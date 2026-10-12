@@ -146,6 +146,37 @@ public class BrokenModuleTests : GridTestContext
         Assert.Equal(words, cut.Find(".ex-announce").TextContent);
     }
 
+    [Fact] // ERR-10 / ADR-0203: a substituted Chrome words the refusal, as it words every refusal, ahead of the label function
+    public void ERR10_a_substituted_chrome_words_the_refusal()
+    {
+        _js.Breakage = Breakage.OtherStamp;
+        const string words = "La page contient une autre version du script. Rechargez-la.";
+
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.Columns, TestRows.Columns())
+            .Add(g => g.ViewportHeight, 100)
+            .Add(g => g.Chrome, new WordingChrome(ReloadNoticeLabelIds.Script, words))
+            .Add(g => g.CommandLabel, id => id == ReloadNoticeLabelIds.Script ? "Not these words." : null));
+
+        cut.WaitForAssertion(() => Assert.Equal(words, cut.Find(".ex-viewport > [data-ex-notice='script']").TextContent));
+        Assert.Equal(words, cut.Find(".ex-announce").TextContent);
+    }
+
+    /// <summary>A Chrome that words one id and leaves every other seam to the core.</summary>
+    private sealed class WordingChrome(string id, string words) : IGridChrome
+    {
+        public Microsoft.AspNetCore.Components.RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public Microsoft.AspNetCore.Components.RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public Microsoft.AspNetCore.Components.RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public Microsoft.AspNetCore.Components.RenderFragment? LoadingIndicator(LoadingContext context) => null;
+
+        public string? Words(string asked) => asked == id ? words : null;
+    }
+
     [Fact] // ERR-10 / ADR-0033: the refusal is said once, and nothing the grid does afterwards says it again
     public void ERR10_the_refusal_is_said_once()
     {

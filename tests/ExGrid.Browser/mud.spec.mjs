@@ -84,12 +84,14 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
         const css = await gridA(page).evaluate((g) => {
             const focus = [...g.querySelectorAll('.ex-focus')].find((el) => el.getBoundingClientRect().width > 0);
             const range = g.querySelector('.ex-range');
+            // A range's tint is an element of its own beside its box (ADR-0206).
+            const tint = g.querySelector('.ex-range-tint');
             // Each outline is the border of its box of its own, the ::after (ADR-0008, 2026-10-01).
             return {
                 focus: getComputedStyle(focus, '::after').borderTopColor,
                 focusStyle: getComputedStyle(focus, '::after').borderTopStyle,
                 range: range ? getComputedStyle(range, '::after').borderTopColor : null,
-                fill: range ? getComputedStyle(range, '::before').backgroundColor : null,
+                fill: tint ? getComputedStyle(tint).backgroundColor : null,
                 ground: getComputedStyle(g).backgroundColor,
                 primary: getComputedStyle(g).getPropertyValue('--mud-palette-primary'),
             };
@@ -150,6 +152,7 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
         await expect(gridA(page).locator('.ex-range')).not.toHaveCount(0);
         const withRange = await colours();
         expect(withRange.range, JSON.stringify(withRange)).toEqual(oneCell.focus);
+        expect(withRange.fill, JSON.stringify(withRange)).not.toBeNull();
         expect(withRange.fill).not.toBe('rgba(0, 0, 0, 0)');
     }
 });

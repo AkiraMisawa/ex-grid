@@ -51,6 +51,11 @@
             </tbody>
         </MudSimpleTable>
         <p>
+            The selection's shade is set by <code>--ex-selection-fill</code> alone. It is painted by an element of
+            the grid's own, beneath each selected range's box, so a rule on <code>ex-range</code>, the box that draws
+            the outline, or on anything inside it, does not reach the shade.
+        </p>
+        <p>
             The font family is the exception. The grid decides whether a number fits — or becomes <code>####</code> —
             from the width of its glyphs, so <code>--ex-font-family</code> is a metric as much as a look: whoever
             changes it also passes matching <code>CellMetrics</code>. <code>MudExGridPaper</code> does this for
@@ -108,6 +113,17 @@
             Chrome draws and calls back; the grid decides what every choice means. The same filter chosen under
             either Chrome gives the same rows. Every Example on this site runs under both: switch with
             <em>Built-in / MudBlazor</em> at the top of the page.
+        </p>
+        <p>
+            <strong>A Chrome of your own</strong> implements <code>IGridChrome</code>, and two of its duties are
+            easy to miss. Each popover's context — the column menu's, the Context Menu's, the filter panel's and
+            the find panel's — hands it a <code>TakeFocus</code> function: the contents take the keyboard by
+            calling it with their control, never with the control's own <code>FocusAsync</code>. Over Blazor
+            Server the request lands a round trip after the key that opened the popover, and the grid gives the
+            control the keyboard only while it is still the grid's, so a user who has pressed another grid in
+            the meantime keeps it there. And <code>IGridChrome.Words</code> answers the words a refusal is
+            announced in, by the ids in <code>RefusalLabelIds</code>; answering <code>null</code> leaves the
+            built-in English (<a href="exgrid/clipboard#what-a-refusal-sounds-like">what a refusal sounds like</a>).
         </p>
     </DocsSection>
 

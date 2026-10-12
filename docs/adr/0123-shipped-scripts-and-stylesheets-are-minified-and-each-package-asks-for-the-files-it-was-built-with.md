@@ -79,6 +79,9 @@ What happens today was measured on 2026-10-11:
   - When the stamp differs, or is missing (a module older than this rule), the grid attaches nothing.
     In place of its rows it shows, in the built-in Chrome's words (ADR-0203) and in its live region
     (ADR-0033), that the page holds another version's script and is to be reloaded.
+    *(2026-10-12, as built beside ADR-0203's seam: both notices are worded as a refusal is — a
+    substituted Chrome's `IGridChrome.Words`, else the Consumer's `CommandLabel`, else the built-in
+    English — so the MudBlazor Wrapper's `Label` words them as it words every refusal.)*
   - A script that does not load at all is shown the same way, never left busy.
   - A grid that refused its script is neither busy nor a tab stop. It waits for nothing, and nothing
     would hear a key (ADR-0033).

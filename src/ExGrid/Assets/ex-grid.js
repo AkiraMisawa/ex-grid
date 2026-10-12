@@ -178,6 +178,103 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         });
     };
 
+    // The page follows what a move reveals (ADR-0204). After a move the grid makes — the arrows,
+    // Ctrl+arrows, Home and End, PageUp and PageDown, Enter and Tab cycling, Ctrl+Backspace — the
+    // grid has revealed the Focus in its own Viewport by its own arithmetic (ADR-0012), or the
+    // Extent while extending (ADR-0052); the browser is then asked to bring the Keyboard Field,
+    // which stands over that cell (ADR-0080) — or the cell itself, on a grid without a field, and
+    // the Extent's — into the window at the nearest edge. A cell already in the window moves
+    // nothing, and neither does a page the user scrolled meanwhile so that the cell shows. The
+    // request names the render that paints the move (data-ex-follow, as a reveal names its own) and
+    // waits for it; it then waits for the frame that paints it, and for a reveal's write and repaint,
+    // and runs in the task after that frame, so nothing is read on the path to a paint. It runs only
+    // while the keyboard is still this grid's — DOM focus inside this root or on nothing, the
+    // editor's question — and only for the Focus it was taken for, which the root names whether or
+    // not that cell is painted (data-ex-follow-focus: while extending, the Focus may be far above the
+    // painted rows, ADR-0052): a request whose Focus has moved on, or whose keyboard has left, is
+    // dropped. The Cell Editor opening is followed by the same
+    // rule (focusEditor). The grid's own scroller is the grid's, and is put back where the reveal
+    // left it if the browser moved it. The scroll entry of ADR-0021, applied to the page.
+    let follow = null;
+    const followObserver = new MutationObserver(() => awaitFollowedRender());
+    const dropFollow = () => {
+        if (follow) {
+            cancelAnimationFrame(follow.frame);
+            clearTimeout(follow.timer);
+            follow = null;
+        }
+        followObserver.disconnect();
+    };
+    // DOM focus inside this root, or on nothing: the keyboard is still this grid's.
+    const keyboardStillHere = () => {
+        const active = document.activeElement;
+        return !!root && (!active || active === document.body || active === document.documentElement || root.contains(active));
+    };
+    // After the frame that paints what is held, and after a reveal's write and repaint: a rAF puts
+    // the request in the frame, and a timer of no delay in the task after its paint.
+    const afterPaint = (request, run) => {
+        request.frame = requestAnimationFrame(() => {
+            request.timer = setTimeout(() => {
+                if (follow !== request) {
+                    return;
+                }
+                if (pendingReveal || repaint) {
+                    afterPaint(request, run);
+                    return;
+                }
+                follow = null;
+                run();
+            }, 0);
+        });
+    };
+    const awaitFollowedRender = () => {
+        const request = follow;
+        if (!request || request.token === undefined) {
+            return;
+        }
+        if (Number(root.getAttribute('data-ex-follow')) < request.token) {
+            followObserver.observe(root, { attributes: true, attributeFilter: ['data-ex-follow'] });
+            return;
+        }
+        followObserver.disconnect();
+        request.token = undefined;
+        afterPaint(request, () => {
+            if (!keyboardStillHere() || root.getAttribute('data-ex-follow-focus') !== request.focus) {
+                return;
+            }
+            // Found inside this root, by the id its own render wrote: never another instance's cell.
+            const cell = root.querySelector(`#${CSS.escape(request.target)}`);
+            const element = request.target === request.focus ? (keyFieldOf() ?? cell) : cell;
+            if (element) {
+                bringIntoWindow(element);
+            }
+        });
+    };
+    // The browser places, the grid does not measure (ADR-0204): the page moves, at the nearest edge,
+    // and a page with a fixed bar says how much of the window it covers with scroll-padding.
+    const bringIntoWindow = (element) => {
+        const top = scroller.scrollTop;
+        const left = scroller.scrollLeft;
+        element.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        if (scroller.scrollTop !== top) {
+            scroller.scrollTop = top;
+        }
+        if (scroller.scrollLeft !== left) {
+            scroller.scrollLeft = left;
+        }
+    };
+    // The editor's surface, focused without scrolling, followed by the same rule once it has painted.
+    const followEditor = (field) => {
+        dropFollow();
+        const request = { frame: 0, timer: 0 };
+        follow = request;
+        afterPaint(request, () => {
+            if (keyboardStillHere() && field.isConnected && root.contains(field)) {
+                bringIntoWindow(field);
+            }
+        });
+    };
+
     // Whether the synchronous channel exists — WebAssembly has it, a server circuit
     // does not. Probed once with a no-op, so a real .NET failure during a copy is
     // never mistaken for "no channel" (that conflation made a failed copy silent).
@@ -3040,6 +3137,48 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             scroller.scrollTop = top;
             return true;
         },
+        // The page follows a move the grid made (ADR-0204, above): focus names the Focus it was taken
+        // for, as the root's data-ex-follow-focus does, target the id of the cell to bring into the
+        // window (the Extent's while extending), and token the render (data-ex-follow). A newer
+        // request replaces one still waiting.
+        followFocus: (focus, target, token) => {
+            if (!root || !scroller) {
+                return;
+            }
+            dropFollow();
+            follow = { focus, target, token, frame: 0, timer: 0 };
+            awaitFollowedRender();
+        },
+        // A focus the core takes a round trip after a gesture of this grid's (ADR-0204): a built-in
+        // popover's opening focus, a key's move inside a menu, and a Chrome's popover control, which is
+        // handed the core's focus function as a Chrome's editor is (ADR-0010). It asks the editor's
+        // question first — DOM focus inside this root or on nothing — and leaves a field beside the
+        // rows with focus of its own, as reclaimFocus does: another grid, or a control of the page's
+        // the user has pressed in the meantime, keeps the keyboard. An element that cannot take focus
+        // itself hands it to the first of its descendants that can, so a Chrome may name the box of a
+        // control whose own element it cannot reach. Reads document.activeElement and no layout; the
+        // seventh decision about focus made in script (ADR-0021's note of 2026-10-11).
+        takeFocus: (element, preventScroll) => {
+            const active = document.activeElement;
+            const own = active instanceof Element && active !== staleField
+                && active.closest('.ex-formula-bar') !== null;
+            if (!root || !(element instanceof HTMLElement) || !element.isConnected
+                || !(!active || active === document.body || active === document.documentElement
+                    || (root.contains(active) && !own))) {
+                return;
+            }
+            // The element itself where it takes focus; else, inside it, a field first — a design
+            // system's adornment or clear button stands before the field it decorates — then any
+            // other control that takes focus by Tab.
+            const field = 'input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled])';
+            const control = 'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+            const target = element.matches(`${field}, ${control}, [tabindex]`) ? element
+                : element.querySelector(field) ?? element.querySelector(control);
+            if (target instanceof HTMLElement) {
+                staleField = null;
+                target.focus({ preventScroll: preventScroll === true });
+            }
+        },
         // The keyboard back to this grid's root — to its Keyboard Field where it has one, the
         // element that holds the keyboard with no edit open (ADR-0080) — asked for by the core a
         // round trip after the gesture that wanted it (ADR-0021, ADR-0018): only while DOM focus
@@ -3142,9 +3281,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             if (!active || active === document.body || active === document.documentElement || root.contains(active)) {
                 focusDeclined = false;
-                // Scrolled into view as Blazor's FocusAsync scrolled it: an editor opened by keys
-                // below the fold is brought on screen.
-                field.focus();
+                // Not scrolled by the focus itself: the page follows the editor as it follows a move,
+                // to the nearest edge, once it has painted (ADR-0204) — an editor opened by keys below
+                // the fold is brought on screen, and one already in the window moves nothing.
+                field.focus({ preventScroll: true });
+                followEditor(field);
             } else if (editing !== 'none') {
                 // The surface the core asked for is the edit's: the held keys go into it, and a
                 // press back puts the keyboard there (standingField), the bar's when it was the bar.
@@ -3169,6 +3310,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             resolutionQuery = null;
             dropReveal();
             dropRepaint();
+            dropFollow();
             clearTimeout(restTimer);
             root.removeEventListener('mousemove', onPointerMove);
             root.removeEventListener('mouseleave', onPointerLeave);

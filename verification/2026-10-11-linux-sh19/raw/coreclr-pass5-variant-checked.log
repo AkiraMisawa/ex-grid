@@ -1,0 +1,22 @@
+2026-10-12T00:07:55Z
+16.83 28.56 41.12 29/988 11454
+warning: Git tree '/home/user/ex-grid/.claude/worktrees/sh19-measure' is dirty
+dotnet 10.0.203 (nix-managed)
+xUnit.net v3 In-Process Runner v2.0.3+216a74a292 (64-bit .NET 10.0.7)
+  Discovering: ExSheet.Engine.Tests
+  Discovered:  ExSheet.Engine.Tests
+  Starting:    ExSheet.Engine.Tests
+    ExSheet.Engine.Tests.Measurements.Every_row_reading_a_whole_column [OUTPUT] 4 logical CPUs, .NET 10.0.7, Ubuntu 24.04.5 LTS, server GC False, load average 16.83 28.56 41.12
+    ExSheet.Engine.Tests.Measurements.Every_row_reading_a_whole_column [OUTPUT] every row's share of a whole-column SUM: built by one SetEntries in 100117 ms
+    ExSheet.Engine.Tests.Measurements.Every_row_reading_a_whole_column [OUTPUT] every row's share of a whole-column SUM: 10,000 rows by 20 columns, and 20 totals beside them; 50,020 Formulas, 10,020 of them reading a whole column, and 150,000 constants (seed 20261011)
+    ExSheet.Engine.Tests.Measurements.Every_row_reading_a_whole_column [OUTPUT] every row's share of a whole-column SUM: Sheet.Open, every Value computed: median 76491.4 ms, best 75032.3 ms, worst 82361.9 ms (n=3); collections by run: g0+71/g2+14 g0+71/g2+12 g0+67/g2+11
+    ExSheet.Engine.Tests.Measurements.Every_row_reading_a_whole_column [OUTPUT] every row's share of a whole-column SUM: an edit to A1, which the whole running total reads: median 42522.5 ms, best 41880.6 ms, worst 46873.8 ms (n=3); 20,009 recalculated, 20,010 Values changed; collections by run: g0+35/g2+14 g0+38/g2+18 g0+37/g2+18
+    ExSheet.Engine.Tests.Measurements.Every_row_reading_a_whole_column [OUTPUT] every row's share of a whole-column SUM: an edit to A10000, which its own row and the totals read: median 38978.4 ms, best 38645.4 ms, worst 40100.8 ms (n=3); 10,010 recalculated, 10,011 Values changed; collections by run: g0+36/g2+18 g0+36/g2+18 g0+36/g2+18
+    ExSheet.Engine.Tests.Measurements.Every_row_reading_a_whole_column [OUTPUT] every row's share of a whole-column SUM: an edit to O5000, which only its column's total reads: median 22.4 ms, best 17.8 ms, worst 27.8 ms (n=3); 1 recalculated, 2 Values changed; collections by run: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+    ExSheet.Engine.Tests.Measurements.Every_row_reading_a_whole_column [OUTPUT] every row's share of a whole-column SUM: a row inserted at row 2: median 47633.9 ms, best 46513.8 ms, worst 50008.3 ms (n=3); 50,016 recalculated, 10,000 rows changed; collections by run: g0+74/g2+11 g0+76/g2+13 g0+80/g2+13
+    ExSheet.Engine.Tests.Measurements.Every_row_reading_a_whole_column [OUTPUT] every row's share of a whole-column SUM: that insertion undone: median 52450.0 ms, best 50928.1 ms, worst 57505.7 ms (n=3); collections by run: g0+72/g2+9 g0+76/g2+9 g0+84/g2+11
+  Finished:    ExSheet.Engine.Tests
+=== TEST EXECUTION SUMMARY ===
+   ExSheet.Engine.Tests  Total: 1, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 893.264s
+2026-10-12T00:22:50Z
+12.83 9.27 20.63 13/775 24524

@@ -144,6 +144,29 @@ public class ShippedFilesTests : GridTestContext
 
         Assert.Equal("Rechargez la page.", cut.Find("[data-ex-notice='stylesheet']").TextContent);
     }
+
+    [Fact] // ADR-0123 / ERR-11 / ADR-0203: a substituted Chrome words the notice, as it words a refusal, ahead of the label function
+    public void ERR11_a_substituted_chrome_words_the_notice()
+    {
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(10))
+            .Add(g => g.Columns, TestRows.Columns())
+            .Add(g => g.ViewportHeight, 100)
+            .Add(g => g.Chrome, new WordsTheNotice())
+            .Add(g => g.CommandLabel, id => id == ReloadNoticeLabelIds.Stylesheet ? "Not these words." : null));
+
+        Assert.All(cut.FindAll(".ex-grid > [data-ex-notice='stylesheet']"), notice => Assert.Equal(WordsTheNotice.Words, notice.TextContent));
+    }
+
+    /// <summary>A Wrapper's Chrome that brings a stylesheet and words its notice.</summary>
+    private sealed class WordsTheNotice : BringsNothing, IGridChrome
+    {
+        internal const string Words = "La page contient une autre feuille de style. Rechargez-la.";
+
+        public IReadOnlyList<ChromeStylesheet> Stylesheets { get; } = [new("acme-grid.css", BringsOne.Stamp)];
+
+        string? IGridChrome.Words(string id) => id == ReloadNoticeLabelIds.Stylesheet ? Words : null;
+    }
 }
 
 /// <summary>

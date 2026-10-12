@@ -83,21 +83,25 @@ public partial class ExGrid<TRow>
         StateHasChanged();
     }
 
-    /// <summary>What the refusal says, in the built-in Chrome's words (ADR-0203): the Consumer's
-    /// through <see cref="CommandLabel"/>, the built-in English where it says nothing.</summary>
-    private string ScriptRefusedWords => WordFor(ReloadNoticeLabelIds.Script);
+    /// <summary>What the refusal says, worded as a refusal is (ADR-0203): a substituted Chrome's
+    /// <see cref="IGridChrome.Words"/>, else the Consumer's through <see cref="CommandLabel"/>, else
+    /// the built-in English.</summary>
+    private string ScriptRefusedWords => RefusalWords(ReloadNoticeLabelIds.Script);
 
-    /// <summary>What the stylesheet's notice says, should another version's stylesheet show it. The
-    /// notice is in every render of the root, so the words are asked for again only when the
-    /// Consumer's label function is another one.</summary>
+    /// <summary>What the stylesheet's notice says, should another version's stylesheet show it,
+    /// worded as a refusal is (ADR-0203). The notice is in every render of the root, so the words are
+    /// asked for again only when the Chrome or the Consumer's label function is another one.</summary>
     private string StylesheetNoticeWords
     {
         get
         {
-            if (_stylesheetNoticeWords is null || !ReferenceEquals(_stylesheetNoticeLabel, CommandLabel))
+            if (_stylesheetNoticeWords is null
+                || !ReferenceEquals(_stylesheetNoticeLabel, CommandLabel)
+                || !ReferenceEquals(_stylesheetNoticeChrome, Chrome))
             {
                 _stylesheetNoticeLabel = CommandLabel;
-                _stylesheetNoticeWords = WordFor(ReloadNoticeLabelIds.Stylesheet);
+                _stylesheetNoticeChrome = Chrome;
+                _stylesheetNoticeWords = RefusalWords(ReloadNoticeLabelIds.Stylesheet);
             }
             return _stylesheetNoticeWords;
         }
@@ -105,4 +109,5 @@ public partial class ExGrid<TRow>
 
     private string? _stylesheetNoticeWords;
     private Func<string, string?>? _stylesheetNoticeLabel;
+    private IGridChrome? _stylesheetNoticeChrome;
 }

@@ -135,6 +135,16 @@ public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 /// <see cref="FilterPanelChoices.ReadOperand"/>, and what an operand in <see cref="Current"/> is.
 /// A panel hands that type to the engine or nothing: a <see cref="DateTime"/> on a
 /// <see cref="ExGrid.DateType.DateOnly"/> column is refused when it is applied.</para>
+///
+/// <para><see cref="TakeFocus"/> is the core's focus function (ADR-0204), as a Chrome's editor is
+/// handed one (ADR-0010): the contents answer a request by calling it with the control, and whether
+/// the control may scroll into view, instead of the control's own <c>FocusAsync</c>. On a circuit a
+/// request lands a round trip after the gesture that made it, so the core gives the control DOM focus
+/// only while the keyboard is still this grid's — DOM focus inside the root or on nothing — and
+/// another grid or a control of the page's the user has pressed in the meantime keeps it. An element
+/// that cannot take focus itself hands it to the first of its descendants that can, so the contents
+/// may name the box of a control whose own element they cannot reach. Null only in a context the
+/// core did not make.</para>
 /// </summary>
 public sealed record FilterPanelContext(
     string Column,
@@ -152,7 +162,8 @@ public sealed record FilterPanelContext(
     int FocusLastRequest = 0,
     Func<KeyboardEventArgs, Task>? ValueListKey = null,
     int SearchRequest = 0,
-    DateType DateType = DateType.DateTime);
+    DateType DateType = DateType.DateTime,
+    Func<ElementReference, bool, Task>? TakeFocus = null);
 
 /// <summary>The column menu's contract (ADR-0010): the core decides the items. They stand
 /// at the top of the one popover Alt+↓ and the ▾ open, above the column's filter where it
@@ -168,7 +179,18 @@ public sealed record FilterPanelContext(
 /// place, so a key is answered against where the keys have moved it, not against whichever
 /// item holds DOM focus when it lands — on a Blazor Server circuit focus follows a round
 /// trip behind (ADR-0039). A popup the menu's contents open of their own is reported
-/// through <see cref="InnerPopupChanged"/>, as in the filter panel.</summary>
+/// through <see cref="InnerPopupChanged"/>, as in the filter panel.
+///
+/// <para><see cref="TakeFocus"/> is the core's focus function (ADR-0204), as a Chrome's editor is
+/// handed one (ADR-0010): the contents answer a request by calling it with the control, and whether
+/// the control may scroll into view, instead of the control's own <c>FocusAsync</c>. On a circuit a
+/// request lands a round trip after the gesture that made it, so the core gives the control DOM focus
+/// only while the keyboard is still this grid's — DOM focus inside the root or on nothing — and
+/// another grid or a control of the page's the user has pressed in the meantime keeps it. An element
+/// that cannot take focus itself hands it to the first of its descendants that can, so the contents
+/// may name the box of a control whose own element they cannot reach. Null only in a context the
+/// core did not make.</para>
+/// </summary>
 public sealed record ColumnMenuContext(
     string Column,
     ColumnType Type,
@@ -176,7 +198,8 @@ public sealed record ColumnMenuContext(
     Action Close,
     int FocusRequest = 0,
     Action<bool>? InnerPopupChanged = null,
-    MenuKeyResolver? ResolveKey = null);
+    MenuKeyResolver? ResolveKey = null,
+    Func<ElementReference, bool, Task>? TakeFocus = null);
 
 /// <summary>
 /// A key pressed on a menu's item, answered by the core against the place it keeps for
@@ -203,6 +226,16 @@ public delegate MenuKey MenuKeyResolver(string key, bool shift, bool controlAltO
 /// first enabled item whenever it changes (ADR-0039). As in the column menu, invoking a
 /// command closes the menu and hands the keyboard back, and <see cref="MenuKeys"/> says
 /// what each key means on an item.</para>
+///
+/// <para><see cref="TakeFocus"/> is the core's focus function (ADR-0204), as a Chrome's editor is
+/// handed one (ADR-0010): the contents answer a request by calling it with the control, and whether
+/// the control may scroll into view, instead of the control's own <c>FocusAsync</c>. On a circuit a
+/// request lands a round trip after the gesture that made it, so the core gives the control DOM focus
+/// only while the keyboard is still this grid's — DOM focus inside the root or on nothing — and
+/// another grid or a control of the page's the user has pressed in the meantime keeps it. An element
+/// that cannot take focus itself hands it to the first of its descendants that can, so the contents
+/// may name the box of a control whose own element they cannot reach. Null only in a context the
+/// core did not make.</para>
 /// </summary>
 public sealed record ContextMenuContext<TRow>(
     TRow Row,
@@ -214,7 +247,8 @@ public sealed record ContextMenuContext<TRow>(
     Action Close,
     int FocusRequest = 0,
     Action<bool>? InnerPopupChanged = null,
-    MenuKeyResolver? ResolveKey = null);
+    MenuKeyResolver? ResolveKey = null,
+    Func<ElementReference, bool, Task>? TakeFocus = null);
 
 /// <summary>
 /// A cell's message, while it is showing (ADR-0034): the Consumer's sentence for a
@@ -317,6 +351,16 @@ public sealed record CellEditorContext(
 /// field, and whatever buttons the Chrome draws. <see cref="Outcome"/> is what the last step
 /// came to; the grid holds no sentence for it, so the Chrome words it, into a live region
 /// (ADR-0033).</para>
+///
+/// <para><see cref="TakeFocus"/> is the core's focus function (ADR-0204), as a Chrome's editor is
+/// handed one (ADR-0010): the contents answer a request by calling it with the control, and whether
+/// the control may scroll into view, instead of the control's own <c>FocusAsync</c>. On a circuit a
+/// request lands a round trip after the gesture that made it, so the core gives the control DOM focus
+/// only while the keyboard is still this grid's — DOM focus inside the root or on nothing — and
+/// another grid or a control of the page's the user has pressed in the meantime keeps it. An element
+/// that cannot take focus itself hands it to the first of its descendants that can, so the contents
+/// may name the box of a control whose own element they cannot reach. Null only in a context the
+/// core did not make.</para>
 /// </summary>
 public sealed record FindContext(
     string Text,
@@ -330,7 +374,8 @@ public sealed record FindContext(
     Func<Task> Previous,
     Action Close,
     int FocusRequest = 0,
-    Action<bool>? InnerPopupChanged = null);
+    Action<bool>? InnerPopupChanged = null,
+    Func<ElementReference, bool, Task>? TakeFocus = null);
 
 /// <summary>
 /// What the grid hands a Consumer's own contents in its popover frame (ADR-0050, item 16;
@@ -546,4 +591,15 @@ public interface IGridChrome
     /// built-in Chrome, which brings none. Read on every render of the root: answer the same list
     /// each time.</summary>
     IReadOnlyList<ChromeStylesheet> Stylesheets => [];
+
+    /// <summary>
+    /// The Chrome's words for something the core says rather than shows: a refusal, by its
+    /// <see cref="RefusalLabelIds"/> id (ADR-0203), which the root's live region announces once, as
+    /// it happens. The core holds no sentence; this is the Chrome's label function, the seam
+    /// <c>ExGrid.CommandLabel</c> is for the built-in Chrome. Null — the default — leaves the
+    /// built-in Chrome's words: <c>ExGrid.CommandLabel</c>, then <see cref="BuiltInCommandLabels"/>.
+    /// The empty string says nothing for that id, and whoever answers it owns saying it.
+    /// </summary>
+    /// <param name="id">The id of the words asked for.</param>
+    string? Words(string id) => null;
 }

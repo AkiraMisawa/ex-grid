@@ -54,7 +54,7 @@ public abstract class PivotTestContext : BunitContext
         offset.SetResult(default);
         _scrollOffsets.Add(offset);
         handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handKeyboardTo", "dispose" })
+        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handKeyboardTo", "takeFocus", "followFocus", "dispose" })
             handle.SetupVoid(name, _ => true).SetVoidResult();
     }
 

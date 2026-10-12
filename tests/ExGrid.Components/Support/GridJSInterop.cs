@@ -175,6 +175,22 @@ internal sealed class GridJSInterop
             return true;
         });
         handKeyboardTo.SetVoidResult();
+        // A focus the core takes a round trip after a gesture — a popover's opening focus, a key's
+        // move inside a menu, a Chrome's popover control — asked of the handle, which grants it only
+        // while DOM focus is still inside the root or on nothing (ADR-0204): logged with the other
+        // focus requests, as the element.
+        var takeFocus = handle.SetupVoid(invocation =>
+        {
+            if (invocation.Identifier != "takeFocus")
+                return false;
+            focusLog.Add(((Microsoft.AspNetCore.Components.ElementReference)invocation.Arguments[0]!).Id);
+            return true;
+        });
+        takeFocus.SetVoidResult();
+        // The page following a move the grid made (ADR-0204): what the browser was asked to bring
+        // into the window, and for which Focus, is asserted.
+        var followFocus = handle.SetupVoid("followFocus", _ => true);
+        followFocus.SetVoidResult();
         // Where the keyboard is going, told to the key gate (ADR-0039 and ADR-0050 item 16,
         // 2026-10-01): to a Consumer's popover, or to a frame of the Consumer's own.
         var handOff = handle.SetupVoid("handOff", _ => true);
@@ -217,6 +233,8 @@ internal sealed class GridJSInterop
             FocusReclaimed = reclaimFocus,
             EditorFocusAsked = focusEditor,
             KeyboardHandedOn = handKeyboardTo,
+            FocusTaken = takeFocus,
+            PageFollowed = followFocus,
             _focusLog = focusLog,
         };
     }
@@ -256,6 +274,20 @@ internal sealed class GridJSInterop
     /// 2026-10-02): its argument is the control.</summary>
     internal JSRuntimeInvocationHandler KeyboardHandedOn { get; private init; } = default!;
 
+    /// <summary>Every focus the core asked the handle to take a round trip after a gesture, through
+    /// its conditional <c>takeFocus</c> (ADR-0204): the element, and whether it may scroll.</summary>
+    internal JSRuntimeInvocationHandler FocusTaken { get; private init; } = default!;
+
+    /// <summary>Every time the core asked the page to follow a move (ADR-0204): the
+    /// <c>aria-activedescendant</c> the move's render writes, the id of the cell to bring into the
+    /// window, and the render's number.</summary>
+    internal JSRuntimeInvocationHandler PageFollowed { get; private init; } = default!;
+
+    /// <summary>What each page follow asked for, in order: the Focus it was taken for, as its
+    /// <c>aria-activedescendant</c>, and the cell to bring into the window.</summary>
+    internal IReadOnlyList<(string Focus, string Target)> Followed =>
+        [.. PageFollowed.Invocations.Select(i => ((string)i.Arguments[0]!, (string)i.Arguments[1]!))];
+
     /// <summary>The Cell Editor's surface, as <see cref="Focused"/> names a request for it.</summary>
     internal const string CellSurface = "surface:cell";
 
@@ -270,8 +302,9 @@ internal sealed class GridJSInterop
     /// <summary>Every element the core has asked the browser to focus, in the order asked: the
     /// root, by the handle's conditional reclaim; an open edit's surface, by the handle's
     /// conditional <c>focusEditor</c>, as <see cref="CellSurface"/> or <see cref="BarSurface"/>;
-    /// a control of the Consumer's, by the handle's conditional <c>handKeyboardTo</c>; and any
-    /// other element by Blazor's.</summary>
+    /// a control of the Consumer's, by the handle's conditional <c>handKeyboardTo</c>; a popover's
+    /// control, by the handle's conditional <c>takeFocus</c> (ADR-0204); and any other element by
+    /// Blazor's.</summary>
     internal IReadOnlyList<string> Focused => [.. _focusLog.Select(id => id ?? RootReferenceId)];
 
     /// <summary>How many times the core has asked for DOM focus anywhere, by any route.</summary>
@@ -283,6 +316,16 @@ internal sealed class GridJSInterop
         => _handle!.SetupVoid(invocation =>
         {
             if (invocation.Identifier == "reclaimFocus")
+                heard();
+            return false;
+        });
+
+    /// <summary>Runs <paramref name="heard"/> at each conditional focus the core asks of the handle
+    /// (ADR-0204) as it makes it, so a test can read what stood on screen at that moment.</summary>
+    internal void OnFocusTaken(Action heard)
+        => _handle!.SetupVoid(invocation =>
+        {
+            if (invocation.Identifier == "takeFocus")
                 heard();
             return false;
         });

@@ -54,6 +54,7 @@ internal static class FeatureMatrixByHand
         new("IGridChrome.EditorCompletion", "The completion list and argument hint", ["ADR-0051"]),
         new("IGridChrome.SelectionSummary", "The Selection Summary in the status line", ["ADR-0130"]),
         new("IGridChrome.Stylesheets", "The notice that the page holds another version of the Wrapper's stylesheet", ["ADR-0123"]),
+        new("IGridChrome.Words", "The words a refusal is announced in", ["ADR-0203"]),
         new("ISheetChrome.FormatCells", "Format Cells", ["ADR-0071"]),
         new("ISheetChrome.ToolbarItem", "The Sheet Toolbar's items", ["ADR-0100"]),
         new("IPivotChrome.GridChrome", "The report's grid, dressed by ExGrid.MudBlazor's Chrome", ["ADR-0061", "ADR-0062"]),

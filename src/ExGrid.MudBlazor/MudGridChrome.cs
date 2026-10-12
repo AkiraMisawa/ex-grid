@@ -126,18 +126,19 @@ public sealed class MudGridChrome : IGridChrome
     public RenderFragment? ColumnMenu(ColumnMenuContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
-        return Menu(context.Commands, context.Close, context.FocusRequest, context.ResolveKey);
+        return Menu(context.Commands, context.Close, context.FocusRequest, context.ResolveKey, context.TakeFocus);
     }
 
     /// <summary>The Context Menu: the same items over the selection's commands (ADR-0036).</summary>
     public RenderFragment? ContextMenu<TRow>(ContextMenuContext<TRow> context)
     {
         ArgumentNullException.ThrowIfNull(context);
-        return Menu(context.Commands, context.Close, context.FocusRequest, context.ResolveKey);
+        return Menu(context.Commands, context.Close, context.FocusRequest, context.ResolveKey, context.TakeFocus);
     }
 
     private RenderFragment Menu(
-        IReadOnlyList<GridCommand> commands, Action close, int focusRequest, MenuKeyResolver? resolveKey)
+        IReadOnlyList<GridCommand> commands, Action close, int focusRequest, MenuKeyResolver? resolveKey,
+        Func<ElementReference, bool, Task>? takeFocus)
         => builder =>
         {
             builder.OpenComponent<MudExGridMenu>(0);
@@ -146,8 +147,19 @@ public sealed class MudGridChrome : IGridChrome
             builder.AddComponentParameter(3, nameof(MudExGridMenu.FocusRequest), focusRequest);
             builder.AddComponentParameter(4, nameof(MudExGridMenu.Chrome), this);
             builder.AddComponentParameter(5, nameof(MudExGridMenu.ResolveKey), resolveKey);
+            builder.AddComponentParameter(6, nameof(MudExGridMenu.TakeFocus), takeFocus);
             builder.CloseComponent();
         };
+
+    /// <summary>
+    /// The words the grid's live region says a refusal in (ADR-0203), by its
+    /// <see cref="RefusalLabelIds"/> id: MudBlazor's localised text where MudBlazor has a key — it has
+    /// none for a refused paste or copy — and otherwise the Chrome's own words, as WR-3 has it for
+    /// the filter panel: <see cref="Label"/>, then the built-in Chrome's English. <see cref="Label"/>
+    /// answering the empty string silences the announcement for that refusal.
+    /// </summary>
+    /// <param name="id">The id of the words asked for.</param>
+    public string? Words(string id) => MudExGridWords.Own(this, id);
 
     /// <summary>What a command is called (WR-3): MudBlazor's localised text where it has
     /// a key, the Chrome's <see cref="Label"/> for the rest, English where that says

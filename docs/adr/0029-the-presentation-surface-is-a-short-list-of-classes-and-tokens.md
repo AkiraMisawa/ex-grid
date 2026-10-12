@@ -401,7 +401,7 @@ is added to the stable table, so what a Consumer may style does not grow:
 - the Sheet's appearance families, generated from document data: `ex-lined`, `ex-fill-<rgb>`,
   `ex-font-xb`, `ex-font-xi`, and the Border sides `ex-lt-…`, `ex-lr-…`, `ex-lb-…`, `ex-ll-…` (a side,
   a style and a colour);
-- the selection's tint and the pinned shade layer
+- the selection's tint, `ex-range-tint`, and the pinned shade layer, `ex-shade-pinned`
   ([ADR-0206](./0206-a-ranges-tint-is-an-element-of-its-own-and-on-the-paper-the-pinned-tints-multiply-as-one-layer.md)).
 
 UX-4's walk checks each class against the stable table, the internal names, and these prefixes and
