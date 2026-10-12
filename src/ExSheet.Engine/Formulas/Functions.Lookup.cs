@@ -11,7 +11,10 @@ internal static partial class FunctionLibrary
     /// </summary>
     /// <remarks>
     /// A row or a column of 0 names the whole column or row, which spills where it is more than one
-    /// cell (ADR-0125), and is a range a function such as <c>SUM</c> reads.
+    /// cell (ADR-0125), and is a range a function such as <c>SUM</c> reads. Over a Reference of
+    /// several rows and several columns, <c>column_num</c> cannot be left out: <c>INDEX(G1:H5,2)</c>
+    /// is <c>#REF!</c>, as Excel's is (INDEX-012, the seventeenth Windows run). Over an array it is
+    /// the whole row, as Microsoft documents.
     /// </remarks>
     private static Operand Index(FunctionCall call)
     {
@@ -39,6 +42,7 @@ internal static partial class FunctionLibrary
         row = Math.Truncate(row);
         column = Math.Truncate(column);
         if (row < 0 || column < 0) return Operand.Of(ErrorValue.Value);
+        if (call.Count < 3 && source.Kind == OperandKind.Area && rows > 1 && columns > 1) return Operand.Of(ErrorValue.Ref);
         if (row > rows || column > columns) return Operand.Of(ErrorValue.Ref);
         if ((row == 0 && rows > 1) || (column == 0 && columns > 1))
         {
@@ -194,34 +198,123 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// INDIRECT (ADR-0124's note of 2026-10-10, a volatile function): the Reference its text names,
-    /// A1-style, to a cell or a range of this Sheet, with or without the Sheet's own qualifier. A
-    /// Reference of several cells is a range for a function such as <c>SUM</c>, and spills where it
-    /// is the result (ADR-0125). The text is text: an insertion or a deletion does not rewrite it.
-    /// Text in a form Excel reads but no Windows run has observed is <c>#VALUE!</c> — R1C1 style
-    /// (<c>a1</c> FALSE), a structured reference (<c>Positions[PV]</c>) and a Spill Range
-    /// (<c>A1#</c>) — and text that names no place is <c>#REF!</c>, as in Excel, another Sheet's
-    /// name included (ADR-0046).
+    /// to a cell or a range of this Sheet, with or without the Sheet's own qualifier. A Reference of
+    /// several cells is a range for a function such as <c>SUM</c>, and spills where it is the result
+    /// (ADR-0125). The text is text: an insertion or a deletion does not rewrite it.
     /// </summary>
+    /// <remarks>
+    /// The seventeenth Windows run observed the forms it had refused (INDIRECT-023 to INDIRECT-026),
+    /// and they are read as Excel reads them: R1C1 text (<c>a1</c> FALSE, 0, a blank or left empty)
+    /// naming an absolute cell, <c>R3C2</c>, or a range of two, <c>R2C2:R5C2</c>; a structured
+    /// reference, <c>Positions[PV]</c>, as the typed one is read; and a Spill Range, <c>A1#</c>, as
+    /// the typed one is read. R1C1 text in a form no run has observed — relative (<c>R[1]C[-1]</c>,
+    /// <c>RC</c>), whole rows or columns (<c>R3</c>, <c>C2</c>) — and the structured forms a Formula
+    /// does not take (<c>#All</c>, <c>@</c>) are still <c>#VALUE!</c>. Text that names no place is
+    /// <c>#REF!</c>, as in Excel, another Sheet's name, a table never declared and a column the table
+    /// does not have included (ADR-0046, ADR-0049).
+    /// </remarks>
     private static Operand Indirect(FunctionCall call)
     {
         if (!TryScalar(call, 0, out var value, out var failure)) return failure;
+        // a1: TRUE, or left out, is A1 style; FALSE, 0, a blank or an empty argument is R1C1's.
+        var isA1 = true;
         if (call.Count > 1)
         {
-            // a1: TRUE, or left out, is A1 style; FALSE, 0, a blank or an empty argument is R1C1's.
-            if (!call.Has(1)) return Operand.Of(ErrorValue.Value);
-            if (!TryScalar(call, 1, out var style, out failure)) return failure;
-            if (style is not { } a1 || !TryTruth(a1, out var isA1)) return Operand.Of(ErrorValue.Value);
-            if (!isA1) return Operand.Of(ErrorValue.Value);
+            if (!call.Has(1)) isA1 = false;
+            else
+            {
+                if (!TryScalar(call, 1, out var style, out failure)) return failure;
+                if (style is not { } a1) isA1 = false;
+                else if (!TryTruth(a1, out isA1)) return Operand.Of(ErrorValue.Value);
+            }
         }
         var text = call.Evaluator.ToText(value);
-        // Table[Column], and any other text a structured reference begins as.
+        return isA1 ? IndirectA1(call, text) : IndirectRowColumn(call, text);
+    }
+
+    /// <summary>INDIRECT's A1-style text: a Reference as a Formula writes one, <c>A1#</c>, or <c>Table[Column]</c>.</summary>
+    private static Operand IndirectA1(FunctionCall call, string text)
+    {
+        var cells = call.Evaluator.Cells;
+        // Table[Column] or Table[[Column]], read as the typed one is (ADR-0049): a table still waiting
+        // for its data waits, and one never declared names no place, as a column it lacks does.
+        if (Lexer.ReadStructuredReference(text, 0) is { } structured && structured.Length == text.Length)
+        {
+            var column = cells.TableColumn(structured.Table, structured.Column);
+            return column.IsError && column.Scalar!.Value.Error == ErrorValue.Name ? Operand.Of(ErrorValue.Ref) : column;
+        }
+        // Any other text a structured reference begins as: a form a Formula does not take (#All, @).
         if (StructuredText().IsMatch(text)) return Operand.Of(ErrorValue.Value);
         if (Lexer.ReadReference(text, 0, out var length) is not { } reference) return Operand.Of(ErrorValue.Ref);
-        // A1#: the Spill Range of the Formula in A1 (ADR-0125).
-        if (reference.Shape == ReferenceShape.Cell && length == text.Length - 1 && text[length] == '#') return Operand.Of(ErrorValue.Value);
-        if (length != text.Length || !call.Evaluator.Cells.IsLocal(reference)) return Operand.Of(ErrorValue.Ref);
+        // A1#: the Spill Range of the Formula in A1, read as the typed one is (ADR-0125).
+        if (reference.Shape == ReferenceShape.Cell && length == text.Length - 1 && text[length] == '#')
+        {
+            if (!cells.IsLocal(reference)) return Operand.Of(ErrorValue.Ref);
+            return cells.Spill(new CellAddress(reference.Row1, reference.Column1));
+        }
+        if (length != text.Length || !cells.IsLocal(reference)) return Operand.Of(ErrorValue.Ref);
         return Operand.Of(reference.Area);
     }
+
+    /// <summary>
+    /// INDIRECT's R1C1-style text: an absolute cell, <c>R3C2</c>, or a range of two, <c>R2C2:R5C2</c>,
+    /// with or without the Sheet's own qualifier. Another form of the notation — relative, a whole
+    /// row or column, a number written with a leading 0 — is <c>#VALUE!</c>, as are a structured
+    /// reference and <c>#</c> after the text, which no run has observed in this style. Text that is
+    /// not R1C1 notation, or names a row or a column past the Sheet's edge, names no place: <c>#REF!</c>.
+    /// </summary>
+    private static Operand IndirectRowColumn(FunctionCall call, string text)
+    {
+        var spilled = text.EndsWith('#');
+        var match = RowColumnText().Match(spilled ? text[..^1] : text);
+        if (!match.Success) return Operand.Of(StructuredText().IsMatch(text) ? ErrorValue.Value : ErrorValue.Ref);
+        if (spilled) return Operand.Of(ErrorValue.Value);
+        string? sheet = null;
+        if (match.Groups["sheet"].Success)
+        {
+            var raw = match.Groups["sheet"].Value;
+            sheet = raw[0] == '\'' ? raw[1..^1].Replace("''", "'", StringComparison.Ordinal) : raw;
+        }
+        var first = AbsoluteRowColumn(match.Groups["first"].Value);
+        var second = match.Groups["second"].Success ? AbsoluteRowColumn(match.Groups["second"].Value) : first;
+        if (first is not { } one || second is not { } two) return Operand.Of(ErrorValue.Value);
+        if (one.Row < 0 || one.Column < 0 || two.Row < 0 || two.Column < 0) return Operand.Of(ErrorValue.Ref);
+        var reference = Reference.Rectangle(sheet, Math.Min(one.Row, two.Row), Math.Min(one.Column, two.Column), Math.Max(one.Row, two.Row), Math.Max(one.Column, two.Column), true, true, true, true);
+        if (!call.Evaluator.Cells.IsLocal(reference)) return Operand.Of(ErrorValue.Ref);
+        return Operand.Of(reference.Area);
+    }
+
+    /// <summary>
+    /// One part of R1C1 text as an absolute cell, <c>R3C2</c>: its row and column from 0, each −1 where
+    /// the Sheet has no such row or column. <see langword="null"/> for any other form of the notation.
+    /// </summary>
+    private static (int Row, int Column)? AbsoluteRowColumn(string part)
+    {
+        var match = AbsoluteRowColumnText().Match(part);
+        if (!match.Success) return null;
+        return (Ordinal(match.Groups["row"].Value, Sheet.RowCount), Ordinal(match.Groups["column"].Value, Sheet.ColumnCount));
+
+        static int Ordinal(string digits, int count) =>
+            digits.Length <= 7 && int.Parse(digits, System.Globalization.CultureInfo.InvariantCulture) is var n && n <= count ? n - 1 : -1;
+    }
+
+    /// <summary>
+    /// R1C1 notation, one part or two separated by <c>:</c>, after an optional Sheet qualifier: each
+    /// part an R with a row (<c>3</c>, <c>[-1]</c>) or none, and a C with a column or none, or a C
+    /// alone. Letters in either case.
+    /// </summary>
+    [System.Text.RegularExpressions.GeneratedRegex(
+        """
+        ^(?:(?<sheet>'(?:[^']|'')+'|[A-Za-z_][A-Za-z0-9_.]*)!)?
+        (?<first>[Rr](?:[0-9]+|\[[+-]?[0-9]+\])?(?:[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?)?|[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?)
+        (?::(?<second>[Rr](?:[0-9]+|\[[+-]?[0-9]+\])?(?:[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?)?|[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?))?$
+        """,
+        System.Text.RegularExpressions.RegexOptions.IgnorePatternWhitespace | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    private static partial System.Text.RegularExpressions.Regex RowColumnText();
+
+    /// <summary>An absolute R1C1 cell, <c>R3C2</c>: each number without a leading 0.</summary>
+    [System.Text.RegularExpressions.GeneratedRegex(@"^[Rr](?<row>[1-9][0-9]*)[Cc](?<column>[1-9][0-9]*)$", System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    private static partial System.Text.RegularExpressions.Regex AbsoluteRowColumnText();
 
     [System.Text.RegularExpressions.GeneratedRegex(@"^[A-Za-z_\\][A-Za-z0-9_.]*\[", System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     private static partial System.Text.RegularExpressions.Regex StructuredText();

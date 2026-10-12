@@ -14,8 +14,8 @@ public sealed partial class Sheet
 
     /// <summary>
     /// One recalculation: what <paramref name="changed"/> reaches and every volatile Formula, the moment
-    /// read once (ADR-0124); then the spills laid out, and what their layout changed recalculated,
-    /// until nothing moves.
+    /// read once (ADR-0124); then the spills laid out, and what their layout changed recalculated with
+    /// every volatile Formula, until nothing moves.
     /// </summary>
     private SheetChange Recalculate(HashSet<CellAddress> changed, SortedSet<int> rows)
     {
@@ -28,8 +28,11 @@ public sealed partial class Sheet
             foreach (var address in laidOut) rows.Add(address.Row);
             changes.Add(new SheetChange(laidOut, [], [.. laidOut.Select(a => a.Row).Distinct().Order()]));
             var readers = new HashSet<CellAddress>(laidOut.SelectMany(Dependents));
-            if (readers.Count == 0) break;
-            changes.Add(RecalculatePass(readers, rows, withVolatile: false));
+            // A Reference INDIRECT or OFFSET computes may read what the layout changed, and no
+            // Dependent says so: the volatile Formulas are read again after a layout, as after any
+            // change (ADR-0124). Each draws and reads the clock as it did in the first pass.
+            if (readers.Count == 0 && _volatileFormulas.Count == 0) break;
+            changes.Add(RecalculatePass(readers, rows, withVolatile: true));
         }
         return SheetChange.Merge(changes);
     }

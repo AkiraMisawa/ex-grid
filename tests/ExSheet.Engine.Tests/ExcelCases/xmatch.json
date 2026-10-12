@@ -67,12 +67,14 @@
     },
     {
       "id": "XMATCH-008",
-      "source": "uncertain",
-      "description": "Refused, as XLOOKUP's is: a binary search over data not sorted as the mode says",
+      "source": "observed",
+      "description": "Refused, as XLOOKUP's is: a binary search over data not sorted as the mode says. Excel answers 2, by a search it does not document",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=XMATCH(\"Banana\",G1:G5,0,2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (Settled while building): XMATCH's binary search, as XLOOKUP's, answers only over data sorted as the mode says; otherwise #VALUE!, since Excel does not document how it searches unsorted data",
+      "excelExpect": {"value2": 2}
     }
   ]
 }

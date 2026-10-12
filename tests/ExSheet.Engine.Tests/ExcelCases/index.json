@@ -101,12 +101,12 @@
     },
     {
       "id": "INDEX-012",
-      "source": "uncertain",
-      "description": "A whole row of several cells spills; the anchor shows its first",
+      "source": "observed",
+      "description": "Over a Reference of several rows and several columns, column_num cannot be left out: #REF!, as the seventeenth Windows run observed",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=INDEX(G1:H5,2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "Banana"}
+      "expect": {"value2": "#REF!"}
     },
     {
       "id": "INDEX-013",
@@ -116,6 +116,32 @@
       "cells": {"ZZ1000": "=INDEX(G1:H5,0,2)"},
       "check": "ZZ1000",
       "expect": {"value2": 10}
+    },
+    {
+      "id": "INDEX-014",
+      "source": "documented",
+      "description": "Microsoft's documentation: over an array of several rows and several columns, row_num alone is the whole row, which spills; the anchor shows its first",
+      "cells": {"ZZ1000": "=INDEX(SEQUENCE(2,2),2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "INDEX-015",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: column_num given but left empty is 0, the whole row, which spills; the anchor shows its first",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(G1:H5,2,)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Banana"}
+    },
+    {
+      "id": "INDEX-016",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: column_num left out over a Reference of several rows and several columns is #REF! for a row of 0 too",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(G1:H5,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
     }
   ]
 }
