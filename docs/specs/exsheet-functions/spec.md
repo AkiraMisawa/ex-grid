@@ -245,10 +245,10 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | Function | Status | Priority | Notes |
 |---|---|---|---|
 | `PMT` | Supported | — | At a rate other than 0, an `nper` that is not a whole number from 0 is #VALUE! (ADR-0047, note of 2026-10-12). Excel gives a General cell its currency format on entry (the area pass of 2026-10-12 read `$#,##0.00_);[Red]($#,##0.00)` for PMT, PV, FV and NPV); ExSheet gives none |
-| `PV` | Supported | — | `type` is read as a truth value; any `nper` is answered, but one that is not a whole number at a rate below -1 is #VALUE! until Excel is asked (PV-011) |
-| `FV` | Supported | — | `type` is read as a truth value; any `nper` is answered, but one that is not a whole number at a rate below -1 is #VALUE! until Excel is asked (FV-017) |
+| `PV` | Supported | — | `type` is read as a truth value; an `nper` that is not a whole number, or is negative, is answered where every evaluation Excel's observed doubles leave gives the same double, and is #VALUE! until Excel is asked where they part (half a period, FV-016; a negative fraction, FV-022), at a rate of -1 when negative (PV-012), and at a rate below -1 when not a whole number (PV-011) |
+| `FV` | Supported | — | As `PV`; with both a present value and a payment, #VALUE! where the unfused sum and a fused multiply-add part (FV-014, FV-015), but at the end of each period with a whole `nper` from 0, which answers the unfused sum as before (FV-019 asks) |
 | `NPV` | Blocked | P3 | Observed: no evaluation searched gives every double Excel gave, to the last bit (NPV-001 to 008, `spikes/exsheet-financial-evaluation/`). Refused for 0.1.0 as IRR is (ADR-0202, note of 2026-10-12). Ticket 13 |
-| `XNPV` | Supported | — | A rate of -1 or below is #VALUE! until Excel is asked (XNPV-007 to 010) |
+| `XNPV` | Supported | — | #VALUE! where the days over 365 or times 1/365, and at whole years e^(years ln(1+rate)), squaring or a power, part (XNPV-005, 006, 011), and at a rate of -1 or below (XNPV-007 to 010), until Excel is asked. Other evaluations give both observed doubles too and part from these at most inputs; whether XNPV answers there is the user's question (ADR-0202, ticket 13; XNPV-012 to 017 ask) |
 | `IRR` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
 | `XIRR` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
 | `RATE` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
@@ -378,10 +378,13 @@ function Excel adds is listed here.
     *(2026-10-11, the seventeenth run: Excel's keyboard took a function's name as a `LET` name, so the
     list is no longer what the engine refuses; see the list's paragraph.)*
 14. **The area pass of 2026-10-12 asked the financial functions' open cases** (ADR-0202's note of
-    that date, `verification/2026-10-12-windows-area/`). `PV` and `FV` answer any `nper` and any `type`
-    as Excel does, to the last bit, but for an `nper` that is not a whole number at a rate below -1;
-    that, and `XNPV` at a rate of -1 or below, are refused until Excel is asked, since the evaluations
-    Excel's doubles leave part there. `PMT` reads `type` as they do; a non-whole or negative `nper` is
+    that date, `verification/2026-10-12-windows-area/`). `PV` and `FV` read any `type`, and answer an
+    `nper` that is not a whole number, or is negative, where every evaluation Excel's doubles leave gives
+    the same double; where those part (half a period, a negative fraction, a rate of -1, and `FV` with a
+    present value and a payment) and at a rate below -1 with a fractional `nper` they are refused until
+    Excel is asked. `XNPV` is refused where the six evaluations it computes part (whole years, the days
+    over 365 or times 1/365) and at a rate of -1 or below; 72 evaluations give its two observed doubles
+    and part at most other inputs, which is the user's question. `PMT` reads `type` as they do; a non-whole or negative `nper` is
     refused, and five of its payments differ from Excel's by one to three units in the last place,
     which no evaluation searched explains, so whether it is corrected or refused is the user's
     question. `NPV` is Blocked: no evaluation searched gives every double Excel gave for it. Ticket 13

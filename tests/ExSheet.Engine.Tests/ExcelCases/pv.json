@@ -86,7 +86,7 @@
     {
       "id": "PV-010",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: half a period, the square root of 1+rate as the ^ operator takes it (ARITH-133); e^(0.5 ln(1+rate)), PV-005's evaluation at 10.5, gives the same double here, and FV-016 is where they differ",
+      "description": "Engine's answer, Excel to be asked: half a period, answered because the square root of 1+rate, the ^ operator's evaluation at an exponent of 0.5 (ARITH-133), and e^(0.5 ln(1+rate)), PV-005's evaluation at 10.5, give the same double here; FV-016 is where they part",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05,0.5,-100)"},
       "check": "ZZ1000",
@@ -95,9 +95,18 @@
     {
       "id": "PV-011",
       "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: half a period at a rate below -1, refused as FV-017 is; the ^ operator and e^(nper ln(1+rate)) both have no answer for a negative base to the power 0.5 (#NUM!)",
+      "description": "Engine's answer, Excel to be asked: half a period at a rate below -1, refused as before the area pass of 2026-10-12, although the ^ operator and e^(nper ln(1+rate)) both have no answer for a negative base to the power 0.5 (#NUM!): no run has observed what PV gives there",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(-1.5,0.5,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PV-012",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: ten periods before, at a rate of -1, refused as FV-021 is: 1 over 0 to the power 10 by squaring leaves PV no finite number (#NUM!), where the ^ operator gives 0 to a negative power as #DIV/0! (ARITH-042)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(-1,-10,-100)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
     }

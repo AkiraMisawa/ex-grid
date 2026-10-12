@@ -55,3 +55,13 @@ Excel's by one to three units in the last place, and none of the 11,242 evaluati
 the 7,344 in `Search.cs` gives every payment Excel was seen to give. PMT-011 and 012 (an `nper` of 10.5
 and of -10) are refused by decision until one does. Whether PMT is corrected or refused before the tag is
 the user's question (ADR-0202); PMT-019 to 033 ask Excel more.
+
+`XNPV` stays Supported (ticket 05), but its evaluation is open as PMT's is (2026-10-12, later). Excel's two
+observed doubles, XNPV-001 and 004, are given by 72 of the 1,496 evaluations `Search.cs` tries: the days
+over 365 or times 1/365; the discount e^(years ln(1+rate)), at whole years by squaring or a power, a
+correctly rounded power, or an x87's; each value divided by it or multiplied by its reciprocal; summed
+forward, with a fused multiply-add or Excel's last-addition adjustment, or pairwise. The engine computes
+six and refuses where they part (XNPV-005, 006 and 011); the 72 part at 1,668 of the 4,004 inputs
+`Search.cs --refusals` draws where the engine answers. Whether XNPV is refused for 0.1.0 as NPV is, refused
+wherever the 72 part, or asked before the tag is the user's question (ADR-0202); XNPV-012 to 017 are the
+inputs that tell the 72 apart (`discriminate-xnpv.txt`).
