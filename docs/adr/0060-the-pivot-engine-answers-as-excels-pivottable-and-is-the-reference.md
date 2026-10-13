@@ -26,6 +26,10 @@ Pivot Source answers with
 ([ADR-0066](./0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)), and
 it computes those Leaf Aggregates from a Snapshot for the bundled source. It has no UI and depends
 only on `ExGrid.Data`, so a server computes the same report the screen shows.
+*(2026-10-12, [ADR-0201](./0201-the-public-surface-is-what-consumers-chromes-and-the-sibling-products-use.md),
+decided with the user: the whole-report path is internal, `PivotEngine.Compute` and `PivotReport` with
+what it names. A server computes the same report through `PivotReportSource`, the contract the screen
+reads.)*
 
 **Like `GridSource.From` for filter and sort
 ([ADR-0023](./0023-filter-and-sort-semantics-of-the-reference-implementation.md)), its behaviour is

@@ -118,7 +118,7 @@ public static class GridQueryEngine
     /// <summary>Whether one row passes <paramref name="filter"/>, under exactly the
     /// semantics <see cref="Apply{TRow}"/> filters by. The Filter is validated first, so a
     /// malformed one is refused whatever the row holds.</summary>
-    public static bool Matches<TRow>(TRow row, IReadOnlyList<ColumnInfo<TRow>> columns, GridFilter filter)
+    internal static bool Matches<TRow>(TRow row, IReadOnlyList<ColumnInfo<TRow>> columns, GridFilter filter)
     {
         ArgumentNullException.ThrowIfNull(filter);
         return Matches(row, Prepare(IndexColumns(columns), filter));

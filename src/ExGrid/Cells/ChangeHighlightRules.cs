@@ -24,7 +24,7 @@ public static class ChangeHighlightRules
     /// <returns>The first instant at which the cell is no longer marked.</returns>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="duration"/> is negative:
     /// a mark cannot end before the change it marks.</exception>
-    public static DateTimeOffset EndOf(DateTimeOffset changedAt, TimeSpan duration)
+    internal static DateTimeOffset EndOf(DateTimeOffset changedAt, TimeSpan duration)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(duration, TimeSpan.Zero);
         // In UTC first, so the sum can only overflow the one way the guard below catches: an
@@ -47,7 +47,7 @@ public static class ChangeHighlightRules
     /// <param name="duration">How long a mark lasts.</param>
     /// <param name="now">The grid's current time.</param>
     /// <returns>When the mark ends, or null when the cell is not marked.</returns>
-    public static DateTimeOffset? ShowingUntil(DateTimeOffset? changedAt, TimeSpan duration, DateTimeOffset now)
+    internal static DateTimeOffset? ShowingUntil(DateTimeOffset? changedAt, TimeSpan duration, DateTimeOffset now)
     {
         if (changedAt is not { } at)
             return null;

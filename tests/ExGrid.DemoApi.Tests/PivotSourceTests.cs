@@ -117,10 +117,9 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
                 new PivotValueField("Book", PivotAggregation.Average),
             ],
         };
-        var query = PivotQuery.For(layout);
 
-        var sql = Report(query, await sources.Sql.AggregateAsync(query, Token), sources.Sql.Fields, layout);
-        var reference = Report(query, await sources.ReferenceAnswer(query), sources.Reference.Fields, layout);
+        var sql = await Report(sources.Sql, layout);
+        var reference = await Report(Answering(sources), layout);
 
         Assert.Equal(Cells(reference), Cells(sql));
         Assert.Contains(Cells(sql), cell => cell.Contains("#DIV/0!", StringComparison.Ordinal)); // the Average of text
@@ -138,25 +137,24 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
             Filters = [new PivotFieldPlacement("Book") { HiddenItems = [T(TradeGenerator.CommaBook.ToUpperInvariant())] }],
             Values = [new PivotValueField("Pnl", PivotAggregation.Sum)],
         };
-        var query = PivotQuery.For(layout);
-        var report = Report(query, await sources.Sql.AggregateAsync(query, Token), sources.Sql.Fields, layout);
+        var report = await Report(sources.Sql, layout);
 
         var cells = 0;
         foreach (var row in report.Rows.Where(row => row.CarriesValues))
         {
-            for (var column = 0; column < report.ValueColumns.Count; column += 3)
+            for (var column = 0; column < report.Metadata.ValueColumns.Count; column += 3)
             {
-                if (report.ValueAt(row, column) is not { } value)
+                if (row.ValueAt(column) is not { } value)
                     continue;
                 // The whole cell — one page holds it, under the server's cap on a page — then a
                 // page from inside it: the same records, and the same total.
-                var whole = report.DetailsQuery(row, column, count: PivotEndpoints.MaxDetailsPage);
+                var whole = report.Metadata.DetailsQuery(row, column, count: PivotEndpoints.MaxDetailsPage);
                 var all = await sources.Sql.DetailsAsync(whole, Token);
                 Assert.True(all.Total <= PivotEndpoints.MaxDetailsPage, "a cell this test reads whole fits one page");
                 SameDetails(await sources.ReferenceDetails(whole), all);
                 Assert.Equal(value.Exact, all.Records.Sum(record => (decimal)record.Values[9]!));
                 Assert.All(all.Records, record => Assert.NotEqual("GBP", record.Values[5]));
-                var page = report.DetailsQuery(row, column, start: 3, count: 4);
+                var page = report.Metadata.DetailsQuery(row, column, start: 3, count: 4);
                 SameDetails(await sources.ReferenceDetails(page), await sources.Sql.DetailsAsync(page, Token));
                 cells++;
             }
@@ -390,13 +388,29 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
         Assert.Contains(detail, problem.GetProperty("detail").GetString(), StringComparison.Ordinal);
     }
 
-    private static PivotReport Report(PivotQuery query, PivotAnswer answer, IReadOnlyList<PivotField> fields, PivotLayout layout) =>
-        PivotEngine.Report(PivotEngine.Cube(query, answer, fields), layout, new PivotOptions { Culture = CultureInfo.InvariantCulture });
+    // The report a page shows of a source, computed as ExPivot computes it: through the report
+    // source, every row in one Window, invariant (ADR-0151, ADR-0201).
+    private static async Task<(PivotReportMetadata Metadata, IReadOnlyList<PivotDisplayRow> Rows)> Report(PivotSource source, PivotLayout layout)
+    {
+        await using var reports = PivotReportSource.From(source);
+        var update = await reports.WindowAsync(
+            new PivotReportRequest("report", layout, PivotReportSettings.Invariant, new PivotReportWindow(0, int.MaxValue)), Token);
+        Assert.Null(update.Refusal);
+        return (update.Metadata!, update.Rows!);
+    }
+
+    // The reference's answers, sent through PivotJson as the server's are, as a source of their own.
+    private static PivotSource Answering(PivotSources sources) => PivotSource.Fetch(
+        sources.Reference.Fields,
+        sources.Reference.Features,
+        async (query, _) => await sources.ReferenceAnswer(query),
+        async (query, _) => await sources.ReferenceItems(query),
+        async (query, _) => await sources.ReferenceDetails(query));
 
     // Every row's labels and every value cell's shown text and raw number, in the report's order.
-    private static string[] Cells(PivotReport report) => report.Rows
+    private static string[] Cells((PivotReportMetadata Metadata, IReadOnlyList<PivotDisplayRow> Rows) report) => report.Rows
         .Select(row => string.Join(" | ", row.Labels.Select(label => label.Text ?? ""))
-            + " => " + string.Join(" | ", Enumerable.Range(0, report.ValueColumns.Count).Select(column =>
-                report.ValueAt(row, column) is { } value ? value.Text + " = " + value.ToString(null, CultureInfo.InvariantCulture) : "")))
+            + " => " + string.Join(" | ", Enumerable.Range(0, report.Metadata.ValueColumns.Count).Select(column =>
+                row.ValueAt(column) is { } value ? value.Text + " = " + value.ToString(null, CultureInfo.InvariantCulture) : "")))
         .ToArray();
 }

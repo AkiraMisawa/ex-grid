@@ -8,6 +8,7 @@
             <li><b>.NET 10 or newer.</b> The packages target <code>net10.0</code> and load unchanged in newer applications.</li>
             <li><b>Chrome or Edge.</b> They are the supported browsers. Safari and Firefox are out of scope.</li>
             <li><b>An interactive render mode.</b> The grid handles keys, the pointer and the clipboard. It is verified under WebAssembly, and every browser test also runs under Blazor Server.</li>
+            <li><b>MudBlazor 9.6 or a later 9.x, for the Wrappers.</b> Each MudBlazor Wrapper takes <code>[9.6.0,10.0.0)</code>: 9.6.0 or any later 9.x. Below 9.6.0 a Wrapper's selects lose their name or the keyboard, and a refused filter value can lose its words, so an application that references an earlier 9.x is stopped at restore (NU1605, an error by default) and moves MudBlazor up within 9. An application on MudBlazor 10 is warned at restore (NU1608, a warning unless the application treats it as an error), rather than left unwarned on a major version the Wrapper was never tested with.</li>
         </ul>
     </DocsSection>
 

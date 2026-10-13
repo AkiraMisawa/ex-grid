@@ -113,7 +113,14 @@ changed in each version, what is coming, the whole API, and a search. The frame 
   - **The API reference is not built yet.** A page per public type would publish a surface nobody has
     reviewed, and Consumers would start depending on types that are public only so the tests can reach
     them (ADR-0042). It waits for the decision about the public C# surface. Until then each topic page
-    keeps its API table.
+    keeps its API table. *(2026-10-12, after
+    [ADR-0201](./0201-the-public-surface-is-what-consumers-chromes-and-the-sibling-products-use.md): the
+    **API reference** is built, at `/reference/api`. It lists every public type of the packages by product,
+    in ADR-0042's order, read by the build from the shipped assemblies, each with its summary; a type's
+    name opens its API table, the same table a topic page places. What is public and not the contract —
+    the types marked `[EditorBrowsable(Never)]`, and the members of contract types the grid's script calls
+    or that are so marked — is listed apart under "Not the contract: may change in any version", and every
+    API table lists such members apart the same way. The topic pages keep their API tables.)*
 - **A site map is generated at build time** from the pages: each route, title, section and Example.
   It feeds the rail, the search, the Feature matrix and the checks on Release Notes' links. A route
   missing from the navigation, a navigation entry with no page, a section title that is not a literal
@@ -183,6 +190,19 @@ again on each visit), and no scroll spy on the rail.
   - **So the release publishes the site, after the push.** `release.yml` gains a last job that calls
     `docs.yml` with the version, the tag and the UTC day of the push (ADR-0190). The site therefore
     states a version only once nuget.org has it. `docs.yml` is no longer started by a tag.
+  - *(2026-10-11, decided with the user,
+    [ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md);
+    and 2026-10-12, decided with the user, for a stable version that a stable tag is above.)* **Once a
+    stable version exists, a prerelease's release publishes no site, and neither does a stable version
+    that a stable tag is above.**
+    - The site describes the latest stable version. A prerelease's notes are on its GitHub release,
+      and reach the site with the next stable publish.
+    - A stable version exists once the repository has a tag without a suffix.
+    - A patch to an older line, such as `0.1.1` from `release/0.1` after `0.2.0`, publishes no site:
+      versions are compared by SemVer precedence, and its pages would replace a later version's.
+    - `release.yml`'s first job decides it, and says so. `docs.yml` refuses a call that comes anyway,
+      and refuses too when it cannot read the repository's tags.
+    - The on-demand publish of `main` or a `lab/*` branch stays, under its banner.
   - **On demand stays, from `main` or a `lab/*` branch**, and refuses any other. A lab publish is how
     an experiment reaches a machine nobody can run a build on, and it stays possible.
   - **A site not published from a tag says so on every page**: a banner above the page names the

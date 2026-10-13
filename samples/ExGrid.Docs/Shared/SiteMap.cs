@@ -49,7 +49,7 @@ public enum SiteSearchKind
     /// <summary>An Example.</summary>
     Example,
 
-    /// <summary>A type a page's API table lists.</summary>
+    /// <summary>A type a page's API table lists, or a public type of the API reference.</summary>
     Type,
 
     /// <summary>A line of the Release Notes, or a Change Note (ADR-0190).</summary>
@@ -100,8 +100,8 @@ internal static partial class SiteMap
     /// <summary>
     /// What the search leads to: each page the navigation lists, each of its sections, each titled
     /// Example and each type an API table lists, in the navigation's order; then each line of the
-    /// Release Notes, each item of the Roadmap, each function ExSheet supports and each key of the
-    /// Keyboard reference.
+    /// Release Notes, each item of the Roadmap, each function ExSheet supports, each key of the
+    /// Keyboard reference and each public type of the API reference.
     /// </summary>
     public static IReadOnlyList<SiteSearchEntry> Entries { get; } = BuildEntries();
 
@@ -171,6 +171,7 @@ internal static partial class SiteMap
         entries.AddRange(Roadmap.SearchEntries());
         entries.AddRange(FunctionCatalogue.SearchEntries());
         entries.AddRange(Keyboard.SearchEntries());
+        entries.AddRange(ApiSurface.SearchEntries());
         return entries.ToArray();
     }
 

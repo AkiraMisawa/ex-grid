@@ -1,0 +1,47 @@
+@page "/reference/api"
+
+@* The API reference (ADR-0201, ADR-0110), a reference page: every public type of the family's packages,
+   read by the build from the assemblies a release ships, by product in ADR-0042's order. The contract is
+   listed under each product; what is public and not the contract is listed apart, at the end, as what may
+   change in any version. A type's name opens its API table, the one the topic pages place. *@
+<DocsPage Title="API reference"
+          Lead="Every public type of the family's packages, by product and package. A type's name opens its table: a component's parameters, events and methods, a type's constructors, properties and methods. What is public and not the contract is listed apart, at the end.">
+    <ReferenceAsOf>
+        Read from the shipped assemblies the site was built with, each type's description from the documentation its
+        package ships.
+    </ReferenceAsOf>
+    <p class="docs-reference-asof">
+        A type is public when a Consumer, a Chrome or a sibling product uses it, or when a public signature names it;
+        everything else is internal. Each package also declares its public members in <code>PublicAPI.Shipped.txt</code>
+        and <code>PublicAPI.Unshipped.txt</code> beside its project, and a build that adds or removes one without
+        declaring it fails, so a change to the surface shows in review. Decided in
+        <a href="@DocsBuild.BlobUrl(ApiSurface.RecordPath)" target="_blank" rel="noopener">ADR-0201</a>.
+    </p>
+
+    <DocsSection Title="ExGrid">
+        <ApiPackages Product="ExGrid" />
+    </DocsSection>
+
+    <DocsSection Title="ExSheet">
+        <ApiPackages Product="ExSheet" />
+    </DocsSection>
+
+    <DocsSection Title="The Snapshot">
+        <ApiPackages Product="The Snapshot" />
+    </DocsSection>
+
+    <DocsSection Title="ExPivot">
+        <ApiPackages Product="ExPivot" />
+    </DocsSection>
+
+    <DocsSection Title="Not the contract">
+        <p>
+            <b>@ApiSurface.NotTheContract.</b> These are public because Razor places only a public component, or because
+            the grid's own script calls them, and each is hidden from a Consumer's editor
+            (<code>[EditorBrowsable(EditorBrowsableState.Never)]</code>). A Consumer, a Chrome or a Wrapper does not use
+            them: the parts a product's components render themselves, the methods and payloads of the grid's script, and
+            the types only those name. Making them internal can be reconsidered before 1.0.
+        </p>
+        <ApiNotContract />
+    </DocsSection>
+</DocsPage>

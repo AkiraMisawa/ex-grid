@@ -229,8 +229,8 @@ public readonly record struct CellTextMetrics
     /// The metrics a bold cell is judged by (ADR-0050, item 15): the bold widths in the regular
     /// widths' place, with the same full-width class — no narrower than the bold digit, which the
     /// uniform form's em would be — and the same padding. Its own bold widths are the same ones, so
-    /// it is bold however often it is asked. Hand it to <see cref="OverflowRules.Decide"/> for a bold
-    /// cell's <c>####</c> decision.
+    /// it is bold however often it is asked. The grid makes a bold cell's <c>####</c> decision
+    /// by these.
     /// </summary>
     public CellTextMetrics Bold => new(
         BoldWideWidthPx, BoldDigitWidthPx, BoldNarrowWidthPx, Math.Max(FullWidthPx, BoldDigitWidthPx),
@@ -254,7 +254,7 @@ public readonly record struct CellTextMetrics
     /// <summary>These metrics with measured bold widths in place of whatever they carried —
     /// derived, or another theme's (ADR-0050, item 15). The bold other class goes with them: it is
     /// charged its allowance over the new bold digit (<see cref="OtherWidthAllowance"/>).</summary>
-    public CellTextMetrics WithBoldWidths(double boldWideWidthPx, double boldDigitWidthPx, double boldNarrowWidthPx)
+    internal CellTextMetrics WithBoldWidths(double boldWideWidthPx, double boldDigitWidthPx, double boldNarrowWidthPx)
         => new(WideWidthPx, DigitWidthPx, NarrowWidthPx, FullWidthPx, CellHorizontalPaddingPx,
             boldWideWidthPx, boldDigitWidthPx, boldNarrowWidthPx,
             OtherWidthPx, boldDigitWidthPx * OtherWidthAllowance, GlyphWidths, _glyphScale, _glyphBold);
@@ -309,7 +309,7 @@ public readonly record struct CellTextMetrics
     /// the widest glyph measured, so a glyph nobody listed errs toward <c>####</c>. A surrogate
     /// half is charged as the other class; <see cref="TextWidthPx"/> charges the pair as the one
     /// character it encodes.</summary>
-    public double WidthOf(char c) => WidthOf((int)c);
+    internal double WidthOf(char c) => WidthOf((int)c);
 
     private double WidthOf(int codePoint) => codePoint switch
     {
@@ -375,9 +375,8 @@ public readonly record struct CellTextMetrics
 
     /// <summary>
     /// The full cell width a value requires — the text charged per character class,
-    /// plus the padding on both sides. This output is the unit
-    /// <see cref="AutoWidth.Observe"/> and <see cref="ColumnWidthSpec.SizeToFit"/>
-    /// take, directly comparable to a resolved column width (ADR-0016).
+    /// plus the padding on both sides. This output is the unit the grid's Auto width and
+    /// Size to fit take, directly comparable to a resolved column width (ADR-0016).
     /// </summary>
     public double EstimatePx(string text) => TextWidthPx(text) + 2 * CellHorizontalPaddingPx;
 

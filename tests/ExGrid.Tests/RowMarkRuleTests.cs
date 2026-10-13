@@ -21,14 +21,14 @@ public class RowMarkRuleTests
 public class RowMarkHeaderTests
 {
     [Theory] // ADR-0043: the header's state comes from the result's counts, not from what is loaded
-    [InlineData(0, 0, RowMarkHeaderState.None)]
-    [InlineData(0, 10, RowMarkHeaderState.None)]
-    [InlineData(1, 10, RowMarkHeaderState.Some)]
-    [InlineData(9, 10, RowMarkHeaderState.Some)]
-    [InlineData(10, 10, RowMarkHeaderState.All)]
-    public void The_header_state_compares_marked_rows_with_the_rows_of_the_result(int marked, int rows, RowMarkHeaderState expected)
+    [InlineData(0, 0, nameof(RowMarkHeaderState.None))]
+    [InlineData(0, 10, nameof(RowMarkHeaderState.None))]
+    [InlineData(1, 10, nameof(RowMarkHeaderState.Some))]
+    [InlineData(9, 10, nameof(RowMarkHeaderState.Some))]
+    [InlineData(10, 10, nameof(RowMarkHeaderState.All))]
+    public void The_header_state_compares_marked_rows_with_the_rows_of_the_result(int marked, int rows, string expected)
     {
-        Assert.Equal(expected, RowMarkRules.HeaderState(new RowMarkCounts(marked, rows, 0)));
+        Assert.Equal(Enum.Parse<RowMarkHeaderState>(expected), RowMarkRules.HeaderState(new RowMarkCounts(marked, rows, 0)));
     }
 
     [Fact] // ADR-0043: 40 loaded rows all marked in a result of a million is "some", never "all"
@@ -44,12 +44,12 @@ public class RowMarkHeaderTests
     }
 
     [Theory] // ADR-0043: pressing "some" marks all; only "all" unmarks
-    [InlineData(RowMarkHeaderState.None, true)]
-    [InlineData(RowMarkHeaderState.Some, true)]
-    [InlineData(RowMarkHeaderState.All, false)]
-    public void Pressing_the_header_marks_all_unless_all_are_marked(RowMarkHeaderState state, bool marks)
+    [InlineData(nameof(RowMarkHeaderState.None), true)]
+    [InlineData(nameof(RowMarkHeaderState.Some), true)]
+    [InlineData(nameof(RowMarkHeaderState.All), false)]
+    public void Pressing_the_header_marks_all_unless_all_are_marked(string state, bool marks)
     {
-        Assert.Equal(marks, RowMarkRules.HeaderPress(state));
+        Assert.Equal(marks, RowMarkRules.HeaderPress(Enum.Parse<RowMarkHeaderState>(state)));
     }
 
     [Fact] // ADR-0043: a count that contradicts itself is refused, not painted

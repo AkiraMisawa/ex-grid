@@ -128,6 +128,24 @@ public static class Packages
         return (diagnostics.ToImmutable(), Emit(packages, record));
     }
 
+    /// <summary>
+    /// The family's products, each with its packages, in ADR-0042's order — or <see langword="null"/> when
+    /// the table or release.yml's ids cannot be read, or disagree. <see cref="Build"/> says why; the API
+    /// reference (<see cref="ApiSurface"/>) lists the packages this returns.
+    /// </summary>
+    /// <param name="files">ADR-0042, the release workflow and the shipped projects (<see cref="RepoPathOf"/>).</param>
+    internal static List<(string Product, List<string> Ids)>? Family(ImmutableArray<RecordInput> files)
+    {
+        var table = ReadTable(files, (_, _) => { });
+        var ids = ReadIds(files, (_, _) => { });
+        if (table is null || ids is null)
+            return null;
+        var rows = table.Value.Rows;
+        return rows.SelectMany(r => r.Ids).SequenceEqual(ids.Value.Ids, StringComparer.Ordinal)
+            ? rows.Select(r => (r.Product, r.Ids)).ToList()
+            : null;
+    }
+
     private static (List<(string Product, List<string> Ids, Location Location)> Rows, Location Location)? ReadTable(
         ImmutableArray<RecordInput> files, Action<Location, string> report)
     {

@@ -1,0 +1,10 @@
+#nullable enable
+const ExGrid.Data.Arrow.SnapshotArrow.StreamMediaType = "application/vnd.apache.arrow.stream" -> string!
+const ExGrid.Data.Arrow.SnapshotArrowMetadata.Caption = "exgrid.caption" -> string!
+const ExGrid.Data.Arrow.SnapshotArrowMetadata.RecordKey = "exgrid.recordKey" -> string!
+const ExGrid.Data.Arrow.SnapshotArrowMetadata.Version = "exgrid.version" -> string!
+ExGrid.Data.Arrow.SnapshotArrow
+ExGrid.Data.Arrow.SnapshotArrowMetadata
+static ExGrid.Data.Arrow.SnapshotArrow.ReadAsync(System.IO.Stream! stream, ExGrid.Data.SnapshotLoadOptions? options = null, Apache.Arrow.Ipc.ICompressionCodecFactory? codecs = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.Snapshot!>
+static ExGrid.Data.Arrow.SnapshotArrow.ReadAsync(System.ReadOnlyMemory<byte> arrow, ExGrid.Data.SnapshotLoadOptions? options = null, Apache.Arrow.Ipc.ICompressionCodecFactory? codecs = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.Snapshot!>
+static ExGrid.Data.Arrow.SnapshotArrow.WriteAsync(ExGrid.Data.Snapshot! snapshot, System.IO.Stream! stream, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!

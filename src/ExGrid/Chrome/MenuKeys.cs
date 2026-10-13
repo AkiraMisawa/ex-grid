@@ -92,7 +92,7 @@ public static class MenuKeys
     /// stands under the commands in the same popover — Tab then moves into it rather than
     /// closing, and E reaches its search box.
     /// </summary>
-    public static MenuKey ResolveInColumnMenu(
+    internal static MenuKey ResolveInColumnMenu(
         string key, bool shift, bool controlAltOrMeta, IReadOnlyList<GridCommand> commands, int current,
         bool filterBelow)
     {
@@ -113,7 +113,7 @@ public static class MenuKeys
     /// Lock is not a different key. Answered for a key on a command and for a key on the value
     /// list alike; in a text field a letter is text, and nothing asks this.
     /// </summary>
-    public static MenuKey Letter(string key, bool controlAltOrMeta, IReadOnlyList<GridCommand> commands, bool filterBelow)
+    internal static MenuKey Letter(string key, bool controlAltOrMeta, IReadOnlyList<GridCommand> commands, bool filterBelow)
     {
         ArgumentNullException.ThrowIfNull(commands);
         if (controlAltOrMeta || key is not { Length: 1 })

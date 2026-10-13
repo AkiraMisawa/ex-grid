@@ -1,0 +1,21 @@
+@using System.Globalization
+
+@* The built-in grid paints ExGrid's own font, system-ui, and decides #### with the widths ExGrid
+   measured for it: there is nothing to set. *@
+<ExGrid TRow="Position" Source="_source" Columns="_columns" Density="GridDensity.Standard"
+        ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
+
+    private readonly GridColumn<Position>[] _columns =
+    [
+        new("Id", ColumnType.Number, p => p.Id),
+        new("Desk", ColumnType.Text, p => p.Desk),
+        new("Instrument", ColumnType.Text, p => p.Instrument),
+        new("Quantity", ColumnType.Number, p => p.Quantity, format: v => ((int)v).ToString("N0", Invariant)),
+        new("Pnl", ColumnType.Number, p => p.Pnl, header: "P&L", format: v => ((decimal)v).ToString("N2", Invariant)),
+    ];
+}

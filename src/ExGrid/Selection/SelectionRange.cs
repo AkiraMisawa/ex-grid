@@ -63,7 +63,7 @@ public readonly record struct SelectionRange
 
     /// <summary>Normalizes any pair of opposite corners — shrinking a range back through
     /// the Focus flips it around the Focus for free (ADR-0052).</summary>
-    public static SelectionRange FromCorners(CellPosition a, CellPosition b) => new(
+    internal static SelectionRange FromCorners(CellPosition a, CellPosition b) => new(
         Math.Min(a.Row, b.Row),
         Math.Min(a.Column, b.Column),
         Math.Abs(a.Row - b.Row) + 1,
@@ -82,7 +82,7 @@ public readonly record struct SelectionRange
     /// what remains of that row to its right, then to its left, then the band above
     /// (ADR-0052, "What the third run settled").
     /// </summary>
-    public IReadOnlyList<SelectionRange> Subtract(CellPosition cell)
+    internal IReadOnlyList<SelectionRange> Subtract(CellPosition cell)
         => Contains(cell) ? SubtractArea(new SelectionRange(cell.Row, cell.Column, 1, 1)) : [this];
 
     /// <summary>
@@ -94,7 +94,7 @@ public readonly record struct SelectionRange
     /// unchanged; one that covers it yields nothing. Not an overload of <c>Subtract</c>: a call
     /// written <c>Subtract(new(1, 1))</c> would stop compiling.
     /// </summary>
-    public IReadOnlyList<SelectionRange> SubtractArea(SelectionRange area)
+    internal IReadOnlyList<SelectionRange> SubtractArea(SelectionRange area)
     {
         var top = Math.Max(TopRow, area.TopRow);
         var bottom = Math.Min(BottomRow, area.BottomRow);

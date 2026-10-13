@@ -313,7 +313,10 @@ nobody had asked for. What that means when writing a test:
   `window` must be what they were when the file booted there, and the Clipboard API, the timers
   and the other natives in `fixtures.mjs`'s list — read as a caller reads them, so a stub on
   `document` counts as much as one on `Document.prototype` — must be the ones the app booted
-  with. A difference fails the test by name: "nothing left outside the test's own page". What it
+  with. Both readings are taken once every stylesheet the document links has loaded — on
+  WebAssembly the packages' stylesheets are rendered into the head after the app boots, and a
+  `<link>` joins `document.styleSheets` only when its file has arrived. A difference fails the
+  test by name: "nothing left outside the test's own page". What it
   cannot see — a listener on `window` or `document`, a timer or an observer left running, a
   native outside the list — is held by the rule alone.
 - **A test gets a document of its own** — a context of its own, every navigation real — with
@@ -907,9 +910,16 @@ nobody had asked for. What that means when writing a test:
   nothing moving, its end opening the Cell Editor holding it and Enter committing (ED-30, i1); a
   cancelled one leaving an empty edit (i2); a press on D12 mid-composition putting the text in D10;
   two compositions behind 150 ms appended in order; the sixteenth run's k6, one key ending a
-  composition and starting the next (both sent at once), with DOM focus kept in the field until
-  the second ends and D10 holding both, and a third clause started the same way while the editor's
-  request already waits; copy and paste from the field; a field per
+  composition and starting the next, told as a real IME's key is (its keydown and its keyup both
+  `Process` with keyCode 229, as that run recorded them, around the end and the start, each sent
+  once the one before has been answered, so no time between them decides anything), with DOM focus
+  kept in the field until the second ends and D10 holding both, and a third clause started the same
+  way while the editor's request already waits; a composition ended with no key being told giving
+  that waiting editor the keyboard at its end, and one composed there at once coming after the text
+  held for the edit; the sixteenth run's k15, Alt+Tab mid-composition, as a keydown 229 whose keyup
+  never comes and the end, the request waiting until the keyboard leaves the field and the editor
+  then taking it holding the text (left from script: Playwright emulates focus, so a window switch
+  tells the page nothing); copy and paste from the field; a field per
   Sheet (ADR-0018); read-only over a cell that does not edit. The field as the one tab stop, Tab in
   from before and Shift+Tab in from after, then out (A11Y-4), and a display-only grid's root
   likewise; on `/features` under both Chromes, no column's ▾ reached by Tab or Shift+Tab, on the

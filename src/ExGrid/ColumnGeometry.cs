@@ -21,7 +21,7 @@ namespace ExGrid;
 /// the fixed row height that makes the vertical case one multiplication has no
 /// horizontal equivalent.
 /// </summary>
-public sealed class ColumnGeometry
+internal sealed class ColumnGeometry
 {
     // Count + 1 entries: _offsets[i] is column i's left edge and _offsets[Count] is the
     // total width, so a column's right edge is _offsets[i + 1] with no special case at
