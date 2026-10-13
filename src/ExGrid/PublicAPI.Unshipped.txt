@@ -1093,6 +1093,7 @@ ExGrid.Components.ExGrid<TRow>.PageSize.get -> int?
 ExGrid.Components.ExGrid<TRow>.PageSize.set -> void
 ExGrid.Components.ExGrid<TRow>.PaintedText.get -> ExGrid.Cells.PaintedTextOf<TRow!>?
 ExGrid.Components.ExGrid<TRow>.PaintedText.set -> void
+ExGrid.Components.ExGrid<TRow>.PassKeysOutAsync() -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.PasteByteCap.get -> long
 ExGrid.Components.ExGrid<TRow>.PasteByteCap.set -> void
 ExGrid.Components.ExGrid<TRow>.PasteMaySpill.get -> bool

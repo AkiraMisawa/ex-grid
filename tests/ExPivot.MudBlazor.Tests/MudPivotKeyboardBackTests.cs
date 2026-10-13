@@ -59,6 +59,16 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
                     && !pivot.Find(".ex-pivot-report").HasAttribute("inert")
                     && pivot.FindAll(".ex-pivot-sheet-covered").Count == 0);
             }
+            // The dialog's own close (decided with the user, 2026-10-13): from the dialog, still
+            // standing, with the report no longer inert, and the keys typed in the dialog since.
+            if (invocation.Identifier == "takeKeyboardBack")
+            {
+                var pivot = cut();
+                seen.Add(pivot.FindAll(".ex-pivot-dialog").Count == 1
+                    && invocation.Arguments[0] is Microsoft.AspNetCore.Components.ElementReference
+                    && !pivot.Find(".ex-pivot-report").HasAttribute("inert")
+                    && pivot.FindAll(".ex-pivot-sheet-covered").Count == 0);
+            }
             return false;
         });
         return seen;
@@ -85,7 +95,7 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
         Assert.Equal(returns + 1, KeyboardReturns(report));
     }
 
-    [Theory] // ADR-0070/0062 (PV-9, PV-39): however the dialog closes under MudBlazor — its grid's Escape, an Escape on its Close, Close, the backdrop — the report's grid takes the keyboard back, once, after the render that took the dialog away
+    [Theory] // ADR-0070/0062 (PV-9, PV-39): however the dialog closes under MudBlazor — its grid's Escape, an Escape on its Close, Close, the backdrop — the report's grid takes the keyboard back, once, from the dialog still standing, after the render that took the report's inert away, and the dialog then goes (decided with the user, 2026-10-13)
     [InlineData("grid")]
     [InlineData("escape")]
     [InlineData("close")]
@@ -115,7 +125,7 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
                 break;
         }
 
-        Assert.Empty(cut.FindAll(".ex-pivot-dialog"));
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-pivot-dialog")));
         Assert.Equal([true], seen);
     }
 

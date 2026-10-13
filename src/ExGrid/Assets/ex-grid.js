@@ -74,12 +74,25 @@ export function stamp() {
  *   (ADR-0122): only then is it read, once, and reported
  * @returns a handle owned by that one grid
  */
-export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone) {
+export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared) {
     let taken = new Set(takenKeys);
     // The Consumer's declared keys (ADR-0050, item 14), handed by C# like the core's own. With no
     // edit open they are in `taken`; while one is open they are claimed beside the editor's keys,
     // and the Consumer is told an edit is open. This file names none of them.
     let declared = new Set(declaredKeys ?? []);
+    // Whether the Consumer hears the Escape that leaves the grid (OnLeave, ADR-0070), and may take the
+    // keyboard out of it on that Escape: the keys after a plain Escape on the root then wait for its
+    // answer (passKeysOut; decided with the user, 2026-10-13).
+    let leaves = leaveDeclared === true;
+    // The keyboard is leaving this grid for the Consumer's element around it (passKeysOut): the keys
+    // held behind the Escape that led here, and those typed on the root until DOM focus leaves it, are
+    // not this grid's. They are passed to the element around the root, in order, as the keydowns they
+    // were, for the Consumer's handler there to hold and hand on with the keyboard. A Consumer's dialog
+    // that closes on that Escape: on a circuit its grid holds the keyboard for a round trip or more
+    // after the Escape, and ↓ typed straight after it moved in the closing dialog's grid and was lost
+    // to the report the keyboard went back to (ExPivot's Show Details, 2026-10-13). Ended by DOM focus
+    // leaving the root, a press on the grid, and disposal.
+    let keysOut = false;
 
     // A reveal's scroll write, held until the render that paints its slice has reached the
     // DOM (ADR-0012, 2026-09-29). The core sends the write from inside that render, so on a
@@ -1134,6 +1147,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const altReleaseAnswered = () => new Promise((dispatched) => {
         setTimeout(dispatched);
     }).then(() => (core ? core.invokeMethodAsync('Ping').catch(() => false) : false));
+    // The keys held here, passed on to the element around the root (keysOut), in order, as the keydowns
+    // — and an Alt's release, the keyup — they were. What is not a key — a press, a composition's text,
+    // a clipboard event — stays this grid's, and goes.
+    const passHeldOut = () => {
+        const parent = root?.parentElement;
+        const keys = held.splice(0, held.length);
+        for (const k of keys) {
+            if (!parent || typeof k.key !== 'string' || k.key.length === 0 || (k.altUp === true && k.altAlone !== true)) {
+                continue;
+            }
+            parent.dispatchEvent(new KeyboardEvent(k.altUp === true ? 'keyup' : 'keydown', {
+                key: k.key, ctrlKey: k.ctrlKey === true, shiftKey: k.shiftKey === true, altKey: k.altKey === true,
+                metaKey: k.metaKey === true, repeat: k.repeat === true, bubbles: true, cancelable: true,
+            }));
+        }
+    };
     // The keys a frame heard on the way back, with each declared Alt that went down alone among them
     // noted, and each release of one noted as its press was: a chord among them makes it a chord's.
     const withAltsNoted = (keys) => {
@@ -1577,6 +1606,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // gap must still be held, not gated against the root.
         await editorSettled();
         while (held.length > 0 && core) {
+            // The keyboard is leaving for the Consumer's element around the root: the keys held are its.
+            if (keysOut) {
+                passHeldOut();
+                break;
+            }
             // The keyboard never reached what the core handed it to: the keys are dropped, not
             // gated against the grid (handOff).
             if (handOffMissed) {
@@ -1780,6 +1814,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             return;
         }
+        // Typed while the keyboard leaves for the Consumer's element around the root (keysOut): that
+        // element's handler hears it, after every key passed on before it; its default would act on a
+        // grid the keyboard is leaving.
+        if (keysOut && !replaying) {
+            event.preventDefault();
+            return;
+        }
         const k = snapshot(event);
         // While the root itself holds the keyboard, the document keeps no text selection: a
         // key here is the grid's, and so is the clipboard command it may be (ADR-0005). The
@@ -1907,6 +1948,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         } else if (verdict === 'core' && closing !== null) {
             // Escape closing a popover: the keys after it wait until it is gone (escapeCloses).
             awaitingMove = closing;
+            if (answering) {
+                holdStartedAt = performance.now();
+            } else {
+                startHold(answer);
+            }
+        } else if (verdict === 'core' && leaves && k.onRoot && k.key === 'Escape' && plain(k) && !k.shiftKey
+            && k.repeat !== true && editing === 'none') {
+            // An Escape the Consumer may answer by taking the keyboard out of the grid (OnLeave): the
+            // keys after it wait for its answer, and go out with the keyboard if it is told so
+            // (keysOut), or are this grid's as ever.
             if (answering) {
                 holdStartedAt = performance.now();
             } else {
@@ -2218,6 +2269,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         keyboardByPress = false;
         // An Alt still down when the keyboard left is not released here (altPending).
         altPending = null;
+        // The keyboard has left: the keys typed from now are wherever it went (keysOut).
+        keysOut = false;
     };
     root.addEventListener('focus', onFocused, true);
     root.addEventListener('focusout', onFocusLeft, true);
@@ -2525,6 +2578,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             keyboardByPress = true;
             // A press between an Alt and its release: the release starts nothing here (altPending).
             altPending = null;
+            // A press on the grid takes the keyboard back into it (keysOut).
+            keysOut = false;
         }
         // A press into a field beside the rows gives that field a focus of its own, which a
         // late hand-back leaves alone (reclaimFocus).
@@ -3360,6 +3415,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 startHold();
             }
         },
+        // The keyboard is leaving this grid for the Consumer's element around it (keysOut; ExGrid's
+        // PassKeysOutAsync, decided with the user, 2026-10-13): told before the answer to the Escape
+        // that led here, so the keys held behind that Escape go out too, in order.
+        passKeysOut: () => {
+            if (!core) {
+                return;
+            }
+            keysOut = true;
+            if (!answering) {
+                passHeldOut();
+            }
+        },
         // A popover's contents reported a popup of their own opening or closing
         // (ADR-0039): while one is open, a descendant's Escape is left to it.
         setInnerPopup: (open) => {
@@ -3370,11 +3437,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // becomes display-only stops taking printable keys, and one whose Consumer stops
         // listening for undo gives Ctrl+Z back to the page (ADR-0007/0010/0020/0055) — and
         // which of them the Consumer declared (ADR-0050, item 14).
-        setClaims: (takenKeys, editable, findable, declaredKeys) => {
+        setClaims: (takenKeys, editable, findable, declaredKeys, leaveDeclared) => {
             taken = new Set(takenKeys);
             canEdit = editable;
             canFind = findable;
             declared = new Set(declaredKeys ?? []);
+            leaves = leaveDeclared === true;
         },
         getScrollOffset: () => {
             if (pendingReveal) {

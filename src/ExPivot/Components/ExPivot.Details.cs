@@ -1,6 +1,7 @@
 using ExPivot.Chrome;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 
 namespace ExPivot.Components;
 
@@ -11,6 +12,7 @@ public partial class ExPivot
 {
     private readonly List<PivotDetailsSheet> _sheets = [];
     private readonly EventCallback _closeDialog;
+    private readonly EventCallback<KeyboardEventArgs> _onDialogKey;
     private readonly string _idPrefix;
     private PivotDetailsSheet? _selectedSheet;
     private PivotDetailsSheet? _dialog;
@@ -67,6 +69,7 @@ public partial class ExPivot
         {
             _dialog?.Dispose();
             _dialog = sheet;
+            _dialogKeys = null;
             _dialogFocus = ++_focusSequence;
         }
         else
@@ -118,16 +121,86 @@ public partial class ExPivot
 
     private void CloseDialog()
     {
-        if (_dialog is not { } dialog)
+        if (_dialog is not { } dialog || _dialogKeys is not null)
             return;
-        _dialog = null;
-        dialog.Dispose();
-        // However it closed — its grid's Escape, an Escape on its frame, Close, the backdrop — the
-        // control that held the keyboard went with it, and the report's grid takes it back
-        // (ADR-0070).
-        _keyboardBack = ++_focusSequence;
+        // However it closes — its grid's Escape, an Escape on its frame, Close, the backdrop — the
+        // report's grid takes the keyboard back (ADR-0070). On a circuit the dialog stands a round trip
+        // after the key or press that closes it, and a key typed meanwhile was the dialog's: ↓ typed
+        // straight after Escape moved in the closing dialog's grid and was lost, the report's Focus
+        // staying where it was (observed 2026-10-13, the Server host at 80 ms, both Chromes). So the
+        // keys typed in it from now are held, in order — its grid passes its own out to the frame — and
+        // the render takes the report's inert away while the dialog stands; after it the report's grid
+        // takes the keyboard back from the dialog, with those keys, and only then does the dialog go
+        // (decided with the user, 2026-10-13).
+        if (_grid is null)
+        {
+            _dialog = null;
+            dialog.Dispose();
+            _keyboardBack = ++_focusSequence;
+            StateHasChanged();
+            return;
+        }
+        _dialogKeys = [];
+        _dialogBack = ++_focusSequence;
         StateHasChanged();
     }
+
+    // The keys typed in the dialog since its close began, held for the report; null while it is not
+    // closing. The request for the report's grid to take the keyboard back from it.
+    private List<KeyboardEventArgs>? _dialogKeys;
+    private int _dialogBack;
+    private PivotDialogFrame? _dialogFrame;
+    private Func<Task>? _returnFromDialog;
+    private Func<IReadOnlyList<KeyboardEventArgs>>? _takeDialogKeys;
+
+    /// <summary>Whether the dialog holds the keyboard over the report and the Field List, which are
+    /// inert meanwhile: not while it closes, when the report's grid takes the keyboard back.</summary>
+    private bool DialogHoldsTheKeyboard => _dialog is not null && _dialogKeys is null;
+
+    // A key heard in the dialog's frame: held while the dialog closes, and Escape closes it.
+    private void OnDialogKey(KeyboardEventArgs e)
+    {
+        if (_dialogKeys is { } held)
+        {
+            held.Add(e);
+            return;
+        }
+        if (e.Key == "Escape")
+            CloseDialog();
+    }
+
+    // After the render that took the report's inert away: the report's grid takes the keyboard back from
+    // the dialog, with the keys held, and the dialog goes.
+    private async Task ReturnFromDialogAsync()
+    {
+        if (_dialog is not { } dialog || _dialogKeys is null)
+            return;
+        if (_grid is { } grid && _dialogFrame is { } frame)
+            await grid.ReturnKeyboardAsync(frame.Element, _takeDialogKeys ??= TakeDialogKeys);
+        if (!ReferenceEquals(_dialog, dialog))
+            return;
+        _dialog = null;
+        _dialogKeys = null;
+        dialog.Dispose();
+        StateHasChanged();
+    }
+
+    // The report's grid has the keyboard and asks for the keys: they are its own.
+    private IReadOnlyList<KeyboardEventArgs> TakeDialogKeys()
+    {
+        var keys = _dialogKeys ?? [];
+        if (_dialogKeys is not null)
+            _dialogKeys = [];
+        return keys;
+    }
+
+    private RenderFragment DialogKeyboardReturn() => builder =>
+    {
+        builder.OpenComponent<PivotKeyboardReturn>(0);
+        builder.AddComponentParameter(1, nameof(PivotKeyboardReturn.Request), _dialogBack);
+        builder.AddComponentParameter(2, nameof(PivotKeyboardReturn.Return), _returnFromDialog ??= ReturnFromDialogAsync);
+        builder.CloseComponent();
+    };
 
     /// <summary>Asks the report's grid for the keyboard back (ADR-0070), when there is a grid: an
     /// empty report has none, and a grid that has gone does nothing.</summary>

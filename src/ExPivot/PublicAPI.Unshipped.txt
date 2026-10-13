@@ -525,6 +525,8 @@ ExPivot.Components.PivotDialogFrame.Label.get -> string!
 ExPivot.Components.PivotDialogFrame.Label.set -> void
 ExPivot.Components.PivotDialogFrame.OnEscape.get -> Microsoft.AspNetCore.Components.EventCallback
 ExPivot.Components.PivotDialogFrame.OnEscape.set -> void
+ExPivot.Components.PivotDialogFrame.OnKey.get -> Microsoft.AspNetCore.Components.EventCallback<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>
+ExPivot.Components.PivotDialogFrame.OnKey.set -> void
 ExPivot.Components.PivotDialogFrame.PivotDialogFrame() -> void
 ExPivot.Components.PivotFieldListView
 ExPivot.Components.PivotFieldListView.Context.get -> ExPivot.Chrome.PivotFieldListContext!

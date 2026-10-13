@@ -148,6 +148,7 @@ public partial class ExPivot
         _gridFragment = RenderGrid;
         _escape = new EventCallback(null, (Func<Task>)OnEscapeAsync);
         _closeDialog = new EventCallback(null, (Action)CloseDialog);
+        _onDialogKey = new EventCallback<KeyboardEventArgs>(null, (Action<KeyboardEventArgs>)OnDialogKey);
         _idPrefix = "ex-pivot-" + Guid.NewGuid().ToString("N")[..12];
     }
 

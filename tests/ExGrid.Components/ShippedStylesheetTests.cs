@@ -610,7 +610,7 @@ public class ShippedStylesheetTests
             .Where(line => line.Length > 0 && !char.IsWhiteSpace(line[0]) && !line.StartsWith("//", StringComparison.Ordinal)
                 && !line.StartsWith("/**", StringComparison.Ordinal))
             .ToList();
-        Assert.Equal(["export function stamp() {", "}", "export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone) {", "}"], topLevel);
+        Assert.Equal(["export function stamp() {", "}", "export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared) {", "}"], topLevel);
     }
 
     [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
@@ -874,6 +874,33 @@ public class ShippedStylesheetTests
         Assert.DoesNotContain("altReleased", script, StringComparison.Ordinal);
         // Nothing measured.
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), keyUp);
+    }
+
+    [Fact] // ADR-0070 / ADR-0010 (decided with the user, 2026-10-13: keys typed while the keyboard leaves are held and handed on in order): a grid whose Consumer hears OnLeave holds the keys after a plain Escape on the root for its answer; told to pass them out, it hands what it holds and what is typed on its root after to the element around the root, in order, and acts on none; no listener is added
+    public void The_keys_after_a_leaving_escape_go_out_to_the_element_around_the_root()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var keyDown = ListenerBody(script, "onKeyDown");
+        var drain = Regex.Match(script, @"const drain = async \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        var passOut = Regex.Match(script, @"const passHeldOut = \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(passOut);
+
+        // Told with the claims whether the Consumer hears OnLeave.
+        Assert.Contains("leaves = leaveDeclared === true;", script, StringComparison.Ordinal);
+        // The Escape the Consumer may answer by taking the keyboard out: the keys after it wait for its answer.
+        Assert.Matches(new Regex(@"\} else if \(verdict === 'core' && leaves && k\.onRoot && k\.key === 'Escape' && plain\(k\) && !k\.shiftKey\s*&& k\.repeat !== true && editing === 'none'\) \{.*?startHold\(answer\);", RegexOptions.Singleline), keyDown);
+        // Told to pass them out, the held keys go to the root's parent, as the keydowns they were, in order.
+        Assert.Matches(new Regex(@"passKeysOut: \(\) => \{.*?keysOut = true;.*?if \(!answering\) \{\s*passHeldOut\(\);", RegexOptions.Singleline), script);
+        Assert.Contains("const parent = root?.parentElement;", passOut, StringComparison.Ordinal);
+        Assert.Contains("const keys = held.splice(0, held.length);", passOut, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"parent\.dispatchEvent\(new KeyboardEvent\("), passOut);
+        Assert.Matches(new Regex(@"while \(held\.length > 0 && core\) \{\s*(//[^\n]*\s*)*if \(keysOut\) \{\s*passHeldOut\(\);\s*break;"), drain);
+        // A key typed meanwhile is not the grid's: its default goes, and it travels on to the element around.
+        Assert.Matches(new Regex(@"if \(keysOut && !replaying\) \{\s*event\.preventDefault\(\);\s*return;\s*\}"), keyDown);
+        Assert.DoesNotContain("stopPropagation", Regex.Match(keyDown, @"if \(keysOut && !replaying\) \{.*?\}", RegexOptions.Singleline).Value, StringComparison.Ordinal);
+        // Ended by the keyboard leaving, a press, and nothing else of its own.
+        Assert.Equal(2, Regex.Matches(script, @"(?<!let )keysOut = false;").Count);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), passOut);
     }
 
     [Fact] // ADR-0080 / ADR-0021's seventh entry / ADR-0018: the Keyboard Field's listeners are on the root, on every grid, and go with the instance
@@ -1147,7 +1174,7 @@ public class ShippedStylesheetTests
         // hands it, at attach or re-told through setClaims, and that set is consulted only
         // while no edit is open. While one is, the editing sets decide, and they carry none.
         Assert.DoesNotMatch(new Regex(@"'Control\+(Shift\+)?[zZyY]'"), script.Text);
-        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys\) => \{\s*taken = new Set\(takenKeys\);"), script.Text);
+        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys, leaveDeclared\) => \{\s*taken = new Set\(takenKeys\);"), script.Text);
         Assert.Matches(new Regex(@"if \(!taken\.has\(canonical\)\)"), script.Text);
     }
 
@@ -1159,9 +1186,9 @@ public class ShippedStylesheetTests
         Assert.True(gate.Success, "the gate is not in the module");
 
         // Handed at attach and re-told with the claims, per instance.
-        Assert.Matches(new Regex(@"export function attach\([^)]*, declaredKeys, reportTimeZone\) \{"), script.Text);
+        Assert.Matches(new Regex(@"export function attach\([^)]*, declaredKeys, reportTimeZone, leaveDeclared\) \{"), script.Text);
         Assert.Matches(new Regex(@"let declared = new Set\(declaredKeys \?\? \[\]\);"), script.Text);
-        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys\) => \{[^}]*declared = new Set\(declaredKeys \?\? \[\]\);", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys, leaveDeclared\) => \{[^}]*declared = new Set\(declaredKeys \?\? \[\]\);", RegexOptions.Singleline), script.Text);
         // With no edit open they are among the taken keys, and only a taken one is asked about: the
         // Consumer answers it, and may open a popover or a frame of its own (Format Cells' Ctrl+1),
         // so the keys after it are held until that answer, and then until the keyboard has arrived

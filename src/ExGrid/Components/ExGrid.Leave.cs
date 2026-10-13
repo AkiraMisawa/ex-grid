@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 
 namespace ExGrid.Components;
 
@@ -41,6 +43,40 @@ public partial class ExGrid<TRow>
     /// a held Escape's repeats never reach here (<see cref="OnKeyAsync"/>), and they leave a release
     /// standing in the gate.
     /// </summary>
+    /// <summary>
+    /// The keyboard is leaving this grid for the Consumer's element around it — a dialog the grid stands
+    /// in, closing on the Escape that raised <see cref="OnLeave"/> (ADR-0070; decided with the user,
+    /// 2026-10-13). Called from the <see cref="OnLeave"/> handler, before its first await.
+    ///
+    /// <para>On Blazor Server the Consumer's dialog stands a round trip or more after that Escape, and the
+    /// keyboard stays in this grid until the Consumer has put it elsewhere: a key typed meanwhile was
+    /// this grid's, and moved in a dialog about to go. While a Consumer listens to <see cref="OnLeave"/>,
+    /// the keys typed after an Escape on the root wait for its answer; once this is called, they, and the
+    /// keys typed on the root until DOM focus leaves it, are passed to the element around the root, in
+    /// order, as the keydowns they were. A handler of the Consumer's there holds them and hands them on
+    /// where the keyboard lands — to another grid, with
+    /// <see cref="ReturnKeyboardAsync(ElementReference, Func{IReadOnlyList{KeyboardEventArgs}})"/> — so
+    /// the outcome is the one typed slowly, whatever the round trip. A press on the grid takes the
+    /// keyboard back into it, and the keys are its own again.</para>
+    ///
+    /// <para>It moves no focus and reads no layout: the key gate passes on what it hears (ADR-0021).
+    /// Before the grid is attached to the page, and after it is gone, it does nothing.</para>
+    /// </summary>
+    /// <returns>A task that completes once the request has been made.</returns>
+    public Task PassKeysOutAsync()
+        => InvokeAsync(async () =>
+        {
+            if (_disposed || _scrollHandle is null)
+                return;
+            try
+            {
+                await _scrollHandle.InvokeVoidAsync("passKeysOut");
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+            }
+        });
+
     private async Task LeaveAsync()
     {
         var released = ReleaseTabAsync();

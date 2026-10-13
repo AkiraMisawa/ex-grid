@@ -2283,6 +2283,9 @@
     // What the key gate was last told (ADR-0010/0020/0055): which keys this grid takes,
     // whether any column edits, whether anything can find. Null until attach.
     private GridKeyClaims? _jsClaims;
+    // Whether the gate was told the Consumer hears the Escape that leaves the grid (OnLeave): the keys
+    // after such an Escape wait for its answer (PassKeysOutAsync; decided with the user, 2026-10-13).
+    private bool _jsLeaves;
 
     // Interactive over the core's own actions (ADR-0037): the cell Space entered and the
     // action chosen in it. The keyboard never leaves the root; this is what the arrows
@@ -3769,14 +3772,15 @@
         // changes the answer.
         // A Consumer's declared keys are re-told the same way (ADR-0050, item 14).
         var claims = KeyClaims();
-        if (_scrollHandle is not null && !_disposed && (claims != _jsClaims || !ReferenceEquals(_declared, _jsDeclared)))
+        if (_scrollHandle is not null && !_disposed && (claims != _jsClaims || !ReferenceEquals(_declared, _jsDeclared) || OnLeave.HasDelegate != _jsLeaves))
         {
             _jsClaims = claims;
             _jsDeclared = _declared;
+            _jsLeaves = OnLeave.HasDelegate;
             try
             {
                 await _scrollHandle.InvokeVoidAsync(
-                    "setClaims", TakenKeys(claims), claims.CanEdit, claims.CanFind, DeclaredForGate());
+                    "setClaims", TakenKeys(claims), claims.CanEdit, claims.CanFind, DeclaredForGate(), _jsLeaves);
             }
             catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
             {
@@ -3883,9 +3887,10 @@
             var claims = KeyClaims();
             _jsClaims = claims;
             _jsDeclared = _declared;
+            _jsLeaves = OnLeave.HasDelegate;
             var handle = await _module.InvokeAsync<IJSObjectReference>(
                 "attach", _root, _scroller, _self, TakenKeys(claims), claims.CanEdit,
-                PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate(), OnBrowserTimeZone.HasDelegate);
+                PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate(), OnBrowserTimeZone.HasDelegate, _jsLeaves);
             if (_disposed)
             {
                 // Disposal overtook the attach; nobody else holds this handle now. Its own

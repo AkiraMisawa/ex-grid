@@ -31,6 +31,13 @@ public abstract class PivotTestContext : BunitContext
     private static readonly TimeSpan SettleDelay = TimeSpan.FromMilliseconds(150);
 
     private readonly BunitJSModuleInterop _module;
+    // The handle every grid but one a test keeps apart attaches to: the details grids' among them.
+    private readonly BunitJSModuleInterop _anyGrid;
+
+    /// <summary>How many times a grid on the common handle — a details grid — has passed the keys typed
+    /// on it out to the element around it (ExGrid's <c>PassKeysOutAsync</c>; decided with the user,
+    /// 2026-10-13).</summary>
+    internal int KeysPassedOut => _anyGrid.Invocations.Count(invocation => invocation.Identifier == "passKeysOut");
     // Where each handle says its scroller stands, as the browser would (ScrollReportAsync).
     private readonly List<JSRuntimeInvocationHandler<ScrollOffset>> _scrollOffsets = [];
     private bool _rendererInfoSet;
@@ -40,7 +47,8 @@ public abstract class PivotTestContext : BunitContext
         Services.AddSingleton<TimeProvider>(Clock);
         _module = JSInterop.SetupModule(ModulePath);
         _module.Setup<string>("stamp").SetResult(ExGrid.Testing.ShippedScript.Stamp);
-        StandIn(_module.SetupModule("attach", _ => true));
+        _anyGrid = _module.SetupModule("attach", _ => true);
+        StandIn(_anyGrid);
         // Blazor's own FocusAsync, which the built-in views use to hand the keyboard on.
         JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true).SetVoidResult();
     }
@@ -54,7 +62,7 @@ public abstract class PivotTestContext : BunitContext
         offset.SetResult(default);
         _scrollOffsets.Add(offset);
         handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handKeyboardTo", "takeFocus", "followFocus", "dispose" })
+        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handKeyboardTo", "takeFocus", "followFocus", "dispose", "takeKeyboardBack", "passKeysOut" })
             handle.SetupVoid(name, _ => true).SetVoidResult();
     }
 
@@ -70,9 +78,10 @@ public abstract class PivotTestContext : BunitContext
     }
 
     /// <summary>How many times the report grid behind <paramref name="handle"/> has asked for the
-    /// keyboard back on its root, from nothing or from inside it (ADR-0021/0070).</summary>
+    /// keyboard back on its root, from nothing or from inside it (ADR-0021/0070), or from the dialog
+    /// with the keys typed in it as it closed (decided with the user, 2026-10-13).</summary>
     internal static int KeyboardReturns(BunitJSModuleInterop handle)
-        => handle.Invocations.Count(invocation => invocation.Identifier == "reclaimFocus");
+        => handle.Invocations.Count(invocation => invocation.Identifier is "reclaimFocus" or "takeKeyboardBack");
 
     /// <summary>The elements the report grid behind <paramref name="handle"/> has handed the
     /// keyboard on to, by id, in the order asked: a control of ExPivot's own takes it from the
