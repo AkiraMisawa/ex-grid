@@ -2714,8 +2714,8 @@
     // it (ADR-0003's identity, element by element where the reader can see it). Only painted
     // rows are compared, so the cost follows the painted rows and not the Window (ADR-0141), and
     // only rows of the Window last given are held (ADR-0160). Off screen, the grid reads the
-    // Window afresh as it scrolls. Every other list parameter — Columns above all — is compared
-    // by instance alone, as ADR-0003 has it.
+    // Window afresh as it scrolls. Columns, HeaderGroups and Sorts are compared element by
+    // element (TakeInList); every other list by instance alone, as ADR-0003 has it.
     private TRow[] _paintedRows = [];
     private int _paintedFrom;
     private int _paintedWindowCount = -1;
@@ -2764,17 +2764,17 @@
             || _focusRequest is not null;
 
     // Columns, HeaderGroups and Sorts, as handed and as the grid takes them (decided with the user
-    // on 2026-10-13, after AG Grid's re-applied columnDefs). A list handed again as the same
-    // instance whose elements changed — a column added, replaced, removed or moved in place —
-    // is taken exactly as a new list would be: the grid takes a copy of it, a new instance, and
-    // everything keyed on the list's identity (ADR-0003) rebuilds through the one path a new
-    // list takes. Handed again unchanged, the grid keeps the instance it took, so nothing
-    // rebuilds. The elements are compared by reference; these lists are short.
-    private sealed class TakenList(object? handed, object? taken, object?[] elements)
+    // on 2026-10-13, after AG Grid's re-applied columnDefs). The grid always holds a copy of the
+    // list it was handed, so a Consumer changing its own list cannot change what the grid painted
+    // from behind its back. A list handed again as the same instance whose elements changed — a
+    // column added, replaced, removed or moved in place — is taken exactly as a new list would be:
+    // a new copy, and everything keyed on the list's identity (ADR-0003) rebuilds through the one
+    // path a new list takes. Handed again unchanged, the copy is kept, so nothing rebuilds. The
+    // elements are compared by reference, through the list's own indexer, with nothing allocated.
+    private sealed class TakenList(object? handed, System.Collections.IList? taken)
     {
         public object? Handed { get; set; } = handed;
-        public object? Taken { get; set; } = taken;
-        public object?[] Elements { get; set; } = elements;
+        public System.Collections.IList? Taken { get; set; } = taken;
     }
 
     private readonly Dictionary<string, TakenList> _takenLists = new(StringComparer.Ordinal);
@@ -2785,31 +2785,30 @@
     {
         if (name is not (nameof(Columns) or nameof(HeaderGroups) or nameof(Sorts)))
             return false;
-        object?[] elements = handed is System.Collections.IEnumerable sequence
-            ? [.. sequence.Cast<object?>()]
-            : [];
         if (_takenLists.TryGetValue(name, out var taken) && ReferenceEquals(taken.Handed, handed) && handed is not null)
         {
-            if (taken.Elements.AsSpan().SequenceEqual(elements, ReferenceComparer.Instance))
+            if (SameElements(taken.Taken, (IReadOnlyList<object?>)handed))
                 return false;
             taken.Taken = CopyOf(name, handed);
-            taken.Elements = elements;
             return true;
         }
-        _takenLists[name] = new TakenList(handed, handed, elements);
+        _takenLists[name] = new TakenList(handed, handed is null ? null : CopyOf(name, handed));
         return false;
     }
 
-    private sealed class ReferenceComparer : IEqualityComparer<object?>
+    private static bool SameElements(System.Collections.IList? taken, IReadOnlyList<object?> handed)
     {
-        public static readonly ReferenceComparer Instance = new();
-
-        public new bool Equals(object? x, object? y) => ReferenceEquals(x, y);
-
-        public int GetHashCode(object? obj) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj!);
+        if (taken is null || taken.Count != handed.Count)
+            return false;
+        for (var i = 0; i < taken.Count; i++)
+        {
+            if (!ReferenceEquals(taken[i], handed[i]))
+                return false;
+        }
+        return true;
     }
 
-    private static object CopyOf(string name, object handed) => name switch
+    private static System.Collections.IList CopyOf(string name, object handed) => name switch
     {
         nameof(Columns) => ((IReadOnlyList<GridColumn<TRow>>)handed).ToArray(),
         nameof(HeaderGroups) => ((IReadOnlyList<HeaderGroup>)handed).ToArray(),
@@ -2817,8 +2816,8 @@
     };
 
     /// <summary>Puts the lists the grid took in place of the ones handed, first thing in
-    /// <see cref="OnParametersSet"/>: the copy taken for a list changed in place, kept for as
-    /// long as it is handed again unchanged.</summary>
+    /// <see cref="OnParametersSet"/>: its own copy, taken anew for a list changed in place, and
+    /// kept for as long as the list is handed again unchanged.</summary>
     private void UseTakenLists()
     {
         if (_takenLists.TryGetValue(nameof(Columns), out var columns) && ReferenceEquals(columns.Handed, Columns)
@@ -3160,7 +3159,8 @@
         if (columnsChanged || metricsChanged)
         {
             // A changed column declaration means a fresh tracker re-measured from what
-            // is painted next (ADR-0016); the metrics feed the estimates, so they reset
+            // is painted next (ADR-0016) — but for a column instance carried over by Name
+            // under the same metrics, below; the metrics feed the estimates, so they reset
             // with it. The header label is content the column paints too — unobserved,
             // every short Auto column would stand with a chopped header.
             // What the grid holds per column is carried to the new list by the column's Name, as
@@ -3178,7 +3178,7 @@
             _autoWidths = new AutoWidth[Columns.Count];
             for (var i = 0; i < Columns.Count; i++)
             {
-                if (!metricsChanged && previousAt.TryGetValue(Columns[i].Name, out var was)
+                if (!metricsChanged && _metrics == _observedGridMetrics && previousAt.TryGetValue(Columns[i].Name, out var was)
                     && ReferenceEquals(previous[was], Columns[i]) && was < previousAutoWidths.Length)
                 {
                     _autoWidths[i] = previousAutoWidths[was];
@@ -3224,6 +3224,7 @@
             _observedColumns = Columns;
             _observedColumnElements = [.. Columns];
             _observedMetrics = _metrics.CellMetrics;
+            _observedGridMetrics = _metrics;
             _measured = false;
         }
 
@@ -3354,11 +3355,12 @@
     // The columns as they stood when last taken in, element by element, so that what the grid
     // holds per column can be found by Name in a list the Consumer changed in place.
     private GridColumn<TRow>[] _observedColumnElements = [];
+    private GridMetrics? _observedGridMetrics;
 
     /// <summary>The column state the grid itself holds, moved to where each column now stands by
     /// its Name: the column whose popover is open, and the column a resize grip is dragging. A
     /// column no longer in the list takes its state with it — the popover closes, the drag
-    /// ends. The Selection, the Copied Range and an open edit are not carried: a change of the
+    /// ends. A header reorder drag ends whatever changed, since it lifted columns by position. The Selection, the Copied Range and an open edit are not carried: a change of the
     /// visible columns drops them (ADR-0011).</summary>
     private void CarryColumnStateByName(GridColumn<TRow>[] previous)
     {
@@ -3381,6 +3383,14 @@
                 CloseMenus();
             else
                 _menuColumn = now;
+        }
+        // A header reorder drag holds a unit of columns by position and is ended, not carried: the
+        // unit it lifted may no longer be one, and a drop against the new order would report a move
+        // of other columns (principle 6: a gesture carries what it was taken against).
+        if (_reordering || _dragUnitFirst >= 0)
+        {
+            DetachRootGesture();
+            return;
         }
         if (_resizeColumn >= 0)
             _resizeColumn = Now(_resizeColumn);

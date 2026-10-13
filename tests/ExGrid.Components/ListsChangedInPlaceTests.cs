@@ -38,7 +38,14 @@ public class ListsChangedInPlaceTests : GridTestContext
     /// <summary>A Consumer holding its lists in fields and changing them in place.</summary>
     private sealed class InPlaceConsumer : ComponentBase
     {
-        public TestRow[] Window { get; } = TestRows.Many(30);
+        public TestRow[] Window { get; } = WithOneWideBook(TestRows.Many(60));
+
+        // Row 50's Book is far wider than the rest: its column grows once that row is painted.
+        private static TestRow[] WithOneWideBook(TestRow[] rows)
+        {
+            rows[50] = new TestRow { Book = "A Book label far wider than any other in the window", Amount = 50 };
+            return rows;
+        }
 
         public List<GridColumn<TestRow>> Columns { get; } = [.. TestRows.Columns()];
 
@@ -181,5 +188,65 @@ public class ListsChangedInPlaceTests : GridTestContext
         Rerender(host);
 
         Assert.Equal(renders, grid.RenderCount);
+    }
+
+    private static double BookWidthPx(IRenderedComponent<InPlaceConsumer> host)
+    {
+        var header = host.FindAll(".ex-header-cell").First(h => h.TextContent.Trim() == "Book");
+        var match = System.Text.RegularExpressions.Regex.Match(header.GetAttribute("style")!, @"(?:^|;)\s*width: ([0-9.]+)px");
+        return double.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>Paints row 50, whose wide Book grows the Auto column, and comes back to the top.</summary>
+    private async Task<double> WidenBookAsync(IRenderedComponent<InPlaceConsumer> host)
+    {
+        var narrow = BookWidthPx(host);
+        await ScrollToAsync(host.Find(".ex-scroller"), 50 * 20);
+        await host.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+        await ScrollToAsync(host.Find(".ex-scroller"), 0);
+        await host.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+        var wide = BookWidthPx(host);
+        Assert.True(wide > narrow, $"Book grew from {narrow} to {wide}");
+        return wide;
+    }
+
+    [Fact] // FN-22, ADR-0003 (2026-10-13) / ADR-0016: the same column instance moved in place keeps the Auto width it measured
+    public async Task FN22_a_column_moved_in_place_keeps_its_measured_auto_width()
+    {
+        var host = RenderConsumer();
+        var wide = await WidenBookAsync(host);
+
+        var amount = host.Instance.Columns[1];
+        host.Instance.Columns.RemoveAt(1);
+        host.Instance.Columns.Insert(0, amount);
+        Rerender(host);
+
+        Assert.Equal("Amount", Headers(host)[0]);
+        Assert.Equal(wide, BookWidthPx(host));
+    }
+
+    [Fact] // FN-22, ADR-0003 (2026-10-11 and 2026-10-13): a new instance under the same Name measures afresh — what is derived from a definition is not carried
+    public async Task FN22_a_new_column_instance_under_the_same_name_measures_afresh()
+    {
+        var host = RenderConsumer();
+        var wide = await WidenBookAsync(host);
+
+        host.Instance.Columns[0] = new GridColumn<TestRow>("Book", ColumnType.Text, r => r.Book);
+        Rerender(host);
+
+        Assert.True(BookWidthPx(host) < wide, $"Book measured afresh at {BookWidthPx(host)}, under {wide}");
+    }
+
+    [Fact] // FN-22, ADR-0003 (2026-10-13): the open column menu goes with its column when the column is removed in place
+    public async Task FN22_the_open_menu_closes_when_its_column_is_removed_in_place()
+    {
+        var host = RenderConsumer();
+        await host.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs()); // Amount's menu
+        Assert.Single(host.FindAll(".stub-menu"));
+
+        host.Instance.Columns.RemoveAt(1);
+        Rerender(host);
+
+        Assert.Empty(host.FindAll(".stub-menu"));
     }
 }
