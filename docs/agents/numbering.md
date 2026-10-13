@@ -72,4 +72,5 @@ reserved here.
 | 7 | in (Pointing Scope) | a Linked Table's key (ADR-0049) |
 | 8 | `claude/exsheet-cell-format` | Font, Fill and Borders (ADR-0071, numbered 0063 before) |
 | 9 | `claude/excel-formulas-management-4clj80` | a Linked Table's key of several columns (ADR-0058, amended 2026-10-03) |
-| 10– | free | reserve one at a time |
+| 10 | `claude/area-corrections` | an Entry that holds a refusal, carried by a paste from a refused cell (2026-10-13) |
+| 11– | free | reserve one at a time |
