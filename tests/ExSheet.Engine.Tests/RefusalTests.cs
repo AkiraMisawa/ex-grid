@@ -69,11 +69,11 @@ public class RefusalTests
     {
         var sheet = WithData();
 
-        Assert.True(sheet.Evaluate("=" + refusing) is { IsRefusal: true }, refusing);
-        Assert.True(sheet.Evaluate($"=IFERROR({refusing},0)") is { IsRefusal: true }, refusing);
-        Assert.True(sheet.Evaluate($"=ISERROR({refusing})") is { IsRefusal: true }, refusing);
-        Assert.True(sheet.Evaluate($"=ERROR.TYPE({refusing})") is { IsRefusal: true }, refusing);
-        Assert.True(sheet.Evaluate($"=COUNTA({refusing},1)") is { IsRefusal: true }, refusing);
+        Assert.True(sheet.Evaluate("=" + refusing) is { IsRefused: true }, refusing);
+        Assert.True(sheet.Evaluate($"=IFERROR({refusing},0)") is { IsRefused: true }, refusing);
+        Assert.True(sheet.Evaluate($"=ISERROR({refusing})") is { IsRefused: true }, refusing);
+        Assert.True(sheet.Evaluate($"=ERROR.TYPE({refusing})") is { IsRefused: true }, refusing);
+        Assert.True(sheet.Evaluate($"=COUNTA({refusing},1)") is { IsRefused: true }, refusing);
     }
 
     [Theory, MemberData(nameof(Refusing))] // ADR-0047 (2026-10-12): a refused cell refuses every Formula that reads it, whatever it does with it
@@ -82,9 +82,9 @@ public class RefusalTests
         var sheet = WithData();
         sheet.Enter("B1", "=" + refusing);
 
-        Assert.True(sheet.Value("B1") is { IsRefusal: true }, refusing);
-        Assert.True(sheet.Evaluate("=IFERROR(B1,0)") is { IsRefusal: true }, refusing);
-        Assert.True(sheet.Evaluate("=ISERROR(B1)") is { IsRefusal: true }, refusing);
+        Assert.True(sheet.Value("B1") is { IsRefused: true }, refusing);
+        Assert.True(sheet.Evaluate("=IFERROR(B1,0)") is { IsRefused: true }, refusing);
+        Assert.True(sheet.Evaluate("=ISERROR(B1)") is { IsRefused: true }, refusing);
     }
 
     /// <summary>What reads B1, refused (<c>MROUND(6.05,0.1)</c>), beside B2 holding 1.</summary>
@@ -129,7 +129,7 @@ public class RefusalTests
         sheet.Enter("B1", "=MROUND(6.05,0.1)");
         sheet.Enter("B2", "1");
 
-        Assert.True(sheet.Evaluate(formula) is { IsRefusal: true }, formula);
+        Assert.True(sheet.Evaluate(formula) is { IsRefused: true }, formula);
     }
 
     [Fact] // ADR-0047 (2026-10-12): the refusal is carried along a chain of three cells, and lifted when its cause goes
@@ -141,7 +141,7 @@ public class RefusalTests
         sheet.Enter("D1", "=IFERROR(C1,1)");
         sheet.Enter("E1", "=COUNTA(D1)");
 
-        foreach (var cell in new[] { "B1", "C1", "D1", "E1" }) Assert.True(sheet.Value(cell) is { IsRefusal: true }, cell);
+        foreach (var cell in new[] { "B1", "C1", "D1", "E1" }) Assert.True(sheet.Value(cell) is { IsRefused: true }, cell);
         Assert.Equal("#VALUE!", sheet.Value("E1")!.Value.ToString());
 
         sheet.Enter("B1", "=MROUND(6,2)");
@@ -158,7 +158,7 @@ public class RefusalTests
         var sheet = NewSheet();
         sheet.Enter("B1", "=1+\"a\"");
 
-        Assert.False(sheet.Value("B1") is { IsRefusal: true });
+        Assert.False(sheet.Value("B1") is { IsRefused: true });
         Assert.Equal(ErrorValue.Value, sheet.Error("B1"));
         Assert.Equal(0, sheet.Evaluate("=IFERROR(1+\"a\",0)").Number);
         Assert.Equal(0, sheet.Evaluate("=IFERROR(B1,0)").Number);
@@ -176,8 +176,8 @@ public class RefusalTests
         sheet.Enter("B1", "=MROUND(6.05,0.1)");
         sheet.Enter("B2", "=1+1");
 
-        Assert.True(sheet.Value("C1") is { IsRefusal: true });
-        Assert.True(sheet.Value("C2") is { IsRefusal: true });
+        Assert.True(sheet.Value("C1") is { IsRefused: true });
+        Assert.True(sheet.Value("C2") is { IsRefused: true });
         Assert.Equal(2, sheet.Number("B2"));
     }
 
@@ -193,9 +193,9 @@ public class RefusalTests
         sheet.Enter("C3", "=COUNT(INDIRECT(\"Positions[PV]\"))");
         sheet.Enter("C4", "=COUNTA(Positions[Id])");
 
-        Assert.True(sheet.Value("C1") is { IsRefusal: true });
-        Assert.True(sheet.Value("C2") is { IsRefusal: true });
-        Assert.True(sheet.Value("C3") is { IsRefusal: true });
+        Assert.True(sheet.Value("C1") is { IsRefused: true });
+        Assert.True(sheet.Value("C2") is { IsRefused: true });
+        Assert.True(sheet.Value("C3") is { IsRefused: true });
         // A column that holds none is read as ever.
         Assert.Equal(2, sheet.Number("C4"));
 
@@ -255,8 +255,8 @@ public class RefusalTests
         Assert.Equal("#VALUE!\r\n#VALUE!\r\n", copy.Text);
         sheet.Do(SheetEdit.Paste(copy.Block!, CellAddress.Parse("D1")));
         Assert.Equal("=MROUND(6.05,0.1)", sheet.GetEntry(CellAddress.Parse("D1"))!.Formula);
-        Assert.True(sheet.Value("D1") is { IsRefusal: true });
-        Assert.True(sheet.Value("D2") is { IsRefusal: true });
+        Assert.True(sheet.Value("D1") is { IsRefused: true });
+        Assert.True(sheet.Value("D2") is { IsRefused: true });
     }
 
     [Fact] // ADR-0047 (2026-10-12): the corpus and the engine agree on which #VALUE! is a refusal
@@ -276,7 +276,7 @@ public class RefusalTests
                 // The engine's #VALUE! is a refusal where no run has observed Excel's answer, or where it differs from it by decision.
                 var refusal = c.GetProperty("source").GetString() == "uncertain" || c.TryGetProperty("engineDiffersByDecision", out _)
                     || refusedWhereExcelGaveValueError.Contains(id);
-                if ((ExcelCorpus.CheckedValue(c) is { IsRefusal: true }) != refusal) wrong.Add($"{id}: expected {(refusal ? "a refusal" : "an Error Value a Formula can catch")}");
+                if ((ExcelCorpus.CheckedValue(c) is { IsRefused: true }) != refusal) wrong.Add($"{id}: expected {(refusal ? "a refusal" : "an Error Value a Formula can catch")}");
             }
         }
 

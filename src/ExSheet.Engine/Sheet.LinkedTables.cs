@@ -210,7 +210,7 @@ public sealed partial class Sheet
         }
         // The snapshot is built whole before it replaces the old one.
         table.Data = [.. columns.Select(c => (IReadOnlyList<Value?>)c.AsReadOnly())];
-        table.Refusing = [.. columns.Select(c => c.Any(v => v is { IsRefusal: true }))];
+        table.Refusing = [.. columns.Select(c => c.Any(v => v is { IsRefused: true }))];
         table.RowCount = count;
         return RecalculateReaders(table.Name);
     }

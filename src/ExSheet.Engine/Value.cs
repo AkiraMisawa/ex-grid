@@ -48,14 +48,14 @@ public readonly struct Value : IEquatable<Value>
     internal static Value Refusal { get; } = new(ValueKind.Error, (int)ErrorValue.Value, null, refusal: true);
 
     /// <summary>
-    /// Whether this <c>#VALUE!</c> is a refusal: the Value of a cell whose Formula ExSheet refused, because
+    /// Whether this <c>#VALUE!</c> is a Refused Formula's: the Value of a cell whose Formula ExSheet refused, because
     /// it cannot answer it as Excel — the readings of the evaluation part, or no run has settled the answer
     /// (ADR-0047). It is <c>#VALUE!</c> in every other way, and equal to it; no Formula can catch it, in its
     /// own cell or in any cell that reads it (2026-10-12, decided with the user: a refusal is never caught,
     /// anywhere), and it is no constant an Entry can hold (<see cref="Entry.FromValue"/>). A Consumer that
     /// passes it on, into a Linked Table, passes the refusal on with it.
     /// </summary>
-    public bool IsRefusal => _refusal;
+    public bool IsRefused => _refusal;
 
     /// <summary>Which of the four kinds this Value is.</summary>
     public ValueKind Kind { get; }

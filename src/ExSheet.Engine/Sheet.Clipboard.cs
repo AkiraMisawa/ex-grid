@@ -61,7 +61,7 @@ public sealed partial class Sheet
         var carried = CarriedState(address);
         var inside = anchor.Row >= range.First.Row && anchor.Row <= range.Last.Row && anchor.Column >= range.First.Column && anchor.Column <= range.Last.Column;
         // A refused Value is never one: a Formula that reads a refused cell is refused, and spills nothing.
-        if (inside || GetValue(address) is not { } value || value is { IsError: true, Error: ErrorValue.GettingData or ErrorValue.Circ } || value.IsRefusal) return carried;
+        if (inside || GetValue(address) is not { } value || value is { IsError: true, Error: ErrorValue.GettingData or ErrorValue.Circ } || value.IsRefused) return carried;
         return carried with { Entry = Entry.FromValue(value) };
     }
 

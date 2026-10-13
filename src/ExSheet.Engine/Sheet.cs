@@ -597,7 +597,7 @@ public sealed partial class Sheet
                 {
                     if (value.Error == ErrorValue.Circ) return value;
                     if (value.Error == ErrorValue.GettingData) gettingData = true;
-                    if (value.IsRefusal) refused = true;
+                    if (value.IsRefused) refused = true;
                 }
             }
         }
@@ -656,7 +656,7 @@ public sealed partial class Sheet
                 : onDemand?.Invoke(address) is { } computed ? computed
                 : sheet.GetValue(address);
             if (value is { IsError: true, Error: ErrorValue.Circ or ErrorValue.GettingData } met && Met != ErrorValue.Circ) Met = met.Error;
-            if (value is { IsRefusal: true }) MetRefusal = true;
+            if (value is { IsRefused: true }) MetRefusal = true;
             return value;
         }
 

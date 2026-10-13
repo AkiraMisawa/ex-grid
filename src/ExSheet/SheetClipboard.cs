@@ -18,7 +18,7 @@ namespace ExSheet;
 /// for a copy that carries Values alone.</param>
 /// <param name="Fields">What <see cref="ClipboardParse.Parse"/> reads from the two flavours written.</param>
 /// <param name="Refused">For a copy that carries Values alone, the first cell it holds whose Formula ExSheet
-/// refused (<see cref="Value.IsRefusal"/>); <see langword="null"/> for none.</param>
+/// refused (<see cref="Value.IsRefused"/>); <see langword="null"/> for none.</param>
 internal sealed record SheetOwnCopy(SheetBlock? Block, IReadOnlyList<IReadOnlyList<string>> Fields, CellAddress? Refused = null)
 {
     /// <summary>Whether a paste's fields are this copy's, field for field.</summary>
@@ -99,7 +99,7 @@ internal static partial class SheetClipboard
         string Raw(CellAddress address)
         {
             var value = sheet.GetValue(address);
-            if (value is { IsRefusal: true }) refused ??= address;
+            if (value is { IsRefused: true }) refused ??= address;
             return value?.ToString() ?? "";
         }
     }
