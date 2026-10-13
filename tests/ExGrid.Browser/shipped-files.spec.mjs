@@ -280,10 +280,13 @@ test.describe('ERR-11: each product\'s stylesheet notice', () => {
     }
 
     test('ERR-11 / ADR-0123: while the stylesheet has not arrived, the notice shows nothing', async ({ page }) => {
-        // In a Blazor Web App the stylesheet is in the head the server renders, and nothing runs before
-        // it arrives. A standalone application links it once it has started, so the grid can stand
-        // before its stylesheet has arrived: the cold load's unstyled moment, without a notice.
-        test.skip(SERVER, 'a Blazor Web App\'s stylesheet arrives before anything is drawn');
+        // A standalone application links the stylesheet once it has started, so the grid can stand,
+        // and hear keys, before its stylesheet has arrived: the cold load's unstyled moment. A Blazor
+        // Web App's prerendered page has the grid in its markup and the stylesheet in its head, where
+        // it holds back the page's scripts, so the page stays prerendered until it arrives. Either way
+        // the grid stands in the document before its stylesheet does, and the notice shows nothing.
+        // The navigation's own wait for an interactive page is therefore awaited only once the
+        // stylesheet has been let through: on the Server host it cannot end before.
         let arrive;
         const arrived = new Promise((resolve) => { arrive = resolve; });
         await page.route(stylesheetOf('ExGrid', 'ex-grid'), async (route) => {
@@ -291,16 +294,20 @@ test.describe('ERR-11: each product\'s stylesheet notice', () => {
             await route.continue();
         });
 
-        await page.goto('/wide', { waitUntil: 'commit' });
+        const navigated = page.goto('/wide', { waitUntil: 'commit' });
+        try {
+            const grid = page.locator('.ex-grid').first();
+            await expect(grid.locator('.ex-row').first()).toBeAttached();
+            // No stylesheet yet: the grid stands unstyled (its root is not positioned), and the notice
+            // is not shown.
+            expect(await grid.evaluate((element) => getComputedStyle(element).position)).toBe('static');
+            await expect(grid.locator(':scope > [data-ex-stylesheet="ex-grid.css"]')).toBeHidden();
+        } finally {
+            arrive();
+            await navigated;
+        }
 
         const grid = page.locator('.ex-grid').first();
-        await expect(grid.locator('.ex-row').first()).toBeAttached();
-        // No stylesheet yet: the grid stands unstyled (its root is not positioned), and the notice is
-        // not shown.
-        expect(await grid.evaluate((element) => getComputedStyle(element).position)).toBe('static');
-        await expect(grid.locator(':scope > [data-ex-stylesheet="ex-grid.css"]')).toBeHidden();
-
-        arrive();
         await expect.poll(() => grid.evaluate((element) => getComputedStyle(element).position)).toBe('relative');
         await expect(grid.locator(':scope > [data-ex-stylesheet="ex-grid.css"]')).toBeHidden();
     });

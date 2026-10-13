@@ -19,6 +19,7 @@ builder.Services.AddHostedService<TradesHubBroadcaster>();
 builder.Services.AddSingleton<TradeArrow>();
 builder.Services.AddSingleton<TradePivotSource>();
 builder.Services.AddSingleton<PivotReportStore>();
+builder.Services.AddSingleton<PivotWindowGate>();
 builder.Services.AddHostedService(services => services.GetRequiredService<PivotReportStore>());
 builder.Services.AddSignalR();
 builder.Services.AddCors(DemoCors.AddPolicies);

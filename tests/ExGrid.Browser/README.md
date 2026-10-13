@@ -797,11 +797,12 @@ nobody had asked for. What that means when writing a test:
   below the rows on screen leaves the Window while every row on screen is still held — counted in the
   page's own tally of questions, never timed, behind the latency proxy on the Server host, and with the
   Window each question names read from the request on WebAssembly (LV-34, FN-3a, ADR-0182/0183); on
-  WebAssembly, the question asked early, its answer held behind a gate the test opens (a route, never a
-  timer), stays in flight while the report scrolls past the Window held and within the question's, the
-  report undimmed until rows on screen wait for it, and once it lands one question more is asked, ten
-  rows before the new Window runs out (the Server host asks the demo API from the server, where no
-  route can hold it); and a
+  both hosts, the question asked early, its answer held at the demo API's Window gate
+  (`/api/pivot/window-gate`, which the test opens, never a timer, and which records the Window each
+  question names — the gate is where both hosts' questions arrive, since the Server host asks the demo
+  API from the server, where no browser route reaches), stays in flight while the report scrolls past
+  the Window held and within the question's, the report undimmed until rows on screen wait for it, and
+  once it lands one question more is asked, ten rows before the new Window runs out; and a
   whole-column Copy and Selection Summary of a remote report include the rows
   outside the Window and equal the local report's (LV-28). **Run once per Chrome**: its trades read over
   Arrow into a Snapshot the page pivots in its own process, at the version `/api/status` names, and
@@ -941,8 +942,10 @@ Prerendered root's attributes (A11Y-20).
   live region; and the six packages' stylesheet notices — the three products' in their roots, and each
   MudBlazor Wrapper's where the stylesheet its Chrome brings is rendered, on `/mud`,
   `/sheet?chrome=mud` and `/pivot?chrome=mud` — hidden by their own stylesheet, shown by another
-  version's, and ExGrid's not shown while its stylesheet has not arrived (the WebAssembly host only: a
-  Blazor Web App's stylesheet is in the head the server sends).
+  version's, and ExGrid's not shown while its stylesheet has not arrived (on WebAssembly the grid
+  stands interactive before it; on the Server host the prerendered grid stands in the document while
+  the stylesheet in its head holds the page's scripts back, so the navigation's wait for an interactive
+  page is awaited only once the stylesheet is let through).
 - `freshness.spec.mjs` — ERR-9's deploy (ADR-0123): `freshness-app/`, a standalone application of one
   grid, published twice from two copies of `src/ExGrid` whose shipped files are two versions', each
   copy's `ShippedAssets.g.cs` written as `tools/assets/minify.mjs` would. The first is served as GitHub
@@ -950,8 +953,8 @@ Prerendered root's attributes (A11Y-20).
   and the page reloaded: the second assembly runs the second script and paints with the second
   stylesheet, each asked for at its new address, while the framework's unchanged script stays in the
   cache. Nothing is built in the checkout, so a running DemoHost is never rebuilt under itself; the two
-  publishes take under a minute. It drives a host of its own, so it runs beside the WebAssembly
-  host only.
+  publishes take under a minute. It drives a host of its own, so it needs neither DemoHost, and runs
+  the same beside either (SRV-2 names no exception for it).
 
 Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its
 first navigation and fails a test on a console `error` or an uncaught page error
