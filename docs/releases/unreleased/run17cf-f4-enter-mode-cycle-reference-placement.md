@@ -1,0 +1,5 @@
+Product: ExGrid
+Kind: Behaviour
+ADR: 0051
+
+The selection a `CycleReference` function answers is placed as given where the F4 key carried a selection, or a caret the user had moved in that text with a key or a press; where the caret stood where typing, the edit's opening or an earlier F4 left it, the grid collapses it to a caret at its end (`SelectionEnd`), in any editing state — as Excel was seen to place them after a selection, a caret moved by a key and a caret left by typing, a press and the edit's opening by generalisation. While pointing, the function is now asked with a selection over the whole Reference the outline wrote, so a pointed range's two ends cycle together, and the caret stands at the end of the answer: the rewritten Reference wears Point's own look and is not selected in the field, where a key typed would replace it. A function that answered a selection over what it rewrote now sees it selected only after a move or over a selection; one that answers a caret sees no change.
