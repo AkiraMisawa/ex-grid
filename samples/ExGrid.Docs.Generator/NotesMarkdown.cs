@@ -103,7 +103,7 @@ public sealed record NotesInline(string Html, string Text, ImmutableArray<NotesL
 /// <summary>What the inline text needs to render: the decision records and where links to them point.</summary>
 /// <param name="Adrs">The decision records' file names, by number.</param>
 /// <param name="GitRef">The tag or commit a link into the repository points at.</param>
-/// <param name="AllowRef">Whether <c>{ref}</c>, the prerelease note's placeholder, may appear.</param>
+/// <param name="AllowRef">Whether <c>{ref}</c>, the placeholder of the prerelease note and the candidate's note, may appear.</param>
 public sealed record NotesContext(ImmutableDictionary<string, string> Adrs, string GitRef, bool AllowRef);
 
 /// <summary>
@@ -314,7 +314,7 @@ public static class NotesMarkdown
     /// <summary>
     /// Renders <paramref name="text"/>, or the part of it from <paramref name="from"/>, as HTML and as
     /// plain text, and finds its links. A construct outside the subset, an ADR with no file and a
-    /// <c>{ref}</c> outside the prerelease note are problems.
+    /// <c>{ref}</c> outside the prerelease note and the candidate's note are problems.
     /// </summary>
     public static NotesInline Render(NotesText text, NotesContext context, List<NotesProblem> problems, int from = 0)
     {
@@ -578,7 +578,7 @@ public static class NotesMarkdown
 
         private void RefOutside(int index) =>
             Problem(NotesProblemKind.Shape, index, 5,
-                "{ref} is the prerelease note's place for the commit, and is filled in only there. Write the version or the commit itself.");
+                "{ref} is the prerelease note's place for the commit, and the candidate's note's, and is filled in only there. Write the version or the commit itself.");
 
         private bool At(int i, string word) =>
             string.CompareOrdinal(_s, i, word, 0, word.Length) == 0;

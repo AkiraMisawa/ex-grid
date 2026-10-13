@@ -38,8 +38,20 @@ released, is a poor process. It is the ordinary one — a release branch, with r
   *(2026-10-12, decided with the user: the rehearsal includes the stable version's release notes. A
   release candidate's notes carry the blocks a stable version's must (ADR-0190's note of this date),
   checked as a stable version's are, so the text the GitHub release will show is seen before the tag.)*
+  *(2026-10-12, decided with the user: **two checks are a stable tag's only**, the two that read a
+  sign-off, since a candidate has none yet. They are the Signed off block read in full — the
+  `results.md` at the tag, X in full, the record naming X, X the commit a candidate of the version was
+  tagged on — and the structural check, that the tag is X plus only `verification/` and
+  `docs/releases/`. A candidate's Signed off block takes a pending form of its own, saying that the
+  sign-off is being made against this candidate, and the workflow reads a candidate's blocks by form
+  only, through the Docs Site's build. A candidate's GitHub release and its section on the site open
+  with a note of its own, not the prerelease note. ADR-0202's "the eighteenth run … on `0.1.0-rc.1`
+  itself" stays: that run is made at the candidate's commit, which the sign-off is made against.)*
 - **The sign-off is made against a commit of the branch, X.** Every step of the Definition of Done's §22
   runs at X; `results.md` names X.
+  *(2026-10-12, decided with the user: X is the commit a release candidate was tagged on. The sign-off
+  is made against that candidate, whose notes say so, and the release workflow refuses a stable tag
+  whose X no `-rc.N` of the same version was tagged on.)*
 - **The stable tag goes on Y, which is X plus only the records and the notes**: the
   `verification/<date>/` directory and `docs/releases/0.1.0.md`. The release workflow reads X from the
   notes' "Signed off" block and **refuses the tag if X..Y touches anything else**. A fix after X is a new
@@ -76,6 +88,11 @@ Besides ADR-0190's headings and [ADR-0202](./0202-what-0-1-0-holds-of-exsheet-an
   target framework and the packages.
 
 The Docs Site's notes parser requires each of them of an unsuffixed version.
+*(2026-10-12, decided with the user: they stand after the products, in the order above, each in the
+form ADR-0190's note of this date gives, Known limitations standing after Behaviour changes. The parser
+requires them of a release candidate too, whose notes rehearse them, its Signed off block in a pending
+form of its own that says the sign-off is being made against this candidate, and refuses them on an
+`-alpha` or a `-beta`.)*
 
 ### The Wrappers' MudBlazor range
 
@@ -99,6 +116,9 @@ The Docs Site's notes parser requires each of them of an unsuffixed version.
 - **Once a stable version exists, a prerelease does not publish the Docs Site.** The site describes the
   latest stable version; a prerelease's notes are on its GitHub release, and reach the site with the next
   stable publish. The on-demand publish of `main` or a `lab/*` branch stays, under its banner (ADR-0110).
+  *(2026-10-12, decided with the user: nor does a version without a suffix that a stable tag is above by
+  SemVer precedence, a patch to an older line, so `0.1.1` from `release/0.1` after `0.2.0` leaves
+  `0.2.0`'s site in place. A stable version exists once the repository has a tag without a suffix.)*
 
 ## Considered options
 
@@ -123,6 +143,8 @@ The Docs Site's notes parser requires each of them of an unsuffixed version.
 - ADR-0042 is rewritten on the release branch, in the change that adds this `release.yml`, with what it
   said kept: its refusal is replaced as above, not quietly dropped. The Definition of Done's Step 7
   clause on the refusal says the same.
+  *(2026-10-12, decided with the user: the rewrite and this `release.yml` go in on `main` before
+  `release/0.1` is cut, so the branch carries them from its cut, as "The release branch" asks.)*
 - ADR-0190 is amended: a stable version's tag goes on its release branch's Y, and its notes carry the
   blocks above. ADR-0110: a prerelease publishes no site once a stable version exists.
 - The package readmes are reworded for any version before `rc.1`. `check.sh`, PV-1 and the three Wrapper

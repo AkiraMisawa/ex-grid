@@ -27,7 +27,15 @@ before the sign-off, on the terms of
 [ADR-0042](adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md): every
 layer green in CI, the commit on `main`, and release notes naming what this document still owes.
 It is not a release in this document's sense, and nothing here is relaxed for it. *(Added
-2026-09-24.)*
+2026-09-24.)* *(2026-10-12, decided with the user,
+[ADR-0190](adr/0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md) and
+[ADR-0205](adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md):
+a release candidate, `0.1.0-rc.N`, is a prerelease too, and no release either: the sign-off is made
+against it. Its notes rehearse the release's. They carry the blocks a version without a suffix must —
+its known limitations, the SHOULD criteria accepted failing with their reasons, what is out of its scope
+and what it supports — and a Signed off block in a pending form of its own, saying that the sign-off is
+being made against this candidate. They open with the candidate's note, not the prerelease note. An
+alpha's or a beta's notes carry none of the blocks.)*
 
 Every criterion has an **ID**, a **statement**, a **verification** (the exact command or scenario)
 and a **pass condition** (what result counts). If a verification cannot be run, the criterion is
@@ -55,7 +63,8 @@ A run of this document produces one directory, `verification/<date>/`, holding:
 
 - `layers-1-2.log`, the console output of section 22's Step 1, and one `<test project>.trx` per test
   project beside it — `ExGrid.Tests.trx`, `ExGrid.Components.trx`, `ExSheet.Engine.Tests.trx` and so
-  on, twelve in all — each holding every test of that project with its outcome, and every skip
+  on, one for each test project in `ExGrid.slnx` *(it said "twelve in all" until 2026-10-12, when there
+  were fourteen)* — each holding every test of that project with its outcome, and every skip
   with its reason; `layer3.log` — full test output. *(Restated 2026-10-11, decided with the user: it
   named `layer1.log` and `layer2.log`, one per ExGrid suite. Steps 1 and 2 are now one run of every
   product's suites, since `0.1.0` carries all ten packages
@@ -938,6 +947,24 @@ any to a note.)*
 that date); its measurements are explicit tests as PV-21's are, and the variant with a whole-column
 `SUM` on every row runs as `spikes/exsheet-sh19-whole-column`, outside the suite.)*
 
+*(2026-10-12, the release tool's reader of this step; the rule above is unchanged.)* The run is read from
+the `.trx` files Step 1 copied into `verification/<date>/`:
+
+```sh
+nix develop -c dotnet run --project tools/release/ExGrid.Release -- skips --trx verification/<date>
+```
+
+It refuses each test that failed, and each that did not run and is not one of those above, by its project
+and its name. It refuses an allowed test left out otherwise than this step says: an explicit measurement
+is written `NotRunnable` in its `.trx`, and a skip `NotExecuted` with the reason its test gives, which must
+be that reason. It refuses a test project of `ExGrid.slnx` with no `.trx`, a `.trx` named for no test
+project, and a `.trx` it cannot read whole. The list it holds the run to is written in its code as this
+step names the tests, and a layer-1 test holds the two together and to the tests in the source. It names
+`CsvClockTests`' skip with its reason; the `.trx` does not say the machine, so whoever signs off confirms
+from the run that it was one where `TZ` cannot move the zone. Nor does it read CON-7's count of unobserved
+exceptions, which is read from `layers-1-2.log`. The release workflow does not run Step 1, so it does not read
+the run: the sign-off does.
+
 ### Step 3 — Static inspection
 
 Grep and read, recording each result:
@@ -986,6 +1013,100 @@ are unchanged, and the release workflow checks that. The table of rows and paths
 that check. Every automated command in this step runs in full, every time. A question to Excel is asked
 when its feature is built, never at a release, and the corpus may hold no `uncertain` or `documented`
 case without a written reason.)*
+
+**Rows checked by hand, and the code each covers**
+
+*(Added 2026-10-12, decided with the user: the table
+[ADR-0208](adr/0208-a-question-to-excel-is-asked-when-its-feature-is-built-and-a-check-by-hand-is-repeated-only-when-its-code-changes.md)
+of 2026-10-11 asks for, written with the release workflow's check, and what that check reads, confirmed the
+same day: FN-12e as two rows, a record's commit kept fetchable by a tag named for the record's directory, and
+WR-10's floor run indexed beside the rows.)* Each row a person checks, where it is checked, and the paths whose
+change could change its result.
+
+- **A row's latest record holds while its paths are unchanged.** That means unchanged between the
+  commit the record was made at and the commit being signed off, or, for a release candidate, the
+  commit it is tagged on.
+- **The release workflow compares them** (`git diff --quiet`). It refuses a version without a suffix,
+  and a release candidate, when:
+  - a path changed;
+  - the row has no record, and is not marked a Known limitation of the version being released *(2026-10-12,
+    how the release workflow reads a row put out of a version by decision: such a row is named in a notice and
+    never holds; see the index below)*;
+  - its latest record is not a pass;
+  - its record does not name the commit the index gives it;
+  - the record's tag is not `verified/` followed by the name of the record's directory;
+  - that commit cannot be fetched through the record's tag, or the tag names another commit, so whether
+    its paths changed cannot be checked;
+  - a path names nothing;
+  - for WR-10, a record its entry names besides the floor record is refused as the floor record would be,
+    its paths compared from its own commit; or a stable MudBlazor version within the range the Wrappers
+    declare, listed on nuget.org and published before X's commit time by its registration index or given no
+    date there, is not among the versions its records' layer-2 runs covered; or that index cannot be read
+    *(2026-10-12, how the release workflow checks the WR-10 row's notes below)*.
+- **The records are indexed in `verification/by-hand.json`.** For each row it names the same paths as
+  this table, the row's latest record, the commit that record was made at, and the record's tag. *(2026-10-12,
+  how the release workflow checks the WR-10 row: for WR-10 each record names besides the MudBlazor versions
+  its layer-2 runs covered, and the entry names the records of later layer-2 runs, by the row's notes,
+  besides the floor record.)* *(2026-10-12, how the release workflow reads a row put out of a version by
+  decision: the index marks it `knownLimitation`, naming the version without a suffix, the day of the decision
+  and its words, and gives it no record, and this table's row says "Known limitation of" that version. The
+  mark reaches that version's release candidates and the version, and no other; the workflow refuses it on a
+  row that also has a record, without its date or its words, or where this table does not say the same.)* A
+  layer-1 test (`tests/ExGrid.Release.Tests`) fails when the index and the table differ, and the release
+  workflow refuses a tag where they do.
+
+**The paths are drawn wide** (ADR-0208). A row names whole files, and a directory where its behaviour
+crosses several:
+
+- the grid's script and stylesheet sources, and their minified builds, which are what a browser runs;
+- the keyboard, editor and toolbar files;
+- the measuring code;
+- the spec a row runs;
+- the DemoHost's or the Docs Site's page, only where the row reads that page.
+
+When in doubt, the path goes in. The list is reviewed with the row, and in any change that moves the
+code it names. A path is a file, a directory ending in `/`, or a pattern git reads as a glob, written
+`:(glob)<pattern>`, where `*` stays within a directory and `**` crosses them: `:(glob)src/*.MudBlazor/**` is
+every file below each Wrapper.
+
+**A run that records a row** writes its record under `verification/`, in a directory named for the run, as
+`verification/2026-10-11-windows-17/`, naming the commit it verified in full or by seven digits or more. It
+tags that commit `verified/` followed by the name of that directory *(2026-10-12, decided with the user: the
+tag is `verified/` followed by the name of the record's directory under `verification/`, and nothing else, one
+tag for each record directory, whatever the platform or the run's purpose; a record whose tag is not exactly
+that is refused)*: `verification/2026-10-01-windows-browser-11/keys.md` is tagged
+`verified/2026-10-01-windows-browser-11`, and a later `verification/2026-11-02-macos-kb3/`,
+`verified/2026-11-02-macos-kb3`. The session that made the run pushes the tag, which is never moved, so a squash
+merge or a deleted branch cannot take the commit away. In the same commit as the record, it replaces the row's
+record in `verification/by-hand.json`, naming the commit, the tag, the file and the verdict. The release
+workflow fetches the commit through the tag.
+
+**FN-12e is two rows.** On Windows it keeps the measurement as well as the painting while
+`tests/GlyphWidths` holds no `system-ui.windows.json`, so that its MUST, the widest glyph measured on each
+platform, never passes on a painting alone; once that record is committed and held by layer 1, the Windows
+row narrows to the painting in the same change. On macOS, whose widths are recorded and held by layer 1, it
+checks the painting.
+
+**WR-10's floor run is indexed beside the rows**
+([ADR-0205](adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)'s
+notes of 2026-10-12). It is automated, but a person makes it once, not CI, and its record carries it
+forward while the Wrappers and the demo pages are unchanged, so the release workflow reads its paths as a
+row's and refuses a tag whose Wrappers or demo pages changed since the run.
+
+| Row | Where | Checked by hand | The code it covers |
+|---|---|---|---|
+| **VZ-14** | Windows | `scrollbar.spec.mjs`'s VZ-14 block at a fractional display scale, headed, on Chrome and Edge, on both hosts | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid/Selection/`, `src/ExGrid/ColumnGeometry.cs`, `src/ExGrid/GridMetrics.cs`, `src/ExGrid/ViewportBox.cs`, `src/ExGrid/ViewportGeometry.cs`, `src/ExGrid/ViewportSize.cs`, `samples/ExGrid.DemoPages/Pages/Wide.razor`, `tests/ExGrid.Browser/fixtures.mjs`, `tests/ExGrid.Browser/scrollbar.spec.mjs` |
+| **VZ-16** | Windows | A real browser zoom told to the grid as it changes, on a page that is only displayed. A thin line and a gridline in device pixels at a real 2.25: the display at 150%, the browser's zoom at 150%, on `/sheet?case=11` | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Cells/`, `src/ExGrid/Components/`, `src/ExGrid/ColumnGeometry.cs`, `src/ExGrid/GridMetrics.cs`, `src/ExSheet/Assets/`, `src/ExSheet/wwwroot/`, `src/ExSheet/Components/`, `src/ExSheet/SheetAppearance.cs`, `samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `samples/ExGrid.DemoPages/Pages/Wide.razor`, `samples/ExGrid.DemoPages/SheetCases.cs` |
+| **FN-12e** | Windows | The widest glyph of each `CellTextMetrics` class, measured in Chrome and Edge, while the Windows widths are not recorded (no `system-ui.windows.json` in `tests/GlyphWidths`). On `/sizing` and `/sheet?case=3c`, a bold amount estimated to fit painted without an ellipsis, and `####` filling its cell | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Cells/`, `src/ExGrid/Columns/`, `src/ExGrid/Components/`, `src/ExGrid/DisplayText.cs`, `src/ExGrid/GridDensity.cs`, `src/ExGrid/GridMetrics.cs`, `src/ExGrid/GridPresentationDefaults.cs`, `src/ExGrid.MudBlazor/MudExGridPresentation.cs`, `src/ExGrid.MudBlazor/RobotoGlyphTable.cs`, `src/ExSheet/Assets/`, `src/ExSheet/wwwroot/`, `src/ExSheet/Components/`, `src/ExSheet/SheetCellText.cs`, `src/ExSheet/SheetColumns.cs`, `src/ExSheet/SheetRow.cs`, `src/ExSheet.Engine/CellDisplay.cs`, `src/ExSheet.Engine/NumberFormat.cs`, `src/ExSheet.Engine/NumberText.cs`, `samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `samples/ExGrid.DemoPages/Pages/Sizing.razor`, `samples/ExGrid.DemoPages/SheetCases.cs`, `tests/GlyphWidths/classes.mjs`, `tests/GlyphWidths/corpus.json`, `tests/GlyphWidths/measure.mjs` |
+| **FN-12e** | macOS | On `/sizing` and `/sheet?case=3c`, a bold amount estimated to fit painted without an ellipsis, and `####` filling its cell. The macOS widths are measured already, `tests/GlyphWidths/*.macos.json` | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Cells/`, `src/ExGrid/Columns/`, `src/ExGrid/Components/`, `src/ExGrid/DisplayText.cs`, `src/ExGrid/GridDensity.cs`, `src/ExGrid/GridMetrics.cs`, `src/ExGrid/GridPresentationDefaults.cs`, `src/ExGrid.MudBlazor/MudExGridPresentation.cs`, `src/ExGrid.MudBlazor/RobotoGlyphTable.cs`, `src/ExSheet/Assets/`, `src/ExSheet/wwwroot/`, `src/ExSheet/Components/`, `src/ExSheet/SheetCellText.cs`, `src/ExSheet/SheetColumns.cs`, `src/ExSheet/SheetRow.cs`, `src/ExSheet.Engine/CellDisplay.cs`, `src/ExSheet.Engine/NumberFormat.cs`, `src/ExSheet.Engine/NumberText.cs`, `samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `samples/ExGrid.DemoPages/Pages/Sizing.razor`, `samples/ExGrid.DemoPages/SheetCases.cs`, `tests/GlyphWidths/classes.mjs`, `tests/GlyphWidths/corpus.json`, `tests/GlyphWidths/measure.mjs` |
+| **ED-30** | Windows | A real IME on `/sheet` and `/sheet?chrome=mud`, on Chrome and Edge, on both hosts and behind 150 ms: the sixteenth run's cases k1 to k16, and DC-47's | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Cells/`, `src/ExGrid/Chrome/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid/Selection/`, `src/ExGrid.MudBlazor/`, `src/ExSheet/Assets/`, `src/ExSheet/wwwroot/`, `src/ExSheet/Components/`, `src/ExSheet/SheetFormulaAids.cs`, `src/ExSheet.MudBlazor/`, `samples/ExGrid.DemoPages/DemoChrome.cs`, `samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `samples/ExGrid.DemoPages/SheetCases.cs` |
+| **SH-42** | Windows | Ctrl+1 to Ctrl+5 reach `/sheet` before the browser's tab switching, on Chrome and Edge, on both hosts | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExSheet/Components/`, `src/ExSheet/SheetFormatKeys.cs`, `samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `samples/ExGrid.DemoPages/SheetCases.cs` |
+| **SH-51** | Windows | Ctrl+F1 reaches `/sheet`, and the toolbar hides and shows | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExSheet/Components/`, `src/ExSheet/Toolbar/`, `samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `samples/ExGrid.DemoPages/SheetCases.cs` |
+| **SH-52** | Windows | Alt released alone, and F10, show the KeyTips on `/sheet` under both Chromes, and the browser's menu does not open. Each letter is read beside Excel's Home tab. Nothing starts while an edit is open | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid.MudBlazor/`, `src/ExSheet/Assets/`, `src/ExSheet/wwwroot/`, `src/ExSheet/Components/`, `src/ExSheet/Toolbar/`, `src/ExSheet.MudBlazor/`, `samples/ExGrid.DemoPages/DemoChrome.cs`, `samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `samples/ExGrid.DemoPages/SheetCases.cs` |
+| **KB-3** | macOS | Layer 3 on a Mac, where `ControlOrMeta` presses Command: Cmd+Enter fills, on every key path, the editor's included | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Cells/`, `src/ExGrid/Chrome/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid.MudBlazor/`, `src/ExSheet/Components/`, `src/ExSheet/SheetFormatKeys.cs`, `src/ExSheet/SheetStructureKeys.cs`, `src/ExSheet/Toolbar/`, `src/ExSheet.MudBlazor/`, `tests/ExGrid.Browser/` |
+| **VZ-18** | the remote-isolation PC | Ctrl+↓, Ctrl+↑ and PageDown on the Docs Site's blotter paint the rows they reveal, without a further scroll. *(2026-10-12, decided with the user: VZ-18, the check on the remote-isolation PC, is a Known limitation of `0.1.0`. It is not run, and the 2026-10-08 observation, which names no commit, is not taken as its record.)* | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid/Selection/`, `src/ExGrid/GridMetrics.cs`, `src/ExGrid/ViewportBox.cs`, `src/ExGrid/ViewportGeometry.cs`, `src/ExGrid/ViewportSize.cs`, `src/ExGrid.MudBlazor/`, `samples/ExGrid.Docs/Examples/Grid/Blotter/`, `samples/ExGrid.Docs/Showcases/Blotter.razor` |
+| **§21.11** | Windows | Where DOM focus is after ↓, → and ↓ ↓ on `/sheet`, with and without a Focus. Read under NVDA, under Narrator, and with neither, on Chrome and Edge | `src/ExGrid/Assets/`, `src/ExGrid/wwwroot/`, `src/ExGrid/Chrome/`, `src/ExGrid/Components/`, `src/ExGrid/Keys/`, `src/ExGrid/Selection/`, `src/ExSheet/Assets/`, `src/ExSheet/wwwroot/`, `src/ExSheet/Components/`, `samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `samples/ExGrid.DemoPages/SheetCases.cs` |
+| **WR-10** | Windows or Linux | Step 4's floor run: the layer-3 tests that run under a Wrapper, against a DemoHost built with the MudBlazor every Wrapper declares as its floor, on both hosts, in Chrome and in Edge; and beside it each Wrapper's layer-2 suite at every published version of its declared range. *(2026-10-12, decided with the user: a MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only; the floor run, layer 3 at 9.6.0, holds while its paths are unchanged.)* *(2026-10-12, decided with the user: an unlisted version is not asked for; the release check reports it as out of the check because it is unlisted.)* *(2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own; its record goes in its own `verification/<date>-<name>/` directory, the run tags the commit it verified `verified/` followed by that directory's name, and WR-10's entry in `verification/by-hand.json` names that record besides the floor record. The release check reads every record the entry names: the floor record's paths hold since its commit, and each later record's tag names its commit.)* | `:(glob)src/*.MudBlazor/**`, `samples/ExGrid.DemoPages/` |
 
 The run must capture `page.on('console')` and `page.on('pageerror')` into `console.json` for
 CON-1..4 and CON-8, and read `Performance.getMetrics` into `metrics.json` for MEM-2/5, DOM-5,
@@ -1097,7 +1218,14 @@ ExSheet, ExPivot and the data packages (ADR-0200), and Step 7 asks for every OBS
   **replaced by a check the workflow makes**: an unsuffixed tag is refused unless its Release Notes
   name this `results.md` and the commit it was made against, and the tag differs from that commit
   only under `verification/` and `docs/releases/`. ADR-0042 is rewritten in the change on the release
-  branch that adds that check.)*
+  branch that adds that check.)* *(2026-10-12, decided with the user: that change goes in on `main`
+  before `release/0.1` is cut, and the branch carries it from its cut.)* *(2026-10-12, decided with the
+  user, ADR-0190 and ADR-0205: the sign-off is made against a release candidate, and the commit it was
+  made against is that candidate's. The candidate's notes carry a Signed off block in a pending form of
+  its own, saying that the sign-off is being made against it, with the blocks of the SHOULD criteria
+  accepted failing and of what is out of scope, which the Docs Site's build checks, so that what the
+  release's notes will say is read before its tag. The release workflow reads this `results.md` and that
+  commit only on the stable tag.)*
 
 **A criterion that could not be verified is not passed.** Write `blocked` and say why.
 
