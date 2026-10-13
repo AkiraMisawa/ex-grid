@@ -1949,8 +1949,8 @@
         return Task.CompletedTask;
     }
 
-    private static RenderFragment ToolbarChoices(string title, IReadOnlyList<ToolbarChoice> choices, GridPopoverContext popover, Action? gone) =>
-        @<ToolbarChoicesPanel Title="@title" Choices="choices" Popover="popover" Gone="gone" />;
+    private RenderFragment ToolbarChoices(string title, IReadOnlyList<ToolbarChoice> choices, GridPopoverContext popover, Action? gone) =>
+        @<ToolbarChoicesPanel Title="@title" Choices="choices" Popover="popover" Gone="gone" Standing="@(() => _toolbarChoicesTitle == title)" />;
 
     private Task ChangedAsync(SheetChange change, bool raiseDocument = true, bool byUser = true) => ChangedAsync([change], raiseDocument, byUser);
 

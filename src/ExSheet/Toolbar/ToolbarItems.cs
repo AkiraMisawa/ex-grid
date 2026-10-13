@@ -338,7 +338,7 @@ public sealed class NumberFormatItem : ToolbarItemBase
             if (offer.Category is NumberFormatCategory.Special) continue; // not on Excel's ribbon list
             if (offer.Category is NumberFormatCategory.Custom)
             {
-                choices.Add(new("More Number Formats…", () => Context.RunAsync(() => Context.Sheet.OpenFormatCellsAsync())));
+                choices.Add(new("More Number Formats…", () => Context.RunAsync(() => Context.Sheet.OpenFormatCellsAsync())) { OpensPopover = true });
                 continue;
             }
             var label = FormatCellsOffer.NameOf(offer.Category);

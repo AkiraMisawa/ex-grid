@@ -354,6 +354,8 @@ ExSheet.ToolbarChoicesPanel.Gone.get -> System.Action?
 ExSheet.ToolbarChoicesPanel.Gone.set -> void
 ExSheet.ToolbarChoicesPanel.Popover.get -> ExGrid.Chrome.GridPopoverContext!
 ExSheet.ToolbarChoicesPanel.Popover.set -> void
+ExSheet.ToolbarChoicesPanel.Standing.get -> System.Func<bool>?
+ExSheet.ToolbarChoicesPanel.Standing.set -> void
 ExSheet.ToolbarChoicesPanel.Title.get -> string!
 ExSheet.ToolbarChoicesPanel.Title.set -> void
 ExSheet.ToolbarChoicesPanel.ToolbarChoicesPanel() -> void

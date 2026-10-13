@@ -72,6 +72,11 @@
     /// a KeyTip opened (ADR-0100's note of 2026-10-12).</summary>
     [Parameter] public Action? Gone { get; set; }
 
+    /// <summary>Whether the frame still shows this list, once a choice that opens a popover in its place
+    /// has been made: what it opened stands there now, and closing the frame would close that. Null, the
+    /// list is taken to stand.</summary>
+    [Parameter] public Func<bool>? Standing { get; set; }
+
     /// <inheritdoc />
     public void Dispose() => Gone?.Invoke();
 
@@ -177,6 +182,17 @@
     {
         var choice = Choices[at];
         if (choice.DisabledReason is not null) return;
+        if (choice.OpensPopover)
+        {
+            // More Number Formats… opens Format Cells in the list's place: the core tells its key gate the
+            // keyboard is going to the popover before it asks for the root, as it does for a menu's command
+            // (ADR-0039's note of 2026-10-13). Closed first, the frame asked for the root a message ahead of
+            // that hand-off, and on a circuit a key landing between the two was the grid's. The list is
+            // closed afterwards only where nothing took its place: nothing selected, or a Chrome's own frame.
+            await choice.Choose();
+            if (Standing?.Invoke() ?? true) Popover.Close();
+            return;
+        }
         // The frame closes first and gives the keyboard back; the choice is then made on the Sheet.
         Popover.Close();
         await choice.Choose();
