@@ -52,14 +52,61 @@ repository does not have, and MudBlazor's fetch is a server call.
   promises of a beta: every layer passed in CI on this commit, the Definition of Done is not signed
   off, and what it still owes is `docs/implementation-status.md` at that commit. The release workflow
   and the Docs Site both read that file, so the two cannot say different things.
+  *(2026-10-12, decided with the user: a release candidate's notes begin instead with a note of its
+  own, the candidate's note, held once in `docs/releases/candidate-note.md` with a `{ref}` where the
+  commit goes. It says what ADR-0042 and ADR-0205 promise of a candidate, and that the Definition of
+  Done is being signed off against it. The release workflow and the Docs Site both read that file.)*
 - *(2026-10-12, decided with the user.)* **A release candidate rehearses a stable version's notes.** An
   `-rc.N` version's notes carry the blocks a version without a suffix must carry, and the build checks
   them as it checks a stable version's, so ADR-0205's rehearsal covers the notes too. An `-alpha` or
   `-beta` version's notes are refused if they carry any of them.
+  *(2026-10-12, decided with the user: one block is a candidate's own. Its sign-off is still being
+  made, so its Signed off block takes a pending form, below, and the build reads a candidate's blocks
+  by form. The release workflow reads a sign-off in full only on a stable tag.)*
 - **A stable version's notes carry two more blocks**, which the build requires of a version without a
   suffix (Definition of Done §1 and Step 7):
   - **Signed off** — the `verification/<date>/results.md` the sign-off was made against;
   - **SHOULD criteria accepted failing** — each criterion's ID and the written reason, or "None."
+
+  *(2026-10-11, decided with the user in
+  [ADR-0202](./0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md) and
+  [ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md):
+  a stable version's notes carry three blocks besides, Known limitations, Out of scope for this version
+  and Supported, and its Signed off block names, besides the record, the commit X the sign-off was made
+  against and the toolchain, OS and browser versions it ran with.)*
+
+  *(2026-10-12, decided with the user.)* **Where the blocks stand, and the form of each**, which the
+  build checks:
+  - **Their order.** Known limitations stands after Behaviour changes. The other four stand after the
+    products, in this order: Signed off, SHOULD criteria accepted failing, Out of scope for this
+    version, Supported. A release's headings are therefore Highlights, Breaking changes, Behaviour
+    changes, Known limitations, ExGrid, ExSheet, ExPivot, Data, Signed off, SHOULD criteria accepted
+    failing, Out of scope for this version and Supported.
+  - **Known limitations**: what the version does not do, or "None.". Each line begins with the products
+    it reaches in bold, as a Breaking line does, names the limitation in a sentence, and links the page
+    of the site that says it in full.
+  - **Signed off, for a version without a suffix**: five lines, each beginning with its label in bold,
+    in this order:
+    - `Record:` the `verification/<date>/results.md` the sign-off was made against, linked at the
+      version's own tag, since the record is committed after X and so is at the tag and not at X;
+    - `Commit:` the commit X, its forty hex digits in a code span: the commit a release candidate of
+      the version was tagged on, which the release workflow reads;
+    - `Toolchain:`, `OS:` and `Browsers:`, the versions the sign-off ran with.
+
+    The block names one record and one commit, a link's address included, so that the release workflow
+    reads exactly those. It never takes the pending form.
+  - **Signed off, for a release candidate: the pending form.** One line, `**Pending:**`, saying that the
+    Definition of Done is being signed off against this candidate, and naming it by its tag in a code
+    span, as `v0.1.0-rc.1`. It names no record and no commit: those are the release's, named once the
+    sign-off is made. It is the only form a candidate's block takes.
+  - **SHOULD criteria accepted failing**: each line begins with the criterion's ID in bold, or several
+    separated by commas, and gives the written reason it was accepted; or "None.". The ID is a SHOULD of
+    the Definition of Done: a MUST that fails stops the release, and an OBSERVATIONAL number never fails.
+  - **Out of scope for this version**: each line names the Definition of Done's §21 item accepted in
+    writing as out of the version's scope, as §21.11, and links where it was accepted; or "None.".
+  - **Supported**: four lines, each beginning with its label in bold, in this order: `Hosts:`,
+    `Browsers:`, `Target framework:` and `Packages:`. The target framework and the packages are those its
+    `Target:` and `Packages:` header lines name.
 
 ### How they are written
 
@@ -125,6 +172,8 @@ repository does not have, and MudBlazor's fetch is a server call.
 - **On GitHub, as the release's text.** The release workflow renders the prerelease note (for a
   prerelease) followed by the version's file, with the site's routes made absolute, and passes it with
   `--notes-file`. It no longer asks for `--generate-notes`.
+  *(2026-10-12, decided with the user: for a release candidate it renders the candidate's note instead,
+  and the site's section of a candidate opens with that note too.)*
   - A release that GitHub's page already made is given that text, replacing what it said.
   - **beta.1 and beta.2 are written once, after the fact,** from the git log, the pull requests and
     ADR-0042. They name beta.2's change of target as breaking. The user reviews them before they merge.
@@ -141,11 +190,28 @@ repository does not have, and MudBlazor's fetch is a server call.
   - a first line that differs from the file's name;
   - an `ADR-NNNN` with no file, or a `Docs:` link to a route or anchor the site does not have;
   - `Published: pending` on any file but the newest;
-  - a version without a suffix whose notes lack the Signed off and SHOULD blocks.
+  - a version without a suffix whose notes lack the Signed off and SHOULD blocks;
+  - *(2026-10-12, decided with the user.)* a version without a suffix, or a release candidate, whose
+    notes lack one of the five blocks a release carries, or hold one out of its form (above): a
+    release's Signed off block in the pending form, and a candidate's in a release's, among them;
+  - *(2026-10-12, decided with the user.)* an `-alpha`'s, a `-beta`'s or any other prerelease's notes
+    that carry one of the five;
+  - *(2026-10-12, decided with the user.)* a suffix that begins with `rc` and is not exactly `-rc.N`
+    with N from 1, as `-rc1` or `-RC.1`, whose notes would be read as a beta's, without the blocks a
+    candidate rehearses;
+  - *(2026-10-12, decided with the user.)* a release candidate's notes with no candidate's note to
+    begin them, or a candidate's note without its `{ref}`.
 - **When the build is given the version it publishes** (`-p:DocsVersion=` on a tag), it also refuses a
   missing file for that version, and any Change Note still under `docs/releases/unreleased/`.
+  *(2026-10-12, decided with the user: in a release's or a release candidate's notes it also reads the
+  SHOULD criteria accepted failing and the §21 items out of scope against the Definition of Done, and
+  refuses an ID that is not a SHOULD there and an item §21 does not have. Only the build that publishes
+  a version reads them against it, so a version already published stays true of its own day however the
+  Definition of Done is restated after it.)*
 - **The release workflow's first job refuses the tag** before CI's twenty minutes when the tagged commit
   has no `docs/releases/<version>.md`, still holds a Change Note, or has an older file still `pending`.
+  *(2026-10-12, decided with the user: what it refuses besides, by the kind of version the tag names, is
+  ADR-0042's "How a version is published", step 1.)*
 
 ## Considered options
 
