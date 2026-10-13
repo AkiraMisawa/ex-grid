@@ -350,6 +350,14 @@
       "cells": {"B1": "x", "B2": "y", "A3": "1", "B3": "z", "ZZ1000": "=SORT(A1:B3)"},
       "check": "AAA1001",
       "expect": {"value2": "x", "kind": "text"}
+    },
+    {
+      "id": "SORT-042",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a sort_index that is not a whole number; truncated to 1 it sorts by the first column and the Anchor is 1, rounded to 2 by the second and the Anchor is 3, and #VALUE! if Excel takes no fraction there",
+      "cells": {"G1": "2", "H1": "2", "G2": "1", "H2": "3", "G3": "3", "H3": "1", "ZZ1000": "=SORT(G1:H3,1.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

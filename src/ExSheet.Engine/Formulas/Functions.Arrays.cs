@@ -164,7 +164,10 @@ internal static partial class FunctionLibrary
     /// already follows every number, as Excel's <c>#N/A</c> followed the 7 of SORT-015, and the Formula
     /// is refused with <c>#VALUE!</c> elsewhere (<see cref="ErrorKeysSettled"/>). An index outside the
     /// array, or an order other than 1 and −1, is <c>#VALUE!</c>: Excel's was for an index past the
-    /// array and an order of 0 (SORT-007, 008), and the rest is the engine's, by generalisation.
+    /// array and an order of 0 (SORT-007, 008), and the rest is the engine's, by generalisation. An index
+    /// that is not a whole number is refused until Excel is asked (SORT-042): truncated,
+    /// <c>=SORT(G1:H5,1.5)</c> sorts by the first column, rounded by the second, and no run has read which
+    /// (2026-10-13; before, the engine truncated it).
     /// </summary>
     private static Operand Sort(FunctionCall call)
     {
@@ -173,7 +176,7 @@ internal static partial class FunctionLibrary
         if (call.Has(1) && !TryNumber(call, 1, out index, out failure)) return failure;
         if (!TryOrder(call, 2, out var descending, out failure)) return failure;
         if (!TryFlag(call, 3, out var byColumn, out failure)) return failure;
-        index = Math.Truncate(index);
+        if (index != Math.Floor(index)) return call.Evaluator.Refuse();
         var lines = byColumn ? array.Columns : array.Rows;
         var across = byColumn ? array.Rows : array.Columns;
         if (index < 1 || index > across) return Operand.Of(ErrorValue.Value);
