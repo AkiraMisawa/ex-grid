@@ -13,7 +13,11 @@
   them, so a row replaced in the same Window array still repaints. That compares only the painted
   rows (ADR-0141's cost rule) and holds only rows of the Window last given (ADR-0160). Every other
   list (Columns, HeaderGroups, sorts) is compared by instance, as ADR-0003 has it. An empty push
-  still renders. The test is
+  still renders.
+- The skip also waits while the grid owes work that only its next render's `OnAfterRenderAsync`
+  tells: the editing mode and Point state to the key gate and the Consumer, the key claims, a focus,
+  or a sentence. The layer-3 run on the Server host found a Sheet edit whose gate was never told
+  its mode, because the skipped Consumer render had been the render that told it (ED-22). The test is
   `VisualTokenAncestorTests.UX5_a_visual_token_set_on_the_wrapping_element_renders_nothing_in_dotnet`.
 - LV-22's ExPivot test now checks the bound after the pivot renders again: no earlier Window's row
   is alive but the rows the grid painted from the Window before the newest. Its Viewport is shorter
