@@ -122,6 +122,9 @@
     private readonly EventCallback<IReadOnlyList<ReferenceKeyColour>> _keyColoursChanged;
     private readonly Func<ContextMenuContext<SheetRow>, IEnumerable<GridCommand>> _contextCommands;
     private readonly Func<string, string?> _commandLabel;
+    // The Selection Summary's own words (a refused cell's reason), asked as a refusal's are (ADR-0203):
+    // a substituted Chrome's, else CommandLabel and the Sheet's English.
+    private readonly Func<string, string?> _summaryWords;
     private readonly Func<global::ExGrid.Clipboard.GridCopyRequest, global::ExGrid.Clipboard.GridCopyAnswer> _copyAnswer;
     private readonly Func<global::ExGrid.Finding.GridFindRequest, CancellationToken, Task<global::ExGrid.Finding.GridFindResult>> _find;
     // The Selection Summary (ADR-0130): answered from the Sheet's own cells, and the figures shown,
@@ -235,8 +238,12 @@
         _find = (request, _) => Task.FromResult(request.RowSequenceVersion == _sequence && _sheet is { } sheet
             ? SheetFind.Step(sheet, request)
             : global::ExGrid.Finding.GridFindResult.NotFound);
+        // The Consumer's wording first, then ExSheet's own English for its commands; null falls
+        // back to the grid's built-in words for the grid's own commands (ADR-0036).
+        _commandLabel = id => CommandLabel?.Invoke(id) ?? SheetCommandIds.EnglishFor(id);
+        _summaryWords = id => Chrome?.Words(id) ?? _commandLabel(id);
         _summarize = (request, _) => Task.FromResult(request.RowSequenceVersion == _sequence && _sheet is { } sheet
-            ? SheetSummary.Answer(sheet, request)
+            ? SheetSummary.Answer(sheet, request, at => SheetWords.SummaryRefused(at, sheet.GetValue(at)?.ToString() ?? "#VALUE!", _summaryWords))
             : new global::ExGrid.Summarizing.GridSummaryCells().Answer(request.Figures));
         _summaryFiguresChanged = new EventCallback<global::ExGrid.Summarizing.SummaryFigures>(null,
             (Func<global::ExGrid.Summarizing.SummaryFigures, Task>)(async figures =>
@@ -245,9 +252,6 @@
                 StateHasChanged();
                 await SummaryFiguresChanged.InvokeAsync(figures);
             }));
-        // The Consumer's wording first, then ExSheet's own English for its commands; null falls
-        // back to the grid's built-in words for the grid's own commands (ADR-0036).
-        _commandLabel = id => CommandLabel?.Invoke(id) ?? SheetCommandIds.EnglishFor(id);
         _complete = (text, caret) => ValueTask.FromResult(_sheet is { } sheet ? SheetFormulaAids.Complete(sheet, text, caret) : null);
         // The References the grid colours and outlines while a Formula is edited (ADR-0057),
         // answered from the engine at once. It reads this Sheet's name, so it is the instance's own.
@@ -1319,6 +1323,10 @@
     /// that cannot be read as a Formula is taken as text, as Excel takes it (ADR-0048). A shown
     /// field that is a run of <c>#</c> is a value too wide for its source column, the value itself
     /// missing, and refuses the whole paste by name (<see cref="SheetClipboard.IsTooNarrowToShow"/>).
+    /// A copy that is not this Sheet's own Entries and holds a cell ExSheet marked refused — this
+    /// Sheet's copy of Values alone, or any copy of another Sheet on the page — is refused whole by
+    /// name too: pasted as a value, the refusal would become an Error Value a Formula can catch
+    /// (ADR-0047; 2026-10-12, decided with the user: a refusal is never caught, anywhere).
     /// Every refusal is told to the grid (<see cref="global::ExGrid.Clipboard.GridPasteIntent.Refuse"/>)
     /// before this completes, so the Selection stays where it was, as in Excel (ADR-0050 item 3),
     /// and the notice stands until the user's own next action.
@@ -1352,6 +1360,16 @@
         if (OwnCopy is { } own && own.IsPastedAs(intent.Values))
         {
             await PasteEntriesAsync(own.Block, intent);
+            return;
+        }
+        // A Sheet's copy holding a refused cell, marked in its table (SheetClipboard.RefusedMarkFor) —
+        // this Sheet's copy of Values alone, or any copy of another Sheet on the page: refused whole,
+        // rather than turn the refusal into an Error Value a Formula can catch (ADR-0047, 2026-10-12).
+        if (FirstRefusedIn(intent) is { } refusedFrom)
+        {
+            intent.Refuse();
+            Tell(SheetWords.PasteRefusedFormula(refusedFrom));
+            StateHasChanged();
             return;
         }
         var sheet = CurrentSheet;
@@ -1400,6 +1418,26 @@
             Tell(SheetWords.Refused(refused.Refusal));
             StateHasChanged();
         }
+    }
+
+    /// <summary>The cell the first pasted field ExSheet marked refused was copied from, in the order
+    /// of the copied block, or null for a paste that holds none.</summary>
+    private static CellAddress? FirstRefusedIn(global::ExGrid.Clipboard.GridPasteIntent intent)
+    {
+        var source = intent.Plan.Source;
+        foreach (var range in intent.Plan.Targets)
+        {
+            // Every field of the block lands in each target range, from its top-left (ADR-0014).
+            for (var row = 0; row < Math.Min(source.Rows, range.RowCount); row++)
+            {
+                for (var column = 0; column < Math.Min(source.Columns, range.ColumnCount); column++)
+                {
+                    if (SheetClipboard.RefusedIn(intent.MarkFor(new CellPosition(range.TopRow + row, range.LeftColumn + column))) is { } from)
+                        return from;
+                }
+            }
+        }
+        return null;
     }
 
     /// <summary>

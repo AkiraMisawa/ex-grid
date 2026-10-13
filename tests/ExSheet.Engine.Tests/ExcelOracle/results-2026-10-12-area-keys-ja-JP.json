@@ -1,0 +1,47 @@
+{
+    "ran":  "2026-10-12T10:39:31",
+    "excel":  "16.0 (build 20430); EXCEL.EXE 16.0.20430.20146",
+    "windowsRegionalFormat":  "ja-JP",
+    "formulasEnteredThrough":  "Range.Formula2",
+    "constantsEnteredThrough":  "typed (keyboard input: SendInput, then Enter)",
+    "summary":  {
+                    "agree":  1,
+                    "disagree":  0,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "TEXTFN-008",
+                      "area":  "text",
+                      "source":  "observed",
+                      "description":  "Engine\u0027s answer, Excel to be asked: under ja-JP a code that spells the built-in short date shows as written",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "9/26/2026",
+                                       "kind":  "text"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "9/26/2026",
+                                           "kind":  "text"
+                                       },
+                      "excel":  {
+                                    "value2":  "9/26/2026",
+                                    "kind":  "text",
+                                    "text":  "9/26/2026",
+                                    "formula":  "=TEXT(DATE(2026,9,26),\"m/d/yyyy\")",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  }
+              ]
+}

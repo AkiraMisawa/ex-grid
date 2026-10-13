@@ -261,6 +261,12 @@ HTML flavours to write, or a refusal carrying the Consumer's own sentence.
   content is the strongest evidence a page has. A false match would need another program to have
   put exactly that block there, and even then it pastes the Entries that showed exactly those
   Values.
+- *(2026-10-13, decided with the user: a cell of the family's own clipboard HTML may carry a mark, `ClipboardData.MarkAttribute`
+  (`data-ex-mark`), which the grid hands back beside the pasted field (`GridPasteIntent.MarkFor`) and
+  gives no meaning; another program ignores it. ExSheet marks a refused cell,
+  `data-ex-mark="exsheet-refused:C1"`, so that a paste of it as a Value is refused by name, wherever on
+  the page it lands, rather than turn a Refused Formula into an Error Value a Formula can catch
+  (ADR-0047).)*
 
 **10. A paste says where each field came from.** The paste notification marks each field as an
 invariant number (Excel's `x:num` attribute, or ExGrid's own unformatted HTML) or as shown text.

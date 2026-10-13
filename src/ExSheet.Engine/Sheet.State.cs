@@ -93,10 +93,11 @@ public sealed partial class Sheet
         void Compare(CellAddress address, CellState old)
         {
             var now = StateOf(address);
-            if (!Nullable.Equals(old.Value, now.Value)) valueChanges.Add(address);
+            var valueChanged = !Value.Unchanged(old.Value, now.Value);
+            if (valueChanged) valueChanges.Add(address);
             var shown = shownBefore is null
                 || (shownBefore.TryGetValue(address, out var was) ? was : CellFormat.Default) == GetCellFormat(address);
-            if (!Nullable.Equals(old.Value, now.Value) || !old.SameRecord(now) || !shown) rows.Add(address.Row);
+            if (valueChanged || !old.SameRecord(now) || !shown) rows.Add(address.Row);
         }
         foreach (var (address, old) in before) Compare(address, old);
         foreach (var address in _cells.Keys)

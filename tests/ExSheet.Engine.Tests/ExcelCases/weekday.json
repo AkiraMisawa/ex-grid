@@ -60,6 +60,15 @@
       "cells": {"A1": "2/14/2008", "ZZ1000": "=WEEKDAY(A1,16)"},
       "check": "ZZ1000",
       "expect": {"value2": 6}
+    },
+    {
+      "id": "WEEKDAY-008",
+      "source": "observed",
+      "description": "A serial between -1 and 0 is cut down to its day, -1, below 0, and #NUM!; it is not truncated to serial 0, a Saturday (WEEKDAY-006)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=WEEKDAY(-0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
     }
   ]
 }

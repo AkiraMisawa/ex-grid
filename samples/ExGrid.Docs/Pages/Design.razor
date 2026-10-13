@@ -14,7 +14,10 @@
             <li>A copy is never truncated. A copy too large to carry is refused, and the user is told.</li>
             <li>A paste never spills outside the selection unless you allow it.</li>
             <li>The selection is dropped when the order changes, rather than left over different rows.</li>
-            <li>A Formula ExSheet cannot compute as Excel does is <code>#NAME?</code>, never an approximation.</li>
+            <li>
+                A Formula ExSheet cannot compute as Excel does is <code>#VALUE!</code>, or <code>#NAME?</code> for a
+                function Excel has that it does not support, never an approximation, and no Formula catches it.
+            </li>
         </ul>
     </DocsSection>
 

@@ -115,4 +115,82 @@ public class SheetSummaryTests : SheetTestContext
         cut.WaitForAssertion(() => Assert.Equal(
             ["Average: 51000%", "Count: 2", "Numerical Count: 2", "Min: 2000%", "Max: 100000%", "Sum: 102000%"], Figures(cut)));
     }
+
+    // A Formula ExSheet refuses because it cannot answer it as Excel does (MROUND-001): its cell is #VALUE!.
+    private const string Refusing = "=MROUND(6.05,0.1)";
+
+    private static string Declined(Bunit.IRenderedComponent<Components.ExSheet> cut)
+        => cut.Find(".ex-summary.ex-summary-declined").TextContent;
+
+    [Fact] // ADR-0130 (2026-10-13, decided with the user): a refused cell among the cells leaves no figure, and the line says why
+    public async Task ADR0130_a_refused_cell_among_the_cells_leaves_no_figure_and_says_why()
+    {
+        var cut = RenderWithEveryFigure();
+        await EnterAsync(cut, "A1", "1");
+        await EnterAsync(cut, "A2", "2");
+        await EnterAsync(cut, "A3", Refusing);
+        await EnterAsync(cut, "A4", "x");
+        Assert.Equal("#VALUE!", CellText(cut, "A3"));
+
+        await GoToAsync(cut, "A1:A4");
+
+        // Not even Count or Numerical Count, which an Error Value would leave (b5): Excel answers A3.
+        cut.WaitForAssertion(() => Assert.Equal(
+            "No figures: ExSheet refused the Formula in A3 with #VALUE! because it cannot answer it as Excel does, so a figure over it would not be Excel's.",
+            Declined(cut)));
+        Assert.Empty(Figures(cut));
+    }
+
+    [Fact] // ADR-0130, ADR-0047 (2026-10-13): a refused #NAME? — a function Excel has that ExSheet does not declare — leaves no figure, and the line names what the cell shows
+    public async Task ADR0130_a_refused_name_leaves_no_figure_and_the_line_says_it_shows_NAME()
+    {
+        var cut = RenderWithEveryFigure();
+        await EnterAsync(cut, "A1", "1");
+        await EnterAsync(cut, "A2", "=NPV(0.1,1,2)");
+        Assert.Equal("#NAME?", CellText(cut, "A2"));
+
+        await GoToAsync(cut, "A1:A2");
+
+        cut.WaitForAssertion(() => Assert.Equal(
+            "No figures: ExSheet refused the Formula in A2 with #NAME? because it cannot answer it as Excel does, so a figure over it would not be Excel's.",
+            Declined(cut)));
+        Assert.Empty(Figures(cut));
+    }
+
+    [Fact] // ADR-0130 (2026-10-13): a Formula that reads a refused cell is refused too; the first refused cell in reading order is named, and the figures come back once none is left
+    public async Task ADR0130_the_first_refused_cell_is_named_and_the_figures_return_without_one()
+    {
+        var cut = RenderWithEveryFigure();
+        await EnterAsync(cut, "B2", Refusing);
+        await EnterAsync(cut, "A3", "=B2+1");
+        await EnterAsync(cut, "A1", "4");
+
+        await GoToAsync(cut, "A1:B3");
+        cut.WaitForAssertion(() => Assert.Contains("the Formula in B2 ", Declined(cut)));
+
+        await GoToAsync(cut, "A1:A3");
+        cut.WaitForAssertion(() => Assert.Contains("the Formula in A3 ", Declined(cut)));
+
+        await EnterAsync(cut, "B2", "6");
+        await GoToAsync(cut, "A1:A3");
+        cut.WaitForAssertion(() => Assert.Equal(
+            ["Average: 5.5", "Count: 2", "Numerical Count: 2", "Min: 4", "Max: 7", "Sum: 11"], Figures(cut)));
+    }
+
+    [Fact] // ADR-0130 (2026-10-13): the reason is asked through CommandLabel by its id, so a Consumer words it in its own language
+    public async Task ADR0130_the_refused_reason_is_worded_through_command_label()
+    {
+        var cut = RenderSheet(ps => ps
+            .Add(p => p.SummaryFigures, SummaryFigures.All)
+            .Add(p => p.CommandLabel, id => id == SheetCommandIds.SummaryRefused
+                ? "集計なし: {0} の数式は Excel と同じ答えを出せないため、ExSheet が #VALUE! で拒否しました。"
+                : null));
+        await EnterAsync(cut, "A1", "1");
+        await EnterAsync(cut, "A2", Refusing);
+
+        await GoToAsync(cut, "A1:A2");
+
+        cut.WaitForAssertion(() => Assert.Equal(
+            "集計なし: A2 の数式は Excel と同じ答えを出せないため、ExSheet が #VALUE! で拒否しました。", Declined(cut)));
+    }
 }

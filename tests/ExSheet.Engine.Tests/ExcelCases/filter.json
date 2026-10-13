@@ -77,7 +77,7 @@
     {
       "id": "FILTER-009",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: include of another height is #VALUE!",
+      "description": "An include of another height is #VALUE!",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=FILTER(H1:H5,H1:H3>0)"},
       "check": "ZZ1000",
@@ -86,7 +86,7 @@
     {
       "id": "FILTER-010",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: include holding text is #VALUE!",
+      "description": "An include holding text is #VALUE!",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=FILTER(H1:H5,G1:G5)"},
       "check": "ZZ1000",
@@ -95,11 +95,38 @@
     {
       "id": "FILTER-011",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a number in include is TRUE when it is not 0",
+      "description": "A number in include is TRUE when it is not 0",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=FILTER(G1:G5,H1:H5-20)"},
       "check": "ZZ1000",
       "expect": {"value2": "Apple", "kind": "text"}
+    },
+    {
+      "id": "FILTER-012",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: COUNTA counts a blank FILTER keeps, as Excel counted SORT's and UNIQUE's (SORT-021, UNIQUE-017); 1 if it passes over it as over a blank cell",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=COUNTA(FILTER(Q1:Q2,H1:H2>0))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "FILTER-013",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the blank FILTER keeps, taken out by INDEX, is blank to ISBLANK, as Excel read SORT's (SORT-022); FALSE if FILTER turned it into the 0 it spills as",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=ISBLANK(INDEX(FILTER(Q1:Q2,H1:H2>0),2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "FILTER-014",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: AVERAGE over a blank FILTER keeps is #VALUE!; 7 if it passes over it, 3.5 if it reads it as 0",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=AVERAGE(FILTER(Q1:Q2,H1:H2>0))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

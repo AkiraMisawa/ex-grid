@@ -1,12 +1,16 @@
 namespace ExSheet.Engine.Formulas;
 
-/// <summary>Text functions admitted against the 2026-10-03 Windows observations (ADR-0047).</summary>
+/// <summary>
+/// Text functions admitted against the 2026-10-03 Windows observations (ADR-0047). A character outside
+/// the domains observed, and a sigma context not observed, refuse the Formula
+/// (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's).
+/// </summary>
 internal static partial class FunctionLibrary
 {
     private static Operand Upper(FunctionCall call)
     {
         if (!TryText(call, 0, out var text, out var failure)) return failure;
-        if (text.Any(c => !ObservedCaseCharacter(c))) return Operand.Of(ErrorValue.Value);
+        if (text.Any(c => !ObservedCaseCharacter(c))) return call.Evaluator.Refuse();
         return Operand.Of(Value.FromText(new string(text.Select(ObservedUpper).ToArray())));
     }
 
@@ -14,7 +18,7 @@ internal static partial class FunctionLibrary
     {
         if (!TryText(call, 0, out var text, out var failure)) return failure;
         if (text.Any(c => !ObservedCaseCharacter(c) && c is not ('Α' or 'Ο')) || !ObservedSigmaContexts(text))
-            return Operand.Of(ErrorValue.Value);
+            return call.Evaluator.Refuse();
         var result = text.ToCharArray();
         for (var i = 0; i < result.Length; i++)
             result[i] = text[i] == 'Σ'
@@ -46,11 +50,11 @@ internal static partial class FunctionLibrary
     private static Operand Proper(FunctionCall call)
     {
         if (!TryText(call, 0, out var text, out var failure)) return failure;
-        if (text.Any(c => !ObservedCaseCharacter(c))) return Operand.Of(ErrorValue.Value);
+        if (text.Any(c => !ObservedCaseCharacter(c))) return call.Evaluator.Refuse();
         // Only isolated sigma letters were observed for PROPER; its word context is separate
         // from LOWER's, and cannot be inferred from a Unicode title-case implementation.
         foreach (var word in text.Split(' '))
-            if (word.Length > 1 && word.Any(c => c is 'σ' or 'ς' or 'Σ')) return Operand.Of(ErrorValue.Value);
+            if (word.Length > 1 && word.Any(c => c is 'σ' or 'ς' or 'Σ')) return call.Evaluator.Refuse();
         var result = text.ToCharArray();
         var initial = true;
         for (var i = 0; i < result.Length; i++)
@@ -76,8 +80,8 @@ internal static partial class FunctionLibrary
         var start = 1.0;
         if (call.Has(2) && !TryNumber(call, 2, out start, out failure)) return failure;
         start = Math.Truncate(start);
-        if (start < 1 || start > within.Length || wanted.Any(c => !ObservedSearchCharacter(c)) ||
-            within.Any(c => !ObservedSearchCharacter(c))) return Operand.Of(ErrorValue.Value);
+        if (wanted.Any(c => !ObservedSearchCharacter(c)) || within.Any(c => !ObservedSearchCharacter(c))) return call.Evaluator.Refuse();
+        if (start < 1 || start > within.Length) return Operand.Of(ErrorValue.Value);
         if (wanted.Length == 0) return Operand.Of(Value.FromNumber(start));
 
         var tokens = new List<(char Character, bool Wild)>();

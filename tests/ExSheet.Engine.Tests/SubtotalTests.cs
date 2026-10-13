@@ -202,9 +202,27 @@ public class SubtotalTests
         Assert.Equal(5, sheet.Evaluate("=AGGREGATE(14,6,5,1)").Number);
         Assert.Equal(5, sheet.Evaluate("=AGGREGATE(15,4,2+3,1)").Number);
         Assert.Equal(ErrorValue.Num, sheet.Evaluate("=AGGREGATE(14,6,5,2)").Error);
-        // Text and a boolean given directly are not asked yet (AGGREGATE-061), and stay refused.
-        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=AGGREGATE(14,6,\"5\",1)").Error);
-        Assert.Equal(ErrorValue.Value, sheet.Evaluate("=AGGREGATE(14,6,TRUE,1)").Error);
+    }
+
+    [Theory] // ADR-0047 (the area pass of 2026-10-12: AGGREGATE-061): text or a boolean given directly to the array form is an array of that one Value, which holds no number, so LARGE and SMALL are #NUM!, under every option
+    [InlineData("=AGGREGATE(14,6,\"5\",1)")]
+    [InlineData("=AGGREGATE(14,4,\"5\",1)")]
+    [InlineData("=AGGREGATE(15,6,\"abc\",1)")]
+    [InlineData("=AGGREGATE(14,6,TRUE,1)")]
+    [InlineData("=AGGREGATE(15,0,FALSE,1)")]
+    [InlineData("=AGGREGATE(15,6,\"\",1)")]
+    public void ADR0047_the_array_form_takes_text_or_a_boolean_given_directly_as_no_number(string formula)
+    {
+        Assert.Equal(ErrorValue.Num, NewSheet().Evaluate(formula).Error);
+    }
+
+    [Fact] // ADR-0047: an Error Value given directly to the array form is its result, as an Error Value argument is, even under an option that passes over Error Values, until Excel is asked (AGGREGATE-067)
+    public void ADR0047_an_error_given_directly_is_the_array_forms_result()
+    {
+        var sheet = NewSheet();
+
+        Assert.Equal(ErrorValue.Div0, sheet.Evaluate("=AGGREGATE(14,6,1/0,1)").Error);
+        Assert.Equal(ErrorValue.NA, sheet.Evaluate("=AGGREGATE(15,4,NA(),1)").Error);
     }
 
     [Fact] // ADR-0047 (2026-10-10), ADR-0049: a Linked Table's column is a reference to SUBTOTAL and AGGREGATE, and they wait for its data

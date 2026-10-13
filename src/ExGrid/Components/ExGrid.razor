@@ -6623,7 +6623,7 @@
         }
         var version = _sequenceVersion;
         var binding = _binding;
-        var intent = new GridPasteIntent(decision.Plan, block, version, parsed.Origins);
+        var intent = new GridPasteIntent(decision.Plan, block, version, parsed.Origins, marks: parsed.Marks);
         if (OnPaste.HasDelegate)
         {
             // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound
