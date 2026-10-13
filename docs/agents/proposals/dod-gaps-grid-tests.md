@@ -108,9 +108,12 @@ across by column Name, as AG Grid carries its column state by colId when columnD
     (ADR-0003's note of 2026-10-11).
 - **Ended, not carried:** a header reorder drag. It lifted a unit of columns by position, and a drop
   against the new order would report a move of other columns (principle 6).
-- **Always a copy:** the grid holds its own copy of each of the three lists from the moment it is
-  handed one. So a Consumer changing its list cannot change what the grid paints before the grid is
-  handed the list again.
+- **Not covered: a list changed in place and not yet handed again.** The grid copies a list only
+  once it has been handed again changed. Until then it reads the Consumer's own instance, as it always
+  has, so a render of the grid's own (a scroll) between the Consumer's edit and its next render reads
+  the new elements against the old layout. Holding a copy from the first handing would close this. It
+  was tried. It made every re-handing of `cut.Instance.Columns` a new list. It also hid from
+  `HeaderGroupRenderingTests` the resolutions it counts on the Consumer's list. So it was left out.
 - **Not carried, as ADR-0011 decides:** the Selection, the Copied Range and an open edit. They are
   matched by column names in order, and dropped when the visible columns change.
 - **Not held by the grid, nothing to carry:**

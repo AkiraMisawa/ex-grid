@@ -2764,17 +2764,18 @@
             || _focusRequest is not null;
 
     // Columns, HeaderGroups and Sorts, as handed and as the grid takes them (decided with the user
-    // on 2026-10-13, after AG Grid's re-applied columnDefs). The grid always holds a copy of the
-    // list it was handed, so a Consumer changing its own list cannot change what the grid painted
-    // from behind its back. A list handed again as the same instance whose elements changed — a
-    // column added, replaced, removed or moved in place — is taken exactly as a new list would be:
-    // a new copy, and everything keyed on the list's identity (ADR-0003) rebuilds through the one
-    // path a new list takes. Handed again unchanged, the copy is kept, so nothing rebuilds. The
-    // elements are compared by reference, through the list's own indexer, with nothing allocated.
-    private sealed class TakenList(object? handed, System.Collections.IList? taken)
+    // on 2026-10-13, after AG Grid's re-applied columnDefs). A list handed again as the same
+    // instance whose elements changed — a column added, replaced, removed or moved in place — is
+    // taken exactly as a new list would be: the grid takes a copy of it, a new instance, and
+    // everything keyed on the list's identity (ADR-0003) rebuilds through the one path a new list
+    // takes. Handed again unchanged, the grid keeps the instance it took, so nothing rebuilds. The
+    // elements are compared by reference against a snapshot taken once per list taken in, by one
+    // enumeration and with nothing allocated beyond it; these lists are short.
+    private sealed class TakenList(object? handed, object? taken, object?[] elements)
     {
         public object? Handed { get; set; } = handed;
-        public System.Collections.IList? Taken { get; set; } = taken;
+        public object? Taken { get; set; } = taken;
+        public object?[] Elements { get; set; } = elements;
     }
 
     private readonly Dictionary<string, TakenList> _takenLists = new(StringComparer.Ordinal);
@@ -2787,28 +2788,36 @@
             return false;
         if (_takenLists.TryGetValue(name, out var taken) && ReferenceEquals(taken.Handed, handed) && handed is not null)
         {
-            if (SameElements(taken.Taken, (IReadOnlyList<object?>)handed))
+            if (SameElements(taken.Elements, handed))
                 return false;
             taken.Taken = CopyOf(name, handed);
+            taken.Elements = ElementsOf(handed);
             return true;
         }
-        _takenLists[name] = new TakenList(handed, handed is null ? null : CopyOf(name, handed));
+        _takenLists[name] = new TakenList(handed, handed, ElementsOf(handed));
         return false;
     }
 
-    private static bool SameElements(System.Collections.IList? taken, IReadOnlyList<object?> handed)
+    private static object?[] ElementsOf(object? handed)
+        => handed is System.Collections.IEnumerable sequence ? [.. sequence.Cast<object?>()] : [];
+
+    /// <summary>Whether <paramref name="handed"/> holds exactly <paramref name="held"/>, element by
+    /// element, read once by its enumerator — never its indexer, which a Consumer's list may count.</summary>
+    private static bool SameElements(object?[] held, object handed)
     {
-        if (taken is null || taken.Count != handed.Count)
+        if (handed is not System.Collections.IEnumerable sequence)
             return false;
-        for (var i = 0; i < taken.Count; i++)
+        var at = 0;
+        foreach (var element in sequence)
         {
-            if (!ReferenceEquals(taken[i], handed[i]))
+            if (at == held.Length || !ReferenceEquals(held[at], element))
                 return false;
+            at++;
         }
-        return true;
+        return at == held.Length;
     }
 
-    private static System.Collections.IList CopyOf(string name, object handed) => name switch
+    private static object CopyOf(string name, object handed) => name switch
     {
         nameof(Columns) => ((IReadOnlyList<GridColumn<TRow>>)handed).ToArray(),
         nameof(HeaderGroups) => ((IReadOnlyList<HeaderGroup>)handed).ToArray(),
@@ -2816,8 +2825,8 @@
     };
 
     /// <summary>Puts the lists the grid took in place of the ones handed, first thing in
-    /// <see cref="OnParametersSet"/>: its own copy, taken anew for a list changed in place, and
-    /// kept for as long as the list is handed again unchanged.</summary>
+    /// <see cref="OnParametersSet"/>: the copy taken for a list changed in place, kept for as
+    /// long as it is handed again unchanged.</summary>
     private void UseTakenLists()
     {
         if (_takenLists.TryGetValue(nameof(Columns), out var columns) && ReferenceEquals(columns.Handed, Columns)
