@@ -332,11 +332,15 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// HOUR, MINUTE and SECOND: the serial's time of day, rounded to the nearest second, as Excel shows
-    /// a time; a serial below 0 or past 31 December 9999 is <c>#NUM!</c>.
+    /// a time; a serial below 0 or past 31 December 9999 is <c>#NUM!</c>, but one between -1 and 0, which
+    /// is refused (<see cref="Evaluator.Refuse"/>) until Excel is asked (HOUR-005, MINUTE-003, SECOND-003;
+    /// 2026-10-13): read as a time of day, <c>HOUR(-0.5)</c> is 12, and below 0 <c>#NUM!</c>, and no run
+    /// has read which Excel takes. -1 and below stay <c>#NUM!</c>, as Excel's was at -1.
     /// </summary>
     private static Operand TimePart(FunctionCall call, Func<long, long> part)
     {
         if (!TryNumber(call, 0, out var serial, out var failure)) return failure;
+        if (serial < 0 && serial > -1) return call.Evaluator.Refuse();
         if (serial < 0 || serial >= DateSerial.Maximum + 1) return Operand.Of(ErrorValue.Num);
         var seconds = (long)Math.Round((serial - Math.Floor(serial)) * SecondsPerDay, MidpointRounding.AwayFromZero) % SecondsPerDay;
         return Operand.Of(Value.FromNumber(part(seconds)));

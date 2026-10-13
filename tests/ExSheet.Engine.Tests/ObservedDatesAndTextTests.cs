@@ -119,19 +119,37 @@ public class ObservedDatesAndTextTests
             Assert.Equal(Error(ErrorValue.Num), sheet.Evaluate(formula));
     }
 
-    // ADR-0047: DATEDIF, YEARFRAC, HOUR, MINUTE and SECOND refuse any serial below 0 with #NUM! before reading its day or
-    // time, and do not cut it down. Excel was observed at -1 under three (DATEDIF-045, YEARFRAC-056, MINUTE-002); between
-    // -1 and 0, and under HOUR and SECOND at all, #NUM! is the engine's answer, by generalisation, until a case asks Excel.
+    // ADR-0047 (2026-10-13): DATEDIF, YEARFRAC, HOUR, MINUTE and SECOND refuse a serial between -1 and 0 until Excel is
+    // asked (DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003), where the readings part: cut down to -1 it is
+    // #NUM!, truncated to 0 a date or a time of day. -1 is #NUM!, as Excel's was under three (DATEDIF-045, YEARFRAC-056,
+    // MINUTE-002), and below it #NUM! by generalisation.
     [Theory]
     [InlineData("=DATEDIF(-0.5,1,\"D\")")]
+    [InlineData("=DATEDIF(1,-0.5,\"D\")")]
+    [InlineData("=DATEDIF(-1E-300,1,\"Y\")")]
     [InlineData("=YEARFRAC(-0.5,1)")]
+    [InlineData("=YEARFRAC(1,-0.999)")]
     [InlineData("=HOUR(-0.5)")]
     [InlineData("=MINUTE(-0.5)")]
     [InlineData("=SECOND(-0.5)")]
+    [InlineData("=IFERROR(HOUR(-0.5),0)")]
+    public void Adr0047_DateDif_YearFrac_and_the_time_parts_refuse_a_serial_between_minus_1_and_0(string formula) =>
+        Assert.True(NewSheet().Evaluate(formula) is { IsRefused: true }, formula);
+
+    [Theory] // ADR-0047: -1 is #NUM! (DATEDIF-045, YEARFRAC-056, MINUTE-002, observed), and below it by generalisation
+    [InlineData("=DATEDIF(-1,61,\"D\")")]
+    [InlineData("=YEARFRAC(-1,61,1)")]
+    [InlineData("=MINUTE(-1)")]
     [InlineData("=HOUR(-1)")]
     [InlineData("=SECOND(-1)")]
-    public void Adr0047_DateDif_YearFrac_and_the_time_parts_give_NUM_for_a_serial_below_0_by_generalisation(string formula) =>
-        Assert.Equal(Error(ErrorValue.Num), NewSheet().Evaluate(formula));
+    [InlineData("=HOUR(-1.5)")]
+    [InlineData("=DATEDIF(-2,1,\"D\")")]
+    public void Adr0047_DateDif_YearFrac_and_the_time_parts_give_NUM_at_minus_1_and_below(string formula)
+    {
+        var value = NewSheet().Evaluate(formula);
+        Assert.Equal(Error(ErrorValue.Num), value);
+        Assert.False(value.IsRefused, formula);
+    }
 
     [Theory] // ADR-0047: a start of -1 is #NUM! (EOMONTH-004, EDATE-007), and one below it is below 0 truncated or cut down
     [InlineData("=EOMONTH(-1,0)")]

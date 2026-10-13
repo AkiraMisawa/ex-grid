@@ -23,11 +23,11 @@
     {
       "id": "SECOND-003",
       "source": "uncertain",
-      "description": "The engine's answer, by generalisation, asked of Excel: SECOND gives #NUM! for any serial below 0 and does not cut it down to its day, as the nine functions the second area pass of 2026-10-12 asked do at -0.5 (YEAR-008 and its kin); Excel was observed to answer #NUM! at -1 under DATEDIF, YEARFRAC and MINUTE (DATEDIF-045, YEARFRAC-056, MINUTE-002), and between -1 and 0 no run has read it, nor under SECOND at all: read as a time of day, -0.5 is 12:00, and SECOND is 0. Whether the engine refuses here instead, as the readings part, is open (docs/agents/proposals/area-corrections-apply.md)",
+      "description": "Refused until Excel is asked (2026-10-13): a serial between -1 and 0 under SECOND, where the readings part. The nine functions the second area pass of 2026-10-12 asked gave #NUM! at -0.5 (YEAR-008 and its kin), Excel was observed to answer #NUM! at -1 under DATEDIF, YEARFRAC and MINUTE (DATEDIF-045, YEARFRAC-056, MINUTE-002), and between -1 and 0 no run has read it, nor under SECOND at all: read as a time of day, -0.5 is 12:00, and SECOND is 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SECOND(-0.5)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#NUM!"}
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

@@ -912,10 +912,10 @@
     {
       "id": "YEARFRAC-058",
       "source": "uncertain",
-      "description": "The engine's answer, by generalisation, asked of Excel: YEARFRAC gives #NUM! for any serial below 0 and does not cut it down to its day, as the nine functions the second area pass of 2026-10-12 asked do at -0.5 (YEAR-008 and its kin); Excel was observed to answer #NUM! at -1 under DATEDIF, YEARFRAC and MINUTE (DATEDIF-045, YEARFRAC-056, MINUTE-002), and between -1 and 0 no run has read it: truncated to serial 0, it is a number. Whether the engine refuses here instead, as the readings part, is open (docs/agents/proposals/area-corrections-apply.md)",
+      "description": "Refused until Excel is asked (2026-10-13): a serial between -1 and 0 under YEARFRAC, where the readings part. The nine functions the second area pass of 2026-10-12 asked gave #NUM! at -0.5 (YEAR-008 and its kin), Excel was observed to answer #NUM! at -1 under DATEDIF, YEARFRAC and MINUTE (DATEDIF-045, YEARFRAC-056, MINUTE-002), and between -1 and 0 no run has read it: truncated to serial 0, it is a number",
       "cells": {"Z1": "=YEARFRAC(-0.5,1)"},
       "check": "Z1",
-      "expect": {"value2": "#NUM!"}
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }
