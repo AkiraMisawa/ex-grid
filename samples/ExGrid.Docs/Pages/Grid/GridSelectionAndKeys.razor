@@ -17,6 +17,16 @@
             <li>Clicking a <strong>header</strong> sorts. <strong>Shift+click</strong> on a header selects whole columns, and <strong>Ctrl+Space</strong> does from the keyboard.</li>
         </ul>
         <p>
+            The header shows where the selection is, as Excel's column letters and row numbers do: every column
+            that holds part of it has a line two screen pixels thick along the bottom of its header, unbroken across
+            neighbouring columns. Where the grid has Row Headings, every row that holds part of it has the same line
+            down the right edge of its Row Heading. This is the <strong>Heading Mark</strong>. It is drawn over the
+            header and the Row Headings, so it costs the same for one cell as for a million rows, and no row is
+            painted again for it. Its colour is <code>--ex-heading-mark</code>, the Focus outline's colour unless you
+            set it (<a href="exgrid/appearance#visual-tokens">Visual Tokens</a>). Select a range in the example
+            below, then Ctrl+click elsewhere: the columns between the two ranges stay unmarked.
+        </p>
+        <p>
             Positions are in the current order. When the order of the rows changes — a sort, a filter, a row
             inserted — the same positions would name other rows, so the grid <strong>drops the selection</strong>
             rather than leave it on rows you did not choose.

@@ -44,6 +44,7 @@
                 <tr><td><code>--ex-row-rule-color</code>, <code>--ex-column-rule-color</code></td><td>Lines between rows and columns; transparent until set.</td></tr>
                 <tr><td><code>--ex-row-stripe-background</code></td><td>Row Stripes.</td></tr>
                 <tr><td><code>--ex-selection-fill</code>, <code>--ex-selection-outline</code>, <code>--ex-focus-outline</code>, <code>--ex-focus-among-ranges-outline</code></td><td>The selection and the Focus cell. The last is the Focus's thin border among several ranges, and is the Focus outline's colour unless you set it.</td></tr>
+                <tr><td><code>--ex-heading-mark</code></td><td>The Heading Mark: the line under the header of each column the selection holds, and beside the Row Heading of each row. The Focus outline's colour unless you set it.</td></tr>
                 <tr><td><code>--ex-focus-row-fill</code>, <code>--ex-row-hover-background</code></td><td>The Focus row and hover bands.</td></tr>
                 <tr><td><code>--ex-tone-positive-color</code>, <code>--ex-tone-negative-color</code></td><td>Tones. Unset, a toned cell looks like any other.</td></tr>
                 <tr><td><code>--ex-state-stale-color</code>, <code>--ex-state-error-color</code>, <code>--ex-state-missing-background</code>, <code>--ex-state-modified-mark</code></td><td>Cell States. Each is a colour: the modified mark's is the corner triangle's.</td></tr>
@@ -64,6 +65,14 @@
             ExGrid.MudBlazor it is the palette's primary. The theme in "A theme, tones and a stale price" below sets
             <code>--ex-focus-outline</code> and not <code>--ex-focus-among-ranges-outline</code>: Ctrl+click in it
             (built-in).
+        </p>
+        <p>
+            The header marks the columns the selection holds with a line two screen pixels thick along their bottom
+            edge, and the Row Headings, where there are some, mark its rows down their right edge
+            (<a href="exgrid/selection#rectangles--a-focus-and-an-extent">Selection</a>). That line is
+            <code>--ex-heading-mark</code>, and it too is the Focus outline's colour unless you set it, so the same
+            theme colours it; under ExGrid.MudBlazor it is the palette's primary. Under forced colours it stays, in the
+            system's highlight colour, as the selection's outline does.
         </p>
         <p>
             The font family is the exception. The grid decides whether a number fits — or becomes <code>####</code> —

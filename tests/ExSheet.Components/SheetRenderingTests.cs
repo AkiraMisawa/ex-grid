@@ -102,7 +102,11 @@ public class SheetRenderingTests : SheetTestContext
         var cellsAtCorner = cut.FindAll("[role=gridcell]").Count;
         Assert.True(cellsAtTop < 1_000, $"{cellsAtTop} cells at the top");
         Assert.True(cellsAtCorner <= cellsAtTop, $"{cellsAtCorner} cells at the corner, {cellsAtTop} at the top");
-        Assert.True(atCorner <= atTop + 20, $"{atCorner} elements at the corner, {atTop} at the top");
+        // The corner holds a Selection and the top none, so the corner has the overlays a Selection
+        // paints, each a fixed number of elements whatever the extent: among them the Heading Mark's
+        // box over XFD's Heading, and the Row Headings' layer with its box over row 1048576's
+        // (ADR-0008, 2026-10-13), three more than the twenty the bound allowed before them.
+        Assert.True(atCorner <= atTop + 20 + 3, $"{atCorner} elements at the corner, {atTop} at the top");
     }
 
     [Fact] // ADR-0046: ExGrid's sort and filter are not wired — a header click selects, nothing sorts, the column menu cannot sort

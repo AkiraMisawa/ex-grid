@@ -76,6 +76,14 @@
             cell was observed with that border. Under ExSheet.MudBlazor it is the palette's primary, as the outline is.
             <code>--ex-focus-among-ranges-outline</code> colours it.
         </p>
+        <p>
+            The Headings show where the Selection is, as Excel's do: each column letter and each row number whose
+            column or row holds part of it has a line two screen pixels thick on its edge toward the cells — under the
+            letter, and down the right of the number — in the outline's green, the palette's primary under
+            ExSheet.MudBlazor. It marks every Selection, one cell included, and among several ranges the Headings
+            between them stay unmarked. <code>--ex-heading-mark</code> colours it. The Headings themselves frame the
+            Paper and follow the page's scheme, and the line stands on them as it is.
+        </p>
         <DocsExample Builtin="typeof(BordersUnderSelection)" Mud="typeof(BordersUnderSelectionMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])">
             Column A is pinned. Select across it, from A3 to D8: the thin lines over the totals and the double line
             under the operating profit stay black under the shade, on both sides of the pinned column's edge.

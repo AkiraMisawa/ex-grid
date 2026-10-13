@@ -112,6 +112,27 @@ public class PaperStylesheetTests
         Assert.DoesNotMatch(new Regex(@"\b(border|border-width|top|left|right|bottom):"), among.Body);
     }
 
+    [Fact] // ADR-0008 (2026-10-13) / ADR-0071: on a Sheet the Heading Mark is the outline's colour, #217346 where no token names it, as R4 measured Excel's; its width and place are the core's, and forced colors restate it
+    public void On_a_sheet_the_heading_mark_is_the_outlines_green()
+    {
+        var css = Regex.Replace(Stylesheet("src", "ExSheet", "Assets", "ex-sheet.css"), @"/\*.*?\*/", "", RegexOptions.Singleline);
+        var forced = Regex.Matches(css, @"@media \(forced-colors: active\) \{(?<body>(?:[^{}]|\{[^{}]*\})*)\}");
+        var outside = forced.Aggregate(css, (rest, block) => rest.Replace(block.Value, "", StringComparison.Ordinal));
+        static List<(string[] Selectors, string Body)> RulesOf(string css)
+            => [.. Regex.Matches(css, @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}")
+                .Select(rule => (rule.Groups["selectors"].Value.Split(',').Select(selector => selector.Trim()).ToArray(), rule.Groups["body"].Value))];
+
+        // Two classes, so it outranks the core's one in any order the stylesheets load in. Its own token
+        // wins where a Theme or a Wrapper names it; else the Focus outline's colour, which
+        // ExSheet.MudBlazor gives the primary; else Excel's #217346, which the readings of 2026-10-12
+        // measured (R4), as the Focus outline's own fallback on the Paper is.
+        var mark = Assert.Single(RulesOf(outside), rule => rule.Selectors.Contains(".ex-sheet .ex-heading-mark"));
+        Assert.Matches(new Regex(@"^\s*border-color: var\(--ex-heading-mark, var\(--ex-focus-outline, #217346\)\);\s*$"), mark.Body);
+        // Under forced colors the core's restatement is made again at the same specificity.
+        var restated = Assert.Single(forced.SelectMany(block => RulesOf(block.Groups["body"].Value)), rule => rule.Selectors.Contains(".ex-sheet .ex-heading-mark"));
+        Assert.Matches(new Regex(@"^\s*border-color: Highlight;\s*$"), restated.Body);
+    }
+
     [Fact] // SH-39 / ADR-0071: ExSheet's stylesheet defaults the Paper to Excel's white and the Ink to Excel's black, the same in every scheme
     public void The_paper_and_the_ink_default_to_white_and_black_in_every_scheme()
     {

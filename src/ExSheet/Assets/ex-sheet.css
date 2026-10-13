@@ -134,6 +134,18 @@
     .ex-sheet .ex-copied-range::after { outline-color: Highlight; }
 }
 
+/* The Heading Mark (ADR-0008, 2026-10-13): the core's line of two Device Pixels on the edge of each
+   marked Heading, in the outline's colour, which on a Sheet is Excel's green where no Theme or Wrapper
+   names --ex-heading-mark or --ex-focus-outline: the readings of 2026-10-12 measured Excel's line as
+   #217346, the active cell's border's colour (R4). Under ExSheet.MudBlazor it is the palette's
+   primary, as the outline is. The Headings frame the Paper and follow the scheme, and the line stands
+   on them as drawn. Two classes, so it outranks the core's rule in any order; under forced colors the
+   core's restatement is made again here for the same reason. */
+.ex-sheet .ex-heading-mark { border-color: var(--ex-heading-mark, var(--ex-focus-outline, #217346)); }
+@media (forced-colors: active) {
+    .ex-sheet .ex-heading-mark { border-color: Highlight; }
+}
+
 /* The Row Headings' edge is Excel's #ABABAB over white (Part C): the core's grey at the alpha that
    gives it, so on a dark page it still stands out from the dark ground. Only the core's own default
    changes: a Theme's or a Wrapper's --ex-heading-rule-color, or its header rule, which the core falls

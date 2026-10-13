@@ -45,7 +45,9 @@ names. They are these, by file:
   Device Pixel inside its cell (UX-19, ADR-0008 of 2026-10-12): ExGrid's own on `/wide`
   (`selection-look.spec.mjs`), on the Paper under both Chromes and in the three selections of the
   readings of 2026-10-12 (R4) (`sheet-paper.spec.mjs`), and under `ExGrid.MudBlazor` on `/mud`
-  (`mud.spec.mjs`).
+  (`mud.spec.mjs`). And the Heading Mark, a line of two Device Pixels on a Heading's edge toward
+  the cells (UX-21, ADR-0008 of 2026-10-13): ExGrid's own on `/wide`, and the Sheet's Headings under
+  both Chromes (`heading-mark.spec.mjs`).
 
 `selection-look.spec.mjs` and `sheet-paper.spec.mjs` emulate their viewport everywhere else, and
 leave the window to Chrome there, since an emulated viewport is painted at a scale of 1.
@@ -687,6 +689,19 @@ nobody had asked for. What that means when writing a test:
   a number uses one Device Pixel of its cell's right padding (VZ-19, ADR-0090). Without it, where
   `system-ui` is DejaVu Sans, as on Linux, the column painted a pixel narrower than declared cut it
   to `1…` (ticket 18, 2026-10-10).
+- `heading-mark.spec.mjs` — the Heading Mark (UX-21, ADR-0008 of 2026-10-13), read in Device
+  Pixels: on `/sheet`, under the built-in Chrome and `ExSheet.MudBlazor`'s, R4's shape of a range and
+  a cell apart from it marks the Headings of their columns and rows with a line of two Device Pixels
+  on the edge toward the cells, in the Focus outline's colour (`#217346`, or the primary), along each
+  run's whole length and unbroken where two marked Headings meet, and the Headings between them not
+  at all; a whole column marks its Heading and every Row Heading in view, and the corner every
+  Heading, the pinned A's among them. On `/wide`, ExGrid's own header with no Theme, in `CanvasText`,
+  which a Theme's `--ex-focus-outline` recolours and `--ex-heading-mark` overrides; a Pinned Column's
+  part of the mark staying whole over its header while a scrollable column passes beneath it, and a
+  scrollable column's mark passing beneath the pinned headers as the column does; the line kept under
+  forced colors, in `Highlight`. On `/pivot`, under both Chromes, ExPivot's report header marked over
+  the selected value's column and not over the pinned labels'. What the core decides — which Headings,
+  which boxes, that no row renders for them — is layer 2's (`HeadingMarkTests`).
 - `format-cells.spec.mjs` — Format Cells under the built-in Chrome (ADR-0071, SH-45, DC-60;
   tickets 52 and 56) on `/sheet` and `/sheets`: a popover inside the Sheet's box, opened from the
   Context Menu and Ctrl+1 (case 22) with the keyboard on its tab; the arrows switching the tabs; OK as

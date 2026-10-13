@@ -661,6 +661,35 @@
     bottom: calc(var(--ex-rule-dp, 1px) + var(--ex-dp, 1px));
     border: var(--ex-dp, 1px) solid var(--ex-focus-among-ranges-outline, var(--ex-focus-outline, CanvasText));
 }
+/* The Heading Mark (ADR-0008, 2026-10-13). For every Selection, the Headings of the columns and the
+   rows that hold part of it carry a line of two Device Pixels on their edge toward the cells, where
+   Excel's lay: under a column's Heading and down a row's right edge, over the Heading's own rule and
+   the Device Pixel beside it (observed: the readings of 2026-10-12, R4 and R5). Wherever a header or
+   Row Headings stand: a plain grid's header is marked as a Sheet's Headings are. The core places one
+   box per run of marked Headings, the Headings' own, inline (ADR-0027/0028); the line is its border
+   on that edge, so it lies on Device Pixels wherever the band's edge does (ADR-0090), and nothing in
+   C# reads its width. Its colour is --ex-heading-mark, and where nothing names that token it is the
+   Focus outline's (2026-10-13, decided with the user), so a Theme or a Wrapper that colours the Focus
+   colours the mark too, with no mapping of its own.
+   A column's box stands in the header band above its cells, beneath the pinned header cells (5) and
+   the Headings' corner (7), as the columns pass beneath them; a Pinned Column's part rides a sticky
+   layer above the pinned cells (6) at the band's left edge, as a pinned Header Group does. A row's box
+   stands in a sticky layer of the Viewport above the Row Headings (4); the header covers it as it
+   covers them. Paint only: no part of it takes the pointer. */
+.ex-heading-marks-pinned, .ex-heading-marks-rows { position: sticky; left: 0; width: 0; height: 0; pointer-events: none; }
+.ex-heading-marks-pinned { z-index: 6; }
+.ex-heading-marks-rows { z-index: 5; }
+.ex-heading-mark {
+    position: absolute;
+    z-index: 1;
+    box-sizing: border-box;
+    pointer-events: none;
+    border-style: solid;
+    border-width: 0;
+    border-color: var(--ex-heading-mark, var(--ex-focus-outline, CanvasText));
+}
+.ex-heading-mark-column { border-bottom-width: calc(2 * var(--ex-dp, 1px)); }
+.ex-heading-mark-row { border-right-width: calc(2 * var(--ex-dp, 1px)); }
 /* The Copied Range (ADR-0170): dashes round a rectangle the clipboard holds as the grid copied it,
    Excel's moving border standing still (ADR-0027 P8). They lie where the Selection's outline lies,
    and are painted after it, because a copy usually shares its range: a band of the grid's ground
@@ -1193,6 +1222,9 @@
        each outlined. */
     .ex-range { outline-style: solid; outline-color: Highlight; }
     .ex-focus { outline-style: solid; }
+    /* The Heading Mark keeps its line, a border, which forced colors keep, restated in the system
+       colour a range's outline is restated in (ADR-0008, 2026-10-13). */
+    .ex-heading-mark { border-color: Highlight; }
     /* The tints are not painted at all (ADR-0206): stated here rather than left to how a browser
        forces a translucent background. Each range keeps its box, whose outline is above. */
     .ex-range-tint { display: none; }

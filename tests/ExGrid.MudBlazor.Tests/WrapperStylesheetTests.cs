@@ -43,6 +43,13 @@ public class WrapperStylesheetTests
     public void No_wrapper_maps_the_focus_among_ranges(string package, string file)
         => Assert.DoesNotContain("ex-focus-among-ranges", Stylesheet(package, file), StringComparison.Ordinal);
 
+    [Theory] // ADR-0008 (2026-10-13) / ADR-0030: the Heading Mark follows the Focus outline each Wrapper maps, with no mapping and no rule of the Wrapper's own
+    [InlineData("ExGrid.MudBlazor", "mud-ex-grid.css")]
+    [InlineData("ExSheet.MudBlazor", "mud-ex-sheet.css")]
+    [InlineData("ExPivot.MudBlazor", "mud-ex-pivot.css")]
+    public void No_wrapper_maps_the_heading_mark(string package, string file)
+        => Assert.DoesNotContain("heading-mark", Stylesheet(package, file), StringComparison.Ordinal);
+
     [Theory] // ADR-0052 (2026-09-29) / ADR-0029 / DC-44: the Wrapper paints the Size Tip from its tokens, as MudBlazor paints a tooltip
     [InlineData("--ex-size-tip-background", "var(--mud-palette-gray-darker)")]
     [InlineData("--ex-size-tip-color", "var(--mud-palette-dark-text)")]

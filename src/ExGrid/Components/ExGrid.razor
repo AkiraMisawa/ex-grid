@@ -117,6 +117,24 @@
             @if (!HideHeader)
             {
             <div class="ex-header" role="row" style="@HeaderBandStyle()" @attributes="_headerDragHandler" @onclick="OnHeaderClickAsync" @onmousedown="HeaderPressHandler" @onmousedown:preventDefault="PointedAtNow">
+                @if (MarksColumns && MarksPinnedColumns)
+                {
+                    @* The Heading Mark over the Pinned Columns' headers (ADR-0008, 2026-10-13): their
+                       part of each run of marked columns, on a zero-size sticky layer held at the
+                       band's left edge, as the pinned header cells are. First in the band's flow, so
+                       its place in the flow is the band's left edge whatever stands after it, and it
+                       displaces nothing. Paint only: the band's delegated handlers read the press. *@
+                    var pinnedMarks = ColumnMarks(pinnedLayer: true);
+                    <div class="ex-heading-marks-pinned" aria-hidden="true">
+                        @for (var m = 0; m < pinnedMarks.Length; m++)
+                        {
+                            @if (pinnedMarks[m] is { } pinnedMark)
+                            {
+                                <div class="ex-heading-mark ex-heading-mark-column" style="@pinnedMark"></div>
+                            }
+                        }
+                    </div>
+                }
                 @if (_rowHeadingStyle is not null)
                 {
                     @* Where the two Headings meet (ADR-0050): held at the left edge as the
@@ -181,6 +199,21 @@
                     @if (!IsGroupHeld(group))
                     {
                         <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colspan="@CellIds.Span(group.MemberCount)">@group.Label</div>
+                    }
+                }
+                @* The Heading Mark (ADR-0008, 2026-10-13): one rectangle per run of marked columns,
+                   over the band's last tier, on whose bottom edge the stylesheet draws the line. It
+                   passes beneath the pinned header cells and the Headings' corner as the columns do,
+                   and its pinned part rides the layer at the band's start. *@
+                @if (MarksColumns)
+                {
+                    var columnMarks = ColumnMarks(pinnedLayer: false);
+                    @for (var m = 0; m < columnMarks.Length; m++)
+                    {
+                        @if (columnMarks[m] is { } columnMark)
+                        {
+                            <div class="ex-heading-mark ex-heading-mark-column" style="@columnMark" aria-hidden="true"></div>
+                        }
                     }
                 }
             </div>
@@ -448,6 +481,23 @@
                                 <div class="@PointOutlineClass(pointRange)" style="@point"></div>
                             }
                         </div>
+                        @* The Heading Mark over the Row Headings (ADR-0008, 2026-10-13): one rectangle
+                           per run of marked rows, cut to the painted rows, on whose right edge the
+                           stylesheet draws the line. A zero-size sticky layer held at the Viewport's left
+                           edge, as the Row Headings are, and above them; no row is told. *@
+                        @if (MarksRows)
+                        {
+                            var markedRows = MarkedRows;
+                            <div class="ex-heading-marks-rows" aria-hidden="true" @key="HeadingMarksLayerKey">
+                                @for (var m = 0; m < markedRows.Length; m++)
+                                {
+                                    @if (HeadingMarkStyles.Row(markedRows[m], visible, _metrics.RowHeightPx, _rowHeadingWidthPx) is { } rowMark)
+                                    {
+                                        <div class="ex-heading-mark ex-heading-mark-row" style="@rowMark"></div>
+                                    }
+                                }
+                            </div>
+                        }
                     }
                     @* The Cell Editor (ADR-0010): one input floated over the focused
                        cell — never inside a row, which would break the memoisation.

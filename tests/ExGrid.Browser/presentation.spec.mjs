@@ -418,7 +418,7 @@ const STABLE_CLASSES = [
 ];
 
 /** ADR-0029's internal list, with the entries added there by ADR-0050/0051, ADR-0057, ADR-0058,
- * ADR-0130, ADR-0170 and ADR-0008 (2026-10-12). */
+ * ADR-0130, ADR-0170 and ADR-0008 (2026-10-12 and 2026-10-13). */
 const INTERNAL_CLASSES = [
     'ex-scroller', 'ex-spacer', 'ex-viewport', 'ex-gap', 'ex-selection', 'ex-selection-pinned',
     'ex-header-groups-pinned', 'ex-focus-row', 'ex-pager', 'ex-status', 'ex-mark-count',
@@ -442,6 +442,9 @@ const INTERNAL_CLASSES = [
     'ex-range-tint', 'ex-shade-pinned',
     // The Focus among several ranges (ADR-0008 of 2026-10-12, entered in ADR-0029).
     'ex-focus-among-ranges',
+    // The Heading Mark (ADR-0008 of 2026-10-13, entered in ADR-0029): each box, the edge its line is
+    // on, the header band's pinned layer and the Row Headings' layer.
+    'ex-heading-mark', 'ex-heading-mark-column', 'ex-heading-mark-row', 'ex-heading-marks-pinned', 'ex-heading-marks-rows',
 ];
 
 /** The same section's prefixes: every popover part not named above, and every part of Find. */
@@ -644,7 +647,8 @@ test('every class under the root is one ADR-0029 names, stable or internal (UX-4
         'ex-row-group', 'ex-row-total', 'ex-row-stripe', 'ex-tone-negative', 'ex-tone-positive', 'ex-status', 'ex-range', 'ex-focus', 'ex-focus-among-ranges', 'ex-editor', 'ex-editing', 'ex-action', 'ex-action-chosen',
         'ex-mark', 'ex-mark-all', 'ex-resize-guide', 'ex-drop-indicator', 'ex-row-heading', 'ex-headings-corner',
         'ex-formula-bar', 'ex-name-box', 'ex-fill-handle', 'ex-popover', ...(clipboardWatched ? ['ex-copied-range'] : []),
-        'ex-completion', 'ex-reference-outline'];
+        'ex-completion', 'ex-reference-outline',
+        'ex-heading-mark', 'ex-heading-mark-column', 'ex-heading-mark-row', 'ex-heading-marks-pinned', 'ex-heading-marks-rows'];
     expect(reached.filter((name) => !worn.has(name)), 'states the walk set out to reach and did not').toEqual([]);
 
     // Each kind of name the section lists was met, so none of them is a pattern that matches nothing.

@@ -237,7 +237,7 @@ public class SelectionTests : SelectionGridContext
         Assert.Equal(rows, cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount));
     }
 
-    [Fact] // P3 / PF-5 / ADR-0206: a drag that crosses the pinned boundary repaints no row, and its elements grow by a tint and a box when it reaches the other layer and never again
+    [Fact] // P3 / PF-5 / ADR-0206 / ADR-0008 (2026-10-13): a drag that crosses the pinned boundary repaints no row, and its elements grow by a tint, a box and the header's Heading Mark when it reaches the other layer and never again
     public async Task A_drag_across_the_pinned_boundary_repaints_no_row()
     {
         var cut = RenderGrid(pinnedColumnCount: 2);
@@ -250,12 +250,14 @@ public class SelectionTests : SelectionGridContext
         Assert.Empty(cut.FindAll(".ex-selection > .ex-range-tint, .ex-selection > .ex-range"));
         var pinnedOnly = cut.FindAll(".ex-grid *").Count;
 
-        // Across the boundary: the scrollable layer gains the range's tint and box, and that is all.
+        // Across the boundary: the scrollable layer gains the range's tint and box, and the header the
+        // Heading Mark's scrollable part (ADR-0008, 2026-10-13), and that is all.
         await DragAsync(cut, Cell(2, 2).X, Cell(2, 2).Y);
         Assert.Single(cut.FindAll(".ex-selection > .ex-range-tint"));
         Assert.Single(cut.FindAll(".ex-selection > .ex-range"));
+        Assert.Single(cut.FindAll(".ex-header > .ex-heading-mark"));
         var across = cut.FindAll(".ex-grid *").Count;
-        Assert.Equal(pinnedOnly + 2, across);
+        Assert.Equal(pinnedOnly + 3, across);
 
         // Further, and to the bottom of the painted rows: the same elements, larger.
         await DragAsync(cut, Cell(3, 3).X, Cell(3, 3).Y);

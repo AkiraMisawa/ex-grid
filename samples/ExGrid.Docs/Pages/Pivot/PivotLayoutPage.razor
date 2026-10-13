@@ -74,6 +74,13 @@
             Count, as in Excel, and the figures wear the format of the Focus cell's Value Field.
             <code>ShowSelectionSummary="false"</code> turns the line off.
         </p>
+        <p>
+            The report's header shows which columns the selection holds, as a sheet's column letters do in Excel: a
+            line two screen pixels thick along the bottom of each such column's header, the pinned label column's
+            included when the selection reaches it. It is ExGrid's
+            <a href="exgrid/selection#rectangles--a-focus-and-an-extent">Heading Mark</a>, in the Focus outline's
+            colour — the palette's primary under ExPivot.MudBlazor — and <code>--ex-heading-mark</code> colours it.
+        </p>
         <DocsExample Builtin="typeof(ReportForms)" Mud="typeof(ReportFormsMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
     </DocsSection>
 
