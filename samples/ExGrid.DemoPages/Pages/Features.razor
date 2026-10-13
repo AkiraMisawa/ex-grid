@@ -89,6 +89,10 @@
         CellMessageOf="_rules.Message"
         Chrome="_chrome" />
 
+@* The Header Groups as this page declared them, written out after every render: a drag never
+   changes them (ADR-0032, HG-15). *@
+<p class="demo-status"><span id="groups-status">Groups: @string.Join("; ", _groups.Select(g => $"{g.Label} [{string.Join(",", g.Columns)}] tier {g.Tier} span {g.TierSpan}"))</span></p>
+
 <h2>A second, independent instance</h2>
 <p>Two grids on one page hold independent DOM, tokens and handles (ADR-0018).</p>
 
