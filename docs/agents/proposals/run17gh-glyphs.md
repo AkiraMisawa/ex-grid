@@ -11,8 +11,10 @@ change.
 
 Apply the blocks in order. Each old text occurs exactly once in its file, and the list applies in order without one
 block spoiling another's match. Blocks 1 to 3 were checked against this branch's tip (`docs/adr/0016` there is
-`origin/main`'s at `a533de01`, and unchanged on `origin/main` at `2265cda6`). Block 4's file is not on this branch:
-it was checked against `origin/claude/exsheet-windows-verify-17` at `2fc23f56`, where the seventeenth run's report is.
+`origin/main`'s at `a533de01`, and unchanged on `origin/main` at `2265cda6`). Block 4's file is on this branch in
+#83's version, Parts A and B only, without the text block 4 corrects: block 4 applies to the report as
+`origin/claude/exsheet-windows-verify-17` holds it at `2fc23f56` (each old text once there), so it is applied once
+that branch's report is merged, and not before.
 
 ## What changed on the branch
 
@@ -110,7 +112,7 @@ the widest glyph no table holds, full-width aside, which is an em on Windows too
 | narrow | 5.781 (`/`) / 5.80 | 5.203 (`/`) / 5.25 | 4.953 (`/`) / 4.97 | 4.453 (`/`) / 4.50 |
 | other | 11.547 (`₾`, Arial) / 12.44 | 11.547 (`₾`, Arial) / 12.28 | 9.891 (`₾`, Arial) / 10.66 | 9.891 (`₾`, Arial) / 10.53 |
 
-*Every class holds on Windows. Roboto's widths at 12px are its 14px ones scaled, as the core scales them.
+*(Every class holds on Windows. Roboto's widths at 12px are its 14px ones scaled, as the core scales them.
 Seven letters did not: Segoe UI paints `ƒ` at every weight (7.547px against 6.10 at 14px, 400; 8.063 at
 700), `ť` at 700 (7.188 against 6.71), and the Hebrew `ג` `ט` `י` `ס` `פ` at some weights wider than the
 table charged them, by 0.001 to 0.76px. A Number or Date holding one was charged under what it paints. The
@@ -144,7 +146,9 @@ they name Roboto as the painter of reads Arial's advance (446 of 451, exactly), 
 before Roboto applied and the painters after. `measure.mjs` now reads each glyph again after its painter
 and refuses a record whose widths changed in between. Roboto is a web font the page serves, so its own
 widths should not change with the display language, and the glyphs it lacks read the same widths as
-under English. No other display language is measured.)*
+under English. No other display language is measured.)* *(2026-10-12, decided with the user: Windows
+under a display language other than English and Japanese is a Known limitation of `0.1.0`, listed in
+[ADR-0202](./0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md).)*
 ````
 
 ### 2. docs/adr/0016-column-width-and-overflow.md
@@ -207,7 +211,8 @@ A reading correction to the seventeenth run's report (Part G, FN-12e). `part-g/g
 Roboto records with the core's defaults (14.04, 9.75, 6.41), not with the widths `MudExGridPresentation` cascades for
 Roboto (10.4, 8.3, 5.8; bold 10.4, 8.34, 5.25). Against Roboto's own, every class is still within, by as little as
 0.005px (the digit class at 12px: `£` 7.109 against 7.114), and layer 1 now holds every Roboto glyph and string of
-that run to them. The file is on `origin/claude/exsheet-windows-verify-17`, not on this branch.
+that run to them. The text it corrects is in the report as `origin/claude/exsheet-windows-verify-17` holds it; this
+branch's copy is #83's, without Part G. Apply it after that branch's report is merged.
 
 Old:
 
@@ -223,6 +228,27 @@ New:
     class only, against the core's defaults rather than Roboto's own widths. *(Corrected 2026-10-12: against Roboto's
     widths every class is within, by as little as 0.005px, and `RobotoGlyphWidthCorpusTests` now reads these records
     and passes.)*
+````
+
+### 5. docs/adr/0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md
+
+`0.1.0`'s Known limitations gain the display languages. The old text is the VZ-18 note PR #95 adds, so this block
+applies once #95 is merged, after it.
+
+Old:
+
+````text
+  and the observation of 2026-10-08, which names no commit, is not taken as its record.)*
+````
+
+New:
+
+````text
+  and the observation of 2026-10-08, which names no commit, is not taken as its record.)*
+  *(2026-10-12, decided with the user: also the Number and Date widths under a Windows display language
+  other than English and Japanese. `system-ui` is the face Windows sets for its display language, and only
+  those two were measured (FN-12e, ADR-0016); under another, a glyph its face paints wider than the table
+  charges is charged under what it paints.)*
 ````
 
 ## Notes without a block
@@ -243,7 +269,8 @@ of Done Step 4). For whoever writes it, and for the eighteenth run's list:
 - **FN-12e's measurement is of the platform's fonts, under a display language.** Its record is the six Windows
   records this branch adds: four under an English display, two under a Japanese one. It holds until the fonts, the
   display language, the browsers' text layout, the corpus or what the tool reads change. This branch changes
-  `measure.mjs` in how it finds its own folder and names its record (the patch the run measured with) and in refusing
+  `measure.mjs` in how it finds its own folder (`fileURLToPath`, the patch the run measured with), in how it finds
+  the browser (`--browser`) and names its record, and in refusing
   a record whose widths changed before its painters were read; what it measures is unchanged. Proposed paths, the
   measurement's apart from the paintings':
   - the measurement: `tests/GlyphWidths/corpus.json`, `tests/GlyphWidths/classes.mjs`,
@@ -277,7 +304,17 @@ Two, both in the branch: `docs/releases/unreleased/run17gh-glyphs-windows-widths
 display) and `docs/releases/unreleased/run17gh-glyphs-windows-ja-widths.md` (ExGrid, Fixed: a Japanese display, where
 eight glyphs rise).
 
-## Open questions for the user
+## Decided
+
+- **Question 2** *(2026-10-12, decided with the user: Windows under a display language other than English and
+  Japanese is a Known limitation of `0.1.0`)*. ADR-0016's note, ADR-0202's Known limitations and `0.1.0`'s Release
+  Notes say so; `tests/GlyphWidths/README.md` already does.
+- **Question 1**, the orchestrator's ruling of 2026-10-13: the Japanese-display Roboto records stay in
+  `verification/` and are not read by layer 1. Roboto is a web font, so its own glyphs are the same whatever the
+  display language, and the English records cover them; the glyphs it does not hold fall back to faces the Japanese
+  records measured. No new measurement is asked for `0.1.0`.
+
+## The questions as they were put
 
 1. **Roboto under a Japanese display.** Its records read Arial's widths, so they are held out (above). Measure Roboto
    again on the Windows desk under a Japanese display with the corrected `measure.mjs` (two commands, after a sign-out
