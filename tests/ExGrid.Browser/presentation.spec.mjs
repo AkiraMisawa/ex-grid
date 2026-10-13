@@ -62,6 +62,91 @@ test('the painted heights equal the declared metrics exactly (UX-3, ST-3)', asyn
     expect(measured.cellPadding).toBe('8px');
 });
 
+// A density change on /density (ADR-0028): each preset's resolved Grid Metrics, from
+// GridMetrics.Resolve's table — the row and header tier heights, the cell padding and the
+// font size. The page's one Header Group makes the band two tiers tall.
+const PRESETS = {
+    standard: { row: 32, header: 32, padding: 8, font: 14 },
+    comfortable: { row: 40, header: 40, padding: 12, font: 14 },
+    excel: { row: 20, header: 20, padding: 4, font: 12 },
+    compact: { row: 28, header: 28, padding: 8, font: 14 },
+};
+
+/** What the grid on /density painted: every row's box, the header band and its cells, the
+ * spacer the row arithmetic sizes, the Selection's outline and the Focus, each beside the
+ * cells it stands over. */
+function paintedGeometry(page) {
+    return grid(page).evaluate((g) => {
+        const box = (el) => {
+            const r = el.getBoundingClientRect();
+            return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+        };
+        const shown = (selector) => [...g.querySelectorAll(selector)].map(box).find((r) => r.width > 0) ?? null;
+        const cell = g.querySelector('.ex-cell');
+        return {
+            token: g.style.getPropertyValue('--ex-row-height'),
+            rows: [...g.querySelectorAll('.ex-row')]
+                .map((row) => ({ index: Number(row.getAttribute('aria-rowindex')), ...box(row) }))
+                .sort((a, b) => a.index - b.index),
+            header: box(g.querySelector('.ex-header')),
+            leaves: [...g.querySelectorAll('.ex-header-cell')].map(box),
+            group: box(g.querySelector('.ex-header-group')),
+            padding: getComputedStyle(cell).paddingLeft,
+            font: getComputedStyle(cell).fontSize,
+            spacer: box(g.querySelector('.ex-spacer')),
+            range: shown('.ex-range'),
+            focus: shown('.ex-focus'),
+            from: box(g.querySelector("[id$='r1c0']")),
+            to: box(g.querySelector("[id$='r3c1']")),
+        };
+    });
+}
+
+test('UX-3 / ST-3 / ADR-0027 P6, ADR-0028: after each density change the rows, header band and Selection are painted at the resolved Grid Metrics, at every preset', async ({ page }) => {
+    await page.goto('/density');
+    await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+    // A range over rows 1-3 of Book and Trader, the Focus at its top left.
+    await grid(page).locator("[id$='r1c0']").click({ force: true });
+    await expectActiveDescendant(grid(page), /r1c0$/);
+    await grid(page).locator("[id$='r3c1']").click({ force: true, modifiers: ['Shift'] });
+    await expect(page.locator('#density-status')).toHaveText('Density: Compact');
+
+    for (const [name, m] of Object.entries(PRESETS)) {
+        await page.locator(`#density-${name}`).click();
+        await expect.poll(async () => (await paintedGeometry(page)).rows[0]?.height, `${name}: the rows repaint`)
+            .toBe(m.row);
+        await circuitQuiet();
+        const p = await paintedGeometry(page);
+        const at = (what) => `${name}: ${what}`;
+
+        // The arithmetic's Row Height: the spacer it sizes is the band plus 200 rows of it.
+        expect(p.token, at('the inline Geometry Token')).toBe(`${m.row}px`);
+        expect(p.spacer.height, at('the spacer the row arithmetic sizes')).toBe(2 * m.header + 200 * m.row);
+        // The painted Row Height: every painted row is that tall and stands one row below the last.
+        expect(p.rows.length, at('rows are painted')).toBeGreaterThan(3);
+        for (const [i, row] of p.rows.entries()) {
+            expect(row.height, at(`row ${row.index} height`)).toBe(m.row);
+            if (i > 0) expect(row.top - p.rows[i - 1].top, at(`row ${row.index} pitch`)).toBe(m.row);
+        }
+        // The band: two tiers, the group one tier tall, the covered leaves one tier, the uncovered
+        // leaf (Notional) the band.
+        expect(p.header.height, at('the band')).toBe(2 * m.header);
+        expect(p.group.height, at('the group tier')).toBe(m.header);
+        expect(p.leaves.map((leaf) => leaf.height), at('the leaves')).toEqual([m.header, m.header, 2 * m.header]);
+        expect(p.rows[0].top, at('the first row starts under the band')).toBe(p.header.bottom);
+        expect(p.padding, at('cell padding')).toBe(`${m.padding}px`);
+        expect(p.font, at('font size')).toBe(`${m.font}px`);
+        // The Selection's outline covers rows 1-3 of Book and Trader exactly, and the Focus its
+        // top left cell: the overlay's arithmetic and the rows' paint are one number.
+        expect(p.range, at('the Selection is painted')).not.toBeNull();
+        expect({ left: p.range.left, top: p.range.top, right: p.range.right, bottom: p.range.bottom }, at('the Selection'))
+            .toEqual({ left: p.from.left, top: p.from.top, right: p.to.right, bottom: p.to.bottom });
+        expect(p.range.height, at('the Selection is three rows')).toBe(3 * m.row);
+        expect({ left: p.focus.left, top: p.focus.top, width: p.focus.width, height: p.focus.height }, at('the Focus'))
+            .toEqual({ left: p.from.left, top: p.from.top, width: p.from.width, height: m.row });
+    }
+});
+
 test('a Visual Token set on an ancestor recolours the paint (UX-5, the paint half)', async ({ page }) => {
     await open(page);
     const before = await grid(page).locator('.ex-header')
