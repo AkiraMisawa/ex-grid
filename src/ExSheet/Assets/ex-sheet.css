@@ -82,6 +82,18 @@
 .ex-sheet .ex-editing .ex-range-single::after {
     box-shadow: none;
 }
+/* The Focus among several ranges (ADR-0008, 2026-10-12): the core's thin border of one Device Pixel
+   inside the cell, in the outline's colour (2026-10-12, decided with the user: on the Paper it is
+   #217346, as the readings of 2026-10-12 measured Excel's active cell among several areas, R4). That
+   is where no Theme or Wrapper names --ex-focus-among-ranges-outline or --ex-focus-outline; under
+   ExSheet.MudBlazor it is the palette's primary. It draws no white line of its own: between it and
+   the gridline lies the cell's own ground, the Paper's white on a cell with no Fill, which R4
+   measured there; over a Fill no run has looked. Three classes, so it outranks the Focus outline's
+   rule above, and its white line, in any order. */
+.ex-sheet .ex-focus.ex-focus-among-ranges::after {
+    border-color: var(--ex-focus-among-ranges-outline, var(--ex-focus-outline, #217346));
+    box-shadow: none;
+}
 /* The Copied Range's dashes (ADR-0170) are the outline's colour, as Excel's are: its green where no
    Theme or Wrapper names one, or they would be the core's CanvasText round a green outline. */
 .ex-sheet .ex-copied-range::after { outline-color: var(--ex-focus-outline, #217346); }

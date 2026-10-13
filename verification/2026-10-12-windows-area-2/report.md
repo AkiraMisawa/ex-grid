@@ -1,5 +1,7 @@
 # The second area pass, 2026-10-12
 
+**Verified commit:** `afd70b156e40961dfbd505ae9fbd84c748423ec6` — tagged `verified/2026-10-12-windows-area-2`
+
 A second `oracle.ps1 -Area` pass, asked for by the session preparing `0.1.0-rc.1`. It puts to Excel the 160
 `uncertain` cases the first pass's corrections added (branch `claude/area-corrections`), so that Excel's doubles decide
 between the evaluations its first answers left open. It follows `docs/specs/exsheet/verify-on-windows-17.md`, Part A,

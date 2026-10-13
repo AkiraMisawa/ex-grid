@@ -797,6 +797,15 @@ own. Under the built-in Chrome:
 - **The outline is 2 Device Pixels of `#217346`, on the gridline and one Device Pixel outside it,
   with a white line of one Device Pixel inside it.** Today it is 2 CSS px in the Ink. The single range's
   outline and the Focus's outline are drawn alike.
+  - *Several ranges.* This outline and the Focus's are not drawn among several ranges
+    ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)) *(2026-10-12, decided with the user:
+    among several ranges no range carries an outline and no fill handle is shown, and the Focus
+    takes a thin border of one Device Pixel; on the Paper it is `#217346`, as the readings of
+    2026-10-12 measured (R4))*. The border lies inside the Focus's cell, a Device Pixel in from its
+    edges and its gridline, and has no white line of its own: the cell's ground lies between it and
+    the gridline, the Paper's white on a cell with no Fill, which is the white the readings of
+    2026-10-12 observed there (R4; over a Fill, unobserved). Under `ExSheet.MudBlazor` it is the
+    palette's primary, as the Focus outline is.
 - **The shade is `#C7C7C7`, and the lines inside it stay as drawn.** Excel's black lines stay
   `#000000` over its shade.
   - The shade multiplies with what is beneath it, rather than lying over it. On white Paper it is

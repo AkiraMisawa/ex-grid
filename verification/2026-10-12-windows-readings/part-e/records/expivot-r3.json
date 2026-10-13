@@ -1,0 +1,969 @@
+{
+ "base": "http://localhost:5299",
+ "started": "2026-10-12T15:46:24.509Z",
+ "items": [
+  {
+   "id": "e05c",
+   "item": 5,
+   "what": "Every Aggregation over a text field: a Group of text, one of one text, one of blanks only",
+   "steps": [
+    "Group dragged onto Rows (it landed on drag 2)",
+    "Note dragged onto Values: Count of Note",
+    {
+     "valueFieldSettings": "Count of Note",
+     "agg": "Average",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Note"
+     ]
+    },
+    "Note dragged onto Values: Count of Note",
+    {
+     "valueFieldSettings": "Count of Note",
+     "agg": "StdDev",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Note",
+      "StdDev of Note"
+     ]
+    },
+    "Note dragged onto Values: Count of Note",
+    {
+     "valueFieldSettings": "Count of Note",
+     "agg": "Var",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Note",
+      "StdDev of Note",
+      "Var of Note"
+     ]
+    },
+    "Note dragged onto Values: Count of Note",
+    {
+     "valueFieldSettings": "Count of Note",
+     "agg": "StdDevp",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Note",
+      "StdDev of Note",
+      "Var of Note",
+      "StdDevp of Note"
+     ]
+    },
+    "Note dragged onto Values: Count of Note",
+    {
+     "valueFieldSettings": "Count of Note",
+     "agg": "Varp",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Note",
+      "StdDev of Note",
+      "Var of Note",
+      "StdDevp of Note",
+      "Varp of Note"
+     ]
+    },
+    "Note dragged onto Values: Count of Note",
+    {
+     "valueFieldSettings": "Count of Note",
+     "agg": "Sum",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Note",
+      "StdDev of Note",
+      "Var of Note",
+      "StdDevp of Note",
+      "Varp of Note",
+      "Sum of Note"
+     ]
+    },
+    "Note dragged onto Values: Count of Note",
+    {
+     "valueFieldSettings": "Count of Note",
+     "agg": "Max",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Note",
+      "StdDev of Note",
+      "Var of Note",
+      "StdDevp of Note",
+      "Varp of Note",
+      "Sum of Note",
+      "Max of Note"
+     ]
+    },
+    "Note dragged onto Values: Count of Note",
+    {
+     "valueFieldSettings": "Count of Note",
+     "agg": "Min",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Note",
+      "StdDev of Note",
+      "Var of Note",
+      "StdDevp of Note",
+      "Varp of Note",
+      "Sum of Note",
+      "Max of Note",
+      "Min of Note"
+     ]
+    },
+    "Note dragged onto Values: Count of Note",
+    {
+     "valueFieldSettings": "Count of Note",
+     "agg": "Product",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Note",
+      "StdDev of Note",
+      "Var of Note",
+      "StdDevp of Note",
+      "Varp of Note",
+      "Sum of Note",
+      "Max of Note",
+      "Min of Note",
+      "Product of Note"
+     ]
+    },
+    "Note dragged onto Values: Count of Note",
+    "Note dragged onto Values: Count of Note2",
+    {
+     "valueFieldSettings": "Count of Note2",
+     "agg": "Count Numbers",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Note",
+      "StdDev of Note",
+      "Var of Note",
+      "StdDevp of Note",
+      "Varp of Note",
+      "Sum of Note",
+      "Max of Note",
+      "Min of Note",
+      "Product of Note",
+      "Count of Note",
+      "Count Numbers of Note"
+     ]
+    }
+   ],
+   "suggestion": {
+    "file": "From its first 5 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.\nEvery column holds text, so whether the first record is a header row cannot be told; it is taken as one.",
+    "columns": [
+     {
+      "column": "Group",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "A  B  C",
+      "notClear": ""
+     },
+     {
+      "column": "Note",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "x  y  z",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e05c.csv: 5 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [
+     "Σ Values"
+    ],
+    "rows": [
+     "Group"
+    ],
+    "values": [
+     "Average of Note",
+     "StdDev of Note",
+     "Var of Note",
+     "StdDevp of Note",
+     "Varp of Note",
+     "Sum of Note",
+     "Max of Note",
+     "Min of Note",
+     "Product of Note",
+     "Count of Note",
+     "Count Numbers of Note"
+    ]
+   },
+   "report": {
+    "rowCount": "4",
+    "colCount": "12",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Average of Note"
+     },
+     {
+      "col": 3,
+      "text": "StdDev of Note"
+     },
+     {
+      "col": 4,
+      "text": "Var of Note"
+     },
+     {
+      "col": 5,
+      "text": "StdDevp of Note"
+     },
+     {
+      "col": 6,
+      "text": "Varp of Note"
+     },
+     {
+      "col": 7,
+      "text": "Sum of Note"
+     },
+     {
+      "col": 8,
+      "text": "Max of Note"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "A",
+       "#DIV/0!",
+       "#DIV/0!",
+       "#DIV/0!",
+       "#DIV/0!",
+       "#DIV/0!",
+       "0",
+       "0"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "B",
+       "#DIV/0!",
+       "#DIV/0!",
+       "#DIV/0!",
+       "#DIV/0!",
+       "#DIV/0!",
+       "0",
+       "0"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "C",
+       "",
+       "",
+       "",
+       "",
+       "",
+       "",
+       ""
+      ]
+     },
+     {
+      "row": 4,
+      "cells": [
+       "Grand Total",
+       "#DIV/0!",
+       "#DIV/0!",
+       "#DIV/0!",
+       "#DIV/0!",
+       "#DIV/0!",
+       "0",
+       "0"
+      ]
+     }
+    ]
+   },
+   "shot": "e05c-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e16b",
+   "item": 16,
+   "what": "A numeric Row field's Item label in General: eleven characters, as the values show?",
+   "steps": [
+    "Key dragged onto Rows (it landed on drag 2)",
+    "Amount dragged onto Values: Sum of Amount"
+   ],
+   "suggestion": {
+    "file": "From its first 2 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Key",
+      "kind": "Decimal",
+      "readAs": "decimal point '.'",
+      "examples": "1.23456789012345  123456789012.345",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "1  2",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e16b.csv: 2 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [],
+    "rows": [
+     "Key"
+    ],
+    "values": [
+     "Sum of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "3",
+    "colCount": "2",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Sum of Amount"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "1.23456789012345",
+       "1"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "123456789012.345",
+       "2"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "Grand Total",
+       "3"
+      ]
+     }
+    ]
+   },
+   "shot": "e16b-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  }
+ ],
+ "browser": "154.0.8037.98",
+ "finished": "2026-10-12T15:51:51.254Z"
+}
