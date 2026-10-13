@@ -1254,34 +1254,138 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         look();
     });
 
+    // How a field moves its caret further than a character, on the platform it runs on, for a held
+    // key replayed as the field would have moved it (ADR-0010). By a word with Ctrl on Windows and
+    // Linux, and with Option on an Apple platform, where ⌘'s arrows take it to the start or the end
+    // of the text instead — as a held Home or End does there (ticket 32) — and Ctrl's arrows are
+    // the system's. Alt's arrows are the browser's history on Windows and Linux, and move no caret.
+    // Ctrl's Home and End are the text's start and end on Windows and Linux, as Home and End are in
+    // a field of one line; and the Primary Modifier's A selects the whole text, on every platform.
+    const byWord = (k) => (metaIsPrimary ? k.altKey && !k.ctrlKey : k.ctrlKey && !k.altKey) && !k.metaKey;
+    const primaryOnly = (k) => (metaIsPrimary ? k.metaKey && !k.ctrlKey : k.ctrlKey && !k.metaKey) && !k.altKey;
+    const unmodified = (k) => !k.ctrlKey && !k.metaKey && !k.altKey;
+    // Forward, a word move ends at the end of the word on macOS, Linux and ChromeOS, and on Windows
+    // at the start of the next one, past the spaces after this one: the browser's own conventions.
+    const wordMovePassesSpaces = /^win/i.test(platform);
+    // The word-like stretches of a field's text, as [start, end) offsets: Intl.Segmenter's words,
+    // from the Unicode word breaks the browser moves by itself, with the spaces and punctuation
+    // between them left out. Where a browser has no segmenter, runs of letters, marks, digits and
+    // underscores.
+    let wordSegmenter;
+    const wordsOf = (text) => {
+        if (wordSegmenter === undefined) {
+            wordSegmenter = typeof Intl.Segmenter === 'function'
+                ? new Intl.Segmenter(undefined, { granularity: 'word' })
+                : null;
+        }
+        if (wordSegmenter === null) {
+            return [...text.matchAll(/[\p{L}\p{M}\p{N}_]+/gu)].map((run) => [run.index, run.index + run[0].length]);
+        }
+        const words = [];
+        for (const piece of wordSegmenter.segment(text)) {
+            if (piece.isWordLike) {
+                words.push([piece.index, piece.index + piece.segment.length]);
+            }
+        }
+        return words;
+    };
+    // Where a word move from `at` lands: back, at the start of the word the caret is in, or of the
+    // word before it; forward, at the end of the word the caret is in or of the next one — on
+    // Windows at the start of the next word — and at the text's end where there is none. The
+    // field's own text is all that is read (ADR-0021).
+    const wordEdge = (text, at, forward) => {
+        const words = wordsOf(text);
+        if (!forward) {
+            let edge = 0;
+            for (const [start] of words) {
+                if (start >= at) {
+                    break;
+                }
+                edge = start;
+            }
+            return edge;
+        }
+        for (const [start, end] of words) {
+            if (wordMovePassesSpaces ? start > at : end > at) {
+                return wordMovePassesSpaces ? start : end;
+            }
+        }
+        return text.length;
+    };
+
     // A held key a text field would have handled itself, handled as it would have: text is
-    // typed at the caret, a deletion deletes, a caret key moves the caret. Anything else
-    // was the browser's, and its moment has passed. Whether it was one of these is answered.
+    // typed at the caret, a deletion deletes, a caret key moves the caret — Shift extending the
+    // selection from its anchor, and a word or the text's edge at a time with the modifier the
+    // platform does that with (byWord, primaryOnly). Anything else was the browser's, and its moment
+    // has passed. Whether it was one of these is answered. Nothing is read but the field's value
+    // and selection (ADR-0021).
     const typeInto = (input, k) => {
         const start = input.selectionStart ?? input.value.length;
         const end = input.selectionEnd ?? start;
+        const inEditor = input.closest('.ex-editor') !== null;
         // A composition's text from the Keyboard Field (ADR-0080) is typed as a character is.
-        if (k.text !== undefined || k.key.length === 1) {
+        if (k.text !== undefined || (k.key.length === 1 && !k.ctrlKey && !k.metaKey)) {
             input.setRangeText(k.text ?? k.key, start, end, 'end');
-        } else if (k.key === 'Backspace') {
-            input.setRangeText('', start === end ? Math.max(0, start - 1) : start, end, 'end');
-        } else if (k.key === 'Delete') {
-            input.setRangeText('', start, start === end ? Math.min(input.value.length, end + 1) : end, 'end');
+        } else if (k.key === 'Backspace' || k.key === 'Delete') {
+            // A character, or with the word modifier a word, before the caret or after it; a
+            // selection is deleted whole, with or without it.
+            const word = byWord(k) && !k.shiftKey;
+            if (!word && !unmodified(k)) {
+                return false;
+            }
+            const forward = k.key === 'Delete';
+            let from = start;
+            let to = end;
+            if (start === end) {
+                const reach = word ? wordEdge(input.value, start, forward)
+                    : forward ? Math.min(input.value.length, start + 1) : Math.max(0, start - 1);
+                from = Math.min(start, reach);
+                to = Math.max(start, reach);
+            }
+            input.setRangeText('', from, to, 'end');
         } else if (k.key === 'Home' || k.key === 'End') {
             // As the field would have: to the start or the end, Shift extending the selection, and
             // scrolled to show it. Setting the selection from script moves no view, so a held End
             // replayed on a circuit left the caret at the end and the text shown from its start
             // (ticket 32, seen in CI on the Server host).
-            placeCaretAtEnd(input, k, input.closest('.ex-editor') !== null);
+            if (!unmodified(k) && (metaIsPrimary || !primaryOnly(k))) {
+                return false;
+            }
+            placeCaretAtEnd(input, k, inEditor);
             return true;
         } else if (k.key === 'ArrowLeft' || k.key === 'ArrowRight') {
-            const at = k.key === 'ArrowLeft' ? Math.max(0, start - 1)
-                : Math.min(input.value.length, end + 1);
-            if (input.closest('.ex-editor') !== null) {
+            const forward = k.key === 'ArrowRight';
+            if (metaIsPrimary && primaryOnly(k)) {
+                placeCaretAtEnd(input, { key: forward ? 'End' : 'Home', shiftKey: k.shiftKey }, inEditor);
+                return true;
+            }
+            const word = byWord(k);
+            if (!word && !unmodified(k)) {
+                return false;
+            }
+            // The end of the selection a caret key moves is its focus, the other its anchor: the
+            // start of a backward selection is its focus, the end of any other. A selection with
+            // the plain arrow collapses to its own edge on that side; anything else moves the focus.
+            const backward = input.selectionDirection === 'backward';
+            const anchor = backward ? end : start;
+            const focus = backward ? start : end;
+            const to = word ? wordEdge(input.value, focus, forward)
+                : start !== end && !k.shiftKey ? (forward ? end : start)
+                    : forward ? Math.min(input.value.length, focus + 1) : Math.max(0, focus - 1);
+            if (inEditor) {
                 noteCaretMove(input);
             }
-            input.setSelectionRange(at, at);
-            showCaret(input, at);
+            if (!k.shiftKey) {
+                input.setSelectionRange(to, to);
+            } else if (to < anchor) {
+                input.setSelectionRange(to, anchor, 'backward');
+            } else {
+                input.setSelectionRange(anchor, to, 'forward');
+            }
+            showCaret(input, to);
+            return true;
+        } else if ((k.key === 'a' || k.key === 'A') && !k.shiftKey && primaryOnly(k)) {
+            input.setSelectionRange(0, input.value.length, 'forward');
             return true;
         } else {
             return false;
@@ -1333,9 +1437,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         showCaret(input, edge);
     };
+    // A held key the edit's field is left, handled as the field would have handled it (typeInto):
+    // chords among them, so that a Ctrl+← held behind F2 moves the caret by a word as it does when
+    // it is not held, rather than be dropped while the End before it moved the caret — an outcome
+    // that turned on whether the keys arrived before F2's answer (ED-2, seen in CI on Edge,
+    // WebAssembly). A chord typeInto does not know is the browser's, and is dropped.
     const typeIntoEditor = (k) => {
         const input = editorInput();
-        if (input && !k.ctrlKey && !k.metaKey) {
+        if (input) {
             typeInto(input, k);
         }
     };

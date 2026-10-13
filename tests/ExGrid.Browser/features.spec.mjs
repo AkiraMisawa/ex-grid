@@ -562,12 +562,131 @@ test('in Overwrite Ctrl+← commits and moves to the row\'s first column, Ctrl+S
     // In Caret (F2) the same key is the editor's: the caret moves, and nothing commits.
     await page.keyboard.press('F2');
     await expect(editor).toBeVisible();
+    // Typed behind F2, End and Ctrl+← may reach the edit before or after F2's answer: held, they are
+    // replayed as the field would have handled them, so the caret lands at 0 either way (ADR-0010).
     await page.keyboard.press('End');
     await page.keyboard.press('Control+ArrowLeft');
     await expect.poll(() => editor.evaluate((input) => input.selectionStart)).toBe(0);
     await expect(editor).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(editor).toHaveCount(0);
+});
+
+// A word move, and Shift's extension, in Caret on a value of two words. Where the field's own word
+// moves land, on the platform the browser runs on: back, at the start of a word; forward, at its end,
+// or on Windows at the start of the next word. The modifier is Ctrl, and Option on an Apple platform,
+// where ⌘'s arrows go to the text's ends instead.
+async function wordKeys(page) {
+    const platform = await page.evaluate(() => navigator.userAgentData?.platform ?? navigator.platform ?? '');
+    return {
+        word: /mac|iphone|ipad|ipod/i.test(platform) ? 'Alt' : 'Control',
+        // 'alpha beta': from the start, forward a word.
+        forward: /^win/i.test(platform) ? 6 : 5,
+    };
+}
+
+/** Commits 'alpha beta' into Trader on row 2 and leaves the Focus on that cell, no edit open. */
+async function alphaBetaInTrader(page) {
+    const editor = grid(page).locator('input.ex-editor');
+    await clickCell(page, 2, 1); // Trader, editable
+    await page.keyboard.type('alpha beta');
+    await expect(editor).toHaveValue('alpha beta');
+    await page.keyboard.press('Enter');
+    await expect(editor).toHaveCount(0);
+    await expect(page.locator('#edit-status')).toContainText('Trader=alpha beta');
+    await clickCell(page, 2, 1);
+    await expectActiveDescendant(grid(page), /r2c1$/);
+    return editor;
+}
+
+const selectionOf = (editor) => editor.evaluate((input) => [input.selectionStart, input.selectionEnd]);
+const extensionOf = (editor) => editor.evaluate((input) => [input.selectionStart, input.selectionEnd, input.selectionDirection]);
+
+// The field's own word moves, typed behind no key the grid is answering: the edit stands open and
+// holds the keyboard before the first of them, so the browser carries them out itself. What the held
+// keys of the next test are measured against.
+test('in Caret Ctrl+← and Ctrl+→ move the caret by a word, with Shift extend the selection, and Ctrl+Backspace and Ctrl+Delete delete a word, in the field itself (ED-2, ADR-0010)', async ({ page }) => {
+    const { word, forward } = await wordKeys(page);
+    const editor = await alphaBetaInTrader(page);
+    await page.keyboard.press('F2');
+    await expect(editor).toBeFocused();
+    await circuitQuiet();
+
+    await page.keyboard.press('End');
+    await page.keyboard.press(`${word}+ArrowLeft`);
+    await expect.poll(() => selectionOf(editor)).toEqual([6, 6]);
+    await page.keyboard.press('Shift+End');
+    await expect.poll(() => extensionOf(editor)).toEqual([6, 10, 'forward']);
+
+    await page.keyboard.press('Home');
+    await page.keyboard.press(`${word}+ArrowRight`);
+    await expect.poll(() => selectionOf(editor)).toEqual([forward, forward]);
+    await page.keyboard.press(`${word}+Shift+ArrowRight`);
+    await expect.poll(() => extensionOf(editor)).toEqual([forward, 10, 'forward']);
+
+    await page.keyboard.press('End');
+    await page.keyboard.press(`${word}+Backspace`);
+    await expect(editor).toHaveValue('alpha ');
+    await expect.poll(() => selectionOf(editor)).toEqual([6, 6]);
+
+    // Escape gives the text back; the edit reopened holds the keyboard before the next key.
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    await page.keyboard.press('F2');
+    await expect(editor).toBeFocused();
+    await expect(editor).toHaveValue('alpha beta');
+    await circuitQuiet();
+    await page.keyboard.press('Home');
+    await page.keyboard.press(`${word}+Delete`);
+    await expect(editor).toHaveValue('alpha beta'.slice(forward));
+    await expect.poll(() => selectionOf(editor)).toEqual([0, 0]);
+
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    await expect(grid(page).locator("[id$='r2c1']")).toHaveText('alpha beta');
+});
+
+// The same keys held for certain: typed straight after F2 (or Escape and F2) over a 150 ms round trip,
+// every one waits for the edit to open, and is then replayed into it. A held key the field would have
+// handled itself is handled as it would have (ADR-0010): Ctrl+← and Shift+End were once dropped and
+// collapsed there, so where the caret landed turned on whether the keys arrived before F2's answer —
+// Ctrl+← stood at 2 in 'GH' on Edge, WebAssembly, where the test above it waits for 0 (ED-2).
+test('with a 150 ms round trip, End, Ctrl+←, Shift+End typed straight after F2 move and extend as the field would; so do Ctrl+→, Ctrl+Shift+→, Ctrl+Backspace and Ctrl+Delete (ED-2, ADR-0010)', async ({ page }) => {
+    test.skip(!SERVER, 'WebAssembly answers F2 before most keys: nothing is held for certain');
+    const { word, forward } = await wordKeys(page);
+    const editor = await alphaBetaInTrader(page);
+    await setRoundTrip(150);
+
+    await page.keyboard.press('F2');
+    await page.keyboard.press('End');
+    await page.keyboard.press(`${word}+ArrowLeft`);
+    await page.keyboard.press('Shift+End');
+    await expect.poll(() => extensionOf(editor)).toEqual([6, 10, 'forward']);
+    await expect(editor).toHaveValue('alpha beta');
+
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('F2');
+    await page.keyboard.press('Home');
+    await page.keyboard.press(`${word}+ArrowRight`);
+    await page.keyboard.press(`${word}+Shift+ArrowRight`);
+    await expect.poll(() => extensionOf(editor)).toEqual([forward, 10, 'forward']);
+
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('F2');
+    await page.keyboard.press(`${word}+Backspace`);
+    await expect(editor).toHaveValue('alpha ');
+    await expect.poll(() => selectionOf(editor)).toEqual([6, 6]);
+
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('F2');
+    await page.keyboard.press('Home');
+    await page.keyboard.press(`${word}+Delete`);
+    await expect(editor).toHaveValue('alpha beta'.slice(forward));
+    await expect.poll(() => selectionOf(editor)).toEqual([0, 0]);
+
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    await expect(grid(page).locator("[id$='r2c1']")).toHaveText('alpha beta');
 });
 
 test('a Reject holds the commit Shift+↓ asks for in Overwrite, and the Selection stays (ED-2, ED-15, ADR-0034)', async ({ page }) => {
