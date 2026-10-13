@@ -1,5 +1,7 @@
 # Windows, 2026-10-12: ED-30's k8 with the Microsoft IME's predictive input off
 
+**Verified commit:** `8436e45e73083944e413e92340f73dbba0b521c4` — tagged `verified/2026-10-12-windows-ed30-k8`
+
 **The build is `8436e45e`**: the seventeenth run's DemoHosts, from its worktree, not rebuilt. The branch
 `claude/exsheet-windows-ed30-k8-2026-10-12` is from `claude/exsheet-windows-verify-17` at `2fc23f56`, whose
 `part-g/ed30/` holds the probe. Asked by the requesting session as its item 3, with the user at the desk, 21:41 to
