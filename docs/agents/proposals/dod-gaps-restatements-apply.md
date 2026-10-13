@@ -27,7 +27,12 @@ in order.
 Not decisions, the audit's:
 
 - **(d) SRV-2**: three layer-3 tests skipped on the Server host without naming an exception; they run there
-  now (tests only, on this branch).
+  now, on both hosts and both browsers, and no SRV-2 restatement is needed (merged from `claude/dod-gaps-srv2`).
+  `pivot-db.spec.mjs`'s LV-34 test holds the Window question at a test gate in the demo API, which the
+  Server host's question passes through, instead of at a browser route it never reaches. Noticed, not
+  changed: on a Release-published Server host, which pins the script by integrity, `shipped-files.spec.mjs`'s
+  ERR-10 test at :172 skips and its integrity-pinned sibling at :215 runs, and the other way round on
+  WebAssembly; whether SRV-2 accepts that pair is the user's.
 - **(e) "twelve test projects"**: §22 Step 1's restatement note said twelve; edit 4 notes the count, in a note
   not credited to the user. §1's Evidence ("twelve in all") is `claude/release-workflow-checks`' list's edit 26,
   whose old text no edit here touches.
