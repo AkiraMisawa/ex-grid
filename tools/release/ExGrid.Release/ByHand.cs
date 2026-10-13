@@ -298,7 +298,8 @@ public static partial class ByHand
 
         if (holding.Count > 0)
             report.Notice($"Holding on their records, their code unchanged since: {string.Join(", ", holding)} (ADR-0208).");
-        // Not run, and not holding: the version's notes say it among their Known limitations.
+        // Not run, and not holding. The version's notes are to say it among their Known limitations (ADR-0202, ADR-0190);
+        // this check does not read them.
         if (limitations.Count > 0)
             report.Notice($"Not run, and not holding, as a Known limitation of {released} by decision: {string.Join("; ", limitations)}.");
         if (toRun.Count > 0)

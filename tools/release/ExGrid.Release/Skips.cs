@@ -184,11 +184,11 @@ public static class Skips
         if (allowedRun.Count > 0)
             report.Notice($"Not run, as Step 2 allows: {string.Join("; ", allowedRun)}."
                 + (allowedRun.Any(a => a.Contains(".CsvClockTests.", StringComparison.Ordinal))
-                    ? " CsvClockTests' skip is allowed only where a process cannot move its time zone through TZ, a Windows machine whose own zone's base offset is zero: its reason says the zone did not move, and the machine is read from the run."
+                    ? " CsvClockTests' skip is allowed only where a process cannot move its time zone through TZ, a Windows machine whose own zone's base offset is zero: its reason says the zone did not move. The machine is not in the .trx: whoever signs off confirms from the run that it was such a machine."
                     : "")
                 + " (The Definition of Done's §22 Step 2.)");
         if (report.Admitted)
-            report.Notice($"Step 2: {testCount} tests in {projects.Count} test projects, every one passed or allowed (the Definition of Done's §22 Step 2).");
+            report.Notice($"Step 2: {testCount} tests in {projects.Count} test projects, every one passed or allowed (the Definition of Done's §22 Step 2). CON-7's count of unobserved exceptions is not in the .trx, and is read from layers-1-2.log.");
     }
 
     // A TRX's results, as (testName, outcome, the output's StdOut); null, refused, when the file cannot be read as

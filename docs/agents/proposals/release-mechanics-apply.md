@@ -81,8 +81,11 @@ back.
     said in notes of the check's own, not credited to the user (edit 27; the index's `about`; `ByHand`): the
     row's `knownLimitation` names the version, the day and the decision, the row keeps no record, the table's
     row says "Known limitation of" that version, and for that version's candidates and the version the check
-    names the row in a notice instead of refusing it. The Definition of Done's own VZ-18 row, ADR-0202 and the
-    release notes are another branch's, and this list does not edit them.
+    names the row in a notice instead of refusing it. The Definition of Done's own VZ-18 row, §21.11's
+    reservation and its "VZ-18 is checked as written", ADR-0202 and the release notes' line are
+    `claude/dod-gaps-restatements`' list's, and this list does not edit them. Step 4's ADR-0208 note of
+    2026-10-11 still names VZ-18 among the rows checked by hand; the table this list's edit 27 adds right after
+    it says the row is a Known limitation of `0.1.0`.
 
 Besides, as the rule every record checked by hand already lives under (ADR-0208, and decision (3) for the floor
 record), not a new decision: **a later record holds only while the Wrappers' and the demo pages' paths are
@@ -1221,6 +1224,8 @@ is written `NotRunnable` in its `.trx`, and a skip `NotExecuted` with the reason
 be that reason. It refuses a test project of `ExGrid.slnx` with no `.trx`, a `.trx` named for no test
 project, and a `.trx` it cannot read whole. The list it holds the run to is written in its code as this
 step names the tests, and a layer-1 test holds the two together and to the tests in the source. It names
-`CsvClockTests`' skip with its reason; whether the machine was one where `TZ` cannot move the zone is read
-from the run. The release workflow does not run Step 1, so it does not read the run: the sign-off does.
+`CsvClockTests`' skip with its reason; the `.trx` does not say the machine, so whoever signs off confirms
+from the run that it was one where `TZ` cannot move the zone. Nor does it read CON-7's count of unobserved
+exceptions, which is read from `layers-1-2.log`. The release workflow does not run Step 1, so it does not read
+the run: the sign-off does.
 ````
