@@ -442,7 +442,8 @@
         if (pursue)
         {
             // A new source alone is a refresh of the data, which its answer marks and a refusal of
-            // leaves the report stale (ADR-0067); with a new layout, new caps or new Order Key policies, it is the layout's.
+            // leaves the report stale (ADR-0067); with a new layout, new caps or new Order Key
+            // policies, it is the layout's.
             // A user's layout still on its way is raised once shown, whoever asked for it last.
             var kind = refresh && !layoutMoved && !capsMoved && !policiesMoved ? Question.Data : Question.Layout;
             await PursueAsync(raise: !layoutMoved && _raisePending, force: force, kind);

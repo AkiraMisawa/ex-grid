@@ -18,6 +18,7 @@ that throws retains ADR-0060's named refusal; a null key retains its existing me
 New:
 ```
 that throws retains ADR-0060's named refusal; a null key retains its existing meaning.
+
 *(2026-10-13, decided with the user: a change of OrderKeyPolicies on a shown report asks for the report again, as a layout change does. Otherwise the screen would keep one order while the parameter names another. The same policies handed again, even in a new dictionary, ask nothing.)*
 ```
 

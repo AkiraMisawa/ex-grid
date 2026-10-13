@@ -337,7 +337,9 @@ public partial class ExPivot
             var settings = PivotReportSettings.From(_options) with
             {
                 ChangeHighlightDuration = ChangeHighlightDuration,
-                OrderKeyPolicies = OrderKeyPolicies ?? new Dictionary<string, string>(),
+                // The policies compared when the parameters were set, so a question never carries
+                // policies no render compared (ADR-0152, 2026-10-13).
+                OrderKeyPolicies = _orderKeyPolicies.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal),
                 LabelMetrics = new(metrics.WideWidthPx, metrics.DigitWidthPx, metrics.NarrowWidthPx,
                     metrics.FullWidthPx, metrics.OtherWidthPx, metrics.CellHorizontalPaddingPx, metrics.ExportGlyphWidths()),
             };

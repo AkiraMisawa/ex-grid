@@ -112,4 +112,40 @@ public sealed class OrderKeyPolicyChangeTests : PivotTestContext
         Assert.Same(shown, cut.Instance.Report);
         Assert.Equal(before, RowTexts(cut));
     }
+
+    [Fact] // LV-26, ADR-0152 (2026-10-13): the same pairs in another order are the same policies, and ask nothing
+    public async Task LV26_the_same_policies_in_another_order_ask_nothing()
+    {
+        await using var server = new Server();
+        var cut = RenderPivot(RegionAmount,
+            ps => ps.Add(p => p.OrderKeyPolicies, new Dictionary<string, string> { ["Region"] = "west-first", ["Product"] = "north-first" }),
+            reportSource: server.Remote);
+        cut.WaitForState(() => !cut.Instance.IsLoading && cut.Instance.Report is not null);
+        var asked = server.Questions;
+
+        cut.Render(ps => ps.Add(p => p.OrderKeyPolicies, new Dictionary<string, string> { ["Product"] = "north-first", ["Region"] = "west-first" }));
+
+        Assert.False(cut.Instance.IsLoading);
+        Assert.Equal(asked, server.Questions);
+    }
+
+    [Fact] // LV-26, ADR-0152 (2026-10-13), ADR-0067: a new source and a new policy in one render are a layout's question — a refusal is said, not a Stale Report
+    public async Task LV26_a_new_source_with_a_policy_that_throws_is_refused_not_marked_stale()
+    {
+        await using var first = new Server();
+        await using var second = new Server();
+        var cut = RenderShown(first, "west-first");
+        var shown = cut.Instance.Report;
+
+        cut.Render(ps => ps
+            .Add(p => p.ReportSource, second.Remote)
+            .Add(p => p.OrderKeyPolicies, Policy("picky")));
+
+        cut.WaitForState(() => !cut.Instance.IsLoading && cut.Instance.LastError is not null);
+        Assert.Equal("The source could not answer: The Order Key of Region failed on 'West'.",
+            cut.Find(".ex-pivot-refusal-notice").TextContent);
+        Assert.False(cut.Instance.IsStale);
+        Assert.Empty(cut.FindAll(".ex-pivot-stale-notice"));
+        Assert.Same(shown, cut.Instance.Report);
+    }
 }
