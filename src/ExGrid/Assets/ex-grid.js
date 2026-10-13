@@ -2175,29 +2175,36 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
     };
     // The root's one keyup listener. The key the IME took has been told whole: everything it owed the
-    // page came before this. And the release of a declared Alt that went down alone (altPending;
-    // decided with the user, 2026-10-13): held in its place while keys are held — kept from the
-    // Consumer's handler until its turn — and otherwise left to reach it, with the keys typed after it
-    // held until it has been answered. A release this listener hands on itself is let through.
+    // page came before this. And, where the Consumer declares the Alt key alone, the Alt key's release
+    // (altPending; decided with the user, 2026-10-13): held in its place while keys are held — kept from
+    // the Consumer's handler until its turn — and otherwise left to reach it, with the keys typed after
+    // it held until it has been answered. Whether it was alone is told here, where every key between
+    // its press and its release is heard in order: a chord's release, or one whose press this listener
+    // did not hear, never reaches the Consumer. The releases of other keys go their way, and the
+    // Consumer does not read them: held keys' would reach it out of turn. A release this listener hands
+    // on itself is let through.
     const onRootKeyUp = (event) => {
         if (imeKeyTold) {
             imeKeyTold = false;
             grantEditorFocus();
         }
-        if (!core || replaying || event.key !== 'Alt') {
+        if (!core || replaying || event.key !== 'Alt' || !declared.has('Alt+Alt')) {
             return;
         }
         const pending = altPending;
         altPending = null;
+        const alone = pending?.alone === true;
         if (answering) {
             event.stopPropagation();
             event.preventDefault();
-            held.push({ altUp: true, altAlone: pending?.alone === true, key: 'Alt' });
+            held.push({ altUp: true, altAlone: alone, key: 'Alt' });
             return;
         }
-        if (pending?.alone === true) {
-            startHold(altReleaseAnswered());
+        if (!alone) {
+            event.stopPropagation();
+            return;
         }
+        startHold(altReleaseAnswered());
     };
     root.addEventListener('compositionstart', onKeyFieldCompositionStart, true);
     root.addEventListener('compositionend', onKeyFieldCompositionEnd, true);

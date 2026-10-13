@@ -156,10 +156,9 @@ public class SheetToolbarKeyTipTests : SheetTestContext
 
         Assert.Equal(["frame"], HandOffs);
 
-        // A chord's release starts nothing, and tells nothing.
+        // A release whose press the Sheet did not hear starts nothing, and tells nothing: a chord's never
+        // reaches it, the key gate keeping it (decided with the user, 2026-10-13).
         await TypeOnToolbarAsync(cut, "Escape");
-        await AltDownAsync(cut);
-        await KeyUpAsync(cut, "ArrowDown");
         await KeyUpAsync(cut, "Alt");
         Assert.Equal(["frame"], HandOffs);
     }
@@ -191,15 +190,25 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         Assert.Equal(["keydown:Alt", "keyup:Alt", "keydown:h"], keys.Select(k => $"{k.Type}:{k.Key}"));
     }
 
-    [Fact] // ADR-0100, SH-52: Alt held with another key is a chord, and its release shows nothing
-    public async Task Alt_with_another_key_is_a_chord()
+    [Fact] // ADR-0100, SH-52 (decided with the user, 2026-10-13): whether the Alt went down alone is the key gate's to tell, which hears every key between the press and the release in order and keeps a chord's release from the Sheet; another key's release reaching the Sheet — out of turn while the gate holds keys — changes nothing, and a key typed on the band forgets a press whose release the gate kept
+    public async Task Whether_the_alt_was_alone_is_the_gates_to_tell()
     {
         var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
 
         await AltDownAsync(cut);
         await KeyUpAsync(cut, "ArrowDown");
         await KeyUpAsync(cut, "Alt");
+        Assert.Equal(["H"], ShownKeyTips(cut));
+        await TypeOnToolbarAsync(cut, "Escape");
+        Assert.Empty(ShownKeyTips(cut));
 
+        // A chord's press the Sheet heard, whose release the gate kept; then a key and an Alt's release
+        // typed on the band: nothing starts.
+        await AltDownAsync(cut);
+        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "x", Type = "keydown" });
+        await cut.Find(".ex-sheet-toolbar").KeyUpAsync(new KeyboardEventArgs { Key = "Alt", Type = "keyup" });
         Assert.Empty(ShownKeyTips(cut));
     }
 

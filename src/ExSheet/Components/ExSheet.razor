@@ -1783,6 +1783,11 @@
     // The Alt key went down alone, and its release has not been heard: the release starts the
     // KeyTips, unless another key was released first — a chord, which is not a KeyTip.
     private bool _altAlone;
+
+    // A key typed on the toolbar's band: an Alt press heard before it, whose release the key gate kept
+    // from here as a chord's, is not the one an Alt released on the band ends (decided with the user,
+    // 2026-10-13).
+    internal void ForgetAltPress() => _altAlone = false;
     private KeyUpListener? _keyUpListener;
 
     // Answers whether the key was one of the toolbar's.
@@ -1804,19 +1809,17 @@
         }
     }
 
-    // Every key's release, heard while the toolbar is shown: the Alt key's starts the KeyTips when
-    // it went down alone, and any other key's makes the Alt a chord's. The grid's key gate holds an
-    // Alt's release typed on its root while it holds keys, and hands it here in its turn, after the
-    // press it releases; the toolbar's band does the same for one typed on it while the keyboard is in
-    // flight, and that one is left here (decided with the user, 2026-10-13).
+    // The Alt key's release, heard while the toolbar is shown: it starts the KeyTips when the Alt went
+    // down alone. Which it did is the grid's key gate's to tell, where every key between the press and
+    // the release is heard in order (decided with the user, 2026-10-13): it keeps a chord's release from
+    // here, and holds an Alt's release typed on its root while it holds keys, handing it here in its
+    // turn, after the press it releases. Another key's release says nothing: one typed while keys are
+    // held reaches here ahead of the held Alt's. The toolbar's band holds an Alt's release typed on it
+    // while the keyboard is in flight, and that one is left here.
     private async Task OnKeyUpAsync(KeyboardEventArgs e)
     {
         if (_toolbar.TakeKeyUpHeld()) return;
-        if (e.Key != "Alt")
-        {
-            _altAlone = false;
-            return;
-        }
+        if (e.Key != "Alt") return;
         if (!_altAlone) return;
         _altAlone = false;
         if (ShowToolbar && !IsEditing && _toolbar.StartKeyTips is { } start) await start();

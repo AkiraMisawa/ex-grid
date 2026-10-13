@@ -573,6 +573,7 @@
     {
         // A release held among the keys is the Sheet's, not the band's.
         if (e.Type == "keyup") return;
+        Context.Sheet.ForgetAltPress();
         // While the keyboard is in flight — back to the Sheet, on its way here, or out of a Chrome's list
         // closing — the keys are held, in order, for where it lands. Only then: a hold stands only while a
         // hand-back or a list's close is under way.

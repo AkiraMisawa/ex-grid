@@ -856,11 +856,12 @@ public class ShippedStylesheetTests
         Assert.Single(Regex.Matches(script, @"addEventListener\('keyup'"));
         Assert.Contains("root.addEventListener('keyup', onRootKeyUp, true);", script, StringComparison.Ordinal);
         // While keys are held, the release is kept from the Consumer's handler and held in its place.
-        Assert.Matches(new Regex(@"if \(answering\) \{\s*event\.stopPropagation\(\);\s*event\.preventDefault\(\);\s*held\.push\(\{ altUp: true, altAlone: pending\?\.alone === true, key: 'Alt' \}\);\s*return;\s*\}"), keyUp);
-        // Otherwise it reaches the Consumer now, and the keys after it wait for the answer to it.
-        Assert.Matches(new Regex(@"if \(pending\?\.alone === true\) \{\s*startHold\(altReleaseAnswered\(\)\);\s*\}"), keyUp);
-        // A release this listener hands on itself is not held again.
-        Assert.Contains("if (!core || replaying || event.key !== 'Alt') {", keyUp, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"if \(answering\) \{\s*event\.stopPropagation\(\);\s*event\.preventDefault\(\);\s*held\.push\(\{ altUp: true, altAlone: alone, key: 'Alt' \}\);\s*return;\s*\}"), keyUp);
+        // Otherwise it reaches the Consumer now, and the keys after it wait for the answer to it; a chord's
+        // release, or one whose press was not heard, never reaches the Consumer: the gate tells which.
+        Assert.Matches(new Regex(@"if \(!alone\) \{\s*event\.stopPropagation\(\);\s*return;\s*\}\s*startHold\(altReleaseAnswered\(\)\);"), keyUp);
+        // A release this listener hands on itself is not held again, and only where the Consumer declares the Alt key alone.
+        Assert.Contains("if (!core || replaying || event.key !== 'Alt' || !declared.has('Alt+Alt')) {", keyUp, StringComparison.Ordinal);
         // Its turn: handed on as the keyup it was, then its answer asked; its press is not skipped as a
         // modifier's, so the Consumer hears the press before the release.
         Assert.Matches(new Regex(@"if \(k\.altUp\) \{\s*if \(k\.altAlone\) \{\s*await replayAltRelease\(\);\s*await editorSettled\(\);"), drain);
