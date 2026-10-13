@@ -40,8 +40,10 @@ internal static class RoadmapByHand
             ["ExSheet"], ["ADR-0206"]),
         new("A saved view, its sort, filters, widths, column order and pinned columns, is written to JSON and read back equal through an entry point of ExGrid's own, each filter value with its type.",
             ["ExGrid"], ["ADR-0207"]),
-        new("The stable version is grown on a release branch and rehearsed by release candidates, published through the same checks a stable tag runs. The release workflow publishes a version without a suffix only when its notes name the sign-off and the commit it was made at, and the tagged commit adds nothing to that one but the records and the notes.",
-            ["ExGrid", "ExSheet", "ExPivot", "Data"], ["ADR-0205"]),
+        new("The stable version is grown on a release branch and rehearsed by release candidates, published through every check a stable tag runs but the two that read its sign-off, their release notes included: a candidate's notes carry the release's blocks, and say that the sign-off is being made against that candidate. The release workflow publishes a version without a suffix only when its notes name the sign-off and the commit it was made at, a candidate's, and the tagged commit adds nothing to that one but the records and the notes.",
+            ["ExGrid", "ExSheet", "ExPivot", "Data"], ["ADR-0205", "ADR-0190"]),
+        new("A check a person makes by hand is run again only when the code it covers has changed since its record, and the release workflow refuses a candidate or a stable version until each such check holds. Each record names the commit it verified, which a tag keeps, so that the check can always be read; and no question to Excel is left open in ExSheet's corpus.",
+            ["ExGrid", "ExSheet", "ExPivot", "Data"], ["ADR-0208", "ADR-0205"]),
     ];
 
     /// <summary>The records the section links at the ref the site was built from, rather than copies.</summary>
