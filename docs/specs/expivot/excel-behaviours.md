@@ -25,8 +25,14 @@ cell.
 2. **Text Items ignore case**, and the first spelling in the records labels the Item.
 3. **A missing value is `(blank)`**, is an Item like any other, and is counted by Count.
 4. **Count** counts every non-empty value, text included; **Count Numbers** counts numbers only.
-5. **Average, StdDev, Var** over no numbers are `#DIV/0!`; StdDev and Var over one number are
-   `#DIV/0!`; StdDevp and Varp over one number are 0.
+5. **Over records whose every value is Blank**, every Aggregation is an empty cell, Count
+   included. **Over values none of which is a number**, Average, StdDev, Var, StdDevp and Varp are
+   `#DIV/0!`, Sum, Max, Min, Product and Count Numbers are 0, and Count counts the values. StdDev
+   and Var over one number are `#DIV/0!`; StdDevp and Varp over one number are 0. *(Observed: (a)
+   by the seventeenth Windows run, item 5 (a), for Average, StdDev and Var over blanks, and by the
+   readings of 2026-10-12, R3 (a), for all eleven over text and over blanks, in the English (UK)
+   and English (US) editions; (b) by the seventeenth run, item 5 (b). The reading said `#DIV/0!`
+   over no numbers, which is so over text and not over blanks.)*
 6. **Product over no numbers.** ExPivot shows an empty cell where there are no values, and Product
    over values none of which is a number shows 0. *Unverified in both halves.*
 7. **An empty cell stays empty**, never 0, unless "For empty cells show" is set — which ExPivot
@@ -45,11 +51,23 @@ cell.
 13. **Σ Values**: appears in Columns when the second Value Field is placed; stands innermost; the
     headers read "Sum of Amount" under each column Item.
 14. **Captions**: "Sum of Amount", "Count of Region", and a second Value Field of the same field
-    and Aggregation "Sum of Amount2". A caption equal to a field's caption or another Value Field's
-    is refused with "PivotTable field name already exists." — compared ignoring case.
+    and Aggregation "Sum of Amount2". Count Numbers is captioned as Count is, so a Count and a Count
+    Numbers of one field are "Count of Value" and "Count of Value2", and Count Numbers chosen in
+    Value Field Settings is "Count of Amount", "データの個数 / Amount" in Japanese. Max and Min are
+    "Max of Amount" and "Min of Amount" in the English (US) edition, whose words ExPivot's are; the
+    English (UK) edition writes "Max. of" and "Min. of". A caption equal to a field's caption or
+    another Value Field's is refused with "PivotTable field name already exists." — compared
+    ignoring case. *(Observed: the captions by the seventeenth Windows run, items 4 and 14, through
+    COM; Count Numbers', Max's and Min's by the readings of 2026-10-12, R3 (a) and (d), and the
+    English (US) record of that day, (a) and (d). Not asked: the refusal.)*
 15. **Show Values As** "% of Grand Total", "% of Column Total", "% of Row Total" in the format
     `0.00%`, and a total's share of itself 100.00%.
-16. **General** writes at most 15 significant digits, as a cell does.
+16. **General** shows at most eleven characters besides a minus sign, whatever the column's width, as a cell's
+    General shows them in a column twelve characters wide or wider: decimals rounded to what fits, scientific where
+    the integer part has twelve or more digits or where that is closer (`1.414213562`, `1.23457E+11`,
+    `1.23457E-05`). A number Item's label is the same General (`1.23456789`, `1.23457E+11`). *(Corrected by the
+    seventeenth Windows run: the reading said 15 significant digits, which is General written in full, not General
+    shown. The Item labels observed by the readings of 2026-10-12, R3 (c).)*
 17. **Hidden Items are left out of the totals** (Excel's "Include filtered items in totals" off,
     its default for a non-OLAP pivot).
 18. **Sort by value**: a field's Items ordered by the Value Field's value at each Item's total
@@ -87,7 +105,11 @@ cell.
     `第3四半期` and `9月` in the Japanese one, and ordered by the calendar.
 27. **The Japanese edition's words**: `行ラベル`, `列ラベル`, `総計`, `集計`, `合計 / 金額`,
     `データの個数 / 地域`, `(空白)`, `(すべて)`, `(複数のアイテム)`, `値`, and the pane's
-    `ピボットテーブルのフィールド`, each read against Excel's own screens.
+    `ピボットテーブルのフィールド`, each read against Excel's own screens. Count Numbers is captioned
+    as Count is, `データの個数 / Amount`, and the pane's two instruction lines end with a colon.
+    *(Observed: the words by the seventeenth Windows run, item 27; Count Numbers' caption and the
+    colon by the readings of 2026-10-12, R3 (d) and (b), the colon from pictures, as UI Automation's
+    names leave it out.)*
 28. **The Design tab's Layout choices** carry these names: Subtotals (Do Not Show Subtotals, Show all
     Subtotals at Bottom of Group, Show all Subtotals at Top of Group), Grand Totals (Off for Rows and
     Columns, On for Rows and Columns, On for Rows Only, On for Columns Only), and Report Layout (Show

@@ -15,6 +15,10 @@
                 <strong>Two formats go on the clipboard.</strong> The text each cell shows, its <code>format</code>
                 applied, as plain text; and the raw values as an HTML table, so Excel receives every digit of an
                 amount the grid displays rounded. A cell showing <code>####</code> copies its value, never the hashes.
+                <em>Copy with headers</em> puts each column's header in both. When you answer a copy yourself,
+                <code>ClipboardData.Assemble</code> makes the two formats from each cell's shown and raw text, and a
+                header that shows a number rounded can carry the number in full for the HTML through
+                <code>headerRawAt</code>, as ExPivot's number column Items do.
             </li>
             <li>
                 <strong>Rows off screen are copied too.</strong> A selection larger than the rows the grid has painted
