@@ -15,16 +15,17 @@ application, the Consumer. The grid displays what it is given and tells you what
 for. Where it cannot do something correctly, it refuses rather than guess: a copy is never
 truncated, and a number that does not fit shows `####`.
 
-> **This is a beta (`0.x`).** Every test layer passes in CI on the commit it was built from,
-> but the API may still change between betas, and the project's
+> **The API may still change.** While the version is `0.x`, it may change from one version to the
+> next; each version's [Release Notes](https://akiramisawa.github.io/ex-grid/release-notes) say what
+> changed. A prerelease, a version with a suffix such as `-rc.1`, passed every test layer in CI on
+> the commit it was built from, and its Release Notes say what the project's
 > [Definition of Done](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/definition-of-done.md)
-> has not been signed off. What it still owes is listed in
-> [`docs/implementation-status.md`](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/implementation-status.md).
+> still owed. A version without a suffix is published only once the Definition of Done is signed off
+> on it.
 
 ## Requirements
 
 - **.NET 10 or newer.** The package targets `net10.0` and loads unchanged in newer applications.
-  (`0.1.0-beta.1` targeted `net8.0`; every later version targets `net10.0`.)
 - **Chrome or Edge.** They are the supported browsers; Safari and Firefox are out of scope.
 - **An interactive render mode.** The grid handles keys, the pointer and the clipboard. It is
   verified under WebAssembly. Under Blazor Server every browser test also runs, against a
@@ -34,35 +35,42 @@ truncated, and a number that does not fit shows `####`.
 ## Install
 
 ```sh
-dotnet add package ExGrid --prerelease
+dotnet add package ExGrid
 ```
 
-Add the stylesheet to the page that hosts your application (`wwwroot/index.html`, or
-`App.razor` in a Blazor Web App):
+Add `--prerelease` for a prerelease, a version with a suffix such as `-rc.1`.
 
-```html
-<link rel="stylesheet" href="_content/ExGrid/ex-grid.min.css" />
+Place the stylesheet component in the head. In a Blazor Web App, in `App.razor`:
+
+```razor
+@using ExGrid.Components
+
+<head>
+    ...
+    <ExGridStylesheet />
+    <HeadOutlet />
+</head>
+```
+
+In a standalone WebAssembly application, as a root component in `Program.cs`, beside `HeadOutlet`
+(not inside a `<HeadContent>`, which a page with one of its own would displace):
+
+```csharp
+builder.RootComponents.Add<HeadOutlet>("head::after");
+builder.RootComponents.Add<ExGrid.Components.ExGridStylesheet>("head::after");
 ```
 
 The grid loads its own script module; there is nothing else to include.
 
-The script and the stylesheet are minified, with source maps. Whether a browser gets the new ones
-after an update is decided by how your application serves static files (ADR-0123). .NET's static
-assets fingerprint them, so a new version is a new URL. To get that, reference the stylesheet
-through the fingerprint, and keep the import map, through which the grid's script is resolved:
-
-```razor
-@* App.razor in a Blazor Web App, with app.MapStaticAssets() *@
-<link rel="stylesheet" href="@Assets["_content/ExGrid/ex-grid.min.css"]" />
-<ImportMap />
-```
-
-```html
-<!-- wwwroot/index.html in a standalone WebAssembly app, with
-     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders> in the project -->
-<link rel="stylesheet" href="_content/ExGrid/ex-grid.min#[.{fingerprint}].css" />
-<script type="importmap"></script>
-```
+The script and the stylesheet are minified, with source maps, and the grid asks for the files it
+was built with (ADR-0123): at the fingerprinted address .NET's static assets give each file in a
+Blazor Web App, and otherwise at the plain address with the file's content hash as `?v=`. A new
+version is therefore a new address, and a normal reload after an upgrade brings the new files, on
+GitHub Pages too. A standalone application's first visit can show the grid unstyled for a moment
+until its stylesheet arrives. A page that still holds another version's script shows "This page
+holds another version of the grid's script. Reload the page." in place of the rows, and another
+version's stylesheet shows a notice of its own. The
+[Installation](https://akiramisawa.github.io/ex-grid/getting-started) page says more.
 
 ## A first grid
 

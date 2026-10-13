@@ -1,3 +1,19 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   Every product using is written with global::. The component lives in ExPivot.Components, where a
+   plain "ExPivot.Engine" could be looked up against the ExPivot component class first, and a plain
+   "ExGrid.X" against sibling types (the CS0426 trap in AGENTS.md). The Web namespace makes @on...
+   handlers compile as event handlers rather than as plain HTML attributes. *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExGrid
+@using global::ExGrid.Cells
+@using global::ExGrid.Chrome
+@using global::ExGrid.Columns
+@using global::ExGrid.Components
+@using global::ExGrid.Rows
+@using global::ExGrid.Selection
+@using global::ExPivot.Chrome
+@using global::ExPivot.Engine
 @using System.Globalization
 @using System.Runtime.CompilerServices
 @implements IDisposable
@@ -25,6 +41,13 @@
 <div class="ex-pivot" style="@RootStyle"
      @onmousedown="() => DismissFieldMenu(fieldMenu)" @onmousedown:stopPropagation
      @onfocusin="() => DismissFieldMenu(fieldMenu)" @onfocusin:stopPropagation>
+    @* ExPivot's stylesheet notice (ADR-0123, ERR-11), shown only by another version's stylesheet, and
+       beside it one for each stylesheet the Pivot Chrome brings, with the same markup. *@
+    <div data-ex-notice="stylesheet" data-ex-stylesheet="@NoticeStylesheet" data-ex-stamp="@NoticeStamp" style="display: none">@StylesheetNoticeWords</div>
+    @foreach (var brought in PivotChrome?.Stylesheets ?? [])
+    {
+        <div data-ex-notice="stylesheet" data-ex-stylesheet="@brought.Name" data-ex-stamp="@brought.Stamp" style="display: none">@StylesheetNoticeWords</div>
+    }
     @* While Show Details' dialog stands, what it covers takes neither the keyboard nor the pointer:
        the dialog is modal (ADR-0059). While the report is a Stale Report it carries
        ex-pivot-report-stale, by which ExPivot's stylesheet paints its value cells in a muted colour
@@ -96,6 +119,9 @@
     private Func<string, string?>? _label;
     private PivotOptions _options = PivotOptions.Default;
     private PivotCaps _caps = PivotCaps.Default;
+    // The Order Key policies the report on screen was asked under, as their pairs: a Consumer that
+    // builds the same policies on every render asks nothing again (ADR-0152).
+    private KeyValuePair<string, string>[] _orderKeyPolicies = [];
     private bool _showFieldListParameter = true;
     private bool _fieldListShown = true;
     private bool _initialised;
@@ -129,7 +155,8 @@
     /// on a server orders a field's Items by the function the server registered under that name
     /// (<c>PivotReportSource.From(data, orderKeys)</c>); only the name crosses the wire. Local fields
     /// keep their declared delegates. An unknown identifier, and a function that throws, are refused
-    /// by name, never replaced by label order.</summary>
+    /// by name, never replaced by label order. Changing the policies on a report already shown asks for
+    /// it again, as a new layout does; the same policies handed again ask nothing.</summary>
     [Parameter] public IReadOnlyDictionary<string, string>? OrderKeyPolicies { get; set; }
 
     /// <summary>
@@ -381,6 +408,18 @@
             force = true;
             capsMoved = true;
         }
+        // A change of the Order Key policies on a report already shown asks for it again, as a new
+        // layout does: the screen never keeps one order while the parameter names another
+        // (ADR-0152, 2026-10-13).
+        var policies = (OrderKeyPolicies ?? new Dictionary<string, string>())
+            .OrderBy(pair => pair.Key, StringComparer.Ordinal).ToArray();
+        var policiesMoved = !policies.SequenceEqual(_orderKeyPolicies);
+        if (policiesMoved)
+        {
+            _orderKeyPolicies = policies;
+            pursue = true;
+            force = true;
+        }
         var culture = Culture ?? CultureInfo.CurrentCulture;
         var wordsMoved = !Equals(culture, _culture) || !ReferenceEquals(Label, _label);
         if (wordsMoved)
@@ -403,9 +442,10 @@
         if (pursue)
         {
             // A new source alone is a refresh of the data, which its answer marks and a refusal of
-            // leaves the report stale (ADR-0067); with a new layout or new caps, it is the layout's.
+            // leaves the report stale (ADR-0067); with a new layout, new caps or new Order Key
+            // policies, it is the layout's.
             // A user's layout still on its way is raised once shown, whoever asked for it last.
-            var kind = refresh && !layoutMoved && !capsMoved ? Question.Data : Question.Layout;
+            var kind = refresh && !layoutMoved && !capsMoved && !policiesMoved ? Question.Data : Question.Layout;
             await PursueAsync(raise: !layoutMoved && _raisePending, force: force, kind);
         }
         else

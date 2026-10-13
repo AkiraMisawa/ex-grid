@@ -143,6 +143,10 @@ public class HoverBandTests : GridTestContext
         await ReportAsync(cut, 250, 30);
 
         Assert.Equal(2, cut.FindAll(".ex-hover-row").Count);
+        // The pinned part is a wash, so it lies in the pinned shade layer, which it stands alone
+        // (ADR-0206): nothing selected, and still the layer.
+        Assert.Single(cut.FindAll(".ex-shade-pinned > .ex-hover-row"));
+        Assert.Single(cut.FindAll(".ex-selection > .ex-hover-row"));
     }
 
     [Fact] // ADR-0008: the band sits beneath the selection when both are painted

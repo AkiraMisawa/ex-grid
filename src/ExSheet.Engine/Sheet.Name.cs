@@ -43,9 +43,11 @@ public sealed partial class Sheet
     /// new one, as Excel rewrites them, and a Formula whose qualifier now names or stops naming
     /// this Sheet is recalculated. A rename is a change, so <c>RAND</c> and <c>RANDBETWEEN</c> draw
     /// again, as Excel's do (ADR-0180); a rename to the name the Sheet already has changes nothing.
+    /// Internal (ADR-0201): a Consumer renames through <see cref="Do"/> with <see cref="SheetEdit.Rename"/>,
+    /// which is the same change and can be undone.
     /// </summary>
     /// <exception cref="ArgumentException">The name is not one a Sheet can have (<see cref="IsValidName"/>).</exception>
-    public SheetChange Rename(string name) => ApplyRename(name).Change;
+    internal SheetChange Rename(string name) => ApplyRename(name).Change;
 
     /// <summary>Whether <paramref name="qualifier"/>, a Reference's Sheet name, names this Sheet: no qualifier, or this Sheet's name without regard to case.</summary>
     internal bool IsThisSheet(string? qualifier) => Names(qualifier, Name);

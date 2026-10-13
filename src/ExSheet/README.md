@@ -6,15 +6,22 @@ extent of 1,048,576 rows by 16,384 columns — computes its **Values** with
 [`ExGrid`](https://www.nuget.org/packages/ExGrid) as that grid's Consumer: ExSheet holds and
 computes, ExGrid paints, selects, navigates and reports.
 
-> **This is a prerelease (`0.x`).** ExSheet ships with ExGrid, at the same version; upgrade them
-> together. The API may change between prereleases.
+> **ExSheet ships with ExGrid, at the same version;** upgrade them together. While the version is
+> `0.x`, the API may change from one version to the next; each version's
+> [Release Notes](https://akiramisawa.github.io/ex-grid/release-notes) say what changed.
 
 ## Requirements
 
 - **.NET 10 or newer.** The package targets `net10.0`.
-- ExGrid's stylesheet and script, as for any ExGrid, and ExSheet's own stylesheet,
-  `_content/ExSheet/ex-sheet.min.css`, which paints the Paper and the Ink and draws the built-in Format
-  Cells.
+- ExGrid's stylesheet, as for any ExGrid, and ExSheet's own, which paints the Paper and the Ink and
+  draws the built-in Format Cells. Each is a component placed in the head, at the address of the
+  file the package was built with: `<ExGridStylesheet />` and `<ExSheetStylesheet />` in `App.razor`'s
+  `<head>` in a Blazor Web App, or root components in a standalone application's `Program.cs`:
+
+  ```csharp
+  builder.RootComponents.Add<ExGrid.Components.ExGridStylesheet>("head::after");
+  builder.RootComponents.Add<ExSheet.Components.ExSheetStylesheet>("head::after");
+  ```
 
 ## Showing a Sheet
 

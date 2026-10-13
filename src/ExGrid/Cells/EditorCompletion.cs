@@ -62,7 +62,7 @@ public sealed record EditorCompletion(IReadOnlyList<CompletionCandidate> Candida
 /// own typing is not answered here: the browser reports it, because working it out from the
 /// change is ambiguous where letters repeat (ADR-0051's second round).
 /// </summary>
-public static class EditorTextRules
+internal static class EditorTextRules
 {
     /// <summary>
     /// <paramref name="text"/> with the span from <paramref name="start"/> of

@@ -37,11 +37,11 @@ public readonly record struct ColumnWidth
     /// <summary>Whether this is an Auto width.</summary>
     public bool IsAuto => _px == 0;
 
-    /// <summary>The Fixed width in pixels. Throws when Auto: an Auto width is resolved
-    /// through its <see cref="AutoWidth"/> tracker, never read from here (ADR-0016).</summary>
+    /// <summary>The Fixed width in pixels. Throws when Auto: the grid resolves an Auto width
+    /// from the values it has painted, and it is never read from here (ADR-0016).</summary>
     public double FixedPx => IsAuto
         ? throw new InvalidOperationException(
-            "An Auto width has no fixed pixel value; resolve it through its AutoWidth tracker (ADR-0016).")
+            "An Auto width has no fixed pixel value; the grid resolves it from the values it has painted (ADR-0016).")
         : _px;
 
     /// <summary><c>Auto</c> or <c>Fixed(120px)</c>. Written by hand: the record's own

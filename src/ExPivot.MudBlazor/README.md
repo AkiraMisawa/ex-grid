@@ -25,30 +25,37 @@ The pivot's behaviour does not change. The Chrome draws and calls back, and ExPi
 every tick, drop and command means, which tab is selected, and where every menu, panel and dialog
 opens. The same gestures make the same layout under either Chrome.
 
-> **This is a prerelease (`0.x`).** It ships at the same version as ExPivot and depends on
-> exactly that version and on the matching `ExGrid.MudBlazor`, so upgrade them together.
+> **It ships at the same version as ExPivot,** and depends on exactly that version and on the
+> matching `ExGrid.MudBlazor`, so upgrade them together. While the version is `0.x`, the API may
+> change from one version to the next; each version's
+> [Release Notes](https://akiramisawa.github.io/ex-grid/release-notes) say what changed.
 
 ## Install
 
 ```sh
-dotnet add package ExPivot.MudBlazor --prerelease
+dotnet add package ExPivot.MudBlazor
 ```
 
-This brings in ExPivot, ExGrid.MudBlazor and MudBlazor (9.0 or newer). Set MudBlazor up as
-usual:
+Add `--prerelease` for a prerelease, a version with a suffix such as `-rc.1`.
+
+This brings in ExPivot, ExGrid.MudBlazor and MudBlazor 9: the package takes `[9.6.0,10.0.0)`, any
+9.x from 9.6.0. An application that references an earlier 9.x is stopped at restore (NU1605, an
+error by default) and moves MudBlazor up within 9; one on MudBlazor 10 is warned (NU1608, a warning
+unless the application treats it as an error). Set MudBlazor up as usual:
 
 - `builder.Services.AddMudServices()`
 - MudBlazor's stylesheet and script
 - `<MudThemeProvider />` and `<MudPopoverProvider />` in your layout. The panels' selects open
   their lists through the popover provider.
 
-Then add the four stylesheets:
+Then add the four stylesheets, as components in the head: in `App.razor`'s `<head>` in a Blazor
+Web App, or as root components in a standalone application's `Program.cs`:
 
-```html
-<link rel="stylesheet" href="_content/ExGrid/ex-grid.min.css" />
-<link rel="stylesheet" href="_content/ExGrid.MudBlazor/mud-ex-grid.min.css" />
-<link rel="stylesheet" href="_content/ExPivot/ex-pivot.min.css" />
-<link rel="stylesheet" href="_content/ExPivot.MudBlazor/mud-ex-pivot.min.css" />
+```csharp
+builder.RootComponents.Add<ExGrid.Components.ExGridStylesheet>("head::after");
+builder.RootComponents.Add<ExGrid.MudBlazor.MudExGridStylesheet>("head::after");
+builder.RootComponents.Add<ExPivot.Components.ExPivotStylesheet>("head::after");
+builder.RootComponents.Add<ExPivot.MudBlazor.MudExPivotStylesheet>("head::after");
 ```
 
 ## A pivot on a paper

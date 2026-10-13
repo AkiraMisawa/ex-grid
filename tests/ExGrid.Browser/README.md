@@ -26,7 +26,8 @@ shows a later row once the height is compressed, which only a run at 150% can se
 once the grid has painted the slice for the offset the browser holds, as the offset the grid
 wrote on the Viewport says: compressed, the rows move when the grid is told of the scroll, a
 round trip later on the Server host, and a reading taken before that is of rows that are leaving.
-It also reads pixels that only a real 150% lays out: the Border lines (DC-59), and SH-41's sweep of
+It also reads pixels that only a real 150% lays out: the Border lines (DC-59), the Selection's shade
+over them in a Pinned Column (DC-59, ADR-0206), and SH-41's sweep of
 the bold edge (VZ-19), where a number may use one Device Pixel of its cell's right padding
 (ADR-0090). `sheet-paper.spec.mjs` emulates its viewport everywhere else, and leaves the window to
 Chrome there, since an emulated viewport is painted at a scale of 1.
@@ -312,7 +313,10 @@ nobody had asked for. What that means when writing a test:
   `window` must be what they were when the file booted there, and the Clipboard API, the timers
   and the other natives in `fixtures.mjs`'s list — read as a caller reads them, so a stub on
   `document` counts as much as one on `Document.prototype` — must be the ones the app booted
-  with. A difference fails the test by name: "nothing left outside the test's own page". What it
+  with. Both readings are taken once every stylesheet the document links has loaded — on
+  WebAssembly the packages' stylesheets are rendered into the head after the app boots, and a
+  `<link>` joins `document.styleSheets` only when its file has arrived. A difference fails the
+  test by name: "nothing left outside the test's own page". What it
   cannot see — a listener on `window` or `document`, a timer or an observer left running, a
   native outside the list — is held by the rule alone.
 - **A test gets a document of its own** — a context of its own, every navigation real — with
@@ -620,6 +624,18 @@ nobody had asked for. What that means when writing a test:
   left lying under the Row Headings' edge (the twelfth run's case 14); and the lines still on the
   device pixels with the Sheet moved a third of a pixel across and down. The case pages pin no
   column, as the run's workbook did not.
+- `part-c.spec.mjs` — what Part C of the eleventh Windows run left (ADR-0071, "What was decided after
+  Part C"; ADR-0090; ADR-0050 item 14; ADR-0016) on `/sheet?case=…`, read in device pixels: the
+  Selection on the Paper (SH-54), Excel's outline and shade under both Chromes; and, with `?pin=`
+  putting B2:C3 wholly in the Pinned Columns and across their boundary, the shade still multiplying
+  there (DC-59, ADR-0206) — a black line inside it black, the shade `#C7C7C7` under the built-in
+  Chrome and the primary mixed into white under `ExSheet.MudBlazor`, a Consumer's coloured
+  `--ex-selection-fill` darkening a pinned Fill and leaving a pinned thick line black, column A's
+  shade staying on it while the Sheet scrolls down and across, no tint under forced colors, the
+  same pixels in the dark scheme; and the sub-pixel gate, five of the thirteen lines' Device Pixels kept
+  with a pinned tint on screen and the page a third of a pixel across and down. Then the gridlines
+  and column edges on Device Pixels (VZ-17), the Row Headings' edge, `####` filling its cell, and
+  Ctrl+Shift+= and Ctrl+- (SH-53). The tests named DC-59 run at 150% too, in `chrome-150`.
 - `sheet-paper.spec.mjs` — the Paper and the Ink (ADR-0071, SH-39, SH-40, DC-58; ticket 48) on
   `/sheet?case=paper`, under the built-in Chrome and `ExSheet.MudBlazor`'s, with `?scheme=light` and
   `?scheme=dark`: the Paper white and the Ink black in both schemes; a Font colour, a Number
@@ -894,9 +910,16 @@ nobody had asked for. What that means when writing a test:
   nothing moving, its end opening the Cell Editor holding it and Enter committing (ED-30, i1); a
   cancelled one leaving an empty edit (i2); a press on D12 mid-composition putting the text in D10;
   two compositions behind 150 ms appended in order; the sixteenth run's k6, one key ending a
-  composition and starting the next (both sent at once), with DOM focus kept in the field until
-  the second ends and D10 holding both, and a third clause started the same way while the editor's
-  request already waits; copy and paste from the field; a field per
+  composition and starting the next, told as a real IME's key is (its keydown and its keyup both
+  `Process` with keyCode 229, as that run recorded them, around the end and the start, each sent
+  once the one before has been answered, so no time between them decides anything), with DOM focus
+  kept in the field until the second ends and D10 holding both, and a third clause started the same
+  way while the editor's request already waits; a composition ended with no key being told giving
+  that waiting editor the keyboard at its end, and one composed there at once coming after the text
+  held for the edit; the sixteenth run's k15, Alt+Tab mid-composition, as a keydown 229 whose keyup
+  never comes and the end, the request waiting until the keyboard leaves the field and the editor
+  then taking it holding the text (left from script: Playwright emulates focus, so a window switch
+  tells the page nothing); copy and paste from the field; a field per
   Sheet (ADR-0018); read-only over a cell that does not edit. The field as the one tab stop, Tab in
   from before and Shift+Tab in from after, then out (A11Y-4), and a display-only grid's root
   likewise; on `/features` under both Chromes, no column's ▾ reached by Tab or Shift+Tab, on the
@@ -918,6 +941,27 @@ edits is false whenever the keyboard is the grid's; the Focus is read with `expe
 element carries it; and "the grid is interactive" is `expectTabStopTaken`. A grid's root is still
 asserted directly where the root is the point: a display-only grid's tab stop (A11Y-17), a
 Prerendered root's attributes (A11Y-20).
+
+- `shipped-files.spec.mjs` — each package asks for the files it was built with (ADR-0123; ERR-9 to
+  ERR-11), on the DemoHost under both hosts, each test on a document of its own: the address the grid's
+  script and the stylesheets are asked for at — fingerprinted on the Server host, the plain path with
+  `?v=` on the WebAssembly one — and the stylesheets still in the head on a page with a `HeadContent` of
+  its own; another version's script, and one older than the stamp, served in place of the grid's and
+  refused before anything attaches (its `attach` counted), said in place of the rows and once in the
+  live region; and the six packages' stylesheet notices — the three products' in their roots, and each
+  MudBlazor Wrapper's where the stylesheet its Chrome brings is rendered, on `/mud`,
+  `/sheet?chrome=mud` and `/pivot?chrome=mud` — hidden by their own stylesheet, shown by another
+  version's, and ExGrid's not shown while its stylesheet has not arrived (the WebAssembly host only: a
+  Blazor Web App's stylesheet is in the head the server sends).
+- `freshness.spec.mjs` — ERR-9's deploy (ADR-0123): `freshness-app/`, a standalone application of one
+  grid, published twice from two copies of `src/ExGrid` whose shipped files are two versions', each
+  copy's `ShippedAssets.g.cs` written as `tools/assets/minify.mjs` would. The first is served as GitHub
+  Pages serves a site (`Cache-Control: max-age=600`, an ETag), loaded, replaced in place by the second,
+  and the page reloaded: the second assembly runs the second script and paints with the second
+  stylesheet, each asked for at its new address, while the framework's unchanged script stays in the
+  cache. Nothing is built in the checkout, so a running DemoHost is never rebuilt under itself; the two
+  publishes take under a minute. It drives a host of its own, so it runs beside the WebAssembly
+  host only.
 
 Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its
 first navigation and fails a test on a console `error` or an uncaught page error

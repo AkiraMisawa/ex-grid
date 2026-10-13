@@ -11,27 +11,39 @@
 The grid's behaviour does not change: the Chrome renders and calls back, and the core decides
 what every choice means. The same filter chosen under either Chrome gives the same result.
 
-> **This is a beta (`0.x`),** released together with ExGrid at the same version. It depends on
-> exactly that ExGrid version, so upgrade the two together.
+> **Released together with ExGrid, at the same version.** It depends on exactly that ExGrid version,
+> so upgrade the two together. While the version is `0.x`, the API may change from one version to
+> the next; each version's [Release Notes](https://akiramisawa.github.io/ex-grid/release-notes) say
+> what changed.
 
 ## Install
 
 ```sh
-dotnet add package ExGrid.MudBlazor --prerelease
+dotnet add package ExGrid.MudBlazor
 ```
 
-This brings in ExGrid and MudBlazor (9.0 or newer). Set MudBlazor up as usual:
+Add `--prerelease` for a prerelease, a version with a suffix such as `-rc.1`.
+
+This brings in ExGrid and MudBlazor 9: the package takes `[9.6.0,10.0.0)`, any 9.x from 9.6.0.
+An application that references an earlier 9.x is stopped at restore (NU1605, an error by
+default) and moves MudBlazor up within 9; one on MudBlazor 10 is warned (NU1608, a warning unless
+the application treats it as an error). Set MudBlazor up as usual:
 
 - `builder.Services.AddMudServices()`
 - MudBlazor's stylesheet and script
 - `<MudThemeProvider />` and `<MudPopoverProvider />` in your layout
 
-Then add both grid stylesheets:
+Then add both grid stylesheets, as components in the head: `<ExGridStylesheet />` and
+`<MudExGridStylesheet />` in `App.razor`'s `<head>` in a Blazor Web App, or root components in a
+standalone application's `Program.cs`:
 
-```html
-<link rel="stylesheet" href="_content/ExGrid/ex-grid.min.css" />
-<link rel="stylesheet" href="_content/ExGrid.MudBlazor/mud-ex-grid.min.css" />
+```csharp
+builder.RootComponents.Add<ExGrid.Components.ExGridStylesheet>("head::after");
+builder.RootComponents.Add<ExGrid.MudBlazor.MudExGridStylesheet>("head::after");
 ```
+
+Each links its file at the address of the one the package was built with, so a normal reload after
+an upgrade brings the new files.
 
 ## A grid on a paper
 

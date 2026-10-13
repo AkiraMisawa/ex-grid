@@ -13,9 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The latest MudBlazor, above the Wrapper's 9.0.0 floor on purpose: a Consumer's
-         application resolves the dependency upward (ADR-0022), and these pages are where
-         that is seen to work. -->
+    <!-- The MudBlazor the demo pages pin, above the Wrappers' 9.6.0 floor on purpose: a
+         Consumer's application resolves the dependency upward (ADR-0022), and these pages
+         are where that is seen to work. -->
     <PackageReference Include="MudBlazor" Version="9.9.0" />
     <!-- How /pivot-live and /grid-live hear the demo API server's "the trades changed": its
          SignalR hub. The demo's dependency, never a library's (ADR-0069, Q63): ExGrid and ExPivot

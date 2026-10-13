@@ -41,6 +41,6 @@ public sealed record ColumnInfo<TRow>(
 
     /// <summary>The same text from a value already extracted — the row fetches the value once
     /// and derives both its text and its tone from it.</summary>
-    public string TextFor(object? value)
+    internal string TextFor(object? value)
         => value is null ? "" : Format is { } format ? format(value) : DisplayText.Of(value);
 }

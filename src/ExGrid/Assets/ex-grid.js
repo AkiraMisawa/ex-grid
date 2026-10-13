@@ -19,9 +19,12 @@
 // and the editor listener keeping the coloured text beneath a field honest (ADR-0057). And the
 // seventh entry (ADR-0080): the Keyboard Field's composition and focus, heard on the root —
 // `compositionstart` and `compositionend`, always on, so a composition on a selected cell takes its
-// place among the held keys; the root's `focus`, passing focus that lands on the root itself on to
-// its field; and the root's `focusout`, emptying the field as it is left and ending the release of
-// Tab when DOM focus leaves the grid (ADR-0012). The eighth entry (ADR-0090): a media query
+// place among the held keys, and `keyup`, which says that a key the IME took has been told whole, so
+// that the editor's request for the keyboard is granted in order with the IME's events; the root's
+// `focus`, passing focus that lands on the root itself on to its field; and the root's `focusout`,
+// emptying the field as it is left, ending the release of Tab when DOM focus leaves the grid
+// (ADR-0012), and ending a key the IME took whose keyup the keyboard left before it was told
+// (ADR-0080, 2026-10-12). The eighth entry (ADR-0090): a media query
 // telling the Device Pixel. And the ninth (ADR-0122): the browser's time zone, read once at
 // attach and only when the Consumer asked for it, so TODAY() is the user's day. Anything
 // else — text measurement, overlay geometry, popovers — stays in C#; adding to this file needs an
@@ -34,6 +37,21 @@
 // an editor surface inside this instance's root, and is removed with the instance. One instance
 // reaches another in one place only: a press handed on is told to the root its own render names,
 // by a DOM event that is the whole message, and nothing of either instance is kept by the other.
+
+/**
+ * The SHA-256 of this file's source, which the grid compares with the one it was built with before
+ * it attaches anything (ADR-0123; ADR-0021's note of 2026-10-11). A page that kept another
+ * version's script beside a new component, or a module older than this export, is refused and said
+ * to be reloaded, instead of running code that does not match. A file cannot hold its own hash, so
+ * tools/assets/minify.mjs writes the source's in place of the identifier below; this source is
+ * never served. It reads nothing from the browser and adds no listener. Its name and its answer, a
+ * string, never change between versions: they are how two versions tell each other apart.
+ * @returns {string} the SHA-256 of Assets/ex-grid.js, as the shipped file's banner names it
+ */
+export function stamp() {
+    // eslint-disable-next-line no-undef
+    return typeof EX_SOURCE_SHA256 === 'string' ? EX_SOURCE_SHA256 : '';
+}
 
 /**
  * @param {HTMLElement} root the instance's root element — where keys are captured, so a
@@ -1180,7 +1198,29 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // When the hold that is standing began: two seconds from it, whatever the keys held
     // since have asked for, the rest is handed on (ADR-0010).
     let holdStartedAt = 0;
-    const editorSettled = () => new Promise((resolve) => {
+    // The waits standing in editorSettled. Each is looked at every animation frame, and once more
+    // the moment this listener gives the editor the keyboard itself (focusEditor): what the hold
+    // has for the edit is then typed into it in a microtask, before the browser hands the page
+    // anything else. An IME's composition cannot be held — it reaches whatever has DOM focus — and
+    // one started in the editor before the next frame was typed ahead of the text the hold still
+    // had for it: `かな`, `感じ` held, `ｄ` composed in the editor, and D10 read `かなｄ感じです`
+    // (ED-30, the third composition, WebAssembly).
+    const settledWaits = new Set();
+    const lookAgain = () => {
+        for (const again of [...settledWaits]) {
+            again();
+        }
+    };
+    const editorSettled = () => new Promise((settle) => {
+        // Settled once: a wait looked at again leaves no second frame of its own behind, and none
+        // looks after it has settled.
+        let waiting = true;
+        let lookFrame = 0;
+        const resolve = () => {
+            waiting = false;
+            settledWaits.delete(again);
+            settle();
+        };
         const look = () => {
             // A grid disposed during the wait has nothing left to wait for, and is asked
             // first: its root is gone, and looking for DOM focus inside it would throw from
@@ -1201,9 +1241,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 }
                 resolve();
             } else {
-                requestAnimationFrame(look);
+                lookFrame = requestAnimationFrame(look);
             }
         };
+        const again = () => {
+            if (waiting) {
+                cancelAnimationFrame(lookFrame);
+                look();
+            }
+        };
+        settledWaits.add(again);
         look();
     });
 
@@ -1578,8 +1625,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         // Mid-composition an IME owns Enter, Escape and the arrows — they choose and
         // commit a candidate. Taking them there breaks typing in any language that needs
-        // one, and the grid would move under a half-finished word.
+        // one, and the grid would move under a half-finished word. One the IME takes in the
+        // Keyboard Field is told until its keyup (imeKeyTold, ADR-0080).
         if (event.isComposing || event.keyCode === 229) {
+            if (isKeyField(event.target)) {
+                imeKeyTold = true;
+            }
             return;
         }
         const k = snapshot(event);
@@ -1818,21 +1869,31 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // order move or a replaced Source has dropped since opens nothing (ADR-0142, 2026-10-08). Reads an
     // attribute; nothing is measured.
     let keyFieldPaint = -1;
-    // The editor's request for the keyboard, made while the field was composing or as a
-    // composition ended: granted once the field has stopped composing (keyFieldEnded).
+    // The editor's request for the keyboard, made while the field was composing or while a key the
+    // IME took was still being told: granted once neither holds (grantEditorFocus).
     let deferredEditorFocus = null;
-    // A composition's end holds the keyboard in the field until the task after it, for the key
-    // that ends one composition can start the next: the sixteenth Windows run's k6, where the `k`
-    // of `kanji` ended `かな` and started `ｋ`. The browser tells the page of that start only once
-    // the end's listeners, and everything they ran, have returned — and on WebAssembly that is
-    // the core's whole answer to the text, the Cell Editor opened and its request for the
-    // keyboard made, 22 ms of it in that run. Granted then, between the end and the start, the
-    // request moved DOM focus, the IME carried `ｋ` into the editor without its romaji, and the
-    // `a` composed `あ`: `かな暗示`. The events the IME's key still owes the page are waiting by the
-    // end of that task, and the browser runs waiting input ahead of a timer, so a timer of no
-    // delay is the first moment the next composition, if there is one, has said so. No layout is
-    // read, and nothing is listened to (ADR-0021's seventh entry).
-    let keyFieldEndTimer = 0;
+    // A key the IME took in the field is still being told: from its keydown, which the listener
+    // above leaves to the IME, to the next keyup heard on the root, its own as a rule. The key that
+    // ends one composition can start the next: the sixteenth Windows run's k6, where the `k` of
+    // `kanji` ended `かな` and started `ｋ`. On WebAssembly the end's own listeners ran the core's
+    // whole answer to the text, the Cell Editor opened and its request for the keyboard made, 22 ms
+    // of it in that run; granted then, between the end and the start, the request moved DOM focus,
+    // the IME carried `ｋ` into the editor without its romaji, and the `a` composed `あ`: `かな暗示`.
+    // Every event the IME owes a key reaches the page before that key's keyup, and before any later
+    // key's events, as the browser takes them in order — so the keyup is the moment the next
+    // composition, if the key started one, has said so, whatever the time between them. It was the
+    // task after the end until 2026-10-12, which a start told a moment later missed: a script
+    // driving the IME, whose end and start are two commands, had the request granted between them,
+    // the start composed in the editor ahead of the text still held for it, and D10 read `かなｄ感じです`
+    // (ED-30, the third composition, WebAssembly). A composition that ends with no such key being
+    // told — a candidate chosen with the pointer, text a script commits — has nothing more to come,
+    // and the request is granted at its end. And the keyboard leaving the field ends the key too
+    // (onFocusLeft): whatever it still owes is told wherever the keyboard went, and none of it can
+    // start a composition here. Alt+Tab mid-composition is that key — the sixteenth Windows run's
+    // k15: its keydown was the IME's, the window switch ended the composition, and in 7 of 12
+    // configurations its keyup went to the other window, so a keyup alone would have kept the
+    // request waiting for whatever key came next. No layout is read (ADR-0021's seventh entry).
+    let imeKeyTold = false;
     // The field goes back to being unseen and empty: once the keyboard has left it, or when the
     // composition's text opened nothing (a cell that does not edit).
     const settleKeyField = () => {
@@ -1875,11 +1936,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         carryKeyFieldText(field);
     };
     // The text the field holds past what has already gone takes its place among the held keys,
-    // and a request for the editor's focus that waited for it, or that the core makes in answer to
-    // it before this task is over, is granted in the task after (keyFieldEndTimer).
+    // and a request for the editor's focus that waited for it is granted, unless the key the IME
+    // took is still being told (imeKeyTold).
     const carryKeyFieldText = (field) => {
-        clearTimeout(keyFieldEndTimer);
-        keyFieldEndTimer = setTimeout(keyFieldEnded, 0);
         const text = field.value.slice(keyFieldCarried);
         keyFieldCarried = field.value.length;
         held.push({ text, paint: keyFieldPaint });
@@ -1890,19 +1949,28 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (document.activeElement !== field) {
             settleKeyField();
         }
+        grantEditorFocus();
     };
-    // The task after a composition's end: the request is granted unless the key that ended it
-    // started another, which it then waits for, as it waits for any composition.
-    const keyFieldEnded = () => {
-        keyFieldEndTimer = 0;
+    // The editor's request, granted once the field has stopped composing and no key the IME took is
+    // still being told; a key that started another composition leaves it waiting for that one's end.
+    // `toward` is where the keyboard is going when the field is being left (onFocusLeft).
+    const grantEditorFocus = (toward) => {
         const pending = deferredEditorFocus;
-        if (pending !== null && !keyFieldComposing) {
+        if (pending !== null && !keyFieldComposing && !imeKeyTold) {
             deferredEditorFocus = null;
-            handle.focusEditor(pending.bar, pending.fromField);
+            handle.focusEditor(pending.bar, pending.fromField, toward);
+        }
+    };
+    // The key the IME took has been told whole: everything it owed the page came before this.
+    const onKeyFieldKeyUp = () => {
+        if (imeKeyTold) {
+            imeKeyTold = false;
+            grantEditorFocus();
         }
     };
     root.addEventListener('compositionstart', onKeyFieldCompositionStart, true);
     root.addEventListener('compositionend', onKeyFieldCompositionEnd, true);
+    root.addEventListener('keyup', onKeyFieldKeyUp, true);
 
     // The seventh entry's focus listeners (ADR-0021, ADR-0080), on every grid, with a field or not.
     //
@@ -1942,13 +2010,27 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // departure came after is not granted (releaseTab). The window losing focus is not a
     // departure: the browser says so with no next holder too, but DOM focus stays where it is,
     // still the document's active element while the event is told, and comes back there.
+    //
+    // Whichever it is, a key the IME took that is still being told ends here (imeKeyTold): its
+    // keyup, if it comes, is told wherever the keyboard went — on a window switch, to another
+    // window — and a request for the editor that waited for it is decided now. Decided against
+    // where the keyboard is going, `next`, since DOM focus is on nothing while a move is told: a
+    // control outside the grid that the user moved to keeps the keyboard and the request is
+    // declined, as it would be once there; on a window switch DOM focus is still the field's, and
+    // the editor takes the keyboard back there.
     const onFocusLeft = (event) => {
         if (isKeyField(event.target)) {
             settleKeyField();
             markFocusVisible(false);
         }
         const next = event.relatedTarget;
-        if (event.target === document.activeElement || (next instanceof Node && root && root.contains(next))) {
+        // Read before the grant below, which moves DOM focus.
+        const stays = event.target === document.activeElement || (next instanceof Node && root && root.contains(next));
+        if (imeKeyTold) {
+            imeKeyTold = false;
+            grantEditorFocus(next);
+        }
+        if (stays) {
             return;
         }
         tabReleased = false;
@@ -3270,15 +3352,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // keyboard stays where the user put it, and the edit goes on there: a request for the
         // Cell Editor, landing after a press into the bar, took the keyboard from the bar, and the
         // key typed next opened an edit in the cell (found on CI, msedge, the Server host).
-        focusEditor: (bar, fromField) => {
+        //
+        // A waiting request granted as the keyboard leaves the Keyboard Field (onFocusLeft) is
+        // judged where the keyboard is going, `toward`: DOM focus is on nothing while the browser
+        // tells that departure. The core never passes it.
+        focusEditor: (bar, fromField, toward) => {
             if (!root) {
                 return;
             }
             // While the Keyboard Field composes, the request waits for the composition to end
             // there, and is granted then (carryKeyFieldText; ADR-0080): moving DOM focus now would
-            // end it half-typed. So it does in the task a composition ended in, before the browser
-            // has told the page whether the same key started the next (keyFieldEndTimer).
-            if (keyFieldComposing || keyFieldEndTimer !== 0) {
+            // end it half-typed. So it does while a key the IME took there is still being told,
+            // before the browser has told the page whether that key started the next (imeKeyTold).
+            if (keyFieldComposing || imeKeyTold) {
                 deferredEditorFocus = { bar, fromField };
                 return;
             }
@@ -3288,7 +3374,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (!field) {
                 return;
             }
-            const active = document.activeElement;
+            const active = toward instanceof Element ? toward : document.activeElement;
             const fieldOfItsOwn = active instanceof Element && active !== staleField && !field.contains(active)
                 && root.contains(active) && active.closest('.ex-formula-bar') !== null;
             if (fieldOfItsOwn && fromField !== true) {
@@ -3301,6 +3387,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // the fold is brought on screen, and one already in the window moves nothing.
                 field.focus({ preventScroll: true });
                 followEditor(field);
+                // What the hold has for the edit goes into it now, ahead of any composition the IME
+                // starts there next (settledWaits).
+                lookAgain();
             } else if (editing !== 'none') {
                 // The surface the core asked for is the edit's: the held keys go into it, and a
                 // press back puts the keyboard there (standingField), the bar's when it was the bar.
@@ -3343,10 +3432,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.removeEventListener('input', onEditorInput, true);
             root.removeEventListener('compositionstart', onKeyFieldCompositionStart, true);
             root.removeEventListener('compositionend', onKeyFieldCompositionEnd, true);
+            root.removeEventListener('keyup', onKeyFieldKeyUp, true);
             root.removeEventListener('focus', onFocused, true);
             root.removeEventListener('focusout', onFocusLeft, true);
-            clearTimeout(keyFieldEndTimer);
-            keyFieldEndTimer = 0;
+            imeKeyTold = false;
             deferredEditorFocus = null;
             markFocusVisible(false);
             document.removeEventListener('selectionchange', onSelectionChange);

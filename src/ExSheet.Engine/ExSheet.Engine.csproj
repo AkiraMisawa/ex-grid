@@ -12,8 +12,13 @@
 
   <ItemGroup>
     <!-- Layer 1 counts the passes of a recalculation, which has no public surface: how often a
-         volatile Formula is computed is bounded, and the bound is tested (ADR-0124, ADR-0125). -->
+         volatile Formula is computed is bounded, and the bound is tested (ADR-0124, ADR-0125). It
+         also pins the engine's machinery and the entry points a contract member answers (ADR-0201). -->
     <InternalsVisibleTo Include="ExSheet.Engine.Tests" />
+    <!-- ExSheet's layer 2 fills a Sheet a cell at a time, through the engine's own one-cell entry
+         point, which SetEntries answers for a Consumer (ADR-0201). Granted to test projects only,
+         never to a package. -->
+    <InternalsVisibleTo Include="ExSheet.Components.Tests" />
   </ItemGroup>
 
 </Project>

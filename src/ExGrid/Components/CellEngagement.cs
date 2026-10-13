@@ -14,9 +14,11 @@ namespace ExGrid.Components;
 /// that hands it to a Template cell's content, and the core clears it straight after.</item>
 /// </list>
 ///
-/// Public because <see cref="ExGridRow{TRow}"/> is, like <see cref="ColumnStyles"/>; it is
-/// the row seam's vocabulary, not something a Consumer constructs.
+/// Not the contract (ADR-0201): public only because <see cref="ExGridRow{TRow}"/>'s parameter
+/// names it, like <see cref="ColumnStyles"/>, hidden from a Consumer's editor, and may change in
+/// any version. It is the row seam's vocabulary, not something a Consumer constructs.
 /// </summary>
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public readonly record struct CellEngagement(int Column, int Action, int FocusRequest)
 {
     /// <summary>No cell of this row is engaged. <c>default</c> is NOT this — it would name

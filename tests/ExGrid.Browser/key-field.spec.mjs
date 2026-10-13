@@ -33,15 +33,23 @@ async function compose(client, ...steps) {
 
 /**
  * One key of an IME's that ends the composition with `text` and starts the next with `next`, as the
- * `k` of `kanji` ended `かな` and started `ｋ` in the sixteenth Windows run's k6. Sent together, so
- * the browser has the second start waiting while the page answers the first end, as it had the
- * IME's: on WebAssembly that answer is the Cell Editor's whole opening, its request for the
- * keyboard included, before the start is told.
+ * `k` of `kanji` ended `かな` and started `ｋ` in the sixteenth Windows run's k6, told as a real IME's
+ * key is told: its keydown, which the IME takes, the end, the start, and its keyup, which the IME
+ * took too — both `Process`, keyCode 229, with the code of the Latin key pressed (`key`), as that
+ * run recorded every key the IME had. Each waits for the one before it, so the start reaches the
+ * page only once the end has been answered whole — on WebAssembly the Cell Editor's opening, its
+ * request for the keyboard included — and any time the page might have given that request between
+ * the two has passed: the grid tells the start from the end by the key's events, not by the time
+ * between them (ADR-0080). Two commands sent at once, which this sent until 2026-10-12, reached the
+ * page a fraction of a millisecond apart or more, as the browser happened to take them.
  */
-const endAndStart = (client, text, next) => Promise.all([
-    client.send('Input.insertText', { text }),
-    client.send('Input.imeSetComposition', { text: next, selectionStart: next.length, selectionEnd: next.length }),
-]);
+async function endAndStart(client, text, next, key) {
+    const code = `Key${key.toUpperCase()}`;
+    await client.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Process', code, windowsVirtualKeyCode: 229, nativeVirtualKeyCode: 229 });
+    await client.send('Input.insertText', { text });
+    await client.send('Input.imeSetComposition', { text: next, selectionStart: next.length, selectionEnd: next.length });
+    await client.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Process', code, windowsVirtualKeyCode: 229, nativeVirtualKeyCode: 229 });
+}
 
 /** What the Keyboard Field shows: its value, whether it is drawn, and whether it has the keyboard. */
 const fieldState = (grid) => keyField(grid).evaluate((field) => ({
@@ -301,7 +309,7 @@ for (const chrome of ['builtin', 'mud']) {
                 await expect.poll(() => fieldState(grid)).toEqual({ value: 'かな', drawn: true, focused: true });
 
                 // `kana`, Space, then the `k` of `kanji`.
-                await endAndStart(client, 'かな', 'ｋ');
+                await endAndStart(client, 'かな', 'ｋ', 'k');
                 // The second composes in the field, which keeps DOM focus: moved now, the IME would
                 // carry `ｋ` elsewhere without its romaji. The first one's text has opened the edit,
                 // and its request for the keyboard waits — on a circuit, once the wire is quiet, it
@@ -346,7 +354,7 @@ for (const chrome of ['builtin', 'mud']) {
             const client = await page.context().newCDPSession(page);
             try {
                 await compose(client, 'か', 'かな');
-                await endAndStart(client, 'かな', 'ｋ');
+                await endAndStart(client, 'かな', 'ｋ', 'k');
                 await compose(client, 'か', 'かん', 'かんじ');
                 // The edit the first text opened stands, and its request for the keyboard has come
                 // (on a circuit, once the wire is quiet) and waits for the second composition.
@@ -356,7 +364,7 @@ for (const chrome of ['builtin', 'mud']) {
 
                 // A third clause: its first key ends the second composition and starts the third.
                 // The request that waited is not granted between the two.
-                await endAndStart(client, '感じ', 'ｄ');
+                await endAndStart(client, '感じ', 'ｄ', 'd');
                 await expect.poll(() => fieldState(grid)).toEqual({ value: 'かな感じｄ', drawn: true, focused: true });
                 await compose(client, 'で', 'でｓ', 'です');
                 expect(await fieldState(grid)).toEqual({ value: 'かな感じです', drawn: true, focused: true });
@@ -373,6 +381,99 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Enter');
             await expect(editor(grid)).toHaveCount(0);
             await expect(cell(grid, 'D10')).toHaveText('かな感じです');
+            await expectFieldFocusAt(grid, 'D11');
+            await expect(keyField(grid)).toBeFocused();
+            await setRoundTrip(0);
+
+            await pressAt(grid, 'D10');
+            await page.keyboard.press('Delete');
+            await expect(cell(grid, 'D10')).toHaveText(before ?? '');
+        });
+
+        test('ED-30 / ADR-0080 / ADR-0010: a composition that ends with no key the IME took being told gives the waiting editor the keyboard at its end, and one composed there at once comes after the text held for the edit (150 ms on the Server host)', async ({ page }) => {
+            const grid = sheet(page);
+            await pressAt(grid, 'D10');
+            const before = await cell(grid, 'D10').textContent();
+            await setRoundTrip(150);
+            const client = await page.context().newCDPSession(page);
+            try {
+                await compose(client, 'か', 'かな');
+                await endAndStart(client, 'かな', 'ｋ', 'k');
+                await compose(client, 'か', 'かん', 'かんじ');
+                await expect(editor(grid)).toHaveValue('かな');
+                await circuitQuiet();
+                await expect.poll(() => fieldState(grid)).toEqual({ value: 'かなかんじ', drawn: true, focused: true });
+
+                // The second ends with no key being told — a candidate chosen with the pointer, a
+                // script's commit — so nothing more is coming: the request that waited is granted at
+                // the end, and the text the hold had for the edit is in it before anything else is
+                // told. The next composition, started at once, is the editor's and comes after it:
+                // D10 once read `かなｄ感じです`, the composition typed ahead of the held text.
+                await client.send('Input.insertText', { text: '感じ' });
+                await compose(client, 'ｄ');
+                await expect(editor(grid)).toBeFocused();
+                await expect(editor(grid)).toHaveValue('かな感じｄ');
+                await expect.poll(() => fieldState(grid)).toEqual({ value: '', drawn: false, focused: false });
+                await compose(client, 'で', 'でｓ', 'です');
+                await client.send('Input.insertText', { text: 'です' });
+                await expect(editor(grid)).toHaveValue('かな感じです');
+            } finally {
+                await client.detach();
+            }
+
+            await page.keyboard.press('Enter');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('かな感じです');
+            await expectFieldFocusAt(grid, 'D11');
+            await expect(keyField(grid)).toBeFocused();
+            await setRoundTrip(0);
+
+            await pressAt(grid, 'D10');
+            await page.keyboard.press('Delete');
+            await expect(cell(grid, 'D10')).toHaveText(before ?? '');
+        });
+
+        test('ED-30 / ADR-0080 (the sixteenth run\'s k15): a key the IME took whose keyup never comes — Alt+Tab mid-composition — ends as the keyboard leaves the field, and the editor the composition opened takes the keyboard holding its text (150 ms on the Server host)', async ({ page }) => {
+            const grid = sheet(page);
+            await pressAt(grid, 'D10');
+            const before = await cell(grid, 'D10').textContent();
+            await setRoundTrip(150);
+            const client = await page.context().newCDPSession(page);
+            try {
+                await compose(client, 'ｋ', 'か', 'かｎ', 'かな');
+                await expect.poll(() => fieldState(grid)).toEqual({ value: 'かな', drawn: true, focused: true });
+
+                // Alt, pressed for Alt+Tab, is the IME's while it composes: its keydown as the sixteenth
+                // run recorded it (`Process`, AltLeft, 229, Alt held). The window switch ends the
+                // composition; the keyup goes to the window brought forward, and this page never hears
+                // it (7 of the run's 12 configurations).
+                await client.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Process', code: 'AltLeft', modifiers: 1, windowsVirtualKeyCode: 229, nativeVirtualKeyCode: 229 });
+                await client.send('Input.insertText', { text: 'かな' });
+                // The text has opened the edit, and its request for the keyboard has come (on a
+                // circuit, once the wire is quiet) and waits for the key's keyup.
+                await expect(editor(grid)).toHaveValue('かな');
+                await circuitQuiet();
+                expect(await fieldState(grid)).toEqual({ value: 'かな', drawn: true, focused: true });
+                await expect(editor(grid)).not.toBeFocused();
+
+                // The keyboard leaves the field, which ends the key: the request is granted, and the
+                // editor takes the keyboard holding `かな`, as the sixteenth run saw it at the window
+                // switch. Playwright emulates focus, so this page is told nothing when another window
+                // comes forward; the field is left from script here, DOM focus going to nothing, where
+                // a browser nobody emulates focus in tells the field's focusout with DOM focus kept.
+                // The editor is granted the keyboard in both (focusEditor).
+                await keyField(grid).evaluate((field) => field.blur());
+                await expect(editor(grid)).toBeFocused();
+                await expect(editor(grid)).toHaveValue('かな');
+                await expect.poll(() => fieldState(grid)).toEqual({ value: '', drawn: false, focused: false });
+            } finally {
+                await client.detach();
+            }
+
+            // Enter commits and moves, as it did in the sixteenth run's k15 once the window was back.
+            await page.keyboard.press('Enter');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('かな');
             await expectFieldFocusAt(grid, 'D11');
             await expect(keyField(grid)).toBeFocused();
             await setRoundTrip(0);

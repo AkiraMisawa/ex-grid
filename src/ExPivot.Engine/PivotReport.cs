@@ -9,7 +9,7 @@ namespace ExPivot.Engine;
 /// (<see cref="ValueAt"/>), so a report of many rows costs its rows, not its
 /// cells.
 /// </summary>
-public sealed class PivotReport
+internal sealed class PivotReport
 {
     private readonly CellReader _reader;
 
@@ -274,7 +274,7 @@ internal sealed record ValueFieldPlan(
 /// and its labels. Unchanged rows are shared by immutable report versions (ADR-0153).
 /// Read values through the report version; a structural row owns no report or cell cache.
 /// </summary>
-public sealed class PivotReportRow
+internal sealed class PivotReportRow
 {
     internal PivotReportRow(PivotRowRole role, AxisNode node, int valueField, bool carriesValues, PivotRowLabel[] labels,
         ReportLineage lineage)
@@ -343,7 +343,7 @@ public sealed record PivotToggle(string Field, PivotItemKey Item, string ItemLab
 public sealed record PivotLabelColumn(string Name, string Header, string? Field);
 
 /// <summary>A value column (ADR-0060): what it stands for and its leaf header.</summary>
-public sealed class PivotReportColumn
+internal sealed class PivotReportColumn
 {
     internal PivotReportColumn(string name, string header, PivotColumnRole role, int valueField, AxisNode node)
     {
@@ -373,7 +373,7 @@ public sealed class PivotReportColumn
 /// <summary>A rectangle above the value columns' headers (ADR-0032/0060).</summary>
 /// <param name="Label">Its caption: a column Item, <c>&lt;item&gt; Total</c> or <c>Grand Total</c>.</param>
 /// <param name="FirstColumn">The first value column it covers, by index in
-/// <see cref="PivotReport.ValueColumns"/>.</param>
+/// <see cref="PivotReportMetadata.ValueColumns"/>.</param>
 /// <param name="ColumnCount">How many value columns it covers.</param>
 /// <param name="Tier">Its top tier, 1 directly above the leaf headers.</param>
 /// <param name="TierSpan">How many tiers it spans downward.</param>

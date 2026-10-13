@@ -249,6 +249,23 @@ html { scroll-padding-top: calc(var(--mud-appbar-height) - var(--mud-appbar-heig
 .docs-api-more .docs-api-text { margin-top: 6px; color: var(--docs-muted); }
 .docs-api-text a { color: var(--mud-palette-primary); }
 .docs-api-table ul { margin: 4px 0 0 18px; }
+/* What is public and not the contract (ADR-0201): said under a type's name, and its members listed apart. */
+.docs-api-notcontract-note { max-width: 820px; margin: 4px 0 8px; color: var(--docs-muted); font-size: 0.9rem; line-height: 1.6; }
+.docs-api-notcontract { margin-top: 12px; }
+/* The API reference: a type's name opens its table beneath its row. */
+.docs-api-table th.docs-api-kind { width: 13%; }
+.docs-api-toggle {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: left;
+    color: var(--mud-palette-primary);
+    cursor: pointer;
+}
+.docs-api-toggle:focus-visible { outline: 2px solid var(--mud-palette-primary); outline-offset: 2px; }
+.docs-api-open > td { background: var(--mud-palette-background-gray); }
+.docs-api-open .docs-api { margin: 4px 0 8px; }
 
 .docs-prev-next {
     display: flex;

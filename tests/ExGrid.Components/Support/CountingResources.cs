@@ -82,12 +82,15 @@ internal abstract class CountingReference(CountingJSRuntime runtime) : IJSObject
     }
 }
 
-/// <summary>The imported module: it answers <c>attach</c> and nothing else.</summary>
+/// <summary>The imported module: it answers its stamp, this build's (ADR-0123), and
+/// <c>attach</c>, and nothing else.</summary>
 internal sealed class CountingModule(CountingJSRuntime runtime) : CountingReference(runtime)
 {
     public override async ValueTask<TValue> InvokeAsync<TValue>(
         string identifier, CancellationToken cancellationToken, object?[]? args)
     {
+        if (identifier == "stamp")
+            return (TValue)(object)ExGrid.Testing.ShippedScript.Stamp;
         if (identifier != "attach")
             throw new InvalidOperationException($"The grid called '{identifier}' on the module.");
         var handle = Runtime.Attach(args);

@@ -38,8 +38,20 @@ released, is a poor process. It is the ordinary one — a release branch, with r
   *(2026-10-12, decided with the user: the rehearsal includes the stable version's release notes. A
   release candidate's notes carry the blocks a stable version's must (ADR-0190's note of this date),
   checked as a stable version's are, so the text the GitHub release will show is seen before the tag.)*
+  *(2026-10-12, decided with the user: **two checks are a stable tag's only**, the two that read a
+  sign-off, since a candidate has none yet. They are the Signed off block read in full — the
+  `results.md` at the tag, X in full, the record naming X, X the commit a candidate of the version was
+  tagged on — and the structural check, that the tag is X plus only `verification/` and
+  `docs/releases/`. A candidate's Signed off block takes a pending form of its own, saying that the
+  sign-off is being made against this candidate, and the workflow reads a candidate's blocks by form
+  only, through the Docs Site's build. A candidate's GitHub release and its section on the site open
+  with a note of its own, not the prerelease note. ADR-0202's "the eighteenth run … on `0.1.0-rc.1`
+  itself" stays: that run is made at the candidate's commit, which the sign-off is made against.)*
 - **The sign-off is made against a commit of the branch, X.** Every step of the Definition of Done's §22
   runs at X; `results.md` names X.
+  *(2026-10-12, decided with the user: X is the commit a release candidate was tagged on. The sign-off
+  is made against that candidate, whose notes say so, and the release workflow refuses a stable tag
+  whose X no `-rc.N` of the same version was tagged on.)*
 - **The stable tag goes on Y, which is X plus only the records and the notes**: the
   `verification/<date>/` directory and `docs/releases/0.1.0.md`. The release workflow reads X from the
   notes' "Signed off" block and **refuses the tag if X..Y touches anything else**. A fix after X is a new
@@ -76,14 +88,75 @@ Besides ADR-0190's headings and [ADR-0202](./0202-what-0-1-0-holds-of-exsheet-an
   target framework and the packages.
 
 The Docs Site's notes parser requires each of them of an unsuffixed version.
+*(2026-10-12, decided with the user: they stand after the products, in the order above, each in the
+form ADR-0190's note of this date gives, Known limitations standing after Behaviour changes. The parser
+requires them of a release candidate too, whose notes rehearse them, its Signed off block in a pending
+form of its own that says the sign-off is being made against this candidate, and refuses them on an
+`-alpha` or a `-beta`.)*
 
 ### The Wrappers' MudBlazor range
 
-- **Each Wrapper declares MudBlazor `[9.0.0,10.0.0)`.** A Consumer on MudBlazor 10 is told at restore
+- **Each Wrapper declares MudBlazor `[9.6.0,10.0.0)`.** A Consumer on MudBlazor 10 is told at restore
   (NU1608), as `Apache.Arrow`'s `[23,24)` already tells (ADR-0065).
+  *(2026-10-12, decided with the user: the floor was 9.0.0, and is raised to 9.6.0. The Wrappers'
+  layer-3 tests, run that day on Playwright's Chromium against a DemoHost at 9.0.0, failed on both
+  hosts; bisected over 9.0.0 to 9.9.0, the lowest version at which they passed, but for two failures
+  that are not MudBlazor's, was 9.6.0. Below 9.6.0 the filter panel's two operators have no role and
+  no name on the element that takes the keyboard (MudBlazor #13080 put them there), and below 9.2.0
+  ExPivot's Field Settings… opens with the keyboard on `<body>` whenever its focus request comes before
+  MudSelect's second render (#12837 ended it). The Wrappers' layer-2 suites, run at every published
+  9.x, found a third inside the old range and above its floor: from 9.3.0 to 9.5.0 a refused filter
+  operand keeps Apply unavailable and loses its words (#12892, undone by #13312). ExPivot's and
+  ExSheet's own selects, which show their text through `ToStringFunc`, are named from 9.4.0. Each is a
+  Wrapper wrong in a way the screen does not show. Holding the Wrappers at 9.0.0 instead would have
+  copied MudBlazor's ARIA wiring into them, still partial below 9.4.0, and bound every later Wrapper
+  change to 9.0.0 as well as to the latest 9.x. The raise costs a Consumer on 9.0 to 9.5 one minor
+  upgrade within 9: one that references an earlier 9.x is stopped at restore (NU1605, an error by
+  default), where one on MudBlazor 10 is told (NU1608, a warning). The three Change Notes say so as
+  Breaking. The Wrappers take their floor by ADR-0022's rule; ADR-0022's note of this date says why a
+  `0.x` prerelease line may raise it. A layer-2 test in each Wrapper, named for WR-10, pins the role and
+  name on the focusable element of every MudSelect it draws, and another pins a refused operand's words,
+  so CI holds the floor on every push. The record is `verification/2026-10-12-linux-mudblazor-floor/`;
+  it is not the floor run below. The options weighed are in `docs/agents/proposals/mudblazor-range.md`.)*
 - **The floor is run once before the sign-off**: the Wrappers' layer-3 specs against a DemoHost pinned to
-  MudBlazor 9.0.0, recorded under `verification/`. Every other run stays on the version the DemoPages
-  pin.
+  the floor every Wrapper declares, recorded under `verification/`. Every other run stays on the version
+  the DemoPages pin.
+  *(2026-10-12, decided with the user: "once" is a record that still holds at X. A floor run's record
+  holds while `src/*.MudBlazor/` and `samples/ExGrid.DemoPages/` are unchanged from the commit it was
+  made at up to X, as a row checked by hand holds while its code is unchanged (ADR-0208); a change to
+  either asks for the run again, at the floor then declared. The run is the Definition of Done's Step 4
+  floor paragraph, on both hosts in installed Chrome and Edge, and WR-10 judges it. The record of
+  2026-10-12 is a bisection on Playwright's bundled Chromium and does not discharge it. **The floor run,
+  and the layer-2 runs recorded with it (the next notes), are the one automated run a record carries
+  forward**: an exception to this ADR's note of 2026-10-11 under "After `0.1.0`", that every automated
+  step of §22 still runs on every such version, and to ADR-0208's "every automated layer still runs in
+  full on every candidate and every stable tag". The release workflow refuses a tag whose Wrappers or
+  demo pages changed since their record, as it refuses one for a row checked by hand. Every other
+  automated step still runs on every candidate and every version without a suffix.)*
+  *(2026-10-12, decided with the user: a layer-2 run at a 9.x published after the floor record is a run
+  of its own, and its record, which WR-10's entry names besides the floor record, is carried forward
+  too.)*
+  *(2026-10-12, decided with the user: beside the floor run, each Wrapper's layer-2 suite runs with
+  MudBlazor pinned in its test project to every published version of the declared range, and is
+  recorded with the floor run. A run at the floor alone cannot see what breaks between the ends of the
+  range: the refused operand of 9.3.0 to 9.5.0 lay inside the old one. Layer 2 across the range can,
+  for markup and a component's state. It sees no focus and no timing, so it adds to the floor run and
+  replaces nothing.)*
+  *(2026-10-12, decided with the user: **a MudBlazor 9.x published after the floor record and before X
+  asks for the layer-2 runs at that version only.** The floor run (layer 3 at 9.6.0) holds while its paths
+  are unchanged.)*
+  *(2026-10-12, decided with the user: **an unlisted version is not asked for.** The release check reports
+  it as out of the check because it is unlisted.)*
+  *(2026-10-12, decided with the user: **a layer-2 run at a 9.x published after the floor record is a run
+  of its own.** Its record goes in its own `verification/<date>-<name>/` directory, and the run tags the
+  commit it verified `verified/` followed by that directory's name, as every run does. WR-10's entry in
+  `verification/by-hand.json` names that record (commit, tag, path, verdict, the version it covered)
+  besides the floor record. The release check reads every record WR-10's entry names: the floor record's
+  paths hold since its commit, and each later record's tag names its commit.)*
+  *(2026-10-12, how the release workflow holds the notes above: it refuses a tag when no record WR-10's
+  entry names covers such a version, by
+  [ADR-0208](./0208-a-question-to-excel-is-asked-when-its-feature-is-built-and-a-check-by-hand-is-repeated-only-when-its-code-changes.md)'s
+  check of WR-10's records.)*
 
 ### After `0.1.0`
 
@@ -99,6 +172,9 @@ The Docs Site's notes parser requires each of them of an unsuffixed version.
 - **Once a stable version exists, a prerelease does not publish the Docs Site.** The site describes the
   latest stable version; a prerelease's notes are on its GitHub release, and reach the site with the next
   stable publish. The on-demand publish of `main` or a `lab/*` branch stays, under its banner (ADR-0110).
+  *(2026-10-12, decided with the user: nor does a version without a suffix that a stable tag is above by
+  SemVer precedence, a patch to an older line, so `0.1.1` from `release/0.1` after `0.2.0` leaves
+  `0.2.0`'s site in place. A stable version exists once the repository has a tag without a suffix.)*
 
 ## Considered options
 
@@ -123,8 +199,12 @@ The Docs Site's notes parser requires each of them of an unsuffixed version.
 - ADR-0042 is rewritten on the release branch, in the change that adds this `release.yml`, with what it
   said kept: its refusal is replaced as above, not quietly dropped. The Definition of Done's Step 7
   clause on the refusal says the same.
+  *(2026-10-12, decided with the user: the rewrite and this `release.yml` go in on `main` before
+  `release/0.1` is cut, so the branch carries them from its cut, as "The release branch" asks.)*
 - ADR-0190 is amended: a stable version's tag goes on its release branch's Y, and its notes carry the
   blocks above. ADR-0110: a prerelease publishes no site once a stable version exists.
 - The package readmes are reworded for any version before `rc.1`. `check.sh`, PV-1 and the three Wrapper
-  readmes state `[9.0.0,10.0.0)`.
+  readmes state `[9.6.0,10.0.0)` *(`[9.0.0,10.0.0)` until the note of 2026-10-12 above)*.
+  *(2026-10-12, decided with the user: the Definition of Done's Step 4 runs the floor and layer 2 across
+  the range, and WR-10 judges both.)*
 - `docs/agents/numbering.md` gains nothing: a release branch takes no numbers.

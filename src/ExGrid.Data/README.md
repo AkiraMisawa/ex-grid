@@ -20,8 +20,9 @@ pass over a million rows is a loop over arrays rather than over objects.
 
 A Snapshot is data, not a query engine: it does not sort, filter, group or aggregate.
 
-> **This is a prerelease (`0.x`).** `ExGrid.Data` ships with ExGrid and ExPivot, at the same
-> version. The API may change between prereleases.
+> **`ExGrid.Data` ships with ExGrid and ExPivot, at the same version.** While the version is `0.x`,
+> the API may change from one version to the next; each version's
+> [Release Notes](https://akiramisawa.github.io/ex-grid/release-notes) say what changed.
 
 ## Requirements
 

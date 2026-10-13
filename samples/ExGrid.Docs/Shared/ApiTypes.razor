@@ -1,0 +1,86 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+
+@* One package's public types on the API reference (ADR-0201), the contract or what is public and not
+   the contract, by namespace: each type's name, what it is and its summary, and the topic page whose API
+   table shows it. A type's name opens its API table beneath its row; an address naming the row's anchor,
+   as a search result does, opens it too. *@
+@foreach (var ns in _types.GroupBy(t => t.Namespace))
+{
+    <MudText Typo="Typo.subtitle2" Class="docs-api-heading"><code>@ns.Key</code></MudText>
+    <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table docs-reference-table">
+        <thead>
+            <tr><th class="docs-api-name">Type</th><th class="docs-api-kind">Kind</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var type in ns)
+            {
+                var open = _open.Contains(type.Id);
+                <tr id="@type.Anchor">
+                    <td class="docs-api-name">
+                        <button type="button" class="docs-api-toggle" aria-expanded="@(open ? "true" : "false")"
+                                title="@(open ? "Close its table" : "Open its table")" @onclick="() => Toggle(type)">
+                            <code>@type.Name</code>
+                        </button>
+                        @if (ApiSurface.ShownOn(type) is { } shown)
+                        {
+                            <div><a href="@shown.Href" class="docs-reference-small">On @shown.Title</a></div>
+                        }
+                    </td>
+                    <td>@type.Kind</td>
+                    <td><ApiSummary Html="@type.Summary" /></td>
+                </tr>
+                @if (open)
+                {
+                    <tr class="docs-api-open">
+                        <td colspan="3"><ApiTable Type="type.Type" ShowTitle="false" /></td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </MudSimpleTable>
+}
+
+@code {
+    /// <summary>The package, by its id.</summary>
+    [Parameter, EditorRequired] public string Package { get; set; } = "";
+
+    /// <summary>Whether to list its contract, or what is public and not the contract.</summary>
+    [Parameter] public bool Contract { get; set; } = true;
+
+    private List<ApiType> _types = [];
+    private readonly HashSet<string> _open = new(StringComparer.Ordinal);
+
+    protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+
+    protected override void OnParametersSet()
+    {
+        _types = ApiSurface.TypesOf(Package, Contract).ToList();
+        OpenNamed(Navigation.Uri);
+    }
+
+    private void Toggle(ApiType type)
+    {
+        if (!_open.Remove(type.Id))
+            _open.Add(type.Id);
+    }
+
+    // A search result leads to a type's row by its anchor: open its table there.
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        if (OpenNamed(e.Location))
+            InvokeAsync(StateHasChanged);
+    }
+
+    private bool OpenNamed(string uri)
+    {
+        var hash = uri.IndexOf('#');
+        if (hash < 0)
+            return false;
+        var anchor = uri[(hash + 1)..];
+        var named = _types.FirstOrDefault(t => t.Anchor == anchor);
+        return named is not null && _open.Add(named.Id);
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

@@ -95,7 +95,7 @@ test('mounting and disposing the grid fifty times returns nodes and listeners to
     // read before it lands the selectionchange listener still stood (CI, Edge on the Server
     // host, 2026-10-02). A listener the dispose never takes off still fails here.
     await expect.poll(async () => (await grid.listenersOn('document')).map(key)
-        .filter((k) => /@ex-grid(\.[\w-]+)*\.js$/.test(k)), { message: 'the first cycle\'s grid let go of the document' })
+        .filter((k) => /@ex-grid(\.[\w-]+)*\.js(\?v=[0-9a-f]{12})?$/.test(k)), { message: 'the first cycle\'s grid let go of the document' })
         .toEqual([]);
     const baseline = await grid.counters();
     const byFramework = added(freshOnDocument, await grid.listenersOn('document'));
@@ -123,9 +123,9 @@ test('mounting and disposing the grid fifty times returns nodes and listeners to
 
 test('disposal takes the module\'s listeners off the root, and the count comes back (MEM-4)', async ({ page }) => {
     const grid = await lifecycle(page);
-    const fromModule = (t) => expect.stringMatching(new RegExp(`^${t.replace(/[()]/g, '\\$&')} @ex-grid(\\.[\\w-]+)*\\.js$`));
+    const fromModule = (t) => expect.stringMatching(new RegExp(`^${t.replace(/[()]/g, '\\$&')} @ex-grid(\\.[\\w-]+)*\\.js(\\?v=[0-9a-f]{12})?$`));
     const moduleOnDocument = async () => (await grid.listenersOn('document')).map(key)
-        .filter((k) => /@ex-grid(\.[\w-]+)*\.js$/.test(k));
+        .filter((k) => /@ex-grid(\.[\w-]+)*\.js(\?v=[0-9a-f]{12})?$/.test(k));
     // Blazor's own delegated listeners land here (MEM-2 checks which). Mounted until it
     // listens, and read once the module has let go, so the baseline is not taken while an
     // attach or a dispose is still on the wire (a Server circuit's round trip).
@@ -137,18 +137,18 @@ test('disposal takes the module\'s listeners off the root, and the count comes b
     await grid.mount();
     await page.evaluate(() => { window.__disposedRoot = document.querySelector('.ex-grid'); });
     const attached = (await grid.listenersOn('window.__disposedRoot')).map(key).sort();
-    // The per-instance handle's sixteen on the instance root (ADR-0018): the capture-phase
+    // The per-instance handle's seventeen on the instance root (ADR-0018): the capture-phase
     // keys, the capture-phase press and release that keep a press on the rows among held
     // keys (ADR-0021/0010), the editor's input report (ADR-0051), the pointer report, the
     // two clipboard events, and copy, cut and paste again in the capture phase, which take
     // the event a clipboard key fires while a hold stands into its place among the held keys
     // (ADR-0010's note of 2026-10-02), the press another grid hands on while this one points
-    // through a Pointing Scope (ADR-0058, DC-54), and the Keyboard Field's composition and
-    // focus (ADR-0080, ADR-0021's seventh entry), on every root, with a field or not.
+    // through a Pointing Scope (ADR-0058, DC-54), and the Keyboard Field's composition, focus
+    // and keyup (ADR-0080, ADR-0021's seventh entry), on every root, with a field or not.
     expect(attached).toEqual([
         'compositionend (capture)', 'compositionstart (capture)', 'copy (capture)', 'copy', 'cut (capture)',
         'ex-press-handed-on', 'focus (capture)', 'focusout (capture)', 'input (capture)', 'keydown (capture)',
-        'mousedown (capture)', 'mouseleave', 'mousemove', 'mouseup (capture)', 'paste (capture)', 'paste',
+        'keyup (capture)', 'mousedown (capture)', 'mouseleave', 'mousemove', 'mouseup (capture)', 'paste (capture)', 'paste',
     ].map(fromModule));
     // And one on the document, the only place `selectionchange` fires: it acts only while
     // DOM focus is in this instance's editor surface (ADR-0051), and it goes with the

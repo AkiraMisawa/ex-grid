@@ -303,8 +303,9 @@ public sealed partial class Sheet
         return new SheetChange(change.ValueChanges, change.Recalculated, [.. rows]);
     }
 
-    /// <summary>Sets or clears (<see langword="null"/>) one cell's Entry, and recalculates.</summary>
-    public SheetChange SetEntry(CellAddress address, Entry? entry) =>
+    /// <summary>Sets or clears (<see langword="null"/>) one cell's Entry, and recalculates. Internal
+    /// (ADR-0201): <see cref="SetEntries"/> with one pair is the same change.</summary>
+    internal SheetChange SetEntry(CellAddress address, Entry? entry) =>
         SetEntries([new KeyValuePair<CellAddress, Entry?>(address, entry)]);
 
     /// <summary>Sets or clears several cells' Entries as one change, with one recalculation. A later pair for the same cell wins.</summary>

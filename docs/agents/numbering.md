@@ -47,7 +47,8 @@ block on `main` before it uses the first number.
 | 120–139 | `claude/exsheet-after-run-16` and its successors | Pointing Scope's line, continued: the sixteenth Windows run's answers |
 | 140–159 | `claude/exsheet-part-c` | Part C of the eleventh Windows run: what ADR-0071 left to the next PR |
 | 160–179 | `claude/trusting-babbage-1tpuqo` | The Sheet Toolbar |
-| 180– | free | reserve a block of twenty |
+| 180–199 | `claude/dod-gaps-sheet-pivot-tests` | Closing the Definition of Done's unproven ExSheet rows before 0.1.0: 180 is a structured reference written in its table's declared case (decided with the user 2026-10-13, after 0.1.0) |
+| 200– | free | reserve a block of twenty |
 
 Another spec's tickets (`docs/specs/<feature>/issues/`) are numbered within that spec, and are not
 reserved here.
