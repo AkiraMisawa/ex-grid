@@ -20,8 +20,17 @@ namespace ExGrid.Components.Tests;
 /// the count the status line displays, every scroll offset the grid writes lies within
 /// [0, max], the painted rows are exactly <c>ViewportGeometry.SliceAt</c> of where the browser
 /// stands — the page's rows, at their absolute positions, under the ceiling's compression — the
-/// page on screen is one the result holds, and nothing throws. Each seed must reach a pager, a page
-/// past the first, and a compressed scroll, or the run fails. The browser is modelled: it takes every offset the grid writes,
+/// page on screen is one the result holds, a page the pager turned is the next one and starts at the
+/// top, the spacer is the arithmetic's height, and nothing throws. The browser stops where the
+/// spacer the grid laid out stops, under the ceiling. Each seed must act often enough paged, past
+/// the first page, compressed, compressed without a pager and compressed past the first page, and
+/// must turn a page while compressed, or the run fails; thirty steps halfway through are spent where
+/// paging and compression meet.
+///
+/// <para>The painted rows are judged against <c>ViewportGeometry</c> itself, so a fault inside
+/// <c>ViewportGeometry</c> — <c>SliceAt</c>, <c>ContentOffsetAt</c> under compression — is invisible
+/// here by construction. Layer 1 pins that arithmetic independently (<c>ViewportCompressionTests</c>,
+/// <c>ViewportGeometryTests</c>); this test pins that the grid paints by it.</para> The browser is modelled: it takes every offset the grid writes,
 /// clamps any position the content no longer reaches, and reports each move with a scroll
 /// event. The seed is in the test name's data so a failure replays exactly.
 /// </summary>
@@ -83,10 +92,20 @@ public class ConsistencyTests : GridTestContext
 
         // How often the run stood where the two newer paths are: paged, past the first page, and
         // compressed under a Layout Ceiling — counted so a seed that never reaches them fails.
-        int paged = 0, pastFirstPage = 0, compressed = 0;
+        int paged = 0, pastFirstPage = 0, compressed = 0, compressedUnpaged = 0, compressedPastFirstPage = 0, turnedWhileCompressed = 0;
         for (var step = 0; step < 500; step++)
         {
-            var operation = random.Next(13);
+            // Halfway, the run is put where paging and compression meet — a pager of 60 rows under
+            // an 800px ceiling — and acts there for thirty steps (clicks, drags, keys, scrolls, page
+            // turns), so every seed reaches it whatever it drew before.
+            var operation = step switch
+            {
+                250 => 13,
+                > 250 and < 280 => new[] { 0, 1, 2, 3, 11, 11 }[random.Next(6)],
+                _ => random.Next(13),
+            };
+            int? turnedTo = null;
+            var compressedBefore = GeometryOf(layout, source, cut).IsCompressed;
             switch (operation)
             {
                 case 0: // click somewhere on screen
@@ -160,18 +179,25 @@ public class ConsistencyTests : GridTestContext
                     cut.Render(ps => ps.Add(g => g.Density, (GridDensity)random.Next(3)));
                     break;
                 case 10: // a pager put on, taken off, or set to another page size (ADR-0015)
-                    layout = layout with { PageSize = new int?[] { null, 25, 60 }[random.Next(3)] };
+                    layout = layout with { PageSize = new int?[] { null, null, 25, 60 }[random.Next(4)] };
                     cut.Render(ps => ps.Add(g => g.PageSize, layout.PageSize));
                     break;
                 case 11: // the pager turned a page back or on, where it can be
                     if (cut.FindAll(".ex-pager button") is { Count: 2 } pager
-                        && pager[random.Next(2)] is var button && !button.HasAttribute("disabled"))
+                        && random.Next(2) is var direction && !pager[direction].HasAttribute("disabled"))
                     {
-                        await button.ClickAsync(new MouseEventArgs());
+                        // Known before the press, not read back from the pager afterwards.
+                        turnedTo = PageOf(layout, source, cut).Index + (direction == 0 ? -1 : 1);
+                        await pager[direction].ClickAsync(new MouseEventArgs());
                     }
                     break;
+                case 13: // scripted: a pager and a low ceiling at once
+                    layout = layout with { PageSize = 60, CeilingPx = 800 };
+                    cut.Render(ps => ps.Add(g => g.PageSize, layout.PageSize));
+                    await cut.InvokeAsync(() => cut.Instance.OnLayoutCeilingAsync(800));
+                    break;
                 case 12: // the browser reports another Layout Ceiling: a zoom, a scale (ADR-0053)
-                    layout = layout with { CeilingPx = new[] { ViewportGeometry.MaxScrollHeightPx, 1_500d, 6_000d }[random.Next(3)] };
+                    layout = layout with { CeilingPx = new[] { ViewportGeometry.MaxScrollHeightPx, 1_500d, 800d, 6_000d }[random.Next(4)] };
                     var ceiling = layout.CeilingPx;
                     await cut.InvokeAsync(() => cut.Instance.OnLayoutCeilingAsync(ceiling));
                     break;
@@ -182,18 +208,39 @@ public class ConsistencyTests : GridTestContext
             await browser.FollowAsync(layout, source);
             AssertInvariants(cut, selection, source, layout, browser,
                 $"seed {seed}, step {step}, operation {operation}, {layout}, {source.TotalCount} rows, browser at {browser.Top}");
-            if (layout.PageSize is not null)
+            // A page turned by the pager is the page next to the one before, and starts at the top
+            // (ADR-0015): the turn is the pager's scroll.
+            if (turnedTo is { } expectedPage)
+            {
+                Assert.True(PageOf(layout, source, cut).Index == expectedPage && browser.Top == 0,
+                    $"turned to page {PageOf(layout, source, cut).Index + 1} at {browser.Top}, expected page {expectedPage + 1} at the top: seed {seed}, step {step}");
+                if (compressedBefore)
+                    turnedWhileCompressed++;
+            }
+            // Counted where an operation acted in the state, not where the run merely stood in it.
+            var acting = operation is 0 or 1 or 2 or 3 or 11;
+            var compressedNow = GeometryOf(layout, source, cut).IsCompressed;
+            if (acting && layout.PageSize is not null)
             {
                 paged++;
                 if (PageOf(layout, source, cut).Index > 0)
                     pastFirstPage++;
             }
-            if (GeometryOf(layout, source, cut).IsCompressed)
+            if (acting && compressedNow)
+            {
                 compressed++;
+                if (layout.PageSize is null)
+                    compressedUnpaged++;
+                else if (PageOf(layout, source, cut).Index > 0)
+                    compressedPastFirstPage++;
+            }
         }
 
-        Assert.True(paged > 0 && pastFirstPage > 0 && compressed > 0,
-            $"seed {seed} reached paged {paged}, past the first page {pastFirstPage}, compressed {compressed} steps");
+        Assert.True(paged >= 20 && pastFirstPage >= 20 && compressed >= 20 && compressedUnpaged >= 5
+            && compressedPastFirstPage >= 1 && turnedWhileCompressed >= 1,
+            $"seed {seed} acted paged {paged}, past the first page {pastFirstPage}, compressed {compressed}, "
+            + $"compressed without a pager {compressedUnpaged}, compressed past the first page {compressedPastFirstPage}, "
+            + $"turned a page compressed {turnedWhileCompressed} times");
     }
 
     private const double HeaderHeightPx = 20;
@@ -243,9 +290,20 @@ public class ConsistencyTests : GridTestContext
         /// <summary>Every offset the grid has written since the last look, for the bounds check.</summary>
         public List<(double Top, double Left)> NewWrites { get; } = [];
 
+        /// <summary>Where a browser stops the scroller: the spacer the grid laid out, no taller than
+        /// the Layout Ceiling, less the Viewport — read from the page, not from the arithmetic.</summary>
+        private double MaxTop(Layout layout)
+        {
+            var style = cut.Find(".ex-spacer").GetAttribute("style")!;
+            var match = System.Text.RegularExpressions.Regex.Match(style, @"height: ([0-9.]+)px");
+            var spacer = double.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+            return Math.Max(0, Math.Min(spacer, layout.CeilingPx) - layout.ViewportHeightPx);
+        }
+
         public async Task ScrollAsync(double top, double left, Layout layout, InMemoryGridSource<TestRow> source)
         {
-            Top = Math.Clamp(top, 0, MaxScrollTop(layout, source, cut));
+            _ = source;
+            Top = Math.Clamp(top, 0, MaxTop(layout));
             Left = Math.Clamp(left, 0, MaxScrollLeft(layout));
             await ReportAsync();
         }
@@ -275,7 +333,8 @@ public class ConsistencyTests : GridTestContext
                     (Top, Left) = writes[^1];
                     moved = true;
                 }
-                var top = Math.Clamp(Top, 0, MaxScrollTop(layout, source, cut));
+                _ = source;
+                var top = Math.Clamp(Top, 0, MaxTop(layout));
                 var left = Math.Clamp(Left, 0, MaxScrollLeft(layout));
                 moved |= top != Top || left != Left;
                 (Top, Left) = (top, left);
@@ -821,6 +880,14 @@ public class ConsistencyTests : GridTestContext
         }
 
         // The painted rows are exactly ViewportGeometry.SliceAt of where the browser is.
+        // The spacer the grid lays out is the arithmetic's scroll height under the header band: what a
+        // browser lets the scroller reach is what the slices are computed against (ADR-0053).
+        var spacerStyle = cut.Find(".ex-spacer").GetAttribute("style")!;
+        var spacerPx = double.Parse(System.Text.RegularExpressions.Regex.Match(spacerStyle, @"height: ([0-9.]+)px").Groups[1].Value,
+            System.Globalization.CultureInfo.InvariantCulture);
+        Assert.True(spacerPx == HeaderHeightPx + GeometryOf(layout, source, cut).ScrollHeightPx,
+            $"spacer {spacerPx}, arithmetic {HeaderHeightPx + GeometryOf(layout, source, cut).ScrollHeightPx}: {where}");
+
         // Under a pager, the page on screen is one the result holds (ADR-0015), and the rows are the
         // page's slice, written at their absolute positions.
         var page = PageOf(layout, source, cut);
