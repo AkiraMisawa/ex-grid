@@ -203,8 +203,13 @@
             <li>
                 <b>Pointing.</b> Wherever a Reference can go — after <code>=</code>, an operator, <code>(</code> or
                 <code>,</code> — the arrow keys and the mouse point at cells and write their Reference. Shift and an
-                arrow, or a drag, writes a range. F4 cycles the Reference at the caret through <code>$A$1</code>,
-                <code>A$1</code>, <code>$A1</code> and <code>A1</code>.
+                arrow, or a drag, writes a range, and Shift+Home a range to the row's first column. Typed into the
+                Formula Bar, the arrow keys move the caret instead, as they do in Excel's bar, until <kbd>F2</kbd>
+                points. F4 cycles the Reference at the caret through <code>$A$1</code>, <code>A$1</code>,
+                <code>$A1</code> and <code>A1</code>; in a range typed out only the end at the caret cycles, and its
+                column letters are written in upper case, while a range being pointed at cycles whole. Where the caret
+                was moved with a key or a press, the rewritten Reference is left selected, so the next F4 cycles it
+                again; where typing left the caret, the caret stands after it.
             </li>
             <li>
                 <b>Reference outlines.</b> Each Reference in the Formula being edited wears a colour, and the cells it

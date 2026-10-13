@@ -130,6 +130,12 @@ DOM focus. This is the same allowlisted listener doing the same job
 
 - **Shift+arrow points too.** While a pointing outline stands, the key listener claims the four
   Shift+arrows as well, so they extend the outline instead of selecting text in the input.
+  *(2026-10-12, after the readings of 2026-10-12, R1 (viii).)* **Shift+Home is claimed with them**,
+  and extends the outline from its fixed end to the row's first column, pointing going on: in Excel,
+  `=`, ↓, Shift+Home in D10 gave `=A11:D11`, still in Point (observed). From a range already pointed
+  (`=D11:D12`), it extends from the range's fixed end (`=A11:D12`), as Shift+Home extends a
+  Selection: a reading. The second round of the seventeenth run's corrections had left it to the
+  editor, which selected text.
 - **While the completion list is open, only ↑, ↓, Tab and Escape are claimed.** ← and → move the
   caret, as they do in Excel.
 - **The editor's caret is reported and set, never inferred.** An input event carries no caret, and
@@ -191,32 +197,80 @@ SH-6). Nothing in ExGrid or ExSheet did it.
   where `=A$1+B2` is right. **A placement still in flight wins over the browser's own caret, unless
   the user moved it**, which is the rule the second round (above) already applies to caret reports.
 - **While pointing, F4 cycles the Reference the pointing outline wrote**, and pointing goes on.
+  *(2026-10-12.)* The whole of it: the function is asked with a selection over the outline's
+  Reference, so a pointed range's two ends cycle together, as Excel's did (observed, the readings of
+  2026-10-12, R1 (vi): `=`, ↓, Shift+↓, F4 in D10 gave `=$D$11:$D$12`). Asked at a caret at its end,
+  only the second end would cycle, now that each end is a Reference of its own.
 - **On a Mac it is F4 only.** Excel for Mac's own key is ⌘+T, which a browser keeps for a new tab and
   never gives a page. On a Mac laptop's default keyboard settings, F4 is Fn+F4.
 
-**Readings, until the seventh Windows run observes them.** The rules above are Excel's documented
-behaviour. These are the closest readings of what it does at the edges, taken for the
-implementation and asked of Excel in `docs/specs/exsheet/verify-on-windows-7.md`:
+**What Excel does at the edges** *(observed by the seventeenth Windows run, 2026-10-11, Excel
+16.0.20430 on Windows 11, `verification/2026-10-11-windows-17/report.md`, Part C, and by the readings
+of 2026-10-12, R1, `verification/2026-10-12-windows-readings/report.md`; settled here 2026-10-12, as
+SH-28 and ADR-0202 ask)*. The rules above are Excel's documented behaviour. The bullets below were
+first the closest readings of what it does at the edges, taken for the implementation and asked of
+Excel in `docs/specs/exsheet/verify-on-windows-7.md`; the seventeenth run put them to Excel, typed
+into a cell (Enter mode) and with F2 first (Edit mode), and R1 in the Formula Bar and while pointing.
+Where a reading was wrong, the bullet says what Excel does and keeps what was read:
 
 - **The Reference at the caret** is the one the caret is inside or touching, on either side: `=A1|+B2`
-  and `=|A1+B2` both cycle `A1`. A caret touching no Reference changes nothing, as does F4 in a
-  function name, a number, a string, or text that is not a Formula.
-- **A range cycles as one**: `A1:B2` → `$A$1:$B$2` → `A$1:B$2` → `$A1:$B2` → `A1:B2`. From a range whose
-  ends differ, the next form is taken from the first end and given to both.
+  and `=|A1+B2` both cycle `A1` (observed, cases 2 to 4). **Each end of a cell range is a Reference of
+  its own** *(observed, cases 5, 6 and 22)*: `=SUM(A1:B2|)` and `=SUM(A1:|B2)` cycle `B2`, and
+  `=SUM(A1|:B2)` cycles `A1`. A caret touching no Reference changes nothing, as does F4 in a function
+  name (observed, case 12), a number (case 13) or text that is not a Formula (case 14), and in a
+  string, a reading by generalisation: no case asked it.
+- **A cell range does not cycle as one: the end at the caret cycles, from its own form** *(corrected
+  after the seventeenth Windows run, cases 5, 6 and 22. The reading was that a range cycles as one,
+  `A1:B2` → `$A$1:$B$2` → `A$1:B$2` → `$A1:$B2` → `A1:B2`, its next form taken from the first end and
+  given to both; Excel cycles only the end the caret touches)*. `=SUM(A1:B2)` with the caret after
+  `B2` gives `=SUM(A1:$B$2)`, `=SUM(A1:B$2)`, `=SUM(A1:$B2)` and `=SUM(A1:B2)`; `=$A1:B2` gives
+  `=$A1:$B$2`, the other end left; `=B2:A1` gives `=B2:$A$1`. A selection over both ends cycles both,
+  as it cycles every Reference it covers (below), each to the first end's next form, and so does a
+  range being pointed at (above; observed, R1 (vi)). Whole columns and whole rows stay one Reference
+  (below).
 - **A selection cycles every Reference it covers, overlaps, or touches at either end**, each to the
   next form of the first one. *(Observed by the user in Excel, Microsoft 365 on Windows,
   2026-09-29, for the touching case: in `=A1+B1`, selecting only `+` and pressing F4 gives
   `=$A$1+$B$1`. The first reading, "a selection that overlaps no Reference changes nothing", was
-  wrong. The overlapping case and the form taken from the first Reference are still read.)*
-- **The text keeps the case and the order it was typed in**, since only `$` signs are written:
-  `=b2` gives `=$b$2`, and `=B2:A1` gives `=$B$2:$A$1`.
-- **Whole columns and whole rows have two forms**: `A:A` ↔ `$A:$A`, `1:1` ↔ `$1:$1`.
-- **A Sheet qualifier is kept**, and only the cell part cycles: `Sheet2!A1` → `Sheet2!$A$1`.
-- **A structured reference does not cycle**: `Positions[PV]` is left as it is.
-- **After F4, the caret is at the end of the rewritten Reference**, or, from a selection, the
-  selection covers what was rewritten.
-- **After F4 while pointing, a further move writes the new Reference as pointing writes it**, in the
-  relative form. Whether Excel keeps the `$` form while pointing goes on is asked in the run.
+  wrong. The overlapping case and the form taken from the first Reference were observed by the
+  seventeenth Windows run, cases 19 and 20: `1+B` selected in `=A1+B2` gave `=$A$1+$B$2`, and
+  `A1+$B$2` selected gave `=$A$1+$B$2`.)*
+- **The rewritten Reference's column letters are written in upper case** *(corrected after the
+  seventeenth Windows run, cases 21 and 22. The reading was that only `$` signs are written, so that
+  `=b2` gave `=$b$2`; Excel gives `=$B$2`)*. **The rest of the text keeps the case and the order it was
+  typed in**, a reading: no case observed lower-case text outside the rewritten Reference. `=B2:A1`
+  gives `=B2:$A$1`, its order kept. A Sheet qualifier is not rewritten and keeps
+  its case: it was not asked.
+- **Whole columns and whole rows have two forms**: `A:A` ↔ `$A:$A`, `1:1` ↔ `$1:$1` (observed, cases
+  8 and 9: the third press gives `$A:$A` and `$1:$1` again).
+- **A Sheet qualifier is kept**, and only the cell part cycles: `Sheet2!A1` → `Sheet2!$A$1` (observed,
+  case 10).
+- **A structured reference does not cycle**: `Positions[PV]` is left as it is (observed, case 11).
+- **After F4, the rewritten Reference is selected where the caret had been moved, and a caret stands
+  at its end where typing left it** *(corrected after the seventeenth Windows run and the readings of
+  2026-10-12. The reading was a caret at the end in every case; a first correction, taken from Part C
+  alone, tied the selection to Edit mode, and R1 (iv) contradicted it in the Formula Bar)*. Observed:
+  a caret moved with ←, or with Home and →, after F2 selected what was rewritten (`$A$1` in cases 2
+  to 4, `$B$2` in case 5, the whole `$A:$A` and `$1:$1` in cases 8 and 9), and so did ← in the bar
+  (R1 (v): `=SUM(A1:B2)`, ←, F4 gave `=SUM(A1:$B$2)` with `$B$2` selected); a selection stayed over
+  what was rewritten (cases 7 and 18 to 20); and with the caret where typing left it, the caret stood
+  at the end, typed into a cell (cases 1, 10, 21 and 22) and into the bar (R1 (iv): `=B2`, F4
+  gave `=$B$2`, nothing selected). The Consumer answers the span of what was rewritten, a Sheet
+  qualifier included before the first end, for a caret as for a selection. The F4 key message
+  already says whether the user moved the caret in that text (above), and the grid selects the span
+  where it says so or where the key carried a selection, and collapses it to a caret at its end
+  otherwise, in any editing state. A press in the text counts as a move, and a caret where F2 opened
+  the edit, or where an earlier F4 placed it, as one typing left: readings, by generalisation. A
+  placement still in flight carries the selection as it carries a caret (the rule settled while
+  building, above), so the next F4 cycles the same Reference. *(Whether a selection in Edit mode
+  starts at a Sheet qualifier was not asked: case 10 was typed.)*
+- **After F4 while pointing, the rewritten Reference is the one Point is writing**: the caret stands
+  at its end, so a key typed next follows it (observed, case 16: `=`, ↓, F4, `+` gave `=$A$2+`).
+  Excel reported it as the bar's selection (R1 (vi): UI Automation gave `$D$11:$D$12`); ExSheet
+  shows it as Point shows the Reference it writes, with Point's look and never as a selection of the
+  field's text, which a key typed would replace (Reference Outlines, below; ADR-0057, case 32).
+  **A further move writes the new Reference as pointing writes it, in the relative form** (observed,
+  case 15b: `=A3`, the reading's first option).
 
 ## Reference Outlines *(2026-09-29, decided with the user)*
 
@@ -300,7 +354,10 @@ the run's case. It was F2.)*
 - **While the edit is in the Formula Bar, typing keeps it in Caret.** Typing that ends Point there
   returns to Caret, not Overwrite. `Home`, `End`, ← and → move the caret, as they do in Caret
   anywhere, and Enter, Tab and Escape keep their meanings. Excel's bar stays in Edit while it is typed
-  in (the tenth Windows run, cases 14–16).
+  in (the tenth Windows run, cases 14–16). *(Observed again by the readings of 2026-10-12, R1 (i) to
+  (iii): a press into Excel's bar, `=`, ↓ stayed in Edit with the text `=` and nothing outlined; F4
+  and ↓ changed nothing, and `+` typed on. ExSheet's bar does the same: the seventeenth run's Part C
+  read `=` and `=+` there, cases 15, 15b and 16, and its "difference" 10 is none.)*
 - **An edit that moves from the cell into the bar goes into Caret**, and one that moves back into the
   cell keeps the mode it has. Excel's cell does not return to Enter mode once it is in Edit (the
   tenth run, cases 18 and 19).

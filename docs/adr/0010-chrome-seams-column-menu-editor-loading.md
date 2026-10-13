@@ -158,6 +158,36 @@ Only the keys the core decides to pass reach the editor.
 | Arrows / Home / End | **the core in Overwrite** (commit and move); **the editor in Caret** (move the caret) |
 | Everything else | the editor |
 
+*(2026-10-12, after the seventeenth Windows run, Part C, case 7, and the readings of 2026-10-12, R1
+(vii).)* **In Overwrite the core also takes Shift+Home, the four Shift+arrows, and the Primary
+Modifier's arrows with Shift or without.** Typed into a cell, Excel's Enter mode committed the entry
+on Shift+Home and extended the Selection, which the Shift+→ after it narrowed to `B10:D10` (case 7);
+on Shift+→, Shift+↓ and Shift+← it committed and extended from D10 (`D10:E10`, `D10:D11`,
+`C10:D10`); on Ctrl+→ it committed and moved to XFD10, and on Ctrl+Shift+→ it committed and selected
+`D10:XFD10` (R1 (vii)). ExGrid left them to the editor, which selected its text or moved its caret.
+Shift+↑ and the Primary Modifier's other arrows follow by generalisation. Where the Consumer says a
+Reference can go, the Shift keys point
+([ADR-0051](./0051-formula-entry-completion-point-mode-and-the-formula-bar.md)): a Shift+arrow extends
+a pointing outline from the edited cell, as Point does with it, and Shift+Home points from the edited
+cell to the row's first column (observed with a Ctrl+C before it: in R1's reading after its first
+step, `=` in D10, a Ctrl+C that copied nothing, then Shift+Home pointed, and a Ctrl+C copied
+`A10:D10`); the Primary Modifier's arrows there are taken and do nothing, as `End` does
+([ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md), Q53), rather than
+commit a Formula that ends too early — a reading: Excel was not asked. Elsewhere they commit, and then
+move or extend the Selection exactly as the same key does with no edit open
+([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)), an arrow with the Primary Modifier to
+the edge the Consumer answers; a Reject holds the commit, as it does for the arrows
+([ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)), and a commit
+whose own handler moved the order has dropped the Selection the key was aimed with, so the key moves
+and extends nothing, as Enter and the arrows move nothing then
+([ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)).
+Caret keeps them the editor's, and so does a list of names
+([ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md), Q51); a list open over
+Point leaves Shift+Home and the Primary Modifier's arrows to the editor, and its Shift+arrows point.
+**Shift+End stays the editor's**: Excel's committed, left the Selection on D10 and turned End Mode
+on (R1 (vii)), and the grid has no End Mode (ADR-0058, Q53). *(2026-10-13, decided with the user:
+Shift+End is left to the editor.)*
+
 Bubbling is too late — once the editor has handled the key and moved the caret, it cannot be taken
 back. **The capture phase is the point.**
 
