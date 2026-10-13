@@ -21,7 +21,7 @@ public readonly record struct ChartPoint(DateOnly X, decimal? Y);
 /// <param name="Text">The column's own format, so a value reads as its cell does.</param>
 public sealed record ChartSeries(
     string Column, string Name, string Group, string Leaf, int Slot, int GroupIndex,
-    bool Secondary, IReadOnlyList<ChartPoint> Points, Func<decimal, string> Text);
+    bool Secondary, IReadOnlyList<ChartPoint> Points, Func<decimal, string> Text, SeriesStyle Style);
 
 public sealed record ChartPanel(string Title, IReadOnlyList<ChartSeries> Series);
 
@@ -60,7 +60,8 @@ public static class ChartModelBuilder
         IReadOnlyList<TRow> rows,
         Func<string, bool> isChange,
         ChartLayout layout,
-        ChartView view)
+        ChartView view,
+        Func<string, SeriesStyle>? styleOf = null)
     {
         var byName = columns.ToDictionary(c => c.Name);
         var x = byName[definition.XColumn];
@@ -97,7 +98,8 @@ public static class ChartModelBuilder
                 leaves.IndexOf(column.Header), groupNames.IndexOf(group),
                 layout == ChartLayout.PanelPerGroup && isChange(name),
                 points,
-                format is null ? v => v.ToString("N2") : v => format(v)));
+                format is null ? v => v.ToString("N2") : v => format(v),
+                styleOf?.Invoke(name) ?? SeriesStyle.Default));
         }
 
         // The filter applies after the colours and dashes are given out, so that hiding "Before"

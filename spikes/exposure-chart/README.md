@@ -18,6 +18,7 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
 |---|---|
 | ![Panel per group, hovered](screenshots/hover.png) | ![One axis](screenshots/one-axis.png) |
 | ![Chart Filters](screenshots/filter.png) | ![Tooltip](screenshots/tooltip.png) |
+| ![Steps and markers, first five years](screenshots/step-5y.png) | ![Style panel](screenshots/style-panel.png) |
 
 ## How it is built
 
@@ -45,6 +46,15 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
   horizon (1Y / 5Y / 10Y / All) rather than Excel's one checkbox per category, which for 67 dates
   is a list nobody reads. It narrows the chart and its CSV, never the grid or the definition, and
   a hidden series keeps its colour slot so "After" stays blue when "Before" goes.
+- **How points are joined is declared per series** (`SeriesStyle`, chosen per Header Group under
+  Filter → Style): a line, a line with points, points only, or a step — over (tᵢ₋₁, tᵢ] or over
+  [tᵢ, tᵢ₊₁). A step is drawn as mathematics draws one: the end that takes the value is a
+  filled marker, the end that does not is an open one, and where the next level is equal the
+  function is continuous and no open marker is drawn; there is no vertical riser, since the
+  function takes no value between the levels. Markers are a circle, a square, a diamond or a
+  triangle. CVA defaults to the (tᵢ₋₁, tᵢ] step, because that is the piecewise-constant profile
+  its bucket-by-bucket integral uses; a line between the dates would show a profile the
+  calculation never saw.
 - **CSV with no script**: a `data:` URL behind `<a download>`, UTF-8 with a byte-order mark (Excel
   on a Japanese Windows otherwise reads Shift_JIS), invariant, unformatted, every digit; a missing
   value is an empty field, never a zero.
@@ -66,6 +76,10 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
 5. **Text is not measured**, so the legend wraps on an estimate per character (ADR-0021).
 6. **The rows a selection names are the shown rows.** Under a filter, the chart is of what was
    visible; "the whole table" means the Window, not the Consumer's data.
-7. **Charts beyond this one** (risk ladders by tenor, PL Explain waterfalls, HPL-vs-RTPL scatter for
+7. **A gesture must carry only what it changes.** The style controls first sent the whole style
+   they were rendered with; on the Server host, choosing a Draw and then a Marker within one round
+   trip put the Draw back. Each control now changes its one field on the style as it is when the
+   event is handled (spine rule 6) — the kind of race only machine-speed driving shows.
+8. **Charts beyond this one** (risk ladders by tenor, PL Explain waterfalls, HPL-vs-RTPL scatter for
    PLA) put a category or a number on the horizontal axis; the category's order then matters,
    and this PoC does not answer it.

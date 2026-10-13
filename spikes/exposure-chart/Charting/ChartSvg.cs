@@ -37,6 +37,8 @@ public static class ChartSvg
         .ex-chart-hit .ex-chart-hover { visibility: hidden; }
         .ex-chart-hit:hover .ex-chart-hover { visibility: visible; }
         .ex-chart-guide { stroke: var(--ex-chart-guide, #6b7280); stroke-width: 1; stroke-dasharray: 3 3; }
+        .ex-chart-root .ex-chart-marker { stroke-width: 1.3; }
+        .ex-chart-root .ex-chart-open { fill: var(--ex-chart-surface, #fff); }
         .ex-chart-dot { stroke: var(--ex-chart-surface, #fff); stroke-width: 1.5; }
         """;
 
@@ -128,7 +130,8 @@ public static class ChartSvg
             foreach (var series in panel.Series)
             {
                 var axis = series.Secondary ? rightAxis!.Value : leftAxis;
-                svg.Append(Invariant, $"""<path class="ex-chart-line ex-chart-slot-{series.Slot % 5} ex-chart-group-{(panel.Title.Length == 0 ? series.GroupIndex % 4 : 0)}" d="{PathOf(series.Points, X, v => Y(axis, v))}"><title>{Escape(series.Name)}</title></path>""");
+                var dash = panel.Title.Length == 0 ? series.GroupIndex % 4 : 0;
+                WriteSeries(svg, series, dash, X, v => Y(axis, v));
             }
         }
 
@@ -213,6 +216,73 @@ public static class ChartSvg
 
     private static IEnumerable<decimal> Values(ChartSeries series) =>
         series.Points.Where(p => p.Y.HasValue).Select(p => p.Y!.Value);
+
+    private static void WriteSeries(StringBuilder svg, ChartSeries series, int dash, Func<DateOnly, double> x, Func<decimal, double> y)
+    {
+        var slot = series.Slot % 5;
+        var style = series.Style;
+        var title = $"<title>{Escape(series.Name)}</title>";
+        if (style.Draw is SeriesDraw.Line or SeriesDraw.LinePoints)
+            svg.Append(Invariant, $"""<path class="ex-chart-line ex-chart-slot-{slot} ex-chart-group-{dash}" d="{PathOf(series.Points, x, y)}">{title}</path>""");
+        if (style.Draw is SeriesDraw.LinePoints or SeriesDraw.Points)
+            foreach (var p in series.Points)
+                if (p.Y is { } v) Marker(svg, style.Marker, slot, x(p.X), y(v), open: false, size: 3.2);
+        if (style.IsStep) WriteSteps(svg, series, slot, dash, x, y);
+    }
+
+    /// <summary>
+    /// A step function as mathematics draws one: a level per interval, a filled marker at the end
+    /// that takes the value and an open one at the end that does not. Where the next level is the
+    /// same the function is continuous, and no open marker is drawn. No vertical riser: the
+    /// function takes no value between the two levels, and a riser would draw one.
+    /// </summary>
+    private static void WriteSteps(StringBuilder svg, ChartSeries series, int slot, int dash, Func<DateOnly, double> x, Func<decimal, double> y)
+    {
+        var points = series.Points;
+        var preceding = series.Style.Draw == SeriesDraw.StepPreceding;
+        var d = new StringBuilder();
+        var opens = new List<(double X, double Y)>();
+        var closed = new List<(double X, double Y)>();
+        for (var i = 0; i < points.Count; i++)
+        {
+            if (points[i].Y is not { } v) continue;
+            var level = y(v);
+            closed.Add((x(points[i].X), level));
+            // (tᵢ₋₁, tᵢ] runs back to the previous date; [tᵢ, tᵢ₊₁) forward to the next.
+            var j = preceding ? i - 1 : i + 1;
+            if (j < 0 || j >= points.Count) continue;
+            var otherEnd = x(points[j].X);
+            d.Append(Invariant, $"M{otherEnd:0.##} {level:0.##}H{x(points[i].X):0.##}");
+            // Open where the neighbour's own value differs: there the function jumps.
+            if (points[j].Y != v) opens.Add((otherEnd, level));
+        }
+        svg.Append(Invariant, $"""<path class="ex-chart-line ex-chart-slot-{slot} ex-chart-group-{dash}" d="{d}"><title>{Escape(series.Name)}</title></path>""");
+        foreach (var (cx, cy) in opens) Marker(svg, series.Style.Marker, slot, cx, cy, open: true, size: 2.6);
+        foreach (var (cx, cy) in closed) Marker(svg, series.Style.Marker, slot, cx, cy, open: false, size: 2.6);
+    }
+
+    private static void Marker(StringBuilder svg, MarkerShape shape, int slot, double cx, double cy, bool open, double size)
+    {
+        var cls = $"ex-chart-marker ex-chart-slot-{slot}{(open ? " ex-chart-open" : "")}";
+        var s = size;
+        switch (shape)
+        {
+            case MarkerShape.Circle:
+                svg.Append(Invariant, $"""<circle class="{cls}" cx="{cx:0.##}" cy="{cy:0.##}" r="{s:0.##}"/>""");
+                break;
+            case MarkerShape.Square:
+                svg.Append(Invariant, $"""<rect class="{cls}" x="{cx - s:0.##}" y="{cy - s:0.##}" width="{2 * s:0.##}" height="{2 * s:0.##}"/>""");
+                break;
+            case MarkerShape.Diamond:
+                var r = s * 1.3;
+                svg.Append(Invariant, $"""<polygon class="{cls}" points="{cx:0.##},{cy - r:0.##} {cx + r:0.##},{cy:0.##} {cx:0.##},{cy + r:0.##} {cx - r:0.##},{cy:0.##}"/>""");
+                break;
+            case MarkerShape.Triangle:
+                var t = s * 1.35;
+                svg.Append(Invariant, $"""<polygon class="{cls}" points="{cx:0.##},{cy - t:0.##} {cx + t:0.##},{cy + t * 0.8:0.##} {cx - t:0.##},{cy + t * 0.8:0.##}"/>""");
+                break;
+        }
+    }
 
     // A missing value ends the run and the next value starts a new one: a gap, not a dive to zero.
     private static string PathOf(IReadOnlyList<ChartPoint> points, Func<DateOnly, double> x, Func<decimal, double> y)
