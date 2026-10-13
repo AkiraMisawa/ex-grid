@@ -1,5 +1,7 @@
 # The area pass before `0.1.0-rc.1`, 2026-10-12
 
+**Verified commit:** `75ee684dfecc85e154ca527ebe5ba395d8aa1ff4` — tagged `verified/2026-10-12-windows-area`
+
 One `oracle.ps1 -Area` pass, decided with the user on 2026-10-12 (ADR-0208's remedy; the notes to ADR-0202 and ADR-0208,
 PR #87). It asks every question the seventeenth Windows run's corrections added, and PMT at small rates and NPV. It
 follows `docs/specs/exsheet/verify-on-windows-17.md`, Part A, steps 1 to 5, over a smaller scope. **Nothing was
