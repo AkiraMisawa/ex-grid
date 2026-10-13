@@ -1,5 +1,6 @@
 import { test, expect, circuitQuiet } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
+import { readClipboard } from './sheet-helpers.mjs';
 import fs from 'node:fs';
 
 // ExPivot over a CSV on /pivot-csv (ADR-0064, ADR-0069), under ExPivot's own markup and under
@@ -11,8 +12,8 @@ import fs from 'node:fs';
 // large file paints its progress while it is read and Cancel stops it with nothing read; that an
 // unknown file's suggested Schema is shown with what is not clear, applied only once confirmed,
 // and read under to exact totals; that a value in General paints Excel's eleven characters whole in
-// its column, and a number Item's label the same General; and that the code the page shows is the
-// code it runs.
+// its column, and a number Item's label the same General, which a copy with headers carries in full
+// to the HTML Excel reads; and that the code the page shows is the code it runs.
 
 // Tall and wide enough for the report and the pane beside it, under the page's controls.
 test.use({ viewport: { width: 1400, height: 1100 } });
@@ -279,6 +280,40 @@ for (const chrome of ['builtin', 'mud']) {
                 ['1.23457E+11', '2'],
                 ['Grand Total', '3'],
             ]);
+        });
+
+        test(`ADR-0005/ADR-0060: a copy with headers takes a number column Item's header as painted into the text, and in full into the HTML Excel reads (${chrome})`, async ({ page, context }, testInfo) => {
+            // The readings of 2026-10-12's e16b.csv (R3 (c)), its Key in Columns: Excel holds each
+            // Item whole, 123456789012.345 where it shows 1.23457E+11 (ADR-0005's note of 2026-10-13).
+            await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+            const file = testInfo.outputPath('e16b.csv');
+            fs.writeFileSync(file, `${['Key,Amount', '1.23456789012345,1', '123456789012.345,2'].join('\r\n')}\r\n`);
+            await open(page, chrome);
+            await page.locator('#csv-unknown-file').setInputFiles(file);
+            await expect(page.locator('#csv-suggestion').getByRole('heading')).toHaveText('The Schema suggested for e16b.csv');
+            await page.locator('#csv-confirm').click();
+            await expect(status(page)).toHaveText(/^e16b\.csv: 2 rows read in [\d.]+ s\.$/);
+            await pane(page).getByRole('checkbox', { name: 'Key', exact: true }).check();
+            await pane(page).getByRole('button', { name: 'Options for Sum of Key', exact: true }).click();
+            await page.getByRole('menuitem', { name: 'Move to Column Labels', exact: true }).click();
+            await pane(page).getByRole('checkbox', { name: 'Amount', exact: true }).check();
+            // One row of values under the Items' headers: 1, 2 and the Grand Total, 3.
+            await expect.poll(async () => (await paintedRows(page)).at(-1)?.slice(-3)).toEqual(['1', '2', '3']);
+
+            const cells = rows(page).last().locator('[role=gridcell]');
+            const count = await cells.count();
+            await cells.nth(count - 3).click({ force: true });
+            await cells.nth(count - 1).click({ modifiers: ['Shift'], force: true });
+            await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+            await cells.nth(count - 1).click({ button: 'right', force: true });
+            await page.getByRole('menuitem', { name: 'Copy with headers', exact: true }).click();
+
+            // The write lands a round trip later on the Server host: read once it has.
+            await expect.poll(async () => (await readClipboard(page))['text/plain'] ?? 'SENTINEL').not.toBe('SENTINEL');
+            const clipboard = await readClipboard(page);
+            expect(clipboard['text/plain']).toBe('1.23456789\t1.23457E+11\tGrand Total\r\n1\t2\t3\r\n');
+            expect(clipboard['text/html']).toContain('<th>1.23456789012345</th><th>123456789012.345</th><th>Grand Total</th>');
+            expect(clipboard['text/html']).not.toContain('1.23457E');
         });
 
         test(`ADR-0064: the page's two samples, one under the declared Schema and one under a suggested one, read the same trades to the same total (${chrome})`, async ({ page }) => {

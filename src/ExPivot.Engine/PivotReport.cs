@@ -373,6 +373,11 @@ public sealed class PivotReportColumn
     public int ValueField { get; }
 
     internal AxisNode Node { get; }
+
+    // The number a number column Item's leaf header shows, in full: a copy with headers carries it
+    // in the HTML flavour, as a cell's copy carries its number (ADR-0005's note of 2026-10-13).
+    // Null for any other header.
+    internal double? HeaderNumber { get; init; }
 }
 
 /// <summary>A rectangle above the value columns' headers (ADR-0032/0060).</summary>

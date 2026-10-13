@@ -334,7 +334,9 @@ public static class PivotWords
         [ValuesPseudoField] = "Σ 値",
 
         ["aggregation-sum"] = "合計",
-        ["aggregation-count"] = "データの個数",
+        // The Japanese edition lists Count as 個数 in Value Field Settings, and captions it
+        // データの個数 / {0} (the readings of 2026-10-12, R3 (d); decided with the user, 2026-10-13).
+        ["aggregation-count"] = "個数",
         ["aggregation-average"] = "平均",
         ["aggregation-max"] = "最大",
         ["aggregation-min"] = "最小",

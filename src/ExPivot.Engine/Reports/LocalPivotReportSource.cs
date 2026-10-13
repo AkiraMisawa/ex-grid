@@ -492,7 +492,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
                 var cells = new List<PivotReportCopyCell>();
                 for (var c = range.Left; c <= range.Right; c++)
                 {
-                    var (value, index, _) = columns[c];
+                    var (value, index, _, _) = columns[c];
                     if (!value)
                     {
                         // A number Item's label is shown in General; its copy carries the number in
@@ -511,7 +511,14 @@ public sealed class LocalPivotReportSource : PivotReportSource
                 rows.Add(cells);
                 if (pace.Done(cells.Count)) await pace.PauseAsync().ConfigureAwait(false);
             }
-            blocks.Add(new(columns.Skip(range.Left).Take(range.Right - range.Left + 1).Select(c => c.Header).ToArray(), rows));
+            var spanned = columns.Skip(range.Left).Take(range.Right - range.Left + 1).ToArray();
+            // A number column Item's header carries its number in full for the HTML flavour, as a
+            // number Item's label does (ADR-0005's note of 2026-10-13).
+            var raws = spanned.Select(c => c.HeaderNumber?.ToString(CultureInfo.InvariantCulture)).ToArray();
+            blocks.Add(new(spanned.Select(c => c.Header).ToArray(), rows)
+            {
+                HeaderRaws = raws.Any(raw => raw is not null) ? raws : null,
+            });
         }
         return new(query.Version, blocks);
     }
@@ -534,7 +541,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (pace.Done(1)) await pace.PauseAsync().ConfigureAwait(false);
-            var (isValue, index, _) = columns[c];
+            var (isValue, index, _, _) = columns[c];
             if (!isValue)
             {
                 if (!string.IsNullOrEmpty(held.Report.Rows[r].Labels[index].Text)) counts.Values++;
@@ -614,11 +621,11 @@ public sealed class LocalPivotReportSource : PivotReportSource
         }
         return null;
     }
-    private static (bool Value, int Index, string Header)[] Columns(PivotReport report, IReadOnlyList<string> names)
+    private static (bool Value, int Index, string Header, double? HeaderNumber)[] Columns(PivotReport report, IReadOnlyList<string> names)
     {
-        var all = report.LabelColumns.Select((c, i) => (c.Name, Value: false, Index: i, c.Header))
-            .Concat(report.ValueColumns.Select((c, i) => (c.Name, Value: true, Index: i, c.Header)))
-            .ToDictionary(c => c.Name, c => (c.Value, c.Index, c.Header), StringComparer.Ordinal);
+        var all = report.LabelColumns.Select((c, i) => (c.Name, Value: false, Index: i, c.Header, HeaderNumber: (double?)null))
+            .Concat(report.ValueColumns.Select((c, i) => (c.Name, Value: true, Index: i, c.Header, c.HeaderNumber)))
+            .ToDictionary(c => c.Name, c => (c.Value, c.Index, c.Header, c.HeaderNumber), StringComparer.Ordinal);
         return names.Select(name => all[name]).ToArray();
     }
     /// <inheritdoc />

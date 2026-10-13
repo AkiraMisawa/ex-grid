@@ -1014,7 +1014,7 @@ public partial class ExPivot
                     Caption = own,
                     NumberFormat = open.NumberFormat.Trim().Length == 0 ? null : open.NumberFormat.Trim(),
                 };
-                var result = PivotLayoutEdits.SetValueField(layout, open.ValueIndex, value, Infos);
+                var result = PivotLayoutEdits.SetValueField(layout, open.ValueIndex, value, Infos, _options);
                 if (result.IsRefused)
                 {
                     open.Refusal = Word(result.RefusalWord!);

@@ -433,8 +433,11 @@ internal sealed class ReportBuilder
         else
         {
             // Its own leaf header; for a collapsed Item it stretches up to its parent's
-            // rectangle (ADR-0032).
-            columns.Add(Column(PivotColumnRole.Item, node, -1, label));
+            // rectangle (ADR-0032). A number Item's header carries its number for a copy.
+            columns.Add(new(ColumnName(PivotColumnRole.Item, node, -1), label, PivotColumnRole.Item, -1, node)
+            {
+                HeaderNumber = global::ExPivot.Engine.ItemLabels.NumberOf(node.Item, _columnMeta[level]),
+            });
         }
         return -1;
     }

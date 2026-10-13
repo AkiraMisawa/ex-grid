@@ -64,11 +64,10 @@ Item labels.
   `ItemTests.ADR0060_PV7_A_number_Items_copy_carries_the_number_in_full` (layer 1) and
   `PivotValueTextTests.ADR0060_PV7_A_number_Items_copy_carries_the_number_in_full` (layer 2), each failing without
   the change.
-- **Left for a decision: a column Item in a copy's header row.** A number Item standing in Columns heads its value
-  columns with its label, and a copy with headers writes the column's header, the same text in both flavours (ADR-0005,
-  "Copy with headers": the header is what is on screen, into both formats). With the label in General, that header
-  is `1.23457E+11` in the HTML as well. Carrying the number there needs a header with a raw form of its own, which
-  ADR-0005 does not have; see "What waits on a decision".
+- **A column Item in a copy's header row: decided with the user on 2026-10-13** (round 4 below). A number Item
+  standing in Columns heads its value columns with its label, and a copy with headers wrote the column's header, the
+  same text in both flavours (ADR-0005, "Copy with headers"), so the HTML held `1.23457E+11`. A header now carries a
+  raw form of its own, as a cell does (edit 16).
 - **An Item and a value of the same number** (found in review). An Item is labelled from its key, a `double`; a
   value of a Decimal column is shown from its exact `decimal`. Round 1's decimal path built its two forms from fifteen
   significant digits but judged the closer one against the decimal's further digits, so `0.10000000049999999m`
@@ -111,8 +110,8 @@ the Aggregation list, as R3 (d) read the Japanese list. The numbering was alread
   typed as a Count's Custom Name beside a Sum of Amount, which shows `合計 / Amount`, is not refused: it is kept, and
   the Sum becomes `合計 / Amount2` (checked against this branch's engine; English refuses `Sum of Amount` there). The
   review found it wider: under Japanese, `Sum of Amount` is refused as taken beside a Sum shown as `合計 / Amount`.
-  It was so before this branch. The fix gives `SetValueField` the report's words, a change to a public signature, so it
-  is left for a decision ("What waits on a decision").
+  It was so before this branch. *Decided with the user on 2026-10-13, and fixed in round 4*: `SetValueField` takes the
+  report's words (edit 17).
 
 **(e)** By the user's rule of 2026-10-12, "read the US edition first", ExPivot's English is the US edition's, and keeps
 `Max of`, `Min of` and `Summarize value field by`. Its Aggregation list is the US edition's list, word for word and in
@@ -120,6 +119,34 @@ its order (`ADR0060_The_English_words_are_Excels_English_US_editions`). Edit 5 i
 Known limitations line, edit 14 the page's sentence, and the Release Notes' line is below. No code changed: a comment
 and the class's summary in `PivotWords.cs`, and the **Label** line of `src/ExPivot/README.md` (the package's readme),
 say which edition the English is.
+
+## Round 4 (2026-10-13): the user's three decisions
+
+The three questions this proposal left open were put to the user, who chose each recommended option (2026-10-13).
+
+| | Decided with the user | Built | Evidence |
+|---|---|---|---|
+| A1 | A copy-with-headers header gets a raw form of its own, as a cell has: the TSV keeps the painted text, the HTML carries the number in full | `ClipboardData.Assemble` gains `headerRawAt`; ExPivot gives a number column Item's leaf header its number | `ClipboardDataTests.A_header_with_a_raw_form_carries_it_in_the_html_only`, `…A_header_raw_form_of_null_copies_as_before`; `ItemTests.ADR0005_A_number_column_Items_header_carries_its_number_in_full` (with the JSON a server's report travels in); `PivotValueTextTests.ADR0005_A_number_column_Items_header_copies_in_full`; layer 3, `pivot-csv.spec.mjs`'s copy with headers of e16b's Key in Columns |
+| A2 | Value Field Settings compares a typed caption with the other Value Fields' captions in the report's words | `PivotLayoutEdits.SetValueField(…, PivotOptions? options = null)`, passed from the Field List | `LayoutEditTests.ADR0060_Value_field_settings_refuses_a_caption_the_report_shows_in_its_words` and `…_does_not_refuse_a_caption_of_other_words`, each failing without the change; `PanelTests.ADR0060_Value_field_settings_refuse_a_caption_the_report_shows_in_Japanese`, failing when the Field List passes no options |
+| A3 | The Japanese list word for Count is `個数`; the caption `データの個数 / …` stays | `["aggregation-count"] = "個数"` in `PivotWords.Japanese` | `JapaneseWordsTests.ADR0060_The_Japanese_list_names_Count_個数_and_the_caption_stays` |
+
+**A1, the design** (mine; the decision is the user's):
+- `ClipboardData.Assemble` takes an optional `Func<int, string?>? headerRawAt`, read only with `headerAt`. A header
+  whose raw form is null writes its text into both flavours, exactly as before: ExGrid's and ExSheet's calls pass
+  none, and `A_header_raw_form_of_null_copies_as_before` holds that the payload is identical.
+- ExPivot.Engine: a value column's internal `HeaderNumber`, set where the report builder heads a column with a
+  number Item (a collapsed or innermost column Item, its Value Fields not in Columns); `PivotReportCopyBlock` gains
+  an init-only `HeaderRaws`, null unless some header of the rectangle has a raw form. It travels a server's JSON
+  (source-generated, round-tripped in the test). A fetching report source and ExPivot refuse a block whose
+  `HeaderRaws` does not match its `Headers`, as they refuse one whose rows do not.
+- Only an Item's own leaf header carries a number. `<Item> Total`, `Grand Total`, captions and date parts' words
+  copy as text. A column Item that heads a span above its Value Fields' captions is not in a copy's header row,
+  which names leaf columns only.
+
+**A2.** `ValueCaptions.Resolve` already took the options; `SetValueField` now passes them. Left out, they are the
+English words, as before.
+
+**A3.** One word. The Change Note covering the Japanese words says it.
 
 ## The first two rounds, finding by finding
 
@@ -618,6 +645,128 @@ No Example changes: every Docs Site Example and Showcase gives its Value Fields 
 field in Rows or Columns without a `format`, and none uses Count Numbers or the Japanese words with it, so none shows
 anything new and no GIF is re-recorded.
 
+### 16. docs/adr/0005-copy-refuses-rather-than-truncates.md
+
+Old:
+
+```
+- **It goes into both formats** — a `<th>` row in `text/html` as well as the first TSV line.
+  Excel prefers the HTML flavour, and a header row that reached the text editor but not the
+  spreadsheet would miss the case the feature exists for.
+```
+
+New:
+
+```
+- **It goes into both formats** — a `<th>` row in `text/html` as well as the first TSV line.
+  Excel prefers the HTML flavour, and a header row that reached the text editor but not the
+  spreadsheet would miss the case the feature exists for.
+  - *(2026-10-13, decided with the user: a header can carry a raw form of its own, as a cell does.)*
+    The TSV line takes the header as shown; the `<th>` takes its raw form where it has one, and its
+    text where it has none, as before. A pivot's number column Item heads its column in General
+    (`1.23457E+11`) and is copied in full (`123456789012.345`), as its cells are
+    ([ADR-0060](./0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)'s note of
+    2026-10-12). `ClipboardData.Assemble` takes the raw form through `headerRawAt`, and ExPivot
+    supplies it from the Item; ExGrid's own columns have none, and copy as before.
+```
+
+### 17. docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md
+
+Old:
+
+```
+- **A caption of its own that equals another Value Field's, or a Pivot Field's, is refused**, as
+  Excel refuses it ("PivotTable field name already exists").
+```
+
+New:
+
+```
+- **A caption of its own that equals another Value Field's, or a Pivot Field's, is refused**, as
+  Excel refuses it ("PivotTable field name already exists").
+  - *(2026-10-13, decided with the user: a typed caption is compared with the other Value Fields'
+    captions in the report's own words.)* `PivotLayoutEdits.SetValueField` takes the report's
+    `PivotOptions`, and the Field List passes its own: under `PivotWords.Japanese`, `合計 / Amount`
+    beside a Sum of Amount is refused, and `Sum of Amount` is not. It compared them in the English
+    words, whatever the report's (found in review, 2026-10-12).
+```
+
+### 18. docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md
+
+Old:
+
+```
+    so the character itself was not read. In Japanese the colon on screen sits where U+003A sits
+    when the same text is drawn for comparison, and U+FF1A begins about 10 px later; a full-width
+    colon that Office draws narrower (proportional metrics) is not excluded by that measurement.
+```
+
+New:
+
+```
+    so the character itself was not read. In Japanese the colon on screen sits where U+003A sits
+    when the same text is drawn for comparison, and U+FF1A begins about 10 px later; a full-width
+    colon that Office draws narrower (proportional metrics) is not excluded by that measurement.
+  - *(2026-10-13, decided with the user: Value Field Settings lists Count as `個数`, as the
+    Japanese edition does; the caption stays `データの個数 / {0}`.)* The readings of 2026-10-12
+    (R3 (d)) read the edition's list as `合計, 個数, 平均, 最大, 最小, 積, 数値の個数, …`; ExPivot
+    listed `データの個数`, the caption's word.
+```
+
+### 19. docs/definition-of-done.md
+
+Old:
+
+```
+| **CP-17** | MUST | Copy with headers emits the column's **declared `Header`** as one extra row — the first TSV line and a `<th>` row in `text/html` — for a disjoint selection in either orientation, and never the truncated paint (ADR-0005) | Layer 1 for the assembly, Layer 3 for the real clipboard | one header row, in both formats, naming the covered columns in emission order |
+```
+
+New:
+
+```
+| **CP-17** | MUST | Copy with headers emits the column's **declared `Header`** as one extra row — the first TSV line and a `<th>` row in `text/html` — for a disjoint selection in either orientation, and never the truncated paint. A header with a raw form of its own carries it in the `<th>`, as a cell carries its raw value, and its text in the TSV (ADR-0005; its note of 2026-10-13) | Layer 1 for the assembly, Layer 3 for the real clipboard (`features.spec.mjs`; `pivot-csv.spec.mjs` for a raw form) | one header row, in both formats, naming the covered columns in emission order |
+```
+
+### 20. samples/ExGrid.Docs/Pages/Grid/GridClipboard.razor
+
+Old:
+
+```
+                <strong>Two formats go on the clipboard.</strong> The text each cell shows, its <code>format</code>
+                applied, as plain text; and the raw values as an HTML table, so Excel receives every digit of an
+                amount the grid displays rounded. A cell showing <code>####</code> copies its value, never the hashes.
+```
+
+New:
+
+```
+                <strong>Two formats go on the clipboard.</strong> The text each cell shows, its <code>format</code>
+                applied, as plain text; and the raw values as an HTML table, so Excel receives every digit of an
+                amount the grid displays rounded. A cell showing <code>####</code> copies its value, never the hashes.
+                <em>Copy with headers</em> puts each column's header in both. When you answer a copy yourself,
+                <code>ClipboardData.Assemble</code> makes the two formats from each cell's shown and raw text, and a
+                header that shows a number rounded can carry the number in full for the HTML through
+                <code>headerRawAt</code>, as ExPivot's number column Items do.
+```
+
+### 21. samples/ExGrid.Docs/Pages/Pivot/PivotValues.razor
+
+Old:
+
+```
+            text a cell paints is not what a copy carries: copying puts the full-precision value on the
+            clipboard, so Excel receives the number, not its rounding.
+```
+
+New:
+
+```
+            text a cell paints is not what a copy carries: copying puts the full-precision value on the
+            clipboard, so Excel receives the number, not its rounding. So does a number Item's label, and a
+            number column Item's header in a copy with headers: <code>1.23457E+11</code> on screen and in the
+            plain text, <code>123456789012.345</code> in the HTML that Excel reads.
+```
+
 ## The Release Notes' Known limitations line (for `0.1.0`)
 
 Under "Known limitations" (ADR-0202), linking the page edit 14 writes:
@@ -632,25 +781,71 @@ Under "Known limitations" (ADR-0202), linking the page edit 14 writes:
 - `docs/releases/unreleased/run17cf-pivot-general-count-numbers-caption.md`: ExPivot, Behaviour (round 1; round 3
   adds the Japanese caption).
 - `docs/releases/unreleased/run17cf-pivot-general-item-labels-general.md`: ExPivot, Behaviour (round 3).
+- `docs/releases/unreleased/run17cf-pivot-general-header-raw-form.md`: ExGrid, Added (round 4, A1).
+- `docs/releases/unreleased/run17cf-pivot-general-column-item-header-copy.md`: ExPivot, Behaviour (round 4, A1).
+- `docs/releases/unreleased/run17cf-pivot-general-caption-refusal-words.md`: ExPivot, Fixed (round 4, A2).
+- `run17cf-pivot-general-count-numbers-caption.md` also says the Japanese list word `個数` (round 4, A3).
+
+## For the merge
+
+This branch starts at a533de01, before main's #89 (2265cda6, ADR-0201), which added each shipped project's
+`PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt` and made the engine's report classes internal. The branch adds
+no PublicAPI file (an add/add of the same path would conflict). After the merge, the build fails on RS0016 and RS0017
+until these lines are written, in main's format, into the files main added:
+
+`src/ExGrid/PublicAPI.Unshipped.txt`, replace:
+
+```
+static ExGrid.Clipboard.ClipboardData.Assemble(ExGrid.Clipboard.CopyPlan! plan, System.Func<int, int, string!>! displayAt, System.Func<int, int, string!>! rawAt, System.Func<int, string!>? headerAt = null) -> (string! Text, string! Html)
+```
+
+with:
+
+```
+static ExGrid.Clipboard.ClipboardData.Assemble(ExGrid.Clipboard.CopyPlan! plan, System.Func<int, int, string!>! displayAt, System.Func<int, int, string!>! rawAt, System.Func<int, string!>? headerAt = null, System.Func<int, string?>? headerRawAt = null) -> (string! Text, string! Html)
+```
+
+`src/ExPivot.Engine/PublicAPI.Unshipped.txt`, add (after `ExPivot.Engine.PivotReportCopyBlock.Headers.init -> void`):
+
+```
+ExPivot.Engine.PivotReportCopyBlock.HeaderRaws.get -> System.Collections.Generic.IReadOnlyList<string?>?
+ExPivot.Engine.PivotReportCopyBlock.HeaderRaws.init -> void
+```
+
+and replace:
+
+```
+static ExPivot.Engine.PivotLayoutEdits.SetValueField(ExPivot.Engine.PivotLayout! layout, int index, ExPivot.Engine.PivotValueField! value, System.Collections.Generic.IReadOnlyDictionary<string!, ExPivot.Engine.PivotFieldInfo!>! fields) -> ExPivot.Engine.PivotEditResult!
+```
+
+with:
+
+```
+static ExPivot.Engine.PivotLayoutEdits.SetValueField(ExPivot.Engine.PivotLayout! layout, int index, ExPivot.Engine.PivotValueField! value, System.Collections.Generic.IReadOnlyDictionary<string!, ExPivot.Engine.PivotFieldInfo!>! fields, ExPivot.Engine.PivotOptions? options = null) -> ExPivot.Engine.PivotEditResult!
+```
+
+Nothing else public changes: `PivotRowLabel.Number` and the value column's `HeaderNumber` are internal, and
+`ItemLabels` is internal.
+
+**Conflicts to expect** (`git merge-tree` of this branch's tip with origin/main):
+
+- `src/ExPivot/PivotSummary.cs`: deleted on main (#89), modified here (round 1: a comment naming the Selection
+  Summary's `G15` under a General Focus). Take main's deletion. The live path is
+  `LocalPivotReportSource.SummaryAsync`, whose `G15` the proposal's "Left as they are" already names.
+- `src/ExPivot.Engine/PivotReport.cs` and `PivotValue.cs` merge without conflict: main made `PivotReport`,
+  `PivotReportRow`, `PivotReportColumn` and `PivotValue` internal, and this branch adds internal members and
+  comments elsewhere in those files.
+- After the merge, check that main's tests of the copy, the captions and the words still pass with this branch's
+  answers: main's suites predate `Count of` for Count Numbers, General labels and the Japanese `個数`.
+
 
 ## What waits on a decision
 
-Nothing here is changed on the branch.
+Nothing. The three questions this section held were decided with the user on 2026-10-13 (round 4) and are built:
 
-1. **The Japanese Aggregation list names Count `個数`: an observed contradiction.** R3 (d): "The Japanese list reads
-   `合計, 個数, 平均, 最大, 最小, 積, 数値の個数, …`". ExPivot's list word is `["aggregation-count"] = "データの個数"`
-   (`PivotWords.cs`, the Japanese table), which is the edition's caption word (`データの個数 / Amount`), not its list
-   word. Options: correct the list word to `個数` (one word, observed; the caption stays `データの個数 / {0}`), or
-   keep it as a Known limitation of `0.1.0` (ADR-0202: a wording difference).
-2. **Value Field Settings' refusal under other words** (`PivotLayoutEdits.SetValueField`, round 3's (d) above).
-   Options: (a) give `SetValueField` the report's `PivotOptions`, a change to a public signature under ADR-0201's
-   surface; (b) a Known limitation; (c) the Field List checks before it calls, which repeats an engine rule outside
-   the engine, against ADR-0060's "every Field List rule is the engine's function".
-3. **A number column Item in a copy's header row** (round 3's (c) above). The header row is the columns' headers,
-   one text for both flavours (ADR-0005, "Copy with headers"), so a number Item heading value columns reaches the HTML
-   as its General label. Options: a header with a raw form of its own for the HTML flavour (ExGrid's `ClipboardData`
-   and ADR-0005 change), or accept it as said here. Before this branch the header was the label at 15 significant
-   digits, which Excel read to 15 digits.
+1. The Japanese Aggregation list names Count `個数`, as R3 (d) read it: edit 18.
+2. Value Field Settings compares a typed caption in the report's words: edit 17.
+3. A copy-with-headers header carries a raw form of its own: edits 16 and 19 to 21.
 
 ## ask_excel (for the next Windows pass)
 

@@ -222,6 +222,30 @@ public class ItemTests
         Assert.Equal(["1", "2", "3"], rows.Select(row => row[1].Raw));
     }
 
+    [Fact] // ADR-0005's note of 2026-10-13 (decided with the user), ADR-0060: a number column Item heads its column in General, and a copy's header carries its number in full for the HTML flavour; it travels a server's JSON
+    public async Task ADR0005_A_number_column_Items_header_carries_its_number_in_full()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var source = PivotReportSource.From(PivotSource.From(E16b, KeyedFields));
+        var client = new PivotReportClient(source);
+        var byColumn = new PivotLayout { Columns = [P("Key")], Values = [Sum("Amount")] };
+        Assert.True(await client.ReadAsync(byColumn, PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct));
+        var shown = client.Current!.Metadata;
+        var columns = shown.ValueColumns.Select(c => c.Name).ToArray();
+
+        var copy = await source.CopyAsync(new(shown.Version, columns, [new(0, 0, 0, columns.Length - 1)]), ct);
+
+        var block = copy.Blocks[0];
+        Assert.Equal(["1.23456789", "1.23457E+11", "Grand Total"], block.Headers);
+        Assert.Equal(["1.23456789012345", "123456789012.345", null], block.HeaderRaws!);
+        var travelled = PivotReportJson.Read<PivotReportCopyResult>(PivotReportJson.Write(copy)).Blocks[0];
+        Assert.Equal(block.HeaderRaws!, travelled.HeaderRaws!);
+        // A rectangle whose headers are all text has none.
+        var labels = await source.CopyAsync(new(shown.Version, [columns[^1]], [new(0, 0, 0, 0)]), ct);
+        Assert.Null(labels.Blocks[0].HeaderRaws);
+        Assert.Null(PivotReportJson.Read<PivotReportCopyResult>(PivotReportJson.Write(labels)).Blocks[0].HeaderRaws);
+    }
+
     [Fact] // ADR-0060 (R3 (c)): Filter… lists a number Item by the same General label the report paints
     public void ADR0060_Filter_lists_a_number_Item_by_its_General_label()
     {

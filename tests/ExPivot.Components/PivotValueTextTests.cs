@@ -103,6 +103,29 @@ public class PivotValueTextTests : PivotTestContext
         Assert.Equal(["1.23456789 | 1", "1.23457E+11 | 2", "Grand Total | 3"], RowTexts(cut));
     }
 
+    [Fact] // ADR-0005's note of 2026-10-13 (decided with the user), ADR-0060: a copy with headers takes a number column Item's header as painted into the TSV, and its number in full into the HTML
+    public async Task ADR0005_A_number_column_Items_header_copies_in_full()
+    {
+        var cut = RenderPivot(new PivotLayout { Columns = [P("Key")], Values = [Sum("Amount")] },
+            source: PivotSource.From<Keyed>([new(1.23456789012345m, 1), new(123456789012.345m, 2)],
+            [
+                new("Key", PivotFieldType.Number, k => k.Key),
+                new("Amount", PivotFieldType.Number, k => k.Amount),
+            ]));
+        var grid = Grid(cut).Instance;
+        var columns = HeaderTexts(cut);
+        var first = Array.IndexOf(columns, "1.23456789");
+        Assert.Equal(["1.23456789", "1.23457E+11", "Grand Total"], columns[first..]);
+        await cut.InvokeAsync(() => grid.PlaceSelectionAsync(new SelectionRange(0, first, 1, 3), new CellPosition(0, first), grid.RowSequenceVersion));
+
+        var payload = await cut.InvokeAsync(() => grid.BuildCopyPayloadAsync(withHeaders: true));
+
+        Assert.NotNull(payload);
+        Assert.StartsWith("1.23456789\t1.23457E+11\tGrand Total\r\n1\t2\t3", payload!.Text, StringComparison.Ordinal);
+        Assert.Contains("<tr><th>1.23456789012345</th><th>123456789012.345</th><th>Grand Total</th></tr>", payload.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("1.23457E", payload.Html, StringComparison.Ordinal);
+    }
+
     [Fact] // ADR-0060, PV-7, ADR-0005: a number Item's label copies as it is painted in the TSV, and as the whole number in the HTML Excel reads (R3 (c): Excel's label cell holds 123456789012.345)
     public async Task ADR0060_PV7_A_number_Items_copy_carries_the_number_in_full()
     {
