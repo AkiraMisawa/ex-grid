@@ -276,6 +276,12 @@ whole, since the Focus is Excel's active cell everywhere
   outer corner. Centring it on the outline's centre line would need the outline's width in C#.
   That is a stylesheet value, and pairing it with a C# constant is the defect
   [ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md) removes.
+  *(2026-10-12, decided with the user: whole columns put it at the first row's top-right corner and
+  whole rows at the first column's bottom-left, as Excel does.)* There it lies just inside the
+  cells, beside the Heading, which stands above this layer; Excel's straddles the Heading's edge
+  (the readings of 2026-10-12, R5). Every cell has none, and a whole column's handle stays at the
+  top of the part in view. [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), "The handle on
+  a whole axis".
 - **The hole was measured before it was claimed.** Main-thread time per ten-render selecting drag
   on `/sheet`, headless Chrome on an M4 Pro. With the hole switched off on the changed build, a drag
   moved by 0.6 to 0.7 ms (Server 16.2 against 15.6, WebAssembly 33.3 against 32.6). That is inside
