@@ -34,7 +34,9 @@ internal static class PivotEndpoints
     public const string JsonMediaType = "application/json";
 
     /// <summary>Maps <c>GET /api/pivot/fields</c>, and <c>POST /api/pivot/aggregate</c>,
-    /// <c>/api/pivot/items</c> and <c>/api/pivot/details</c>.</summary>
+    /// <c>/api/pivot/items</c> and <c>/api/pivot/details</c>; a report's operations under
+    /// <c>/api/pivot/reports/{id}</c>; and <c>GET</c> and <c>POST /api/pivot/window-gate</c>, the
+    /// gate a test holds a report's Window question at (<see cref="PivotWindowGate"/>).</summary>
     public static IEndpointRouteBuilder MapPivotEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/api/pivot/fields", () => new PivotFieldsResponse(
@@ -58,6 +60,9 @@ internal static class PivotEndpoints
             (source, query, ct) => source is null ? ValueTask.FromResult(new PivotReportCopyResult(query.Version, [], PivotReportStore.NotHeld())) : source.CopyAsync(query, ct));
         MapReport<PivotReportSummaryQuery, PivotReportSummaryResult>(app, "summary", false,
             (source, query, ct) => source is null ? ValueTask.FromResult(new PivotReportSummaryResult(query.Version, default, default, default, false, null, "", PivotReportStore.NotHeld())) : source.SummaryAsync(query, ct));
+        app.MapGet("/api/pivot/window-gate", (PivotWindowGate gate) => gate.State);
+        app.MapPost("/api/pivot/window-gate", (PivotWindowGateRequest request, PivotWindowGate gate) =>
+            request.Hold is { } hold ? Results.Ok(gate.Set(hold)) : ApiResults.BadRequest("hold is true or false."));
         app.MapDelete("/api/pivot/reports/{id}", async (string id, PivotReportStore reports, CancellationToken ct) =>
         {
             await reports.RemoveAsync(id, ct);
@@ -69,13 +74,15 @@ internal static class PivotEndpoints
     private static void MapReport<TQuery, TResult>(IEndpointRouteBuilder app, string operation, bool create,
         Func<LocalPivotReportSource?, TQuery, CancellationToken, ValueTask<TResult>> answer)
         => app.MapPost("/api/pivot/reports/{id}/" + operation,
-            (string id, HttpRequest request, PivotReportStore reports, TradeStore store, CancellationToken ct) =>
+            (string id, HttpRequest request, PivotReportStore reports, TradeStore store, PivotWindowGate gate, CancellationToken ct) =>
                 Answer(request, store, document =>
                 {
                     if (!Guid.TryParseExact(id, "N", out _)) throw new FormatException("A report identity must be a UUID in N format.");
                     return PivotReportJson.Read<TQuery>(document);
                 }, (query, token) => reports.AnswerAsync(id, create,
-                    async source => PivotReportJson.Write(await answer(source, query, token)), token), ct));
+                    async source => PivotReportJson.Write(await answer(source, query, token)), token), ct,
+                    // Only a Window question waits at the gate (PivotWindowGate).
+                    operation == "window" ? gate.PassAsync : null));
 
     /// <summary>The most records one Details page may ask for. A page is what a grid paints and
     /// reads ahead; a million records in one answer is not something to build (principle 5), so a
@@ -97,7 +104,8 @@ internal static class PivotEndpoints
         TradeStore store,
         Func<string, TQuestion> read,
         Func<TQuestion, CancellationToken, ValueTask<string>> answer,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<string, CancellationToken, Task>? before = null)
     {
         if (store.State != TradeStoreState.Ready)
             return ApiResults.NotReady(store, request.HttpContext.Response);
@@ -114,6 +122,8 @@ internal static class PivotEndpoints
         {
             return ApiResults.BadRequest(e.Message);
         }
+        if (before is not null)
+            await before(document, cancellationToken);
         return Results.Text(await answer(question, cancellationToken), JsonMediaType, Encoding.UTF8);
     }
 }

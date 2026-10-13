@@ -6,8 +6,9 @@ extent of 1,048,576 rows by 16,384 columns — computes its **Values** with
 [`ExGrid`](https://www.nuget.org/packages/ExGrid) as that grid's Consumer: ExSheet holds and
 computes, ExGrid paints, selects, navigates and reports.
 
-> **This is a prerelease (`0.x`).** ExSheet ships with ExGrid, at the same version; upgrade them
-> together. The API may change between prereleases.
+> **ExSheet ships with ExGrid, at the same version;** upgrade them together. While the version is
+> `0.x`, the API may change from one version to the next; each version's
+> [Release Notes](https://akiramisawa.github.io/ex-grid/release-notes) say what changed.
 
 ## Requirements
 

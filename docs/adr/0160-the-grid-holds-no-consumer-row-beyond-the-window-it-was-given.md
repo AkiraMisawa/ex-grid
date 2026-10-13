@@ -55,6 +55,11 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
     newest name the whole Window list it handed the grid, painted or not, until ExPivot renders
     again. A highlight that ends renders only the grid. The holding is bounded to one Window, and its
     rows reach no report (ADR-0153). *(Found while building LV-22's ExPivot test, 2026-10-08.)*
+  - *(2026-10-12, decided with the user: a Consumer render that changes no parameter no longer renders
+    the grid — UX-5, ADR-0027 P3 — so the release of the previous render's painted rows waits for the
+    grid's next real render, a new Window or anything else it is handed. The bound stays one render's
+    painted rows: at any moment nothing of a Window older than the one the grid's last render replaced
+    is held, and of that one only the rows the grid painted from it.)*
 - **What a Consumer hands the grid as its own object is the Consumer's to hold**: a Row Mark adapter, a
   Pointed At's dashes (ADR-0058), a popover's content. The grid keeps the reference, not rows of its own.
 
@@ -73,7 +78,7 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
   - the display rows of the Window last served under the Report Version before it, which is the
     Baseline Window of the next Window Changes ([ADR-0152](./0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
 
-  Once the pivot renders again, the grid holds no display row of an earlier Window. *(Restated on
+  Once the pivot renders again, nothing of an earlier Window is alive but the rows the grid painted from the Window before the newest, until the grid's next real render (2026-10-12, below the bullet on Blazor's frames). *(Restated on
   2026-10-08, when LV-22's ExPivot test was built. The first wording promised no earlier Window's rows,
   and no report beyond the versions kept and the one on screen; the design taken that day promises
   neither. Under the Claude Code track's ADR-0161 the highlight kept no report. **Decided with the user

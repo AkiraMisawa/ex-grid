@@ -374,6 +374,28 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal(["None", "Single"], ListItems(page));
     }
 
+    [Theory] // WR-10 / ADR-0205, SH-45: each of Format Cells' dropdowns names the element that takes its keyboard a combobox, by the field's own label. Below MudBlazor 9.4.0 nothing named it, so this holds the floor on every run
+    [InlineData("Alignment", "mud-ex-sheet-format-cells-alignment", "Horizontal")]
+    [InlineData("Font", "mud-ex-sheet-format-cells-underline", "Underline")]
+    public async Task Every_dropdown_names_the_element_that_takes_its_keyboard(string tab, string field, string label)
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, tab);
+        var select = page.Find($".{field}");
+
+        var focusable = Assert.Single(TakingTheKeyboard(select));
+        Assert.True(focusable.GetAttribute("role") == "combobox", select.OuterHtml);
+        Assert.Equal(label, focusable.GetAttribute("aria-label"));
+    }
+
+    /// <summary>The elements of a field that take the keyboard, as Tab and <c>FocusAsync</c> reach
+    /// them: not a hidden input, nor one taken out of the tab order or disabled.</summary>
+    private static IReadOnlyList<AngleSharp.Dom.IElement> TakingTheKeyboard(AngleSharp.Dom.IElement field)
+        => [.. field.QuerySelectorAll("input, textarea, select, button, [tabindex]").Prepend(field).Where(e =>
+            e.Matches("input, textarea, select, button, [tabindex]")
+            && e.GetAttribute("type") != "hidden" && e.GetAttribute("tabindex") != "-1" && !e.HasAttribute("disabled"))];
+
     [Fact] // ADR-0071 / SH-45: Alignment is horizontal only, and OK sets the one chosen
     public async Task Alignment_sets_the_horizontal_alignment()
     {

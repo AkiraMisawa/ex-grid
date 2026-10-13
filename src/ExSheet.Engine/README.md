@@ -18,8 +18,9 @@ Font, Fill and Borders — and the widths recorded on its columns. It holds Entr
 anyone who wants a saved Sheet's numbers runs this engine — on a server as in the browser, with
 the same result.
 
-> **This is a prerelease (`0.x`).** ExSheet ships with ExGrid, at the same version; upgrade them
-> together. The API may change between prereleases.
+> **ExSheet ships with ExGrid, at the same version;** upgrade them together. While the version is
+> `0.x`, the API may change from one version to the next; each version's
+> [Release Notes](https://akiramisawa.github.io/ex-grid/release-notes) say what changed.
 
 ## Requirements
 
@@ -28,8 +29,10 @@ the same result.
 ## Install
 
 ```sh
-dotnet add package ExSheet.Engine --prerelease
+dotnet add package ExSheet.Engine
 ```
+
+Add `--prerelease` for a prerelease, a version with a suffix such as `-rc.1`.
 
 ## Computing a Sheet
 

@@ -818,11 +818,12 @@ nobody had asked for. What that means when writing a test:
   below the rows on screen leaves the Window while every row on screen is still held — counted in the
   page's own tally of questions, never timed, behind the latency proxy on the Server host, and with the
   Window each question names read from the request on WebAssembly (LV-34, FN-3a, ADR-0182/0183); on
-  WebAssembly, the question asked early, its answer held behind a gate the test opens (a route, never a
-  timer), stays in flight while the report scrolls past the Window held and within the question's, the
-  report undimmed until rows on screen wait for it, and once it lands one question more is asked, ten
-  rows before the new Window runs out (the Server host asks the demo API from the server, where no
-  route can hold it); and a
+  both hosts, the question asked early, its answer held at the demo API's Window gate
+  (`/api/pivot/window-gate`, which the test opens, never a timer, and which records the Window each
+  question names — the gate is where both hosts' questions arrive, since the Server host asks the demo
+  API from the server, where no browser route reaches), stays in flight while the report scrolls past
+  the Window held and within the question's, the report undimmed until rows on screen wait for it, and
+  once it lands one question more is asked, ten rows before the new Window runs out; and a
   whole-column Copy and Selection Summary of a remote report include the rows
   outside the Window and equal the local report's (LV-28). **Run once per Chrome**: its trades read over
   Arrow into a Snapshot the page pivots in its own process, at the version `/api/status` names, and
@@ -928,9 +929,16 @@ nobody had asked for. What that means when writing a test:
   nothing moving, its end opening the Cell Editor holding it and Enter committing (ED-30, i1); a
   cancelled one leaving an empty edit (i2); a press on D12 mid-composition putting the text in D10;
   two compositions behind 150 ms appended in order; the sixteenth run's k6, one key ending a
-  composition and starting the next (both sent at once), with DOM focus kept in the field until
-  the second ends and D10 holding both, and a third clause started the same way while the editor's
-  request already waits; copy and paste from the field; a field per
+  composition and starting the next, told as a real IME's key is (its keydown and its keyup both
+  `Process` with keyCode 229, as that run recorded them, around the end and the start, each sent
+  once the one before has been answered, so no time between them decides anything), with DOM focus
+  kept in the field until the second ends and D10 holding both, and a third clause started the same
+  way while the editor's request already waits; a composition ended with no key being told giving
+  that waiting editor the keyboard at its end, and one composed there at once coming after the text
+  held for the edit; the sixteenth run's k15, Alt+Tab mid-composition, as a keydown 229 whose keyup
+  never comes and the end, the request waiting until the keyboard leaves the field and the editor
+  then taking it holding the text (left from script: Playwright emulates focus, so a window switch
+  tells the page nothing); copy and paste from the field; a field per
   Sheet (ADR-0018); read-only over a cell that does not edit. The field as the one tab stop, Tab in
   from before and Shift+Tab in from after, then out (A11Y-4), and a display-only grid's root
   likewise; on `/features` under both Chromes, no column's ▾ reached by Tab or Shift+Tab, on the
@@ -962,8 +970,10 @@ Prerendered root's attributes (A11Y-20).
   live region; and the six packages' stylesheet notices — the three products' in their roots, and each
   MudBlazor Wrapper's where the stylesheet its Chrome brings is rendered, on `/mud`,
   `/sheet?chrome=mud` and `/pivot?chrome=mud` — hidden by their own stylesheet, shown by another
-  version's, and ExGrid's not shown while its stylesheet has not arrived (the WebAssembly host only: a
-  Blazor Web App's stylesheet is in the head the server sends).
+  version's, and ExGrid's not shown while its stylesheet has not arrived (on WebAssembly the grid
+  stands interactive before it; on the Server host the prerendered grid stands in the document while
+  the stylesheet in its head holds the page's scripts back, so the navigation's wait for an interactive
+  page is awaited only once the stylesheet is let through).
 - `freshness.spec.mjs` — ERR-9's deploy (ADR-0123): `freshness-app/`, a standalone application of one
   grid, published twice from two copies of `src/ExGrid` whose shipped files are two versions', each
   copy's `ShippedAssets.g.cs` written as `tools/assets/minify.mjs` would. The first is served as GitHub
@@ -971,8 +981,8 @@ Prerendered root's attributes (A11Y-20).
   and the page reloaded: the second assembly runs the second script and paints with the second
   stylesheet, each asked for at its new address, while the framework's unchanged script stays in the
   cache. Nothing is built in the checkout, so a running DemoHost is never rebuilt under itself; the two
-  publishes take under a minute. It drives a host of its own, so it runs beside the WebAssembly
-  host only.
+  publishes take under a minute. It drives a host of its own, so it needs neither DemoHost, and runs
+  the same beside either (SRV-2 names no exception for it).
 
 Every spec takes `test` from `fixtures.mjs`, which listens to every page from before its
 first navigation and fails a test on a console `error` or an uncaught page error

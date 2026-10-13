@@ -92,7 +92,8 @@
             <li>
                 <strong>Give the grid the same objects across renders.</strong> Keep the source, the column list and
                 any delegates you pass in fields. A new array or lambda on every render looks like a change and renders
-                every row again.
+                every row again; handed nothing new, the grid does not render at all, so restyling the element around it
+                costs no render.
             </li>
         </ul>
     </DocsSection>
