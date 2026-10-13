@@ -12,12 +12,16 @@ namespace ExGrid.Components.Tests;
 /// <summary>
 /// ST-1: after any sequence of operations the invariants hold. A scripted randomised
 /// sequence — clicks, drags with the button held, every claimed key, scrolls, sorts, filters,
-/// row-height changes, Viewport resizes and density steps — asserting after each step that
+/// row-height changes, Viewport resizes, density steps, a pager put on, resized and turned
+/// (ADR-0015), and the Layout Ceiling the browser reports moved low enough to compress the
+/// scroll (ADR-0053) — asserting after each step that
 /// every selection rectangle lies inside the extent, the Focus and the Extent lie inside the
 /// range holding the Focus (ADR-0052), the cell count is the sum of rectangle areas and so is
 /// the count the status line displays, every scroll offset the grid writes lies within
 /// [0, max], the painted rows are exactly <c>ViewportGeometry.SliceAt</c> of where the browser
-/// stands, and nothing throws. The browser is modelled: it takes every offset the grid writes,
+/// stands — the page's rows, at their absolute positions, under the ceiling's compression — the
+/// page on screen is one the result holds, and nothing throws. Each seed must reach a pager, a page
+/// past the first, and a compressed scroll, or the run fails. The browser is modelled: it takes every offset the grid writes,
 /// clamps any position the content no longer reaches, and reports each move with a scroll
 /// event. The seed is in the test name's data so a failure replays exactly.
 /// </summary>
@@ -77,9 +81,12 @@ public class ConsistencyTests : GridTestContext
             ".", "Backspace",
         ];
 
+        // How often the run stood where the two newer paths are: paged, past the first page, and
+        // compressed under a Layout Ceiling — counted so a seed that never reaches them fails.
+        int paged = 0, pastFirstPage = 0, compressed = 0;
         for (var step = 0; step < 500; step++)
         {
-            var operation = random.Next(10);
+            var operation = random.Next(13);
             switch (operation)
             {
                 case 0: // click somewhere on screen
@@ -116,7 +123,7 @@ public class ConsistencyTests : GridTestContext
                     break;
                 case 3: // the user scrolls to an arbitrary offset, which the browser clamps
                     await browser.ScrollAsync(
-                        random.NextDouble() * 1.1 * MaxScrollTop(layout, source),
+                        random.NextDouble() * 1.1 * MaxScrollTop(layout, source, cut),
                         random.Next(0, 100), layout, source);
                     break;
                 case 4: // sort by a random column, sometimes back to none
@@ -152,6 +159,22 @@ public class ConsistencyTests : GridTestContext
                 case 9: // a density step
                     cut.Render(ps => ps.Add(g => g.Density, (GridDensity)random.Next(3)));
                     break;
+                case 10: // a pager put on, taken off, or set to another page size (ADR-0015)
+                    layout = layout with { PageSize = new int?[] { null, 25, 60 }[random.Next(3)] };
+                    cut.Render(ps => ps.Add(g => g.PageSize, layout.PageSize));
+                    break;
+                case 11: // the pager turned a page back or on, where it can be
+                    if (cut.FindAll(".ex-pager button") is { Count: 2 } pager
+                        && pager[random.Next(2)] is var button && !button.HasAttribute("disabled"))
+                    {
+                        await button.ClickAsync(new MouseEventArgs());
+                    }
+                    break;
+                case 12: // the browser reports another Layout Ceiling: a zoom, a scale (ADR-0053)
+                    layout = layout with { CeilingPx = new[] { ViewportGeometry.MaxScrollHeightPx, 1_500d, 6_000d }[random.Next(3)] };
+                    var ceiling = layout.CeilingPx;
+                    await cut.InvokeAsync(() => cut.Instance.OnLayoutCeilingAsync(ceiling));
+                    break;
             }
 
             // Whatever the grid wrote, the browser now is, and says so; and a position the
@@ -159,19 +182,49 @@ public class ConsistencyTests : GridTestContext
             await browser.FollowAsync(layout, source);
             AssertInvariants(cut, selection, source, layout, browser,
                 $"seed {seed}, step {step}, operation {operation}, {layout}, {source.TotalCount} rows, browser at {browser.Top}");
+            if (layout.PageSize is not null)
+            {
+                paged++;
+                if (PageOf(layout, source, cut).Index > 0)
+                    pastFirstPage++;
+            }
+            if (GeometryOf(layout, source, cut).IsCompressed)
+                compressed++;
         }
+
+        Assert.True(paged > 0 && pastFirstPage > 0 && compressed > 0,
+            $"seed {seed} reached paged {paged}, past the first page {pastFirstPage}, compressed {compressed} steps");
     }
 
     private const double HeaderHeightPx = 20;
     private const double ColumnsWidthPx = 4 * 100;
 
-    private sealed record Layout(double RowHeightPx, double ViewportHeightPx, double ViewportWidthPx);
+    /// <summary>What the grid is handed and told: its geometry parameters, the page size, and the
+    /// Layout Ceiling the browser reports (ADR-0053; the grid's own default until one is told).</summary>
+    private sealed record Layout(double RowHeightPx, double ViewportHeightPx, double ViewportWidthPx,
+        int? PageSize = null, double CeilingPx = ViewportGeometry.MaxScrollHeightPx);
 
-    private static ViewportGeometry GeometryOf(Layout layout, InMemoryGridSource<TestRow> source)
-        => new(layout.RowHeightPx, layout.ViewportHeightPx - HeaderHeightPx, source.TotalCount!.Value);
+    /// <summary>The page on screen, as the pager says it: where it starts and how many rows it
+    /// holds — the whole result without a pager (ADR-0015).</summary>
+    private static (int Index, int Start, int Rows) PageOf(Layout layout, InMemoryGridSource<TestRow> source, IRenderedComponent<ExGrid<TestRow>> cut)
+    {
+        var total = source.TotalCount!.Value;
+        if (layout.PageSize is not { } size)
+            return (0, 0, total);
+        var text = cut.Find(".ex-pager span").TextContent;
+        var index = int.Parse(text[..text.IndexOf(' ', StringComparison.Ordinal)], System.Globalization.CultureInfo.InvariantCulture) - 1;
+        var start = index * size;
+        return (index, start, Math.Clamp(total - start, 0, size));
+    }
 
-    private static double MaxScrollTop(Layout layout, InMemoryGridSource<TestRow> source)
-        => GeometryOf(layout, source).MaxScrollTopPx;
+    /// <summary>The arithmetic the grid paints by, as ADR-0053 builds it: the page's rows under the
+    /// header, in what the Layout Ceiling leaves them once the header band is taken from it.</summary>
+    private static ViewportGeometry GeometryOf(Layout layout, InMemoryGridSource<TestRow> source, IRenderedComponent<ExGrid<TestRow>> cut)
+        => new(layout.RowHeightPx, layout.ViewportHeightPx - HeaderHeightPx, PageOf(layout, source, cut).Rows,
+            Math.Max(1, layout.CeilingPx - HeaderHeightPx));
+
+    private static double MaxScrollTop(Layout layout, InMemoryGridSource<TestRow> source, IRenderedComponent<ExGrid<TestRow>> cut)
+        => GeometryOf(layout, source, cut).MaxScrollTopPx;
 
     private static double MaxScrollLeft(Layout layout) => Math.Max(0, ColumnsWidthPx - layout.ViewportWidthPx);
 
@@ -192,7 +245,7 @@ public class ConsistencyTests : GridTestContext
 
         public async Task ScrollAsync(double top, double left, Layout layout, InMemoryGridSource<TestRow> source)
         {
-            Top = Math.Clamp(top, 0, MaxScrollTop(layout, source));
+            Top = Math.Clamp(top, 0, MaxScrollTop(layout, source, cut));
             Left = Math.Clamp(left, 0, MaxScrollLeft(layout));
             await ReportAsync();
         }
@@ -222,7 +275,7 @@ public class ConsistencyTests : GridTestContext
                     (Top, Left) = writes[^1];
                     moved = true;
                 }
-                var top = Math.Clamp(Top, 0, MaxScrollTop(layout, source));
+                var top = Math.Clamp(Top, 0, MaxScrollTop(layout, source, cut));
                 var left = Math.Clamp(Left, 0, MaxScrollLeft(layout));
                 moved |= top != Top || left != Left;
                 (Top, Left) = (top, left);
@@ -763,19 +816,28 @@ public class ConsistencyTests : GridTestContext
         // Both scroll offsets the grid wrote lie within [0, max], and so does where the browser is.
         foreach (var (top, left) in browser.NewWrites)
         {
-            Assert.True(top >= 0 && top <= MaxScrollTop(layout, source), $"wrote top {top}: {where}");
+            Assert.True(top >= 0 && top <= MaxScrollTop(layout, source, cut), $"wrote top {top}: {where}");
             Assert.True(double.IsNaN(left) || (left >= 0 && left <= MaxScrollLeft(layout)), $"wrote left {left}: {where}");
         }
 
         // The painted rows are exactly ViewportGeometry.SliceAt of where the browser is.
+        // Under a pager, the page on screen is one the result holds (ADR-0015), and the rows are the
+        // page's slice, written at their absolute positions.
+        var page = PageOf(layout, source, cut);
+        if (layout.PageSize is { } pageSize)
+        {
+            var pages = Math.Max(1, (source.TotalCount!.Value + pageSize - 1) / pageSize);
+            Assert.True(page.Index >= 0 && page.Index < pages, $"page {page.Index + 1} of {pages}: {where}");
+        }
         var rows = cut.FindAll(".ex-row");
-        var expected = GeometryOf(layout, source).SliceAt(browser.Top);
+        var expected = GeometryOf(layout, source, cut).SliceAt(browser.Top);
         if (expected is { } slice)
         {
             var firstRow = int.Parse(cut.Find(".ex-viewport").GetAttribute("data-ex-first-row")!);
-            Assert.True(slice.Count == rows.Count && slice.Start == firstRow
-                && slice.Start + 1 == int.Parse(rows[0].GetAttribute("aria-rowindex")!),
-                $"painted {rows.Count} rows from {firstRow}, SliceAt says {slice.Count} from {slice.Start}: {where}");
+            var from = page.Start + slice.Start;
+            Assert.True(slice.Count == rows.Count && from == firstRow
+                && from + 1 == int.Parse(rows[0].GetAttribute("aria-rowindex")!),
+                $"painted {rows.Count} rows from {firstRow}, SliceAt says {slice.Count} from {from}: {where}");
         }
         else
         {
