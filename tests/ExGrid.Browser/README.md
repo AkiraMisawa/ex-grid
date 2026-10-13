@@ -844,9 +844,11 @@ nobody had asked for. What that means when writing a test:
   them, at most eleven characters (`0.3`, `1.23457E+11`, `1.23456789`, `1.23457E-05`), each whole
   in its column and never `####` (ADR-0060, PV-7); the readings of 2026-10-12's `e16b.csv`, its
   number Items labelled in the same General as Excel labelled them (`1.23456789`, `1.23457E+11`;
-  R3 (c), ADR-0060); the page's two samples, one under the declared Schema and one under a
-  suggested Schema, reading the same trades to the same total — a second file read while a report
-  stands; and the code shown under "The code" equal to its source.
+  R3 (c), ADR-0060), and with its Key in Column Labels a copy with headers of the value row
+  through the Context Menu carrying those headers as painted in the text flavour and in full in
+  the HTML (`<th>123456789012.345</th>`; ADR-0005); the page's two samples, one under the
+  declared Schema and one under a suggested Schema, reading the same trades to the same total — a
+  second file read while a report stands; and the code shown under "The code" equal to its source.
 - `pivot-db.spec.mjs` — `/pivot-db` (ADR-0065/0066/0069, ADR-0151/0152), against the demo API server
   from either host. A server report scrolls beyond its first Window with a bounded number of rendered
   rows (LV-24); a report scrolled to its last row and then shrunk by a layout, computed in the page
