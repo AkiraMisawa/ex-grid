@@ -1,0 +1,157 @@
+{
+ "recording": "narrator-msedge-scan-off.wav",
+ "meta": {
+  "startUtcMs": 1791834573643,
+  "rate": 48000,
+  "channels": 2,
+  "blockAlign": 8,
+  "frames": 5123079,
+  "packets": 8903,
+  "paddedFrames": 849639,
+  "device": "{0.0.0.00000000}.{6909bfe6-8151-4779-96b0-a9a1bfb18382}"
+ },
+ "clockOffset": 0.06,
+ "model": "ggml-small.en.bin",
+ "steps": [
+  {
+   "start": "without-focus",
+   "step": "fresh page",
+   "from": 3.98,
+   "to": 16.67,
+   "peak": 0.5335,
+   "heard": "Xgrid demo host, profile 1, microsoft edge window, run 17 message 7 7 7 0 6, microsoft scan, scan off.",
+   "activeElement": "body",
+   "focus": null
+  },
+  {
+   "start": "without-focus",
+   "step": "0-focus-given-by-script-to-revalue",
+   "from": 16.67,
+   "to": 22.82,
+   "peak": 0.5344,
+   "heard": "Revalue the positions by +1%, button.",
+   "activeElement": "button#sheet-revalue",
+   "focus": null
+  },
+  {
+   "start": "without-focus",
+   "step": "1-tab",
+   "from": 22.82,
+   "to": 29.03,
+   "peak": 0.5602,
+   "heard": "Home group, bold, toggle button, off, bold, control and B.",
+   "activeElement": "div.ex-sheet-toolbar",
+   "focus": null
+  },
+  {
+   "start": "without-focus",
+   "step": "1b-tab-again",
+   "from": 29.03,
+   "to": 35.22,
+   "peak": 0.5533,
+   "heard": "Enter table 1,048,576 by 16,300 and",
+   "activeElement": "key-field input.ex-key-field",
+   "focus": null
+  },
+  {
+   "start": "without-focus",
+   "step": "2-down",
+   "from": 35.22,
+   "to": 41.4,
+   "peak": 0.6606,
+   "heard": "item column header cap a row two of one million forty eight thousand five hundred and seventy six column",
+   "activeElement": "key-field input.ex-key-field",
+   "focus": "A1"
+  },
+  {
+   "start": "without-focus",
+   "step": "3-right",
+   "from": 41.4,
+   "to": 47.59,
+   "peak": 0.5111,
+   "heard": "Quantity, column header cap B, column 2 of 16384.",
+   "activeElement": "key-field input.ex-key-field",
+   "focus": "B1"
+  },
+  {
+   "start": "without-focus",
+   "step": "4-down",
+   "from": 47.59,
+   "to": 53.78,
+   "peak": 0.5404,
+   "heard": "12, row 3 of 1,048,576.",
+   "activeElement": "key-field input.ex-key-field",
+   "focus": "B2"
+  },
+  {
+   "start": "without-focus",
+   "step": "5-down",
+   "from": 53.78,
+   "to": 59.96,
+   "peak": 0.5807,
+   "heard": "7. Row 4 of 1,048,576",
+   "activeElement": "key-field input.ex-key-field",
+   "focus": "B3"
+  },
+  {
+   "start": "with-focus",
+   "step": "fresh page",
+   "from": 59.96,
+   "to": 73.74,
+   "peak": 0.4556,
+   "heard": "Exit table, xgrid demo host, loading complete, scan, xgrid demo host has finished loading, xgrid demo host, loading, unavailable scan off.",
+   "activeElement": "body",
+   "focus": null
+  },
+  {
+   "start": "with-focus",
+   "step": "1-press-d10",
+   "from": 73.74,
+   "to": 79.98,
+   "peak": 0.5575,
+   "heard": "Enter table one million forty eight thousand five hundred and seventy six by sixteen thousand three hundred",
+   "activeElement": "key-field input.ex-key-field",
+   "focus": "D10"
+  },
+  {
+   "start": "with-focus",
+   "step": "2-down",
+   "from": 79.98,
+   "to": 86.17,
+   "peak": 0.5465,
+   "heard": "Row 12 of 1,048,576.",
+   "activeElement": "key-field input.ex-key-field",
+   "focus": "D11"
+  },
+  {
+   "start": "with-focus",
+   "step": "3-right",
+   "from": 86.17,
+   "to": 92.35,
+   "peak": 0.5117,
+   "heard": "column header capi, column 5 of 16384.",
+   "activeElement": "key-field input.ex-key-field",
+   "focus": "E11"
+  },
+  {
+   "start": "with-focus",
+   "step": "4-down",
+   "from": 92.35,
+   "to": 98.54,
+   "peak": 0.5373,
+   "heard": "Row 13 of 1,048,576.",
+   "activeElement": "key-field input.ex-key-field",
+   "focus": "E12"
+  },
+  {
+   "start": "with-focus",
+   "step": "5-down",
+   "from": 98.54,
+   "to": 104.74,
+   "peak": 0.5524,
+   "heard": "Row 14 of 1,048,576",
+   "activeElement": "key-field input.ex-key-field",
+   "focus": "E13"
+  }
+ ]
+}

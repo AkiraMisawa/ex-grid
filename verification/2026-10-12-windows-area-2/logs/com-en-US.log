@@ -1,0 +1,596 @@
+set en-US at 16:13:23
+a new PowerShell reads en-US
+pass com-en-US started 16:13:24
+16:13:26 AGGREGATE-001 agree       0.4 s
+16:13:26 AGGREGATE-002 agree       0.2 s
+16:13:26 AGGREGATE-003 agree       0.2 s
+16:13:26 AGGREGATE-004 agree       0.2 s
+16:13:26 AGGREGATE-005 agree       0.2 s
+16:13:27 AGGREGATE-006 agree       0.2 s
+16:13:27 AGGREGATE-007 agree       0.2 s
+16:13:27 AGGREGATE-008 agree       0.2 s
+16:13:27 AGGREGATE-009 agree       0.2 s
+16:13:27 AGGREGATE-010 agree       0.3 s
+16:13:28 AGGREGATE-011 agree       0.2 s
+16:13:28 AGGREGATE-012 agree       0.2 s
+16:13:28 AGGREGATE-013 agree       0.2 s
+16:13:28 AGGREGATE-014 agree       0.2 s
+16:13:28 AGGREGATE-015 agree       0.2 s
+16:13:29 AGGREGATE-016 agree       0.2 s
+16:13:29 AGGREGATE-017 agree       0.2 s
+16:13:29 AGGREGATE-018 agree       0.2 s
+16:13:29 AGGREGATE-019 agree       0.2 s
+16:13:29 AGGREGATE-020 agree       0.2 s
+16:13:30 AGGREGATE-021 agree       0.1 s
+16:13:30 AGGREGATE-022 agree       0.2 s
+16:13:30 AGGREGATE-023 agree       0.3 s
+16:13:30 AGGREGATE-024 agree       0.2 s
+16:13:30 AGGREGATE-025 agree       0.1 s
+16:13:31 AGGREGATE-026 agree       0.1 s
+16:13:31 AGGREGATE-027 agree       0.2 s
+16:13:31 AGGREGATE-028 agree       0.2 s
+16:13:31 AGGREGATE-029 agree       0.2 s
+16:13:31 AGGREGATE-030 agree       0.2 s
+16:13:32 AGGREGATE-031 agree       0.2 s
+16:13:32 AGGREGATE-032 agree       0.2 s
+16:13:32 AGGREGATE-033 agree       0.3 s
+16:13:32 AGGREGATE-034 agree       0.2 s
+16:13:33 AGGREGATE-035 agree       0.2 s
+16:13:33 AGGREGATE-036 agree       0.2 s
+16:13:33 AGGREGATE-037 agree       0.2 s
+16:13:33 AGGREGATE-038 agree       0.2 s
+16:13:33 AGGREGATE-039 agree       0.2 s
+16:13:34 AGGREGATE-040 agree       0.1 s
+16:13:34 AGGREGATE-041 agree       0.2 s
+16:13:34 AGGREGATE-042 agree       0.2 s
+16:13:34 AGGREGATE-043 agree       0.2 s
+16:13:34 AGGREGATE-044 agree       0.2 s
+16:13:34 AGGREGATE-045 agree       0.1 s
+16:13:35 AGGREGATE-046 agree       0.1 s
+16:13:35 AGGREGATE-047 agree       0.1 s
+16:13:35 AGGREGATE-048 agree       0.1 s
+16:13:35 AGGREGATE-049 agree       0.1 s
+16:13:35 AGGREGATE-050 agree       0.2 s
+16:13:35 AGGREGATE-051 agree       0.1 s
+16:13:35 AGGREGATE-052 agree       0.1 s
+16:13:36 AGGREGATE-053 agree       0.1 s
+16:13:36 AGGREGATE-054 agree       0.1 s
+16:13:36 AGGREGATE-055 agree       0.2 s
+16:13:36 AGGREGATE-056 agree       0.2 s
+16:13:36 AGGREGATE-057 agree       0.2 s
+16:13:36 AGGREGATE-058 agree       0.1 s
+16:13:37 AGGREGATE-059 agree       0.2 s
+16:13:37 AGGREGATE-060 agree       0.3 s
+16:13:37 AGGREGATE-061 agree       0.2 s
+16:13:37 AGGREGATE-062 agree       0.2 s
+16:13:37 AGGREGATE-063 agree       0.2 s
+16:13:38 AGGREGATE-064 agree       0.2 s
+16:13:38 AGGREGATE-065 agree       0.2 s
+16:13:38 AGGREGATE-066 agree       0.2 s
+16:13:38 AGGREGATE-067 agree       0.2 s
+16:13:38 DAY-001      agree       0.1 s
+16:13:39 DAY-002      agree       0.2 s
+16:13:39 DAY-003      agree       0.2 s
+16:13:39 DAY-004      agree       0.2 s
+16:13:39 DAY-005      agree       0.2 s
+16:13:39 DAYS-001     agree       0.1 s
+16:13:39 DAYS-002     agree       0.1 s
+16:13:40 DAYS-003     agree       0.2 s
+16:13:40 DAYS-004     agree       0.2 s
+16:13:40 DAYS-005     agree       0.2 s
+16:13:40 EDATE-001    agree       0.1 s
+16:13:40 EDATE-002    agree       0.2 s
+16:13:40 EDATE-003    agree       0.1 s
+16:13:40 EDATE-004    agree       0.2 s
+16:13:41 EDATE-005    agree       0.2 s
+16:13:41 EDATE-006    agree       0.2 s
+16:13:41 EDATE-007    agree       0.2 s
+16:13:41 EDATE-008    agree       0.2 s
+16:13:41 EDATE-009    agree       0.2 s
+16:13:41 EDATE-010    agree       0.2 s
+16:13:42 EDATE-011    agree       0.2 s
+16:13:42 EDATE-012    agree       0.2 s
+16:13:42 EDATE-013    agree       0.2 s
+16:13:42 EDATE-014    agree       0.2 s
+16:13:42 EDATE-015    agree       0.2 s
+16:13:42 EDATE-016    disagree    0.2 s
+16:13:43 EDATE-017    disagree    0.2 s
+16:13:43 EOMONTH-001  agree       0.1 s
+16:13:43 EOMONTH-002  agree       0.1 s
+16:13:43 EOMONTH-003  agree       0.2 s
+16:13:43 EOMONTH-004  agree       0.2 s
+16:13:43 EOMONTH-005  agree       0.2 s
+16:13:44 EOMONTH-006  agree       0.2 s
+16:13:44 EOMONTH-007  agree       0.2 s
+16:13:44 EOMONTH-008  agree       0.2 s
+16:13:44 EOMONTH-009  agree       0.2 s
+16:13:44 EOMONTH-010  agree       0.2 s
+16:13:44 EOMONTH-011  agree       0.2 s
+16:13:45 EOMONTH-012  agree       0.2 s
+16:13:45 EOMONTH-013  agree       0.2 s
+16:13:45 EOMONTH-014  agree       0.2 s
+16:13:45 EOMONTH-015  agree       0.2 s
+16:13:45 EOMONTH-016  disagree    0.2 s
+16:13:45 EOMONTH-017  disagree    0.2 s
+16:13:46 FV-001       agree       0.2 s
+16:13:46 FV-002       agree       0.2 s
+16:13:46 FV-003       agree       0.2 s
+16:13:46 FV-004       agree       0.2 s
+16:13:46 FV-005       agree       0.2 s
+16:13:46 FV-006       agree       0.2 s
+16:13:46 FV-007       agree       0.2 s
+16:13:47 FV-008       agree       0.2 s
+16:13:47 FV-009       agree       0.2 s
+16:13:47 FV-010       agree       0.2 s
+16:13:47 FV-011       agree       0.2 s
+16:13:47 FV-012       agree       0.2 s
+16:13:48 FV-013       agree       0.2 s
+16:13:48 FV-014       disagree    0.2 s
+16:13:48 FV-015       disagree    0.2 s
+16:13:48 FV-016       disagree    0.2 s
+16:13:48 FV-017       disagree    0.2 s
+16:13:48 FV-018       disagree    0.2 s
+16:13:49 FV-019       agree       0.2 s
+16:13:49 FV-020       disagree    0.2 s
+16:13:49 FV-021       disagree    0.2 s
+16:13:49 FV-022       disagree    0.2 s
+16:13:49 INDIRECT-001 agree       0.1 s
+16:13:49 INDIRECT-002 agree       0.1 s
+16:13:50 INDIRECT-003 agree       0.2 s
+16:13:50 INDIRECT-004 agree       0.1 s
+16:13:50 INDIRECT-005 agree       0.2 s
+16:13:50 INDIRECT-006 agree       0.1 s
+16:13:50 INDIRECT-007 agree       0.2 s
+16:13:50 INDIRECT-008 agree       0.1 s
+16:13:50 INDIRECT-009 agree       0.2 s
+16:13:51 INDIRECT-010 agree       0.2 s
+16:13:51 INDIRECT-011 agree       0.2 s
+16:13:51 INDIRECT-012 agree       0.1 s
+16:13:51 INDIRECT-013 agree       0.1 s
+16:13:51 INDIRECT-014 agree       0.2 s
+16:13:51 INDIRECT-015 agree       0.2 s
+16:13:52 INDIRECT-016 agree       0.2 s
+16:13:52 INDIRECT-017 agree       0.2 s
+16:13:52 INDIRECT-018 agree       0.2 s
+16:13:52 INDIRECT-019 agree       0.2 s
+16:13:52 INDIRECT-020 agree       0.1 s
+16:13:52 INDIRECT-021 agree       0.2 s
+16:13:53 INDIRECT-022 agree       0.2 s
+16:13:53 INDIRECT-023 agree       0.2 s
+16:13:53 INDIRECT-024 agree       0.2 s
+16:13:53 INDIRECT-025 agree       0.5 s
+16:13:53 INDIRECT-026 agree       0.1 s
+16:13:54 INDIRECT-027 agree       0.2 s
+16:13:54 INDIRECT-028 agree       0.2 s
+16:13:54 INDIRECT-029 agree       0.2 s
+16:13:54 INDIRECT-030 agree       0.2 s
+16:13:54 INDIRECT-031 agree       0.2 s
+16:13:54 INDIRECT-032 agree       0.2 s
+16:13:55 INDIRECT-033 agree       0.2 s
+16:13:55 INDIRECT-034 agree       0.2 s
+16:13:55 INDIRECT-035 agree       0.2 s
+16:13:55 INDIRECT-036 agree       0.2 s
+16:13:55 INDIRECT-037 agree       0.2 s
+16:13:55 INDIRECT-038 agree       0.1 s
+16:13:56 INDIRECT-039 agree       0.4 s
+16:13:56 INDIRECT-040 agree       0.4 s
+16:13:57 INDIRECT-041 agree       0.4 s
+16:13:57 INDIRECT-042 agree       0.1 s
+16:13:57 INDIRECT-043 agree       0.4 s
+16:13:57 INDIRECT-044 recorded    0.2 s
+16:13:58 INDIRECT-045 agree       0.2 s
+16:13:58 INDIRECT-046 agree       0.2 s
+16:13:58 INDIRECT-047 agree       0.2 s
+16:13:58 INDIRECT-048 agree       0.2 s
+16:13:58 INDIRECT-049 agree       0.2 s
+16:13:58 INDIRECT-050 agree       0.2 s
+16:13:59 INDIRECT-051 recorded    0.2 s
+16:13:59 INDIRECT-052 recorded    0.2 s
+16:13:59 INDIRECT-053 recorded    0.5 s
+16:14:00 INDIRECT-054 recorded    0.5 s
+16:14:00 INDIRECT-055 recorded    0.5 s
+16:14:01 INDIRECT-056 recorded    0.5 s
+16:14:01 INDIRECT-057 recorded    0.5 s
+16:14:01 INDIRECT-058 recorded    0.2 s
+16:14:02 INDIRECT-059 recorded    0.2 s
+16:14:02 INDIRECT-060 recorded    0.1 s
+16:14:02 INDIRECT-061 recorded    0.4 s
+16:14:02 INDIRECT-062 recorded    0.1 s
+16:14:02 INDIRECT-063 recorded    0.2 s
+16:14:03 INDIRECT-064 recorded    0.2 s
+16:14:03 INDIRECT-065 recorded    0.2 s
+16:14:03 INDIRECT-066 recorded    0.2 s
+16:14:03 LARGE-001    agree       0.2 s
+16:14:03 LARGE-002    agree       0.1 s
+16:14:03 LARGE-003    agree       0.2 s
+16:14:04 LARGE-004    agree       0.2 s
+16:14:04 LARGE-005    agree       0.2 s
+16:14:04 LARGE-006    agree       0.2 s
+16:14:04 LARGE-007    agree       0.2 s
+16:14:04 LARGE-008    agree       0.2 s
+16:14:04 LARGE-009    agree       0.1 s
+16:14:05 LARGE-010    agree       0.2 s
+16:14:05 LARGE-011    agree       0.2 s
+16:14:05 LARGE-012    agree       0.2 s
+16:14:05 LARGE-013    agree       0.2 s
+16:14:05 LARGE-014    agree       0.1 s
+16:14:06 TABLE-001    agree       0.9 s
+16:14:07 TABLE-002    agree       0.9 s
+16:14:08 TABLE-003    agree       0.8 s
+16:14:08 TABLE-004    agree       0.6 s
+16:14:08 TABLE-005    blocked     0.0 s
+16:14:08 TABLE-006    blocked     0.0 s
+16:14:08 TABLE-007    blocked     0.0 s
+16:14:08 TABLE-008    blocked     0.0 s
+16:14:08 TABLE-009    blocked     0.0 s
+16:14:08 TABLE-010    blocked     0.0 s
+16:14:09 TABLE-011    agree       0.5 s
+16:14:09 TABLE-012    agree       0.5 s
+16:14:09 TABLE-013    agree       0.1 s
+16:14:10 TABLE-014    agree       0.3 s
+16:14:10 TABLE-015    agree       0.3 s
+16:14:10 TABLE-016    agree       0.3 s
+16:14:11 TABLE-017    agree       0.3 s
+16:14:11 TABLE-018    agree       0.3 s
+16:14:11 TABLE-019    agree       0.2 s
+16:14:11 TABLE-020    agree       0.2 s
+16:14:12 TABLE-021    agree       0.6 s
+16:14:13 TABLE-022    agree       0.6 s
+16:14:13 TABLE-023    agree       0.3 s
+16:14:13 MOD-001      agree       0.1 s
+16:14:13 MOD-002      agree       0.1 s
+16:14:13 MOD-003      agree       0.1 s
+16:14:13 MOD-004      agree       0.1 s
+16:14:14 MOD-005      agree       0.2 s
+16:14:14 MOD-006      agree       0.1 s
+16:14:14 MOD-007      agree       0.1 s
+16:14:14 MOD-008      agree       0.1 s
+16:14:14 MOD-009      agree       0.1 s
+16:14:14 MOD-010      agree       0.1 s
+16:14:14 MOD-011      agree       0.1 s
+16:14:14 MOD-012      agree       0.1 s
+16:14:14 MOD-013      agree       0.1 s
+16:14:15 MOD-014      agree       0.1 s
+16:14:15 MOD-015      agree       0.1 s
+16:14:15 MOD-016      agree       0.1 s
+16:14:15 MOD-017      agree       0.1 s
+16:14:15 MOD-018      agree       0.1 s
+16:14:15 MOD-019      agree       0.1 s
+16:14:15 MOD-020      disagree    0.1 s
+16:14:15 MOD-021      disagree    0.1 s
+16:14:15 MOD-022      disagree    0.1 s
+16:14:15 MOD-023      disagree    0.1 s
+16:14:16 MOD-024      disagree    0.1 s
+16:14:16 MOD-025      disagree    0.1 s
+16:14:16 MOD-026      disagree    0.1 s
+16:14:16 MOD-027      disagree    0.1 s
+16:14:16 MOD-028      disagree    0.1 s
+16:14:16 MOD-029      disagree    0.1 s
+16:14:16 MOD-030      disagree    0.1 s
+16:14:16 MOD-031      disagree    0.1 s
+16:14:16 MOD-032      disagree    0.1 s
+16:14:16 MONTH-001    agree       0.1 s
+16:14:17 MONTH-002    agree       0.1 s
+16:14:17 MONTH-003    agree       0.1 s
+16:14:17 MONTH-004    agree       0.1 s
+16:14:17 MONTH-005    agree       0.1 s
+16:14:17 NETWORKDAYS-001 agree       0.1 s
+16:14:17 NETWORKDAYS-002 agree       0.1 s
+16:14:17 NETWORKDAYS-003 agree       0.1 s
+16:14:17 NETWORKDAYS-004 agree       0.1 s
+16:14:18 NETWORKDAYS-005 agree       0.1 s
+16:14:18 NETWORKDAYS-006 agree       0.1 s
+16:14:18 NETWORKDAYS-007 agree       0.1 s
+16:14:18 NETWORKDAYS-008 agree       0.1 s
+16:14:18 NETWORKDAYS-009 agree       0.1 s
+16:14:18 NPV-001      agree       0.1 s
+16:14:18 NPV-002      agree       0.1 s
+16:14:18 NPV-003      agree       0.1 s
+16:14:19 NPV-004      agree       0.1 s
+16:14:19 NPV-005      agree       0.1 s
+16:14:19 NPV-006      agree       0.1 s
+16:14:19 NPV-007      agree       0.1 s
+16:14:19 NPV-008      agree       0.1 s
+16:14:19 NPV-009      recorded    0.1 s
+16:14:19 NPV-010      recorded    0.1 s
+16:14:19 NPV-011      recorded    0.1 s
+16:14:20 NPV-012      recorded    0.1 s
+16:14:20 NPV-013      recorded    0.1 s
+16:14:20 NPV-014      recorded    0.1 s
+16:14:20 NPV-015      recorded    0.1 s
+16:14:20 NPV-016      recorded    0.1 s
+16:14:20 NPV-017      recorded    0.1 s
+16:14:20 NPV-018      recorded    0.1 s
+16:14:20 NPV-019      recorded    0.1 s
+16:14:21 NPV-020      recorded    0.1 s
+16:14:21 NPV-021      recorded    0.1 s
+16:14:21 NPV-022      recorded    0.1 s
+16:14:21 PMT-001      agree       0.1 s
+16:14:21 PMT-002      agree       0.1 s
+16:14:21 PMT-003      agree       0.1 s
+16:14:21 PMT-004      agree       0.2 s
+16:14:22 PMT-005      agree       0.1 s
+16:14:22 PMT-006      agree       0.1 s
+16:14:22 PMT-007      agree       0.1 s
+16:14:22 PMT-008      agree       0.1 s
+16:14:22 PMT-009      agree       0.1 s
+16:14:22 PMT-010      agree       0.1 s
+16:14:22 PMT-011      agree       0.1 s
+16:14:22 PMT-012      agree       0.1 s
+16:14:23 PMT-013      disagree    0.1 s
+16:14:23 PMT-014      disagree    0.1 s
+16:14:23 PMT-015      disagree    0.1 s
+16:14:23 PMT-016      disagree    0.1 s
+16:14:23 PMT-017      agree       0.1 s
+16:14:23 PMT-018      disagree    0.1 s
+16:14:23 PMT-019      agree       0.1 s
+16:14:24 PMT-020      disagree    0.1 s
+16:14:24 PMT-021      disagree    0.1 s
+16:14:24 PMT-022      agree       0.1 s
+16:14:24 PMT-023      disagree    0.2 s
+16:14:24 PMT-024      disagree    0.1 s
+16:14:24 PMT-025      disagree    0.1 s
+16:14:24 PMT-026      disagree    0.1 s
+16:14:25 PMT-027      disagree    0.1 s
+16:14:25 PMT-028      disagree    0.1 s
+16:14:25 PMT-029      disagree    0.2 s
+16:14:25 PMT-030      disagree    0.1 s
+16:14:25 PMT-031      disagree    0.1 s
+16:14:25 PMT-032      disagree    0.1 s
+16:14:25 PMT-033      agree       0.1 s
+16:14:26 PV-001       agree       0.1 s
+16:14:26 PV-002       agree       0.1 s
+16:14:26 PV-003       agree       0.2 s
+16:14:26 PV-004       agree       0.1 s
+16:14:26 PV-005       agree       0.1 s
+16:14:26 PV-006       agree       0.1 s
+16:14:26 PV-007       agree       0.1 s
+16:14:27 PV-008       agree       0.1 s
+16:14:27 PV-009       agree       0.2 s
+16:14:27 PV-010       agree       0.1 s
+16:14:27 PV-011       disagree    0.1 s
+16:14:27 PV-012       disagree    0.1 s
+16:14:27 NAME-001     agree       0.1 s
+16:14:27 NAME-002     agree       0.1 s
+16:14:27 NAME-003     agree       0.1 s
+16:14:28 NAME-004     agree       0.1 s
+16:14:28 NAME-005     agree       0.1 s
+16:14:28 NAME-006     blocked     0.0 s
+16:14:28 NAME-007     blocked     0.0 s
+16:14:28 NAME-008     blocked     0.0 s
+16:14:28 NAME-009     agree       0.1 s
+16:14:28 NAME-010     agree       0.1 s
+16:14:28 NAME-011     agree       0.1 s
+16:14:28 NAME-012     agree       0.1 s
+16:14:28 NAME-013     agree       0.1 s
+16:14:28 NAME-014     agree       0.1 s
+16:14:29 NAME-015     agree       0.1 s
+16:14:29 NAME-016     agree       0.1 s
+16:14:29 NAME-017     agree       0.1 s
+16:14:29 NAME-018     agree       0.1 s
+16:14:29 NAME-019     agree       0.1 s
+16:14:29 NAME-020     agree       0.1 s
+16:14:29 NAME-021     agree       0.1 s
+16:14:29 NAME-022     agree       0.1 s
+16:14:29 NAME-023     agree       0.1 s
+16:14:29 NAME-024     agree       0.1 s
+16:14:30 NAME-025     agree       0.1 s
+16:14:30 NAME-026     agree       0.1 s
+16:14:30 NAME-027     agree       0.1 s
+16:14:30 NAME-028     agree       0.1 s
+16:14:30 NAME-029     agree       0.1 s
+16:14:30 NAME-030     agree       0.1 s
+16:14:30 NAME-031     agree       0.1 s
+16:14:30 NAME-032     agree       0.1 s
+16:14:31 NAME-033     agree       0.1 s
+16:14:31 NAME-034     agree       0.1 s
+16:14:31 NAME-035     agree       0.1 s
+16:14:31 NAME-036     blocked     0.0 s
+16:14:31 NAME-037     agree       0.1 s
+16:14:31 SMALL-001    agree       0.2 s
+16:14:31 SMALL-002    agree       0.2 s
+16:14:31 SMALL-003    agree       0.1 s
+16:14:31 SMALL-004    agree       0.1 s
+16:14:32 SMALL-005    agree       0.1 s
+16:14:32 SMALL-006    agree       0.1 s
+16:14:32 SMALL-007    agree       0.1 s
+16:14:32 SMALL-008    disagree    0.1 s
+16:14:32 SMALL-009    agree       0.1 s
+16:14:32 SMALL-010    agree       0.1 s
+16:14:32 SORT-001     agree       0.2 s
+16:14:32 SORT-002     agree       0.2 s
+16:14:33 SORT-003     agree       0.2 s
+16:14:33 SORT-004     agree       0.2 s
+16:14:33 SORT-005     agree       0.2 s
+16:14:33 SORT-006     agree       0.2 s
+16:14:34 SORT-007     agree       0.2 s
+16:14:34 SORT-008     agree       0.2 s
+16:14:34 SORT-009     agree       0.3 s
+16:14:34 SORT-010     agree       0.2 s
+16:14:35 SORT-011     agree       0.2 s
+16:14:35 SORT-012     agree       0.2 s
+16:14:35 SORT-013     agree       0.2 s
+16:14:35 SORT-014     agree       0.1 s
+16:14:35 SORT-015     disagree    0.1 s
+16:14:35 SORT-016     agree       0.1 s
+16:14:35 SORT-017     agree       0.1 s
+16:14:36 SORT-018     agree       0.1 s
+16:14:36 SORT-019     agree       0.1 s
+16:14:36 SORT-020     agree       0.1 s
+16:14:36 SORT-021     disagree    0.2 s
+16:14:36 SORT-022     disagree    0.2 s
+16:14:36 SORT-023     agree       0.1 s
+16:14:36 SORT-024     agree       0.1 s
+16:14:37 SORT-025     agree       0.1 s
+16:14:37 SORTBY-001   agree       0.2 s
+16:14:37 SORTBY-002   agree       0.2 s
+16:14:37 SORTBY-003   agree       0.2 s
+16:14:37 SORTBY-004   agree       0.2 s
+16:14:38 SORTBY-005   agree       0.2 s
+16:14:38 SORTBY-006   agree       0.2 s
+16:14:38 SORTBY-007   agree       0.2 s
+16:14:38 SORTBY-008   agree       0.2 s
+16:14:39 SORTBY-009   agree       0.2 s
+16:14:39 TEXTFN-001   agree       0.1 s
+16:14:39 TEXTFN-002   agree       0.1 s
+16:14:39 TEXTFN-003   agree       0.2 s
+16:14:39 TEXTFN-004   agree       0.1 s
+16:14:39 TEXTFN-005   agree       0.1 s
+16:14:39 TEXTFN-006   agree       0.1 s
+16:14:40 TEXTFN-007   agree       0.1 s
+16:14:40 TEXTFN-008   blocked     0.0 s
+16:14:40 TEXTFN-009   blocked     0.0 s
+16:14:40 TEXTFN-010   blocked     0.0 s
+16:14:40 TEXTFN-011   agree       0.1 s
+16:14:40 TEXTFN-012   agree       0.1 s
+16:14:40 TEXTFN-013   agree       0.1 s
+16:14:40 TEXTFN-014   agree       0.1 s
+16:14:40 TEXTFN-015   agree       0.1 s
+16:14:40 TEXTFN-016   agree       0.1 s
+16:14:41 TEXTFN-017   agree       0.1 s
+16:14:41 TEXTFN-018   agree       0.1 s
+16:14:41 TEXTFN-019   agree       0.1 s
+16:14:41 TEXTFN-020   agree       0.1 s
+16:14:41 TEXTFN-021   agree       0.1 s
+16:14:41 TEXTFN-022   agree       0.1 s
+16:14:41 TEXTFN-023   agree       0.1 s
+16:14:41 TEXTFN-024   agree       0.1 s
+16:14:42 TEXTFN-025   agree       0.2 s
+16:14:42 TEXTFN-026   agree       0.1 s
+16:14:42 TEXTFN-027   agree       0.1 s
+16:14:42 TEXTFN-028   agree       0.1 s
+16:14:42 TEXTFN-029   agree       0.1 s
+16:14:42 TEXTFN-030   agree       0.1 s
+16:14:42 TEXTFN-031   agree       0.1 s
+16:14:43 TEXTFN-032   agree       0.1 s
+16:14:43 TEXTFN-033   agree       0.1 s
+16:14:43 TEXTFN-034   agree       0.1 s
+16:14:43 UNIQUE-001   agree       0.2 s
+16:14:43 UNIQUE-002   agree       0.2 s
+16:14:43 UNIQUE-003   agree       0.2 s
+16:14:44 UNIQUE-004   agree       0.2 s
+16:14:44 UNIQUE-005   agree       0.3 s
+16:14:44 UNIQUE-006   agree       0.2 s
+16:14:44 UNIQUE-007   agree       0.2 s
+16:14:45 UNIQUE-008   agree       0.2 s
+16:14:45 UNIQUE-009   agree       0.3 s
+16:14:45 UNIQUE-010   agree       0.2 s
+16:14:45 UNIQUE-011   agree       0.1 s
+16:14:45 UNIQUE-012   agree       0.1 s
+16:14:45 UNIQUE-013   agree       0.1 s
+16:14:46 UNIQUE-014   agree       0.1 s
+16:14:46 UNIQUE-015   agree       0.1 s
+16:14:46 UNIQUE-016   agree       0.2 s
+16:14:46 UNIQUE-017   disagree    0.2 s
+16:14:46 UNIQUE-018   disagree    0.2 s
+16:14:46 UNIQUE-019   disagree    0.1 s
+16:14:47 WEEKDAY-001  agree       0.1 s
+16:14:47 WEEKDAY-002  agree       0.1 s
+16:14:47 WEEKDAY-003  agree       0.1 s
+16:14:47 WEEKDAY-004  agree       0.1 s
+16:14:47 WEEKDAY-005  agree       0.1 s
+16:14:47 WEEKDAY-006  agree       0.1 s
+16:14:47 WEEKDAY-007  agree       0.1 s
+16:14:47 WEEKDAY-008  agree       0.1 s
+16:14:47 WORKDAY-001  agree       0.1 s
+16:14:48 WORKDAY-002  agree       0.1 s
+16:14:48 WORKDAY-003  agree       0.1 s
+16:14:48 WORKDAY-004  agree       0.1 s
+16:14:48 WORKDAY-005  agree       0.1 s
+16:14:48 WORKDAY-006  agree       0.1 s
+16:14:48 WORKDAY-007  agree       0.1 s
+16:14:48 WORKDAY-008  agree       0.1 s
+16:14:48 WORKDAY-009  agree       0.1 s
+16:14:49 WORKDAY-010  agree       0.1 s
+16:14:49 XNPV-001     agree       0.1 s
+16:14:49 XNPV-002     agree       0.1 s
+16:14:49 XNPV-003     agree       0.1 s
+16:14:49 XNPV-004     agree       0.1 s
+16:14:49 XNPV-005     disagree    0.1 s
+16:14:49 XNPV-006     disagree    0.1 s
+16:14:49 XNPV-007     disagree    0.1 s
+16:14:49 XNPV-008     disagree    0.1 s
+16:14:50 XNPV-009     disagree    0.1 s
+16:14:50 XNPV-010     disagree    0.1 s
+16:14:50 XNPV-011     disagree    0.1 s
+16:14:50 XNPV-012     disagree    0.1 s
+16:14:50 XNPV-013     disagree    0.2 s
+16:14:50 XNPV-014     disagree    0.1 s
+16:14:50 XNPV-015     disagree    0.1 s
+16:14:50 XNPV-016     agree       0.1 s
+16:14:51 XNPV-017     disagree    0.1 s
+16:14:51 YEAR-001     agree       0.1 s
+16:14:51 YEAR-002     agree       0.1 s
+16:14:51 YEAR-003     agree       0.1 s
+16:14:51 YEAR-004     agree       0.1 s
+16:14:51 YEAR-005     agree       0.1 s
+16:14:51 YEAR-006     agree       0.1 s
+16:14:52 YEAR-007     agree       0.1 s
+16:14:52 YEAR-008     agree       0.1 s
+
+agree 419, disagree 63, blocked 13, recorded 31 -> C:\Users\amisa\AppData\Local\exgrid-layer3\area-2026-10-12b\oracle\ExcelOracle\results-2026-10-12-area-2-com-en-US.json
+DISAGREE EDATE-016: value2: expected "#VALUE!", Excel 31 (number)
+DISAGREE EDATE-017: value2: expected "#VALUE!", Excel "#NUM!" (error)
+DISAGREE EOMONTH-016: value2: expected "#VALUE!", Excel "#NUM!" (error)
+DISAGREE EOMONTH-017: value2: expected "#VALUE!", Excel "#NUM!" (error)
+DISAGREE FV-014: value2: expected "#VALUE!", Excel 2900.664506306397 (number)
+DISAGREE FV-015: value2: expected "#VALUE!", Excel 123950.02507801351 (number)
+DISAGREE FV-016: value2: expected "#VALUE!", Excel 45.627983043166275 (number)
+DISAGREE FV-017: value2: expected "#VALUE!", Excel 0.33333333333333331 (number)
+DISAGREE FV-018: value2: expected 500, Excel "#NUM!" (error)
+DISAGREE FV-020: value2: expected "#VALUE!", Excel "#DIV/0!" (error)
+DISAGREE FV-021: value2: expected "#VALUE!", Excel "#DIV/0!" (error)
+DISAGREE FV-022: value2: expected "#VALUE!", Excel -247.8287941856272 (number)
+DISAGREE MOD-020: value2: expected "#VALUE!", Excel 0.09999999999999995 (number)
+DISAGREE MOD-021: value2: expected "#VALUE!", Excel 0.099999999999999728 (number)
+DISAGREE MOD-022: value2: expected "#VALUE!", Excel 0.09999999999999995 (number)
+DISAGREE MOD-023: value2: expected "#VALUE!", Excel -0.09999999999999995 (number)
+DISAGREE MOD-024: value2: expected "#VALUE!", Excel 0.0099999999999997539 (number)
+DISAGREE MOD-025: value2: expected "#VALUE!", Excel 0.0099999999999999412 (number)
+DISAGREE MOD-026: value2: expected "#VALUE!", Excel 0.09999444888487688 (number)
+DISAGREE MOD-027: value2: expected "#VALUE!", Excel 0.19999314677151464 (number)
+DISAGREE MOD-028: value2: expected "#VALUE!", Excel -93.699999999978971 (number)
+DISAGREE MOD-029: value2: expected "#VALUE!", Excel 6629.9123739999995 (number)
+DISAGREE MOD-030: value2: expected "#VALUE!", Excel 2.7755575615628914E-17 (number)
+DISAGREE MOD-031: value2: expected "#VALUE!", Excel 2.7755575615628914E-17 (number)
+DISAGREE MOD-032: value2: expected "#VALUE!", Excel 0 (number)
+DISAGREE PMT-013: value2: expected -7363.703123976373, Excel -7363.7031239763755 (number)
+DISAGREE PMT-014: value2: expected -21530.430018725492, Excel -21530.430018725485 (number)
+DISAGREE PMT-015: value2: expected -852.5226402170998, Excel -852.5226402171 (number)
+DISAGREE PMT-016: value2: expected -20936.48778866115, Excel -20936.487788661154 (number)
+DISAGREE PMT-018: value2: expected -27.90167156122446, Excel -27.901671561224465 (number)
+DISAGREE PMT-020: value2: expected -10.501648240558218, Excel -10.501648240558216 (number)
+DISAGREE PMT-021: value2: expected -32615.986669943606, Excel -32615.986669943602 (number)
+DISAGREE PMT-023: value2: expected -11260.941796175352, Excel -11260.941796175353 (number)
+DISAGREE PMT-024: value2: expected -10750.782380145603, Excel -10750.7823801456 (number)
+DISAGREE PMT-025: value2: expected 50.90552130119935, Excel 50.905521301199329 (number)
+DISAGREE PMT-026: value2: expected 1.8452907580883144, Excel 1.8452907580883169 (number)
+DISAGREE PMT-027: value2: expected -13.963833694802405, Excel -13.963833694802407 (number)
+DISAGREE PMT-028: value2: expected 0.9737277420722884, Excel 0.97372774207228763 (number)
+DISAGREE PMT-029: value2: expected 63.197272167756275, Excel 63.197272167756296 (number)
+DISAGREE PMT-030: value2: expected -445.64260793186025, Excel -445.64260793186031 (number)
+DISAGREE PMT-031: value2: expected -22603.91407630351, Excel -22603.914076303507 (number)
+DISAGREE PMT-032: value2: expected -22817.298664792015, Excel -22817.298664792012 (number)
+DISAGREE PV-011: value2: expected "#VALUE!", Excel "#NUM!" (error)
+DISAGREE PV-012: value2: expected "#VALUE!", Excel "#DIV/0!" (error)
+DISAGREE SMALL-008: value2: expected 7, Excel "#NUM!" (error)
+DISAGREE SORT-015: value2: expected "#VALUE!", Excel 7 (number)
+DISAGREE SORT-021: value2: expected "#VALUE!", Excel 2 (number)
+DISAGREE SORT-022: value2: expected "#VALUE!", Excel true (boolean)
+DISAGREE UNIQUE-017: value2: expected "#VALUE!", Excel 2 (number)
+DISAGREE UNIQUE-018: value2: expected "#VALUE!", Excel true (boolean)
+DISAGREE UNIQUE-019: value2: expected "#VALUE!", Excel 2 (number)
+DISAGREE XNPV-005: value2: expected "#VALUE!", Excel 2023.0065393622904 (number)
+DISAGREE XNPV-006: value2: expected "#VALUE!", Excel 2277.5848519247406 (number)
+DISAGREE XNPV-007: value2: expected "#VALUE!", Excel "#NUM!" (error)
+DISAGREE XNPV-008: value2: expected "#VALUE!", Excel "#NUM!" (error)
+DISAGREE XNPV-009: value2: expected "#VALUE!", Excel "#NUM!" (error)
+DISAGREE XNPV-010: value2: expected "#VALUE!", Excel "#NUM!" (error)
+DISAGREE XNPV-011: value2: expected "#VALUE!", Excel -7286.8778090094384 (number)
+DISAGREE XNPV-012: value2: expected "#VALUE!", Excel "#NUM!" (error)
+DISAGREE XNPV-013: value2: expected 700.2269770028581, Excel 700.22697700285767 (number)
+DISAGREE XNPV-014: value2: expected "#VALUE!", Excel 5895.8664861795514 (number)
+DISAGREE XNPV-015: value2: expected "#VALUE!", Excel 4384.9427145314748 (number)
+DISAGREE XNPV-017: value2: expected "#VALUE!", Excel "#NUM!" (error)
+-Update: 419 agreeing cases now say source "observed"; disagreeing ones are untouched.
+pass com-en-US ended 16:15:00

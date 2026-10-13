@@ -1,0 +1,9 @@
+{"t": "12:01:44", "cmd": "stop", "answer": "err Cannot stop process \"Idle (0)\" because of the following error: Access is denied t=45083989"}
+{"t": "12:01:46", "cmd": "start", "answer": "ok start pid=50568 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=45085910"}
+{"t": "12:01:47", "cmd": "setup A1 1", "answer": "ok setup A1 t=45087427"}
+{"t": "12:01:47", "cmd": "setup B1 2", "answer": "ok setup B1 t=13740"}
+{"t": "12:01:47", "cmd": "setup C1 3", "answer": "ok setup C1 t=45087547"}
+{"t": "12:01:47", "cmd": "setup A2 4", "answer": "ok setup A2 t=45087597"}
+{"t": "12:01:47", "cmd": "setup C5 5", "answer": "ok setup C5 t=45087654"}
+{"t": "12:01:47", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=45087735"}
+{"t": "12:01:48", "cmd": "geo C5", "answer": "ok geo A1:41,353,137,381 t=14016"}

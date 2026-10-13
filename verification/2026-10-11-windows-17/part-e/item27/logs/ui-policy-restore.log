@@ -1,0 +1,4 @@
+restore at 10:58:12 as the user (elevated)
+policy key removed (it held nothing else)
+ClientCulture=en-gb ScenarioCulture=
+policy key exists after: False

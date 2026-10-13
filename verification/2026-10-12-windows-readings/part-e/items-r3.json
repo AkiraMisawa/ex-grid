@@ -1,0 +1,7 @@
+{
+  "about": "2026-10-12 readings, R3 (a) and (c): ExPivot's readings (docs/specs/expivot/excel-behaviours.md, items 5 (a) and 16) beside Excel, as verify-on-windows-17.md's Part E built them (part-e-excel.ps1 and pivot-probe.mjs, unchanged).",
+  "items": [
+    {"id": "e05c", "item": 5, "half": "a, the other half", "gates": true, "what": "Every Aggregation over a text field: a Group of text, one of one text, one of blanks only", "csv": "Group,Note\r\nA,x\r\nA,y\r\nB,z\r\nC,\r\nC,\r\n", "rows": ["Group"], "cols": [], "values": [{"field": "Note", "agg": "Average"}, {"field": "Note", "agg": "StdDev"}, {"field": "Note", "agg": "Var"}, {"field": "Note", "agg": "StdDevp"}, {"field": "Note", "agg": "Varp"}, {"field": "Note", "agg": "Sum"}, {"field": "Note", "agg": "Max"}, {"field": "Note", "agg": "Min"}, {"field": "Note", "agg": "Product"}, {"field": "Note", "agg": "Count"}, {"field": "Note", "agg": "Count Numbers"}]},
+    {"id": "e16b", "item": 16, "gates": true, "what": "A numeric Row field's Item label in General: eleven characters, as the values show?", "csv": "Key,Amount\r\n1.23456789012345,1\r\n123456789012.345,2\r\n", "rows": ["Key"], "cols": [], "values": [{"field": "Amount", "agg": "Sum"}]}
+  ]
+}

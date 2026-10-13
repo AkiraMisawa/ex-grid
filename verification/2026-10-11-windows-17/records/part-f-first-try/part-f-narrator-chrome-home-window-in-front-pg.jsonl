@@ -1,0 +1,2 @@
+{"t": "12:31:03", "cmd": {"op": "goto", "url": "http://localhost:5299/sheet", "ready": "() => { const g = document.querySelector('.ex-grid:has(> .ex-formula-bar)'); if (!g) return false;\n  const c = [...g.querySelectorAll('[id$=\"-r11c1\"]')].map(e => e.textContent).join(''); return c.includes('318.25') && !!g.querySelector('input.ex-key-field'); }"}, "answer": {"error": "Error: front run17-chrome-62813: err the window 'run17-chrome-62813...' is not in front t=1369"}}
+{"t": "12:31:03", "cmd": {"op": "quit"}, "answer": {"ok": "quit"}}
