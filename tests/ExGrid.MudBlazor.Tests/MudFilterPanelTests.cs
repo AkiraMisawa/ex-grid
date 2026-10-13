@@ -329,6 +329,32 @@ public class MudFilterPanelTests : MudTestContext
         Assert.Equal(FilterOperator.Contains, cut.FindComponent<MudSelect<FilterOperator>>().Instance.GetState(x => x.Value));
     }
 
+    /// <summary>The elements of a field that take the keyboard, as Tab and <c>FocusAsync</c> reach
+    /// them: not a hidden input, nor one taken out of the tab order or disabled.</summary>
+    private static IReadOnlyList<IElement> TakingTheKeyboard(IElement field)
+        => [.. field.QuerySelectorAll("input, textarea, select, button, [tabindex]").Prepend(field).Where(e =>
+            e.Matches("input, textarea, select, button, [tabindex]")
+            && e.GetAttribute("type") != "hidden" && e.GetAttribute("tabindex") != "-1" && !e.HasAttribute("disabled"))];
+
+    public static TheoryData<string, ColumnType, string> Selects() => new()
+    {
+        { "mud-ex-grid-filter-operator", ColumnType.Text, "Operator" },
+        { "mud-ex-grid-filter-operator", ColumnType.Number, "Operator" },
+        { "mud-ex-grid-filter-second", ColumnType.Text, "Second condition" },
+        { "mud-ex-grid-filter-operand", ColumnType.Boolean, "Value" },
+    };
+
+    [Theory, MemberData(nameof(Selects))] // WR-10 / ADR-0205, WR-2, A11Y-19: each MudSelect of the panel names the element that takes its keyboard a combobox, by the field's own label. Below MudBlazor 9.6.0 the two operators named nothing there (the Operator a focusable "=" with no role and no name), and below 9.4.0 neither did the Boolean value, so this holds the floor on every run
+    public void Every_select_names_the_element_that_takes_its_keyboard(string field, ColumnType type, string label)
+    {
+        var cut = RenderPanel(Context(type, FilterUiMode.Condition));
+        var select = cut.Find($".{field}");
+
+        var focusable = Assert.Single(TakingTheKeyboard(select));
+        Assert.True(focusable.GetAttribute("role") == "combobox", select.OuterHtml);
+        Assert.Equal(label, focusable.GetAttribute("aria-label"));
+    }
+
     [Fact] // WR-2: the operand is MudBlazor's control for the column's type
     public void The_operand_is_the_types_own_control()
     {

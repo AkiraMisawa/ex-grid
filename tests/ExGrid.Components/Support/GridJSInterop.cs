@@ -376,6 +376,9 @@ internal sealed class GridJSInterop
     internal JSRuntimeInvocationHandler<ScrollOffset> UnansweredScrollRead()
         => _handle!.Setup<ScrollOffset>("getScrollOffset");
 
+    /// <summary>How many times the grid has asked the browser for its scroll offset.</summary>
+    internal int ScrollReads => _handle!.Invocations["getScrollOffset"].Count;
+
     /// <summary>A <c>setCaret</c> the browser has not carried out yet, finished when the test
     /// says — how a caret report crossing the core's placement on the wire is staged
     /// (ADR-0051). Every placement from here on lands on it.</summary>

@@ -57,6 +57,19 @@ is only +7% against plain markup.
   surviving row and the same instance re-renders none; the Definition of Done's RR-5, which asked
   that a fresh-but-equal array re-render nothing, was restated to match, since "equal" columns would
   call two `Format` delegates equal that paint differently.)*
+  *(2026-10-13, decided with the user: a list handed to the grid is drawn from the copy the grid
+  takes when it is handed — for `Columns`, `HeaderGroups` and `Sorts`, a read-only copy, which is
+  also what the grid's property answers. A Consumer's in-place mutation shows when the list is
+  handed again, never through a render of the grid's own in between. Handed again, the list is
+  compared with the copy element by element, by reference: the same instance with other elements —
+  a column added, replaced, removed or moved in place — is a new list, of which a new copy is taken,
+  and everything keyed on the list's identity rebuilds by the one path a new list takes; the copy
+  itself handed back, or a list holding its elements, is no change. The column state the grid
+  itself holds — the column whose popover is open, the column a resize grip is dragging, a
+  column's measured Auto width for the same instance — is carried across by the column's Name, as
+  AG Grid matches re-applied columnDefs by colId. What is derived from a definition is not carried
+  across instances, by the note above. The Selection, the Copied Range and an open edit still go
+  when the visible columns change (ADR-0011).)*
   The first Consumer's baseline is a content-addressed immutable snapshot, so a new feed version
   naturally produces new instances and the constraint does not bite
   ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md) relies on the same

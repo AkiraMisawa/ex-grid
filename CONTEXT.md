@@ -1123,8 +1123,13 @@ _Avoid_: demo, hero
 What a published version says it holds, one file per version under `docs/releases/`: its highlights,
 its breaking and behaviour changes, and what each product gained. The same text is the GitHub
 release and the Docs Site's Release notes page. A prerelease's notes say what the Definition of Done
-still owes; a stable version's name its sign-off and every SHOULD accepted failing
-([ADR-0190](./docs/adr/0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md)).
+still owes; a stable version's also say what it does not do (its Known limitations), name its sign-off,
+every SHOULD accepted failing and what was left out of its scope, and say what it supports. A Release
+Candidate's carry the same blocks, to rehearse them, but say that its sign-off is being made, and open
+with a note of their own
+([ADR-0190](./docs/adr/0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md),
+[ADR-0202](./docs/adr/0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md),
+[ADR-0205](./docs/adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)).
 _Avoid_: changelog; "release" for a prerelease (a release is a version without a suffix)
 
 **Change Note**:
@@ -1133,6 +1138,15 @@ branch that makes the change, naming its product and whether it adds, fixes, cha
 breaks. The cut before a tag gathers them into the version's Release Notes
 ([ADR-0190](./docs/adr/0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md)).
 _Avoid_: changeset, fragment
+
+**Release Candidate**:
+A prerelease, `-rc.N`, tagged to rehearse the version without a suffix that follows it: it publishes
+through the same workflow and runs that version's checks but the two that read a sign-off, and its
+Release Notes carry the blocks that version's will. The Definition of Done is signed off against a
+Release Candidate, and the version that follows is its commit with only the sign-off's records and its
+notes added
+([ADR-0205](./docs/adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)).
+_Avoid_: beta (a beta runs none of the stable path's checks); "release" alone for it
 
 **Roadmap**:
 The Docs Site's page of what is decided next, what is left for later and what the family will not do,

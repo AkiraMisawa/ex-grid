@@ -1,0 +1,66 @@
+node v24.14.1, dotnet 10.0.203
+== 2026-10-12T09:16:09Z host=wasm tag=sel-9.6.0 base=http://localhost:5491 head=0c0ab368 locations=
+Running 282 tests using 1 worker
+  ✘   14 [chrome] › copied-range.spec.mjs:159:1 › on a Sheet the dashes are its outline's colour, with and without a Wrapper (ADR-0170, ADR-0071) (1.2m)
+  ✘  113 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (1.3m)
+
+  1) [chrome] › copied-range.spec.mjs:159:1 › on a Sheet the dashes are its outline's colour, with and without a Wrapper (ADR-0170, ADR-0071) 
+
+    Error: expect(locator).not.toHaveCount(expected) failed
+
+    Locator:  locator('.ex-sheet .ex-grid').first().locator('.ex-copied-range')
+    Expected: not 0
+    Received: 0
+    Timeout:  60000ms
+
+    Call log:
+      - Expect "not toHaveCount" with timeout 60000ms
+      - waiting for locator('.ex-sheet .ex-grid').first().locator('.ex-copied-range')
+        123 × locator resolved to 0 elements
+            - unexpected value "0"
+
+
+      165 |         await page.keyboard.press('Shift+ArrowRight');
+      166 |         await page.keyboard.press('ControlOrMeta+C');
+    > 167 |         await expect(sheet.locator('.ex-copied-range')).not.toHaveCount(0);
+          |                                                             ^
+      168 |
+      169 |         const colours = await sheet.evaluate((root) => ({
+      170 |             outline: getComputedStyle(root.querySelector('.ex-range-single'), '::after').borderTopColor,
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/copied-range.spec.mjs:167:61
+
+
+  2) [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 3
+    + Received  + 3
+
+      Object {
+    -   "drawn": true,
+    -   "focused": true,
+    -   "value": "かな感じｄ",
+    +   "drawn": false,
+    +   "focused": false,
+    +   "value": "",
+      }
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      358 |                 // The request that waited is not granted between the two.
+      359 |                 await endAndStart(client, '感じ', 'ｄ');
+    > 360 |                 await expect.poll(() => fieldState(grid)).toEqual({ value: 'かな感じｄ', drawn: true, focused: true });
+          |                                                           ^
+      361 |                 await compose(client, 'で', 'でｓ', 'です');
+      362 |                 expect(await fieldState(grid)).toEqual({ value: 'かな感じです', drawn: true, focused: true });
+      363 |                 await expect(editor(grid)).not.toBeFocused();
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/key-field.spec.mjs:360:59
+
+  2 failed
+    [chrome] › copied-range.spec.mjs:159:1 › on a Sheet the dashes are its outline's colour, with and without a Wrapper (ADR-0170, ADR-0071) 
+    [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) 
+  7 skipped
+  273 passed (23.2m)
+== exit 1 at 2026-10-12T09:39:21Z

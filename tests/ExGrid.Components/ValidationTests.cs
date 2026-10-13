@@ -190,6 +190,61 @@ public class ValidationTests : GridTestContext
         Assert.Equal("'abc' is not a date", cut.Find(".ex-announce").TextContent);
     }
 
+    /// <summary>Every text the live region takes while <paramref name="act"/> runs, in order:
+    /// one entry per write a screen reader would hear (an emptying is recorded as "").</summary>
+    private static async Task<List<string>> LiveRegionWritesDuring(IRenderedComponent<ExGrid<TestRow>> cut, Func<Task> act)
+    {
+        var writes = new List<string>();
+        var last = cut.Find(".ex-announce").TextContent;
+        void Record(object? sender, EventArgs e)
+        {
+            var now = cut.Find(".ex-announce").TextContent;
+            if (now != last)
+                writes.Add(now);
+            last = now;
+        }
+        cut.OnMarkupUpdated += Record;
+        try
+        {
+            await act();
+        }
+        finally
+        {
+            cut.OnMarkupUpdated -= Record;
+        }
+        return writes;
+    }
+
+    [Fact] // A11Y-15, ADR-0033/0034: one live-region write per Reject, the Consumer's text verbatim, and aria-invalid
+    public async Task A11Y15_each_reject_is_written_once_into_the_live_region()
+    {
+        var cut = RenderGrid(validate: (_, _) => EditVerdict.Reject("'abc' is not a date"));
+
+        var writes = await LiveRegionWritesDuring(cut, async () =>
+        {
+            await TypeAndCommitAsync(cut, "abc");                // the first Reject
+            Assert.Equal("true", cut.Find(".ex-editor").GetAttribute("aria-invalid"));
+            await PressAsync(cut, "Enter");                      // the same text, rejected again
+        });
+
+        // Each Reject is heard once; the repeat is emptied first so it is heard at all.
+        Assert.Equal(2, writes.Count(w => w == "'abc' is not a date"));
+        Assert.All(writes, w => Assert.Contains(w, new[] { "", "'abc' is not a date" }));
+    }
+
+    [Theory] // A11Y-15, ADR-0033/0034: an Accept or a Flag writes nothing into the live region
+    [InlineData("accept")]
+    [InlineData("flag")]
+    public async Task A11Y15_an_accept_or_a_flag_writes_nothing_into_the_live_region(string verdict)
+    {
+        var cut = RenderGrid(validate: (_, _) => verdict == "accept" ? EditVerdict.Accept : EditVerdict.Flag("out of range"));
+
+        var writes = await LiveRegionWritesDuring(cut, () => TypeAndCommitAsync(cut, "abc"));
+
+        Assert.Empty(cut.FindAll(".ex-editor"));                 // committed
+        Assert.Empty(writes);
+    }
+
     [Fact] // ADR-0033/0034: a Focus move after a Reject leaves the relayed sentence alone — only a selection sentence is the selection's to empty
     public async Task A_focus_move_after_a_reject_leaves_its_sentence()
     {
