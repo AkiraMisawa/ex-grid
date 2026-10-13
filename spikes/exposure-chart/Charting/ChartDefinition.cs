@@ -1,4 +1,5 @@
 using ExGrid;
+using ExGrid.Columns;
 using ExGrid.Selection;
 
 namespace ExposureChart.Charting;
@@ -14,16 +15,51 @@ public sealed record SeriesDefinition(string Column, IReadOnlySet<DateOnly> RowK
 /// series' rows are its own, as each Excel series has its own ranges: a series added later, or a
 /// range selected over other rows, is charted at the dates it was given.
 /// </summary>
-public sealed record ChartDefinition(string XColumn, IReadOnlyList<SeriesDefinition> Series)
+public sealed record ChartDefinition(string XColumn, IReadOnlyList<SeriesDefinition> Series) : ChartSpec
 {
+    public override int SeriesCount => Series.Count;
+    public override string Describe() => $"x: {XColumn} · {Series.Count} series · {AllKeys.Count} dates";
+
     public IReadOnlyList<string> SeriesColumns => Series.Select(s => s.Column).ToList();
 
     /// <summary>Every date some series is charted at.</summary>
     public IReadOnlySet<DateOnly> AllKeys => Series.SelectMany(s => s.RowKeys).ToHashSet();
 }
 
+/// <summary>What a chart is of: series in columns along a date column, or series in rows.</summary>
+public abstract record ChartSpec
+{
+    public abstract int SeriesCount { get; }
+    public abstract string Describe();
+}
+
+/// <summary>One series in rows: a row, by its key, across some of one Header Group's columns.</summary>
+public sealed record RowSeriesDefinition(object RowKey, string Group, IReadOnlyList<string> Columns);
+
+/// <summary>A chart of series in rows — Excel's "series in rows" — each a row and a group.</summary>
+public sealed record RowChartDefinition(IReadOnlyList<RowSeriesDefinition> Series) : ChartSpec
+{
+    public override int SeriesCount => Series.Count;
+    public override string Describe() =>
+        $"{Series.Select(s => s.RowKey).Distinct().Count()} rows · {Series.Count} series";
+}
+
+/// <summary>
+/// The Consumer's declarations for series in rows. The positions are declared, never read off a
+/// header: "6m" is a header's text, 0.5 years is what the Consumer says it stands for.
+/// </summary>
+/// <param name="Key">A row's identity, so a series follows its row through a sort.</param>
+/// <param name="Name">A row's name in the legend and the tooltip: ticker, seniority, currency.</param>
+/// <param name="XOf">A column's position along the axis, or null for a column that has none.</param>
+public sealed record RowChartSpec<TRow>(
+    Func<TRow, object> Key,
+    Func<TRow, string> Name,
+    Func<string, double?> XOf,
+    XScale Scale,
+    string XHeader);
+
 /// <summary>A chart that could be made, or the sentence that says why not.</summary>
-public sealed record ChartOutcome(ChartDefinition? Definition, string? Refusal)
+public sealed record ChartOutcome(ChartSpec? Definition, string? Refusal)
 {
     public static ChartOutcome Refused(string why) => new(null, why);
 }
@@ -101,5 +137,54 @@ public static class ChartRequest
             series.Add(new SeriesDefinition(columns[i].Name, keys));
         }
         return (series, null);
+    }
+
+    /// <summary>
+    /// A selection read as series in rows: each selected row, across the positioned columns the
+    /// selection covered, one series per Header Group they fall in. A selection that covers no
+    /// positioned column, or one only, stands for its rows' whole curves — a curve needs two
+    /// points. A number column with no position (a recovery rate) is refused by name, not
+    /// dropped: it was chosen, and it cannot be drawn on this axis.
+    /// </summary>
+    public static ChartOutcome FromRowSelection<TRow>(
+        IReadOnlyList<SelectionRange> ranges,
+        int selectionVersion,
+        int currentVersion,
+        IReadOnlyList<GridColumn<TRow>> columns,
+        IReadOnlyList<HeaderGroup> groups,
+        IReadOnlyList<TRow> window,
+        RowChartSpec<TRow> spec,
+        IReadOnlyCollection<RowSeriesDefinition>? existing = null)
+    {
+        if (ranges.Count == 0)
+            return ChartOutcome.Refused("Nothing is selected.");
+        if (selectionVersion != currentVersion)
+            return ChartOutcome.Refused("The rows were reordered after the selection was made. Select again.");
+
+        var covered = ranges.SelectMany(r => Enumerable.Range(r.LeftColumn, r.ColumnCount)).Distinct().Order().Select(i => columns[i]).ToList();
+        var unpositioned = covered.Where(c => c.Type == ColumnType.Number && spec.XOf(c.Name) is null).ToList();
+        if (unpositioned.Count > 0)
+            return ChartOutcome.Refused(
+                $"{string.Join(", ", unpositioned.Select(c => c.Header))} has no position on the {spec.XHeader} axis, so it cannot be drawn here.");
+
+        var positioned = covered.Where(c => spec.XOf(c.Name) is not null).Select(c => c.Name).ToList();
+        var groupsOfCurve = groups.Where(g => g.Tier == 1 && g.Columns.Any(c => spec.XOf(c) is not null)).ToList();
+        var series = new List<RowSeriesDefinition>();
+        var rowsCovered = ranges.SelectMany(r => Enumerable.Range(r.TopRow, r.RowCount)).Distinct().Order();
+        foreach (var rowIndex in rowsCovered)
+        {
+            var key = spec.Key(window[rowIndex]);
+            foreach (var group in groupsOfCurve)
+            {
+                var inGroup = positioned.Where(group.Columns.Contains).ToList();
+                if (positioned.Count > 1 && inGroup.Count == 0) continue;
+                var cols = inGroup.Count > 1 ? inGroup : group.Columns.Where(c => spec.XOf(c) is not null).ToList();
+                if (existing?.Any(e => Equals(e.RowKey, key) && e.Group == group.Label) == true) continue;
+                series.Add(new RowSeriesDefinition(key, group.Label, cols));
+            }
+        }
+        if (series.Count == 0)
+            return ChartOutcome.Refused(existing is null ? "The selection makes no curve." : "Every curve in the selection is already in the chart.");
+        return new(new RowChartDefinition(series), null);
     }
 }

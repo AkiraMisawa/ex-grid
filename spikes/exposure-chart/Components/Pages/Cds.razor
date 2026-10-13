@@ -89,7 +89,7 @@
     private readonly IReadOnlyList<GridColumn<CdsRow>> _columns = AllColumns;
     private readonly IReadOnlyList<HeaderGroup> _groups = Groups;
     private ChartDefinition _initial = null!;
-    private Func<DateOnly, string?> _tenorOf = null!;
+    private Func<double, string?> _tenorOf = null!;
 
     private Func<ContextMenuContext<CdsRow>, IEnumerable<GridCommand>> _contextCommands = null!;
     private readonly Func<string, string?> _commandLabel = id => id == ChartCommand ? "Chart selection" : null;
@@ -101,7 +101,7 @@
     protected override void OnInitialized()
     {
         _source = GridSource.From(_rows, r => r.Maturity);
-        _tenorOf = date => _rows.FirstOrDefault(r => r.Maturity == date)?.Tenor;
+        _tenorOf = x => _rows.FirstOrDefault(r => XScale.Of(r.Maturity) == x)?.Tenor;
         // Shown from the start: the spread and the hazard rate at every pillar, the curve's date included.
         var all = _rows.Select(r => r.Maturity).ToHashSet();
         _initial = new ChartDefinition("Maturity", [new SeriesDefinition("Spread", all), new SeriesDefinition("Hazard", all)]);

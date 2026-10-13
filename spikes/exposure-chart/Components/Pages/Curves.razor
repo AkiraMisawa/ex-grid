@@ -1,0 +1,137 @@
+@page "/curves"
+@using System.Globalization
+
+<PageTitle>CDS curves PoC</PageTitle>
+
+<Nav />
+
+<h1>CDS curves by reference entity — tenors across</h1>
+<p class="hint">
+    One row per curve, its tenors across: the grid shows the curves as Excel's "series in rows". Select rows —
+    any of their cells, or their tickers — then right-click → <b>Chart selection</b>. Each row draws its par spreads
+    (left axis, bp) and its hazard rates (right axis, % a year, piecewise constant over (tᵢ₋₁, tᵢ] from 0),
+    in one colour, along the tenors' own years. Selecting tenor columns charts only those.
+</p>
+
+<ExGrid TRow="CdsCurveRow" Source="_source" Columns="_columns" HeaderGroups="_groups" PinnedColumnCount="1"
+        HeaderClickSelects="true" SelectionChanged="OnSelectionChanged"
+        ContextCommands="_contextCommands" CommandLabel="_commandLabel"
+        ViewportHeight="250" ViewportWidth="ViewportSize.Stretch" />
+
+<div class="toolbar">
+    <button type="button" @onclick="ChartCurrentSelection">Chart selection</button>
+    <span class="selected">@(_selection.IsEmpty ? "Nothing selected" : $"{_selection.Ranges.Count} range(s), {_selection.CellCount:N0} cells")</span>
+    <span class="sep"></span>
+    <button type="button" @onclick="() => Shift(-25)">Quotes −25bp</button>
+    <button type="button" @onclick="() => Shift(25)">Quotes +25bp</button>
+</div>
+
+<ChartBox TRow="CdsCurveRow" @ref="_chart" Columns="_columns" Groups="_groups" Rows="_rows"
+          Window="_source.Window" RowSequenceVersion="_source.RowSequenceVersion"
+          Selection="_selection" SelectionVersion="_selectionVersion"
+          OnRight="_onRight" UnitOf="_unitOf" InitialStyles="Styles" InitialLayout="ChartLayout.OnePanel"
+          InitialXAxis="XAxis" RowSpec="Spec" FileName="cds-curves" InitialDefinition="_initial" />
+
+@code {
+    private const string ChartCommand = "chart-selection";
+    private const string SpreadGroup = "Par spread (bp)", HazardGroup = "Hazard rate (%)";
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private static ColumnWidthSpec Fixed(double px) => new(ColumnWidth.Fixed(px));
+
+    private static Func<object, string> Digits(int digits) => v => ((decimal)v).ToString("N" + digits, Invariant);
+
+    private static readonly GridColumn<CdsCurveRow>[] AllColumns =
+    [
+        new("Ticker", ColumnType.Text, r => r.Ticker, width: Fixed(84)),
+        new("Entity", ColumnType.Text, r => r.Entity, header: "Ref entity name", width: Fixed(190)),
+        new("Ccy", ColumnType.Text, r => r.Ccy, width: Fixed(76)),
+        new("Seniority", ColumnType.Text, r => r.Seniority, width: Fixed(104)),
+        new("Doc", ColumnType.Text, r => r.DocClause, header: "Doc clause", width: Fixed(108)),
+        new("Recovery", ColumnType.Number, r => r.RecoveryPct, header: "Recovery (%)", width: Fixed(128), format: Digits(0)),
+        .. CdsCurves.TenorNames.Select((t, i) => new GridColumn<CdsCurveRow>($"S_{t}", ColumnType.Number, r => r.Spreads[i], header: t, width: Fixed(72), format: Digits(1))),
+        .. CdsCurves.TenorNames.Select((t, i) => new GridColumn<CdsCurveRow>($"H_{t}", ColumnType.Number, r => r.Hazards[i], header: t, width: Fixed(84), format: Digits(4))),
+    ];
+
+    private static readonly HeaderGroup[] Groups =
+    [
+        new(SpreadGroup, [.. CdsCurves.TenorNames.Select(t => $"S_{t}")]),
+        new(HazardGroup, [.. CdsCurves.TenorNames.Select(t => $"H_{t}")]),
+    ];
+
+    // Each tenor column's position on the axis, in years: declared here, never read off "6m".
+    private static readonly Dictionary<string, double> Positions = CdsCurves.TenorNames
+        .SelectMany((t, i) => new[] { ($"S_{t}", CdsCurves.TenorYears[i]), ($"H_{t}", CdsCurves.TenorYears[i]) })
+        .ToDictionary(p => p.Item1, p => p.Item2);
+
+    private static readonly RowChartSpec<CdsCurveRow> Spec = new(
+        Key: r => r.Key,
+        Name: r => r.Key,
+        XOf: column => Positions.TryGetValue(column, out var years) ? years : null,
+        Scale: XScale.TenorYears,
+        XHeader: "Tenor");
+
+    private readonly Func<string, bool> _onRight = column => column.StartsWith("H_", StringComparison.Ordinal);
+    private readonly Func<string, string?> _unitOf = column =>
+        column.StartsWith("S_", StringComparison.Ordinal) ? "Par spread (bp)" : column.StartsWith("H_", StringComparison.Ordinal) ? "Hazard rate (% a year)" : null;
+
+    private static readonly Dictionary<string, SeriesStyle> Styles = new()
+    {
+        [SpreadGroup] = new(SeriesDraw.LinePoints, MarkerShape.Circle),
+        [HazardGroup] = new(SeriesDraw.StepPreceding, MarkerShape.Circle),
+    };
+
+    private static readonly XAxisStyle XAxis = new(XTicks.DataDates, XLabel.Tenor, 0);
+
+    private IReadOnlyList<CdsCurveRow> _rows = CdsCurves.All();
+    private double _shift;
+    private InMemoryGridSource<CdsCurveRow> _source = null!;
+    private readonly IReadOnlyList<GridColumn<CdsCurveRow>> _columns = AllColumns;
+    private readonly IReadOnlyList<HeaderGroup> _groups = Groups;
+    private ChartSpec _initial = null!;
+
+    private Func<ContextMenuContext<CdsCurveRow>, IEnumerable<GridCommand>> _contextCommands = null!;
+    private readonly Func<string, string?> _commandLabel = id => id == ChartCommand ? "Chart selection" : null;
+
+    private GridSelection _selection = GridSelection.Empty;
+    private int _selectionVersion;
+    private ChartBox<CdsCurveRow> _chart = null!;
+
+    protected override void OnInitialized()
+    {
+        _source = GridSource.From(_rows, r => r.Key);
+        // From the start: an investment-grade name, and one high-yield name senior and subordinated.
+        var shown = new[] { "ACMEC SNRFOR USD XR14", "CYGNUS SNRFOR USD XR14", "CYGNUS SUBLT2 USD XR14" };
+        _initial = new RowChartDefinition([.. shown.SelectMany(k => new[]
+        {
+            new RowSeriesDefinition(k, SpreadGroup, Groups[0].Columns),
+            new RowSeriesDefinition(k, HazardGroup, Groups[1].Columns),
+        })]);
+        _contextCommands = context =>
+        [
+            new GridCommand(ChartCommand, context.Selection.Count > 0, () =>
+            {
+                Chart(context.Selection, context.RowSequenceVersion);
+                return Task.CompletedTask;
+            }),
+        ];
+    }
+
+    private void OnSelectionChanged(GridSelection selection)
+    {
+        _selection = selection;
+        _selectionVersion = _source.RowSequenceVersion;
+    }
+
+    private void ChartCurrentSelection() => Chart(_selection.Ranges, _selectionVersion);
+
+    private void Chart(IReadOnlyList<SelectionRange> ranges, int version) =>
+        _chart.Show(ChartRequest.FromRowSelection(ranges, version, _source.RowSequenceVersion, _columns, _groups, _source.Window, Spec));
+
+    private void Shift(double bp)
+    {
+        _shift += bp;
+        _rows = CdsCurves.All(_shift);
+        _source.ReplaceAll(_rows);
+    }
+}

@@ -43,3 +43,7 @@ h1 { font-size: 18px; margin: 0 0 4px; }
 .chart { --ex-chart-slot-3: #059669; --ex-chart-slot-4: #be185d; }
 .ex-chart-swatch-3 { background: var(--ex-chart-slot-3); }
 .ex-chart-swatch-4 { background: var(--ex-chart-slot-4); }
+.chart { --ex-chart-slot-5: #7c3aed; --ex-chart-slot-6: #0891b2; --ex-chart-slot-7: #65a30d; }
+.ex-chart-swatch-5 { background: var(--ex-chart-slot-5); }
+.ex-chart-swatch-6 { background: var(--ex-chart-slot-6); }
+.ex-chart-swatch-7 { background: var(--ex-chart-slot-7); }

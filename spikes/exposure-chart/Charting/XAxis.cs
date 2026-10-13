@@ -22,13 +22,13 @@ public enum XLabel { Auto, Year, YearMonth, IsoDate, MonthNameYear, Tenor, Colum
 public sealed record XAxisStyle(XTicks Ticks, XLabel Label, int Angle)
 {
     /// <summary>The Consumer's label for a date — a tenor column's "5Y" — for <see cref="XLabel.Column"/>.</summary>
-    public Func<DateOnly, string?>? LabelOf { get; init; }
+    public Func<double, string?>? LabelOf { get; init; }
 
     public static XAxisStyle Default { get; } = new(XTicks.Calendar, XLabel.Auto, 0);
 }
 
 /// <summary>A tick; a label it could not fit is null, and the tick is still drawn.</summary>
-public readonly record struct XTick(DateOnly Date, string? Label);
+public readonly record struct XTick(double X, string? Label);
 
 public static class XAxis
 {
@@ -38,35 +38,69 @@ public static class XAxis
     // Text is not measured (ADR-0021): an estimate of an 11px label, generous so labels never touch.
     private const double CharWidth = 6.3, LineHeight = 12;
 
-    public static IReadOnlyList<XTick> Ticks(IReadOnlyList<DateOnly> dates, XAxisStyle style, Func<DateOnly, double> x)
+    /// <param name="xs">The positions charted, in order.</param>
+    /// <param name="domain">The axis' extent, which may start before the first position.</param>
+    public static IReadOnlyList<XTick> Ticks(IReadOnlyList<double> xs, (double From, double To) domain, XScale scale,
+        XAxisStyle style, Func<double, double> x)
     {
-        var first = dates[0];
-        var last = dates[^1];
-        var (positions, auto) = style.Ticks switch
-        {
-            XTicks.DataDates => (dates.ToList(), XLabel.IsoDate),
-            XTicks.Tenors => (TenorMonths.Select(m => first.AddMonths(m)).Where(d => d <= last).Prepend(first).ToList(), XLabel.Tenor),
-            _ => Calendar(first, last),
-        };
+        var (positions, auto) = scale.IsDate ? DatePositions(xs, style) : NumberPositions(xs, domain, style);
         var label = style.Label == XLabel.Auto ? auto : style.Label;
+        var first = scale.IsDate ? XScale.DateOf(xs[0]) : default;
 
         // Keep a label only where it clears the previous one along the axis. Upright, a label
         // takes its width; turned, it takes a line's height divided by the sine of the angle.
         var ticks = new List<XTick>();
         var clearUntil = double.NegativeInfinity;
-        foreach (var date in positions)
+        foreach (var position in positions)
         {
-            var text = label == XLabel.Column && style.LabelOf?.Invoke(date) is { } own ? own : Format(date, first, label);
+            var text = label == XLabel.Column && style.LabelOf?.Invoke(position) is { } own ? own
+                : scale.IsDate ? Format(XScale.DateOf(position), first, label)
+                : label == XLabel.Tenor || label == XLabel.Column ? XScale.Tenor(position) : scale.Format(position);
             var footprint = style.Angle == 0 ? text.Length * CharWidth + 10 : LineHeight / Math.Sin(style.Angle * Math.PI / 180) + 2;
-            var at = x(date);
+            var at = x(position);
             if (at - footprint / 2 >= clearUntil)
             {
-                ticks.Add(new XTick(date, text));
+                ticks.Add(new XTick(position, text));
                 clearUntil = at + footprint / 2;
             }
-            else ticks.Add(new XTick(date, null));
+            else ticks.Add(new XTick(position, null));
         }
         return ticks;
+    }
+
+    private static (List<double>, XLabel) DatePositions(IReadOnlyList<double> xs, XAxisStyle style)
+    {
+        var first = XScale.DateOf(xs[0]);
+        var last = XScale.DateOf(xs[^1]);
+        return style.Ticks switch
+        {
+            XTicks.DataDates => (xs.ToList(), XLabel.IsoDate),
+            XTicks.Tenors => (TenorMonths.Select(m => first.AddMonths(m)).Where(d => d <= last).Prepend(first).Select(XScale.Of).ToList(), XLabel.Tenor),
+            _ => Calendar(first, last),
+        };
+    }
+
+    // A number axis — a tenor's years: the data's positions, the market's tenors, or round numbers,
+    // each from the axis' start.
+    private static (List<double>, XLabel) NumberPositions(IReadOnlyList<double> xs, (double From, double To) domain, XAxisStyle style)
+    {
+        var (from, to) = domain;
+        List<double> positions = style.Ticks switch
+        {
+            XTicks.DataDates => [.. xs],
+            XTicks.Tenors => [.. TenorMonths.Select(m => m / 12.0).Where(y => y >= from && y <= to)],
+            _ => Round(from, to),
+        };
+        if (positions.Count == 0 || positions[0] > from) positions.Insert(0, from);
+        return (positions, XLabel.Tenor);
+    }
+
+    private static List<double> Round(double from, double to)
+    {
+        var step = new[] { 0.25, 0.5, 1, 2, 5, 10, 20, 50 }.First(s => (to - from) / s <= 10);
+        var list = new List<double>();
+        for (var v = Math.Ceiling(from / step) * step; v <= to + 1e-9; v += step) list.Add(v);
+        return list;
     }
 
     /// <summary>How much room the labels need under the last panel.</summary>
@@ -97,10 +131,10 @@ public static class XAxis
         return $"{date.DayNumber - first.DayNumber}D";
     }
 
-    private static (List<DateOnly>, XLabel) Calendar(DateOnly first, DateOnly last)
+    private static (List<double>, XLabel) Calendar(DateOnly first, DateOnly last)
     {
         var ticks = Axis.DateTicks(first, last);
         var years = (last.DayNumber - first.DayNumber) / 365.25;
-        return (ticks.Select(t => t.Date).ToList(), years >= 3 ? XLabel.Year : XLabel.YearMonth);
+        return (ticks.Select(t => XScale.Of(t.Date)).ToList(), years >= 3 ? XLabel.Year : XLabel.YearMonth);
     }
 }

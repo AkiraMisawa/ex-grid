@@ -9,7 +9,8 @@ the material for the grilling that follows it. Throw it away once that is done.
 nix develop -c dotnet run --project spikes/exposure-chart -- --urls http://localhost:5410
 ```
 
-Two pages: `/` the exposure profile, `/cds` a CDS curve and the hazard rates bootstrapped from it.
+Three pages: `/` the exposure profile, `/cds` a CDS curve and the hazard rates bootstrapped from
+it, `/curves` several reference entities' curves with their tenors across.
 Both draw through one component, `Components/ChartBox.razor`, which takes the grid's columns,
 its Header Groups, the data, the window and the selection, and the Consumer's declarations:
 which columns read on the right, their units and colours, and their styles.
@@ -47,6 +48,32 @@ labelled by the grid's Tenor column (`XLabel.Column`) — a tenor counted from t
 
 Writing the page, the grid refused it by name: a Header Group straddled the pinned column
 (ADR-0032). The page pinned nothing instead.
+
+## The curves page: series in rows
+
+![CDS curves, tenors across](screenshots/curves-page.png)
+
+| | |
+|---|---|
+| ![Two tickers selected](screenshots/curves-two.png) | ![An inverted curve](screenshots/curves-deltap.png) |
+
+One row per reference entity — ticker, name, currency, seniority, doc clause, recovery — and its
+tenors across, under two Header Groups: the par spreads, and the hazard rates bootstrapped with
+the row's own recovery (`CdsCurves.cs`; where no positive rate prices a quote the rate is left
+empty, with every later one, rather than invented). This is Excel's "series in rows", and the
+chart reads it so (`RowChartDefinition`, `RowChartSpec`):
+
+- **A series is a row and a Header Group**: an entity's spreads, its hazard rates — one colour per
+  row, a line with points for the spreads and a step over (tᵢ₋₁, tᵢ] from 0 for the hazard rates.
+  It is named by the row's key and follows the row through a sort.
+- **The axis is the tenors' own years, declared per column** — "6m" is a header's text, 0.5 is what
+  the page says it stands for — so 6m to 1y is a tenth of 10y to 15y, not equal to it, as on
+  Excel's category axis. The horizontal axis became a number with a scale (`XScale`): a date is
+  its day number, a tenor its years.
+- **Which way a selection is read is declared, not guessed from its shape.** Selected rows across
+  tenor columns chart those tenors; rows with no tenor column (their tickers) chart their whole
+  curves. A number column with no position — the recovery rate — selected with tenors is refused
+  by name: it was chosen, and this axis has no place for it.
 
 ## How it is built
 

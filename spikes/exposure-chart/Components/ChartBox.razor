@@ -21,7 +21,7 @@
     <section class="chart">
         <div class="chart-head">
             <span class="definition">
-                x: <b>@_definition!.XColumn</b> · @_definition.Series.Count series · @_definition.AllKeys.Count dates
+                @_definition!.Describe()
                 @if (model.Missing > 0)
                 {
                     <span class="refusal"> — @model.Missing of them no longer in the data</span>
@@ -43,11 +43,18 @@
         </div>
         @if (_pickerOpen)
         {
-            var addable = Columns.Where(c => c.Type == ColumnType.Number && !_definition!.SeriesColumns.Contains(c.Name)).ToList();
+            // A list of columns adds series in columns; series in rows come from the grid's selection.
+            var addable = _definition is ChartDefinition columnChart
+                ? Columns.Where(c => c.Type == ColumnType.Number && !columnChart.SeriesColumns.Contains(c.Name)).ToList()
+                : [];
             <div class="chart-filter" role="group" aria-label="Add series">
                 <div class="filter-section">
                     <div class="filter-heading"><span>Add series</span></div>
-                    @if (addable.Count == 0)
+                    @if (_definition is RowChartDefinition)
+                    {
+                        <p class="filter-note">Each curve is a row: select rows in the grid and add them.</p>
+                    }
+                    else if (addable.Count == 0)
                     {
                         <p class="filter-note">Every number column is in the chart.</p>
                     }
@@ -87,7 +94,7 @@
                         <span class="leaf-toggles">
                             @foreach (var leaf in model.Leaves)
                             {
-                                var on = model.AllSeries.Where(s => s.Leaf == leaf).All(s => !_view.HiddenSeries.Contains(s.Column));
+                                var on = model.AllSeries.Where(s => s.Leaf == leaf).All(s => !_view.HiddenSeries.Contains(s.Id));
                                 <button type="button" class="chip @(on ? "on" : "")" aria-pressed="@(on ? "true" : "false")"
                                         @onclick="() => ShowLeaf(leaf, !on)">@leaf</button>
                             }
@@ -95,18 +102,18 @@
                     </div>
                     @foreach (var group in model.AllSeries.GroupBy(s => s.Group))
                     {
-                        var all = group.All(s => !_view.HiddenSeries.Contains(s.Column));
+                        var all = group.All(s => !_view.HiddenSeries.Contains(s.Id));
                         <div class="filter-row">
                             <label class="group-label">
-                                <input type="checkbox" checked="@all" @onchange="() => ShowColumns(group.Select(s => s.Column), !all)" />
+                                <input type="checkbox" checked="@all" @onchange="() => ShowColumns(group.Select(s => s.Id), !all)" />
                                 @(group.Key.Length == 0 ? "(no group)" : group.Key)
                             </label>
                             @foreach (var series in group)
                             {
-                                var shown = !_view.HiddenSeries.Contains(series.Column);
+                                var shown = !_view.HiddenSeries.Contains(series.Id);
                                 <label class="series-label">
-                                    <input type="checkbox" checked="@shown" @onchange="() => ShowColumns([series.Column], !shown)" />
-                                    <span class="swatch ex-chart-swatch-@(series.Slot % 5)"></span>@series.Leaf
+                                    <input type="checkbox" checked="@shown" @onchange="() => ShowColumns([series.Id], !shown)" />
+                                    <span class="swatch ex-chart-swatch-@(series.Slot % 8)"></span>@series.Leaf
                                 </label>
                             }
                         </div>
@@ -180,18 +187,18 @@
                     <div class="filter-heading"><span>Dates</span></div>
                     <div class="filter-row">
                         <label>From
-                            <select value="@Key(_view.From ?? model.AllDates[0])" @onchange="e => SetRange(Parse(e.Value), _view.To)">
-                                @foreach (var d in model.AllDates)
+                            <select value="@IndexOf(model, _view.From ?? model.AllXs[0])" @onchange="e => SetRange(At(model, e.Value), _view.To)">
+                                @for (var i = 0; i < model.AllXs.Count; i++)
                                 {
-                                    <option value="@Key(d)">@Key(d)</option>
+                                    <option value="@i">@model.Scale.Format(model.AllXs[i])</option>
                                 }
                             </select>
                         </label>
                         <label>To
-                            <select value="@Key(_view.To ?? model.AllDates[^1])" @onchange="e => SetRange(_view.From, Parse(e.Value))">
-                                @foreach (var d in model.AllDates)
+                            <select value="@IndexOf(model, _view.To ?? model.AllXs[^1])" @onchange="e => SetRange(_view.From, At(model, e.Value))">
+                                @for (var i = 0; i < model.AllXs.Count; i++)
                                 {
-                                    <option value="@Key(d)">@Key(d)</option>
+                                    <option value="@i">@model.Scale.Format(model.AllXs[i])</option>
                                 }
                             </select>
                         </label>
@@ -206,12 +213,12 @@
         }
         <div class="chart-body" @ref="_chartBody">
             @((MarkupString)_pageSvg!)
-            @if (_band is { } band && band < model.Dates.Count)
+            @if (_band is { } band && band < model.Xs.Count)
             {
                 var anchor = ChartSvg.Anchor(model, band);
                 <div class="chart-tip @(anchor.OnLeft ? "on-left" : "")" role="tooltip"
                      style="left: @Percent(anchor.X); top: @Percent(anchor.Top)">
-                    <div class="tip-date">@Key(model.Dates[band])@(XLabelOf?.Invoke(model.Dates[band]) is { } tipLabel ? $" ({tipLabel})" : "")</div>
+                    <div class="tip-date">@model.Scale.Format(model.Xs[band])@(XLabelOf?.Invoke(model.Xs[band]) is { } tipLabel && tipLabel != model.Scale.Format(model.Xs[band]) ? $" ({tipLabel})" : "")</div>
                     @foreach (var panel in model.Panels)
                     {
                         @if (panel.Title.Length > 0)
@@ -221,9 +228,9 @@
                         @foreach (var series in panel.Series)
                         {
                             <div class="tip-row">
-                                <span class="swatch ex-chart-swatch-@(series.Slot % 5)"></span>
+                                <span class="swatch ex-chart-swatch-@(series.Slot % 8)"></span>
                                 <span class="tip-name">@(panel.Title.Length > 0 ? series.Leaf : series.Name)</span>
-                                @{ var point = series.At(model.Dates[band]); }
+                                @{ var point = series.At(model.Xs[band]); }
                                 <span class="tip-value @(point is null ? "absent" : "")">@(point is null ? "—" : point.Value.Y is { } v ? series.Text(v) : "(no value)")</span>
                             </div>
                         }
@@ -265,12 +272,15 @@
     [Parameter] public XAxisStyle? InitialXAxis { get; set; }
 
     /// <summary>A label of the Consumer's for a date on the axis — a tenor column's text.</summary>
-    [Parameter] public Func<DateOnly, string?>? XLabelOf { get; set; }
+    [Parameter] public Func<double, string?>? XLabelOf { get; set; }
+
+    /// <summary>The declarations for series in rows; given, a selection is read that way.</summary>
+    [Parameter] public RowChartSpec<TRow>? RowSpec { get; set; }
     [Parameter] public string XLabelName { get; set; } = "From a column";
     [Parameter] public string FileName { get; set; } = "chart";
 
     /// <summary>A chart to show from the start, before anything is selected.</summary>
-    [Parameter] public ChartDefinition? InitialDefinition { get; set; }
+    [Parameter] public ChartSpec? InitialDefinition { get; set; }
 
     private ChartLayout _layout;
     private ChartView _view = ChartView.All;
@@ -291,7 +301,8 @@
     {
         // In the grid's column order, so a group's series keep its Before, After, Diff order;
         // at the chart's dates, since a list of columns names no rows.
-        var keys = _definition!.AllKeys;
+        if (_definition is not ChartDefinition columnChart) return;
+        var keys = columnChart.AllKeys;
         AddSeries(Columns.Select(c => c.Name).Where(_picked.Contains).Select(n => new SeriesDefinition(n, keys)).ToList());
         _picked.Clear();
         _pickerOpen = false;
@@ -306,8 +317,20 @@
         _refusal = null;
         if (Selection.IsEmpty) { _refusal = "Select the columns to add in the grid first."; return; }
         if (SelectionVersion != RowSequenceVersion) { _refusal = "The rows were reordered after the selection was made. Select again."; return; }
-        var x = Columns.First(c => c.Name == _definition!.XColumn);
-        var (series, refusal) = ChartRequest.SeriesOf(Selection.Ranges, Columns, Window, x, _definition!.SeriesColumns);
+        if (_definition is RowChartDefinition rowChart && RowSpec is { } spec)
+        {
+            var outcome = ChartRequest.FromRowSelection(Selection.Ranges, SelectionVersion, RowSequenceVersion, Columns, Groups, Window, spec, rowChart.Series.ToList());
+            if (outcome.Refusal is not null) { _refusal = outcome.Refusal; return; }
+            var added = ((RowChartDefinition)outcome.Definition!).Series;
+            _definition = rowChart with { Series = [.. rowChart.Series, .. added] };
+            _notice = $"Added {added.Count} curves.";
+            _pickerOpen = false;
+            Redraw();
+            return;
+        }
+        if (_definition is not ChartDefinition definition) return;
+        var x = Columns.First(c => c.Name == definition.XColumn);
+        var (series, refusal) = ChartRequest.SeriesOf(Selection.Ranges, Columns, Window, x, definition.SeriesColumns);
         if (refusal is not null) { _refusal = refusal; return; }
         if (series.Count == 0) { _refusal = "Every column in the selection is already in the chart."; return; }
         AddSeries(series);
@@ -317,7 +340,8 @@
     private void AddSeries(IReadOnlyList<SeriesDefinition> series)
     {
         if (series.Count == 0) return;
-        _definition = _definition! with { Series = [.. _definition.Series, .. series] };
+        var columnChart = (ChartDefinition)_definition!;
+        _definition = columnChart with { Series = [.. columnChart.Series, .. series] };
         _notice = $"Added {string.Join(", ", series.Select(s => $"{s.Column} ({s.RowKeys.Count} dates)"))}.";
         Redraw();
     }
@@ -326,7 +350,8 @@
     {
         if (Selection.IsEmpty) return "nothing selected in the grid";
         var count = Selection.Ranges.SelectMany(r => Enumerable.Range(r.LeftColumn, r.ColumnCount)).Distinct()
-            .Count(i => i < Columns.Count && Columns[i].Type == ColumnType.Number && !_definition!.SeriesColumns.Contains(Columns[i].Name));
+            .Count(i => i < Columns.Count && Columns[i].Type == ColumnType.Number && _definition is ChartDefinition c && !c.SeriesColumns.Contains(Columns[i].Name));
+        if (_definition is RowChartDefinition) return $"{Selection.Ranges.SelectMany(r => Enumerable.Range(r.TopRow, r.RowCount)).Distinct().Count()} rows selected";
         return count == 0 ? "the selection adds nothing new" : $"the selection adds {count} series";
     }
     private XAxisStyle _xAxis = XAxisStyle.Default;
@@ -370,7 +395,7 @@
     private bool _filterOpen;
     private static readonly (string Label, int? Years)[] Presets = [("1Y", 1), ("5Y", 5), ("10Y", 10), ("All", null)];
 
-    private ChartDefinition? _definition;
+    private ChartSpec? _definition;
     private ChartModel? _model;
     private string? _svg, _pageSvg, _csv, _csvLong, _refusal, _notice;
 
@@ -425,8 +450,14 @@
     private void Redraw()
     {
         if (_definition is null) return;
-        _model = ChartModelBuilder.Build(_definition, Columns, Groups, Rows, OnRight, _layout, _view, StyleOfColumn, UnitOf, SlotOf)
-            with { XAxis = _xAxis with { LabelOf = XLabelOf } };
+        var look = new ChartLook(_layout, _view, OnRight, StyleOfColumn, UnitOf, SlotOf);
+        var model = _definition switch
+        {
+            RowChartDefinition rows => ChartModelBuilder.BuildRows(rows, RowSpec!, Columns, Groups, Rows, look),
+            ChartDefinition columns => ChartModelBuilder.Build(columns, Columns, Groups, Rows, look),
+            _ => throw new InvalidOperationException(),
+        };
+        _model = model with { XAxis = _xAxis with { LabelOf = XLabelOf } };
         _drawing++;
         _band = null;
         _svg = ChartSvg.Write(_model);
@@ -445,9 +476,9 @@
     }
 
     private void ShowLeaf(string leaf, bool show) =>
-        ShowColumns(_model!.AllSeries.Where(s => s.Leaf == leaf).Select(s => s.Column), show);
+        ShowColumns(_model!.AllSeries.Where(s => s.Leaf == leaf).Select(s => s.Id), show);
 
-    private void SetRange(DateOnly? from, DateOnly? to)
+    private void SetRange(double? from, double? to)
     {
         // A range turned inside out is put the right way round rather than drawn empty.
         if (from is { } f && to is { } t && f > t) (from, to) = (t, f);
@@ -456,20 +487,24 @@
     }
 
     private void SetHorizon(ChartModel model, int? years) =>
-        SetRange(null, years is { } y ? model.AllDates[0].AddYears(y) : null);
+        SetRange(null, years is not { } y ? null
+            : model.Scale.IsDate ? XScale.Of(XScale.DateOf(model.AllXs[0]).AddYears(y))
+            : (model.Scale.Origin ?? model.AllXs[0]) + y);
 
     private static string FilterSummary(ChartModel model)
     {
         var shown = model.Panels.Sum(p => p.Series.Count);
-        var dates = model.Dates.Count;
-        return shown == model.AllSeries.Count && dates == model.AllDates.Count
+        var points = model.Xs.Count;
+        return shown == model.AllSeries.Count && points == model.AllXs.Count
             ? ""
-            : $"({shown}/{model.AllSeries.Count} series, {dates}/{model.AllDates.Count} dates)";
+            : $"({shown}/{model.AllSeries.Count} series, {points}/{model.AllXs.Count} points)";
     }
 
-    private static string Key(DateOnly d) => d.ToString("yyyy-MM-dd", Invariant);
-    private static DateOnly? Parse(object? value) =>
-        DateOnly.TryParseExact(value as string, "yyyy-MM-dd", Invariant, DateTimeStyles.None, out var d) ? d : null;
+    // The range's choices are positions of the chart, sent as their index: a value written in
+    // one culture and read in another never crosses.
+    private static int IndexOf(ChartModel model, double x) => Math.Max(0, model.AllXs.ToList().IndexOf(x));
+    private static double? At(ChartModel model, object? value) =>
+        int.TryParse(value as string, NumberStyles.None, Invariant, out var i) && i >= 0 && i < model.AllXs.Count ? model.AllXs[i] : null;
 
     private void CloseChart() => (_definition, _model, _svg, _pageSvg, _csv, _filterOpen, _band, _pickerOpen, _notice) = (null, null, null, null, null, false, null, false, null);
 

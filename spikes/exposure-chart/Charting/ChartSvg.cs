@@ -30,6 +30,9 @@ public static class ChartSvg
         .ex-chart-slot-2 { stroke: var(--ex-chart-slot-2, #d97706); fill: var(--ex-chart-slot-2, #d97706); }
         .ex-chart-slot-3 { stroke: var(--ex-chart-slot-3, #059669); fill: var(--ex-chart-slot-3, #059669); }
         .ex-chart-slot-4 { stroke: var(--ex-chart-slot-4, #be185d); fill: var(--ex-chart-slot-4, #be185d); }
+        .ex-chart-slot-5 { stroke: var(--ex-chart-slot-5, #7c3aed); fill: var(--ex-chart-slot-5, #7c3aed); }
+        .ex-chart-slot-6 { stroke: var(--ex-chart-slot-6, #0891b2); fill: var(--ex-chart-slot-6, #0891b2); }
+        .ex-chart-slot-7 { stroke: var(--ex-chart-slot-7, #65a30d); fill: var(--ex-chart-slot-7, #65a30d); }
         .ex-chart-line.ex-chart-group-1 { stroke-dasharray: 6 3; }
         .ex-chart-line.ex-chart-group-2 { stroke-dasharray: 2 2; }
         .ex-chart-line.ex-chart-group-3 { stroke-dasharray: 8 3 2 3; }
@@ -51,9 +54,7 @@ public static class ChartSvg
     public static TipAnchor Anchor(ChartModel model, int index)
     {
         var (_, height, legendHeight) = Heights(model);
-        var first = model.Dates[0].DayNumber;
-        var span = Math.Max(1, model.Dates[^1].DayNumber - first);
-        var x = Left + (Width - Left - Right) * (model.Dates[index].DayNumber - first) / span;
+        var x = XOf(model, model.Xs[index]);
         return new TipAnchor(x / Width, (legendHeight + Top) / height, x / Width > 0.6);
     }
 
@@ -66,15 +67,15 @@ public static class ChartSvg
         return (panelHeight, legendHeight + panels * (Top + panelHeight) + (panels - 1) * Gap + bottom, legendHeight);
     }
 
-    private static double XOf(ChartModel model, DateOnly date)
+    private static double XOf(ChartModel model, double position)
     {
-        var first = model.Dates[0].DayNumber;
-        var span = Math.Max(1, model.Dates[^1].DayNumber - first);
-        return Left + (Width - Left - Right) * (date.DayNumber - first) / span;
+        var (from, to) = model.Domain;
+        var span = to - from > 0 ? to - from : 1;
+        return Left + (Width - Left - Right) * (position - from) / span;
     }
 
     public static IReadOnlyList<XTick> TicksOf(ChartModel model) =>
-        model.Dates.Count == 0 ? [] : XAxis.Ticks(model.Dates, model.XAxis, d => XOf(model, d));
+        model.Xs.Count == 0 ? [] : XAxis.Ticks(model.Xs, model.Domain, model.Scale, model.XAxis, v => XOf(model, v));
 
     /// <param name="version">Stamped on the drawing, so that a pointer report taken against an
     /// older drawing is recognised and dropped.</param>
@@ -83,7 +84,7 @@ public static class ChartSvg
     public static string Write(ChartModel model, int version = 0, bool forFile = true)
     {
         var panels = model.Panels.Count;
-        if (panels == 0 || model.Dates.Count == 0)
+        if (panels == 0 || model.Xs.Count == 0)
             return Empty(model, panels);
         var (panelHeight, height, legendHeight) = Heights(model);
         var plotWidth = Width - Left - Right;
@@ -92,10 +93,7 @@ public static class ChartSvg
         svg.Append("<style>").Append(Style).Append("</style>");
 
 
-        var first = model.Dates[0];
-        var last = model.Dates[^1];
-        var span = Math.Max(1, last.DayNumber - first.DayNumber);
-        double X(DateOnly d) => Left + plotWidth * (d.DayNumber - first.DayNumber) / span;
+        double X(double position) => XOf(model, position);
 
         WriteLegend(svg, model, legendHeight);
 
@@ -139,11 +137,11 @@ public static class ChartSvg
             {
                 foreach (var tick in r.Ticks())
                     Text(svg, Width - Right + 6, Y(r, tick) + 4, Axis.Compact(tick, r), "start", "ex-chart-secondary-label");
-                var names = string.Join(", ", panel.Series.Where(s => s.Secondary).Select(s => panel.Title.Length > 0 ? s.Leaf : s.Name).Distinct());
+                var names = string.Join(", ", panel.Series.Where(s => s.Secondary).Select(s => panel.Title.Length > 0 ? s.Leaf : s.Group.Length > 0 ? s.Group : s.Name).Distinct());
                 Text(svg, Width - Right, top - 10, $"{names} → right axis", "end", "ex-chart-secondary-label");
             }
             foreach (var tick in dateTicks)
-                Line(svg, X(tick.Date), top, X(tick.Date), bottom, tick.Label is null ? "ex-chart-grid ex-chart-minor" : "ex-chart-grid");
+                Line(svg, X(tick.X), top, X(tick.X), bottom, tick.Label is null ? "ex-chart-grid ex-chart-minor" : "ex-chart-grid");
             svg.Append(Invariant, $"""<rect class="ex-chart-frame" x="{Left}" y="{top:0.##}" width="{plotWidth}" height="{panelHeight}"/>""");
 
             foreach (var series in panel.Series)
@@ -159,27 +157,27 @@ public static class ChartSvg
         var angle = model.XAxis.Angle;
         foreach (var tick in dateTicks)
         {
-            Line(svg, X(tick.Date), lastBottom, X(tick.Date), lastBottom + 4, "ex-chart-zero");
+            Line(svg, X(tick.X), lastBottom, X(tick.X), lastBottom + 4, "ex-chart-zero");
             if (tick.Label is not { } label) continue;
             if (angle == 0)
-                Text(svg, X(tick.Date), lastBottom + 16, label, "middle", null);
+                Text(svg, X(tick.X), lastBottom + 16, label, "middle", null);
             else
                 // Turned about its own end, which stands under the tick: read upwards, as Excel does.
-                svg.Append(Invariant, $"""<text x="{X(tick.Date):0.##}" y="{lastBottom + 10:0.##}" text-anchor="end" dominant-baseline="middle" transform="rotate({-angle} {X(tick.Date):0.##} {lastBottom + 10:0.##})">{Escape(label)}</text>""");
+                svg.Append(Invariant, $"""<text x="{X(tick.X):0.##}" y="{lastBottom + 10:0.##}" text-anchor="end" dominant-baseline="middle" transform="rotate({-angle} {X(tick.X):0.##} {lastBottom + 10:0.##})">{Escape(label)}</text>""");
         }
 
         // One hover band per date across every panel: the guide, a dot per series and the readout.
         var plotTop = layouts[0].Top;
-        for (var i = 0; i < model.Dates.Count; i++)
+        for (var i = 0; i < model.Xs.Count; i++)
         {
-            var date = model.Dates[i];
-            var from = i == 0 ? Left : (X(model.Dates[i - 1]) + X(date)) / 2;
-            var to = i == model.Dates.Count - 1 ? Width - Right : (X(date) + X(model.Dates[i + 1])) / 2;
+            var date = model.Xs[i];
+            var from = i == 0 ? Left : (X(model.Xs[i - 1]) + X(date)) / 2;
+            var to = i == model.Xs.Count - 1 ? Width - Right : (X(date) + X(model.Xs[i + 1])) / 2;
             svg.Append(Invariant, $"""<g class="ex-chart-hit" data-ex-chart-band="{i}">""");
             svg.Append(Invariant, $"""<rect x="{from:0.##}" y="{plotTop:0.##}" width="{Math.Max(1, to - from):0.##}" height="{lastBottom - plotTop:0.##}"/>""");
             svg.Append("""<g class="ex-chart-hover">""");
             Line(svg, X(date), plotTop, X(date), lastBottom, "ex-chart-guide");
-            var readout = new StringBuilder($"{model.XHeader}: {date.ToString("yyyy-MM-dd", Invariant)}");
+            var readout = new StringBuilder($"{model.XHeader}: {model.Scale.Format(date)}");
             foreach (var (panel, top, leftAxis, rightAxis) in layouts)
                 foreach (var series in panel.Series)
                 {
@@ -189,7 +187,7 @@ public static class ChartSvg
                     if (point?.Y is not { } value) continue;
                     var axis = series.Secondary ? rightAxis!.Value : leftAxis;
                     var cy = top + panelHeight - panelHeight * axis.Fraction(value);
-                    svg.Append(Invariant, $"""<circle class="ex-chart-dot ex-chart-slot-{series.Slot % 5}" cx="{X(date):0.##}" cy="{cy:0.##}" r="3.5"/>""");
+                    svg.Append(Invariant, $"""<circle class="ex-chart-dot ex-chart-slot-{series.Slot % 8}" cx="{X(date):0.##}" cy="{cy:0.##}" r="3.5"/>""");
                 }
             svg.Append("</g>");
             if (forFile) svg.Append("<title>").Append(Escape(readout.ToString())).Append("</title>");
@@ -199,10 +197,10 @@ public static class ChartSvg
         return svg.Append("</svg>").ToString();
     }
 
-    private static List<(string Name, int Slot, int Group)> LegendEntries(ChartModel model) =>
+    private static List<(string Name, int Slot, int Group, SeriesStyle? Style)> LegendEntries(ChartModel model) =>
         model.Panels is [{ Title.Length: 0 }]
-            ? model.Panels[0].Series.Select(s => (s.Name, s.Slot, s.GroupIndex)).ToList()
-            : model.Leaves.Select((leaf, i) => (leaf, i, 0)).ToList();
+            ? model.Panels[0].Series.Select(s => (s.Name, s.Slot, s.GroupIndex, (SeriesStyle?)s.Style)).ToList()
+            : model.Leaves.Select((leaf, i) => (leaf, i, 0, (SeriesStyle?)null)).ToList();
 
     // Text is not measured (ADR-0021 keeps measurement out of JS): an estimate per character,
     // generous enough that entries never collide.
@@ -211,7 +209,7 @@ public static class ChartSvg
     private static int LegendRows(ChartModel model)
     {
         var (rows, x) = (1, Left);
-        foreach (var (name, _, _) in LegendEntries(model))
+        foreach (var (name, _, _, _) in LegendEntries(model))
         {
             if (x + EntryWidth(name) > Width - Right && x > Left) (rows, x) = (rows + 1, Left);
             x += EntryWidth(name);
@@ -234,10 +232,20 @@ public static class ChartSvg
         // Panels by group: the colours are the leaves, the same in every panel. One axis: every
         // series, its colour the leaf and its dash the group.
         var (x, y) = (Left, 12.0);
-        foreach (var (name, slot, group) in LegendEntries(model))
+        foreach (var (name, slot, group, style) in LegendEntries(model))
         {
             if (x + EntryWidth(name) > Width - Right && x > Left) (x, y) = (Left, y + 18);
-            svg.Append(Invariant, $"""<line class="ex-chart-line ex-chart-slot-{slot % 5} ex-chart-group-{group % 4}" x1="{x:0.##}" y1="{y}" x2="{x + 22:0.##}" y2="{y}"/>""");
+            // The sample is drawn as the series is: a line, points, or a step's open and filled ends.
+            var s = slot % 8;
+            if (style is not { Draw: SeriesDraw.Points })
+                svg.Append(Invariant, $"""<line class="ex-chart-line ex-chart-slot-{s} ex-chart-group-{group % 4}" x1="{x:0.##}" y1="{y}" x2="{x + 22:0.##}" y2="{y}"/>""");
+            if (style is { IsStep: true })
+            {
+                Marker(svg, style.Marker, s, x + 2, y, open: style.Draw == SeriesDraw.StepPreceding, size: 2.6);
+                Marker(svg, style.Marker, s, x + 20, y, open: style.Draw == SeriesDraw.StepFollowing, size: 2.6);
+            }
+            else if (style is { Draw: SeriesDraw.LinePoints or SeriesDraw.Points })
+                Marker(svg, style.Marker, s, x + 11, y, open: false, size: 3);
             Text(svg, x + 27, y + 4, name, "start", null);
             x += EntryWidth(name);
         }
@@ -249,9 +257,9 @@ public static class ChartSvg
     private static IEnumerable<decimal> Values(ChartSeries series) =>
         series.Points.Where(p => p.Y.HasValue).Select(p => p.Y!.Value);
 
-    private static void WriteSeries(StringBuilder svg, ChartSeries series, int dash, Func<DateOnly, double> x, Func<decimal, double> y)
+    private static void WriteSeries(StringBuilder svg, ChartSeries series, int dash, Func<double, double> x, Func<decimal, double> y)
     {
-        var slot = series.Slot % 5;
+        var slot = series.Slot % 8;
         var style = series.Style;
         var title = $"<title>{Escape(series.Name)}</title>";
         if (style.Draw is SeriesDraw.Line or SeriesDraw.LinePoints)
@@ -268,7 +276,7 @@ public static class ChartSvg
     /// same the function is continuous, and no open marker is drawn. No vertical riser: the
     /// function takes no value between the two levels, and a riser would draw one.
     /// </summary>
-    private static void WriteSteps(StringBuilder svg, ChartSeries series, int slot, int dash, Func<DateOnly, double> x, Func<decimal, double> y)
+    private static void WriteSteps(StringBuilder svg, ChartSeries series, int slot, int dash, Func<double, double> x, Func<decimal, double> y)
     {
         var points = series.Points;
         var preceding = series.Style.Draw == SeriesDraw.StepPreceding;
@@ -318,10 +326,10 @@ public static class ChartSvg
     }
 
     // A missing value ends the run and the next value starts a new one: a gap, not a dive to zero.
-    private static string PathOf(IReadOnlyList<ChartPoint> points, Func<DateOnly, double> x, Func<decimal, double> y)
+    private static string PathOf(IReadOnlyList<ChartPoint> points, Func<double, double> x, Func<decimal, double> y)
     {
         var d = new StringBuilder();
-        DateOnly? penAt = null;
+        double? penAt = null;
         foreach (var point in points)
         {
             if (point.Y is not { } v) { penAt = null; continue; }

@@ -56,12 +56,13 @@ public static class Axis
     public static string Compact(decimal value, ValueAxis axis)
     {
         var abs = Math.Max(Math.Abs(axis.Min), Math.Abs(axis.Max));
+        // Thousands only from ten thousand: an axis of basis points to 1,000 reads "1,000", not "1K".
         var (unit, suffix) = abs >= 1_000_000_000m ? (1_000_000_000m, "B")
             : abs >= 1_000_000m ? (1_000_000m, "M")
-            : abs >= 1_000m ? (1_000m, "K")
+            : abs >= 10_000m ? (1_000m, "K")
             : (1m, "");
         if (value == 0) return "0";
-        return (value / unit).ToString("0.###", Invariant) + suffix;
+        return (value / unit).ToString("#,##0.###", Invariant) + suffix;
     }
 
     /// <summary>

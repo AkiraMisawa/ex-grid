@@ -23,11 +23,11 @@ public static class ChartCsv
         csv.Append(Field(model.XHeader));
         foreach (var s in series) csv.Append(',').Append(Field(s.Name));
         csv.Append("\r\n");
-        for (var i = 0; i < model.Dates.Count; i++)
+        foreach (var x in model.Xs)
         {
-            csv.Append(model.Dates[i].ToString("yyyy-MM-dd", Invariant));
+            csv.Append(model.Scale.Raw(x));
             foreach (var s in series)
-                csv.Append(',').Append(s.At(model.Dates[i])?.Y is { } v ? v.ToString(Invariant) : "");
+                csv.Append(',').Append(s.At(x)?.Y is { } v ? v.ToString(Invariant) : "");
             csv.Append("\r\n");
         }
         return csv.ToString();
@@ -39,7 +39,7 @@ public static class ChartCsv
         csv.Append(Field("Series")).Append(',').Append(Field(model.XHeader)).Append(",Value\r\n");
         foreach (var s in model.Panels.SelectMany(p => p.Series))
             foreach (var p in s.Points)
-                csv.Append(Field(s.Name)).Append(',').Append(p.X.ToString("yyyy-MM-dd", Invariant)).Append(',')
+                csv.Append(Field(s.Name)).Append(',').Append(model.Scale.Raw(p.X)).Append(',')
                     .Append(p.Y is { } v ? v.ToString(Invariant) : "").Append("\r\n");
         return csv.ToString();
     }
