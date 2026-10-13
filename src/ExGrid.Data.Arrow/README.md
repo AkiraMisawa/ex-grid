@@ -18,8 +18,9 @@ pipeline produced as it is.
 - **The stream is written uncompressed.** HTTP's own compression (gzip, Brotli) does the rest. A
   compressed stream from another producer is read when you hand the reader a codec.
 
-> **This is a prerelease (`0.x`).** `ExGrid.Data.Arrow` ships beside `ExGrid.Data`, with ExGrid
-> and ExPivot, at the same version. The API may change between prereleases.
+> **`ExGrid.Data.Arrow` ships beside `ExGrid.Data`, with ExGrid and ExPivot, at the same version.**
+> While the version is `0.x`, the API may change from one version to the next; each version's
+> [Release Notes](https://akiramisawa.github.io/ex-grid/release-notes) say what changed.
 
 ## Requirements
 
@@ -32,8 +33,10 @@ pipeline produced as it is.
 ## Install
 
 ```sh
-dotnet add package ExGrid.Data.Arrow --prerelease
+dotnet add package ExGrid.Data.Arrow
 ```
+
+Add `--prerelease` for a prerelease, a version with a suffix such as `-rc.1`.
 
 ## Writing
 

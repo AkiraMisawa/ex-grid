@@ -82,6 +82,7 @@ Geometry tokens (written inline by C#, read-only — ADR-0027/0028):
 --ex-row-height   --ex-header-height   --ex-font-size   --ex-cell-padding-x
 --ex-action-padding-x   --ex-action-border-width   --ex-action-gap
 --ex-menu-button-width   --ex-menu-button-inset   --ex-sort-mark-width
+--ex-resize-grip-width   --ex-column-guide-width
 ```
 
 *(The menu-button pair was added when review found the ▾'s 16px/6px living as a CSS
@@ -90,6 +91,10 @@ dissolved, re-entering through a new element. `--ex-sort-mark-width` was added f
 reason on 2026-09-26: the header estimate began charging the sort mark
 ([ADR-0016](./0016-column-width-and-overflow.md)), and the mark's `" ▲"` was a stylesheet
 literal.)*
+*(2026-10-12, decided with the user: `--ex-resize-grip-width` and `--ex-column-guide-width` come from
+Grid Metrics, emitted inline on the instance root as the other geometry is. The grip's 5px and the resize
+guide's and drop indicator's 2px were the last bare geometric pixels in `ex-grid.css`. The guide and the indicator
+lie on Device Pixels ([ADR-0090](./0090-the-grid-is-told-its-device-pixel-and-puts-column-edges-on-it.md)).)*
 
 Visual tokens (defaults in `ex-grid.css`, overridden on any ancestor). The existing eleven are
 kept with their names and defaults; the vocabulary this ADR fixes is:
