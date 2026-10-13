@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- A disposable proof of concept: an exposure profile grid whose selection is drawn as a
+       chart and exported as CSV. It answers "what would charting look like" before any ADR is
+       written; nothing here is a decision. Blazor Server, as the first Consumer runs. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ExposureChart</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ExGrid\ExGrid.csproj" />
+  </ItemGroup>
+
+</Project>

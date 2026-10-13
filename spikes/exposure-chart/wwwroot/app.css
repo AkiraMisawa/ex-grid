@@ -1,0 +1,12 @@
+body { font: 14px system-ui, sans-serif; margin: 24px; color: #1f2937; background: #fff; }
+h1 { font-size: 18px; margin: 0 0 4px; }
+.hint { color: #4b5563; margin: 0 0 12px; }
+.toolbar { display: flex; gap: 16px; align-items: center; margin: 12px 0; }
+.toolbar .sep { flex: 1; }
+.refusal { color: #b91c1c; }
+.chart { border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; max-width: 984px; }
+.chart-head { display: flex; gap: 16px; align-items: center; margin-bottom: 8px; }
+.chart-head .definition { flex: 1; color: #4b5563; }
+.chart-body svg { width: 100%; height: auto; }
+/* The chart's Visual Tokens: what a Consumer's theme would set. */
+.chart { --ex-chart-slot-0: #9ca3af; --ex-chart-slot-1: #2563eb; --ex-chart-slot-2: #d97706; }

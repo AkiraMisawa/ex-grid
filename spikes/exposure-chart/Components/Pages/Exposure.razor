@@ -1,0 +1,161 @@
+@page "/"
+@using System.Globalization
+
+<PageTitle>Exposure chart PoC</PageTitle>
+
+<h1>Exposure profile — chart a selection</h1>
+<p class="hint">
+    Select <b>Date</b> and the figures to plot (drag, Shift+click, or Ctrl+click headers — header clicks select
+    whole columns), then right-click → <b>Chart selection</b>, or the button. A single selected cell charts the
+    whole table, as Excel does.
+</p>
+
+<ExGrid TRow="ExposureRow" Source="_source" Columns="_columns" HeaderGroups="_groups" PinnedColumnCount="1"
+        HeaderClickSelects="true" SelectionChanged="OnSelectionChanged"
+        ContextCommands="_contextCommands" CommandLabel="_commandLabel"
+        ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+
+<div class="toolbar">
+    <button type="button" @onclick="ChartCurrentSelection">Chart selection</button>
+    <span class="selected">@(_selection.IsEmpty ? "Nothing selected" : $"{_selection.Ranges.Count} range(s), {_selection.CellCount:N0} cells")</span>
+    <label><input type="radio" name="layout" checked="@(_layout == ChartLayout.PanelPerGroup)"
+                  @onchange="() => SetLayout(ChartLayout.PanelPerGroup)" /> Panel per group</label>
+    <label><input type="radio" name="layout" checked="@(_layout == ChartLayout.OneAxis)"
+                  @onchange="() => SetLayout(ChartLayout.OneAxis)" /> One axis (Excel's default)</label>
+    <span class="sep"></span>
+    <button type="button" @onclick="Recalculate">Recalculate: hedge ×@((_hedge + 0.5).ToString("0.0", CultureInfo.InvariantCulture))</button>
+</div>
+
+@if (_refusal is not null)
+{
+    <p class="refusal" role="alert">@_refusal</p>
+}
+
+@if (_model is { } model)
+{
+    <section class="chart">
+        <div class="chart-head">
+            <span class="definition">
+                x: <b>@_definition!.XColumn</b> · @_definition.SeriesColumns.Count series · @_definition.RowKeys.Count dates
+                @if (model.Missing > 0)
+                {
+                    <span class="refusal"> — @model.Missing of them no longer in the data</span>
+                }
+            </span>
+            <a class="download" href="@ChartCsv.DataUrl(_csv!, "text/csv")" download="exposure-profile.csv">Download CSV</a>
+            <a class="download" href="@ChartCsv.DataUrl(_svg!, "image/svg+xml")" download="exposure-profile.svg">Download SVG</a>
+            <button type="button" @onclick="CloseChart">Close</button>
+        </div>
+        <div class="chart-body">@((MarkupString)_svg!)</div>
+    </section>
+}
+
+@code {
+    private const string ChartCommand = "chart-selection";
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private static Func<object, string> Money => v => ((decimal)v).ToString("#,##0.00;-#,##0.00", Invariant);
+
+    private static readonly GridColumn<ExposureRow>[] AllColumns =
+    [
+        new("Date", ColumnType.Date, r => r.Date, dateType: DateType.DateOnly),
+        new("EpeBefore", ColumnType.Number, r => r.EpeBefore, header: "Before", format: Money),
+        new("EpeAfter", ColumnType.Number, r => r.EpeAfter, header: "After", format: Money),
+        new("EpeDiff", ColumnType.Number, r => r.EpeDiff, header: "Diff", format: Money),
+        new("EneBefore", ColumnType.Number, r => r.EneBefore, header: "Before", format: Money),
+        new("EneAfter", ColumnType.Number, r => r.EneAfter, header: "After", format: Money),
+        new("EneDiff", ColumnType.Number, r => r.EneDiff, header: "Diff", format: Money),
+        new("CvaBefore", ColumnType.Number, r => r.CvaBefore, header: "Before", format: Money),
+        new("CvaAfter", ColumnType.Number, r => r.CvaAfter, header: "After", format: Money),
+        new("CvaDiff", ColumnType.Number, r => r.CvaDiff, header: "Diff", format: Money),
+    ];
+
+    private static readonly HeaderGroup[] Groups =
+    [
+        new("EPE(0)", ["EpeBefore", "EpeAfter", "EpeDiff"]),
+        new("ENE(0)", ["EneBefore", "EneAfter", "EneDiff"]),
+        new("CVA", ["CvaBefore", "CvaAfter", "CvaDiff"]),
+    ];
+
+    // Which columns are a change rather than a level: the Consumer says so, the chart does not
+    // read it off the word "Diff".
+    private static bool IsChange(string column) => column.EndsWith("Diff", StringComparison.Ordinal);
+
+    private IReadOnlyList<ExposureRow> _rows = ExposureData.Profile();
+    private InMemoryGridSource<ExposureRow> _source = null!;
+    private readonly IReadOnlyList<GridColumn<ExposureRow>> _columns = AllColumns;
+    private readonly IReadOnlyList<HeaderGroup> _groups = Groups;
+
+    // Delegates handed to the grid are created once (CLAUDE.md: a method group is a new
+    // instance per render).
+    private Func<ContextMenuContext<ExposureRow>, IEnumerable<GridCommand>> _contextCommands = null!;
+    private readonly Func<string, string?> _commandLabel = id => id == ChartCommand ? "Chart selection" : null;
+
+    private GridSelection _selection = GridSelection.Empty;
+    private int _selectionVersion;
+    private double _hedge = 1.0;
+    private ChartLayout _layout = ChartLayout.PanelPerGroup;
+
+    private ChartDefinition? _definition;
+    private ChartModel? _model;
+    private string? _svg, _csv, _refusal;
+
+    protected override void OnInitialized()
+    {
+        _source = GridSource.From(_rows, r => r.Date);
+        _contextCommands = context =>
+        [
+            new GridCommand(ChartCommand, context.Selection.Count > 0, () =>
+            {
+                Chart(context.Selection, context.RowSequenceVersion);
+                InvokeAsync(StateHasChanged);
+                return Task.CompletedTask;
+            }),
+        ];
+    }
+
+    private void OnSelectionChanged(GridSelection selection)
+    {
+        _selection = selection;
+        _selectionVersion = _source.RowSequenceVersion;
+    }
+
+    private void ChartCurrentSelection() => Chart(_selection.Ranges, _selectionVersion);
+
+    private void Chart(IReadOnlyList<SelectionRange> ranges, int version)
+    {
+        var outcome = ChartRequest.FromSelection(ranges, version, _source.RowSequenceVersion, _columns, _source.Window);
+        _refusal = outcome.Refusal;
+        if (outcome.Definition is { } definition)
+        {
+            _definition = definition;
+            Redraw();
+        }
+    }
+
+    private void SetLayout(ChartLayout layout)
+    {
+        _layout = layout;
+        Redraw();
+    }
+
+    // The data changed; the chart is defined in the data's terms, so it is simply drawn again.
+    private void Recalculate()
+    {
+        _hedge += 0.5;
+        _rows = ExposureData.Profile(_hedge);
+        _source.ReplaceAll(_rows);
+        Redraw();
+    }
+
+    private void Redraw()
+    {
+        if (_definition is null) return;
+        _model = ChartModelBuilder.Build(_definition, _columns, _groups, _rows, IsChange, _layout);
+        _svg = ChartSvg.Write(_model);
+        _csv = ChartCsv.Write(_model);
+    }
+
+    private void CloseChart() => (_definition, _model, _svg, _csv) = (null, null, null, null);
+
+}

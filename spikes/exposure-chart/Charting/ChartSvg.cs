@@ -1,0 +1,207 @@
+using System.Globalization;
+using System.Security;
+using System.Text;
+
+namespace ExposureChart.Charting;
+
+/// <summary>
+/// Writes a <see cref="ChartModel"/> as one SVG document, in C#. No JavaScript: the hover guide
+/// and the readout are CSS <c>:hover</c> and a native <c>&lt;title&gt;</c>, painted from markup
+/// written once, so nothing crosses the circuit while the pointer moves. The same string is the
+/// page's picture and the downloadable file, and the same model always writes the same bytes.
+/// </summary>
+public static class ChartSvg
+{
+    private const double Width = 960;
+    private const double Left = 72, Right = 72, Top = 34, Bottom = 26, Gap = 18;
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    // Defaults for a file opened on its own; on the page the Visual Tokens win.
+    private const string Style = """
+        .ex-chart-root { font: 11px system-ui, sans-serif; fill: var(--ex-chart-text, #374151); }
+        .ex-chart-title { font-weight: 600; font-size: 12px; }
+        .ex-chart-grid { stroke: var(--ex-chart-grid, #e5e7eb); stroke-width: 1; }
+        .ex-chart-zero { stroke: var(--ex-chart-zero, #9ca3af); stroke-width: 1; }
+        .ex-chart-frame { fill: none; stroke: var(--ex-chart-grid, #e5e7eb); }
+        .ex-chart-root .ex-chart-line { fill: none; stroke-width: 1.75; stroke-linejoin: round; }
+        .ex-chart-slot-0 { stroke: var(--ex-chart-slot-0, #9ca3af); fill: var(--ex-chart-slot-0, #9ca3af); }
+        .ex-chart-slot-1 { stroke: var(--ex-chart-slot-1, #2563eb); fill: var(--ex-chart-slot-1, #2563eb); }
+        .ex-chart-slot-2 { stroke: var(--ex-chart-slot-2, #d97706); fill: var(--ex-chart-slot-2, #d97706); }
+        .ex-chart-slot-3 { stroke: var(--ex-chart-slot-3, #059669); fill: var(--ex-chart-slot-3, #059669); }
+        .ex-chart-slot-4 { stroke: var(--ex-chart-slot-4, #be185d); fill: var(--ex-chart-slot-4, #be185d); }
+        .ex-chart-line.ex-chart-group-1 { stroke-dasharray: 6 3; }
+        .ex-chart-line.ex-chart-group-2 { stroke-dasharray: 2 2; }
+        .ex-chart-line.ex-chart-group-3 { stroke-dasharray: 8 3 2 3; }
+        .ex-chart-secondary-label { font-style: italic; }
+        .ex-chart-hit rect { fill: transparent; }
+        .ex-chart-hit .ex-chart-hover { visibility: hidden; }
+        .ex-chart-hit:hover .ex-chart-hover { visibility: visible; }
+        .ex-chart-guide { stroke: var(--ex-chart-guide, #6b7280); stroke-width: 1; stroke-dasharray: 3 3; }
+        .ex-chart-dot { stroke: var(--ex-chart-surface, #fff); stroke-width: 1.5; }
+        """;
+
+    public static string Write(ChartModel model)
+    {
+        var panels = model.Panels.Count;
+        var panelHeight = panels == 1 ? 360 : 190;
+        var legendHeight = LegendRows(model) * 18 + 6;
+        var height = legendHeight + panels * (Top + panelHeight) + (panels - 1) * Gap + Bottom;
+        var plotWidth = Width - Left - Right;
+        var svg = new StringBuilder();
+        svg.Append(Invariant, $"""<svg xmlns="http://www.w3.org/2000/svg" class="ex-chart-root" viewBox="0 0 {Width} {height}" width="{Width}" height="{height}" role="img">""");
+        svg.Append("<style>").Append(Style).Append("</style>");
+
+        if (model.Dates.Count == 0)
+        {
+            Text(svg, Width / 2, height / 2.0, "None of the charted rows is in the data any more.", "middle", "ex-chart-title");
+            return svg.Append("</svg>").ToString();
+        }
+
+        var first = model.Dates[0];
+        var last = model.Dates[^1];
+        var span = Math.Max(1, last.DayNumber - first.DayNumber);
+        double X(DateOnly d) => Left + plotWidth * (d.DayNumber - first.DayNumber) / span;
+
+        WriteLegend(svg, model, legendHeight);
+
+        var dateTicks = Axis.DateTicks(first, last);
+        var layouts = new List<(ChartPanel Panel, double Top, ValueAxis Left, ValueAxis? Right)>();
+        var y0 = (double)legendHeight;
+        foreach (var panel in model.Panels)
+        {
+            var leftAxis = Axis.Nice(panel.Series.Where(s => !s.Secondary).SelectMany(Values));
+            ValueAxis? rightAxis = null;
+            if (panel.Series.Any(s => s.Secondary))
+            {
+                var right = Axis.Nice(panel.Series.Where(s => s.Secondary).SelectMany(Values));
+                (leftAxis, right) = Axis.AlignZeros(leftAxis, right);
+                rightAxis = right;
+            }
+            layouts.Add((panel, y0 + Top, leftAxis, rightAxis));
+            y0 += Top + panelHeight + Gap;
+        }
+
+        foreach (var (panel, top, leftAxis, rightAxis) in layouts)
+        {
+            var bottom = top + panelHeight;
+            double Y(ValueAxis axis, decimal v) => bottom - panelHeight * axis.Fraction(v);
+
+            if (panel.Title.Length > 0)
+                Text(svg, Left, top - 10, panel.Title, "start", "ex-chart-title");
+            foreach (var tick in leftAxis.Ticks())
+            {
+                var y = Y(leftAxis, tick);
+                Line(svg, Left, y, Width - Right, y, tick == 0 ? "ex-chart-zero" : "ex-chart-grid");
+                Text(svg, Left - 6, y + 4, Axis.Compact(tick, leftAxis), "end", null);
+            }
+            if (rightAxis is { } r)
+            {
+                foreach (var tick in r.Ticks())
+                    Text(svg, Width - Right + 6, Y(r, tick) + 4, Axis.Compact(tick, r), "start", "ex-chart-secondary-label");
+                var names = string.Join(", ", panel.Series.Where(s => s.Secondary).Select(s => s.Leaf).Distinct());
+                Text(svg, Width - Right, top - 10, $"{names} → right axis", "end", "ex-chart-secondary-label");
+            }
+            foreach (var (date, _) in dateTicks)
+                Line(svg, X(date), top, X(date), bottom, "ex-chart-grid");
+            svg.Append(Invariant, $"""<rect class="ex-chart-frame" x="{Left}" y="{top:0.##}" width="{plotWidth}" height="{panelHeight}"/>""");
+
+            foreach (var series in panel.Series)
+            {
+                var axis = series.Secondary ? rightAxis!.Value : leftAxis;
+                svg.Append(Invariant, $"""<path class="ex-chart-line ex-chart-slot-{series.Slot % 5} ex-chart-group-{(panel.Title.Length == 0 ? series.GroupIndex % 4 : 0)}" d="{PathOf(series.Points, X, v => Y(axis, v))}"><title>{Escape(series.Name)}</title></path>""");
+            }
+        }
+
+        // The date labels once, under the last panel.
+        var lastBottom = layouts[^1].Top + panelHeight;
+        foreach (var (date, label) in dateTicks)
+            Text(svg, X(date), lastBottom + 16, label, "middle", null);
+
+        // One hover band per date across every panel: the guide, a dot per series and the readout.
+        var plotTop = layouts[0].Top;
+        for (var i = 0; i < model.Dates.Count; i++)
+        {
+            var date = model.Dates[i];
+            var from = i == 0 ? Left : (X(model.Dates[i - 1]) + X(date)) / 2;
+            var to = i == model.Dates.Count - 1 ? Width - Right : (X(date) + X(model.Dates[i + 1])) / 2;
+            svg.Append("""<g class="ex-chart-hit">""");
+            svg.Append(Invariant, $"""<rect x="{from:0.##}" y="{plotTop:0.##}" width="{Math.Max(1, to - from):0.##}" height="{lastBottom - plotTop:0.##}"/>""");
+            svg.Append("""<g class="ex-chart-hover">""");
+            Line(svg, X(date), plotTop, X(date), lastBottom, "ex-chart-guide");
+            var readout = new StringBuilder($"{model.XHeader}: {date.ToString("yyyy-MM-dd", Invariant)}");
+            foreach (var (panel, top, leftAxis, rightAxis) in layouts)
+                foreach (var series in panel.Series)
+                {
+                    var y = series.Points[i].Y;
+                    readout.Append('\n').Append(series.Name).Append(": ").Append(y is { } v ? series.Text(v) : "(no value)");
+                    if (y is not { } value) continue;
+                    var axis = series.Secondary ? rightAxis!.Value : leftAxis;
+                    var cy = top + panelHeight - panelHeight * axis.Fraction(value);
+                    svg.Append(Invariant, $"""<circle class="ex-chart-dot ex-chart-slot-{series.Slot % 5}" cx="{X(date):0.##}" cy="{cy:0.##}" r="3.5"/>""");
+                }
+            svg.Append("</g><title>").Append(Escape(readout.ToString())).Append("</title></g>");
+        }
+
+        return svg.Append("</svg>").ToString();
+    }
+
+    private static List<(string Name, int Slot, int Group)> LegendEntries(ChartModel model) =>
+        model.Panels is [{ Title.Length: 0 }]
+            ? model.Panels[0].Series.Select(s => (s.Name, s.Slot, s.GroupIndex)).ToList()
+            : model.Leaves.Select((leaf, i) => (leaf, i, 0)).ToList();
+
+    // Text is not measured (ADR-0021 keeps measurement out of JS): an estimate per character,
+    // generous enough that entries never collide.
+    private static double EntryWidth(string name) => 27 + name.Length * 6.4 + 18;
+
+    private static int LegendRows(ChartModel model)
+    {
+        var (rows, x) = (1, Left);
+        foreach (var (name, _, _) in LegendEntries(model))
+        {
+            if (x + EntryWidth(name) > Width - Right && x > Left) (rows, x) = (rows + 1, Left);
+            x += EntryWidth(name);
+        }
+        return rows;
+    }
+
+    private static void WriteLegend(StringBuilder svg, ChartModel model, double height)
+    {
+        // Panels by group: the colours are the leaves, the same in every panel. One axis: every
+        // series, its colour the leaf and its dash the group.
+        var (x, y) = (Left, 12.0);
+        foreach (var (name, slot, group) in LegendEntries(model))
+        {
+            if (x + EntryWidth(name) > Width - Right && x > Left) (x, y) = (Left, y + 18);
+            svg.Append(Invariant, $"""<line class="ex-chart-line ex-chart-slot-{slot % 5} ex-chart-group-{group % 4}" x1="{x:0.##}" y1="{y}" x2="{x + 22:0.##}" y2="{y}"/>""");
+            Text(svg, x + 27, y + 4, name, "start", null);
+            x += EntryWidth(name);
+        }
+    }
+
+    private static IEnumerable<decimal> Values(ChartSeries series) =>
+        series.Points.Where(p => p.Y.HasValue).Select(p => p.Y!.Value);
+
+    // A missing value ends the run and the next value starts a new one: a gap, not a dive to zero.
+    private static string PathOf(IReadOnlyList<ChartPoint> points, Func<DateOnly, double> x, Func<decimal, double> y)
+    {
+        var d = new StringBuilder();
+        var pen = false;
+        foreach (var point in points)
+        {
+            if (point.Y is not { } v) { pen = false; continue; }
+            d.Append(pen ? 'L' : 'M').Append(x(point.X).ToString("0.##", Invariant)).Append(' ')
+                .Append(y(v).ToString("0.##", Invariant)).Append(' ');
+            pen = true;
+        }
+        return d.ToString().TrimEnd();
+    }
+
+    private static void Line(StringBuilder svg, double x1, double y1, double x2, double y2, string cls) =>
+        svg.Append(Invariant, $"""<line class="{cls}" x1="{x1:0.##}" y1="{y1:0.##}" x2="{x2:0.##}" y2="{y2:0.##}"/>""");
+
+    private static void Text(StringBuilder svg, double x, double y, string text, string anchor, string? cls) =>
+        svg.Append(Invariant, $"""<text{(cls is null ? "" : $" class=\"{cls}\"")} x="{x:0.##}" y="{y:0.##}" text-anchor="{anchor}">{Escape(text)}</text>""");
+
+    private static string Escape(string text) => SecurityElement.Escape(text) ?? "";
+}
