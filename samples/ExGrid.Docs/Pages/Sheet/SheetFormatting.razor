@@ -96,6 +96,16 @@
             only the parts the user touched, as one undo step; Cancel and Escape set nothing. It opens from Ctrl+1,
             from "Format Cells…" in the Context Menu, and from <code>OpenFormatCellsAsync()</code>.
         </p>
+        <p>
+            Over one cell that shows a line on exactly one of its edges, the Border tab's Style and Colour open on
+            that line, so pressing that edge's button takes the line away. Anywhere else they open on Thin and
+            Automatic. Excel's Border tab was seen to open on the line shown over a thick top line, black or
+            Automatic, a thin top line and a thick black bottom line, and on Thin and Automatic over a cell with a
+            thin top and a thick right, over a range whose cells show different lines, and over a cell with no line.
+            The rest is ExSheet's reading, not yet asked of Excel: a line on a left or right edge, any other bottom
+            line, a style other than Thick or Thin, a colour other than Automatic or black, and every other
+            Selection.
+        </p>
         <ul>
             <li><b>Under the built-in Chrome</b> it is a popover inside the Sheet's box, which scrolls when the box is small.</li>
             <li>

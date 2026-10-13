@@ -16,7 +16,7 @@ namespace ExSheet;
 /// none (the fourteenth run, case 13); an edge inside a range shows the cells' own sides. The Border
 /// tab's line opens as the line shown where the Selection is one cell and exactly one of its edges
 /// shows a line, and as Thin and Automatic everywhere else. Excel was seen to open on the line shown
-/// only for a top edge and a bottom edge, and the rest of that rule is a reading (see
+/// only over a top line and a thick black bottom line, and the rest of that rule is a reading (see
 /// <see cref="LineStyle"/>).</para>
 ///
 /// <para><see cref="Change"/> names only the parts the user touched, so OK leaves every other part
@@ -66,8 +66,8 @@ public sealed class FormatCellsDraft
     /// <summary>
     /// The line the Border tab opens on (ADR-0071): over one cell where exactly one edge shows a line,
     /// that line, so a single press of that edge's button takes it away; everywhere else Thin and
-    /// Automatic. Excel was seen to open on the line shown only for a top edge and a bottom edge, in
-    /// Automatic or black: on Thick over A2 under A1's thick Automatic bottom, and on Thin where that
+    /// Automatic. Excel was seen to open on the line shown only over a thick top line, black or
+    /// Automatic, a thin top line and a thick black bottom line: on Thick over A2 under A1's thick Automatic bottom, and on Thin where that
     /// line was thin (the seventeenth Windows run, h10); on Thick and black over A2 and over A1 where
     /// A1's bottom was thick and black (the fourteenth run, case 13). It was seen to open on Thin and
     /// Automatic over B2 with a thin top and a thick right of its own, over A2:B3 with a different line
