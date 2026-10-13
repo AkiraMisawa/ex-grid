@@ -133,3 +133,9 @@ The run ExGrid's own by-hand rows need anyway (VZ-14, VZ-16, FN-12e, ED-30, SM-7
   case it decided, a 10,000 × 20 block with its twenty whole-column totals beside it, where an edit takes
   tens of milliseconds; with such a `SUM` on every row instead, an edit was measured at about 40 to 48
   seconds and holds the circuit that long. `verification/2026-10-11-linux-sh19/` has both.)*
+  *(2026-10-12: also how far ExSheet widens a column for an italic number over `####`. Over
+  123456789.12 in `0.00` at the standard width, Excel's Format Cells' Font tab widened column A to
+  12.45 for Italic alone, and to 11.73 for a single underline or a colour alone (the readings of
+  2026-10-12 (R6)). ExSheet widens an italic number to the width the upright one takes, because
+  ADR-0071 judges italic by the regular widths. It is a difference that follows ADR-0071, not a
+  change.)*
