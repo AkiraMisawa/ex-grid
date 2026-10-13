@@ -299,12 +299,12 @@ public class CompletionTests : GridTestContext
         await cut.InvokeAsync(() => { });
         Assert.Empty(cut.FindAll(".ex-completion"));
 
-        // Typed back to "=SU": the question is asked again, and that answer is current. Read in a
-        // turn behind the answer's continuation, as the stale ones are, never against a clock
-        // (ReadInTurnAsync).
+        // Typed back to "=SU": the question is asked again, and that answer is current. Read once the
+        // dispatcher is idle, after the answer's continuation, never against a clock
+        // (ReadWhenIdleAsync).
         await TypeAsync(cut, "=SU");
         pending["=SU"].SetResult(Answer("=SU", 3));
-        Assert.Equal(["SUM", "SUMIF"], await ReadInTurnAsync(() => Labels(cut)));
+        Assert.Equal(["SUM", "SUMIF"], await ReadWhenIdleAsync(() => Labels(cut)));
     }
 
     [Fact] // ADR-0051 / DC-18: a list standing for the old text goes the moment the text changes

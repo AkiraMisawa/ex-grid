@@ -202,8 +202,9 @@ public class CompletionOverPointTests : GridTestContext
         await PressAsync(cut, "Tab", "=F(Pos");
         late.SetResult(Answer("=F(Positions", 12));
 
-        // Read in a turn behind the answer's continuation, never against a clock (ReadInTurnAsync).
-        var shown = await ReadInTurnAsync(() => (Hint: cut.Find(".ex-completion .ex-completion-hint").TextContent, Labels: Labels(cut)));
+        // Read once the dispatcher is idle, after the answer's continuation, never against a clock
+        // (ReadWhenIdleAsync).
+        var shown = await ReadWhenIdleAsync(() => (Hint: cut.Find(".ex-completion .ex-completion-hint").TextContent, Labels: Labels(cut)));
         Assert.Equal("F(value, [mode])", shown.Hint);
         Assert.Empty(shown.Labels);
     }

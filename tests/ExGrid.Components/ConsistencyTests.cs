@@ -477,7 +477,7 @@ public class ConsistencyTests : GridTestContext
 
         // Uncommitted text is held by the grid, committed data by the Consumer (ADR-0007): the
         // Formula Bar may still show what the user typed, and nothing the rows held.
-        await AssertInTurnAsync(() =>
+        await AssertWhenIdleAsync(() =>
         {
             Assert.Empty(cut.FindAll(".ex-row"));
             Assert.Empty(cut.FindAll(".ex-cell"));
@@ -535,7 +535,7 @@ public class ConsistencyTests : GridTestContext
         await cut.InvokeAsync(() => source.Push([], totalCount: 0));
 
         // The rows' data is gone; the typing is the grid's to hold, and the edit has not ended.
-        await AssertInTurnAsync(() =>
+        await AssertWhenIdleAsync(() =>
         {
             Assert.Empty(cut.FindAll(".ex-row"));
             Assert.Empty(cut.FindAll(".ex-cell"));
@@ -545,7 +545,7 @@ public class ConsistencyTests : GridTestContext
 
         // The row back in the Window: the editor is still there with what was typed.
         await cut.InvokeAsync(() => source.Push(rows, totalCount: 50));
-        await AssertInTurnAsync(() => Assert.Equal("Typed", cut.Find(".ex-formula-bar-text").GetAttribute("value")));
+        await AssertWhenIdleAsync(() => Assert.Equal("Typed", cut.Find(".ex-formula-bar-text").GetAttribute("value")));
         Assert.Equal([true], editing);
         Assert.False(Renderer.UnhandledException.IsCompleted);
     }
@@ -573,7 +573,7 @@ public class ConsistencyTests : GridTestContext
         // Another Window that still holds row 1: a refresh, with the rows past 30 gone.
         await cut.InvokeAsync(() => source.Push(rows[..30], totalCount: 30));
 
-        await AssertInTurnAsync(() => Assert.Equal("Row 000001", cut.Find(".ex-viewport input.ex-editor").GetAttribute("value")));
+        await AssertWhenIdleAsync(() => Assert.Equal("Row 000001", cut.Find(".ex-viewport input.ex-editor").GetAttribute("value")));
         Assert.Equal([true], editing);
     }
 
@@ -604,7 +604,7 @@ public class ConsistencyTests : GridTestContext
         // The Window moves on to rows 200 to 259: row 1 is no longer in it.
         await cut.InvokeAsync(() => source.Push(rows[200..260], windowStart: 200, totalCount: 500));
 
-        await AssertInTurnAsync(() =>
+        await AssertWhenIdleAsync(() =>
         {
             Assert.Empty(cut.FindAll(".ex-editor:not(.ex-formula-bar-text)"));
             Assert.Equal([true, false], editing);
@@ -658,7 +658,7 @@ public class ConsistencyTests : GridTestContext
         // The Window moves on to rows 200 to 259: the grid asks the browser, and the editor stands
         // meanwhile — it is not taken down on the core's own copy of the text.
         await cut.InvokeAsync(() => source.Push(rows[200..260], windowStart: 200, totalCount: 500));
-        await AssertInTurnAsync(() => Assert.Single(question.Invocations));
+        await AssertWhenIdleAsync(() => Assert.Single(question.Invocations));
         Assert.Equal("Row 000001", (string)question.Invocations.First().Arguments[0]!);
         Assert.Single(cut.FindAll(".ex-viewport input.ex-editor"));
 
@@ -668,7 +668,7 @@ public class ConsistencyTests : GridTestContext
         // and the edit stays.
         await cut.InvokeAsync(() => question.SetResult(answeredUntouched));
 
-        await AssertInTurnAsync(() => Assert.Equal("Row 000001x", cut.Find(".ex-formula-bar-text").GetAttribute("value")));
+        await AssertWhenIdleAsync(() => Assert.Equal("Row 000001x", cut.Find(".ex-formula-bar-text").GetAttribute("value")));
         Assert.Equal([true], editing);
         Assert.Empty(discards);
         Assert.Equal(answeredUntouched ? 1 : 0, Js.CloseAnswered.Invocations.Count);
@@ -688,12 +688,12 @@ public class ConsistencyTests : GridTestContext
     {
         var (cut, source, rows, question, editing, edits, discards, selections) = await F2OverRow1Async();
         await cut.InvokeAsync(() => source.Push(rows[200..260], windowStart: 200, totalCount: 500));
-        await AssertInTurnAsync(() => Assert.Single(question.Invocations));
+        await AssertWhenIdleAsync(() => Assert.Single(question.Invocations));
         var before = Js.GateTold.Count;
 
         await cut.InvokeAsync(() => question.SetResult(true));
 
-        await AssertInTurnAsync(() =>
+        await AssertWhenIdleAsync(() =>
         {
             Assert.Empty(cut.FindAll(".ex-editor:not(.ex-formula-bar-text)"));
             Assert.Equal([true, false], editing);
@@ -717,12 +717,12 @@ public class ConsistencyTests : GridTestContext
     {
         var (cut, source, rows, question, editing, _, discards, _) = await F2OverRow1Async();
         await cut.InvokeAsync(() => source.Push(rows[200..260], windowStart: 200, totalCount: 500));
-        await AssertInTurnAsync(() => Assert.Single(question.Invocations));
+        await AssertWhenIdleAsync(() => Assert.Single(question.Invocations));
         await cut.InvokeAsync(() => source.Push(rows[..60], totalCount: 500));
 
         await cut.InvokeAsync(() => question.SetResult(true));
 
-        await AssertInTurnAsync(() => Assert.Single(Js.CloseAnswered.Invocations));
+        await AssertWhenIdleAsync(() => Assert.Single(Js.CloseAnswered.Invocations));
         Assert.Equal("Row 000001", cut.Find(".ex-viewport input.ex-editor").GetAttribute("value"));
         Assert.Equal([true], editing);
         Assert.Empty(discards);
@@ -736,7 +736,7 @@ public class ConsistencyTests : GridTestContext
 
         await cut.InvokeAsync(() => source.Push(rows[200..260], windowStart: 200, totalCount: 500));
 
-        await AssertInTurnAsync(() => Assert.Equal("Typed", cut.Find(".ex-formula-bar-text").GetAttribute("value")));
+        await AssertWhenIdleAsync(() => Assert.Equal("Typed", cut.Find(".ex-formula-bar-text").GetAttribute("value")));
         Assert.Empty(question.Invocations);
         Assert.Equal([true], editing);
     }
@@ -770,7 +770,7 @@ public class ConsistencyTests : GridTestContext
 
         await cut.InvokeAsync(() => source.Push(rows[200..260], windowStart: 200, totalCount: 500));
 
-        await AssertInTurnAsync(() => Assert.Equal("Row 000001", cut.Find(".ex-formula-bar-text").GetAttribute("value")));
+        await AssertWhenIdleAsync(() => Assert.Equal("Row 000001", cut.Find(".ex-formula-bar-text").GetAttribute("value")));
         Assert.Empty(question.Invocations);
         Assert.Equal([true], editing);
         Assert.Empty(discards);
@@ -806,7 +806,7 @@ public class ConsistencyTests : GridTestContext
         TestRow[] reordered = [rows[0], rows[2], rows[1], .. rows[3..]];
         await cut.InvokeAsync(() => source.Push(reordered, totalCount: 50, rowSequenceVersion: 1));
 
-        await AssertInTurnAsync(() =>
+        await AssertWhenIdleAsync(() =>
         {
             Assert.Empty(cut.FindAll(".ex-editor:not(.ex-formula-bar-text)"));
             Assert.Equal([true, false], editing);
@@ -840,13 +840,13 @@ public class ConsistencyTests : GridTestContext
         // Row 000001 moved to position 3, under a new order: the editor follows it and stays.
         TestRow[] moved = [rows[0], rows[2], rows[3], rows[1], .. rows[4..]];
         await cut.InvokeAsync(() => source.Push(moved, totalCount: 50, rowSequenceVersion: 1));
-        await AssertInTurnAsync(() => Assert.Equal("Row 000001", cut.Find(".ex-viewport input.ex-editor").GetAttribute("value")));
+        await AssertWhenIdleAsync(() => Assert.Equal("Row 000001", cut.Find(".ex-viewport input.ex-editor").GetAttribute("value")));
         Assert.Equal([true], editing);
 
         // Row 000001 gone, another row at every position it stood at: the editor closes.
         TestRow[] without = [.. moved.Where(row => !ReferenceEquals(row, rows[1]))];
         await cut.InvokeAsync(() => source.Push(without, totalCount: 49, rowSequenceVersion: 2));
-        await AssertInTurnAsync(() =>
+        await AssertWhenIdleAsync(() =>
         {
             Assert.Empty(cut.FindAll(".ex-editor:not(.ex-formula-bar-text)"));
             Assert.Equal([true, false], editing);
@@ -856,12 +856,12 @@ public class ConsistencyTests : GridTestContext
 
     /// <summary>ST-2's pass condition: no row, cell, Placeholder, Focus or range is painted, the
     /// Formula Bar shows nothing, no value of the data is anywhere in the markup, and nothing was
-    /// thrown on the way. Read in a turn behind whatever the last step left the dispatcher — ST-2's
-    /// question goes out after a yield (AskWhetherUntypedAsync) — never against a clock
-    /// (<see cref="GridTestContext.AssertInTurnAsync"/>).</summary>
+    /// thrown on the way. Read once the dispatcher is idle — ST-2's question goes out after a yield
+    /// (AskWhetherUntypedAsync) — never against a clock
+    /// (<see cref="GridTestContext.AssertWhenIdleAsync"/>).</summary>
     private async Task AssertNothingPaintedAsync(IRenderedComponent<ExGrid<TestRow>> cut)
     {
-        await AssertInTurnAsync(() =>
+        await AssertWhenIdleAsync(() =>
         {
             Assert.Empty(cut.FindAll(".ex-row"));
             Assert.Empty(cut.FindAll(".ex-cell"));

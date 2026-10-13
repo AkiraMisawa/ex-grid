@@ -57,9 +57,9 @@ public class EditingNotificationTests : GridTestContext
         => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, ctrl, false, false, false, false));
 
     /// <summary>What a key had done by the time it first waited: the key, whether it was already
-    /// answered, and <paramref name="read"/>, all in one turn of the renderer's dispatcher, as the
-    /// browser's call reaches the grid. The key goes on afterwards as the test answers what it
-    /// waits for.</summary>
+    /// answered, and <paramref name="read"/>, all in one turn of the renderer's dispatcher, taken
+    /// once it is idle (<see cref="GridTestContext.ReadWhenIdleAsync{T}"/>), as the browser's call
+    /// reaches the grid. The key goes on afterwards as the test answers what it waits for.</summary>
     /// <remarks>A key raised from the test's own thread and read there after the call returned is
     /// read at the right moment only while the dispatcher has nothing else in hand, for only then
     /// does the call run on the test's thread before it returns. After an answer the test gave from
@@ -71,7 +71,7 @@ public class EditingNotificationTests : GridTestContext
     /// class beside four busy cores, 2026-10-13).</remarks>
     private Task<(Task Key, bool Answered, T Read)> KeyAndReadInOneTurnAsync<T>(
         IRenderedComponent<ExGrid<TestRow>> cut, string key, Func<T> read)
-        => ReadInTurnAsync(() =>
+        => ReadWhenIdleAsync(() =>
         {
             var pressed = cut.Instance.OnKeyAsync(key, false, false, false, false, false);
             return (pressed, pressed.IsCompleted, read());
@@ -480,7 +480,7 @@ public class EditingNotificationTests : GridTestContext
         var cut = RenderGrid(told);
         await ClickCellAsync(cut, 50, 10);
         // Stood up on the dispatcher, like the keys: the interop's handlers are the grid's to read.
-        var gate = await ReadInTurnAsync(Js.UnansweredGateMode);
+        var gate = await ReadWhenIdleAsync(Js.UnansweredGateMode);
 
         var opening = await KeyAndReadInOneTurnAsync(cut, "9", told.ToArray);
 
@@ -491,7 +491,7 @@ public class EditingNotificationTests : GridTestContext
         gate.SetVoidResult();
         await opening.Key;
 
-        gate = await ReadInTurnAsync(Js.UnansweredGateMode);
+        gate = await ReadWhenIdleAsync(Js.UnansweredGateMode);
         var ending = await KeyAndReadInOneTurnAsync(cut, "Escape", told.ToArray);
 
         // An ending's is not held for the gate's reply at all (PushEditingStateAsync).
@@ -514,7 +514,7 @@ public class EditingNotificationTests : GridTestContext
         var cut = RenderGrid(told: null, edits);
         await ClickCellAsync(cut, 50, 10);
         await PressAsync(cut, "9");
-        var gate = await ReadInTurnAsync(Js.UnansweredGateMode);
+        var gate = await ReadWhenIdleAsync(Js.UnansweredGateMode);
 
         var enter = await KeyAndReadInOneTurnAsync(cut, "Enter", () =>
             (Edits: edits.Count, Gate: GateModesTold()[^1], Focus: KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid"))));

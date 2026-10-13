@@ -36,14 +36,14 @@ public class ScrollBurstTests : GridTestContext
         var first = cut.InvokeAsync(() => scroller.TriggerEventAsync("onscroll", EventArgs.Empty));
         await cut.InvokeAsync(() => scroller.TriggerEventAsync("onscroll", EventArgs.Empty));
         await cut.InvokeAsync(() => scroller.TriggerEventAsync("onscroll", EventArgs.Empty));
-        Assert.Equal(readsBefore + 1, await ReadInTurnAsync(() => Js.ScrollReads)); // the burst sent one read, not three
+        Assert.Equal(readsBefore + 1, await ReadWhenIdleAsync(() => Js.ScrollReads)); // the burst sent one read, not three
 
         // The first answer lands and is painted while the burst's one further read is out. The
         // answer posts the scroll handler's continuation to the dispatcher, and the reading is taken
-        // in a turn behind it, whenever the process gets round to it (ReadInTurnAsync).
+        // once the dispatcher is idle, whenever the process gets round to it (ReadWhenIdleAsync).
         var secondRead = Js.UnansweredScrollRead();
         await cut.InvokeAsync(() => firstRead.SetResult(new ScrollOffset(60, 0)));
-        var afterFirst = await ReadInTurnAsync(() => (Reads: Js.ScrollReads, Frames: frames.ToArray()));
+        var afterFirst = await ReadWhenIdleAsync(() => (Reads: Js.ScrollReads, Frames: frames.ToArray()));
         Assert.Equal(readsBefore + 2, afterFirst.Reads);
         Assert.Contains(afterFirst.Frames, f => f.First);
 
@@ -52,7 +52,7 @@ public class ScrollBurstTests : GridTestContext
         await first;
         // A jump this far is a fling: placeholders until the scroll settles (ADR-0004).
         await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
-        var settled = await ReadInTurnAsync(() => (Reads: Js.ScrollReads, cut.Markup, Frames: frames.ToArray()));
+        var settled = await ReadWhenIdleAsync(() => (Reads: Js.ScrollReads, cut.Markup, Frames: frames.ToArray()));
 
         // One further read for the whole burst, never one per event, and its answer is what
         // stays painted.

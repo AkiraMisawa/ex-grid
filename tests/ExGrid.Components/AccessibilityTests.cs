@@ -368,10 +368,10 @@ public class AccessibilityTests : GridTestContext
         Assert.Empty(Js.FocusReclaimed.Invocations);
 
         // ...until the attach has finished and its render has made the root a tab stop. The answer
-        // posts the rest of the attach to the dispatcher, and the reading is taken in a turn behind
-        // it: once, whenever the process gets round to it, never a wait against a clock.
+        // posts the rest of the attach to the dispatcher, and the reading is taken once the
+        // dispatcher is idle: once, whenever the process gets round to it, never against a clock.
         await cut.InvokeAsync(() => listening.SetResult(false));
-        var reclaimed = await ReadInTurnAsync(() => (
+        var reclaimed = await ReadWhenIdleAsync(() => (
             Asked: Js.FocusReclaimed.Invocations.Select(i => (bool)i.Arguments[0]!).ToArray(),
             TabIndex: tabIndexAtReclaim.ToArray(),
             Focused: Js.Focused.ToArray(),
@@ -383,6 +383,6 @@ public class AccessibilityTests : GridTestContext
 
         // Owed once: the renders after it ask nothing more.
         cut.Render();
-        Assert.Single(await ReadInTurnAsync(() => Js.FocusReclaimed.Invocations.ToArray()));
+        Assert.Single(await ReadWhenIdleAsync(() => Js.FocusReclaimed.Invocations.ToArray()));
     }
 }
