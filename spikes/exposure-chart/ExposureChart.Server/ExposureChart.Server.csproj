@@ -2,16 +2,17 @@
 
   <!-- A disposable proof of concept: an exposure profile grid whose selection is drawn as a
        chart and exported as CSV. It answers "what would charting look like" before any ADR is
-       written; nothing here is a decision. Blazor Server, as the first Consumer runs. -->
+       written; nothing here is a decision. This is its Blazor Server host; ExposureChart.Wasm is its
+       WebAssembly host, and ExposureChart.Pages holds what both serve. -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>ExposureChart</RootNamespace>
+    <RootNamespace>ExposureChart.Server</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ExGrid\ExGrid.csproj" />
+    <ProjectReference Include="..\ExposureChart.Pages\ExposureChart.Pages.csproj" />
   </ItemGroup>
 
 </Project>

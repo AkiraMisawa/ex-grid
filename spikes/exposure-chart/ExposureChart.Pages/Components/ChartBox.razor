@@ -636,7 +636,7 @@
         _attachedTo = id;
         if (_listener is not null) { await _listener.DisposeAsync(); _listener = null; }
         if (id is null) return;
-        _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./exposure-chart.js");
+        _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./_content/ExposureChart.Pages/exposure-chart.js");
         _self ??= DotNetObjectReference.Create(this);
         _listener = await _module.InvokeAsync<IJSObjectReference>("attach", _chartBody, _self);
     }

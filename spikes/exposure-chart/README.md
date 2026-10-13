@@ -6,12 +6,19 @@ turned into a chart, and the chart's data exported as CSV. **Nothing here is a d
 the material for the grilling that follows it. Throw it away once that is done.
 
 ```sh
-nix develop -c dotnet run --project spikes/exposure-chart -- --urls http://localhost:5410
+# Blazor Server
+nix develop -c dotnet run --project spikes/exposure-chart/ExposureChart.Server -- --urls http://localhost:5410
+# WebAssembly (the same pages)
+nix develop -c dotnet run --project spikes/exposure-chart/ExposureChart.Wasm
 ```
+
+`ExposureChart.Pages` holds the pages, the chart (`Charting/`, `Components/ChartBox.razor`) and
+the analytics (`Analytics/`); `ExposureChart.Server` and `ExposureChart.Wasm` only host them, as
+the DemoHost's two hosts host the demo pages (ADR-0019).
 
 Three pages: `/` the exposure profile, `/cds` a CDS curve and the hazard rates bootstrapped from
 it, `/curves` several reference entities' curves with their tenors across.
-Both draw through one component, `Components/ChartBox.razor`, which takes the grid's columns,
+Both draw through one component, `ExposureChart.Pages/Components/ChartBox.razor`, which takes the grid's columns,
 its Header Groups, the data, the window and the selection, and the Consumer's declarations:
 which columns read on the right, their units and colours, and their styles.
 
@@ -120,7 +127,7 @@ refers to it. The chart knows a hazard rate only by its column's declarations �
 - **SVG written in C#** (`ChartSvg`). The hover guide and the dots are CSS `:hover`, instant and
   with no circuit traffic. The downloaded file carries a native `<title>` per date instead of a
   tooltip, since it has no page to draw one.
-- **The tooltip is one listener, in ADR-0029's shape** (`wwwroot/exposure-chart.js`; the user
+- **The tooltip is one listener, in ADR-0029's shape** (`ExposureChart.Pages/wwwroot/exposure-chart.js`; the user
   allowed widening the JavaScript allowlist for it, 2026-10-13 — the ADR is for the grilling to
   write). It reports the date under the pointer **only when it changes** and when the pointer
   leaves — 48 frames on the circuit for 89 mousemoves across 44 dates — and never measures: Blazor
