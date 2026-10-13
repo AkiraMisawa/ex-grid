@@ -236,9 +236,13 @@ The readings of 2026-10-12 asked the rest (`verification/2026-10-12-windows-read
   number (observed, R5's control: C5's `1` dragged down gave 1, 1). The series is held at 15
   significant digits as the trend is, and counts back by one filled left or up (by generalisation).
   A single number in any other source of several cells is still copied: Excel was not read there.
+  From several whole columns or rows, a line that holds a number beside a blank is refused, as any
+  such pattern is (`FillPatternNotSupported`), until the next Windows run reads it.
 - **ExSheet writes a whole axis's format on the target axis.** A fill from whole columns writes each
   target column's format as the one its source column records, then only the lines that hold a
-  cell; whole rows likewise. Each cell shows, and records as its own four sides (ADR-0071), what
+  cell; whole rows likewise. The handle reaches it, and Ctrl+D over whole rows; Ctrl+R over whole
+  columns is refused before ExSheet by the core's paste cap (`CopyCellCap`, a million cells), as
+  any paste that large is. Each cell shows, and records as its own four sides (ADR-0071), what
   writing it would give it, since a cell's own part is its row's, else its column's; the format is
   recorded once on the column, as a whole column's is (ADR-0047). Excel's record of a fill from
   formatted whole columns was not read. Written cell by cell, column C bold filled into D:E was some
