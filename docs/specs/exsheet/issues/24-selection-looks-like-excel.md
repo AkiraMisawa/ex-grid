@@ -153,3 +153,9 @@ The run noted above as written and not yet run has run since, and UX-9 passes. T
 three readings under "To observe on the next Windows run", which no run has taken yet (ADR-0008
 still says "Read, not observed"), and the re-run of the selection-hole measurement, still pending in
 its README.
+
+2026-10-12, question 3 read in the seventeenth Windows run (h3) and in the readings of 2026-10-12
+(R5): Excel puts a whole column's handle at its top-right, beside its Heading, a whole row's at its
+bottom-left, several whole columns' at the last one's top-right, and shows none in view for every
+cell; ExGrid follows (`claude/run17gh-fill-handle-axis`, ADR-0050 "The handle on a whole axis"). The
+outline and the untinted first cell were as ExSheet's already.

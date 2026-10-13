@@ -46,6 +46,13 @@ question.** The shape is Find's ([ADR-0055](./0055-find-is-asked-of-the-consumer
 - **There is no cap.** Selection is cheap and is not capped (the fifth principle). A Consumer that
   will not sum a million rows **declines with a reason**, and the reason is shown in place of the
   figures. **A partial figure is never shown.** `InMemoryGridSource` never declines.
+  *(2026-10-13, decided with the user: ExSheet shows no numeric figure when the Selection holds a cell whose
+  Formula it refused (a Refused Formula, ADR-0047), and says why.)* *(2026-10-13: it declines, Count withheld
+  too, as every other figure is, since a partial figure is never shown; its reason names the cell and what it
+  shows: "No figures: ExSheet refused the Formula in A3 with #VALUE! because it cannot answer it as Excel does,
+  so a figure over it would not be Excel's." `SheetCommandIds.SummaryRefused` words it in another language,
+  asked of a substituted Chrome first and then of `CommandLabel` (ADR-0203), `{0}` standing for the cell and
+  `{1}` for what it shows.)*
 - **With nobody to answer, nothing is shown** beyond the count the grid makes itself. Unlike
   Ctrl+F, the user asked for nothing, so a refusal would be noise. `CanSummarize` tells a Consumer
   whether the figures can appear.

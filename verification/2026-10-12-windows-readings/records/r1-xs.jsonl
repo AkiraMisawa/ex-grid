@@ -1,0 +1,745 @@
+{"t": "16:24:14", "cmd": "select D10", "answer": "ok select D10 t=150384"}
+{"t": "16:24:14", "cmd": "geo C9 E13 D10 D12", "answer": "ok geo C9:233,585,329,614 E13:425,701,521,729 D10:329,614,425,644 D12:329,674,425,701 t=150457"}
+{"t": "16:24:15", "cmd": "uia", "answer": "ok uia Formula Bar:328,267,3840,324 Name Box:not found Status Bar:0,2055,3840,2088 Sheet Tab:not found Sheet1:160,2007,259,2055 t=151476"}
+{"t": "16:24:15", "cmd": "layout", "answer": "ok layout 0x08090809 t=151519"}
+{"t": "16:24:16", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=152947"}
+{"t": "16:24:17", "cmd": "select D10", "answer": "ok select D10 t=153008"}
+{"t": "16:24:17", "cmd": "click 3819 295", "answer": "ok click t=153809"}
+{"t": "16:24:18", "cmd": "shot r1-press-at-box-edge", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-press-at-box-edge.png windows: XLMAIN@-11,-11,3851,2099 t=154815"}
+{"t": "16:24:18", "cmd": "crop r1-press-at-box-edge 0 255 3840 80 r1-press-at-box-edge-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-press-at-box-edge-bar.png t=154872"}
+{"t": "16:24:19", "cmd": "crop r1-press-at-box-edge 0 2055 600 33 r1-press-at-box-edge-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-press-at-box-edge-mode.png t=154929"}
+{"t": "16:24:19", "cmd": "crop r1-press-at-box-edge 183 535 348 204 r1-press-at-box-edge-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-press-at-box-edge-cells.png t=154990"}
+{"t": "16:24:19", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":false,\"box\":[328,267,3840,324]}] t=155331"}
+{"t": "16:24:19", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=155362"}
+{"t": "16:24:19", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=155427"}
+{"t": "16:24:20", "cmd": "click 3813 284", "answer": "ok click t=155935"}
+{"t": "16:24:21", "cmd": "shot r1-press-at-box-edge-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-press-at-box-edge-2.png windows: XLMAIN@-11,-11,3851,2099 ; EXCEL8@3739,372,3840,403 t=156893"}
+{"t": "16:24:21", "cmd": "crop r1-press-at-box-edge-2 0 255 3840 80 r1-press-at-box-edge-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-press-at-box-edge-2-bar.png t=156927"}
+{"t": "16:24:21", "cmd": "crop r1-press-at-box-edge-2 0 2055 600 33 r1-press-at-box-edge-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-press-at-box-edge-2-mode.png t=156984"}
+{"t": "16:24:21", "cmd": "crop r1-press-at-box-edge-2 183 535 348 204 r1-press-at-box-edge-2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-press-at-box-edge-2-cells.png t=157044"}
+{"t": "16:24:21", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":false,\"box\":[328,267,3840,324]}] t=157385"}
+{"t": "16:24:21", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=157417"}
+{"t": "16:24:21", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=157471"}
+{"t": "16:24:23", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=158882"}
+{"t": "16:24:23", "cmd": "select D10", "answer": "ok select D10 t=158905"}
+{"t": "16:24:23", "cmd": "click 3793 295", "answer": "ok click t=159717"}
+{"t": "16:24:25", "cmd": "shot r1-i-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-1.png windows: XLMAIN@-11,-11,3851,2099 t=160795"}
+{"t": "16:24:25", "cmd": "crop r1-i-1 0 255 3840 80 r1-i-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-1-bar.png t=160825"}
+{"t": "16:24:25", "cmd": "crop r1-i-1 0 2055 600 33 r1-i-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-1-mode.png t=160885"}
+{"t": "16:24:25", "cmd": "crop r1-i-1 183 535 348 204 r1-i-1-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-1-cells.png t=160947"}
+{"t": "16:24:25", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=161171"}
+{"t": "16:24:25", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=161217"}
+{"t": "16:24:25", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=161271"}
+{"t": "16:24:25", "cmd": "clipclear", "answer": "ok clipclear t=161323"}
+{"t": "16:24:25", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=161475"}
+{"t": "16:24:26", "cmd": "clipboard", "answer": "ok clipboard \"\" t=161890"}
+{"t": "16:24:26", "cmd": "clipclear", "answer": "ok clipclear t=161948"}
+{"t": "16:24:26", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=162148"}
+{"t": "16:24:26", "cmd": "clipboard", "answer": "ok clipboard \"\" t=162567"}
+{"t": "16:24:27", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=162789"}
+{"t": "16:24:27", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=162846"}
+{"t": "16:24:27", "cmd": "shot r1-i-1-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-1-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=163029"}
+{"t": "16:24:27", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=163056"}
+{"t": "16:24:27", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=163151"}
+{"t": "16:24:27", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=163579"}
+{"t": "16:24:28", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=163684"}
+{"t": "16:24:28", "cmd": "select D10", "answer": "ok select D10 t=163746"}
+{"t": "16:24:28", "cmd": "click 3793 295", "answer": "ok click t=164559"}
+{"t": "16:24:29", "cmd": "keys 80 =", "answer": "ok keys 1 t=165197"}
+{"t": "16:24:30", "cmd": "shot r1-i-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-2.png windows: XLMAIN@-11,-11,3851,2099 t=166247"}
+{"t": "16:24:30", "cmd": "crop r1-i-2 0 255 3840 80 r1-i-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-2-bar.png t=166287"}
+{"t": "16:24:30", "cmd": "crop r1-i-2 0 2055 600 33 r1-i-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-2-mode.png t=166342"}
+{"t": "16:24:30", "cmd": "crop r1-i-2 183 535 348 204 r1-i-2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-2-cells.png t=166402"}
+{"t": "16:24:31", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=166612"}
+{"t": "16:24:31", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=166670"}
+{"t": "16:24:31", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=166722"}
+{"t": "16:24:31", "cmd": "clipclear", "answer": "ok clipclear t=166776"}
+{"t": "16:24:31", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=166908"}
+{"t": "16:24:31", "cmd": "clipboard", "answer": "ok clipboard \"\" t=167340"}
+{"t": "16:24:31", "cmd": "clipclear", "answer": "ok clipclear t=167400"}
+{"t": "16:24:32", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=167600"}
+{"t": "16:24:32", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=168020"}
+{"t": "16:24:32", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"=\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=168247"}
+{"t": "16:24:32", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=168304"}
+{"t": "16:24:33", "cmd": "shot r1-i-2-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-2-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=168483"}
+{"t": "16:24:33", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=168515"}
+{"t": "16:24:33", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=168611"}
+{"t": "16:24:33", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=169040"}
+{"t": "16:24:33", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=169144"}
+{"t": "16:24:33", "cmd": "select D10", "answer": "ok select D10 t=169206"}
+{"t": "16:24:34", "cmd": "click 3793 295", "answer": "ok click t=170010"}
+{"t": "16:24:35", "cmd": "keys 80 =", "answer": "ok keys 1 t=170605"}
+{"t": "16:24:35", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=171199"}
+{"t": "16:24:36", "cmd": "shot r1-i-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-3.png windows: XLMAIN@-11,-11,3851,2099 t=172241"}
+{"t": "16:24:36", "cmd": "crop r1-i-3 0 255 3840 80 r1-i-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-3-bar.png t=172282"}
+{"t": "16:24:37", "cmd": "crop r1-i-3 0 2055 600 33 r1-i-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-3-mode.png t=172338"}
+{"t": "16:24:37", "cmd": "crop r1-i-3 183 535 348 204 r1-i-3-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-3-cells.png t=172398"}
+{"t": "16:24:37", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=172610"}
+{"t": "16:24:37", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=172666"}
+{"t": "16:24:37", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=172715"}
+{"t": "16:24:37", "cmd": "clipclear", "answer": "ok clipclear t=172768"}
+{"t": "16:24:37", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=172897"}
+{"t": "16:24:38", "cmd": "clipboard", "answer": "ok clipboard \"\" t=173329"}
+{"t": "16:24:38", "cmd": "clipclear", "answer": "ok clipclear t=173388"}
+{"t": "16:24:38", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=173575"}
+{"t": "16:24:38", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=174008"}
+{"t": "16:24:38", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"=\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=174233"}
+{"t": "16:24:39", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=174288"}
+{"t": "16:24:39", "cmd": "shot r1-i-3-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-i-3-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=174466"}
+{"t": "16:24:39", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=174499"}
+{"t": "16:24:39", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=174595"}
+{"t": "16:24:39", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=175019"}
+{"t": "16:24:50", "cmd": "select D10", "answer": "ok select D10 t=186359"}
+{"t": "16:24:50", "cmd": "geo C9 E13 D10 D12", "answer": "ok geo C9:233,585,329,614 E13:425,701,521,729 D10:329,614,425,644 D12:329,674,425,701 t=186436"}
+{"t": "16:24:51", "cmd": "uia", "answer": "ok uia Formula Bar:328,267,3840,324 Name Box:not found Status Bar:0,2055,3840,2088 Sheet Tab:not found Sheet1:160,2007,259,2055 t=187314"}
+{"t": "16:24:51", "cmd": "layout", "answer": "ok layout 0x08090809 t=187333"}
+{"t": "16:24:51", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=187447"}
+{"t": "16:24:51", "cmd": "select D10", "answer": "ok select D10 t=187508"}
+{"t": "16:24:52", "cmd": "click 3793 295", "answer": "ok click t=188310"}
+{"t": "16:24:53", "cmd": "shot r1-ii-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-1.png windows: XLMAIN@-11,-11,3851,2099 t=189393"}
+{"t": "16:24:53", "cmd": "crop r1-ii-1 0 255 3840 80 r1-ii-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-1-bar.png t=189417"}
+{"t": "16:24:53", "cmd": "crop r1-ii-1 0 2055 600 33 r1-ii-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-1-mode.png t=189473"}
+{"t": "16:24:53", "cmd": "crop r1-ii-1 183 535 348 204 r1-ii-1-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-1-cells.png t=189533"}
+{"t": "16:24:53", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=189749"}
+{"t": "16:24:54", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=189803"}
+{"t": "16:24:54", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=189853"}
+{"t": "16:24:54", "cmd": "clipclear", "answer": "ok clipclear t=189907"}
+{"t": "16:24:54", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=190036"}
+{"t": "16:24:54", "cmd": "clipboard", "answer": "ok clipboard \"\" t=190469"}
+{"t": "16:24:54", "cmd": "clipclear", "answer": "ok clipclear t=190528"}
+{"t": "16:24:54", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=190723"}
+{"t": "16:24:55", "cmd": "clipboard", "answer": "ok clipboard \"\" t=191137"}
+{"t": "16:24:55", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=191367"}
+{"t": "16:24:55", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=191421"}
+{"t": "16:24:55", "cmd": "shot r1-ii-1-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-1-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=191597"}
+{"t": "16:24:55", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=191632"}
+{"t": "16:24:56", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=191736"}
+{"t": "16:24:56", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=192192"}
+{"t": "16:24:56", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=192294"}
+{"t": "16:24:56", "cmd": "select D10", "answer": "ok select D10 t=192358"}
+{"t": "16:24:57", "cmd": "click 3793 295", "answer": "ok click t=193169"}
+{"t": "16:24:58", "cmd": "keys 80 =", "answer": "ok keys 1 t=193791"}
+{"t": "16:24:59", "cmd": "shot r1-ii-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-2.png windows: XLMAIN@-11,-11,3851,2099 t=194827"}
+{"t": "16:24:59", "cmd": "crop r1-ii-2 0 255 3840 80 r1-ii-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-2-bar.png t=194870"}
+{"t": "16:24:59", "cmd": "crop r1-ii-2 0 2055 600 33 r1-ii-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-2-mode.png t=194928"}
+{"t": "16:24:59", "cmd": "crop r1-ii-2 183 535 348 204 r1-ii-2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-2-cells.png t=194988"}
+{"t": "16:24:59", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=195207"}
+{"t": "16:24:59", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=195259"}
+{"t": "16:24:59", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=195310"}
+{"t": "16:24:59", "cmd": "clipclear", "answer": "ok clipclear t=195365"}
+{"t": "16:24:59", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=195482"}
+{"t": "16:25:00", "cmd": "clipboard", "answer": "ok clipboard \"\" t=195928"}
+{"t": "16:25:00", "cmd": "clipclear", "answer": "ok clipclear t=195987"}
+{"t": "16:25:00", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=196177"}
+{"t": "16:25:01", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=196602"}
+{"t": "16:25:01", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"=\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=196833"}
+{"t": "16:25:01", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=196890"}
+{"t": "16:25:01", "cmd": "shot r1-ii-2-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-2-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=197060"}
+{"t": "16:25:01", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=197091"}
+{"t": "16:25:01", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=197187"}
+{"t": "16:25:02", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=197605"}
+{"t": "16:25:02", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=197709"}
+{"t": "16:25:02", "cmd": "select D10", "answer": "ok select D10 t=197772"}
+{"t": "16:25:03", "cmd": "click 3793 295", "answer": "ok click t=198578"}
+{"t": "16:25:03", "cmd": "keys 80 =", "answer": "ok keys 1 t=199213"}
+{"t": "16:25:04", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=199806"}
+{"t": "16:25:05", "cmd": "shot r1-ii-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-3.png windows: XLMAIN@-11,-11,3851,2099 t=200843"}
+{"t": "16:25:05", "cmd": "crop r1-ii-3 0 255 3840 80 r1-ii-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-3-bar.png t=200880"}
+{"t": "16:25:05", "cmd": "crop r1-ii-3 0 2055 600 33 r1-ii-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-3-mode.png t=200936"}
+{"t": "16:25:05", "cmd": "crop r1-ii-3 183 535 348 204 r1-ii-3-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-3-cells.png t=200999"}
+{"t": "16:25:05", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=201221"}
+{"t": "16:25:05", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=201270"}
+{"t": "16:25:05", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=201322"}
+{"t": "16:25:05", "cmd": "clipclear", "answer": "ok clipclear t=201375"}
+{"t": "16:25:06", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=201505"}
+{"t": "16:25:06", "cmd": "clipboard", "answer": "ok clipboard \"\" t=201936"}
+{"t": "16:25:06", "cmd": "clipclear", "answer": "ok clipclear t=201996"}
+{"t": "16:25:06", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=202185"}
+{"t": "16:25:07", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=202614"}
+{"t": "16:25:07", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"=\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=202839"}
+{"t": "16:25:07", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=202908"}
+{"t": "16:25:07", "cmd": "shot r1-ii-3-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-3-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=203075"}
+{"t": "16:25:07", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=203109"}
+{"t": "16:25:07", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=203205"}
+{"t": "16:25:08", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=203626"}
+{"t": "16:25:08", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=203733"}
+{"t": "16:25:08", "cmd": "select D10", "answer": "ok select D10 t=203795"}
+{"t": "16:25:09", "cmd": "click 3793 295", "answer": "ok click t=204612"}
+{"t": "16:25:09", "cmd": "keys 80 =", "answer": "ok keys 1 t=205244"}
+{"t": "16:25:10", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=205853"}
+{"t": "16:25:11", "cmd": "keys 80 {F4}", "answer": "ok keys 1 t=206448"}
+{"t": "16:25:12", "cmd": "shot r1-ii-4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-4.png windows: XLMAIN@-11,-11,3851,2099 t=207490"}
+{"t": "16:25:12", "cmd": "crop r1-ii-4 0 255 3840 80 r1-ii-4-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-4-bar.png t=207532"}
+{"t": "16:25:12", "cmd": "crop r1-ii-4 0 2055 600 33 r1-ii-4-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-4-mode.png t=207587"}
+{"t": "16:25:12", "cmd": "crop r1-ii-4 183 535 348 204 r1-ii-4-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-4-cells.png t=207648"}
+{"t": "16:25:12", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=207865"}
+{"t": "16:25:12", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=207926"}
+{"t": "16:25:12", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=207972"}
+{"t": "16:25:12", "cmd": "clipclear", "answer": "ok clipclear t=208026"}
+{"t": "16:25:12", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=208157"}
+{"t": "16:25:13", "cmd": "clipboard", "answer": "ok clipboard \"\" t=208588"}
+{"t": "16:25:13", "cmd": "clipclear", "answer": "ok clipclear t=208646"}
+{"t": "16:25:13", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=208829"}
+{"t": "16:25:13", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=209245"}
+{"t": "16:25:14", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"=\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=209472"}
+{"t": "16:25:14", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=209528"}
+{"t": "16:25:14", "cmd": "shot r1-ii-4-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-4-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=209727"}
+{"t": "16:25:14", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=209784"}
+{"t": "16:25:14", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=209888"}
+{"t": "16:25:15", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=210347"}
+{"t": "16:25:15", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=210451"}
+{"t": "16:25:15", "cmd": "select D10", "answer": "ok select D10 t=210513"}
+{"t": "16:25:16", "cmd": "click 3793 295", "answer": "ok click t=211329"}
+{"t": "16:25:15", "cmd": "keys 80 =", "answer": "ok keys 1 t=211933"}
+{"t": "16:25:16", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=212541"}
+{"t": "16:25:17", "cmd": "keys 80 {F4}", "answer": "ok keys 1 t=213135"}
+{"t": "16:25:17", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=213715"}
+{"t": "16:25:18", "cmd": "shot r1-ii-5", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-5.png windows: XLMAIN@-11,-11,3851,2099 t=214762"}
+{"t": "16:25:18", "cmd": "crop r1-ii-5 0 255 3840 80 r1-ii-5-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-5-bar.png t=214781"}
+{"t": "16:25:18", "cmd": "crop r1-ii-5 0 2055 600 33 r1-ii-5-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-5-mode.png t=214839"}
+{"t": "16:25:18", "cmd": "crop r1-ii-5 183 535 348 204 r1-ii-5-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-5-cells.png t=214901"}
+{"t": "16:25:19", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=215117"}
+{"t": "16:25:19", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=215173"}
+{"t": "16:25:19", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=215222"}
+{"t": "16:25:19", "cmd": "clipclear", "answer": "ok clipclear t=215275"}
+{"t": "16:25:19", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=215391"}
+{"t": "16:25:19", "cmd": "clipboard", "answer": "ok clipboard \"\" t=215827"}
+{"t": "16:25:19", "cmd": "clipclear", "answer": "ok clipclear t=215879"}
+{"t": "16:25:20", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=216081"}
+{"t": "16:25:20", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=216482"}
+{"t": "16:25:20", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"=\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=216710"}
+{"t": "16:25:20", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=216760"}
+{"t": "16:25:21", "cmd": "shot r1-ii-5-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-ii-5-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=216949"}
+{"t": "16:25:21", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=216969"}
+{"t": "16:25:21", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=217064"}
+{"t": "16:25:21", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=217474"}
+{"t": "16:25:21", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=217578"}
+{"t": "16:25:21", "cmd": "select D10", "answer": "ok select D10 t=217641"}
+{"t": "16:25:22", "cmd": "click 3793 295", "answer": "ok click t=218453"}
+{"t": "16:25:23", "cmd": "shot r1-iii-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-1.png windows: XLMAIN@-11,-11,3851,2099 t=219504"}
+{"t": "16:25:23", "cmd": "crop r1-iii-1 0 255 3840 80 r1-iii-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-1-bar.png t=219544"}
+{"t": "16:25:23", "cmd": "crop r1-iii-1 0 2055 600 33 r1-iii-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-1-mode.png t=219602"}
+{"t": "16:25:23", "cmd": "crop r1-iii-1 183 535 348 204 r1-iii-1-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-1-cells.png t=219661"}
+{"t": "16:25:24", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=219881"}
+{"t": "16:25:24", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=219935"}
+{"t": "16:25:24", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=219983"}
+{"t": "16:25:24", "cmd": "clipclear", "answer": "ok clipclear t=220035"}
+{"t": "16:25:24", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=220162"}
+{"t": "16:25:24", "cmd": "clipboard", "answer": "ok clipboard \"\" t=220596"}
+{"t": "16:25:24", "cmd": "clipclear", "answer": "ok clipclear t=220655"}
+{"t": "16:25:25", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=220848"}
+{"t": "16:25:25", "cmd": "clipboard", "answer": "ok clipboard \"\" t=221270"}
+{"t": "16:25:25", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=221500"}
+{"t": "16:25:25", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=221552"}
+{"t": "16:25:26", "cmd": "shot r1-iii-1-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-1-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=221725"}
+{"t": "16:25:26", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=221763"}
+{"t": "16:25:26", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=221859"}
+{"t": "16:25:26", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=222272"}
+{"t": "16:25:26", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=222379"}
+{"t": "16:25:26", "cmd": "select D10", "answer": "ok select D10 t=222439"}
+{"t": "16:25:27", "cmd": "click 3793 295", "answer": "ok click t=223249"}
+{"t": "16:25:28", "cmd": "keys 80 =", "answer": "ok keys 1 t=223885"}
+{"t": "16:25:29", "cmd": "shot r1-iii-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-2.png windows: XLMAIN@-11,-11,3851,2099 t=224938"}
+{"t": "16:25:29", "cmd": "crop r1-iii-2 0 255 3840 80 r1-iii-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-2-bar.png t=224965"}
+{"t": "16:25:29", "cmd": "crop r1-iii-2 0 2055 600 33 r1-iii-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-2-mode.png t=225025"}
+{"t": "16:25:29", "cmd": "crop r1-iii-2 183 535 348 204 r1-iii-2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-2-cells.png t=225085"}
+{"t": "16:25:29", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=225298"}
+{"t": "16:25:29", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=225355"}
+{"t": "16:25:29", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=225405"}
+{"t": "16:25:29", "cmd": "clipclear", "answer": "ok clipclear t=225459"}
+{"t": "16:25:30", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=225586"}
+{"t": "16:25:30", "cmd": "clipboard", "answer": "ok clipboard \"\" t=226016"}
+{"t": "16:25:30", "cmd": "clipclear", "answer": "ok clipclear t=226069"}
+{"t": "16:25:30", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=226257"}
+{"t": "16:25:31", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=226691"}
+{"t": "16:25:31", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"=\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=226922"}
+{"t": "16:25:31", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=226973"}
+{"t": "16:25:31", "cmd": "shot r1-iii-2-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-2-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=227162"}
+{"t": "16:25:31", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=227184"}
+{"t": "16:25:31", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=227279"}
+{"t": "16:25:32", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=227703"}
+{"t": "16:25:32", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=227807"}
+{"t": "16:25:32", "cmd": "select D10", "answer": "ok select D10 t=227872"}
+{"t": "16:25:33", "cmd": "click 3793 295", "answer": "ok click t=228686"}
+{"t": "16:25:33", "cmd": "keys 80 =", "answer": "ok keys 1 t=229322"}
+{"t": "16:25:34", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=229916"}
+{"t": "16:25:35", "cmd": "shot r1-iii-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-3.png windows: XLMAIN@-11,-11,3851,2099 t=230978"}
+{"t": "16:25:35", "cmd": "crop r1-iii-3 0 255 3840 80 r1-iii-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-3-bar.png t=231043"}
+{"t": "16:25:35", "cmd": "crop r1-iii-3 0 2055 600 33 r1-iii-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-3-mode.png t=231099"}
+{"t": "16:25:35", "cmd": "crop r1-iii-3 183 535 348 204 r1-iii-3-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-3-cells.png t=231159"}
+{"t": "16:25:36", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=231381"}
+{"t": "16:25:36", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=231432"}
+{"t": "16:25:36", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=231482"}
+{"t": "16:25:36", "cmd": "clipclear", "answer": "ok clipclear t=231536"}
+{"t": "16:25:36", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=231650"}
+{"t": "16:25:36", "cmd": "clipboard", "answer": "ok clipboard \"\" t=232095"}
+{"t": "16:25:36", "cmd": "clipclear", "answer": "ok clipclear t=232154"}
+{"t": "16:25:36", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=232341"}
+{"t": "16:25:37", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=232776"}
+{"t": "16:25:37", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"=\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=233029"}
+{"t": "16:25:37", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=233057"}
+{"t": "16:25:37", "cmd": "shot r1-iii-3-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-3-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=233240"}
+{"t": "16:25:37", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=233269"}
+{"t": "16:25:38", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=233374"}
+{"t": "16:25:38", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=233839"}
+{"t": "16:25:38", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=233948"}
+{"t": "16:25:38", "cmd": "select D10", "answer": "ok select D10 t=234006"}
+{"t": "16:25:39", "cmd": "click 3793 295", "answer": "ok click t=234829"}
+{"t": "16:25:40", "cmd": "keys 80 =", "answer": "ok keys 1 t=235463"}
+{"t": "16:25:40", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=236072"}
+{"t": "16:25:41", "cmd": "keys 80 {F4}", "answer": "ok keys 1 t=236669"}
+{"t": "16:25:42", "cmd": "shot r1-iii-4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-4.png windows: XLMAIN@-11,-11,3851,2099 t=237719"}
+{"t": "16:25:42", "cmd": "crop r1-iii-4 0 255 3840 80 r1-iii-4-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-4-bar.png t=237764"}
+{"t": "16:25:42", "cmd": "crop r1-iii-4 0 2055 600 33 r1-iii-4-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-4-mode.png t=237820"}
+{"t": "16:25:42", "cmd": "crop r1-iii-4 183 535 348 204 r1-iii-4-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-4-cells.png t=237882"}
+{"t": "16:25:42", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=238106"}
+{"t": "16:25:42", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=238153"}
+{"t": "16:25:42", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=238217"}
+{"t": "16:25:43", "cmd": "clipclear", "answer": "ok clipclear t=238260"}
+{"t": "16:25:43", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=238392"}
+{"t": "16:25:43", "cmd": "clipboard", "answer": "ok clipboard \"\" t=238826"}
+{"t": "16:25:43", "cmd": "clipclear", "answer": "ok clipclear t=238881"}
+{"t": "16:25:43", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=239070"}
+{"t": "16:25:44", "cmd": "clipboard", "answer": "ok clipboard \"=\" t=239504"}
+{"t": "16:25:44", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"=\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=239732"}
+{"t": "16:25:44", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=239788"}
+{"t": "16:25:44", "cmd": "shot r1-iii-4-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-4-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=239977"}
+{"t": "16:25:44", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=240001"}
+{"t": "16:25:44", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=240109"}
+{"t": "16:25:45", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=240579"}
+{"t": "16:25:45", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=240682"}
+{"t": "16:25:45", "cmd": "select D10", "answer": "ok select D10 t=240747"}
+{"t": "16:25:46", "cmd": "click 3793 295", "answer": "ok click t=241562"}
+{"t": "16:25:46", "cmd": "keys 80 =", "answer": "ok keys 1 t=242198"}
+{"t": "16:25:47", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=242791"}
+{"t": "16:25:47", "cmd": "keys 80 {F4}", "answer": "ok keys 1 t=243400"}
+{"t": "16:25:47", "cmd": "keys 80 {+}", "answer": "ok keys 1 t=244010"}
+{"t": "16:25:48", "cmd": "shot r1-iii-5", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-5.png windows: XLMAIN@-11,-11,3851,2099 t=245052"}
+{"t": "16:25:49", "cmd": "crop r1-iii-5 0 255 3840 80 r1-iii-5-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-5-bar.png t=245079"}
+{"t": "16:25:49", "cmd": "crop r1-iii-5 0 2055 600 33 r1-iii-5-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-5-mode.png t=245135"}
+{"t": "16:25:49", "cmd": "crop r1-iii-5 183 535 348 204 r1-iii-5-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-5-cells.png t=245196"}
+{"t": "16:25:49", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=+\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=245413"}
+{"t": "16:25:49", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=245470"}
+{"t": "16:25:49", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=245521"}
+{"t": "16:25:49", "cmd": "clipclear", "answer": "ok clipclear t=245574"}
+{"t": "16:25:49", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=245706"}
+{"t": "16:25:50", "cmd": "clipboard", "answer": "ok clipboard \"\" t=246144"}
+{"t": "16:25:50", "cmd": "clipclear", "answer": "ok clipclear t=246197"}
+{"t": "16:25:50", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=246381"}
+{"t": "16:25:50", "cmd": "clipboard", "answer": "ok clipboard \"=+\" t=246818"}
+{"t": "16:25:51", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=+\",\"selection\":[\"=+\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=247061"}
+{"t": "16:25:51", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=247099"}
+{"t": "16:25:51", "cmd": "shot r1-iii-5-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iii-5-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=247271"}
+{"t": "16:25:51", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=247312"}
+{"t": "16:25:51", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=247408"}
+{"t": "16:25:51", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=247826"}
+{"t": "16:25:52", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=247947"}
+{"t": "16:25:52", "cmd": "select D10", "answer": "ok select D10 t=247995"}
+{"t": "16:25:52", "cmd": "click 3793 295", "answer": "ok click t=248813"}
+{"t": "16:25:53", "cmd": "shot r1-iv-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-1.png windows: XLMAIN@-11,-11,3851,2099 t=249867"}
+{"t": "16:25:54", "cmd": "crop r1-iv-1 0 255 3840 80 r1-iv-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-1-bar.png t=249912"}
+{"t": "16:25:54", "cmd": "crop r1-iv-1 0 2055 600 33 r1-iv-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-1-mode.png t=249967"}
+{"t": "16:25:54", "cmd": "crop r1-iv-1 183 535 348 204 r1-iv-1-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-1-cells.png t=250028"}
+{"t": "16:25:54", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=250242"}
+{"t": "16:25:54", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=250299"}
+{"t": "16:25:54", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=250348"}
+{"t": "16:25:54", "cmd": "clipclear", "answer": "ok clipclear t=250403"}
+{"t": "16:25:54", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=250536"}
+{"t": "16:25:55", "cmd": "clipboard", "answer": "ok clipboard \"\" t=250953"}
+{"t": "16:25:55", "cmd": "clipclear", "answer": "ok clipclear t=251006"}
+{"t": "16:25:55", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=251195"}
+{"t": "16:25:55", "cmd": "clipboard", "answer": "ok clipboard \"\" t=251608"}
+{"t": "16:25:56", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=251828"}
+{"t": "16:25:56", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=251900"}
+{"t": "16:25:56", "cmd": "shot r1-iv-1-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-1-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=252073"}
+{"t": "16:25:56", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=252097"}
+{"t": "16:25:56", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=252203"}
+{"t": "16:25:56", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=252661"}
+{"t": "16:25:57", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=252766"}
+{"t": "16:25:57", "cmd": "select D10", "answer": "ok select D10 t=252825"}
+{"t": "16:25:57", "cmd": "click 3793 295", "answer": "ok click t=253620"}
+{"t": "16:25:58", "cmd": "keys 80 =B2", "answer": "ok keys 3 t=254447"}
+{"t": "16:25:59", "cmd": "shot r1-iv-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-2.png windows: XLMAIN@-11,-11,3851,2099 t=255468"}
+{"t": "16:25:59", "cmd": "crop r1-iv-2 0 255 3840 80 r1-iv-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-2-bar.png t=255513"}
+{"t": "16:25:59", "cmd": "crop r1-iv-2 0 2055 600 33 r1-iv-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-2-mode.png t=255568"}
+{"t": "16:26:00", "cmd": "crop r1-iv-2 183 535 348 204 r1-iv-2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-2-cells.png t=255629"}
+{"t": "16:26:00", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=B2\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=255842"}
+{"t": "16:26:00", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=255906"}
+{"t": "16:26:00", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=255951"}
+{"t": "16:26:00", "cmd": "clipclear", "answer": "ok clipclear t=256003"}
+{"t": "16:26:00", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=256119"}
+{"t": "16:26:01", "cmd": "clipboard", "answer": "ok clipboard \"\" t=256556"}
+{"t": "16:26:01", "cmd": "clipclear", "answer": "ok clipclear t=256614"}
+{"t": "16:26:01", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=256793"}
+{"t": "16:26:01", "cmd": "clipboard", "answer": "ok clipboard \"=B2\" t=257220"}
+{"t": "16:26:01", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=B2\",\"selection\":[\"=B2\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=257450"}
+{"t": "16:26:01", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=257505"}
+{"t": "16:26:02", "cmd": "shot r1-iv-2-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-2-after-reading.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@356,234,369,257 t=257684"}
+{"t": "16:26:02", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=257711"}
+{"t": "16:26:02", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=257806"}
+{"t": "16:26:02", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=258221"}
+{"t": "16:26:02", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=258333"}
+{"t": "16:26:02", "cmd": "select D10", "answer": "ok select D10 t=258386"}
+{"t": "16:26:03", "cmd": "click 3793 295", "answer": "ok click t=259197"}
+{"t": "16:26:04", "cmd": "keys 80 =B2", "answer": "ok keys 3 t=260027"}
+{"t": "16:26:05", "cmd": "keys 80 {F4}", "answer": "ok keys 1 t=260635"}
+{"t": "16:26:06", "cmd": "shot r1-iv-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-3.png windows: XLMAIN@-11,-11,3851,2099 t=261671"}
+{"t": "16:26:06", "cmd": "crop r1-iv-3 0 255 3840 80 r1-iv-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-3-bar.png t=261704"}
+{"t": "16:26:06", "cmd": "crop r1-iv-3 0 2055 600 33 r1-iv-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-3-mode.png t=261760"}
+{"t": "16:26:06", "cmd": "crop r1-iv-3 183 535 348 204 r1-iv-3-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-3-cells.png t=261822"}
+{"t": "16:26:06", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=$B$2\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=262054"}
+{"t": "16:26:06", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=262094"}
+{"t": "16:26:06", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=262144"}
+{"t": "16:26:06", "cmd": "clipclear", "answer": "ok clipclear t=262198"}
+{"t": "16:26:06", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=262309"}
+{"t": "16:26:07", "cmd": "clipboard", "answer": "ok clipboard \"\" t=262762"}
+{"t": "16:26:07", "cmd": "clipclear", "answer": "ok clipclear t=262820"}
+{"t": "16:26:07", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=263015"}
+{"t": "16:26:08", "cmd": "clipboard", "answer": "ok clipboard \"=$B$2\" t=263429"}
+{"t": "16:26:08", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=$B$2\",\"selection\":[\"=$B$2\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=263660"}
+{"t": "16:26:08", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=263715"}
+{"t": "16:26:08", "cmd": "shot r1-iv-3-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-iv-3-after-reading.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@368,234,381,257 t=263910"}
+{"t": "16:26:08", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=263975"}
+{"t": "16:26:08", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=264081"}
+{"t": "16:26:09", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=264541"}
+{"t": "16:26:09", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=264654"}
+{"t": "16:26:09", "cmd": "select D10", "answer": "ok select D10 t=264707"}
+{"t": "16:26:10", "cmd": "click 3793 295", "answer": "ok click t=265512"}
+{"t": "16:26:11", "cmd": "shot r1-v-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-1.png windows: XLMAIN@-11,-11,3851,2099 t=266549"}
+{"t": "16:26:11", "cmd": "crop r1-v-1 0 255 3840 80 r1-v-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-1-bar.png t=266589"}
+{"t": "16:26:11", "cmd": "crop r1-v-1 0 2055 600 33 r1-v-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-1-mode.png t=266643"}
+{"t": "16:26:11", "cmd": "crop r1-v-1 183 535 348 204 r1-v-1-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-1-cells.png t=266703"}
+{"t": "16:26:11", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=266917"}
+{"t": "16:26:11", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=266970"}
+{"t": "16:26:11", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=267019"}
+{"t": "16:26:11", "cmd": "clipclear", "answer": "ok clipclear t=267074"}
+{"t": "16:26:12", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=267204"}
+{"t": "16:26:12", "cmd": "clipboard", "answer": "ok clipboard \"\" t=267617"}
+{"t": "16:26:12", "cmd": "clipclear", "answer": "ok clipclear t=267670"}
+{"t": "16:26:12", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=267863"}
+{"t": "16:26:13", "cmd": "clipboard", "answer": "ok clipboard \"\" t=268276"}
+{"t": "16:26:13", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=268503"}
+{"t": "16:26:13", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=268555"}
+{"t": "16:26:13", "cmd": "shot r1-v-1-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-1-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=268736"}
+{"t": "16:26:13", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=268762"}
+{"t": "16:26:13", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=268854"}
+{"t": "16:26:14", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=269257"}
+{"t": "16:26:14", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=269362"}
+{"t": "16:26:14", "cmd": "select D10", "answer": "ok select D10 t=269422"}
+{"t": "16:26:15", "cmd": "click 3793 295", "answer": "ok click t=270218"}
+{"t": "16:26:16", "cmd": "keys 80 =SUM{(}A1:B2{)}", "answer": "ok keys 11 t=271759"}
+{"t": "16:26:18", "cmd": "shot r1-v-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-2.png windows: XLMAIN@-11,-11,3851,2099 t=272790"}
+{"t": "16:26:18", "cmd": "crop r1-v-2 0 255 3840 80 r1-v-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-2-bar.png t=272830"}
+{"t": "16:26:18", "cmd": "crop r1-v-2 0 2055 600 33 r1-v-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-2-mode.png t=272884"}
+{"t": "16:26:18", "cmd": "crop r1-v-2 183 535 348 204 r1-v-2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-2-cells.png t=272944"}
+{"t": "16:26:18", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=SUM(A1:B2)\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=273161"}
+{"t": "16:26:18", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=273213"}
+{"t": "16:26:18", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=273280"}
+{"t": "16:26:18", "cmd": "clipclear", "answer": "ok clipclear t=273316"}
+{"t": "16:26:18", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=273441"}
+{"t": "16:26:17", "cmd": "clipboard", "answer": "ok clipboard \"\" t=273878"}
+{"t": "16:26:17", "cmd": "clipclear", "answer": "ok clipclear t=273937"}
+{"t": "16:26:18", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=274120"}
+{"t": "16:26:18", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(A1:B2)\" t=274545"}
+{"t": "16:26:18", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=SUM(A1:B2)\",\"selection\":[\"=SUM(A1:B2)\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=274781"}
+{"t": "16:26:18", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=274830"}
+{"t": "16:26:18", "cmd": "shot r1-v-2-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-2-after-reading.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@404,234,417,257 t=275007"}
+{"t": "16:26:19", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=275036"}
+{"t": "16:26:19", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=275142"}
+{"t": "16:26:19", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=275614"}
+{"t": "16:26:19", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=275725"}
+{"t": "16:26:19", "cmd": "select D10", "answer": "ok select D10 t=275777"}
+{"t": "16:26:20", "cmd": "click 3793 295", "answer": "ok click t=276592"}
+{"t": "16:26:22", "cmd": "keys 80 =SUM{(}A1:B2{)}", "answer": "ok keys 11 t=278166"}
+{"t": "16:26:22", "cmd": "keys 80 {LEFT}", "answer": "ok keys 1 t=278792"}
+{"t": "16:26:24", "cmd": "shot r1-v-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-3.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@356,327,614,358 t=279841"}
+{"t": "16:26:24", "cmd": "crop r1-v-3 0 255 3840 80 r1-v-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-3-bar.png t=279912"}
+{"t": "16:26:24", "cmd": "crop r1-v-3 0 2055 600 33 r1-v-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-3-mode.png t=279969"}
+{"t": "16:26:24", "cmd": "crop r1-v-3 183 535 348 204 r1-v-3-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-3-cells.png t=280028"}
+{"t": "16:26:24", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=SUM(A1:B2)\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=280244"}
+{"t": "16:26:24", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=280298"}
+{"t": "16:26:24", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=280346"}
+{"t": "16:26:24", "cmd": "clipclear", "answer": "ok clipclear t=280399"}
+{"t": "16:26:24", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=280513"}
+{"t": "16:26:25", "cmd": "clipboard", "answer": "ok clipboard \"\" t=280949"}
+{"t": "16:26:25", "cmd": "clipclear", "answer": "ok clipclear t=281006"}
+{"t": "16:26:25", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=281193"}
+{"t": "16:26:25", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(A1:B2\" t=281615"}
+{"t": "16:26:26", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=SUM(A1:B2)\",\"selection\":[\"=SUM(A1:B2\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=281853"}
+{"t": "16:26:26", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=281912"}
+{"t": "16:26:26", "cmd": "shot r1-v-3-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-3-after-reading.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@404,234,417,257 t=282073"}
+{"t": "16:26:26", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=282102"}
+{"t": "16:26:26", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=282199"}
+{"t": "16:26:26", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=282628"}
+{"t": "16:26:27", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=282742"}
+{"t": "16:26:27", "cmd": "select D10", "answer": "ok select D10 t=282796"}
+{"t": "16:26:27", "cmd": "click 3793 295", "answer": "ok click t=283593"}
+{"t": "16:26:29", "cmd": "keys 80 =SUM{(}A1:B2{)}", "answer": "ok keys 11 t=285166"}
+{"t": "16:26:30", "cmd": "keys 80 {LEFT}", "answer": "ok keys 1 t=285775"}
+{"t": "16:26:30", "cmd": "keys 80 {F4}", "answer": "ok keys 1 t=286369"}
+{"t": "16:26:31", "cmd": "shot r1-v-4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-4.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@356,327,614,358 ; Net UI Tool Window@458,234,471,257 t=287409"}
+{"t": "16:26:31", "cmd": "crop r1-v-4 0 255 3840 80 r1-v-4-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-4-bar.png t=287432"}
+{"t": "16:26:32", "cmd": "crop r1-v-4 0 2055 600 33 r1-v-4-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-4-mode.png t=287486"}
+{"t": "16:26:32", "cmd": "crop r1-v-4 183 535 348 204 r1-v-4-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-4-cells.png t=287546"}
+{"t": "16:26:32", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=SUM(A1:$B$2)\",\"selection\":[\"$B$2\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=287768"}
+{"t": "16:26:32", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=287822"}
+{"t": "16:26:32", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=287868"}
+{"t": "16:26:32", "cmd": "clipclear", "answer": "ok clipclear t=287923"}
+{"t": "16:26:32", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=288051"}
+{"t": "16:26:33", "cmd": "clipboard", "answer": "ok clipboard \"$B$2\" t=288477"}
+{"t": "16:26:33", "cmd": "clipclear", "answer": "ok clipclear t=288533"}
+{"t": "16:26:33", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=288721"}
+{"t": "16:26:33", "cmd": "clipboard", "answer": "ok clipboard \"=SUM(A1:\" t=289145"}
+{"t": "16:26:33", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=SUM(A1:$B$2)\",\"selection\":[\"=SUM(A1:\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=289373"}
+{"t": "16:26:34", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=289426"}
+{"t": "16:26:34", "cmd": "shot r1-v-4-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-v-4-after-reading.png windows: XLMAIN@-11,-11,3851,2099 t=289595"}
+{"t": "16:26:34", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=289636"}
+{"t": "16:26:34", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=289731"}
+{"t": "16:26:34", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=290148"}
+{"t": "16:26:34", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=290261"}
+{"t": "16:26:34", "cmd": "select D10", "answer": "ok select D10 t=290314"}
+{"t": "16:26:35", "cmd": "keys 80 =", "answer": "ok keys 1 t=290747"}
+{"t": "16:26:36", "cmd": "shot r1-vi-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-1.png windows: XLMAIN@-11,-11,3851,2099 t=291796"}
+{"t": "16:26:36", "cmd": "crop r1-vi-1 0 255 3840 80 r1-vi-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-1-bar.png t=291861"}
+{"t": "16:26:36", "cmd": "crop r1-vi-1 0 2055 600 33 r1-vi-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-1-mode.png t=291919"}
+{"t": "16:26:36", "cmd": "crop r1-vi-1 183 535 348 204 r1-vi-1-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-1-cells.png t=291981"}
+{"t": "16:26:36", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=292203"}
+{"t": "16:26:36", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=292252"}
+{"t": "16:26:37", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=292302"}
+{"t": "16:26:37", "cmd": "clipclear", "answer": "ok clipclear t=292357"}
+{"t": "16:26:37", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=292490"}
+{"t": "16:26:37", "cmd": "clipboard", "answer": "ok clipboard \"\" t=292915"}
+{"t": "16:26:37", "cmd": "clipclear", "answer": "ok clipclear t=292969"}
+{"t": "16:26:37", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=293157"}
+{"t": "16:26:38", "cmd": "clipboard", "answer": "ok clipboard \"A10:D10\" t=293580"}
+{"t": "16:26:38", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=A10:D10\",\"selection\":[\"A10:D10\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=293815"}
+{"t": "16:26:38", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=293866"}
+{"t": "16:26:38", "cmd": "shot r1-vi-1-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-1-after-reading.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@348,581,412,604 t=294044"}
+{"t": "16:26:38", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=294074"}
+{"t": "16:26:38", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=294170"}
+{"t": "16:26:39", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=294585"}
+{"t": "16:26:39", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=294763"}
+{"t": "16:26:39", "cmd": "select D10", "answer": "ok select D10 t=294803"}
+{"t": "16:26:40", "cmd": "keys 80 =", "answer": "ok keys 1 t=295229"}
+{"t": "16:26:40", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=295823"}
+{"t": "16:26:41", "cmd": "shot r1-vi-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-2.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@354,581,367,604 t=296849"}
+{"t": "16:26:41", "cmd": "crop r1-vi-2 0 255 3840 80 r1-vi-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-2-bar.png t=296883"}
+{"t": "16:26:41", "cmd": "crop r1-vi-2 0 2055 600 33 r1-vi-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-2-mode.png t=296940"}
+{"t": "16:26:41", "cmd": "crop r1-vi-2 183 535 348 204 r1-vi-2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-2-cells.png t=297002"}
+{"t": "16:26:42", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=D11\",\"selection\":[\"D11\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=297228"}
+{"t": "16:26:42", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=297278"}
+{"t": "16:26:42", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=297325"}
+{"t": "16:26:42", "cmd": "clipclear", "answer": "ok clipclear t=297379"}
+{"t": "16:26:42", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=297506"}
+{"t": "16:26:42", "cmd": "clipboard", "answer": "ok clipboard \"D11\" t=297937"}
+{"t": "16:26:43", "cmd": "clipclear", "answer": "ok clipclear t=297993"}
+{"t": "16:26:43", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=298182"}
+{"t": "16:26:43", "cmd": "clipboard", "answer": "ok clipboard \"A10:D10\" t=298639"}
+{"t": "16:26:43", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=A10:D10\",\"selection\":[\"A10:D10\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=298876"}
+{"t": "16:26:43", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=298946"}
+{"t": "16:26:44", "cmd": "shot r1-vi-2-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-2-after-reading.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@348,581,412,604 t=299135"}
+{"t": "16:26:44", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=299164"}
+{"t": "16:26:44", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=299268"}
+{"t": "16:26:44", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=299722"}
+{"t": "16:26:44", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=299910"}
+{"t": "16:26:44", "cmd": "select D10", "answer": "ok select D10 t=299956"}
+{"t": "16:26:45", "cmd": "keys 80 =", "answer": "ok keys 1 t=300417"}
+{"t": "16:26:45", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=301057"}
+{"t": "16:26:46", "cmd": "keys 80 +{DOWN}", "answer": "ok keys 1 t=301713"}
+{"t": "16:26:47", "cmd": "shot r1-vi-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-3.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@362,581,400,604 t=302827"}
+{"t": "16:26:47", "cmd": "crop r1-vi-3 0 255 3840 80 r1-vi-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-3-bar.png t=302863"}
+{"t": "16:26:47", "cmd": "crop r1-vi-3 0 2055 600 33 r1-vi-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-3-mode.png t=302929"}
+{"t": "16:26:47", "cmd": "crop r1-vi-3 183 535 348 204 r1-vi-3-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-3-cells.png t=302989"}
+{"t": "16:26:47", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=D11:D12\",\"selection\":[\"D11:D12\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=303215"}
+{"t": "16:26:48", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=303282"}
+{"t": "16:26:48", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=303332"}
+{"t": "16:26:48", "cmd": "clipclear", "answer": "ok clipclear t=303389"}
+{"t": "16:26:48", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=303519"}
+{"t": "16:26:48", "cmd": "clipboard", "answer": "ok clipboard \"D11:D12\" t=303979"}
+{"t": "16:26:48", "cmd": "clipclear", "answer": "ok clipclear t=304035"}
+{"t": "16:26:48", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=304224"}
+{"t": "16:26:49", "cmd": "clipboard", "answer": "ok clipboard \"A10:D10\" t=304646"}
+{"t": "16:26:49", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=A10:D10\",\"selection\":[\"A10:D10\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=304878"}
+{"t": "16:26:49", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=304936"}
+{"t": "16:26:49", "cmd": "shot r1-vi-3-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-3-after-reading.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@348,581,412,604 t=305110"}
+{"t": "16:26:49", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=305138"}
+{"t": "16:26:49", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=305233"}
+{"t": "16:26:49", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=305648"}
+{"t": "16:26:49", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=305843"}
+{"t": "16:26:49", "cmd": "select D10", "answer": "ok select D10 t=305868"}
+{"t": "16:26:50", "cmd": "keys 80 =", "answer": "ok keys 1 t=306307"}
+{"t": "16:26:50", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=306900"}
+{"t": "16:26:51", "cmd": "keys 80 +{DOWN}", "answer": "ok keys 1 t=307511"}
+{"t": "16:26:52", "cmd": "keys 80 {F4}", "answer": "ok keys 1 t=308105"}
+{"t": "16:26:53", "cmd": "shot r1-vi-4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-4.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@384,581,422,604 t=309187"}
+{"t": "16:26:53", "cmd": "crop r1-vi-4 0 255 3840 80 r1-vi-4-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-4-bar.png t=309238"}
+{"t": "16:26:53", "cmd": "crop r1-vi-4 0 2055 600 33 r1-vi-4-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-4-mode.png t=309294"}
+{"t": "16:26:53", "cmd": "crop r1-vi-4 183 535 348 204 r1-vi-4-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-4-cells.png t=309356"}
+{"t": "16:26:53", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=$D$11:$D$12\",\"selection\":[\"$D$11:$D$12\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=309576"}
+{"t": "16:26:53", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=309631"}
+{"t": "16:26:53", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=309678"}
+{"t": "16:26:53", "cmd": "clipclear", "answer": "ok clipclear t=309732"}
+{"t": "16:26:53", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=309860"}
+{"t": "16:26:54", "cmd": "clipboard", "answer": "ok clipboard \"$D$11:$D$12\" t=310292"}
+{"t": "16:26:54", "cmd": "clipclear", "answer": "ok clipclear t=310350"}
+{"t": "16:26:54", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=310536"}
+{"t": "16:26:55", "cmd": "clipboard", "answer": "ok clipboard \"A10:D10\" t=310964"}
+{"t": "16:26:55", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=A10:D10\",\"selection\":[\"A10:D10\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=311191"}
+{"t": "16:26:55", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=311252"}
+{"t": "16:26:55", "cmd": "shot r1-vi-4-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vi-4-after-reading.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@348,581,412,604 t=311426"}
+{"t": "16:26:55", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=311459"}
+{"t": "16:26:55", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=311557"}
+{"t": "16:26:56", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=311989"}
+{"t": "16:26:56", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=312167"}
+{"t": "16:26:56", "cmd": "select D10", "answer": "ok select D10 t=312203"}
+{"t": "16:26:56", "cmd": "keys 80 abc", "answer": "ok keys 3 t=312839"}
+{"t": "16:26:57", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"abc\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=313427"}
+{"t": "16:26:57", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=313482"}
+{"t": "16:26:57", "cmd": "keys 80 +{RIGHT}", "answer": "ok keys 1 t=313620"}
+{"t": "16:26:58", "cmd": "shot r1-vii-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-1.png windows: XLMAIN@-11,-11,3851,2099 t=314355"}
+{"t": "16:26:58", "cmd": "crop r1-vii-1 0 255 3840 80 r1-vii-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-1-bar.png t=314395"}
+{"t": "16:26:58", "cmd": "crop r1-vii-1 0 2055 600 33 r1-vii-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-1-mode.png t=314451"}
+{"t": "16:26:58", "cmd": "crop r1-vii-1 183 535 348 204 r1-vii-1-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-1-cells.png t=314515"}
+{"t": "16:26:59", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"abc\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=314839"}
+{"t": "16:26:59", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=314903"}
+{"t": "16:26:59", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10:E10 t=314945"}
+{"t": "16:27:00", "cmd": "cell D10 E10 D11 C10", "answer": "ok cell D10: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=315788"}
+{"t": "16:27:01", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=317007"}
+{"t": "16:27:01", "cmd": "select D10", "answer": "ok select D10 t=317057"}
+{"t": "16:27:02", "cmd": "keys 80 abc", "answer": "ok keys 3 t=317681"}
+{"t": "16:27:02", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"abc\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=318279"}
+{"t": "16:27:02", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=318336"}
+{"t": "16:27:02", "cmd": "keys 80 +{DOWN}", "answer": "ok keys 1 t=318478"}
+{"t": "16:27:03", "cmd": "shot r1-vii-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-2.png windows: XLMAIN@-11,-11,3851,2099 t=319225"}
+{"t": "16:27:03", "cmd": "crop r1-vii-2 0 255 3840 80 r1-vii-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-2-bar.png t=319248"}
+{"t": "16:27:03", "cmd": "crop r1-vii-2 0 2055 600 33 r1-vii-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-2-mode.png t=319304"}
+{"t": "16:27:03", "cmd": "crop r1-vii-2 183 535 348 204 r1-vii-2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-2-cells.png t=319364"}
+{"t": "16:27:04", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"abc\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=319694"}
+{"t": "16:27:04", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=319739"}
+{"t": "16:27:04", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10:D11 t=319796"}
+{"t": "16:27:04", "cmd": "cell D10 E10 D11 C10", "answer": "ok cell D10: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=320491"}
+{"t": "16:27:06", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=321694"}
+{"t": "16:27:06", "cmd": "select D10", "answer": "ok select D10 t=321753"}
+{"t": "16:27:07", "cmd": "keys 80 =A1{+}B2", "answer": "ok keys 6 t=322667"}
+{"t": "16:27:07", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=A1+B2\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=323287"}
+{"t": "16:27:07", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=323346"}
+{"t": "16:27:07", "cmd": "keys 80 +{LEFT}", "answer": "ok keys 1 t=323478"}
+{"t": "16:27:08", "cmd": "shot r1-vii-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-3.png windows: XLMAIN@-11,-11,3851,2099 t=324226"}
+{"t": "16:27:08", "cmd": "crop r1-vii-3 0 255 3840 80 r1-vii-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-3-bar.png t=324267"}
+{"t": "16:27:08", "cmd": "crop r1-vii-3 0 2055 600 33 r1-vii-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-3-mode.png t=324324"}
+{"t": "16:27:08", "cmd": "crop r1-vii-3 183 535 348 204 r1-vii-3-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-3-cells.png t=324384"}
+{"t": "16:27:09", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=A1+B2\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=324719"}
+{"t": "16:27:09", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=324761"}
+{"t": "16:27:09", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=C10:D10 t=324820"}
+{"t": "16:27:10", "cmd": "cell D10 E10 D11 C10", "answer": "ok cell D10: number 0 | formula \"=A1+B2\" | text \"0\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=325592"}
+{"t": "16:27:11", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=326837"}
+{"t": "16:27:11", "cmd": "select D10", "answer": "ok select D10 t=326877"}
+{"t": "16:27:12", "cmd": "keys 80 abc", "answer": "ok keys 3 t=327509"}
+{"t": "16:27:12", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"abc\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=328113"}
+{"t": "16:27:12", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=328163"}
+{"t": "16:27:12", "cmd": "keys 80 +{END}", "answer": "ok keys 1 t=328292"}
+{"t": "16:27:13", "cmd": "shot r1-vii-4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-4.png windows: XLMAIN@-11,-11,3851,2099 t=329036"}
+{"t": "16:27:13", "cmd": "crop r1-vii-4 0 255 3840 80 r1-vii-4-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-4-bar.png t=329082"}
+{"t": "16:27:13", "cmd": "crop r1-vii-4 0 2055 600 33 r1-vii-4-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-4-mode.png t=329139"}
+{"t": "16:27:13", "cmd": "crop r1-vii-4 183 535 348 204 r1-vii-4-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-4-cells.png t=329200"}
+{"t": "16:27:14", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"abc\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=329532"}
+{"t": "16:27:14", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"End Mode End Mode\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=329578"}
+{"t": "16:27:14", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=329632"}
+{"t": "16:27:15", "cmd": "cell D10 E10 D11 C10", "answer": "ok cell D10: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=330335"}
+{"t": "16:27:16", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=331540"}
+{"t": "16:27:16", "cmd": "select D10", "answer": "ok select D10 t=331595"}
+{"t": "16:27:16", "cmd": "keys 80 abc", "answer": "ok keys 3 t=332214"}
+{"t": "16:27:17", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"abc\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=332814"}
+{"t": "16:27:17", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=332872"}
+{"t": "16:27:17", "cmd": "keys 80 ^{RIGHT}", "answer": "ok keys 1 t=333012"}
+{"t": "16:27:18", "cmd": "shot r1-vii-5", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-5.png windows: XLMAIN@-11,-11,3851,2099 t=333759"}
+{"t": "16:27:18", "cmd": "crop r1-vii-5 0 255 3840 80 r1-vii-5-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-5-bar.png t=333801"}
+{"t": "16:27:18", "cmd": "crop r1-vii-5 0 2055 600 33 r1-vii-5-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-5-mode.png t=333861"}
+{"t": "16:27:18", "cmd": "crop r1-vii-5 183 535 348 204 r1-vii-5-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-5-cells.png t=333922"}
+{"t": "16:27:19", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=334250"}
+{"t": "16:27:19", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=334298"}
+{"t": "16:27:19", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!XFD10 selection=XFD10 t=334355"}
+{"t": "16:27:19", "cmd": "cell D10 E10 D11 C10", "answer": "ok cell D10: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=335051"}
+{"t": "16:27:21", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=336403"}
+{"t": "16:27:20", "cmd": "select D10", "answer": "ok select D10 t=336470"}
+{"t": "16:27:21", "cmd": "keys 80 abc", "answer": "ok keys 3 t=337088"}
+{"t": "16:27:21", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"abc\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=337809"}
+{"t": "16:27:21", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=337847"}
+{"t": "16:27:21", "cmd": "keys 80 ^+{RIGHT}", "answer": "ok keys 1 t=337979"}
+{"t": "16:27:22", "cmd": "shot r1-vii-6", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-6.png windows: XLMAIN@-11,-11,3851,2099 t=338758"}
+{"t": "16:27:22", "cmd": "crop r1-vii-6 0 255 3840 80 r1-vii-6-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-6-bar.png t=338828"}
+{"t": "16:27:22", "cmd": "crop r1-vii-6 0 2055 600 33 r1-vii-6-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-6-mode.png t=338885"}
+{"t": "16:27:22", "cmd": "crop r1-vii-6 183 535 348 204 r1-vii-6-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-vii-6-cells.png t=338949"}
+{"t": "16:27:23", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"abc\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=339276"}
+{"t": "16:27:23", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=339324"}
+{"t": "16:27:23", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10:XFD10 t=339382"}
+{"t": "16:27:24", "cmd": "cell D10 E10 D11 C10", "answer": "ok cell D10: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=340064"}
+{"t": "16:27:25", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=341425"}
+{"t": "16:27:25", "cmd": "select D10", "answer": "ok select D10 t=341453"}
+{"t": "16:27:25", "cmd": "keys 80 =", "answer": "ok keys 1 t=341884"}
+{"t": "16:27:27", "cmd": "shot r1-viii-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-1.png windows: XLMAIN@-11,-11,3851,2099 t=342932"}
+{"t": "16:27:27", "cmd": "crop r1-viii-1 0 255 3840 80 r1-viii-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-1-bar.png t=342970"}
+{"t": "16:27:27", "cmd": "crop r1-viii-1 0 2055 600 33 r1-viii-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-1-mode.png t=343027"}
+{"t": "16:27:27", "cmd": "crop r1-viii-1 183 535 348 204 r1-viii-1-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-1-cells.png t=343091"}
+{"t": "16:27:27", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=\",\"selection\":[\"\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=343440"}
+{"t": "16:27:27", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=343466"}
+{"t": "16:27:27", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=343518"}
+{"t": "16:27:27", "cmd": "clipclear", "answer": "ok clipclear t=343572"}
+{"t": "16:27:27", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=343686"}
+{"t": "16:27:28", "cmd": "clipboard", "answer": "ok clipboard \"\" t=344138"}
+{"t": "16:27:28", "cmd": "clipclear", "answer": "ok clipclear t=344192"}
+{"t": "16:27:28", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=344380"}
+{"t": "16:27:28", "cmd": "clipboard", "answer": "ok clipboard \"A10:D10\" t=344816"}
+{"t": "16:27:29", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=A10:D10\",\"selection\":[\"A10:D10\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=345070"}
+{"t": "16:27:29", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=345106"}
+{"t": "16:27:29", "cmd": "shot r1-viii-1-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-1-after-reading.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@348,581,412,604 t=345290"}
+{"t": "16:27:29", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=345314"}
+{"t": "16:27:29", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=345409"}
+{"t": "16:27:30", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=345837"}
+{"t": "16:27:30", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=346219"}
+{"t": "16:27:30", "cmd": "select D10", "answer": "ok select D10 t=346258"}
+{"t": "16:27:30", "cmd": "keys 80 =", "answer": "ok keys 1 t=346698"}
+{"t": "16:27:31", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=347291"}
+{"t": "16:27:32", "cmd": "shot r1-viii-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-2.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@354,581,367,604 t=348347"}
+{"t": "16:27:32", "cmd": "crop r1-viii-2 0 255 3840 80 r1-viii-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-2-bar.png t=348373"}
+{"t": "16:27:32", "cmd": "crop r1-viii-2 0 2055 600 33 r1-viii-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-2-mode.png t=348429"}
+{"t": "16:27:32", "cmd": "crop r1-viii-2 183 535 348 204 r1-viii-2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-2-cells.png t=348491"}
+{"t": "16:27:33", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=D11\",\"selection\":[\"D11\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=348716"}
+{"t": "16:27:33", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=348769"}
+{"t": "16:27:33", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=348817"}
+{"t": "16:27:33", "cmd": "clipclear", "answer": "ok clipclear t=348870"}
+{"t": "16:27:33", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=349007"}
+{"t": "16:27:33", "cmd": "clipboard", "answer": "ok clipboard \"D11\" t=349431"}
+{"t": "16:27:33", "cmd": "clipclear", "answer": "ok clipclear t=349488"}
+{"t": "16:27:33", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=349673"}
+{"t": "16:27:34", "cmd": "clipboard", "answer": "ok clipboard \"A10:D10\" t=350095"}
+{"t": "16:27:34", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=A10:D10\",\"selection\":[\"A10:D10\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=350323"}
+{"t": "16:27:34", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=350381"}
+{"t": "16:27:34", "cmd": "shot r1-viii-2-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-2-after-reading.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@348,581,412,604 t=350560"}
+{"t": "16:27:34", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=350590"}
+{"t": "16:27:35", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=350688"}
+{"t": "16:27:35", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=351109"}
+{"t": "16:27:35", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=351285"}
+{"t": "16:27:35", "cmd": "select D10", "answer": "ok select D10 t=351325"}
+{"t": "16:27:36", "cmd": "keys 80 =", "answer": "ok keys 1 t=351760"}
+{"t": "16:27:36", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=352370"}
+{"t": "16:27:37", "cmd": "keys 80 +{HOME}", "answer": "ok keys 1 t=352979"}
+{"t": "16:27:38", "cmd": "shot r1-viii-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-3.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@348,581,412,604 t=354052"}
+{"t": "16:27:38", "cmd": "crop r1-viii-3 0 255 3840 80 r1-viii-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-3-bar.png t=354104"}
+{"t": "16:27:38", "cmd": "crop r1-viii-3 0 2055 600 33 r1-viii-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-3-mode.png t=354158"}
+{"t": "16:27:38", "cmd": "crop r1-viii-3 183 535 348 204 r1-viii-3-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-3-cells.png t=354219"}
+{"t": "16:27:38", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=A11:D11\",\"selection\":[\"A11:D11\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=354440"}
+{"t": "16:27:38", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=354497"}
+{"t": "16:27:39", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=354545"}
+{"t": "16:27:39", "cmd": "clipclear", "answer": "ok clipclear t=354598"}
+{"t": "16:27:39", "cmd": "keys 60 ^c", "answer": "ok keys 1 t=354719"}
+{"t": "16:27:39", "cmd": "clipboard", "answer": "ok clipboard \"A11:D11\" t=355164"}
+{"t": "16:27:39", "cmd": "clipclear", "answer": "ok clipclear t=355221"}
+{"t": "16:27:39", "cmd": "keys 60 +{HOME}^c", "answer": "ok keys 2 t=355411"}
+{"t": "16:27:40", "cmd": "clipboard", "answer": "ok clipboard \"A10:D10\" t=355835"}
+{"t": "16:27:40", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"=A10:D10\",\"selection\":[\"A10:D10\"],\"focus\":true,\"box\":[328,267,3840,324]}] t=356079"}
+{"t": "16:27:40", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=356122"}
+{"t": "16:27:40", "cmd": "shot r1-viii-3-after-reading", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r1-viii-3-after-reading.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@348,581,412,604 t=356304"}
+{"t": "16:27:40", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=356334"}
+{"t": "16:27:41", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=356438"}
+{"t": "16:27:41", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=356906"}

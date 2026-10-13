@@ -642,7 +642,7 @@ public class FormatCellsTests : SheetTestContext
     private static IReadOnlySet<CellFormat> RecordedAt(IRenderedComponent<ExSheet> cut, string range) =>
         Sheet.Open(cut.Instance.ToDocument()).GetCellFormats(CellRange.Parse(range));
 
-    [Fact] // ADR-0071 / SH-45, case 14-13: A2 under A1's thick bottom opens with a thick top, its button pressed, though A2 records nothing
+    [Fact] // ADR-0071 / SH-45, case 14-13: A2 under A1's thick bottom opens with a thick top, its button pressed, though A2 records nothing; and with Thick chosen in Style, the one line A2 shows (the seventeenth Windows run, h10)
     public async Task A2_under_a1s_thick_bottom_opens_with_a_thick_top_case_14_13()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(ThickBottomOnA1)));
@@ -653,6 +653,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.Equal("true", cut.Find(".ex-format-cells-edge[data-edge=Top]").GetAttribute("aria-pressed"));
         Assert.Equal("3", cut.Find(".ex-format-cells-preview line[data-edge=Top]").GetAttribute("stroke-width"));
         Assert.Equal("false", cut.Find(".ex-format-cells-edge[data-edge=Bottom]").GetAttribute("aria-pressed"));
+        Assert.Equal("Thick", cut.FindAll(".ex-format-cells-line-column input").Single(i => i.HasAttribute("checked")).GetAttribute("aria-label"));
         Assert.Equal([CellFormat.Default], RecordedAt(cut, "A2"));
     }
 
@@ -704,14 +705,14 @@ public class FormatCellsTests : SheetTestContext
         Assert.Equal(Thick, FormatAt(cut, "A1").Borders.Bottom);
     }
 
-    [Fact] // ADR-0071 / SH-45, case 14-13 (a reading: no run pressed it): taking the shown top away clears A1's bottom too, so no line is drawn there
+    [Fact] // ADR-0071 / SH-45, case 14-13 (observed in Excel, the seventeenth Windows run, h10): the Top button alone takes the shown top away, and OK clears A1's bottom too, so no line is drawn there
     public async Task Taking_the_shown_top_away_clears_a1s_bottom_case_14_13()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(ThickBottomOnA1)));
         await OpenAsync(cut, "A2");
         await ShowTabAsync(cut, "Border");
 
-        await cut.FindAll(".ex-format-cells-line-column input").Single(i => i.GetAttribute("aria-label") == "Thick").ChangeAsync(new ChangeEventArgs { Value = "on" });
+        // What the run pressed: the Top button, then OK. The tab opened on the thick line.
         await cut.Find(".ex-format-cells-edge[data-edge=Top]").ClickAsync(new MouseEventArgs());
         Assert.Equal("false", cut.Find(".ex-format-cells-edge[data-edge=Top]").GetAttribute("aria-pressed"));
         await OkAsync(cut);

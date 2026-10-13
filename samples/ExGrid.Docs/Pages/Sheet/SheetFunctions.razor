@@ -6,7 +6,7 @@
    the categories, which the rail lists. The filter is C#. A function the catalogue lists and the engine does not
    support yet links to the Roadmap section that holds its ticket. *@
 <DocsPage Product="ExSheet" Title="Functions"
-          Lead="Every function ExSheet's engine supports, by category, with its arguments as Excel writes them. Each gives Excel's result; a name outside this list is #NAME?, never an approximation.">
+          Lead="Every function ExSheet's engine supports, by category, with its arguments as Excel writes them. Each gives Excel's result; a function outside this list is #NAME?, never an approximation, and where Excel has it, no Formula catches that #NAME?.">
     <ReferenceAsOf>
         The functions and their arguments are the engine's own list, <code>DeclaredFunction.All</code>; the categories are
         its catalogue's.
@@ -48,7 +48,9 @@
             </MudText>
             <p>
                 Excel functions the catalogue lists, which the engine does not answer yet: in a Formula each is
-                <code>#NAME?</code> today. Each links the place on the Roadmap that holds the work on it.
+                <code>#NAME?</code> today, which no Formula catches: <code>=IFERROR(NPV(0.1,A1:A3),0)</code> is not
+                0, and a cell that reads such a Formula is <code>#VALUE!</code>. Each links the place on the Roadmap
+                that holds the work on it.
             </p>
             <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table docs-reference-table">
                 <thead><tr><th style="width: 22%">Function</th><th style="width: 30%">Category</th><th>On the Roadmap</th></tr></thead>

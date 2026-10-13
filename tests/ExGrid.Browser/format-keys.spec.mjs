@@ -1,5 +1,5 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
-import { sheet, openSheet, cell, editor, nameBox, pressCell, toolbarItem } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, editor, nameBox, pressCell, toolbarItem, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 
 // Excel's formatting keys on /sheet (ticket 51; ADR-0071 "Keys", ADR-0050 item 14), with real keys:
 // each toggle and Number Format key reaching the Sheet before the browser's own meaning, and with
@@ -167,4 +167,32 @@ test('SH-43/ADR-0071: with an edit open, Ctrl+U changes nothing, is taken from t
     await pressCell(grid, 'F2');
     await expect(font(page)).toHaveText('regular');
     await expect(numberFormat(page)).toHaveText('General');
+});
+
+// The seventeenth Windows run's h7 (ADR-0071; ticket 100's path): over a number showing ####,
+// Excel's Ctrl+U widened a column nobody had sized, from 8.09 to 11.73, and Ctrl+I did not; at a
+// width set through COM, neither did. The run pressed each key in a workbook of its own; pressed here
+// one after the other on one Selection, the two together are a reading.
+test('ADR-0071/SH-42 (the seventeenth run, h7): Ctrl+U over #### widens a column at the standard width and leaves a sized one at its width; Ctrl+I widens neither; one Ctrl+Z takes back both', async ({ page }) => {
+    const grid = sheet(page);
+    const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
+
+    await page.keyboard.press('ControlOrMeta+i');
+    await expect(font(page)).toHaveText('italic');
+    await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+    expect((await boxOf(columnHeader(grid, 'E'))).width).toBeCloseTo(standard, 0);
+
+    await page.keyboard.press('ControlOrMeta+u');
+    await expect(font(page)).toHaveText('italic underline');
+    await expect(cell(grid, 'E1')).toHaveText('123,456,789.12');
+    await expect.poll(async () => (await boxOf(columnHeader(grid, 'E'))).width).toBeGreaterThan(standard + 10);
+    await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
+    expect((await boxOf(columnHeader(grid, 'F'))).width).toBeCloseTo(sized, 0);
+
+    // The width is a step of the key's own: one Ctrl+Z takes back the underline and the width.
+    await page.keyboard.press('ControlOrMeta+Z');
+    await expect(font(page)).toHaveText('italic');
+    await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+    await expect.poll(async () => (await boxOf(columnHeader(grid, 'E'))).width).toBeCloseTo(standard, 0);
+    expect((await boxOf(columnHeader(grid, 'F'))).width).toBeCloseTo(sized, 0);
 });

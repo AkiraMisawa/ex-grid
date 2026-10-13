@@ -263,7 +263,26 @@ def g_expm1_log1p(rate, n, p):
     return (N(g), N(e))
 
 
+def g_pv_fv(rate, n, p):
+    """One reading of PV and FV (2026-10-12): squaring for a whole n, 1 over it for a negative one, and
+    otherwise the ^ operator's evaluation (the engine's Arithmetic.Power): the C library's exp(n log(1+rate)),
+    but the square root correctly rounded at an n of exactly 0.5 (ARITH-133), all in doubles. Python's
+    math.exp, math.log and math.sqrt are glibc's, as .NET's on Linux. No observed double has an n of 0.5, nor
+    a negative fraction, so this and Search.cs's other readings of those all survive; the engine computes
+    each and refuses where they part (Search.cs --refusals), and --vectors, which takes this one alone, no
+    longer models the engine there."""
+    b = 1 + float(rate.v)
+    if n == int(n):
+        k = abs(int(n))
+        g = float(g_square_rtl(N(rate.v), k, 53).v) if k else 1.0
+        return N(Q(g if n >= 0 else 1 / g))
+    if float(n) == 0.5:
+        return N(Q(math.sqrt(b)))
+    return N(Q(math.exp(math.log(b) * float(n))))
+
+
 GROWTH = {
+    "pv-fv": g_pv_fv,
     "pow": g_pow,
     "square-rtl": g_square_rtl,
     "square-ltr": g_square_ltr,
@@ -280,7 +299,7 @@ for _order in ("rtl", "ltr", "repeat"):
             GROWTH[f"excess-{_order} {_combine} {_square}"] = excess(_order, _combine, _square)
 INTEGER_ONLY = {"square-rtl", "square-ltr", "repeat"} | {k for k in GROWTH if k.startswith("excess")}
 EXTENDED_ONLY = {"x87-f2xm1"}
-DOUBLE_ONLY = {"crt-pow"}
+DOUBLE_ONLY = {"crt-pow", "pv-fv"}
 
 
 # --------------------------------------------------------------------------------------------
@@ -537,13 +556,15 @@ def precisions(growth_name):
     return [(a, b) for a in gp for b in (53, 64)]
 
 
-def run_annuity(function, form, growth, gp, ep, args, due="inline"):
+def run_annuity(function, form, growth, gp, ep, args, due="inline", growth_name=""):
     rate, nper, third, fourth, kind = args
     if kind != 0:
-        kind = Q(1)  # PMT-008 asks type 2: Excel answers as 1 (the type found)
+        kind = Q(1)  # Excel reads type as a truth value: 2, 0.5 and -1 each answer as 1 (PMT-008 to PMT-010)
     if rate == 0:
         return None
-    k = int(nper)
+    if growth_name in INTEGER_ONLY and (nper != int(nper) or nper < 0):
+        return None  # squaring and the excess forms raise only to a whole number from 0 (PMT-011, PMT-012 ask others)
+    k = int(nper) if nper == int(nper) else nper
 
     def grow(m):
         found = growth(N(rate), m, gp)
@@ -585,7 +606,7 @@ def annuity_candidates(function, forms):
                     if due != "inline" and fname.startswith("M14"):
                         continue
                     tag = "" if due == "inline" else f" | due={due}"
-                    yield f"{fname} | g={gname}@{gp} | rest@{ep}{tag}", (lambda args, form=form, growth=growth, gp=gp, ep=ep, due=due: run_annuity(function, form, growth, gp, ep, args, due))
+                    yield f"{fname} | g={gname}@{gp} | rest@{ep}{tag}", (lambda args, form=form, growth=growth, gp=gp, ep=ep, due=due, gname=gname: run_annuity(function, form, growth, gp, ep, args, due, gname))
 
 
 def npv_candidates():
@@ -663,7 +684,12 @@ def search():
         cases = [o for o in by_function.get(name, []) if annuity_args(parse_call(o["formula"])[1])[0] != 0]
         rows = []
         for label, run in annuity_candidates(name, forms):
-            got = {o["id"]: run(annuity_args(parse_call(o["formula"])[1])) for o in cases}
+            got = {}
+            for o in cases:
+                try:
+                    got[o["id"]] = run(annuity_args(parse_call(o["formula"])[1]))
+                except (ZeroDivisionError, OverflowError, decimal.InvalidOperation):
+                    got[o["id"]] = None
             rows.append((label, got))
         table[name] = (cases, rows)
 
@@ -686,7 +712,13 @@ def search():
     return observations, table
 
 
+def signed(v):
+    return v if isinstance(v, str) else f"{v:+d}"
+
+
 def ulps(a, b):
+    if b is None:
+        return "none"
     ia = struct.unpack("<q", struct.pack("<d", a))[0]
     ib = struct.unpack("<q", struct.pack("<d", b))[0]
     return ib - ia
@@ -803,21 +835,25 @@ def npv_wide(observations):
 
 
 def model_fv(rate, nper, pmt, pv, kind):
+    """FV by F4, the payment times (1+r*t)*((g-1)/r), and g_pv_fv's reading (2026-10-12): where the engine
+    answers, its double, which F9, F10 and the other readings of 1+rate's power give too (Search.cs)."""
     if rate == 0:
         return float(-(pv + pmt * nper))
     with precision(53):
-        g = g_square_rtl(N(rate), int(nper), 53)
+        g = g_pv_fv(N(rate), nper, 53)
         r, t = N(rate), N(1 if kind else 0)
-        return double(-(N(pv) * g + N(pmt) * (1 + r * t) * ((g - 1) / r)))
+        return double(-(N(pv) * g + N(pmt) * ((1 + r * t) * ((g - 1) / r))))
 
 
 def model_pv(rate, nper, pmt, fv, kind):
+    """PV by V5, the payment grouped as FV's, and g_pv_fv's reading (2026-10-12): where the engine answers, its
+    double."""
     if rate == 0:
         return float(-(fv + pmt * nper))
     with precision(53):
-        g = g_square_rtl(N(rate), int(nper), 53)
+        g = g_pv_fv(N(rate), nper, 53)
         r, t = N(rate), N(1 if kind else 0)
-        return double(-(N(fv) + N(pmt) * (1 + r * t) * ((g - 1) / r)) / g)
+        return double(-(N(fv) + N(pmt) * ((1 + r * t) * ((g - 1) / r))) / g)
 
 
 def model_pmt(rate, nper, pv, fv, kind):
@@ -859,18 +895,19 @@ def vectors(count, seed):
         k, d, sign = rng.choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 18]), rng.choice([1, 2, 4, 12, 52, 100, 1200]), rng.choice([1, 1, 1, -1])
         rate_text = f"{'-' if sign < 0 else ''}{k}/{d}/100"  # as a Formula writes it: two divisions in doubles
         rate = float(rnd(rnd(Q(k) / d, 53) / 100, 53)) * sign
-        nper = rng.choice([1, 2, 3, 5, 7, 10, 12, 24, 30, 36, 48, 60, 120, 180, 240, 300, 360, 480, 1000])
+        nper = rng.choice([1, 2, 3, 5, 7, 10, 12, 24, 30, 36, 48, 60, 120, 180, 240, 300, 360, 480, 1000, 0.5, 10.5, 36.25, -1, -12, -10.5])
         a = float(rng.choice([0, 100, 1000, 2500, 10000, 50000, 125000, 250000, 1e6]) * rng.choice([1, -1]))
         b = float(rng.choice([0, 0, 500, 1000, 20000]) * rng.choice([1, -1]))
-        kind = rng.choice([0, 1, 2])
+        kind = rng.choice([0, 1, 2, 0.5, -1])
         q = [Q(rate), Q(nper), Q(a), Q(b)]
         try:
-            pmt, margin = model_pmt(q[0], nper, q[2], q[3], kind)
+            # PMT refuses an nper that is not a whole number from 0 (ADR-0047, note of 2026-10-12)
+            pmt, margin = model_pmt(q[0], nper, q[2], q[3], kind) if nper == int(nper) and nper > 0 else (None, 1)
             fv = model_fv(q[0], nper, q[2], q[3], kind)
             pv = model_pv(q[0], nper, q[2], q[3], kind)
         except (ZeroDivisionError, OverflowError):
             continue
-        if not all(math.isfinite(v) for v in (pmt, fv, pv)):
+        if not all(v is None or math.isfinite(v) for v in (pmt, fv, pv)):
             continue
         out.append({"rateText": rate_text, "rate": rate, "nper": nper, "a": a, "b": b, "type": kind, "pmt": pmt, "pmtMargin": margin, "fv": fv, "pv": pv})
     return out
@@ -932,7 +969,7 @@ def main():
         print(f"\n{name}: {len(cases)} observed doubles (a rate of 0 is not a search case), {len(scored)} candidates, {len(full)} reproduce all")
         shown = scored if options.detail else scored[:12]
         for matches, label, got in shown:
-            off = ", ".join(f"{o['id']} {ulps(o['excel'], got[o['id']]):+d}" for o in cases if got[o["id"]] != o["excel"])
+            off = ", ".join(f"{o['id']} {signed(ulps(o['excel'], got[o['id']]))}" for o in cases if got[o["id"]] != o["excel"])
             print(f"  {matches}/{len(cases)}  {label}" + (f"   [ulps off: {off}]" if off else ""))
         histogram = {}
         for matches, _, _ in scored:
@@ -972,6 +1009,9 @@ def print_spread(formula, labels):
         exact = float(Q(exact) / (1 + rate))
     print(f"\n{formula}: the exact payment rounded once (the engine's model) {exact!r}")
     for title, chosen in (("every survivor", runs), ("at 64 bits, raised by no excess form", [(l, r) for l, r in runs if "@64 | rest@64" in l and "excess" not in l])):
+        if not chosen:
+            print(f"  {title}: none")
+            continue
         counts = {}
         for _, run in chosen:
             value = run(args)

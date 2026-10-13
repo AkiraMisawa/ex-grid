@@ -49,7 +49,7 @@
     },
     {
       "id": "TAN-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the reduced angle's tangent rounded once; SIN over COS as doubles, or -1/tan of the remainder as a double, give 1.557407724654902",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TAN(1)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "TAN-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the reduced angle's tangent rounded once; SIN over COS as doubles gives -0.4523156594418099",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TAN(9)"},

@@ -8,12 +8,16 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// VLOOKUP and HLOOKUP: first exact match, or the last smaller/equal key in an ascending
-    /// table. Unlike INDEX, their result is a Value, and a blank target becomes numeric zero.
+    /// table. Unlike INDEX, their result is a Value, and a blank target becomes numeric zero. A
+    /// table that holds a kept blank (<see cref="Operand.KeptBlank"/>, ADR-0125) is answered where
+    /// the blank is never read: the Formula is refused where it is among the keys searched, or is the
+    /// target, since no run has read how a search or a target reads it.
     /// </summary>
     private static Operand LegacyLookup(FunctionCall call, bool vertical)
     {
         if (!TryScalar(call, 0, out var lookup, out var failure)) return failure;
-        var table = ArrayOrValue(call.Operand(1));
+        var table = ArrayOrValue(call.KeepingBlanks(1));
+        if (table.KeptBlank && table.Kind != OperandKind.Array) return call.Evaluator.Refuse();
         if (!table.IsRange) return table.IsError ? table : Operand.Of(ErrorValue.Value);
         if (!TryNumber(call, 2, out var index, out failure)) return failure;
         index = Math.Truncate(index);
@@ -29,10 +33,12 @@ internal static partial class FunctionLibrary
         if (call.Count > 3 && !TryNumber(call, 3, out mode, out failure)) return failure;
 
         var keys = LegacyTableLine(table, vertical, 0);
+        if (table.KeptBlank && keys.FirstBlank(call.Evaluator, fromEnd: false) is not null) return call.Evaluator.Refuse();
         var outcome = LegacySearch(call.Evaluator, keys, lookup, mode == 0 ? 0 : 1);
         if (outcome.Failure is { } error) return error;
         if (outcome.Found is not { } found) return Operand.Of(ErrorValue.NA);
         var result = LegacyTableLine(table, vertical, (int)index - 1).ItemAt(found);
+        if (table.KeptBlank && result is { Kind: OperandKind.Scalar, Scalar: null }) return call.Evaluator.Refuse();
         return Operand.Of(call.Evaluator.ScalarOf(result) ?? Value.FromNumber(0));
     }
 
@@ -75,28 +81,29 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// The searches shared by VLOOKUP, HLOOKUP and MATCH. Approximate searches retain ADR-0047's
     /// refusal of data that cannot be established as sorted. They never use XLOOKUP's distinct
-    /// duplicate-key rules.
+    /// duplicate-key rules. Each refusal here is the Formula's (<see cref="Evaluator.Refuse"/>), which
+    /// no Formula can catch.
     /// </summary>
     private static SearchOutcome LegacySearch(Evaluator evaluator, Vector vector, Value? lookup, int mode)
     {
         var wanted = lookup ?? Value.FromNumber(0);
         if (wanted.Kind == ValueKind.Text && wanted.Text.Length > 255)
-            return new SearchOutcome(null, Operand.Of(ErrorValue.Value));
+            return new SearchOutcome(null, evaluator.Refuse());
         var candidates = vector.Candidates(evaluator).ToList();
-        if (mode == 0) return LegacyExact(candidates, wanted);
+        if (mode == 0) return LegacyExact(evaluator, candidates, wanted);
         if (candidates.Count != vector.Length || candidates.Any(c => c.Value.IsError))
-            return new SearchOutcome(null, Operand.Of(ErrorValue.Value));
+            return new SearchOutcome(null, evaluator.Refuse());
         var kind = candidates.Count == 0 ? wanted.Kind : candidates[0].Value.Kind;
         if (candidates.Any(c => c.Value.Kind != kind || !LegacyOrderable(c.Value)))
-            return new SearchOutcome(null, Operand.Of(ErrorValue.Value));
+            return new SearchOutcome(null, evaluator.Refuse());
         for (var i = 1; i < candidates.Count; i++)
         {
             var order = Evaluator.Compare(candidates[i - 1].Value, candidates[i].Value);
             if (mode > 0 ? order > 0 : order < 0)
-                return new SearchOutcome(null, Operand.Of(ErrorValue.Value));
+                return new SearchOutcome(null, evaluator.Refuse());
         }
         if (wanted.Kind != kind) return new SearchOutcome(null, null);
-        if (!LegacyOrderable(wanted)) return new SearchOutcome(null, Operand.Of(ErrorValue.Value));
+        if (!LegacyOrderable(wanted)) return new SearchOutcome(null, evaluator.Refuse());
         int? found = null;
         foreach (var (index, candidate) in candidates)
         {
@@ -110,7 +117,7 @@ internal static partial class FunctionLibrary
         if (mode < 0 && found is { } at && at > 0
             && Evaluator.Compare(candidates[at].Value, wanted) != 0
             && Evaluator.Compare(candidates[at - 1].Value, candidates[at].Value) == 0)
-            return new SearchOutcome(null, Operand.Of(ErrorValue.Value));
+            return new SearchOutcome(null, evaluator.Refuse());
         return new SearchOutcome(found, null);
     }
 
@@ -124,10 +131,10 @@ internal static partial class FunctionLibrary
     /// whether a later matching key wins over an earlier Error Value. Refuse that unobserved
     /// outcome rather than borrow XLOOKUP's error-skipping rule.
     /// </summary>
-    private static SearchOutcome LegacyExact(IEnumerable<(int Index, Value Value)> candidates, Value wanted)
+    private static SearchOutcome LegacyExact(Evaluator evaluator, IEnumerable<(int Index, Value Value)> candidates, Value wanted)
     {
         if (wanted.Kind == ValueKind.Text && !wanted.Text.All(char.IsAscii))
-            return new SearchOutcome(null, Operand.Of(ErrorValue.Value));
+            return new SearchOutcome(null, evaluator.Refuse());
         var errorSeen = false;
         var unobservedError = false;
         foreach (var (index, candidate) in candidates)
@@ -140,11 +147,11 @@ internal static partial class FunctionLibrary
             }
             if (candidate.Kind != wanted.Kind) continue;
             if (candidate.Kind == ValueKind.Text && !candidate.Text.All(char.IsAscii))
-                return new SearchOutcome(null, Operand.Of(ErrorValue.Value));
+                return new SearchOutcome(null, evaluator.Refuse());
             var matches = wanted.Kind == ValueKind.Text
                 ? Wildcard.Matches(wanted.Text, candidate.Text) : SameKindEqual(candidate, wanted);
-            if (matches) return errorSeen ? new SearchOutcome(null, Operand.Of(ErrorValue.Value)) : new SearchOutcome(index, null);
+            if (matches) return errorSeen ? new SearchOutcome(null, evaluator.Refuse()) : new SearchOutcome(index, null);
         }
-        return new SearchOutcome(null, unobservedError ? Operand.Of(ErrorValue.Value) : null);
+        return new SearchOutcome(null, unobservedError ? evaluator.Refuse() : null);
     }
 }

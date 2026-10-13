@@ -1,5 +1,5 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
-import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
 // Format Cells under the built-in Chrome (ADR-0071, ticket 52; SH-45, DC-60): a popover in the
@@ -193,6 +193,80 @@ test.describe('on /sheet', () => {
         await expect(formatCells(grid).getByRole('button', { name: 'Top', exact: true })).toHaveAttribute('aria-pressed', 'true');
         await expect(formatCells(grid).locator('.ex-format-cells-preview line[data-edge=Top]')).toHaveAttribute('stroke-width', '3');
         await expect(formatCells(grid).getByRole('button', { name: 'Bottom', exact: true })).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    test('SH-45, run 17 h10: over A2 under A1\'s thick bottom the Border tab opens on Thick, and the Top button alone takes the line away on both sides', async ({ page }) => {
+        const grid = sheet(page);
+        const edge = (name) => formatCells(grid).getByRole('button', { name, exact: true });
+        // A1's bottom thick, set through Format Cells itself. Over A1, with no line, it opens on Thin.
+        await openFromMenu(grid, 'A1');
+        await tab(grid, 'Border').click();
+        await expect(choice(grid, 'Thin')).toBeChecked();
+        await choice(grid, 'Thick').check();
+        await edge('Bottom').click();
+        await formatCells(grid).getByRole('button', { name: 'OK' }).click();
+        await expect(formatCells(grid)).toHaveCount(0);
+
+        // Over A2 it opens on the one line A2 shows, as Excel's did.
+        await openFromMenu(grid, 'A2');
+        await expect(tab(grid, 'Border')).toHaveAttribute('aria-selected', 'true');
+        await expect(choice(grid, 'Thick')).toBeChecked();
+        await expect(edge('Top')).toHaveAttribute('aria-pressed', 'true');
+
+        // What the run pressed: the Top button, then OK.
+        await edge('Top').click();
+        await expect(edge('Top')).toHaveAttribute('aria-pressed', 'false');
+        await formatCells(grid).getByRole('button', { name: 'OK' }).click();
+        await expect(formatCells(grid)).toHaveCount(0);
+
+        // Neither cell keeps a line there: A2 shows no top, and A1 no bottom.
+        await openFromMenu(grid, 'A2');
+        await expect(edge('Top')).toHaveAttribute('aria-pressed', 'false');
+        await expect(choice(grid, 'Thin')).toBeChecked();
+        await formatCells(grid).getByRole('button', { name: 'Cancel' }).click();
+        await expect(formatCells(grid)).toHaveCount(0);
+        await openFromMenu(grid, 'A1');
+        await expect(edge('Bottom')).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    // Decided with the user on 2026-10-12 (ADR-0071): Format Cells' OK widens a column over ####
+    // for any part of the Font it sets, as Excel's Font tab widened column A for Bold in the
+    // seventeenth Windows run's h7, where Ctrl+B does not; its Fill tab widens nothing.
+    test('ADR-0071 (decided 2026-10-12; the seventeenth run, h7): OK with Bold over #### widens a column at the standard width and leaves a sized one; OK with a Fill widens nothing; one Ctrl+Z takes back the bold and the width', async ({ page }) => {
+        const grid = sheet(page);
+        const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
+        const width = async (name) => (await boxOf(columnHeader(grid, name))).width;
+
+        await page.keyboard.press('Control+1');
+        await expect(formatCells(grid)).toBeVisible();
+        await tab(grid, 'Fill').click();
+        await formatCells(grid).getByRole('radio', { name: 'Yellow', exact: true }).check();
+        await formatCells(grid).getByRole('button', { name: 'OK' }).click();
+        await expect(formatCells(grid)).toHaveCount(0);
+        await expectKeyboardOn(grid);
+        await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+        expect(await width('E')).toBeCloseTo(standard, 0);
+
+        await page.keyboard.press('Control+1');
+        await expect(formatCells(grid)).toBeVisible();
+        await tab(grid, 'Font').click();
+        await choice(grid, 'Bold').check();
+        await formatCells(grid).getByRole('button', { name: 'OK' }).click();
+
+        await expect(formatCells(grid)).toHaveCount(0);
+        await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
+        await expect(cell(grid, 'E1')).toHaveText('123,456,789.12');
+        await expect.poll(() => width('E')).toBeGreaterThan(standard + 10);
+        await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
+        expect(await width('F')).toBeCloseTo(sized, 0);
+
+        // The width is a step of OK's own: one Ctrl+Z takes back the bold and the width.
+        await expectKeyboardOn(grid);
+        await page.keyboard.press('ControlOrMeta+Z');
+        await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
+        await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+        await expect.poll(() => width('E')).toBeCloseTo(standard, 0);
+        expect(await width('F')).toBeCloseTo(sized, 0);
     });
 
     // On the Server host the grid raises a move a round trip after it, from after the render that

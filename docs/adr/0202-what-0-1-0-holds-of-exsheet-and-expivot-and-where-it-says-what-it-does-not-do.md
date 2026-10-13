@@ -55,7 +55,10 @@ The run ExGrid's own by-hand rows need anyway (VZ-14, VZ-16, FN-12e, ED-30, SM-7
   the machine's is run under that regional format.
   - **A function that disagrees is corrected before the tag, or the arguments where it disagrees are
     refused with an Error Value**, as `MOD` refuses a quotient of 2^27 or more (ADR-0047). A width, a
-    format or an undo that disagrees is corrected.
+    format or an undo that disagrees is corrected. *(2026-10-12: Excel answers a quotient of 2^27 or
+    more, and so does `MOD` now; its `#NUM!` from 1,125,900,000,000 is Excel's own answer. `MOD` is an
+    example still: where the evaluations at 64 bits that give every answer Excel gave part, as at
+    `MOD(-1E-17,1)`, it is `#VALUE!` until a Windows run asks (ADR-0047's note of that date).)*
   - SH-7 is then met as written: every case observed.
 - **SH-28's edge cases, and SH-51 and SH-52 by hand** (Part A and B of the seventh run's script, and
   ticket 160's readings). A disagreement is settled by correcting ADR-0051 or ADR-0100 first, and the
@@ -127,12 +130,47 @@ The run ExGrid's own by-hand rows need anyway (VZ-14, VZ-16, FN-12e, ED-30, SM-7
   to the one `oracle.ps1 -Area` pass before `0.1.0-rc.1` (ADR-0208's note of this date), and the answers
   decide. If no such pass can be made before the tag, `NPV` is refused for `0.1.0` as `IRR` is, listed
   under Known limitations, and `PMT` stays as it is.
+  *(2026-10-12, what the answers decided. Two passes were made, `verification/2026-10-12-windows-area/`
+  and `-area-2/`. **`NPV` is refused for `0.1.0`, as `IRR` is** (`#NAME?`), and listed under Known
+  limitations: Excel answers the same values alike typed or in a range, which leaves 18 distinct observed
+  doubles, and none of the 5,796 evaluations searched gives them all; the best give 7 of 21. **`PMT` at
+  small rates agrees** (PMT-017, at 10^-7). **`PMT` at ordinary rates does not**: 19 of its 30 observed
+  payments were 1 to 11 units in the last place from the engine's (23 since the payment at the start is
+  rounded once, ADR-0047's note of 2026-10-13), and none of the 39,602 evaluations
+  searched gives every payment Excel gave. Decided with the user the same day: **`PMT` is kept, under
+  ADR-0047's exception for `PMT` alone** (its note of this date), and its last digits are listed under
+  Known limitations. **`XNPV` agrees at every observed double**: 4 of the 2,592 candidates searched give
+  all nine, two evaluations that part only where a last addition nearly cancels, where the engine
+  refuses; none of them gives Excel's `#NUM!` at a negative rate, which the engine gives by a check of
+  the rate. `spikes/exsheet-financial-evaluation/` holds the searches.)*
 - `0.1.0`'s Known limitations will hold at least: `IRR`, `XIRR` and `RATE`; dragging a Reference Outline;
   ExPivot's speed near its cap; and whatever of ExPivot's layout and wording the run finds different.
   *(2026-10-12, decided with the user: also a whole-column `SUM` on every row of a large Sheet. SH-19 is the
   case it decided, a 10,000 × 20 block with its twenty whole-column totals beside it, where an edit takes
   tens of milliseconds; with such a `SUM` on every row instead, an edit was measured at about 40 to 48
   seconds and holds the circuit that long. `verification/2026-10-11-linux-sh19/` has both.)*
+  *(2026-10-12: also `NPV`, which stays undeclared by the note of that date above; and, decided with the
+  user, `PMT`'s last digits, which may differ from Excel's, under ADR-0047's exception for `PMT` alone.)*
+  *(2026-10-12, decided with the user: also `INDIRECT` over a declared Linked Table's bare name,
+  `INDIRECT("Positions")`, which is `#VALUE!` where Excel reads the table's data: a Formula could then read
+  the table by position, which ADR-0049's rule 2 does not offer; and, in R1C1 style, a row or column number
+  past the Sheet's edge, `INDIRECT("R1048577C2",FALSE)`, which is `#VALUE!` until Excel is asked whether it
+  names no place or a place. ADR-0124's note of that date has Excel's answers and the readings.)*
+  *(2026-10-13, decided with the user: also a refused Anchor whose array's shape could depend on a Value —
+  a refused `FILTER`, `UNIQUE`, `SORT`, `SORTBY`, `SEQUENCE` or `LET`, a call that can give a Reference, or
+  a function given an array where it wants one Value, `=LEN(A1:A3)`: nothing spills, and the cells its
+  array would cover read as blank (ADR-0125's note of that date). And `PMT`'s last digits are 1 to 11
+  units in the last place at 23 of the 30 observed payments, at two of them in General's 15th digit.)*
   *(2026-10-12, decided with the user: also ExGrid's VZ-18 on the remote-isolation PC. The
   repaint after a reveal is in, and its layer-3 test gates; the check on that PC is not run for `0.1.0`,
   and the observation of 2026-10-08, which names no commit, is not taken as its record.)*
+  *(2026-10-12, decided with the user: also the Number and Date widths under a Windows display language
+  other than English and Japanese. `system-ui` is the face Windows sets for its display language, and only
+  those two were measured (FN-12e, ADR-0016); under another, a glyph its face paints wider than the table
+  charges is charged under what it paints.)*
+  *(2026-10-12, decided with the user: also how far ExSheet widens a column for an italic number over `####`. Over
+  123456789.12 in `0.00` at the standard width, Excel's Format Cells' Font tab widened column A to
+  12.45 for Italic alone, and to 11.73 for a single underline or a colour alone (the readings of
+  2026-10-12 (R6)). ExSheet widens an italic number to the width the upright one takes, because
+  ADR-0071 judges italic by the regular widths. It is a difference that follows ADR-0071, not a
+  change.)*

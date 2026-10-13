@@ -40,7 +40,7 @@
     },
     {
       "id": "SEC-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 1/COS as doubles; the secant rounded once gives 1.8508157176809257",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SEC(1)"},

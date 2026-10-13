@@ -1108,7 +1108,7 @@ ExGrid.Components.ExGrid<TRow>.Presentation.set -> void
 ExGrid.Components.ExGrid<TRow>.PressAnsweredAsync() -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.PressHandedOnAsync(int press, bool inTurn) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.PressInTurn(int press) -> void
-ExGrid.Components.ExGrid<TRow>.PressTakenAt(string! kind, double offsetX, double offsetY, int firstRow, double scrollLeftPx, int rowSequence, int layout) -> void
+ExGrid.Components.ExGrid<TRow>.PressTakenAt(string! kind, double offsetX, double offsetY, int firstRow, double scrollLeftPx, double scrollTopPx, int rowSequence, int layout) -> void
 ExGrid.Components.ExGrid<TRow>.RangeRequestMargin.get -> int
 ExGrid.Components.ExGrid<TRow>.RangeRequestMargin.set -> void
 ExGrid.Components.ExGrid<TRow>.ReadSelection() -> ExGrid.Selection.HeldSelection
@@ -2339,3 +2339,5 @@ virtual ExGrid.Rows.RowMarkStep.PrintMembers(System.Text.StringBuilder! builder)
 ~static ExGrid.Cells.GridPointedPress<TRow>.operator ==(ExGrid.Cells.GridPointedPress<TRow>? left, ExGrid.Cells.GridPointedPress<TRow>? right) -> bool
 ~static ExGrid.Cells.GridPointedStep<TRow>.operator !=(ExGrid.Cells.GridPointedStep<TRow>? left, ExGrid.Cells.GridPointedStep<TRow>? right) -> bool
 ~static ExGrid.Cells.GridPointedStep<TRow>.operator ==(ExGrid.Cells.GridPointedStep<TRow>? left, ExGrid.Cells.GridPointedStep<TRow>? right) -> bool
+const ExGrid.Clipboard.ClipboardData.MarkAttribute = "data-ex-mark" -> string!
+ExGrid.Clipboard.GridPasteIntent.MarkFor(ExGrid.Selection.CellPosition target) -> string?

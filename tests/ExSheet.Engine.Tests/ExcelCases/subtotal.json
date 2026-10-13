@@ -324,7 +324,7 @@
     },
     {
       "id": "SUBTOTAL-039",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a cell whose Formula calls SUBTOTAL in a branch IF never takes is nested by its text, and passed over (SH-68)",
       "cells": {"A1": "1", "A2": "2", "A3": "=IF(FALSE,SUBTOTAL(9,A1:A2),5)", "ZZ1000": "=SUBTOTAL(9,A1:A3)"},
       "check": "ZZ1000",
@@ -332,7 +332,7 @@
     },
     {
       "id": "SUBTOTAL-040",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: text, which can never be a Reference, is refused on entry",
       "cells": {"A2": "120", "A3": "10", "A4": "150", "A5": "23", "ZZ1000": "=SUBTOTAL(9,\"A2:A5\")"},
       "check": "ZZ1000",
@@ -340,7 +340,7 @@
     },
     {
       "id": "SUBTOTAL-041",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: an operator's result over a range, which is no Reference, is refused on entry",
       "cells": {"A2": "120", "A3": "10", "A4": "150", "A5": "23", "ZZ1000": "=SUBTOTAL(9,A2:A5*1)"},
       "check": "ZZ1000",
@@ -348,7 +348,7 @@
     },
     {
       "id": "SUBTOTAL-042",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a negated range is an operator's result, refused on entry",
       "cells": {"A2": "120", "A3": "10", "A4": "150", "A5": "23", "ZZ1000": "=SUBTOTAL(9,-A2:A5)"},
       "check": "ZZ1000",
@@ -356,7 +356,7 @@
     },
     {
       "id": "SUBTOTAL-043",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: IF can give a Reference, so it is taken, and the Reference it gives is read",
       "cells": {"A2": "120", "A3": "10", "A4": "150", "A5": "23", "ZZ1000": "=SUBTOTAL(9,IF(TRUE,A2:A5))"},
       "check": "ZZ1000",
@@ -364,7 +364,7 @@
     },
     {
       "id": "SUBTOTAL-044",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a Reference in parentheses is a Reference",
       "cells": {"A2": "120", "A3": "10", "A4": "150", "A5": "23", "ZZ1000": "=SUBTOTAL(9,(A2:A5))"},
       "check": "ZZ1000",

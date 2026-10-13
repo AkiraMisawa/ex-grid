@@ -10,7 +10,9 @@ internal static class NumberText
     /// The most characters General shows, whatever the width, not counting a minus sign: a wide
     /// column shows <c>=1/3</c> as <c>0.333333333</c> and <c>123456789012</c> as
     /// <c>1.23457E+11</c>. Microsoft documents only that twelve or more digits go scientific; the
-    /// eleven, and leaving the sign out of them, are uncertain in the case corpus (ADR-0047).
+    /// eleven were observed in a wide column (GW-004, GW-009, GW-010), and leaving the sign out of them
+    /// in <c>TEXT</c>'s General (TEXTFN-025, TEXTFN-029, TEXTFN-030; ADR-0120). A wide column has not
+    /// been asked a negative number.
     /// </summary>
     public const int GeneralLimit = 11;
 

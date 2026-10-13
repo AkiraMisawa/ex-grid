@@ -121,7 +121,7 @@
     },
     {
       "id": "AND-014",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: typed text alone is passed over (AND-011), which leaves nothing that counts: #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=AND(\"abc\")"},
@@ -130,7 +130,7 @@
     },
     {
       "id": "AND-015",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: typed text that spells FALSE counts, so the result is FALSE; TRUE if Excel passes over all typed text, as it passes over 'abc' (AND-011)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=AND(\"FALSE\",TRUE)"},

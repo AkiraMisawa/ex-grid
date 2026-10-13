@@ -182,6 +182,26 @@ internal static class ExcelCorpus
         return differences;
     }
 
+    /// <summary>
+    /// The Value of the case's checked cell once its entries and actions are done, for a test that asks
+    /// more of it than <see cref="Run"/> compares: whether a <c>#VALUE!</c> is a refusal (ADR-0047).
+    /// <see langword="null"/> for a blank, and for a case whose entries are refused.
+    /// </summary>
+    public static Value? CheckedValue(JsonElement c)
+    {
+        Sheet sheet;
+        try
+        {
+            sheet = Build(c, TypedWidening(c));
+        }
+        catch (Exception e) when (e is FormulaSyntaxException or FormatException)
+        {
+            return null;
+        }
+        Act(sheet, c);
+        return sheet.GetValue(CellAddress.Parse(c.GetProperty("check").GetString()!));
+    }
+
     /// <summary>The check column's width in characters, when the case sets one (<c>columnWidth</c>).</summary>
     private static double? ColumnWidth(JsonElement c) =>
         c.TryGetProperty("columnWidth", out var width) ? width.GetDouble() : null;

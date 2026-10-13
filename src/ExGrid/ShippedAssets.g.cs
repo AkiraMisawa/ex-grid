@@ -15,19 +15,19 @@ internal static class ShippedAssets
     internal const string ScriptPath = "_content/ExGrid/ex-grid.min.js";
 
     /// <summary>The first 12 hex digits of the SHA-256 of that file as shipped: the version its address carries.</summary>
-    internal const string ScriptVersion = "cdcee93dce0e";
+    internal const string ScriptVersion = "ee8ffd8dc312";
 
     /// <summary>The SHA-256 of <c>Assets/ex-grid.js</c>, which the shipped file names and answers: its stamp.</summary>
-    internal const string ScriptStamp = "d708cd12a688e530962664bc3d78339928e8e0835a287f40a2234d44b2450b88";
+    internal const string ScriptStamp = "8e6852f90bcc4a73cbbf42f00819ee139de0e0edea8e436a5a3691e15abe0f6a";
 
     /// <summary>Where the package serves <c>ex-grid.css</c>, minified, under the application's base.</summary>
     internal const string StylesheetPath = "_content/ExGrid/ex-grid.min.css";
 
     /// <summary>The first 12 hex digits of the SHA-256 of that file as shipped: the version its address carries.</summary>
-    internal const string StylesheetVersion = "c1934bcc2029";
+    internal const string StylesheetVersion = "9e21a3a9bce8";
 
     /// <summary>The SHA-256 of <c>Assets/ex-grid.css</c>, which the shipped file names and answers: its stamp.</summary>
-    internal const string StylesheetStamp = "437d0d22587afcfb2500288391f84c42a36bf4162096993f58642bb232bec9f1";
+    internal const string StylesheetStamp = "3f1e5195f673489a43c585ada8cd9fa5078b85e5fef6776446985c9f683dc276";
 
     /// <summary>The source's name, by which the stylesheet's notice rules find this package's notice.</summary>
     internal const string StylesheetName = "ex-grid.css";
