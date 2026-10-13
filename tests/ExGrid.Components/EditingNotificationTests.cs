@@ -56,6 +56,27 @@ public class EditingNotificationTests : GridTestContext
     private static Task PressAsync(IRenderedComponent<ExGrid<TestRow>> cut, string key, bool ctrl = false)
         => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, ctrl, false, false, false, false));
 
+    /// <summary>What a key had done by the time it first waited: the key, whether it was already
+    /// answered, and <paramref name="read"/>, all in one turn of the renderer's dispatcher, as the
+    /// browser's call reaches the grid. The key goes on afterwards as the test answers what it
+    /// waits for.</summary>
+    /// <remarks>A key raised from the test's own thread and read there after the call returned is
+    /// read at the right moment only while the dispatcher has nothing else in hand, for only then
+    /// does the call run on the test's thread before it returns. After an answer the test gave from
+    /// outside the dispatcher — <c>SetVoidResult</c> on the key gate — the grid's continuation runs
+    /// as the dispatcher's work on a pool thread, and the test, resumed on another by the key it
+    /// awaited, can call while that work is still unwinding. The next key is then queued behind it
+    /// and runs on a third thread while the test reads: a list of what the Consumer heard,
+    /// enumerated as that key added to it, threw "Collection was modified" (2 of 30 runs of this
+    /// class beside four busy cores, 2026-10-13).</remarks>
+    private Task<(Task Key, bool Answered, T Read)> KeyAndReadInOneTurnAsync<T>(
+        IRenderedComponent<ExGrid<TestRow>> cut, string key, Func<T> read)
+        => ReadInTurnAsync(() =>
+        {
+            var pressed = cut.Instance.OnKeyAsync(key, false, false, false, false, false);
+            return (pressed, pressed.IsCompleted, read());
+        });
+
     private static Task ClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
         => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y });
 
@@ -331,16 +352,21 @@ public class EditingNotificationTests : GridTestContext
         }));
         await ClickCellAsync(cut, 50, 10);
 
-        await PressAsync(cut, "9").WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+        // The browser answers at once here, so a key that does not wait for the handler is answered
+        // in the turn it was raised in; one that waited would not be answered while the handler is
+        // held, which is to the end of the test.
+        var opening = await KeyAndReadInOneTurnAsync(cut, "9", () => (Told: told.ToArray(), Gate: GateModesTold()[^1]));
 
-        Assert.Equal([true], told);
-        Assert.Equal("overwrite", GateModesTold()[^1]);
+        Assert.True(opening.Answered);
+        Assert.Equal([true], opening.Read.Told);
+        Assert.Equal("overwrite", opening.Read.Gate);
         Assert.NotEmpty(cut.FindAll(".ex-editor"));
 
-        await PressAsync(cut, "Escape").WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+        var ending = await KeyAndReadInOneTurnAsync(cut, "Escape", () => (Told: told.ToArray(), Gate: GateModesTold()[^1]));
 
-        Assert.Equal([true, false], told);
-        Assert.Equal("none", GateModesTold()[^1]);
+        Assert.True(ending.Answered);
+        Assert.Equal([true, false], ending.Read.Told);
+        Assert.Equal("none", ending.Read.Gate);
         Assert.False(held.Task.IsCompleted);
         held.SetResult();
     }
@@ -453,25 +479,26 @@ public class EditingNotificationTests : GridTestContext
         var told = new List<bool>();
         var cut = RenderGrid(told);
         await ClickCellAsync(cut, 50, 10);
-        var gate = Js.UnansweredGateMode();
+        // Stood up on the dispatcher, like the keys: the interop's handlers are the grid's to read.
+        var gate = await ReadInTurnAsync(Js.UnansweredGateMode);
 
-        var opening = PressAsync(cut, "9");
+        var opening = await KeyAndReadInOneTurnAsync(cut, "9", told.ToArray);
 
         // An opening's key is answered once the gate has the edit (ADR-0010); the Consumer has
         // heard before that.
-        Assert.False(opening.IsCompleted);
-        Assert.Equal([true], told);
+        Assert.False(opening.Answered);
+        Assert.Equal([true], opening.Read);
         gate.SetVoidResult();
-        await opening;
+        await opening.Key;
 
-        gate = Js.UnansweredGateMode();
-        var ending = PressAsync(cut, "Escape");
+        gate = await ReadInTurnAsync(Js.UnansweredGateMode);
+        var ending = await KeyAndReadInOneTurnAsync(cut, "Escape", told.ToArray);
 
         // An ending's is not held for the gate's reply at all (PushEditingStateAsync).
-        Assert.Equal([true, false], told);
-        Assert.True(ending.IsCompleted);
+        Assert.Equal([true, false], ending.Read);
+        Assert.True(ending.Answered);
         gate.SetVoidResult();
-        await ending;
+        await ending.Key;
     }
 
     [Fact] // ADR-0050 section 6 / ADR-0010: a commit's value, its Focus move and the key's answer go out together; the gesture does not wait for the browser's replies
@@ -487,16 +514,17 @@ public class EditingNotificationTests : GridTestContext
         var cut = RenderGrid(told: null, edits);
         await ClickCellAsync(cut, 50, 10);
         await PressAsync(cut, "9");
-        var gate = Js.UnansweredGateMode();
+        var gate = await ReadInTurnAsync(Js.UnansweredGateMode);
 
-        var enter = PressAsync(cut, "Enter");
+        var enter = await KeyAndReadInOneTurnAsync(cut, "Enter", () =>
+            (Edits: edits.Count, Gate: GateModesTold()[^1], Focus: KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid"))));
 
-        Assert.Single(edits);
-        Assert.Equal("none", GateModesTold()[^1]);
-        Assert.EndsWith("-r1c0", KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid")));
-        Assert.True(enter.IsCompleted);
+        Assert.Equal(1, enter.Read.Edits);
+        Assert.Equal("none", enter.Read.Gate);
+        Assert.EndsWith("-r1c0", enter.Read.Focus);
+        Assert.True(enter.Answered);
         gate.SetVoidResult();
-        await enter;
+        await enter.Key;
     }
 
     [Fact] // ADR-0050 section 6 / SH-29: off by default — a Consumer that does not listen edits and commits exactly as before
