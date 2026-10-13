@@ -1,88 +1,141 @@
-# The area pass's corrections: LARGE, SMALL, AGGREGATE's array form, MOD — proposals for the orchestrator
+# The area passes' corrections: LARGE, SMALL, AGGREGATE's array form, MOD — proposals for the orchestrator
 
-Branch `claude/area-kth-and-mod`. The engine (`Functions.Math.cs`, `Functions.Subtotal.cs`), the corpus
-(`small.json`, `large.json`, `aggregate.json`, `mod.json`), the tests (`KthAndModTests`, `SubtotalTests`),
-ticket 16, the MOD search (`spikes/exsheet-financial-evaluation/mod-search.cs`) and the Change Notes are on
-the branch. What follows is the text this area would put into files a background agent does not edit, or
-that another area owns: ADR-0047, the engine's README, the function catalogue (`spec.md`), tickets 04 and
-01, and the Docs Site. Each edit quotes the text it replaces.
+*(Rewritten 2026-10-12 after the second area pass, to say what is true after it. The first round's
+version, on `claude/area-kth-and-mod`, proposed seven classes of `MOD` evaluation and refusals where
+they parted; the second pass ruled out every one of the seven, and this version replaces it. Corrected
+the same day after the orchestrator's review: the search records the evaluations at widths no hardware
+holds, which give every observed answer too, section 0 says plainly the judgment the engine answers on
+and how much it answers on it, MOD-039 and 040 ask that judgment, and the first round's class names for
+C2 and C4 are right.)*
 
-Evidence: `verification/2026-10-12-windows-area/report.md` ("Every disagreement (29)") and
-`tests/ExSheet.Engine.Tests/ExcelOracle/results-2026-10-12-area-com-en-US.json` (E1), with the seventeenth
-run's `results-2026-10-11-run17*.json`.
+Branches: `claude/area-kth-and-mod` (the first pass's corrections, merged into `claude/area-corrections`)
+and `claude/area2-kth-and-mod` (the second pass's). The engine (`Functions.Math.cs`, `Functions.Subtotal.cs`),
+the corpus (`small.json`, `large.json`, `aggregate.json`, `mod.json`), the tests (`KthAndModTests`,
+`SubtotalTests`), ticket 16, the MOD search (`spikes/exsheet-financial-evaluation/mod-search.cs` and its
+recorded run, `mod-search.txt`) and the Change Notes are on the branches. What follows is the text this
+area would put into files a background agent does not edit, or that another area owns: ADR-0047, ADR-0202,
+the engine's README, the function catalogue (`spec.md`), tickets 04 and 01, and the Docs Site. Each edit
+quotes the whole lines it replaces, with the target's own indentation.
 
-| Case | Formula | Excel (E1) | Before | Now |
+Evidence: `verification/2026-10-12-windows-area/report.md` (E1, the first pass) and
+`verification/2026-10-12-windows-area-2/report.md` (E2, the second, Excel 16.0.20430.20146, en-US, through
+COM), with `tests/ExSheet.Engine.Tests/ExcelOracle/results-2026-10-12-area-com-en-US.json`,
+`results-2026-10-12-area-2-com-en-US.json` and the seventeenth run's `results-2026-10-11-run17*.json`.
+Excel's double is its `number` (G17).
+
+| Case | Formula | Excel | On `main` | Now |
 |---|---|---|---|---|
-| SMALL-004 | `=SMALL(A1:A9,1.5)` | 2 | `#VALUE!` | 2, observed |
-| SMALL-005 | `=SMALL(A1:A9,1.2)` | 2 | `#VALUE!` | 2, observed |
-| AGGREGATE-060 | `=AGGREGATE(15,6,A1:A11,1.2)` | 30 | `#VALUE!` | 30, observed |
-| LARGE-011 | `=LARGE(A1:B5,0.5)` | `#NUM!` | `#VALUE!` | `#NUM!`, observed |
-| AGGREGATE-061 | `=AGGREGATE(14,6,"5",1)` | `#NUM!` | `#VALUE!` | `#NUM!`, observed |
-| MOD-017 | `=MOD(123456789012,0.7)` | 0.5000078322611261 | 0.5000152587890625 | 0.5000078322611261, observed |
-| MOD-020 | `=MOD(1,0.1)` | not asked | 0 | `#VALUE!`, where the evaluations that fit part (section 0) |
-| MOD-030 | `=MOD(1.1,0.1)` | not asked | 0 | `#VALUE!`, where the evaluations that fit part (section 0) |
+| SMALL-004 | `=SMALL(A1:A9,1.5)` | 2 (E1) | `#VALUE!` | 2, observed |
+| SMALL-008 | `=SMALL(A1:A9,9.5)` | `#NUM!` (E2) | `#VALUE!` (7 after the first round) | `#NUM!`, observed |
+| AGGREGATE-060 | `=AGGREGATE(15,6,A1:A11,1.2)` | 30 (E1) | `#VALUE!` | 30, observed |
+| LARGE-011 | `=LARGE(A1:B5,0.5)` | `#NUM!` (E1) | `#VALUE!` | `#NUM!`, observed |
+| AGGREGATE-061 | `=AGGREGATE(14,6,"5",1)` | `#NUM!` (E1) | `#VALUE!` | `#NUM!`, observed |
+| MOD-017 | `=MOD(123456789012,0.7)` | 0.5000078322611261 (E1) | 0.5000152587890625 | Excel's, observed |
+| MOD-020 | `=MOD(1,0.1)` | 0.09999999999999995 (E2) | 0 | Excel's, observed |
+| MOD-024 | `=MOD(3.3,0.01)` | 0.009999999999999754 (E2) | -4.440892098500626E-16 | Excel's, observed |
+| MOD-029 | `=MOD(-0.087626,6630)` | 6629.9123739999995 (E2) | 6629.912374 | Excel's, observed |
+| MOD-030 | `=MOD(1.1,0.1)` | 2.7755575615628914E-17 (E2) | 0 | Excel's, observed |
+| MOD-032 | `=MOD(-1E-20,1)` | 0 (E2) | 1 | 0, observed |
+| MOD-033 | `=MOD(-1E-17,1)` | not asked | 1 | `#VALUE!`, where the three evaluations at 64 bits that fit part (section 0) |
+| MOD-034 | `=MOD(-0.084474,2270)` | not asked | 2269.915526 | `#VALUE!`, likewise |
+| MOD-039 | `=MOD(-0.024901,2350)` | not asked | 2349.975099 | 2349.975099, on the judgment of section 0 (narrower widths give 2349.9750990000002) |
+| MOD-040 | `=MOD(-0.006664,5250)` | not asked | 5249.993336 | 5249.993336, likewise (5249.9933359999995) |
+
+MOD-018 to 028 and 030 to 032 are all Excel's now (`mod.json`); LARGE-013, 014, SMALL-007, 009, 010 and
+AGGREGATE-062 to 067 agreed in E2.
 
 ---
 
-## 0. MOD: seven evaluations fit Excel's answers, and the engine refuses where they part
+## 0. MOD: the evaluations that give every answer Excel gave, the three at 64 bits the engine follows, and where they part
 
-*(Rewritten 2026-10-12, in the second round. The first version of this section counted three classes and
-asked the user whether `MOD(1,0.1)` should move from 0 to 0.09999999999999995 or be refused. A verifier
-found a class it had missed, a fused multiply-add with a wrong sign taken as 0, which gives 0 there. So the
-observations do not choose, ADR-0047 and ADR-0202 leave no question, and the engine refuses there.)*
+**What the second pass settled.** The first pass left seven classes of evaluation, which parted at
+MOD-020 to 032. Excel's answers there rule out all seven:
 
-`mod-search.cs` tries 33 evaluations, each written once, against all 17 MOD cases Excel answered (35 reads,
-12 numbers), and 15 give every one. Every evaluation of the identity in doubles misses MOD-017: the one the
-engine computed before, `n - d*FLOOR(n/d)`, and its variants with a wrong sign taken as 0, with Excel's
-cancellation of a final addition, or written as a Formula whose last subtraction cancels. So do x87
-registers (from MOD-017's 9th digit), decimal, and a multiply-add over a quotient read at 15 digits
-(MOD-009). The 15 fall into seven classes, within which none of the 3,116,066 inputs searched parts them:
+- MOD-020 to 028: Excel keeps the exact remainder, about the divisor, where the double quotient rounds up
+  onto a whole number (`MOD(1,0.1)` is 0.09999999999999995): no fused multiply-add over that quotient,
+  with or without a wrong sign taken as 0 (classes 3 to 5).
+- MOD-030 and 031: a remainder within 2^-49 of the number is itself (2.7755575615628914E-17): no
+  cancellation of a final addition (classes 5 and 6).
+- MOD-029: `MOD(-0.087626,6630)` is 6629.9123739999995, the remainder plus the divisor held at 64 bits,
+  rounded to nearest or truncated, and then stored as a double; rounded once it is 6629.912374 (every class
+  but 2). The exact sum lies 15/65536 of a unit in the last place past the midpoint between the two doubles;
+  64 bits put it onto the midpoint, and the double breaks the tie to the even one, below. So would a width
+  of 54 to 63 bits rounded, or 54 to 65 truncated (below).
+- MOD-032: `MOD(-1E-20,1)` is 0, a sum stored as the divisor itself taken as 0 (every class but 7).
 
-1. **the exact remainder, rounded once** (C# `%` with the divisor added, IEEE remainder, a fused
-   multiply-add with the sign corrected);
-2. **the same, rounded first to an x87 register's 64 bits**;
-3. **a fused multiply-add over the double quotient**, its sign not corrected;
-4. **the same, a wrong sign taken as 0**;
-5. **that, and Excel's cancellation**: a remainder within 2^-49 of the number is 0, the tolerance the
-   engine observed of a final addition (`Arithmetic.FinalAdd`);
-6. **the exact remainder, and that cancellation**;
-7. **the exact remainder, 0 where it rounds to the divisor itself**.
+**The search, extended.** `mod-search.cs` now reads all 32 observed cases (67 reads, 27 numbers, Excel's
+`number`) and tries 75 evaluations, each written once; `mod-search.txt` records every candidate's match
+count and the cases it misses. After the second pass it gained eight, which add the divisor at 64 bits —
+rounded to nearest, as an x87 register adds, or truncated, as a sum of 64-bit significands would be — or
+truncated to a double, and take a sum that is the divisor as 0 in the double stored or in the register.
+After the orchestrator's review it gained 34 more: three of those eight with the sum held at 54 to 66 bits
+(B9@54 to B12@66, below). Match counts: the identity in doubles and its variants (A to A9) 14 to 16 of 32;
+the first round's class 1 (B, B2, B3, C2, C4) 30, class 2 (B4, B5) 31, class 7 (B8) 31, classes 3 to 6
+(C, C3, C5 to C7, B6, B7) 19 to 28; the multiply-add over a quotient read at 15 digits (C8) 20; x87
+identities (D to D5) 17 to 25; decimal (E to E3) 15; B11 and B13 (truncated at 64 bits, 0 in the register
+or not at all) 31, B14 to B16 (truncated to a double) 31. **34 give all 32.** At the hardware's widths, a
+double's 53 bits and an x87 register's 64, three:
 
-They part in four places. The counts are of 1,915,648 random inputs of up to five digits:
+- **B9**: the exact remainder, the divisor added in an x87 register (64 bits, to nearest), stored as a
+  double, and 0 where that double is the divisor;
+- **B10**: the same, 0 where the register holds the divisor (((n%d)+d)%d with every step in the register);
+- **B12**: the divisor added truncated at 64 bits, stored as a double to nearest, and 0 where it is the
+  divisor.
 
-- **The double quotient rounds up onto a whole number the exact one is below.** `MOD(1,0.1)` is
-  0.09999999999999995 by classes 1, 2, 6 and 7, -5.551115123125783E-17 by 3, and 0 by 4 and 5. 8,857
-  inputs. MOD-020 to 028.
-- **The remainder is not 0 but within 2^-49 of the number.** `MOD(1.1,0.1)` is 2.7755575615628914E-17 by
-  classes 1 to 4 and 7, and 0 by 5 and 6. 10,768 inputs. MOD-030 and 031.
-- **The remainder plus the divisor rounds to the divisor.** `MOD(-1E-20,1)` is 1 by classes 1 to 6, and 0 by
-  7. No random input; a number far smaller than the divisor, of the other sign. MOD-032.
-- **Adding the divisor in 64 bits first rounds twice.** `MOD(-0.087626,6630)` is 6629.912374 by every class
-  but 2, which gives 6629.9123739999995. 8 inputs. MOD-029.
+The other 31 are the same three at widths no hardware holds: B9 and B10 with the sum held at 54 to 63 bits
+and rounded to nearest, and B12 with it truncated at 54 to 63 or 65 bits. Rounded at 65 bits, or truncated
+at 66, MOD-029's sum lies past the midpoint, and B9@65, B10@65 and B12@66, the bounds, give 31 of 32.
 
-**The engine answers where all seven give one double, and is `#VALUE!` where they part**, until the next
-`oracle.ps1 -Area mod` pass asks MOD-020 to MOD-032 (ADR-0047, "a function answers as Excel, or not at
-all"; ADR-0202, "the arguments where it disagrees are refused"). Its answer is class 1's. It tests the four
-places directly: the multiply-add against the exact remainder, the remainder against 2^-49 of the number,
-the remainder against the divisor, and the double rounding by the exact error of the sum.
-`mod-search.cs --discriminate` checks, over every input searched, that it refuses exactly where the classes
-part. It refuses 19,633 of the random inputs, about one in a hundred, everyday ones among them:
-`MOD(1,0.1)`, `MOD(0.5,0.1)`, `MOD(1.1,0.1)`.
+**The three at 64 bits part in two places** (3,616,066 inputs searched: a grid of 418, 1,915,648 random
+inputs of up to five digits, 1,000,000 a few units from a multiple of the divisor, 200,000 far smaller
+than the divisor, of the other sign, and 500,000 whose sum with the divisor lies near a midpoint):
 
-Before, on `main` (the identity in doubles): `MOD(1,0.1)` and `MOD(5,0.1)` were 0, `MOD(3.3,0.01)`
--4.440892098500626E-16, `MOD(0.7,0.01)` -1.1102230246251565E-16, and `MOD(1.1,0.1)` 0. Each is `#VALUE!`
-now. Where the classes agree, the answer can move from the old one, as `MOD(10,0.3)` moves from
-0.09999999999999964 to 0.10000000000000037: that follows from MOD-017 by a rule every fitting evaluation
-shares, and MOD-018 and 019 ask two such answers. The Change Note `area-kth-and-mod-mod-remainder.md` says
-both. Each pair of classes parts at one new case at least, which the spike prints. When the pass answers,
-the cases leave one class standing or none: the engine then answers as that class, or the search starts
-again.
+- **The sum is the divisor as a double but not at 64 bits.** `MOD(-1E-17,1)` is 0 by B9 and B12, 1 by
+  B10. 43,880 inputs, none of up to five digits. MOD-033.
+- **Truncating at 64 bits stores another double than rounding there**, the sum within one 64-bit unit of
+  a midpoint. `MOD(-0.084474,2270)` is 2269.915526 by B9 and B10, as rounded once, and 2269.9155259999998
+  by B12; `MOD(-0.008511,81200)` is 81199.99148900001 by B9 and B10, which round twice, and 81199.991489
+  by B12, as rounded once; `MOD(0.071472,-276)` is the latter's split with the divisor negative. 86,444
+  inputs, 13 of the 1,915,648 of up to five digits. MOD-034 to 036.
 
-Found while searching (not a corpus case): Microsoft's Q&A thread "Problem with the MOD function in
-excel?" (2011) reads `MOD(15*(1.4-1),6)`, where `15*(1.4-1)` is 6−2^-49, as −1.776E-15 in Excel 2003 and
-as 6−2^-49 in Excel 2010. The 2003 answer is the identity with the quotient read at 15 digits (candidate
-A4, which misses MOD-009 today); the 2010 one is what every candidate that fits gives, and the engine
-answers it. So `MOD` was rewritten in Excel 2010, as the change of limit already said.
+**The engine** (`Mod`, `TurnedRemainder`) answers the exact remainder where it has the divisor's sign,
+and where it has the number's adds the divisor as the three at 64 bits do — from the sum rounded once and
+its exact error, the 64-bit sum is a whole number of 2^-11 steps of the double's last place — and is
+`#VALUE!` where they part. `mod-search.cs --discriminate` checks over every input searched that it refuses
+exactly there: 130,316 of 3,616,066, and 13 of the 1,915,648 of up to five digits, where the seven classes'
+refusal took 19,633. MOD-037 (`MOD(-1E-16,1)`, 0.9999999999999999) and MOD-038 (`MOD(1E-20,1)`, 1E-20) ask
+two answers all 34 give that an evaluation outside them might not: a sum one unit below the divisor, and a
+number of the divisor's sign far smaller than it.
+
+**Where the engine answers and the widths no hardware holds give another double.** Every such input has
+the divisor added to a number of the other sign smaller than it; where the number is the larger, the
+remainder is a multiple of the divisor's last place and the sum is exact at every width. Of the 1,915,635
+inputs of up to five digits the engine answers, B9@54 and B10@54 give another double at 40,858 (2.1%),
+B12@54 at 45,509 (2.4%), about half as many at each further bit, down to 8 or 9 at 63 bits and 1 for
+B12@65 (a sum exactly on the 65-bit point 16/65536 past a midpoint), and any of the 31 at 65,972 (3.4%).
+Five of the grid's 418 are among them: `MOD(-0.3,7)` is 6.7 by the engine and 6.699999999999999 by B12@54.
+Two new `uncertain` cases ask the judgment below, each holding the engine's answer: MOD-039
+(`MOD(-0.024901,2350)`, 2349.975099, where B9 and B10 at 54 to 63 bits give 2349.9750990000002) and
+MOD-040 (`MOD(-0.006664,5250)`, 5249.993336, where B9 and B10 at 54 to 62 bits and B12 at 54 to 63 give
+5249.9933359999995). Between them every one of the 31 but B12@65 gives another double than the engine's;
+`mod-search.txt` lists, for each, the asked cases where it does. `KthAndModTests` pins the two with both
+signs.
+
+**For the orchestrator, plainly.** None of the seven classes the first round named fits; the evaluations
+that fit were found after the second pass's answers, by adding to the search the two features MOD-029 and
+MOD-032 show (a sum held wider than a double, and a sum stored as the divisor taken as 0). **The engine
+answers on a judgment that no observed answer settles: that only 53-bit and 64-bit intermediates are
+natural, the hardware's formats (a double, an x87 register's significand).** On it, of the 34 evaluations
+that fit, it follows the three at 64 bits, refuses only where they part (13 of 1,915,648 inputs of up to
+five digits), and answers where the 31 at other widths give another double: 65,972 of those inputs
+(3.4%), about 2% at 54 bits, rounded (40,858) or truncated (45,509). MOD-039 and 040 would show the
+judgment wrong if Excel answers them otherwise. If the user does not accept it now, there are two ways to
+answer only what the observations settle: refuse wherever any of the 34 part, 65,985 of the five-digit
+inputs (3.4%), which keeps every observed answer; or refuse wherever the divisor is added and the sum is
+not exact, the only inputs where any width can part from another, 192,038 of them (10.0%), MOD-029 and
+MOD-032 among the observed cases, which would become recorded cases (`engineDiffersByDecision`). (The
+previous version of this section named MOD-018 and 019 there too; their sums are exact.) The engine does
+neither now.
 
 ## 1. ADR-0047, the note of 2026-10-12 under "The catalogue's last Decide rows"
 
@@ -103,12 +156,13 @@ New:
 ```markdown
   - **`AGGREGATE`'s array form takes a number given directly** as an array of that one Value
     (AGGREGATE-039: `AGGREGATE(14,6,5,1)` is 5). Text and a boolean given directly have not been asked,
-    and stay `#VALUE!` (AGGREGATE-061). *(2026-10-12, the area pass: text given directly is such an array
-    too, and holds no number, since it is not coerced: `AGGREGATE(14,6,"5",1)` is `#NUM!`, neither 5 nor
-    `#VALUE!` (AGGREGATE-061). The engine takes text and a boolean given directly so, and `LARGE` and
-    `SMALL` find no number in them. AGGREGATE-064 and 065 ask a boolean and text that spells no number,
-    and AGGREGATE-067 an Error Value given directly, which the engine gives back as an Error Value
-    argument's result, where option 6 might pass over it.)*
+    and stay `#VALUE!` (AGGREGATE-061). *(2026-10-12, the area passes: text given directly is such an
+    array too, and holds no number, since it is not coerced: `AGGREGATE(14,6,"5",1)` is `#NUM!`, neither
+    5 nor `#VALUE!` (AGGREGATE-061), and so are a boolean and text that spells no number (AGGREGATE-064,
+    065). An Error Value given directly is the result, as an Error Value argument is, and option 6 does
+    not pass over it: `AGGREGATE(14,6,1/0,1)` is `#DIV/0!` (AGGREGATE-067). `LARGE` and `SMALL`
+    themselves coerce a Value given directly: `LARGE("5",1)` is 5 and `SMALL(TRUE,1)` 1 (LARGE-014,
+    SMALL-010). The engine follows each.)*
 ```
 
 ### 1b. The `LARGE` bullet
@@ -134,15 +188,17 @@ New:
     (LARGE-008 and AGGREGATE-059 ask 1.2). `SMALL`'s k that is not whole, where LibreOffice and ODF round
     down and Gnumeric up, and a k between 0 and 1, where they disagree too, stay `#VALUE!` until Excel is
     asked (SMALL-004, 005, AGGREGATE-060, LARGE-011). k is read at 15 significant digits first, as both
-    implementations do, so `1+2^-52` is 1 (LARGE-012, SMALL-006). *(2026-10-12, the area pass: Excel
+    implementations do, so `1+2^-52` is 1 (LARGE-012, SMALL-006). *(2026-10-12, the area passes: Excel
     truncates `SMALL`'s k, as LibreOffice and ODF do: `SMALL(A1:A9,1.5)` and `SMALL(A1:A9,1.2)` are each
-    the smallest (SMALL-004, 005), and `AGGREGATE(15,6,A1:A11,1.2)` is 30 (AGGREGATE-060). `LARGE`'s 1.2
-    is the 2nd largest (LARGE-008, AGGREGATE-059), so `LARGE` rounds up, not to nearest. A k below 1 is
-    `#NUM!`, whole or not: `LARGE(A1:B5,0.5)` is `#NUM!` (LARGE-011), not rounded up to 1. The two are one
-    rule — the k-th largest with k rounded up is the (n+1-k)-th smallest with that index truncated — and
-    past the count once so rounded, k is `#NUM!` (LARGE-010). The engine follows it, and no k is
-    `#VALUE!` any more. SMALL-007 to 009, LARGE-013 and AGGREGATE-062, 063 and 066 ask where the rule
-    reaches next: a k below 1 for `SMALL`, and a k near the count.)*
+    the smallest (SMALL-004, 005), `SMALL(A1:A9,3.9)` the 3rd (SMALL-009), and `AGGREGATE(15,6,A1:A11,1.2)`
+    is 30 (AGGREGATE-060). `LARGE`'s 1.2 is the 2nd largest (LARGE-008, AGGREGATE-059), so `LARGE` rounds
+    up, not to nearest. A k below 1 or above the count of the numbers is `#NUM!`, whole or not, before it
+    is rounded: `LARGE(A1:B5,0.5)` and `LARGE(A1:B5,0.99)` are `#NUM!`, not rounded up to 1 (LARGE-011,
+    013), as `SMALL(A1:A9,0.5)` is (SMALL-007), and `SMALL(A1:A9,9.5)` over nine numbers is `#NUM!`, not
+    truncated to the 9th smallest (SMALL-008). The two are one rule — the k-th largest with k rounded up
+    is the (n+1-k)-th smallest with that index truncated, and k lies within 1 to n exactly where n+1-k
+    does. The engine follows it, and no k is `#VALUE!` any more. SMALL-011 and AGGREGATE-068 ask a k above
+    the count again.)*
 ```
 
 ### 1c. The `MOD` paragraph
@@ -168,118 +224,236 @@ New:
   case read (MOD-009's 0.09999999999999998 among them). A Microsoft 365 user reported on Microsoft's Q&A
   (2021) that `MOD(1125899999999,1)` is 0 and `MOD(1125900000000,1)` is `#NUM!`, a limit Excel 2010 brought
   in; the engine answers a quotient below 1,125,900,000,000 and is `#NUM!` from it, and MOD-010 to MOD-017
-  ask Excel on both sides of it. *(2026-10-12, the area pass: the limit holds on both sides (MOD-010 to
-  016), but the doubles are not Excel's on every case. Excel's `MOD(123456789012,0.7)` is
-  0.5000078322611261 (MOD-017): the identity computed exactly and rounded once, where in doubles it is
-  0.5000152587890625. Of 33 evaluations tried against the 17 cases Excel answered
-  (`spikes/exsheet-financial-evaluation/mod-search.cs`), 15 give every one, and none of them evaluates the
-  identity in doubles. They fall into seven classes: the exact remainder rounded once; the same rounded
-  first to an x87 register; a fused multiply-add over the double quotient, with a wrong sign kept, taken as
-  0, or taken as 0 with Excel's cancellation of a final addition; the exact remainder with that
-  cancellation; and the exact remainder taken as 0 where it rounds to the divisor. They part where the
-  double quotient rounds up onto a whole number the exact one is below (`MOD(1,0.1)` is
-  0.09999999999999995, -5.551115123125783E-17 or 0), where the remainder is not 0 but within 2^-49 of the
-  number (`MOD(1.1,0.1)` is 2.7755575615628914E-17 or 0), where the remainder plus the divisor rounds to
-  the divisor (`MOD(-1E-20,1)` is 1 or 0), and at the last bit where adding the divisor in 64 bits first
-  rounds twice (`MOD(-0.087626,6630)`). So, as "admitted with some argument values refused" and ADR-0202
-  require, the engine answers the exact remainder rounded once where all seven agree, and is `#VALUE!`
-  where they part, about one random input of up to five digits in a hundred, until a Windows run asks
-  MOD-020 to MOD-032.)*
+  ask Excel on both sides of it. *(2026-10-12, the area passes: the limit holds on both sides (MOD-010 to
+  016), but the doubles are not Excel's on every case. Excel's remainder is exact:
+  `MOD(123456789012,0.7)` is 0.5000078322611261 (MOD-017), where the identity in doubles gives
+  0.5000152587890625, and `MOD(1,0.1)` is 0.09999999999999995 (MOD-020), where the double quotient, 10,
+  gives 0. A remainder a hair from 0 is itself, with no cancellation: `MOD(1.1,0.1)` is
+  2.7755575615628914E-17 (MOD-030). Where the divisor is added to a remainder of the other sign, the sum
+  is not rounded once: `MOD(-0.087626,6630)` is 6629.9123739999995 (MOD-029), the sum held at 64 bits,
+  rounded to nearest or truncated, and then stored as a double, where rounded once it is 6629.912374;
+  and a sum stored as the divisor itself is 0: `MOD(-1E-20,1)` is 0 (MOD-032). The first pass's answers
+  left seven classes of evaluation, and the second pass's ruled out all seven. Of 75 evaluations tried
+  against the 32 cases Excel answered (`spikes/exsheet-financial-evaluation/mod-search.cs`), 34 give
+  every one. At the hardware's widths, a double's 53 bits and an x87 register's 64, three: the divisor
+  added in an x87 register's 64 bits, or truncated at 64 bits, and stored as a double, a sum that is the
+  divisor taken as 0 in the double or, for the x87's, in the register. The other 31 are the same with
+  the sum held at a width no hardware holds, 54 to 63 bits rounded or 54 to 65 truncated. The three at
+  64 bits part where the sum is the divisor as a double but not at 64 bits (`MOD(-1E-17,1)` is 0 or 1)
+  and where truncating at 64 bits stores another double than rounding there (`MOD(-0.084474,2270)` is
+  2269.915526 or 2269.9155259999998). So, as "admitted with some argument values refused" and ADR-0202
+  require, the engine answers as the three where they agree and is `#VALUE!` where they part, 13 of
+  1,915,648 random inputs of up to five digits, until a Windows run asks MOD-033 to MOD-036. It does not
+  model the other widths: that only the hardware's formats are natural intermediates is a judgment, which
+  no observed answer settles, and on it the engine answers 65,972 of those inputs (3.4%) where one of the
+  31 gives another double, about 2% at 54 bits; MOD-039 and MOD-040 ask two.)*
 ```
 
-## 2. The engine's README (`src/ExSheet.Engine/README.md`)
+## 2. ADR-0202, "The run ExGrid's own by-hand rows need anyway"
 
-- In "**Asked of Excel before they are answered**", old: "`NETWORKDAYS` and `WORKDAY` with a boolean typed as
-  a date (`#VALUE!`); `SMALL` with a `k` that is not a whole number, and `LARGE` with one between 0 and 1;
-  `PMT`, `PV` and `FV` with a" → new: "`NETWORKDAYS` and `WORKDAY` with a boolean typed as a date
-  (`#VALUE!`); `MOD` where the evaluations that give every answer Excel gave part, as at `MOD(1,0.1)` and
-  `MOD(1.1,0.1)` (`#VALUE!`; MOD-020 to 032); `PMT`, `PV` and `FV` with a". (The financial and dates areas
-  edit the same bullet, so the edit is given as a phrase, not as whole lines.)
-- In "**Answered as the seventeenth Windows run read Excel.**", old: "`MOD` answers a quotient of 2^27 or
-  more, and is `#NUM!` from 1,125,900,000,000, the limit a Microsoft 365 user reported (MOD-010 to 017 ask
-  Excel)." → new: "`MOD` answers a quotient of 2^27 or more, and is `#NUM!` from 1,125,900,000,000, the limit
-  a Microsoft 365 user reported, as the area pass of 2026-10-12 read Excel on both sides of it (MOD-010 to
-  016)."
-- A bullet to add after it:
+Its example is out of date: `MOD` answers a quotient of 2^27 or more since the seventeenth run, and its
+`#NUM!` from 1,125,900,000,000 is Excel's own answer, not a refusal.
 
-  > - **Answered as the area pass of 2026-10-12 read Excel.** `SMALL`, and `AGGREGATE`'s 15, truncate a `k`
-  >   that is not whole: `SMALL(A1:A9,1.5)` is the smallest. A `k` below 1 is `#NUM!` for `LARGE` and
-  >   `SMALL` alike, whole or not. `AGGREGATE`'s array form takes text or a boolean given directly as an
-  >   array holding no number: `AGGREGATE(14,6,"5",1)` is `#NUM!`. `MOD` is `number - divisor*INT(number/divisor)`
-  >   computed exactly and rounded once, where every evaluation that gives Excel's answers agrees:
-  >   `MOD(123456789012,0.7)` is 0.5000078322611261, as Excel's. Where they part it is `#VALUE!` until
-  >   Excel is asked (above).
+Old:
 
-- In "**`SUBTOTAL` and `AGGREGATE` while no row can be hidden**", old: "and `AGGREGATE`'s
-  array form takes a number given directly." → new: "and `AGGREGATE`'s array form takes a Value given
-  directly as an array of that one Value: a number is that number, and text or a boolean holds none
-  (`#NUM!`)."
+```markdown
+  - **A function that disagrees is corrected before the tag, or the arguments where it disagrees are
+    refused with an Error Value**, as `MOD` refuses a quotient of 2^27 or more (ADR-0047). A width, a
+    format or an undo that disagrees is corrected.
+```
 
-## 3. The function catalogue (`docs/specs/exsheet-functions/spec.md`)
+New:
 
-- `LARGE`, old: "A `k` that is not whole is rounded up, as Excel's (ADR-0047, 2026-10-12)" → new: "A `k`
-  that is not whole is rounded up, and one below 1 is `#NUM!`, as Excel's (ADR-0047, 2026-10-12)"
-- `SMALL`, old: "A `k` that is not whole is `#VALUE!` until observed" → new: "A `k` that is not whole is
-  truncated, and one below 1 is `#NUM!`, as Excel's (ADR-0047, 2026-10-12)"
-- `MOD`, the whole row. Old:
+```markdown
+  - **A function that disagrees is corrected before the tag, or the arguments where it disagrees are
+    refused with an Error Value**, as `MOD` refuses a quotient of 2^27 or more (ADR-0047). A width, a
+    format or an undo that disagrees is corrected. *(2026-10-12: Excel answers a quotient of 2^27 or
+    more, and so does `MOD` now; its `#NUM!` from 1,125,900,000,000 is Excel's own answer. `MOD` is an
+    example still: where the evaluations at 64 bits that give every answer Excel gave part, as at
+    `MOD(-1E-17,1)`, it is `#VALUE!` until a Windows run asks (ADR-0047's note of that date).)*
+```
 
-  ```markdown
-  | `MOD` | Supported | — | Excel's sign follows the divisor; `#NUM!` from a quotient of 1,125,900,000,000 |
-  ```
+## 3. The engine's README (`src/ExSheet.Engine/README.md`)
 
-  New:
+### 3a. "Asked of Excel before they are answered"
 
-  ```markdown
-  | `MOD` | Supported | — | The exact remainder, rounded once, with the divisor's sign, as Excel's (MOD-017), where every evaluation that gives Excel's answers agrees; `#VALUE!` where they part, as at `MOD(1,0.1)` and `MOD(1.1,0.1)`, until Excel is asked (MOD-020 to 032, ADR-0047, 2026-10-12); `#NUM!` from a quotient of 1,125,900,000,000 |
-  ```
-- `AGGREGATE`, old: "As `SUBTOTAL`; options 0 to 3 pass over a nested cell and 4 to 7 count it, and a
-  function number for a function the engine does not support (13, 16 to 19) is `#VALUE!`. Ticket 16" → new:
-  "As `SUBTOTAL`; options 0 to 3 pass over a nested cell and 4 to 7 count it, and a function number for a
-  function the engine does not support (13, 16 to 19) is `#VALUE!`; text or a boolean given as the array
-  holds no number. Ticket 16"
+The financial and dates areas edit the same bullet, so the orchestrator merges by phrase: this area's
+phrase is "`SMALL` with a `k` that is not a whole number, and `LARGE` with one between 0 and 1", which
+goes, and "`MOD` where the evaluations at 64 bits … (`#VALUE!`; MOD-033 to 036)", which comes.
 
-## 4. Ticket 04 (`04-p2-ready-functions.md`, the financial area's)
+Old:
+
+```markdown
+  (`#VALUE!`); `NETWORKDAYS` and `WORKDAY` with a boolean typed as a date (`#VALUE!`); `SMALL` with a
+  `k` that is not a whole number, and `LARGE` with one between 0 and 1; `PMT`, `PV` and `FV` with a
+```
+
+New:
+
+```markdown
+  (`#VALUE!`); `NETWORKDAYS` and `WORKDAY` with a boolean typed as a date (`#VALUE!`); `MOD` where the
+  evaluations at 64 bits that give every answer Excel gave part, as at `MOD(-1E-17,1)` and
+  `MOD(-0.084474,2270)` (`#VALUE!`; MOD-033 to 036); `PMT`, `PV` and `FV` with a
+```
+
+### 3b. "Answered as the seventeenth Windows run read Excel"
+
+Old:
+
+```markdown
+- **Answered as the seventeenth Windows run read Excel.** `MOD` answers a quotient of 2^27 or more, and
+  is `#NUM!` from 1,125,900,000,000, the limit a Microsoft 365 user reported (MOD-010 to 017 ask
+  Excel). `LARGE`, and `AGGREGATE`'s 14, round a `k` that is not whole up: `LARGE(A1:B5,1.5)` is the
+```
+
+New:
+
+```markdown
+- **Answered as the seventeenth Windows run read Excel.** `MOD` answers a quotient of 2^27 or more, and
+  is `#NUM!` from 1,125,900,000,000, the limit a Microsoft 365 user reported, as the area pass of
+  2026-10-12 read Excel on both sides of it (MOD-010 to 016). `LARGE`, and `AGGREGATE`'s 14, round a
+  `k` that is not whole up: `LARGE(A1:B5,1.5)` is the
+```
+
+### 3c. A bullet after that one
+
+Old:
+
+```markdown
+  an operator's result, a call such as `SEQUENCE(3)` — as Excel does.
+```
+
+New:
+
+```markdown
+  an operator's result, a call such as `SEQUENCE(3)` — as Excel does.
+- **Answered as the area passes of 2026-10-12 read Excel.** `SMALL`, and `AGGREGATE`'s 15, truncate a
+  `k` that is not whole: `SMALL(A1:A9,1.5)` is the smallest. A `k` below 1 or above the count of the
+  numbers is `#NUM!` for `LARGE` and `SMALL` alike, whole or not, before it is rounded:
+  `SMALL(A1:A9,9.5)` over nine numbers is `#NUM!`. `AGGREGATE`'s array form takes text or a boolean
+  given directly as an array holding no number: `AGGREGATE(14,6,"5",1)` is `#NUM!`. `MOD`'s remainder is
+  exact, as Excel's is: `MOD(123456789012,0.7)` is 0.5000078322611261 and `MOD(1,0.1)`
+  0.09999999999999995, where `number - divisor*INT(number/divisor)` in doubles gives 0.5000152587890625
+  and 0. Where the divisor is added to a remainder of the other sign, the sum is held at 64 bits before
+  it is stored as a double, which gives Excel's `MOD(-0.087626,6630)`, 6629.9123739999995, and a sum
+  stored as the divisor itself is 0, as Excel's `MOD(-1E-20,1)` is. Where the evaluations at 64 bits
+  that give every answer Excel gave still part, `MOD` is `#VALUE!` (above). The same evaluations with the
+  sum held at a width no hardware holds (54 to 63 bits rounded, 54 to 65 truncated) give those answers
+  too; the engine does not model them, and answers as 64 bits do where they would give another last
+  digit, about 3 inputs of up to five digits in 100, a judgment Excel has yet to settle (MOD-039, 040).
+```
+
+### 3d. "`SUBTOTAL` and `AGGREGATE` while no row can be hidden"
+
+Old:
+
+```markdown
+  array form takes a number given directly. `#VALUE!`: an argument that is no reference when it is
+```
+
+New:
+
+```markdown
+  array form takes a Value given directly as an array of that one Value: a number is that number, and
+  text or a boolean holds none (`#NUM!`). `#VALUE!`: an argument that is no reference when it is
+```
+
+## 4. The function catalogue (`docs/specs/exsheet-functions/spec.md`)
+
+Old:
+
+```markdown
+| `LARGE` | Supported | — | A `k` that is not whole is rounded up, as Excel's (ADR-0047, 2026-10-12) |
+| `SMALL` | Supported | — | A `k` that is not whole is `#VALUE!` until observed |
+```
+
+New:
+
+```markdown
+| `LARGE` | Supported | — | A `k` that is not whole is rounded up, and one below 1 or above the count of the numbers is `#NUM!`, as Excel's (ADR-0047, 2026-10-12) |
+| `SMALL` | Supported | — | A `k` that is not whole is truncated, and one below 1 or above the count of the numbers is `#NUM!`, as Excel's (ADR-0047, 2026-10-12) |
+```
+
+Old:
+
+```markdown
+| `AGGREGATE` | Supported | — | As `SUBTOTAL`; options 0 to 3 pass over a nested cell and 4 to 7 count it, and a function number for a function the engine does not support (13, 16 to 19) is `#VALUE!`. Ticket 16 |
+```
+
+New:
+
+```markdown
+| `AGGREGATE` | Supported | — | As `SUBTOTAL`; options 0 to 3 pass over a nested cell and 4 to 7 count it, and a function number for a function the engine does not support (13, 16 to 19) is `#VALUE!`; text or a boolean given as the array holds no number. Ticket 16 |
+```
+
+Old:
+
+```markdown
+| `MOD` | Supported | — | Excel's sign follows the divisor; `#NUM!` from a quotient of 1,125,900,000,000 |
+```
+
+New:
+
+```markdown
+| `MOD` | Supported | — | Excel's sign follows the divisor. The exact remainder; where the divisor is added to it, the sum held at 64 bits and then stored as a double, and a sum stored as the divisor 0, as Excel's (MOD-017 to 032); `#VALUE!` where the evaluations at 64 bits that give Excel's answers still part, as at `MOD(-1E-17,1)` and `MOD(-0.084474,2270)`, until Excel is asked (MOD-033 to 036; ADR-0047, 2026-10-12); where only evaluations at widths no hardware holds give another double, the 64 bits' answer, on a judgment Excel has yet to settle (MOD-039, 040); `#NUM!` from a quotient of 1,125,900,000,000 |
+```
+
+## 5. Ticket 04 (`04-p2-ready-functions.md`, the financial area's)
 
 A comment to append:
 
-> 2026-10-12, with the area pass (`verification/2026-10-12-windows-area/report.md`): Excel truncates
-> `SMALL`'s k that is not whole (SMALL-004, 005: 1.5 and 1.2 are each the smallest), and a k below 1 is
-> `#NUM!` (LARGE-011: 0.5, which `LARGE` does not round up to 1). LARGE-008 to 010 and 012 and SMALL-006
-> agreed. The engine reads k so for `LARGE`, `SMALL` and `AGGREGATE`'s 14 and 15 (`KthOf`), and no k is
-> `#VALUE!` any more (ADR-0047's note of that date; `KthAndModTests`). SMALL-007 to 010 and LARGE-013 and 014
-> are new `uncertain` cases: a k below 1 or near the count for `SMALL`, a k just below 1 for `LARGE`, and
-> text or a boolean given directly as the array, which `LARGE` and `SMALL` coerce where `AGGREGATE`'s array
-> form takes it as no number (AGGREGATE-061).
+> 2026-10-12, with the area passes (`verification/2026-10-12-windows-area/report.md` and
+> `verification/2026-10-12-windows-area-2/report.md`): Excel truncates `SMALL`'s k that is not whole
+> (SMALL-004, 005, 009: 1.5 and 1.2 are each the smallest, 3.9 the 3rd), rounds `LARGE`'s up (LARGE-008,
+> 009), and a k below 1 or above the count of the numbers is `#NUM!` before it is rounded (LARGE-011, 013:
+> 0.5 and 0.99; SMALL-007: 0.5; SMALL-008: 9.5 over nine numbers, which truncated would be the 9th
+> smallest; LARGE-010: 10.5 over ten). `LARGE` and `SMALL` coerce a Value given directly as the array
+> (LARGE-014: `LARGE("5",1)` is 5; SMALL-010: `SMALL(TRUE,1)` is 1). The engine reads k so for `LARGE`,
+> `SMALL` and `AGGREGATE`'s 14 and 15 (`KthOf`), and no k is `#VALUE!` any more (ADR-0047's note of that
+> date; `KthAndModTests`). SMALL-011 (`SMALL(A1:A9,9.2)`, `#NUM!`) is a new `uncertain` case: a k a little
+> above the count, which rounded to nearest would be 9.
 
 The ticket is `done`, and ADR-0208 does not close one on "the next run asks". Either a box —
 
-> - [ ] `oracle.ps1 -Area small,large` before the tag (ADR-0208): SMALL-007 to 010, LARGE-013 and 014
+> - [ ] `oracle.ps1 -Area small` before the tag (ADR-0208): SMALL-011
 
-— with the Status `ready-for-human` and a `Roadmap:` line ("ExSheet — `LARGE` and `SMALL` checked against
-Excel for a k below 1 or near the count, and for text or a boolean in place of their array"), or the
-orchestrator's word that they belong to ticket 16's box, which already holds AGGREGATE-062 to 067.
+— with the Status `ready-for-human` and a `Roadmap:` line ("ExSheet — `SMALL` checked against Excel for a
+k a little above the count of its numbers, which it refuses with `#NUM!`"), or the orchestrator's word
+that SMALL-011 belongs to ticket 16's open box, with AGGREGATE-068.
 
-## 5. Ticket 01 (`01-p1-ready-functions.md`, the dates-and-text area's)
+## 6. Ticket 01 (`01-p1-ready-functions.md`, the dates-and-text area's)
 
 A comment to append:
 
-> 2026-10-12, with the area pass: MOD-010 to 016 agreed, so the limit at a quotient of 1,125,900,000,000
-> holds on both sides. MOD-017 did not: Excel's `MOD(123456789012,0.7)` is 0.5000078322611261, the
-> identity `number - divisor*INT(number/divisor)` computed exactly and rounded once, where the engine's
-> doubles gave 0.5000152587890625. Seven classes of evaluation give every MOD value Excel has given, and
-> none evaluates the identity in doubles (`spikes/exsheet-financial-evaluation/mod-search.cs`). The engine
-> answers the exact remainder rounded once (`%` on doubles, the divisor added where its sign is the
-> number's) where all seven agree, and `#VALUE!` where they part: where the double quotient rounds up onto
-> a whole number, as in `MOD(1,0.1)`, which was 0; where the remainder is within 2^-49 of the number, as in
-> `MOD(1.1,0.1)`, which was 0; and rarely at the divisor or the last bit. MOD-018 to 032 are `uncertain`
-> cases, MOD-020 to 032 chosen so that each pair of classes parts at one of them (ADR-0047's note of that
-> date; `KthAndModTests`).
+> 2026-10-12, with the area passes: MOD-010 to 016 agreed, so the limit at a quotient of
+> 1,125,900,000,000 holds on both sides. The doubles did not: Excel's remainder is exact
+> (`MOD(123456789012,0.7)` is 0.5000078322611261, MOD-017; `MOD(1,0.1)` is 0.09999999999999995, MOD-020,
+> where the identity in doubles gave 0.5000152587890625 and 0), a remainder a hair from 0 is itself
+> (`MOD(1.1,0.1)` is 2.7755575615628914E-17, MOD-030, where it gave 0), the divisor added to a remainder
+> of the other sign is not rounded once (`MOD(-0.087626,6630)` is 6629.9123739999995, MOD-029, the sum
+> held at 64 bits and then stored as a double), and a sum stored as the divisor itself is 0
+> (`MOD(-1E-20,1)`, MOD-032). At 64 bits three evaluations give all 32 answers Excel has given, and 31
+> more at widths no hardware holds (the sum held at 54 to 63 bits rounded, or 54 to 65 truncated); none
+> evaluates the identity in doubles (`spikes/exsheet-financial-evaluation/mod-search.cs`,
+> `mod-search.txt`). The engine answers as the three at 64 bits where they agree, and `#VALUE!` where they
+> part: where the sum is the divisor as a double but not at 64 bits (`MOD(-1E-17,1)`), and where
+> truncating at 64 bits stores another double than rounding there (`MOD(-0.084474,2270)`), 13 of 1,915,648
+> random inputs of up to five digits. It does not model the other widths, on the judgment that only the
+> hardware's formats are natural, and so answers 65,972 of those inputs (3.4%) where one of them gives
+> another double. MOD-033 to 036 ask where the three part, MOD-037 and 038 two answers all 34 share, and
+> MOD-039 and 040 two the judgment answers (ADR-0047's note of that date; `KthAndModTests`).
 
-The same ADR-0208 question as ticket 04's: a box `oracle.ps1 -Area mod` for MOD-018 to 032, the Status
-`ready-for-human`, and a `Roadmap:` line ("ExSheet — `MOD` checked against Excel where the quotient lies a
-hair from a whole number, as in `MOD(1,0.1)` and `MOD(1.1,0.1)`, which are refused until then").
+The same ADR-0208 question as ticket 04's: a box —
 
-## 6. The Docs Site
+> - [ ] `oracle.ps1 -Area mod` before the tag (ADR-0208): MOD-033 to 040
+
+— the Status `ready-for-human`, and a `Roadmap:` line ("ExSheet — `MOD` checked against Excel where the
+divisor added to the remainder lands on the divisor or a hair from the midpoint between two doubles, as
+in `MOD(-1E-17,1)` and `MOD(-0.084474,2270)`, which are refused until then, and where a register narrower
+than 64 bits would give another last digit, as in `MOD(-0.024901,2350)`, which is answered as 64 bits
+give it").
+
+## 7. The Docs Site
 
 ### `/exsheet/formulas`, "Supported functions" (`SheetFormulas.razor`)
 
@@ -297,55 +471,46 @@ New:
 ```html
                 <b><code>LARGE</code> and <code>SMALL</code>'s k.</b> A k that is not whole is rounded up by
                 <code>LARGE</code> and truncated by <code>SMALL</code>, as Excel does: <code>=LARGE(A1:B5,1.5)</code>
-                is the 2nd largest, and <code>=SMALL(A1:A9,1.5)</code> the smallest. A k below 1 is
-                <code>#NUM!</code>, whole or not. <b><code>MOD</code></b> is
-                <code>number - divisor*INT(number/divisor)</code> computed exactly and rounded once, as Excel's is:
-                <code>=MOD(123456789012,0.7)</code> is 0.5000078322611261. Where the ways of computing it that give
-                every answer Excel was seen to give part, it is <code>#VALUE!</code> until Excel has been asked:
-                where the quotient lies a hair below a whole number, as in <code>=MOD(1,0.1)</code>, where the number
-                lies a hair past a multiple of the divisor, as in <code>=MOD(1.1,0.1)</code>, and rarely elsewhere.
-                It is <code>#NUM!</code> from a quotient of 1,125,900,000,000, as Excel 365's.
+                is the 2nd largest, and <code>=SMALL(A1:A9,1.5)</code> the smallest. A k below 1 or above the count
+                of the numbers is <code>#NUM!</code>, whole or not: <code>=SMALL(A1:A9,9.5)</code> over nine numbers
+                is <code>#NUM!</code>. <b><code>MOD</code></b>'s remainder is exact, as Excel's is:
+                <code>=MOD(1,0.1)</code> is 0.09999999999999995, where
+                <code>number - divisor*INT(number/divisor)</code> in doubles would give 0. Where the divisor is
+                added to a remainder of the other sign, the sum is held at 64 bits before it is stored, which gives
+                Excel's <code>=MOD(-0.087626,6630)</code>, 6629.9123739999995, and a sum stored as the divisor is 0,
+                as Excel's <code>=MOD(-1E-20,1)</code> is. Where the ways of computing it at 64 bits that give every
+                answer Excel was seen to give part, it is <code>#VALUE!</code> until Excel has been asked: a sum that
+                is the divisor only once stored, as in <code>=MOD(-1E-17,1)</code>, and a sum a hair from the
+                midpoint between two doubles, as in <code>=MOD(-0.084474,2270)</code>, about one input of up to five
+                digits in 150,000. Holding the sum at some other widths wider than a double's, which no hardware
+                holds, would give those answers too, and another last digit for about 3 inputs of up to five digits
+                in 100, as in <code>=MOD(-0.024901,2350)</code>; there it answers as 64 bits do, and Excel has yet
+                to be asked. It is <code>#NUM!</code> from a quotient of 1,125,900,000,000, as Excel 365's.
 ```
 
-In the `SUBTOTAL` and `AGGREGATE` list item, after "…options 4 to 7 count its value.", a sentence:
+In the `SUBTOTAL` and `AGGREGATE` list item, old:
 
 ```html
-                Given text or a boolean in place of its array, <code>AGGREGATE</code>'s <code>LARGE</code> and
-                <code>SMALL</code> find no number, as Excel's do: <code>=AGGREGATE(14,6,"5",1)</code> is
-                <code>#NUM!</code>.
-```
-
-No Example shows these functions; nothing else on the site moves.
-
-## 7. Found while writing
-
-- **ADR-0202's example is out of date.** It says `MOD` refuses a quotient of 2^27 or more, but since the
-  seventeenth run `MOD` answers from 2^27, and its `#NUM!` from 1,125,900,000,000 is Excel's own answer,
-  not a refusal. `MOD`'s refusal where the evaluations that fit part (section 0) is such an example now.
-  The edit, in "The run ExGrid's own by-hand rows need anyway", follows the list.
-- **SMALL-009 asks 3.9, not the triage's 2.9.** Over A1:A9 the 2nd and 3rd smallest are both 3, so 2.9
-  could not tell truncation from rounding; the 3rd and 4th are 3 and 4.
-- **Observed cases still described as "Excel to be asked" or "until Excel is asked"** (SMALL-006, LARGE-005,
-  006, 008 to 010, 012, MOD-006, 007, 009 to 016, AGGREGATE-007, 008, 011, 022 to 024, 032 to 037, 041, 055 to
-  059):
-  `-Update` rewrites `source` only. Left as they are here, to keep this branch to the cases it decides; a
-  sweep over the corpus would fix them in every file at once.
-
-ADR-0202, old:
-
-```markdown
-  - **A function that disagrees is corrected before the tag, or the arguments where it disagrees are
-    refused with an Error Value**, as `MOD` refuses a quotient of 2^27 or more (ADR-0047). A width, a
-    format or an undo that disagrees is corrected.
+                <code>MODE.SNGL</code>, is <code>#VALUE!</code>.
 ```
 
 New:
 
-```markdown
-  - **A function that disagrees is corrected before the tag, or the arguments where it disagrees are
-    refused with an Error Value**, as `MOD` refuses a quotient of 2^27 or more (ADR-0047). A width, a
-    format or an undo that disagrees is corrected. *(2026-10-12: Excel answers a quotient of 2^27 or
-    more, and so does `MOD` now; its `#NUM!` from 1,125,900,000,000 is Excel's own answer. `MOD` is an
-    example still: where the evaluations that give every answer Excel gave part, as at `MOD(1,0.1)`, it
-    is `#VALUE!` until a Windows run asks (ADR-0047's note of that date).)*
+```html
+                <code>MODE.SNGL</code>, is <code>#VALUE!</code>. Given text or a boolean in place of its array,
+                <code>AGGREGATE</code>'s <code>LARGE</code> and <code>SMALL</code> find no number, as Excel's do:
+                <code>=AGGREGATE(14,6,"5",1)</code> is <code>#NUM!</code>.
 ```
+
+No Example shows these functions; nothing else on the site moves.
+
+## 8. Found while writing
+
+- **SMALL-009 asks 3.9, not the triage's 2.9** (first round). Over A1:A9 the 2nd and 3rd smallest are
+  both 3, so 2.9 could not tell truncation from rounding; the 3rd and 4th are 3 and 4.
+- **Observed cases described as "Excel to be asked".** `-Update` rewrites `source` only. The 46 in this
+  area's four files (SMALL-006, 007, 009, 010; LARGE-005, 006, 008 to 010, 012 to 014; MOD-006, 007, 009
+  to 016; AGGREGATE-007, 008, 011, 022 to 024, 032 to 037, 041, 055 to 059, 062 to 067) now say what
+  Excel answered and which run read it, and MOD-006, 007 and 009 compare Excel's doubles to the bit
+  (`claude/area2-kth-and-mod`, the second commit). Other areas' files have the same leftovers; a sweep
+  would fix them there.

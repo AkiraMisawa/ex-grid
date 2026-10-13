@@ -50,20 +50,20 @@
     {
       "id": "MOD-006",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a fractional remainder",
+      "description": "A fractional remainder (the seventeenth Windows run)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(5.5,2)"},
       "check": "ZZ1000",
-      "expect": {"value2": 1.5, "digits": 12}
+      "expect": {"value2": 1.5}
     },
     {
       "id": "MOD-007",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a fractional remainder of a negative number",
+      "description": "A fractional remainder of a negative number (the seventeenth Windows run)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(-7.5,2)"},
       "check": "ZZ1000",
-      "expect": {"value2": 0.5, "digits": 12}
+      "expect": {"value2": 0.5}
     },
     {
       "id": "MOD-008",
@@ -77,16 +77,16 @@
     {
       "id": "MOD-009",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: 0.3 over 0.1 leaves almost 0.1 in doubles",
+      "description": "0.3 over 0.1 leaves almost 0.1, 0.09999999999999998, the exact remainder (the seventeenth Windows run)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=MOD(0.3,0.1)"},
       "check": "ZZ1000",
-      "expect": {"value2": 0.1, "digits": 12}
+      "expect": {"value2": 0.09999999999999998}
     },
     {
       "id": "MOD-010",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a quotient of 2^40 is answered",
+      "description": "A quotient of 2^40 is answered (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(2^40,3)"},
       "check": "ZZ1000",
       "expect": {"value2": 1}
@@ -94,7 +94,7 @@
     {
       "id": "MOD-011",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a quotient just below 1125900000000, the limit a Microsoft 365 user reported, is answered",
+      "description": "A quotient just below 1125900000000, the limit a Microsoft 365 user reported, is answered (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(1125899999999,1)"},
       "check": "ZZ1000",
       "expect": {"value2": 0}
@@ -102,7 +102,7 @@
     {
       "id": "MOD-012",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a quotient of 1125900000000, the limit a Microsoft 365 user reported, is #NUM!",
+      "description": "A quotient of 1125900000000, the limit a Microsoft 365 user reported, is #NUM! (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(1125900000000,1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
@@ -110,7 +110,7 @@
     {
       "id": "MOD-013",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: the limit is on the quotient, not the number: 3377699999997/3 is just below it",
+      "description": "The limit is on the quotient, not the number: 3377699999997/3 is just below it (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(3377699999997,3)"},
       "check": "ZZ1000",
       "expect": {"value2": 0}
@@ -118,7 +118,7 @@
     {
       "id": "MOD-014",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: 3377700000000/3 reaches the limit, #NUM!",
+      "description": "3377700000000/3 reaches the limit, #NUM! (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(3377700000000,3)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
@@ -126,7 +126,7 @@
     {
       "id": "MOD-015",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a quotient of 2^53 is #NUM!",
+      "description": "A quotient of 2^53 is #NUM! (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(2^53,3)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
@@ -134,7 +134,7 @@
     {
       "id": "MOD-016",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a quotient of 1E+16/7 is #NUM!",
+      "description": "A quotient of 1E+16/7 is #NUM! (the area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(1E+16,7)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
@@ -150,7 +150,7 @@
     {
       "id": "MOD-018",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: the exact remainder plus the divisor, rounded once, is 0.19999216773887385, as every evaluation that gives every observed case gives it, where number-divisor*INT(number/divisor) in doubles gives 0.1999969482421875 (MOD-017's numbers, the number negative)",
+      "description": "The exact remainder plus the divisor, rounded once, 0.19999216773887385, where number-divisor*INT(number/divisor) in doubles gives 0.1999969482421875 (MOD-017's numbers, the number negative; the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(-123456789012,0.7)"},
       "check": "ZZ1000",
       "expect": {"value2": 0.19999216773887385}
@@ -158,114 +158,178 @@
     {
       "id": "MOD-019",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: the exact remainder plus the divisor, rounded once, is -0.19999216773887385, as every evaluation that gives every observed case gives it, where the identity in doubles gives -0.1999969482421875 (MOD-017's numbers, the divisor negative)",
+      "description": "The exact remainder plus the divisor, rounded once, -0.19999216773887385, where the identity in doubles gives -0.1999969482421875 (MOD-017's numbers, the divisor negative; the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(123456789012,-0.7)"},
       "check": "ZZ1000",
       "expect": {"value2": -0.19999216773887385}
     },
     {
       "id": "MOD-020",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the double quotient rounds up onto a whole number the exact one is below (10), where the evaluations that give every observed case part: the exact remainder rounded once is 0.09999999999999995, a fused multiply-add over the double quotient -5.551115123125783E-17, and that with a wrong sign taken as 0 is 0. The identity in doubles, which misses MOD-017, gave 0",
+      "source": "observed",
+      "description": "The double quotient rounds up onto a whole number the exact one is below (10), and the remainder is the exact one, 0.09999999999999995, where a fused multiply-add over that quotient gives -5.551115123125783E-17, and that with a wrong sign taken as 0 gives 0; the identity in doubles gives 0 (the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(1,0.1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 0.09999999999999995}
     },
     {
       "id": "MOD-021",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the double quotient rounds up onto a whole number the exact one is below (50), where the evaluations that give every observed case part: the exact remainder rounded once is 0.09999999999999973, a fused multiply-add over the double quotient -2.7755575615628914E-16, and that with a wrong sign taken as 0 is 0. The identity in doubles, which misses MOD-017, gave 0",
+      "source": "observed",
+      "description": "The double quotient rounds up onto a whole number the exact one is below (50), and the remainder is the exact one, 0.09999999999999973, where a fused multiply-add over that quotient gives -2.7755575615628914E-16, and that with a wrong sign taken as 0 gives 0; the identity in doubles gives 0 (the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(5,0.1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 0.09999999999999973}
     },
     {
       "id": "MOD-022",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the double quotient rounds up onto a whole number the exact one is below (-22), where the evaluations that give every observed case part: the exact remainder rounded once is 0.09999999999999995, a fused multiply-add over the double quotient -5.551115123125783E-17, and that with a wrong sign taken as 0 is 0. The identity in doubles, which misses MOD-017, gave 0",
+      "source": "observed",
+      "description": "The double quotient rounds up onto a whole number the exact one is below (-22), and the remainder is the exact one, 0.09999999999999995, where a fused multiply-add over that quotient gives -5.551115123125783E-17, and that with a wrong sign taken as 0 gives 0; the identity in doubles gives 0 (the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(-2.2,0.1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 0.09999999999999995}
     },
     {
       "id": "MOD-023",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the double quotient rounds up onto a whole number the exact one is below (10), where the evaluations that give every observed case part: the exact remainder rounded once is -0.09999999999999995, a fused multiply-add over the double quotient 5.551115123125783E-17, and that with a wrong sign taken as 0 is 0. The identity in doubles, which misses MOD-017, gave 0",
+      "source": "observed",
+      "description": "The double quotient rounds up onto a whole number the exact one is below (10), and the remainder is the exact one, -0.09999999999999995, where a fused multiply-add over that quotient gives 5.551115123125783E-17, and that with a wrong sign taken as 0 gives 0; the identity in doubles gives 0 (the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(-1,-0.1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": -0.09999999999999995}
     },
     {
       "id": "MOD-024",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the double quotient rounds up onto a whole number the exact one is below (330), where the evaluations that give every observed case part: the exact remainder rounded once is 0.009999999999999754, a fused multiply-add over the double quotient -2.463307335887066E-16, and that with a wrong sign taken as 0 is 0. The identity in doubles, which misses MOD-017, gave -4.440892098500626E-16",
+      "source": "observed",
+      "description": "The double quotient rounds up onto a whole number the exact one is below (330), and the remainder is the exact one, 0.009999999999999754, where a fused multiply-add over that quotient gives -2.463307335887066E-16, and that with a wrong sign taken as 0 gives 0; the identity in doubles gives -4.440892098500626E-16 (the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(3.3,0.01)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 0.009999999999999754}
     },
     {
       "id": "MOD-025",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the double quotient rounds up onto a whole number the exact one is below (70), where the evaluations that give every observed case part: the exact remainder rounded once is 0.009999999999999941, a fused multiply-add over the double quotient -5.898059818321144E-17, and that with a wrong sign taken as 0 is 0. The identity in doubles, which misses MOD-017, gave -1.1102230246251565E-16",
+      "source": "observed",
+      "description": "The double quotient rounds up onto a whole number the exact one is below (70), and the remainder is the exact one, 0.009999999999999941, where a fused multiply-add over that quotient gives -5.898059818321144E-17, and that with a wrong sign taken as 0 gives 0; the identity in doubles gives -1.1102230246251565E-16 (the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(0.7,0.01)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 0.009999999999999941}
     },
     {
       "id": "MOD-026",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the double quotient rounds up onto a whole number the exact one is below (10^12, below the limit), where the evaluations that give every observed case part: the exact remainder rounded once is 0.09999444888487688, a fused multiply-add over the double quotient -5.551115123125783E-06, and that with a wrong sign taken as 0 is 0. The identity in doubles, which misses MOD-017, gave 0",
+      "source": "observed",
+      "description": "The double quotient rounds up onto a whole number the exact one is below (10^12, below the limit), and the remainder is the exact one, 0.09999444888487688, where a fused multiply-add over that quotient gives -5.551115123125783E-06, and that with a wrong sign taken as 0 gives 0; the identity in doubles gives 0 (the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(100000000000,0.1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 0.09999444888487688}
     },
     {
       "id": "MOD-027",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the double quotient rounds up onto a whole number the exact one is below (617283945060), where the evaluations that give every observed case part: the exact remainder rounded once is 0.19999314677151464, a fused multiply-add over the double quotient -6.8532284853706216E-06, and that with a wrong sign taken as 0 is 0. The identity in doubles, which misses MOD-017, gave 0",
+      "source": "observed",
+      "description": "The double quotient rounds up onto a whole number the exact one is below (617283945060), and the remainder is the exact one, 0.19999314677151464, where a fused multiply-add over that quotient gives -6.8532284853706216E-06, and that with a wrong sign taken as 0 gives 0; the identity in doubles gives 0 (the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(123456789012,0.2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 0.19999314677151464}
     },
     {
       "id": "MOD-028",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the double quotient rounds up onto a whole number the exact one is below (7400), where the evaluations that give every observed case part: the exact remainder rounded once is -93.69999999997897, a fused multiply-add over the double quotient 2.1032064978498966E-11, and that with a wrong sign taken as 0 is 0. The identity in doubles, which misses MOD-017, gave 0",
+      "source": "observed",
+      "description": "The double quotient rounds up onto a whole number the exact one is below (7400), and the remainder is the exact one, -93.69999999997897, where a fused multiply-add over that quotient gives 2.1032064978498966E-11, and that with a wrong sign taken as 0 gives 0; the identity in doubles gives 0 (the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(-693380,-93.7)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": -93.69999999997897}
     },
     {
       "id": "MOD-029",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the remainder plus the divisor, rounded once, is 6629.912374, which six of the seven classes of evaluation that give every observed case give; rounded first to an x87 register's 64 bits and then to a double, as the seventh does, it is 6629.9123739999995",
+      "source": "observed",
+      "description": "The remainder plus the divisor held at 64 bits, rounded to nearest or truncated, and then stored as a double, 6629.9123739999995, where rounded once it is 6629.912374: the exact sum lies 15/65536 of a unit in the last place above the midpoint between the two doubles, less than half a 64-bit unit, so 64 bits put it onto the midpoint, rounded or truncated, and the double then breaks the tie to the even one, below; held at 54 to 63 bits rounded, or 54 to 65 truncated, it is the same double, and the engine models only 64 (the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(-0.087626,6630)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 6629.9123739999995}
     },
     {
       "id": "MOD-030",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the remainder is not 0 but within 2^-49 of the number, where the evaluations that give every observed case part: the exact remainder rounded once is 2.7755575615628914E-17, and those with Excel's cancellation of a final addition give 0. The identity in doubles, which misses MOD-017, gave 0",
+      "source": "observed",
+      "description": "A remainder that is not 0 but within 2^-49 of the number is itself, 2.7755575615628914E-17, and not 0 as Excel's cancellation of a final addition would make it; the identity in doubles gives 0 (the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(1.1,0.1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 2.7755575615628914E-17}
     },
     {
       "id": "MOD-031",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the remainder plus the divisor is not 0 but within 2^-49 of the number, the number negative: the exact remainder rounded once is 2.7755575615628914E-17, and the evaluations with Excel's cancellation of a final addition give 0. The identity in doubles, which misses MOD-017, gave 0",
+      "source": "observed",
+      "description": "The remainder plus the divisor, not 0 but within 2^-49 of the number, is itself, 2.7755575615628914E-17, the number negative; the identity in doubles gives 0 (the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=MOD(-0.9,0.1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.7755575615628914E-17}
+    },
+    {
+      "id": "MOD-032",
+      "source": "observed",
+      "description": "The remainder plus the divisor stored as the divisor itself, 1, is 0 (the second area pass of 2026-10-12)",
+      "cells": {"ZZ1000": "=MOD(-1E-20,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "MOD-033",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the remainder plus the divisor is the divisor itself as a double, 1, but not in a 64-bit register, where the three evaluations at the hardware's widths that give every observed case part: taken as 0 where the double stored is the divisor, as MOD-032's is, it is 0, and taken as 0 only where the register holds the divisor, 1",
+      "cells": {"ZZ1000": "=MOD(-1E-17,1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
     },
     {
-      "id": "MOD-032",
+      "id": "MOD-034",
       "source": "uncertain",
-      "description": "Refused until Excel is asked: the remainder plus the divisor rounds to the divisor itself, 1, which six of the seven classes of evaluation that give every observed case give; the seventh takes a remainder that rounds to the divisor as 0. The identity in doubles gave 1",
-      "cells": {"ZZ1000": "=MOD(-1E-20,1)"},
+      "description": "Refused until Excel is asked: the remainder plus the divisor lies just past the midpoint between two doubles, more than half a 64-bit unit, where the three evaluations at the hardware's widths that give every observed case part: held at 64 bits rounded to nearest, as an x87 register holds it, it is 2269.915526, as rounded once, and truncated at 64 bits 2269.9155259999998",
+      "cells": {"ZZ1000": "=MOD(-0.084474,2270)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "MOD-035",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the remainder plus the divisor lies just short of the midpoint between two doubles, less than half a 64-bit unit, where the three evaluations at the hardware's widths that give every observed case part: held at 64 bits rounded to nearest it rounds twice, to 81199.99148900001, and truncated at 64 bits it is 81199.991489, as rounded once",
+      "cells": {"ZZ1000": "=MOD(-0.008511,81200)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "MOD-036",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: MOD-035's split with the divisor negative: held at 64 bits rounded to nearest, -275.92852800000003, and truncated at 64 bits -275.928528, as rounded once",
+      "cells": {"ZZ1000": "=MOD(0.071472,-276)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "MOD-037",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the remainder plus the divisor one unit in the last place below the divisor is that double, 0.9999999999999999, in each of the evaluations that give every observed case, at 64 bits and at the widths no hardware holds, and not 0 as a sum stored as the divisor itself is (MOD-032)",
+      "cells": {"ZZ1000": "=MOD(-1E-16,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.9999999999999999}
+    },
+    {
+      "id": "MOD-038",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number of the divisor's sign far smaller than it is its own remainder, 1E-20, in each of the evaluations that give every observed case, at 64 bits and at the widths no hardware holds; MOD-032's, of the other sign, is 0",
+      "cells": {"ZZ1000": "=MOD(1E-20,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1E-20}
+    },
+    {
+      "id": "MOD-039",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the remainder plus the divisor lies 23/65536 of a unit in the last place below the midpoint between two doubles, the even one above; held at 64 bits, rounded to nearest or truncated, it is stored as the double below, 2349.975099, as rounded once, in each of the three evaluations at the hardware's widths that give every observed case; held at 54 to 63 bits and rounded to nearest, widths no hardware holds and the engine does not model, it lands on the midpoint and is stored as the even double above, 2349.9750990000002. It asks the judgment that only the hardware's widths are natural",
+      "cells": {"ZZ1000": "=MOD(-0.024901,2350)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2349.975099}
+    },
+    {
+      "id": "MOD-040",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the remainder plus the divisor lies 48.25/65536 of a unit in the last place above the midpoint between two doubles, the even one below; held at 64 bits, rounded to nearest or truncated, it is stored as the double above, 5249.993336, as rounded once, in each of the three evaluations at the hardware's widths that give every observed case; held at 54 to 62 bits rounded to nearest, or at 54 to 63 truncated, widths no hardware holds and the engine does not model, it lands on the midpoint and is stored as the even double below, 5249.9933359999995. It asks the judgment that only the hardware's widths are natural",
+      "cells": {"ZZ1000": "=MOD(-0.006664,5250)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5249.993336}
     }
   ]
 }

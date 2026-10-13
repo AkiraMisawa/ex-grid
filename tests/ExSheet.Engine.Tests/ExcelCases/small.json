@@ -45,7 +45,7 @@
     {
       "id": "SMALL-006",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: k is read at 15 significant digits, so 1+2^-52 is 1",
+      "description": "k is read at 15 significant digits, so 1+2^-52 is 1 (the area pass of 2026-10-12)",
       "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "ZZ1000": "=SMALL(A1:A9,1+2^-52)"},
       "check": "ZZ1000",
       "expect": {"value2": 2}
@@ -53,23 +53,23 @@
     {
       "id": "SMALL-007",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a k below 1 is #NUM!, as LARGE's 0.5 is (LARGE-011)",
+      "description": "A k below 1 is #NUM!, as LARGE's 0.5 is (LARGE-011; the second area pass of 2026-10-12)",
       "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "ZZ1000": "=SMALL(A1:A9,0.5)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
     },
     {
       "id": "SMALL-008",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a k of 9.5 over nine numbers is truncated to 9, the largest, 7, and not rounded up past their count (#NUM!)",
+      "source": "observed",
+      "description": "A k above the count of the numbers is #NUM! before it is truncated: 9.5 over nine numbers is not the 9th smallest, 7 (the second area pass of 2026-10-12)",
       "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "ZZ1000": "=SMALL(A1:A9,9.5)"},
       "check": "ZZ1000",
-      "expect": {"value2": 7}
+      "expect": {"value2": "#NUM!"}
     },
     {
       "id": "SMALL-009",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a k of 3.9 is truncated to the 3rd smallest, 3, and not rounded to the 4th, 4",
+      "description": "A k of 3.9 is truncated to the 3rd smallest, 3, and not rounded to the 4th, 4 (the second area pass of 2026-10-12)",
       "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "ZZ1000": "=SMALL(A1:A9,3.9)"},
       "check": "ZZ1000",
       "expect": {"value2": 3}
@@ -77,10 +77,18 @@
     {
       "id": "SMALL-010",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a boolean given directly as the array is coerced, as a typed value is; AGGREGATE's array form takes one as no number (AGGREGATE-064)",
+      "description": "A boolean given directly as the array is coerced, as a typed value is, where AGGREGATE's array form takes one as no number (AGGREGATE-064; the second area pass of 2026-10-12)",
       "cells": {"ZZ1000": "=SMALL(TRUE,1)"},
       "check": "ZZ1000",
       "expect": {"value2": 1}
+    },
+    {
+      "id": "SMALL-011",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a k above the count is #NUM! however little above it, as 9.5 is (SMALL-008): 9.2 over nine numbers, which rounded to nearest would be 9 and truncated is 9",
+      "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "ZZ1000": "=SMALL(A1:A9,9.2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
     }
   ]
 }

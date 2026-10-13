@@ -326,4 +326,6 @@ payment at the end's double over 1+rate, rounded again: at 809 of the 4,132 paym
 - `discriminate-xnpv.txt`: the second search's `--discriminate-xnpv` run, the inputs XNPV-012 to 017 asked.
 - `pmt_exact.py`: PMT against Python's decimal at 1200 digits over a dense random set (the third and fourth
   rounds).
-- `mod-search.cs`: MOD's search (another area's).
+- `mod-search.cs`, `mod-search.txt`: the same search for `MOD` (its header says what it found after
+  each area pass and after the review of the second, which added the widths no hardware holds), and its
+  last `--discriminate` run, every candidate with its match count.
