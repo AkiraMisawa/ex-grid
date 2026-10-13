@@ -2126,7 +2126,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         || (inOwnScroller(target) && target.closest('.ex-header') !== null);
     // What a press or release on this grid's own rows was taken against (ED-31; ADR-0021, note of
     // 2026-10-02): the offsets the browser gave it, the first row the Viewport painted, the
-    // horizontal scroll, and the row order and the columns and row height the painting render
+    // scroll on both axes, and the row order and the columns and row height the painting render
     // carried (data-ex-sequence, data-ex-layout). A replayed event is measured again, against the
     // rows painted at the replay, so a held press replayed after a key had moved the view landed on
     // the row the move brought there (`1` Enter PageDown `9` and a press on F6 at once, on the
@@ -2142,6 +2142,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         return {
             x: event.offsetX, y: event.offsetY, first: number('data-ex-first-row'),
             left: scroller ? scroller.scrollLeft : 0,
+            // Where a fill handle held at the readable area's top stands (ADR-0050, item 5).
+            top: scroller ? scroller.scrollTop : 0,
             sequence: number('data-ex-sequence'), layout: number('data-ex-layout'),
         };
     };
@@ -2149,7 +2151,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!core || !taken) {
             return;
         }
-        core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left,
+        core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left, taken.top,
             taken.sequence, taken.layout).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to hear where a press was taken', error);

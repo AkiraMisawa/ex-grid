@@ -170,7 +170,7 @@ public class WritesLandAsEnteredTests : GridTestContext
     /// it was taken under, as the listener tells them (ED-31).</summary>
     private static async Task ReleaseFillAsync(IRenderedComponent<ExGrid<TestRow>> cut, int sequence, int layout)
     {
-        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mouseup", 50, 70, Attribute(cut, "data-ex-first-row"), 0,
+        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mouseup", 50, 70, Attribute(cut, "data-ex-first-row"), 0, 0,
             sequence, layout));
         await UpAsync(cut, 50, 70);
     }
@@ -422,7 +422,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Push(cut, Changed(rows, 0, book: "Moved upstream"));
 
         // The press of the double click is told the render it was made on, as the listener tells it.
-        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mousedown", 50, 10, firstRow, 0, sequence, layout));
+        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mousedown", 50, 10, firstRow, 0, 0, sequence, layout));
         await DownAsync(cut, 50, 10);
         await UpAsync(cut, 50, 10);
         await cut.Find(".ex-viewport").DoubleClickAsync(new MouseEventArgs { Button = 0, OffsetX = 50, OffsetY = 10 });

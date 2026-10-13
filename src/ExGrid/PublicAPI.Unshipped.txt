@@ -1108,7 +1108,7 @@ ExGrid.Components.ExGrid<TRow>.Presentation.set -> void
 ExGrid.Components.ExGrid<TRow>.PressAnsweredAsync() -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.PressHandedOnAsync(int press, bool inTurn) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.PressInTurn(int press) -> void
-ExGrid.Components.ExGrid<TRow>.PressTakenAt(string! kind, double offsetX, double offsetY, int firstRow, double scrollLeftPx, int rowSequence, int layout) -> void
+ExGrid.Components.ExGrid<TRow>.PressTakenAt(string! kind, double offsetX, double offsetY, int firstRow, double scrollLeftPx, double scrollTopPx, int rowSequence, int layout) -> void
 ExGrid.Components.ExGrid<TRow>.RangeRequestMargin.get -> int
 ExGrid.Components.ExGrid<TRow>.RangeRequestMargin.set -> void
 ExGrid.Components.ExGrid<TRow>.ReadSelection() -> ExGrid.Selection.HeldSelection

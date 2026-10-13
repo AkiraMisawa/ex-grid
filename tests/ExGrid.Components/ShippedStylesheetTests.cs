@@ -806,8 +806,9 @@ public class ShippedStylesheetTests
         Assert.True(replay.Success, "replayPress is not in the module");
 
         // What it was taken against: the browser's offsets, the attributes the painting render wrote
-        // on the Viewport, and the scroll offset (the second entry). No layout is read.
-        foreach (var read in new[] { "event.offsetX", "event.offsetY", "'data-ex-first-row'", "'data-ex-sequence'", "'data-ex-layout'", "scroller.scrollLeft" })
+        // on the Viewport, and the scroll offsets (the second entry), the vertical one placing a fill
+        // handle held at the readable area's top (ADR-0050, item 5). No layout is read.
+        foreach (var read in new[] { "event.offsetX", "event.offsetY", "'data-ex-first-row'", "'data-ex-sequence'", "'data-ex-layout'", "scroller.scrollLeft", "scroller.scrollTop" })
             Assert.Contains(read, taken.Value, StringComparison.Ordinal);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects|elementFromPoint"), taken.Value);
 
