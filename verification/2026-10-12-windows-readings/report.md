@@ -1,5 +1,7 @@
 # Excel readings after the seventeenth run, 2026-10-12
 
+**Verified commit:** `8436e45e73083944e413e92340f73dbba0b521c4` — tagged `verified/2026-10-12-windows-readings` (the orchestrator's reading of 2026-10-13: the Excel readings verify no commit of ours, the one build the run exercised is R3's ExPivot DemoHost at 8436e45e, and afd70b15 is only the branch's base)
+
 Readings R1 to R8, asked for by the session preparing `0.1.0-rc.1` after the run 17 corrections. None needed the user at
 the desk. They use run 17's methods: `excel/xl-server.ps1` (an Excel of its own, real keys and presses through
 SendInput, pictures Excel's windows draw of themselves), and Part E's CSV-to-both for ExPivot. **Nothing was decided.**
