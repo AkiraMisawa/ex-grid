@@ -1,9 +1,12 @@
 @page "/release-notes"
 
-@* The Release Notes (ADR-0190), a reference page: every version published to nuget.org, newest first,
-   one anchor each, read at build time from docs/releases/. A site not published from a tag also shows
-   what is unreleased, from the Change Notes. Its sections are the versions, which the rail lists. *@
+@* The Release Notes (ADR-0190), a reference page: every version published to nuget.org up to the one the
+   site was published for, newest first, one anchor each, read at build time from docs/releases/. Once a
+   stable version exists, the site follows the latest one (ADR-0205), so a later prerelease's notes, or a
+   patch's to an older line, are on its GitHub release until the next stable publish. A site not published
+   from a tag also shows what is unreleased, from the Change Notes. Its sections are the versions, which
+   the rail lists. *@
 <DocsPage Title="Release notes"
-          Lead="Every version published to nuget.org, newest first. A version's packages ship together, at one version, from one tag.">
+          Lead="Every version published to nuget.org up to the one this site describes, newest first. A version's packages ship together, at one version, from one tag. Once a version without a suffix is out, this site describes the latest such version, and a version published after it that does not replace it, a prerelease or a patch to an older line, has its notes on its GitHub release until the next stable version brings them here.">
     <ReleaseNotesView />
 </DocsPage>

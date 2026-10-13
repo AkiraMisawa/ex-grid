@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- The release workflow's checks (tools/release/ExGrid.Release; ADR-0042, ADR-0205, ADR-0208),
+         pinned against repositories each test makes with git, and the repository's own record index
+         held to the Definition of Done's table. Part of layer 1. Mirrors tests/ExGrid.DemoApi.Tests:
+         net10.0 (ADR-0022), xunit v3 on Microsoft.Testing.Platform, and no native apphost
+         (tests/Directory.Build.targets has the account). Needs git on the PATH. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- A failed test's name and message in `dotnet test`'s output, where CI's log shows them;
+         the summary alone names only the assembly. -->
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="2.0.3" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\tools\release\ExGrid.Release\ExGrid.Release.csproj" />
+  </ItemGroup>
+
+</Project>
