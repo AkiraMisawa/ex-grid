@@ -19,7 +19,8 @@ public sealed record GridMetrics
         double rowHeightPx, double headerHeightPx, double fontSizePx,
         CellTextMetrics cellMetrics,
         double actionPaddingXPx, double actionBorderPx, double actionGapPx,
-        double menuButtonWidthPx, double menuButtonInsetPx, double sortMarkWidthPx)
+        double menuButtonWidthPx, double menuButtonInsetPx, double sortMarkWidthPx,
+        double resizeGripWidthPx, double columnGuideWidthPx)
     {
         RowHeightPx = rowHeightPx;
         HeaderHeightPx = headerHeightPx;
@@ -31,6 +32,8 @@ public sealed record GridMetrics
         MenuButtonWidthPx = menuButtonWidthPx;
         MenuButtonInsetPx = menuButtonInsetPx;
         SortMarkWidthPx = sortMarkWidthPx;
+        ResizeGripWidthPx = resizeGripWidthPx;
+        ColumnGuideWidthPx = columnGuideWidthPx;
     }
 
     /// <summary>The fixed height of every row (ADR-0013) — what the virtualisation
@@ -106,6 +109,18 @@ public sealed record GridMetrics
     /// menu button's do (ADR-0016/0029).</summary>
     internal double SortMarkWidthPx { get; }
 
+    /// <summary>The width of the resize grip in a header cell's right-hand edge (ADR-0016):
+    /// a hit target, so a CSS pixel count, and emitted as a Geometry Token the stylesheet
+    /// sizes the grip with (ADR-0027/0028; UX-1). Declared, not measured.</summary>
+    internal double ResizeGripWidthPx { get; }
+
+    /// <summary>The painted width of the line a resize drags (ADR-0016) and of the reorder
+    /// drop indicator (ADR-0011). Emitted as a Geometry Token; the stylesheet draws it in
+    /// whole Device Pixels — this width rounded down to the Device Pixel, never under one —
+    /// as it draws a rule (ADR-0090; UX-1). Painted, never laid out. Declared, not
+    /// measured.</summary>
+    internal double ColumnGuideWidthPx { get; }
+
     /// <summary>
     /// The full cell width a header needs (ADR-0016, 2026-09-25): its label, one
     /// full-width em of slack, the menu button's band when there is one, and the sort
@@ -159,7 +174,10 @@ public sealed record GridMetrics
         // 6px/1px/4px ex-grid.css always used, scaled down only where the whole preset is —
         // and the menu button's 16px/6px and the sort mark's box (an em and a 6px gap) travel
         // the same way, so the header estimate and the stylesheet read one number (the
-        // pairing ADR-0027/0028 dissolved).
+        // pairing ADR-0027/0028 dissolved). The resize grip's hit width and the width of the
+        // resize guide and the drop indicator are the 5px and 2px ex-grid.css always drew, in
+        // every preset (UX-1): neither is read by any arithmetic, but no pixel is only a
+        // stylesheet value (ADR-0027).
         // Measured on 2026-10-01 (ticket 83, tests/GlyphWidths): system-ui on macOS (SF) and
         // DejaVu Sans, which Linux paints for system-ui and paints Bold for 600 and 700. At
         // 14px: % 14.031 (DejaVu, 600), a digit 9.75, ( 6.406, and the other class's widest,
@@ -214,6 +232,7 @@ public sealed record GridMetrics
                     .WithGlyphWidths(density == GridDensity.Excel ? DefaultGlyphWidths.At12 : DefaultGlyphWidths.At14, font))
                 .WithFullWidthAtLeast(font),
             actionPad, actionBorder, actionGap,
-            menuWidth, menuInset, sortMark);
+            menuWidth, menuInset, sortMark,
+            resizeGripWidthPx: 5, columnGuideWidthPx: 2);
     }
 }

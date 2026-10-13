@@ -189,14 +189,17 @@
             {
                 @* The resize guide (ADR-0016): one absolutely positioned element
                    moving over the top — the selection Overlay's mechanism, for the
-                   selection Overlay's reason. *@
-                <div class="ex-resize-guide" style="left: @Px(_resizeGuideLeftPx)" aria-hidden="true"></div>
+                   selection Overlay's reason. Its left edge is put on the Device Pixel
+                   as a column edge is (ADR-0090), and the stylesheet draws its width in
+                   whole Device Pixels (UX-1). *@
+                <div class="ex-resize-guide" style="left: @Px(ColumnGeometry.OnDevicePixel(_resizeGuideLeftPx, _devicePixelRatio))" aria-hidden="true"></div>
             }
             @if (_reordering && _dropBoundary >= 0)
             {
                 @* Where the dragged unit will land (ADR-0011): it stops at the pinned
-                   boundary and at a group's edge rather than promising a refused drop. *@
-                <div class="ex-drop-indicator" style="left: @Px(_dropIndicatorLeftPx)" aria-hidden="true"></div>
+                   boundary and at a group's edge rather than promising a refused drop.
+                   On a Device Pixel, as the guide is (ADR-0090; UX-1). *@
+                <div class="ex-drop-indicator" style="left: @Px(ColumnGeometry.OnDevicePixel(_dropIndicatorLeftPx, _devicePixelRatio))" aria-hidden="true"></div>
             }
             @* Every cell under here is `pointer-events: none`, so this element is the
                target of every mouse event in the rows and the offsets on the event are
@@ -9886,7 +9889,7 @@
             _rootStyleRatio = _devicePixelRatio;
             _rootStyle = string.Create(
                 CultureInfo.InvariantCulture,
-                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px{StretchRootStyle(stretch.Item1, stretch.Item2)}{FormulaBarRootStyle()}{DevicePixelRootStyle()}");
+                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px; --ex-resize-grip-width: {_metrics.ResizeGripWidthPx}px; --ex-column-guide-width: {_metrics.ColumnGuideWidthPx}px{StretchRootStyle(stretch.Item1, stretch.Item2)}{FormulaBarRootStyle()}{DevicePixelRootStyle()}");
         }
         return _rootStyle;
     }

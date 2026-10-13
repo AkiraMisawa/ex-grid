@@ -102,14 +102,16 @@ public class ShippedStylesheetTests
         // its place among the held keys — a second compositionend, beside the coloured text's —
         // and the root's focus, passing focus that lands on the root itself on to its field, and
         // focusout, emptying the field as it is left and ending the release of Tab when DOM focus
-        // leaves the grid (ADR-0012). And the eighth (ADR-0090): change on a media query of the
+        // leaves the grid (ADR-0012), and keyup, which says that a key the IME took in the field has
+        // been told whole, so the editor's request for the keyboard is granted in order with the IME's
+        // events rather than a moment after a composition's end (ADR-0080, 2026-10-12). And the eighth (ADR-0090): change on a media query of the
         // current resolution, which tells the grid its Device Pixel when the scale or the zoom moves.
         // And the clipboard entry once more: copy, cut and paste in the capture phase, taking the
         // event a clipboard key fires while a hold stands into its place among the held keys
         // (ADR-0010's note of 2026-10-02) — the same events, no new use. And the clipboard entry a
         // last time (ADR-0170): clipboardchange on navigator.clipboard, which tells the grid that the
         // clipboard changed by a write other than its own copy, so the Copied Range can go.
-        string[] allowed = ["change", "clipboardchange", "compositionend", "compositionend", "compositionstart", "copy", "copy", "cut", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
+        string[] allowed = ["change", "clipboardchange", "compositionend", "compositionend", "compositionstart", "copy", "copy", "cut", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
@@ -700,7 +702,7 @@ public class ShippedStylesheetTests
     public void The_open_edits_focus_is_granted_only_while_the_keyboard_is_this_grids()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
-        var method = Regex.Match(script.Text, @"focusEditor: \(bar, fromField\) => \{.*?\n        \},", RegexOptions.Singleline);
+        var method = Regex.Match(script.Text, @"focusEditor: \(bar, fromField, toward\) => \{.*?\n        \},", RegexOptions.Singleline);
         Assert.True(method.Success, "focusEditor is not in the handle");
         var body = method.Value;
 
@@ -710,6 +712,9 @@ public class ShippedStylesheetTests
         Assert.Contains("surfaceField(box)", body, StringComparison.Ordinal);
         // Granted only while DOM focus is inside this root or on nothing: reclaimFocus's condition.
         Assert.Contains("!active || active === document.body || active === document.documentElement || root.contains(active)", body, StringComparison.Ordinal);
+        // Where DOM focus is, or, granted as the keyboard leaves the Keyboard Field, where it is going:
+        // the browser has it on nothing while it tells the departure (ADR-0080, 2026-10-12).
+        Assert.Contains("const active = toward instanceof Element ? toward : document.activeElement;", body, StringComparison.Ordinal);
         // Nor from a field beside the rows with focus of its own, a field a press on the rows left
         // standing aside, unless the core means to take the keyboard out of it, as the hand-back
         // leaves those fields (ADR-0021, 2026-09-28).
@@ -835,13 +840,14 @@ public class ShippedStylesheetTests
 
         // At attach's own level, behind no condition: every grid hears them, with a field or not —
         // the release of Tab ends on a display-only grid too (ADR-0012).
-        Assert.Matches(new Regex(@"\n    root\.addEventListener\('compositionstart', onKeyFieldCompositionStart, true\);\n    root\.addEventListener\('compositionend', onKeyFieldCompositionEnd, true\);"), script);
+        Assert.Matches(new Regex(@"\n    root\.addEventListener\('compositionstart', onKeyFieldCompositionStart, true\);\n    root\.addEventListener\('compositionend', onKeyFieldCompositionEnd, true\);\n    root\.addEventListener\('keyup', onKeyFieldKeyUp, true\);"), script);
         Assert.Matches(new Regex(@"\n    root\.addEventListener\('focus', onFocused, true\);\n    root\.addEventListener\('focusout', onFocusLeft, true\);"), script);
         var dispose = Regex.Match(script, @"dispose: \(\) => \{.*?root = null;", RegexOptions.Singleline).Value;
         foreach (var removed in new[]
         {
             "root.removeEventListener('compositionstart', onKeyFieldCompositionStart, true);",
             "root.removeEventListener('compositionend', onKeyFieldCompositionEnd, true);",
+            "root.removeEventListener('keyup', onKeyFieldKeyUp, true);",
             "root.removeEventListener('focus', onFocused, true);",
             "root.removeEventListener('focusout', onFocusLeft, true);",
         })
@@ -866,7 +872,8 @@ public class ShippedStylesheetTests
 
         // Leaving: the next holder is nothing, or outside this root. Not the window losing focus,
         // which leaves DOM focus where it is, the document's active element still.
-        Assert.Matches(new Regex(@"const next = event\.relatedTarget;\s*if \(event\.target === document\.activeElement \|\| \(next instanceof Node && root && root\.contains\(next\)\)\) \{\s*return;\s*\}\s*tabReleased = false;\s*releaseEndsHeard\+\+;"), left);
+        Assert.Matches(new Regex(@"const next = event\.relatedTarget;\s*(//[^\n]*\s*)*const stays = event\.target === document\.activeElement \|\| \(next instanceof Node && root && root\.contains\(next\)\);"), left);
+        Assert.Matches(new Regex(@"if \(stays\) \{\s*return;\s*\}\s*tabReleased = false;\s*releaseEndsHeard\+\+;"), left);
         // Counted with the presses, so a release the core answers for an Escape forwarded before the
         // departure is not granted.
         Assert.Contains("releaseEndsAtEscape = releaseEndsHeard;", script, StringComparison.Ordinal);
@@ -886,10 +893,10 @@ public class ShippedStylesheetTests
         var reclaim = Regex.Match(script, @"reclaimFocus: \(fromField\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
         Assert.Contains("(keyFieldOf() ?? root).focus({ preventScroll: true });", reclaim, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"const keyFieldOf = \(\) => \{\s*const field = root \? root\.querySelector\('\.ex-key-field'\) : null;\s*return field !== null && isKeyField\(field\) \? field : null;"), script);
-        // The editor's request for the keyboard waits while the field composes, and through the task
-        // a composition ended in; it is granted after that (the next fact).
-        var focusEditor = Regex.Match(script, @"focusEditor: \(bar, fromField\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
-        Assert.Matches(new Regex(@"if \(keyFieldComposing \|\| keyFieldEndTimer !== 0\) \{\s*deferredEditorFocus = \{ bar, fromField \};\s*return;\s*\}"), focusEditor);
+        // The editor's request for the keyboard waits while the field composes, and while a key the
+        // IME took there is still being told; it is granted after that (the next fact).
+        var focusEditor = Regex.Match(script, @"focusEditor: \(bar, fromField, toward\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
+        Assert.Matches(new Regex(@"if \(keyFieldComposing \|\| imeKeyTold\) \{\s*deferredEditorFocus = \{ bar, fromField \};\s*return;\s*\}"), focusEditor);
         // A primary press during a composition ends it first, by the field giving up the keyboard,
         // before anything else the press does.
         Assert.Matches(new Regex(@"^const onPress = \(event\) => \{\s*(//[^\n]*\s*)*if \(keyFieldComposing && core && !replaying && event\.button === 0\) \{\s*keyFieldOf\(\)\?\.blur\(\);\s*\}"), ListenerBody(script, "onPress"));
@@ -901,32 +908,97 @@ public class ShippedStylesheetTests
         Assert.Contains("if (k.onRoot && !isKeyField(event.target)) {", ListenerBody(script, "onKeyDown"), StringComparison.Ordinal);
     }
 
-    [Fact] // ED-30 / ADR-0080 (the sixteenth Windows run's k6): the editor's request is never granted in the task a composition ended in, where the key that ended it may have started the next, but in the task after, and only while the field is not composing again
-    public void ED30_the_editors_request_is_granted_only_after_the_task_a_composition_ended_in()
+    [Fact] // ED-30 / ADR-0080 (the sixteenth Windows run's k6; the third composition, 2026-10-12): the editor's request is granted only once the key the IME took has been told whole, its keyup, and never while the field composes again — told by the key's events, not by a time
+    public void ED30_the_editors_request_is_granted_only_once_the_key_the_IME_took_has_been_told_whole()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
         var carry = Regex.Match(script, @"const carryKeyFieldText = \(field\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
-        var ended = Regex.Match(script, @"const keyFieldEnded = \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        var grant = Regex.Match(script, @"const grantEditorFocus = \(toward\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        var keyUp = Regex.Match(script, @"const onKeyFieldKeyUp = \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
         Assert.NotEmpty(carry);
-        Assert.NotEmpty(ended);
+        Assert.NotEmpty(grant);
+        Assert.NotEmpty(keyUp);
 
-        // The end starts the wait before anything else it does: on WebAssembly the core's answer to
-        // the text — the Cell Editor opened, and its request for the keyboard — runs inside this
-        // task, before the browser says whether the same key started another composition.
-        Assert.Matches(new Regex(@"^const carryKeyFieldText = \(field\) => \{\s*clearTimeout\(keyFieldEndTimer\);\s*keyFieldEndTimer = setTimeout\(keyFieldEnded, 0\);\s*const text = "), carry);
-        // Nothing is granted at the end itself: on WebAssembly, granted there, the request moved DOM
-        // focus between one composition's end and the next one's start, and `kanji` lost its `k`.
-        Assert.DoesNotContain("focusEditor", carry, StringComparison.Ordinal);
-        // The task after: granted unless the field composes again, when it waits for that end.
-        Assert.Matches(new Regex(@"keyFieldEndTimer = 0;\s*const pending = deferredEditorFocus;\s*if \(pending !== null && !keyFieldComposing\) \{\s*deferredEditorFocus = null;\s*handle\.focusEditor\(pending\.bar, pending\.fromField\);\s*\}"), ended);
-        // The one place a waiting request is granted, and the one timer, which goes with the instance.
+        // A key the IME takes in the field is being told from its keydown, which the listener leaves
+        // to the IME, to a keyup: on WebAssembly the core's answer to a composition's text — the Cell
+        // Editor opened, and its request for the keyboard — runs inside the end, before the browser
+        // says whether the same key started another composition.
+        Assert.Matches(new Regex(@"if \(event\.isComposing \|\| event\.keyCode === 229\) \{\s*if \(isKeyField\(event\.target\)\) \{\s*imeKeyTold = true;\s*\}\s*return;\s*\}"), ListenerBody(script, "onKeyDown"));
+        Assert.Matches(new Regex(@"if \(imeKeyTold\) \{\s*imeKeyTold = false;\s*grantEditorFocus\(\);\s*\}"), keyUp);
+        // The end grants what waited only through grantEditorFocus, after the text has taken its
+        // place among the held keys: at once when no such key is being told, else at its keyup.
+        Assert.Matches(new Regex(@"held\.push\(\{ text, paint: keyFieldPaint \}\);.*grantEditorFocus\(\);\s*\};$", RegexOptions.Singleline), carry);
+        Assert.DoesNotContain("focusEditor(", carry, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"const pending = deferredEditorFocus;\s*if \(pending !== null && !keyFieldComposing && !imeKeyTold\) \{\s*deferredEditorFocus = null;\s*handle\.focusEditor\(pending\.bar, pending\.fromField, toward\);\s*\}"), grant);
+        // The one place a waiting request is granted, and no time in it: the task after a
+        // composition's end, a timer of no delay, missed a start told a moment later (ED-30's
+        // third composition read `かなｄ感じです`).
         Assert.Single(Regex.Matches(script, @"handle\.focusEditor\("));
-        Assert.Single(Regex.Matches(script, @"keyFieldEndTimer = setTimeout\("));
+        Assert.DoesNotMatch(new Regex(@"setTimeout|requestAnimationFrame|keyFieldEndTimer"), carry + grant + keyUp);
+        Assert.DoesNotContain("keyFieldEndTimer", script, StringComparison.Ordinal);
         var dispose = Regex.Match(script, @"dispose: \(\) => \{.*?root = null;", RegexOptions.Singleline).Value;
-        Assert.Contains("clearTimeout(keyFieldEndTimer);", dispose, StringComparison.Ordinal);
-        // No listener of its own, and nothing measured (ADR-0021's seventh entry).
-        Assert.DoesNotMatch(new Regex(@"addEventListener"), carry + ended);
-        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), carry + ended);
+        Assert.Contains("imeKeyTold = false;", dispose, StringComparison.Ordinal);
+        // No listener of its own beyond the seventh entry's, and nothing measured.
+        Assert.DoesNotMatch(new Regex(@"addEventListener"), carry + grant + keyUp);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), carry + grant + keyUp);
+    }
+
+    [Fact] // ED-30 / ADR-0080 (the sixteenth Windows run's k15, 2026-10-12): a key the IME took ends as the keyboard leaves — Alt+Tab mid-composition told its keyup to the other window — and the request that waited for it is decided against where the keyboard is going
+    public void ED30_a_key_the_IME_took_ends_as_the_keyboard_leaves()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var left = ListenerBody(script, "onFocusLeft");
+
+        // Every focusout the root hears ends it, the window switch's among them, and decides the
+        // waiting request against the next holder: DOM focus is on nothing while a move is told, and
+        // a control the user moved to outside the grid keeps the keyboard.
+        Assert.Matches(new Regex(@"if \(imeKeyTold\) \{\s*imeKeyTold = false;\s*grantEditorFocus\(next\);\s*\}"), left);
+        // After the departure has been told from the window losing focus by where DOM focus was, and
+        // before anything returns: a grant moves DOM focus, and a window switch read after one would
+        // end the release of Tab.
+        var stays = left.IndexOf("const stays = ", StringComparison.Ordinal);
+        var granted = left.IndexOf("grantEditorFocus(next);", StringComparison.Ordinal);
+        Assert.True(stays >= 0 && stays < granted);
+        Assert.True(granted < left.IndexOf("return;", StringComparison.Ordinal));
+        Assert.Single(Regex.Matches(left, @"return;"));
+        // One place marks the key, and each way it can end clears it: its keyup heard on the root,
+        // the keyboard leaving, and the instance's end. Nothing else leaves a request waiting on it.
+        Assert.Single(Regex.Matches(script, @"imeKeyTold = true;"));
+        Assert.Equal(3, Regex.Matches(script, @"(?<!let )imeKeyTold = false;").Count);
+        Assert.Matches(new Regex(@"const onKeyFieldKeyUp = \(\) => \{\s*if \(imeKeyTold\) \{\s*imeKeyTold = false;\s*grantEditorFocus\(\);"), script);
+        // The grant goes through focusEditor's own rule, judged where the keyboard is going.
+        Assert.Contains("handle.focusEditor(pending.bar, pending.fromField, toward);", script, StringComparison.Ordinal);
+        Assert.Contains("const active = toward instanceof Element ? toward : document.activeElement;", script, StringComparison.Ordinal);
+        // No listener of its own: focusout is the seventh entry's already (ADR-0021).
+        Assert.Single(Regex.Matches(script, @"addEventListener\('focusout'"));
+    }
+
+    [Fact] // ED-30 / ADR-0080 / ADR-0010 (the third composition, 2026-10-12): as the listener gives the editor the keyboard, what the hold has for the edit goes into it at once, never a frame later, when a composition the IME started there would come ahead of it
+    public void ED30_the_text_held_for_the_edit_goes_into_it_as_the_editor_takes_the_keyboard()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var focusEditor = Regex.Match(script, @"focusEditor: \(bar, fromField, toward\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
+        var settled = Regex.Match(script, @"const editorSettled = \(\) => new Promise\(\(settle\) => \{.*?\n    \}\);", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(focusEditor);
+        Assert.NotEmpty(settled);
+
+        // Straight after the focus it gives, the hold's waits are looked at again: the held text is
+        // typed in a microtask, before the browser tells the page anything else. An IME's composition
+        // cannot be held, and one started in the editor before the next frame came ahead of the text
+        // still held for it: D10 read `かなｄ感じです`.
+        Assert.Matches(new Regex(@"field\.focus\(\{ preventScroll: true \}\);\s*followEditor\(field\);\s*(//[^\n]*\s*)*lookAgain\(\);"), focusEditor);
+        Assert.Matches(new Regex(@"const lookAgain = \(\) => \{\s*for \(const again of \[\.\.\.settledWaits\]\) \{\s*again\(\);\s*\}\s*\};"), script);
+        // Every wait of the hold's is one lookAgain reaches, and leaves the set as it settles, by
+        // whichever path; looked at again, it leaves no second frame of its own behind, and once
+        // settled it is never looked at again.
+        Assert.Matches(new Regex(@"const resolve = \(\) => \{\s*waiting = false;\s*settledWaits\.delete\(again\);\s*settle\(\);\s*\};"), settled);
+        Assert.Matches(new Regex(@"const again = \(\) => \{\s*if \(waiting\) \{\s*cancelAnimationFrame\(lookFrame\);\s*look\(\);\s*\}\s*\};\s*settledWaits\.add\(again\);\s*look\(\);"), settled);
+        Assert.Contains("lookFrame = requestAnimationFrame(look);", settled, StringComparison.Ordinal);
+        // The look settles the wait only through resolve, so that no path leaves it in the set.
+        var look = Regex.Match(settled, @"const look = \(\) => \{.*?\n        \};", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(look);
+        Assert.DoesNotContain("settle(", look, StringComparison.Ordinal);
+        Assert.Contains("resolve();", look, StringComparison.Ordinal);
     }
 
     [Fact] // KB-12 / ADR-0080: the root's ring is drawn from the script's mark while its field holds a keyboard that did not come of a press on the grid, as from :focus-visible on a grid without one

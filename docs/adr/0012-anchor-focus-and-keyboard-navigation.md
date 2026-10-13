@@ -563,6 +563,10 @@ moves back. That is the move that painted the rows there.
   paints nothing for them, and that a scroll in between stands. Whether it paints under Citrix is
   checked by hand there (VZ-18). *(Checked 2026-10-08 on that PC, with a build of v0.1.0-beta.2
   carrying only this change published to the Docs Site: Ctrl+↓, Ctrl+↑ and PageDown painted.)*
+  *(2026-10-12, decided with the user: that observation names no commit, and is not taken as VZ-18's
+  record. VZ-18's check on that PC is a Known limitation of `0.1.0`
+  ([ADR-0202](./0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md)),
+  not run for it.)*
 
 ## Added later: the white Viewport was seen through a remote browser isolation mirror *(2026-10-09)*
 
@@ -594,3 +598,7 @@ layers, the remote desktop or the mirror, drops the paint. The run that settles 
 served from that PC's own `localhost`, which the service should not isolate, with the repaint off.
 The verification record gives its two outcomes. Until it is run, the repaint stays, and VZ-18 is
 checked as it is written.
+*(2026-10-12, decided with the user: for `0.1.0` VZ-18's check on that PC is a Known limitation, not run;
+its layer-3 half still gates. 2026-10-13, decided with the user: `0.1.0`'s notes and the Docs Site name the
+remote browser isolation service, not Citrix: the PC reaches the web through such a service from inside an
+organisation whose desktops run under Citrix, and the service is the likelier cause.)*

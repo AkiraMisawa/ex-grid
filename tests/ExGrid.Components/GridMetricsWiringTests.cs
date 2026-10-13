@@ -281,4 +281,19 @@ public class GridMetricsWiringTests : GridTestContext
         var excel = RenderGrid(ps => ps.Add(g => g.Density, GridDensity.Excel));
         Assert.Contains("--ex-menu-button-width: 14px", excel.Find(".ex-grid").GetAttribute("style"));
     }
+
+    [Fact] // ADR-0027/0028 / UX-1: the resize grip's hit width and the guide's width are Geometry Tokens, not stylesheet pixels
+    public void The_grip_and_guide_widths_are_emitted_from_the_metrics()
+    {
+        foreach (var density in Enum.GetValues<GridDensity>())
+        {
+            var metrics = GridMetrics.Resolve(density);
+            var style = RenderGrid(ps => ps.Add(g => g.Density, density)).Find(".ex-grid").GetAttribute("style")!;
+            Assert.Contains(FormattableString.Invariant($"--ex-resize-grip-width: {metrics.ResizeGripWidthPx}px"), style);
+            Assert.Contains(FormattableString.Invariant($"--ex-column-guide-width: {metrics.ColumnGuideWidthPx}px"), style);
+        }
+        // What ex-grid.css always drew: the declared numbers moved, unchanged.
+        Assert.Equal(5, GridMetrics.Resolve(GridDensity.Compact).ResizeGripWidthPx);
+        Assert.Equal(2, GridMetrics.Resolve(GridDensity.Compact).ColumnGuideWidthPx);
+    }
 }
