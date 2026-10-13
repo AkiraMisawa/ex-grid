@@ -438,11 +438,16 @@ nobody had asked for. What that means when writing a test:
   elsewhere reports it as gone.
 - `presentation.spec.mjs` — the presentation contract, measured: inline Geometry
   Tokens beat the supported override routes (UX-2), painted geometry equals declared
-  (UX-3/ST-3), Visual Tokens recolour from an ancestor (UX-5), nothing under the
-  Viewport animates (UX-6), forced colors keep every state tellable (UX-7), a Stale or
+  (UX-3/ST-3), and on `/density` equals each preset's Grid Metrics after every density
+  change — rows, header band, spacer, Selection and Focus (UX-3/ST-3) — with no
+  `ResizeObserver` loop through density changes and window resizes, heard as `error` events
+  on `window`, which Chrome does not send to the console (CON-4), Visual Tokens recolour from
+  an ancestor (UX-5), nothing under the Viewport animates (UX-6), forced colors keep every
+  Cell State and Row Kind tellable without their grounds, each required on `/cells` (UX-7), a Stale or
   Error state outranks a theme's tone colour on `/tones` (ADR-0006/0029), the Modified mark a
   triangle in the corner alone, in its token's colour, a pinned one still sticky (UX-20), the dark
-  scheme stays readable (UX-8), the LTR island inside an RTL page (DIR-2/3), the
+  scheme stays readable (UX-8), the LTR island inside an RTL page (DIR-2), an Arabic value
+  reading right to left inside its unmoved cell (DIR-3), the
   editor's box is the cell's (ED-9), the runaway auto-scroll stops (SL-14/15), the
   Blazor error UI never shows (CON-5), and every class painted under a root — watched from
   `/features`, `/cells`, `/tones`, `/stripes`, `/marks`, `/appearance` and `/sheet` while their
