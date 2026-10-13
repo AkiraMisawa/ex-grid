@@ -1,0 +1,97 @@
+mud-server-150-chrome  ime-on       active=key-field editing=False focus=D10 field='' composing=False D10='' D12=''
+mud-server-150-chrome  k            active=key-field editing=False focus=D10 field='ｋ' composing=True D10='' D12=''
+mud-server-150-chrome  a            active=key-field editing=False focus=D10 field='か' composing=True D10='' D12=''
+mud-server-150-chrome  n            active=key-field editing=False focus=D10 field='かｎ' composing=True D10='' D12=''
+mud-server-150-chrome  a2           active=key-field editing=False focus=D10 field='かな' composing=True D10='' D12=''
+mud-server-150-chrome  pressed-d12  active=key-field editing=False focus=D12 field='' composing=False D10='かな' D12='' events=[('compositionend', 'かな'), ('mousedown', 'div.ex-viewport'), ('click', 'div.ex-viewport'), ('mousedown', 'div.ex-viewport')]
+mud-server-150-chrome  k8 as written: met (browser 154.0.8037.98, messages ['info', 'info'])
+
+mud-server-150-msedge  ime-on       active=key-field editing=False focus=D10 field='' composing=False D10='' D12=''
+mud-server-150-msedge  k            active=key-field editing=False focus=D10 field='ｋ' composing=True D10='' D12=''
+mud-server-150-msedge  a            active=key-field editing=False focus=D10 field='か' composing=True D10='' D12=''
+mud-server-150-msedge  n            active=key-field editing=False focus=D10 field='かｎ' composing=True D10='' D12=''
+mud-server-150-msedge  a2           active=key-field editing=False focus=D10 field='かな' composing=True D10='' D12=''
+mud-server-150-msedge  pressed-d12  active=key-field editing=False focus=D12 field='' composing=False D10='かな' D12='' events=[('compositionend', 'かな'), ('mousedown', 'div.ex-viewport'), ('click', 'div.ex-viewport'), ('mousedown', 'div.ex-viewport')]
+mud-server-150-msedge  k8 as written: met (browser 155.0.4283.45, messages ['info', 'info'])
+
+mud-server-chrome      ime-on       active=key-field editing=False focus=D10 field='' composing=False D10='' D12=''
+mud-server-chrome      k            active=key-field editing=False focus=D10 field='ｋ' composing=True D10='' D12=''
+mud-server-chrome      a            active=key-field editing=False focus=D10 field='か' composing=True D10='' D12=''
+mud-server-chrome      n            active=key-field editing=False focus=D10 field='かｎ' composing=True D10='' D12=''
+mud-server-chrome      a2           active=key-field editing=False focus=D10 field='かな' composing=True D10='' D12=''
+mud-server-chrome      pressed-d12  active=key-field editing=False focus=D12 field='' composing=False D10='かな' D12='' events=[('compositionend', 'かな'), ('mousedown', 'div.ex-viewport'), ('mousedown', 'div.ex-viewport'), ('click', 'div.ex-viewport')]
+mud-server-chrome      k8 as written: met (browser 154.0.8037.98, messages ['info', 'info'])
+
+mud-server-msedge      ime-on       active=key-field editing=False focus=D10 field='' composing=False D10='' D12=''
+mud-server-msedge      k            active=key-field editing=False focus=D10 field='ｋ' composing=True D10='' D12=''
+mud-server-msedge      a            active=key-field editing=False focus=D10 field='か' composing=True D10='' D12=''
+mud-server-msedge      n            active=key-field editing=False focus=D10 field='かｎ' composing=True D10='' D12=''
+mud-server-msedge      a2           active=key-field editing=False focus=D10 field='かな' composing=True D10='' D12=''
+mud-server-msedge      pressed-d12  active=key-field editing=False focus=D12 field='' composing=False D10='かな' D12='' events=[('compositionend', 'かな'), ('mousedown', 'div.ex-viewport'), ('mousedown', 'div.ex-viewport'), ('click', 'div.ex-viewport')]
+mud-server-msedge      k8 as written: met (browser 155.0.4283.45, messages ['info', 'info'])
+
+mud-wasm-chrome        ime-on       active=key-field editing=False focus=D10 field='' composing=False D10='' D12=''
+mud-wasm-chrome        k            active=key-field editing=False focus=D10 field='ｋ' composing=True D10='' D12=''
+mud-wasm-chrome        a            active=key-field editing=False focus=D10 field='か' composing=True D10='' D12=''
+mud-wasm-chrome        n            active=key-field editing=False focus=D10 field='かｎ' composing=True D10='' D12=''
+mud-wasm-chrome        a2           active=key-field editing=False focus=D10 field='かな' composing=True D10='' D12=''
+mud-wasm-chrome        pressed-d12  active=key-field editing=False focus=D12 field='' composing=False D10='かな' D12='' events=[('compositionend', 'かな'), ('mousedown', 'div.ex-viewport'), ('click', 'div.ex-viewport'), ('mousedown', 'div.ex-viewport')]
+mud-wasm-chrome        k8 as written: met (browser 154.0.8037.98, messages ['info'])
+
+mud-wasm-msedge        ime-on       active=key-field editing=False focus=D10 field='' composing=False D10='' D12=''
+mud-wasm-msedge        k            active=key-field editing=False focus=D10 field='ｋ' composing=True D10='' D12=''
+mud-wasm-msedge        a            active=key-field editing=False focus=D10 field='か' composing=True D10='' D12=''
+mud-wasm-msedge        n            active=key-field editing=False focus=D10 field='かｎ' composing=True D10='' D12=''
+mud-wasm-msedge        a2           active=key-field editing=False focus=D10 field='かな' composing=True D10='' D12=''
+mud-wasm-msedge        pressed-d12  active=key-field editing=False focus=D12 field='' composing=False D10='かな' D12='' events=[('compositionend', 'かな'), ('mousedown', 'div.ex-viewport'), ('click', 'div.ex-viewport'), ('mousedown', 'div.ex-viewport')]
+mud-wasm-msedge        k8 as written: met (browser 155.0.4283.45, messages ['info'])
+
+sheet-server-150-chrome ime-on       active=key-field editing=False focus=D10 field='' composing=False D10='' D12=''
+sheet-server-150-chrome k            active=key-field editing=False focus=D10 field='ｋ' composing=True D10='' D12=''
+sheet-server-150-chrome a            active=key-field editing=False focus=D10 field='か' composing=True D10='' D12=''
+sheet-server-150-chrome n            active=key-field editing=False focus=D10 field='かｎ' composing=True D10='' D12=''
+sheet-server-150-chrome a2           active=key-field editing=False focus=D10 field='かな' composing=True D10='' D12=''
+sheet-server-150-chrome pressed-d12  active=key-field editing=False focus=D12 field='' composing=False D10='かな' D12='' events=[('compositionend', 'かな'), ('mousedown', 'div.ex-viewport'), ('click', 'div.ex-viewport'), ('mousedown', 'div.ex-viewport')]
+sheet-server-150-chrome k8 as written: met (browser 154.0.8037.98, messages ['info', 'info'])
+
+sheet-server-150-msedge ime-on       active=key-field editing=False focus=D10 field='' composing=False D10='' D12=''
+sheet-server-150-msedge k            active=key-field editing=False focus=D10 field='ｋ' composing=True D10='' D12=''
+sheet-server-150-msedge a            active=key-field editing=False focus=D10 field='か' composing=True D10='' D12=''
+sheet-server-150-msedge n            active=key-field editing=False focus=D10 field='かｎ' composing=True D10='' D12=''
+sheet-server-150-msedge a2           active=key-field editing=False focus=D10 field='かな' composing=True D10='' D12=''
+sheet-server-150-msedge pressed-d12  active=key-field editing=False focus=D12 field='' composing=False D10='かな' D12='' events=[('compositionend', 'かな'), ('mousedown', 'div.ex-viewport'), ('click', 'div.ex-viewport'), ('mousedown', 'div.ex-viewport')]
+sheet-server-150-msedge k8 as written: met (browser 155.0.4283.45, messages ['info', 'info'])
+
+sheet-server-chrome    ime-on       active=key-field editing=False focus=D10 field='' composing=False D10='' D12=''
+sheet-server-chrome    k            active=key-field editing=False focus=D10 field='ｋ' composing=True D10='' D12=''
+sheet-server-chrome    a            active=key-field editing=False focus=D10 field='か' composing=True D10='' D12=''
+sheet-server-chrome    n            active=key-field editing=False focus=D10 field='かｎ' composing=True D10='' D12=''
+sheet-server-chrome    a2           active=key-field editing=False focus=D10 field='かな' composing=True D10='' D12=''
+sheet-server-chrome    pressed-d12  active=key-field editing=False focus=D12 field='' composing=False D10='かな' D12='' events=[('compositionend', 'かな'), ('mousedown', 'div.ex-viewport'), ('mousedown', 'div.ex-viewport'), ('click', 'div.ex-viewport')]
+sheet-server-chrome    k8 as written: met (browser 154.0.8037.98, messages ['info', 'info'])
+
+sheet-server-msedge    ime-on       active=key-field editing=False focus=D10 field='' composing=False D10='' D12=''
+sheet-server-msedge    k            active=key-field editing=False focus=D10 field='ｋ' composing=True D10='' D12=''
+sheet-server-msedge    a            active=key-field editing=False focus=D10 field='か' composing=True D10='' D12=''
+sheet-server-msedge    n            active=key-field editing=False focus=D10 field='かｎ' composing=True D10='' D12=''
+sheet-server-msedge    a2           active=key-field editing=False focus=D10 field='かな' composing=True D10='' D12=''
+sheet-server-msedge    pressed-d12  active=key-field editing=False focus=D12 field='' composing=False D10='かな' D12='' events=[('compositionend', 'かな'), ('mousedown', 'div.ex-viewport'), ('mousedown', 'div.ex-viewport'), ('click', 'div.ex-viewport')]
+sheet-server-msedge    k8 as written: met (browser 155.0.4283.45, messages ['info', 'info'])
+
+sheet-wasm-chrome      ime-on       active=key-field editing=False focus=D10 field='' composing=False D10='' D12=''
+sheet-wasm-chrome      k            active=key-field editing=False focus=D10 field='ｋ' composing=True D10='' D12=''
+sheet-wasm-chrome      a            active=key-field editing=False focus=D10 field='か' composing=True D10='' D12=''
+sheet-wasm-chrome      n            active=key-field editing=False focus=D10 field='かｎ' composing=True D10='' D12=''
+sheet-wasm-chrome      a2           active=key-field editing=False focus=D10 field='かな' composing=True D10='' D12=''
+sheet-wasm-chrome      pressed-d12  active=key-field editing=False focus=D12 field='' composing=False D10='かな' D12='' events=[('compositionend', 'かな'), ('mousedown', 'div.ex-viewport'), ('mousedown', 'div.ex-viewport'), ('click', 'div.ex-viewport')]
+sheet-wasm-chrome      k8 as written: met (browser 154.0.8037.98, messages ['info'])
+
+sheet-wasm-msedge      ime-on       active=key-field editing=False focus=D10 field='' composing=False D10='' D12=''
+sheet-wasm-msedge      k            active=key-field editing=False focus=D10 field='ｋ' composing=True D10='' D12=''
+sheet-wasm-msedge      a            active=key-field editing=False focus=D10 field='か' composing=True D10='' D12=''
+sheet-wasm-msedge      n            active=key-field editing=False focus=D10 field='かｎ' composing=True D10='' D12=''
+sheet-wasm-msedge      a2           active=key-field editing=False focus=D10 field='かな' composing=True D10='' D12=''
+sheet-wasm-msedge      pressed-d12  active=key-field editing=False focus=D12 field='' composing=False D10='かな' D12='' events=[('compositionend', 'かな'), ('mousedown', 'div.ex-viewport'), ('mousedown', 'div.ex-viewport'), ('click', 'div.ex-viewport')]
+sheet-wasm-msedge      k8 as written: met (browser 155.0.4283.45, messages ['info'])
+
+k8 met in 12 of 12 configurations

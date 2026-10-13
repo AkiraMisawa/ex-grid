@@ -103,6 +103,31 @@ public class SelectionSummaryTests : GridTestContext
         Assert.Equal(new CellPosition(0, 1), request.Focus);
     }
 
+    [Fact] // SM-1, ADR-0130: a hidden column is not asked about, and the columns come in the current order
+    public async Task SM1_a_request_names_the_visible_columns_in_the_current_order()
+    {
+        var heard = new Heard();
+        var rows = TestRows.Many(500);
+        var cut = RenderGrid(heard, Reference(rows), rows);
+        await ClickCellAsync(cut, 150, 10);
+        await PressAsync(cut, "ArrowDown", shift: true);   // asked once over all three columns
+        Assert.Equal(["Book", "Amount", "AsOf"], heard.Requests[^1].Columns);
+
+        // The Consumer hides Amount and moves AsOf to the front: the grid is handed the result.
+        var all = Columns();
+        cut.Render(ps => ps.Add(g => g.Columns, (GridColumn<TestRow>[])[all[2], all[0]]));
+
+        await ClickCellAsync(cut, 50, 10);                 // (0, 0): AsOf
+        await PressAsync(cut, "ArrowRight", shift: true);  // (0, 0)-(0, 1): AsOf, Book
+        await PressAsync(cut, "ArrowDown", shift: true);   // two rows
+
+        var request = heard.Requests[^1];
+        Assert.Equal([new SelectionRange(0, 0, 2, 2)], request.Ranges);
+        Assert.Equal(["AsOf", "Book"], request.Columns);
+        // Answered over those columns alone: four cells, none a number — Amount is never summed.
+        cut.WaitForAssertion(() => Assert.Equal("Count: 4", SummaryText(cut)));
+    }
+
     [Fact] // ADR-0130 / SM-9: the default figures, in Excel's order, the Focus's column's format applied
     public async Task ADR0130_the_status_line_shows_average_count_and_sum()
     {

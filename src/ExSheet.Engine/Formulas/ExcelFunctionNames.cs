@@ -1,0 +1,59 @@
+namespace ExSheet.Engine.Formulas;
+
+/// <summary>
+/// The names of Excel's worksheet functions that ExSheet does not declare: the catalogue's rows that are not
+/// Supported and its list of Excel's functions not in the queue (<c>docs/specs/exsheet-functions/spec.md</c>;
+/// <c>FunctionCatalogueTests</c> holds this list to it). A call of one of them is refused, its Formula a
+/// Refused Formula, which no Formula catches, in its own cell or in any cell that reads it (2026-10-13,
+/// decided with the user): Excel answers it, and an ordinary <c>#NAME?</c> that <c>IFERROR</c> caught would
+/// answer otherwise. A name Excel does not have, a typo, stays an ordinary <c>#NAME?</c>.
+/// </summary>
+internal static class ExcelFunctionNames
+{
+    /// <summary>Whether Excel has a worksheet function of this name that ExSheet does not declare, the name read without regard to case.</summary>
+    public static bool Undeclared(string name) => Names.Contains(name);
+
+    internal static readonly HashSet<string> Names = new(StringComparer.OrdinalIgnoreCase)
+    {
+    "ACCRINT", "ACCRINTM", "ADDRESS", "AMORDEGRC", "AMORLINC", "ARABIC", "AREAS", "ARRAYTOTEXT", "ASC", "AVEDEV",
+    "AVERAGEA", "BAHTTEXT", "BASE", "BESSELI", "BESSELJ", "BESSELK", "BESSELY", "BETA.DIST", "BETA.INV", "BETADIST",
+    "BETAINV", "BIN2DEC", "BIN2HEX", "BIN2OCT", "BINOM.DIST", "BINOM.DIST.RANGE", "BINOM.INV", "BINOMDIST", "BITAND",
+    "BITLSHIFT", "BITOR", "BITRSHIFT", "BITXOR", "BYCOL", "BYROW", "CALL", "CEILING", "CEILING.PRECISE", "CELL",
+    "CHAR", "CHIDIST", "CHIINV", "CHISQ.DIST", "CHISQ.DIST.RT", "CHISQ.INV", "CHISQ.INV.RT", "CHISQ.TEST", "CHITEST",
+    "CHOOSECOLS", "CHOOSEROWS", "CLEAN", "CODE", "COMBIN", "COMBINA", "COMPLEX", "CONFIDENCE", "CONFIDENCE.NORM",
+    "CONFIDENCE.T", "CONVERT", "COPILOT", "CORREL", "COUPDAYBS", "COUPDAYS", "COUPDAYSNC", "COUPNCD", "COUPNUM",
+    "COUPPCD", "COVAR", "COVARIANCE.P", "COVARIANCE.S", "CRITBINOM", "CUBEKPIMEMBER", "CUBEMEMBER",
+    "CUBEMEMBERPROPERTY", "CUBERANKEDMEMBER", "CUBESET", "CUBESETCOUNT", "CUBEVALUE", "CUMIPMT", "CUMPRINC",
+    "DATEVALUE", "DAVERAGE", "DAYS360", "DB", "DBCS", "DCOUNT", "DCOUNTA", "DDB", "DEC2BIN", "DEC2HEX", "DEC2OCT",
+    "DECIMAL", "DELTA", "DETECTLANGUAGE", "DEVSQ", "DGET", "DISC", "DMAX", "DMIN", "DOLLAR", "DOLLARDE", "DOLLARFR",
+    "DPRODUCT", "DROP", "DSTDEV", "DSTDEVP", "DSUM", "DURATION", "DVAR", "DVARP", "ECMA.CEILING", "EFFECT",
+    "ENCODEURL", "ERF", "ERF.PRECISE", "ERFC", "ERFC.PRECISE", "EUROCONVERT", "EVEN", "EXPAND", "EXPON.DIST",
+    "EXPONDIST", "F.DIST", "F.DIST.RT", "F.INV", "F.INV.RT", "F.TEST", "FACT", "FACTDOUBLE", "FALSE", "FDIST",
+    "FIELDVALUE", "FILTERXML", "FINDB", "FINV", "FISHER", "FISHERINV", "FIXED", "FLOOR", "FLOOR.PRECISE", "FORECAST",
+    "FORECAST.ETS", "FORECAST.ETS.CONFINT", "FORECAST.ETS.SEASONALITY", "FORECAST.ETS.STAT", "FORECAST.LINEAR",
+    "FORMULATEXT", "FREQUENCY", "FTEST", "FVSCHEDULE", "GAMMA", "GAMMA.DIST", "GAMMA.INV", "GAMMADIST", "GAMMAINV",
+    "GAMMALN", "GAMMALN.PRECISE", "GAUSS", "GCD", "GEOMEAN", "GESTEP", "GETPIVOTDATA", "GROUPBY", "GROWTH",
+    "HARMEAN", "HEX2BIN", "HEX2DEC", "HEX2OCT", "HSTACK", "HYPERLINK", "HYPGEOM.DIST", "HYPGEOMDIST", "IMABS",
+    "IMAGE", "IMAGINARY", "IMARGUMENT", "IMCONJUGATE", "IMCOS", "IMCOSH", "IMCOT", "IMCSC", "IMCSCH", "IMDIV",
+    "IMEXP", "IMLN", "IMLOG10", "IMLOG2", "IMPOWER", "IMPRODUCT", "IMREAL", "IMSEC", "IMSECH", "IMSIN", "IMSINH",
+    "IMSQRT", "IMSUB", "IMSUM", "IMTAN", "INFO", "INTERCEPT", "INTRATE", "IPMT", "IRR", "ISERR", "ISEVEN",
+    "ISFORMULA", "ISLOGICAL", "ISNONTEXT", "ISO.CEILING", "ISODD", "ISOMITTED", "ISOWEEKNUM", "ISPMT", "ISREF",
+    "JIS", "KURT", "LAMBDA", "LCM", "LEFTB", "LENB", "LINEST", "LOGEST", "LOGINV", "LOGNORM.DIST", "LOGNORM.INV",
+    "LOGNORMDIST", "LOOKUP", "MAKEARRAY", "MAP", "MAXA", "MDETERM", "MDURATION", "MIDB", "MINA", "MINVERSE", "MIRR",
+    "MMULT", "MODE", "MODE.MULT", "MODE.SNGL", "MULTINOMIAL", "MUNIT", "N", "NEGBINOM.DIST", "NEGBINOMDIST",
+    "NETWORKDAYS.INTL", "NOMINAL", "NORM.DIST", "NORM.INV", "NORM.S.DIST", "NORM.S.INV", "NORMDIST", "NORMINV",
+    "NORMSDIST", "NORMSINV", "NPER", "NPV", "OCT2BIN", "OCT2DEC", "OCT2HEX", "ODD", "ODDFPRICE", "ODDFYIELD",
+    "ODDLPRICE", "ODDLYIELD", "PDURATION", "PEARSON", "PERCENTILE", "PERCENTILE.EXC", "PERCENTILE.INC", "PERCENTOF",
+    "PERCENTRANK", "PERCENTRANK.EXC", "PERCENTRANK.INC", "PERMUT", "PERMUTATIONA", "PHI", "PHONETIC", "PIVOTBY",
+    "POISSON", "POISSON.DIST", "PPMT", "PRICE", "PRICEDISC", "PRICEMAT", "PROB", "PY", "QUARTILE", "QUARTILE.EXC",
+    "QUARTILE.INC", "QUOTIENT", "RANDARRAY", "RANK", "RANK.AVG", "RATE", "RECEIVED", "REDUCE", "REGEXEXTRACT",
+    "REGEXREPLACE", "REGEXTEST", "REGISTER.ID", "REPLACEB", "RIGHTB", "ROMAN", "RRI", "RSQ", "RTD", "SCAN",
+    "SEARCHB", "SERIESSUM", "SHEET", "SHEETS", "SKEW", "SKEW.P", "SLN", "SLOPE", "SQRTPI", "STANDARDIZE", "STDEV",
+    "STDEVA", "STDEVP", "STDEVPA", "STEYX", "STOCKHISTORY", "SUMSQ", "SUMX2MY2", "SUMX2PY2", "SUMXMY2", "SYD", "T",
+    "T.DIST", "T.DIST.2T", "T.DIST.RT", "T.INV", "T.INV.2T", "T.TEST", "TAKE", "TBILLEQ", "TBILLPRICE", "TBILLYIELD",
+    "TDIST", "TEXTAFTER", "TEXTBEFORE", "TEXTSPLIT", "TIMEVALUE", "TINV", "TOCOL", "TOROW", "TRANSLATE", "TREND",
+    "TRIMMEAN", "TRIMRANGE", "TRUE", "TTEST", "TYPE", "UNICHAR", "UNICODE", "VALUETOTEXT", "VAR", "VARA", "VARP",
+    "VARPA", "VDB", "VSTACK", "WEBSERVICE", "WEEKNUM", "WEIBULL", "WEIBULL.DIST", "WORKDAY.INTL", "WRAPCOLS",
+    "WRAPROWS", "XIRR", "YIELD", "YIELDDISC", "YIELDMAT", "Z.TEST", "ZTEST"
+    };
+}

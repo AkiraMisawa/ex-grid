@@ -248,10 +248,50 @@ whole, since the Focus is Excel's active cell everywhere
   range and the Focus coincide, and it shows the Focus outline alone. *(Read, not observed: that
   Excel draws no separate outline around the active cell inside a single range. It is on the next
   Windows run's list.)*
-- **Several ranges are left as they are until Excel has been observed**: each range tinted with
-  no outline, the Focus's cell untinted (the hole above) and outlined. How Excel outlines a
-  selection made with Ctrl+click, and whether its active cell carries a border there, is on the
-  next Windows run's list, and this bullet is replaced by what it finds.
+- **Several ranges: no outline, no fill handle, and a thin border on the Focus** *(2026-10-12,
+  decided with the user: in a Selection of several ranges ExGrid as a whole follows Excel, with no
+  range outline and no fill handle, and the Focus cell takes a thin border of one Device Pixel in a
+  Visual Token of its own, `--ex-focus-among-ranges-outline`; a single range keeps the look
+  above)*. The decision followed the seventeenth Windows run's h2
+  (`verification/2026-10-11-windows-17/report.md`, Part H). This bullet first left several ranges
+  as they were, each tinted and the Focus outlined, until Excel had been observed.
+  - No range carries an outline, and no fill handle is shown
+    ([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), item 5). Each range is tinted, with
+    the hole where the Focus is, as before.
+  - The border's colour *(2026-10-12, decided with the user: where nothing names
+    `--ex-focus-among-ranges-outline`, the border is the Focus outline's colour,
+    `--ex-focus-outline`, so a Theme or a Wrapper that colours the Focus colours it too, with no
+    mapping of its own, and under the MudBlazor Wrappers it is their primary; on a Sheet's Paper it
+    is `#217346`)*. Earlier the same day it had been decided as `CanvasText`, and black on the
+    Paper, from h2's report. The readings of 2026-10-12 then measured Excel's border as `#217346`
+    (R4): h2's black was its picture read at 1×.
+  - It lies inside the cell, one Device Pixel in from its top and left edges and from the gridline
+    the cell holds on its right and bottom, with the cell's own ground between it and the
+    gridline. That is where the readings of 2026-10-12 measured Excel's active cell among several
+    areas (R4), at Excel's 100% and 150% zoom on a 150% display, in each of three selections: one
+    device pixel of `#217346` on every edge, one device pixel inside the cell, and white between it
+    and the gridline. Nothing above the selection layer covers a side of it (UX-18), and every side
+    lies on Device Pixels wherever the cell's edges do
+    ([ADR-0090](./0090-the-grid-is-told-its-device-pixel-and-puts-column-edges-on-it.md)).
+  - The core marks the Focus among several ranges with a class, decided from the Selection: a
+    layer may hold the Focus and no range's box, so the stylesheet cannot tell from the Focus's
+    siblings.
+  - Under forced colors the border is not drawn, and the Focus is outlined there as it is
+    everywhere else under forced colors, beside ranges that are each outlined.
+  - *Not observed:* a display at 100% (R4 read the 150% display at both zooms, so one device pixel
+    at a 100% display is by generalisation); a cell with a Fill (whether the line between the
+    border and the gridline is the Fill, as built, or white); and the active cell while it is
+    edited (ExGrid's Cell Editor covers the cell, and the border inside it).
+  - *Observed and not followed* *(2026-10-13, decided with the user)*: R4's pictures frame each area
+    among several ranges, a line of `#AFAFAF` on the gridline round it and a white Device Pixel
+    inside it, and show the active cell's gridline as `#AFAFAF` on every side. The Paper draws
+    neither. Whether that line is the gridline under the shade or a line drawn over it is
+    unobserved: no run has looked with the gridlines hidden, and the next one does.
+  - *Decided, not yet built* *(2026-10-13, decided with the user)*: Excel's Heading mark is added
+    for every selection, not only several ranges — the selected rows' and columns' Headings marked,
+    with a line of 2 Device Pixels on their edge toward the cells, as R4 pictured them. It is drawn
+    as an overlay in the Heading bands, so no row learns the Selection; its classes, its tokens and
+    the products that draw it are written here when it is built.
 - **The range outline has the token ADR-0029 reserved for it.** `--ex-selection-outline` was
   reserved there as "the border Excel draws around the range's perimeter", and this is that border.
   Its default is `--ex-focus-outline`, so a Theme or Wrapper that sets only the Focus outline's
@@ -276,6 +316,12 @@ whole, since the Focus is Excel's active cell everywhere
   outer corner. Centring it on the outline's centre line would need the outline's width in C#.
   That is a stylesheet value, and pairing it with a C# constant is the defect
   [ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md) removes.
+  *(2026-10-12, decided with the user: whole columns put it at the first row's top-right corner and
+  whole rows at the first column's bottom-left, as Excel does.)* There it lies just inside the
+  cells, beside the Heading, which stands above this layer; Excel's straddles the Heading's edge
+  (the readings of 2026-10-12, R5). Every cell has none, and a whole column's handle stays at the
+  top of the part in view. [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), "The handle on
+  a whole axis".
 - **The hole was measured before it was claimed.** Main-thread time per ten-render selecting drag
   on `/sheet`, headless Chrome on an M4 Pro. With the hole switched off on the changed build, a drag
   moved by 0.6 to 0.7 ms (Server 16.2 against 15.6, WebAssembly 33.3 against 32.6). That is inside

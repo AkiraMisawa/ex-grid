@@ -21,13 +21,19 @@
         </ul>
         <p>
             A format lives at three levels, as in Excel: cell over row over column. A format set on whole columns or
-            whole rows is recorded once on them, and covers the cells that hold nothing as well.
+            whole rows is recorded once on them, and covers the cells that hold nothing as well. A fill from whole
+            columns or whole rows carries it the same way, recorded once on the columns or rows it fills.
         </p>
         <p>
             <b>A number that does not fit shows <code>####</code>.</b> General rounds its decimals to fit the column,
             as Excel's does; any other format is never shortened, because a formatted figure cut short would read as
             a different figure. Widen the column and the number appears. A number typed into a column you have not
-            sized widens it, as Excel's does, and so does setting a Number Format, as Excel's formatting keys do. A
+            sized widens it, as Excel's does, and so does setting a Number Format, as Excel's formatting keys do.
+            So do Ctrl+5 and Ctrl+U, which set no Number Format, and <code>SetCellFormatAsync</code> when it sets
+            underline or strikethrough. Ctrl+B and Ctrl+I widen nothing, nor do bold, italic or a Font colour set from
+            code, a Fill, an alignment or Borders. Format Cells' OK widens when it sets any part of the Font. An italic
+            number widens its column only to the width the same number takes upright, where Excel's Font tab widened
+            it further. A column you sized is never widened. A
             column inserted beside a widened one takes its width as one you set, so a longer number typed into it is
             fitted to the column rather than widening it. A number that fits is painted whole, bold too: it
             may use one screen pixel of its cell's right padding, so a column whose edges round narrower on screen
@@ -63,6 +69,12 @@
             Pinned Column too — Excel's frozen pane — and across its edge. Under ExSheet.MudBlazor the shade is the
             palette's primary mixed into white, and a <code>--ex-selection-fill</code> of your own darkens the cells
             in the same way.
+        </p>
+        <p>
+            Among several ranges, made with Ctrl+click, no range carries the green outline and there is no fill handle,
+            and the active cell takes a thin border of one screen pixel inside it, in the outline's green: Excel's active
+            cell was observed with that border. Under ExSheet.MudBlazor it is the palette's primary, as the outline is.
+            <code>--ex-focus-among-ranges-outline</code> colours it.
         </p>
         <DocsExample Builtin="typeof(BordersUnderSelection)" Mud="typeof(BordersUnderSelectionMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])">
             Column A is pinned. Select across it, from A3 to D8: the thin lines over the totals and the double line
@@ -116,7 +128,10 @@
             The Sheet Toolbar is Excel's Home tab, above the Formula Bar. It is off until you set
             <code>ShowToolbar</code>, and the Sheet's <code>ViewportHeight</code> includes it. Each item follows the
             Focus cell — Bold shows pressed over a bold cell — acts on the Selection as one undo step, and is greyed
-            out while a cell is edited. A press leaves the keyboard on the Sheet.
+            out while a cell is edited. A press leaves the keyboard on the Sheet. Over a number that shows
+            <code>####</code>, Underline and Strikethrough widen a column you have not sized, as Ctrl+U and Ctrl+5
+            do. Bold and Italic widen nothing, as Ctrl+B and Ctrl+I do not, and neither does the Font Colour, whose
+            face and list set the colour through <code>SetCellFormatAsync</code>.
         </p>
         <p>
             What it holds, and in which order, is yours to declare in <code>ToolbarContent</code>.

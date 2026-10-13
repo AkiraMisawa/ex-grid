@@ -1,0 +1,70 @@
+10:57:04.236 Excel 42652, display language before: 1041
+10:57:08.058 dialog: Excel のオプション | NUIDialog
+10:57:08.948 selected the Language page
+10:57:10.170 item: 表示言語 2.     Microsoft Windows と同じ [英語 (English)]
+10:57:10.173 selected the windows item
+10:57:10.699 button: 優先として設定, enabled True
+10:57:10.704 invoked Set as Preferred
+10:57:11.919 --- after Set as Preferred
+10:57:11.937   Excel のオプション | ControlType.Group | enabled True
+10:57:11.937   カテゴリ | ControlType.List | enabled True
+10:57:11.937   全般 | ControlType.ListItem | enabled True
+10:57:11.938   数式 | ControlType.ListItem | enabled True
+10:57:11.938   データ | ControlType.ListItem | enabled True
+10:57:11.938   文章校正 | ControlType.ListItem | enabled True
+10:57:11.939   Copilot | ControlType.ListItem | enabled True
+10:57:11.939   保存 | ControlType.ListItem | enabled True
+10:57:11.939   言語 | ControlType.ListItem | enabled True
+10:57:11.940   アクセシビリティ | ControlType.ListItem | enabled True
+10:57:11.940   詳細設定 | ControlType.ListItem | enabled True
+10:57:11.940   リボンのユーザー設定 | ControlType.ListItem | enabled True
+10:57:11.940   クイック アクセス ツール バー | ControlType.ListItem | enabled True
+10:57:11.941   アドイン | ControlType.ListItem | enabled True
+10:57:11.941   トラスト センター | ControlType.ListItem | enabled True
+10:57:11.942   言語 | ControlType.Pane | enabled True
+10:57:11.942   Office の言語設定を構成します | ControlType.Text | enabled True
+10:57:11.943   Office の表示言語 | ControlType.Text | enabled True
+10:57:11.943   Office の表示言語 | ControlType.Group | enabled True
+10:57:11.943   ボタン、メニュー、およびその他のコントロールは、このリストで最初に使用できる言語で表示されます。 | ControlType.Text | enabled True
+10:57:11.944   表示言語 | ControlType.DataGrid | enabled True
+10:57:11.944   表示言語 1.     Microsoft Windows と同じ [英語 (English)] <優先> | ControlType.ListItem | enabled True
+10:57:11.945   表示言語 2.     日本語 | ControlType.ListItem | enabled True
+10:57:11.945   表示言語 3.     英語 [English] | ControlType.ListItem | enabled True
+10:57:11.946   言語の追加... | ControlType.Button | enabled True
+10:57:11.946   上へ移動 | ControlType.Button | enabled False
+10:57:11.947   下へ移動 | ControlType.Button | enabled True
+10:57:11.947   優先として設定 | ControlType.Button | enabled False
+10:57:11.947   Office のオーサリング言語と校正機能 | ControlType.Text | enabled True
+10:57:11.948   Office のオーサリング言語と校正機能 | ControlType.Group | enabled True
+10:57:11.948   スペル チェックや文章校正などの校正ツールを含む、ドキュメントの作成や編集に使用する言語を管理します。 | ControlType.Text | enabled True
+10:57:11.948   編集言語 | ControlType.DataGrid | enabled True
+10:57:11.949   編集言語 英語 (英国) <優先>, 校正機能はインストール済み | ControlType.ListItem | enabled True
+10:57:11.949   英語 (英国) <優先> | ControlType.Text | enabled True
+10:57:11.950   校正機能はインストール済み | ControlType.Text | enabled True
+10:57:11.951   編集言語 日本語, 校正機能はインストール済み, アカウントに保存 | ControlType.ListItem | enabled True
+10:57:11.951   日本語 | ControlType.Text | enabled True
+10:57:11.951   校正機能はインストール済み | ControlType.Text | enabled True
+10:57:11.952   アカウントに保存 | ControlType.Hyperlink | enabled True
+10:57:11.953   編集言語 英語 (米国), 校正機能はインストール済み, アカウントに保存 | ControlType.ListItem | enabled True
+10:57:11.953   英語 (米国) | ControlType.Text | enabled True
+10:57:11.954   校正機能はインストール済み | ControlType.Text | enabled True
+10:57:11.954   アカウントに保存 | ControlType.Hyperlink | enabled True
+10:57:11.954   言語を追加... | ControlType.Button | enabled True
+10:57:11.955   削除 | ControlType.Button | enabled False
+10:57:11.955   優先として設定 | ControlType.Button | enabled False
+10:57:11.956   自分のアカウントのオーサリング言語をクラウドに保存します。 | ControlType.CheckBox | enabled True
+10:57:11.956   Windows の [設定] から追加のキーボードをインストール | ControlType.Hyperlink | enabled True
+10:57:11.956   カーソルを 1 行上へ移動 | ControlType.Button | enabled True
+10:57:11.957   1 画面分上へ移動 | ControlType.Button | enabled True
+10:57:11.957   位置 | ControlType.Thumb | enabled True
+10:57:11.957   1 画面分下へ移動 | ControlType.Button | enabled True
+10:57:11.959   カーソルを 1 行下へ移動 | ControlType.Button | enabled True
+10:57:11.959   OK | ControlType.Button | enabled True
+10:57:11.959   キャンセル | ControlType.Button | enabled True
+10:57:11.960   ボックスのサイズ変更 | ControlType.Thumb | enabled True
+10:57:11.981 invoked OK
+10:57:13.497 after OK, window: Book1 - Excel
+10:57:13.498 after OK, window: Excel のオプション
+10:57:14.311 close: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED))
+10:57:24.446 ended its own Excel with Stop-Process
+10:57:24.452 UILanguageTag=ja-jp FollowSystemUI= UISnapshotLanguages=en-gb;ja-jp

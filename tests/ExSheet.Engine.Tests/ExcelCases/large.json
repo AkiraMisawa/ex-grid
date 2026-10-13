@@ -37,7 +37,7 @@
     {
       "id": "LARGE-005",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: text and booleans in a range are passed over",
+      "description": "Text and booleans in a range are passed over (the seventeenth Windows run)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=LARGE(A1:A7,1)"},
       "check": "ZZ1000",
@@ -46,7 +46,7 @@
     {
       "id": "LARGE-006",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: an empty range is #NUM!",
+      "description": "An empty range is #NUM! (the seventeenth Windows run)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=LARGE(A5,1)"},
       "check": "ZZ1000",
@@ -62,43 +62,59 @@
     },
     {
       "id": "LARGE-008",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a k of 1.2 is rounded up to 2 (6), not rounded to 1 (7)",
+      "source": "observed",
+      "description": "A k of 1.2 is rounded up to 2 (6), not rounded to 1 (7) (the area pass of 2026-10-12)",
       "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,1.2)"},
       "check": "ZZ1000",
       "expect": {"value2": 6}
     },
     {
       "id": "LARGE-009",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a k of 9.5 over ten numbers is rounded up to 10, the smallest",
+      "source": "observed",
+      "description": "A k of 9.5 over ten numbers is rounded up to 10, the smallest (the area pass of 2026-10-12)",
       "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,9.5)"},
       "check": "ZZ1000",
       "expect": {"value2": 2}
     },
     {
       "id": "LARGE-010",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a k of 10.5 over ten numbers is rounded up past their count, #NUM!",
+      "source": "observed",
+      "description": "A k of 10.5 over ten numbers is above their count, #NUM! (the area pass of 2026-10-12)",
       "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,10.5)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
     },
     {
       "id": "LARGE-011",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a k between 0 and 1 is #VALUE! (LibreOffice rounds it up to 1, Gnumeric gives #NUM!)",
+      "source": "observed",
+      "description": "A k between 0 and 1 is #NUM!, and not rounded up to 1 as a k above 1 is (the area pass of 2026-10-12)",
       "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,0.5)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#NUM!"}
     },
     {
       "id": "LARGE-012",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: k is read at 15 significant digits, so 1+2^-52 is 1 (7), not rounded up to 2 (6)",
+      "source": "observed",
+      "description": "k is read at 15 significant digits, so 1+2^-52 is 1 (7), not rounded up to 2 (6) (the area pass of 2026-10-12)",
       "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,1+2^-52)"},
       "check": "ZZ1000",
       "expect": {"value2": 7}
+    },
+    {
+      "id": "LARGE-013",
+      "source": "observed",
+      "description": "A k just below 1 is #NUM!, as 0.5 is (LARGE-011), and not rounded up to 1 (7) (the second area pass of 2026-10-12)",
+      "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,0.99)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "LARGE-014",
+      "source": "observed",
+      "description": "Text given directly as the array is coerced, as a typed value is, where AGGREGATE's array form takes it as no number, #NUM! (AGGREGATE-061; the second area pass of 2026-10-12)",
+      "cells": {"ZZ1000": "=LARGE(\"5\",1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5}
     }
   ]
 }

@@ -1,0 +1,400 @@
+{
+    "ran":  "2026-10-12T10:39:00",
+    "excel":  "16.0 (build 20430); EXCEL.EXE 16.0.20430.20146",
+    "windowsRegionalFormat":  "en-US",
+    "formulasEnteredThrough":  "typed (keyboard input), as every other cell of a case",
+    "constantsEnteredThrough":  "typed (keyboard input: SendInput, then Enter)",
+    "summary":  {
+                    "agree":  11,
+                    "disagree":  0,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "CW-018",
+                      "area":  "column-widths",
+                      "source":  "observed",
+                      "description":  "A typed number that widens its column makes the width custom, as Excel\u0027s file marks it (verification/2026-09-27-windows-excel-2: widened to 10.18, customWidth set; ADR-0047, \"What the second observation settled\"). The engine leaves the widening to the component; the harness widens as the component does",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "custom":  true
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "custom":  true
+                                       },
+                      "excel":  {
+                                    "value2":  1234567890,
+                                    "kind":  "number",
+                                    "number":  "1234567890",
+                                    "text":  "1234567890",
+                                    "formula":  "1234567890",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  10.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "CW-021",
+                      "area":  "column-widths",
+                      "source":  "observed",
+                      "description":  "A typed number that widens its column is recorded as a width widened by entry, marked custom as Excel\u0027s file marks it (ADR-0046, 2026-09-28): typed, Excel widened B to 11.18, written width=\"11.81640625\" bestFit=\"1\" customWidth=\"1\" (verification/2026-10-11-windows-17, b10). Excel\u0027s width for a typed entry is in its own pixels (11.18 at 150%), and the engine harness\u0027s is its characters (11), so the width is bounded, not compared",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "widthAtLeast":  10.5,
+                                       "widthAtMost":  12,
+                                       "custom":  true
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "widthAtLeast":  10.5,
+                                           "widthAtMost":  12,
+                                           "custom":  true
+                                       },
+                      "excel":  {
+                                    "value2":  12345678901,
+                                    "kind":  "number",
+                                    "number":  "12345678901",
+                                    "text":  "12345678901",
+                                    "formula":  "12345678901",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  11.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "CW-022",
+                      "area":  "column-widths",
+                      "source":  "observed",
+                      "description":  "The user setting a width over one widened by entry makes it the user\u0027s: recorded and marked custom, and never widened by an entry (ColumnWidthTests). Typed, Excel widened B to 11.18; Column Width 11 then left it 11, written customWidth=\"1\" without bestFit (verification/2026-10-11-windows-17, b10)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "width":  11,
+                                       "custom":  true
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "width":  11,
+                                           "custom":  true
+                                       },
+                      "excel":  {
+                                    "value2":  12345678901,
+                                    "kind":  "number",
+                                    "number":  "12345678901",
+                                    "text":  "12345678901",
+                                    "formula":  "12345678901",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  11,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "CW-023",
+                      "area":  "column-widths",
+                      "source":  "observed",
+                      "description":  "An inserted column takes the width widened by entry of the column to its left as a width the user set: typed, Excel widened B to 11.18 (bestFit, customWidth), and the column inserted at C took 11.18 written customWidth=\"1\" without bestFit, while B kept bestFit (verification/2026-10-11-windows-17, b10). Excel\u0027s width for a typed entry is in its own pixels (11.18 at 150%), and the engine harness\u0027s is its characters (11), so the width is bounded, not compared",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widthAtLeast":  10.5,
+                                       "widthAtMost":  12,
+                                       "custom":  true
+                                   },
+                      "engineExpect":  {
+                                           "widthAtLeast":  10.5,
+                                           "widthAtMost":  12,
+                                           "custom":  true
+                                       },
+                      "excel":  {
+                                    "value2":  null,
+                                    "kind":  "blank",
+                                    "text":  "",
+                                    "formula":  "",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  11.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "CW-025",
+                      "area":  "column-widths",
+                      "source":  "observed",
+                      "description":  "Deleting a column moves a width widened by entry to its right left, of the same kind: typed, Excel widened C to 11.18, and with B deleted the column now B was 11.18, written bestFit=\"1\" customWidth=\"1\" (verification/2026-10-11-windows-17, b10). Excel\u0027s width for a typed entry is in its own pixels (11.18 at 150%), and the engine harness\u0027s is its characters (11), so the width is bounded, not compared",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widthAtLeast":  10.5,
+                                       "widthAtMost":  12,
+                                       "custom":  true
+                                   },
+                      "engineExpect":  {
+                                           "widthAtLeast":  10.5,
+                                           "widthAtMost":  12,
+                                           "custom":  true
+                                       },
+                      "excel":  {
+                                    "value2":  12345678901,
+                                    "kind":  "number",
+                                    "number":  "12345678901",
+                                    "text":  "12345678901",
+                                    "formula":  "12345678901",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  11.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "CW-027",
+                      "area":  "column-widths",
+                      "source":  "observed",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a typed date that widens its column makes the width custom, as a typed number does (CW-018 observed the flag for a number only)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "custom":  true
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "custom":  true
+                                       },
+                      "excel":  {
+                                    "value2":  46291,
+                                    "kind":  "number",
+                                    "number":  "46291",
+                                    "text":  "9/26/2026",
+                                    "formula":  "46291",
+                                    "numberFormat":  "m/d/yyyy",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.45,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "CW-028",
+                      "area":  "column-widths",
+                      "source":  "observed",
+                      "description":  "After a typed number widened B (to 10.18), a longer typed number widens it again (to 11.18), and Excel\u0027s file still marks it custom: a width widened by entry widens again (ADR-0046, 2026-09-28) (verification/2026-09-28-windows-excel-3)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "custom":  true,
+                                       "widthAtLeast":  10.5
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "custom":  true,
+                                           "widthAtLeast":  10.5
+                                       },
+                      "excel":  {
+                                    "value2":  12345678901,
+                                    "kind":  "number",
+                                    "number":  "12345678901",
+                                    "text":  "12345678901",
+                                    "formula":  "12345678901",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  11.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "CW-029",
+                      "area":  "column-widths",
+                      "source":  "observed",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a typed Formula whose number widens its column (WD-007\u0027s shape) makes the width custom, as a typed number does",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widens":  true,
+                                       "custom":  true
+                                   },
+                      "engineExpect":  {
+                                           "widens":  true,
+                                           "custom":  true
+                                       },
+                      "excel":  {
+                                    "value2":  1234567890,
+                                    "kind":  "number",
+                                    "number":  "1234567890",
+                                    "text":  "1234567890",
+                                    "formula":  "=123456789*10",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  10.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "CW-030",
+                      "area":  "column-widths",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a column inserted beside one a typed number widened (to 10.18, CW-028) holds its width as the user\u0027s, so a longer number typed into it does not widen it: Excel wrote the inserted column customWidth without bestFit (verification/2026-10-11-windows-17, b10, CW-023), the flag ECMA-376 gives a column a typed number widens",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widthAtMost":  10.5,
+                                       "custom":  true
+                                   },
+                      "engineExpect":  {
+                                           "widthAtMost":  10.5,
+                                           "custom":  true
+                                       },
+                      "excel":  {
+                                    "value2":  12345678901,
+                                    "kind":  "number",
+                                    "number":  "12345678901",
+                                    "text":  "12345678901",
+                                    "formula":  "12345678901",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  10.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "CW-031",
+                      "area":  "column-widths",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: the column a typed number widened keeps its kind when a column is inserted to its right, so a longer number typed into it widens it again: Excel kept its bestFit (verification/2026-10-11-windows-17, b10, CW-023)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widthAtLeast":  10.5,
+                                       "custom":  true
+                                   },
+                      "engineExpect":  {
+                                           "widthAtLeast":  10.5,
+                                           "custom":  true
+                                       },
+                      "excel":  {
+                                    "value2":  12345678901,
+                                    "kind":  "number",
+                                    "number":  "12345678901",
+                                    "text":  "12345678901",
+                                    "formula":  "12345678901",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  11.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "CW-032",
+                      "area":  "column-widths",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a width widened by entry moved left by a deletion keeps its kind, so a longer number typed into it widens it again: Excel kept its bestFit (verification/2026-10-11-windows-17, b10, CW-025)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "widthAtLeast":  10.5,
+                                       "custom":  true
+                                   },
+                      "engineExpect":  {
+                                           "widthAtLeast":  10.5,
+                                           "custom":  true
+                                       },
+                      "excel":  {
+                                    "value2":  12345678901,
+                                    "kind":  "number",
+                                    "number":  "12345678901",
+                                    "text":  "12345678901",
+                                    "formula":  "12345678901",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  11.18,
+                                    "standardWidth":  8.09,
+                                    "widens":  true,
+                                    "custom":  true,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  }
+              ]
+}

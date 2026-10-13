@@ -81,13 +81,13 @@ internal static partial class FunctionLibrary
     private static Operand IfNa(FunctionCall call)
     {
         var operand = call.Operand(0);
-        if (IsArray(operand)) return Operand.Of(ErrorValue.Value);
+        if (IsArray(operand)) return Unlifted(call);
         var value = call.Evaluator.ScalarOf(operand);
         if (value is { IsError: true, Error: ErrorValue.NA })
         {
             if (!call.Has(1)) return Operand.Blank;
             var fallback = call.Operand(1);
-            if (IsArray(fallback)) return Operand.Of(ErrorValue.Value);
+            if (IsArray(fallback)) return Unlifted(call);
             return call.Evaluator.ScalarOf(fallback) is { } caught ? Operand.Of(caught) : Operand.Blank;
         }
         return value is { } v ? Operand.Of(v) : Operand.Blank;
@@ -100,14 +100,16 @@ internal static partial class FunctionLibrary
     private static Operand IsNumber(FunctionCall call) => Inspect(call, value => value is { Kind: ValueKind.Number });
 
     /// <summary>
-    /// An IS function: it answers TRUE or FALSE for any one Value, an Error Value included — but
+    /// An IS function: it answers TRUE or FALSE for any one Value, an Error Value included, and a kept
+    /// blank as a blank cell's, as Excel's <c>ISBLANK</c> read <c>SORT</c>'s (SORT-022), carried to the
+    /// other IS functions and the other four's kept blank by generalisation, which no run has read — but
     /// <c>#GETTING_DATA</c> and <c>#CIRC!</c> are its result, as <c>ISERROR</c>'s (ADR-0047,
     /// ADR-0049): FALSE would be an answer about data that has not arrived, or about a cycle.
     /// </summary>
     private static Operand Inspect(FunctionCall call, Func<Value?, bool> test)
     {
-        var operand = call.Operand(0);
-        if (IsArray(operand)) return Operand.Of(ErrorValue.Value);
+        var operand = call.OneValue(0);
+        if (IsArray(operand)) return Unlifted(call);
         var value = call.Evaluator.ScalarOf(operand);
         if (value is { IsError: true, Error: ErrorValue.GettingData or ErrorValue.Circ } waiting) return Operand.Of(waiting);
         return Operand.Of(Value.FromBoolean(test(value)));
@@ -144,7 +146,7 @@ internal static partial class FunctionLibrary
     private static Operand ErrorType(FunctionCall call)
     {
         var operand = call.Operand(0);
-        if (IsArray(operand)) return Operand.Of(ErrorValue.Value);
+        if (IsArray(operand)) return Unlifted(call);
         if (call.Evaluator.ScalarOf(operand) is not { IsError: true } value) return Operand.Of(ErrorValue.NA);
         return value.Error switch
         {
@@ -176,7 +178,7 @@ internal static partial class FunctionLibrary
         for (var i = 0; i + 1 < call.Count; i += 2)
         {
             var test = call.Operand(i);
-            if (IsArray(test)) return Operand.Of(ErrorValue.Value);
+            if (IsArray(test)) return Unlifted(call);
             var truth = false;
             if (call.Evaluator.ScalarOf(test) is { } value && !TryTruth(value, out truth)) return Operand.Of(value.IsError ? value.Error : ErrorValue.Value);
             if (truth) return call.Has(i + 1) ? call.Operand(i + 1) : Operand.Of(Value.FromNumber(0));

@@ -20,14 +20,14 @@ internal static partial class FunctionLibrary
     /// likely. As Excel was observed to answer: a bottom above the top is <c>#NUM!</c>, a boolean and
     /// text that is not a number are <c>#VALUE!</c>, a numeric string is read as its number, a blank
     /// Reference is 0, and an Error Value passes through (RANDBETWEEN-007 to 014). Refused by decision
-    /// with <c>#VALUE!</c>: a fractional bound, whose draw Excel was seen to take past the top
-    /// (RANDBETWEEN-004 to 006), and a bound above 2^53 in magnitude.
+    /// (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's): a fractional bound, whose draw
+    /// Excel was seen to take past the top (RANDBETWEEN-004 to 006), and a bound above 2^53 in magnitude.
     /// </summary>
     private static Operand RandBetween(FunctionCall call)
     {
         if (!TryBound(call, 0, out var bottom, out var failure)) return failure;
         if (!TryBound(call, 1, out var top, out failure)) return failure;
-        if (!IsWhole(bottom) || !IsWhole(top)) return Operand.Of(ErrorValue.Value);
+        if (!IsWhole(bottom) || !IsWhole(top)) return call.Evaluator.Refuse();
         if (bottom > top) return Operand.Of(ErrorValue.Num);
         if (DrawOf(call) is not { } draw) return Operand.Of(ErrorValue.GettingData);
         return Operand.Of(Value.FromNumber(Draws.Between(draw, (long)bottom, (long)top)));

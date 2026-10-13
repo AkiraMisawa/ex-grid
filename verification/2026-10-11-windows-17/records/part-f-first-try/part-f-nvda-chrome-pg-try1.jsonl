@@ -1,0 +1,11 @@
+{"t": "10:10:50", "cmd": {"op": "goto", "url": "http://localhost:5299/sheet", "ready": "() => { const g = document.querySelector('.ex-grid:has(> .ex-formula-bar)'); if (!g) return false;\n  const c = [...g.querySelectorAll('[id$=\"-r11c1\"]')].map(e => e.textContent).join(''); return c.includes('318.25') && !!g.querySelector('input.ex-key-field'); }"}, "answer": {"ok": "goto", "title": "run17-chrome-50354", "url": "http://localhost:5299/sheet"}}
+{"t": "10:10:52", "cmd": {"op": "calibrate"}, "answer": {"ok": "calibrate", "dpr": 1.5, "tries": [{"px": 671, "py": 371, "client": null}, {"px": 671, "py": 371, "client": null}, {"px": 671, "py": 371, "client": null}, {"px": 671, "py": 371, "client": null}, {"px": 671, "py": 371, "client": null}, {"px": 671, "py": 371, "client": null}]}}
+{"t": "10:10:52", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": "run17-chrome-50354"}}
+{"t": "10:10:53", "cmd": {"op": "input", "cmd": "english run17-chrome-50354"}, "answer": {"ok": "ok english was=0x08090809 now=0x08090809"}}
+{"t": "10:10:53", "cmd": {"op": "input", "cmd": "imeoff"}, "answer": {"ok": "ok imeoff"}}
+{"t": "10:10:53", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": {"activeElement": "body", "ariaActiveDescendant": null, "activeDescendantCell": null, "activeDescendantExists": null, "focus": null, "hasFocus": true, "editing": false, "fieldRole": null, "fieldLabel": null}}}
+{"t": "10:10:53", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": "sheet-revalue"}}
+{"t": "10:10:54", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": {"activeElement": "button#sheet-revalue", "ariaActiveDescendant": null, "activeDescendantCell": null, "activeDescendantExists": null, "focus": null, "hasFocus": true, "editing": false, "fieldRole": null, "fieldLabel": null}}}
+{"t": "10:10:54", "cmd": {"op": "events"}, "answer": {"ok": "events", "value": [{"t": 3507, "type": "focusin", "target": "button#sheet-revalue"}]}}
+{"t": "10:10:54", "cmd": {"op": "input", "cmd": "foreground"}, "answer": {"ok": "ok foreground title=\"run17-chrome-50354 - Google Chrome\" process=chrome"}}
+{"t": "10:10:55", "cmd": {"op": "quit"}, "answer": {"ok": "quit"}}

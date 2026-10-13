@@ -74,7 +74,7 @@
     {
       "id": "EDATE-009",
       "source": "observed",
-      "description": "A boolean typed as an argument is #VALUE!",
+      "description": "A boolean typed as the start date is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(TRUE,1)"},
       "check": "ZZ1000",
@@ -82,16 +82,16 @@
     },
     {
       "id": "EDATE-010",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a start on serial 60, 29 February 1900, the day that never existed",
+      "source": "observed",
+      "description": "A start on serial 60 is read as DAY reads it, the 29th of February 1900 (DAY-002), and a month on keeps the 29th: 29 March, 89",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(60,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 89}
     },
     {
       "id": "EDATE-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: from 31 January 1900, a month on is 28 February, 59, as February 1900 has 28 days",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(31,1)"},
@@ -100,12 +100,111 @@
     },
     {
       "id": "EDATE-012",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a result before 1900, a month before 15 January 1900, is #NUM!, as EOMONTH's is (EOMONTH-005, and Microsoft documents #NUM! for EOMONTH's invalid result); EDATE's follows by analogy, where it was #VALUE! before the seventeenth run's corrections",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(15,-1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "EDATE-013",
+      "source": "observed",
+      "description": "From serial 60, the 29th of February 1900, no months on is the month's last day on the real calendar, 28 February, 59, as EDATE-010 keeps the 29th where the month has one",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(60,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 59}
+    },
+    {
+      "id": "EDATE-014",
+      "source": "observed",
+      "description": "From serial 60, twelve months on is 28 February 1901, 425, as February 1901 has 28 days",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(60,12)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 425}
+    },
+    {
+      "id": "EDATE-015",
+      "source": "observed",
+      "description": "From serial 60, a month before is 29 January 1900, 29",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(60,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 29}
+    },
+    {
+      "id": "EDATE-016",
+      "source": "observed",
+      "description": "A start on serial 0, 0 January 1900, keeps its day 0, as DAY reads it (DAY-004): a month on is day 0 of February 1900, the day before its 1st, 31 January, 31",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(0,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 31}
+    },
+    {
+      "id": "EDATE-017",
+      "source": "observed",
+      "description": "A start between -1 and 0 is cut down to its day, -1, as YEAR reads a serial (YEAR-008), and #NUM! as EDATE-007's -1 is; it is not truncated to serial 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(-0.5,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "EDATE-018",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: from serial 0, two months on is day 0 of March 1900, the day before 1 March, which is the day that never existed, 60, by DATE's arithmetic and 28 February, 59, on the real calendar; the readings that give every observed answer part here (spikes/exsheet-date-readings/)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "EDATE-019",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: from serial 0, no months on is day 0 of January 1900, which is serial 0 by DATE's arithmetic and 31 December 1899, before any serial and #NUM! as EOMONTH-015 is, on the real calendar",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(0,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "EDATE-020",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: from serial 0 to January 10000, which is past the last year and #NUM! by DATE's arithmetic, while the month before's last day is 31 December 9999, 2958465",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(0,97200)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "EDATE-021",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: from serial 0, three months on is day 0 of April 1900, 31 March, 91, under every reading that gives the observed answers",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(0,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 91}
+    },
+    {
+      "id": "EDATE-022",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a start between 0 and 1 is cut down to serial 0, and twelve months on is day 0 of January 1901, 31 December 1900, 366",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(0.5,12)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 366}
+    },
+    {
+      "id": "EDATE-023",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a boolean typed as the months, which no run has typed into EDATE (EDATE-009 typed one as the start); EOMONTH gives #VALUE! for a boolean as its months (EOMONTH-009), and read as 1, a month on from 15 March 2023 is 15 April, 45031",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(45000,TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

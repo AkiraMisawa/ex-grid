@@ -36,6 +36,15 @@
       "cells": {"ZZ1000": "=MONTH(0)"},
       "check": "ZZ1000",
       "expect": {"value2": 1}
+    },
+    {
+      "id": "MONTH-005",
+      "source": "observed",
+      "description": "A serial between -1 and 0 is cut down to its day, -1, below 0, and #NUM!; it is not truncated to serial 0, in January (MONTH-004)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MONTH(-0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
     }
   ]
 }

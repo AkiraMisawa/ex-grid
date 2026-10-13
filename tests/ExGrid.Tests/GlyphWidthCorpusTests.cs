@@ -8,9 +8,10 @@ namespace ExGrid.Tests;
 /// No glyph a Number Format can emit is charged below its width (ADR-0016's note of 2026-10-01;
 /// principle 1): under the core's default widths, no text ExSheet's built-in formats paint is
 /// wider than its estimate, so a number or date judged to fit is never cut. The painted widths are
-/// <c>tests/GlyphWidths</c>' measurement of the core's two faces — <c>system-ui</c> as macOS
-/// resolves it, and DejaVu Sans, which Linux resolves it to — at 14px for Compact, Standard and
-/// Comfortable and 12px for Excel, at weights 400, 500 and 600 under the regular widths and 700
+/// <c>tests/GlyphWidths</c>' measurement of the core's faces — <c>system-ui</c> as macOS resolves
+/// it and as Windows does (Segoe UI under an English display, Yu Gothic UI under a Japanese one, in
+/// Chrome and in Edge), and DejaVu Sans, which Linux resolves it to — at 14px for Compact, Standard
+/// and Comfortable and 12px for Excel, at weights 400, 500 and 600 under the regular widths and 700
 /// under the bold ones. README.md there says how to measure again.
 /// </summary>
 public class GlyphWidthCorpusTests
@@ -67,6 +68,21 @@ public class GlyphWidthCorpusTests
         Assert.True(under.Length == 0,
             $"{under.Length} glyphs are charged under their width in {record.Face} at {size}px, weight {weight}: "
             + string.Join("; ", under.Select(g => $"'{g.Glyph}' (U+{char.ConvertToUtf32(g.Glyph, 0):X4}, {g.Painter}) is {g.Painted:0.###} and is charged {g.Charged:0.###}")));
+    }
+
+    [Fact] // ADR-0016, FN-12e: the defaults hold on every platform measured, so a platform's record never drops out unseen
+    public void The_core_is_held_to_macOS_Windows_under_English_and_Japanese_in_both_browsers_and_DejaVu_Sans()
+    {
+        var files = Faces.SelectMany(GlyphWidthRecord.FilesOf).ToHashSet();
+
+        Assert.Superset(
+            new HashSet<string>
+            {
+                "dejavu-sans.macos.json", "system-ui.macos.json",
+                "system-ui.windows.chrome.json", "system-ui.windows.msedge.json",
+                "system-ui.windows-ja.chrome.json", "system-ui.windows-ja.msedge.json",
+            },
+            files);
     }
 
     [Theory, MemberData(nameof(Files))] // ADR-0016: a record holds this corpus's widths, or it holds none

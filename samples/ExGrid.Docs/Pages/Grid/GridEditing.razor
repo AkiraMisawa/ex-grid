@@ -78,8 +78,13 @@
             </li>
             <li>
                 <strong>The fill handle</strong>, with <code>ShowFillHandle</code>, is the square at the corner of the
-                selection. Drag it and the grid raises <code>OnFill</code> with the source range and the target
-                beside it; what a fill means — a copy, a series — is yours.
+                selection: its bottom-right, or the top-right of whole columns and the bottom-left of whole rows, one
+                or several, beside the header or the Row Headings, as Excel puts it (observed beside Excel: one
+                column and one row in the Windows run of 2026-10-11, several in the readings of 2026-10-12, R5). It
+                stays at the edge of the part in view when that first row or column is scrolled away, as Excel's
+                did for a column (R5; for a row by generalisation), and a selection of every cell has none, as
+                Excel showed none (R5). Drag it and the grid raises <code>OnFill</code> with the source range and
+                the target beside it; what a fill means — a copy, a series — is yours.
             </li>
             <li>
                 <strong><kbd>Delete</kbd></strong> raises <code>OnClear</code>: these cells should hold no value.

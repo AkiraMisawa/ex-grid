@@ -75,7 +75,7 @@
     {
       "id": "EOMONTH-009",
       "source": "observed",
-      "description": "A boolean typed as an argument is #VALUE!",
+      "description": "A boolean typed as the months is #VALUE!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(45000,TRUE)"},
       "check": "ZZ1000",
@@ -83,21 +83,84 @@
     },
     {
       "id": "EOMONTH-010",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a start on serial 0, 0 January 1900",
+      "source": "observed",
+      "description": "A start on serial 0 is read as MONTH reads it, in January 1900 (MONTH-004), and the end of the month after is 28 February, 59",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(0,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 59}
     },
     {
       "id": "EOMONTH-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: from 1 March 1900, the month before ends on 28 February, 59, not on the day that never existed",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(DATE(1900,3,1),-1)"},
       "check": "ZZ1000",
       "expect": {"value2": 59}
+    },
+    {
+      "id": "EOMONTH-012",
+      "source": "observed",
+      "description": "A start on serial 60 is in February 1900, as MONTH reads it, and February ends on the 28th, 59, not on the day that never existed",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EOMONTH(60,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 59}
+    },
+    {
+      "id": "EOMONTH-013",
+      "source": "observed",
+      "description": "From serial 60, the end of the month after is 31 March 1900, 91",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EOMONTH(60,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 91}
+    },
+    {
+      "id": "EOMONTH-014",
+      "source": "observed",
+      "description": "A start on serial 0 is in January 1900, which ends on the 31st, 31",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EOMONTH(0,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 31}
+    },
+    {
+      "id": "EOMONTH-015",
+      "source": "observed",
+      "description": "From serial 0, the month before is December 1899, before any serial, and #NUM! as EOMONTH-005's result after 9999 is",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EOMONTH(0,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "EOMONTH-016",
+      "source": "observed",
+      "description": "A start between -1 and 0 is cut down to its day, -1, as YEAR reads a serial (YEAR-008), and #NUM! as EOMONTH-004's -1 is; it is not truncated to serial 0, whose month ends on 31 January",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EOMONTH(-0.5,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "EOMONTH-017",
+      "source": "observed",
+      "description": "The same a month on: #NUM!, not the end of February 1900",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EOMONTH(-0.5,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "EOMONTH-018",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a boolean typed as the start, which no run has typed into EOMONTH (EOMONTH-009 typed one as the months); Excel reads a boolean typed as a start date as 1 under DATEDIF (DATEDIF-046) and gives #VALUE! under YEARFRAC (YEARFRAC-054), and read as 1, the end of the month after 1 January 1900 is 28 February, 59",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EOMONTH(TRUE,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

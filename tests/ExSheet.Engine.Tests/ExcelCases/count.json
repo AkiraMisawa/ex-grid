@@ -73,6 +73,15 @@
       "cells": {"ZZ1000": "=COUNT(,)"},
       "check": "ZZ1000",
       "expect": {"value2": 2}
+    },
+    {
+      "id": "COUNT-009",
+      "source": "uncertain",
+      "description": "COUNT over a range holding a refused cell is refused: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001), and B2 is 1; what COUNT(B1:B2) gives is asked",
+      "cells": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "ZZ1000": "=COUNT(B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND's fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell through a range is refused, where COUNT passed over its #VALUE! and gave 1 before"
     }
   ]
 }

@@ -155,6 +155,10 @@ public sealed partial class Sheet
     /// compared as <c>XLOOKUP</c>'s exact match compares them, so <c>r-1</c> and <c>R-1</c> are one
     /// key while the number 1 and the text <c>1</c> are two. A blank key is not a key, and any number
     /// of rows may have none; an Error Value matches nothing, and is not compared either.</para>
+    /// <para>A <c>#VALUE!</c> read from a cell whose Formula ExSheet refused, because it cannot answer
+    /// it as Excel, is taken as it came, and a Formula that reads its column is refused as one that reads
+    /// the cell is: no Formula can catch it (ADR-0047; 2026-10-12, decided with the user: a refusal is
+    /// never caught, anywhere).</para>
     /// </summary>
     /// <param name="name">The declared table's name.</param>
     /// <param name="rows">The rows, each holding one Value per declared column in order; <see langword="null"/> is a blank.</param>
@@ -206,6 +210,7 @@ public sealed partial class Sheet
         }
         // The snapshot is built whole before it replaces the old one.
         table.Data = [.. columns.Select(c => (IReadOnlyList<Value?>)c.AsReadOnly())];
+        table.Refusing = [.. columns.Select(c => c.Any(v => v is { IsRefused: true }))];
         table.RowCount = count;
         return RecalculateReaders(table.Name);
     }
@@ -278,6 +283,26 @@ public sealed partial class Sheet
         return table.ColumnIndex.TryGetValue(column, out var index) ? Operand.Of(table.Data[index]) : Operand.Of(ErrorValue.Ref);
     }
 
+    /// <summary>
+    /// Whether a Linked Table's column holds a refusal (<see cref="Value.Refusal"/>): a Value the
+    /// Consumer read from a cell whose Formula ExSheet refused, and pushed. A Formula that reads the
+    /// column is refused, as one that reads the cell is (ADR-0047; 2026-10-12, decided with the user: a
+    /// refusal is never caught, anywhere).
+    /// </summary>
+    private bool ColumnHoldsRefusal(string name, string column) =>
+        _tables.TryGetValue(name, out var table) && table.Data is not null
+        && table.ColumnIndex.TryGetValue(column, out var index) && table.Refusing[index];
+
+    /// <summary>Whether a Formula's text names a Linked Table's column that holds a refusal (<see cref="ColumnHoldsRefusal"/>).</summary>
+    private bool ReadsRefusingTable(Node node)
+    {
+        foreach (var reference in node.StructuredReferences)
+        {
+            if (ColumnHoldsRefusal(reference.Table, reference.Column)) return true;
+        }
+        return false;
+    }
+
     /// <summary>Whether a Formula reads a declared Linked Table whose first snapshot has not arrived.</summary>
     private bool ReadsWaitingTable(Node node)
     {
@@ -288,20 +313,43 @@ public sealed partial class Sheet
         return false;
     }
 
+    /// <summary>
+    /// The tables a Formula reads: those its structured references name, and every bare name it holds, which
+    /// is refused once a Linked Table of that name is declared (TABLE-024; 2026-10-13, decided with the user),
+    /// so that the declaration recalculates it.
+    /// </summary>
+    private static IEnumerable<string> TablesRead(Node formula) =>
+        formula.StructuredReferences.Select(r => r.Table).Concat(BareNames(formula)).Distinct(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The names a Formula holds that no <c>LET</c> binds, which a Linked Table's name could be.</summary>
+    private static IEnumerable<string> BareNames(Node node) => node switch
+    {
+        NameNode { Binding: null } name => [name.Name],
+        NameNode => [],
+        IntersectionNode i => BareNames(i.Left).Concat(BareNames(i.Right)),
+        ParenthesesNode p => BareNames(p.Inner),
+        UnaryNode u => BareNames(u.Operand),
+        PercentNode p => BareNames(p.Operand),
+        BinaryNode b => BareNames(b.Left).Concat(BareNames(b.Right)),
+        FunctionNode f => f.Arguments.SelectMany(BareNames),
+        LetNode l => l.Bindings.SelectMany(b => BareNames(b.Value)).Concat(BareNames(l.Calculation)),
+        _ => [],
+    };
+
     private void RegisterTableReaders(CellAddress formulaCell, Node formula)
     {
-        foreach (var reference in formula.StructuredReferences)
+        foreach (var table in TablesRead(formula))
         {
-            if (!_tableReaders.TryGetValue(reference.Table, out var set)) _tableReaders[reference.Table] = set = [];
+            if (!_tableReaders.TryGetValue(table, out var set)) _tableReaders[table] = set = [];
             set.Add(formulaCell);
         }
     }
 
     private void UnregisterTableReaders(CellAddress formulaCell, Node formula)
     {
-        foreach (var reference in formula.StructuredReferences)
+        foreach (var table in TablesRead(formula))
         {
-            if (_tableReaders.TryGetValue(reference.Table, out var set) && set.Remove(formulaCell) && set.Count == 0) _tableReaders.Remove(reference.Table);
+            if (_tableReaders.TryGetValue(table, out var set) && set.Remove(formulaCell) && set.Count == 0) _tableReaders.Remove(table);
         }
     }
 
@@ -333,6 +381,9 @@ public sealed partial class Sheet
 
         /// <summary>The current snapshot, column by column; <see langword="null"/> until the first arrives, and after one is refused.</summary>
         public IReadOnlyList<Value?>[]? Data { get; set; }
+
+        /// <summary>For each column of <see cref="Data"/>, whether it holds a refusal (<see cref="Value.Refusal"/>).</summary>
+        public bool[] Refusing { get; set; } = [];
 
         public int RowCount { get; set; }
     }

@@ -1,0 +1,32 @@
+## system-ui.windows.chrome.json: 'system-ui, sans-serif', HeadlessChrome/154.0.0.0 Safari/537.36, unit 1/64 px, rounded up
+  14px regular: wide 11.766 ('%' at 500) vs default 14.04 -> within; digit 8.625 ('₫' at 500) vs default 9.75 -> within; narrow 5.797 ('/' at 500) vs default 6.41 -> within
+  14px bold: wide 12.141 ('%' at 700) vs default 14.36 -> within; digit 9.078 ('₫' at 700) vs default 9.75 -> within; narrow 6.219 ('/' at 700) vs default 6.41 -> within
+  12px regular: wide 10.094 ('%' at 500) vs default 12.04 -> within; digit 7.391 ('₫' at 500) vs default 8.36 -> within; narrow 4.969 ('/' at 500) vs default 5.49 -> within
+  12px bold: wide 10.406 ('%' at 700) vs default 12.44 -> within; digit 7.781 ('₫' at 700) vs default 8.36 -> within; narrow 5.328 ('/' at 700) vs default 5.49 -> within
+  painted at 400 by: Segoe UI (483 glyphs); Tahoma (28 glyphs); Microsoft YaHei (11 glyphs); Malgun Gothic (1 glyphs)
+  14px other (no class, full-width aside): widest 14.938 ('Щ' at 700) vs default 15.46 -> within
+  12px other (no class, full-width aside): widest 12.797 ('Щ' at 700) vs default 13.26 -> within
+## system-ui.windows.msedge.json: 'system-ui, sans-serif', HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0, unit 1/64 px, rounded up
+  14px regular: wide 11.766 ('%' at 500) vs default 14.04 -> within; digit 8.625 ('₫' at 500) vs default 9.75 -> within; narrow 5.797 ('/' at 500) vs default 6.41 -> within
+  14px bold: wide 12.141 ('%' at 700) vs default 14.36 -> within; digit 9.078 ('₫' at 700) vs default 9.75 -> within; narrow 6.219 ('/' at 700) vs default 6.41 -> within
+  12px regular: wide 10.094 ('%' at 500) vs default 12.04 -> within; digit 7.391 ('₫' at 500) vs default 8.36 -> within; narrow 4.969 ('/' at 500) vs default 5.49 -> within
+  12px bold: wide 10.406 ('%' at 700) vs default 12.44 -> within; digit 7.781 ('₫' at 700) vs default 8.36 -> within; narrow 5.328 ('/' at 700) vs default 5.49 -> within
+  painted at 400 by: Segoe UI (483 glyphs); Tahoma (28 glyphs); Noto Sans JP (11 glyphs); Malgun Gothic (1 glyphs)
+  14px other (no class, full-width aside): widest 14.938 ('Щ' at 700) vs default 15.46 -> within
+  12px other (no class, full-width aside): widest 12.797 ('Щ' at 700) vs default 13.26 -> within
+## roboto.windows.chrome.json: 'Roboto, "Helvetica Neue", Arial, sans-serif', HeadlessChrome/154.0.0.0 Safari/537.36, unit 1/64 px, rounded up
+  14px regular: wide 10.344 ('%' at 600) vs default 14.04 -> within; digit 8.281 ('£' at 600) vs default 9.75 -> within; narrow 5.781 ('/' at 400) vs default 6.41 -> within
+  14px bold: wide 10.359 ('%' at 700) vs default 14.36 -> within; digit 8.328 ('£' at 700) vs default 9.75 -> within; narrow 5.203 ('/' at 700) vs default 6.41 -> within
+  12px regular: wide 8.859 ('%' at 600) vs default 12.04 -> within; digit 7.109 ('£' at 600) vs default 8.36 -> within; narrow 4.953 ('/' at 400) vs default 5.49 -> within
+  12px bold: wide 8.875 ('%' at 700) vs default 12.44 -> within; digit 7.141 ('£' at 700) vs default 8.36 -> within; narrow 4.453 ('/' at 700) vs default 5.49 -> within
+  painted at 400 by: Roboto (451 glyphs); Arial (29 glyphs); Tahoma (29 glyphs); Microsoft YaHei (11 glyphs); Nirmala UI (1 glyphs); Leelawadee UI (1 glyphs); Malgun Gothic (1 glyphs)
+  14px other (no class, full-width aside): widest 15.141 ('Њ' at 400) vs default 15.46 -> within
+  12px other (no class, full-width aside): widest 12.969 ('Њ' at 400) vs default 13.26 -> within
+## roboto.windows.msedge.json: 'Roboto, "Helvetica Neue", Arial, sans-serif', HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0, unit 1/64 px, rounded up
+  14px regular: wide 10.344 ('%' at 600) vs default 14.04 -> within; digit 8.281 ('£' at 600) vs default 9.75 -> within; narrow 5.781 ('/' at 400) vs default 6.41 -> within
+  14px bold: wide 10.359 ('%' at 700) vs default 14.36 -> within; digit 8.328 ('£' at 700) vs default 9.75 -> within; narrow 5.203 ('/' at 700) vs default 6.41 -> within
+  12px regular: wide 8.859 ('%' at 600) vs default 12.04 -> within; digit 7.109 ('£' at 600) vs default 8.36 -> within; narrow 4.953 ('/' at 400) vs default 5.49 -> within
+  12px bold: wide 8.875 ('%' at 700) vs default 12.44 -> within; digit 7.141 ('£' at 700) vs default 8.36 -> within; narrow 4.453 ('/' at 700) vs default 5.49 -> within
+  painted at 400 by: Roboto (451 glyphs); Arial (29 glyphs); Tahoma (29 glyphs); Noto Sans JP (11 glyphs); Nirmala UI (1 glyphs); Leelawadee UI (1 glyphs); Malgun Gothic (1 glyphs)
+  14px other (no class, full-width aside): widest 15.141 ('Њ' at 400) vs default 15.46 -> within
+  12px other (no class, full-width aside): widest 12.969 ('Њ' at 400) vs default 13.26 -> within
