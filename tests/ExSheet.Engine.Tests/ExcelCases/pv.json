@@ -121,7 +121,7 @@
     },
     {
       "id": "PV-014",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: half a period is the square root of 1+rate, as FV-016's, PV raising 1+rate as FV does (PV-005 and PV-009 to PV-012 agree); e^(0.5 ln(1+rate)) gives 38.29015278650262",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.42,0.5,-100)"},
@@ -130,7 +130,7 @@
     },
     {
       "id": "PV-015",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 1 over the power to 2.5, as FV-022's; raising to -2.5 directly gives -250.9382807624435",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.06/12,-2.5,-100)"},
@@ -139,7 +139,7 @@
     },
     {
       "id": "PV-016",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: e^(nper ln(1+rate)) with the exponential and the logarithm correctly rounded, the engine's, gives 1091.2943662943903; glibc's exp and log, which .NET takes on Linux, give 1091.2943662943944. XNPV-013 found Excel's exponential correctly rounded where glibc's is not; no observed double tells the logarithms apart",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.06/12,11.25,-100)"},
