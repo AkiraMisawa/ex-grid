@@ -19,7 +19,7 @@ in order.
 3. **(c) UX-1**: the three bare pixel values in `ex-grid.css` come from Grid Metrics, emitted inline on the
    instance root, and lie on Device Pixels. Code and tests on this branch (merged from `claude/dod-gaps-ux1`);
    edits 10, 11 and 12; edit 13 names the tests (c) asked for.
-4. **(g) VZ-18's check on the remote-isolation (Citrix) PC is a Known limitation of `0.1.0`.** It is not run,
+4. **(g) VZ-18's check on the remote-isolation PC is a Known limitation of `0.1.0`.** It is not run,
    and the 2026-10-08 observation, which names no commit, is not taken as its record. Edits 6, 7, 8 and 9, and
    the Release Notes line below. The release check's side (`verification/by-hand.json` and the table of rows
    checked by hand) is `claude/release-workflow-checks`'.
@@ -43,14 +43,14 @@ Not decisions, the audit's:
 carry this line, in the form ADR-0202 gives:
 
 ```md
-- **ExGrid:** the repaint after Ctrl+↓, Ctrl+↑ or PageDown is not checked on a PC under Citrix with the browser's hardware acceleration off, or behind a remote browser isolation service: its browser test passes; the check on such a PC was not run for this version ([Getting started](getting-started)) (VZ-18, ADR-0202).
+- **ExGrid:** behind a remote browser isolation service, the repaint after Ctrl+↓, Ctrl+↑ or PageDown is not checked: its browser test passes, but the check behind such a service was not run for this version ([Behind a remote browser isolation service](getting-started#behind-a-remote-browser-isolation-service)) (VZ-18, ADR-0202).
 ```
 
-**Not done, for the orchestrator:** the line links Getting started, whose "Behind a remote browser isolation
-service" section says nothing yet of Citrix, hardware acceleration or the unchecked repaint, so it does not say
-the limitation in full as ADR-0202 asks. A sentence there, and an anchor for the link, are the Docs Site's, which
-this branch does not edit. ADR-0012's "Checked 2026-10-08 on that PC" and "VZ-18 is checked as it is written"
-still read as if that observation were VZ-18's record; decision (g) named no edit to ADR-0012, so none is made.
+*(2026-10-13, decided with the user: the line names no Citrix. The PC where the white Viewport was seen
+reaches the web through a remote browser isolation service, from inside an organisation whose desktops run
+under Citrix; the service, not Citrix, is the likelier cause. Getting started's "Behind a remote browser
+isolation service" says the limitation in full (edit 14), and the line links that section. ADR-0012 gains dated
+notes that the 2026-10-08 observation is not VZ-18's record (edits 15 and 16).)*
 
 ## Where this list meets other branches' lists
 
@@ -65,7 +65,7 @@ still read as if that observation were VZ-18's record; decision (g) named no edi
 3. **§22 Step 3's restatement notes: a dated note.** Decision (a).
 4. **§22 Step 1: the test projects' count.** The audit's (e), uncredited.
 5. **WR-2: a number is a `MudTextField` read in the current culture.** Decision (b), whole row.
-6. **VZ-18: the check on the Citrix PC is a Known limitation.** Decision (g), whole row.
+6. **VZ-18: the check on the remote-isolation PC is a Known limitation.** Decision (g), whole row.
 7. **§21.11: VZ-18's reservation.** Decision (g): the run on that PC is not made at `0.1.0`'s sign-off.
 8. **§21.11: "VZ-18 is checked as written".** Decision (g).
 9. **ADR-0202: `0.1.0`'s Known limitations.** Decision (g).
@@ -73,6 +73,9 @@ still read as if that observation were VZ-18's record; decision (g) named no edi
 11. **ADR-0029: a dated note on why.** Decision (c).
 12. **ADR-0028: the two metrics in "What geometry consists of".** Decision (c).
 13. **UX-1: the tests that hold it.** Decision (c): the row gains the tests it lacked.
+14. **Docs Site, Getting started: the Known limitation behind a remote browser isolation service.** Decision (g), worded as the user decided on 2026-10-13: no Citrix.
+15. **ADR-0012: "Checked 2026-10-08 on that PC" is not VZ-18's record.** Decision (g), with the user's of 2026-10-13.
+16. **ADR-0012: "VZ-18 is checked as it is written".** The same.
 
 ### 1. docs/definition-of-done.md
 
@@ -178,7 +181,7 @@ Old:
 New:
 
 ````text
-| **VZ-18** | MUST | A reveal is repainted: in the frame after it the offset moves one pixel away from the edge it stands at, and in the frame after that it moves back; the core paints no slice for either move and reads neither; a scroll the user makes between them stands, and the grid paints where it stands. Under Citrix with the browser's hardware acceleration off, Ctrl+↓, Ctrl+↑ and PageDown paint the rows they reveal without a further scroll (ADR-0012, 2026-10-08; ADR-0021) | Layer 3 `virtualisation.spec.mjs` for the mechanism; by hand on the Citrix PC where the white Viewport was seen, from the Docs Site's blotter, since no layer-3 run reaches it (that PC also shows the site as a remote browser isolation mirror, so the check covers both layers until ADR-0012's run of 2026-10-09 separates them) | the scroll events after PageDown read T, T−1, T and the painted slice changes once; a scroll made at the second frame is where the scroller and the painted rows end; on the Citrix PC the last rows show at once *(2026-10-12, decided with the user: **the check on the remote-isolation (Citrix) PC is a Known limitation of `0.1.0`.** It is not run for `0.1.0`, and the observation of 2026-10-08, which names no commit, is not taken as its record. The layer-3 half, `virtualisation.spec.mjs`, still gates. ADR-0202's Known limitations and `0.1.0`'s Release Notes say so.)* |
+| **VZ-18** | MUST | A reveal is repainted: in the frame after it the offset moves one pixel away from the edge it stands at, and in the frame after that it moves back; the core paints no slice for either move and reads neither; a scroll the user makes between them stands, and the grid paints where it stands. Under Citrix with the browser's hardware acceleration off, Ctrl+↓, Ctrl+↑ and PageDown paint the rows they reveal without a further scroll (ADR-0012, 2026-10-08; ADR-0021) | Layer 3 `virtualisation.spec.mjs` for the mechanism; by hand on the Citrix PC where the white Viewport was seen, from the Docs Site's blotter, since no layer-3 run reaches it (that PC also shows the site as a remote browser isolation mirror, so the check covers both layers until ADR-0012's run of 2026-10-09 separates them) | the scroll events after PageDown read T, T−1, T and the painted slice changes once; a scroll made at the second frame is where the scroller and the painted rows end; on the Citrix PC the last rows show at once *(2026-10-12, decided with the user: **the check on the remote-isolation PC is a Known limitation of `0.1.0`.** It is not run for `0.1.0`, and the observation of 2026-10-08, which names no commit, is not taken as its record. The layer-3 half, `virtualisation.spec.mjs`, still gates. ADR-0202's Known limitations and `0.1.0`'s Release Notes say so.)* |
 ````
 
 ### 7. docs/definition-of-done.md
@@ -229,7 +232,7 @@ New:
 
 ````text
   seconds and holds the circuit that long. `verification/2026-10-11-linux-sh19/` has both.)*
-  *(2026-10-12, decided with the user: also ExGrid's VZ-18 on the remote-isolation (Citrix) PC. The
+  *(2026-10-12, decided with the user: also ExGrid's VZ-18 on the remote-isolation PC. The
   repaint after a reveal is in, and its layer-3 test gates; the check on that PC is not run for `0.1.0`,
   and the observation of 2026-10-08, which names no commit, is not taken as its record.)*
 ````
@@ -298,4 +301,70 @@ New:
 
 ````text
 | **UX-1** | MUST | No colour is a C# parameter, and no pixel is only a stylesheet value (ADR-0027) | grep the public surface for colour-typed parameters; grep `ex-grid.css` for length literals. Layer 2 holds both: `NoColourParameterTests` and `StylesheetLengthTests` *(2026-10-12, decided with the user: the row gains the tests it lacked. The second reads every length in `ex-grid.css` against the Geometry Tokens the root emits and an allowlist of non-geometric visual values, each with its reason)* | zero colour parameters; every length in the stylesheet is a `var(--ex-*)` read or a non-geometric visual value |
+````
+
+### 14. samples/ExGrid.Docs/Pages/GettingStarted.razor
+
+Old:
+
+````text
+            GitHub Pages, so a user behind such a service may see it mirrored.
+        </p>
+    </DocsSection>
+</DocsPage>
+````
+
+New:
+
+````text
+            GitHub Pages, so a user behind such a service may see it mirrored.
+        </p>
+        <p>
+            On a page seen through such a mirror, the rows that Ctrl+↓, Ctrl+↑ or PageDown reveal could stay
+            white until the next scroll. The grid repaints them over the two frames after such a move, which
+            a browser test checks. <b>Behind a remote browser isolation service that repaint has not been
+            checked for 0.1.0</b>: it is one of this version's Known limitations.
+        </p>
+    </DocsSection>
+</DocsPage>
+````
+
+### 15. docs/adr/0012-anchor-focus-and-keyboard-navigation.md
+
+Old:
+
+````text
+  checked by hand there (VZ-18). *(Checked 2026-10-08 on that PC, with a build of v0.1.0-beta.2
+  carrying only this change published to the Docs Site: Ctrl+↓, Ctrl+↑ and PageDown painted.)*
+````
+
+New:
+
+````text
+  checked by hand there (VZ-18). *(Checked 2026-10-08 on that PC, with a build of v0.1.0-beta.2
+  carrying only this change published to the Docs Site: Ctrl+↓, Ctrl+↑ and PageDown painted.)*
+  *(2026-10-12, decided with the user: that observation names no commit, and is not taken as VZ-18's
+  record. VZ-18's check on that PC is a Known limitation of `0.1.0`
+  ([ADR-0202](./0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md)),
+  not run for it.)*
+````
+
+### 16. docs/adr/0012-anchor-focus-and-keyboard-navigation.md
+
+Old:
+
+````text
+The verification record gives its two outcomes. Until it is run, the repaint stays, and VZ-18 is
+checked as it is written.
+````
+
+New:
+
+````text
+The verification record gives its two outcomes. Until it is run, the repaint stays, and VZ-18 is
+checked as it is written.
+*(2026-10-12, decided with the user: for `0.1.0` VZ-18's check on that PC is a Known limitation, not run;
+its layer-3 half still gates. 2026-10-13, decided with the user: `0.1.0`'s notes and the Docs Site name the
+remote browser isolation service, not Citrix: the PC reaches the web through such a service from inside an
+organisation whose desktops run under Citrix, and the service is the likelier cause.)*
 ````

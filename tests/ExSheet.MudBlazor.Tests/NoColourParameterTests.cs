@@ -98,10 +98,8 @@ public class NoColourParameterTests
         }
     }
 
-    /// <summary>Every public parameter a shipped package declares on a public component, its own or
-    /// inherited from another shipped package's. A parameter a component inherits from MudBlazor's
-    /// own (<c>MudPivotButton</c> is a <c>MudButton</c>, and inherits its <c>Color</c>) is
-    /// MudBlazor's surface, not a parameter a package of this family declares.</summary>
+    /// <summary>Every public parameter of a public component of a shipped package, inherited ones
+    /// included, from another shipped package or from MudBlazor: a Consumer can set either.</summary>
     private static IEnumerable<(Type Component, PropertyInfo Parameter)> PublicParameters()
     {
         var packages = ComponentPackages();
@@ -110,9 +108,20 @@ public class NoColourParameterTests
             .Where(type => typeof(IComponent).IsAssignableFrom(type))
             .SelectMany(type => type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(property => property.GetCustomAttribute<ParameterAttribute>(inherit: true) is not null)
-                .Where(property => packages.Contains(property.DeclaringType!.Assembly))
                 .Select(property => (type, property)));
     }
+
+    /// <summary>
+    /// The colour parameters a component inherits and does not offer, each with why (2026-10-13, decided with
+    /// the user: inherited parameters are counted, and these are named). <c>MudPivotButton</c> is a
+    /// <c>MudButton</c> and inherits its <c>Color</c> and <c>IconColor</c>; it is marked
+    /// <c>EditorBrowsable(Never)</c> and is not the contract (ADR-0201). Any other inherited colour fails.
+    /// </summary>
+    private static readonly IReadOnlySet<string> InheritedNotOffered = new HashSet<string>
+    {
+        "ExPivot.MudBlazor.MudPivotButton.Color",
+        "ExPivot.MudBlazor.MudPivotButton.IconColor",
+    };
 
     [Fact] // ADR-0027 / UX-1: no public parameter of a shipped component carries a colour, by its type or by a string its name says is one
     public void UX1_no_public_component_parameter_is_a_colour()
@@ -127,11 +136,13 @@ public class NoColourParameterTests
                 return carried.Any(IsColourType)
                     || (carried.Any(type => type == typeof(string) || type == typeof(object)) && NameSaysColour(entry.Parameter.Name));
             })
-            .Select(entry => $"{entry.Component.FullName}.{entry.Parameter.Name}: {entry.Parameter.PropertyType}")
+            .Select(entry => (Name: $"{entry.Component.FullName}.{entry.Parameter.Name}", Type: entry.Parameter.PropertyType))
             .Distinct()
             .ToList();
 
-        Assert.Empty(offenders);
+        Assert.Empty(offenders.Where(o => !InheritedNotOffered.Contains(o.Name)).Select(o => $"{o.Name}: {o.Type}"));
+        // A named exception that no longer exists is stale, and is taken out.
+        Assert.Equal(InheritedNotOffered.Order(StringComparer.Ordinal), offenders.Select(o => o.Name).Where(InheritedNotOffered.Contains).Order(StringComparer.Ordinal));
     }
 
     [Fact] // ADR-0027 / UX-1: the reading above sees a colour wherever a parameter would hand one in, and not in what a callback sends out
