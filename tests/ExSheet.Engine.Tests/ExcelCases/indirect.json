@@ -467,7 +467,7 @@
     {
       "id": "INDIRECT-056",
       "source": "observed",
-      "description": "A declared table's bare name is refused by decision, and the refusal is the Formula's, which COUNTA does not count: #VALUE!, where COUNTA counted it as one Value, 1, until refusals were never caught. Excel's answer is 4, the table's four Values, as the second area pass of 2026-10-12 observed",
+      "description": "A declared table's bare name is refused by decision, and the refusal is the Formula's, which COUNTA does not count: #VALUE!, where COUNTA counted it as one Value, 1, before a refusal was never caught (2026-10-12). Excel's answer is 4, the table's four Values, as the second area pass of 2026-10-12 observed",
       "cells": {"ZZ1000": "=COUNTA(INDIRECT(\"Positions\"))"},
       "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5], ["R-2", 50]]}},
       "check": "ZZ1000",
