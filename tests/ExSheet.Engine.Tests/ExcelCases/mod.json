@@ -301,7 +301,7 @@
     },
     {
       "id": "MOD-037",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the remainder plus the divisor one unit in the last place below the divisor is that double, 0.9999999999999999, in each of the evaluations that give every observed case, at 64 bits and at the widths no hardware holds, and not 0 as a sum stored as the divisor itself is (MOD-032)",
       "cells": {"ZZ1000": "=MOD(-1E-16,1)"},
       "check": "ZZ1000",
@@ -309,7 +309,7 @@
     },
     {
       "id": "MOD-038",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a number of the divisor's sign far smaller than it is its own remainder, 1E-20, in each of the evaluations that give every observed case, at 64 bits and at the widths no hardware holds; MOD-032's, of the other sign, is 0",
       "cells": {"ZZ1000": "=MOD(1E-20,1)"},
       "check": "ZZ1000",
@@ -325,7 +325,7 @@
     },
     {
       "id": "MOD-040",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the remainder plus the divisor lies 48.25/65536 of a unit in the last place above the midpoint between two doubles, the even one below; held at 64 bits, rounded to nearest or truncated, it is stored as the double above, 5249.993336, as rounded once, in each of the three evaluations at the hardware's widths that give every observed case; held at 54 to 62 bits rounded to nearest, or at 54 to 63 truncated, widths no hardware holds and the engine does not model, it lands on the midpoint and is stored as the even double below, 5249.9933359999995. It asks the judgment that only the hardware's widths are natural",
       "cells": {"ZZ1000": "=MOD(-0.006664,5250)"},
       "check": "ZZ1000",

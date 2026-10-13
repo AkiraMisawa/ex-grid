@@ -156,7 +156,7 @@
     },
     {
       "id": "XNPV-020",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a small negative rate is #NUM!, the engine's check of the rate, which Excel gave at every negative rate it was asked, -0.5, -1, -1.5 and -2, and which none of the evaluations that give XNPV's observed doubles gives",
       "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "A4": "3250", "A5": "2750", "B1": "39448", "B2": "39508", "B3": "39751", "B4": "39859", "B5": "39904", "ZZ1000": "=XNPV(-0.01,A1:A5,B1:B5)"},
       "check": "ZZ1000",
