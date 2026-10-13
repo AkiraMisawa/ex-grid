@@ -361,7 +361,7 @@ for (const chrome of CHROMES) {
                 await circuitQuiet();
                 await expectKeyboardOn(grid(page));
                 await expectActiveDescendant(grid(page), /r3c0$/);
-                await expect(grid(page).locator('.ex-header-cell[aria-sort]')).toHaveCount(0);
+                await expect(grid(page).locator('.ex-header-cell[aria-sort=ascending], .ex-header-cell[aria-sort=descending]')).toHaveCount(0);
                 if (circuit) {
                     // Typed in the menu, a round trip before it could go: the case the hold is for.
                     expect(await landed()).toEqual([

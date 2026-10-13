@@ -374,14 +374,23 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(openLists(page)).toHaveCount(0);
         await expect(cell(grid, 'B3')).toHaveText(before);
 
-        // And back to the band, a letter typed on each again; there Escape gives the keyboard to the Sheet.
-        for (let i = 0; i < 16 && await where() !== 'band'; i++) {
+        // And back to the band through the same stops, a letter typed on each again. The way back starts
+        // inside the toolbar: the keyboard leaves it for the grid, which keeps Tab and Shift+Tab as its own
+        // keys until Escape releases them (KB-8). On the band Escape gives the keyboard to the Sheet.
+        await band.focus();
+        await expect.poll(where).toBe('band');
+        for (const at of stops) {
+            await page.keyboard.press('Tab');
+            await expect.poll(where).toBe(at);
+        }
+        for (let i = stops.length - 1; i >= 0; i--) {
+            await page.keyboard.press('x');
+            await expect.poll(where).toBe(stops[i]);
             await page.keyboard.press('Shift+Tab');
-            if (await where() !== 'band' && await where() !== null) {
-                await page.keyboard.press('x');
-            }
         }
         await expect.poll(where).toBe('band');
+        await expect(openLists(page)).toHaveCount(0);
+        await expect(cell(grid, 'B3')).toHaveText(before);
         await page.keyboard.press('Escape');
         await expectKeyboardOn(grid);
         await page.keyboard.press('ArrowDown');
