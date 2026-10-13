@@ -1,8 +1,8 @@
 # 16: SUBTOTAL and AGGREGATE, while a Sheet cannot hide a row
 
 Status: ready-for-human
-Roadmap: ExSheet — `AGGREGATE`'s `SMALL` checked against Excel for a k above the count of its
-numbers, which `SMALL` refuses with `#NUM!`.
+Roadmap: ExSheet — `AGGREGATE`'s and `SMALL`'s k checked against Excel above the count of the
+numbers, which they refuse with `#NUM!`, and `AGGREGATE` over a cell ExSheet refused.
 
 **What to build:** `SUBTOTAL` and `AGGREGATE` under
 [ADR-0047](../../../adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)'s
@@ -50,10 +50,13 @@ note of 2026-10-10, "The catalogue's last Decide rows".
       engine agrees with each answer, or is corrected to it, before this ticket is done. *Asked by the
       second area pass of 2026-10-12 (`verification/2026-10-12-windows-area-2/report.md`): all six
       agreed, and are `observed`*
-- [ ] `oracle.ps1 -Area aggregate` before the tag (ADR-0208): AGGREGATE-068, the `uncertain` case the
+- [ ] `oracle.ps1 -Area aggregate,small` before the tag (ADR-0208): AGGREGATE-068, the `uncertain` case the
       second area pass's answers led to — `SMALL`'s k above the count of the numbers, which Excel's
-      `SMALL` refuses before truncating it (SMALL-008). The engine agrees with the answer, or is
-      corrected to it, before this ticket is done
+      `SMALL` refuses before truncating it (SMALL-008) — with SMALL-011, `SMALL`'s own k a little above
+      the count (ticket 04's comment of 2026-10-12), and AGGREGATE-069, option 6 over a cell ExSheet
+      refused, which refuses the Formula (ADR-0047, 2026-10-12, decided with the user: a refusal is
+      never caught, anywhere). The engine agrees with each answer, or is corrected to it, or records a
+      refusal by that decision, before this ticket is done
 
 ## Comments
 

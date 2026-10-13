@@ -192,7 +192,9 @@ bare name reads the table's data or one column, and ExSheet has no typed bare ta
 (typed, `Positions` is `#NAME?`; ADR-0049 reads a Linked Table by column), so the refusal stays.
 INDIRECT-053 to 057 ask its columns, rows, first cell, count and spill over a table of two rows; what a
 bare name reads, typed and through `INDIRECT`, then wants a decision. `COUNTA` over the refusal counts
-it as one Value, as it counts any Error Value (INDIRECT-056 records 1).
+it as one Value, as it counts any Error Value (INDIRECT-056 records 1). *(2026-10-12, later, decided with the user: a refusal
+is never caught, anywhere. `COUNTA` over it is `#VALUE!`, the Formula's refusal, and INDIRECT-056 records
+that, Excel's 4 beside it.)*
 
 2026-10-12, after the second area pass (`verification/2026-10-12-windows-area-2/report.md`, "Recorded
 (31)"; `results-2026-10-12-area-2-com-en-US.json`): INDIRECT-045 to 050 agreed and are `observed`, and

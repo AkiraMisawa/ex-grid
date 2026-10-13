@@ -85,27 +85,27 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `SUMPRODUCT` | Supported | — | Its arrays, operators on ranges included, reduced to one Value (ADR-0125) |
 | `PRODUCT` | Supported | — | |
 | `MEDIAN` | Supported | — | |
-| `LARGE` | Supported | — | A `k` that is not whole is rounded up, as Excel's (ADR-0047, 2026-10-12) |
-| `SMALL` | Supported | — | A `k` that is not whole is `#VALUE!` until observed |
+| `LARGE` | Supported | — | A `k` that is not whole is rounded up, and one below 1 or above the count of the numbers is `#NUM!`, as Excel's (ADR-0047, 2026-10-12) |
+| `SMALL` | Supported | — | A `k` that is not whole is truncated, and one below 1 or above the count of the numbers is `#NUM!`, as Excel's (ADR-0047, 2026-10-12) |
 | `RANK.EQ` | Supported | — | A `ref` that can never be a Reference is refused on entry |
 | `STDEV.S` | Supported | — | |
 | `STDEV.P` | Supported | — | |
 | `VAR.S` | Supported | — | |
 | `VAR.P` | Supported | — | |
 | `SUBTOTAL` | Supported | — | Admitted while a Sheet cannot hide a row, behind a test that fails when one can; a cell whose Formula calls `SUBTOTAL` or `AGGREGATE` anywhere is nested and passed over, as Excel does (ADR-0047, 2026-10-10 and 2026-10-12). Ticket 16 |
-| `AGGREGATE` | Supported | — | As `SUBTOTAL`; options 0 to 3 pass over a nested cell and 4 to 7 count it, and a function number for a function the engine does not support (13, 16 to 19) is `#VALUE!`. Ticket 16 |
+| `AGGREGATE` | Supported | — | As `SUBTOTAL`; options 0 to 3 pass over a nested cell and 4 to 7 count it, and a function number for a function the engine does not support (13, 16 to 19) is `#VALUE!`; text or a boolean given as the array holds no number. Ticket 16 |
 
 ### Logic and errors
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
 | `IF` | Supported | — | |
-| `IFERROR` | Supported | — | Does not catch the refusal of a function given an array where it wants one Value, which is the Formula's, nested inside it or not (ADR-0125, IFERROR-009, 017) |
-| `ISERROR` | Supported | — | |
+| `IFERROR` | Supported | — | Does not catch a refusal, which is the Formula's, nested inside it or not, nor a refused cell it reads, directly or through a range, a name, `INDIRECT`, a Spill Range or a Linked Table (ADR-0047, 2026-10-12, decided with the user; ADR-0125; IFERROR-009, 017 to 020) |
+| `ISERROR` | Supported | — | Does not read a refusal, nor a refused cell, as an error: the Formula is refused (ADR-0047, 2026-10-12; ISERROR-011) |
 | `AND` | Supported | — | |
 | `OR` | Supported | — | |
 | `NOT` | Supported | — | |
-| `IFNA` | Supported | — | The partner of `XLOOKUP` and `MATCH`. Like `IFERROR`, it catches neither `#CIRC!` nor `#GETTING_DATA` (ADR-0047, ADR-0049) |
+| `IFNA` | Supported | — | The partner of `XLOOKUP` and `MATCH`. Like `IFERROR`, it catches neither `#CIRC!` nor `#GETTING_DATA` (ADR-0047, ADR-0049), nor a refusal (ADR-0047, 2026-10-12; IFNA-008) |
 | `ISBLANK` | Supported | — | |
 | `ISNUMBER` | Supported | — | |
 | `ISTEXT` | Supported | — | |
@@ -114,7 +114,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `SWITCH` | Supported | — | |
 | `XOR` | Supported | — | |
 | `NA` | Supported | — | |
-| `ERROR.TYPE` | Supported | — | `#GETTING_DATA` and `#CIRC!` are given back, never numbered; Excel's newer Error Values take Excel's numbers, 9 to 14, read by the seventeenth Windows run (ADR-0047, 2026-10-10 and its note of 2026-10-12). Ticket 17 |
+| `ERROR.TYPE` | Supported | — | `#GETTING_DATA` and `#CIRC!` are given back, never numbered; Excel's newer Error Values take Excel's numbers, 9 to 14, read by the seventeenth Windows run (ADR-0047, 2026-10-10 and its note of 2026-10-12); a refusal is not numbered, and the Formula is refused (ADR-0047, 2026-10-12; ERRORTYPE-022). Ticket 17 |
 
 ### Lookup and reference
 
@@ -143,7 +143,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `ROUNDDOWN` | Supported | — | |
 | `ABS` | Supported | — | |
 | `INT` | Supported | — | |
-| `MOD` | Supported | — | Excel's sign follows the divisor; `#NUM!` from a quotient of 1,125,900,000,000 |
+| `MOD` | Supported | — | Excel's sign follows the divisor. The exact remainder; where the divisor is added to it, the sum held at 64 bits and then stored as a double, and a sum stored as the divisor 0, as Excel's (MOD-017 to 032); `#VALUE!` where the evaluations at 64 bits that give Excel's answers still part, as at `MOD(-1E-17,1)` and `MOD(-0.084474,2270)`, until Excel is asked (MOD-033 to 036; ADR-0047, 2026-10-12); where only evaluations at widths no hardware holds give another double, the 64 bits' answer, on a judgment Excel has yet to settle (MOD-039, 040); `#NUM!` from a quotient of 1,125,900,000,000 |
 | `MROUND` | Supported | — | Whole-number multiples; fractional multiples with nonzero same-sign operands are #VALUE! until Excel's binary midpoint algorithm is reproduced. Ticket 10 |
 | `CEILING.MATH` | Supported | — | Observed sign, significance, mode and coercion; almost-integral division boundaries are #VALUE!, quotient underflow is #NUM!; ticket 10 |
 | `FLOOR.MATH` | Supported | — | As CEILING.MATH; ticket 10 |
@@ -200,11 +200,11 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `YEAR` | Supported | — | |
 | `MONTH` | Supported | — | |
 | `DAY` | Supported | — | |
-| `EOMONTH` | Supported | — | |
-| `EDATE` | Supported | — | |
+| `EOMONTH` | Supported | — | A start of serial 0 is in January 1900, as `MONTH` reads it; a boolean typed as the start is `#VALUE!` until Excel is asked (ADR-0047) |
+| `EDATE` | Supported | — | From serial 0 to January 1900, March 1900 or January 10000, and with a boolean typed as the months, `#VALUE!` until Excel is asked (ADR-0047) |
 | `WEEKDAY` | Supported | — | |
-| `NETWORKDAYS` | Supported | — | |
-| `WORKDAY` | Supported | — | |
+| `NETWORKDAYS` | Supported | — | A boolean typed as a date is `#VALUE!` until Excel is asked (ADR-0047) |
+| `WORKDAY` | Supported | — | A boolean typed as a date is `#VALUE!` until Excel is asked (ADR-0047) |
 | `DAYS` | Supported | — | |
 | `YEARFRAC` | Supported | — | All five bases, month ends, leap days and the 1900 date system; a serial between -1 and 0 is #VALUE! until Excel is asked (YEARFRAC-058), and -1 or below #NUM!; ticket 11 |
 | `DATEDIF` | Supported | — | Y, M, D, YM; YD only before a completed anniversary. MD and longer YD intervals are #VALUE!; a serial between -1 and 0 is #VALUE! until Excel is asked (DATEDIF-048), and -1 or below #NUM!; ticket 11 |
@@ -438,5 +438,7 @@ function Excel adds is listed here.
 
 The retained evidence is `verification/2026-10-03-windows-functions/`. New corpus cases preserve
 its IDs, typed fixtures and exact numeric expectations. A deliberate refusal keeps Excel's
-observed result in `excelExpect` and names ADR-0047 in `engineDiffersByDecision`. The engine's
+observed result in `excelExpect` and names ADR-0047 in `engineDiffersByDecision`. A refusal is the
+Formula's, and every Formula's that reads its cell, which no Formula catches (ADR-0047, 2026-10-12,
+decided with the user). The engine's
 README lists the admitted domains; broadening one requires evidence, not a relaxed assertion.

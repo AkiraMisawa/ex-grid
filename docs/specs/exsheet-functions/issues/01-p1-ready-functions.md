@@ -57,3 +57,23 @@ A boolean typed as `EOMONTH`'s start or as `EDATE`'s months stays refused with `
 EDATE-023 ask it: the seventeenth run typed one as `EOMONTH`'s months and as `EDATE`'s start alone (EOMONTH-009,
 EDATE-009), and Excel reads a boolean typed as a start date as 1 under `DATEDIF` (DATEDIF-046) and gives `#VALUE!`
 under `YEARFRAC` (YEARFRAC-054), so neither answers the other argument.
+
+2026-10-12, with the area passes: MOD-010 to 016 agreed, so the limit at a quotient of
+1,125,900,000,000 holds on both sides. The doubles did not: Excel's remainder is exact
+(`MOD(123456789012,0.7)` is 0.5000078322611261, MOD-017; `MOD(1,0.1)` is 0.09999999999999995, MOD-020,
+where the identity in doubles gave 0.5000152587890625 and 0), a remainder a hair from 0 is itself
+(`MOD(1.1,0.1)` is 2.7755575615628914E-17, MOD-030, where it gave 0), the divisor added to a remainder
+of the other sign is not rounded once (`MOD(-0.087626,6630)` is 6629.9123739999995, MOD-029, the sum
+held at 64 bits and then stored as a double), and a sum stored as the divisor itself is 0
+(`MOD(-1E-20,1)`, MOD-032). At 64 bits three evaluations give all 32 answers Excel has given, and 31
+more at widths no hardware holds (the sum held at 54 to 63 bits rounded, or 54 to 65 truncated); none
+evaluates the identity in doubles (`spikes/exsheet-financial-evaluation/mod-search.cs`,
+`mod-search.txt`). The engine answers as the three at 64 bits where they agree, and `#VALUE!` where they
+part: where the sum is the divisor as a double but not at 64 bits (`MOD(-1E-17,1)`), and where
+truncating at 64 bits stores another double than rounding there (`MOD(-0.084474,2270)`), 13 of 1,915,648
+random inputs of up to five digits. It does not model the other widths, on the judgment that only the
+hardware's formats are natural, and so answers 65,972 of those inputs (3.4%) where one of them gives
+another double. MOD-033 to 036 ask where the three part, MOD-037 and 038 two answers all 34 share, and
+MOD-039 and 040 two the judgment answers (ADR-0047's note of that date; `KthAndModTests`). The ticket
+stays done: these cases are asked by the one `oracle.ps1 -Area` pass before `0.1.0-rc.1` (ADR-0208's
+note of 2026-10-12), whose release check refuses the tag while any is `uncertain`.
