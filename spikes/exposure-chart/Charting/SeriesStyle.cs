@@ -32,3 +32,14 @@ public sealed record SeriesStyle(SeriesDraw Draw, MarkerShape Marker)
 
     public bool IsStep => Draw is SeriesDraw.StepPreceding or SeriesDraw.StepFollowing;
 }
+
+/// <summary>Where the page's legend stands beside the chart.</summary>
+public enum LegendPosition { Top, Right, Bottom, None }
+
+/// <summary>A list of every series, or a table of rows by colour and columns by drawing.</summary>
+public enum LegendLayout { Auto, List, Table }
+
+public sealed record LegendStyle(LegendPosition Position, LegendLayout Layout)
+{
+    public static LegendStyle Default { get; } = new(LegendPosition.Top, LegendLayout.Auto);
+}

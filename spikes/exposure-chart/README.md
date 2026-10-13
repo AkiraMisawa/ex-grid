@@ -75,6 +75,23 @@ chart reads it so (`RowChartDefinition`, `RowChartSpec`):
   curves. A number column with no position — the recovery rate — selected with tenors is refused
   by name: it was chosen, and this axis has no place for it.
 
+## The legend
+
+| | |
+|---|---|
+| ![A table legend](screenshots/legend-table.png) | ![Hidden from the legend](screenshots/legend-hidden.png) |
+| ![The legend on the right](screenshots/legend-right.png) | ![The exposure page's table legend](screenshots/legend-exposure.png) |
+
+The page's legend is HTML beside the drawing, not part of it, so that it can be clicked; the
+downloaded SVG carries its own. Filter → Legend sets where it stands (top, right, bottom, none)
+and its form: a list, one entry per series, or a table — a colour per row, a drawing per column
+(the curves page: each entity × its spreads and hazard rates; the exposure page: Before / After /
+Diff × EPE, ENE, CVA, PFE). Auto chooses the table only when every cell of it holds a series: a
+table with holes reads worse than the list. A click hides an entry, a row's header or a column's
+header hides all it names, and a click on something wholly hidden shows it again; hidden entries
+stay in the legend, faded, so they can be found. It is the filter's own state, so both agree.
+Each sample is drawn as its series is — a line, points, a step's open and filled ends.
+
 ## How it is built
 
 - **No change to the core.** The context menu's Consumer command (ADR-0036) already carries the

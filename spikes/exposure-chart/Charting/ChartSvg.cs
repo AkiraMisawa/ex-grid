@@ -53,16 +53,18 @@ public static class ChartSvg
 
     public static TipAnchor Anchor(ChartModel model, int index)
     {
-        var (_, height, legendHeight) = Heights(model);
+        var (_, height, legendHeight) = Heights(model, legend: false);
         var x = XOf(model, model.Xs[index]);
         return new TipAnchor(x / Width, (legendHeight + Top) / height, x / Width > 0.6);
     }
 
-    private static (double PanelHeight, double Height, double Legend) Heights(ChartModel model)
+    // The page draws its own legend, in HTML, where a click can hide a series; a file carries one
+    // inside the drawing.
+    private static (double PanelHeight, double Height, double Legend) Heights(ChartModel model, bool legend)
     {
         var panels = model.Panels.Count;
         double panelHeight = panels == 1 ? 360 : 190;
-        double legendHeight = LegendRows(model) * 18 + 6;
+        double legendHeight = legend ? LegendRows(model) * 18 + 6 : 4;
         var bottom = XAxis.Depth(TicksOf(model), model.XAxis.Angle);
         return (panelHeight, legendHeight + panels * (Top + panelHeight) + (panels - 1) * Gap + bottom, legendHeight);
     }
@@ -86,7 +88,7 @@ public static class ChartSvg
         var panels = model.Panels.Count;
         if (panels == 0 || model.Xs.Count == 0)
             return Empty(model, panels);
-        var (panelHeight, height, legendHeight) = Heights(model);
+        var (panelHeight, height, legendHeight) = Heights(model, legend: forFile);
         var plotWidth = Width - Left - Right;
         var svg = new StringBuilder();
         svg.Append(Invariant, $"""<svg xmlns="http://www.w3.org/2000/svg" class="ex-chart-root" data-ex-chart-version="{version}" viewBox="0 0 {Width} {height}" width="{Width}" height="{height}" role="img">""");
@@ -95,7 +97,7 @@ public static class ChartSvg
 
         double X(double position) => XOf(model, position);
 
-        WriteLegend(svg, model, legendHeight);
+        if (forFile) WriteLegend(svg, model, legendHeight);
 
         var dateTicks = TicksOf(model);
         var layouts = new List<(ChartPanel Panel, double Top, ValueAxis Left, ValueAxis? Right)>();
@@ -217,6 +219,30 @@ public static class ChartSvg
         return rows;
     }
 
+    /// <summary>A legend entry's sample, drawn as the series is drawn, as a small SVG of its own.</summary>
+    public static string Sample(ChartSeries series)
+    {
+        var svg = new StringBuilder();
+        svg.Append("""<svg xmlns="http://www.w3.org/2000/svg" class="ex-chart-root ex-chart-sample" viewBox="-4 -7 30 14" width="30" height="14" aria-hidden="true">""");
+        svg.Append("<style>").Append(Style).Append("</style>");
+        WriteSample(svg, series.Style, series.Slot % 8, series.GroupIndex, 0, 0);
+        return svg.Append("</svg>").ToString();
+    }
+
+    private static void WriteSample(StringBuilder svg, SeriesStyle? style, int s, int group, double x, double y)
+    {
+        // The sample is drawn as the series is: a line, points, or a step's open and filled ends.
+        if (style is not { Draw: SeriesDraw.Points })
+            svg.Append(Invariant, $"""<line class="ex-chart-line ex-chart-slot-{s} ex-chart-group-{group % 4}" x1="{x:0.##}" y1="{y}" x2="{x + 22:0.##}" y2="{y}"/>""");
+        if (style is { IsStep: true })
+        {
+            Marker(svg, style.Marker, s, x + 2, y, open: style.Draw == SeriesDraw.StepPreceding, size: 2.6);
+            Marker(svg, style.Marker, s, x + 20, y, open: style.Draw == SeriesDraw.StepFollowing, size: 2.6);
+        }
+        else if (style is { Draw: SeriesDraw.LinePoints or SeriesDraw.Points })
+            Marker(svg, style.Marker, s, x + 11, y, open: false, size: 3);
+    }
+
     private static string Empty(ChartModel model, int panels)
     {
         var why = panels == 0 ? "Every series is filtered out." : "No charted date is in the filter's range, or in the data.";
@@ -235,17 +261,7 @@ public static class ChartSvg
         foreach (var (name, slot, group, style) in LegendEntries(model))
         {
             if (x + EntryWidth(name) > Width - Right && x > Left) (x, y) = (Left, y + 18);
-            // The sample is drawn as the series is: a line, points, or a step's open and filled ends.
-            var s = slot % 8;
-            if (style is not { Draw: SeriesDraw.Points })
-                svg.Append(Invariant, $"""<line class="ex-chart-line ex-chart-slot-{s} ex-chart-group-{group % 4}" x1="{x:0.##}" y1="{y}" x2="{x + 22:0.##}" y2="{y}"/>""");
-            if (style is { IsStep: true })
-            {
-                Marker(svg, style.Marker, s, x + 2, y, open: style.Draw == SeriesDraw.StepPreceding, size: 2.6);
-                Marker(svg, style.Marker, s, x + 20, y, open: style.Draw == SeriesDraw.StepFollowing, size: 2.6);
-            }
-            else if (style is { Draw: SeriesDraw.LinePoints or SeriesDraw.Points })
-                Marker(svg, style.Marker, s, x + 11, y, open: false, size: 3);
+            WriteSample(svg, style, slot % 8, group, x, y);
             Text(svg, x + 27, y + 4, name, "start", null);
             x += EntryWidth(name);
         }

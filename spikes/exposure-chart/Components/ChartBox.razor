@@ -146,6 +146,26 @@
                     }
                 </div>
                 <div class="filter-section">
+                    <div class="filter-heading"><span>Legend</span></div>
+                    <div class="filter-row">
+                        <label>Position
+                            <select value="@_legend.Position" @onchange="e => SetLegend(l => l with { Position = Enum.Parse<LegendPosition>((string)e.Value!) })">
+                                <option value="@LegendPosition.Top">Top</option>
+                                <option value="@LegendPosition.Right">Right</option>
+                                <option value="@LegendPosition.Bottom">Bottom</option>
+                                <option value="@LegendPosition.None">None</option>
+                            </select>
+                        </label>
+                        <label>Layout
+                            <select value="@_legend.Layout" @onchange="e => SetLegend(l => l with { Layout = Enum.Parse<LegendLayout>((string)e.Value!) })">
+                                <option value="@LegendLayout.Auto">Auto</option>
+                                <option value="@LegendLayout.List">A list, one entry per series</option>
+                                <option value="@LegendLayout.Table">A table: colour by row, drawing by column</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                <div class="filter-section">
                     <div class="filter-heading"><span>Horizontal axis</span></div>
                     <div class="filter-row">
                         <label>Ticks
@@ -211,6 +231,64 @@
                 <p class="filter-note">The CSV holds what the chart shows.</p>
             </div>
         }
+        <div class="chart-area legend-@(_legend.Position.ToString().ToLowerInvariant())">
+        @if (_legend.Position != LegendPosition.None)
+        {
+            <div class="chart-legend" role="group" aria-label="Legend">
+                @if (UseTable(model))
+                {
+                    var leaves = model.AllSeries.Select(s => s.Leaf).Distinct().ToList();
+                    var groups = model.AllSeries.Select(s => s.Group).Distinct().ToList();
+                    <table class="legend-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                @foreach (var group in groups)
+                                {
+                                    var members = model.AllSeries.Where(s => s.Group == group).Select(s => s.Id).ToList();
+                                    <th><button type="button" class="legend-head @(AllHidden(members) ? "off" : "")"
+                                                title="Show or hide every series of @group" @onclick="() => Toggle(members)">@group</button></th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var leaf in leaves)
+                            {
+                                var members = model.AllSeries.Where(s => s.Leaf == leaf).Select(s => s.Id).ToList();
+                                <tr>
+                                    <th><button type="button" class="legend-head @(AllHidden(members) ? "off" : "")"
+                                                title="Show or hide every series of @leaf" @onclick="() => Toggle(members)">@leaf</button></th>
+                                    @foreach (var group in groups)
+                                    {
+                                        <td>
+                                            @if (model.AllSeries.FirstOrDefault(s => s.Leaf == leaf && s.Group == group) is { } series)
+                                            {
+                                                var hidden = _view.HiddenSeries.Contains(series.Id);
+                                                <button type="button" class="legend-cell @(hidden ? "off" : "")" aria-pressed="@(hidden ? "false" : "true")"
+                                                        title="@series.Name" @onclick="() => Toggle([series.Id])">@((MarkupString)ChartSvg.Sample(series))</button>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    var oneGroup = model.AllSeries.Select(s => s.Group).Distinct().Count() == 1;
+                    @foreach (var series in model.AllSeries)
+                    {
+                        var hidden = _view.HiddenSeries.Contains(series.Id);
+                        <button type="button" class="legend-entry @(hidden ? "off" : "")" aria-pressed="@(hidden ? "false" : "true")"
+                                title="@(hidden ? "Show" : "Hide") @series.Name" @onclick="() => Toggle([series.Id])">
+                            @((MarkupString)ChartSvg.Sample(series))<span>@(oneGroup ? series.Leaf : series.Name)</span>
+                        </button>
+                    }
+                }
+                <span class="legend-note">Click to hide or show.</span>
+            </div>
+        }
         <div class="chart-body" @ref="_chartBody">
             @((MarkupString)_pageSvg!)
             @if (_band is { } band && band < model.Xs.Count)
@@ -237,6 +315,7 @@
                     }
                 </div>
             }
+        </div>
         </div>
     </section>
 }
@@ -283,6 +362,30 @@
     [Parameter] public ChartSpec? InitialDefinition { get; set; }
 
     private ChartLayout _layout;
+    private LegendStyle _legend = LegendStyle.Default;
+
+    // The legend changes only what it is about, on the style as it is when the event is handled.
+    private void SetLegend(Func<LegendStyle, LegendStyle> change) => _legend = change(_legend);
+
+    /// <summary>
+    /// A table when the series form a full grid — every leaf with every group, one series each, as a
+    /// row's spreads and hazard rates do — so a colour is read once per row and a drawing once per
+    /// column; a list otherwise.
+    /// </summary>
+    private bool UseTable(ChartModel model)
+    {
+        if (_legend.Layout != LegendLayout.Auto) return _legend.Layout == LegendLayout.Table;
+        var leaves = model.AllSeries.Select(s => s.Leaf).Distinct().Count();
+        var groups = model.AllSeries.Select(s => s.Group).Distinct().Count();
+        // Every cell filled: a table with holes reads worse than the list it replaces.
+        return leaves >= 2 && groups >= 2 && model.AllSeries.Select(s => (s.Leaf, s.Group)).Distinct().Count() == leaves * groups
+            && model.AllSeries.Count == leaves * groups;
+    }
+
+    private bool AllHidden(IReadOnlyCollection<string> ids) => ids.All(_view.HiddenSeries.Contains);
+
+    // A click hides what it names, or shows it again when all of it is hidden.
+    private void Toggle(IReadOnlyCollection<string> ids) => ShowColumns(ids, show: AllHidden(ids));
     private ChartView _view = ChartView.All;
 
     // Adding series to a chart already drawn: the columns ticked in the picker.
