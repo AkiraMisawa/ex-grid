@@ -2,7 +2,7 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 95.7% | 88.8% |
+| ExGrid | 95.7% | 88.4% |
 | ExSheet | 96.1% | 89.7% |
 | ExPivot | 94.2% | 85.2% |
 | Data | 94.4% | 90.2% |
@@ -12,19 +12,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/13/2026 - 15:07:45 |
+| Generated on: | 10/13/2026 - 15:28:00 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
-| Classes: | 838 |
+| Classes: | 839 |
 | Files: | 461 |
-| **Line coverage:** | 95.3% (56649 of 59434) |
-| Covered lines: | 56649 |
-| Uncovered lines: | 2785 |
-| Coverable lines: | 59434 |
-| Total lines: | 100445 |
-| **Branch coverage:** | 88.4% (32854 of 37130) |
-| Covered branches: | 32854 |
-| Total branches: | 37130 |
+| **Line coverage:** | 95.3% (56692 of 59479) |
+| Covered lines: | 56692 |
+| Uncovered lines: | 2787 |
+| Coverable lines: | 59479 |
+| Total lines: | 100606 |
+| **Branch coverage:** | 88.3% (32915 of 37239) |
+| Covered branches: | 32915 |
+| Total branches: | 37239 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -34,7 +34,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**95.4%**|**89%**|
+|**ExGrid**|**95.4%**|**88.6%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -160,8 +160,8 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|90.9%|88%|
-|ExGrid.Components.ExGrid<TRow>|95.6%|90.4%|
+|ExGrid.Components.ExGrid<TRow>|95.5%|90.3%|
+|ExGrid.Components.ExGrid<TRow>|91%|85.9%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
@@ -817,7 +817,8 @@
 |ExSheet.Engine.EntryText|100%|100%|
 |ExSheet.Engine.ErrorValues|100%|90%|
 |ExSheet.Engine.FormulaCompletion|100%||
-|ExSheet.Engine.FormulaEntry|100%|95.4%|
+|ExSheet.Engine.FormulaEntry|99.7%|95.5%|
+|ExSheet.Engine.FormulaEntry.CycleTarget|100%||
 |ExSheet.Engine.FormulaEntry.Frame|100%||
 |ExSheet.Engine.FormulaEntry.Token|100%||
 |ExSheet.Engine.FormulaReference|100%||
