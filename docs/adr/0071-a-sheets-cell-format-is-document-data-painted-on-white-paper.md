@@ -641,9 +641,13 @@ written. This section says what the run changed, and what it still left to a rea
 - **Ctrl+5 widens as a Number Format key does** (case 7). Ctrl+B and the Fill do not, in any of three
   orders. This corrects "a Font never widens" for strikethrough.
   - Ctrl+I, Ctrl+U and Format Cells' Font tab were not asked. They stay as Ctrl+B is, until a run
-    asks.
+    asks. *(2026-10-12: the seventeenth run asked, h7. Ctrl+U widens and Ctrl+I does not, and
+    Format Cells' Font tab with Bold widened. What follows is in "What the seventeenth Windows run
+    settled".)*
   - `SetCellFormatAsync` setting strikethrough is read as the Font tab, and does not widen. It sets
-    a Font as the tab does (ticket 100).
+    a Font as the tab does (ticket 100). *(2026-10-12, decided with the user: `SetCellFormatAsync`
+    widens as the formatting keys do, not as Format Cells' OK does.)* So strikethrough set through
+    it widens, as Ctrl+5 does. See "What the seventeenth Windows run settled".
 - General widens as typing the number would (case 5), and a bold number that fits stays as it is
   (case 6), as read.
 - A Number Format set through COM on a cell that already held the number widened the column (case 7,
@@ -707,7 +711,8 @@ written. This section says what the run changed, and what it still left to a rea
 - **Excel drops the Selection outline's inner white ring while an edit is open** (case 19). That
   belongs to the outline, not to a Cell Format.
 - **Ctrl+5's widening raises a question about the other Font keys** (above). The next run that asks
-  Excel about Cell Format can ask about Ctrl+I, Ctrl+U and the Font tab.
+  Excel about Cell Format can ask about Ctrl+I, Ctrl+U and the Font tab. *(2026-10-12: the
+  seventeenth run asked them, h7. See "What the seventeenth Windows run settled".)*
 
 Tickets 99 to 103 build these answers.
 
@@ -856,7 +861,104 @@ changed. ExSheet has no Normal style, and the box does not give it one: a typefa
 - **`#DIV/0!`'s error triangle and the size of a Sheet's cells** each need a decision of their own,
   and are not decided here.
 - **The other Font keys** (Ctrl+I, Ctrl+U, and the Font tab beside Ctrl+5's widening) wait for the
-  next run that asks Excel about Cell Format.
+  next run that asks Excel about Cell Format. *(2026-10-12: the seventeenth run asked them, h7. See
+  "What the seventeenth Windows run settled".)*
+
+## What the seventeenth Windows run settled *(2026-10-12)*
+
+The run was made at 8436e45e. Its record is `verification/2026-10-11-windows-17/report.md`, Part H,
+rows h7 and h8. It asked what the fourteenth run left "as Ctrl+B is, until a run asks". The readings
+of 2026-10-12 asked what h7 raised (`verification/2026-10-12-windows-readings/report.md`, R6). Every
+answer is Excel's (ADR-0047's rule). Each part below says which of them observed it, or that it is a
+reading.
+
+**What the run observed** (h7, h8). Each case was a workbook of its own at 100% zoom, under the
+regional format en-GB. The format and then the number were set through COM, and then one gesture was
+made.
+- **At the standard width**, over 123456789.12 in `0.00` showing `########` at 8.09, a width nobody
+  set:
+  - **Ctrl+U widened column A to 11.73** (h7).
+  - **Ctrl+I did not widen it** (h7). The number showed `#######` in italic.
+  - **Format Cells' Font tab, with Bold and OK, widened it to 11.73** (h7). Ctrl+B did not widen in
+    the fourteenth run's case 7.
+  - **Ctrl+5 widened it to 11.73** (h8), as case 7 read.
+- **At a width set through COM**, over 123456.78 in `0.00` showing `#####` at width 5, nothing
+  widened it (h7, h8): not Ctrl+I, Ctrl+U, the Font tab with Bold or Ctrl+5. A column the user sized
+  never widens.
+
+**What the readings observed** (R6). The same number and format at the standard width, set through
+COM in the same order, each case a workbook of its own, under the regional format en-US (h7's was
+en-GB):
+- **Format Cells' Font tab widened the column** with Italic alone, to 12.45. With a single Underline
+  alone, or a colour (Red) alone, it widened to 11.73.
+- **The Fill tab and the Alignment tab did not widen it**, untouched or changed (Yellow; Vertical:
+  Top).
+- **The Home tab's buttons acted as the keys.** Bold and Italic did not widen it, and Underline
+  widened it to 11.73. R6 did not press Font Color.
+- **Ctrl+B pressed twice** did not widen it, after either press.
+- **Through COM, `Range.Font` acted as the keys.** `Font.Bold = True` did not widen it, and
+  `Font.Underline = 2` widened it to 11.73.
+
+**Decided with the user.**
+- *(2026-10-12, decided with the user: Format Cells' OK widens for any part of the Font it sets.)*
+  - It widens as it widens for a Number Format.
+  - It widens under every Chrome, in OK's one undo step, and never a column the user sized.
+  - Bold is h7's. Italic, Underline and a colour are R6's.
+  - Strikethrough set there, and the Normal font box, are readings.
+- *(2026-10-12, decided with the user: each Sheet Toolbar toggle widens as the key it names.)*
+  - Underline widens as Ctrl+U, and Strikethrough as Ctrl+5. Bold and Italic widen nothing, as
+    Ctrl+B and Ctrl+I do not.
+  - R6 has since observed the Home tab's Bold, Italic and Underline buttons act so.
+  - Excel's Home tab has no Strikethrough button. That ExSheet's widens as Ctrl+5 follows from the
+    decision, and no run observes it.
+- *(2026-10-12, decided with the user: `SetCellFormatAsync` widens as the formatting keys do, not as
+  Format Cells' OK does.)*
+  - It was decided from R6's `Range.Font` through COM. The day's first decision, from h7 before R6
+    was read, had `SetCellFormatAsync` widen as Format Cells' OK does. This replaces that part of it;
+    the two rules above stand.
+  - So a Number Format, underline or strikethrough set through it widens, and bold, italic or a
+    Font colour does not.
+
+**What ExSheet builds** (`SheetWidening`, ticket 100's path):
+- **The formatting keys widen for a Number Format, underline or strikethrough**
+  (`WidensAsAKeyDoes`). So do `SetCellFormatAsync` and `SetCellFormatFromFocusAsync`, the command the
+  toolbar's toggles set through (ADR-0100).
+- **Format Cells' OK widens for a Number Format or any part of the Font**
+  (`WidensAsFormatCellsOkDoes`), under every Chrome. Only OK widens by this rule.
+- **The toolbar's Font Colour widens nothing**, its face or a colour from its list, since both set
+  through `SetCellFormatAsync`. That Excel's Font Color button widens nothing is a reading.
+- **A Fill, Borders and an alignment widen nothing**, set any way.
+  - Observed for the Home tab's Fill Colour button over `####` (the fourteenth run's case 7), and the
+    Fill tab and the Alignment tab's vertical alignment over `####` (R6).
+  - The Border tab did not widen over a General number shown rounded, `1234568` (case 9).
+  - Borders over `####`, from the tab or the Border keys (Ctrl+Shift+& and Ctrl+Shift+_), and the
+    horizontal alignment, the only one ExSheet sets, are readings.
+- **Each widening is ticket 58's.** The width is recorded as an entry widened it (SH-26), in the
+  action's one undo step, and a column the user sized is never widened.
+
+**Readings that stay**, each for the next Windows run that asks Excel about Cell Format:
+- Taking underline off with Ctrl+U, or strikethrough with Ctrl+5, widens as setting it does.
+- Ctrl+4 widens as Ctrl+U, being the same key in ExSheet's table.
+- The Border keys, Ctrl+Shift+& and Ctrl+Shift+_, widen nothing, and neither does the Border tab
+  over `####`.
+- Ctrl+I then Ctrl+U on one Selection widen as Ctrl+U alone. The run pressed each key in a
+  workbook of its own.
+- Strikethrough from the Font tab, and its Normal font box, widen as its other Font parts do.
+- A horizontal alignment from Format Cells widens nothing.
+- The Home tab's Font Color button widens nothing, as ExSheet's Font Colour does not.
+- `Range.Font` through COM acts as the keys for italic, strikethrough and a colour too.
+- Over several ranges, whole columns or whole rows, each command widens every column it holds
+  numbers in, as over one range.
+
+**Where ExSheet differs, as this ADR has it.**
+- **An italic number is widened only to the width the upright number takes.** Over 123456789.12 in
+  `0.00`, Excel's Font tab widened column A to 12.45 for Italic alone, where a single underline or a
+  colour alone gave 11.73 (R6), and Bold 11.73 (h7).
+- ExSheet widens to what the grid's own estimate charges for the text (ADR-0016), and this ADR judges
+  italic by the regular widths: its slant leans past a glyph's advance by less than the cell's padding
+  ("Bold, and what fits"). So the number shows whole, and the column is not widened further.
+- This is a difference that follows this ADR, not a change. It is a known limitation of `0.1.0`
+  (ADR-0202's note of this date).
 
 ## Consequences
 

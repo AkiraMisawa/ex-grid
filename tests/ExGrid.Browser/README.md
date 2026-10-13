@@ -628,7 +628,9 @@ nobody had asked for. What that means when writing a test:
   page's status line, and the edit committing as typed (SH-43). The page's line under the Sheet
   reads the Focus cell's Cell Format back. The page's
   *Format selection as #,##0.00* pressed straight after Shift+ArrowDown on a 150 ms circuit, before
-  the Sheet has heard the move, formats the extended range as one step (ticket 56).
+  the Sheet has heard the move, formats the extended range as one step (ticket 56). Over numbers
+  showing `####`, Ctrl+I widens no column and Ctrl+U widens the one at the standard width, never the
+  one sized by its grip, in the key's one step (the seventeenth Windows run's h7; ADR-0071).
 - `sheet-borders.spec.mjs` — ExSheet's Borders beside Excel's (ADR-0071, DC-59, SH-46; ticket 49)
   on `/sheet?case=…`, the eleventh, twelfth and fourteenth Windows runs' set-ups, read in device
   pixels: Excel's thirteen line styles on a bottom and on a right edge, scrolled down the Sheet, at
@@ -695,7 +697,10 @@ nobody had asked for. What that means when writing a test:
   the box shrinks below one row; and two Sheets each with their own. On a 150 ms circuit on the
   Server host, the page's *Format Cells…* pressed straight after Shift+ArrowDown, and the Context
   Menu's item chosen as soon as the menu opens on another cell, each open over the Selection the grid
-  holds and stand when the move's notification lands (ticket 56).
+  holds and stand when the move's notification lands (ticket 56). Over numbers showing `####`, OK
+  with a Fill widens no column, and OK with Bold widens the one at the standard width, never the one
+  sized by its grip, in OK's one step (ADR-0071, decided 2026-10-12; the seventeenth Windows run's
+  h7).
 - `format-cells-keys.spec.mjs` — keys typed while Format Cells opens (ticket 93; ADR-0050 item 16
   and ADR-0039, notes of 2026-10-01), under both Chromes, at an 80 ms round trip on the Server host:
   a digit typed straight after a press on "Format Cells…", a press and a round trip, Enter on the
@@ -711,7 +716,20 @@ nobody had asked for. What that means when writing a test:
   typed at full speed arriving whole, Enter as OK; Tab and Shift+Tab kept inside; More Colours as
   MudBlazor's colour picker, read back through Format Cells; and, however it closes, the next
   arrow moving the Focus — from the page's button too, which MudBlazor would otherwise hand the
-  keyboard back to. Two Sheets each keep their own last tab and get the keyboard back.
+  keyboard back to. Over numbers showing `####`, OK widens as under the built-in Chrome: not for a
+  Fill, and for Bold the column at the standard width, never the one sized by its grip, in OK's one
+  step. Two Sheets each keep their own last tab and get the keyboard back.
+- `sheet-toolbar.spec.mjs` — the Sheet Toolbar (ADR-0100, SH-48 to SH-50; ticket 54) on `/sheet`
+  under both Chromes: above the Formula Bar and outside the grid's root, Bold shown pressed over a
+  bold Focus, a press that leaves the keyboard on the Sheet, every item greyed out while a cell is
+  edited, a colour chosen from the list kept on the face, the page's own action, the toolbar as one
+  tab stop, Excel's KeyTips (SH-52) and Ctrl+F1 (SH-51). Over numbers showing `####` (ADR-0071):
+  as decided on 2026-10-12, Bold and Italic widen no column, Underline and Strikethrough widen the
+  one at the standard width, never the one sized by its grip, each taken back by one Ctrl+Z, and the
+  Font Colour face and a colour from its list widen nothing, since they set through
+  `SetCellFormatAsync`, which widens as the keys do. The Fill Colour face widens nothing either, as
+  the fourteenth Windows run's Fill Colour button did not (case 7). That nothing widened is read
+  after `circuitQuiet()`.
 - `declarations.spec.mjs` — the declarations of ADR-0050/0051/0057 (§26) as ExSheet makes them on
   `/sheet`: completion under the built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`)
   — the list inside the grid's box, ↑/↓, Tab, Escape, ←/→ with the list open, `=SS` completed

@@ -660,13 +660,16 @@
     /// <exception cref="ArgumentOutOfRangeException">The change's alignment is not one.</exception>
     /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
     /// <remarks>
-    /// A Number Format widens each column whose numbers it no longer fits, in the same operation,
-    /// as Excel's formatting keys do (ADR-0071, case 17): a column the user has not sized, to hold
+    /// It widens as the formatting keys do, not as Format Cells' OK does (ADR-0071; decided
+    /// 2026-10-12): a Number Format, underline or strikethrough widens each column whose numbers it
+    /// no longer fits, in the same operation, as a Number Format key, Ctrl+U and Ctrl+5 do (case 17;
+    /// the seventeenth Windows run's h7 and h8). It widens a column the user has not sized, to hold
     /// the widest of them, recorded as a width an entry widened (SH-26). A column the user sized
-    /// never widens (case 18). Format Cells' OK does the same. A Font, a Fill or Borders widens
-    /// nothing, strikethrough among them: Excel's Ctrl+5 widens as a Number Format key does (the
-    /// fourteenth Windows run, case 7), but Format Cells' Font tab is read as Ctrl+B is, which no
-    /// run has seen widen, and this method sets a Font as that tab does. <see cref="DoAsync"/> does
+    /// never widens (case 18). Bold, italic and a Font colour widen nothing, as Ctrl+B and Ctrl+I do
+    /// not, and as Excel's <c>Range.Font</c> set through COM did not for bold where it did for
+    /// underline (the readings of 2026-10-12 (R6), case (5)). Neither do a Fill, Borders or an
+    /// alignment. Format Cells' OK widens for any part of the Font instead, as Excel's Font tab did
+    /// for bold, italic, underline and a colour (h7; R6, case (1)), and <see cref="DoAsync"/> does
     /// an edit exactly as it is written, and widens nothing.
     /// </remarks>
     public Task<bool> SetCellFormatAsync(CellFormatChange change)
@@ -681,7 +684,7 @@
         {
             RefuseWhileEditing();
             AdoptGridSelection();
-            return FormatSelectionAsync(change);
+            return FormatSelectionAsync(change, widen: SheetWidening.WidensAsAKeyDoes(change));
         });
     }
 
@@ -689,7 +692,11 @@
     /// Sets on the Selection a change made from the Focus cell's Cell Format as it shows when the
     /// command runs, as a toggle key reads it (ADR-0071, ADR-0100): Bold on over a Focus cell that is
     /// not bold and off over one that is, read from the Selection as the grid holds it then, not as
-    /// it was last heard. Otherwise it acts, refuses and answers as <see cref="SetCellFormatAsync"/>.
+    /// it was last heard. It widens the columns whose numbers no longer fit as the formatting keys
+    /// do, as <see cref="SetCellFormatAsync"/> does (ADR-0071; decided 2026-10-12): for a Number
+    /// Format, underline or strikethrough, as Ctrl+U and Ctrl+5 do, and never for bold or italic
+    /// alone, as Ctrl+B and Ctrl+I do not. The Sheet Toolbar's toggles set through it, and widen as
+    /// the key each names. Otherwise it acts, refuses and answers as <see cref="SetCellFormatAsync"/>.
     /// Answers false when nothing is selected.
     /// </summary>
     /// <param name="change">The change, made from the Focus cell's Cell Format.</param>
@@ -707,7 +714,7 @@
             var made = change(CellFormatAt(new CellAddress(focus.Row, focus.Column)));
             ArgumentNullException.ThrowIfNull(made, nameof(change));
             if (made.IsEmpty) throw new ArgumentException("The change sets no part of a Cell Format.", nameof(change));
-            return await FormatSelectionAsync(made);
+            return await FormatSelectionAsync(made, widen: SheetWidening.WidensAsAKeyDoes(made));
         });
     }
 
@@ -745,8 +752,8 @@
     /// whether an edit is open (ADR-0050 item 14). With no edit open it sets what Excel sets under
     /// the Sheet's culture on the Selection, as one step on the undo stack, a toggle in the
     /// direction the Focus cell gives it (<see cref="SheetFormatKeys.ChangeFor"/>). A Number Format
-    /// key and Ctrl+5 widen the columns whose numbers no longer fit, in that step
-    /// (<see cref="SheetFormatKeys.WidensAsANumberFormatDoes"/>). While an edit is
+    /// key, Ctrl+5 and Ctrl+U widen the columns whose numbers no longer fit, in that step
+    /// (<see cref="SheetWidening.WidensAsAKeyDoes"/>). While an edit is
     /// open it changes nothing, says why, and is raised through <see cref="OnFormatKeyRefused"/>
     /// (SH-43). Ctrl+1 opens Format Cells instead of setting anything, and while an edit is open it
     /// is refused as the others are: Excel opens a Font-only Format Cells there, for rich text
@@ -785,9 +792,8 @@
         }
         var focus = _selection.Focus;
         // On the Selection the key carries, which SetCellFormatAsync would read from the grid again.
-        await FormatSelectionAsync(
-            SheetFormatKeys.ChangeFor(kind, CellFormatAt(new CellAddress(focus.Row, focus.Column)), CurrentSheet.Culture),
-            widen: SheetFormatKeys.WidensAsANumberFormatDoes(kind));
+        var change = SheetFormatKeys.ChangeFor(kind, CellFormatAt(new CellAddress(focus.Row, focus.Column)), CurrentSheet.Culture);
+        await FormatSelectionAsync(change, widen: SheetWidening.WidensAsAKeyDoes(change));
     }
 
     /// <summary>
@@ -904,9 +910,12 @@
 
     /// <summary>
     /// Format Cells' OK (ADR-0071, SH-45): the parts the user touched, set on the Selection as one
-    /// undo step, and Format Cells ends. With nothing touched nothing is set and no step recorded. A
-    /// draft holding a refusal — a Custom code the engine does not read, text that is not a colour —
-    /// sets nothing and leaves Format Cells open, for the Chrome to show why.
+    /// undo step, and Format Cells ends. A Number Format or any part of the Font among them widens
+    /// the columns whose numbers no longer fit, in that step, under every Chrome
+    /// (<see cref="SheetWidening.WidensAsFormatCellsOkDoes"/>). With nothing touched nothing is set
+    /// and no step recorded. A draft holding a refusal — a Custom code the engine does not read,
+    /// text that is not a colour — sets nothing and leaves Format Cells open, for the Chrome to
+    /// show why.
     /// </summary>
     private async Task<bool> OkFormatCellsAsync(FormatCellsContext context)
     {
@@ -918,7 +927,7 @@
             try
             {
                 RefuseWhileEditing();
-                await FormatSelectionAsync(change);
+                await FormatSelectionAsync(change, widen: SheetWidening.WidensAsFormatCellsOkDoes(change));
             }
             catch (SheetRefusedException refused)
             {
@@ -1590,16 +1599,17 @@
     /// range goes to the engine as a range, so whole columns and whole rows are recorded as one
     /// entry each (ADR-0047, SH-21), any other range sets its cells, and Borders are set relative
     /// to each range; nothing is capped (principle 5). A part the change does not name is left as
-    /// it is. A Number Format widens the columns whose numbers it no longer fits, in the same
-    /// step (ADR-0071, case 17), and so does a change <paramref name="widen"/> names although it
-    /// sets none: Ctrl+5's (the fourteenth run's case 7).
+    /// it is. Where <paramref name="widen"/> says the command that sets the change widens, it
+    /// widens the columns whose numbers no longer fit, in the same step (ADR-0071, case 17): as a
+    /// key does (<see cref="SheetWidening.WidensAsAKeyDoes"/>), or as Format Cells' OK does
+    /// (<see cref="SheetWidening.WidensAsFormatCellsOkDoes"/>).
     /// </summary>
-    private async Task<bool> FormatSelectionAsync(CellFormatChange change, bool widen = false)
+    private async Task<bool> FormatSelectionAsync(CellFormatChange change, bool widen)
     {
         var ranges = _selection.Ranges;
         if (ranges.Count == 0) return false;
         var cells = ranges.Select(SheetFormulaAids.RangeOf).ToList();
-        await PerformAsync(SheetEdit.SetCellFormat(cells, change), widenOver: widen || change.NumberFormat is not null ? cells : null);
+        await PerformAsync(SheetEdit.SetCellFormat(cells, change), widenOver: widen ? cells : null);
         return true;
     }
 
@@ -1652,10 +1662,11 @@
     /// The columns a number widens, as Excel's do (<see cref="SheetWidening"/>): a number or date
     /// the user typed into a column that does not fit (ADR-0047, second round; SH-20), a typed
     /// Formula whose result is a number, as Excel was observed to widen it (WD-007), and the
-    /// numbers a Number Format, or Ctrl+5, no longer fits (ADR-0071, case 17; the fourteenth run's
-    /// case 7), in a column the user has not
-    /// sized (SH-26; case 18). Each width is recorded in the Sheet like any other (ADR-0046), as a
-    /// step of the operation's own; none where no column is widened.
+    /// numbers a formatting command no longer fits where it widens — a Number Format, Ctrl+5,
+    /// Ctrl+U, Format Cells' Font (ADR-0071, case 17; the fourteenth run's case 7; the
+    /// seventeenth's h7) — in a column the user has not sized (SH-26; case 18). Each width is
+    /// recorded in the Sheet like any other (ADR-0046), as a step of the operation's own; none
+    /// where no column is widened.
     /// </summary>
     private List<SheetStep> Widen(IReadOnlyList<CellRange> cells)
     {
