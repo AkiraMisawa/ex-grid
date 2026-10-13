@@ -171,7 +171,7 @@ them:
 | `INDEX` | `array, row_num, [column_num]` |
 | `CHOOSE` | `index_num, value1, [value2], ...` |
 | `OFFSET` | `reference, rows, cols, [height], [width]` — volatile (ADR-0124) |
-| `INDIRECT` | `ref_text, [a1]` — text naming a place on the same Sheet, A1 or absolute R1C1, a Linked Table's column or `A1#`; volatile (ADR-0124) |
+| `INDIRECT` | `ref_text, [a1]` — text naming a place on the same Sheet, A1 or R1C1 (offsets in brackets, whole rows and columns, `R1C1#` included), a Linked Table's column, or `A1#`; volatile (ADR-0124) |
 | `ROW`, `COLUMN` | `[reference]` |
 | `ROWS`, `COLUMNS` | `array` |
 | `XLOOKUP` | `lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]` |
@@ -297,18 +297,45 @@ answer:
 - **`INDIRECT` reads A1-style text naming a cell or a range of this Sheet** (ADR-0124, 2026-10-10),
   with or without the Sheet's own qualifier, as it stands after the recalculation; it is volatile,
   as `OFFSET` is. Its text is text: an insertion or a deletion rewrites the References beside it and
-  never it, so `INDIRECT("B5")` names B5 whatever moved. It also reads the forms the seventeenth
-  Windows run observed: R1C1 text (`a1` FALSE, 0, a blank or left empty) naming an absolute cell or a
-  range of two, a structured reference's text as `Table[Column]` typed is read, waiting while the
-  table waits, and `A1#` as typed `A1#` is read. R1C1 text that is relative or names whole rows or
-  columns, and a declared Linked Table's bare name (`Positions`, which Excel reads as the table's
-  data), are `#VALUE!` until a run observes them, and text that names no place is `#REF!`, as in Excel:
-  another Sheet's name, a table never declared or a column it lacks. What a computed Reference
-  (`INDIRECT`'s or `OFFSET`'s) reads taints the Formula as a Reference its text names does: one that
-  reaches a cycle, or its own cell, is `#CIRC!`, and one that reaches a waiting cell waits, whatever
-  the function reading it does with an Error Value — `COUNT`, `COUNTA`, `SUBTOTAL` and `AGGREGATE`'s
-  options that pass over errors included — and a Reference it computes into a Spill Range follows the
-  spill's layout.
+  never it, so `INDIRECT("B5")` names B5 whatever moved. It also reads, as Excel does, the forms the
+  seventeenth Windows run and the two area passes observed: R1C1 text (`a1` FALSE, 0, a blank or left
+  empty) with R and C each a number counted from 1, a leading 0 included (`R3C2`, `R03C2`), an offset
+  in brackets from the Formula's own cell, `+`, 0 and `-0` included (`R[1]C[-1]`, `R[+1]C[-1]`,
+  `R[0]C[-1]`), or no number, the Formula's own row or column (`RC[-1]`, `R[2]C`); a row part alone a
+  whole row and a column part alone a whole column (`R3`, `C[-1]`); two parts of the same kind joined
+  by `:` the rectangle they span (`R2:R3`, `RC[-1]:R[1]C[-1]`); one cell followed by `#` its Spill
+  Range (`R1C1#`); `A1#`, read as typed `A1#` is; a structured reference's text, read as
+  `Table[Column]` typed is, waiting while the table waits, whatever `a1` says; and `#REF!` for text
+  that names no place: another Sheet's name in A1 style, a column past `XFD`, A1 text read as R1C1 and
+  R1C1 text read as A1, an intersection, a table never declared, a column it lacks, and R1C1 parts of
+  two kinds joined (`R2C2:R3`, `R3:C2`). Forms no run has asked — the other combinations of a number,
+  an offset and none, the other orders of parts of two kinds joined, `#` after a relative cell,
+  another Sheet's name in R1C1 style — are read by the rule those answers settle, and put to the next
+  run. `#REF!` too by that rule, though no case asks it: other A1 text that goes on past its
+  Reference (the engine's rule, generalised from the intersection), a row past 1048576 in A1 style, as
+  `XFE1`'s column is *(2026-10-12, decided with the user: A1 text past the Sheet's edge stays
+  `#REF!`)*, and other text that is not R1C1 notation read in R1C1 style, as `B3` is. `#VALUE!` until
+  a run observes them, where the observed answers leave the readings apart: R1C1 text with a row or
+  column number 0 (`R0C2`); a row or column number past the Sheet's edge (`R1048577C2`, `R2C16385`),
+  which could name no place, as `XFE1` does in A1 style, or a place, as an offset past the edge does
+  *(2026-10-12, decided with the user: refused until Excel is asked, while A1 text past the edge stays
+  `#REF!`, as `XFE1` was observed to be)*; an offset past the Sheet's edge, which Excel reads as a
+  place but which no run has shown wrapped round to the far side or stopped at the edge; and, in
+  either style, `#` after a range, a row or a column, whatever the parts joined (`A1:A2#`, `A:A#`,
+  `R2C2:R3C2#`, `R3#`, `C2#`, `R2C2:R3#`), which could name no place, the first cell's Spill Range,
+  the cells themselves or the first cell joined to the second's Spill Range; and `#` inside a join,
+  after its first part (`A1#:A2`, `R1C1#:R2C1`), which could name no place, the first cell's Spill
+  Range joined to the second part, as `A1#` is read, or the cells themselves with the `#` passed over.
+  Another Sheet's name is judged first, so `Sheet2!A1#:A2` is `#REF!`. `#VALUE!` by decision, in
+  either style: a declared Linked Table's bare name (`INDIRECT("Positions")`), which Excel reads as
+  the table's data, every column and every row without the header. A Formula could then read the
+  table by position, and a Linked Table is read by key, never by position (ADR-0049's rule 2)
+  *(2026-10-12, decided with the user: the bare name stays `#VALUE!`, in either style)*. Typed, the
+  bare name is `#NAME?`, as an unknown name is. What a computed Reference (`INDIRECT`'s or `OFFSET`'s) reads taints the Formula as a
+  Reference its text names does: one that reaches a cycle, or its own cell, is `#CIRC!`, and one that
+  reaches a waiting cell waits, whatever the function reading it does with an Error Value — `COUNT`,
+  `COUNTA`, `SUBTOTAL` and `AGGREGATE`'s options that pass over errors included — and a Reference it
+  computes into a Spill Range follows the spill's layout.
 - **`SUBTOTAL` and `AGGREGATE` while no row can be hidden** (ADR-0047, 2026-10-10). A Sheet cannot hide
   a row yet, so `SUBTOTAL`'s 101 to 111 give what 1 to 11 give, and `AGGREGATE`'s options 1, 3, 5
   and 7 what 0, 2, 4 and 6 give, as Excel's do over such a sheet; a test fails on the day a row can

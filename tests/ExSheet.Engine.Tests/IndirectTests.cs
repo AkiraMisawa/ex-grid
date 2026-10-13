@@ -11,9 +11,13 @@ namespace ExSheet.Engine.Tests;
 /// through it. The forms it reads and refuses are in <c>ExcelCases/indirect.json</c>; the forms the
 /// seventeenth Windows run observed (R1C1, structured and <c>A1#</c> text, INDIRECT-023 to 026) are
 /// read here as the Formula forms they name are, cycles, waits and spills included, and so are the
-/// R1C1 forms that follow, by the rule they settle, from the offset, the whole row and the whole
-/// column the area pass of 2026-10-12 observed (INDIRECT-036 to 038). The forms those leave open are
-/// refused with <c>#VALUE!</c> and asked by the corpus.
+/// R1C1 forms the two area passes of 2026-10-12 observed (INDIRECT-036 to 038, 044 and 051 to 066:
+/// offsets, whole rows and columns, an R or a C with no number, a zero or signed offset, a leading 0,
+/// parts of two kinds joined, <c>R1C1#</c> and structured text) and those that follow from them by the
+/// rule they settle. The forms those leave open — a row or column number 0, a row or column number
+/// past the Sheet's edge (2026-10-12, decided with the user: refused until Excel is asked), an offset
+/// past the edge, and a <c>#</c> after a range, a row, a column or a join, or inside a join, in either
+/// style — are refused with <c>#VALUE!</c> and asked by the corpus.
 /// </summary>
 public class IndirectTests
 {
@@ -200,23 +204,23 @@ public class IndirectTests
         Assert.Equal(1.08, sheet.Number("A1"));
     }
 
-    [Fact] // ADR-0124 (2026-10-10), ADR-0049: a declared Linked Table's bare name is a structured reference Excel reads, so #VALUE! until a run observes it; any other name is #REF!
-    public void ADR0124_a_linked_tables_bare_name_is_value_and_any_other_name_ref()
+    [Fact] // ADR-0049 (rule 2), ADR-0124 (2026-10-12, decided with the user: a declared Linked Table's bare name through INDIRECT stays #VALUE!, in either style): a declared Linked Table's bare name is #VALUE!, in R1C1 style as in A1 style, though Excel reads it as the table's data (INDIRECT-043, 053 to 057 record Excel's answers): a Linked Table is read by key, never by position; any other name is #REF!
+    public void ADR0049_a_linked_tables_bare_name_is_refused_and_any_other_name_ref()
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "=INDIRECT(\"Positions\")");
         sheet.Enter("A2", "=SUM(INDIRECT(\"positions\"))");
-        Assert.Equal(ErrorValue.Ref, sheet.Error("A1"));
-        Assert.Equal(ErrorValue.Ref, sheet.Error("A2"));
+        sheet.Enter("A3", "=INDIRECT(\"Positions\",FALSE)");
+        sheet.Enter("A4", "=INDEX(INDIRECT(\"Positions\"),2,1)");
+        foreach (var cell in new[] { "A1", "A2", "A3", "A4" }) Assert.Equal(ErrorValue.Ref, sheet.Error(cell));
 
         // The declaration is a change, and INDIRECT is volatile: it reads its text again.
         sheet.DeclareLinkedTable("Positions", ["Id", "PV"]);
-        Assert.Equal(ErrorValue.Value, sheet.Error("A1"));
-        Assert.Equal(ErrorValue.Value, sheet.Error("A2"));
+        foreach (var cell in new[] { "A1", "A2", "A3", "A4" }) Assert.Equal(ErrorValue.Value, sheet.Error(cell));
 
-        sheet.PushLinkedTable("Positions", [[Value.FromText("R-1"), Value.FromNumber(250.5)]]);
-        Assert.Equal(ErrorValue.Value, sheet.Error("A1"));
-        Assert.Equal(ErrorValue.Value, sheet.Error("A2"));
+        // A table with its data, which Excel's INDEX reads by position (INDIRECT-055), is refused alike.
+        sheet.PushLinkedTable("Positions", [[Value.FromText("R-1"), Value.FromNumber(250.5)], [Value.FromText("R-2"), Value.FromNumber(50)]]);
+        foreach (var cell in new[] { "A1", "A2", "A3", "A4" }) Assert.Equal(ErrorValue.Value, sheet.Error(cell));
     }
 
     private static Sheet MicrosoftsExample()
@@ -251,71 +255,114 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Ref, sheet.Evaluate("=INDIRECT(\"R3C2\",TRUE)").Error);
     }
 
-    [Theory] // ADR-0124 (2026-10-10, 2026-10-12): R1C1 text in a form no Windows run has observed — an R or a C with no number, a zero offset in brackets, a number with a leading 0 or 0 itself, an offset with a +, a cell joined to a whole row or column, a row to a column — is refused with #VALUE!, as are structured and A1# text in R1C1 style (INDIRECT-044, 051 and 058 to 066 ask them)
-    [InlineData("RC[-1]")]
-    [InlineData("rc[-1]")]
-    [InlineData("R[1]C")]
-    [InlineData("R2C")]
-    [InlineData("RC2")]
-    [InlineData("RC")]
-    [InlineData("R")]
-    [InlineData("C")]
-    [InlineData("RC[-1]:R[1]C[-1]")]
-    [InlineData("R[1]C[-1]:RC[-1]")]
-    [InlineData("R[0]C[-1]")]
-    [InlineData("R[-0]C[-1]")]
-    [InlineData("R[1]C[0]")]
-    [InlineData("R[1]C[-0]")]
-    [InlineData("R[0]")]
-    [InlineData("C[-0]")]
-    [InlineData("R[00]C[-1]")]
-    [InlineData("R03C2")]
-    [InlineData("R0C2")]
-    [InlineData("R3C02")]
-    [InlineData("R[01]C2")]
-    [InlineData("R[+1]C2")]
-    [InlineData("R[+1]C[-1]")]
-    [InlineData("R3C2:R5")]
-    [InlineData("R3:R5C2")]
-    [InlineData("R3:C2")]
-    [InlineData("C2:RC")]
-    [InlineData("Sheet1!R3C2:C2")]
-    [InlineData("R3C2#")]
-    [InlineData("Positions[PV]")]
-    public void ADR0124_indirect_refuses_r1c1_text_no_run_has_observed(string text)
+    [Theory] // ADR-0124 (2026-10-12), the second area pass (INDIRECT-044, 051, 059, 063 to 066; 067 to 072 ask what follows): an R or a C with no number is the Formula's own row or column, an offset in brackets may be 0, -0 or signed with a +, and a number or an offset may be written with leading 0s
+    [InlineData("C2", "=INDIRECT(\"RC[-1]\",FALSE)", 1.333)]
+    [InlineData("C2", "=INDIRECT(\"rc[-1]\",FALSE)", 1.333)]
+    [InlineData("C2", "=SUM(INDIRECT(\"RC[-1]:R[1]C[-1]\",FALSE))", 46.333)]
+    [InlineData("C2", "=SUM(INDIRECT(\"R[1]C[-1]:RC[-1]\",FALSE))", 46.333)]
+    [InlineData("B1", "=INDIRECT(\"R[2]C\",FALSE)", 45)]
+    [InlineData("C3", "=INDIRECT(\"RC2\",FALSE)", 45)]
+    [InlineData("B5", "=INDIRECT(\"R2C\",FALSE)", 1.333)]
+    [InlineData("C2", "=INDIRECT(\"R[0]C[-1]\",FALSE)", 1.333)]
+    [InlineData("C2", "=INDIRECT(\"R[-0]C[-1]\",FALSE)", 1.333)]
+    [InlineData("C2", "=INDIRECT(\"R[+0]C[-1]\",FALSE)", 1.333)]
+    [InlineData("C2", "=INDIRECT(\"R[00]C[-1]\",FALSE)", 1.333)]
+    [InlineData("B1", "=INDIRECT(\"R[1]C[0]\",FALSE)", 1.333)]
+    [InlineData("B1", "=INDIRECT(\"R[1]C[-0]\",FALSE)", 1.333)]
+    [InlineData("C2", "=INDIRECT(\"R[+1]C[-1]\",FALSE)", 45)]
+    [InlineData("C2", "=INDIRECT(\"R[01]C[-1]\",FALSE)", 45)]
+    [InlineData("C2", "=INDIRECT(\"R[+01]C[-01]\",FALSE)", 45)]
+    [InlineData("C3", "=INDIRECT(\"R[-01]C[-1]\",FALSE)", 1.333)]
+    [InlineData("ZZ1000", "=INDIRECT(\"R03C2\",FALSE)", 45)]
+    [InlineData("ZZ1000", "=INDIRECT(\"R3C02\",FALSE)", 45)]
+    [InlineData("ZZ1000", "=INDIRECT(\"R0003C0002\",FALSE)", 45)]
+    [InlineData("ZZ1000", "=INDIRECT(\"R00000000000003C2\",FALSE)", 45)]
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"R02:R03\",FALSE))", 46.333)]
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"C02\",FALSE))", 118.333)]
+    [InlineData("C2", "=SUM(INDIRECT(\"R[+1]\",FALSE))", 45)]
+    [InlineData("C2", "=SUM(INDIRECT(\"C[-01]\",FALSE))", 118.333)]
+    public void ADR0124_indirect_reads_the_r1c1_forms_the_second_area_pass_observed(string cell, string formula, double expected)
     {
         var sheet = MicrosoftsExample();
-        sheet.DeclareLinkedTable("Positions", ["Id", "PV"]);
-        sheet.PushLinkedTable("Positions", [[Value.FromText("R-1"), Value.FromNumber(250.5)]]);
-        // In C2, beside Microsoft's example, where the corpus puts these forms: read as their neighbours are, each would name a cell.
+        sheet.Enter(cell, formula);
+
+        Assert.Equal(expected, sheet.Number(cell), 9);
+    }
+
+    [Theory] // ADR-0124 (2026-10-12), ADR-0047, SH-59: an R or a C with no number is the Formula's own row or column, so R alone is its whole row, C alone its whole column and RC its own cell, each reaching the Formula: #CIRC!
+    [InlineData("=SUM(INDIRECT(\"R\",FALSE))")]
+    [InlineData("=SUM(INDIRECT(\"C\",FALSE))")]
+    [InlineData("=INDIRECT(\"RC\",FALSE)")]
+    [InlineData("=SUM(INDIRECT(\"R[-1]:R\",FALSE))")]
+    [InlineData("=SUM(INDIRECT(\"C:C[1]\",FALSE))")]
+    [InlineData("=INDIRECT(\"R[0]C[0]\",FALSE)")]
+    public void ADR0124_r1c1_text_with_no_number_reaches_the_formulas_own_row_or_column(string formula)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter("C2", formula);
+
+        Assert.Equal(ErrorValue.Circ, sheet.Error("C2"));
+    }
+
+    [Theory] // ADR-0124 (2026-10-12): a row or column number 0 is refused with #VALUE!, since no run has asked one and the observed forms do not say whether it names no place (INDIRECT-073 asks it)
+    [InlineData("R0C2")]
+    [InlineData("R00C2")]
+    [InlineData("r0c2")]
+    [InlineData("R3C0")]
+    [InlineData("R0")]
+    [InlineData("C0")]
+    [InlineData("R0:R3")]
+    [InlineData("C2:C00")]
+    [InlineData("R0C[-1]")]
+    [InlineData("R[1]C0")]
+    [InlineData("R0C2:R3C2")]
+    [InlineData("R0C1#")]
+    [InlineData("Sheet1!R0C2")]
+    public void ADR0124_indirect_refuses_a_row_or_column_number_0(string text)
+    {
+        var sheet = MicrosoftsExample();
         sheet.Enter("C2", $"=INDIRECT(\"{text}\",FALSE)");
 
         Assert.Equal(ErrorValue.Value, sheet.Error("C2"));
     }
 
-    [Theory] // ADR-0124 (2026-10-10, 2026-10-12), ADR-0046: R1C1 text that names no place is #REF!, as A1 text's is: A1 text read as R1C1, a number past the Sheet's edge as XFE1 is (INDIRECT-017), another Sheet, a space; with an offset beside the number or the Sheet, whether the offset would name no place or wrap round
+    [Theory] // ADR-0124 (2026-10-10, 2026-10-12), ADR-0046: R1C1 text that names no place is #REF!: A1 text read as R1C1 (INDIRECT-035, observed) and, by that rule, other text that is not R1C1 notation, which no case asks; parts of two kinds joined (INDIRECT-058, 062, observed; 075 to 077 ask the other orders), whatever their parts would read; a # after one cell that does not spill (as A1#'s INDIRECT-042; 079 asks it); a table never declared; and another Sheet's name, by the rule INDIRECT-008 observed in A1 style (093 asks it), whatever follows it, since every reading of the rest names a place on a Sheet that is not there
     [InlineData("B3")]
-    [InlineData("R1048577C2")]
-    [InlineData("R3C16385")]
-    [InlineData("R3C2:R99999999C2")]
-    [InlineData("R1048577")]
-    [InlineData("C16385")]
-    [InlineData("R2:R1048577")]
-    [InlineData("C99999999999")]
-    [InlineData("R1048577C[-1]")]
-    [InlineData("R[-5]C16385")]
-    [InlineData("R[-5]C[-1]:R1048577C2")]
-    [InlineData("R[-5]:R1048577")]
     [InlineData("Sheet2!R3")]
     [InlineData("Sheet2!C2")]
     [InlineData("Sheet2!R3C2")]
     [InlineData("Sheet2!R[1]C[-1]")]
     [InlineData("Sheet2!R[-5]C[-1]")]
+    [InlineData("Sheet2!R1048577C2")]
+    [InlineData("Sheet2!R0C2")]
+    [InlineData("Sheet2!R3#")]
+    [InlineData("Sheet2!R2C2:R3#")]
+    [InlineData("Sheet2!R1C1#:R2C1")]
+    [InlineData("Sheet2!R1C1#:R2C1#")]
     [InlineData(" R3C2")]
     [InlineData("R3C2 ")]
     [InlineData("R3C2:")]
     [InlineData("")]
     [InlineData("no place")]
+    [InlineData("R2C2:R3")]
+    [InlineData("R3C2:R5")]
+    [InlineData("R3:R5C2")]
+    [InlineData("R3:C2")]
+    [InlineData("C2:R3")]
+    [InlineData("R2C2:C3")]
+    [InlineData("C2:RC")]
+    [InlineData("RC[-1]:R")]
+    [InlineData("Sheet1!R3C2:C2")]
+    [InlineData("R0C2:R3")]
+    [InlineData("R[-5]C[-1]:C2")]
+    [InlineData("R1048577C2:R3")]
+    [InlineData("R3C2#")]
+    [InlineData("Sheet2!R1C1#")]
+    [InlineData("R1C1##")]
+    [InlineData("R1C1#:")]
+    [InlineData("#")]
+    [InlineData("Positions[PV]")]
+    [InlineData("Positions")]
     public void ADR0124_indirect_r1c1_text_that_names_no_place_is_ref(string text)
     {
         var sheet = MicrosoftsExample();
@@ -324,7 +371,117 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Ref, sheet.Error("C2"));
     }
 
-    [Theory] // ADR-0124 (2026-10-12), the area pass (INDIRECT-036; 045 and 050 ask what follows): relative R1C1 text counts from the Formula's own cell, R and C each with a number or an offset in brackets
+    [Theory] // ADR-0124 (2026-10-12), ADR-0047: a # after an R1C1 range, row or column, or inside a join, is refused with #VALUE!, whatever the parts joined, as in A1 style: the second area pass observed it after one cell only (INDIRECT-060), and the readings part, no place, the first cell's Spill Range, the cells themselves or the first cell joined to the second's Spill Range; after parts of two kinds joined, no place as R2C2:R3 is (INDIRECT-058) or the first cell's Spill Range; inside a join, no place, the first cell's Spill Range joined to the second part, or the cells themselves with the # passed over (INDIRECT-090, 091, 094, 097, 099 ask it)
+    [InlineData("C2", "R2C2:R3C2#")]
+    [InlineData("C2", "R1C1:R2C1#")]
+    [InlineData("C2", "R3#")]
+    [InlineData("C2", "C1#")]
+    [InlineData("C2", "R2:R3#")]
+    [InlineData("C2", "C1:C2#")]
+    [InlineData("C2", "R[1]#")]
+    [InlineData("C2", "C[-1]#")]
+    [InlineData("C2", "RC[-1]:R[1]C[-1]#")]
+    [InlineData("C2", "r3#")]
+    [InlineData("C2", "Sheet1!R3#")]
+    [InlineData("ZZ1000", "R1C1:R2C1#")]
+    [InlineData("C2", "R2C2:R3#")]
+    [InlineData("ZZ1000", "R1C1:R2#")]
+    [InlineData("C2", "R3:R2C2#")]
+    [InlineData("C2", "R2C2:C3#")]
+    [InlineData("C2", "R3:C2#")]
+    [InlineData("C2", "C2:R3#")]
+    [InlineData("C2", "R0C2:R3#")]
+    [InlineData("C2", "R1C1#:R2C1")]
+    [InlineData("C2", "R1C1#:R2C1#")]
+    [InlineData("ZZ1000", "R1C1#:R2C1")]
+    [InlineData("C2", "r1c1#:r2c1")]
+    [InlineData("C2", "R2C1#:R1C1")]
+    [InlineData("C2", "Sheet1!R1C1#:R2C1")]
+    [InlineData("C2", "RC[-2]#:R[1]C[-2]")]
+    [InlineData("C2", "R1#:R2")]
+    [InlineData("C2", "C1#:C2")]
+    [InlineData("C2", "R2C2#:R3")]
+    [InlineData("C2", "R3#:C2")]
+    public void ADR0124_indirect_refuses_a_hash_after_an_r1c1_range_row_or_column(string cell, string text)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter("A1", "=SEQUENCE(3)");
+        sheet.Enter(cell, $"=SUM(INDIRECT(\"{text}\",FALSE))");
+
+        Assert.Equal(ErrorValue.Value, sheet.Error(cell));
+    }
+
+    [Theory] // ADR-0124 (2026-10-12), ADR-0047: a # after an A1 range, whole row or whole column, or inside a join, is refused with #VALUE!, as in R1C1 style: no run has observed it, and the readings part; after a range, no place as the intersection is (INDIRECT-021), the first cell's Spill Range, the cells themselves, or the first cell joined to the second's Spill Range, A1:(A2#); inside a join, no place, the first cell's Spill Range joined to the second cell, (A1#):A2, as A1# is read (INDIRECT-026, 060), or the cells themselves with the # passed over (INDIRECT-092, 096, 098 ask it)
+    [InlineData("C2", "A1:A2#")]
+    [InlineData("C2", "A2:A1#")]
+    [InlineData("C2", "a1:a2#")]
+    [InlineData("C2", "$A$1:A2#")]
+    [InlineData("C2", "A1:A1#")]
+    [InlineData("C2", "A:A#")]
+    [InlineData("C2", "A:B#")]
+    [InlineData("C2", "1:1#")]
+    [InlineData("C2", "1:3#")]
+    [InlineData("C2", "Sheet1!A1:A2#")]
+    [InlineData("C2", "'Sheet1'!A:A#")]
+    [InlineData("ZZ1000", "A1:A2#")]
+    [InlineData("C2", "A1#:A2")]
+    [InlineData("C2", "A1#:A2#")]
+    [InlineData("C2", "$A$1#:A2")]
+    [InlineData("C2", "Sheet1!A1#:A2")]
+    [InlineData("C2", "'Sheet1'!A1#:A2")]
+    [InlineData("C2", "a1#:a2")]
+    [InlineData("C2", "A2#:A1")]
+    [InlineData("C2", "A#:B")]
+    [InlineData("C2", "1#:2")]
+    [InlineData("ZZ1000", "A1#:A2")]
+    public void ADR0124_indirect_refuses_a_hash_after_an_a1_range_row_or_column(string cell, string text)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter("A1", "=SEQUENCE(3)");
+        sheet.Enter(cell, $"=SUM(INDIRECT(\"{text}\"))");
+
+        Assert.Equal(ErrorValue.Value, sheet.Error(cell));
+    }
+
+    [Fact] // ADR-0124 (2026-10-12), ADR-0047: where the second cell spills, a # after a range gives each reading a different answer, 4 for A1:(A2#), 2 for the range with the # passed over, #REF! for no place or A1's Spill Range, and is refused in either style (INDIRECT-096, 097 ask it)
+    public void ADR0124_indirect_refuses_a_hash_after_a_range_whose_second_cell_spills()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "1");
+        sheet.Enter("A2", "=SEQUENCE(2)");
+        sheet.Enter("C1", "=SUM(INDIRECT(\"A1:A2#\"))");
+        sheet.Enter("C2", "=SUM(INDIRECT(\"R1C1:R2C1#\",FALSE))");
+
+        Assert.Equal(ErrorValue.Value, sheet.Error("C1"));
+        Assert.Equal(ErrorValue.Value, sheet.Error("C2"));
+        // The readings the refusal keeps apart, each answered differently over this fixture.
+        Assert.Equal(4, sheet.Evaluate("=SUM(A1:A3)").Number);
+        Assert.Equal(2, sheet.Evaluate("=SUM(INDIRECT(\"A1:A2\"))").Number);
+        Assert.Equal(3, sheet.Evaluate("=SUM(INDIRECT(\"A2#\"))").Number);
+        Assert.Equal(ErrorValue.Ref, sheet.Evaluate("=SUM(INDIRECT(\"A1#\"))").Error);
+    }
+
+    [Theory] // ADR-0124 (2026-10-10, 2026-10-12), ADR-0046: A1 text naming another Sheet names no place, as INDIRECT-008 observed, whatever follows the name, a # after a range or inside a join included, since every reading of the rest names a place on a Sheet that is not there
+    [InlineData("Sheet2!B2")]
+    [InlineData("Sheet2!A1#")]
+    [InlineData("Sheet2!A1:A2#")]
+    [InlineData("Sheet2!A:A#")]
+    [InlineData("Sheet2!1:1#")]
+    [InlineData("'Sheet 2'!A1:A2#")]
+    [InlineData("Sheet2!A1#:A2")]
+    [InlineData("Sheet2!A1#:A2#")]
+    [InlineData("'Sheet 2'!1#:2")]
+    [InlineData("Sheet2!B2 x")]
+    public void ADR0124_indirect_a1_text_naming_another_sheet_is_ref_whatever_follows(string text)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter("A1", "=SEQUENCE(3)");
+        sheet.Enter("C2", $"=SUM(INDIRECT(\"{text}\"))");
+
+        Assert.Equal(ErrorValue.Ref, sheet.Error("C2"));
+    }
+
+    [Theory] // ADR-0124 (2026-10-12), the area passes (INDIRECT-036, 045, 050): relative R1C1 text counts from the Formula's own cell, R and C each with a number or an offset in brackets
     [InlineData("C2", "=INDIRECT(\"R[1]C[-1]\",FALSE)", 45)]
     [InlineData("C3", "=INDIRECT(\"R[-1]C[-1]\",FALSE)", 1.333)]
     [InlineData("C2", "=INDIRECT(\"R3C[-1]\",FALSE)", 45)]
@@ -342,7 +499,7 @@ public class IndirectTests
         Assert.Equal(expected, sheet.Number(cell), 9);
     }
 
-    [Theory] // ADR-0124 (2026-10-12), the area pass (INDIRECT-037, 038; 046 to 049 ask what follows): a row part alone is a whole row, a column part alone a whole column, and two parts of the same kind joined by ':' the rectangle they span
+    [Theory] // ADR-0124 (2026-10-12), the area passes (INDIRECT-037, 038, 046 to 049): a row part alone is a whole row, a column part alone a whole column, and two parts of the same kind joined by ':' the rectangle they span
     [InlineData("ZZ1000", "=SUM(INDIRECT(\"R3\",FALSE))", 45)]
     [InlineData("ZZ1000", "=SUM(INDIRECT(\"C2\",FALSE))", 118.333)]
     [InlineData("C2", "=SUM(INDIRECT(\"R[1]\",FALSE))", 45)]
@@ -367,7 +524,54 @@ public class IndirectTests
         Assert.Equal(expected, sheet.Number(cell), 9);
     }
 
-    [Theory] // ADR-0124 (2026-10-12), ADR-0047: an offset past the Sheet's edge, on either side and on either axis, is refused with #VALUE!: no run has observed one, and Excel might name no place or wrap it round to the Sheet's far side (INDIRECT-052 asks it)
+    [Theory] // ADR-0124, ADR-0047 (2026-10-12, decided with the user: in R1C1 style, a row or column number past the Sheet's edge is refused with #VALUE! until Excel is asked; INDIRECT-074 asks it), INDIRECT-095 asking a column: it could name no place, as XFE1 does in A1 style, or a place, as an offset past the edge does (INDIRECT-052), and is refused whatever an offset beside it, a join or a # after it would read
+    [InlineData("C2", "R1048577C2")]
+    [InlineData("C2", "R2C16385")]
+    [InlineData("C2", "R3C16385")]
+    [InlineData("C2", "R3C2:R99999999C2")]
+    [InlineData("C2", "R1048577")]
+    [InlineData("C2", "C16385")]
+    [InlineData("C2", "R2:R1048577")]
+    [InlineData("C2", "C99999999999")]
+    [InlineData("C2", "R1048577C[-1]")]
+    [InlineData("C2", "R[-5]C16385")]
+    [InlineData("C2", "R[-5]C[-1]:R1048577C2")]
+    [InlineData("C2", "R[-5]:R1048577")]
+    [InlineData("C2", "R1048577C2#")]
+    [InlineData("C2", "r1048577c2")]
+    [InlineData("C2", "Sheet1!R1048577C2")]
+    [InlineData("C2", "R01048577C2")]
+    [InlineData("ZZ1000", "R1048577C[-1]")]
+    public void ADR0124_indirect_refuses_an_r1c1_number_past_the_sheets_edge(string cell, string text)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter(cell, $"=INDIRECT(\"{text}\",FALSE)");
+
+        Assert.Equal(ErrorValue.Value, sheet.Error(cell));
+    }
+
+    [Theory] // ADR-0124 (2026-10-12, decided with the user: A1 text past the Sheet's edge stays #REF!): a column past XFD names no place, as XFE1 was observed to (INDIRECT-017), and a row past 1048576 by the same rule, in a cell, a range, whole columns or whole rows, whatever follows, a # included, and whatever comes before it in a join, a # inside the join included
+    [InlineData("XFE1")]
+    [InlineData("B1048577")]
+    [InlineData("B2:B1048577")]
+    [InlineData("A1:XFE1")]
+    [InlineData("XFE:XFE")]
+    [InlineData("1048577:1048577")]
+    [InlineData("Sheet1!XFE1")]
+    [InlineData("XFE1#")]
+    [InlineData("A1:XFE1#")]
+    [InlineData("B1:B1048577#")]
+    [InlineData("A1#:XFE1")]
+    [InlineData("B1#:B1048577")]
+    public void ADR0124_indirect_a1_text_past_the_sheets_edge_is_ref(string text)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter("C2", $"=INDIRECT(\"{text}\")");
+
+        Assert.Equal(ErrorValue.Ref, sheet.Error("C2"));
+    }
+
+    [Theory] // ADR-0124 (2026-10-12), ADR-0047: an offset past the Sheet's edge, on either side and on either axis, is refused with #VALUE!: Excel reads one as a place (INDIRECT-052 is 0, a blank cell, not #REF!), but no run has told whether it wraps round to the Sheet's far side or stops at the edge (INDIRECT-082 to 084 ask it)
     [InlineData("C2", "R[-5]C[-1]")]
     [InlineData("C2", "R[-2]C[-1]")]
     [InlineData("C2", "R[-1]C[-3]")]
@@ -380,6 +584,10 @@ public class IndirectTests
     [InlineData("C2", "R[-5]C[-1]:R3C2")]
     [InlineData("C2", "Sheet1!R[-5]C[-1]")]
     [InlineData("C2", "R[9999999999]C[-1]")]
+    [InlineData("C2", "RC[-3]")]
+    [InlineData("C2", "R[-2]C")]
+    [InlineData("C2", "R[-5]C[-1]#")]
+    [InlineData("C2", "R2C[-5]")]
     public void ADR0124_indirect_r1c1_offset_past_the_sheets_edge_is_refused(string cell, string text)
     {
         var sheet = MicrosoftsExample();
@@ -473,13 +681,17 @@ public class IndirectTests
         Assert.Equal(45, sheet.Number("D2"));
     }
 
-    [Theory] // ADR-0124 (2026-10-10), ADR-0049, seventeenth Windows run (INDIRECT-025): structured reference text reads the Linked Table's column as Table[Column] typed reads it
+    [Theory] // ADR-0124 (2026-10-10, 2026-10-12), ADR-0049, seventeenth Windows run and the second area pass (INDIRECT-025, 061; 080 asks what follows): structured reference text reads the Linked Table's column as Table[Column] typed reads it, whatever a1 says
     [InlineData("=INDIRECT(\"Positions[PV]\")", 250.5)]
     [InlineData("=INDIRECT(\"Positions[[PV]]\")", 250.5)]
     [InlineData("=INDIRECT(\"positions[pv]\")", 250.5)]
     [InlineData("=SUM(INDIRECT(\"Positions[PV]\"))", 350.5)]
     [InlineData("=ROWS(INDIRECT(\"Positions[PV]\"))", 2)]
     [InlineData("=SUM(Positions[PV])", 350.5)]
+    [InlineData("=INDIRECT(\"Positions[PV]\",FALSE)", 250.5)]
+    [InlineData("=INDIRECT(\"Positions[[PV]]\",0)", 250.5)]
+    [InlineData("=SUM(INDIRECT(\"positions[pv]\",FALSE))", 350.5)]
+    [InlineData("=ROWS(INDIRECT(\"Positions[Id]\",))", 2)]
     public void ADR0124_indirect_reads_structured_reference_text(string formula, double expected)
     {
         var sheet = NewSheet();
@@ -489,7 +701,13 @@ public class IndirectTests
         Assert.Equal(expected, sheet.Evaluate(formula).Number);
     }
 
-    [Theory] // ADR-0124 (2026-10-10), ADR-0049: structured reference text naming a table never declared, or a column the table does not have, names no place: #REF!, where the typed one is #NAME? and #REF!; a form a Formula does not take is refused
+    [Theory] // ADR-0124 (2026-10-10, 2026-10-12), ADR-0049: structured reference text naming a table never declared, or a column the table does not have, names no place: #REF!, where the typed one is #NAME? and #REF!; a form a Formula does not take is refused; in R1C1 style as in A1 style (INDIRECT-061; 081 asks what follows)
+    [InlineData("=INDIRECT(\"Missing[PV]\",FALSE)", ErrorValue.Ref)]
+    [InlineData("=INDIRECT(\"Positions[Delta]\",FALSE)", ErrorValue.Ref)]
+    [InlineData("=INDIRECT(\"Positions[#All]\",FALSE)", ErrorValue.Value)]
+    [InlineData("=INDIRECT(\"Positions[PV]x\",FALSE)", ErrorValue.Value)]
+    [InlineData("=INDIRECT(\"Positions[PV]#\",FALSE)", ErrorValue.Value)]
+    [InlineData("=INDIRECT(\"Sheet1!Positions[PV]\",FALSE)", ErrorValue.Ref)]
     [InlineData("=INDIRECT(\"Missing[PV]\")", ErrorValue.Ref)]
     [InlineData("=INDIRECT(\"Positions[Delta]\")", ErrorValue.Ref)]
     [InlineData("=Positions[Delta]", ErrorValue.Ref)]
@@ -629,5 +847,34 @@ public class IndirectTests
 
         sheet.Enter("E1", "=SEQUENCE(2,1,SUM(INDIRECT(\"E1#\")))");
         Assert.Equal(ErrorValue.Circ, sheet.Error("E1"));
+    }
+
+    [Fact] // ADR-0124 (2026-10-12), ADR-0125, the second area pass (INDIRECT-060; 078 and 079 ask what follows): R1C1 text naming a cell, followed by #, reads that cell's Spill Range as A1# does, follows it as it grows, is #REF! where it does not spill, and is #CIRC! where it reaches its own Formula
+    public void ADR0124_indirect_reads_a_spill_range_in_r1c1_text()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", "=SEQUENCE(3)");
+        sheet.Enter("C1", "=SUM(INDIRECT(\"R1C1#\",FALSE))");
+        sheet.Enter("D1", "=SUM(INDIRECT(\"RC[-3]#\",FALSE))");
+        sheet.Enter("E1", "=ROWS(INDIRECT(\"Sheet1!r1c1#\",FALSE))");
+        sheet.Enter("F1", "=SUM(INDIRECT(\"R2C1#\",FALSE))");
+
+        Assert.Equal(6, sheet.Number("C1"));
+        Assert.Equal(6, sheet.Number("D1"));
+        Assert.Equal(3, sheet.Number("E1"));
+        // A2 is a cell of the Spill Range, not its Anchor: it spills nothing, as A2# typed does not.
+        Assert.Equal(ErrorValue.Ref, sheet.Error("F1"));
+
+        sheet.Enter("A1", "=SEQUENCE(4)");
+
+        Assert.Equal(10, sheet.Number("C1"));
+        Assert.Equal(4, sheet.Number("E1"));
+
+        sheet.Enter("A1", "7");
+
+        Assert.Equal(ErrorValue.Ref, sheet.Error("C1"));
+
+        sheet.Enter("G1", "=SEQUENCE(2,1,SUM(INDIRECT(\"RC#\",FALSE)))");
+        Assert.Equal(ErrorValue.Circ, sheet.Error("G1"));
     }
 }
