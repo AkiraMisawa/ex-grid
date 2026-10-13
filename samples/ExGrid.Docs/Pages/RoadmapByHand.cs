@@ -30,7 +30,7 @@ internal static class RoadmapByHand
             ["ExSheet"], ["ADR-0202", "DoD §27"]),
         new("ExPivot's readings of Excel are run beside Excel. Where one that changes a number on screen disagrees, the decision is corrected first and the code after it; a difference in layout or wording is said as a known limitation.",
             ["ExPivot"], ["ADR-0202", "DoD §29"]),
-        new("What the stable version does not do is said where a reader meets it: on the product's page, and under Known limitations in its Release Notes. Among them: IRR, XIRR and RATE, which it does not support, and a Reference Outline, which cannot be dragged.",
+        new("What the stable version does not do is said where a reader meets it: on the product's page, and under Known limitations in its Release Notes. Among them: NPV, IRR, XIRR and RATE, which it does not support, PMT's last digits, which may differ from Excel's, and a Reference Outline, which cannot be dragged.",
             ["ExGrid", "ExSheet", "ExPivot", "Data"], ["ADR-0202"]),
         new("A refusal is worded by default: the built-in Chrome says and announces why a paste or a copy was refused, and what to do next where something can be done, unless your application words it.",
             ["ExGrid"], ["ADR-0203"]),
@@ -40,8 +40,10 @@ internal static class RoadmapByHand
             ["ExSheet"], ["ADR-0206"]),
         new("A saved view, its sort, filters, widths, column order and pinned columns, is written to JSON and read back equal through an entry point of ExGrid's own, each filter value with its type.",
             ["ExGrid"], ["ADR-0207"]),
-        new("The stable version is grown on a release branch and rehearsed by release candidates, published through the same checks a stable tag runs. The release workflow publishes a version without a suffix only when its notes name the sign-off and the commit it was made at, and the tagged commit adds nothing to that one but the records and the notes.",
-            ["ExGrid", "ExSheet", "ExPivot", "Data"], ["ADR-0205"]),
+        new("The stable version is grown on a release branch and rehearsed by release candidates, published through every check a stable tag runs but the two that read its sign-off, their release notes included: a candidate's notes carry the release's blocks, and say that the sign-off is being made against that candidate. The release workflow publishes a version without a suffix only when its notes name the sign-off and the commit it was made at, a candidate's, and the tagged commit adds nothing to that one but the records and the notes.",
+            ["ExGrid", "ExSheet", "ExPivot", "Data"], ["ADR-0205", "ADR-0190"]),
+        new("A check a person makes by hand is run again only when the code it covers has changed since its record, and the release workflow refuses a candidate or a stable version until each such check holds. Each record names the commit it verified, which a tag keeps, so that the check can always be read; and no question to Excel is left open in ExSheet's corpus.",
+            ["ExGrid", "ExSheet", "ExPivot", "Data"], ["ADR-0208", "ADR-0205"]),
     ];
 
     /// <summary>The records the section links at the ref the site was built from, rather than copies.</summary>

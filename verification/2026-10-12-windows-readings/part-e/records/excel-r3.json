@@ -1,0 +1,714 @@
+[
+    {
+        "id":  "e05c",
+        "item":  5,
+        "steps":  [
+                      "Group to Rows"
+                  ],
+        "excelProcess":  48208,
+        "source":  [
+                       [
+                           {
+                               "text":  "Group",
+                               "value2":  "Group",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Note",
+                               "value2":  "Note",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "A",
+                               "value2":  "A",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "x",
+                               "value2":  "x",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "A",
+                               "value2":  "A",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "y",
+                               "value2":  "y",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "B",
+                               "value2":  "B",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "z",
+                               "value2":  "z",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "C",
+                               "value2":  "C",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "",
+                               "value2":  null,
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "C",
+                               "value2":  "C",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "",
+                               "value2":  null,
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Note",
+                                "agg":  "Average",
+                                "show":  null,
+                                "caption":  "Average of Note",
+                                "function":  -4106,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Note",
+                                "agg":  "StdDev",
+                                "show":  null,
+                                "caption":  "StdDev of Note",
+                                "function":  -4155,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Note",
+                                "agg":  "Var",
+                                "show":  null,
+                                "caption":  "Var of Note",
+                                "function":  -4164,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Note",
+                                "agg":  "StdDevp",
+                                "show":  null,
+                                "caption":  "StdDevp of Note",
+                                "function":  -4156,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Note",
+                                "agg":  "Varp",
+                                "show":  null,
+                                "caption":  "Varp of Note",
+                                "function":  -4165,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Note",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Note",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Note",
+                                "agg":  "Max",
+                                "show":  null,
+                                "caption":  "Max. of Note",
+                                "function":  -4136,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Note",
+                                "agg":  "Min",
+                                "show":  null,
+                                "caption":  "Min. of Note",
+                                "function":  -4139,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Note",
+                                "agg":  "Product",
+                                "show":  null,
+                                "caption":  "Product of Note",
+                                "function":  -4149,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Note",
+                                "agg":  "Count",
+                                "show":  null,
+                                "caption":  "Count of Note",
+                                "function":  -4112,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Note",
+                                "agg":  "Count Numbers",
+                                "show":  null,
+                                "caption":  "Count of Note2",
+                                "function":  11,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:L7",
+        "tableRange2":  "A3:L7",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Average of Note",
+                              "value2":  "Average of Note",
+                              "format":  "General",
+                              "wideText":  "Average of Note"
+                          },
+                          {
+                              "text":  "StdDev of Note",
+                              "value2":  "StdDev of Note",
+                              "format":  "General",
+                              "wideText":  "StdDev of Note"
+                          },
+                          {
+                              "text":  "Var of Note",
+                              "value2":  "Var of Note",
+                              "format":  "General",
+                              "wideText":  "Var of Note"
+                          },
+                          {
+                              "text":  "StdDevp of Note",
+                              "value2":  "StdDevp of Note",
+                              "format":  "General",
+                              "wideText":  "StdDevp of Note"
+                          },
+                          {
+                              "text":  "Varp of Note",
+                              "value2":  "Varp of Note",
+                              "format":  "General",
+                              "wideText":  "Varp of Note"
+                          },
+                          {
+                              "text":  "Sum of Note",
+                              "value2":  "Sum of Note",
+                              "format":  "General",
+                              "wideText":  "Sum of Note"
+                          },
+                          {
+                              "text":  "Max. of Note",
+                              "value2":  "Max. of Note",
+                              "format":  "General",
+                              "wideText":  "Max. of Note"
+                          },
+                          {
+                              "text":  "Min. of Note",
+                              "value2":  "Min. of Note",
+                              "format":  "General",
+                              "wideText":  "Min. of Note"
+                          },
+                          {
+                              "text":  "Product of Note",
+                              "value2":  "Product of Note",
+                              "format":  "General",
+                              "wideText":  "Product of Note"
+                          },
+                          {
+                              "text":  "Count of Note",
+                              "value2":  "Count of Note",
+                              "format":  "General",
+                              "wideText":  "Count of Note"
+                          },
+                          {
+                              "text":  "Count of Note2",
+                              "value2":  "Count of Note2",
+                              "format":  "General",
+                              "wideText":  "Count of Note2"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "A",
+                              "value2":  "A",
+                              "format":  "General",
+                              "wideText":  "A"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "B",
+                              "value2":  "B",
+                              "format":  "General",
+                              "wideText":  "B"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "C",
+                              "value2":  "C",
+                              "format":  "General",
+                              "wideText":  "C"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          },
+                          {
+                              "text":  "3",
+                              "value2":  "3",
+                              "format":  "General",
+                              "wideText":  "3"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             13.09,
+                             12.55,
+                             9.18,
+                             13.64,
+                             10.27,
+                             10.27,
+                             10.36,
+                             10.09,
+                             13.09,
+                             11.55,
+                             12.64
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e05c-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e16b",
+        "item":  16,
+        "steps":  [
+                      "Key to Rows"
+                  ],
+        "excelProcess":  51124,
+        "source":  [
+                       [
+                           {
+                               "text":  "Key",
+                               "value2":  "Key",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "1.234568",
+                               "value2":  "1.23456789012345",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "1",
+                               "value2":  "1",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "1.23E+11",
+                               "value2":  "123456789012.345",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "2",
+                               "value2":  "2",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:B6",
+        "tableRange2":  "A3:B6",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "1.23456789",
+                              "value2":  "1.23456789012345",
+                              "format":  "General",
+                              "wideText":  "1.23456789"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "1.23457E+11",
+                              "value2":  "123456789012.345",
+                              "format":  "General",
+                              "wideText":  "1.23457E+11"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "3",
+                              "value2":  "3",
+                              "format":  "General",
+                              "wideText":  "3"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             13
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e16b-excel.png",
+        "ended":  "Stop-Process (its own)"
+    }
+]

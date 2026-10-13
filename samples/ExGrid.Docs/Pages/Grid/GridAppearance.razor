@@ -43,7 +43,7 @@
                 <tr><td><code>--ex-header-background</code>, <code>--ex-header-color</code>, <code>--ex-header-rule-color</code></td><td>The header band.</td></tr>
                 <tr><td><code>--ex-row-rule-color</code>, <code>--ex-column-rule-color</code></td><td>Lines between rows and columns; transparent until set.</td></tr>
                 <tr><td><code>--ex-row-stripe-background</code></td><td>Row Stripes.</td></tr>
-                <tr><td><code>--ex-selection-fill</code>, <code>--ex-selection-outline</code>, <code>--ex-focus-outline</code></td><td>The selection and the Focus cell.</td></tr>
+                <tr><td><code>--ex-selection-fill</code>, <code>--ex-selection-outline</code>, <code>--ex-focus-outline</code>, <code>--ex-focus-among-ranges-outline</code></td><td>The selection and the Focus cell. The last is the Focus's thin border among several ranges, and is the Focus outline's colour unless you set it.</td></tr>
                 <tr><td><code>--ex-focus-row-fill</code>, <code>--ex-row-hover-background</code></td><td>The Focus row and hover bands.</td></tr>
                 <tr><td><code>--ex-tone-positive-color</code>, <code>--ex-tone-negative-color</code></td><td>Tones. Unset, a toned cell looks like any other.</td></tr>
                 <tr><td><code>--ex-state-stale-color</code>, <code>--ex-state-error-color</code>, <code>--ex-state-missing-background</code>, <code>--ex-state-modified-mark</code></td><td>Cell States. Each is a colour: the modified mark's is the corner triangle's.</td></tr>
@@ -56,11 +56,32 @@
             the outline, or on anything inside it, does not reach the shade.
         </p>
         <p>
+            A single range is outlined in <code>--ex-selection-outline</code>, and the Focus inside it is only left
+            unshaded. Among several ranges, made with Ctrl+click, no range carries that outline and no fill handle is
+            shown, and the Focus cell takes a thin border of one device pixel inside it, where Excel's active cell was
+            observed to have one, in <code>--ex-focus-among-ranges-outline</code>. Unset, that is the Focus outline's
+            colour, so a theme that colours <code>--ex-focus-outline</code> colours this border too, and under
+            ExGrid.MudBlazor it is the palette's primary. The theme in "A theme, tones and a stale price" below sets
+            <code>--ex-focus-outline</code> and not <code>--ex-focus-among-ranges-outline</code>: Ctrl+click in it
+            (built-in).
+        </p>
+        <p>
             The font family is the exception. The grid decides whether a number fits — or becomes <code>####</code> —
             from the width of its glyphs, so <code>--ex-font-family</code> is a metric as much as a look: whoever
             changes it also passes matching <code>CellMetrics</code>. <code>MudExGridPaper</code> does this for
             Roboto.
         </p>
+        <p>
+            For a MudBlazor theme in another font, give the paper a <code>MudExGridFont</code> as its
+            <code>Font</code>: the family and the widths measured for it, in one value. The paper writes the family
+            as <code>--ex-font-family</code> and hands the grid the widths in the same render, so the font on screen
+            and the widths behind <code>####</code> cannot come from different hands. It does not read the theme's
+            typography, because a font the grid was not measured for would put one font on screen and another's
+            widths in the arithmetic. Below, the theme's font is the system font, the one ExGrid's own stylesheet
+            paints, so its widths are the ones ExGrid measured: under the built-in Chrome there is nothing to set.
+        </p>
+        <DocsExample Title="A font other than Roboto" Builtin="typeof(FontGrid)" Mud="typeof(FontGridMud)"
+                     Files="@(["Examples/Grid/Position.cs"])" />
         <p>
             Those metrics are a <code>CellTextMetrics</code>: a width per class of character, and a table of single
             glyphs measured on their own. When something that is not the grid sizes text that the grid will show —

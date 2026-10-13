@@ -29,7 +29,7 @@ namespace ExSheet.Engine.Formulas;
 internal static class Arithmetic
 {
     /// <summary>2^-49: a final addition whose operands are closer than this, relative to each, is 0.</summary>
-    private const double CancelTolerance = 1.0 / 562949953421312.0;
+    internal const double CancelTolerance = 1.0 / 562949953421312.0;
 
     /// <summary>
     /// Whether two numbers are equal at Excel's precision: identical, or the same when each is

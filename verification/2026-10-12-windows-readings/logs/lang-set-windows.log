@@ -1,0 +1,132 @@
+17:07:26.725 Excel 27952, display language before: 1041
+17:07:30.558 dialog: Excel のオプション | NUIDialog
+17:07:31.450 selected the Language page
+17:07:32.670 item: 表示言語 2.     Microsoft Windows と同じ [英語 (English)]
+17:07:32.674 selected the windows item
+17:07:33.193 button: 優先として設定, enabled True
+17:07:33.198 invoked Set as Preferred
+17:07:34.413 --- after Set as Preferred
+17:07:34.427   Excel のオプション | ControlType.Group | enabled True
+17:07:34.428   カテゴリ | ControlType.List | enabled True
+17:07:34.428   全般 | ControlType.ListItem | enabled True
+17:07:34.428   数式 | ControlType.ListItem | enabled True
+17:07:34.429   データ | ControlType.ListItem | enabled True
+17:07:34.429   文章校正 | ControlType.ListItem | enabled True
+17:07:34.429   Copilot | ControlType.ListItem | enabled True
+17:07:34.430   保存 | ControlType.ListItem | enabled True
+17:07:34.430   言語 | ControlType.ListItem | enabled True
+17:07:34.430   アクセシビリティ | ControlType.ListItem | enabled True
+17:07:34.430   詳細設定 | ControlType.ListItem | enabled True
+17:07:34.431   リボンのユーザー設定 | ControlType.ListItem | enabled True
+17:07:34.431   クイック アクセス ツール バー | ControlType.ListItem | enabled True
+17:07:34.432   アドイン | ControlType.ListItem | enabled True
+17:07:34.432   トラスト センター | ControlType.ListItem | enabled True
+17:07:34.433   言語 | ControlType.Pane | enabled True
+17:07:34.433   Office の言語設定を構成します | ControlType.Text | enabled True
+17:07:34.434   Office の表示言語 | ControlType.Text | enabled True
+17:07:34.434   Office の表示言語 | ControlType.Group | enabled True
+17:07:34.434   ボタン、メニュー、およびその他のコントロールは、このリストで最初に使用できる言語で表示されます。 | ControlType.Text | enabled True
+17:07:34.435   表示言語 | ControlType.DataGrid | enabled True
+17:07:34.435   表示言語 1.     Microsoft Windows と同じ [英語 (English)] <優先> | ControlType.ListItem | enabled True
+17:07:34.436   表示言語 2.     日本語 | ControlType.ListItem | enabled True
+17:07:34.436   表示言語 3.     英語 [English] | ControlType.ListItem | enabled True
+17:07:34.437   言語の追加... | ControlType.Button | enabled True
+17:07:34.437   上へ移動 | ControlType.Button | enabled False
+17:07:34.437   下へ移動 | ControlType.Button | enabled True
+17:07:34.438   優先として設定 | ControlType.Button | enabled False
+17:07:34.438   Office のオーサリング言語と校正機能 | ControlType.Text | enabled True
+17:07:34.438   Office のオーサリング言語と校正機能 | ControlType.Group | enabled True
+17:07:34.439   スペル チェックや文章校正などの校正ツールを含む、ドキュメントの作成や編集に使用する言語を管理します。 | ControlType.Text | enabled True
+17:07:34.439   編集言語 | ControlType.DataGrid | enabled True
+17:07:34.440   編集言語 英語 (英国) <優先>, 校正機能はインストール済み | ControlType.ListItem | enabled True
+17:07:34.440   英語 (英国) <優先> | ControlType.Text | enabled True
+17:07:34.441   校正機能はインストール済み | ControlType.Text | enabled True
+17:07:34.441   編集言語 日本語, 校正機能はインストール済み, アカウントに保存 | ControlType.ListItem | enabled True
+17:07:34.442   日本語 | ControlType.Text | enabled True
+17:07:34.442   校正機能はインストール済み | ControlType.Text | enabled True
+17:07:34.442   アカウントに保存 | ControlType.Hyperlink | enabled True
+17:07:34.443   編集言語 英語 (米国), 校正機能はインストール済み, アカウントに保存 | ControlType.ListItem | enabled True
+17:07:34.443   英語 (米国) | ControlType.Text | enabled True
+17:07:34.444   校正機能はインストール済み | ControlType.Text | enabled True
+17:07:34.444   アカウントに保存 | ControlType.Hyperlink | enabled True
+17:07:34.445   言語を追加... | ControlType.Button | enabled True
+17:07:34.445   削除 | ControlType.Button | enabled False
+17:07:34.445   優先として設定 | ControlType.Button | enabled False
+17:07:34.446   自分のアカウントのオーサリング言語をクラウドに保存します。 | ControlType.CheckBox | enabled True
+17:07:34.446   Windows の [設定] から追加のキーボードをインストール | ControlType.Hyperlink | enabled True
+17:07:34.446   カーソルを 1 行上へ移動 | ControlType.Button | enabled True
+17:07:34.447   1 画面分上へ移動 | ControlType.Button | enabled True
+17:07:34.447   位置 | ControlType.Thumb | enabled True
+17:07:34.447   1 画面分下へ移動 | ControlType.Button | enabled True
+17:07:34.448   カーソルを 1 行下へ移動 | ControlType.Button | enabled True
+17:07:34.448   OK | ControlType.Button | enabled True
+17:07:34.448   キャンセル | ControlType.Button | enabled True
+17:07:34.449   ボックスのサイズ変更 | ControlType.Thumb | enabled True
+17:07:34.471 invoked OK
+17:07:35.986 after OK, window: Book1 - Excel
+17:07:35.986 after OK, a window: Excel のオプション
+17:07:35.986 --- it
+17:07:36.006   Microsoft Office の言語設定の変更 | ControlType.Window | enabled True
+17:07:36.006   Microsoft Office の言語設定の変更 | ControlType.Window | enabled True
+17:07:36.006   Microsoft Office の言語設定の変更 | ControlType.Text | enabled True
+17:07:36.007   警告アイコン | ControlType.Image | enabled True
+17:07:36.007   Office を再起動して、言語の変更を有効にしてください。 | ControlType.Text | enabled True
+17:07:36.007   OK | ControlType.Button | enabled True
+17:07:36.007   Excel のオプション | ControlType.Group | enabled True
+17:07:36.008   カテゴリ | ControlType.List | enabled True
+17:07:36.008   全般 | ControlType.ListItem | enabled True
+17:07:36.008   数式 | ControlType.ListItem | enabled True
+17:07:36.009   データ | ControlType.ListItem | enabled True
+17:07:36.009   文章校正 | ControlType.ListItem | enabled True
+17:07:36.009   Copilot | ControlType.ListItem | enabled True
+17:07:36.010   保存 | ControlType.ListItem | enabled True
+17:07:36.010   言語 | ControlType.ListItem | enabled True
+17:07:36.010   アクセシビリティ | ControlType.ListItem | enabled True
+17:07:36.010   詳細設定 | ControlType.ListItem | enabled True
+17:07:36.011   リボンのユーザー設定 | ControlType.ListItem | enabled True
+17:07:36.011   クイック アクセス ツール バー | ControlType.ListItem | enabled True
+17:07:36.012   アドイン | ControlType.ListItem | enabled True
+17:07:36.012   トラスト センター | ControlType.ListItem | enabled True
+17:07:36.013   言語 | ControlType.Pane | enabled True
+17:07:36.013   Office の言語設定を構成します | ControlType.Text | enabled True
+17:07:36.013   Office の表示言語 | ControlType.Text | enabled True
+17:07:36.014   Office の表示言語 | ControlType.Group | enabled True
+17:07:36.014   ボタン、メニュー、およびその他のコントロールは、このリストで最初に使用できる言語で表示されます。 | ControlType.Text | enabled True
+17:07:36.014   表示言語 | ControlType.DataGrid | enabled True
+17:07:36.014   表示言語 1.     Microsoft Windows と同じ [英語 (English)] <優先> | ControlType.ListItem | enabled True
+17:07:36.015   表示言語 2.     日本語 | ControlType.ListItem | enabled True
+17:07:36.015   表示言語 3.     英語 [English] | ControlType.ListItem | enabled True
+17:07:36.016   言語の追加... | ControlType.Button | enabled True
+17:07:36.016   上へ移動 | ControlType.Button | enabled False
+17:07:36.016   下へ移動 | ControlType.Button | enabled True
+17:07:36.016   優先として設定 | ControlType.Button | enabled False
+17:07:36.017   Office のオーサリング言語と校正機能 | ControlType.Text | enabled True
+17:07:36.017   Office のオーサリング言語と校正機能 | ControlType.Group | enabled True
+17:07:36.017   スペル チェックや文章校正などの校正ツールを含む、ドキュメントの作成や編集に使用する言語を管理します。 | ControlType.Text | enabled True
+17:07:36.017   編集言語 | ControlType.DataGrid | enabled True
+17:07:36.018   編集言語 英語 (英国) <優先>, 校正機能はインストール済み | ControlType.ListItem | enabled True
+17:07:36.018   英語 (英国) <優先> | ControlType.Text | enabled True
+17:07:36.018   校正機能はインストール済み | ControlType.Text | enabled True
+17:07:36.019   編集言語 日本語, 校正機能はインストール済み, アカウントに保存 | ControlType.ListItem | enabled True
+17:07:36.019   日本語 | ControlType.Text | enabled True
+17:07:36.019   校正機能はインストール済み | ControlType.Text | enabled True
+17:07:36.020   アカウントに保存 | ControlType.Hyperlink | enabled True
+17:07:36.020   編集言語 英語 (米国), 校正機能はインストール済み, アカウントに保存 | ControlType.ListItem | enabled True
+17:07:36.020   英語 (米国) | ControlType.Text | enabled True
+17:07:36.021   校正機能はインストール済み | ControlType.Text | enabled True
+17:07:36.022   アカウントに保存 | ControlType.Hyperlink | enabled True
+17:07:36.022   言語を追加... | ControlType.Button | enabled True
+17:07:36.022   削除 | ControlType.Button | enabled False
+17:07:36.023   優先として設定 | ControlType.Button | enabled False
+17:07:36.023   自分のアカウントのオーサリング言語をクラウドに保存します。 | ControlType.CheckBox | enabled True
+17:07:36.023   Windows の [設定] から追加のキーボードをインストール | ControlType.Hyperlink | enabled True
+17:07:36.023   カーソルを 1 行上へ移動 | ControlType.Button | enabled True
+17:07:36.024   1 画面分上へ移動 | ControlType.Button | enabled True
+17:07:36.025   位置 | ControlType.Thumb | enabled True
+17:07:36.025   1 画面分下へ移動 | ControlType.Button | enabled True
+17:07:36.025   カーソルを 1 行下へ移動 | ControlType.Button | enabled True
+17:07:36.025   OK | ControlType.Button | enabled True
+17:07:36.026   キャンセル | ControlType.Button | enabled True
+17:07:36.026   ボックスのサイズ変更 | ControlType.Thumb | enabled True
+17:07:36.045 invoked OK on Excel のオプション
+17:07:39.658 UILanguageTag=ja-jp FollowSystemUI= UISnapshotLanguages=en-gb;ja-jp

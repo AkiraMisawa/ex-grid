@@ -235,7 +235,8 @@ public abstract class SheetEdit
     /// A Fill Intent resolved as Excel fills (ADR-0050, item 5): <paramref name="target"/> extends
     /// <paramref name="source"/> in <paramref name="direction"/>, given as the new cells alone or as
     /// the whole extended range. Formulas are copied with their References shifted, two or more
-    /// numbers continue as Excel's linear trend, a single date goes on by day, and a single number,
+    /// numbers continue as Excel's linear trend, a single date goes on by day, a single number in a
+    /// line of a fill from whole columns or whole rows goes on by one, and any other single number,
     /// text without a pattern, booleans, Error Values and blanks are copied. Any other pattern is
     /// refused (<see cref="SheetRefusalReason.FillPatternNotSupported"/>), never filled with copies;
     /// <see cref="Sheet.Check"/> says so before anything is written.
@@ -289,8 +290,11 @@ public abstract class SheetEdit
     }
 
     /// <summary>
-    /// The Sheet renamed (<see cref="Sheet.Rename"/>): References qualified with the old name are
-    /// rewritten to the new one. Undoing it puts back the name and those Formulas exactly.
+    /// The Sheet renamed (ADR-0046): every Reference qualified with the old name is rewritten to the
+    /// new one, as Excel rewrites them, and a Formula whose qualifier now names or stops naming the
+    /// Sheet is recalculated. A rename is a change, so <c>RAND</c> and <c>RANDBETWEEN</c> draw again,
+    /// as Excel's do (ADR-0180); a rename to the name the Sheet already has changes nothing. Undoing
+    /// it puts back the name and those Formulas exactly.
     /// </summary>
     /// <exception cref="ArgumentException">The name is not one a Sheet can have (<see cref="Sheet.IsValidName"/>).</exception>
     public static SheetEdit Rename(string name)
@@ -342,9 +346,11 @@ public abstract class SheetEdit
 
         internal override SheetStep Apply(Sheet sheet)
         {
-            var (refusal, states) = sheet.PlanFill(source, target, direction, copyOnly);
-            if (refusal is not null) throw new SheetRefusedException(refusal);
-            var settled = sheet.Settle(states);
+            var plan = sheet.PlanFill(source, target, direction, copyOnly);
+            if (plan.Refusal is not null) throw new SheetRefusedException(plan.Refusal);
+            // From whole columns or whole rows: the target's own formats, then its cells.
+            if (plan.Levels is not null) return sheet.DoFillWithLevels(plan);
+            var settled = sheet.Settle(plan.States);
             return new CellsEdit(settled.Select(s => s.Address), s => s.Restore(settled)).Apply(sheet);
         }
     }

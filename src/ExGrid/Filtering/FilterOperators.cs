@@ -4,7 +4,7 @@ namespace ExGrid;
 /// Which operators a column offers is decided by the core from the declared type,
 /// not by Chrome and not by the Consumer (ADR-0009, ADR-0023).
 /// </summary>
-public static class FilterOperators
+internal static class FilterOperators
 {
     // IReadOnlyList-typed fields: the collection expression compiles to a read-only
     // wrapper, so no caller can cast back to an array and mutate the process-wide

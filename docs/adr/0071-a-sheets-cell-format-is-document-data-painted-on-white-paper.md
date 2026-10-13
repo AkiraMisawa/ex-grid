@@ -623,6 +623,10 @@ settled.)*
     - -5 and 0 show in the first section, with no colour.
     - Text shows in the last section's red.
     - In three sections that end in `@`, zero takes the first section.
+    - *(2026-10-12, the seventeenth Windows run, h12.)* Excel refused `@;0` and `0;@;0`, as ExSheet
+      refuses `@` before the last section. Through COM it answered "Unable to set the NumberFormat
+      property of the Range class", and its Format Cells kept the dialog open with the code selected
+      and said nothing. ExSheet's Format Cells refuses them by name (SH-45). `0;0;@;0` was not asked.
 - **Not a reading but an estimate.** ExSheet widens column A for `05-Jan-26`, which fitted Excel's 8.09
   in case 19. ExSheet's fitting charges every character one digit width (ADR-0047). That is the same
   estimate that otherwise decides `####`, and it errs towards widening, never towards hiding text.
@@ -641,9 +645,13 @@ written. This section says what the run changed, and what it still left to a rea
 - **Ctrl+5 widens as a Number Format key does** (case 7). Ctrl+B and the Fill do not, in any of three
   orders. This corrects "a Font never widens" for strikethrough.
   - Ctrl+I, Ctrl+U and Format Cells' Font tab were not asked. They stay as Ctrl+B is, until a run
-    asks.
+    asks. *(2026-10-12: the seventeenth run asked, h7. Ctrl+U widens and Ctrl+I does not, and
+    Format Cells' Font tab with Bold widened. What follows is in "What the seventeenth Windows run
+    settled".)*
   - `SetCellFormatAsync` setting strikethrough is read as the Font tab, and does not widen. It sets
-    a Font as the tab does (ticket 100).
+    a Font as the tab does (ticket 100). *(2026-10-12, decided with the user: `SetCellFormatAsync`
+    widens as the formatting keys do, not as Format Cells' OK does.)* So strikethrough set through
+    it widens, as Ctrl+5 does. See "What the seventeenth Windows run settled".
 - General widens as typing the number would (case 5), and a bold number that fits stays as it is
   (case 6), as read.
 - A Number Format set through COM on a cell that already held the number widened the column (case 7,
@@ -665,6 +673,17 @@ written. This section says what the run changed, and what it still left to a rea
     nothing more of Excel's, so the version stays.
   - The same rule holds under every culture. Under en-GB, `d-mmm-yy` typed into Format Cells shows
     `5-Jan-26`, not built-in 15's `05-Jan-26`. No run has typed it there.
+    *(2026-10-12, the seventeenth Windows run, h9, on 12 October 2026 at 13:30 and on 13:30 alone.
+    Observed under en-GB: `d-mmm-yy` and `m/d/yyyy` typed into Custom are codes of their own. On
+    13:30 alone `d-mmm-yy` showed `0-Jan-00`, where built-in 15, which Excel spells `dd-mmm-yy`
+    under en-GB (the twelfth run's case 19), would show `00-Jan-00` by that code. `m/d/yyyy` put the
+    month first, `10/12/2026` and `1/0/1900`, where built-in 14 shows the day first under en-GB
+    (`26/09/2026`, the second Windows run). `h:mm` showed `13:30` on both values, as built-in 20
+    would, so h9 did not show it to be a code of its own. Observed under ja-JP: `mmmmm` shows `1`,
+    the first character of `10月` and of `1月`. Not asked: a code of its own reopened under en-US,
+    and the month names under zh-CN and ko-KR. The readings of 2026-10-12 (R7) then observed under
+    en-GB `h:mm` typed into Custom as `9:05`, not `09:05`, and this bullet's `d-mmm-yy` as
+    `5-Jan-26`.)*
   - Format Cells' Custom list and its code box spell each code in the Sheet's culture, so a Custom OK
     never turns a built-in into a code of its own unasked.
 
@@ -677,8 +696,37 @@ written. This section says what the run changed, and what it still left to a rea
   records differ (the eleventh run's case 24).
   - OK still sets only what the user touched (SH-45). Taking the shown top away clears that edge on
     both sides, as clearing an edge does. That is a reading; no run pressed it.
+    *(Observed 2026-10-12, the seventeenth Windows run, h10: over A2 under A1's thick bottom, Format
+    Cells opened with a thick top, its button pressed. The Top button alone (Alt+T) took it away,
+    and after OK A1's bottom was gone too. Neither cell keeps a line there.)*
+  - **Over one cell, the Border tab's line opened on the line its top or bottom showed**
+    *(2026-10-12, the seventeenth Windows run, h10)*. Excel's Style list opened on Thick over A2
+    under A1's thick Automatic bottom, and on Thin where the line on that edge was thin, its Colour
+    Automatic both times. In case 13 it opened on Thick and black for A1's thick black bottom, over
+    A2 and over A1. So one press of the edge's button takes the line away, where ExSheet's Thin
+    would have set a thin top. Format Cells now opens the Style and the Colour on the line shown
+    where the Selection is one cell and exactly one of its four edges shows a line, and on Thin and
+    Automatic everywhere else, as before. Excel was seen to open on the line shown only for a top
+    edge and a bottom edge, in Automatic or black; the rest of that rule is a reading.
+    - Observed on Thin and Automatic, in the readings of 2026-10-12 (R8): B2 with a thin top and a
+      thick right of its own; the range A2:B3, with a different line on four of its cells' sides;
+      and D5 with no line, as the eleventh run's case 22 saw over A1.
+    - A reading, asked of the next Windows run: one cell whose one line is on its left or right; a
+      line in a style other than Thick or Thin, or in a colour other than Automatic or black; one
+      cell with lines on two edges, none of them thin (R8's thin top cannot tell Thin from the top's
+      line); one cell with the same line on two edges; a range whose edges show one line; and
+      several one-cell ranges.
   - Where both cells record a line on an outer edge, the dialog shows the one drawn, the upper or
     left cell's (ticket 102). No run looked.
+    *(2026-10-12, the seventeenth Windows run, h10: still not asked. By the twelfth run's model, a
+    line set on an edge, through COM or Format Cells, clears the neighbour's record of it, and h10
+    agrees: A2's thin top set through COM after A1's thick bottom read back as A1's bottom thin too,
+    and Format Cells over A2 showed that thin line. COM reads the edge as drawn, not each cell's
+    record, so h10 did not see the records themselves. By the model, setting lines cannot make the
+    state. A paste makes it: case 12 above read the saved file after a paste, and B2 recorded a
+    thick red right while C2 kept its thin blue left. That is the one run that read two records on
+    one edge. The twelfth run's cases 1, 3, 6, 7 and 9 read COM and the pixels, which show the edge
+    and not each cell's record. A run asks this by case 12's paste, then Format Cells over C2.)*
 - **Inside over whole rows sets every vertical side, A's left and XFD's right included**, and the
   lines between the rows (case 14). Excel records it as a row format: row 3 holds left, right and
   bottom, and row 4 left, right and top.
@@ -707,7 +755,8 @@ written. This section says what the run changed, and what it still left to a rea
 - **Excel drops the Selection outline's inner white ring while an edit is open** (case 19). That
   belongs to the outline, not to a Cell Format.
 - **Ctrl+5's widening raises a question about the other Font keys** (above). The next run that asks
-  Excel about Cell Format can ask about Ctrl+I, Ctrl+U and the Font tab.
+  Excel about Cell Format can ask about Ctrl+I, Ctrl+U and the Font tab. *(2026-10-12: the
+  seventeenth run asked them, h7. See "What the seventeenth Windows run settled".)*
 
 Tickets 99 to 103 build these answers.
 
@@ -797,6 +846,15 @@ own. Under the built-in Chrome:
 - **The outline is 2 Device Pixels of `#217346`, on the gridline and one Device Pixel outside it,
   with a white line of one Device Pixel inside it.** Today it is 2 CSS px in the Ink. The single range's
   outline and the Focus's outline are drawn alike.
+  - *Several ranges.* This outline and the Focus's are not drawn among several ranges
+    ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)) *(2026-10-12, decided with the user:
+    among several ranges no range carries an outline and no fill handle is shown, and the Focus
+    takes a thin border of one Device Pixel; on the Paper it is `#217346`, as the readings of
+    2026-10-12 measured (R4))*. The border lies inside the Focus's cell, a Device Pixel in from its
+    edges and its gridline, and has no white line of its own: the cell's ground lies between it and
+    the gridline, the Paper's white on a cell with no Fill, which is the white the readings of
+    2026-10-12 observed there (R4; over a Fill, unobserved). Under `ExSheet.MudBlazor` it is the
+    palette's primary, as the Focus outline is.
 - **The shade is `#C7C7C7`, and the lines inside it stay as drawn.** Excel's black lines stay
   `#000000` over its shade.
   - The shade multiplies with what is beneath it, rather than lying over it. On white Paper it is
@@ -847,7 +905,104 @@ changed. ExSheet has no Normal style, and the box does not give it one: a typefa
 - **`#DIV/0!`'s error triangle and the size of a Sheet's cells** each need a decision of their own,
   and are not decided here.
 - **The other Font keys** (Ctrl+I, Ctrl+U, and the Font tab beside Ctrl+5's widening) wait for the
-  next run that asks Excel about Cell Format.
+  next run that asks Excel about Cell Format. *(2026-10-12: the seventeenth run asked them, h7. See
+  "What the seventeenth Windows run settled".)*
+
+## What the seventeenth Windows run settled *(2026-10-12)*
+
+The run was made at 8436e45e. Its record is `verification/2026-10-11-windows-17/report.md`, Part H,
+rows h7 and h8. It asked what the fourteenth run left "as Ctrl+B is, until a run asks". The readings
+of 2026-10-12 asked what h7 raised (`verification/2026-10-12-windows-readings/report.md`, R6). Every
+answer is Excel's (ADR-0047's rule). Each part below says which of them observed it, or that it is a
+reading.
+
+**What the run observed** (h7, h8). Each case was a workbook of its own at 100% zoom, under the
+regional format en-GB. The format and then the number were set through COM, and then one gesture was
+made.
+- **At the standard width**, over 123456789.12 in `0.00` showing `########` at 8.09, a width nobody
+  set:
+  - **Ctrl+U widened column A to 11.73** (h7).
+  - **Ctrl+I did not widen it** (h7). The number showed `#######` in italic.
+  - **Format Cells' Font tab, with Bold and OK, widened it to 11.73** (h7). Ctrl+B did not widen in
+    the fourteenth run's case 7.
+  - **Ctrl+5 widened it to 11.73** (h8), as case 7 read.
+- **At a width set through COM**, over 123456.78 in `0.00` showing `#####` at width 5, nothing
+  widened it (h7, h8): not Ctrl+I, Ctrl+U, the Font tab with Bold or Ctrl+5. A column the user sized
+  never widens.
+
+**What the readings observed** (R6). The same number and format at the standard width, set through
+COM in the same order, each case a workbook of its own, under the regional format en-US (h7's was
+en-GB):
+- **Format Cells' Font tab widened the column** with Italic alone, to 12.45. With a single Underline
+  alone, or a colour (Red) alone, it widened to 11.73.
+- **The Fill tab and the Alignment tab did not widen it**, untouched or changed (Yellow; Vertical:
+  Top).
+- **The Home tab's buttons acted as the keys.** Bold and Italic did not widen it, and Underline
+  widened it to 11.73. R6 did not press Font Color.
+- **Ctrl+B pressed twice** did not widen it, after either press.
+- **Through COM, `Range.Font` acted as the keys.** `Font.Bold = True` did not widen it, and
+  `Font.Underline = 2` widened it to 11.73.
+
+**Decided with the user.**
+- *(2026-10-12, decided with the user: Format Cells' OK widens for any part of the Font it sets.)*
+  - It widens as it widens for a Number Format.
+  - It widens under every Chrome, in OK's one undo step, and never a column the user sized.
+  - Bold is h7's. Italic, Underline and a colour are R6's.
+  - Strikethrough set there, and the Normal font box, are readings.
+- *(2026-10-12, decided with the user: each Sheet Toolbar toggle widens as the key it names.)*
+  - Underline widens as Ctrl+U, and Strikethrough as Ctrl+5. Bold and Italic widen nothing, as
+    Ctrl+B and Ctrl+I do not.
+  - R6 has since observed the Home tab's Bold, Italic and Underline buttons act so.
+  - Excel's Home tab has no Strikethrough button. That ExSheet's widens as Ctrl+5 follows from the
+    decision, and no run observes it.
+- *(2026-10-12, decided with the user: `SetCellFormatAsync` widens as the formatting keys do, not as
+  Format Cells' OK does.)*
+  - It was decided from R6's `Range.Font` through COM. The day's first decision, from h7 before R6
+    was read, had `SetCellFormatAsync` widen as Format Cells' OK does. This replaces that part of it;
+    the two rules above stand.
+  - So a Number Format, underline or strikethrough set through it widens, and bold, italic or a
+    Font colour does not.
+
+**What ExSheet builds** (`SheetWidening`, ticket 100's path):
+- **The formatting keys widen for a Number Format, underline or strikethrough**
+  (`WidensAsAKeyDoes`). So do `SetCellFormatAsync` and `SetCellFormatFromFocusAsync`, the command the
+  toolbar's toggles set through (ADR-0100).
+- **Format Cells' OK widens for a Number Format or any part of the Font**
+  (`WidensAsFormatCellsOkDoes`), under every Chrome. Only OK widens by this rule.
+- **The toolbar's Font Colour widens nothing**, its face or a colour from its list, since both set
+  through `SetCellFormatAsync`. That Excel's Font Color button widens nothing is a reading.
+- **A Fill, Borders and an alignment widen nothing**, set any way.
+  - Observed for the Home tab's Fill Colour button over `####` (the fourteenth run's case 7), and the
+    Fill tab and the Alignment tab's vertical alignment over `####` (R6).
+  - The Border tab did not widen over a General number shown rounded, `1234568` (case 9).
+  - Borders over `####`, from the tab or the Border keys (Ctrl+Shift+& and Ctrl+Shift+_), and the
+    horizontal alignment, the only one ExSheet sets, are readings.
+- **Each widening is ticket 58's.** The width is recorded as an entry widened it (SH-26), in the
+  action's one undo step, and a column the user sized is never widened.
+
+**Readings that stay**, each for the next Windows run that asks Excel about Cell Format:
+- Taking underline off with Ctrl+U, or strikethrough with Ctrl+5, widens as setting it does.
+- Ctrl+4 widens as Ctrl+U, being the same key in ExSheet's table.
+- The Border keys, Ctrl+Shift+& and Ctrl+Shift+_, widen nothing, and neither does the Border tab
+  over `####`.
+- Ctrl+I then Ctrl+U on one Selection widen as Ctrl+U alone. The run pressed each key in a
+  workbook of its own.
+- Strikethrough from the Font tab, and its Normal font box, widen as its other Font parts do.
+- A horizontal alignment from Format Cells widens nothing.
+- The Home tab's Font Color button widens nothing, as ExSheet's Font Colour does not.
+- `Range.Font` through COM acts as the keys for italic, strikethrough and a colour too.
+- Over several ranges, whole columns or whole rows, each command widens every column it holds
+  numbers in, as over one range.
+
+**Where ExSheet differs, as this ADR has it.**
+- **An italic number is widened only to the width the upright number takes.** Over 123456789.12 in
+  `0.00`, Excel's Font tab widened column A to 12.45 for Italic alone, where a single underline or a
+  colour alone gave 11.73 (R6), and Bold 11.73 (h7).
+- ExSheet widens to what the grid's own estimate charges for the text (ADR-0016), and this ADR judges
+  italic by the regular widths: its slant leans past a glyph's advance by less than the cell's padding
+  ("Bold, and what fits"). So the number shows whole, and the column is not widened further.
+- This is a difference that follows this ADR, not a change. It is a known limitation of `0.1.0`
+  (ADR-0202's note of this date).
 
 ## Consequences
 

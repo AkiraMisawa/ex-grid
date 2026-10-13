@@ -90,8 +90,9 @@ own qualifier. A structured reference's text is the Linked Table's column, read 
 still waiting for its data waits, even under `IFERROR`, and a table never declared, or a column it does not have,
 names no place, `#REF!`. `A1#` is the Spill Range of the Formula in A1, read as `A1#` typed is, and `#REF!` where it
 does not spill. **R1C1 text in a form no run has observed stays `#VALUE!`**: relative (`R[1]C[-1]`, `RC`), whole rows
-or columns (`R3`, `C2`), a number with a leading 0, and structured or `#` text in R1C1 style. INDIRECT-030 to 042 put
-the forms generalised from the observed ones to the next run. Excel reads R1C1 text in the letters of its display
+or columns (`R3`, `C2`), a number with a leading 0, and structured or `#` text in R1C1 style (the two area passes of
+the same day observed a form of each; the note below says what is read since, and what stays refused). INDIRECT-030 to
+042 put the forms generalised from the observed ones to the next run. Excel reads R1C1 text in the letters of its display
 language (`Z1S1` in a German Excel); ExSheet reads R and C in every culture, as its function names are English in
 every culture, and the run's Excel was English. **A volatile Formula is computed once more after each layout of the
 spills that changes something**, since what it computes a Reference to is no Dependent of the cells the layout
@@ -99,3 +100,43 @@ changed: a Reference `INDIRECT` or `OFFSET` computes into a Spill Range follows 
 typed one does. An Anchor computed again with an array of the shape its layout blocked stays `#SPILL!`, so the
 recalculation ends on a layout that changes nothing: a change that blocks or frees one spill computes each volatile
 Formula twice, and one that moves no spill once.)*
+
+*(2026-10-12, after the two area passes (ADR-0208's remedy): **R1C1 text is read as Excel was observed to read it,
+and in the forms that follow from its answers by the rule they settle; a declared Linked Table's bare name stays
+refused, by decision.** The first pass read, in C2, `INDIRECT("R[1]C[-1]",FALSE)` as 45, B3's Value,
+`SUM(INDIRECT("R3",FALSE))` as 45 and `SUM(INDIRECT("C2",FALSE))` as 118.333 (INDIRECT-036 to 038). The second read
+the forms those left open: `RC[-1]` from C2 is 1.333 and `R[2]C` from B1 is 45, so an R or a C with no number is the
+Formula's own row or column, not every one (INDIRECT-044, 051, 066); `R[0]C[-1]` and `R[-0]C[-1]` are 1.333 and
+`R[+1]C[-1]` is 45, so an offset is a signed number, 0 included (INDIRECT-063 to 065); `R03C2` is 45, so a number is
+read with its leading 0s (INDIRECT-059); `R2C2:R3` and `R3:C2` are `#REF!`, so parts of two kinds joined name no place
+(INDIRECT-058, 062); `R1C1#` is the Spill Range, as `A1#` is (INDIRECT-060); and `Positions[PV]` read in R1C1 style is
+the column, as in A1 style (INDIRECT-061). INDIRECT-045 to 050, the forms the first pass's answers gave, agreed. What
+follows is read until a run asks it (INDIRECT-067 to 072, 075 to 081, 093): R and C each take a number, an offset in
+brackets or nothing, in any combination; a row part alone is a whole row, a column part alone a whole column; two
+parts of the same kind joined by `:` name the rectangle they span, and two of different kinds name no place, whichever
+comes first; a `#` after any one cell on its own is its Spill Range; another Sheet's name names no place, whatever follows it, as
+it was observed to in A1 style (INDIRECT-008); a Linked Table's text is read alike whatever `a1` says. `R` alone is
+therefore the Formula's whole row, `C` its whole column and `RC` its own cell, each a cycle. **Still `#VALUE!`**, where
+the observed answers leave the readings apart: an offset past the Sheet's edge, which Excel reads as a place
+(`R[-5]C[-1]` from C2 is 0, a blank cell, not `#REF!`, INDIRECT-052) though no run has told whether it wraps round to
+the Sheet's far side or stops at the edge, since both cells are blank there; a row or column number 0; a row or column
+number past the Sheet's edge (`R1048577C2`, `R2C16385`), which could name no place, as `XFE1` does in A1 style
+(INDIRECT-017), or a place, as an offset past the edge does (2026-10-12, decided with the user: in R1C1 style a row or
+column number past the Sheet's edge is refused with `#VALUE!` until Excel is asked, and INDIRECT-074 asks it; A1 text
+past the edge stays `#REF!`, as `XFE1` was observed to be); and, in either style, a `#` after a range, a row or a
+column, whatever the parts joined (`A1:A2#`, `A:A#`, `R2C2:R3C2#`, `R2C2:R3#`), which no run has observed in either
+style and which could name no place, the first cell's Spill Range, the cells themselves or the first cell joined to
+the second's Spill Range, `A1:(A2#)`; and, in either style, a `#` inside a join, after its first part (`A1#:A2`,
+`R1C1#:R2C1`), which no run has observed either and which could name no place, the first cell's Spill Range joined to
+the second part, `(A1#):A2`, as `A1#` is read, or the cells themselves with the `#` passed over (INDIRECT-073, 082 to
+084, 090 to 092 and 094 to 099 ask them). Other A1 text
+that goes on past its Reference names no place, as the intersection Excel was observed to refuse does (INDIRECT-021):
+the engine's rule, which no case asks. **A declared Linked Table's bare name is `#VALUE!` by decision** (2026-10-12,
+decided with the user: the bare name stays `#VALUE!`, in either style): Excel reads it as the table's data — over a table of two rows,
+`COLUMNS(INDIRECT("Positions"))` is 2, `ROWS` 2, `INDEX(…,1,1)` the first row's first Value, `COUNTA` 4, and the name
+as a Formula's result spills the data (INDIRECT-053 to 057), which also gives the first pass's `SUM`, 250.5
+(INDIRECT-043) — but a Formula could then read the table by position, and
+[ADR-0049](./0049-linked-tables-are-the-consumers-data-read-by-key.md)'s rule 2 reads a Linked Table by key, never by
+position. The six cases hold Excel's answers beside the refusal, a difference by decision, and the refusal is a Known
+limitation of `0.1.0` (ADR-0202). Typed, a table's bare name shows `#NAME?` and is refused, which no Formula
+catches (2026-10-13, decided with the user; TABLE-024).)*

@@ -111,6 +111,72 @@ public class SelectionLookTests : SelectionGridContext
         Assert.Equal([Rect(0, 0, 200, 40), Rect(200, 60, 200, 40) + Hole(0, 0, 100, 20)], Tints(cut));
     }
 
+    /// <summary>The Focus's element in a layer: its classes, or null when the layer holds none.</summary>
+    private static string? FocusClass(IRenderedComponent<ExGrid<TestRow>> cut, string layer = ".ex-selection")
+        => cut.FindAll($"{layer} > .ex-focus").SingleOrDefault()?.GetAttribute("class");
+
+    [Fact] // ADR-0008 (2026-10-12) / UX-19: among several ranges the Focus is marked as such, for its thin border; one cell and a single range are not
+    public async Task Among_several_ranges_the_focus_is_marked_and_one_range_is_not()
+    {
+        var cut = RenderGrid();
+
+        await PressCellAsync(cut, 0, 0);
+        Assert.Equal("ex-focus", FocusClass(cut));
+        await PressCellAsync(cut, 1, 1, shift: true);
+        Assert.Equal("ex-focus", FocusClass(cut));
+
+        // Ctrl+click adds a range: the Focus moves into it and stands among several ranges. Its
+        // element is the same rectangle, the cell, whatever the class.
+        await PressCellAsync(cut, 3, 2, ctrl: true);
+        Assert.Equal("ex-focus ex-focus-among-ranges", FocusClass(cut));
+        Assert.Equal(Rect(200, 60, 100, 20), cut.Find(".ex-focus").GetAttribute("style"));
+        // No range carries the outline, and none is marked single (ADR-0008, 2026-10-12).
+        Assert.All(Ranges(cut), range => Assert.Equal("ex-range", range.Class));
+        await PressCellAsync(cut, 4, 3, shift: true);
+        Assert.Equal("ex-focus ex-focus-among-ranges", FocusClass(cut));
+
+        // Enter cycles the Focus through the ranges (ADR-0052): it stays among several.
+        await KeyAsync(cut, "Enter");
+        Assert.Equal("ex-focus ex-focus-among-ranges", FocusClass(cut));
+
+        // A press without Ctrl makes one cell the Selection again: the plain Focus outline.
+        await PressCellAsync(cut, 2, 2);
+        Assert.Equal("ex-focus", FocusClass(cut));
+        Assert.Empty(cut.FindAll(".ex-focus-among-ranges"));
+    }
+
+    [Fact] // ADR-0008 (2026-10-12) / UX-19: Ctrl+click taking a cell out of two ranges leaves one, and the Focus goes back to the plain outline
+    public async Task Taking_a_range_away_leaves_the_plain_focus()
+    {
+        var cut = RenderGrid();
+        await PressCellAsync(cut, 0, 0);
+        await PressCellAsync(cut, 1, 1, shift: true);
+        await PressCellAsync(cut, 3, 2, ctrl: true);
+        Assert.Equal("ex-focus ex-focus-among-ranges", FocusClass(cut));
+
+        // Ctrl+click on the one cell it added takes that range out (SL-5): one range is left, and
+        // it carries the outline again, round the whole range, with the plain Focus inside it.
+        await PressCellAsync(cut, 3, 2, ctrl: true);
+        Assert.Equal([("ex-range ex-range-single", Rect(0, 0, 200, 40) + InsideTopAndLeft)], Ranges(cut));
+        Assert.Equal("ex-focus", FocusClass(cut));
+    }
+
+    [Fact] // ADR-0008 (2026-10-12) / UX-19 / ADR-0004: the Focus among several ranges is marked in whichever layer holds it
+    public async Task The_focus_among_ranges_is_marked_in_the_pinned_layer_too()
+    {
+        var cut = RenderGrid(pinnedColumnCount: 1);
+        await PressCellAsync(cut, 0, 1);
+        await PressCellAsync(cut, 1, 2, shift: true);
+
+        // Added in the Pinned Column: the Focus is the pinned layer's, and the scrollable layer,
+        // which holds the other range's box, has no Focus at all.
+        await PressCellAsync(cut, 3, 0, ctrl: true);
+        Assert.Equal("ex-focus ex-focus-among-ranges", FocusClass(cut, ".ex-selection-pinned"));
+        Assert.Null(FocusClass(cut));
+        Assert.Equal([("ex-range", Rect(100, 0, 200, 40) + InsideTopAndLeft)], Ranges(cut));
+        Assert.Empty(Ranges(cut, ".ex-selection-pinned"));
+    }
+
     [Fact] // ADR-0008 (2026-09-29) / ADR-0004: a single range across the pinned boundary is whole in each layer, clipped to its side
     public async Task A_single_range_across_the_pinned_boundary_is_whole_in_each_layer_and_clipped_to_its_side()
     {

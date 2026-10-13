@@ -49,6 +49,13 @@ What the eleventh run found, for this ticket (ADR-0071, "What the eleventh Windo
       Dash-dot, Dashed, Thin; Medium Dash-dot-dot, Slanted Dash-dot, Medium Dash-dot, Medium Dashed,
       Medium, Thick, Double), Thin selected on opening; presets None, Outline and Inside, Inside and
       the Horizontal and Vertical buttons disabled for one cell; no diagonal buttons.
+      *(Corrected 2026-10-12: Thin opens over a cell with no line, as case 22 saw. Over one cell
+      that shows a line on exactly one of its edges, ExSheet now opens on that line. Excel was seen
+      to do so only over a thick top line, black or Automatic, a thin top line and a thick black
+      bottom line (the seventeenth Windows
+      run, h10; the fourteenth run, case 13), and to open on Thin and Automatic over B2 with a thin
+      top and a thick right, over A2:B3 and over D5 (the readings of 2026-10-12 (R8)); the rest is a
+      reading. See the comment of that date.)*
 - [x] Parts that differ across the Selection as case 24 showed: the Font style empty, a differing
       Fill as No Colour, a differing inside edge as a grey dotted line.
 - [x] The palette is case 23's: Automatic, the Office theme's 10 colours with 5 tints each, the 10
@@ -144,4 +151,18 @@ round trip it failed three runs in four.
 - **Left open, also the core's.** A Tab or Shift+Tab held by the core's own hold is still dropped
   with the keys behind it (ADR-0010). Before the contents hold the keyboard, only one that reaches a
   sentinel enters as the user meant.
+
+*(2026-10-12, the seventeenth Windows run, h10; branch `claude/run17gh-readings`.)* **"Thin selected on opening" does
+not hold over every Selection.** Over A2 under A1's thick bottom, Excel's Border tab opened on Thick, Automatic as the
+line was; in the fourteenth run's case 13 it opened on Thick and black, over A2 and over A1. Where the line shown was
+thin it opened on Thin. The readings of 2026-10-12 (R8) opened on Thin and Automatic over B2 with a thin top and a
+thick right, over the range A2:B3 with a different line on four of its cells' sides, and over D5 with no line.
+`FormatCellsDraft` now opens the Style and the Colour on the line shown where the Selection is one cell and exactly one
+of its edges shows a line, and on Thin and Automatic everywhere else. Excel was seen to open on the line shown only for
+a top edge (h10; case 13 over A2) and a bottom edge (case 13 over A1), in Automatic or black, and on Thin and Automatic
+over R8's three Selections. The rest of the rule is a reading, listed in ADR-0071's note of this date. Both Chromes
+bind their line choice to the draft, so both follow. Layer 2 (`FormatCellsDraftTests`, `FormatCellsTests`,
+`MudFormatCellsTests`) and layer 3 (`format-cells.spec.mjs`, `format-cells-mud.spec.mjs`) test it. The readings are
+tests named as readings in `FormatCellsDraftTests`: a lone left or right line, a medium dashed line and a red one each
+open on that line, and two lines, or one line in each of several one-cell ranges, open on Thin.
 

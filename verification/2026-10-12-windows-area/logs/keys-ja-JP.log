@@ -1,0 +1,7 @@
+a new PowerShell reads ja-JP
+pass keys-ja-JP started 10:39:28
+10:39:30 TEXTFN-008   agree       1.1 s
+
+agree 1, disagree 0, blocked 0, recorded 0 -> %LOCALAPPDATA%\exgrid-layer3\area-2026-10-12\oracle\ExcelOracle\results-2026-10-12-area-keys-ja-JP.json
+-Update: 1 agreeing cases now say source "observed"; disagreeing ones are untouched.
+pass keys-ja-JP ended 10:39:31

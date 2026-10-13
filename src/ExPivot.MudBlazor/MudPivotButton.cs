@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 
@@ -12,7 +13,12 @@ namespace ExPivot.MudBlazor;
 /// comes from the report's grid — the details dialog's Close — it is taken through
 /// <see cref="TakeKeyboard"/>, which the grid grants only while the keyboard is still the report's
 /// (ADR-0070's note of 2026-10-02).
+///
+/// <para>Not the contract (ADR-0201): the Wrapper's own parts place it, and no Consumer does. It is
+/// public only because Razor places in markup only a public component, is hidden from a Consumer's
+/// editor, and may change in any version.</para>
 /// </summary>
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class MudPivotButton : global::MudBlazor.MudButton
 {
     private int _acted;

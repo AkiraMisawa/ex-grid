@@ -303,8 +303,9 @@ public sealed partial class Sheet
         return new SheetChange(change.ValueChanges, change.Recalculated, [.. rows]);
     }
 
-    /// <summary>Sets or clears (<see langword="null"/>) one cell's Entry, and recalculates.</summary>
-    public SheetChange SetEntry(CellAddress address, Entry? entry) =>
+    /// <summary>Sets or clears (<see langword="null"/>) one cell's Entry, and recalculates. Internal
+    /// (ADR-0201): <see cref="SetEntries"/> with one pair is the same change.</summary>
+    internal SheetChange SetEntry(CellAddress address, Entry? entry) =>
         SetEntries([new KeyValuePair<CellAddress, Entry?>(address, entry)]);
 
     /// <summary>Sets or clears several cells' Entries as one change, with one recalculation. A later pair for the same cell wins.</summary>
@@ -449,9 +450,10 @@ public sealed partial class Sheet
         // A Reference a volatile function computes is read as it stands after this recalculation:
         // a cell this recalculation has still to compute is computed first, on demand, and a
         // Formula that reaches itself that way is #CIRC! (ADR-0124). What such a Reference reads is
-        // tainted as a named one is (Taint): a Formula that met a cycle is #CIRC!, and one that met a
-        // waiting cell waits, whatever it computes — a function that passes over or counts an Error
-        // Value included (ADR-0047, ADR-0049).
+        // tainted as a named one is (Taint): a Formula that met a cycle is #CIRC!, one that met a
+        // waiting cell waits, and one that met a refused cell is refused, whatever it computes — a
+        // function that passes over or counts an Error Value included (ADR-0047, ADR-0049; 2026-10-12,
+        // decided with the user: a refusal is never caught, anywhere).
         var inProgress = new HashSet<CellAddress>();
         var arrays = new Dictionary<CellAddress, ValueArray?>();
         var recalculated = new List<CellAddress>();
@@ -497,7 +499,7 @@ public sealed partial class Sheet
                 cell.Value = value;
                 if (cell.IsEmpty) _cells.Remove(address);
             }
-            if (!Nullable.Equals(old, value))
+            if (!Value.Unchanged(old, value))
             {
                 valueChanges.Add(address);
                 rows.Add(address.Row);
@@ -518,7 +520,9 @@ public sealed partial class Sheet
             evaluator.Self = address;
             // The outer Formula's reads so far are its own; this one's start from none.
             var outerMet = reader.Met;
+            var outerMetRefusal = reader.MetRefusal;
             reader.Met = null;
+            reader.MetRefusal = false;
             Value value;
             if (Taint(node, reader) is { } tainted)
             {
@@ -542,6 +546,13 @@ public sealed partial class Sheet
                     value = Value.FromError(met);
                     arrays[address] = null;
                 }
+                else if (reader.MetRefusal)
+                {
+                    // A computed Reference read a refused cell, or a Linked Table's column holding a
+                    // refusal: refused, as Taint refuses a Formula that names one.
+                    value = Value.Refusal;
+                    arrays[address] = null;
+                }
                 else
                 {
                     arrays[address] = array;
@@ -550,7 +561,21 @@ public sealed partial class Sheet
                         : array[0, 0] ?? Value.FromNumber(0);
                 }
             }
+            // A refused Anchor whose array's shape its text settles spills refusals over that shape, so that
+            // each cell of it reads as refused (2026-10-13, decided with the user); where the shape could
+            // depend on a Value, nothing spills (KnownShape).
+            if (value.IsRefused && KnownShape.Of(node, IsLocal) is { } shape && (shape.Rows > 1 || shape.Columns > 1))
+            {
+                var refusals = new ValueArray(shape.Rows, shape.Columns);
+                for (var r = 0; r < shape.Rows; r++)
+                {
+                    for (var c = 0; c < shape.Columns; c++) refusals[r, c] = Value.Refusal;
+                }
+                arrays[address] = refusals;
+                if (StillBlocked(_cells[address], refusals)) value = Value.FromError(ErrorValue.Spill);
+            }
             reader.Met = outerMet;
+            reader.MetRefusal = outerMetRefusal;
             evaluator.Self = outer;
             inProgress.Remove(address);
             staged[address] = value;
@@ -565,11 +590,17 @@ public sealed partial class Sheet
     /// <summary>
     /// A Formula that reads a cell in a cycle is <c>#CIRC!</c> whatever it computes; one that reads
     /// a waiting cell, or calls <c>TODAY</c> before the Sheet Day is known, or draws before the Sheet
-    /// has a seed, waits (ADR-0047, ADR-0049, ADR-0121, ADR-0180). Neither can be caught by <c>IFERROR</c>.
+    /// has a seed, waits (ADR-0047, ADR-0049, ADR-0121, ADR-0180); and one that reads a refused cell,
+    /// or a Linked Table's column that holds a refusal, is refused (<see cref="Value.Refusal"/>; 2026-10-12,
+    /// decided with the user: a refusal is never caught, anywhere). None can be caught by <c>IFERROR</c>.
+    /// As for a cycle, a Formula reads what its text names, whether or not the branch naming it is
+    /// taken: <c>=IF(TRUE,1,B1)</c> over a refused B1 is refused. A cycle comes before a wait, and a wait
+    /// before a refusal: the data on its way may change what the Formula is.
     /// </summary>
     private Value? Taint(Node node, StagedReader reader)
     {
         var gettingData = ReadsWaitingTable(node) || WaitsForToday(node) || WaitsForNow(node) || WaitsForSeed(node);
+        var refused = ReadsRefusingTable(node);
         foreach (var reference in node.References)
         {
             if (!IsLocal(reference)) continue;
@@ -579,10 +610,11 @@ public sealed partial class Sheet
                 {
                     if (value.Error == ErrorValue.Circ) return value;
                     if (value.Error == ErrorValue.GettingData) gettingData = true;
+                    if (value.IsRefused) refused = true;
                 }
             }
         }
-        return gettingData ? Value.FromError(ErrorValue.GettingData) : null;
+        return gettingData ? Value.FromError(ErrorValue.GettingData) : refused ? Value.Refusal : null;
     }
 
     /// <summary>The addresses inside <paramref name="area"/> that hold something, in no particular order.</summary>
@@ -622,6 +654,14 @@ public sealed partial class Sheet
         /// </summary>
         public ErrorValue? Met { get; set; }
 
+        /// <summary>
+        /// Whether a read has met a refusal (<see cref="Value.Refusal"/>) while the Formula being computed
+        /// was evaluated: a refused cell, or a Linked Table's column that holds one. The recalculation sets
+        /// it aside as it sets <see cref="Met"/> aside, and refuses the Formula with it, as <c>Taint</c>
+        /// refuses one whose text names a refused cell.
+        /// </summary>
+        public bool MetRefusal { get; set; }
+
         /// <summary>A cell as this recalculation leaves it: staged, or computed now when it is still to be (ADR-0124), or as it stood.</summary>
         public Value? Read(CellAddress address)
         {
@@ -629,6 +669,7 @@ public sealed partial class Sheet
                 : onDemand?.Invoke(address) is { } computed ? computed
                 : sheet.GetValue(address);
             if (value is { IsError: true, Error: ErrorValue.Circ or ErrorValue.GettingData } met && Met != ErrorValue.Circ) Met = met.Error;
+            if (value is { IsRefused: true }) MetRefusal = true;
             return value;
         }
 
@@ -643,6 +684,7 @@ public sealed partial class Sheet
         {
             var read = sheet.TableColumn(table, column);
             if (read.IsError && read.Scalar!.Value.Error == ErrorValue.GettingData && Met != ErrorValue.Circ) Met = ErrorValue.GettingData;
+            if (sheet.ColumnHoldsRefusal(table, column)) MetRefusal = true;
             return read;
         }
 

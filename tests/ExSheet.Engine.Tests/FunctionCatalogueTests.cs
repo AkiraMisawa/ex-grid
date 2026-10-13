@@ -116,4 +116,13 @@ public class FunctionCatalogueTests
         Assert.Empty(listed.GroupBy(n => n.Name).Where(g => g.Count() > 1).Select(g => g.Key));
         Assert.Empty(listed.Where(n => rows.Contains(n.Name)).Select(n => n.Name));
     }
+
+    [Fact] // ADR-0047 (2026-10-13, decided with the user): the functions Excel has and ExSheet does not declare, whose call is a Refused Formula, are exactly the catalogue's rows that are not Supported and its list of the rest
+    public void The_engines_list_of_excels_undeclared_functions_is_the_catalogues()
+    {
+        var catalogued = Catalogue().Where(r => r.Status != "Supported").Select(r => r.Name).Concat(NotQueued().Select(n => n.Name));
+
+        Assert.Equal(catalogued.Order(StringComparer.Ordinal), Formulas.ExcelFunctionNames.Names.Order(StringComparer.Ordinal));
+        Assert.DoesNotContain(DeclaredFunction.All, f => Formulas.ExcelFunctionNames.Undeclared(f.Name));
+    }
 }

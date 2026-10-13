@@ -174,9 +174,12 @@ Part B asked each reading above of Excel.
   A1:C3 leaves A3:C3, C2, A2, A1:C1, in that order, where `SelectionRange.Subtract`'s own order was
   kept before. **Enter visits the fragment holding the Focus first, then the others in that order**,
   wrapping.
-- **Read, not observed**: when a take-out removes the whole range made last (A1:B2, then Ctrl+click
-  F6, then Ctrl+click F6 again), the latest range still standing takes its place, so the Focus goes
-  to A1. Asked of Excel in the next Windows run.
+- **Observed by the seventeenth Windows run, for the case below** *(2026-10-12, h4; read here first,
+  and asked of Excel in a later run)*: when a take-out removes the whole range made last (A1:B2, then
+  Ctrl+click F6, then Ctrl+click F6 again), the latest range still standing takes its place, so the
+  Focus goes to A1. Excel's Selection was A1:B2 and its active cell A1, and Enter then went to A2, B1
+  and B2, down each column, with the Selection kept. A1:B2 was the only range left, so which range
+  takes the place where several are left, the latest as read here, is still a reading.
 
 ## What the user's run settled *(2026-09-29, decided with the user)*
 

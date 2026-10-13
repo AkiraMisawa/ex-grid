@@ -138,5 +138,27 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(() => figureTexts(book))
                 .toEqual(['Average: 1.5', 'Count: 3', 'Numerical Count: 2', 'Min: 1', 'Max: 2', 'Sum: 3']);
         });
+
+        test('a refused cell among the cells leaves no figure, and the line says why (ADR-0130, 2026-10-13)', async ({ page }) => {
+            await openSheet(page, chrome);
+            const book = sheet(page);
+            await enter(page, book, 'F1', '1');
+            // MROUND-001: a fractional multiple ExSheet refuses, as it cannot answer it as Excel does.
+            await enter(page, book, 'F2', '=MROUND(6.05,0.1)');
+            await expect(cell(book, 'F2')).toHaveText('#VALUE!');
+
+            await pressCell(book, 'F1');
+            await clickCell(book, 'F2', { modifiers: ['Shift'] });
+
+            await expect(book.locator('.ex-summary')).toHaveText(
+                "No figures: ExSheet refused the Formula in F2 with #VALUE! because it cannot answer it as Excel does, so a figure over it would not be Excel's.");
+            await expect.poll(() => figureTexts(book)).toEqual([]);
+
+            // F2 typed over with a number: the figures are back.
+            await enter(page, book, 'F2', '3');
+            await pressCell(book, 'F1');
+            await clickCell(book, 'F2', { modifiers: ['Shift'] });
+            await expect.poll(() => figureTexts(book)).toEqual(['Average: 2', 'Count: 2', 'Sum: 4']);
+        });
     });
 }

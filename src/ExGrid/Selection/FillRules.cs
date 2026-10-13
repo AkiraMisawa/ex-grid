@@ -12,7 +12,7 @@ namespace ExGrid.Selection;
 /// the source, counted in cells; a tie goes down or up, Excel's usual fill. A pointer back
 /// inside the source reaches nothing, and a release there raises nothing.</para>
 /// </summary>
-public static class FillRules
+internal static class FillRules
 {
     /// <summary>
     /// The range the handle stands on, or null when there is none: the Selection's last
@@ -23,6 +23,30 @@ public static class FillRules
     {
         ArgumentNullException.ThrowIfNull(selection);
         return selection.Ranges.Count == 1 ? selection.Ranges[^1] : null;
+    }
+
+    /// <summary>
+    /// Which corner of <paramref name="range"/> the handle stands at (ADR-0050, item 5; 2026-10-12,
+    /// decided with the user: the handle on a whole axis follows Excel, from the seventeenth Windows
+    /// run's h3), or null where there is none.
+    /// A range spanning every row of <paramref name="extent"/> (whole columns) at its first row's
+    /// top-right corner, beside the column's Heading; one spanning every column (whole rows) at its
+    /// first column's bottom-left, beside the row's Heading — a bottom-right corner a million rows
+    /// down, or sixteen thousand columns across, is one nobody can reach. Several whole columns put
+    /// it at the last one's top-right and several whole rows at the last one's bottom-left (observed,
+    /// the readings of 2026-10-12 (R5): columns B:D and rows 2:4, each selected from its first
+    /// Heading). A range spanning both, every cell (Ctrl+A), has none: Excel showed none in view
+    /// (observed, R5), and there is nowhere left to fill to. Every other range keeps its
+    /// bottom-right corner.
+    /// </summary>
+    internal static FillHandleCorner? HandleCorner(SelectionRange range, GridExtent extent)
+    {
+        var everyRow = range.SpansEveryRow(extent);
+        var everyColumn = range.SpansEveryColumn(extent);
+        return everyRow && everyColumn ? null
+            : everyRow ? FillHandleCorner.TopRight
+            : everyColumn ? FillHandleCorner.BottomLeft
+            : FillHandleCorner.BottomRight;
     }
 
     /// <summary>
@@ -89,20 +113,39 @@ public static class FillRules
 }
 
 /// <summary>
+/// The corner of its range the fill handle stands at (ADR-0050, item 5): the bottom-right, but
+/// for a range of whole columns or whole rows, whose bottom-right lies where nobody can reach it.
+/// </summary>
+internal enum FillHandleCorner
+{
+    /// <summary>The range's last row and last column: every range but the two below.</summary>
+    BottomRight,
+
+    /// <summary>The first row's top-right corner, beside the column's Heading: whole columns. Held at
+    /// the readable area's top while that row is scrolled above it.</summary>
+    TopRight,
+
+    /// <summary>The first column's bottom-left corner, beside the row's Heading: whole rows. Held at
+    /// the readable area's left while that column is scrolled under the Row Headings or the Pinned
+    /// Columns.</summary>
+    BottomLeft,
+}
+
+/// <summary>
 /// What a fill-handle drag has reached (ADR-0050, item 5): the cells a release would fill,
 /// which never include the source, and the direction they lie in from it.
 /// </summary>
 /// <param name="Target">The cells to fill, adjacent to the source along one axis and as
 /// wide (or as tall) as it.</param>
 /// <param name="Direction">Which way from the source the target lies.</param>
-public readonly record struct FillExtension(SelectionRange Target, GridDirection Direction);
+internal readonly record struct FillExtension(SelectionRange Target, GridDirection Direction);
 
 /// <summary>
 /// A fill-handle release approved with its extension, or refused with a reason — never
 /// both, never neither. Reading the absent half throws rather than answering something
 /// plausible (ADR-0014's shape, for a fill).
 /// </summary>
-public sealed class FillDecision
+internal sealed class FillDecision
 {
     private readonly FillExtension? _extension;
     private readonly PasteRefusalReason _reason;

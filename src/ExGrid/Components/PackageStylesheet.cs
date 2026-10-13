@@ -43,7 +43,7 @@ public abstract class PackageStylesheet : ComponentBase
     /// <param name="assets">The host's static assets: <see cref="ComponentBase.Assets"/>.</param>
     /// <param name="path">The file's path under the application's base, as the package serves it.</param>
     /// <param name="version">The first twelve hex digits of the SHA-256 of the file as shipped.</param>
-    public static string AddressOf(ResourceAssetCollection assets, string path, string version)
+    internal static string AddressOf(ResourceAssetCollection assets, string path, string version)
     {
         ArgumentNullException.ThrowIfNull(assets);
         ArgumentException.ThrowIfNullOrEmpty(path);

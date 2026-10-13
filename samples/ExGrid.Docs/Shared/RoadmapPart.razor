@@ -147,7 +147,8 @@
         <p class="docs-roadmap-intro">
             What the next version without a suffix requires, each row with the record that requires it. A version
             with a suffix is a prerelease, published before the Definition of Done is signed off; one without is a
-            release, and waits for that sign-off.
+            release, and waits for that sign-off. A release candidate, <code>-rc.N</code>, is the prerelease the
+            sign-off is made against, and the release that follows it adds only the sign-off's records and its notes.
         </p>
         var stable = RoadmapByHand.TowardStable.Where(n => Roadmap.Shows(n.Products, Product)).ToList();
         @if (stable.Count == 0)

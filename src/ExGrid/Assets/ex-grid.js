@@ -19,9 +19,12 @@
 // and the editor listener keeping the coloured text beneath a field honest (ADR-0057). And the
 // seventh entry (ADR-0080): the Keyboard Field's composition and focus, heard on the root —
 // `compositionstart` and `compositionend`, always on, so a composition on a selected cell takes its
-// place among the held keys; the root's `focus`, passing focus that lands on the root itself on to
-// its field; and the root's `focusout`, emptying the field as it is left and ending the release of
-// Tab when DOM focus leaves the grid (ADR-0012). The eighth entry (ADR-0090): a media query
+// place among the held keys, and `keyup`, which says that a key the IME took has been told whole, so
+// that the editor's request for the keyboard is granted in order with the IME's events; the root's
+// `focus`, passing focus that lands on the root itself on to its field; and the root's `focusout`,
+// emptying the field as it is left, ending the release of Tab when DOM focus leaves the grid
+// (ADR-0012), and ending a key the IME took whose keyup the keyboard left before it was told
+// (ADR-0080, 2026-10-12). The eighth entry (ADR-0090): a media query
 // telling the Device Pixel. And the ninth (ADR-0122): the browser's time zone, read once at
 // attach and only when the Consumer asked for it, so TODAY() is the user's day. Anything
 // else — text measurement, overlay geometry, popovers — stays in C#; adding to this file needs an
@@ -325,16 +328,28 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const editingKeys = new Set(
         ['Escape', 'Enter', 'Shift+Enter', 'Control+Enter', 'Tab', 'Shift+Tab', 'F2',
             'Control+f', 'Control+F']);
-    const overwriteKeys = new Set([
-        ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End']);
-    // Pointing (ADR-0051's second round): Overwrite's keys and the four Shift+arrows, which
-    // extend the outline rather than select text in the input. And while a completion list
-    // is open, only its ↑/↓ beside the editing keys (Tab, Escape): ←, →, Home, End and the
-    // Shift+arrows are the editor's — unless the list is open over Point, where they do what
-    // Point does with them, as they do without it (ADR-0058: the tenth Windows run, and Part B
-    // of the ninth).
+    // Pointing (ADR-0051's second round): the arrows, Home and End, the four Shift+arrows and
+    // Shift+Home, which move or extend the outline rather than select text in the input (Shift+Home
+    // observed in Excel: the readings of 2026-10-12, R1 (viii)). And while a completion list is
+    // open, only its ↑/↓ beside the editing keys (Tab, Escape): ←, →, Home, End and the
+    // Shift+arrows are the editor's — unless the list is open over Point, where they do what Point
+    // does with them, as they do without it (ADR-0058: the tenth Windows run, and Part B of the
+    // ninth).
     const pointKeys = new Set([
-        ...overwriteKeys, 'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
+        ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',
+        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight', 'Shift+Home']);
+    // Overwrite, Excel's Enter mode (ADR-0010, ED-2): Point's keys, which commit and move or extend
+    // the Selection — or point, where a Reference can go — rather than move the caret or select
+    // text in the input, and the Primary Modifier's arrows with Shift or without, which commit and
+    // move or extend to the edge. Observed in Excel: Shift+Home, Shift+→, Shift+↓, Shift+←, Ctrl+→
+    // and Ctrl+Shift+→ (the seventeenth Windows run, Part C, case 7; R1 (vii)); the rest of the
+    // Primary Modifier's arrows and Shift+↑ by generalisation. End's commit and move is the grid's,
+    // not Excel's: in Enter mode Excel's End turns on an End Mode (ADR-0058), which the grid does
+    // not have. Shift+End stays the editor's (decided with the user, 2026-10-13): Excel's commits
+    // and turns on an End Mode (R1 (vii)), which the grid does not have (ADR-0058, Q53).
+    const overwriteKeys = new Set([
+        ...pointKeys, 'Control+ArrowUp', 'Control+ArrowDown', 'Control+ArrowLeft', 'Control+ArrowRight',
+        'Control+Shift+ArrowUp', 'Control+Shift+ArrowDown', 'Control+Shift+ArrowLeft', 'Control+Shift+ArrowRight']);
     // Pointing from outside (ADR-0058, "The keyboard"): while what Point wrote was written for a
     // press on another grid, and the Consumer that wrote it hears the arrows, Point's keys and the
     // Primary Modifier's arrows, with Shift or without, which the Consumer refuses rather than let
@@ -631,7 +646,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // measurement: no layout is read. The selection's end goes with it for F4, which cycles
     // every Reference a selection covers, and so does whether the user moved the caret in that
     // very text: until the core's placement lands, the browser's own caret there is not the
-    // user's, and the core tells the two apart as it does for a report (ADR-0051, 2026-09-29).
+    // user's, and the core tells the two apart as it does for a report (ADR-0051, 2026-09-29);
+    // and a caret the user moved leaves F4's rewrite selected, where one typing left stays a
+    // caret, as Excel's did (the readings of 2026-10-12, R1 (iv) and (v)).
     // Whether the key is a held key's repeat goes with it too: auto-repeat is visible only here,
     // and by the time a key reaches .NET a repeat looks like a press. The core raises a
     // Consumer's OnLeave once per press, however long Escape is held (ADR-0070). A field of the
@@ -670,12 +687,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // it says it is the user's, so the core takes it over the placement it has in flight
     // (ADR-0051's third round: a press in the text while pointing ends pointing; found on the
     // Server host, Windows, fourth run, DC-19/DC-34). Only while the field still holds that
-    // text: once it has changed, the move was made in text the core no longer holds.
+    // text: once it has changed, the move was made in text the core no longer holds, and it is
+    // forgotten there and then. A move belongs to the text it was made in, not to an equal text
+    // written later: F4 cycling a whole column back to =SUM(A:A), the text a ← was pressed in,
+    // took the browser's caret at the end for the user's, and the third F4 touched no Reference
+    // (the seventeenth Windows run, Part C, cases 8 and 9).
     let caretMoved = null;
     const noteCaretMove = (input) => {
         caretMoved = { input, text: input.value };
     };
-    const movedByUser = (input) => caretMoved !== null && caretMoved.input === input && caretMoved.text === input.value;
+    const movedByUser = (input) => {
+        if (caretMoved === null || caretMoved.input !== input) {
+            return false;
+        }
+        if (caretMoved.text !== input.value) {
+            caretMoved = null;
+            return false;
+        }
+        return true;
+    };
     const reportCaretOf = (input) => {
         const caret = input.selectionStart ?? input.value.length;
         if (input.value === reportedText && caret === reportedCaret) {
@@ -1168,7 +1198,29 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // When the hold that is standing began: two seconds from it, whatever the keys held
     // since have asked for, the rest is handed on (ADR-0010).
     let holdStartedAt = 0;
-    const editorSettled = () => new Promise((resolve) => {
+    // The waits standing in editorSettled. Each is looked at every animation frame, and once more
+    // the moment this listener gives the editor the keyboard itself (focusEditor): what the hold
+    // has for the edit is then typed into it in a microtask, before the browser hands the page
+    // anything else. An IME's composition cannot be held — it reaches whatever has DOM focus — and
+    // one started in the editor before the next frame was typed ahead of the text the hold still
+    // had for it: `かな`, `感じ` held, `ｄ` composed in the editor, and D10 read `かなｄ感じです`
+    // (ED-30, the third composition, WebAssembly).
+    const settledWaits = new Set();
+    const lookAgain = () => {
+        for (const again of [...settledWaits]) {
+            again();
+        }
+    };
+    const editorSettled = () => new Promise((settle) => {
+        // Settled once: a wait looked at again leaves no second frame of its own behind, and none
+        // looks after it has settled.
+        let waiting = true;
+        let lookFrame = 0;
+        const resolve = () => {
+            waiting = false;
+            settledWaits.delete(again);
+            settle();
+        };
         const look = () => {
             // A grid disposed during the wait has nothing left to wait for, and is asked
             // first: its root is gone, and looking for DOM focus inside it would throw from
@@ -1189,40 +1241,151 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 }
                 resolve();
             } else {
-                requestAnimationFrame(look);
+                lookFrame = requestAnimationFrame(look);
             }
         };
+        const again = () => {
+            if (waiting) {
+                cancelAnimationFrame(lookFrame);
+                look();
+            }
+        };
+        settledWaits.add(again);
         look();
     });
 
+    // How a field moves its caret further than a character, on the platform it runs on, for a held
+    // key replayed as the field would have moved it (ADR-0010). By a word with Ctrl on Windows and
+    // Linux, and with Option on an Apple platform, where ⌘'s arrows take it to the start or the end
+    // of the text instead — as a held Home or End does there (ticket 32) — and Ctrl's arrows are
+    // the system's. Alt's arrows are the browser's history on Windows and Linux, and move no caret.
+    // Ctrl's Home and End are the text's start and end on Windows and Linux, as Home and End are in
+    // a field of one line; and the Primary Modifier's A selects the whole text, on every platform.
+    const byWord = (k) => (metaIsPrimary ? k.altKey && !k.ctrlKey : k.ctrlKey && !k.altKey) && !k.metaKey;
+    const primaryOnly = (k) => (metaIsPrimary ? k.metaKey && !k.ctrlKey : k.ctrlKey && !k.metaKey) && !k.altKey;
+    const unmodified = (k) => !k.ctrlKey && !k.metaKey && !k.altKey;
+    // Forward, a word move ends at the end of the word on macOS, Linux and ChromeOS, and on Windows
+    // at the start of the next one, past the spaces after this one: the browser's own conventions.
+    const wordMovePassesSpaces = /^win/i.test(platform);
+    // The word-like stretches of a field's text, as [start, end) offsets: Intl.Segmenter's words,
+    // from the Unicode word breaks the browser moves by itself, with the spaces and punctuation
+    // between them left out. Where a browser has no segmenter, runs of letters, marks, digits and
+    // underscores.
+    let wordSegmenter;
+    const wordsOf = (text) => {
+        if (wordSegmenter === undefined) {
+            wordSegmenter = typeof Intl.Segmenter === 'function'
+                ? new Intl.Segmenter(undefined, { granularity: 'word' })
+                : null;
+        }
+        if (wordSegmenter === null) {
+            return [...text.matchAll(/[\p{L}\p{M}\p{N}_]+/gu)].map((run) => [run.index, run.index + run[0].length]);
+        }
+        const words = [];
+        for (const piece of wordSegmenter.segment(text)) {
+            if (piece.isWordLike) {
+                words.push([piece.index, piece.index + piece.segment.length]);
+            }
+        }
+        return words;
+    };
+    // Where a word move from `at` lands: back, at the start of the word the caret is in, or of the
+    // word before it; forward, at the end of the word the caret is in or of the next one — on
+    // Windows at the start of the next word — and at the text's end where there is none. The
+    // field's own text is all that is read (ADR-0021).
+    const wordEdge = (text, at, forward) => {
+        const words = wordsOf(text);
+        if (!forward) {
+            let edge = 0;
+            for (const [start] of words) {
+                if (start >= at) {
+                    break;
+                }
+                edge = start;
+            }
+            return edge;
+        }
+        for (const [start, end] of words) {
+            if (wordMovePassesSpaces ? start > at : end > at) {
+                return wordMovePassesSpaces ? start : end;
+            }
+        }
+        return text.length;
+    };
+
     // A held key a text field would have handled itself, handled as it would have: text is
-    // typed at the caret, a deletion deletes, a caret key moves the caret. Anything else
-    // was the browser's, and its moment has passed. Whether it was one of these is answered.
+    // typed at the caret, a deletion deletes, a caret key moves the caret — Shift extending the
+    // selection from its anchor, and a word or the text's edge at a time with the modifier the
+    // platform does that with (byWord, primaryOnly). Anything else was the browser's, and its moment
+    // has passed. Whether it was one of these is answered. Nothing is read but the field's value
+    // and selection (ADR-0021).
     const typeInto = (input, k) => {
         const start = input.selectionStart ?? input.value.length;
         const end = input.selectionEnd ?? start;
+        const inEditor = input.closest('.ex-editor') !== null;
         // A composition's text from the Keyboard Field (ADR-0080) is typed as a character is.
-        if (k.text !== undefined || k.key.length === 1) {
+        if (k.text !== undefined || (k.key.length === 1 && !k.ctrlKey && !k.metaKey)) {
             input.setRangeText(k.text ?? k.key, start, end, 'end');
-        } else if (k.key === 'Backspace') {
-            input.setRangeText('', start === end ? Math.max(0, start - 1) : start, end, 'end');
-        } else if (k.key === 'Delete') {
-            input.setRangeText('', start, start === end ? Math.min(input.value.length, end + 1) : end, 'end');
+        } else if (k.key === 'Backspace' || k.key === 'Delete') {
+            // A character, or with the word modifier a word, before the caret or after it; a
+            // selection is deleted whole, with or without it.
+            const word = byWord(k) && !k.shiftKey;
+            if (!word && !unmodified(k)) {
+                return false;
+            }
+            const forward = k.key === 'Delete';
+            let from = start;
+            let to = end;
+            if (start === end) {
+                const reach = word ? wordEdge(input.value, start, forward)
+                    : forward ? Math.min(input.value.length, start + 1) : Math.max(0, start - 1);
+                from = Math.min(start, reach);
+                to = Math.max(start, reach);
+            }
+            input.setRangeText('', from, to, 'end');
         } else if (k.key === 'Home' || k.key === 'End') {
             // As the field would have: to the start or the end, Shift extending the selection, and
             // scrolled to show it. Setting the selection from script moves no view, so a held End
             // replayed on a circuit left the caret at the end and the text shown from its start
             // (ticket 32, seen in CI on the Server host).
-            placeCaretAtEnd(input, k, input.closest('.ex-editor') !== null);
+            if (!unmodified(k) && (metaIsPrimary || !primaryOnly(k))) {
+                return false;
+            }
+            placeCaretAtEnd(input, k, inEditor);
             return true;
         } else if (k.key === 'ArrowLeft' || k.key === 'ArrowRight') {
-            const at = k.key === 'ArrowLeft' ? Math.max(0, start - 1)
-                : Math.min(input.value.length, end + 1);
-            if (input.closest('.ex-editor') !== null) {
+            const forward = k.key === 'ArrowRight';
+            if (metaIsPrimary && primaryOnly(k)) {
+                placeCaretAtEnd(input, { key: forward ? 'End' : 'Home', shiftKey: k.shiftKey }, inEditor);
+                return true;
+            }
+            const word = byWord(k);
+            if (!word && !unmodified(k)) {
+                return false;
+            }
+            // The end of the selection a caret key moves is its focus, the other its anchor: the
+            // start of a backward selection is its focus, the end of any other. A selection with
+            // the plain arrow collapses to its own edge on that side; anything else moves the focus.
+            const backward = input.selectionDirection === 'backward';
+            const anchor = backward ? end : start;
+            const focus = backward ? start : end;
+            const to = word ? wordEdge(input.value, focus, forward)
+                : start !== end && !k.shiftKey ? (forward ? end : start)
+                    : forward ? Math.min(input.value.length, focus + 1) : Math.max(0, focus - 1);
+            if (inEditor) {
                 noteCaretMove(input);
             }
-            input.setSelectionRange(at, at);
-            showCaret(input, at);
+            if (!k.shiftKey) {
+                input.setSelectionRange(to, to);
+            } else if (to < anchor) {
+                input.setSelectionRange(to, anchor, 'backward');
+            } else {
+                input.setSelectionRange(anchor, to, 'forward');
+            }
+            showCaret(input, to);
+            return true;
+        } else if ((k.key === 'a' || k.key === 'A') && !k.shiftKey && primaryOnly(k)) {
+            input.setSelectionRange(0, input.value.length, 'forward');
             return true;
         } else {
             return false;
@@ -1274,9 +1437,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         showCaret(input, edge);
     };
+    // A held key the edit's field is left, handled as the field would have handled it (typeInto):
+    // chords among them, so that a Ctrl+← held behind F2 moves the caret by a word as it does when
+    // it is not held, rather than be dropped while the End before it moved the caret — an outcome
+    // that turned on whether the keys arrived before F2's answer (ED-2, seen in CI on Edge,
+    // WebAssembly). A chord typeInto does not know is the browser's, and is dropped.
     const typeIntoEditor = (k) => {
         const input = editorInput();
-        if (input && !k.ctrlKey && !k.metaKey) {
+        if (input) {
             typeInto(input, k);
         }
     };
@@ -1566,8 +1734,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         // Mid-composition an IME owns Enter, Escape and the arrows — they choose and
         // commit a candidate. Taking them there breaks typing in any language that needs
-        // one, and the grid would move under a half-finished word.
+        // one, and the grid would move under a half-finished word. One the IME takes in the
+        // Keyboard Field is told until its keyup (imeKeyTold, ADR-0080).
         if (event.isComposing || event.keyCode === 229) {
+            if (isKeyField(event.target)) {
+                imeKeyTold = true;
+            }
             return;
         }
         const k = snapshot(event);
@@ -1806,21 +1978,31 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // order move or a replaced Source has dropped since opens nothing (ADR-0142, 2026-10-08). Reads an
     // attribute; nothing is measured.
     let keyFieldPaint = -1;
-    // The editor's request for the keyboard, made while the field was composing or as a
-    // composition ended: granted once the field has stopped composing (keyFieldEnded).
+    // The editor's request for the keyboard, made while the field was composing or while a key the
+    // IME took was still being told: granted once neither holds (grantEditorFocus).
     let deferredEditorFocus = null;
-    // A composition's end holds the keyboard in the field until the task after it, for the key
-    // that ends one composition can start the next: the sixteenth Windows run's k6, where the `k`
-    // of `kanji` ended `かな` and started `ｋ`. The browser tells the page of that start only once
-    // the end's listeners, and everything they ran, have returned — and on WebAssembly that is
-    // the core's whole answer to the text, the Cell Editor opened and its request for the
-    // keyboard made, 22 ms of it in that run. Granted then, between the end and the start, the
-    // request moved DOM focus, the IME carried `ｋ` into the editor without its romaji, and the
-    // `a` composed `あ`: `かな暗示`. The events the IME's key still owes the page are waiting by the
-    // end of that task, and the browser runs waiting input ahead of a timer, so a timer of no
-    // delay is the first moment the next composition, if there is one, has said so. No layout is
-    // read, and nothing is listened to (ADR-0021's seventh entry).
-    let keyFieldEndTimer = 0;
+    // A key the IME took in the field is still being told: from its keydown, which the listener
+    // above leaves to the IME, to the next keyup heard on the root, its own as a rule. The key that
+    // ends one composition can start the next: the sixteenth Windows run's k6, where the `k` of
+    // `kanji` ended `かな` and started `ｋ`. On WebAssembly the end's own listeners ran the core's
+    // whole answer to the text, the Cell Editor opened and its request for the keyboard made, 22 ms
+    // of it in that run; granted then, between the end and the start, the request moved DOM focus,
+    // the IME carried `ｋ` into the editor without its romaji, and the `a` composed `あ`: `かな暗示`.
+    // Every event the IME owes a key reaches the page before that key's keyup, and before any later
+    // key's events, as the browser takes them in order — so the keyup is the moment the next
+    // composition, if the key started one, has said so, whatever the time between them. It was the
+    // task after the end until 2026-10-12, which a start told a moment later missed: a script
+    // driving the IME, whose end and start are two commands, had the request granted between them,
+    // the start composed in the editor ahead of the text still held for it, and D10 read `かなｄ感じです`
+    // (ED-30, the third composition, WebAssembly). A composition that ends with no such key being
+    // told — a candidate chosen with the pointer, text a script commits — has nothing more to come,
+    // and the request is granted at its end. And the keyboard leaving the field ends the key too
+    // (onFocusLeft): whatever it still owes is told wherever the keyboard went, and none of it can
+    // start a composition here. Alt+Tab mid-composition is that key — the sixteenth Windows run's
+    // k15: its keydown was the IME's, the window switch ended the composition, and in 7 of 12
+    // configurations its keyup went to the other window, so a keyup alone would have kept the
+    // request waiting for whatever key came next. No layout is read (ADR-0021's seventh entry).
+    let imeKeyTold = false;
     // The field goes back to being unseen and empty: once the keyboard has left it, or when the
     // composition's text opened nothing (a cell that does not edit).
     const settleKeyField = () => {
@@ -1863,11 +2045,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         carryKeyFieldText(field);
     };
     // The text the field holds past what has already gone takes its place among the held keys,
-    // and a request for the editor's focus that waited for it, or that the core makes in answer to
-    // it before this task is over, is granted in the task after (keyFieldEndTimer).
+    // and a request for the editor's focus that waited for it is granted, unless the key the IME
+    // took is still being told (imeKeyTold).
     const carryKeyFieldText = (field) => {
-        clearTimeout(keyFieldEndTimer);
-        keyFieldEndTimer = setTimeout(keyFieldEnded, 0);
         const text = field.value.slice(keyFieldCarried);
         keyFieldCarried = field.value.length;
         held.push({ text, paint: keyFieldPaint });
@@ -1878,19 +2058,28 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (document.activeElement !== field) {
             settleKeyField();
         }
+        grantEditorFocus();
     };
-    // The task after a composition's end: the request is granted unless the key that ended it
-    // started another, which it then waits for, as it waits for any composition.
-    const keyFieldEnded = () => {
-        keyFieldEndTimer = 0;
+    // The editor's request, granted once the field has stopped composing and no key the IME took is
+    // still being told; a key that started another composition leaves it waiting for that one's end.
+    // `toward` is where the keyboard is going when the field is being left (onFocusLeft).
+    const grantEditorFocus = (toward) => {
         const pending = deferredEditorFocus;
-        if (pending !== null && !keyFieldComposing) {
+        if (pending !== null && !keyFieldComposing && !imeKeyTold) {
             deferredEditorFocus = null;
-            handle.focusEditor(pending.bar, pending.fromField);
+            handle.focusEditor(pending.bar, pending.fromField, toward);
+        }
+    };
+    // The key the IME took has been told whole: everything it owed the page came before this.
+    const onKeyFieldKeyUp = () => {
+        if (imeKeyTold) {
+            imeKeyTold = false;
+            grantEditorFocus();
         }
     };
     root.addEventListener('compositionstart', onKeyFieldCompositionStart, true);
     root.addEventListener('compositionend', onKeyFieldCompositionEnd, true);
+    root.addEventListener('keyup', onKeyFieldKeyUp, true);
 
     // The seventh entry's focus listeners (ADR-0021, ADR-0080), on every grid, with a field or not.
     //
@@ -1930,13 +2119,27 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // departure came after is not granted (releaseTab). The window losing focus is not a
     // departure: the browser says so with no next holder too, but DOM focus stays where it is,
     // still the document's active element while the event is told, and comes back there.
+    //
+    // Whichever it is, a key the IME took that is still being told ends here (imeKeyTold): its
+    // keyup, if it comes, is told wherever the keyboard went — on a window switch, to another
+    // window — and a request for the editor that waited for it is decided now. Decided against
+    // where the keyboard is going, `next`, since DOM focus is on nothing while a move is told: a
+    // control outside the grid that the user moved to keeps the keyboard and the request is
+    // declined, as it would be once there; on a window switch DOM focus is still the field's, and
+    // the editor takes the keyboard back there.
     const onFocusLeft = (event) => {
         if (isKeyField(event.target)) {
             settleKeyField();
             markFocusVisible(false);
         }
         const next = event.relatedTarget;
-        if (event.target === document.activeElement || (next instanceof Node && root && root.contains(next))) {
+        // Read before the grant below, which moves DOM focus.
+        const stays = event.target === document.activeElement || (next instanceof Node && root && root.contains(next));
+        if (imeKeyTold) {
+            imeKeyTold = false;
+            grantEditorFocus(next);
+        }
+        if (stays) {
             return;
         }
         tabReleased = false;
@@ -2059,7 +2262,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         || (inOwnScroller(target) && target.closest('.ex-header') !== null);
     // What a press or release on this grid's own rows was taken against (ED-31; ADR-0021, note of
     // 2026-10-02): the offsets the browser gave it, the first row the Viewport painted, the
-    // horizontal scroll, and the row order and the columns and row height the painting render
+    // scroll on both axes, and the row order and the columns and row height the painting render
     // carried (data-ex-sequence, data-ex-layout). A replayed event is measured again, against the
     // rows painted at the replay, so a held press replayed after a key had moved the view landed on
     // the row the move brought there (`1` Enter PageDown `9` and a press on F6 at once, on the
@@ -2075,6 +2278,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         return {
             x: event.offsetX, y: event.offsetY, first: number('data-ex-first-row'),
             left: scroller ? scroller.scrollLeft : 0,
+            // Where a fill handle held at the readable area's top stands (ADR-0050, item 5).
+            top: scroller ? scroller.scrollTop : 0,
             sequence: number('data-ex-sequence'), layout: number('data-ex-layout'),
         };
     };
@@ -2082,7 +2287,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!core || !taken) {
             return;
         }
-        core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left,
+        core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left, taken.top,
             taken.sequence, taken.layout).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to hear where a press was taken', error);
@@ -3010,8 +3215,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // repeat.
         setCaret: (text, caret, end) => {
             const input = editorInput();
+            // Read first: a move made in text the field no longer holds is forgotten now, before the
+            // field can come back to that text (movedByUser).
+            const moved = input ? movedByUser(input) : false;
             if (input && input.value === text) {
-                if (movedByUser(input)) {
+                if (moved) {
                     reportedText = null;
                     reportCaretOf(input);
                     return;
@@ -3255,15 +3463,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // keyboard stays where the user put it, and the edit goes on there: a request for the
         // Cell Editor, landing after a press into the bar, took the keyboard from the bar, and the
         // key typed next opened an edit in the cell (found on CI, msedge, the Server host).
-        focusEditor: (bar, fromField) => {
+        //
+        // A waiting request granted as the keyboard leaves the Keyboard Field (onFocusLeft) is
+        // judged where the keyboard is going, `toward`: DOM focus is on nothing while the browser
+        // tells that departure. The core never passes it.
+        focusEditor: (bar, fromField, toward) => {
             if (!root) {
                 return;
             }
             // While the Keyboard Field composes, the request waits for the composition to end
             // there, and is granted then (carryKeyFieldText; ADR-0080): moving DOM focus now would
-            // end it half-typed. So it does in the task a composition ended in, before the browser
-            // has told the page whether the same key started the next (keyFieldEndTimer).
-            if (keyFieldComposing || keyFieldEndTimer !== 0) {
+            // end it half-typed. So it does while a key the IME took there is still being told,
+            // before the browser has told the page whether that key started the next (imeKeyTold).
+            if (keyFieldComposing || imeKeyTold) {
                 deferredEditorFocus = { bar, fromField };
                 return;
             }
@@ -3273,7 +3485,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (!field) {
                 return;
             }
-            const active = document.activeElement;
+            const active = toward instanceof Element ? toward : document.activeElement;
             const fieldOfItsOwn = active instanceof Element && active !== staleField && !field.contains(active)
                 && root.contains(active) && active.closest('.ex-formula-bar') !== null;
             if (fieldOfItsOwn && fromField !== true) {
@@ -3286,6 +3498,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // the fold is brought on screen, and one already in the window moves nothing.
                 field.focus({ preventScroll: true });
                 followEditor(field);
+                // What the hold has for the edit goes into it now, ahead of any composition the IME
+                // starts there next (settledWaits).
+                lookAgain();
             } else if (editing !== 'none') {
                 // The surface the core asked for is the edit's: the held keys go into it, and a
                 // press back puts the keyboard there (standingField), the bar's when it was the bar.
@@ -3328,10 +3543,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.removeEventListener('input', onEditorInput, true);
             root.removeEventListener('compositionstart', onKeyFieldCompositionStart, true);
             root.removeEventListener('compositionend', onKeyFieldCompositionEnd, true);
+            root.removeEventListener('keyup', onKeyFieldKeyUp, true);
             root.removeEventListener('focus', onFocused, true);
             root.removeEventListener('focusout', onFocusLeft, true);
-            clearTimeout(keyFieldEndTimer);
-            keyFieldEndTimer = 0;
+            imeKeyTold = false;
             deferredEditorFocus = null;
             markFocusVisible(false);
             document.removeEventListener('selectionchange', onSelectionChange);

@@ -69,6 +69,9 @@ buttons:
 - **Items are built on public commands only:** `SetCellFormatAsync`, `CellFormatAt`,
   `OpenFormatCellsAsync`, and the notifications of the Selection and of an edit.
   - An item reads the Sheet through what the toolbar cascades. Nothing internal is cascaded.
+    *(2026-10-12, ADR-0201: the toolbar's rows also cascade `ToolbarOrder`, the scope that keeps
+    items in markup order, and it is internal. It is the rows' bookkeeping, not the Sheet's: an item
+    still reads the Sheet only through public commands.)*
   - The compiler cannot hold this inside one assembly, so a test holds it: no item type references
     an internal member.
 - **An item's state follows the Focus cell.** Whenever the Selection changes, each item reads the
@@ -162,6 +165,14 @@ None of these changes the decision. Each records how a part of it is held, or a 
   - The Focus format the toolbar last heard is not enough: on a circuit it is a round trip old.
   - It is a new name, not an overload of `SetCellFormatAsync`. An overload made a Consumer's
     `SetCellFormatAsync(null)` ambiguous.
+  - *(2026-10-12, decided with the user: each Sheet Toolbar toggle widens as the key it names.)*
+    *(2026-10-12, decided with the user: `SetCellFormatAsync` widens as the formatting keys do, not
+    as Format Cells' OK does.)* ADR-0071, "What the seventeenth Windows run settled", holds both.
+    - An item acts through public commands only, so the toggles' rule is this command's. It widens
+      a column over `####` as the formatting keys do: Underline and Strikethrough widen, and Bold and
+      Italic do not.
+    - The Font Colour, its face and its list, sets through `SetCellFormatAsync`, so it widens
+      nothing. That Excel's Font Color button widens nothing is a reading.
 - **Comma Style is in the default row, disabled, with the reason.** Excel's Comma Style sets the
   built-in Comma style, whose code pads with `*` as Accounting does, and ExSheet does not read
   that code. Showing it disabled is what Format Cells does for Accounting. Setting another code

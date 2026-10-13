@@ -81,7 +81,10 @@
             <code>TargetNotEditable</code>, since no reselection of the same shape would help. A single value pasted
             as plain text — not as a table — over a range lands in its top-left cell only. Numbers copied from Excel
             arrive at full precision, and <code>Origins</code> tells you whether a field is invariant-culture text
-            from Excel's own data or text as it was shown.
+            from Excel's own data or text as it was shown. In the family's own HTML a cell may carry
+            <code>ClipboardData.MarkAttribute</code>; <code>MarkFor</code> hands its value to the Consumer that
+            wrote it, and another program ignores it. ExSheet marks a refused cell so that a paste into a Sheet is
+            refused.
         </p>
         <DocsExample Title="Copy out, paste in" Builtin="typeof(ClipboardGrid)" Mud="typeof(ClipboardGridMud)"
                      Files="@(["Examples/Grid/Position.cs"])">

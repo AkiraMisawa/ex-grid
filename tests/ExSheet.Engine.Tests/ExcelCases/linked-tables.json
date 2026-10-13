@@ -223,6 +223,16 @@
       "cells": {"A1": "=SUM(Trades[[Unit Price]])*SUM(Trades[Qty])"},
       "check": "A1",
       "expect": {"value2": 10, "formula": "=SUM(Trades[Unit Price])*SUM(Trades[Qty])"}
+    },
+    {
+      "id": "TABLE-024",
+      "source": "uncertain",
+      "description": "Refused by decision, and recorded so that Excel is asked: a declared table's bare name typed, which Excel reads through INDIRECT as the table's data (2 columns, INDIRECT-053); ExSheet offers no typed bare table name, so it is a Refused Formula that shows #NAME?, which no Formula catches, and a cell that reads it is refused (2026-10-13, decided with the user)",
+      "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5], ["R-2", 50]]}},
+      "cells": {"A1": "=COLUMNS(Positions)"},
+      "check": "A1",
+      "expect": {"value2": "#NAME?"},
+      "engineDiffersByDecision": "ADR-0049 (rule 2: a Linked Table is read by key, never by position, and a whole column by name; 2026-10-12, decided with the user: a declared Linked Table's bare name through INDIRECT stays #VALUE!, in either style): a table's bare name typed is not offered and is #NAME?; recorded, so that a run reads Excel's answer beside INDIRECT-053"
     }
   ]
 }

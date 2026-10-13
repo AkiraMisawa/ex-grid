@@ -38,15 +38,24 @@ public sealed class Entry : IEquatable<Entry>
 
     internal Node? Parsed { get; }
 
-    /// <summary>A constant Entry. <c>#GETTING_DATA</c> and <c>#CIRC!</c> are states of a computation and cannot be one.</summary>
+    /// <summary>
+    /// A constant Entry. <c>#GETTING_DATA</c> and <c>#CIRC!</c> are states of a computation and cannot be one,
+    /// and neither can the <c>#VALUE!</c> of a cell whose Formula ExSheet refuses, read from it: held as a
+    /// constant it would be an Error Value a Formula can catch (ADR-0047; 2026-10-12, decided with the user:
+    /// a refusal is never caught, anywhere).
+    /// </summary>
+    /// <exception cref="ArgumentException"><paramref name="constant"/> is one of those.</exception>
     public static Entry FromValue(Value constant) =>
-        constant.IsError && constant.Error is ErrorValue.GettingData or ErrorValue.Circ
+        constant.IsRefused
+            ? throw new ArgumentException($"This {constant.Error.ToText()} is a Formula ExSheet refused, because it cannot answer it as Excel; held as a constant it would be an Error Value a Formula can catch.", nameof(constant))
+            : constant.IsError && constant.Error is ErrorValue.GettingData or ErrorValue.Circ
             ? throw new ArgumentException($"{constant.Error.ToText()} is not a constant a cell can hold.", nameof(constant))
             : new(constant);
 
-    /// <summary>A Formula Entry from its invariant text, which begins with <c>=</c>.</summary>
+    /// <summary>A Formula Entry from its invariant text, which begins with <c>=</c>. Internal
+    /// (ADR-0201): <see cref="Parse"/> reads the same text as the same Formula.</summary>
     /// <exception cref="FormulaSyntaxException">The Formula cannot be read.</exception>
-    public static Entry FromFormula(string formula)
+    internal static Entry FromFormula(string formula)
     {
         ArgumentNullException.ThrowIfNull(formula);
         var parsed = Parser.Parse(formula, out var tokens);

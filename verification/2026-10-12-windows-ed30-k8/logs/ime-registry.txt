@@ -1,0 +1,27 @@
+# HKCU\Software\Microsoft\IME\15.0\IMEJP, exported before, after Off, after 1 character, and after the added value was removed
+before: c8d0adf6a134446abfbe7b2f2f0c3075dac0bc6bbf20ed0fe8b76dbb0e1fc41b
+off: 0076e9225b2faaed49959ec05a5d8ff682eaa8cbfb62b9f8df61fc6e5d6e0b19
+after: e920f0fb339f70752a76dd4f71fb958054305ce0fd0c123b4c3c0a4f25d67592
+restored: 5ecb15e188e43bfd8cd378b390432d53e7b985a083e1b4bff586708fa3305d06
+
+## before -> Off
+62c62
+< "PredictionUseInputHistory"=dword:00000001
+---
+> "PredictionUseInputHistory"=dword:00000000
+64a65
+> "PredictionUseSystemDictionary"=dword:00000000
+
+## before -> 1 character again
+64a65
+> "PredictionUseSystemDictionary"=dword:00000001
+112c113
+< "CDSSaveRequestTime"=hex(b):bd,ef,b6,3a,c1,59,dd,01
+---
+> "CDSSaveRequestTime"=hex(b):d6,70,f9,9f,8a,5a,dd,01
+
+## before -> PredictionUseSystemDictionary removed
+112c112
+< "CDSSaveRequestTime"=hex(b):bd,ef,b6,3a,c1,59,dd,01
+---
+> "CDSSaveRequestTime"=hex(b):d6,70,f9,9f,8a,5a,dd,01

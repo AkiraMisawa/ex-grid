@@ -5,7 +5,7 @@ namespace ExGrid.Columns;
 /// is <c>#</c> repeated to fill the cell — presentation only: selection, copy, editing
 /// and screen readers all deal with the real value.
 /// </summary>
-public readonly record struct OverflowDecision
+internal readonly record struct OverflowDecision
 {
     private OverflowDecision(bool isHashed, string displayText)
     {

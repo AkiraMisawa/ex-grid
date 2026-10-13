@@ -19,7 +19,8 @@ public sealed record GridMetrics
         double rowHeightPx, double headerHeightPx, double fontSizePx,
         CellTextMetrics cellMetrics,
         double actionPaddingXPx, double actionBorderPx, double actionGapPx,
-        double menuButtonWidthPx, double menuButtonInsetPx, double sortMarkWidthPx)
+        double menuButtonWidthPx, double menuButtonInsetPx, double sortMarkWidthPx,
+        double resizeGripWidthPx, double columnGuideWidthPx)
     {
         RowHeightPx = rowHeightPx;
         HeaderHeightPx = headerHeightPx;
@@ -31,6 +32,8 @@ public sealed record GridMetrics
         MenuButtonWidthPx = menuButtonWidthPx;
         MenuButtonInsetPx = menuButtonInsetPx;
         SortMarkWidthPx = sortMarkWidthPx;
+        ResizeGripWidthPx = resizeGripWidthPx;
+        ColumnGuideWidthPx = columnGuideWidthPx;
     }
 
     /// <summary>The fixed height of every row (ADR-0013) — what the virtualisation
@@ -52,13 +55,13 @@ public sealed record GridMetrics
     /// Sheet has, as the Cell Metrics estimate it with a cell's padding — as text, which
     /// never becomes <c>####</c> (<see cref="CellTextMetrics.For"/>). Emitted inline, never a
     /// stylesheet value.</summary>
-    public double NameBoxWidthPx => CellMetrics.For(ColumnType.Text).EstimatePx("XFD1048576");
+    internal double NameBoxWidthPx => CellMetrics.For(ColumnType.Text).EstimatePx("XFD1048576");
 
     /// <summary>The fill handle's side (ADR-0050, item 5; ADR-0028): a square centred on
     /// the bottom-right corner of the Selection, a little under a third of a row. The
     /// press that grabs it is read against the same number, so the paint and the hit
     /// cannot disagree. Declared, not measured.</summary>
-    public double FillHandleSizePx => Math.Max(5, Math.Round(RowHeightPx * 0.3));
+    internal double FillHandleSizePx => Math.Max(5, Math.Round(RowHeightPx * 0.3));
 
     /// <summary>States the size <see cref="CellMetrics"/>' digit width is true at.</summary>
     public double FontSizePx { get; }
@@ -68,17 +71,17 @@ public sealed record GridMetrics
     public CellTextMetrics CellMetrics { get; }
 
     /// <summary>One action button's own horizontal padding, per side (ADR-0020).</summary>
-    public double ActionPaddingXPx { get; }
+    internal double ActionPaddingXPx { get; }
 
     /// <summary>One action button's border, per side.</summary>
-    public double ActionBorderPx { get; }
+    internal double ActionBorderPx { get; }
 
     /// <summary>The gap between neighbouring action buttons.</summary>
-    public double ActionGapPx { get; }
+    internal double ActionGapPx { get; }
 
     /// <summary>A cell's horizontal padding on one side, read from
     /// <see cref="CellMetrics"/>; a cell pays it twice.</summary>
-    public double CellPaddingXPx => CellMetrics.CellHorizontalPaddingPx;
+    internal double CellPaddingXPx => CellMetrics.CellHorizontalPaddingPx;
 
     /// <summary>The width of one digit, read from <see cref="CellMetrics"/> — the unit
     /// <c>####</c> is counted in (ADR-0016).</summary>
@@ -87,24 +90,36 @@ public sealed record GridMetrics
     /// <summary>One action button's box beside its text: padding both sides, border
     /// both sides, and the gap to the next button — what an Auto Action Column's width
     /// is measured from (ADR-0016/0020).</summary>
-    public double ActionButtonChromePx => (ActionPaddingXPx * 2) + (ActionBorderPx * 2) + ActionGapPx;
+    internal double ActionButtonChromePx => (ActionPaddingXPx * 2) + (ActionBorderPx * 2) + ActionGapPx;
 
     /// <summary>The column-menu button's own width in the header cell (ADR-0010).</summary>
-    public double MenuButtonWidthPx { get; }
+    internal double MenuButtonWidthPx { get; }
 
     /// <summary>The gap between the menu button and the header cell's right edge.</summary>
-    public double MenuButtonInsetPx { get; }
+    internal double MenuButtonInsetPx { get; }
 
     /// <summary>What the menu button takes off the header text's room — width plus the
     /// inset — which an Auto column's header estimate must include, or a short header
     /// stands with its label under the ▾ (ADR-0016/0028).</summary>
-    public double MenuButtonBandPx => MenuButtonWidthPx + MenuButtonInsetPx;
+    internal double MenuButtonBandPx => MenuButtonWidthPx + MenuButtonInsetPx;
 
     /// <summary>The box the sort mark (▲ / ▼) stands in at the end of a sorted header —
     /// an em for the glyph and a gap before it. Emitted as a Geometry Token the stylesheet
     /// sizes the mark with, so the header estimate and the paint read one number, as the
     /// menu button's do (ADR-0016/0029).</summary>
-    public double SortMarkWidthPx { get; }
+    internal double SortMarkWidthPx { get; }
+
+    /// <summary>The width of the resize grip in a header cell's right-hand edge (ADR-0016):
+    /// a hit target, so a CSS pixel count, and emitted as a Geometry Token the stylesheet
+    /// sizes the grip with (ADR-0027/0028; UX-1). Declared, not measured.</summary>
+    internal double ResizeGripWidthPx { get; }
+
+    /// <summary>The painted width of the line a resize drags (ADR-0016) and of the reorder
+    /// drop indicator (ADR-0011). Emitted as a Geometry Token; the stylesheet draws it in
+    /// whole Device Pixels — this width rounded down to the Device Pixel, never under one —
+    /// as it draws a rule (ADR-0090; UX-1). Painted, never laid out. Declared, not
+    /// measured.</summary>
+    internal double ColumnGuideWidthPx { get; }
 
     /// <summary>
     /// The full cell width a header needs (ADR-0016, 2026-09-25): its label, one
@@ -159,7 +174,10 @@ public sealed record GridMetrics
         // 6px/1px/4px ex-grid.css always used, scaled down only where the whole preset is —
         // and the menu button's 16px/6px and the sort mark's box (an em and a 6px gap) travel
         // the same way, so the header estimate and the stylesheet read one number (the
-        // pairing ADR-0027/0028 dissolved).
+        // pairing ADR-0027/0028 dissolved). The resize grip's hit width and the width of the
+        // resize guide and the drop indicator are the 5px and 2px ex-grid.css always drew, in
+        // every preset (UX-1): neither is read by any arithmetic, but no pixel is only a
+        // stylesheet value (ADR-0027).
         // Measured on 2026-10-01 (ticket 83, tests/GlyphWidths): system-ui on macOS (SF) and
         // DejaVu Sans, which Linux paints for system-ui and paints Bold for 600 and 700. At
         // 14px: % 14.031 (DejaVu, 600), a digit 9.75, ( 6.406, and the other class's widest,
@@ -214,6 +232,7 @@ public sealed record GridMetrics
                     .WithGlyphWidths(density == GridDensity.Excel ? DefaultGlyphWidths.At12 : DefaultGlyphWidths.At14, font))
                 .WithFullWidthAtLeast(font),
             actionPad, actionBorder, actionGap,
-            menuWidth, menuInset, sortMark);
+            menuWidth, menuInset, sortMark,
+            resizeGripWidthPx: 5, columnGuideWidthPx: 2);
     }
 }

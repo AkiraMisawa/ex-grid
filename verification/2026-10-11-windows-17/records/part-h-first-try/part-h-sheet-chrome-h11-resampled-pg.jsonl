@@ -1,0 +1,29 @@
+{"t": "12:22:34", "cmd": {"op": "goto", "url": "http://localhost:5299/wide", "ready": "() => !!document.querySelector('.ex-grid .ex-row')"}, "answer": {"ok": "goto", "title": "run17-chrome-54251", "url": "http://localhost:5299/wide"}}
+{"t": "12:22:34", "cmd": {"op": "front"}, "answer": {"ok": "ok front"}}
+{"t": "12:22:34", "cmd": {"op": "input", "cmd": "type 200 ^{KEY0}"}, "answer": {"ok": "ok type keys=1"}}
+{"t": "12:22:36", "cmd": {"op": "goto", "url": "http://localhost:5299/sheet?case=fills", "ready": "() => !!document.querySelector('.ex-grid:has(> .ex-formula-bar) .ex-viewport [id$=\"-r0c0\"]') && !!document.querySelector('.ex-grid:has(> .ex-formula-bar) input.ex-key-field')"}, "answer": {"ok": "goto", "title": "run17-chrome-56053", "url": "http://localhost:5299/sheet?case=fills"}}
+{"t": "12:22:37", "cmd": {"op": "calibrate"}, "answer": {"ok": "calibrate", "dpr": 1.5, "tries": [{"px": 671, "py": 371, "client": {"x": 400, "y": 120}}]}}
+{"t": "12:22:37", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": "run17-chrome-56053"}}
+{"t": "12:22:37", "cmd": {"op": "input", "cmd": "english run17-chrome-56053"}, "answer": {"ok": "ok english was=0x08090809 now=0x08090809"}}
+{"t": "12:22:37", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": 344}}
+{"t": "12:22:39", "cmd": {"op": "input", "cmd": "move 3700 300"}, "answer": {"ok": "ok move"}}
+{"t": "12:22:39", "cmd": {"op": "shot", "file": "%LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\shots-h\\h-h11-zoom-100-chrome.png"}, "answer": {"ok": "shot", "file": "%LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\shots-h\\h-h11-zoom-100-chrome.png"}}
+{"t": "12:22:39", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": {"nameBox": "", "focus": null, "selected": [], "drawn": [], "dpr": 1.5}}}
+{"t": "12:22:40", "cmd": {"op": "goto", "url": "http://localhost:5299/wide", "ready": "() => !!document.querySelector('.ex-grid .ex-row')"}, "answer": {"ok": "goto", "title": "run17-chrome-59777", "url": "http://localhost:5299/wide"}}
+{"t": "12:22:40", "cmd": {"op": "front"}, "answer": {"ok": "ok front"}}
+{"t": "12:22:40", "cmd": {"op": "input", "cmd": "type 200 ^{KEY0}"}, "answer": {"ok": "ok type keys=1"}}
+{"t": "12:22:42", "cmd": {"op": "input", "cmd": "type 300 ^{OEMPLUS}^{OEMPLUS}^{OEMPLUS}"}, "answer": {"ok": "ok type keys=3"}}
+{"t": "12:22:44", "cmd": {"op": "goto", "url": "http://localhost:5299/sheet?case=fills", "ready": "() => !!document.querySelector('.ex-grid:has(> .ex-formula-bar) .ex-viewport [id$=\"-r0c0\"]') && !!document.querySelector('.ex-grid:has(> .ex-formula-bar) input.ex-key-field')"}, "answer": {"ok": "goto", "title": "run17-chrome-63919", "url": "http://localhost:5299/sheet?case=fills"}}
+{"t": "12:22:45", "cmd": {"op": "calibrate"}, "answer": {"ok": "calibrate", "dpr": 2.25, "tries": [{"px": 1601, "py": 678, "client": {"x": 680, "y": 216}}, {"px": 971, "py": 462, "client": {"x": 400, "y": 120}}]}}
+{"t": "12:22:45", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": "run17-chrome-63919"}}
+{"t": "12:22:46", "cmd": {"op": "input", "cmd": "english run17-chrome-63919"}, "answer": {"ok": "ok english was=0x08090809 now=0x08090809"}}
+{"t": "12:22:46", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": 408}}
+{"t": "12:22:47", "cmd": {"op": "input", "cmd": "move 3700 300"}, "answer": {"ok": "ok move"}}
+{"t": "12:22:48", "cmd": {"op": "shot", "file": "%LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\shots-h\\h-h11-zoom-150-chrome.png"}, "answer": {"ok": "shot", "file": "%LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\shots-h\\h-h11-zoom-150-chrome.png"}}
+{"t": "12:22:48", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": {"nameBox": "", "focus": null, "selected": [], "drawn": [], "dpr": 2.25}}}
+{"t": "12:22:48", "cmd": {"op": "goto", "url": "http://localhost:5299/wide", "ready": "() => !!document.querySelector('.ex-grid .ex-row')"}, "answer": {"ok": "goto", "title": "run17-chrome-67856", "url": "http://localhost:5299/wide"}}
+{"t": "12:22:48", "cmd": {"op": "front"}, "answer": {"ok": "ok front"}}
+{"t": "12:22:48", "cmd": {"op": "input", "cmd": "type 200 ^{KEY0}"}, "answer": {"ok": "ok type keys=1"}}
+{"t": "12:22:49", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": 1.5}}
+{"t": "12:22:49", "cmd": {"op": "console"}, "answer": {"ok": "console", "value": [{"t": "2026-10-12T11:22:34.427Z", "type": "info", "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"}, {"t": "2026-10-12T11:22:36.165Z", "type": "info", "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"}, {"t": "2026-10-12T11:22:39.892Z", "type": "info", "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"}, {"t": "2026-10-12T11:22:44.021Z", "type": "info", "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"}, {"t": "2026-10-12T11:22:47.955Z", "type": "info", "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"}]}}
+{"t": "12:22:49", "cmd": {"op": "quit"}, "answer": {"ok": "quit"}}

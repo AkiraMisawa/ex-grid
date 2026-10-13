@@ -1,0 +1,114 @@
+22:08:23.248 Excel 39360, display language before: 2057
+22:08:27.076 dialog: Excel Options | NUIDialog
+22:08:27.956 selected the Language page
+22:08:29.187 invoked the display group's Add a Language...
+22:08:31.698 --- the dialog: Install a display language
+22:08:31.717   Select the language you want to install. | ControlType.Text | enabled True
+22:08:31.717   Install a display language | ControlType.List | enabled True
+22:08:31.718   Afrikaans [Afrikaans] | ControlType.ListItem | enabled True
+22:08:31.718   Albanian [shqip] | ControlType.ListItem | enabled True
+22:08:31.719   Amharic [አማርኛ] | ControlType.ListItem | enabled True
+22:08:31.719   Arabic [العربية] | ControlType.ListItem | enabled True
+22:08:31.720   Armenian [հայերեն] | ControlType.ListItem | enabled True
+22:08:31.720   Assamese [অসমীয়া] | ControlType.ListItem | enabled True
+22:08:31.720   Azerbaijani (Latin) [azərbaycan] | ControlType.ListItem | enabled True
+22:08:31.721   Bangla (Bangladesh) [বাংলা (বাংলাদেশ)] | ControlType.ListItem | enabled True
+22:08:31.721   Basque [euskara] | ControlType.ListItem | enabled True
+22:08:31.721   Belarusian [беларуская] | ControlType.ListItem | enabled True
+22:08:31.722   Bengali (India) [বাংলা (ভারত)] | ControlType.ListItem | enabled True
+22:08:31.722   Bosnian (Latin) [bosanski] | ControlType.ListItem | enabled True
+22:08:31.723   Bulgarian [български] | ControlType.ListItem | enabled True
+22:08:31.723   Catalan [català] | ControlType.ListItem | enabled True
+22:08:31.723   Chinese (Simplified) [中文(简体)] | ControlType.ListItem | enabled True
+22:08:31.724   Chinese (Traditional) [中文(繁體)] | ControlType.ListItem | enabled True
+22:08:31.724   Croatian [hrvatski] | ControlType.ListItem | enabled True
+22:08:31.724   Czech [čeština] | ControlType.ListItem | enabled True
+22:08:31.725   Danish [dansk] | ControlType.ListItem | enabled True
+22:08:31.726   Dari [فارسی] | ControlType.ListItem | enabled True
+22:08:31.726   Dutch [Nederlands] | ControlType.ListItem | enabled True
+22:08:31.727   English (United Kingdom) | ControlType.ListItem | enabled False
+22:08:31.727   English (United States) | ControlType.ListItem | enabled True
+22:08:31.728   Estonian [eesti] | ControlType.ListItem | enabled True
+22:08:31.728   Filipino [Filipino] | ControlType.ListItem | enabled True
+22:08:31.729   Finnish [suomi] | ControlType.ListItem | enabled True
+22:08:31.729   French (Canada) [français] | ControlType.ListItem | enabled True
+22:08:31.729   French (France) [français] | ControlType.ListItem | enabled True
+22:08:31.730   Galician [galego] | ControlType.ListItem | enabled True
+22:08:31.730   Georgian [ქართული] | ControlType.ListItem | enabled True
+22:08:31.731   German [Deutsch] | ControlType.ListItem | enabled True
+22:08:31.731   Greek [Ελληνικά] | ControlType.ListItem | enabled True
+22:08:31.731   Gujarati [ગુજરાતી] | ControlType.ListItem | enabled True
+22:08:31.732   Hebrew [עברית] | ControlType.ListItem | enabled True
+22:08:31.732   Hindi [हिन्दी] | ControlType.ListItem | enabled True
+22:08:31.732   Hungarian [magyar] | ControlType.ListItem | enabled True
+22:08:31.733   Icelandic [íslenska] | ControlType.ListItem | enabled True
+22:08:31.733   Indonesian [Indonesia] | ControlType.ListItem | enabled True
+22:08:31.733   Irish [Gaeilge] | ControlType.ListItem | enabled True
+22:08:31.734   Italian [italiano] | ControlType.ListItem | enabled True
+22:08:31.734   Japanese [日本語] | ControlType.ListItem | enabled False
+22:08:31.734   Kannada [ಕನ್ನಡ] | ControlType.ListItem | enabled True
+22:08:31.734   Kazakh [қазақ тілі] | ControlType.ListItem | enabled True
+22:08:31.735   Khmer [ខ្មែរ] | ControlType.ListItem | enabled True
+22:08:31.735   Kiswahili [Kiswahili] | ControlType.ListItem | enabled True
+22:08:31.736   Konkani [कोंकणी] | ControlType.ListItem | enabled True
+22:08:31.736   Korean [한국어] | ControlType.ListItem | enabled True
+22:08:31.736   Kyrgyz [кыргызча] | ControlType.ListItem | enabled True
+22:08:31.737   Latvian [latviešu] | ControlType.ListItem | enabled True
+22:08:31.737   Lithuanian [lietuvių] | ControlType.ListItem | enabled True
+22:08:31.738   Luxembourgish [Lëtzebuergesch] | ControlType.ListItem | enabled True
+22:08:31.738   Macedonian [македонски] | ControlType.ListItem | enabled True
+22:08:31.738   Malay [Melayu] | ControlType.ListItem | enabled True
+22:08:31.739   Malayalam [മലയാളം] | ControlType.ListItem | enabled True
+22:08:31.739   Maltese [Malti] | ControlType.ListItem | enabled True
+22:08:31.739   Māori [Māori] | ControlType.ListItem | enabled True
+22:08:31.740   Marathi [मराठी] | ControlType.ListItem | enabled True
+22:08:31.740   Mongolian [монгол] | ControlType.ListItem | enabled True
+22:08:31.741   Nepali [नेपाली] | ControlType.ListItem | enabled True
+22:08:31.741   Norwegian (Bokmål) [norsk bokmål] | ControlType.ListItem | enabled True
+22:08:31.741   Norwegian (Nynorsk) [norsk nynorsk] | ControlType.ListItem | enabled True
+22:08:31.742   Odia [ଓଡ଼ିଆ] | ControlType.ListItem | enabled True
+22:08:31.742   Persian [فارسی] | ControlType.ListItem | enabled True
+22:08:31.743   Polish [polski] | ControlType.ListItem | enabled True
+22:08:31.743   Portuguese (Brazil) [Português (Brasil)] | ControlType.ListItem | enabled True
+22:08:31.743   Portuguese (Portugal) [português (Portugal)] | ControlType.ListItem | enabled True
+22:08:31.744   Punjabi [ਪੰਜਾਬੀ] | ControlType.ListItem | enabled True
+22:08:31.744   Quechua [Runasimi] | ControlType.ListItem | enabled True
+22:08:31.744   Romanian [română] | ControlType.ListItem | enabled True
+22:08:31.745   Russian [русский] | ControlType.ListItem | enabled True
+22:08:31.745   Scottish Gaelic [Gàidhlig] | ControlType.ListItem | enabled True
+22:08:31.746   Serbian (Cyrillic) [српски] | ControlType.ListItem | enabled True
+22:08:31.746   Serbian (Cyrillic, Bosnia and Herzegovina) [српски] | ControlType.ListItem | enabled True
+22:08:31.746   Serbian (Latin) [srpski] | ControlType.ListItem | enabled True
+22:08:31.747   Sindhi (Arabic) [سنڌي] | ControlType.ListItem | enabled True
+22:08:31.747   Sinhala [සිංහල] | ControlType.ListItem | enabled True
+22:08:31.747   Slovak [slovenčina] | ControlType.ListItem | enabled True
+22:08:31.748   Slovenian [slovenščina] | ControlType.ListItem | enabled True
+22:08:31.748   Spanish (Mexico) [español] | ControlType.ListItem | enabled True
+22:08:31.748   Spanish (Spain) [español] | ControlType.ListItem | enabled True
+22:08:31.749   Swedish [svenska] | ControlType.ListItem | enabled True
+22:08:31.749   Tamil [தமிழ்] | ControlType.ListItem | enabled True
+22:08:31.750   Tatar [татар] | ControlType.ListItem | enabled True
+22:08:31.750   Telugu [తెలుగు] | ControlType.ListItem | enabled True
+22:08:31.750   Thai [ไทย] | ControlType.ListItem | enabled True
+22:08:31.751   Turkish [Türkçe] | ControlType.ListItem | enabled True
+22:08:31.751   Turkmen [türkmen dili] | ControlType.ListItem | enabled True
+22:08:31.752   Ukrainian [українська] | ControlType.ListItem | enabled True
+22:08:31.752   Urdu [اردو] | ControlType.ListItem | enabled True
+22:08:31.752   Uyghur [ئۇيغۇرچە] | ControlType.ListItem | enabled True
+22:08:31.753   Uzbek (Latin) [o‘zbek] | ControlType.ListItem | enabled True
+22:08:31.753   Valencian [valencià] | ControlType.ListItem | enabled True
+22:08:31.754   Vietnamese [Tiếng Việt] | ControlType.ListItem | enabled True
+22:08:31.754   Welsh [Cymraeg] | ControlType.ListItem | enabled True
+22:08:31.754   Line up | ControlType.Button | enabled True
+22:08:31.755   Page up | ControlType.Button | enabled True
+22:08:31.756   Position | ControlType.Thumb | enabled True
+22:08:31.756   Page down | ControlType.Button | enabled True
+22:08:31.756   Line down | ControlType.Button | enabled True
+22:08:31.757     | ControlType.Group | enabled True
+22:08:31.757   Set as Office display language | ControlType.CheckBox | enabled True
+22:08:31.757   Install | ControlType.Button | enabled True
+22:08:31.758   Cancel | ControlType.Button | enabled True
+22:08:31.758   Size box | ControlType.Thumb | enabled True
+22:08:31.784 invoked Cancel on it
+22:08:32.811 invoked Cancel on Options
+22:08:36.338 UILanguageTag=en-GB FollowSystemUI= UISnapshotLanguages=en-gb;ja-jp

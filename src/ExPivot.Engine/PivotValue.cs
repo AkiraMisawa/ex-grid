@@ -13,7 +13,7 @@ namespace ExPivot.Engine;
 /// <c>decimal</c> or the shortest round-trip <c>double</c>, which Excel reads back as the same
 /// number, and an error value's own text. <see cref="ToString()"/> is the shown text.</para>
 /// </summary>
-public sealed class PivotValue : IFormattable
+internal sealed class PivotValue : IFormattable
 {
     /// <summary>Excel's error value for a division by zero.</summary>
     public const string DivideByZeroText = "#DIV/0!";

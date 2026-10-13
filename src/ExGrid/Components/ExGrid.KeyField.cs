@@ -71,7 +71,9 @@ public partial class ExGrid<TRow>
     /// <para>Called by the grid's own script module and not for Consumers: it is public only
     /// because JavaScript interop requires it.</para>
     /// </summary>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnKeyFieldCompositionStartAsync()
     {
         if (_disposed || _editMode != EditMode.None || _selection.Selection.IsEmpty || FocusCellIsPainted())
@@ -101,7 +103,9 @@ public partial class ExGrid<TRow>
     /// <param name="text">The composition's text.</param>
     /// <param name="paint">The paint the Viewport named at the composition's start
     /// (<c>data-ex-paint</c>); left out, the newest.</param>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task<bool> OnKeyFieldTextAsync(string text, int paint = PaintNotTold)
     {
         if (_disposed)

@@ -115,7 +115,7 @@ public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 /// <para><see cref="ValueListKey"/> is where the contents hand a key pressed on their value
 /// list — its checkboxes, "(Select All)" — for Excel's letters (ADR-0044): S, O and C run
 /// the commands above and close the popover, and E moves to the search box through
-/// <see cref="SearchRequest"/>. The core decides, by <see cref="MenuKeys.Letter"/>,
+/// <see cref="SearchRequest"/>. The core decides, by <see cref="MenuKeys"/>' column-menu letters,
 /// and every other key means nothing to it; the task completes when what the key ran has.
 /// A key in a text field is never handed over: a letter there is text. The element that
 /// hands them over carries the class <c>ex-value-list</c>, by which the grid's key listener
