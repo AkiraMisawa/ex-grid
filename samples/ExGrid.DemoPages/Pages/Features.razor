@@ -120,6 +120,11 @@
     <p class="demo-status">
         <button id="summary-answer" @onclick="AnswerHeldSummary">Answer the summary</button>
         <span id="summary-asked">Asked: @_heldAsked; cancelled: @_heldCancelled; answered: @_heldAnswered</span>
+        @if (HeldIgnoresCancellation)
+        {
+            <button id="summary-answer-late" @onclick="AnswerReplacedHeldSummary">Answer the replaced question</button>
+            <span id="summary-late">Answered late: @_heldLateAnswered</span>
+        }
     </p>
     <div id="held-summary">
         <ExGrid TRow="DemoTrade"
@@ -195,6 +200,20 @@
 
     private bool HeldSummaryOn => SummaryName == "held";
 
+    /// <summary>
+    /// <c>?late=1</c> beside <c>?summary=held</c>: the page ignores the token, as a careless Consumer
+    /// may, and keeps the question a new selection replaced, so that it can be answered after the
+    /// grid has cancelled it. The grid shows nothing of that answer (ADR-0130, SM-2 through SM-11).
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "late")]
+    public string? LateParameter { get; set; }
+
+    private bool HeldIgnoresCancellation => HeldSummaryOn && LateParameter == "1";
+
+    private TaskCompletionSource<GridSummaryResult>? _heldReplacedAnswer;
+    private GridSummaryRequest? _heldReplacedRequest;
+    private int _heldLateAnswered;
+
     private const int HeldSummaryMostCells = 4;
 
     private DemoTrade[] _heldRows = [];
@@ -216,12 +235,17 @@
         var answer = new TaskCompletionSource<GridSummaryResult>(TaskCreationOptions.RunContinuationsAsynchronously);
         cancellation.Register(() =>
         {
-            if (answer.TrySetCanceled(cancellation))
+            if (HeldIgnoresCancellation ? !answer.Task.IsCompleted : answer.TrySetCanceled(cancellation))
             {
                 _heldCancelled++;
                 _ = ShowHeldCountsAsync();
             }
         });
+        if (HeldIgnoresCancellation && _heldAnswer is { Task.IsCompleted: false })
+        {
+            _heldReplacedAnswer = _heldAnswer;
+            _heldReplacedRequest = _heldRequest;
+        }
         _heldAnswer = answer;
         _heldRequest = request;
         return answer.Task;
@@ -236,6 +260,18 @@
         _heldRequest = null;
         if (answer.TrySetResult(GridSummary.Of(_heldRows, request, HeldValueOf)))
             _heldAnswered++;
+    }
+
+    /// <summary>Answers the question a new selection replaced, with its own figures, after the grid
+    /// cancelled it (<c>?late=1</c>).</summary>
+    private void AnswerReplacedHeldSummary()
+    {
+        if (_heldReplacedAnswer is not { } answer || _heldReplacedRequest is not { } request)
+            return;
+        _heldReplacedAnswer = null;
+        _heldReplacedRequest = null;
+        if (answer.TrySetResult(GridSummary.Of(_heldRows, request, HeldValueOf)))
+            _heldLateAnswered++;
     }
 
     private Func<DemoTrade, object?>? HeldValueOf(string column)

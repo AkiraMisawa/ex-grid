@@ -229,6 +229,40 @@ for (const chrome of ['builtin', 'mud']) {
             }
         });
 
+        test(`SM-11 / ADR-0130 (SM-2): the answer to a question a new selection replaced, given after the grid cancelled it, is shown nowhere (${chrome})`, async ({ page }) => {
+            // The page ignores the token and keeps the replaced question, as a careless Consumer may.
+            await page.goto(`/features?chrome=${chrome}&summary=held&late=1`);
+            await expect(held(page).locator('.ex-row').first()).toBeVisible();
+            await alterPage(page, () => {
+                const root = document.querySelector('#held-summary .ex-grid');
+                const seen = [];
+                const observer = new MutationObserver(() => seen.push(root.querySelector('.ex-summary')?.innerText ?? ''));
+                observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true });
+                window.__heldLateSeen = seen;
+                return () => { observer.disconnect(); delete window.__heldLateSeen; };
+            });
+
+            // Two rows asked, then a third before the answer: the two rows' question is replaced.
+            await notional(page, 0).click({ force: true });
+            await page.keyboard.press('Shift+ArrowDown');
+            await expect(page.locator('#summary-asked')).toHaveText('Asked: 1; cancelled: 0; answered: 0');
+            await page.keyboard.press('Shift+ArrowDown');
+            await expect(page.locator('#summary-asked')).toHaveText('Asked: 2; cancelled: 1; answered: 0');
+
+            // Answered now, with the two rows' figures: the grid has already let that question go.
+            await page.locator('#summary-answer-late').dispatchEvent('click');
+            await expect(page.locator('#summary-late')).toHaveText('Answered late: 1');
+            // The answer to the question standing comes after it and is shown; by then the late one
+            // has had its turn, so what stood in between is read off every render.
+            await answer(page);
+            await expect.poll(() => figureTexts(held(page))).toContain(`Sum: ${await sumOf(page, 3)}`);
+            expect(await figureTexts(held(page))).toContain('Count: 3');
+
+            const seen = await page.evaluate(() => window.__heldLateSeen);
+            expect(seen.some((text) => /Count: 3/.test(text)), 'the standing answer was observed').toBe(true);
+            expect(seen.filter((text) => /Count: 2\b/.test(text)), 'the replaced question\'s figures, shown').toEqual([]);
+        });
+
         test(`SM-11 / ADR-0130 (SM-4): a declined question shows its reason in place of the figures, and no figure with it (${chrome})`, async ({ page }) => {
             await notional(page, 0).click({ force: true });
             for (let i = 0; i < 4; i++) {
