@@ -5,26 +5,26 @@
 | ExGrid | 95.7% | 88.8% |
 | ExSheet | 96.1% | 89.7% |
 | ExPivot | 94.2% | 85.2% |
-| Data | 94.5% | 90.3% |
+| Data | 94.4% | 90.2% |
 
 # Summary
 <details open><summary>Summary</summary>
 
 |||
 |:---|:---|
-| Generated on: | 10/13/2026 - 13:58:46 |
+| Generated on: | 10/13/2026 - 15:07:45 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 838 |
 | Files: | 461 |
-| **Line coverage:** | 95.3% (56648 of 59432) |
-| Covered lines: | 56648 |
-| Uncovered lines: | 2784 |
-| Coverable lines: | 59432 |
-| Total lines: | 100431 |
-| **Branch coverage:** | 88.4% (32851 of 37128) |
-| Covered branches: | 32851 |
-| Total branches: | 37128 |
+| **Line coverage:** | 95.3% (56649 of 59434) |
+| Covered lines: | 56649 |
+| Uncovered lines: | 2785 |
+| Coverable lines: | 59434 |
+| Total lines: | 100445 |
+| **Branch coverage:** | 88.4% (32854 of 37130) |
+| Covered branches: | 32854 |
+| Total branches: | 37130 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -160,8 +160,8 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|95.6%|90.4%|
 |ExGrid.Components.ExGrid<TRow>|90.9%|88%|
+|ExGrid.Components.ExGrid<TRow>|95.6%|90.4%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
@@ -277,7 +277,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.6%**|
+|**ExGrid.Data**|**94.6%**|**90.5%**|
 |ExGrid.Data.AggregateAccumulator|86%|87.8%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -366,7 +366,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -711,7 +711,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**92.4%**|**85.7%**|
+|**ExSheet**|**92.4%**|**85.8%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -722,10 +722,10 @@
 |ExSheet.ColourItem|95.2%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|91.4%|85.8%|
+|ExSheet.Components.ExSheet|91.4%|86%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91.4%|85.8%|
+|ExSheet.Components.ExSheet<T>|91.4%|86%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.4%|
 |ExSheet.DefaultToolbarRow|100%|50%|
