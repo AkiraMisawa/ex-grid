@@ -1,4 +1,4 @@
-namespace ExposureChart;
+namespace ExposureChart.Analytics;
 
 /// <summary>
 /// One pillar of a CDS curve: a quoted par spread and what the bootstrap made of it. The first row

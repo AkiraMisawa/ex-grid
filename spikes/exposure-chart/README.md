@@ -37,7 +37,7 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
 
 Par spreads by tenor read on the left axis (bp), drawn as points joined; the hazard rates read on
 the right (% a year), drawn as what they are — piecewise constant over (tᵢ₋₁, tᵢ], filled where
-the rate holds, open where it does not. The bootstrap (`CdsData.cs`) prices each maturity's CDS at
+the rate holds, open where it does not. The bootstrap (`Analytics/CdsData.cs`) prices each maturity's CDS at
 par with the earlier intervals fixed: 40% recovery, a flat 3% rate, quarterly premiums on the IMM
 dates (ACT/360) with half a period's accrual on default, the protection leg exact on each interval,
 and the first coupon counted from today since the buyer is paid back what accrued before it (the
@@ -59,7 +59,7 @@ Writing the page, the grid refused it by name: a Header Group straddled the pinn
 
 One row per reference entity — ticker, name, currency, seniority, doc clause, recovery — and its
 tenors across, under two Header Groups: the par spreads, and the hazard rates bootstrapped with
-the row's own recovery (`CdsCurves.cs`; where no positive rate prices a quote the rate is left
+the row's own recovery (`Analytics/CdsCurves.cs`; where no positive rate prices a quote the rate is left
 empty, with every later one, rather than invented). This is Excel's "series in rows", and the
 chart reads it so (`RowChartDefinition`, `RowChartSpec`):
 
@@ -91,6 +91,15 @@ table with holes reads worse than the list. A click hides an entry, a row's head
 header hides all it names, and a click on something wholly hidden shows it again; hidden entries
 stay in the legend, faded, so they can be found. It is the filter's own state, so both agree.
 Each sample is drawn as its series is — a line, points, a step's open and filled ends.
+
+## What is computed where
+
+The profile, the bootstrap and the hazard rates are under `Analytics/`, which stands for the risk
+system: computed outside the chart and the grid, and put in the grid's rows by the page, as a
+Consumer would put what its analytics returned (decided with the user, 2026-10-13: a bootstrap
+belongs to analytics, never to the chart package). Nothing under `Charting/` or `ChartBox`
+refers to it. The chart knows a hazard rate only by its column's declarations — the right axis,
+"% a year", a step over (tᵢ₋₁, tᵢ] — which is the analytics' convention, said by the Consumer.
 
 ## How it is built
 

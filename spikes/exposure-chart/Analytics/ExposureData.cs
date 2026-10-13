@@ -1,4 +1,4 @@
-namespace ExposureChart;
+namespace ExposureChart.Analytics;
 
 /// <summary>
 /// One date of a netting set's exposure profile, before and after a proposed trade. Every figure

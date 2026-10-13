@@ -1,4 +1,4 @@
-namespace ExposureChart;
+namespace ExposureChart.Analytics;
 
 /// <summary>
 /// A reference entity's CDS curve as a trader's screen shows it: one row, its tenors across, and
