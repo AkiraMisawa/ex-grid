@@ -39,6 +39,13 @@ What the run does by hand is two kinds of work, and they age differently:
   through COM).
   - The remedy is a run of `oracle.ps1 -Area` over the files that hold such cases, which takes minutes.
     The whole corpus is never put to Excel again.
+  - *(2026-10-12, decided with the user, with the release workflow's check,
+    [ADR-0042](./0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)'s "How a
+    version is published".)* **Only an `oracleSkip` that says why `oracle.ps1` cannot ask a case excuses
+    it.** One that says "ask by keys" names a case `oracle.ps1 -Keys` asks, and `engineDiffersByDecision`
+    names a case `oracle.ps1` asks and compares; both stay open until a run has answered them and a
+    person has marked the case `observed`. A release candidate is refused on the same terms as a version
+    without a suffix.
 - **The seventeenth run is the one exception**: the questions that piled up before this rule, asked
   together before `0.1.0`.
 
@@ -55,6 +62,46 @@ What the run does by hand is two kinds of work, and they age differently:
 - **The release workflow checks it.** For each row it reads the last record's commit from
   `verification/` and compares the paths with the signed-off commit (`git diff --quiet`). It refuses
   the tag if any row's paths changed and no newer record exists.
+  *(2026-10-12, decided with the user, with the check, ADR-0042:
+  - **Each row's last record is indexed** in `verification/by-hand.json` with the row's paths, which
+    the Definition of Done's Step 4 table names too; a tag where the two differ is refused. A record
+    names the commit it verified, in full in the index, and the record's own file names it too.
+  - **Each run tags the commit it verified** `verified/` followed by the name of its record's directory
+    under `verification/`, and nothing else, one tag for each record directory, whatever the platform or
+    the run's purpose: `verification/2026-10-01-windows-browser-11/keys.md` is tagged
+    `verified/2026-10-01-windows-browser-11`. The session that made the run pushes the tag. The record
+    names its tag, a record whose tag is not exactly that is refused, and the release workflow fetches the
+    record's commit through it. A record's commit must stay fetchable: a tag the workflow cannot fetch,
+    or one that names another commit, refuses the tag as unchecked, and never lets the row hold.
+  - **A release candidate**, which has no sign-off, is judged at its tagged commit.
+  - **WR-10's floor run is indexed beside the rows**, with its paths, `:(glob)src/*.MudBlazor/**` and
+    `samples/ExGrid.DemoPages/`, so that the release workflow refuses a tag whose Wrappers or demo pages
+    changed since the floor run
+    ([ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)'s notes of this
+    date).
+  - **A MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that
+    version only.** The floor run, layer 3 at 9.6.0, holds while its paths are unchanged.)*
+  *(2026-10-12, decided with the user: **an unlisted version is not asked for.** The release check reports it
+  as out of the check because it is unlisted.)*
+  *(2026-10-12, decided with the user: **a layer-2 run at a 9.x published after the floor record is a run of
+  its own.** Its record goes in its own `verification/<date>-<name>/` directory, and the run tags the commit
+  it verified `verified/` followed by that directory's name, as every run does. WR-10's entry in
+  `verification/by-hand.json` names that record (commit, tag, path, verdict, the version it covered) besides
+  the floor record. The release check reads every record WR-10's entry names: the floor record's paths hold
+  since its commit, and each later record's tag names its commit.)*
+  *(2026-10-12, how the release workflow checks the notes above: each record WR-10's entry names is a pass,
+  names its commit, and is fetched through its tag, which names that commit; each holds while the row's
+  paths are unchanged between its own commit and X, as every record checked by hand is held; and two
+  records in one directory are refused. Each record names the MudBlazor versions its layer-2 runs covered,
+  and the check holds the union of them to
+  what nuget.org has published: it reads the range each Wrapper's project declares on its reference to
+  MudBlazor, reads each version's `published` date from nuget.org's registration index, takes X's time to be
+  X's commit time (for a release candidate, the commit it is tagged on), and refuses the tag naming each
+  stable version inside the range, published before X's time, that no record names. A version published
+  after X's time is not asked for, nor is an unlisted one, which a notice names. One listed and given no
+  date is asked for, since whether it came before X cannot be said. One published before the floor record
+  is asked of the floor run's layer-2 runs, which cover every published version of the range. An index it
+  cannot read refuses the tag as unchecked.)*
 - **The paths are drawn wide.** A list too narrow lets a change through unchecked, which is the
   failure this family refuses. Each row names whole files, and, where its behaviour crosses several,
   their directory:
