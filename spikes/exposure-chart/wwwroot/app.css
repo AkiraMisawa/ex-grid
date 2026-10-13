@@ -36,3 +36,10 @@ h1 { font-size: 18px; margin: 0 0 4px; }
 .notice { color: #92400e; }
 .sep-text { color: #6b7280; }
 .tip-value.absent { color: #9ca3af; }
+.nav { display: flex; gap: 16px; margin-bottom: 12px; font-size: 13px; }
+.nav a { color: #4b5563; text-decoration: none; padding: 2px 0; }
+.nav a.active { color: #111827; font-weight: 600; border-bottom: 2px solid #2563eb; }
+.layout { font: inherit; }
+.chart { --ex-chart-slot-3: #059669; --ex-chart-slot-4: #be185d; }
+.ex-chart-swatch-3 { background: var(--ex-chart-slot-3); }
+.ex-chart-swatch-4 { background: var(--ex-chart-slot-4); }

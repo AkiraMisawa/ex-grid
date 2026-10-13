@@ -1,10 +1,9 @@
 @page "/"
 @using System.Globalization
-@using Microsoft.JSInterop
-@implements IAsyncDisposable
-@inject IJSRuntime JS
 
 <PageTitle>Exposure chart PoC</PageTitle>
+
+<Nav />
 
 <h1>Exposure profile — chart a selection</h1>
 <p class="hint">
@@ -21,238 +20,20 @@
 <div class="toolbar">
     <button type="button" @onclick="ChartCurrentSelection">Chart selection</button>
     <span class="selected">@(_selection.IsEmpty ? "Nothing selected" : $"{_selection.Ranges.Count} range(s), {_selection.CellCount:N0} cells")</span>
-    <label><input type="radio" name="layout" checked="@(_layout == ChartLayout.PanelPerGroup)"
-                  @onchange="() => SetLayout(ChartLayout.PanelPerGroup)" /> Panel per group</label>
-    <label><input type="radio" name="layout" checked="@(_layout == ChartLayout.OneAxis)"
-                  @onchange="() => SetLayout(ChartLayout.OneAxis)" /> One axis (Excel's default)</label>
     <span class="sep"></span>
     <button type="button" @onclick="Recalculate">Recalculate: hedge ×@((_hedge + 0.5).ToString("0.0", CultureInfo.InvariantCulture))</button>
 </div>
 
-@if (_refusal is not null)
-{
-    <p class="refusal" role="alert">@_refusal</p>
-}
-@if (_notice is not null)
-{
-    <p class="notice" role="status">@_notice</p>
-}
-
-@if (_model is { } model)
-{
-    <section class="chart">
-        <div class="chart-head">
-            <span class="definition">
-                x: <b>@_definition!.XColumn</b> · @_definition.Series.Count series · @_definition.AllKeys.Count dates
-                @if (model.Missing > 0)
-                {
-                    <span class="refusal"> — @model.Missing of them no longer in the data</span>
-                }
-            </span>
-            <button type="button" class="add-toggle @(_pickerOpen ? "open" : "")" aria-expanded="@(_pickerOpen ? "true" : "false")"
-                    @onclick="() => _pickerOpen = !_pickerOpen">+ Add series</button>
-            <button type="button" class="filter-toggle @(_filterOpen ? "open" : "")" aria-expanded="@(_filterOpen ? "true" : "false")"
-                    @onclick="() => _filterOpen = !_filterOpen">Filter @(FilterSummary(model)) ▾</button>
-            <a class="download" href="@ChartCsv.DataUrl(_csv!, "text/csv")" download="exposure-profile.csv">Download CSV</a>
-            <a class="download" href="@ChartCsv.DataUrl(_csvLong!, "text/csv")" download="exposure-profile-long.csv" title="One row per point: Series, Date, Value">CSV (long)</a>
-            <a class="download" href="@ChartCsv.DataUrl(_svg!, "image/svg+xml")" download="exposure-profile.svg">Download SVG</a>
-            <button type="button" @onclick="CloseChart">Close</button>
-        </div>
-        @if (_pickerOpen)
-        {
-            var addable = _columns.Where(c => c.Type == ColumnType.Number && !_definition!.SeriesColumns.Contains(c.Name)).ToList();
-            <div class="chart-filter" role="group" aria-label="Add series">
-                <div class="filter-section">
-                    <div class="filter-heading"><span>Add series</span></div>
-                    @if (addable.Count == 0)
-                    {
-                        <p class="filter-note">Every number column is in the chart.</p>
-                    }
-                    @foreach (var group in addable.GroupBy(c => GroupLabelOf(c.Name)))
-                    {
-                        var all = group.All(c => _picked.Contains(c.Name));
-                        <div class="filter-row">
-                            <label class="group-label">
-                                <input type="checkbox" checked="@all" @onchange="() => Pick(group.Select(c => c.Name), !all)" />
-                                @(group.Key.Length == 0 ? "(no group)" : group.Key)
-                            </label>
-                            @foreach (var column in group)
-                            {
-                                var on = _picked.Contains(column.Name);
-                                <label class="series-label">
-                                    <input type="checkbox" checked="@on" @onchange="() => Pick([column.Name], !on)" />
-                                    @column.Header
-                                </label>
-                            }
-                        </div>
-                    }
-                    <div class="filter-row">
-                        <button type="button" disabled="@(_picked.Count == 0)" @onclick="AddPicked">Add @(_picked.Count == 0 ? "" : $"{_picked.Count} series")</button>
-                        <span class="sep-text">or</span>
-                        <button type="button" @onclick="AddSelection">Add the grid's selection</button>
-                        <span class="filter-note">@SelectionDescription()</span>
-                    </div>
-                </div>
-            </div>
-        }
-        @if (_filterOpen)
-        {
-            <div class="chart-filter" role="group" aria-label="Chart filter">
-                <div class="filter-section">
-                    <div class="filter-heading">
-                        <span>Series</span>
-                        <span class="leaf-toggles">
-                            @foreach (var leaf in model.Leaves)
-                            {
-                                var on = model.AllSeries.Where(s => s.Leaf == leaf).All(s => !_view.HiddenSeries.Contains(s.Column));
-                                <button type="button" class="chip @(on ? "on" : "")" aria-pressed="@(on ? "true" : "false")"
-                                        @onclick="() => ShowLeaf(leaf, !on)">@leaf</button>
-                            }
-                        </span>
-                    </div>
-                    @foreach (var group in model.AllSeries.GroupBy(s => s.Group))
-                    {
-                        var all = group.All(s => !_view.HiddenSeries.Contains(s.Column));
-                        <div class="filter-row">
-                            <label class="group-label">
-                                <input type="checkbox" checked="@all" @onchange="() => ShowColumns(group.Select(s => s.Column), !all)" />
-                                @(group.Key.Length == 0 ? "(no group)" : group.Key)
-                            </label>
-                            @foreach (var series in group)
-                            {
-                                var shown = !_view.HiddenSeries.Contains(series.Column);
-                                <label class="series-label">
-                                    <input type="checkbox" checked="@shown" @onchange="() => ShowColumns([series.Column], !shown)" />
-                                    <span class="swatch ex-chart-swatch-@(series.Slot % 5)"></span>@series.Leaf
-                                </label>
-                            }
-                        </div>
-                    }
-                </div>
-                <div class="filter-section">
-                    <div class="filter-heading"><span>Style</span></div>
-                    @foreach (var group in model.AllSeries.Select(s => s.Group).Distinct())
-                    {
-                        var style = StyleOfGroup(group);
-                        <div class="filter-row">
-                            <span class="group-label">@(group.Length == 0 ? "(no group)" : group)</span>
-                            <label>Draw
-                                <select value="@style.Draw" @onchange="e => SetStyle(group, s => s with { Draw = Enum.Parse<SeriesDraw>((string)e.Value!) })">
-                                    @foreach (var (draw, label) in DrawLabels)
-                                    {
-                                        <option value="@draw">@label</option>
-                                    }
-                                </select>
-                            </label>
-                            <label>Marker
-                                <select value="@style.Marker" @onchange="e => SetStyle(group, s => s with { Marker = Enum.Parse<MarkerShape>((string)e.Value!) })">
-                                    @foreach (var (shape, label) in MarkerLabels)
-                                    {
-                                        <option value="@shape">@label</option>
-                                    }
-                                </select>
-                            </label>
-                        </div>
-                    }
-                </div>
-                <div class="filter-section">
-                    <div class="filter-heading"><span>Horizontal axis</span></div>
-                    <div class="filter-row">
-                        <label>Ticks
-                            <select value="@_xAxis.Ticks" @onchange="e => SetAxis(a => a with { Ticks = Enum.Parse<XTicks>((string)e.Value!) })">
-                                <option value="@XTicks.Calendar">Calendar</option>
-                                <option value="@XTicks.DataDates">Every date in the data</option>
-                                <option value="@XTicks.Tenors">Tenors (1M, 3M, 1Y …)</option>
-                            </select>
-                        </label>
-                        <label>Labels
-                            <select value="@_xAxis.Label" @onchange="e => SetAxis(a => a with { Label = Enum.Parse<XLabel>((string)e.Value!) })">
-                                <option value="@XLabel.Auto">Auto</option>
-                                <option value="@XLabel.Year">yyyy</option>
-                                <option value="@XLabel.YearMonth">yyyy-MM</option>
-                                <option value="@XLabel.IsoDate">yyyy-MM-dd</option>
-                                <option value="@XLabel.MonthNameYear">MMM yyyy</option>
-                                <option value="@XLabel.Tenor">Tenor (6M, 2Y)</option>
-                            </select>
-                        </label>
-                        <label>Angle
-                            <select value="@_xAxis.Angle" @onchange="e => SetAxis(a => a with { Angle = int.Parse((string)e.Value!, Invariant) })">
-                                <option value="0">0°</option>
-                                <option value="45">45°</option>
-                                <option value="90">90°</option>
-                            </select>
-                        </label>
-                        @{ var ticks = ChartSvg.TicksOf(model); var labelled = ticks.Count(t => t.Label is not null); }
-                        @if (labelled < ticks.Count)
-                        {
-                            <span class="filter-note">@labelled of @ticks.Count labels fit; every tick is still drawn.</span>
-                        }
-                    </div>
-                </div>
-                <div class="filter-section">
-                    <div class="filter-heading"><span>Dates</span></div>
-                    <div class="filter-row">
-                        <label>From
-                            <select value="@Key(_view.From ?? model.AllDates[0])" @onchange="e => SetRange(Parse(e.Value), _view.To)">
-                                @foreach (var d in model.AllDates)
-                                {
-                                    <option value="@Key(d)">@Key(d)</option>
-                                }
-                            </select>
-                        </label>
-                        <label>To
-                            <select value="@Key(_view.To ?? model.AllDates[^1])" @onchange="e => SetRange(_view.From, Parse(e.Value))">
-                                @foreach (var d in model.AllDates)
-                                {
-                                    <option value="@Key(d)">@Key(d)</option>
-                                }
-                            </select>
-                        </label>
-                        @foreach (var (label, years) in Presets)
-                        {
-                            <button type="button" class="chip" @onclick="() => SetHorizon(model, years)">@label</button>
-                        }
-                    </div>
-                </div>
-                <p class="filter-note">The CSV holds what the chart shows.</p>
-            </div>
-        }
-        <div class="chart-body" @ref="_chartBody">
-            @((MarkupString)_pageSvg!)
-            @if (_band is { } band && band < model.Dates.Count)
-            {
-                var anchor = ChartSvg.Anchor(model, band);
-                <div class="chart-tip @(anchor.OnLeft ? "on-left" : "")" role="tooltip"
-                     style="left: @Percent(anchor.X); top: @Percent(anchor.Top)">
-                    <div class="tip-date">@Key(model.Dates[band])</div>
-                    @foreach (var panel in model.Panels)
-                    {
-                        @if (panel.Title.Length > 0)
-                        {
-                            <div class="tip-group">@panel.Title</div>
-                        }
-                        @foreach (var series in panel.Series)
-                        {
-                            <div class="tip-row">
-                                <span class="swatch ex-chart-swatch-@(series.Slot % 5)"></span>
-                                <span class="tip-name">@(panel.Title.Length > 0 ? series.Leaf : series.Name)</span>
-                                @{ var point = series.At(model.Dates[band]); }
-                                <span class="tip-value @(point is null ? "absent" : "")">@(point is null ? "—" : point.Value.Y is { } v ? series.Text(v) : "(no value)")</span>
-                            </div>
-                        }
-                    }
-                </div>
-            }
-        </div>
-    </section>
-}
+<ChartBox TRow="ExposureRow" @ref="_chart" Columns="_columns" Groups="_groups" Rows="_rows"
+          Window="_source.Window" RowSequenceVersion="_source.RowSequenceVersion"
+          Selection="_selection" SelectionVersion="_selectionVersion"
+          OnRight="_onRight" InitialStyles="Styles" FileName="exposure-profile" />
 
 @code {
     private const string ChartCommand = "chart-selection";
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     private static Func<object, string> Money => v => ((decimal)v).ToString("#,##0.00;-#,##0.00", Invariant);
-
     private static readonly GridColumn<ExposureRow>[] AllColumns =
     [
         new("Date", ColumnType.Date, r => r.Date, dateType: DateType.DateOnly),
@@ -278,9 +59,18 @@
         new("PFE(97.5%)", ["PfeBefore", "PfeAfter", "PfeDiff"]),
     ];
 
-    // Which columns are a change rather than a level: the Consumer says so, the chart does not
-    // read it off the word "Diff".
-    private static bool IsChange(string column) => column.EndsWith("Diff", StringComparison.Ordinal);
+    // Which columns are a change rather than a level, read against the right-hand axis: the
+    // Consumer says so, the chart does not read it off the word "Diff".
+    private readonly Func<string, bool> _onRight = column => column.EndsWith("Diff", StringComparison.Ordinal);
+
+    // CVA is computed bucket by bucket from a piecewise-constant profile, each bucket's value
+    // holding over (tᵢ₋₁, tᵢ], so that is how it is drawn by default.
+    private static readonly Dictionary<string, SeriesStyle> Styles = new()
+    {
+        ["CVA"] = new(SeriesDraw.StepPreceding, MarkerShape.Circle),
+    };
+
+    private ChartBox<ExposureRow> _chart = null!;
 
     private IReadOnlyList<ExposureRow> _rows = ExposureData.Profile();
     private InMemoryGridSource<ExposureRow> _source = null!;
@@ -295,119 +85,6 @@
     private GridSelection _selection = GridSelection.Empty;
     private int _selectionVersion;
     private double _hedge = 1.0;
-    private ChartLayout _layout = ChartLayout.PanelPerGroup;
-
-    private ChartView _view = ChartView.All;
-
-    // Adding series to a chart already drawn: the columns ticked in the picker.
-    private bool _pickerOpen;
-    private readonly HashSet<string> _picked = [];
-
-    private string GroupLabelOf(string column) => _groups.FirstOrDefault(g => g.Tier == 1 && g.Columns.Contains(column))?.Label ?? "";
-
-    private void Pick(IEnumerable<string> columns, bool on)
-    {
-        foreach (var c in columns)
-            if (on) _picked.Add(c); else _picked.Remove(c);
-    }
-
-    private void AddPicked()
-    {
-        // In the grid's column order, so a group's series keep its Before, After, Diff order;
-        // at the chart's dates, since a list of columns names no rows.
-        var keys = _definition!.AllKeys;
-        AddSeries(_columns.Select(c => c.Name).Where(_picked.Contains).Select(n => new SeriesDefinition(n, keys)).ToList());
-        _picked.Clear();
-        _pickerOpen = false;
-    }
-
-    /// <summary>
-    /// Excel's "add the range to the chart": the selection's number columns join it, each at the
-    /// rows the selection covered in it — its own dates, not the chart's.
-    /// </summary>
-    private void AddSelection()
-    {
-        _refusal = null;
-        if (_selection.IsEmpty) { _refusal = "Select the columns to add in the grid first."; return; }
-        if (_selectionVersion != _source.RowSequenceVersion) { _refusal = "The rows were reordered after the selection was made. Select again."; return; }
-        var x = _columns.First(c => c.Name == _definition!.XColumn);
-        var (series, refusal) = ChartRequest.SeriesOf(_selection.Ranges, _columns, _source.Window, x, _definition!.SeriesColumns);
-        if (refusal is not null) { _refusal = refusal; return; }
-        if (series.Count == 0) { _refusal = "Every column in the selection is already in the chart."; return; }
-        AddSeries(series);
-        _pickerOpen = false;
-    }
-
-    private void AddSeries(IReadOnlyList<SeriesDefinition> series)
-    {
-        if (series.Count == 0) return;
-        _definition = _definition! with { Series = [.. _definition.Series, .. series] };
-        _notice = $"Added {string.Join(", ", series.Select(s => $"{s.Column} ({s.RowKeys.Count} dates)"))}.";
-        Redraw();
-    }
-
-    private string SelectionDescription()
-    {
-        if (_selection.IsEmpty) return "nothing selected in the grid";
-        var count = _selection.Ranges.SelectMany(r => Enumerable.Range(r.LeftColumn, r.ColumnCount)).Distinct()
-            .Count(i => _columns[i].Type == ColumnType.Number && !_definition!.SeriesColumns.Contains(_columns[i].Name));
-        return count == 0 ? "the selection adds nothing new" : $"the selection adds {count} series";
-    }
-    private XAxisStyle _xAxis = XAxisStyle.Default;
-
-    private void SetAxis(Func<XAxisStyle, XAxisStyle> change)
-    {
-        _xAxis = change(_xAxis);
-        Redraw();
-    }
-
-    // A style per Header Group. CVA is computed bucket by bucket from a piecewise-constant
-    // profile, each bucket's value holding over (tᵢ₋₁, tᵢ], so that is how it is drawn by default.
-    private readonly Dictionary<string, SeriesStyle> _styles = new()
-    {
-        ["CVA"] = new(SeriesDraw.StepPreceding, MarkerShape.Circle),
-    };
-
-    private static readonly (SeriesDraw, string)[] DrawLabels =
-    [
-        (SeriesDraw.Line, "Line"),
-        (SeriesDraw.LinePoints, "Line and points"),
-        (SeriesDraw.Points, "Points"),
-        (SeriesDraw.StepPreceding, "Step, (tᵢ₋₁, tᵢ]"),
-        (SeriesDraw.StepFollowing, "Step, [tᵢ, tᵢ₊₁)"),
-    ];
-
-    private static readonly (MarkerShape, string)[] MarkerLabels =
-        [(MarkerShape.Circle, "● Circle"), (MarkerShape.Square, "■ Square"), (MarkerShape.Diamond, "◆ Diamond"), (MarkerShape.Triangle, "▲ Triangle")];
-
-    private SeriesStyle StyleOfGroup(string group) => _styles.GetValueOrDefault(group, SeriesStyle.Default);
-
-    private SeriesStyle StyleOfColumn(string column) =>
-        StyleOfGroup(_groups.FirstOrDefault(g => g.Tier == 1 && g.Columns.Contains(column))?.Label ?? "");
-
-    // A gesture changes the one field it is about, applied to the style as it is when the event
-    // is handled. Carrying the whole style the control was rendered with would let a second
-    // change, made before the first one's render arrived on the circuit, put the first back
-    // (the spine's sixth rule; found by driving the page at machine speed).
-    private void SetStyle(string group, Func<SeriesStyle, SeriesStyle> change)
-    {
-        _styles[group] = change(StyleOfGroup(group));
-        Redraw();
-    }
-    private bool _filterOpen;
-    private static readonly (string Label, int? Years)[] Presets = [("1Y", 1), ("5Y", 5), ("10Y", 10), ("All", null)];
-
-    private ChartDefinition? _definition;
-    private ChartModel? _model;
-    private string? _svg, _pageSvg, _csv, _csvLong, _refusal, _notice;
-
-    // The tooltip: which date the pointer is over, as the chart's listener reports it.
-    private int _drawing;
-    private int? _band;
-    private ElementReference _chartBody;
-    private string? _attachedTo;
-    private IJSObjectReference? _module, _listener;
-    private DotNetObjectReference<Exposure>? _self;
 
     protected override void OnInitialized()
     {
@@ -417,7 +94,6 @@
             new GridCommand(ChartCommand, context.Selection.Count > 0, () =>
             {
                 Chart(context.Selection, context.RowSequenceVersion);
-                InvokeAsync(StateHasChanged);
                 return Task.CompletedTask;
             }),
         ];
@@ -431,120 +107,13 @@
 
     private void ChartCurrentSelection() => Chart(_selection.Ranges, _selectionVersion);
 
-    private void Chart(IReadOnlyList<SelectionRange> ranges, int version)
-    {
-        var outcome = ChartRequest.FromSelection(ranges, version, _source.RowSequenceVersion, _columns, _source.Window);
-        _refusal = outcome.Refusal;
-        if (outcome.Definition is { } definition)
-        {
-            _definition = definition;
-            _view = ChartView.All;
-            _notice = null;
-            Redraw();
-        }
-    }
+    private void Chart(IReadOnlyList<SelectionRange> ranges, int version) =>
+        _chart.Show(ChartRequest.FromSelection(ranges, version, _source.RowSequenceVersion, _columns, _source.Window));
 
-    private void SetLayout(ChartLayout layout)
-    {
-        _layout = layout;
-        Redraw();
-    }
-
-    // The data changed; the chart is defined in the data's terms, so it is simply drawn again.
     private void Recalculate()
     {
         _hedge += 0.5;
         _rows = ExposureData.Profile(_hedge);
         _source.ReplaceAll(_rows);
-        Redraw();
     }
-
-    private void Redraw()
-    {
-        if (_definition is null) return;
-        _model = ChartModelBuilder.Build(_definition, _columns, _groups, _rows, IsChange, _layout, _view, StyleOfColumn) with { XAxis = _xAxis };
-        _drawing++;
-        _band = null;
-        _svg = ChartSvg.Write(_model);
-        _pageSvg = ChartSvg.Write(_model, _drawing, forFile: false);
-        _csv = ChartCsv.Write(_model);
-        _csvLong = ChartCsv.WriteLong(_model);
-    }
-
-    private void ShowColumns(IEnumerable<string> columns, bool show)
-    {
-        var hidden = new HashSet<string>(_view.HiddenSeries);
-        foreach (var c in columns)
-            if (show) hidden.Remove(c); else hidden.Add(c);
-        _view = _view with { HiddenSeries = hidden };
-        Redraw();
-    }
-
-    private void ShowLeaf(string leaf, bool show) =>
-        ShowColumns(_model!.AllSeries.Where(s => s.Leaf == leaf).Select(s => s.Column), show);
-
-    private void SetRange(DateOnly? from, DateOnly? to)
-    {
-        // A range turned inside out is put the right way round rather than drawn empty.
-        if (from is { } f && to is { } t && f > t) (from, to) = (t, f);
-        _view = _view with { From = from, To = to };
-        Redraw();
-    }
-
-    private void SetHorizon(ChartModel model, int? years) =>
-        SetRange(null, years is { } y ? model.AllDates[0].AddYears(y) : null);
-
-    private static string FilterSummary(ChartModel model)
-    {
-        var shown = model.Panels.Sum(p => p.Series.Count);
-        var dates = model.Dates.Count;
-        return shown == model.AllSeries.Count && dates == model.AllDates.Count
-            ? ""
-            : $"({shown}/{model.AllSeries.Count} series, {dates}/{model.AllDates.Count} dates)";
-    }
-
-    private static string Key(DateOnly d) => d.ToString("yyyy-MM-dd", Invariant);
-    private static DateOnly? Parse(object? value) =>
-        DateOnly.TryParseExact(value as string, "yyyy-MM-dd", Invariant, DateTimeStyles.None, out var d) ? d : null;
-
-    private void CloseChart() => (_definition, _model, _svg, _pageSvg, _csv, _filterOpen, _band, _pickerOpen, _notice) = (null, null, null, null, null, false, null, false, null);
-
-    /// <summary>The listener's report. One taken against an earlier drawing names a date of a
-    /// chart no longer shown, and is dropped rather than shown against this one.</summary>
-    [JSInvokable]
-    public void OnBand(int drawing, int band)
-    {
-        if (drawing != _drawing) return;
-        int? next = band >= 0 ? band : null;
-        if (next == _band) return;
-        _band = next;
-        StateHasChanged();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        // The chart's element is new each time a chart opens; the listener follows it.
-        var id = _model is null ? null : _chartBody.Id;
-        if (id == _attachedTo) return;
-        _attachedTo = id;
-        if (_listener is not null) { await _listener.DisposeAsync(); _listener = null; }
-        if (id is null) return;
-        _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./exposure-chart.js");
-        _self ??= DotNetObjectReference.Create(this);
-        _listener = await _module.InvokeAsync<IJSObjectReference>("attach", _chartBody, _self);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        try
-        {
-            if (_listener is not null) await _listener.DisposeAsync();
-            if (_module is not null) await _module.DisposeAsync();
-        }
-        catch (JSDisconnectedException) { }
-        _self?.Dispose();
-    }
-
-    private static string Percent(double fraction) => (fraction * 100).ToString("0.###", Invariant) + "%";
-
 }

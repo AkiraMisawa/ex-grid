@@ -16,11 +16,14 @@ public enum XTicks
 }
 
 /// <summary>How a tick is labelled.</summary>
-public enum XLabel { Auto, Year, YearMonth, IsoDate, MonthNameYear, Tenor }
+public enum XLabel { Auto, Year, YearMonth, IsoDate, MonthNameYear, Tenor, Column }
 
 /// <param name="Angle">0, 45 or 90 degrees, turned anticlockwise and read upwards.</param>
 public sealed record XAxisStyle(XTicks Ticks, XLabel Label, int Angle)
 {
+    /// <summary>The Consumer's label for a date — a tenor column's "5Y" — for <see cref="XLabel.Column"/>.</summary>
+    public Func<DateOnly, string?>? LabelOf { get; init; }
+
     public static XAxisStyle Default { get; } = new(XTicks.Calendar, XLabel.Auto, 0);
 }
 
@@ -53,7 +56,7 @@ public static class XAxis
         var clearUntil = double.NegativeInfinity;
         foreach (var date in positions)
         {
-            var text = Format(date, first, label);
+            var text = label == XLabel.Column && style.LabelOf?.Invoke(date) is { } own ? own : Format(date, first, label);
             var footprint = style.Angle == 0 ? text.Length * CharWidth + 10 : LineHeight / Math.Sin(style.Angle * Math.PI / 180) + 2;
             var at = x(date);
             if (at - footprint / 2 >= clearUntil)

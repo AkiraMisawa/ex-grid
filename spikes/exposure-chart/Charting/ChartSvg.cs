@@ -34,6 +34,7 @@ public static class ChartSvg
         .ex-chart-line.ex-chart-group-2 { stroke-dasharray: 2 2; }
         .ex-chart-line.ex-chart-group-3 { stroke-dasharray: 8 3 2 3; }
         .ex-chart-secondary-label { font-style: italic; }
+        .ex-chart-unit { font-size: 11px; fill: var(--ex-chart-text-muted, #6b7280); }
         .ex-chart-hit rect { fill: transparent; }
         .ex-chart-hit .ex-chart-hover { visibility: hidden; }
         .ex-chart-hit:hover .ex-chart-hover { visibility: visible; }
@@ -122,6 +123,12 @@ public static class ChartSvg
 
             if (panel.Title.Length > 0)
                 Text(svg, Left, top - 10, panel.Title, "start", "ex-chart-title");
+            // Each axis says its unit, from the series that read against it.
+            var mid = top + panelHeight / 2;
+            if (UnitsOf(panel, secondary: false) is { Length: > 0 } leftUnit)
+                svg.Append(Invariant, $"""<text class="ex-chart-unit" x="14" y="{mid:0.##}" text-anchor="middle" transform="rotate(-90 14 {mid:0.##})">{Escape(leftUnit)}</text>""");
+            if (UnitsOf(panel, secondary: true) is { Length: > 0 } rightUnit)
+                svg.Append(Invariant, $"""<text class="ex-chart-unit" x="{Width - 12}" y="{mid:0.##}" text-anchor="middle" transform="rotate(90 {Width - 12} {mid:0.##})">{Escape(rightUnit)}</text>""");
             foreach (var tick in leftAxis.Ticks())
             {
                 var y = Y(leftAxis, tick);
@@ -132,7 +139,7 @@ public static class ChartSvg
             {
                 foreach (var tick in r.Ticks())
                     Text(svg, Width - Right + 6, Y(r, tick) + 4, Axis.Compact(tick, r), "start", "ex-chart-secondary-label");
-                var names = string.Join(", ", panel.Series.Where(s => s.Secondary).Select(s => s.Leaf).Distinct());
+                var names = string.Join(", ", panel.Series.Where(s => s.Secondary).Select(s => panel.Title.Length > 0 ? s.Leaf : s.Name).Distinct());
                 Text(svg, Width - Right, top - 10, $"{names} → right axis", "end", "ex-chart-secondary-label");
             }
             foreach (var tick in dateTicks)
@@ -142,7 +149,7 @@ public static class ChartSvg
             foreach (var series in panel.Series)
             {
                 var axis = series.Secondary ? rightAxis!.Value : leftAxis;
-                var dash = panel.Title.Length == 0 ? series.GroupIndex % 4 : 0;
+                var dash = series.GroupIndex % 4;
                 WriteSeries(svg, series, dash, X, v => Y(axis, v));
             }
         }
@@ -235,6 +242,9 @@ public static class ChartSvg
             x += EntryWidth(name);
         }
     }
+
+    private static string UnitsOf(ChartPanel panel, bool secondary) =>
+        string.Join(", ", panel.Series.Where(s => s.Secondary == secondary).Select(s => s.Unit).OfType<string>().Distinct());
 
     private static IEnumerable<decimal> Values(ChartSeries series) =>
         series.Points.Where(p => p.Y.HasValue).Select(p => p.Y!.Value);

@@ -11,6 +11,9 @@ public enum ChartLayout
 
     /// <summary>Every series on one panel and one axis, as Excel's default chart would draw them.</summary>
     OneAxis,
+
+    /// <summary>Every series on one panel, each against the axis the Consumer declared for it.</summary>
+    OnePanel,
 }
 
 /// <summary>
@@ -25,7 +28,8 @@ public readonly record struct ChartPoint(DateOnly X, decimal? Y, DateOnly? Previ
 /// <param name="Text">The column's own format, so a value reads as its cell does.</param>
 public sealed record ChartSeries(
     string Column, string Name, string Group, string Leaf, int Slot, int GroupIndex,
-    bool Secondary, IReadOnlyList<ChartPoint> Points, Func<decimal, string> Text, SeriesStyle Style);
+    bool Secondary, IReadOnlyList<ChartPoint> Points, Func<decimal, string> Text, SeriesStyle Style,
+    string? Unit = null);
 
 public static class ChartSeriesExtensions
 {
@@ -80,17 +84,19 @@ public sealed record ChartModel(
 public static class ChartModelBuilder
 {
     /// <param name="rows">The Consumer's data: every row it holds, in any order.</param>
-    /// <param name="isChange">Which columns hold a change rather than a level — the Consumer's
+    /// <param name="onRight">Which columns read against the right-hand axis — the Consumer's
     /// declaration, not a guess from the header's wording.</param>
     public static ChartModel Build<TRow>(
         ChartDefinition definition,
         IReadOnlyList<GridColumn<TRow>> columns,
         IReadOnlyList<HeaderGroup> groups,
         IReadOnlyList<TRow> rows,
-        Func<string, bool> isChange,
+        Func<string, bool> onRight,
         ChartLayout layout,
         ChartView view,
-        Func<string, SeriesStyle>? styleOf = null)
+        Func<string, SeriesStyle>? styleOf = null,
+        Func<string, string?>? unitOf = null,
+        Func<string, int?>? slotOf = null)
     {
         var byName = columns.ToDictionary(c => c.Name);
         var x = byName[definition.XColumn];
@@ -128,11 +134,15 @@ public static class ChartModelBuilder
             var format = column.Format;
             series.Add(new ChartSeries(
                 name, string.Join(" · ", path), group, column.Header,
-                leaves.IndexOf(column.Header), groupNames.IndexOf(group),
-                layout == ChartLayout.PanelPerGroup && isChange(name),
+                // The colour is the Consumer's where it says one, else the leaf's; the dash tells
+                // groups apart only where they share one axis.
+                slotOf?.Invoke(name) ?? leaves.IndexOf(column.Header),
+                layout == ChartLayout.OneAxis ? groupNames.IndexOf(group) : 0,
+                layout != ChartLayout.OneAxis && onRight(name),
                 points,
                 format is null ? v => v.ToString("N2") : v => format(v),
-                styleOf?.Invoke(name) ?? SeriesStyle.Default));
+                styleOf?.Invoke(name) ?? SeriesStyle.Default,
+                unitOf?.Invoke(name)));
         }
 
         // The filter applies after the colours and dashes are given out, so that hiding "Before"
@@ -146,7 +156,7 @@ public static class ChartModelBuilder
         var dates = shown.SelectMany(s => s.Points).Select(p => p.X).Distinct().Order().ToList();
         var allDates = series.SelectMany(s => s.Points).Select(p => p.X).Distinct().Order().ToList();
 
-        var panels = layout == ChartLayout.OneAxis
+        var panels = layout != ChartLayout.PanelPerGroup
             ? shown.Count == 0 ? [] : [new ChartPanel("", shown)]
             : shown.GroupBy(s => s.Group).Select(g => new ChartPanel(g.Key, g.ToList())).ToList();
         return new ChartModel(x.Header, dates, panels, leaves, missing, series, allDates);

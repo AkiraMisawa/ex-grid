@@ -50,8 +50,10 @@ public static class ChartRequest
         if (selectionVersion != currentVersion)
             return ChartOutcome.Refused("The rows were reordered after the selection was made. Select again.");
 
-        // One cell is Excel's "chart the table around it".
-        if (ranges is [{ RowCount: 1, ColumnCount: 1 }])
+        // One cell is Excel's "chart the table around it": every column that can be plotted. A
+        // text column is left out here, where nobody chose it, and refused when somebody did.
+        var wholeTable = ranges is [{ RowCount: 1, ColumnCount: 1 }];
+        if (wholeTable)
             ranges = [new SelectionRange(0, 0, window.Count, columns.Count)];
 
         var columnIndices = ranges.SelectMany(r => Enumerable.Range(r.LeftColumn, r.ColumnCount)).Distinct().Order().ToList();
@@ -63,7 +65,7 @@ public static class ChartRequest
                 $"The selection has {dates.Count} date columns ({string.Join(", ", dates.Select(i => columns[i].Header))}); choose one for the horizontal axis.");
 
         var x = columns[dates[0]];
-        var series = SeriesOf(ranges, columns, window, x, exclude: []);
+        var series = SeriesOf(ranges, columns, window, x, exclude: [], skipUnplottable: wholeTable);
         if (series.Refusal is not null) return ChartOutcome.Refused(series.Refusal);
         if (series.Series.Count == 0)
             return ChartOutcome.Refused("The selection has only the date column; select the figures to plot beside it.");
@@ -79,11 +81,12 @@ public static class ChartRequest
         IReadOnlyList<GridColumn<TRow>> columns,
         IReadOnlyList<TRow> window,
         GridColumn<TRow> x,
-        IReadOnlyCollection<string> exclude)
+        IReadOnlyCollection<string> exclude,
+        bool skipUnplottable = false)
     {
         var columnIndices = ranges.SelectMany(r => Enumerable.Range(r.LeftColumn, r.ColumnCount)).Distinct().Order().ToList();
         var notNumbers = columnIndices.Where(i => columns[i].Type is not (ColumnType.Number or ColumnType.Date)).ToList();
-        if (notNumbers.Count > 0)
+        if (notNumbers.Count > 0 && !skipUnplottable)
             return ([], $"{string.Join(", ", notNumbers.Select(i => columns[i].Header))} cannot be plotted: not a number column.");
 
         var series = new List<SeriesDefinition>();

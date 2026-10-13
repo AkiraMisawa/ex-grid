@@ -9,6 +9,11 @@ the material for the grilling that follows it. Throw it away once that is done.
 nix develop -c dotnet run --project spikes/exposure-chart -- --urls http://localhost:5410
 ```
 
+Two pages: `/` the exposure profile, `/cds` a CDS curve and the hazard rates bootstrapped from it.
+Both draw through one component, `Components/ChartBox.razor`, which takes the grid's columns,
+its Header Groups, the data, the window and the selection, and the Consumer's declarations:
+which columns read on the right, their units and colours, and their styles.
+
 Select **Date** and the figures (drag, or click a header and Ctrl+click others), then right-click
 → **Chart selection**, or the button. One selected cell charts the whole table, as in Excel.
 
@@ -24,6 +29,24 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
 | ![Every date, yyyy-MM-dd at 90°](screenshots/x-every-date-90.png) | ![Tenor ticks and labels](screenshots/x-tenors.png) |
 | ![Every date at 45°, first five years](screenshots/x-every-date-45-5y.png) | ![Axis panel](screenshots/x-every-date-45-5y-panel.png) |
 | ![ENE(0) added over its own six dates](screenshots/own-dates.png) | ![One column over two stretches of rows](screenshots/own-dates-gap.png) |
+
+## The CDS page
+
+![CDS spreads and hazard rates](screenshots/cds-page.png)
+
+Par spreads by tenor read on the left axis (bp), drawn as points joined; the hazard rates read on
+the right (% a year), drawn as what they are — piecewise constant over (tᵢ₋₁, tᵢ], filled where
+the rate holds, open where it does not. The bootstrap (`CdsData.cs`) prices each maturity's CDS at
+par with the earlier intervals fixed: 40% recovery, a flat 3% rate, quarterly premiums on the IMM
+dates (ACT/360) with half a period's accrual on default, the protection leg exact on each interval,
+and the first coupon counted from today since the buyer is paid back what accrued before it (the
+first hazard rate, 0.7073%, is s / (1 − R) at ACT/360). A first row at the curve's date carries no
+quote and no hazard: it is where the first interval starts. The axis' ticks are the pillars,
+labelled by the grid's Tenor column (`XLabel.Column`) — a tenor counted from today would read
+"1894D" for a 5Y maturity on the roll. "Quotes ±10bp" bootstraps again, and the chart follows.
+
+Writing the page, the grid refused it by name: a Header Group straddled the pinned column
+(ADR-0032). The page pinned nothing instead.
 
 ## How it is built
 

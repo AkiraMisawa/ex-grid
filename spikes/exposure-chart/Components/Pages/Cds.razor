@@ -1,0 +1,135 @@
+@page "/cds"
+@using System.Globalization
+
+<PageTitle>CDS curve PoC</PageTitle>
+
+<Nav />
+
+<h1>CDS term structure and its hazard rates</h1>
+<p class="hint">
+    Par spreads quoted by tenor (left axis, bp) and the piecewise-constant hazard rates bootstrapped from them
+    (right axis, % a year), each holding over (tᵢ₋₁, tᵢ] — an open marker where it does not hold, a filled one
+    where it does. Recovery @((CdsData.Recovery * 100).ToString("0", Invariant))%, a flat
+    @((CdsData.Rate * 100).ToString("0.#", Invariant))% rate, quarterly premiums on the IMM dates.
+</p>
+
+<ExGrid TRow="CdsRow" Source="_source" Columns="_columns" HeaderGroups="_groups"
+        HeaderClickSelects="true" SelectionChanged="OnSelectionChanged"
+        ContextCommands="_contextCommands" CommandLabel="_commandLabel"
+        ViewportHeight="330" ViewportWidth="ViewportSize.Stretch" />
+
+<div class="toolbar">
+    <button type="button" @onclick="ChartCurrentSelection">Chart selection</button>
+    <span class="selected">@(_selection.IsEmpty ? "Nothing selected" : $"{_selection.Ranges.Count} range(s), {_selection.CellCount:N0} cells")</span>
+    <span class="sep"></span>
+    <button type="button" @onclick="() => Shift(-10)">Quotes −10bp</button>
+    <button type="button" @onclick="() => Shift(10)">Quotes +10bp</button>
+</div>
+
+<ChartBox TRow="CdsRow" @ref="_chart" Columns="_columns" Groups="_groups" Rows="_rows"
+          Window="_source.Window" RowSequenceVersion="_source.RowSequenceVersion"
+          Selection="_selection" SelectionVersion="_selectionVersion"
+          OnRight="_onRight" UnitOf="_unitOf" SlotOf="_slotOf" InitialStyles="Styles" InitialLayout="ChartLayout.OnePanel"
+          InitialXAxis="XAxis" XLabelOf="_tenorOf" XLabelName="Tenor column" FileName="cds-curve"
+          InitialDefinition="_initial" />
+
+@code {
+    private const string ChartCommand = "chart-selection";
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private static Func<object, string> Digits(int digits) => v => ((decimal)v).ToString("N" + digits, Invariant);
+
+    private static readonly GridColumn<CdsRow>[] AllColumns =
+    [
+        new("Tenor", ColumnType.Text, r => r.Tenor),
+        new("Maturity", ColumnType.Date, r => r.Maturity, dateType: DateType.DateOnly),
+        new("Spread", ColumnType.Number, r => r.SpreadBp, header: "Par spread (bp)", format: Digits(2)),
+        new("Hazard", ColumnType.Number, r => r.HazardPct, header: "Hazard rate (%)", format: Digits(4)),
+        new("Survival", ColumnType.Number, r => r.SurvivalPct, header: "Survival (%)", format: Digits(4)),
+        new("Default", ColumnType.Number, r => r.DefaultPct, header: "Default prob. (%)", format: Digits(4)),
+    ];
+
+    private static readonly HeaderGroup[] Groups =
+    [
+        new("CDS quote", ["Tenor", "Maturity", "Spread"]),
+        new("Bootstrapped", ["Hazard", "Survival", "Default"]),
+    ];
+
+    // The quotes read on the left; what the bootstrap made, on the right.
+    private readonly Func<string, bool> _onRight = column => column is "Hazard" or "Survival" or "Default";
+    private readonly Func<string, string?> _unitOf = column => column switch
+    {
+        "Spread" => "Par spread (bp)",
+        "Hazard" => "Hazard rate (% a year)",
+        "Survival" or "Default" => "%",
+        _ => null,
+    };
+
+    // The quote blue, the bootstrap's figures in colours of their own.
+    private readonly Func<string, int?> _slotOf = column => column switch
+    {
+        "Spread" => 1, "Hazard" => 2, "Survival" => 3, "Default" => 4, _ => null,
+    };
+
+    // A quote is a point, joined to read the curve's shape; the hazard rate is piecewise constant
+    // over (tᵢ₋₁, tᵢ], which is how the bootstrap defines it and how the CVA integral uses it.
+    private static readonly Dictionary<string, SeriesStyle> Styles = new()
+    {
+        ["CDS quote"] = new(SeriesDraw.LinePoints, MarkerShape.Circle),
+        ["Hazard"] = new(SeriesDraw.StepPreceding, MarkerShape.Circle),
+    };
+
+    // The pillars on the axis, labelled by the tenor column rather than by a tenor counted from the
+    // first date: the roll puts a 5Y maturity on 20 December, not five years after today.
+    private static readonly XAxisStyle XAxis = new(XTicks.DataDates, XLabel.Column, 0);
+
+    private IReadOnlyList<CdsRow> _rows = CdsData.Curve();
+    private double _shift;
+    private InMemoryGridSource<CdsRow> _source = null!;
+    private readonly IReadOnlyList<GridColumn<CdsRow>> _columns = AllColumns;
+    private readonly IReadOnlyList<HeaderGroup> _groups = Groups;
+    private ChartDefinition _initial = null!;
+    private Func<DateOnly, string?> _tenorOf = null!;
+
+    private Func<ContextMenuContext<CdsRow>, IEnumerable<GridCommand>> _contextCommands = null!;
+    private readonly Func<string, string?> _commandLabel = id => id == ChartCommand ? "Chart selection" : null;
+
+    private GridSelection _selection = GridSelection.Empty;
+    private int _selectionVersion;
+    private ChartBox<CdsRow> _chart = null!;
+
+    protected override void OnInitialized()
+    {
+        _source = GridSource.From(_rows, r => r.Maturity);
+        _tenorOf = date => _rows.FirstOrDefault(r => r.Maturity == date)?.Tenor;
+        // Shown from the start: the spread and the hazard rate at every pillar, the curve's date included.
+        var all = _rows.Select(r => r.Maturity).ToHashSet();
+        _initial = new ChartDefinition("Maturity", [new SeriesDefinition("Spread", all), new SeriesDefinition("Hazard", all)]);
+        _contextCommands = context =>
+        [
+            new GridCommand(ChartCommand, context.Selection.Count > 0, () =>
+            {
+                Chart(context.Selection, context.RowSequenceVersion);
+                return Task.CompletedTask;
+            }),
+        ];
+    }
+
+    private void OnSelectionChanged(GridSelection selection)
+    {
+        _selection = selection;
+        _selectionVersion = _source.RowSequenceVersion;
+    }
+
+    private void ChartCurrentSelection() => Chart(_selection.Ranges, _selectionVersion);
+
+    private void Chart(IReadOnlyList<SelectionRange> ranges, int version) =>
+        _chart.Show(ChartRequest.FromSelection(ranges, version, _source.RowSequenceVersion, _columns, _source.Window));
+
+    private void Shift(double bp)
+    {
+        _shift += bp;
+        _rows = CdsData.Curve(_shift);
+        _source.ReplaceAll(_rows);
+    }
+}
