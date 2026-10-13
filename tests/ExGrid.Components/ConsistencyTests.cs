@@ -146,17 +146,23 @@ public class ConsistencyTests : GridTestContext
                         random.Next(0, 100), layout, source);
                     break;
                 case 4: // sort by a random column, sometimes back to none
-                    source.OnSortChanged(random.Next(3) == 0
+                    // On the renderer's dispatcher, as the grid's own sort gesture reaches the source:
+                    // from the test's thread, the grid would take the new Window in on that thread
+                    // only while the dispatcher had nothing in hand, and the invariants below would
+                    // read whichever Window it had got to.
+                    IReadOnlyList<SortSpec> sorts = random.Next(3) == 0
                         ? []
-                        : [new SortSpec(Columns()[random.Next(2)].Name, (SortDirection)random.Next(2))]);
+                        : [new SortSpec(Columns()[random.Next(2)].Name, (SortDirection)random.Next(2))];
+                    await cut.InvokeAsync(() => source.OnSortChanged(sorts));
                     break;
-                case 5: // filter on Active, or clear
-                    source.OnFilterChanged(random.Next(2) == 0
+                case 5: // filter on Active, or clear — on the dispatcher, as the sort is
+                    var filter = random.Next(2) == 0
                         ? null
                         : new GridFilter(new Dictionary<string, FilterSpec>
                         {
                             ["Active"] = new([new FilterClause(FilterOperator.Equals, random.Next(2) == 0)]),
-                        }));
+                        });
+                    await cut.InvokeAsync(() => source.OnFilterChanged(filter));
                     break;
                 case 6: // a geometry change: the row height
                     layout = layout with { RowHeightPx = 18d + random.Next(4) * 4 };
