@@ -1,0 +1,11 @@
+start 12/10/2026 21:33:54.70 
+v24.14.1
+tests\GlyphWidths\system-ui.windows.chrome.json: 523 glyphs, 3091 strings, Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36
+system-ui chrome exit=0 21:34:02.21 
+tests\GlyphWidths\roboto.windows.chrome.json: 523 glyphs, 3091 strings, Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36
+roboto chrome exit=0 21:34:09.39 
+tests\GlyphWidths\system-ui.windows.msedge.json: 523 glyphs, 3091 strings, Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0
+system-ui msedge exit=0 21:34:16.61 
+tests\GlyphWidths\roboto.windows.msedge.json: 523 glyphs, 3091 strings, Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0
+roboto msedge exit=0 21:34:24.03 
+end 12/10/2026 21:34:24.03 

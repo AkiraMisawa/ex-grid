@@ -1,0 +1,5 @@
+Region,Flag,Side,Amount
+East,TRUE,Buy,1
+East,FALSE,Sell,2
+West,FALSE,Buy,4
+West,TRUE,Sell,8

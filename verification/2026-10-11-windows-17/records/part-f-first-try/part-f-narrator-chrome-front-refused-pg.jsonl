@@ -1,0 +1,16 @@
+{"t": "20:24:16", "cmd": {"op": "goto", "url": "http://localhost:5299/sheet", "ready": "() => { const g = document.querySelector('.ex-grid:has(> .ex-formula-bar)'); if (!g) return false;\n  const c = [...g.querySelectorAll('[id$=\"-r11c1\"]')].map(e => e.textContent).join(''); return c.includes('318.25') && !!g.querySelector('input.ex-key-field'); }"}, "answer": {"ok": "goto", "title": "run17-chrome-56245", "url": "http://localhost:5299/sheet"}}
+{"t": "20:24:17", "cmd": {"op": "calibrate"}, "answer": {"ok": "calibrate", "dpr": 1.5, "tries": [{"px": 671, "py": 371, "client": {"x": 400, "y": 120}}]}}
+{"t": "20:24:17", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": "run17-chrome-56245"}}
+{"t": "20:24:18", "cmd": {"op": "input", "cmd": "english run17-chrome-56245"}, "answer": {"ok": "ok english was=0x04110411 now=0x08090809"}}
+{"t": "20:24:18", "cmd": {"op": "input", "cmd": "imeoff"}, "answer": {"ok": "ok imeoff"}}
+{"t": "20:24:18", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": {"activeElement": "body", "ariaActiveDescendant": null, "activeDescendantCell": null, "activeDescendantExists": null, "focus": null, "hasFocus": true, "editing": false, "fieldRole": null, "fieldLabel": null}}}
+{"t": "20:24:18", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": "run17-chrome-56245"}}
+{"t": "20:24:18", "cmd": {"op": "input", "cmd": "foreground"}, "answer": {"ok": "ok foreground title=\"run17-chrome-56245 - Google Chrome\" process=chrome"}}
+{"t": "20:24:18", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": "sheet-revalue"}}
+{"t": "20:24:19", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": {"activeElement": "button#sheet-revalue", "ariaActiveDescendant": null, "activeDescendantCell": null, "activeDescendantExists": null, "focus": null, "hasFocus": true, "editing": false, "fieldRole": null, "fieldLabel": null}}}
+{"t": "20:24:19", "cmd": {"op": "events"}, "answer": {"ok": "events", "value": [{"t": 2244, "type": "focusin", "target": "button#sheet-revalue"}]}}
+{"t": "20:24:19", "cmd": {"op": "input", "cmd": "foreground"}, "answer": {"ok": "ok foreground title=\"run17-chrome-56245 - Google Chrome\" process=chrome"}}
+{"t": "20:24:53", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": "run17-chrome-56245"}}
+{"t": "20:24:53", "cmd": {"op": "input", "cmd": "foreground"}, "answer": {"ok": "ok foreground title=\"(the session's terminal; its title left out)\" process=wezterm-gui"}}
+{"t": "20:24:54", "cmd": {"op": "front"}, "answer": {"error": "Error: front run17-chrome-56245: err the window 'run17-chrome-56245...' is not in front t=38250"}}
+{"t": "20:24:54", "cmd": {"op": "quit"}, "answer": {"ok": "quit"}}

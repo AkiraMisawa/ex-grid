@@ -1,0 +1,741 @@
+{
+ "channel": "msedge",
+ "base": "http://localhost:5299",
+ "label": "wasm",
+ "started": "2026-10-12T08:35:38.977Z",
+ "keys": [
+  {
+   "name": "ctrl-1",
+   "before": {
+    "focus": "D10",
+    "keyboard": "key-field",
+    "hasFocus": true,
+    "visible": "visible",
+    "dialogs": [],
+    "d10": {
+     "weight": "400",
+     "style": "normal",
+     "lines": "none"
+    },
+    "focusFont": "regular",
+    "keytips": []
+   },
+   "sent": "ok chord Ctrl+vk 0x31 (scan 0x02)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false,
+     "target": "ex-key-field"
+    },
+    {
+     "key": "1",
+     "code": "Digit1",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false,
+     "target": "ex-key-field"
+    }
+   ],
+   "pageReceived": [
+    "key=1 code=Digit1 ctrl=true target=ex-key-field"
+   ],
+   "after": {
+    "focus": "D10",
+    "keyboard": "button.ex-format-cells-tab",
+    "hasFocus": true,
+    "visible": "visible",
+    "dialogs": [
+     "Format Cells"
+    ],
+    "d10": {
+     "weight": "400",
+     "style": "normal",
+     "lines": "none"
+    },
+    "focusFont": "regular",
+    "keytips": []
+   },
+   "tabs": [
+    {
+     "name": "Number",
+     "selected": true
+    },
+    {
+     "name": "Alignment",
+     "selected": false
+    },
+    {
+     "name": "Font",
+     "selected": false
+    },
+    {
+     "name": "Border",
+     "selected": false
+    },
+    {
+     "name": "Fill",
+     "selected": false
+    },
+    {
+     "name": "tab-1-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-17",
+     "selected": false
+    },
+    {
+     "name": "sheet-verify-17 - Memory usage - 258 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-17",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "Number",
+    "sheet-verify-17 - Memory usage - 258 MB"
+   ],
+   "tabsAdded": [
+    "Number",
+    "Alignment",
+    "Font",
+    "Border",
+    "Fill"
+   ],
+   "visiblePages": [
+    {
+     "url": "data:text/html,<title>tab-1-verify-17</title><p>tab 1</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-2-verify-17</title><p>tab 2</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:5299/sheet",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-4-verify-17</title><p>tab 4</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-5-verify-17</title><p>tab 5</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-6-verify-17</title><p>tab 6</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-7-verify-17</title><p>tab 7</p>",
+     "visible": "visible"
+    }
+   ],
+   "windowsAdded": [],
+   "shot": "ok shot windows=1 box=90,90,2490,1665",
+   "shotFile": "sh42-wasm-msedge-ctrl-1.png",
+   "browserActed": [
+    "tab opened: Number",
+    "tab opened: Alignment",
+    "tab opened: Font",
+    "tab opened: Border",
+    "tab opened: Fill"
+   ],
+   "sheetActed": [
+    "dialog: Format Cells"
+   ],
+   "closed": [
+    "ok esc vk 0x1b (scan 0x01)"
+   ]
+  },
+  {
+   "name": "ctrl-2",
+   "before": {
+    "focus": "D10",
+    "keyboard": "key-field",
+    "hasFocus": true,
+    "visible": "visible",
+    "dialogs": [],
+    "d10": {
+     "weight": "400",
+     "style": "normal",
+     "lines": "none"
+    },
+    "focusFont": "regular",
+    "keytips": []
+   },
+   "sent": "ok chord Ctrl+vk 0x32 (scan 0x03)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false,
+     "target": "ex-key-field"
+    },
+    {
+     "key": "2",
+     "code": "Digit2",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false,
+     "target": "ex-key-field"
+    }
+   ],
+   "pageReceived": [
+    "key=2 code=Digit2 ctrl=true target=ex-key-field"
+   ],
+   "after": {
+    "focus": "D10",
+    "keyboard": "key-field",
+    "hasFocus": true,
+    "visible": "visible",
+    "dialogs": [],
+    "d10": {
+     "weight": "700",
+     "style": "normal",
+     "lines": "none"
+    },
+    "focusFont": "bold",
+    "keytips": []
+   },
+   "tabs": [
+    {
+     "name": "tab-1-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-17",
+     "selected": false
+    },
+    {
+     "name": "sheet-verify-17 - Memory usage - 258 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-17",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "sheet-verify-17 - Memory usage - 258 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "data:text/html,<title>tab-1-verify-17</title><p>tab 1</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-2-verify-17</title><p>tab 2</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:5299/sheet",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-4-verify-17</title><p>tab 4</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-5-verify-17</title><p>tab 5</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-6-verify-17</title><p>tab 6</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-7-verify-17</title><p>tab 7</p>",
+     "visible": "visible"
+    }
+   ],
+   "windowsAdded": [],
+   "shot": "ok shot windows=1 box=90,90,2490,1665",
+   "shotFile": "sh42-wasm-msedge-ctrl-2.png",
+   "browserActed": [],
+   "sheetActed": [
+    "D10 {\"weight\":\"400\",\"style\":\"normal\",\"lines\":\"none\"} -> {\"weight\":\"700\",\"style\":\"normal\",\"lines\":\"none\"}",
+    "focus font regular -> bold"
+   ],
+   "closed": [
+    "Ctrl+Z: ok chord Ctrl+vk 0x5a (scan 0x2c)"
+   ],
+   "restored": {
+    "weight": "400",
+    "style": "normal",
+    "lines": "none"
+   }
+  },
+  {
+   "name": "ctrl-3",
+   "before": {
+    "focus": "D10",
+    "keyboard": "key-field",
+    "hasFocus": true,
+    "visible": "visible",
+    "dialogs": [],
+    "d10": {
+     "weight": "400",
+     "style": "normal",
+     "lines": "none"
+    },
+    "focusFont": "regular",
+    "keytips": []
+   },
+   "sent": "ok chord Ctrl+vk 0x33 (scan 0x04)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false,
+     "target": "ex-key-field"
+    },
+    {
+     "key": "3",
+     "code": "Digit3",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false,
+     "target": "ex-key-field"
+    }
+   ],
+   "pageReceived": [
+    "key=3 code=Digit3 ctrl=true target=ex-key-field"
+   ],
+   "after": {
+    "focus": "D10",
+    "keyboard": "key-field",
+    "hasFocus": true,
+    "visible": "visible",
+    "dialogs": [],
+    "d10": {
+     "weight": "400",
+     "style": "italic",
+     "lines": "none"
+    },
+    "focusFont": "italic",
+    "keytips": []
+   },
+   "tabs": [
+    {
+     "name": "tab-1-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-17",
+     "selected": false
+    },
+    {
+     "name": "sheet-verify-17 - Memory usage - 258 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-17",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "sheet-verify-17 - Memory usage - 258 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "data:text/html,<title>tab-1-verify-17</title><p>tab 1</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-2-verify-17</title><p>tab 2</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:5299/sheet",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-4-verify-17</title><p>tab 4</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-5-verify-17</title><p>tab 5</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-6-verify-17</title><p>tab 6</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-7-verify-17</title><p>tab 7</p>",
+     "visible": "visible"
+    }
+   ],
+   "windowsAdded": [],
+   "shot": "ok shot windows=1 box=90,90,2490,1665",
+   "shotFile": "sh42-wasm-msedge-ctrl-3.png",
+   "browserActed": [],
+   "sheetActed": [
+    "D10 {\"weight\":\"400\",\"style\":\"normal\",\"lines\":\"none\"} -> {\"weight\":\"400\",\"style\":\"italic\",\"lines\":\"none\"}",
+    "focus font regular -> italic"
+   ],
+   "closed": [
+    "Ctrl+Z: ok chord Ctrl+vk 0x5a (scan 0x2c)"
+   ],
+   "restored": {
+    "weight": "400",
+    "style": "normal",
+    "lines": "none"
+   }
+  },
+  {
+   "name": "ctrl-4",
+   "before": {
+    "focus": "D10",
+    "keyboard": "key-field",
+    "hasFocus": true,
+    "visible": "visible",
+    "dialogs": [],
+    "d10": {
+     "weight": "400",
+     "style": "normal",
+     "lines": "none"
+    },
+    "focusFont": "regular",
+    "keytips": []
+   },
+   "sent": "ok chord Ctrl+vk 0x34 (scan 0x05)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false,
+     "target": "ex-key-field"
+    },
+    {
+     "key": "4",
+     "code": "Digit4",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false,
+     "target": "ex-key-field"
+    }
+   ],
+   "pageReceived": [
+    "key=4 code=Digit4 ctrl=true target=ex-key-field"
+   ],
+   "after": {
+    "focus": "D10",
+    "keyboard": "key-field",
+    "hasFocus": true,
+    "visible": "visible",
+    "dialogs": [],
+    "d10": {
+     "weight": "400",
+     "style": "normal",
+     "lines": "underline"
+    },
+    "focusFont": "underline",
+    "keytips": []
+   },
+   "tabs": [
+    {
+     "name": "tab-1-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-17",
+     "selected": false
+    },
+    {
+     "name": "sheet-verify-17 - Memory usage - 258 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-17",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "sheet-verify-17 - Memory usage - 258 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "data:text/html,<title>tab-1-verify-17</title><p>tab 1</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-2-verify-17</title><p>tab 2</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:5299/sheet",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-4-verify-17</title><p>tab 4</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-5-verify-17</title><p>tab 5</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-6-verify-17</title><p>tab 6</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-7-verify-17</title><p>tab 7</p>",
+     "visible": "visible"
+    }
+   ],
+   "windowsAdded": [],
+   "shot": "ok shot windows=1 box=90,90,2490,1665",
+   "shotFile": "sh42-wasm-msedge-ctrl-4.png",
+   "browserActed": [],
+   "sheetActed": [
+    "D10 {\"weight\":\"400\",\"style\":\"normal\",\"lines\":\"none\"} -> {\"weight\":\"400\",\"style\":\"normal\",\"lines\":\"underline\"}",
+    "focus font regular -> underline"
+   ],
+   "closed": [
+    "Ctrl+Z: ok chord Ctrl+vk 0x5a (scan 0x2c)"
+   ],
+   "restored": {
+    "weight": "400",
+    "style": "normal",
+    "lines": "none"
+   }
+  },
+  {
+   "name": "ctrl-5",
+   "before": {
+    "focus": "D10",
+    "keyboard": "key-field",
+    "hasFocus": true,
+    "visible": "visible",
+    "dialogs": [],
+    "d10": {
+     "weight": "400",
+     "style": "normal",
+     "lines": "none"
+    },
+    "focusFont": "regular",
+    "keytips": []
+   },
+   "sent": "ok chord Ctrl+vk 0x35 (scan 0x06)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false,
+     "target": "ex-key-field"
+    },
+    {
+     "key": "5",
+     "code": "Digit5",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false,
+     "target": "ex-key-field"
+    }
+   ],
+   "pageReceived": [
+    "key=5 code=Digit5 ctrl=true target=ex-key-field"
+   ],
+   "after": {
+    "focus": "D10",
+    "keyboard": "key-field",
+    "hasFocus": true,
+    "visible": "visible",
+    "dialogs": [],
+    "d10": {
+     "weight": "400",
+     "style": "normal",
+     "lines": "line-through"
+    },
+    "focusFont": "strikethrough",
+    "keytips": []
+   },
+   "tabs": [
+    {
+     "name": "tab-1-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-17",
+     "selected": false
+    },
+    {
+     "name": "sheet-verify-17 - Memory usage - 258 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-17",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-17",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "sheet-verify-17 - Memory usage - 258 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "data:text/html,<title>tab-1-verify-17</title><p>tab 1</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-2-verify-17</title><p>tab 2</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:5299/sheet",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-4-verify-17</title><p>tab 4</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-5-verify-17</title><p>tab 5</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-6-verify-17</title><p>tab 6</p>",
+     "visible": "visible"
+    },
+    {
+     "url": "data:text/html,<title>tab-7-verify-17</title><p>tab 7</p>",
+     "visible": "visible"
+    }
+   ],
+   "windowsAdded": [],
+   "shot": "ok shot windows=1 box=90,90,2490,1665",
+   "shotFile": "sh42-wasm-msedge-ctrl-5.png",
+   "browserActed": [],
+   "sheetActed": [
+    "D10 {\"weight\":\"400\",\"style\":\"normal\",\"lines\":\"none\"} -> {\"weight\":\"400\",\"style\":\"normal\",\"lines\":\"line-through\"}",
+    "focus font regular -> strikethrough"
+   ],
+   "closed": [
+    "Ctrl+Z: ok chord Ctrl+vk 0x5a (scan 0x2c)"
+   ],
+   "restored": {
+    "weight": "400",
+    "style": "normal",
+    "lines": "none"
+   }
+  }
+ ],
+ "messages": [],
+ "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+ "browserVersion": "Edg/155.0.4283.45",
+ "window": {
+  "hwnd": 1446238,
+  "pid": 24724
+ },
+ "tabsAtStart": [
+  {
+   "name": "tab-1-verify-17",
+   "selected": false
+  },
+  {
+   "name": "tab-2-verify-17",
+   "selected": false
+  },
+  {
+   "name": "sheet-verify-17 - Memory usage - 258 MB",
+   "selected": true
+  },
+  {
+   "name": "tab-4-verify-17",
+   "selected": false
+  },
+  {
+   "name": "tab-5-verify-17",
+   "selected": false
+  },
+  {
+   "name": "tab-6-verify-17",
+   "selected": false
+  },
+  {
+   "name": "tab-7-verify-17",
+   "selected": false
+  }
+ ],
+ "layoutUk": "ok layout asked=uk hkl=0x08090809 was=0x08090809 now=0x08090809 ime=open=0 conversion=0x1",
+ "finished": "2026-10-12T08:35:53.597Z"
+}
