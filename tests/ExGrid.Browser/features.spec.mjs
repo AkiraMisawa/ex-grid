@@ -619,6 +619,78 @@ for (const way of ['a press on the grid that edits', 'a press on the display-onl
     });
 }
 
+// CP-14 (ADR-0005, ADR-0050 item 10): a paste reads text/html before text/plain, and from Excel's
+// markup a number's x:num, the raw value at full precision, where the shown text and the plain
+// flavour hold the display, already rounded. The fields arrive typed: an x:num field as the raw
+// number under the invariant culture, a cell's shown text as text in the source's culture. The
+// payload is Excel's shape as its HTML export writes it; the paste event's data is the browser's
+// own, from the clipboard, through the real Ctrl+V.
+test('CP-14 / ADR-0005: an Excel-shaped paste arrives typed and at full precision, from x:num and not the shown text', async ({ page }) => {
+    const html = [
+        '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"',
+        ' xmlns="http://www.w3.org/TR/REC-html40"><head><meta name=ProgId content=Excel.Sheet>',
+        '<meta name=Generator content="Microsoft Excel 15"></head><body>',
+        '<table border=0 cellpadding=0 cellspacing=0><!--StartFragment-->',
+        '<tr height=19><td height=19>Ishida</td>',
+        '<td class=xl66 align=right x:num="1234567.891234">1,234,567.89</td></tr>',
+        '<tr height=19><td height=19>Mori</td>',
+        '<td class=xl66 align=right x:num="0.1234567890123">0.12</td></tr>',
+        '<!--EndFragment--></table></body></html>',
+    ].join('');
+    await page.evaluate((markup) => navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([markup], { type: 'text/html' }),
+        'text/plain': new Blob(['Ishida\t1,234,567.89\r\nMori\t0.12\r\n'], { type: 'text/plain' }),
+    })]), html);
+    await clickCell(page, 0, 1); // Trader; Notional to its right
+    await page.keyboard.press('Shift+ArrowDown');
+    await page.keyboard.press('Shift+ArrowRight');
+
+    await page.keyboard.press('ControlOrMeta+V');
+
+    await expect(page.locator('#paste-status')).toContainText('4 cells from 2x2');
+    await expect(page.locator('#paste-fields')).toHaveText(
+        'Fields: Ishida:ShownText | 1234567.891234:Invariant | Mori:ShownText | 0.1234567890123:Invariant');
+});
+
+// CP-14's second half (ADR-0005): desktop Excel's own copy carries no x:num. Its HTML holds each
+// cell's shown text, as text/plain does (verification/2026-09-27-windows-excel-2/
+// clipboard-probe-chrome.json, the shape declarations.spec.mjs pastes on /sheet). Then the shown
+// text is what arrives, marked as shown text to be read in the source's culture, and precision is
+// what was shown: here the demo's Consumer reads every field as a number, 1,234.50 among them.
+const excelShownTextColumn = (cells) => [
+    '<html xmlns:v="urn:schemas-microsoft-com:vml"\r\nxmlns:o="urn:schemas-microsoft-com:office:office"\r\n',
+    'xmlns:x="urn:schemas-microsoft-com:office:excel"\r\nxmlns="http://www.w3.org/TR/REC-html40">\r\n\r\n<head>\r\n',
+    '<meta http-equiv=Content-Type content="text/html; charset=utf-8">\r\n<meta name=ProgId content=Excel.Sheet>\r\n',
+    '<meta name=Generator content="Microsoft Excel 15">\r\n<style>\r\n<!--table\r\n\t{mso-displayed-decimal-separator:"\\.";\r\n',
+    '\tmso-displayed-thousand-separator:"\\,";}\r\ntd\r\n\t{mso-number-format:General;\r\n\twhite-space:nowrap;}\r\n',
+    '.xl66\r\n\t{mso-number-format:Standard;}\r\n-->\r\n</style>\r\n</head>\r\n\r\n<body link="#467886" vlink="#96607D">\r\n\r\n',
+    "<table border=0 cellpadding=0 cellspacing=0 width=87 style='border-collapse:\r\n collapse'>\r\n<!--StartFragment-->\r\n",
+    " <col width=87 style='mso-width-source:userset'>\r\n",
+    ...cells.map((text) => ` <tr height=19 style='height:14.5pt'>\r\n  <td height=19 class=xl66 align=right style='height:14.5pt'>${text}</td>\r\n </tr>\r\n`),
+    '<!--EndFragment-->\r\n</table>\r\n\r\n</body>\r\n\r\n</html>\r\n',
+].join('');
+
+test('CP-14 / ADR-0005: desktop Excel\'s paste, shown text with no x:num, arrives as the shown text and is read as numbers', async ({ page }) => {
+    const shown = ['6.00', '1,234.50', '0.12'];
+    await page.evaluate(({ markup, text }) => navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([markup], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+    })]), { markup: excelShownTextColumn(shown), text: shown.map((t) => `${t}\r\n`).join('') });
+    await clickCell(page, 0, 2); // Notional
+    await page.keyboard.press('Shift+ArrowDown');
+    await page.keyboard.press('Shift+ArrowDown');
+
+    await page.keyboard.press('ControlOrMeta+V');
+
+    await expect(page.locator('#paste-fields')).toHaveText('Fields: 6.00:ShownText | 1,234.50:ShownText | 0.12:ShownText');
+    // Each shown text read as a number by the Consumer, as typed: all three written, and painted
+    // back as the numbers they are, at the precision they were shown.
+    await expect(page.locator('#paste-status')).toContainText('3 cells from 3x1, 3 applied');
+    await expect(grid(page).locator("[id$='r0c2']")).toHaveText('6.00');
+    await expect(grid(page).locator("[id$='r1c2']")).toHaveText('1234.50');
+    await expect(grid(page).locator("[id$='r2c2']")).toHaveText('0.12');
+});
+
 test('a Reject holds the editor with real keys, and Escape is the way out (ED-15, ADR-0034)', async ({ page }) => {
     await clickCell(page, 0, 2);                   // Notional, which carries the verdict
     await page.keyboard.type('abc');

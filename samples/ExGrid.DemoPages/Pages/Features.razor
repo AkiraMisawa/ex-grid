@@ -26,6 +26,10 @@
 <p class="demo-status">
     <span id="edit-status">Edited: @_editStatus</span>
     <span id="paste-status">Pasted: @_pasteStatus</span>
+    @* What the last paste's source block held, field by field, with where each field came from
+       (ADR-0005, ADR-0050 item 10): Excel's x:num is the raw value, read under the invariant
+       culture, where the text flavour is the display, already rounded (CP-14). *@
+    <span id="paste-fields">Fields: @_pasteFields</span>
     <span id="clear-status">Cleared: @_clearStatus</span>
     <span id="history-status">History: @_historyStatus</span>
     <span id="copy-status">Copy refused: @_copyStatus</span>
@@ -404,6 +408,7 @@
     private string _findStatus = "—";
     private string _historyStatus = "—";
     private string _pasteStatus = "—";
+    private string _pasteFields = "—";
     private string _copyStatus = "—";
     private string _pasteRefusedStatus = "—";
     private string _editDiscardedStatus = "—";
@@ -530,6 +535,8 @@
     private void OnPaste(GridPasteIntent intent)
     {
         _pasteStatus = $"{intent.CellCount} cells from {intent.Plan.Source.Rows}x{intent.Plan.Source.Columns}";
+        _pasteFields = string.Join(" | ", intent.Values.SelectMany((row, r) =>
+            row.Select((value, c) => $"{value}:{intent.Origins[r][c]}")));
         // Positions are the current order's, so every (row, column, value) is resolved
         // against the Window FIRST — applying as we go could reorder mid-loop under a
         // sort on the edited column (ADR-0011/0014).
