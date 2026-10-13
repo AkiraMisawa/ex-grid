@@ -1,0 +1,590 @@
+{"t": "12:02:51", "cmd": "stop", "answer": "err Cannot stop process \"Idle (0)\" because of the following error: Access is denied t=10221"}
+{"t": "12:02:53", "cmd": "start", "answer": "ok start pid=52864 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=12847"}
+{"t": "12:02:55", "cmd": "setup A1 1", "answer": "ok setup A1 t=14345"}
+{"t": "12:02:55", "cmd": "setup B1 2", "answer": "ok setup B1 t=14398"}
+{"t": "12:02:55", "cmd": "setup C1 3", "answer": "ok setup C1 t=14455"}
+{"t": "12:02:55", "cmd": "setup A2 4", "answer": "ok setup A2 t=14508"}
+{"t": "12:02:55", "cmd": "setup C5 5", "answer": "ok setup C5 t=14565"}
+{"t": "12:02:55", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=14659"}
+{"t": "12:02:55", "cmd": "geo C5", "answer": "ok geo C5:233,470,329,497 t=14687"}
+{"t": "12:02:56", "cmd": "drag 89 367 281 483", "answer": "ok drag t=15681"}
+{"t": "12:02:57", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:C5 t=16309"}
+{"t": "12:02:57", "cmd": "shot h-h1-1-a1-c5-dragged", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h1-1-a1-c5-dragged.png windows: XLMAIN@-11,-11,3851,2099 ; NUIDialog@331,501,364,534 t=16508"}
+{"t": "12:02:57", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=16567"}
+{"t": "12:02:57", "cmd": "crop h-h1-1-a1-c5-dragged 0 293 721 329 h-h1-1-a1-c5-dragged-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h1-1-a1-c5-dragged-cells.png t=16632"}
+{"t": "12:03:07", "cmd": "stop", "answer": "ok stop 52864 ended by Stop-Process (its own) t=26909"}
+{"t": "12:03:38", "cmd": "stop", "answer": "err Cannot stop process \"Idle (0)\" because of the following error: Access is denied t=58393"}
+{"t": "12:03:40", "cmd": "start", "answer": "ok start pid=34716 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=60214"}
+{"t": "12:03:42", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=61762"}
+{"t": "12:03:42", "cmd": "geo B2", "answer": "ok geo B2:137,381,233,411 t=61819"}
+{"t": "12:03:43", "cmd": "drag 89 367 185 396", "answer": "ok drag t=62807"}
+{"t": "12:03:43", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:B2 t=63449"}
+{"t": "12:03:44", "cmd": "shot h-h2-1-a1-b2", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h2-1-a1-b2.png windows: XLMAIN@-11,-11,3851,2099 t=63620"}
+{"t": "12:03:44", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=63669"}
+{"t": "12:03:44", "cmd": "crop h-h2-1-a1-b2 0 293 721 329 h-h2-1-a1-b2-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h2-1-a1-b2-cells.png t=63724"}
+{"t": "12:03:44", "cmd": "geo D4", "answer": "ok geo D4:329,441,425,470 t=63781"}
+{"t": "12:03:44", "cmd": "geo E6", "answer": "ok geo E6:425,497,521,527 t=63840"}
+{"t": "12:03:45", "cmd": "ctrldrag 377 455 473 512", "answer": "ok ctrldrag t=64874"}
+{"t": "12:03:46", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D4 selection=A1:B2,D4:E6 t=65525"}
+{"t": "12:03:46", "cmd": "shot h-h2-2-ctrl-d4-e6", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h2-2-ctrl-d4-e6.png windows: XLMAIN@-11,-11,3851,2099 t=65699"}
+{"t": "12:03:46", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=65744"}
+{"t": "12:03:46", "cmd": "crop h-h2-2-ctrl-d4-e6 0 293 721 329 h-h2-2-ctrl-d4-e6-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h2-2-ctrl-d4-e6-cells.png t=65797"}
+{"t": "12:03:56", "cmd": "stop", "answer": "ok stop 34716 ended by Stop-Process (its own) t=76067"}
+{"t": "12:03:58", "cmd": "start", "answer": "ok start pid=22248 book=Book1 sheet=Sheet1 openedByItself= before=34716 layout=0x08090809 version=16.0 t=77821"}
+{"t": "12:04:00", "cmd": "geo C1", "answer": "ok geo C1:233,353,329,381 t=79350"}
+{"t": "12:04:00", "cmd": "geo A3", "answer": "ok geo A3:41,411,137,441 t=79407"}
+{"t": "12:04:00", "cmd": "click 281 341", "answer": "ok click t=79919"}
+{"t": "12:04:01", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C:C t=80584"}
+{"t": "12:04:01", "cmd": "shot h-h3-1-column-c", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h3-1-column-c.png windows: XLMAIN@-11,-11,3851,2099 t=80753"}
+{"t": "12:04:01", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=80804"}
+{"t": "12:04:01", "cmd": "crop h-h3-1-column-c 0 293 721 329 h-h3-1-column-c-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h3-1-column-c-cells.png t=80858"}
+{"t": "12:04:02", "cmd": "click 27 426", "answer": "ok click t=81367"}
+{"t": "12:04:03", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A3 selection=3:3 t=82025"}
+{"t": "12:04:03", "cmd": "shot h-h3-2-row-3", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h3-2-row-3.png windows: XLMAIN@-11,-11,3851,2099 t=82206"}
+{"t": "12:04:03", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=82243"}
+{"t": "12:04:03", "cmd": "crop h-h3-2-row-3 0 293 721 329 h-h3-2-row-3-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h3-2-row-3-cells.png t=82299"}
+{"t": "12:04:12", "cmd": "stop", "answer": "ok stop 22248 ended by Stop-Process (its own) t=92570"}
+{"t": "12:04:14", "cmd": "start", "answer": "ok start pid=31756 book=Book1 sheet=Sheet1 openedByItself= before=22248 layout=0x08090809 version=16.0 t=94391"}
+{"t": "12:04:16", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=95918"}
+{"t": "12:04:16", "cmd": "geo B2", "answer": "ok geo B2:137,381,233,411 t=95975"}
+{"t": "12:04:17", "cmd": "drag 89 367 185 396", "answer": "ok drag t=96963"}
+{"t": "12:04:18", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:B2 t=97599"}
+{"t": "12:04:18", "cmd": "shot h-h4-1-a1-b2", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h4-1-a1-b2.png windows: XLMAIN@-11,-11,3851,2099 t=97771"}
+{"t": "12:04:18", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=97819"}
+{"t": "12:04:18", "cmd": "crop h-h4-1-a1-b2 0 293 721 329 h-h4-1-a1-b2-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h4-1-a1-b2-cells.png t=97874"}
+{"t": "12:04:18", "cmd": "geo F6", "answer": "ok geo F6:521,497,617,527 t=97931"}
+{"t": "12:04:19", "cmd": "ctrlclick 569 512", "answer": "ok ctrlclick t=98495"}
+{"t": "12:04:19", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!F6 selection=A1:B2,F6 t=99158"}
+{"t": "12:04:19", "cmd": "shot h-h4-2-ctrl-click-f6", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h4-2-ctrl-click-f6.png windows: XLMAIN@-11,-11,3851,2099 t=99332"}
+{"t": "12:04:19", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=99379"}
+{"t": "12:04:20", "cmd": "crop h-h4-2-ctrl-click-f6 0 293 721 329 h-h4-2-ctrl-click-f6-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h4-2-ctrl-click-f6-cells.png t=99434"}
+{"t": "12:04:20", "cmd": "ctrlclick 569 512", "answer": "ok ctrlclick t=99995"}
+{"t": "12:04:21", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:B2 t=100657"}
+{"t": "12:04:21", "cmd": "shot h-h4-3-ctrl-click-f6-again", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h4-3-ctrl-click-f6-again.png windows: XLMAIN@-11,-11,3851,2099 t=100838"}
+{"t": "12:04:21", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=100877"}
+{"t": "12:04:21", "cmd": "crop h-h4-3-ctrl-click-f6-again 0 293 721 329 h-h4-3-ctrl-click-f6-again-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h4-3-ctrl-click-f6-again-cells.png t=100930"}
+{"t": "12:04:21", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=101045"}
+{"t": "12:04:22", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A1:B2 t=101683"}
+{"t": "12:04:22", "cmd": "shot h-h4-4-enter-1", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h4-4-enter-1.png windows: XLMAIN@-11,-11,3851,2099 t=101864"}
+{"t": "12:04:22", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=101903"}
+{"t": "12:04:22", "cmd": "crop h-h4-4-enter-1 0 293 721 329 h-h4-4-enter-1-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h4-4-enter-1-cells.png t=101959"}
+{"t": "12:04:22", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=102046"}
+{"t": "12:04:23", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B1 selection=A1:B2 t=102658"}
+{"t": "12:04:23", "cmd": "shot h-h4-5-enter-2", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h4-5-enter-2.png windows: XLMAIN@-11,-11,3851,2099 t=102833"}
+{"t": "12:04:23", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=102879"}
+{"t": "12:04:23", "cmd": "crop h-h4-5-enter-2 0 293 721 329 h-h4-5-enter-2-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h4-5-enter-2-cells.png t=102935"}
+{"t": "12:04:23", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=103022"}
+{"t": "12:04:24", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B2 selection=A1:B2 t=103637"}
+{"t": "12:04:24", "cmd": "shot h-h4-6-enter-3", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h4-6-enter-3.png windows: XLMAIN@-11,-11,3851,2099 t=103811"}
+{"t": "12:04:24", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=103854"}
+{"t": "12:04:24", "cmd": "crop h-h4-6-enter-3 0 293 721 329 h-h4-6-enter-3-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h4-6-enter-3-cells.png t=103908"}
+{"t": "12:04:35", "cmd": "stop", "answer": "ok stop 31756 ended by Stop-Process (its own) t=114220"}
+{"t": "12:07:06", "cmd": "stop", "answer": "err Cannot stop process \"Idle (0)\" because of the following error: Access is denied t=265105"}
+{"t": "12:07:06", "cmd": "start", "answer": "err Cannot stop process \"Idle (0)\" because of the following error: Access is denied t=10199"}
+{"t": "12:07:47", "cmd": "stop", "answer": "err Cannot stop process \"Idle (0)\" because of the following error: Access is denied t=18770"}
+{"t": "12:07:49", "cmd": "start", "answer": "ok start pid=49620 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=21343"}
+{"t": "12:07:52", "cmd": "keys 30 =VLOOKUP{(}1,A1:B2,2,", "answer": "ok keys 19 t=23528"}
+{"t": "12:07:54", "cmd": "uianames ( - |^TRUE|^FALSE)", "answer": "ok uianames [\"Book1 - Excel | ControlType.Window | XLMAIN\",\"?Book1?  -  Excel | ControlType.TitleBar | NetUIOfficeCaption\",\"?Book1?  -  Excel | ControlType.Button | NetUISimpleButton\",\"Light Turquoise, 20% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 20% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 20% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 20% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 20% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 20% - Accent6 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 40% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 40% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 40% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 40% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 40% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 40% - Accent6 | ControlType.ListItem | NetUIGalleryButton\",\"Turquoise, 60% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 60% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Green, 60% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Turquoise, 60% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 60% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Green, 60% - Accent6 | ControlType.ListItem | NetUIGalleryButton\"] t=25607"}
+{"t": "12:07:54", "cmd": "shot h-h5-1-list", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h5-1-list.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,625,415 ; XLToolTip@534,417,1349,448 ; __XLACOOUTER@242,417,531,483 t=25867"}
+{"t": "12:07:54", "cmd": "geo A1 H12", "answer": "err Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=25932"}
+{"t": "12:08:18", "cmd": "stop", "answer": "ok stop 49620 ended by Stop-Process (its own) t=49984"}
+{"t": "12:08:20", "cmd": "start", "answer": "ok start pid=31772 book=Book1 sheet=Sheet1 openedByItself= before=49620 layout=0x08090809 version=16.0 t=51738"}
+{"t": "12:08:21", "cmd": "geo A1 H12", "answer": "ok geo A1:41,353,137,381 H12:713,674,809,701 t=53281"}
+{"t": "12:08:22", "cmd": "keys 30 =VLOOKUP{(}1,A1:B2,2,", "answer": "ok keys 19 t=53932"}
+{"t": "12:08:24", "cmd": "uianames ( - |^TRUE|^FALSE)", "answer": "ok uianames [\"Book1 - Excel | ControlType.Window | XLMAIN\",\"?Book1?  -  Excel | ControlType.TitleBar | NetUIOfficeCaption\",\"?Book1?  -  Excel | ControlType.Button | NetUISimpleButton\",\"Light Turquoise, 20% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 20% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 20% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 20% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 20% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 20% - Accent6 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 40% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 40% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 40% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 40% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 40% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 40% - Accent6 | ControlType.ListItem | NetUIGalleryButton\",\"Turquoise, 60% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 60% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Green, 60% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Turquoise, 60% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 60% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Green, 60% - Accent6 | ControlType.ListItem | NetUIGalleryButton\"] t=55927"}
+{"t": "12:08:24", "cmd": "shot h-h5-1-list", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h5-1-list.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,625,415 ; XLToolTip@534,417,1349,448 ; __XLACOOUTER@242,417,531,483 t=56146"}
+{"t": "12:08:24", "cmd": "crop h-h5-1-list 0 293 817 416 h-h5-1-list-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h5-1-list-cells.png t=56210"}
+{"t": "12:08:24", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=56287"}
+{"t": "12:08:25", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=56754"}
+{"t": "12:08:26", "cmd": "keys 30 =HLOOKUP{(}1,A1:B2,2,", "answer": "ok keys 19 t=57832"}
+{"t": "12:08:28", "cmd": "uianames ( - |^TRUE|^FALSE)", "answer": "ok uianames [\"Book1 - Excel | ControlType.Window | XLMAIN\",\"?Book1?  -  Excel | ControlType.TitleBar | NetUIOfficeCaption\",\"?Book1?  -  Excel | ControlType.Button | NetUISimpleButton\",\"Light Turquoise, 20% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 20% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 20% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 20% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 20% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 20% - Accent6 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 40% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 40% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 40% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 40% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 40% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 40% - Accent6 | ControlType.ListItem | NetUIGalleryButton\",\"Turquoise, 60% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 60% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Green, 60% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Turquoise, 60% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 60% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Green, 60% - Accent6 | ControlType.ListItem | NetUIGalleryButton\"] t=59748"}
+{"t": "12:08:28", "cmd": "shot h-h5-2-list", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h5-2-list.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,634,415 ; XLToolTip@536,417,1322,448 ; __XLACOOUTER@244,417,533,483 t=59954"}
+{"t": "12:08:28", "cmd": "crop h-h5-2-list 0 293 817 416 h-h5-2-list-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h5-2-list-cells.png t=60001"}
+{"t": "12:08:28", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=60096"}
+{"t": "12:08:29", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=60551"}
+{"t": "12:08:30", "cmd": "keys 30 =MATCH{(}1,A1:A2,", "answer": "ok keys 15 t=61491"}
+{"t": "12:08:32", "cmd": "uianames ( - |^TRUE|^FALSE)", "answer": "ok uianames [\"Book1 - Excel | ControlType.Window | XLMAIN\",\"?Book1?  -  Excel | ControlType.TitleBar | NetUIOfficeCaption\",\"?Book1?  -  Excel | ControlType.Button | NetUISimpleButton\",\"Light Turquoise, 20% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 20% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 20% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 20% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 20% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 20% - Accent6 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 40% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 40% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 40% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 40% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 40% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 40% - Accent6 | ControlType.ListItem | NetUIGalleryButton\",\"Turquoise, 60% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 60% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Green, 60% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Turquoise, 60% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 60% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Green, 60% - Accent6 | ControlType.ListItem | NetUIGalleryButton\"] t=63374"}
+{"t": "12:08:32", "cmd": "shot h-h5-3-list", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h5-3-list.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,483,415 ; XLToolTip@404,417,1324,448 ; __XLACOOUTER@202,417,401,515 t=63582"}
+{"t": "12:08:32", "cmd": "crop h-h5-3-list 0 293 817 416 h-h5-3-list-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h5-3-list-cells.png t=63630"}
+{"t": "12:08:32", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=63716"}
+{"t": "12:08:33", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=64182"}
+{"t": "12:08:34", "cmd": "keys 30 =YEARFRAC{(}A1,A2,", "answer": "ok keys 16 t=65145"}
+{"t": "12:08:36", "cmd": "uianames ( - |^TRUE|^FALSE)", "answer": "ok uianames [\"Book1 - Excel | ControlType.Window | XLMAIN\",\"?Book1?  -  Excel | ControlType.TitleBar | NetUIOfficeCaption\",\"?Book1?  -  Excel | ControlType.Button | NetUISimpleButton\",\"Light Turquoise, 20% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 20% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 20% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 20% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 20% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 20% - Accent6 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 40% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 40% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 40% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 40% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 40% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 40% - Accent6 | ControlType.ListItem | NetUIGalleryButton\",\"Turquoise, 60% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 60% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Green, 60% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Turquoise, 60% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 60% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Green, 60% - Accent6 | ControlType.ListItem | NetUIGalleryButton\"] t=67088"}
+{"t": "12:08:36", "cmd": "shot h-h5-4-list", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h5-4-list.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,394,415 ; XLToolTip@457,417,755,448 ; __XLACOOUTER@214,417,454,579 t=67286"}
+{"t": "12:08:36", "cmd": "crop h-h5-4-list 0 293 817 416 h-h5-4-list-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h5-4-list-cells.png t=67308"}
+{"t": "12:08:36", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=67395"}
+{"t": "12:08:36", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=67863"}
+{"t": "12:08:37", "cmd": "keys 30 =XMATCH{(}1,A1:A2,", "answer": "ok keys 16 t=68920"}
+{"t": "12:08:39", "cmd": "uianames ( - |^TRUE|^FALSE)", "answer": "ok uianames [\"Book1 - Excel | ControlType.Window | XLMAIN\",\"?Book1?  -  Excel | ControlType.TitleBar | NetUIOfficeCaption\",\"?Book1?  -  Excel | ControlType.Button | NetUISimpleButton\",\"Light Turquoise, 20% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 20% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 20% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 20% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 20% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 20% - Accent6 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 40% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 40% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 40% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 40% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 40% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 40% - Accent6 | ControlType.ListItem | NetUIGalleryButton\",\"Turquoise, 60% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 60% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Green, 60% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Turquoise, 60% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 60% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Green, 60% - Accent6 | ControlType.ListItem | NetUIGalleryButton\"] t=70781"}
+{"t": "12:08:40", "cmd": "shot h-h5-5-list", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h5-5-list.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,627,415 ; XLToolTip@591,417,1061,448 ; __XLACOOUTER@213,417,588,579 t=71010"}
+{"t": "12:08:40", "cmd": "crop h-h5-5-list 0 293 817 416 h-h5-5-list-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h5-5-list-cells.png t=71048"}
+{"t": "12:08:40", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=71144"}
+{"t": "12:08:40", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=71595"}
+{"t": "12:08:41", "cmd": "keys 30 =XMATCH{(}1,A1:A2,0,", "answer": "ok keys 18 t=72573"}
+{"t": "12:08:43", "cmd": "uianames ( - |^TRUE|^FALSE)", "answer": "ok uianames [\"Book1 - Excel | ControlType.Window | XLMAIN\",\"?Book1?  -  Excel | ControlType.TitleBar | NetUIOfficeCaption\",\"?Book1?  -  Excel | ControlType.Button | NetUISimpleButton\",\"Light Turquoise, 20% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 20% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 20% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 20% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 20% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 20% - Accent6 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 40% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 40% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 40% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Light Turquoise, 40% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 40% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Light Green, 40% - Accent6 | ControlType.ListItem | NetUIGalleryButton\",\"Turquoise, 60% - Accent1 | ControlType.ListItem | NetUIGalleryButton\",\"Light Orange, 60% - Accent2 | ControlType.ListItem | NetUIGalleryButton\",\"Green, 60% - Accent3 | ControlType.ListItem | NetUIGalleryButton\",\"Turquoise, 60% - Accent4 | ControlType.ListItem | NetUIGalleryButton\",\"Pink, 60% - Accent5 | ControlType.ListItem | NetUIGalleryButton\",\"Green, 60% - Accent6 | ControlType.ListItem | NetUIGalleryButton\"] t=74462"}
+{"t": "12:08:43", "cmd": "shot h-h5-6-list", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h5-6-list.png windows: XLMAIN@-11,-11,3851,2099 ; XLToolTip@54,384,628,415 ; __XLACOOUTER@230,417,669,547 ; XLToolTip@672,417,1017,448 t=74665"}
+{"t": "12:08:43", "cmd": "crop h-h5-6-list 0 293 817 416 h-h5-6-list-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h5-6-list-cells.png t=74721"}
+{"t": "12:08:44", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=74810"}
+{"t": "12:08:44", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=75269"}
+{"t": "12:08:54", "cmd": "stop", "answer": "ok stop 31772 ended by Stop-Process (its own) t=85943"}
+{"t": "12:09:38", "cmd": "stop", "answer": "err Cannot stop process \"Idle (0)\" because of the following error: Access is denied t=129249"}
+{"t": "12:09:40", "cmd": "start", "answer": "ok start pid=24312 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=131068"}
+{"t": "12:09:41", "cmd": "setwidth A1 5", "answer": "ok setwidth A1 5 t=132616"}
+{"t": "12:09:42", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=132974"}
+{"t": "12:09:42", "cmd": "setup A1 123456.78", "answer": "ok setup A1 t=133030"}
+{"t": "12:09:42", "cmd": "select A1", "answer": "ok select A1 t=133082"}
+{"t": "12:09:42", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=133742"}
+{"t": "12:09:43", "cmd": "cell A1", "answer": "ok cell A1: number 123456.78 | formula \"123456.78\" | text \"#####\" | numberFormat \"0.00\" t=133951"}
+{"t": "12:09:43", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 5 | text \"#####\" t=134099"}
+{"t": "12:09:43", "cmd": "shot h-h7-ctrl-i-0-hashes", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-ctrl-i-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=134286"}
+{"t": "12:09:43", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,102,381 G9:582,585,678,614 t=134324"}
+{"t": "12:09:43", "cmd": "crop h-h7-ctrl-i-0-hashes 0 293 686 329 h-h7-ctrl-i-0-hashes-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-ctrl-i-0-hashes-cells.png t=134381"}
+{"t": "12:09:43", "cmd": "keys 40 ^i", "answer": "ok keys 1 t=134473"}
+{"t": "12:09:44", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=135092"}
+{"t": "12:09:44", "cmd": "cell A1", "answer": "ok cell A1: number 123456.78 | formula \"123456.78\" | text \"####\" | numberFormat \"0.00\" t=135274"}
+{"t": "12:09:44", "cmd": "look A1", "answer": "ok look A1: bold False italic True underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 5 | text \"####\" t=135325"}
+{"t": "12:09:44", "cmd": "shot h-h7-ctrl-i-1-ctrl-i", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-ctrl-i-1-ctrl-i.png windows: XLMAIN@-11,-11,3851,2099 t=135487"}
+{"t": "12:09:44", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,102,381 G9:582,585,678,614 t=135535"}
+{"t": "12:09:44", "cmd": "crop h-h7-ctrl-i-1-ctrl-i 0 293 686 329 h-h7-ctrl-i-1-ctrl-i-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-ctrl-i-1-ctrl-i-cells.png t=135589"}
+{"t": "12:09:44", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 5 | useStandardWidth False t=135643"}
+{"t": "12:09:44", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 5 | useStandardWidth False t=135697"}
+{"t": "12:09:54", "cmd": "stop", "answer": "ok stop 24312 ended by Stop-Process (its own) t=146013"}
+{"t": "12:09:56", "cmd": "start", "answer": "ok start pid=36168 book=Book1 sheet=Sheet1 openedByItself= before=24312 layout=0x08090809 version=16.0 t=147816"}
+{"t": "12:09:57", "cmd": "setwidth A1 5", "answer": "ok setwidth A1 5 t=149322"}
+{"t": "12:09:58", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=149510"}
+{"t": "12:09:58", "cmd": "setup A1 123456.78", "answer": "ok setup A1 t=149526"}
+{"t": "12:09:58", "cmd": "select A1", "answer": "ok select A1 t=149581"}
+{"t": "12:09:58", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=150250"}
+{"t": "12:09:59", "cmd": "cell A1", "answer": "ok cell A1: number 123456.78 | formula \"123456.78\" | text \"#####\" | numberFormat \"0.00\" t=150430"}
+{"t": "12:09:59", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 5 | text \"#####\" t=150481"}
+{"t": "12:09:59", "cmd": "shot h-h7-ctrl-u-0-hashes", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-ctrl-u-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=150646"}
+{"t": "12:09:59", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,102,381 G9:582,585,678,614 t=150686"}
+{"t": "12:09:59", "cmd": "crop h-h7-ctrl-u-0-hashes 0 293 686 329 h-h7-ctrl-u-0-hashes-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-ctrl-u-0-hashes-cells.png t=150742"}
+{"t": "12:09:59", "cmd": "keys 40 ^u", "answer": "ok keys 1 t=150833"}
+{"t": "12:10:00", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=151443"}
+{"t": "12:10:00", "cmd": "cell A1", "answer": "ok cell A1: number 123456.78 | formula \"123456.78\" | text \"#####\" | numberFormat \"0.00\" t=151609"}
+{"t": "12:10:00", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline 2 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 5 | text \"#####\" t=151667"}
+{"t": "12:10:00", "cmd": "shot h-h7-ctrl-u-1-ctrl-u", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-ctrl-u-1-ctrl-u.png windows: XLMAIN@-11,-11,3851,2099 t=151834"}
+{"t": "12:10:00", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,102,381 G9:582,585,678,614 t=151878"}
+{"t": "12:10:00", "cmd": "crop h-h7-ctrl-u-1-ctrl-u 0 293 686 329 h-h7-ctrl-u-1-ctrl-u-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-ctrl-u-1-ctrl-u-cells.png t=151933"}
+{"t": "12:10:00", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 5 | useStandardWidth False t=151983"}
+{"t": "12:10:00", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 5 | useStandardWidth False t=152041"}
+{"t": "12:10:11", "cmd": "stop", "answer": "ok stop 36168 ended by Stop-Process (its own) t=162328"}
+{"t": "12:10:13", "cmd": "start", "answer": "ok start pid=51816 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=164130"}
+{"t": "12:10:14", "cmd": "setwidth A1 5", "answer": "ok setwidth A1 5 t=165646"}
+{"t": "12:10:15", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=165859"}
+{"t": "12:10:15", "cmd": "setup A1 123456.78", "answer": "ok setup A1 t=165900"}
+{"t": "12:10:15", "cmd": "select A1", "answer": "ok select A1 t=165955"}
+{"t": "12:10:15", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=166604"}
+{"t": "12:10:15", "cmd": "cell A1", "answer": "ok cell A1: number 123456.78 | formula \"123456.78\" | text \"#####\" | numberFormat \"0.00\" t=166788"}
+{"t": "12:10:16", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 5 | text \"#####\" t=166843"}
+{"t": "12:10:16", "cmd": "shot h-h7-font-tab-0-hashes", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-font-tab-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=166983"}
+{"t": "12:10:16", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,102,381 G9:582,585,678,614 t=167043"}
+{"t": "12:10:16", "cmd": "crop h-h7-font-tab-0-hashes 0 293 686 329 h-h7-font-tab-0-hashes-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-font-tab-0-hashes-cells.png t=167093"}
+{"t": "12:10:16", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=167193"}
+{"t": "12:10:17", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=168753"}
+{"t": "12:10:18", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=169200"}
+{"t": "12:10:19", "cmd": "uianames ^(Font|Font style:|Size:|Bold|Underline:|Effects|Strikethrough|Format Cells)$", "answer": "ok uianames [\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Font | ControlType.Group | NetUIChunk\",\"Font | ControlType.ComboBox | NetUIComboboxAnchor\",\"Font | ControlType.Edit | NetUITextbox\",\"Bold | ControlType.Button | NetUIRibbonButton\"] t=170495"}
+{"t": "12:10:19", "cmd": "keys 40 %o", "answer": "ok keys 1 t=170563"}
+{"t": "12:10:20", "cmd": "keys 40 Bold", "answer": "ok keys 4 t=171060"}
+{"t": "12:10:20", "cmd": "shot h-h7-font-tab-2-bold-chosen", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-font-tab-2-bold-chosen.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=171655"}
+{"t": "12:10:20", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=171740"}
+{"t": "12:10:20", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=172351"}
+{"t": "12:10:20", "cmd": "cell A1", "answer": "ok cell A1: number 123456.78 | formula \"123456.78\" | text \"#####\" | numberFormat \"0.00\" t=172535"}
+{"t": "12:10:20", "cmd": "look A1", "answer": "ok look A1: bold True italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 5 | text \"#####\" t=172577"}
+{"t": "12:10:21", "cmd": "shot h-h7-font-tab-3-ok", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-font-tab-3-ok.png windows: XLMAIN@-11,-11,3851,2099 t=172736"}
+{"t": "12:10:21", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,102,381 G9:582,585,678,614 t=172788"}
+{"t": "12:10:21", "cmd": "crop h-h7-font-tab-3-ok 0 293 686 329 h-h7-font-tab-3-ok-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-font-tab-3-ok-cells.png t=172846"}
+{"t": "12:10:21", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 5 | useStandardWidth False t=172895"}
+{"t": "12:10:31", "cmd": "stop", "answer": "ok stop 51816 ended by Stop-Process (its own) t=183216"}
+{"t": "12:10:33", "cmd": "start", "answer": "ok start pid=21568 book=Book1 sheet=Sheet1 openedByItself= before=51816 layout=0x08090809 version=16.0 t=185037"}
+{"t": "12:10:35", "cmd": "setwidth A1 5", "answer": "ok setwidth A1 5 t=186585"}
+{"t": "12:10:35", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=186785"}
+{"t": "12:10:35", "cmd": "setup A1 123456.78", "answer": "ok setup A1 t=186840"}
+{"t": "12:10:35", "cmd": "select A1", "answer": "ok select A1 t=186894"}
+{"t": "12:10:36", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=187553"}
+{"t": "12:10:36", "cmd": "cell A1", "answer": "ok cell A1: number 123456.78 | formula \"123456.78\" | text \"#####\" | numberFormat \"0.00\" t=187737"}
+{"t": "12:10:36", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 5 | text \"#####\" t=187801"}
+{"t": "12:10:36", "cmd": "shot h-h8-0-hashes", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h8-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=187952"}
+{"t": "12:10:36", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,102,381 G9:582,585,678,614 t=187999"}
+{"t": "12:10:36", "cmd": "crop h-h8-0-hashes 0 293 686 329 h-h8-0-hashes-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h8-0-hashes-cells.png t=188051"}
+{"t": "12:10:37", "cmd": "keys 40 ^5", "answer": "ok keys 1 t=188142"}
+{"t": "12:10:37", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=188768"}
+{"t": "12:10:37", "cmd": "cell A1", "answer": "ok cell A1: number 123456.78 | formula \"123456.78\" | text \"#####\" | numberFormat \"0.00\" t=188961"}
+{"t": "12:10:37", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike True size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 5 | text \"#####\" t=189002"}
+{"t": "12:10:38", "cmd": "shot h-h8-1-ctrl-5", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h8-1-ctrl-5.png windows: XLMAIN@-11,-11,3851,2099 t=189162"}
+{"t": "12:10:38", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,102,381 G9:582,585,678,614 t=189211"}
+{"t": "12:10:38", "cmd": "crop h-h8-1-ctrl-5 0 293 686 329 h-h8-1-ctrl-5-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h8-1-ctrl-5-cells.png t=189266"}
+{"t": "12:10:38", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 5 | useStandardWidth False t=189316"}
+{"t": "12:10:48", "cmd": "stop", "answer": "ok stop 21568 ended by Stop-Process (its own) t=199599"}
+{"t": "12:10:50", "cmd": "start", "answer": "ok start pid=13088 book=Book1 sheet=Sheet1 openedByItself= before=21568 layout=0x08090809 version=16.0 t=201414"}
+{"t": "12:10:51", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=203047"}
+{"t": "12:10:51", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=203078"}
+{"t": "12:10:51", "cmd": "select A1", "answer": "ok select A1 t=203132"}
+{"t": "12:10:52", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=203785"}
+{"t": "12:10:52", "cmd": "cell A1", "answer": "ok cell A1: number 123456789.12 | formula \"123456789.12\" | text \"########\" | numberFormat \"0.00\" t=203996"}
+{"t": "12:10:52", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=204074"}
+{"t": "12:10:52", "cmd": "shot h-h8-standard-0-hashes", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h8-standard-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=204225"}
+{"t": "12:10:52", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=204282"}
+{"t": "12:10:52", "cmd": "crop h-h8-standard-0-hashes 0 293 721 329 h-h8-standard-0-hashes-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h8-standard-0-hashes-cells.png t=204335"}
+{"t": "12:10:52", "cmd": "keys 40 ^5", "answer": "ok keys 1 t=204425"}
+{"t": "12:10:53", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=205039"}
+{"t": "12:10:53", "cmd": "cell A1", "answer": "ok cell A1: number 123456789.12 | formula \"123456789.12\" | text \"123456789.12\" | numberFormat \"0.00\" t=205214"}
+{"t": "12:10:53", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike True size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 11.73 | text \"123456789.12\" t=205272"}
+{"t": "12:10:53", "cmd": "shot h-h8-standard-1-ctrl-5", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h8-standard-1-ctrl-5.png windows: XLMAIN@-11,-11,3851,2099 t=205429"}
+{"t": "12:10:53", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,176,381 G9:656,585,752,614 t=205479"}
+{"t": "12:10:53", "cmd": "crop h-h8-standard-1-ctrl-5 0 293 760 329 h-h8-standard-1-ctrl-5-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h8-standard-1-ctrl-5-cells.png t=205535"}
+{"t": "12:10:54", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 11.73 | useStandardWidth False t=205584"}
+{"t": "12:11:04", "cmd": "stop", "answer": "ok stop 13088 ended by Stop-Process (its own) t=215867"}
+{"t": "12:11:29", "cmd": "stop", "answer": "err Cannot stop process \"Idle (0)\" because of the following error: Access is denied t=241355"}
+{"t": "12:11:31", "cmd": "start", "answer": "ok start pid=31232 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=243174"}
+{"t": "12:11:33", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=244853"}
+{"t": "12:11:33", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=244901"}
+{"t": "12:11:33", "cmd": "select A1", "answer": "ok select A1 t=244955"}
+{"t": "12:11:34", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=245623"}
+{"t": "12:11:34", "cmd": "cell A1", "answer": "ok cell A1: number 123456789.12 | formula \"123456789.12\" | text \"########\" | numberFormat \"0.00\" t=245831"}
+{"t": "12:11:34", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=245903"}
+{"t": "12:11:34", "cmd": "shot h-h7-standard-ctrl-i-0-hashes", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-standard-ctrl-i-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=246061"}
+{"t": "12:11:34", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=246113"}
+{"t": "12:11:34", "cmd": "crop h-h7-standard-ctrl-i-0-hashes 0 293 721 329 h-h7-standard-ctrl-i-0-hashes-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-standard-ctrl-i-0-hashes-cells.png t=246170"}
+{"t": "12:11:35", "cmd": "keys 40 ^i", "answer": "ok keys 1 t=246270"}
+{"t": "12:11:35", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=246925"}
+{"t": "12:11:35", "cmd": "cell A1", "answer": "ok cell A1: number 123456789.12 | formula \"123456789.12\" | text \"#######\" | numberFormat \"0.00\" t=247103"}
+{"t": "12:11:35", "cmd": "look A1", "answer": "ok look A1: bold False italic True underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"#######\" t=247153"}
+{"t": "12:11:36", "cmd": "shot h-h7-standard-ctrl-i-1-ctrl-i", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-standard-ctrl-i-1-ctrl-i.png windows: XLMAIN@-11,-11,3851,2099 t=247318"}
+{"t": "12:11:36", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=247367"}
+{"t": "12:11:36", "cmd": "crop h-h7-standard-ctrl-i-1-ctrl-i 0 293 721 329 h-h7-standard-ctrl-i-1-ctrl-i-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-standard-ctrl-i-1-ctrl-i-cells.png t=247421"}
+{"t": "12:11:36", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=247471"}
+{"t": "12:11:46", "cmd": "stop", "answer": "ok stop 31232 ended by Stop-Process (its own) t=257752"}
+{"t": "12:11:48", "cmd": "start", "answer": "ok start pid=48604 book=Book1 sheet=Sheet1 openedByItself= before=31232 layout=0x08090809 version=16.0 t=259517"}
+{"t": "12:11:50", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=261171"}
+{"t": "12:11:50", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=261235"}
+{"t": "12:11:50", "cmd": "select A1", "answer": "ok select A1 t=261289"}
+{"t": "12:11:51", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=261956"}
+{"t": "12:11:51", "cmd": "cell A1", "answer": "ok cell A1: number 123456789.12 | formula \"123456789.12\" | text \"########\" | numberFormat \"0.00\" t=262152"}
+{"t": "12:11:51", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=262189"}
+{"t": "12:11:51", "cmd": "shot h-h7-standard-ctrl-u-0-hashes", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-standard-ctrl-u-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=262347"}
+{"t": "12:11:51", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=262401"}
+{"t": "12:11:51", "cmd": "crop h-h7-standard-ctrl-u-0-hashes 0 293 721 329 h-h7-standard-ctrl-u-0-hashes-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-standard-ctrl-u-0-hashes-cells.png t=262452"}
+{"t": "12:11:51", "cmd": "keys 40 ^u", "answer": "ok keys 1 t=262553"}
+{"t": "12:11:52", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=263205"}
+{"t": "12:11:52", "cmd": "cell A1", "answer": "ok cell A1: number 123456789.12 | formula \"123456789.12\" | text \"123456789.12\" | numberFormat \"0.00\" t=263383"}
+{"t": "12:11:52", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline 2 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 11.73 | text \"123456789.12\" t=263439"}
+{"t": "12:11:52", "cmd": "shot h-h7-standard-ctrl-u-1-ctrl-u", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-standard-ctrl-u-1-ctrl-u.png windows: XLMAIN@-11,-11,3851,2099 t=263598"}
+{"t": "12:11:52", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,176,381 G9:656,585,752,614 t=263646"}
+{"t": "12:11:52", "cmd": "crop h-h7-standard-ctrl-u-1-ctrl-u 0 293 760 329 h-h7-standard-ctrl-u-1-ctrl-u-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-standard-ctrl-u-1-ctrl-u-cells.png t=263704"}
+{"t": "12:11:53", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 11.73 | useStandardWidth False t=263754"}
+{"t": "12:12:02", "cmd": "stop", "answer": "ok stop 48604 ended by Stop-Process (its own) t=274048"}
+{"t": "12:12:04", "cmd": "start", "answer": "ok start pid=28700 book=Book1 sheet=Sheet1 openedByItself= before=48604 layout=0x08090809 version=16.0 t=275878"}
+{"t": "12:12:06", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=277495"}
+{"t": "12:12:06", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=277520"}
+{"t": "12:12:06", "cmd": "select A1", "answer": "ok select A1 t=277573"}
+{"t": "12:12:06", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=278231"}
+{"t": "12:12:07", "cmd": "cell A1", "answer": "ok cell A1: number 123456789.12 | formula \"123456789.12\" | text \"########\" | numberFormat \"0.00\" t=278415"}
+{"t": "12:12:07", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=278469"}
+{"t": "12:12:07", "cmd": "shot h-h7-standard-font-tab-0-hashes", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-standard-font-tab-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=278620"}
+{"t": "12:12:07", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,137,381 G9:617,585,713,614 t=278672"}
+{"t": "12:12:07", "cmd": "crop h-h7-standard-font-tab-0-hashes 0 293 721 329 h-h7-standard-font-tab-0-hashes-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-standard-font-tab-0-hashes-cells.png t=278729"}
+{"t": "12:12:07", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=278829"}
+{"t": "12:12:09", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=280408"}
+{"t": "12:12:09", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=280909"}
+{"t": "12:12:10", "cmd": "keys 40 %o", "answer": "ok keys 1 t=281598"}
+{"t": "12:12:10", "cmd": "keys 40 Bold", "answer": "ok keys 4 t=282094"}
+{"t": "12:12:11", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=282567"}
+{"t": "12:12:12", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=283233"}
+{"t": "12:12:12", "cmd": "cell A1", "answer": "ok cell A1: number 123456789.12 | formula \"123456789.12\" | text \"123456789.12\" | numberFormat \"0.00\" t=283413"}
+{"t": "12:12:12", "cmd": "look A1", "answer": "ok look A1: bold True italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 11.73 | text \"123456789.12\" t=283464"}
+{"t": "12:12:12", "cmd": "shot h-h7-standard-font-tab-3-ok", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-standard-font-tab-3-ok.png windows: XLMAIN@-11,-11,3851,2099 t=283646"}
+{"t": "12:12:12", "cmd": "geo A1 G9", "answer": "ok geo A1:41,353,176,381 G9:656,585,752,614 t=283672"}
+{"t": "12:12:12", "cmd": "crop h-h7-standard-font-tab-3-ok 0 293 760 329 h-h7-standard-font-tab-3-ok-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h7-standard-font-tab-3-ok-cells.png t=283727"}
+{"t": "12:12:12", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 11.73 | useStandardWidth False t=283780"}
+{"t": "12:12:23", "cmd": "stop", "answer": "ok stop 28700 ended by Stop-Process (its own) t=294066"}
+{"t": "12:12:42", "cmd": "stop", "answer": "err Cannot stop process \"Idle (0)\" because of the following error: Access is denied t=314036"}
+{"t": "12:12:44", "cmd": "start", "answer": "ok start pid=45700 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=315860"}
+{"t": "12:12:46", "cmd": "setup A1 46307.5625", "answer": "ok setup A1 t=317358"}
+{"t": "12:12:46", "cmd": "setup A2 0.5625", "answer": "ok setup A2 t=317415"}
+{"t": "12:12:46", "cmd": "setwidth A1 30", "answer": "ok setwidth A1 30 t=317499"}
+{"t": "12:12:46", "cmd": "select A1:A2", "answer": "ok select A1:A2 t=317539"}
+{"t": "12:12:46", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=317641"}
+{"t": "12:12:48", "cmd": "keys 40 %c", "answer": "ok keys 1 t=319201"}
+{"t": "12:12:48", "cmd": "keys 40 {END}", "answer": "ok keys 1 t=319549"}
+{"t": "12:12:49", "cmd": "keys 40 %t", "answer": "ok keys 1 t=320107"}
+{"t": "12:12:49", "cmd": "keys 40 ^a", "answer": "ok keys 1 t=320454"}
+{"t": "12:12:49", "cmd": "keys 40 d-mmm-yy", "answer": "ok keys 8 t=320842"}
+{"t": "12:12:51", "cmd": "uianames ^(Type:|Sample|Custom|Format Cells)", "answer": "ok uianames [\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Customise Quick Access Toolbar | ControlType.MenuItem | NetUIAnchor\"] t=322082"}
+{"t": "12:12:51", "cmd": "shot h-h9-en-GB-dialog-d-mmm-yy", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h9-en-GB-dialog-d-mmm-yy.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=322249"}
+{"t": "12:12:51", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=322345"}
+{"t": "12:12:52", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:A2 t=322969"}
+{"t": "12:12:52", "cmd": "cell A1 A2", "answer": "ok cell A1: number 46307.5625 | formula \"46307.5625\" | text \"12-Oct-26\" | numberFormat \"d-mmm-yy\" ;; A2: number 0.5625 | formula \"0.5625\" | text \"0-Jan-00\" | numberFormat \"d-mmm-yy\" t=323294"}
+{"t": "12:12:52", "cmd": "shot h-h9-en-GB-ok-d-mmm-yy", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h9-en-GB-ok-d-mmm-yy.png windows: XLMAIN@-11,-11,3851,2099 t=323445"}
+{"t": "12:12:52", "cmd": "geo A1 C4", "answer": "ok geo A1:41,353,377,381 C4:473,441,569,470 t=323501"}
+{"t": "12:12:52", "cmd": "crop h-h9-en-GB-ok-d-mmm-yy 0 293 577 185 h-h9-en-GB-ok-d-mmm-yy-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h9-en-GB-ok-d-mmm-yy-cells.png t=323556"}
+{"t": "12:12:52", "cmd": "setup A1 46307.5625", "answer": "ok setup A1 t=323615"}
+{"t": "12:12:52", "cmd": "setup A2 0.5625", "answer": "ok setup A2 t=323672"}
+{"t": "12:12:53", "cmd": "setwidth A1 30", "answer": "ok setwidth A1 30 t=323792"}
+{"t": "12:12:53", "cmd": "select A1:A2", "answer": "ok select A1:A2 t=323839"}
+{"t": "12:12:53", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=323935"}
+{"t": "12:12:54", "cmd": "keys 40 %c", "answer": "ok keys 1 t=325459"}
+{"t": "12:12:55", "cmd": "keys 40 {END}", "answer": "ok keys 1 t=325859"}
+{"t": "12:12:55", "cmd": "keys 40 %t", "answer": "ok keys 1 t=326408"}
+{"t": "12:12:56", "cmd": "keys 40 ^a", "answer": "ok keys 1 t=326764"}
+{"t": "12:12:56", "cmd": "keys 40 m/d/yyyy", "answer": "ok keys 8 t=327159"}
+{"t": "12:12:56", "cmd": "uianames ^(Type:|Sample|Custom|Format Cells)", "answer": "ok uianames [\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Customise Quick Access Toolbar | ControlType.MenuItem | NetUIAnchor\"] t=328213"}
+{"t": "12:12:56", "cmd": "shot h-h9-en-GB-dialog-m-d-yyyy", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h9-en-GB-dialog-m-d-yyyy.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=328400"}
+{"t": "12:12:56", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=328456"}
+{"t": "12:12:57", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:A2 t=329087"}
+{"t": "12:12:57", "cmd": "cell A1 A2", "answer": "ok cell A1: number 46307.5625 | formula \"46307.5625\" | text \"10/12/2026\" | numberFormat \"m/d/yyyy\" ;; A2: number 0.5625 | formula \"0.5625\" | text \"1/0/1900\" | numberFormat \"m/d/yyyy\" t=329408"}
+{"t": "12:12:57", "cmd": "shot h-h9-en-GB-ok-m-d-yyyy", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h9-en-GB-ok-m-d-yyyy.png windows: XLMAIN@-11,-11,3851,2099 t=329561"}
+{"t": "12:12:58", "cmd": "geo A1 C4", "answer": "ok geo A1:41,353,377,381 C4:473,441,569,470 t=329617"}
+{"t": "12:12:58", "cmd": "crop h-h9-en-GB-ok-m-d-yyyy 0 293 577 185 h-h9-en-GB-ok-m-d-yyyy-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h9-en-GB-ok-m-d-yyyy-cells.png t=329673"}
+{"t": "12:12:58", "cmd": "setup A1 46307.5625", "answer": "ok setup A1 t=329732"}
+{"t": "12:12:58", "cmd": "setup A2 0.5625", "answer": "ok setup A2 t=329792"}
+{"t": "12:12:58", "cmd": "setwidth A1 30", "answer": "ok setwidth A1 30 t=329908"}
+{"t": "12:12:58", "cmd": "select A1:A2", "answer": "ok select A1:A2 t=329955"}
+{"t": "12:12:58", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=330053"}
+{"t": "12:13:00", "cmd": "keys 40 %c", "answer": "ok keys 1 t=331583"}
+{"t": "12:13:00", "cmd": "keys 40 {END}", "answer": "ok keys 1 t=331983"}
+{"t": "12:13:01", "cmd": "keys 40 %t", "answer": "ok keys 1 t=332536"}
+{"t": "12:13:01", "cmd": "keys 40 ^a", "answer": "ok keys 1 t=332894"}
+{"t": "12:13:01", "cmd": "keys 40 h:mm", "answer": "ok keys 4 t=333094"}
+{"t": "12:13:02", "cmd": "uianames ^(Type:|Sample|Custom|Format Cells)", "answer": "ok uianames [\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Customise Quick Access Toolbar | ControlType.MenuItem | NetUIAnchor\"] t=334159"}
+{"t": "12:13:02", "cmd": "shot h-h9-en-GB-dialog-h-mm", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h9-en-GB-dialog-h-mm.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=334344"}
+{"t": "12:13:02", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=334437"}
+{"t": "12:13:03", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:A2 t=335049"}
+{"t": "12:13:03", "cmd": "cell A1 A2", "answer": "ok cell A1: number 46307.5625 | formula \"46307.5625\" | text \"13:30\" | numberFormat \"h:mm\" ;; A2: number 0.5625 | formula \"0.5625\" | text \"13:30\" | numberFormat \"h:mm\" t=335346"}
+{"t": "12:13:04", "cmd": "shot h-h9-en-GB-ok-h-mm", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h9-en-GB-ok-h-mm.png windows: XLMAIN@-11,-11,3851,2099 t=335478"}
+{"t": "12:13:04", "cmd": "geo A1 C4", "answer": "ok geo A1:41,353,377,381 C4:473,441,569,470 t=335534"}
+{"t": "12:13:04", "cmd": "crop h-h9-en-GB-ok-h-mm 0 293 577 185 h-h9-en-GB-ok-h-mm-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h9-en-GB-ok-h-mm-cells.png t=335585"}
+{"t": "12:13:14", "cmd": "stop", "answer": "ok stop 45700 ended by Stop-Process (its own) t=345888"}
+{"t": "12:13:16", "cmd": "start", "answer": "ok start pid=4204 book=Book1 sheet=Sheet1 openedByItself= before=45700 layout=0x08090809 version=16.0 t=347659"}
+{"t": "12:13:18", "cmd": "setedge A1 9 1 4", "answer": "ok setedge A1 9 1 4 t=349216"}
+{"t": "12:13:18", "cmd": "select A2", "answer": "ok select A2 t=349245"}
+{"t": "12:13:18", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2 t=349898"}
+{"t": "12:13:19", "cmd": "look A1 A2", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=1/4 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" ;; A2: bold False italic False underline -4142 strike False size 11 | top=1/4 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" t=349994"}
+{"t": "12:13:19", "cmd": "shot h-h10-take-away-0-a1-bottom-thick", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h10-take-away-0-a1-bottom-thick.png windows: XLMAIN@-11,-11,3851,2099 t=350131"}
+{"t": "12:13:19", "cmd": "geo A1 C4", "answer": "ok geo A1:41,353,137,383 C4:233,441,329,471 t=350182"}
+{"t": "12:13:19", "cmd": "crop h-h10-take-away-0-a1-bottom-thick 0 293 337 186 h-h10-take-away-0-a1-bottom-thick-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h10-take-away-0-a1-bottom-thick-cells.png t=350237"}
+{"t": "12:13:19", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=350328"}
+{"t": "12:13:20", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=351849"}
+{"t": "12:13:21", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=352318"}
+{"t": "12:13:21", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=352819"}
+{"t": "12:13:23", "cmd": "uianames ^(Top Border|Bottom Border|Left Border|Right Border|Border|Presets|None|Outline|Inside|Style:|Colour:|Format Cells)$", "answer": "ok uianames [\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Bottom Border | ControlType.Button | NetUIRibbonButton\"] t=354374"}
+{"t": "12:13:23", "cmd": "shot h-h10-take-away-1-dialog-over-a2", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h10-take-away-1-dialog-over-a2.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=354569"}
+{"t": "12:13:23", "cmd": "keys 40 %t", "answer": "ok keys 1 t=354660"}
+{"t": "12:13:25", "cmd": "uianames ^(Top Border|Bottom Border)$", "answer": "ok uianames [\"Bottom Border | ControlType.Button | NetUIRibbonButton\"] t=355874"}
+{"t": "12:13:25", "cmd": "shot h-h10-take-away-2-top-pressed", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h10-take-away-2-top-pressed.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=356087"}
+{"t": "12:13:25", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=356176"}
+{"t": "12:13:26", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2 t=356805"}
+{"t": "12:13:26", "cmd": "look A1 A2", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" ;; A2: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" t=356891"}
+{"t": "12:13:26", "cmd": "shot h-h10-take-away-3-ok", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h10-take-away-3-ok.png windows: XLMAIN@-11,-11,3851,2099 t=357038"}
+{"t": "12:13:26", "cmd": "geo A1 C4", "answer": "ok geo A1:41,353,137,381 C4:233,441,329,470 t=357085"}
+{"t": "12:13:26", "cmd": "crop h-h10-take-away-3-ok 0 293 337 185 h-h10-take-away-3-ok-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h10-take-away-3-ok-cells.png t=357137"}
+{"t": "12:13:35", "cmd": "stop", "answer": "ok stop 4204 ended by Stop-Process (its own) t=367412"}
+{"t": "12:13:37", "cmd": "start", "answer": "ok start pid=51132 book=Book1 sheet=Sheet1 openedByItself= before=4204 layout=0x08090809 version=16.0 t=369223"}
+{"t": "12:13:39", "cmd": "setedge A1 9 1 4", "answer": "ok setedge A1 9 1 4 t=370742"}
+{"t": "12:13:39", "cmd": "setedge A2 8 1 2", "answer": "ok setedge A2 8 1 2 t=370807"}
+{"t": "12:13:39", "cmd": "select A2", "answer": "ok select A2 t=370841"}
+{"t": "12:13:40", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2 t=371503"}
+{"t": "12:13:40", "cmd": "look A1 A2", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=1/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" ;; A2: bold False italic False underline -4142 strike False size 11 | top=1/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" t=371590"}
+{"t": "12:13:40", "cmd": "shot h-h10-both-0-both-set", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h10-both-0-both-set.png windows: XLMAIN@-11,-11,3851,2099 t=371730"}
+{"t": "12:13:40", "cmd": "geo A1 C4", "answer": "ok geo A1:41,353,137,381 C4:233,441,329,470 t=371791"}
+{"t": "12:13:40", "cmd": "crop h-h10-both-0-both-set 0 293 337 185 h-h10-both-0-both-set-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h10-both-0-both-set-cells.png t=371838"}
+{"t": "12:13:40", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=371938"}
+{"t": "12:13:42", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=373520"}
+{"t": "12:13:42", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=374013"}
+{"t": "12:13:43", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=374472"}
+{"t": "12:13:45", "cmd": "uianames ^(Top Border|Bottom Border|Left Border|Right Border|Border|Presets|None|Outline|Inside|Style:|Colour:|Format Cells)$", "answer": "ok uianames [\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Bottom Border | ControlType.Button | NetUIRibbonButton\"] t=376111"}
+{"t": "12:13:45", "cmd": "shot h-h10-both-1-dialog-over-a2", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h10-both-1-dialog-over-a2.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=376331"}
+{"t": "12:13:45", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=376410"}
+{"t": "12:13:45", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2 t=377026"}
+{"t": "12:13:46", "cmd": "look A1 A2", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=1/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" ;; A2: bold False italic False underline -4142 strike False size 11 | top=1/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" t=377127"}
+{"t": "12:13:46", "cmd": "shot h-h10-both-2-cancelled", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h10-both-2-cancelled.png windows: XLMAIN@-11,-11,3851,2099 t=377318"}
+{"t": "12:13:46", "cmd": "geo A1 C4", "answer": "ok geo A1:41,353,137,381 C4:233,441,329,470 t=377360"}
+{"t": "12:13:46", "cmd": "crop h-h10-both-2-cancelled 0 293 337 185 h-h10-both-2-cancelled-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h10-both-2-cancelled-cells.png t=377412"}
+{"t": "12:13:46", "cmd": "select A1", "answer": "ok select A1 t=377471"}
+{"t": "12:13:46", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=377564"}
+{"t": "12:13:48", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=379091"}
+{"t": "12:13:48", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=379550"}
+{"t": "12:13:49", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=380017"}
+{"t": "12:13:50", "cmd": "uianames ^(Top Border|Bottom Border|Left Border|Right Border|Border|Presets|None|Outline|Inside|Style:|Colour:|Format Cells)$", "answer": "ok uianames [\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Bottom Border | ControlType.Button | NetUIRibbonButton\"] t=381524"}
+{"t": "12:13:50", "cmd": "shot h-h10-both-3-dialog-over-a1", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h10-both-3-dialog-over-a1.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=381683"}
+{"t": "12:13:50", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=381753"}
+{"t": "12:13:51", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=382424"}
+{"t": "12:13:51", "cmd": "look A1 A2", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=1/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" ;; A2: bold False italic False underline -4142 strike False size 11 | top=1/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" t=382523"}
+{"t": "12:13:51", "cmd": "shot h-h10-both-4-cancelled", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h10-both-4-cancelled.png windows: XLMAIN@-11,-11,3851,2099 t=382655"}
+{"t": "12:13:51", "cmd": "geo A1 C4", "answer": "ok geo A1:41,353,137,381 C4:233,441,329,470 t=382706"}
+{"t": "12:13:51", "cmd": "crop h-h10-both-4-cancelled 0 293 337 185 h-h10-both-4-cancelled-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h10-both-4-cancelled-cells.png t=382761"}
+{"t": "12:14:01", "cmd": "stop", "answer": "ok stop 51132 ended by Stop-Process (its own) t=393084"}
+{"t": "12:14:03", "cmd": "start", "answer": "ok start pid=4064 book=Book1 sheet=Sheet1 openedByItself= before=51132 layout=0x08090809 version=16.0 t=394896"}
+{"t": "12:14:04", "cmd": "fill B2 FFFF00", "answer": "ok fill B2 FFFF00 t=396408"}
+{"t": "12:14:04", "cmd": "fill C2 00B0F0", "answer": "ok fill C2 00B0F0 t=396441"}
+{"t": "12:14:05", "cmd": "fill E3 FFFF00", "answer": "ok fill E3 FFFF00 t=396499"}
+{"t": "12:14:05", "cmd": "fill B5 FFFF00", "answer": "ok fill B5 FFFF00 t=396559"}
+{"t": "12:14:05", "cmd": "fill C5 00B0F0", "answer": "ok fill C5 00B0F0 t=396618"}
+{"t": "12:14:05", "cmd": "fill F5 FFFF00", "answer": "ok fill F5 FFFF00 t=396676"}
+{"t": "12:14:05", "cmd": "fill B8 FFFF00", "answer": "ok fill B8 FFFF00 t=396736"}
+{"t": "12:14:05", "cmd": "fill B9 00B0F0", "answer": "ok fill B9 00B0F0 t=396797"}
+{"t": "12:14:05", "cmd": "setedge E2 9 -4119 4", "answer": "ok setedge E2 9 -4119 4 t=396886"}
+{"t": "12:14:05", "cmd": "setedge B5 10 -4119 4", "answer": "ok setedge B5 10 -4119 4 t=396921"}
+{"t": "12:14:05", "cmd": "setedge E5 10 -4119 4", "answer": "ok setedge E5 10 -4119 4 t=396980"}
+{"t": "12:14:05", "cmd": "setedge B8 9 -4119 4", "answer": "ok setedge B8 9 -4119 4 t=397050"}
+{"t": "12:14:05", "cmd": "zoom 100", "answer": "ok zoom 100 t=397092"}
+{"t": "12:14:33", "cmd": "stop", "answer": "ok stop 4064 ended by Stop-Process (its own) t=424878"}
+{"t": "12:14:35", "cmd": "start", "answer": "ok start pid=26692 book=Book1 sheet=Sheet1 openedByItself= before=4064 layout=0x08090809 version=16.0 t=426675"}
+{"t": "12:14:36", "cmd": "fill B2 FFFF00", "answer": "ok fill B2 FFFF00 t=428164"}
+{"t": "12:14:36", "cmd": "fill C2 00B0F0", "answer": "ok fill C2 00B0F0 t=428224"}
+{"t": "12:14:36", "cmd": "fill E3 FFFF00", "answer": "ok fill E3 FFFF00 t=428282"}
+{"t": "12:14:36", "cmd": "fill B5 FFFF00", "answer": "ok fill B5 FFFF00 t=428341"}
+{"t": "12:14:36", "cmd": "fill C5 00B0F0", "answer": "ok fill C5 00B0F0 t=428400"}
+{"t": "12:14:37", "cmd": "fill F5 FFFF00", "answer": "ok fill F5 FFFF00 t=428459"}
+{"t": "12:14:37", "cmd": "fill B8 FFFF00", "answer": "ok fill B8 FFFF00 t=428518"}
+{"t": "12:14:37", "cmd": "fill B9 00B0F0", "answer": "ok fill B9 00B0F0 t=428577"}
+{"t": "12:14:37", "cmd": "setedge E2 9 -4119 4", "answer": "ok setedge E2 9 -4119 4 t=428667"}
+{"t": "12:14:37", "cmd": "setedge B5 10 -4119 4", "answer": "ok setedge B5 10 -4119 4 t=428705"}
+{"t": "12:14:37", "cmd": "setedge E5 10 -4119 4", "answer": "ok setedge E5 10 -4119 4 t=428765"}
+{"t": "12:14:37", "cmd": "setedge B8 9 -4119 4", "answer": "ok setedge B8 9 -4119 4 t=428838"}
+{"t": "12:14:37", "cmd": "zoom 100", "answer": "ok zoom 100 t=428878"}
+{"t": "12:14:38", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=429529"}
+{"t": "12:14:38", "cmd": "look B2 C2 E2 B5 E5 B8", "answer": "ok look B2: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" ;; C2: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" ;; E2: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4119/4 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" ;; B5: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4119/4 | width 8.09 | text \"\" ;; E5: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4119/4 | width 8.09 | text \"\" ;; B8: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4119/4 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" t=429728"}
+{"t": "12:14:38", "cmd": "shot h-h11-zoom-100", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h11-zoom-100.png windows: XLMAIN@-11,-11,3851,2099 t=429927"}
+{"t": "12:14:38", "cmd": "geo A1 G10", "answer": "ok geo A1:41,353,137,381 G10:617,617,713,647 t=429960"}
+{"t": "12:14:38", "cmd": "crop h-h11-zoom-100 0 293 721 362 h-h11-zoom-100-cells 2", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h11-zoom-100-cells.png t=430022"}
+{"t": "12:14:38", "cmd": "zoom 150", "answer": "ok zoom 150 t=430094"}
+{"t": "12:14:39", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=430715"}
+{"t": "12:14:39", "cmd": "look B2 C2 E2 B5 E5 B8", "answer": "ok look B2: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" ;; C2: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" ;; E2: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4119/4 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" ;; B5: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4119/4 | width 8.09 | text \"\" ;; E5: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4119/4 | width 8.09 | text \"\" ;; B8: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4119/4 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" t=430937"}
+{"t": "12:14:39", "cmd": "shot h-h11-zoom-150", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h11-zoom-150.png windows: XLMAIN@-11,-11,3851,2099 ; EXCEL8@3674,314,3775,345 t=431134"}
+{"t": "12:14:39", "cmd": "geo A1 G10", "answer": "ok geo A1:62,368,206,410 G10:926,767,1070,812 t=431204"}
+{"t": "12:14:39", "cmd": "crop h-h11-zoom-150 2 308 1076 512 h-h11-zoom-150-cells 2", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h11-zoom-150-cells.png t=431278"}
+{"t": "12:14:39", "cmd": "zoom 100", "answer": "ok zoom 100 t=431341"}
+{"t": "12:14:50", "cmd": "stop", "answer": "ok stop 26692 ended by Stop-Process (its own) t=441625"}
+{"t": "12:14:52", "cmd": "start", "answer": "ok start pid=49660 book=Book1 sheet=Sheet1 openedByItself= before=26692 layout=0x08090809 version=16.0 t=443409"}
+{"t": "12:14:54", "cmd": "setfmt A1 @;0", "answer": "err Exception calling \"InvokeMember\" with \"6\" argument(s): \"Unable to set the NumberFormat property of the Range class\" t=445053"}
+{"t": "12:15:20", "cmd": "stop", "answer": "ok stop 49660 ended by Stop-Process (its own) t=471543"}
+{"t": "12:15:22", "cmd": "start", "answer": "ok start pid=25312 book=Book1 sheet=Sheet1 openedByItself= before=49660 layout=0x08090809 version=16.0 t=473334"}
+{"t": "12:15:23", "cmd": "setup A1 12", "answer": "ok setup A1 t=474848"}
+{"t": "12:15:23", "cmd": "setup A2 abc", "answer": "ok setup A2 t=474903"}
+{"t": "12:15:24", "cmd": "setwidth A1 20", "answer": "ok setwidth A1 20 t=474988"}
+{"t": "12:15:24", "cmd": "setfmt A1:A2 @;0", "answer": "err Exception calling \"InvokeMember\" with \"6\" argument(s): \"Unable to set the NumberFormat property of the Range class\" t=475141"}
+{"t": "12:15:24", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=475788"}
+{"t": "12:15:25", "cmd": "cell A1 A2", "answer": "ok cell A1: number 12 | formula \"12\" | text \"12\" | numberFormat \"General\" ;; A2: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" t=476114"}
+{"t": "12:15:25", "cmd": "shot h-h12---0-1-after-com", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12---0-1-after-com.png windows: XLMAIN@-11,-11,3851,2099 t=476298"}
+{"t": "12:15:25", "cmd": "geo A1 C4", "answer": "ok geo A1:41,353,269,381 C4:365,441,461,470 t=476377"}
+{"t": "12:15:25", "cmd": "crop h-h12---0-1-after-com 0 293 469 185 h-h12---0-1-after-com-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12---0-1-after-com-cells.png t=476428"}
+{"t": "12:15:25", "cmd": "select A1:A2", "answer": "ok select A1:A2 t=476488"}
+{"t": "12:15:25", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=476581"}
+{"t": "12:15:27", "cmd": "keys 40 %c", "answer": "ok keys 1 t=478112"}
+{"t": "12:15:27", "cmd": "keys 40 {END}", "answer": "ok keys 1 t=478471"}
+{"t": "12:15:28", "cmd": "keys 40 %t", "answer": "ok keys 1 t=479017"}
+{"t": "12:15:28", "cmd": "keys 40 ^a", "answer": "ok keys 1 t=479377"}
+{"t": "12:15:28", "cmd": "keys 40 @;0", "answer": "ok keys 3 t=479529"}
+{"t": "12:15:29", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=480095"}
+{"t": "12:15:31", "cmd": "uianames (cannot|number format|Microsoft Excel|OK|Help)", "answer": "ok uianames [\"Book1 - Excel | ControlType.Window | XLMAIN\",\"?Book1?  -  Excel | ControlType.TitleBar | NetUIOfficeCaption\",\"?Book1?  -  Excel | ControlType.Button | NetUISimpleButton\",\"Help | ControlType.TabItem | NetUIRibbonTab\",\"Number Format | ControlType.ComboBox | NetUIComboboxAnchor\",\"Number Format | ControlType.Edit | NetUITextbox\",\"Accounting Number Format | ControlType.SplitButton | NetUISplitButtonAnchor\",\"Accounting Number Format | ControlType.Button | NetUIRibbonButton\",\"Book1 | ControlType.Pane | ExcelGrid\",\"Book1 | ControlType.Tab | ExcelBookTabControl\"] t=481915"}
+{"t": "12:15:31", "cmd": "shot h-h12---0-2-after-ok", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12---0-2-after-ok.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=482106"}
+{"t": "12:15:31", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=482121"}
+{"t": "12:15:31", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=482217"}
+{"t": "12:15:32", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=483061"}
+{"t": "12:15:32", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:A2 t=484460"}
+{"t": "12:15:33", "cmd": "cell A1 A2", "answer": "ok cell A1: number 12 | formula \"12\" | text \"12\" | numberFormat \"General\" ;; A2: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" t=484691"}
+{"t": "12:15:33", "cmd": "shot h-h12---0-3-cells", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12---0-3-cells.png windows: XLMAIN@-11,-11,3851,2099 t=484855"}
+{"t": "12:15:33", "cmd": "geo A1 C4", "answer": "ok geo A1:41,353,269,381 C4:365,441,461,470 t=484892"}
+{"t": "12:15:33", "cmd": "crop h-h12---0-3-cells 0 293 469 185 h-h12---0-3-cells-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12---0-3-cells-cells.png t=484951"}
+{"t": "12:15:43", "cmd": "stop", "answer": "ok stop 25312 ended by Stop-Process (its own) t=495228"}
+{"t": "12:15:45", "cmd": "start", "answer": "ok start pid=51832 book=Book1 sheet=Sheet1 openedByItself= before=25312 layout=0x08090809 version=16.0 t=497023"}
+{"t": "12:15:47", "cmd": "setup A1 12", "answer": "ok setup A1 t=498516"}
+{"t": "12:15:47", "cmd": "setup A2 abc", "answer": "ok setup A2 t=498573"}
+{"t": "12:15:47", "cmd": "setwidth A1 20", "answer": "ok setwidth A1 20 t=498659"}
+{"t": "12:15:47", "cmd": "setfmt A1:A2 0;@;0", "answer": "err Exception calling \"InvokeMember\" with \"6\" argument(s): \"Unable to set the NumberFormat property of the Range class\" t=498861"}
+{"t": "12:15:48", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=499504"}
+{"t": "12:15:48", "cmd": "cell A1 A2", "answer": "ok cell A1: number 12 | formula \"12\" | text \"12\" | numberFormat \"General\" ;; A2: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" t=499871"}
+{"t": "12:15:48", "cmd": "shot h-h12-0---0-1-after-com", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12-0---0-1-after-com.png windows: XLMAIN@-11,-11,3851,2099 t=500049"}
+{"t": "12:15:48", "cmd": "geo A1 C4", "answer": "ok geo A1:41,353,269,381 C4:365,441,461,470 t=500099"}
+{"t": "12:15:49", "cmd": "crop h-h12-0---0-1-after-com 0 293 469 185 h-h12-0---0-1-after-com-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12-0---0-1-after-com-cells.png t=500148"}
+{"t": "12:15:49", "cmd": "select A1:A2", "answer": "ok select A1:A2 t=500206"}
+{"t": "12:15:49", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=500300"}
+{"t": "12:15:50", "cmd": "keys 40 %c", "answer": "ok keys 1 t=501832"}
+{"t": "12:15:51", "cmd": "keys 40 {END}", "answer": "ok keys 1 t=502184"}
+{"t": "12:15:51", "cmd": "keys 40 %t", "answer": "ok keys 1 t=502754"}
+{"t": "12:15:52", "cmd": "keys 40 ^a", "answer": "ok keys 1 t=503159"}
+{"t": "12:15:52", "cmd": "keys 40 0;@;0", "answer": "ok keys 5 t=503454"}
+{"t": "12:15:52", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=504019"}
+{"t": "12:15:54", "cmd": "uianames (cannot|number format|Microsoft Excel|OK|Help)", "answer": "ok uianames [\"Book1 - Excel | ControlType.Window | XLMAIN\",\"?Book1?  -  Excel | ControlType.TitleBar | NetUIOfficeCaption\",\"?Book1?  -  Excel | ControlType.Button | NetUISimpleButton\",\"Help | ControlType.TabItem | NetUIRibbonTab\",\"Number Format | ControlType.ComboBox | NetUIComboboxAnchor\",\"Number Format | ControlType.Edit | NetUITextbox\",\"Accounting Number Format | ControlType.SplitButton | NetUISplitButtonAnchor\",\"Accounting Number Format | ControlType.Button | NetUIRibbonButton\",\"Book1 | ControlType.Pane | ExcelGrid\",\"Book1 | ControlType.Tab | ExcelBookTabControl\"] t=505858"}
+{"t": "12:15:55", "cmd": "shot h-h12-0---0-2-after-ok", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12-0---0-2-after-ok.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=506072"}
+{"t": "12:15:55", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=506128"}
+{"t": "12:15:55", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=506235"}
+{"t": "12:15:56", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=507116"}
+{"t": "12:15:57", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:A2 t=508522"}
+{"t": "12:15:58", "cmd": "cell A1 A2", "answer": "ok cell A1: number 12 | formula \"12\" | text \"12\" | numberFormat \"General\" ;; A2: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" t=508896"}
+{"t": "12:15:58", "cmd": "shot h-h12-0---0-3-cells", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12-0---0-3-cells.png windows: XLMAIN@-11,-11,3851,2099 t=509052"}
+{"t": "12:15:58", "cmd": "geo A1 C4", "answer": "ok geo A1:41,353,269,381 C4:365,441,461,470 t=509107"}
+{"t": "12:15:58", "cmd": "crop h-h12-0---0-3-cells 0 293 469 185 h-h12-0---0-3-cells-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12-0---0-3-cells-cells.png t=509163"}
+{"t": "12:16:07", "cmd": "stop", "answer": "ok stop 51832 ended by Stop-Process (its own) t=519455"}
+{"t": "12:17:05", "cmd": "stop", "answer": "err Cannot stop process \"Idle (0)\" because of the following error: Access is denied t=576688"}
+{"t": "12:17:06", "cmd": "start", "answer": "ok start pid=52684 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=578459"}
+{"t": "12:17:08", "cmd": "setup A1 12", "answer": "ok setup A1 t=579973"}
+{"t": "12:17:08", "cmd": "setup A2 abc", "answer": "ok setup A2 t=580031"}
+{"t": "12:17:08", "cmd": "select A1:A2", "answer": "ok select A1:A2 t=580096"}
+{"t": "12:17:08", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=580193"}
+{"t": "12:17:10", "cmd": "keys 40 %c", "answer": "ok keys 1 t=581717"}
+{"t": "12:17:10", "cmd": "keys 40 {END}", "answer": "ok keys 1 t=582084"}
+{"t": "12:17:11", "cmd": "keys 40 %t", "answer": "ok keys 1 t=582686"}
+{"t": "12:17:11", "cmd": "keys 40 ^a", "answer": "ok keys 1 t=583046"}
+{"t": "12:17:11", "cmd": "keys 40 @;0", "answer": "ok keys 3 t=583208"}
+{"t": "12:17:12", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=583770"}
+{"t": "12:17:12", "cmd": "windows", "answer": "ok windows 1643158|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 19533876|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=584392"}
+{"t": "12:17:13", "cmd": "uianames ^(?!.*(Ribbon|Excel \\||Book1)).*(format|cannot|Excel|OK)", "answer": "ok uianames [\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Format Painter | ControlType.Button | NetUIRibbonButton\",\"Format Cell Font | ControlType.Button | NetUISimpleButton\",\"Format Cell Alignment | ControlType.Button | NetUISimpleButton\",\"Number Format | ControlType.ComboBox | NetUIComboboxAnchor\",\"Number Format | ControlType.Edit | NetUITextbox\",\"Accounting Number Format | ControlType.SplitButton | NetUISplitButtonAnchor\",\"Accounting Number Format | ControlType.Button | NetUIRibbonButton\",\"Format Cell Number | ControlType.Button | NetUISimpleButton\",\"Conditional Formatting | ControlType.MenuItem | NetUIAnchor\",\"Format as Table | ControlType.MenuItem | NetUIAnchor\",\"Format | ControlType.MenuItem | NetUIAnchor\"] t=585162"}
+{"t": "12:17:13", "cmd": "shot h-h12---0-message-message", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12---0-message-message.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=585358"}
+{"t": "12:17:13", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=585410"}
+{"t": "12:17:14", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=586231"}
+{"t": "12:17:14", "cmd": "windows", "answer": "ok windows 1643158|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 19533876|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=586296"}
+{"t": "12:17:14", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=586388"}
+{"t": "12:17:16", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:A2 t=587800"}
+{"t": "12:17:16", "cmd": "cell A1 A2", "answer": "ok cell A1: number 12 | formula \"12\" | text \"12\" | numberFormat \"General\" ;; A2: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" t=588123"}
+{"t": "12:17:16", "cmd": "shot h-h12---0-message-cells", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12---0-message-cells.png windows: XLMAIN@-11,-11,3851,2099 t=588280"}
+{"t": "12:17:17", "cmd": "geo A1 C4", "answer": "ok geo A1:41,353,137,381 C4:233,441,329,470 t=588339"}
+{"t": "12:17:17", "cmd": "crop h-h12---0-message-cells 0 293 337 185 h-h12---0-message-cells-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12---0-message-cells-cells.png t=588393"}
+{"t": "12:17:27", "cmd": "stop", "answer": "ok stop 52684 ended by Stop-Process (its own) t=598685"}
+{"t": "12:17:29", "cmd": "start", "answer": "ok start pid=1272 book=Book1 sheet=Sheet1 openedByItself= before=52684 layout=0x08090809 version=16.0 t=600471"}
+{"t": "12:17:31", "cmd": "setup A1 12", "answer": "ok setup A1 t=601954"}
+{"t": "12:17:31", "cmd": "setup A2 abc", "answer": "ok setup A2 t=602012"}
+{"t": "12:17:31", "cmd": "select A1:A2", "answer": "ok select A1:A2 t=602076"}
+{"t": "12:17:31", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=602170"}
+{"t": "12:17:32", "cmd": "keys 40 %c", "answer": "ok keys 1 t=603690"}
+{"t": "12:17:33", "cmd": "keys 40 {END}", "answer": "ok keys 1 t=604048"}
+{"t": "12:17:33", "cmd": "keys 40 %t", "answer": "ok keys 1 t=604607"}
+{"t": "12:17:34", "cmd": "keys 40 ^a", "answer": "ok keys 1 t=604971"}
+{"t": "12:17:34", "cmd": "keys 40 0;@;0", "answer": "ok keys 5 t=605267"}
+{"t": "12:17:35", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=605832"}
+{"t": "12:17:35", "cmd": "windows", "answer": "ok windows 3084942|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 588320166|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=606442"}
+{"t": "12:17:36", "cmd": "uianames ^(?!.*(Ribbon|Excel \\||Book1)).*(format|cannot|Excel|OK)", "answer": "ok uianames [\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Format Painter | ControlType.Button | NetUIRibbonButton\",\"Format Cell Font | ControlType.Button | NetUISimpleButton\",\"Format Cell Alignment | ControlType.Button | NetUISimpleButton\",\"Number Format | ControlType.ComboBox | NetUIComboboxAnchor\",\"Number Format | ControlType.Edit | NetUITextbox\",\"Accounting Number Format | ControlType.SplitButton | NetUISplitButtonAnchor\",\"Accounting Number Format | ControlType.Button | NetUIRibbonButton\",\"Format Cell Number | ControlType.Button | NetUISimpleButton\",\"Conditional Formatting | ControlType.MenuItem | NetUIAnchor\",\"Format as Table | ControlType.MenuItem | NetUIAnchor\",\"Format | ControlType.MenuItem | NetUIAnchor\"] t=607246"}
+{"t": "12:17:36", "cmd": "shot h-h12-0---0-message-message", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12-0---0-message-message.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=607417"}
+{"t": "12:17:36", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=607468"}
+{"t": "12:17:37", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=608272"}
+{"t": "12:17:37", "cmd": "windows", "answer": "ok windows 3084942|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 588320166|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=608336"}
+{"t": "12:17:37", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=608429"}
+{"t": "12:17:38", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:A2 t=609822"}
+{"t": "12:17:38", "cmd": "cell A1 A2", "answer": "ok cell A1: number 12 | formula \"12\" | text \"12\" | numberFormat \"General\" ;; A2: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" t=610149"}
+{"t": "12:17:38", "cmd": "shot h-h12-0---0-message-cells", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12-0---0-message-cells.png windows: XLMAIN@-11,-11,3851,2099 t=610315"}
+{"t": "12:17:38", "cmd": "geo A1 C4", "answer": "ok geo A1:41,353,137,381 C4:233,441,329,470 t=610360"}
+{"t": "12:17:38", "cmd": "crop h-h12-0---0-message-cells 0 293 337 185 h-h12-0---0-message-cells-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h12-0---0-message-cells-cells.png t=610412"}
+{"t": "12:17:49", "cmd": "stop", "answer": "ok stop 1272 ended by Stop-Process (its own) t=620709"}
+{"t": "12:18:26", "cmd": "stop", "answer": "err Cannot stop process \"Idle (0)\" because of the following error: Access is denied t=657704"}
+{"t": "12:18:28", "cmd": "start", "answer": "ok start pid=48152 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=659505"}
+{"t": "12:18:30", "cmd": "setup A1 46307.5625", "answer": "ok setup A1 t=661006"}
+{"t": "12:18:30", "cmd": "setup A2 0.5625", "answer": "ok setup A2 t=661063"}
+{"t": "12:18:30", "cmd": "setwidth A1 30", "answer": "ok setwidth A1 30 t=661145"}
+{"t": "12:18:30", "cmd": "select A1:A2", "answer": "ok select A1:A2 t=661186"}
+{"t": "12:18:30", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=661282"}
+{"t": "12:18:31", "cmd": "keys 40 %c", "answer": "ok keys 1 t=662815"}
+{"t": "12:18:32", "cmd": "keys 40 {END}", "answer": "ok keys 1 t=663223"}
+{"t": "12:18:32", "cmd": "keys 40 %t", "answer": "ok keys 1 t=663763"}
+{"t": "12:18:33", "cmd": "keys 40 ^a", "answer": "ok keys 1 t=664123"}
+{"t": "12:18:33", "cmd": "keys 40 mmmmm", "answer": "ok keys 5 t=664375"}
+{"t": "12:18:34", "cmd": "uianames ^(Type:|Sample|Custom|Format Cells)", "answer": "ok uianames [\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Format Cells | ControlType.Window | bosa_sdm_XL9\",\"Customise Quick Access Toolbar | ControlType.MenuItem | NetUIAnchor\"] t=665497"}
+{"t": "12:18:34", "cmd": "shot h-h9-ja-JP-dialog-mmmmm", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h9-ja-JP-dialog-mmmmm.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=665676"}
+{"t": "12:18:34", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=665736"}
+{"t": "12:18:35", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:A2 t=666382"}
+{"t": "12:18:35", "cmd": "cell A1 A2", "answer": "ok cell A1: number 46307.5625 | formula \"46307.5625\" | text \"1\" | numberFormat \"mmmmm\" ;; A2: number 0.5625 | formula \"0.5625\" | text \"1\" | numberFormat \"mmmmm\" t=666606"}
+{"t": "12:18:35", "cmd": "shot h-h9-ja-JP-ok-mmmmm", "answer": "ok shot %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h9-ja-JP-ok-mmmmm.png windows: XLMAIN@-11,-11,3851,2099 t=666775"}
+{"t": "12:18:35", "cmd": "geo A1 C4", "answer": "ok geo A1:44,350,380,377 C4:476,428,572,455 t=666819"}
+{"t": "12:18:36", "cmd": "crop h-h9-ja-JP-ok-mmmmm 0 290 580 173 h-h9-ja-JP-ok-mmmmm-cells 1", "answer": "ok crop %LOCALAPPDATA%\\exgrid-layer3\\run-2026-10-11-17\\xs\\shots\\h-h9-ja-JP-ok-mmmmm-cells.png t=666877"}
+{"t": "12:18:45", "cmd": "stop", "answer": "ok stop 48152 ended by Stop-Process (its own) t=677163"}

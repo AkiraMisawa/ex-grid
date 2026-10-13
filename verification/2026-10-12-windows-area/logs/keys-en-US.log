@@ -1,0 +1,17 @@
+a new PowerShell reads en-US
+pass keys-en-US started 10:38:42
+10:38:46 CW-018       agree       1.8 s
+10:38:47 CW-021       agree       1.0 s
+10:38:48 CW-022       agree       1.4 s
+10:38:50 CW-023       agree       1.4 s
+10:38:51 CW-025       agree       1.3 s
+10:38:52 CW-027       agree       1.0 s
+10:38:53 CW-028       agree       1.5 s
+10:38:54 CW-029       agree       1.0 s
+10:38:56 CW-030       agree       1.8 s
+10:38:58 CW-031       agree       1.8 s
+10:39:00 CW-032       agree       1.8 s
+
+agree 11, disagree 0, blocked 0, recorded 0 -> %LOCALAPPDATA%\exgrid-layer3\area-2026-10-12\oracle\ExcelOracle\results-2026-10-12-area-keys-en-US.json
+-Update: 11 agreeing cases now say source "observed"; disagreeing ones are untouched.
+pass keys-en-US ended 10:39:02

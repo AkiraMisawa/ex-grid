@@ -1,4 +1,5 @@
 using Bunit;
+using ExGrid.Components;
 using ExSheet.Engine;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
@@ -424,6 +425,41 @@ public class MudFormatCellsTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.False(IsOpen(page)));
         var font = FormatAt(page, "B2").Font;
         Assert.True(font.Bold && font.Italic && font.Underline && font.Strikethrough);
+    }
+
+    [Fact] // ADR-0071, decided 2026-10-12 / SH-45: under this Chrome too, OK with Bold widens a column at the default width whose number shows ####, as Excel's Font tab did (the seventeenth Windows run, h7), in OK's one undo step; OK with a Fill widens nothing
+    public async Task Ok_with_a_font_change_widens_and_with_a_fill_does_not_h7()
+    {
+        var page = RenderPage(DocumentOf(
+            sheet => sheet.SetCellFormat([CellRange.Parse("B2:C2")], new CellFormatChange { NumberFormat = NumberFormat.Parse("0.00") }),
+            ("B2", "123456789.12"), ("C2", "123456789.12")));
+        var grid = page.FindComponent<ExGrid<SheetRow>>();
+        double WidthOf(int column) => grid.Instance.Columns[column].Width.Width.FixedPx;
+        var standard = WidthOf(1);
+
+        await OpenAsync(page, "C2");
+        await ShowTabAsync(page, "Fill");
+        await SwatchAsync(page, "Yellow");
+        await OkAsync(page);
+        Assert.False(IsOpen(page));
+        Assert.Equal(standard, WidthOf(2));
+        Assert.Empty(Sheet(page).ToDocument().ColumnWidths);
+
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Font");
+        await ChooseAsync(page, "Bold");
+        await OkAsync(page);
+
+        Assert.False(IsOpen(page));
+        Assert.True(FormatAt(page, "B2").Font.Bold);
+        Assert.True(WidthOf(1) > standard);
+        Assert.Equal(standard, WidthOf(2));
+        var widened = Assert.Single(Sheet(page).ToDocument().ColumnWidths);
+        Assert.Equal((1, SheetColumnWidthKind.WidenedByEntry), (widened.First, widened.Kind));
+        Assert.True(await page.InvokeAsync(Sheet(page).UndoAsync));
+        Assert.False(FormatAt(page, "B2").Font.Bold);
+        Assert.Equal(standard, WidthOf(1));
+        Assert.Empty(Sheet(page).ToDocument().ColumnWidths);
     }
 
     [Fact] // ADR-0071 (2026-10-02) / SH-55: the Font tab's Normal font box sets every part of the Font to its default
