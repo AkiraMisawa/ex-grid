@@ -182,8 +182,28 @@ CSVs); bytes are the WebSocket frames the browser received.
 | 1,566 (weekly) | 88 ms | 2.7 MB / 3.3 MB / 0.2 + 0.7 MB | 1.3 s, 9.0 MB | 705 ms, **9.0 MB** | 60 ms, 3 KB | 33,678 |
 | 10,959 (daily) | — | 18 MB / 22 MB / 1.3 + 4.6 MB | 11.7 s, 61 MB | 6.7 s, **61 MB** | 263 ms, 3 KB | 224,145 |
 
+**WebAssembly** (measured the same day, the same machine: published Release, no AOT, served
+statically; "build" is then .NET in the browser):
+
+| Dates | Build (redraw) | Open the chart | Redraw (legend click) | Hover to the next date |
+|---|---|---|---|---|
+| 67 | 107 ms | 535 ms | 199 ms | 30 ms |
+| 1,566 | 1.1 s | 3.0 s | 1.8 s | **282 ms** |
+| 10,959 | 8.1 s | 17.8 s | 13.5 s | **1.7 s** |
+
+The Server host, rerun beside it: 67 dates 72 ms a redraw and 27 ms a hover, 1,566 dates 644 ms
+and 62 ms, 10,959 dates 7.0 s and 228 ms — as before.
+
 What it says:
 
+- **On WebAssembly the build is the cost**: the same string building is about fifteen times slower
+  in the browser's .NET without AOT (6 ms → 107 ms at 67 dates). AOT is not measured here.
+- **A hover redoes work that has nothing to do with it.** It changes one tooltip, but ChartBox
+  renders whole: the download links' `data:` URLs are encoded again (the file SVG and both CSVs,
+  every time), every legend sample is written again, and the drawing's markup is compared again.
+  On WebAssembly that is 282 ms per date crossed at 1,566 dates. The tooltip wants a component
+  of its own with a hand-written `ShouldRender` (CLAUDE.md), and the files want writing when
+  asked for, not per render.
 - **The server is not the cost; the circuit and the DOM are.** Building is milliseconds; every
   redraw then sends the whole drawing again, and the page's download links carry the file SVG and
   both CSVs as `data:` URLs, URL-encoded — more than half of the 428 KB at 67 dates.
