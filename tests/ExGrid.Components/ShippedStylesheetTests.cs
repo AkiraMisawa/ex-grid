@@ -1002,6 +1002,40 @@ public class ShippedStylesheetTests
         Assert.Contains("resolve();", look, StringComparison.Ordinal);
     }
 
+    [Fact] // ADR-0039 (note of 2026-10-01) / ADR-0010 / ADR-0080: a composition finished in the Keyboard Field while a popover or a Consumer's frame takes the keyboard is handed to it as a held character is — typed into its text field, dropped with every key behind it on any other control — and the core is asked to open an edit only when neither has the keyboard
+    public void ADR0039_a_compositions_text_held_while_a_popover_opens_is_the_popovers()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var drain = Regex.Match(script, @"const drain = async \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(drain);
+        var branch = Regex.Match(drain, @"\n            if \(k\.text !== undefined\) \{.*?\n            \}\n", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(branch);
+
+        // What holds the keyboard is asked first, as it is for every held key: a control of the
+        // grid's own (a popover's: Format Cells' tab, a column's commands, the find field), or the
+        // Consumer's frame the core handed the keyboard to. Asked of the core instead, the text
+        // opened a Cell Editor behind the popover.
+        Assert.Matches(new Regex(
+            @"^\s*if \(k\.text !== undefined\) \{\s*"
+            + @"const holder = focusedControl\(\) \?\? \(deliveringOutside \? outsideControl\(\) : null\);\s*"
+            + @"if \(holder\) \{\s*"
+            // A cancelled composition typed nothing: nothing to hand on, and nothing dropped.
+            + @"if \(k\.text\.length === 0\) \{\s*continue;\s*\}\s*"
+            // Text no keydown carries is a key script cannot reproduce on a control that is not a
+            // text field: dropped, with every key held behind it (ADR-0010).
+            + @"if \(!isTextField\(holder\)\) \{\s*dropHeld\(\);\s*break;\s*\}\s*"
+            // In a text field it is typed at the caret, as a held character is.
+            + @"typeInto\(holder, k\);\s*continue;\s*\}\s*"
+            // Only with the keyboard still the grid's is the core asked to open an edit holding it.
+            + @"if \(editing === 'none'\) \{\s*const opened = await core\.invokeMethodAsync\('OnKeyFieldTextAsync', k\.text, k\.paint\)"),
+            branch);
+        // The one place the core is asked to open an edit for a composition's text.
+        Assert.Single(Regex.Matches(script, @"'OnKeyFieldTextAsync'"));
+        // Where a held key goes is read from what holds DOM focus, as for every held key: nothing is
+        // measured, and no focus is moved from here (ADR-0021).
+        Assert.DoesNotMatch(new Regex(@"\.focus\(|getBoundingClientRect|getComputedStyle|offset(Width|Height|Top|Left)"), branch);
+    }
+
     [Fact] // KB-12 / ADR-0080: the root's ring is drawn from the script's mark while its field holds a keyboard that did not come of a press on the grid, as from :focus-visible on a grid without one
     public void KB12_the_roots_ring_is_drawn_from_the_scripts_mark_on_a_grid_that_edits()
     {
