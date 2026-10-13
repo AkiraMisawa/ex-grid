@@ -63,7 +63,7 @@ process per case; the scratch test is not committed):
 | R5's column C, C:C bold, into D:E | Check 2,472 ms, Do 14,058 ms, Undo 1,631 ms, Redo 3,702 ms; heap 1 → 931 MB; Sheet Document 79,567,034 characters | Check 37 ms, Do 17 ms, Undo 1 ms, Redo 0 ms; 1 → 1 MB; 424 characters | Check 47 ms, Do 30 ms, Undo 1 ms, Redo 0 ms; 2 → 2 MB; 424 characters |
 | A2 `1`; row 2 into rows 3:4, no format | Check 17 ms, Do 22 ms; 1 MB | Check 13 ms, Do 36 ms; 1 MB | Check 28 ms, Do 49 ms; 2 → 2 MB |
 | The whole Sheet bold, A3 `1`; row 3 into rows 4:100 | Check 597 ms, Do 3,637 ms; heap 3 → 391 MB | Check 9 ms, Do 75 ms; 3 → 6 MB | Check 11 ms, Do 98 ms; 4 → 7 MB |
-| C1 `1`, C3 `a`, C:C bold; Ctrl+R from C into D:E (`FillCopy`) | — | — | Check 7 ms, Do 20 ms; 2 → 2 MB; 241 characters |
+| C1 `1`, C3 `a`, C:C bold; `FillCopy` from C into D:E (the engine under Ctrl+R) | — | — | Check 7 ms, Do 20 ms; 2 → 2 MB; 241 characters |
 
 The cost the ExSheet Change Note states is the third column's: a fill from whole columns or rows,
 with a format along it or not, costs the cells that hold something and the target's few levels.
@@ -72,7 +72,8 @@ with a format along it or not, costs the cells that hold something and the targe
 
 - Every cell shows no handle anywhere, not only none in view.
 - ExGrid's handle on a whole axis lies just inside the cells, beside the Heading (round 2's choice,
-  kept). Excel's straddles the Heading's bottom edge (observed, R5 (2)) and with row 1 scrolled away
+  kept). A whole column's straddles its Heading's bottom edge, and a whole row's the Row Heading's
+  right edge (observed, R5 (2)), and with row 1 scrolled away
   the Heading covers its top (observed, R5 (5): 6 × 4 px in view). ExGrid's header and Row Headings
   stand above the selection layer (ADR-0008, 2026-10-01), so a straddling handle would be half
   covered; it lies half its side lower, and is wholly in view in both cases. Round 2's text called
@@ -82,8 +83,11 @@ with a format along it or not, costs the cells that hold something and the targe
 - A whole row's handle is held at the left of the part in view (by generalisation from the column).
 - The lone-number series is limited to whole-axis fills, the case R5 observed; it is held at 15
   significant digits, and counts back by one going left or up.
-- The level write applies to Ctrl+D and Ctrl+R over whole columns or rows too (`SheetEdit.FillCopy`
-  plans through the same `PlanFill`); those copy, as the keys always do.
+- In the engine, the level write applies to `SheetEdit.FillCopy` over whole columns or rows too (it
+  plans through the same `PlanFill`), which copies, as the keys always do. In the UI only Ctrl+D over
+  whole rows reaches it: Ctrl+R over whole columns is refused before the engine by ExGrid's
+  `ClipboardRules.PlanFill`, its source being more than `CopyCellCap` (1,000,000) cells, with the
+  notice a paste of more than that gives.
 - Layer 3 drags column E one column right on `/sheet` (F lies clear of the right edge band, where
   round 2 found G unreliable); R5's two columns are layer 2's, in ExSheet's `FillWiringTests` and
   the engine's `FillTests`.
@@ -93,7 +97,7 @@ with a format along it or not, costs the cells that hold something and the targe
 - **Engine**, `tests/ExSheet.Engine.Tests/FillTests.cs`: round 2's two whole-axis tests rewritten to
   R5's cases (column C into D:E: D1 2, E1 3, `a`, `=ROW()` 20, `z`, D2 empty, D9's text cleared, undo
   byte for byte; row 3 into rows 4:5: A4 2, A5 3, `a`, `=COLUMN()` 8, `z`); one cell's lone number
-  copied (R5's control); a whole column filled left counts back; Ctrl+R over whole columns copies;
+  copied (R5's control); a whole column filled left counts back; `FillCopy` over whole columns copies;
   C:C bold with D yellow into D:E records one bold run C:E, no Fill, and no cell-level Font, and
   undo and redo give the documents back; a whole row's italic recorded on rows 4:5 with three cells
   written; a row format, a cell's own Number Format and a target cell's own Font under the new level
@@ -207,8 +211,9 @@ The readings of 2026-10-12 asked the rest (`verification/2026-10-12-windows-read
   small grid's bottom-right too (by generalisation).
 - **It lies just inside the cells, beside the Heading.** It is centred on the edge that runs along
   the range, the column's right edge or the row's bottom edge, and lies inside the range across the
-  other: its top is the first row's top, and its left the first column's left. Excel's straddles the
-  Heading's bottom edge (observed, R5 (2)). The header and the Row Headings stand above the
+  other: its top is the first row's top, and its left the first column's left. Excel's whole column's
+  straddles its Heading's bottom edge, and a whole row's the Row Heading's right edge (observed, R5
+  (2)). The header and the Row Headings stand above the
   selection layer (ADR-0008, 2026-10-01), so a handle straddling their edge would be half covered;
   ExGrid's lies half its side lower, uncovered.
 - **It stays in view.** With a whole column's first row scrolled above the readable area, the
@@ -363,9 +368,10 @@ New:
 ```
             Beyond typing, the user gets what a spreadsheet user expects: the fill handle (Formulas with
             their References shifted, a series from two or more numbers, dates by day — any other pattern is
-            refused, with the reason; for one or several whole columns or rows it stands beside the Heading
-            and fills every row or column, a single number going on by one, as Excel's did beside it in the
-            readings of 2026-10-12, R5), Ctrl+D and Ctrl+R, Delete to clear contents and keep formats, Ctrl+F to
+            refused, with the reason; for whole columns or rows it stands beside the Heading, and from one
+            whole column or row it fills every row or column, a single number going on by one, as Excel's did
+            beside it in the readings of 2026-10-12, R5; from several, a line with a number beside a blank is
+            refused), Ctrl+D and Ctrl+R, Delete to clear contents and keep formats, Ctrl+F to
 ```
 
 ### 10. samples/ExGrid.Docs/Pages/Sheet/SheetFormatting.razor
@@ -430,8 +436,11 @@ Each in a new workbook at 100% zoom, the pictures cut to the cells and the Headi
 5. **A whole axis with a lone number beside a blank in a line.** Columns B:C with B1 `1` and C1
    empty, dragged right to E: what do D1 and E1 hold? ExSheet refuses ("numbers mixed with other
    cells"); a value there is a pattern to implement.
-6. **A whole column's format.** C1 `1`, C:C bold (Ctrl+B on C's Heading), dragged right to E: D100
-   and E100 bold? Then insert a row at row 50 (row 50's Heading, Ctrl++): is D50 bold? Bold there
-   says the format is the column's, as ExSheet records it; not bold says Excel wrote cells.
+6. **A whole column's format.** C1 `1` and nothing else in C, C:C bold (Ctrl+B on C's Heading),
+   dragged right to E: D100 and E100 bold? Then read `ActiveSheet.UsedRange.Address` through COM, or
+   press Ctrl+End. A format written on the cells down every row takes the used range to row 1048576,
+   and a column's format does not; alternatively, save as .xlsx and read the `<cols>` and `<c>`
+   entries of `xl/worksheets/sheet1.xml`. (Inserting a row cannot tell them apart: Excel gives an
+   inserted row the format of the row above either way.)
 7. **Left and up, and a date.** Column C (C1 `5`) dragged left to A: B1 `4`, A1 `3`? Column C with
    C1 `9/26/2026`, dragged right: D1 `9/27/2026`? Both are ExSheet's by generalisation.

@@ -1,6 +1,6 @@
 import { test, expect, alterPage } from './fixtures.mjs';
 import { sheet, cell, clickCell, expectFocusAt, expectCovers, pressAt } from './sheet-helpers.mjs';
-import { painted, runsOf, sameColour, resolvedColour } from './pixels.mjs';
+import { painted, runsOf, sameColour, resolvedColour, paints, onDeviceGrid, wholePixelCentres } from './pixels.mjs';
 
 // Excel's look for the Focus and a single range, and a whole header rule (ADR-0008 and ADR-0030
 // of 2026-09-29, ticket 24), read in device pixels from what the browser painted: UX-17, UX-18
@@ -375,16 +375,20 @@ const columnHeading = (grid, letters) => grid.locator('.ex-header-cell', { hasTe
 const rowHeading = (grid, number) => grid.locator('.ex-row .ex-row-heading', { hasText: new RegExp(`^${number}$`) });
 
 /**
- * Whether the fill handle is painted where it stands, read in device pixels: its middle shows the
- * handle's own colour, and no layer above the selection — the header, the Headings — covers it.
+ * Whether the fill handle is painted where it stands, read in device pixels: the middle of the
+ * pixels it covers whole shows the handle's own colour, judged with `paints`, and no layer above
+ * the selection — the header, the Headings — covers it. The region is grown out to the device
+ * grid, so each pixel read is the page's.
  */
 async function handleShows(page, grid) {
     const handle = await grid.locator('.ex-fill-handle').boundingBox();
     const colour = await resolvedColour(page, await grid.locator('.ex-fill-handle')
         .evaluate((el) => getComputedStyle(el).backgroundColor));
-    const region = await painted(page, { x: handle.x, y: handle.y, width: handle.width, height: handle.height });
-    const middle = region.at(handle.x + handle.width / 2, handle.y + handle.height / 2);
-    return { shows: sameColour(middle, colour), middle, colour };
+    const scale = await page.evaluate(() => window.devicePixelRatio);
+    const region = await painted(page, onDeviceGrid(handle, scale));
+    const { xs, ys } = wholePixelCentres(handle, scale);
+    const middle = region.at(xs[Math.floor(xs.length / 2)], ys[Math.floor(ys.length / 2)]);
+    return { shows: paints(middle, colour), middle, colour };
 }
 
 for (const [chrome, query] of CHROMES) {

@@ -306,8 +306,9 @@ internal static class SelectionStyles
     /// left the first column's left: that edge is the one the column's Heading or the row's Heading
     /// stands against, and the header and the Row Headings stand above the selection layer
     /// (ADR-0008), so a handle centred on the corner would have half of it beneath them, or past the
-    /// grid's edge without one. Excel's straddles the Heading's bottom edge there (observed, the
-    /// readings of 2026-10-12 (R5)); ExGrid's lies just inside, uncovered.
+    /// grid's edge without one. Excel's straddles the Heading's edge there, a whole column's its
+    /// Heading's bottom edge and a whole row's the Row Heading's right edge (observed, the readings
+    /// of 2026-10-12 (R5 (2))); ExGrid's lies just inside, uncovered.
     ///
     /// <para>Held at the readable area's edge (<paramref name="readable"/>): a whole column's top
     /// never lies above the readable area's top, so with its first row scrolled away the handle
