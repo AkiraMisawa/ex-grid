@@ -2,8 +2,8 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 95.7% | 88.7% |
-| ExSheet | 96.1% | 89.6% |
+| ExGrid | 95.7% | 88.8% |
+| ExSheet | 96.1% | 89.7% |
 | ExPivot | 94.2% | 85.2% |
 | Data | 94.4% | 90.2% |
 
@@ -12,29 +12,29 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/13/2026 - 13:10:03 |
+| Generated on: | 10/13/2026 - 13:20:18 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
-| Classes: | 835 |
+| Classes: | 838 |
 | Files: | 461 |
-| **Line coverage:** | 95.2% (56515 of 59303) |
-| Covered lines: | 56515 |
+| **Line coverage:** | 95.3% (56630 of 59418) |
+| Covered lines: | 56630 |
 | Uncovered lines: | 2788 |
-| Coverable lines: | 59303 |
-| Total lines: | 100096 |
-| **Branch coverage:** | 88.4% (32746 of 37022) |
-| Covered branches: | 32746 |
-| Total branches: | 37022 |
+| Coverable lines: | 59418 |
+| Total lines: | 100388 |
+| **Branch coverage:** | 88.4% (32841 of 37118) |
+| Covered branches: | 32841 |
+| Total branches: | 37118 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExGrid - 95.3%</summary>
+<details><summary>ExGrid - 95.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**95.3%**|**88.9%**|
+|**ExGrid**|**95.4%**|**89%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -160,7 +160,7 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|95.5%|90.4%|
+|ExGrid.Components.ExGrid<TRow>|95.6%|90.4%|
 |ExGrid.Components.ExGrid<TRow>|90.9%|88%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
@@ -171,8 +171,9 @@
 |ExGrid.Components.RowAppearance|100%|75%|
 |ExGrid.Components.RowClasses|96.5%|92.8%|
 |ExGrid.Components.ScrollOffset|100%||
-|ExGrid.Components.SelectionStyles|100%|96.5%|
+|ExGrid.Components.SelectionStyles|100%|95.9%|
 |ExGrid.Components.SelectionStyles.OutlineCover|100%||
+|ExGrid.Components.SelectionStyles.ReadableEdge|100%||
 |ExGrid.Components.Share|100%|100%|
 |ExGrid.Components.SummaryFiguresMenu|80%|85.7%|
 |ExGrid.DisplayText|100%|90%|
@@ -721,10 +722,10 @@
 |ExSheet.ColourItem|95.2%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|91.3%|85.8%|
+|ExSheet.Components.ExSheet|91.4%|86%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91.3%|85.8%|
+|ExSheet.Components.ExSheet<T>|91.4%|86%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.4%|
 |ExSheet.DefaultToolbarRow|100%|50%|
@@ -886,10 +887,12 @@
 |ExSheet.Engine.RangeEdgeLines|100%||
 |ExSheet.Engine.ReferenceCycle|100%||
 |ExSheet.Engine.RepeatedKeyException|100%|88.8%|
-|ExSheet.Engine.Sheet|99.7%|96%|
+|ExSheet.Engine.Sheet|99.6%|96%|
 |ExSheet.Engine.Sheet.Cell|100%|100%|
 |ExSheet.Engine.Sheet.CellFormatOutcome|100%||
 |ExSheet.Engine.Sheet.CellFormatsOutcome|100%||
+|ExSheet.Engine.Sheet.FillLevels|100%||
+|ExSheet.Engine.Sheet.FillPlan|100%||
 |ExSheet.Engine.Sheet.RenameOutcome|100%||
 |ExSheet.Engine.Sheet.StagedReader|100%|89.2%|
 |ExSheet.Engine.Sheet.StructuralOutcome|100%||
@@ -905,12 +908,12 @@
 |ExSheet.Engine.SheetDocumentColumnWidth|100%||
 |ExSheet.Engine.SheetDocumentException|100%||
 |ExSheet.Engine.SheetDocumentTable|100%|100%|
-|ExSheet.Engine.SheetEdit|99.4%|85.7%|
+|ExSheet.Engine.SheetEdit|99.4%|86.1%|
 |ExSheet.Engine.SheetEdit.CellFormatEdit|100%||
 |ExSheet.Engine.SheetEdit.CellFormatsEdit|100%||
 |ExSheet.Engine.SheetEdit.CellsEdit|100%||
 |ExSheet.Engine.SheetEdit.ColumnWidthEdit|100%||
-|ExSheet.Engine.SheetEdit.FillEdit|100%|75%|
+|ExSheet.Engine.SheetEdit.FillEdit|100%|83.3%|
 |ExSheet.Engine.SheetEdit.PlacedEdit|100%|100%|
 |ExSheet.Engine.SheetEdit.RefusedEdit|66.6%||
 |ExSheet.Engine.SheetEdit.RenameEdit|100%||
