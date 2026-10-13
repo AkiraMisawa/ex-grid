@@ -412,7 +412,7 @@ public class FormulaEntryWiringTests : SheetTestContext
         Assert.Equal("=SUM(A1:B2)", EditorText(cut));
     }
 
-    [Fact] // ADR-0051 / SH-28 / C-diff-3, C-diff-6, C-diff-8: typed into a cell (Enter mode), F4 leaves a caret at the end of the rewritten end, in upper case (observed, the seventeenth Windows run, Part C, cases 21 and 22)
+    [Fact] // ADR-0051 / SH-28 / C-diff-3, C-diff-6, C-diff-8: typed into a cell (Enter mode), F4 leaves a caret at the end of the rewritten end, in upper case (observed, the seventeenth Windows run, Part C, cases 21 and 22; the other end kept in lower case is by generalisation)
     public async Task SH28_in_enter_mode_F4_leaves_a_caret_after_the_rewritten_reference()
     {
         var cut = RenderSheet();

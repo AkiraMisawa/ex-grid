@@ -323,9 +323,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Overwrite, Excel's Enter mode (ADR-0010, ED-2): Point's keys, which commit and move or extend
     // the Selection — or point, where a Reference can go — rather than move the caret or select
     // text in the input, and the Primary Modifier's arrows with Shift or without, which commit and
-    // move or extend to the edge (observed: the seventeenth Windows run, Part C, case 7; R1 (vii)).
-    // Shift+End stays the editor's: Excel's commits and turns on an End Mode (R1 (vii)), which the
-    // grid does not have (ADR-0058, Q53), and what it does here is not decided.
+    // move or extend to the edge. Observed in Excel: Shift+Home, Shift+→, Shift+↓, Shift+←, Ctrl+→
+    // and Ctrl+Shift+→ (the seventeenth Windows run, Part C, case 7; R1 (vii)); the rest of the
+    // Primary Modifier's arrows and Shift+↑ by generalisation. End's commit and move is the grid's,
+    // not Excel's: in Enter mode Excel's End turns on an End Mode (ADR-0058), which the grid does
+    // not have. Shift+End stays the editor's (decided with the user, 2026-10-13): Excel's commits
+    // and turns on an End Mode (R1 (vii)), which the grid does not have (ADR-0058, Q53).
     const overwriteKeys = new Set([
         ...pointKeys, 'Control+ArrowUp', 'Control+ArrowDown', 'Control+ArrowLeft', 'Control+ArrowRight',
         'Control+Shift+ArrowUp', 'Control+Shift+ArrowDown', 'Control+Shift+ArrowLeft', 'Control+Shift+ArrowRight']);

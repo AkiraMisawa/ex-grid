@@ -92,8 +92,11 @@ public partial class ExGrid<TRow>
     /// <summary>The key gate's set for the current state (ADR-0010): Caret leaves the arrows
     /// to the editor. Overwrite, Excel's Enter mode, claims the arrows, Home and End, the four
     /// Shift+arrows and Shift+Home, and the Primary Modifier's arrows with Shift or without, which
-    /// commit and move or extend (ADR-0010, ED-2; observed in Excel, the seventeenth Windows run,
-    /// Part C, case 7, and the readings of 2026-10-12, R1 (vii)). While a list is open, in any
+    /// commit and move or extend (ADR-0010, ED-2). Observed in Excel: Shift+Home, Shift+→, Shift+↓,
+    /// Shift+←, Ctrl+→ and Ctrl+Shift+→ (the seventeenth Windows run, Part C, case 7, and the
+    /// readings of 2026-10-12, R1 (vii)); the rest of the Primary Modifier's arrows and Shift+↑ by
+    /// generalisation. End's commit and move is the grid's, not Excel's: in Enter mode Excel's End
+    /// turns on an End Mode (ADR-0058), which the grid does not have. While a list is open, in any
     /// state, only its ↑/↓ are claimed beside the editing keys, so ← and → move the caret — and
     /// ←, →, Home, End and the Shift+arrows too while it is open over Point, where they point
     /// (ADR-0058). Point claims the arrows, Home and End, the four Shift+arrows and Shift+Home,

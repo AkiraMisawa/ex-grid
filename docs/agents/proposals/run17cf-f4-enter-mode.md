@@ -46,21 +46,21 @@ lines, in the order they apply; each old text occurs once in its file at the bra
   as with no edit open, a Reject holding the commit; a commit whose own handler moved the order has
   dropped the Selection, and they move nothing then (ADR-0142). Caret, and a list of names, keep
   them the editor's; a list open over Point leaves Shift+Home and the Primary Modifier's arrows to
-  the editor. Shift+End stays the editor's: see "Needs a decision".
+  the editor. Shift+End stays the editor's: see "Decided".
 - **R1 (viii)** — Point claims Shift+Home again, now with Excel's meaning: it extends the outline from
   its fixed end to the row's first column, and pointing goes on. Round 2 had taken it out of Point's
   set.
 - **R1 (i) to (iii)** — ExSheet's Formula Bar already did what Excel's did after `=` and ↓ (the bar is
   in Caret, so ↓ is the editor's): pinned in layer 2 and layer 3, nothing changed.
 
-## Needs a decision (not built)
+## Decided
 
 - **Shift+End in Overwrite.** R1 (vii): typed `abc` into D10, Shift+End committed, left the Selection
   on D10 and turned End Mode on. ExGrid has no End Mode (ADR-0058, Q53), and its End with no edit
   open is the row's last cell (ADR-0012). The options: (a) commit, and extend to the row's last cell
   as Shift+End does with no edit open; (b) commit, and leave the Selection on the edited cell, as
-  Excel's Selection was left, without End Mode; (c) leave it the editor's, as now. Built: (c), as it
-  was. ADR-0010's note below says so.
+  Excel's Selection was left, without End Mode; (c) leave it the editor's, as now. *(2026-10-13,
+  decided with the user: (c), as built.)* ADR-0010's note below says so.
 - **The pointed Reference's grey ground right after `=`.** ADR-0057 (cases 19 and 31 of the eighth
   run) shows no grey when the pointed Reference follows the Formula's `=` directly, and the Formula
   Bar's selection was empty there. R1's pictures show `D11` on the grey ground after `=`, ↓
@@ -71,7 +71,8 @@ lines, in the order they apply; each old text occurs once in its file at the bra
   19: 652 and 1014 ms, `verification/2026-09-29-windows-excel-8/range-finder.md`), and the tenth run's
   grey that depended on timing was after `+`, not `=` (ADR-0057) — a reading. The options: (a) keep
   ADR-0057 (no grey straight after `=`); (b) show the grey there too, as R1 pictured it; (c) keep (a)
-  until the next Windows run asks again (question 6). Built: (a), as it was.
+  until the next Windows run asks again (question 6). Built: (a), as it was. The orchestrator's ruling
+  of 2026-10-13: (c), so ADR-0057 stands until question 6 is answered, and no ADR changes here.
 
 ## ADR-0051, "Formula entry: completion, Point mode, and a Formula Bar inside the grid's root"
 
@@ -112,7 +113,7 @@ New:
   *(2026-10-12.)* The whole of it: the function is asked with a selection over the outline's
   Reference, so a pointed range's two ends cycle together, as Excel's did (observed, the readings of
   2026-10-12, R1 (vi): `=`, ↓, Shift+↓, F4 in D10 gave `=$D$11:$D$12`). Asked at a caret at its end,
-  only the second end had cycled.
+  only the second end would cycle, now that each end is a Reference of its own.
 ```
 
 ### 3. docs/adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md
@@ -155,7 +156,8 @@ New:
   and `=|A1+B2` both cycle `A1` (observed, cases 2 to 4). **Each end of a cell range is a Reference of
   its own** *(observed, cases 5, 6 and 22)*: `=SUM(A1:B2|)` and `=SUM(A1:|B2)` cycle `B2`, and
   `=SUM(A1|:B2)` cycles `A1`. A caret touching no Reference changes nothing, as does F4 in a function
-  name, a number, a string, or text that is not a Formula (observed, cases 11 to 14).
+  name (observed, case 12), a number (case 13) or text that is not a Formula (case 14), and in a
+  string, a reading by generalisation: no case asked it.
 ```
 
 ### 5. docs/adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md
@@ -218,10 +220,11 @@ Old:
 New:
 
 ```
-- **The rewritten Reference's column letters are written in upper case; the rest of the text keeps
-  the case and the order it was typed in** *(corrected after the seventeenth Windows run, cases 21
-  and 22. The reading was that only `$` signs are written, so that `=b2` gave `=$b$2`; Excel gives
-  `=$B$2`)*. `=B2:A1` gives `=B2:$A$1`, its order kept. A Sheet qualifier is not rewritten and keeps
+- **The rewritten Reference's column letters are written in upper case** *(corrected after the
+  seventeenth Windows run, cases 21 and 22. The reading was that only `$` signs are written, so that
+  `=b2` gave `=$b$2`; Excel gives `=$B$2`)*. **The rest of the text keeps the case and the order it was
+  typed in**, a reading: no case observed lower-case text outside the rewritten Reference. `=B2:A1`
+  gives `=B2:$A$1`, its order kept. A Sheet qualifier is not rewritten and keeps
   its case: it was not asked.
 - **Whole columns and whole rows have two forms**: `A:A` ↔ `$A:$A`, `1:1` ↔ `$1:$1` (observed, cases
   8 and 9: the third press gives `$A:$A` and `$1:$1` again).
@@ -236,7 +239,7 @@ New:
   to 4, `$B$2` in case 5, the whole `$A:$A` and `$1:$1` in cases 8 and 9), and so did ← in the bar
   (R1 (v): `=SUM(A1:B2)`, ←, F4 gave `=SUM(A1:$B$2)` with `$B$2` selected); a selection stayed over
   what was rewritten (cases 7 and 18 to 20); and with the caret where typing left it, the caret stood
-  at the end, typed into a cell (cases 1, 10, 13, 21 and 22) and into the bar (R1 (iv): `=B2`, F4
+  at the end, typed into a cell (cases 1, 10, 21 and 22) and into the bar (R1 (iv): `=B2`, F4
   gave `=$B$2`, nothing selected). The Consumer answers the span of what was rewritten, a Sheet
   qualifier included before the first end, for a caret as for a selection. The F4 key message
   already says whether the user moved the caret in that text (above), and the grid selects the span
@@ -320,8 +323,8 @@ Caret keeps them the editor's, and so does a list of names
 ([ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md), Q51); a list open over
 Point leaves Shift+Home and the Primary Modifier's arrows to the editor, and its Shift+arrows point.
 **Shift+End stays the editor's**: Excel's committed, left the Selection on D10 and turned End Mode
-on (R1 (vii)), the grid has no End Mode (ADR-0058, Q53), and what Shift+End does here is not yet
-decided.
+on (R1 (vii)), and the grid has no End Mode (ADR-0058, Q53). *(2026-10-13, decided with the user:
+Shift+End is left to the editor.)*
 ```
 
 ## Definition of Done
