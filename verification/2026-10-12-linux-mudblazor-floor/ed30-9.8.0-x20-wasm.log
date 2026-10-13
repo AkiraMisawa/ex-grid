@@ -1,0 +1,142 @@
+node v24.14.1, dotnet 10.0.203
+== 2026-10-12T15:02:33Z host=wasm tag=ed30b-9.8.0 base=http://localhost:5491 head=0c0ab368 locations=key-field.spec.mjs:341 --repeat-each=20
+Running 20 tests using 1 worker
+  ✓   1 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (10.1s)
+  ✓   2 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (10.2s)
+  ✓   3 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (9.6s)
+  ✘   4 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (1.2m)
+  ✓   5 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (11.2s)
+  ✓   6 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (11.8s)
+  ✘   7 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (1.2m)
+  ✓   8 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (13.7s)
+  ✓   9 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (12.2s)
+  ✓  10 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (12.4s)
+  ✓  11 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (11.0s)
+  ✓  12 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (10.8s)
+  ✘  13 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (1.2m)
+  ✓  14 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (9.6s)
+  ✓  15 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (9.5s)
+  ✓  16 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (9.3s)
+  ✓  17 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (9.5s)
+  ✓  18 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (9.0s)
+  ✘  19 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (1.2m)
+  ✓  20 [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (9.2s)
+
+  1) [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 3
+    + Received  + 3
+
+      Object {
+    -   "drawn": true,
+    -   "focused": true,
+    -   "value": "かな感じｄ",
+    +   "drawn": false,
+    +   "focused": false,
+    +   "value": "",
+      }
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      358 |                 // The request that waited is not granted between the two.
+      359 |                 await endAndStart(client, '感じ', 'ｄ');
+    > 360 |                 await expect.poll(() => fieldState(grid)).toEqual({ value: 'かな感じｄ', drawn: true, focused: true });
+          |                                                           ^
+      361 |                 await compose(client, 'で', 'でｓ', 'です');
+      362 |                 expect(await fieldState(grid)).toEqual({ value: 'かな感じです', drawn: true, focused: true });
+      363 |                 await expect(editor(grid)).not.toBeFocused();
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/key-field.spec.mjs:360:59
+
+
+  2) [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 3
+    + Received  + 3
+
+      Object {
+    -   "drawn": true,
+    -   "focused": true,
+    -   "value": "かな感じｄ",
+    +   "drawn": false,
+    +   "focused": false,
+    +   "value": "",
+      }
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      358 |                 // The request that waited is not granted between the two.
+      359 |                 await endAndStart(client, '感じ', 'ｄ');
+    > 360 |                 await expect.poll(() => fieldState(grid)).toEqual({ value: 'かな感じｄ', drawn: true, focused: true });
+          |                                                           ^
+      361 |                 await compose(client, 'で', 'でｓ', 'です');
+      362 |                 expect(await fieldState(grid)).toEqual({ value: 'かな感じです', drawn: true, focused: true });
+      363 |                 await expect(editor(grid)).not.toBeFocused();
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/key-field.spec.mjs:360:59
+
+
+  3) [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 3
+    + Received  + 3
+
+      Object {
+    -   "drawn": true,
+    -   "focused": true,
+    -   "value": "かな感じｄ",
+    +   "drawn": false,
+    +   "focused": false,
+    +   "value": "",
+      }
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      358 |                 // The request that waited is not granted between the two.
+      359 |                 await endAndStart(client, '感じ', 'ｄ');
+    > 360 |                 await expect.poll(() => fieldState(grid)).toEqual({ value: 'かな感じｄ', drawn: true, focused: true });
+          |                                                           ^
+      361 |                 await compose(client, 'で', 'でｓ', 'です');
+      362 |                 expect(await fieldState(grid)).toEqual({ value: 'かな感じです', drawn: true, focused: true });
+      363 |                 await expect(editor(grid)).not.toBeFocused();
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/key-field.spec.mjs:360:59
+
+
+  4) [chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 3
+    + Received  + 3
+
+      Object {
+    -   "drawn": true,
+    -   "focused": true,
+    -   "value": "かな感じｄ",
+    +   "drawn": false,
+    +   "focused": false,
+    +   "value": "",
+      }
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      358 |                 // The request that waited is not granted between the two.
+      359 |                 await endAndStart(client, '感じ', 'ｄ');
+    > 360 |                 await expect.poll(() => fieldState(grid)).toEqual({ value: 'かな感じｄ', drawn: true, focused: true });
+          |                                                           ^
+      361 |                 await compose(client, 'で', 'でｓ', 'です');
+      362 |                 expect(await fieldState(grid)).toEqual({ value: 'かな感じです', drawn: true, focused: true });
+      363 |                 await expect(editor(grid)).not.toBeFocused();
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/key-field.spec.mjs:360:59
+
+  4 failed
+  16 passed (10.3m)
+== exit 1 at 2026-10-12T15:12:55Z

@@ -1,0 +1,60 @@
+{"t": "16:43:48", "cmd": "stop", "answer": "ok stop 44872 ended by Stop-Process (its own) t=440397"}
+{"t": "16:43:50", "cmd": "start", "answer": "ok start pid=50752 book=Book1 sheet=Sheet1 openedByItself= before=44872 layout=0x08090809 version=16.0 t=442165"}
+{"t": "16:43:52", "cmd": "setedge B2 8 1 2", "answer": "ok setedge B2 8 1 2 t=443722"}
+{"t": "16:43:52", "cmd": "setedge B2 10 1 4", "answer": "ok setedge B2 10 1 4 t=443768"}
+{"t": "16:43:52", "cmd": "select B2", "answer": "ok select B2 t=443815"}
+{"t": "16:43:52", "cmd": "look B2", "answer": "ok look B2: bold False italic False underline -4142 strike False size 11 | top=1/2 bottom=-4142/2 left=-4142/2 right=1/4 | width 8.09 | text \"\" t=444287"}
+{"t": "16:43:52", "cmd": "shot r8-1-thin-top-thick-right-cells", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r8-1-thin-top-thick-right-cells.png windows: XLMAIN@-11,-11,3851,2099 t=444442"}
+{"t": "16:43:52", "cmd": "geo A1 E6", "answer": "ok geo A1:41,353,137,381 E6:425,497,521,527 t=444499"}
+{"t": "16:43:53", "cmd": "crop r8-1-thin-top-thick-right-cells 1 323 530 214 r8-1-thin-top-thick-right-cells-c 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r8-1-thin-top-thick-right-cells-c.png t=444554"}
+{"t": "16:43:53", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=444644"}
+{"t": "16:43:54", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=446268"}
+{"t": "16:43:55", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=446817"}
+{"t": "16:43:55", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=447366"}
+{"t": "16:43:57", "cmd": "windows", "answer": "ok windows 1642946|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 94637592|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=448469"}
+{"t": "16:43:57", "cmd": "shot r8-1-thin-top-thick-right-dialog", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r8-1-thin-top-thick-right-dialog.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=448662"}
+{"t": "16:43:57", "cmd": "crop r8-1-thin-top-thick-right-dialog 42 462 774 780 r8-1-thin-top-thick-right-dialog-c 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r8-1-thin-top-thick-right-dialog-c.png t=448697"}
+{"t": "16:43:58", "cmd": "uianames ^(Style:|Colour:|None|Automatic|Border|Presets|Outline|Inside)$", "answer": "ok uianames [] t=449463"}
+{"t": "16:43:58", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=449566"}
+{"t": "16:43:58", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B2 selection=B2 t=450223"}
+{"t": "16:43:58", "cmd": "look B2", "answer": "ok look B2: bold False italic False underline -4142 strike False size 11 | top=1/2 bottom=-4142/2 left=-4142/2 right=1/4 | width 8.09 | text \"\" t=450295"}
+{"t": "16:44:08", "cmd": "stop", "answer": "ok stop 50752 ended by Stop-Process (its own) t=460575"}
+{"t": "16:44:10", "cmd": "start", "answer": "ok start pid=49944 book=Book1 sheet=Sheet1 openedByItself= before=50752 layout=0x08090809 version=16.0 t=462336"}
+{"t": "16:44:12", "cmd": "setedge A2 8 1 2", "answer": "ok setedge A2 8 1 2 t=463856"}
+{"t": "16:44:12", "cmd": "setedge B2 10 1 -4138", "answer": "ok setedge B2 10 1 -4138 t=463911"}
+{"t": "16:44:12", "cmd": "setedge A3 9 1 4", "answer": "ok setedge A3 9 1 4 t=463975"}
+{"t": "16:44:12", "cmd": "setedge B3 7 -4115 2", "answer": "ok setedge B3 7 -4115 2 t=464029"}
+{"t": "16:44:12", "cmd": "select A2:B3", "answer": "ok select A2:B3 t=464078"}
+{"t": "16:44:12", "cmd": "look A2 A3 B2 B3", "answer": "ok look A2: bold False italic False underline -4142 strike False size 11 | top=1/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" ;; A3: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=1/4 left=-4142/2 right=-4115/2 | width 8.09 | text \"\" ;; B2: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=1/-4138 | width 8.09 | text \"\" ;; B3: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4115/2 right=-4142/2 | width 8.09 | text \"\" t=464603"}
+{"t": "16:44:12", "cmd": "shot r8-2-range-different-lines-cells", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r8-2-range-different-lines-cells.png windows: XLMAIN@-11,-11,3851,2099 t=464763"}
+{"t": "16:44:13", "cmd": "geo A1 E6", "answer": "ok geo A1:41,353,137,381 E6:425,501,521,530 t=464806"}
+{"t": "16:44:13", "cmd": "crop r8-2-range-different-lines-cells 1 323 530 217 r8-2-range-different-lines-cells-c 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r8-2-range-different-lines-cells-c.png t=464863"}
+{"t": "16:44:13", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=464953"}
+{"t": "16:44:14", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=466585"}
+{"t": "16:44:15", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=467194"}
+{"t": "16:44:16", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=467784"}
+{"t": "16:44:17", "cmd": "windows", "answer": "ok windows 11342000|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 5505806|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=468886"}
+{"t": "16:44:17", "cmd": "shot r8-2-range-different-lines-dialog", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r8-2-range-different-lines-dialog.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=469088"}
+{"t": "16:44:17", "cmd": "crop r8-2-range-different-lines-dialog 42 462 774 780 r8-2-range-different-lines-dialog-c 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r8-2-range-different-lines-dialog-c.png t=469112"}
+{"t": "16:44:18", "cmd": "uianames ^(Style:|Colour:|None|Automatic|Border|Presets|Outline|Inside)$", "answer": "ok uianames [] t=469754"}
+{"t": "16:44:18", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=469818"}
+{"t": "16:44:18", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A2 selection=A2:B3 t=470432"}
+{"t": "16:44:18", "cmd": "look A2 A3 B2 B3", "answer": "ok look A2: bold False italic False underline -4142 strike False size 11 | top=1/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" ;; A3: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=1/4 left=-4142/2 right=-4115/2 | width 8.09 | text \"\" ;; B2: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=1/-4138 | width 8.09 | text \"\" ;; B3: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4115/2 right=-4142/2 | width 8.09 | text \"\" t=470543"}
+{"t": "16:44:29", "cmd": "stop", "answer": "ok stop 49944 ended by Stop-Process (its own) t=480864"}
+{"t": "16:44:31", "cmd": "start", "answer": "ok start pid=45396 book=Book1 sheet=Sheet1 openedByItself= before=49944 layout=0x08090809 version=16.0 t=482645"}
+{"t": "16:44:32", "cmd": "select D5", "answer": "ok select D5 t=484170"}
+{"t": "16:44:33", "cmd": "look D5", "answer": "ok look D5: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" t=484648"}
+{"t": "16:44:33", "cmd": "shot r8-3-no-lines-cells", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r8-3-no-lines-cells.png windows: XLMAIN@-11,-11,3851,2099 t=484807"}
+{"t": "16:44:33", "cmd": "geo A1 E6", "answer": "ok geo A1:41,353,137,381 E6:425,497,521,527 t=484855"}
+{"t": "16:44:33", "cmd": "crop r8-3-no-lines-cells 1 323 530 214 r8-3-no-lines-cells-c 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r8-3-no-lines-cells-c.png t=484912"}
+{"t": "16:44:33", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=485001"}
+{"t": "16:44:35", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=486629"}
+{"t": "16:44:35", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=487189"}
+{"t": "16:44:36", "cmd": "keys 40 ^{TAB}", "answer": "ok keys 1 t=487742"}
+{"t": "16:44:37", "cmd": "windows", "answer": "ok windows 128781420|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 18484664|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=488851"}
+{"t": "16:44:37", "cmd": "shot r8-3-no-lines-dialog", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r8-3-no-lines-dialog.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=489083"}
+{"t": "16:44:37", "cmd": "crop r8-3-no-lines-dialog 42 462 774 780 r8-3-no-lines-dialog-c 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r8-3-no-lines-dialog-c.png t=489127"}
+{"t": "16:44:37", "cmd": "uianames ^(Style:|Colour:|None|Automatic|Border|Presets|Outline|Inside)$", "answer": "ok uianames [] t=489886"}
+{"t": "16:44:38", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=489988"}
+{"t": "16:44:38", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D5 selection=D5 t=490602"}
+{"t": "16:44:38", "cmd": "look D5", "answer": "ok look D5: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"\" t=490672"}

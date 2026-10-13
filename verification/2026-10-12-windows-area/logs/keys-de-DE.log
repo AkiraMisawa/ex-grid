@@ -1,0 +1,8 @@
+a new PowerShell reads de-DE
+pass keys-de-DE started 10:39:17
+10:39:19 TEXTFN-009   agree       1,1 s
+10:39:20 TEXTFN-010   agree       0,5 s
+
+agree 2, disagree 0, blocked 0, recorded 0 -> %LOCALAPPDATA%\exgrid-layer3\area-2026-10-12\oracle\ExcelOracle\results-2026-10-12-area-keys-de-DE.json
+-Update: 2 agreeing cases now say source "observed"; disagreeing ones are untouched.
+pass keys-de-DE ended 10:39:20

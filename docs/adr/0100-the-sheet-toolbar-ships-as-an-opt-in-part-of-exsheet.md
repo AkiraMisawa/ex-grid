@@ -69,6 +69,9 @@ buttons:
 - **Items are built on public commands only:** `SetCellFormatAsync`, `CellFormatAt`,
   `OpenFormatCellsAsync`, and the notifications of the Selection and of an edit.
   - An item reads the Sheet through what the toolbar cascades. Nothing internal is cascaded.
+    *(2026-10-12, ADR-0201: the toolbar's rows also cascade `ToolbarOrder`, the scope that keeps
+    items in markup order, and it is internal. It is the rows' bookkeeping, not the Sheet's: an item
+    still reads the Sheet only through public commands.)*
   - The compiler cannot hold this inside one assembly, so a test holds it: no item type references
     an internal member.
 - **An item's state follows the Focus cell.** Whenever the Selection changes, each item reads the

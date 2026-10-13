@@ -38,6 +38,13 @@ reaches the screen is the same either way.
 - **The rows a source hands the grid are the Consumer's objects, named by a Row Key**
   ([ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md)).
   Typed columns and templates work as they do today.
+- **A Window's array is read where it is painted, and is not copied.** *(2026-10-13, decided with the
+  user: a row put into a Window the Consumer has already handed shows where the grid paints it — a
+  scroll of the grid's own may paint it before the Window is handed again — and a row on screen
+  repaints when the Window is handed again, by the painted-rows check. The Window is not copied when
+  handed, as `Columns`, `HeaderGroups` and `Sorts` are
+  ([ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md)'s note of 2026-10-13): that would be a pass over the whole Window on every
+  handing, the cost this ADR refuses below. To change rows, hand a new array.)*
 - **The Snapshot is not adopted here.**
   - ADR-0064's rule stands: a Snapshot serves a grid "as an index beside those objects, never as
     their replacement", and ExGrid adopts it after measuring.

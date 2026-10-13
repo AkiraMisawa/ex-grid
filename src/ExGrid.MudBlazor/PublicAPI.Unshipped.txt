@@ -1,0 +1,187 @@
+#nullable enable
+const ExGrid.MudBlazor.MudExGridPresentation.RobotoBoldDigitPx = 8.34 -> double
+const ExGrid.MudBlazor.MudExGridPresentation.RobotoBoldNarrowPx = 5.25 -> double
+const ExGrid.MudBlazor.MudExGridPresentation.RobotoBoldOtherPx = 12.28 -> double
+const ExGrid.MudBlazor.MudExGridPresentation.RobotoBoldWidePx = 10.4 -> double
+const ExGrid.MudBlazor.MudExGridPresentation.RobotoDigitPx = 8.3 -> double
+const ExGrid.MudBlazor.MudExGridPresentation.RobotoMeasuredAtPx = 14 -> double
+const ExGrid.MudBlazor.MudExGridPresentation.RobotoNarrowPx = 5.8 -> double
+const ExGrid.MudBlazor.MudExGridPresentation.RobotoOtherPx = 12.44 -> double
+const ExGrid.MudBlazor.MudExGridPresentation.RobotoWidePx = 10.4 -> double
+const ExGrid.MudBlazor.MudExGridWords.AddToFilter = "add-to-filter" -> string!
+const ExGrid.MudBlazor.MudExGridWords.BlankValue = "blank-value" -> string!
+const ExGrid.MudBlazor.MudExGridWords.FormulaBar = "formula-bar" -> string!
+const ExGrid.MudBlazor.MudExGridWords.IsBlank = "operator-is-blank" -> string!
+const ExGrid.MudBlazor.MudExGridWords.IsNotBlank = "operator-is-not-blank" -> string!
+const ExGrid.MudBlazor.MudExGridWords.IsOneOf = "operator-in" -> string!
+const ExGrid.MudBlazor.MudExGridWords.JoinAnd = "join-and" -> string!
+const ExGrid.MudBlazor.MudExGridWords.JoinOr = "join-or" -> string!
+const ExGrid.MudBlazor.MudExGridWords.NameBox = "name-box" -> string!
+const ExGrid.MudBlazor.MudExGridWords.NoSecondCondition = "no-second-condition" -> string!
+const ExGrid.MudBlazor.MudExGridWords.OperandNotReadable = "operand-not-readable" -> string!
+const ExGrid.MudBlazor.MudExGridWords.OperandNotTheColumnsDateForm = "operand-not-the-columns-date-form" -> string!
+const ExGrid.MudBlazor.MudExGridWords.OperandReadsTwoWays = "operand-reads-two-ways" -> string!
+const ExGrid.MudBlazor.MudExGridWords.Search = "search" -> string!
+const ExGrid.MudBlazor.MudExGridWords.SecondCondition = "second-condition" -> string!
+const ExGrid.MudBlazor.MudExGridWords.SelectAll = "select-all" -> string!
+const ExGrid.MudBlazor.MudExGridWords.SelectAllSearchResults = "select-all-search-results" -> string!
+ExGrid.MudBlazor.MudCellEditor
+ExGrid.MudBlazor.MudCellEditor.Context.get -> ExGrid.Chrome.CellEditorContext!
+ExGrid.MudBlazor.MudCellEditor.Context.set -> void
+ExGrid.MudBlazor.MudCellEditor.MudCellEditor() -> void
+ExGrid.MudBlazor.MudEditorCompletion
+ExGrid.MudBlazor.MudEditorCompletion.Context.get -> ExGrid.Chrome.EditorCompletionContext!
+ExGrid.MudBlazor.MudEditorCompletion.Context.set -> void
+ExGrid.MudBlazor.MudEditorCompletion.MudEditorCompletion() -> void
+ExGrid.MudBlazor.MudExGridFilterPanel
+ExGrid.MudBlazor.MudExGridFilterPanel.Chrome.get -> ExGrid.MudBlazor.MudGridChrome!
+ExGrid.MudBlazor.MudExGridFilterPanel.Chrome.set -> void
+ExGrid.MudBlazor.MudExGridFilterPanel.Context.get -> ExGrid.Chrome.FilterPanelContext!
+ExGrid.MudBlazor.MudExGridFilterPanel.Context.set -> void
+ExGrid.MudBlazor.MudExGridFilterPanel.MudExGridFilterPanel() -> void
+ExGrid.MudBlazor.MudExGridFindPanel
+ExGrid.MudBlazor.MudExGridFindPanel.Chrome.get -> ExGrid.MudBlazor.MudGridChrome!
+ExGrid.MudBlazor.MudExGridFindPanel.Chrome.set -> void
+ExGrid.MudBlazor.MudExGridFindPanel.Context.get -> ExGrid.Chrome.FindContext!
+ExGrid.MudBlazor.MudExGridFindPanel.Context.set -> void
+ExGrid.MudBlazor.MudExGridFindPanel.MudExGridFindPanel() -> void
+ExGrid.MudBlazor.MudExGridFont
+ExGrid.MudBlazor.MudExGridFont.<Clone>$() -> ExGrid.MudBlazor.MudExGridFont!
+ExGrid.MudBlazor.MudExGridFont.BoldDigitWidthPx.get -> double?
+ExGrid.MudBlazor.MudExGridFont.BoldDigitWidthPx.init -> void
+ExGrid.MudBlazor.MudExGridFont.BoldNarrowWidthPx.get -> double?
+ExGrid.MudBlazor.MudExGridFont.BoldNarrowWidthPx.init -> void
+ExGrid.MudBlazor.MudExGridFont.BoldOtherWidthPx.get -> double?
+ExGrid.MudBlazor.MudExGridFont.BoldOtherWidthPx.init -> void
+ExGrid.MudBlazor.MudExGridFont.BoldWideWidthPx.get -> double?
+ExGrid.MudBlazor.MudExGridFont.BoldWideWidthPx.init -> void
+ExGrid.MudBlazor.MudExGridFont.Deconstruct(out string! Family, out double WideWidthPx, out double DigitWidthPx, out double NarrowWidthPx, out double MeasuredAtPx, out double? BoldWideWidthPx, out double? BoldDigitWidthPx, out double? BoldNarrowWidthPx, out double? OtherWidthPx, out double? BoldOtherWidthPx, out ExGrid.Columns.GlyphWidthTable? GlyphWidths) -> void
+ExGrid.MudBlazor.MudExGridFont.DigitWidthPx.get -> double
+ExGrid.MudBlazor.MudExGridFont.DigitWidthPx.init -> void
+ExGrid.MudBlazor.MudExGridFont.Equals(ExGrid.MudBlazor.MudExGridFont? other) -> bool
+ExGrid.MudBlazor.MudExGridFont.Family.get -> string!
+ExGrid.MudBlazor.MudExGridFont.Family.init -> void
+ExGrid.MudBlazor.MudExGridFont.GlyphWidths.get -> ExGrid.Columns.GlyphWidthTable?
+ExGrid.MudBlazor.MudExGridFont.GlyphWidths.init -> void
+ExGrid.MudBlazor.MudExGridFont.MeasuredAtPx.get -> double
+ExGrid.MudBlazor.MudExGridFont.MeasuredAtPx.init -> void
+ExGrid.MudBlazor.MudExGridFont.MudExGridFont(string! Family, double WideWidthPx, double DigitWidthPx, double NarrowWidthPx, double MeasuredAtPx, double? BoldWideWidthPx = null, double? BoldDigitWidthPx = null, double? BoldNarrowWidthPx = null, double? OtherWidthPx = null, double? BoldOtherWidthPx = null, ExGrid.Columns.GlyphWidthTable? GlyphWidths = null) -> void
+ExGrid.MudBlazor.MudExGridFont.NarrowWidthPx.get -> double
+ExGrid.MudBlazor.MudExGridFont.NarrowWidthPx.init -> void
+ExGrid.MudBlazor.MudExGridFont.OtherWidthPx.get -> double?
+ExGrid.MudBlazor.MudExGridFont.OtherWidthPx.init -> void
+ExGrid.MudBlazor.MudExGridFont.WideWidthPx.get -> double
+ExGrid.MudBlazor.MudExGridFont.WideWidthPx.init -> void
+ExGrid.MudBlazor.MudExGridMenu
+ExGrid.MudBlazor.MudExGridMenu.Chrome.get -> ExGrid.MudBlazor.MudGridChrome!
+ExGrid.MudBlazor.MudExGridMenu.Chrome.set -> void
+ExGrid.MudBlazor.MudExGridMenu.Close.get -> System.Action!
+ExGrid.MudBlazor.MudExGridMenu.Close.set -> void
+ExGrid.MudBlazor.MudExGridMenu.Commands.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand!>!
+ExGrid.MudBlazor.MudExGridMenu.Commands.set -> void
+ExGrid.MudBlazor.MudExGridMenu.FocusRequest.get -> int
+ExGrid.MudBlazor.MudExGridMenu.FocusRequest.set -> void
+ExGrid.MudBlazor.MudExGridMenu.MudExGridMenu() -> void
+ExGrid.MudBlazor.MudExGridMenu.ResolveKey.get -> ExGrid.Chrome.MenuKeyResolver?
+ExGrid.MudBlazor.MudExGridMenu.ResolveKey.set -> void
+ExGrid.MudBlazor.MudExGridMenu.TakeFocus.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>?
+ExGrid.MudBlazor.MudExGridMenu.TakeFocus.set -> void
+ExGrid.MudBlazor.MudExGridPaper
+ExGrid.MudBlazor.MudExGridPaper.Bordered.get -> bool
+ExGrid.MudBlazor.MudExGridPaper.Bordered.set -> void
+ExGrid.MudBlazor.MudExGridPaper.ChildContent.get -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudExGridPaper.ChildContent.set -> void
+ExGrid.MudBlazor.MudExGridPaper.Class.get -> string?
+ExGrid.MudBlazor.MudExGridPaper.Class.set -> void
+ExGrid.MudBlazor.MudExGridPaper.Dense.get -> bool
+ExGrid.MudBlazor.MudExGridPaper.Dense.set -> void
+ExGrid.MudBlazor.MudExGridPaper.Elevation.get -> int
+ExGrid.MudBlazor.MudExGridPaper.Elevation.set -> void
+ExGrid.MudBlazor.MudExGridPaper.Font.get -> ExGrid.MudBlazor.MudExGridFont?
+ExGrid.MudBlazor.MudExGridPaper.Font.set -> void
+ExGrid.MudBlazor.MudExGridPaper.Hover.get -> bool
+ExGrid.MudBlazor.MudExGridPaper.Hover.set -> void
+ExGrid.MudBlazor.MudExGridPaper.MudExGridPaper() -> void
+ExGrid.MudBlazor.MudExGridPaper.Outlined.get -> bool
+ExGrid.MudBlazor.MudExGridPaper.Outlined.set -> void
+ExGrid.MudBlazor.MudExGridPaper.Square.get -> bool
+ExGrid.MudBlazor.MudExGridPaper.Square.set -> void
+ExGrid.MudBlazor.MudExGridPaper.Striped.get -> bool
+ExGrid.MudBlazor.MudExGridPaper.Striped.set -> void
+ExGrid.MudBlazor.MudExGridPaper.Style.get -> string?
+ExGrid.MudBlazor.MudExGridPaper.Style.set -> void
+ExGrid.MudBlazor.MudExGridPaper.ToolBarContent.get -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudExGridPaper.ToolBarContent.set -> void
+ExGrid.MudBlazor.MudExGridPaper.UserAttributes.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object!>?
+ExGrid.MudBlazor.MudExGridPaper.UserAttributes.set -> void
+ExGrid.MudBlazor.MudExGridPresentation
+ExGrid.MudBlazor.MudExGridStylesheet
+ExGrid.MudBlazor.MudExGridStylesheet.MudExGridStylesheet() -> void
+ExGrid.MudBlazor.MudExGridWords
+ExGrid.MudBlazor.MudFormulaBarText
+ExGrid.MudBlazor.MudFormulaBarText.Context.get -> ExGrid.Chrome.FormulaBarTextContext!
+ExGrid.MudBlazor.MudFormulaBarText.Context.set -> void
+ExGrid.MudBlazor.MudFormulaBarText.Label.get -> string!
+ExGrid.MudBlazor.MudFormulaBarText.Label.set -> void
+ExGrid.MudBlazor.MudFormulaBarText.MudFormulaBarText() -> void
+ExGrid.MudBlazor.MudGridChrome
+ExGrid.MudBlazor.MudGridChrome.CellEditor(ExGrid.Chrome.CellEditorContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudGridChrome.ColumnMenu(ExGrid.Chrome.ColumnMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudGridChrome.ContextMenu<TRow>(ExGrid.Chrome.ContextMenuContext<TRow>! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudGridChrome.EditorCompletion(ExGrid.Chrome.EditorCompletionContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudGridChrome.FilterPanel(ExGrid.Chrome.FilterPanelContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudGridChrome.FindPanel(ExGrid.Chrome.FindContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudGridChrome.FormulaBarText(ExGrid.Chrome.FormulaBarTextContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudGridChrome.Icon.get -> System.Func<string!, string?>?
+ExGrid.MudBlazor.MudGridChrome.Icon.init -> void
+ExGrid.MudBlazor.MudGridChrome.Label.get -> System.Func<string!, string?>?
+ExGrid.MudBlazor.MudGridChrome.Label.init -> void
+ExGrid.MudBlazor.MudGridChrome.LoadingIndicator(ExGrid.Chrome.LoadingContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudGridChrome.LoadingProgressColor.get -> MudBlazor.Color
+ExGrid.MudBlazor.MudGridChrome.LoadingProgressColor.init -> void
+ExGrid.MudBlazor.MudGridChrome.MudGridChrome() -> void
+ExGrid.MudBlazor.MudGridChrome.NameBox(ExGrid.Chrome.NameBoxContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudGridChrome.SelectionSummary(ExGrid.Chrome.SelectionSummaryContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExGrid.MudBlazor.MudGridChrome.Stylesheets.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.ChromeStylesheet!>!
+ExGrid.MudBlazor.MudGridChrome.Words(string! id) -> string?
+ExGrid.MudBlazor.MudNameBox
+ExGrid.MudBlazor.MudNameBox.Context.get -> ExGrid.Chrome.NameBoxContext!
+ExGrid.MudBlazor.MudNameBox.Context.set -> void
+ExGrid.MudBlazor.MudNameBox.Label.get -> string!
+ExGrid.MudBlazor.MudNameBox.Label.set -> void
+ExGrid.MudBlazor.MudNameBox.MudNameBox() -> void
+override ExGrid.MudBlazor.MudCellEditor.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+override ExGrid.MudBlazor.MudCellEditor.OnParametersSet() -> void
+override ExGrid.MudBlazor.MudExGridFilterPanel.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+override ExGrid.MudBlazor.MudExGridFilterPanel.OnInitializedAsync() -> System.Threading.Tasks.Task!
+override ExGrid.MudBlazor.MudExGridFilterPanel.OnParametersSet() -> void
+override ExGrid.MudBlazor.MudExGridFindPanel.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+override ExGrid.MudBlazor.MudExGridFindPanel.OnParametersSet() -> void
+override ExGrid.MudBlazor.MudExGridFont.Equals(object? obj) -> bool
+override ExGrid.MudBlazor.MudExGridFont.GetHashCode() -> int
+override ExGrid.MudBlazor.MudExGridFont.ToString() -> string!
+override ExGrid.MudBlazor.MudExGridMenu.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+override ExGrid.MudBlazor.MudExGridMenu.OnParametersSet() -> void
+override ExGrid.MudBlazor.MudExGridPaper.OnParametersSet() -> void
+override ExGrid.MudBlazor.MudFormulaBarText.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+override ExGrid.MudBlazor.MudFormulaBarText.OnParametersSet() -> void
+override ExGrid.MudBlazor.MudNameBox.OnParametersSet() -> void
+static ExGrid.MudBlazor.MudExGridFont.operator !=(ExGrid.MudBlazor.MudExGridFont? left, ExGrid.MudBlazor.MudExGridFont? right) -> bool
+static ExGrid.MudBlazor.MudExGridFont.operator ==(ExGrid.MudBlazor.MudExGridFont? left, ExGrid.MudBlazor.MudExGridFont? right) -> bool
+static ExGrid.MudBlazor.MudExGridFont.Roboto.get -> ExGrid.MudBlazor.MudExGridFont!
+static ExGrid.MudBlazor.MudExGridPresentation.DensityFor(bool dense) -> ExGrid.GridDensity
+static ExGrid.MudBlazor.MudExGridPresentation.For(bool dense, bool hover) -> ExGrid.GridPresentationDefaults!
+static ExGrid.MudBlazor.MudExGridPresentation.For(bool dense, bool hover, bool striped) -> ExGrid.GridPresentationDefaults!
+static ExGrid.MudBlazor.MudExGridPresentation.For(ExGrid.MudBlazor.MudExGridFont! font, bool dense, bool hover) -> ExGrid.GridPresentationDefaults!
+static ExGrid.MudBlazor.MudExGridPresentation.For(ExGrid.MudBlazor.MudExGridFont! font, bool dense, bool hover, bool striped) -> ExGrid.GridPresentationDefaults!
+static ExGrid.MudBlazor.MudExGridPresentation.Roboto.get -> ExGrid.GridPresentationDefaults!
+static ExGrid.MudBlazor.MudExGridPresentation.RobotoGlyphWidths.get -> ExGrid.Columns.GlyphWidthTable!
+static ExGrid.MudBlazor.MudGridChrome.Default.get -> ExGrid.MudBlazor.MudGridChrome!
+~override ExGrid.MudBlazor.MudCellEditor.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExGrid.MudBlazor.MudEditorCompletion.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExGrid.MudBlazor.MudExGridFilterPanel.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExGrid.MudBlazor.MudExGridFindPanel.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExGrid.MudBlazor.MudExGridMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExGrid.MudBlazor.MudExGridPaper.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExGrid.MudBlazor.MudFormulaBarText.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExGrid.MudBlazor.MudNameBox.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void

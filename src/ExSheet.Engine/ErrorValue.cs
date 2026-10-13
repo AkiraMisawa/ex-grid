@@ -62,15 +62,19 @@ public enum ErrorValue
     Unknown,
 }
 
-/// <summary>The text of each <see cref="ErrorValue"/>, as a cell shows it and as a Formula writes it.</summary>
-public static class ErrorValues
+/// <summary>
+/// The text of each <see cref="ErrorValue"/>, as a cell shows it and as a Formula writes it. Internal
+/// (ADR-0201): a Consumer reads an error's text as <see cref="Value.ToString"/> or a cell's display,
+/// and typed error text through <see cref="Entry.Parse"/>.
+/// </summary>
+internal static class ErrorValues
 {
     private static readonly string[] Texts =
         ["#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A", "#GETTING_DATA", "#CIRC!",
             "#SPILL!", "#CALC!", "#FIELD!", "#BLOCKED!", "#CONNECT!", "#UNKNOWN!"];
 
     /// <summary>The Error Value as a cell shows it, such as <c>#DIV/0!</c>.</summary>
-    public static string ToText(this ErrorValue error) => Texts[(int)error];
+    internal static string ToText(this ErrorValue error) => Texts[(int)error];
 
     /// <summary>
     /// Reads the text of one of Excel's Error Values, in either case, as Excel reads one typed with
@@ -80,7 +84,7 @@ public static class ErrorValues
     /// <c>#BLOCKED!</c>, <c>#CONNECT!</c>, <c>#UNKNOWN!</c>) are read, as Excel reads them typed;
     /// they are data only. <c>#BUSY!</c> is not: Excel keeps it as text (ADR-0047, second run).
     /// </summary>
-    public static bool TryParseTyped([NotNullWhen(true)] string? text, out ErrorValue error)
+    internal static bool TryParseTyped([NotNullWhen(true)] string? text, out ErrorValue error)
     {
         error = default;
         if (text is null) return false;

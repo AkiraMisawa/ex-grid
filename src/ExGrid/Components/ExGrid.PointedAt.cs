@@ -205,7 +205,9 @@ public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
     /// <param name="inTurn">Whether the press is in turn already: the grid that points held no keys
     /// before it.</param>
     /// <returns>Completes once the press has been answered.</returns>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task PressHandedOnAsync(int press, bool inTurn)
     {
         if (_disposed)
@@ -229,7 +231,9 @@ public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
     /// only because JavaScript interop requires it.</para>
     /// </summary>
     /// <param name="press">The number <see cref="PressHandedOnAsync"/> was told.</param>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public void PressInTurn(int press)
     {
         if (_pressesOutOfTurn.Remove(press, out var handedOn))

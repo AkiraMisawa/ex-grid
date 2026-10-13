@@ -8,15 +8,16 @@ namespace ExGrid.Components;
 /// combination. It lives in the component layer for the reason <see cref="ColumnStyles"/>
 /// does: the core decides the meanings — is this a numeric presentation (ADR-0016), is
 /// this cell Stale (ADR-0006) — and this answers how those are written down for a
-/// browser. It is public because that vocabulary is the seam a replacement Chrome
-/// (ADR-0010) paints against; a theme styles these classes rather than inventing its own.
+/// browser. The class names it writes are the seam a replacement Chrome (ADR-0010) paints
+/// against, and a theme styles them rather than inventing its own; the helper that composes
+/// them is the grid's own (ADR-0201).
 ///
 /// <para>Every combination is composed once, up front. The alternative — concatenating
 /// two or three class names per cell — allocates a string for each of the ~800 cells on
 /// every render, on the exact path ADR-0004 caps. A few hundred strings held forever is
 /// the cheaper end of that trade by a wide margin.</para>
 /// </summary>
-public static class CellClasses
+internal static class CellClasses
 {
     // Indexed by (changed, tone, state, align, numeric, pinned) so the lookup is arithmetic,
     // never a switch over combinations that would have to be kept in step with the enums by

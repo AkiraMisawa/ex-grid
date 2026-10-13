@@ -420,7 +420,7 @@ public static partial class FormulaEntry
     /// component knows whether it is pointing; typed by hand, the same text is not pointed.
     /// <see langword="null"/> when no Reference ends at the caret in such a place.
     /// </summary>
-    public static PointSite? PointedReferenceAt(string text, int caret)
+    internal static PointSite? PointedReferenceAt(string text, int caret)
     {
         if (!IsFormula(text, caret)) return null;
         var tokens = Scan(text);

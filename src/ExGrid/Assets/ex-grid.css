@@ -183,11 +183,15 @@
 .ex-header-cell, .ex-header .ex-gap { pointer-events: none; }
 .ex-header-cell { position: relative; }
 /* The grip in the header cell's right-hand edge (ADR-0016): the one part of a header
-   cell that takes its own pointer, because it starts a different gesture. */
-.ex-resize-grip { position: absolute; top: 0; right: 0; width: 5px; height: 100%; cursor: col-resize; pointer-events: auto; }
+   cell that takes its own pointer, because it starts a different gesture. Its width is a
+   hit target, a Geometry Token from Grid Metrics (ADR-0027/0028; UX-1). */
+.ex-resize-grip { position: absolute; top: 0; right: 0; width: var(--ex-resize-grip-width); height: 100%; cursor: col-resize; pointer-events: auto; }
 /* The guide a resize drags (ADR-0016) and the reorder drop indicator (ADR-0011):
-   painted, never laid out — their colours are Visual Tokens (ADR-0029). */
-.ex-resize-guide, .ex-drop-indicator { position: absolute; top: 0; bottom: 0; width: 2px; z-index: 7; pointer-events: none; }
+   painted, never laid out — their colours are Visual Tokens (ADR-0029). Their width is a
+   Geometry Token, drawn as a rule is (--ex-rule-dp, ADR-0090): rounded down to the Device
+   Pixel and never under one, so whole Device Pixels at every scale and zoom. C# puts their
+   left edge on a Device Pixel (UX-1). */
+.ex-resize-guide, .ex-drop-indicator { position: absolute; top: 0; bottom: 0; width: max(var(--ex-dp), round(down, var(--ex-column-guide-width), var(--ex-dp))); z-index: 7; pointer-events: none; }
 .ex-resize-guide { background: var(--ex-resize-guide-color, rgba(60, 120, 216, 0.7)); }
 .ex-drop-indicator { background: var(--ex-drop-indicator-color, rgba(60, 120, 216, 0.9)); }
 /* The sort indicator is painted from the same attribute the accessibility tree reads

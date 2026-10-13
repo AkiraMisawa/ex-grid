@@ -1,0 +1,58 @@
+# The Wrappers' layer-2 suites at every published 9.x from the floor (results.md §7): the Definition of Done's
+# Step 4 layer-2 commands as the apply list (docs/agents/proposals/mudblazor-range-floor-apply.md, edit 5) writes
+# them, run at 6a868089 with 'nix develop' given the worktree's flake. nuget.org listed 9.6.0 9.7.0 9.8.0 9.9.0
+# 9.10.0 9.11.0. Trimmed to each run's heading, summary and the MudBlazor.dll FileVersion it loaded.
+== ExGrid.MudBlazor.Tests, MudBlazor 9.6.0
+Passed! - Failed: 0, Passed: 240, Skipped: 0, Total: 240, Duration: 5s 981ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+9.6.0.0
+== ExSheet.MudBlazor.Tests, MudBlazor 9.6.0
+Passed! - Failed: 0, Passed: 64, Skipped: 0, Total: 64, Duration: 22s 818ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+9.6.0.0
+== ExPivot.MudBlazor.Tests, MudBlazor 9.6.0
+Passed! - Failed: 0, Passed: 79, Skipped: 0, Total: 79, Duration: 6s 404ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+9.6.0.0
+== ExGrid.MudBlazor.Tests, MudBlazor 9.7.0
+Passed! - Failed: 0, Passed: 240, Skipped: 0, Total: 240, Duration: 6s 403ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+9.7.0.0
+== ExSheet.MudBlazor.Tests, MudBlazor 9.7.0
+Passed! - Failed: 0, Passed: 64, Skipped: 0, Total: 64, Duration: 23s 604ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+9.7.0.0
+== ExPivot.MudBlazor.Tests, MudBlazor 9.7.0
+Passed! - Failed: 0, Passed: 79, Skipped: 0, Total: 79, Duration: 9s 403ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+9.7.0.0
+== ExGrid.MudBlazor.Tests, MudBlazor 9.8.0
+Passed! - Failed: 0, Passed: 240, Skipped: 0, Total: 240, Duration: 9s 458ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+9.8.0.0
+== ExSheet.MudBlazor.Tests, MudBlazor 9.8.0
+Passed! - Failed: 0, Passed: 64, Skipped: 0, Total: 64, Duration: 39s 631ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+9.8.0.0
+== ExPivot.MudBlazor.Tests, MudBlazor 9.8.0
+Passed! - Failed: 0, Passed: 79, Skipped: 0, Total: 79, Duration: 21s 471ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+9.8.0.0
+== ExGrid.MudBlazor.Tests, MudBlazor 9.9.0
+Passed! - Failed: 0, Passed: 240, Skipped: 0, Total: 240, Duration: 7s 973ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+9.9.0.0
+== ExSheet.MudBlazor.Tests, MudBlazor 9.9.0
+Passed! - Failed: 0, Passed: 64, Skipped: 0, Total: 64, Duration: 29s 902ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+9.9.0.0
+== ExPivot.MudBlazor.Tests, MudBlazor 9.9.0
+Passed! - Failed: 0, Passed: 79, Skipped: 0, Total: 79, Duration: 5s 939ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+9.9.0.0
+== ExGrid.MudBlazor.Tests, MudBlazor 9.10.0
+Passed! - Failed: 0, Passed: 240, Skipped: 0, Total: 240, Duration: 3s 786ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+9.10.0.0
+== ExSheet.MudBlazor.Tests, MudBlazor 9.10.0
+Passed! - Failed: 0, Passed: 64, Skipped: 0, Total: 64, Duration: 21s 931ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+9.10.0.0
+== ExPivot.MudBlazor.Tests, MudBlazor 9.10.0
+Passed! - Failed: 0, Passed: 79, Skipped: 0, Total: 79, Duration: 5s 807ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+9.10.0.0
+== ExGrid.MudBlazor.Tests, MudBlazor 9.11.0
+Passed! - Failed: 0, Passed: 240, Skipped: 0, Total: 240, Duration: 4s 802ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+9.11.0.0
+== ExSheet.MudBlazor.Tests, MudBlazor 9.11.0
+Passed! - Failed: 0, Passed: 64, Skipped: 0, Total: 64, Duration: 22s 201ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+9.11.0.0
+== ExPivot.MudBlazor.Tests, MudBlazor 9.11.0
+Passed! - Failed: 0, Passed: 79, Skipped: 0, Total: 79, Duration: 6s 709ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+9.11.0.0

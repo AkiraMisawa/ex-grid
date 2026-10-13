@@ -1,4 +1,18 @@
 @namespace ExSheet
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   Every product using is written with global::. A component in ExSheet.Components would look a
+   plain "ExSheet.Engine" up against the ExSheet component class first, and a plain "ExGrid.X"
+   against sibling types (the CS0426 trap recorded in AGENTS.md). The Web namespace makes @on...
+   handlers compile as event handlers rather than as plain HTML attributes. *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExGrid
+@using global::ExGrid.Cells
+@using global::ExGrid.Chrome
+@using global::ExGrid.Components
+@using global::ExGrid.Keys
+@using global::ExGrid.Selection
+@using global::ExSheet.Engine
 
 @*
     The Sheet Toolbar's default row (ADR-0100), shown when the Consumer declares no ToolbarContent: the
@@ -30,8 +44,8 @@
 </CascadingValue>
 
 @code {
-    /// <summary>The scope the row takes its place from.</summary>
-    [CascadingParameter] public ToolbarOrder? Order { get; set; }
+    /// <summary>The scope the row takes its place from. Internal, as its type is (ADR-0201).</summary>
+    [CascadingParameter] internal ToolbarOrder? Order { get; set; }
 
     private ToolbarOrder _place = new();
 

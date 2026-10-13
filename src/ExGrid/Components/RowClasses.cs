@@ -4,12 +4,13 @@ namespace ExGrid.Components;
 
 /// <summary>
 /// The class vocabulary a row is painted with, resolved to one interned string per
-/// combination — the row's counterpart to <see cref="CellClasses"/>, and public for the
-/// same reason: it is what a replacement Chrome and a theme paint against (ADR-0010).
+/// combination — the row's counterpart to <see cref="CellClasses"/>: the class names it
+/// writes are what a replacement Chrome and a theme paint against (ADR-0010), and the helper
+/// is the grid's own (ADR-0201).
 /// <see cref="RowKind.Detail"/> adds nothing, so an ordinary row is painted exactly as it
 /// was before Row Kind existed.
 /// </summary>
-public static class RowClasses
+internal static class RowClasses
 {
     private static readonly string[] Composed = Compose();
 

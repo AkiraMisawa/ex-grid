@@ -309,6 +309,33 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
     }
 
+    public static TheoryData<string, string, string, string, string> Selects() => new()
+    {
+        { "Rows", "Region", "Field Settings…", "mud-ex-pivot-sort", "Sort" },
+        { "Values", "Sum of Amount", "Value Field Settings…", "mud-ex-pivot-aggregation", "Summarize value field by" },
+        { "Values", "Sum of Amount", "Value Field Settings…", "mud-ex-pivot-show-values-as", "Show values as" },
+    };
+
+    [Theory, MemberData(nameof(Selects))] // WR-10 / ADR-0205, PV-11: each MudSelect of Field Settings… and Value Field Settings… names the element that takes its keyboard a combobox, by the field's own label. Below MudBlazor 9.4.0 nothing named it, and below 9.2.0 Field Settings' select could hand its keyboard to an input it then hid, so this holds the floor on every run
+    public async Task Every_select_names_the_element_that_takes_its_keyboard(string area, string entry, string command, string field, string label)
+    {
+        var cut = RenderPivot(RegionProduct);
+        await OpenMenuAsync(cut, area, entry);
+        await RunMenuAsync(cut, command);
+        var select = cut.Find($".{field}");
+
+        var focusable = Assert.Single(TakingTheKeyboard(select));
+        Assert.True(focusable.GetAttribute("role") == "combobox", select.OuterHtml);
+        Assert.Equal(label, focusable.GetAttribute("aria-label"));
+    }
+
+    /// <summary>The elements of a field that take the keyboard, as Tab and <c>FocusAsync</c> reach
+    /// them: not a hidden input, nor one taken out of the tab order or disabled.</summary>
+    private static IReadOnlyList<AngleSharp.Dom.IElement> TakingTheKeyboard(AngleSharp.Dom.IElement field)
+        => [.. field.QuerySelectorAll("input, textarea, select, button, [tabindex]").Prepend(field).Where(e =>
+            e.Matches("input, textarea, select, button, [tabindex]")
+            && e.GetAttribute("type") != "hidden" && e.GetAttribute("tabindex") != "-1" && !e.HasAttribute("disabled"))];
+
     [Fact] // ADR-0061/0062: the report filter band — an outlined MudButton showing (All), then the one Item, in the primary colour once filtered
     public async Task The_report_filter_band()
     {
