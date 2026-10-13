@@ -30,7 +30,11 @@ await sheet.PushLinkedTableAsync("CostCentres", centres.Select(c => c.ToRow()));
                 its tables declared, and their readers wait until you push again. Declare your tables at start-up
                 regardless; declaring the same table again changes nothing.
             </li>
-            <li>A column the table does not have is <code>#REF!</code>; a table that is not declared is <code>#NAME?</code>.</li>
+            <li>
+                A column the table does not have is <code>#REF!</code>; a table that is not declared is
+                <code>#NAME?</code>. A declared table's name typed on its own is <code>#NAME?</code> as well, which no
+                Formula catches: a Linked Table is read by its columns, never whole.
+            </li>
         </ul>
     </DocsSection>
 

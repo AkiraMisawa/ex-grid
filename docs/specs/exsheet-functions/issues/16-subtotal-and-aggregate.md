@@ -1,9 +1,8 @@
 # 16: SUBTOTAL and AGGREGATE, while a Sheet cannot hide a row
 
 Status: ready-for-human
-Roadmap: ExSheet — `SUBTOTAL` and `AGGREGATE` checked against Excel for the forms no Windows run has
-asked yet: a call in a branch `IF` never takes, a function number or option that is not whole, and what
-may stand where only a Reference is taken.
+Roadmap: ExSheet — `AGGREGATE`'s and `SMALL`'s k checked against Excel above the count of the
+numbers, which they refuse with `#NUM!`, and `AGGREGATE` over a cell ExSheet refused.
 
 **What to build:** `SUBTOTAL` and `AGGREGATE` under
 [ADR-0047](../../../adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)'s
@@ -37,12 +36,27 @@ note of 2026-10-10, "The catalogue's last Decide rows".
       of a Spill Range its Anchor's, calls `SUBTOTAL` or `AGGREGATE` anywhere; `SUBTOTAL` (every
       function number) and `AGGREGATE`'s options 0 to 3 pass over it, and options 4 to 7 count its
       Value. The engine follows it (comment of 2026-10-12)*
-- [ ] `oracle.ps1 -Area subtotal,aggregate` before the tag (ADR-0208): the `uncertain` cases the
+- [x] `oracle.ps1 -Area subtotal,aggregate` before the tag (ADR-0208): the `uncertain` cases the
       seventeenth run's answers led to, SUBTOTAL-039 to 044 and AGGREGATE-055 to 061. The engine agrees
       with each answer, or is corrected to it, before this ticket is done. *(Added 2026-10-12 after
       review: ADR-0208 does not close a ticket on "the next Windows run asks", and these questions came
       after the seventeenth run.)* The `LARGE`, `SMALL` and `MOD` cases asked with them are not this
-      ticket's
+      ticket's. *Asked by the area pass of 2026-10-12 (`verification/2026-10-12-windows-area/report.md`):
+      every case agreed but AGGREGATE-060 and 061, and the engine now gives Excel's answer to both
+      (comment of that date)*
+- [x] `oracle.ps1 -Area aggregate` before the tag (ADR-0208): AGGREGATE-062 to 067, the `uncertain`
+      cases the area pass's answers led to — a k below 1 for `LARGE` and `SMALL`, a k near the count for
+      `SMALL`, and a boolean, text that is no number and an Error Value given directly as the array. The
+      engine agrees with each answer, or is corrected to it, before this ticket is done. *Asked by the
+      second area pass of 2026-10-12 (`verification/2026-10-12-windows-area-2/report.md`): all six
+      agreed, and are `observed`*
+- [ ] `oracle.ps1 -Area aggregate,small` before the tag (ADR-0208): AGGREGATE-068, the `uncertain` case the
+      second area pass's answers led to — `SMALL`'s k above the count of the numbers, which Excel's
+      `SMALL` refuses before truncating it (SMALL-008) — with SMALL-011, `SMALL`'s own k a little above
+      the count (ticket 04's comment of 2026-10-12), and AGGREGATE-069, option 6 over a cell ExSheet
+      refused, which refuses the Formula (ADR-0047, 2026-10-12, decided with the user: a refusal is
+      never caught, anywhere). The engine agrees with each answer, or is corrected to it, or records a
+      refusal by that decision, before this ticket is done
 
 ## Comments
 
@@ -134,3 +148,43 @@ and `mod` before the tag (ADR-0208).
 2026-10-12, after review: the Status is `ready-for-human` again, with an open box for that run. The ticket
 had been closed with its own feature's questions open, SUBTOTAL-039 to 044 and AGGREGATE-055 to 061, which
 ADR-0208 does not allow.
+
+2026-10-12, with the area pass (`verification/2026-10-12-windows-area/report.md`, `oracle.ps1 -Area` over
+30 files, ADR-0208's remedy): SUBTOTAL-039 to 044 and AGGREGATE-055 to 059 agreed and are `observed`. Two
+disagreed, and the engine now follows Excel (ADR-0047, ADR-0202's rule for a disagreement):
+
+- **AGGREGATE-060.** `AGGREGATE(15,6,A1:A11,1.2)` is 30, the smallest: `SMALL`'s k that is not whole is
+  truncated, as `SMALL`'s own is (SMALL-004 and 005: 1.5 and 1.2 are each the smallest). `LARGE`'s is
+  rounded up, as before, and the two are one rule, the k-th largest with k rounded up being the
+  (n+1-k)-th smallest with that index truncated. A k below 1 is `#NUM!` for both, whole or not
+  (LARGE-011: 0.5 is `#NUM!`, not rounded up to 1). `KthOf` reads k so for `LARGE`, `SMALL` and
+  `AGGREGATE`'s 14 and 15 alike, and no k is `#VALUE!` any more.
+- **AGGREGATE-061.** `AGGREGATE(14,6,"5",1)` is `#NUM!`, not `#VALUE!` and not 5. A Value given directly
+  to the array form is an array of that one Value, as the number 5 was (AGGREGATE-039), and text in it
+  is no number and is not coerced. So `TryCollect` takes text and a boolean given directly as it takes a
+  number, and `Reduce` passes over them: `LARGE` and `SMALL` find no number. An Error Value given
+  directly is still the result, as an Error Value argument is (AGGREGATE-067 asks whether Excel's
+  option 6 passes over it instead).
+
+`KthAndModTests` and `SubtotalTests` pin both, each test named for ADR-0047. AGGREGATE-062 to 067 are new
+`uncertain` cases the answers lead to, with the engine's answers, for the box above: `AGGREGATE(15,6,…,0.5)`
+and `AGGREGATE(14,6,…,0.5)` (`#NUM!`), `AGGREGATE(14,6,TRUE,1)` and `AGGREGATE(15,6,"abc",1)` (`#NUM!`),
+`AGGREGATE(15,6,A1:A11,8.9)` (81, the 8th smallest) and `AGGREGATE(14,6,1/0,1)` (`#DIV/0!`). The Status stays
+`ready-for-human` until a pass asks them. The Change Notes are
+`docs/releases/unreleased/area-kth-and-mod-small-k.md` and `area-kth-and-mod-aggregate-text.md`; the
+Formulas page's sentence, ADR-0047's note and the README's are proposed in
+`docs/agents/proposals/area-corrections-apply.md`.
+
+2026-10-12, with the second area pass (`verification/2026-10-12-windows-area-2/report.md`, Excel
+16.0.20430.20146): AGGREGATE-062 to 067 agreed and are `observed` — `AGGREGATE`'s 14 and 15 with a k of
+0.5 are `#NUM!`, a boolean and text given directly hold no number (`#NUM!`), `AGGREGATE(15,6,A1:A11,8.9)` is
+81, the 8th smallest, and an Error Value given directly is the result (`#DIV/0!`), not passed over by
+option 6. `SMALL`'s own SMALL-008 disagreed: Excel's `SMALL(A1:A9,9.5)` over nine numbers is `#NUM!`, not
+the 9th smallest, 7, so a k above the count is `#NUM!` before it is truncated, as one below 1 is. `KthOf`
+now checks k against 1 and the count before rounding it, for `LARGE`, `SMALL` and `AGGREGATE`'s 14 and 15
+alike; `LARGE`'s answers do not move, since a k rounded up passes the count exactly where it is above it
+(LARGE-010). Every observed `SMALL`, `LARGE` and `AGGREGATE` 14 and 15 case agrees with the rule. AGGREGATE-068
+asks it of `AGGREGATE`'s 15 (`AGGREGATE(15,6,A1:A11,9.5)`, `#NUM!`), for the box above, and SMALL-011 of
+`SMALL` at 9.2, which rounded to nearest would be 9. The Status stays `ready-for-human` until a pass asks
+them. The Change Note is `docs/releases/unreleased/area-kth-and-mod-small-k.md`; ADR-0047's note, the
+README's and the Formulas page's sentences are proposed in `docs/agents/proposals/area-corrections-apply.md`.

@@ -1,7 +1,9 @@
 # ExSheet's function catalogue
 
 Status: done — but for [ticket 13](issues/13-financial-iteration.md) (`needs-info`): `IRR`, `XIRR` and
-`RATE` are Blocked, since no algorithm reproduces Excel's, and are not pursued for now. And but for
+`RATE` are Blocked, since no algorithm reproduces Excel's, and are not pursued for now; and `NPV` is
+Blocked with them since the area pass of 2026-10-12, since no evaluation searched gives every double
+Excel gave for it (ADR-0202's note of that date). And but for
 tickets [07](issues/07-log-and-trigonometry.md) and [16](issues/16-subtotal-and-aggregate.md)
 (`ready-for-human`): the `uncertain` cases the seventeenth run's answers led to are asked by an
 `oracle.ps1 -Area` run before the tag (ADR-0208). Tickets 14 to 18,
@@ -83,27 +85,27 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `SUMPRODUCT` | Supported | — | Its arrays, operators on ranges included, reduced to one Value (ADR-0125) |
 | `PRODUCT` | Supported | — | |
 | `MEDIAN` | Supported | — | |
-| `LARGE` | Supported | — | A `k` that is not whole is rounded up, as Excel's (ADR-0047, 2026-10-12) |
-| `SMALL` | Supported | — | A `k` that is not whole is `#VALUE!` until observed |
+| `LARGE` | Supported | — | A `k` that is not whole is rounded up, and one below 1 or above the count of the numbers is `#NUM!`, as Excel's (ADR-0047, 2026-10-12) |
+| `SMALL` | Supported | — | A `k` that is not whole is truncated, and one below 1 or above the count of the numbers is `#NUM!`, as Excel's (ADR-0047, 2026-10-12) |
 | `RANK.EQ` | Supported | — | A `ref` that can never be a Reference is refused on entry |
 | `STDEV.S` | Supported | — | |
 | `STDEV.P` | Supported | — | |
 | `VAR.S` | Supported | — | |
 | `VAR.P` | Supported | — | |
 | `SUBTOTAL` | Supported | — | Admitted while a Sheet cannot hide a row, behind a test that fails when one can; a cell whose Formula calls `SUBTOTAL` or `AGGREGATE` anywhere is nested and passed over, as Excel does (ADR-0047, 2026-10-10 and 2026-10-12). Ticket 16 |
-| `AGGREGATE` | Supported | — | As `SUBTOTAL`; options 0 to 3 pass over a nested cell and 4 to 7 count it, and a function number for a function the engine does not support (13, 16 to 19) is `#VALUE!`. Ticket 16 |
+| `AGGREGATE` | Supported | — | As `SUBTOTAL`; options 0 to 3 pass over a nested cell and 4 to 7 count it, and a function number for a function the engine does not support (13, 16 to 19) is `#VALUE!`; text or a boolean given as the array holds no number. Ticket 16 |
 
 ### Logic and errors
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
 | `IF` | Supported | — | |
-| `IFERROR` | Supported | — | |
-| `ISERROR` | Supported | — | |
+| `IFERROR` | Supported | — | Does not catch a refusal, which is the Formula's, nested inside it or not, nor a refused cell it reads, directly or through a range, a name, `INDIRECT`, a Spill Range or a Linked Table (ADR-0047, 2026-10-12, decided with the user; ADR-0125; IFERROR-009, 017 to 020) |
+| `ISERROR` | Supported | — | Does not read a refusal, nor a refused cell, as an error: the Formula is refused (ADR-0047, 2026-10-12; ISERROR-011) |
 | `AND` | Supported | — | |
 | `OR` | Supported | — | |
 | `NOT` | Supported | — | |
-| `IFNA` | Supported | — | The partner of `XLOOKUP` and `MATCH`. Like `IFERROR`, it catches neither `#CIRC!` nor `#GETTING_DATA` (ADR-0047, ADR-0049) |
+| `IFNA` | Supported | — | The partner of `XLOOKUP` and `MATCH`. Like `IFERROR`, it catches neither `#CIRC!` nor `#GETTING_DATA` (ADR-0047, ADR-0049), nor a refusal (ADR-0047, 2026-10-12; IFNA-008) |
 | `ISBLANK` | Supported | — | |
 | `ISNUMBER` | Supported | — | |
 | `ISTEXT` | Supported | — | |
@@ -112,7 +114,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `SWITCH` | Supported | — | |
 | `XOR` | Supported | — | |
 | `NA` | Supported | — | |
-| `ERROR.TYPE` | Supported | — | `#GETTING_DATA` and `#CIRC!` are given back, never numbered; Excel's newer Error Values take Excel's numbers, 9 to 14, read by the seventeenth Windows run (ADR-0047, 2026-10-10 and its note of 2026-10-12). Ticket 17 |
+| `ERROR.TYPE` | Supported | — | `#GETTING_DATA` and `#CIRC!` are given back, never numbered; Excel's newer Error Values take Excel's numbers, 9 to 14, read by the seventeenth Windows run (ADR-0047, 2026-10-10 and its note of 2026-10-12); a refusal is not numbered, and the Formula is refused (ADR-0047, 2026-10-12; ERRORTYPE-022). Ticket 17 |
 
 ### Lookup and reference
 
@@ -130,7 +132,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `ROWS` | Supported | — | |
 | `COLUMNS` | Supported | — | |
 | `OFFSET` | Supported | — | Volatile (ADR-0124): recalculated after every change, its computed Reference read as it stands |
-| `INDIRECT` | Supported | — | Volatile, as `OFFSET`; A1-style text naming a place on the same Sheet, not rewritten by an insertion; absolute R1C1 text, a Linked Table's column as structured text and `A1#`, as the seventeenth run observed; relative and whole-row or whole-column R1C1 text is `#VALUE!`, and text that names no place is `#REF!` (ADR-0124, 2026-10-10 and 2026-10-12). Ticket 18 |
+| `INDIRECT` | Supported | — | Volatile, as `OFFSET`; A1-style text naming a place on the same Sheet, not rewritten by an insertion; R1C1 text (each R and C a number, an offset in brackets from the Formula's own cell, or none, the own row or column; a cell, a whole row or column, the rectangle two parts of the same kind span, or one cell's Spill Range with `#`), a Linked Table's column as structured text, and `A1#`, as the seventeenth run and the two area passes observed and by the rule they settle; `#VALUE!` until Excel is asked for R1C1 text with a row or column number 0 or past the Sheet's edge or an offset past the Sheet's edge, and, in either style, for `#` after a range, a row or a column, whatever the parts joined (`A1:A2#`, `R3#`, `R2C2:R3#`), and for `#` inside a join (`A1#:A2`, `R1C1#:R2C1`), and by decision for a declared Linked Table's bare name (ADR-0049's rule 2); `#REF!` for text that names no place, R1C1 parts of two kinds joined and A1 text past the Sheet's edge (`XFE1`) included (ADR-0124, 2026-10-10 and 2026-10-12) *(2026-10-12, decided with the user: a declared Linked Table's bare name stays `#VALUE!`, in either style; in R1C1 style, a row or column number past the Sheet's edge is `#VALUE!` until Excel is asked; A1 text past the edge stays `#REF!`, as `XFE1` was observed to be)*. Ticket 18 |
 
 ### Math and rounding
 
@@ -141,7 +143,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `ROUNDDOWN` | Supported | — | |
 | `ABS` | Supported | — | |
 | `INT` | Supported | — | |
-| `MOD` | Supported | — | Excel's sign follows the divisor; `#NUM!` from a quotient of 1,125,900,000,000 |
+| `MOD` | Supported | — | Excel's sign follows the divisor. The exact remainder; where the divisor is added to it, the sum held at 64 bits and then stored as a double, and a sum stored as the divisor 0, as Excel's (MOD-017 to 032); `#VALUE!` where the evaluations at 64 bits that give Excel's answers still part, as at `MOD(-1E-17,1)` and `MOD(-0.084474,2270)`, until Excel is asked (MOD-033 to 036; ADR-0047, 2026-10-12); where only evaluations at widths no hardware holds give another double, the 64 bits' answer, on a judgment Excel has yet to settle (MOD-039, 040); `#NUM!` from a quotient of 1,125,900,000,000 |
 | `MROUND` | Supported | — | Whole-number multiples; fractional multiples with nonzero same-sign operands are #VALUE! until Excel's binary midpoint algorithm is reproduced. Ticket 10 |
 | `CEILING.MATH` | Supported | — | Observed sign, significance, mode and coercion; almost-integral division boundaries are #VALUE!, quotient underflow is #NUM!; ticket 10 |
 | `FLOOR.MATH` | Supported | — | As CEILING.MATH; ticket 10 |
@@ -198,18 +200,18 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `YEAR` | Supported | — | |
 | `MONTH` | Supported | — | |
 | `DAY` | Supported | — | |
-| `EOMONTH` | Supported | — | |
-| `EDATE` | Supported | — | |
+| `EOMONTH` | Supported | — | A start of serial 0 is in January 1900, as `MONTH` reads it; a boolean typed as the start is `#VALUE!` until Excel is asked (ADR-0047) |
+| `EDATE` | Supported | — | From serial 0 to January 1900, March 1900 or January 10000, and with a boolean typed as the months, `#VALUE!` until Excel is asked (ADR-0047) |
 | `WEEKDAY` | Supported | — | |
-| `NETWORKDAYS` | Supported | — | |
-| `WORKDAY` | Supported | — | |
+| `NETWORKDAYS` | Supported | — | A boolean typed as a date is `#VALUE!` until Excel is asked (ADR-0047) |
+| `WORKDAY` | Supported | — | A boolean typed as a date is `#VALUE!` until Excel is asked (ADR-0047) |
 | `DAYS` | Supported | — | |
-| `YEARFRAC` | Supported | — | All five bases, month ends, leap days and the 1900 date system; ticket 11 |
-| `DATEDIF` | Supported | — | Y, M, D, YM; YD only before a completed anniversary. MD and longer YD intervals are #VALUE!; ticket 11 |
+| `YEARFRAC` | Supported | — | All five bases, month ends, leap days and the 1900 date system; a serial between -1 and 0 is #VALUE! until Excel is asked (YEARFRAC-058), and -1 or below #NUM!; ticket 11 |
+| `DATEDIF` | Supported | — | Y, M, D, YM; YD only before a completed anniversary. MD and longer YD intervals are #VALUE!; a serial between -1 and 0 is #VALUE! until Excel is asked (DATEDIF-048), and -1 or below #NUM!; ticket 11 |
 | `TIME` | Supported | — | |
-| `HOUR` | Supported | — | |
-| `MINUTE` | Supported | — | |
-| `SECOND` | Supported | — | |
+| `HOUR` | Supported | — | A serial between -1 and 0 is #VALUE! until Excel is asked (HOUR-005), and -1 or below #NUM! |
+| `MINUTE` | Supported | — | A serial between -1 and 0 is #VALUE! until Excel is asked (MINUTE-003), and -1 or below #NUM! (MINUTE-002) |
+| `SECOND` | Supported | — | A serial between -1 and 0 is #VALUE! until Excel is asked (SECOND-003), and -1 or below #NUM! |
 | `TODAY` | Supported | — | The Sheet Day: a fixed day, or the day in the Consumer's time zone, or else the browser's; `#GETTING_DATA` until one is known (ADR-0121, ADR-0122) |
 | `NOW` | Supported | — | Volatile, and moved on each minute; the moment in the Sheet's zone (ADR-0124) |
 
@@ -242,11 +244,11 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `PMT` | Supported | — | Excel is reported to give a General cell a currency format on entry; ExSheet gives none until that is observed |
-| `PV` | Supported | — | |
-| `FV` | Supported | — | |
-| `NPV` | Supported | — | |
-| `XNPV` | Supported | — | |
+| `PMT` | Supported | — | Kept by ADR-0047's exception for `PMT` alone (decided with the user, 2026-10-12): its result may differ from Excel's in its last digits: 23 of the 30 payments Excel was asked differ from ExSheet's by 1 to 11 units in the last place, two of them in the 15th significant digit (note 16), and no evaluation searched gives them all; a Known limitation of 0.1.0 (ADR-0202). Where it answers, the payment is the exact payment rounded once, at the end of each period and at the start (decided with the user, 2026-10-13), held between bounds that decide its double however small the rate (PMT-011, PMT-012; `pmt_exact.py` checked 20,000 inputs against Python's decimal). #VALUE! until Excel is asked where PMT's readings part in kind or beyond the last digits (note 16): at a rate of -1 with periods (PMT-034, PMT-037), below -1 with a whole `nper` or a fraction whose reciprocal is odd (PMT-035, PMT-036; any other fraction is #NUM!), where a quantity a reading computes passes a double's range or falls below its normal numbers (PMT-038 to PMT-044), at a growth below 2^-52 (PMT-045), with no periods at the start (PMT-046), and where a reading magnifies its own roundings more than 2^6 times, as where pv g and fv nearly cancel or `nper` is tiny at the start (PMT-047 to PMT-053). Excel gives a General cell its currency format on entry (the area pass of 2026-10-12 read `$#,##0.00_);[Red]($#,##0.00)` for PMT, PV, FV and NPV); ExSheet gives none |
+| `PV` | Supported | — | `type` is read as a truth value; 1+rate is raised to any `nper` by a power that gives every double and Error Value Excel was observed to give for `PV` and `FV`: squaring, 1 over the power to a negative `nper`, the square root at 0.5, else e^(nper ln(1+rate)), the exponential correctly rounded, as XNPV-013 found Excel's, and the logarithm correctly rounded too (ADR-0047, note of 2026-10-12). Where `PV`'s own observations leave other readings (PV-014, PV-015) and where a correctly rounded logarithm parts from glibc's (PV-016), that is the engine's reading, which those cases ask. At a rate of -1 with an `nper` above 0, #VALUE! until Excel is asked (PV-013) |
+| `FV` | Supported | — | As `PV`, at a rate of -1 too (FV-023 and FV-024 ask where the power is the engine's reading); with both a present value and a payment, the sum as written, which gives Excel's doubles (FV-014, FV-015, FV-019) |
+| `NPV` | Blocked | P3 | Observed: no evaluation searched gives every double Excel gave, to the last bit (NPV-001 to 022, none of 5,796 in `spikes/exsheet-financial-evaluation/`). Refused for 0.1.0 as IRR is (ADR-0202, note of 2026-10-12). Ticket 13 |
+| `XNPV` | Supported | — | Each value divided by 1+rate raised as `PV` raises it to the days over 365, summed from the first: one of the two evaluations that give every observed double (XNPV-001, 004 to 006, 011, 013 to 016). #NUM! at a rate below 0, a check of the rate no evaluation gives: Excel's at -0.5, -1, -1.5 and -2 (XNPV-007 to 010, 012, 017), the engine's at other negative rates (XNPV-020 asks -0.01). #VALUE! at a rate of 0 whose counts and dates are in order (XNPV-019), where the last addition nearly cancels (XNPV-018), and where an Error Value in the rate, the values or the dates fails beside another check that gives another answer (a rate below 0 or of 0, counts that differ, a date before the first wherever it lies, a cell that is not a number, a different Error Value), the order of the checks being unobserved: XNPV reads the rate and every cell before it answers (XNPV-021 to XNPV-030), until Excel is asked. A cell of the values or the dates that is not a number, text, a boolean or a blank, is #VALUE!, whatever else is among them |
 | `IRR` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
 | `XIRR` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
 | `RATE` | Blocked | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Not pursued for now (ADR-0047, 2026-10-10). Ticket 13 |
@@ -257,12 +259,12 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `FILTER` | Supported | — | Spills (ADR-0125); nothing kept is `#CALC!` without `if_empty` |
-| `SORT` | Supported | — | Spills (ADR-0125); a blank or Error Value among the keys is refused until Excel is asked; Excel's Anchor recorded (SORT-011), the refusal kept until a run reads the rest |
-| `SORTBY` | Supported | — | Spills (ADR-0125); keys refused as `SORT`'s; Excel's Anchor recorded (SORT-011), the refusal kept until a run reads the rest |
-| `UNIQUE` | Supported | — | Spills (ADR-0125); a blank in the array is refused until Excel is asked; Excel's Anchor recorded (UNIQUE-009), the refusal kept until a run reads the rest |
+| `FILTER` | Supported | — | Spills (ADR-0125); nothing kept is `#CALC!` without `if_empty`. A blank it keeps is read inside a Formula as `SORT`'s is, which no run has read for `FILTER` (FILTER-012 to 014 ask): `COUNTA` counts it, and a function whose readings of it part, such as `AVERAGE`, makes the Formula #VALUE! |
+| `SORT` | Supported | — | Spills (ADR-0125); a blank key sorts after numbers and text in either order and after a boolean ascending, blank keys keeping their order in a descending sort, as Excel's did, and spills as 0 (SORT-011 to 014, 016 to 020, 023 to 025); after a boolean in a descending sort, and blank keys kept in their order ascending, are the engine's by generalisation (SORT-040, 041 ask), and beside an Error Value key the Formula is #VALUE! (SORT-031 asks). An Error Value key that already follows every number, as Excel's did (SORT-015), is answered, since sorting it after the numbers and keeping its place give the one order; with a number after it, beside text, a boolean, a blank or another Error Value, or in a descending sort, the Formula is #VALUE! until Excel is asked (SORT-026, 028 to 032). Of a blank it keeps, read inside a Formula, Excel's `COUNTA` counted it and `INDEX` took it out as a blank (SORT-021, 022); `SUM` answers where every reading gives the one sum, and a function whose readings part makes the Formula #VALUE! (SORT-033 to 039). A `sort_index` that is not a whole number is #VALUE! until Excel is asked (SORT-042) |
+| `SORTBY` | Supported | — | Spills (ADR-0125); a blank key sorts last, key by key, as Excel's did after a number in an ascending key (SORTBY-007 to 009), and otherwise as `SORT`'s by generalisation (SORTBY-014 asks a descending key), and a blank it keeps is read as `SORT`'s is, which no run has read for `SORTBY` (SORTBY-011 to 013 ask). An Error Value key makes the Formula #VALUE! until Excel is asked whether it sorts as `SORT`'s or is the result (SORTBY-010) |
+| `UNIQUE` | Supported | — | Spills (ADR-0125); a blank is one of a kind only with another blank, never with 0 or empty text, and spills as 0 (UNIQUE-009 to 016). Read inside a Formula, Excel's `COUNTA` counted it and `=` found it equal to empty text (UNIQUE-017, 018); otherwise it is read as `SORT`'s is (UNIQUE-020 to 024 ask) |
 | `SEQUENCE` | Supported | — | Spills (ADR-0125) |
-| `TRANSPOSE` | Supported | — | Spills (ADR-0125) |
+| `TRANSPOSE` | Supported | — | Spills (ADR-0125); a blank spills as 0 (TRANSPOSE-004). A blank it keeps is read inside a Formula as `SORT`'s is, which no run has read for `TRANSPOSE` (TRANSPOSE-005 to 007 ask) |
 | `LET` | Supported | — | Names bound inside one Formula, as Excel's keyboard accepts them; a function's name, declared or not, and an R1C1 shape that is no A1 Reference are names, a value may be left empty, and `TRUE`, `FALSE` and a name that reads as an A1 Reference are refused on entry (ADR-0181, the seventeenth run). Ticket 14 |
 
 ### Random
@@ -375,8 +377,68 @@ function Excel adds is listed here.
     the list beside the rows is what the engine refuses, kept equal to it by `FunctionCatalogueTests`.
     *(2026-10-11, the seventeenth run: Excel's keyboard took a function's name as a `LET` name, so the
     list is no longer what the engine refuses; see the list's paragraph.)*
+14. **The area pass of 2026-10-12 asked the financial functions' open cases** (ADR-0202's note of
+    that date, `verification/2026-10-12-windows-area/`). `PV` and `FV` read any `type`, and answer an
+    `nper` that is not a whole number, or is negative, where every evaluation Excel's doubles leave gives
+    the same double; where those part (half a period, a negative fraction, a rate of -1, and `FV` with a
+    present value and a payment) and at a rate below -1 with a fractional `nper` they are refused until
+    Excel is asked. `XNPV` is refused where the six evaluations it computes part (whole years, the days
+    over 365 or times 1/365) and at a rate of -1 or below; 72 evaluations give its two observed doubles
+    and part at most other inputs, which is the user's question. `PMT` reads `type` as they do; a non-whole or negative `nper` is
+    refused, and five of its payments differ from Excel's by one to three units in the last place,
+    which no evaluation searched explains, so whether it is corrected or refused is the user's
+    question. `NPV` is Blocked: no evaluation searched gives every double Excel gave for it. Ticket 13
+    holds both.
+15. **The second area pass of 2026-10-12 asked what the first left open**
+    (`verification/2026-10-12-windows-area-2/`). `PV` and `FV` raise 1+rate by a power that gives every
+    double and Error Value Excel was observed to give for them, with the exponential and the logarithm
+    correctly rounded: Excel's exponential is the correctly rounded one where glibc's is not (XNPV-013),
+    and no observed double tells logarithms apart (FV-023 and PV-016 ask). `XNPV` divides by
+    that power and sums from the first value, one of the two evaluations (4 candidates) that give its nine
+    observed doubles, and is `#NUM!` below 0, a check of the rate none of them gives, which Excel gave at
+    -0.5 to -2 and XNPV-020 asks at -0.01. They no longer refuse where the first round's readings parted.
+    `PV` at a rate of -1 with an `nper` above 0, and `XNPV` at a rate of 0 and where its last addition
+    nearly cancels, are refused until Excel is asked. `NPV` stays Blocked (none of 5,796 evaluations gives
+    its 21 observed doubles); ticket 13 holds it.
+16. **`PMT` is kept under an exception to ADR-0047** (decided with the user, 2026-10-12: its result may
+    differ from Excel's in its last digits, the engine giving the exact payment rounded once): none of
+    39,602 evaluations gives its 29 observed payments at a rate other than 0, and Excel's differed from the
+    engine's at 19 of them by 1 to 11 units in the last place (PMT-026). *(The decision was taken on digits no
+    format displays, and that holds at none of PMT-013 and PMT-026, below; "its last digits" is what was
+    observed. Decided with the user on 2026-10-13: at the start of each period too the engine gives the exact
+    payment rounded once. Excel's differs from the engine's at 23 of the 30 observed payments, at the end and at
+    the start; at two of them, PMT-013 and PMT-026, both payments at the end, in the 15th significant digit.)* Its cases that differ are recorded as
+    differences by that decision. 0.1.0 lists its last digits under Known limitations (ADR-0202). `NPV` is not
+    part of the exception.
+    *(2026-10-12, the third and fourth rounds, the branch's application, not the user's; three questions of it
+    were put to the user, and decided on 2026-10-13: the exception holds at the 15th digit, the bound of 2^6 is
+    kept, and the payment at the start is rounded once.)* Where it answers, the engine holds the payment at the end of each period
+    between bounds that decide its double, (1+rate)^nper - 1 raised from the rate itself, so that it is the exact
+    payment rounded once however small the rate (PMT-011, PMT-012). At the start it divided that double by 1+rate
+    and rounded again, which gave Excel's double at PMT-008, but lay a unit from the exact payment at the start
+    rounded once there, at PMT-014, 015, 025 and 029, where Excel's double lies on the other side of it, and at
+    20% of the payments at the start `pmt_exact.py` draws. *(2026-10-13, decided with the user: the payment at
+    the start is the exact payment at the start rounded once, as the exception names; it is a unit from Excel's
+    at PMT-008, 009, 010 and 019, and a unit nearer Excel's at PMT-014, 015, 025 and 029.)* `spikes/exsheet-financial-evaluation/pmt_exact.py`
+    checked 20,000 inputs against Python's decimal at 1200 digits, tiny, subnormal and negative rates and
+    fractional and tiny `nper` among them. At PMT-013 and PMT-026, at the end, Excel's double and the exact
+    payment rounded once differ in the 15th significant digit, which General shows; at PMT-025, at the start,
+    they agree there, as the engine's double now does. PMT's readings are the evaluations within 64
+    units in the last place of Excel's at every observed payment: (1+rate)^nper - 1 through log1p and expm1, an
+    x87's FYL2XP1 and F2XM1, or exact, in every form that comes so near, and LibreOffice's `ScGetPMT`. Where
+    they part in kind, or beyond the last digits, `PMT` refuses until Excel is asked (PMT-034 to PMT-053;
+    `Search.cs --refusals` runs them with a double's range over 20,096 inputs, and `--pmt-readings` over
+    `pmt_exact.py`'s 20,000): at a rate of -1 with periods, below -1 with a whole `nper` or an odd root, where a
+    quantity they compute passes a double's range or falls below its normal numbers, at a growth below 2^-52,
+    with no periods at the start, and where one magnifies its own roundings more than 2^6 times, so that they
+    give 0, numbers of the other sign or of a few digits, or an Error Value (pv g and fv nearly cancelling, as at
+    =PMT(0.1,2,1000,-1210); a growth far below 1 taken as 1 + (g-1); the exponent's rounding; and at the start a
+    tiny `nper`, whose nper+1 rounds to 1, or a rate far above 1). Where it answers, every reading run lies
+    within 93 units in the last place of its payment.
 
 The retained evidence is `verification/2026-10-03-windows-functions/`. New corpus cases preserve
 its IDs, typed fixtures and exact numeric expectations. A deliberate refusal keeps Excel's
-observed result in `excelExpect` and names ADR-0047 in `engineDiffersByDecision`. The engine's
+observed result in `excelExpect` and names ADR-0047 in `engineDiffersByDecision`. A refusal is the
+Formula's, and every Formula's that reads its cell, which no Formula catches (ADR-0047, 2026-10-12,
+decided with the user). The engine's
 README lists the admitted domains; broadening one requires evidence, not a relaxed assertion.

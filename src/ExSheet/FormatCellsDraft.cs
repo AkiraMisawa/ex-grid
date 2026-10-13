@@ -14,12 +14,15 @@ namespace ExSheet;
 /// dotted line (<see cref="EdgeLine"/> is <see langword="null"/>). Every other part shows the Focus
 /// cell's. A range's outer edges show as they are drawn, a neighbour's line where the cell records
 /// none (the fourteenth run, case 13); an edge inside a range shows the cells' own sides. The Border
-/// tab's line opens as Thin and Automatic.</para>
+/// tab's line opens as the line shown where the Selection is one cell and exactly one of its edges
+/// shows a line, and as Thin and Automatic everywhere else. Excel was seen to open on the line shown
+/// only over a top line and a thick black bottom line, and the rest of that rule is a reading (see
+/// <see cref="LineStyle"/>).</para>
 ///
 /// <para><see cref="Change"/> names only the parts the user touched, so OK leaves every other part
 /// as each cell has it; with nothing touched it is empty, and OK sets nothing. An edge shown from a
 /// neighbour and left alone writes nothing; taken away, it is cleared on both sides, as clearing an
-/// edge is (SH-45; a reading, since no run pressed it). A choice that
+/// edge is (SH-45; observed in the seventeenth Windows run, h10). A choice that
 /// cannot be set — a Custom code ExSheet does not read, More Colours text that is not a colour — is
 /// held as <see cref="Refusal"/>, by name, and OK sets nothing until it is put right.</para>
 /// </summary>
@@ -55,6 +58,33 @@ public sealed class FormatCellsDraft
         FontColour = opening.Font.Colour;
         Fill = spread.FillDiffers ? CellFill.None : opening.Fill;
         _edges = [.. FormatCellsOffer.Edges.Select(edge => spread.Edges[(int)edge])];
+        var pen = OpeningPen(spread.OneCell, _edges);
+        LineStyle = pen.Style;
+        LineColour = pen.Colour;
+    }
+
+    /// <summary>
+    /// The line the Border tab opens on (ADR-0071): over one cell where exactly one edge shows a line,
+    /// that line, so a single press of that edge's button takes it away; everywhere else Thin and
+    /// Automatic. Excel was seen to open on the line shown only over a thick top line, black or
+    /// Automatic, a thin top line and a thick black bottom line: on Thick over A2 under A1's thick Automatic bottom, and on Thin where that
+    /// line was thin (the seventeenth Windows run, h10); on Thick and black over A2 and over A1 where
+    /// A1's bottom was thick and black (the fourteenth run, case 13). It was seen to open on Thin and
+    /// Automatic over B2 with a thin top and a thick right of its own, over A2:B3 with a different line
+    /// on four of its cells' sides, and over D5 with no line (the readings of 2026-10-12 (R8)). The
+    /// rest is a reading: a line on a left or right edge, in a style other than Thick or Thin or a colour
+    /// other than Automatic or black, and every other Selection.
+    /// </summary>
+    private static BorderLine OpeningPen(bool oneCell, BorderLine?[] edges)
+    {
+        if (oneCell)
+        {
+            BorderLine[] shown = [.. new[] { BorderEdge.Top, BorderEdge.Bottom, BorderEdge.Left, BorderEdge.Right }
+                .Select(edge => edges[(int)edge] ?? BorderLine.None)
+                .Where(line => !line.IsNone)];
+            if (shown.Length == 1) return shown[0];
+        }
+        return new BorderLine(BorderLineStyle.Thin);
     }
 
     /// <summary>The Focus cell's Cell Format, which Format Cells opens on.</summary>
@@ -295,10 +325,21 @@ public sealed class FormatCellsDraft
 
     // ---- Border ----
 
-    /// <summary>The line style an edge or a preset sets; Thin when Format Cells opens.</summary>
-    public BorderLineStyle LineStyle { get; private set; } = BorderLineStyle.Thin;
+    /// <summary>
+    /// The line style an edge or a preset sets. Format Cells opens on the line shown where the
+    /// Selection is one cell and exactly one of its edges shows a line, so that one press of that
+    /// edge's button takes it away, and on Thin everywhere else. Excel was seen to open on the line
+    /// shown for a top edge (the seventeenth Windows run, h10; the fourteenth run, case 13) and a
+    /// bottom edge (case 13), and on Thin over the three Selections tried in the readings of
+    /// 2026-10-12 (R8); the rest of the rule is a reading.
+    /// </summary>
+    public BorderLineStyle LineStyle { get; private set; }
 
-    /// <summary>The line colour an edge or a preset sets; Automatic when Format Cells opens.</summary>
+    /// <summary>
+    /// The line colour an edge or a preset sets. Format Cells opens on the colour of the line
+    /// <see cref="LineStyle"/> opens on where one cell shows a line on exactly one of its edges, and
+    /// on Automatic everywhere else, where the style opens on Thin with no single line shown.
+    /// </summary>
     public CellColour LineColour { get; private set; }
 
     /// <summary>Chooses the line style.</summary>
@@ -527,12 +568,13 @@ public sealed class FormatCellsDraft
 
 /// <summary>
 /// What differs across a Selection, as Format Cells shows it (ADR-0071): whether bold or italic
-/// differs, whether the Fill does, and each edge's one line, or <see langword="null"/> where it
-/// differs. An outer edge is read as it is drawn, so a neighbour's line shows where the cell records
-/// none (the fourteenth Windows run, case 13); an edge inside a range is read from its cells' own
-/// sides, so a thick bottom over a plain cell differs (the eleventh run, case 24).
+/// differs, whether the Fill does, each edge's one line, or <see langword="null"/> where it
+/// differs, and whether the Selection is one cell. An outer edge is read as it is drawn, so a
+/// neighbour's line shows where the cell records none (the fourteenth Windows run, case 13); an edge
+/// inside a range is read from its cells' own sides, so a thick bottom over a plain cell differs (the
+/// eleventh run, case 24).
 /// </summary>
-internal sealed record FormatCellsSpread(bool FontStyleDiffers, bool FillDiffers, BorderLine?[] Edges, bool InsideHorizontal, bool InsideVertical)
+internal sealed record FormatCellsSpread(bool FontStyleDiffers, bool FillDiffers, BorderLine?[] Edges, bool InsideHorizontal, bool InsideVertical, bool OneCell)
 {
     public static FormatCellsSpread Of(Sheet sheet, IReadOnlyList<CellRange> ranges)
     {
@@ -569,7 +611,8 @@ internal sealed record FormatCellsSpread(bool FontStyleDiffers, bool FillDiffers
             shown.Select(f => f.Fill).Distinct().Count() > 1,
             [.. FormatCellsOffer.Edges.Select(edge => sides[(int)edge].Count == 1 ? sides[(int)edge].Single() : (sides[(int)edge].Count == 0 ? BorderLine.None : (BorderLine?)null))],
             ranges.Any(range => range.RowCount > 1),
-            ranges.Any(range => range.ColumnCount > 1));
+            ranges.Any(range => range.ColumnCount > 1),
+            ranges.Count == 1 && ranges[0].First == ranges[0].Last);
 
         void Add(BorderEdge edge, CellRange part, Func<CellBorders, BorderLine> side)
         {

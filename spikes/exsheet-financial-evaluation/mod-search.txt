@@ -1,0 +1,592 @@
+dotnet 10.0.203 (nix-managed)
+MOD: 32 cases observed (67 reads), 27 of them numbers; 75 candidates.
+
+16/32  A   n - d*FLOOR(n/d), doubles
+         MOD-017 gives 0.5000152587890625, Excel 0.5000078322611261
+         MOD-018 gives 0.1999969482421875, Excel 0.19999216773887385
+         MOD-019 gives -0.1999969482421875, Excel -0.19999216773887385
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives -4.440892098500626E-16, Excel 0.009999999999999754
+         MOD-025 gives -1.1102230246251565E-16, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+16/32  A2  n - d*TRUNC(n/d), doubles, then +d where the sign is the number's
+         MOD-017 gives 0.5000152587890625, Excel 0.5000078322611261
+         MOD-018 gives 0.19998474121093746, Excel 0.19999216773887385
+         MOD-019 gives -0.19998474121093746, Excel -0.19999216773887385
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives 0.009999999999999556, Excel 0.009999999999999754
+         MOD-025 gives 0.00999999999999989, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+16/32  A3  n - FLOOR(n/d)*d, doubles, the product the other way
+         MOD-017 gives 0.5000152587890625, Excel 0.5000078322611261
+         MOD-018 gives 0.1999969482421875, Excel 0.19999216773887385
+         MOD-019 gives -0.1999969482421875, Excel -0.19999216773887385
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives -4.440892098500626E-16, Excel 0.009999999999999754
+         MOD-025 gives -1.1102230246251565E-16, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+15/32  A4  n - d*FLOOR(n/d) with the quotient read at 15 digits
+         MOD-009 gives -5.551115123125783E-17, Excel 0.09999999999999998
+         MOD-017 gives 0.5000152587890625, Excel 0.5000078322611261
+         MOD-018 gives 0.1999969482421875, Excel 0.19999216773887385
+         MOD-019 gives -0.1999969482421875, Excel -0.19999216773887385
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives -4.440892098500626E-16, Excel 0.009999999999999754
+         MOD-025 gives -1.1102230246251565E-16, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+14/32  A5  (n/d - FLOOR(n/d))*d, the fraction of the quotient
+         MOD-009 gives 0.09999999999999996, Excel 0.09999999999999998
+         MOD-010 gives 0.99993896484375, Excel 1
+         MOD-017 gives 0.500006103515625, Excel 0.5000078322611261
+         MOD-018 gives 0.199993896484375, Excel 0.19999216773887385
+         MOD-019 gives -0.199993896484375, Excel -0.19999216773887385
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives 0, Excel 0.009999999999999754
+         MOD-025 gives 0, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+16/32  A6  n - d*FLOOR(n/d), then +d where the sign is the number's
+         MOD-017 gives 0.5000152587890625, Excel 0.5000078322611261
+         MOD-018 gives 0.1999969482421875, Excel 0.19999216773887385
+         MOD-019 gives -0.1999969482421875, Excel -0.19999216773887385
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives 0.009999999999999556, Excel 0.009999999999999754
+         MOD-025 gives 0.00999999999999989, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+16/32  A7  n - d*FLOOR(n/d) as a Formula, its last subtraction Excel's final addition
+         MOD-017 gives 0.5000152587890625, Excel 0.5000078322611261
+         MOD-018 gives 0.1999969482421875, Excel 0.19999216773887385
+         MOD-019 gives -0.1999969482421875, Excel -0.19999216773887385
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives 0, Excel 0.009999999999999754
+         MOD-025 gives 0, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+16/32  A8  n - d*FLOOR(n/d), doubles, 0 where the sign is not the divisor's
+         MOD-017 gives 0.5000152587890625, Excel 0.5000078322611261
+         MOD-018 gives 0.1999969482421875, Excel 0.19999216773887385
+         MOD-019 gives -0.1999969482421875, Excel -0.19999216773887385
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives 0, Excel 0.009999999999999754
+         MOD-025 gives 0, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+16/32  A9  n - d*FLOOR(n/d), doubles, 0 where the sign is not the divisor's, then cancellation
+         MOD-017 gives 0.5000152587890625, Excel 0.5000078322611261
+         MOD-018 gives 0.1999969482421875, Excel 0.19999216773887385
+         MOD-019 gives -0.1999969482421875, Excel -0.19999216773887385
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives 0, Excel 0.009999999999999754
+         MOD-025 gives 0, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+30/32  B   exact remainder (C# %, fmod), +d where its sign is the number's, rounded once
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-032 gives 1, Excel 0
+30/32  B2  n - d*FLOOR(n/d) exactly, the quotient exact, rounded once
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-032 gives 1, Excel 0
+30/32  B3  IEEE remainder (round-to-nearest quotient), +d where its sign is not the divisor's
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-032 gives 1, Excel 0
+31/32  B4  exact remainder, +d in an x87 register, then to a double (FPREM, double rounding)
+         MOD-032 gives 1, Excel 0
+31/32  B5  n - d*FLOOR(n/d) exactly, rounded to 64 bits and then to 53
+         MOD-032 gives 1, Excel 0
+28/32  B6  B, then cancellation against the number (|r| <= |n|*2^-49 is 0)
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+28/32  B7  n - d*FLOOR(n/d) exactly, 0 where n and d*FLOOR(n/d) are closer than 2^-49 of each (FinalAdd's form)
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+31/32  B8  B, then 0 where it rounds to the divisor itself
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+32/32  B9  B4, then 0 where the double is the divisor
+32/32  B10 B4, 0 where the x87 register holds the divisor (((n%d)+d)%d, every step in the register)
+31/32  B11 exact remainder, +d truncated to 64 bits, then rounded to a double
+         MOD-032 gives 1, Excel 0
+32/32  B12 B11, then 0 where the double is the divisor
+31/32  B13 B11, 0 where the 64-bit sum is the divisor
+         MOD-032 gives 1, Excel 0
+31/32  B14 exact remainder, +d truncated to a double (rounded toward zero)
+         MOD-032 gives 0.9999999999999999, Excel 0
+31/32  B15 B14, then 0 where the double is the divisor
+         MOD-032 gives 0.9999999999999999, Excel 0
+31/32  B16 exact remainder, +d at 64 bits toward zero in the register and stored toward zero (an x87 set to chop)
+         MOD-032 gives 0.9999999999999999, Excel 0
+21/32  C   FMA(-d, FLOOR(n/d), n)
+         MOD-020 gives -5.551115123125783E-17, Excel 0.09999999999999995
+         MOD-021 gives -2.7755575615628914E-16, Excel 0.09999999999999973
+         MOD-022 gives -5.551115123125783E-17, Excel 0.09999999999999995
+         MOD-023 gives 5.551115123125783E-17, Excel -0.09999999999999995
+         MOD-024 gives -2.463307335887066E-16, Excel 0.009999999999999754
+         MOD-025 gives -5.898059818321144E-17, Excel 0.009999999999999941
+         MOD-026 gives -5.551115123125783E-06, Excel 0.09999444888487688
+         MOD-027 gives -6.8532284853706216E-06, Excel 0.19999314677151464
+         MOD-028 gives 2.1032064978498966E-11, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-032 gives 1, Excel 0
+30/32  C2  FMA(-d, FLOOR(n/d), n), then +d where the sign is not the divisor's
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-032 gives 1, Excel 0
+21/32  C3  n - p - e, with p = d*q and e = FMA(d, q, -p) (TwoProduct)
+         MOD-020 gives -5.551115123125783E-17, Excel 0.09999999999999995
+         MOD-021 gives -2.7755575615628914E-16, Excel 0.09999999999999973
+         MOD-022 gives -5.551115123125783E-17, Excel 0.09999999999999995
+         MOD-023 gives 5.551115123125783E-17, Excel -0.09999999999999995
+         MOD-024 gives -2.463307335887066E-16, Excel 0.009999999999999754
+         MOD-025 gives -5.898059818321144E-17, Excel 0.009999999999999941
+         MOD-026 gives -5.551115123125783E-06, Excel 0.09999444888487688
+         MOD-027 gives -6.8532284853706216E-06, Excel 0.19999314677151464
+         MOD-028 gives 2.1032064978498966E-11, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-032 gives 1, Excel 0
+30/32  C4  FMA(-d, TRUNC(n/d), n), then +d where the sign is the number's
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-032 gives 1, Excel 0
+21/32  C5  FMA(-d, FLOOR(n/d), n), 0 where the sign is not the divisor's
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives 0, Excel 0.009999999999999754
+         MOD-025 gives 0, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-032 gives 1, Excel 0
+19/32  C6  FMA(-d, FLOOR(n/d), n), 0 where the sign is not the divisor's, then cancellation
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives 0, Excel 0.009999999999999754
+         MOD-025 gives 0, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+19/32  C7  FMA(-d, FLOOR(n/d), n), then cancellation
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives 0, Excel 0.009999999999999754
+         MOD-025 gives 0, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+20/32  C8  FMA(-d, FLOOR(n/d), n) with the quotient read at 15 digits
+         MOD-009 gives -2.7755575615628914E-17, Excel 0.09999999999999998
+         MOD-020 gives -5.551115123125783E-17, Excel 0.09999999999999995
+         MOD-021 gives -2.7755575615628914E-16, Excel 0.09999999999999973
+         MOD-022 gives -5.551115123125783E-17, Excel 0.09999999999999995
+         MOD-023 gives 5.551115123125783E-17, Excel -0.09999999999999995
+         MOD-024 gives -2.463307335887066E-16, Excel 0.009999999999999754
+         MOD-025 gives -5.898059818321144E-17, Excel 0.009999999999999941
+         MOD-026 gives -5.551115123125783E-06, Excel 0.09999444888487688
+         MOD-027 gives -6.8532284853706216E-06, Excel 0.19999314677151464
+         MOD-028 gives 2.1032064978498966E-11, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-032 gives 1, Excel 0
+25/32  D   n - d*FLOOR(n/d), every step in an x87 register, then to a double
+         MOD-017 gives 0.5000078305602074, Excel 0.5000078322611261
+         MOD-018 gives 0.19999216496944427, Excel 0.19999216773887385
+         MOD-019 gives -0.19999216496944427, Excel -0.19999216773887385
+         MOD-026 gives 0.09999445080757141, Excel 0.09999444888487688
+         MOD-027 gives 0.19999314844608307, Excel 0.19999314677151464
+         MOD-028 gives -93.69999999997896, Excel -93.69999999997897
+         MOD-032 gives 1, Excel 0
+19/32  D2  the quotient in doubles, the product and difference in an x87 register
+         MOD-017 gives 0.5000078305602074, Excel 0.5000078322611261
+         MOD-018 gives 0.19999216496944427, Excel 0.19999216773887385
+         MOD-019 gives -0.19999216496944427, Excel -0.19999216773887385
+         MOD-020 gives -5.551115123125783E-17, Excel 0.09999999999999995
+         MOD-021 gives -2.7755575615628914E-16, Excel 0.09999999999999973
+         MOD-022 gives -5.551115123125783E-17, Excel 0.09999999999999995
+         MOD-023 gives 5.551115123125783E-17, Excel -0.09999999999999995
+         MOD-024 gives -2.463307335887066E-16, Excel 0.009999999999999754
+         MOD-025 gives -5.898059818321144E-17, Excel 0.009999999999999941
+         MOD-026 gives -5.550682544708252E-06, Excel 0.09999444888487688
+         MOD-027 gives -6.854534149169922E-06, Excel 0.19999314677151464
+         MOD-028 gives 2.1032064978498966E-11, Excel -93.69999999997897
+         MOD-032 gives 1, Excel 0
+17/32  D3  D2, 0 where the sign is not the divisor's, then cancellation
+         MOD-017 gives 0.5000078305602074, Excel 0.5000078322611261
+         MOD-018 gives 0.19999216496944427, Excel 0.19999216773887385
+         MOD-019 gives -0.19999216496944427, Excel -0.19999216773887385
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives 0, Excel 0.009999999999999754
+         MOD-025 gives 0, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+25/32  D4  D, then +d where the sign is not the divisor's, in an x87 register
+         MOD-017 gives 0.5000078305602074, Excel 0.5000078322611261
+         MOD-018 gives 0.19999216496944427, Excel 0.19999216773887385
+         MOD-019 gives -0.19999216496944427, Excel -0.19999216773887385
+         MOD-026 gives 0.09999445080757141, Excel 0.09999444888487688
+         MOD-027 gives 0.19999314844608307, Excel 0.19999314677151464
+         MOD-028 gives -93.69999999997896, Excel -93.69999999997897
+         MOD-032 gives 1, Excel 0
+23/32  D5  D, then cancellation
+         MOD-017 gives 0.5000078305602074, Excel 0.5000078322611261
+         MOD-018 gives 0.19999216496944427, Excel 0.19999216773887385
+         MOD-019 gives -0.19999216496944427, Excel -0.19999216773887385
+         MOD-026 gives 0.09999445080757141, Excel 0.09999444888487688
+         MOD-027 gives 0.19999314844608307, Excel 0.19999314677151464
+         MOD-028 gives -93.69999999997896, Excel -93.69999999997897
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+15/32  E   decimal: (decimal)n % (decimal)d, +d where the sign is the number's
+         MOD-009 gives 0, Excel 0.09999999999999998
+         MOD-017 gives 0.5, Excel 0.5000078322611261
+         MOD-018 gives 0.2, Excel 0.19999216773887385
+         MOD-019 gives -0.2, Excel -0.19999216773887385
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives 0, Excel 0.009999999999999754
+         MOD-025 gives 0, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+15/32  E2  decimal, then cancellation
+         MOD-009 gives 0, Excel 0.09999999999999998
+         MOD-017 gives 0.5, Excel 0.5000078322611261
+         MOD-018 gives 0.2, Excel 0.19999216773887385
+         MOD-019 gives -0.2, Excel -0.19999216773887385
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives 0, Excel 0.009999999999999754
+         MOD-025 gives 0, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+15/32  E3  decimal over the operands read at 15 digits, +d where the sign is the number's
+         MOD-009 gives 0, Excel 0.09999999999999998
+         MOD-017 gives 0.5, Excel 0.5000078322611261
+         MOD-018 gives 0.2, Excel 0.19999216773887385
+         MOD-019 gives -0.2, Excel -0.19999216773887385
+         MOD-020 gives 0, Excel 0.09999999999999995
+         MOD-021 gives 0, Excel 0.09999999999999973
+         MOD-022 gives 0, Excel 0.09999999999999995
+         MOD-023 gives 0, Excel -0.09999999999999995
+         MOD-024 gives 0, Excel 0.009999999999999754
+         MOD-025 gives 0, Excel 0.009999999999999941
+         MOD-026 gives 0, Excel 0.09999444888487688
+         MOD-027 gives 0, Excel 0.19999314677151464
+         MOD-028 gives 0, Excel -93.69999999997897
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+         MOD-030 gives 0, Excel 2.7755575615628914E-17
+         MOD-031 gives 0, Excel 2.7755575615628914E-17
+         MOD-032 gives 1, Excel 0
+32/32  B9@54 B9 at 54 bits: +d rounded to nearest at 54 bits, stored, 0 where the double is the divisor
+32/32  B10@54 B10 at 54 bits: 0 where the 54-bit sum is the divisor
+32/32  B12@54 B12 at 54 bits: +d truncated at 54 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@55 B9 at 55 bits: +d rounded to nearest at 55 bits, stored, 0 where the double is the divisor
+32/32  B10@55 B10 at 55 bits: 0 where the 55-bit sum is the divisor
+32/32  B12@55 B12 at 55 bits: +d truncated at 55 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@56 B9 at 56 bits: +d rounded to nearest at 56 bits, stored, 0 where the double is the divisor
+32/32  B10@56 B10 at 56 bits: 0 where the 56-bit sum is the divisor
+32/32  B12@56 B12 at 56 bits: +d truncated at 56 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@57 B9 at 57 bits: +d rounded to nearest at 57 bits, stored, 0 where the double is the divisor
+32/32  B10@57 B10 at 57 bits: 0 where the 57-bit sum is the divisor
+32/32  B12@57 B12 at 57 bits: +d truncated at 57 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@58 B9 at 58 bits: +d rounded to nearest at 58 bits, stored, 0 where the double is the divisor
+32/32  B10@58 B10 at 58 bits: 0 where the 58-bit sum is the divisor
+32/32  B12@58 B12 at 58 bits: +d truncated at 58 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@59 B9 at 59 bits: +d rounded to nearest at 59 bits, stored, 0 where the double is the divisor
+32/32  B10@59 B10 at 59 bits: 0 where the 59-bit sum is the divisor
+32/32  B12@59 B12 at 59 bits: +d truncated at 59 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@60 B9 at 60 bits: +d rounded to nearest at 60 bits, stored, 0 where the double is the divisor
+32/32  B10@60 B10 at 60 bits: 0 where the 60-bit sum is the divisor
+32/32  B12@60 B12 at 60 bits: +d truncated at 60 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@61 B9 at 61 bits: +d rounded to nearest at 61 bits, stored, 0 where the double is the divisor
+32/32  B10@61 B10 at 61 bits: 0 where the 61-bit sum is the divisor
+32/32  B12@61 B12 at 61 bits: +d truncated at 61 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@62 B9 at 62 bits: +d rounded to nearest at 62 bits, stored, 0 where the double is the divisor
+32/32  B10@62 B10 at 62 bits: 0 where the 62-bit sum is the divisor
+32/32  B12@62 B12 at 62 bits: +d truncated at 62 bits, stored to nearest, 0 where the double is the divisor
+32/32  B9@63 B9 at 63 bits: +d rounded to nearest at 63 bits, stored, 0 where the double is the divisor
+32/32  B10@63 B10 at 63 bits: 0 where the 63-bit sum is the divisor
+32/32  B12@63 B12 at 63 bits: +d truncated at 63 bits, stored to nearest, 0 where the double is the divisor
+31/32  B9@65 B9 at 65 bits: +d rounded to nearest at 65 bits, stored, 0 where the double is the divisor
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+31/32  B10@65 B10 at 65 bits: 0 where the 65-bit sum is the divisor
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+32/32  B12@65 B12 at 65 bits: +d truncated at 65 bits, stored to nearest, 0 where the double is the divisor
+31/32  B12@66 B12 at 66 bits: +d truncated at 66 bits, stored to nearest, 0 where the double is the divisor
+         MOD-029 gives 6629.912374, Excel 6629.9123739999995
+
+Fit every observed value: 34 of 75: B9, B10, B12, B9@54, B10@54, B12@54, B9@55, B10@55, B12@55, B9@56, B10@56, B12@56, B9@57, B10@57, B12@57, B9@58, B10@58, B12@58, B9@59, B10@59, B12@59, B9@60, B10@60, B12@60, B9@61, B10@61, B12@61, B9@62, B10@62, B12@62, B9@63, B10@63, B12@63, B12@65.
+At the hardware's widths (a double's 53 bits, an x87 register's 64), which the engine models: B9, B10, B12; at widths no hardware holds: 31.
+
+Predictions for the new cases, the candidates grouped by the double they give (* fits every observed value at the
+hardware's widths, + at a width no hardware holds), and the engine's answer:
+  MOD-033 =MOD(-1E-17,1)   engine: #VALUE!
+    1                          A, A2, A3, A4, A5, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, *B10, B11, B13, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, E, E2, E3, +B10@56, +B10@57, +B10@58, +B10@59, +B10@60, +B10@61, +B10@62, +B10@63, B10@65
+    0                          B8, *B9, *B12, +B9@54, +B10@54, +B12@54, +B9@55, +B10@55, +B12@55, +B9@56, +B12@56, +B9@57, +B12@57, +B9@58, +B12@58, +B9@59, +B12@59, +B9@60, +B12@60, +B9@61, +B12@61, +B9@62, +B12@62, +B9@63, +B12@63, B9@65, +B12@65, B12@66
+    0.9999999999999999         B14, B15, B16
+  MOD-034 =MOD(-0.084474,2270)   engine: #VALUE!
+    2269.915526                A, A2, A3, A4, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, B8, *B9, *B10, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, E, E2, E3, B9@65, B10@65, +B12@65, B12@66
+    2269.9155259999998         A5, B11, *B12, B13, B14, B15, B16, +B9@54, +B10@54, +B12@54, +B9@55, +B10@55, +B12@55, +B9@56, +B10@56, +B12@56, +B9@57, +B10@57, +B12@57, +B9@58, +B10@58, +B12@58, +B9@59, +B10@59, +B12@59, +B9@60, +B10@60, +B12@60, +B9@61, +B10@61, +B12@61, +B9@62, +B10@62, +B12@62, +B9@63, +B10@63, +B12@63
+  MOD-035 =MOD(-0.008511,81200)   engine: #VALUE!
+    81199.991489               A, A2, A3, A4, A6, A7, A8, A9, B, B2, B3, B6, B7, B8, B11, *B12, B13, B14, B15, B16, C, C2, C3, C4, C5, C6, C7, C8, E, E2, E3, +B12@54, +B12@55, +B12@56, +B12@57, +B12@58, +B12@59, +B12@60, +B12@61, +B12@62, +B12@63, +B12@65, B12@66
+    81199.99148900001          A5, B4, B5, *B9, *B10, D, D2, D3, D4, D5, +B9@54, +B10@54, +B9@55, +B10@55, +B9@56, +B10@56, +B9@57, +B10@57, +B9@58, +B10@58, +B9@59, +B10@59, +B9@60, +B10@60, +B9@61, +B10@61, +B9@62, +B10@62, +B9@63, +B10@63, B9@65, B10@65
+  MOD-036 =MOD(0.071472,-276)   engine: #VALUE!
+    -275.928528                A, A2, A3, A4, A6, A7, A8, A9, B, B2, B3, B6, B7, B8, B11, *B12, B13, B14, B15, B16, C, C2, C3, C4, C5, C6, C7, C8, E, E2, E3, +B12@54, +B12@55, +B12@56, +B12@57, +B12@58, +B12@59, +B12@60, +B12@61, +B12@62, +B12@63, B9@65, B10@65, +B12@65, B12@66
+    -275.92852800000003        A5, B4, B5, *B9, *B10, D, D2, D3, D4, D5, +B9@54, +B10@54, +B9@55, +B10@55, +B9@56, +B10@56, +B9@57, +B10@57, +B9@58, +B10@58, +B9@59, +B10@59, +B9@60, +B10@60, +B9@61, +B10@61, +B9@62, +B10@62, +B9@63, +B10@63
+  MOD-037 =MOD(-1E-16,1)   engine: 0.9999999999999999
+    0.9999999999999999         A, A2, A3, A4, A5, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, B8, *B9, *B10, B11, *B12, B13, B14, B15, B16, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, +B9@54, +B10@54, +B12@54, +B9@55, +B10@55, +B12@55, +B9@56, +B10@56, +B12@56, +B9@57, +B10@57, +B12@57, +B9@58, +B10@58, +B12@58, +B9@59, +B10@59, +B12@59, +B9@60, +B10@60, +B12@60, +B9@61, +B10@61, +B12@61, +B9@62, +B10@62, +B12@62, +B9@63, +B10@63, +B12@63, B9@65, B10@65, +B12@65, B12@66
+    1                          E, E2, E3
+  MOD-038 =MOD(1E-20,1)   engine: 1E-20
+    1E-20                      A, A2, A3, A4, A5, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, B8, *B9, *B10, B11, *B12, B13, B14, B15, B16, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, E, E2, E3, +B9@54, +B10@54, +B12@54, +B9@55, +B10@55, +B12@55, +B9@56, +B10@56, +B12@56, +B9@57, +B10@57, +B12@57, +B9@58, +B10@58, +B12@58, +B9@59, +B10@59, +B12@59, +B9@60, +B10@60, +B12@60, +B9@61, +B10@61, +B12@61, +B9@62, +B10@62, +B12@62, +B9@63, +B10@63, +B12@63, B9@65, B10@65, +B12@65, B12@66
+  MOD-039 =MOD(-0.024901,2350)   engine: 2349.975099
+    2349.975099                A, A2, A3, A4, A5, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, B8, *B9, *B10, B11, *B12, B13, B14, B15, B16, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, E, E2, E3, +B12@54, +B12@55, +B12@56, +B12@57, +B12@58, +B12@59, +B12@60, +B12@61, +B12@62, +B12@63, B9@65, B10@65, +B12@65, B12@66
+    2349.9750990000002         +B9@54, +B10@54, +B9@55, +B10@55, +B9@56, +B10@56, +B9@57, +B10@57, +B9@58, +B10@58, +B9@59, +B10@59, +B9@60, +B10@60, +B9@61, +B10@61, +B9@62, +B10@62, +B9@63, +B10@63
+  MOD-040 =MOD(-0.006664,5250)   engine: 5249.993336
+    5249.993336                A, A2, A3, A4, A5, A6, A7, A8, A9, B, B2, B3, B4, B5, B6, B7, B8, *B9, *B10, B11, *B12, B13, C, C2, C3, C4, C5, C6, C7, C8, D, D2, D3, D4, D5, E, E2, E3, +B9@63, +B10@63, B9@65, B10@65, +B12@65, B12@66
+    5249.9933359999995         B14, B15, B16, +B9@54, +B10@54, +B12@54, +B9@55, +B10@55, +B12@55, +B9@56, +B10@56, +B12@56, +B9@57, +B10@57, +B12@57, +B9@58, +B10@58, +B12@58, +B9@59, +B10@59, +B12@59, +B9@60, +B10@60, +B12@60, +B9@61, +B10@61, +B12@61, +B9@62, +B10@62, +B12@62, +B12@63
+
+Inputs where the candidates at the hardware's widths that fit every observed value part (the grid):
+  0 inputs of 432 part them.
+
+What the engine refuses in each search, and why:
+  the grid: 418 answered or refused, 0 refused ()
+  2,000,000 numbers of up to five digits: 1915648 answered or refused, 13 refused (truncated at 64 bits, another double 13)
+  1,000,000 near a multiple of the divisor: 1000000 answered or refused, 0 refused ()
+  200,000 far smaller than the divisor: 200000 answered or refused, 43902 refused (the divisor itself, as a double but not in the register 43874, truncated at 64 bits, another double 28)
+  500,000 whose sum with the divisor lies near a midpoint: 500000 answered or refused, 86401 refused (the divisor itself, as a double but not in the register 6, truncated at 64 bits, another double 86395)
+
+Every input searched (3616066): the pairs of fitting candidates at the hardware's widths that part, how often, and the first input.
+  B10/B12    130316  =MOD(-0.084474,2270): 2269.915526 / 2269.9155259999998
+  B9/B10      43880  =MOD(3.7736E-16,-56.400000000000006): 0 / -56.400000000000006
+  B9/B12      86444  =MOD(-0.084474,2270): 2269.915526 / 2269.9155259999998
+
+Everyday inputs where each pair parts (the grid, and numbers of up to five digits), the first few:
+  B10/B12
+    =MOD(-0.084474,2270): B9 2269.915526 | B10 2269.915526 | B12 2269.9155259999998
+    =MOD(-0.47307000000000005,67400): B9 67399.52693 | B10 67399.52693 | B12 67399.52692999999
+    =MOD(0.16057000000000002,-69300): B9 -69299.83943 | B10 -69299.83943 | B12 -69299.83942999999
+    =MOD(-0.008511,81200): B9 81199.99148900001 | B10 81199.99148900001 | B12 81199.991489
+    =MOD(0.25027000000000005,-8000): B9 -7999.74973 | B10 -7999.74973 | B12 -7999.7497299999995
+    =MOD(-0.10163000000000001,1810): B9 1809.89837 | B10 1809.89837 | B12 1809.8983699999999
+    =MOD(-0.059348,2290): B9 2289.9406520000002 | B10 2289.9406520000002 | B12 2289.940652
+    =MOD(-0.20326000000000002,3030): B9 3029.79674 | B10 3029.79674 | B12 3029.7967399999998
+    =MOD(-0.8130400000000001,9200): B9 9199.18696 | B10 9199.18696 | B12 9199.186959999999
+    =MOD(-0.44182000000000005,79600): B9 79599.55818 | B10 79599.55818 | B12 79599.55817999999
+    =MOD(-0.018642,9490): B9 9489.981358000001 | B10 9489.981358000001 | B12 9489.981358
+    =MOD(0.071472,-276): B9 -275.92852800000003 | B10 -275.92852800000003 | B12 -275.928528
+  B9/B12
+    =MOD(-0.084474,2270): B9 2269.915526 | B10 2269.915526 | B12 2269.9155259999998
+    =MOD(-0.47307000000000005,67400): B9 67399.52693 | B10 67399.52693 | B12 67399.52692999999
+    =MOD(0.16057000000000002,-69300): B9 -69299.83943 | B10 -69299.83943 | B12 -69299.83942999999
+    =MOD(-0.008511,81200): B9 81199.99148900001 | B10 81199.99148900001 | B12 81199.991489
+    =MOD(0.25027000000000005,-8000): B9 -7999.74973 | B10 -7999.74973 | B12 -7999.7497299999995
+    =MOD(-0.10163000000000001,1810): B9 1809.89837 | B10 1809.89837 | B12 1809.8983699999999
+    =MOD(-0.059348,2290): B9 2289.9406520000002 | B10 2289.9406520000002 | B12 2289.940652
+    =MOD(-0.20326000000000002,3030): B9 3029.79674 | B10 3029.79674 | B12 3029.7967399999998
+    =MOD(-0.8130400000000001,9200): B9 9199.18696 | B10 9199.18696 | B12 9199.186959999999
+    =MOD(-0.44182000000000005,79600): B9 79599.55818 | B10 79599.55818 | B12 79599.55817999999
+    =MOD(-0.018642,9490): B9 9489.981358000001 | B10 9489.981358000001 | B12 9489.981358
+    =MOD(0.071472,-276): B9 -275.92852800000003 | B10 -275.92852800000003 | B12 -275.928528
+
+Classes, the candidates at the hardware's widths that fit and never part: 3.
+  B9   (B4, then 0 where the double is the divisor)
+  B10   (B4, 0 where the x87 register holds the divisor (((n%d)+d)%d, every step in the register))
+  B12   (B11, then 0 where the double is the divisor)
+
+Each pair of classes, and the asked cases that part it:
+  B9  / B10  MOD-033
+  B9  / B12  MOD-034, MOD-035, MOD-036
+  B10 / B12  MOD-033, MOD-034, MOD-035, MOD-036
+  Every pair parts at an asked case.
+
+The engine (Functions.Math.cs, as EngineMod below): refuses 130316 of 3616066; answers otherwise as every candidate at the hardware's widths that fits does.
+  It refuses exactly where they part.
+
+What the engine answers where a candidate at a width no hardware holds, which fits every observed value, gives
+another double: of the inputs it answers in each search, how many, and the share of those of up to five digits.
+                                               grid       5 digits  near multiple    far smaller  near midpoint  5 digits, share
+  answered                                      418        1915635        1000000         156098         413599        100.0000%
+  B9@54                                           0          40858              0          29577           1862          2.1329%
+  B10@54                                          0          40858              0          29577           1862          2.1329%
+  B12@54                                          5          45509              0          34033           1017          2.3757%
+  B9@55                                           0          22095              0          14890           1862          1.1534%
+  B10@55                                          0          22095              0          14890           1862          1.1534%
+  B12@55                                          0          20396              0          14093           1017          1.0647%
+  B9@56                                           0          10551              0           7370           1862          0.5508%
+  B10@56                                          0          10551              0           7370           1862          0.5508%
+  B12@56                                          0           9240              0           7007           1017          0.4823%
+  B9@57                                           0           4426              0           3702           1862          0.2310%
+  B10@57                                          0           4426              0           3702           1862          0.2310%
+  B12@57                                          0           4191              0           3394           1017          0.2188%
+  B9@58                                           0           1989              0           1899           1862          0.1038%
+  B10@58                                          0           1989              0           1899           1862          0.1038%
+  B12@58                                          0           1850              0           1685           1017          0.0966%
+  B9@59                                           0            747              0            963           1862          0.0390%
+  B10@59                                          0            747              0            963           1862          0.0390%
+  B12@59                                          0            834              0            850           1017          0.0435%
+  B9@60                                           0            313              0            427           1862          0.0163%
+  B10@60                                          0            313              0            427           1862          0.0163%
+  B12@60                                          0            308              0            423           1017          0.0161%
+  B9@61                                           0            108              0            210           1862          0.0056%
+  B10@61                                          0            108              0            210           1862          0.0056%
+  B12@61                                          0            117              0            181           1017          0.0061%
+  B9@62                                           0             32              0             85           1862          0.0017%
+  B10@62                                          0             32              0             85           1862          0.0017%
+  B12@62                                          0             33              0             91           1017          0.0017%
+  B9@63                                           0              8              0             18           1190          0.0004%
+  B10@63                                          0              8              0             18           1190          0.0004%
+  B12@63                                          0              9              0             28           1017          0.0005%
+  B12@65                                          0              1              0              0           1619          0.0001%
+  any of them                                     5          65972              0          49517           3481          3.4439%
+
+  The first input of up to five digits (or of the grid) where each gives another double than the engine, and the
+  asked cases the engine answers where it does:
+    B9@54   =MOD(-0.68852,577): engine 576.31148, B9@54 576.3114800000001; asked: MOD-039, MOD-040
+    B10@54  =MOD(-0.68852,577): engine 576.31148, B10@54 576.3114800000001; asked: MOD-039, MOD-040
+    B12@54  =MOD(-0.3,7): engine 6.7, B12@54 6.699999999999999; asked: MOD-040
+    B9@55   =MOD(81.514,-60500): engine -60418.486, B9@55 -60418.486000000004; asked: MOD-039, MOD-040
+    B10@55  =MOD(81.514,-60500): engine -60418.486, B10@55 -60418.486000000004; asked: MOD-039, MOD-040
+    B12@55  =MOD(-910.87,19300): engine 18389.13, B12@55 18389.129999999997; asked: MOD-040
+    B9@56   =MOD(0.5233300000000001,-43900): engine -43899.47667, B9@56 -43899.476670000004; asked: MOD-039, MOD-040
+    B10@56  =MOD(0.5233300000000001,-43900): engine -43899.47667, B10@56 -43899.476670000004; asked: MOD-039, MOD-040
+    B12@56  =MOD(-0.65019,914): engine 913.34981, B12@56 913.3498099999999; asked: MOD-040
+    B9@57   =MOD(0.5233300000000001,-43900): engine -43899.47667, B9@57 -43899.476670000004; asked: MOD-039, MOD-040
+    B10@57  =MOD(0.5233300000000001,-43900): engine -43899.47667, B10@57 -43899.476670000004; asked: MOD-039, MOD-040
+    B12@57  =MOD(-2.9753000000000003,914): engine 911.0247, B12@57 911.0246999999999; asked: MOD-040
+    B9@58   =MOD(0.5233300000000001,-43900): engine -43899.47667, B9@58 -43899.476670000004; asked: MOD-039, MOD-040
+    B10@58  =MOD(0.5233300000000001,-43900): engine -43899.47667, B10@58 -43899.476670000004; asked: MOD-039, MOD-040
+    B12@58  =MOD(-0.034337,11300): engine 11299.965663, B12@58 11299.965662999999; asked: MOD-040
+    B9@59   =MOD(0.5233300000000001,-43900): engine -43899.47667, B9@59 -43899.476670000004; asked: MOD-039, MOD-040
+    B10@59  =MOD(0.5233300000000001,-43900): engine -43899.47667, B10@59 -43899.476670000004; asked: MOD-039, MOD-040
+    B12@59  =MOD(0.083795,-6560): engine -6559.916205, B12@59 -6559.9162049999995; asked: MOD-040
+    B9@60   =MOD(0.5233300000000001,-43900): engine -43899.47667, B9@60 -43899.476670000004; asked: MOD-039, MOD-040
+    B10@60  =MOD(0.5233300000000001,-43900): engine -43899.47667, B10@60 -43899.476670000004; asked: MOD-039, MOD-040
+    B12@60  =MOD(-0.49107000000000006,62800): engine 62799.50893, B12@60 62799.508929999996; asked: MOD-040
+    B9@61   =MOD(0.5233300000000001,-43900): engine -43899.47667, B9@61 -43899.476670000004; asked: MOD-039, MOD-040
+    B10@61  =MOD(0.5233300000000001,-43900): engine -43899.47667, B10@61 -43899.476670000004; asked: MOD-039, MOD-040
+    B12@61  =MOD(-6.698300000000001,41000): engine 40993.3017, B12@61 40993.301699999996; asked: MOD-040
+    B9@62   =MOD(-0.069032,96.80000000000001): engine 96.730968, B9@62 96.73096800000002; asked: MOD-039, MOD-040
+    B10@62  =MOD(-0.069032,96.80000000000001): engine 96.730968, B10@62 96.73096800000002; asked: MOD-039, MOD-040
+    B12@62  =MOD(0.8477800000000001,-574): engine -573.15222, B12@62 -573.1522199999999; asked: MOD-040
+    B9@63   =MOD(-0.24973,7040): engine 7039.75027, B9@63 7039.7502700000005; asked: MOD-039
+    B10@63  =MOD(-0.24973,7040): engine 7039.75027, B10@63 7039.7502700000005; asked: MOD-039
+    B12@63  =MOD(-0.000763,39600): engine 39599.999237, B12@63 39599.999236999996; asked: MOD-040
+    B12@65  =MOD(-0.06289399999999999,280): engine 279.93710599999997, B12@65 279.937106; asked: none
+
+Refusing wherever any candidate that fits every observed value parts would refuse what the engine refuses and
+the inputs of "any of them" above. Refusing wherever the divisor is added and the sum is not exact, which no
+observed answer would then pin, would refuse, of all inputs searched in each search:
+                                               grid       5 digits  near multiple    far smaller  near midpoint
+  searched                                      418        1915648        1000000         200000         500000
+  the divisor added, sum not exact               17         192038              0         200000         500000

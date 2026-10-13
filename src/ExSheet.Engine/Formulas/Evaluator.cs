@@ -75,9 +75,81 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     /// <summary>
     /// A Formula's result as it spills (ADR-0125): a range or an array of more than one Value is
     /// returned as it is, for the Sheet to spill; anything else is one Value, never blank, with the
-    /// final addition's rule applied as in <see cref="Evaluate"/>.
+    /// final addition's rule applied as in <see cref="Evaluate"/>. A Formula a call or an operator
+    /// refused (<see cref="Refuse"/>) is the refusal, <c>#VALUE!</c>, whatever the rest of it made of it
+    /// (<see cref="Value.Refusal"/>).
     /// </summary>
     public Operand EvaluateResult(Node node)
+    {
+        // A Formula computed on demand while another is evaluated has its own refusal; the outer
+        // Formula's is put back after it.
+        var outerRefusal = _refusal;
+        _refusal = null;
+        try
+        {
+            var result = Result(node);
+            return _refusal is { } refusal ? Formulas.Operand.Of(refusal) : result;
+        }
+        finally
+        {
+            _refusal = outerRefusal;
+        }
+    }
+
+    /// <summary>
+    /// The refusal of the Formula being evaluated, or <see langword="null"/>: <see cref="Value.Refusal"/> once a
+    /// function or an operator has refused it (<see cref="Refuse"/>), else <see cref="Value.RefusedName"/> once it
+    /// has called a function Excel has and ExSheet does not declare, or named a Linked Table bare
+    /// (<see cref="RefuseName"/>).
+    /// </summary>
+    private Value? _refusal;
+
+    /// <summary>
+    /// Refuses the Formula being evaluated: its result is the refusal, <c>#VALUE!</c>
+    /// (<see cref="Value.Refusal"/>), whatever the functions and operators around it make of the
+    /// Error Value returned here, so <c>IFERROR</c> cannot catch it, <c>ISBLANK</c> cannot read it as
+    /// not blank and <c>COUNTA</c> cannot count it as one Value, as a Formula that meets <c>#CIRC!</c> is
+    /// <c>#CIRC!</c> (ADR-0047). The cell's Value carries the refusal on: a Formula that reads it is
+    /// refused in turn, whatever it does with it (2026-10-12, decided with the user: a refusal is never
+    /// caught, anywhere). Every function and operator refuses so, and never with a plain <c>#VALUE!</c>,
+    /// where the readings of its evaluation part or no run has settled the answer: where it is given an
+    /// array and wants one Value, which it is not yet applied to each Value of (ADR-0125, "Not yet:
+    /// functions lifted over arrays"; IFERROR-009); where it would read a kept blank, and no run has
+    /// settled how (ADR-0125, <see cref="FunctionCall.Operand"/>); and at every argument value "admitted
+    /// with some argument values refused" keeps out (ADR-0047). A <c>#VALUE!</c> that is Excel's own
+    /// answer, such as <c>=1+"a"</c>'s, is an Error Value like any other.
+    /// </summary>
+    public Operand Refuse()
+    {
+        _refusal = Value.Refusal;
+        return Formulas.Operand.Of(Value.Refusal);
+    }
+
+    /// <summary>
+    /// Refuses the Formula being evaluated with <c>#NAME?</c> (<see cref="Value.RefusedName"/>): a call of a
+    /// function Excel has and ExSheet does not declare (<see cref="ExcelFunctionNames"/>), or a declared Linked
+    /// Table's bare name, which Excel reads as the table's data (TABLE-024). The cell shows the <c>#NAME?</c> it
+    /// showed before, but no Formula catches it, in its own cell or in any cell that reads it (2026-10-13,
+    /// decided with the user): Excel answers these, and an ordinary <c>#NAME?</c> that <c>IFERROR</c> caught
+    /// would answer otherwise. A refusal by <see cref="Refuse"/> in the same Formula comes before it.
+    /// </summary>
+    public Operand RefuseName()
+    {
+        _refusal ??= Value.RefusedName;
+        return Formulas.Operand.Of(Value.RefusedName);
+    }
+
+    /// <summary>
+    /// <see cref="Refuse"/>, for a function that answers with a Value: the Formula is refused, and the
+    /// refusal is returned to stand where the Value would.
+    /// </summary>
+    public Value Refused()
+    {
+        _refusal = Value.Refusal;
+        return Value.Refusal;
+    }
+
+    private Operand Result(Node node)
     {
         if (node is BinaryNode { Operator: "+" or "-" } final)
         {
@@ -166,29 +238,40 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
             : Formulas.Operand.Of(r.Reference.Area),
         StructuredReferenceNode s => Cells.TableColumn(s.Table, s.Column),
         NameNode { Binding: { } binding } => Read(binding),
-        NameNode or IntersectionNode => Formulas.Operand.Of(ErrorValue.Name),
+        NameNode or IntersectionNode => NamesLinkedTable(node) ? RefuseName() : Formulas.Operand.Of(ErrorValue.Name),
         LetNode l => Let(l),
         ParenthesesNode p => Operand(p.Inner),
         UnaryNode u => Map(Operand(u.Operand), value => Negate(u.Operator, value)),
         PercentNode p => Map(Operand(p.Operand), Percent),
         BinaryNode b => Binary(b),
-        FunctionNode f => f.Function is null ? Formulas.Operand.Of(ErrorValue.Name) : f.Function.Invoke(new FunctionCall(this, f.Arguments) { Place = f.Place }),
+        FunctionNode f => f.Function is null ? ExcelFunctionNames.Undeclared(f.Name) ? RefuseName() : Formulas.Operand.Of(ErrorValue.Name)
+            : f.Function.Invoke(new FunctionCall(this, f.Arguments) { Place = f.Place }),
         _ => throw new InvalidOperationException($"No evaluation for {node.GetType().Name}."),
     };
 
+    /// <summary>Whether an unbound name, or a side of an intersection, is a declared Linked Table's bare name (ADR-0049).</summary>
+    private bool NamesLinkedTable(Node node) => node switch
+    {
+        NameNode { Binding: null } name => Cells.IsLinkedTable(name.Name),
+        IntersectionNode i => NamesLinkedTable(i.Left) || NamesLinkedTable(i.Right),
+        ParenthesesNode p => NamesLinkedTable(p.Inner),
+        _ => false,
+    };
+
     /// <summary>
-    /// An operand used as one Value: a single cell is read; a rectangle of more than one cell is
-    /// <c>#VALUE!</c>, because ExSheet has no spilled arrays and will not pick one cell of it
-    /// silently. An empty argument is blank.
+    /// An operand used as one Value: a single cell is read; a rectangle of more than one cell refuses
+    /// the Formula (<see cref="Refused"/>), because Excel 365 applies what wants one Value to each Value
+    /// of it, which ExSheet does not yet (ADR-0125), and ExSheet will not pick one cell of it silently.
+    /// An empty argument is blank.
     /// </summary>
     public Value? ScalarOf(Operand operand) => operand.Kind switch
     {
         OperandKind.Scalar => operand.Scalar,
         OperandKind.Area when operand.Area.IsSingleCell => Cells.Read(new CellAddress(operand.Area.Row1, operand.Area.Column1)),
-        OperandKind.Area => Value.FromError(ErrorValue.Value),
+        OperandKind.Area => Refused(),
         OperandKind.Column when operand.Column!.Count == 1 => operand.Column[0],
-        OperandKind.Column => Value.FromError(ErrorValue.Value),
-        OperandKind.Array => operand.Array!.IsSingle ? operand.Array[0, 0] : Value.FromError(ErrorValue.Value),
+        OperandKind.Column => Refused(),
+        OperandKind.Array => operand.Array!.IsSingle ? operand.Array[0, 0] : Refused(),
         _ => null,
     };
 

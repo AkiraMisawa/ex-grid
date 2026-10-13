@@ -1,4 +1,5 @@
 using Bunit;
+using ExGrid.Components;
 using ExSheet.Engine;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
@@ -373,6 +374,28 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal(["None", "Single"], ListItems(page));
     }
 
+    [Theory] // WR-10 / ADR-0205, SH-45: each of Format Cells' dropdowns names the element that takes its keyboard a combobox, by the field's own label. Below MudBlazor 9.4.0 nothing named it, so this holds the floor on every run
+    [InlineData("Alignment", "mud-ex-sheet-format-cells-alignment", "Horizontal")]
+    [InlineData("Font", "mud-ex-sheet-format-cells-underline", "Underline")]
+    public async Task Every_dropdown_names_the_element_that_takes_its_keyboard(string tab, string field, string label)
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, tab);
+        var select = page.Find($".{field}");
+
+        var focusable = Assert.Single(TakingTheKeyboard(select));
+        Assert.True(focusable.GetAttribute("role") == "combobox", select.OuterHtml);
+        Assert.Equal(label, focusable.GetAttribute("aria-label"));
+    }
+
+    /// <summary>The elements of a field that take the keyboard, as Tab and <c>FocusAsync</c> reach
+    /// them: not a hidden input, nor one taken out of the tab order or disabled.</summary>
+    private static IReadOnlyList<AngleSharp.Dom.IElement> TakingTheKeyboard(AngleSharp.Dom.IElement field)
+        => [.. field.QuerySelectorAll("input, textarea, select, button, [tabindex]").Prepend(field).Where(e =>
+            e.Matches("input, textarea, select, button, [tabindex]")
+            && e.GetAttribute("type") != "hidden" && e.GetAttribute("tabindex") != "-1" && !e.HasAttribute("disabled"))];
+
     [Fact] // ADR-0071 / SH-45: Alignment is horizontal only, and OK sets the one chosen
     public async Task Alignment_sets_the_horizontal_alignment()
     {
@@ -402,6 +425,41 @@ public class MudFormatCellsTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.False(IsOpen(page)));
         var font = FormatAt(page, "B2").Font;
         Assert.True(font.Bold && font.Italic && font.Underline && font.Strikethrough);
+    }
+
+    [Fact] // ADR-0071, decided 2026-10-12 / SH-45: under this Chrome too, OK with Bold widens a column at the default width whose number shows ####, as Excel's Font tab did (the seventeenth Windows run, h7), in OK's one undo step; OK with a Fill widens nothing
+    public async Task Ok_with_a_font_change_widens_and_with_a_fill_does_not_h7()
+    {
+        var page = RenderPage(DocumentOf(
+            sheet => sheet.SetCellFormat([CellRange.Parse("B2:C2")], new CellFormatChange { NumberFormat = NumberFormat.Parse("0.00") }),
+            ("B2", "123456789.12"), ("C2", "123456789.12")));
+        var grid = page.FindComponent<ExGrid<SheetRow>>();
+        double WidthOf(int column) => grid.Instance.Columns[column].Width.Width.FixedPx;
+        var standard = WidthOf(1);
+
+        await OpenAsync(page, "C2");
+        await ShowTabAsync(page, "Fill");
+        await SwatchAsync(page, "Yellow");
+        await OkAsync(page);
+        Assert.False(IsOpen(page));
+        Assert.Equal(standard, WidthOf(2));
+        Assert.Empty(Sheet(page).ToDocument().ColumnWidths);
+
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Font");
+        await ChooseAsync(page, "Bold");
+        await OkAsync(page);
+
+        Assert.False(IsOpen(page));
+        Assert.True(FormatAt(page, "B2").Font.Bold);
+        Assert.True(WidthOf(1) > standard);
+        Assert.Equal(standard, WidthOf(2));
+        var widened = Assert.Single(Sheet(page).ToDocument().ColumnWidths);
+        Assert.Equal((1, SheetColumnWidthKind.WidenedByEntry), (widened.First, widened.Kind));
+        Assert.True(await page.InvokeAsync(Sheet(page).UndoAsync));
+        Assert.False(FormatAt(page, "B2").Font.Bold);
+        Assert.Equal(standard, WidthOf(1));
+        Assert.Empty(Sheet(page).ToDocument().ColumnWidths);
     }
 
     [Fact] // ADR-0071 (2026-10-02) / SH-55: the Font tab's Normal font box sets every part of the Font to its default
@@ -505,7 +563,7 @@ public class MudFormatCellsTests : MudSheetTestContext
     private static IReadOnlySet<CellFormat> RecordedAt(IRenderedComponent<Bunit.Rendering.ContainerFragment> page, string range) =>
         global::ExSheet.Engine.Sheet.Open(Sheet(page).ToDocument()).GetCellFormats(CellRange.Parse(range));
 
-    [Fact] // ADR-0071 / SH-45, case 14-13: under this Chrome too, A2 under A1's thick bottom opens with a thick top, its button pressed
+    [Fact] // ADR-0071 / SH-45, case 14-13: under this Chrome too, A2 under A1's thick bottom opens with a thick top, its button pressed; and with Thick chosen in Style, the one line A2 shows (the seventeenth Windows run, h10)
     public async Task A2_under_a1s_thick_bottom_opens_with_a_thick_top_case_14_13()
     {
         var page = RenderPage(ThickBottomOnA1());
@@ -516,6 +574,8 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal("true", page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Top]").GetAttribute("aria-pressed"));
         Assert.Equal("3", page.Find(".mud-ex-sheet-format-cells-preview line[data-edge=Top]").GetAttribute("stroke-width"));
         Assert.Equal("false", page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Bottom]").GetAttribute("aria-pressed"));
+        Assert.True(Radio(page, "Thick").HasAttribute("checked"));
+        Assert.False(Radio(page, "Thin").HasAttribute("checked"));
     }
 
     [Fact] // ADR-0071 / SH-45, case 14-13: OK with the shown top left alone sets nothing: A2 still records no top, and no undo step is added
@@ -533,14 +593,14 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal(Thick, FormatAt(page, "A1").Borders.Bottom);
     }
 
-    [Fact] // ADR-0071 / SH-45, case 14-13 (a reading: no run pressed it): taking the shown top away clears A1's bottom too, so no line is drawn there
+    [Fact] // ADR-0071 / SH-45, case 14-13 (observed in Excel, the seventeenth Windows run, h10): the Top button alone takes the shown top away, and OK clears A1's bottom too, so no line is drawn there
     public async Task Taking_the_shown_top_away_clears_a1s_bottom_case_14_13()
     {
         var page = RenderPage(ThickBottomOnA1());
         await OpenAsync(page, "A2");
         await ShowTabAsync(page, "Border");
 
-        await ChooseAsync(page, "Thick");
+        // What the run pressed: the Top button, then OK. The tab opened on the thick line.
         await page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Top]").ClickAsync(new MouseEventArgs());
         Assert.Equal("false", page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Top]").GetAttribute("aria-pressed"));
         await OkAsync(page);

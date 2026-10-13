@@ -119,6 +119,15 @@
       "cells": {"A1": "5", "ZZ1000": "=$A$1"},
       "check": "ZZ1000",
       "expect": {"value2": 5}
+    },
+    {
+      "id": "REF-015",
+      "source": "uncertain",
+      "description": "A Reference to a refused cell in a branch not taken refuses the Formula, as one to a cycle makes it #CIRC!: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001); what IF(TRUE,1,B1) gives is asked",
+      "cells": {"B1": "=MROUND(6.05,0.1)", "ZZ1000": "=IF(TRUE,1,B1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND's fractional multiple is refused (ADR-0047), and a Formula whose text names a refused cell is refused whether or not the branch naming it is taken, as #CIRC! is (ADR-0047)"
     }
   ]
 }

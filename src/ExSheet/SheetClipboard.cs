@@ -55,6 +55,12 @@ internal static partial class SheetClipboard
     /// <item>Several ranges combined into one block, or a copy with the headers, carry the same
     /// Values cell by cell, and no Entries: a block of several ranges was never one place its
     /// References were relative to.</item>
+    /// <item>Either way, a refused cell (<see cref="Value.IsRefused"/>) is written as it shows,
+    /// <c>#VALUE!</c> or <c>#NAME?</c>, in both flavours, and its cell of the HTML table carries ExSheet's mark
+    /// (<see cref="RefusedMarkFor"/> in <see cref="ClipboardData.MarkAttribute"/>), which another
+    /// program ignores. A paste into a Sheet that reads the mark is refused by name rather than typed:
+    /// as a value, the refusal would become an Error Value a Formula can catch (ADR-0047; 2026-10-12,
+    /// decided with the user: a refusal is never caught, anywhere).</item>
     /// </list>
     /// </summary>
     internal static (GridCopyAnswer Answer, SheetOwnCopy? Own) Answer(Sheet sheet, GridCopyRequest request)
@@ -71,18 +77,75 @@ internal static partial class SheetClipboard
         if (copies.Count == 1 && !request.WithHeaders)
         {
             var copy = copies[0];
-            var html = Marked(copy.Html!);
+            var range = RangeOf(plan.Segments[0]);
+            var width = range.Last.Column - range.First.Column + 1;
+            // The engine writes its table's cells row by row over the range.
+            var html = MarkRefused(sheet, Marked(copy.Html!), checked((int)range.CellCount),
+                i => new CellAddress(range.First.Row + i / width, range.First.Column + i % width));
             var fields = ClipboardParse.Parse(html, copy.Text)
                 ?? throw new InvalidOperationException("The engine's copy of a range read back as nothing.");
             return (GridCopyAnswer.Write(copy.Text!, html), new SheetOwnCopy(copy.Block!, fields));
         }
 
+        // The cells in the order the table writes them, header cells apart (they are <th>).
+        var written = new List<CellAddress>();
         var (text, combined) = ClipboardData.Assemble(
             plan,
             (row, column) => ShownText(sheet, new CellAddress(row, column)),
-            (row, column) => sheet.GetValue(new CellAddress(row, column))?.ToString() ?? "",
+            (row, column) =>
+            {
+                var address = new CellAddress(row, column);
+                written.Add(address);
+                return sheet.GetValue(address)?.ToString() ?? "";
+            },
             request.WithHeaders ? CellAddress.ColumnName : null);
-        return (GridCopyAnswer.Write(text, combined), null);
+        return (GridCopyAnswer.Write(text, MarkRefused(sheet, combined, written.Count, i => written[i])), null);
+    }
+
+    private const string RefusedMarkPrefix = "exsheet-refused:";
+
+    /// <summary>
+    /// ExSheet's mark on a refused cell of its clipboard table (<see cref="ClipboardData.MarkAttribute"/>):
+    /// the cell it was copied from, so that the refusal of a paste can name it.
+    /// </summary>
+    internal static string RefusedMarkFor(CellAddress copiedFrom) => RefusedMarkPrefix + copiedFrom;
+
+    /// <summary>The cell a pasted field was copied from when ExSheet marked it refused
+    /// (<see cref="RefusedMarkFor"/>), or null for any other field.</summary>
+    internal static CellAddress? RefusedIn(string? mark) =>
+        mark is not null && mark.StartsWith(RefusedMarkPrefix, StringComparison.Ordinal)
+        && CellAddress.TryParse(mark[RefusedMarkPrefix.Length..], out var address)
+            ? address
+            : null;
+
+    /// <summary>
+    /// <paramref name="html"/> with ExSheet's mark on the <c>&lt;td&gt;</c> of every refused cell:
+    /// <paramref name="cellAt"/> names the table's <paramref name="count"/> cells in the order it writes them. Every cell of the
+    /// table is a <c>&lt;td</c> and every other <c>&lt;</c> in it is escaped, so the n-th <c>&lt;td</c> is
+    /// the n-th cell; a table that holds another count is a defect said by name, never a mark on the
+    /// wrong cell.
+    /// </summary>
+    private static string MarkRefused(Sheet sheet, string html, int count, Func<int, CellAddress> cellAt)
+    {
+        var marked = new System.Text.StringBuilder(html.Length);
+        var from = 0;
+        var cell = 0;
+        while (true)
+        {
+            var at = html.IndexOf("<td", from, StringComparison.Ordinal);
+            if (at < 0) break;
+            if (cell >= count)
+                throw new InvalidOperationException("The Sheet's copy holds more cells than it was written from, so ExSheet cannot mark its refused cells.");
+            var open = at + "<td".Length;
+            marked.Append(html, from, open - from);
+            if (sheet.GetValue(cellAt(cell)) is { IsRefused: true })
+                marked.Append(' ').Append(ClipboardData.MarkAttribute).Append("=\"").Append(RefusedMarkFor(cellAt(cell))).Append('"');
+            from = open;
+            cell++;
+        }
+        if (cell != count)
+            throw new InvalidOperationException("The Sheet's copy holds fewer cells than it was written from, so ExSheet cannot mark its refused cells.");
+        return marked.Append(html, from, html.Length - from).ToString();
     }
 
     /// <summary>

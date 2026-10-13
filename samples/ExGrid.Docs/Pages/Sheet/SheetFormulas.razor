@@ -57,14 +57,28 @@
     <DocsSection Title="Supported functions">
         <p>
             Each function gives Excel's result. A name outside this set is <code>#NAME?</code>, never an
-            approximation of what the function might have meant.
+            approximation of what the function might have meant. Where Excel has the function, that
+            <code>#NAME?</code> is ExSheet's refusal, which no Formula catches; a name Excel does not have either is
+            Excel's own <code>#NAME?</code>.
         </p>
         <p>
             The engine supports @DeclaredFunction.All.Count functions. Each one, with its arguments as Excel writes them
             and what it returns, is on the <a href="exsheet/functions">Functions</a> page, by category, with a filter
             and the functions that are not supported yet.
         </p>
-        <p>Where the engine cannot give Excel's answer, it gives an Error Value instead of a different answer:</p>
+        <p>
+            Where the engine cannot give Excel's answer, it gives an Error Value instead of a different answer.
+            Such a <code>#VALUE!</code> is a refusal, and nothing turns it into an answer: not <code>IFERROR</code>,
+            <code>ISERROR</code>, <code>COUNT</code> or any other function around it, and not a Formula in another
+            cell that reads it, directly, through a range, <code>INDIRECT</code>, a Spill Range or a Linked Table,
+            which is refused in turn, as one that reads a circular reference is <code>#CIRC!</code>. Excel's own
+            <code>#VALUE!</code>, such as <code>=1+"a"</code>'s, is caught as in Excel. A copy writes a refused
+            cell as <code>#VALUE!</code>, which another program reads as Excel's Error Value. Pasted back into the
+            Sheet it was copied from, a copy of one range brings its Formula; any other paste of a copy that holds
+            one, of several ranges, with the headers, or into another Sheet on the page, is refused rather than
+            pasted as a value. The Selection Summary shows no figure over a refused cell, and says why.
+        </p>
+        <p>The refusals, and the other Error Values the engine gives in place of an answer:</p>
         <ul>
             <li>
                 <b><code>#CIRC!</code></b> is shown by every cell of a circular reference and every Formula that reads
@@ -72,8 +86,9 @@
             </li>
             <li>
                 <b>A function given a range where it takes one Value.</b> Excel 365 applies such a function to each
-                Value and spills the results, so <code>=ROUND(B2:E2, -3)</code> gives four. ExSheet does not yet: it is
-                <code>#VALUE!</code>.
+                Value and spills the results, so <code>=ROUND(B2:E2, -3)</code> gives four. ExSheet does not yet: the
+                Formula is <code>#VALUE!</code>, and nothing around the call turns that into an answer, so
+                <code>=IFERROR(ROUND(B2:E2, -3), 0)</code> is <code>#VALUE!</code> too.
             </li>
             <li>
                 <b>An array too large to hold.</b> An array of more than 2<sup>24</sup> Values, sixteen whole columns,
@@ -84,9 +99,31 @@
                 -2) answers only over a lookup array sorted as the mode says; otherwise it is <code>#VALUE!</code>.
             </li>
             <li>
-                <b>A blank among <code>SORT</code>'s or <code>SORTBY</code>'s keys, or in <code>UNIQUE</code>'s
-                array,</b> is <code>#VALUE!</code>. Excel sorts it, but where it goes and what its cell shows have not
-                been read yet.
+                <b>An Error Value among <code>SORT</code>'s keys</b> is sorted where it already follows every number:
+                over 7 and then <code>#N/A</code>, Excel's Anchor shows 7, which fits an Error Value sorted after the
+                numbers and one that keeps its place alike. With a number after it, beside text, a boolean, a blank or
+                another Error Value, in a descending sort, and among <code>SORTBY</code>'s keys, the Formula is
+                <code>#VALUE!</code> until Excel has been asked where it goes.
+            </li>
+            <li>
+                <b>A blank among <code>SORT</code>'s or <code>SORTBY</code>'s keys</b> sorts after numbers, text and
+                booleans, in either order, and in <code>UNIQUE</code> a blank is one of a kind only with another blank;
+                it spills as 0. Excel's <code>SORT</code> was seen to sort it after numbers and text in either order
+                and after a boolean ascending, its <code>SORTBY</code> after a number ascending, and its
+                <code>UNIQUE</code> to count it one of a kind only with another blank, and both <code>SORT</code> and
+                <code>UNIQUE</code> spilled it as 0; the rest is ExSheet's own reading until Excel has been asked.
+                Beside an Error Value key the Formula is <code>#VALUE!</code>.
+            </li>
+            <li>
+                <b>A blank <code>UNIQUE</code>, <code>SORT</code>, <code>SORTBY</code>, <code>FILTER</code> or
+                <code>TRANSPOSE</code> keeps, read inside a Formula.</b> <code>COUNTA</code> counts it and
+                <code>INDEX</code> takes it out as a blank. Excel was seen to count it with <code>COUNTA</code>
+                in <code>SORT</code>'s and <code>UNIQUE</code>'s array, to find it blank with <code>ISBLANK</code>
+                once <code>INDEX</code> took it out of <code>SORT</code>'s, and equal to <code>""</code> once taken
+                out of <code>UNIQUE</code>'s; the rest, the other three included, is ExSheet's own reading until
+                Excel has been asked. A function whose readings of it part, such as <code>AVERAGE</code>, <code>MIN</code> or
+                <code>COUNT</code>, makes the Formula <code>#VALUE!</code>, which <code>IFERROR</code> does not catch,
+                so <code>=AVERAGE(FILTER(A2:A9, B2:B9="North"))</code> over a blank is <code>#VALUE!</code>.
             </li>
             <li>
                 <b><code>#GETTING_DATA</code></b>, a Linked Table's data still on its way, is not an error to
@@ -106,7 +143,9 @@
                 Anchor of the Spill Range it belongs to — is nested, as Excel counts one: <code>SUBTOTAL</code> and
                 <code>AGGREGATE</code>'s options 0 to 3 pass over it, and options 4 to 7 count its value. An
                 <code>AGGREGATE</code> function number for a function the Sheet does not have, such as 13,
-                <code>MODE.SNGL</code>, is <code>#VALUE!</code>.
+                <code>MODE.SNGL</code>, is <code>#VALUE!</code>. Given text or a boolean in place of its array,
+                <code>AGGREGATE</code>'s <code>LARGE</code> and <code>SMALL</code> find no number, as Excel's do:
+                <code>=AGGREGATE(14,6,"5",1)</code> is <code>#NUM!</code>.
             </li>
             <li>
                 <b>Arguments that take only a Reference.</b> <code>SUBTOTAL</code>'s references, <code>RANK.EQ</code>'s
@@ -117,21 +156,48 @@
                 their kin are taken, since they can give one.
             </li>
             <li>
-                <b><code>LARGE</code> and <code>SMALL</code>'s k.</b> <code>LARGE</code> rounds a k that is not whole
-                up, as Excel does: <code>=LARGE(A1:B5,1.5)</code> is the 2nd largest. <code>SMALL</code>'s, and a k
-                between 0 and 1, are <code>#VALUE!</code> until Excel has been asked. <b><code>MOD</code></b> is
-                <code>#NUM!</code> from a quotient of 1,125,900,000,000, the limit reported of Excel 365.
+                <b><code>LARGE</code> and <code>SMALL</code>'s k.</b> A k that is not whole is rounded up by
+                <code>LARGE</code> and truncated by <code>SMALL</code>, as Excel does: <code>=LARGE(A1:B5,1.5)</code>
+                is the 2nd largest, and <code>=SMALL(A1:A9,1.5)</code> the smallest. A k below 1 or above the count
+                of the numbers is <code>#NUM!</code>, whole or not: <code>=SMALL(A1:A9,9.5)</code> over nine numbers
+                is <code>#NUM!</code>. <b><code>MOD</code></b>'s remainder is exact, as Excel's is:
+                <code>=MOD(1,0.1)</code> is 0.09999999999999995, where
+                <code>number - divisor*INT(number/divisor)</code> in doubles would give 0. Where the divisor is
+                added to a remainder of the other sign, the sum is held at 64 bits before it is stored, which gives
+                Excel's <code>=MOD(-0.087626,6630)</code>, 6629.9123739999995, and a sum stored as the divisor is 0,
+                as Excel's <code>=MOD(-1E-20,1)</code> is. Where the ways of computing it at 64 bits that give every
+                answer Excel was seen to give part, it is <code>#VALUE!</code> until Excel has been asked: a sum that
+                is the divisor only once stored, as in <code>=MOD(-1E-17,1)</code>, and a sum a hair from the
+                midpoint between two doubles, as in <code>=MOD(-0.084474,2270)</code>, about one input of up to five
+                digits in 150,000. Holding the sum at some other widths wider than a double's, which no hardware
+                holds, would give those answers too, and another last digit for about 3 inputs of up to five digits
+                in 100, as in <code>=MOD(-0.024901,2350)</code>; there it answers as 64 bits do, and Excel has yet
+                to be asked. It is <code>#NUM!</code> from a quotient of 1,125,900,000,000, as Excel 365's.
             </li>
             <li>
                 <b><code>INDIRECT</code></b> reads A1-style text naming a cell or a range of the same Sheet. Like
                 <code>OFFSET</code> it is recalculated after every change, and its text is only text: inserting a row
                 rewrites the References beside it, never the text. It also reads what Excel was seen to read: R1C1
-                text (<code>a1</code> FALSE) naming a cell or a range, <code>R3C2</code> or <code>R2C2:R5C2</code>; a
-                Linked Table's column as text, <code>Positions[PV]</code>, which waits while the table does; and a
-                Spill Range, <code>A1#</code>. R1C1 text that is relative, <code>R[1]C[-1]</code>, or names whole rows
-                or columns, and a Linked Table's name on its own (<code>"Positions"</code>, which Excel reads as the
-                table's data), are <code>#VALUE!</code> until Excel has been asked; text that names no place, another
-                Sheet's name or a table that does not exist included, is <code>#REF!</code>, as in Excel.
+                text (<code>a1</code> FALSE) naming a cell or a range, <code>R3C2</code> or <code>R2C2:R5C2</code>,
+                counted from the Formula's own cell by offsets in brackets, <code>R[1]C[-1]</code>, or from its own
+                row or column where R or C has no number, <code>RC[-1]</code>; naming whole rows and columns,
+                <code>R3</code>, <code>C[-1]</code> or <code>R2:R3</code>; or a Spill Range, <code>R1C1#</code>.
+                Other combinations of these forms are read by the same rule until Excel has been asked them. It
+                reads a Linked Table's column as text, <code>Positions[PV]</code>, which waits while the table
+                does, and a Spill Range, <code>A1#</code>. R1C1 text that joins a cell to a whole row, or a row to
+                a column, <code>R2C2:R3</code> or <code>R3:C2</code>, names no place and is <code>#REF!</code>, as in
+                Excel; so is text naming another Sheet or a table that does not exist, as Excel's A1 text is. Some
+                text is <code>#VALUE!</code> until Excel has told what it names: in R1C1 style, an offset past the
+                Sheet's edge, <code>R[-5]C[-1]</code> from row 2, which Excel reads as a place without saying yet
+                which, and a row or column number 0, <code>R0C2</code>, or one past the Sheet's edge,
+                <code>R1048577C2</code>, while A1 text past the edge, <code>XFE1</code>, is <code>#REF!</code>, as
+                in Excel; and, in either style, <code>#</code> after a range, a row or a column,
+                <code>A1:A2#</code>, <code>R3#</code> or <code>R2C2:R3#</code>, or inside a join,
+                <code>A1#:A2</code> or <code>R1C1#:R2C1</code>. A Linked
+                Table's name on its own, <code>"Positions"</code>, is
+                <code>#VALUE!</code>, though Excel reads the table's data: a Linked Table is read by its columns
+                and by key, never by position, so that a Formula never reads a row by where it stands. Typed in a
+                Formula, the name on its own is <code>#NAME?</code>, which no Formula catches.
                 What <code>INDIRECT</code> or <code>OFFSET</code> reaches counts as a Reference typed in the Formula
                 would: one that reaches its own cell or a circular reference is <code>#CIRC!</code>, and one that
                 reaches data still on its way waits, even under <code>COUNT</code> or an <code>AGGREGATE</code>
@@ -164,20 +230,69 @@
                 refuses a fractional bound, and one past 2<sup>53</sup>, with <code>#VALUE!</code>.
             </li>
             <li>
-                <b><code>PMT</code>, <code>PV</code> and <code>FV</code></b> give, to the last digit, every result Excel
-                was seen to give for them. Which result that is depends on how Excel raises 1+rate to the number of
-                periods. For <code>PMT</code> it rests on payments at rates of 0.5% to 10% a period. At much smaller
-                rates Excel has not been asked, and its payment may differ from ExSheet's from the 13th significant
-                digit. At a rate other than 0, a number of periods that is not a whole number, or is negative, is
-                <code>#VALUE!</code> until Excel has been asked how it raises to one; so is a <code>type</code> that is
-                not a whole number. Any other <code>type</code> but 0, 2 as well as 1, is payment at the start of each
-                period, as Excel reads it.
+                <b><code>PV</code>, <code>FV</code> and <code>XNPV</code></b> give, to the last digit, every result Excel
+                was seen to give for them, Error Values included. 1+rate is raised to the number of periods by
+                squaring to a whole number, as 1 over the power to a negative one, by the square root at half a
+                period, and otherwise as e<sup>n·ln(1+rate)</sup> with the exponential and the logarithm correctly
+                rounded, which ExSheet computes the same on every platform. A negative 1+rate has an odd root, as
+                <code>(-8)^(1/3)</code> does, and no other fractional power (<code>#NUM!</code>); at a rate of -1 no
+                periods is <code>#NUM!</code> and a negative number of periods <code>#DIV/0!</code>, as Excel gave
+                them. <code>PV</code> at a rate of -1 with periods is <code>#VALUE!</code> until Excel has
+                been asked. <code>type</code> is read as a truth value: any number but 0, 0.5 and 2 as well as 1, is
+                payment at the start of each period, as Excel reads it. <code>XNPV</code> counts the years as the days
+                over 365 and sums from the first value. A rate below 0 is <code>#NUM!</code>, which is Excel's answer
+                at every negative rate it was asked, -0.5 to -2, and ExSheet's own between -0.5 and 0 until Excel has
+                been asked; a rate of exactly 0, or values whose last addition nearly cancels, are
+                <code>#VALUE!</code> until Excel has been asked. An Error Value in the rate, the values or the dates is
+                that Error Value, but <code>#VALUE!</code> where another check would give another answer (a rate below
+                0 or of 0, counts that differ, a date before the first, or a different Error Value anywhere among
+                them), since the order Excel checks them in has not been observed. A cell of the values or the dates
+                that is not a number, whether text, a truth value or blank, is <code>#VALUE!</code> until Excel has
+                been asked, whatever else is among them.
+                <b><code>PMT</code></b>, where it answers, gives the exact payment, rounded once, at the end of each
+                period and at the start; it reads
+                <code>type</code> as <code>PV</code> and <code>FV</code> do. Excel's own payment can differ from
+                ExSheet's in its last digits: of the 30 payments Excel was asked, 23 differ by one to eleven units in
+                the last of a double's digits, a relative difference of at most about 1.3·10<sup>-15</sup>, which at
+                two of them shows in the 15th significant digit. No evaluation found gives every payment Excel gave,
+                and this is a known limitation of 0.1.0. Where the evaluations Excel's payments leave give different
+                kinds of answer, or answers far apart, <code>PMT</code> is <code>#VALUE!</code> until Excel has been
+                asked: at a rate of -1 or below (there a number of periods that is a fraction whose reciprocal is not
+                odd is <code>#NUM!</code>), where a number it works with would pass a double's range or fall below its
+                normal numbers, as in <code>=PMT(1,1020,1000)</code>, where 1+rate raised lies below
+                2<sup>-52</sup>, with no periods at the start of each period, and where the evaluations would lose more
+                than a few of their last digits, as where the present value grown and the future value nearly cancel
+                (<code>=PMT(0.1,2,1000,-1210)</code>) or a number of periods is tiny at the start of each period.
+                <b><code>NPV</code></b> is <code>#NAME?</code>, which no Formula catches, as <code>IRR</code>'s is: its last digits differ from
+                Excel's, and no evaluation found gives every result Excel was seen to give.
             </li>
             <li>
                 <b><code>TEXT</code></b> reads its code in the invariant spelling and shows what a cell in that format
-                would show, under the Sheet's culture. A code a cell format does not have is <code>#VALUE!</code>,
+                would show, under the Sheet's culture. <code>General</code>, and <code>@@</code> alone, fit a number to 11
+                characters, as a wide column's General does, and a minus sign is not one of them:
+                <code>TEXT(-1/3,"General")</code> is <code>-0.333333333</code>. A code a cell format does not have is
+                <code>#VALUE!</code>,
                 though Excel answers it: a fraction such as <code># ?/?</code>, or a condition such as
                 <code>[&lt;=9]</code>.
+            </li>
+            <li>
+                <b><code>SORT</code>'s <code>sort_index</code></b> that is not a whole number,
+                <code>=SORT(G1:H5,1.5)</code>, is <code>#VALUE!</code> until Excel has been asked whether it truncates
+                it, rounds it or takes no fraction at all.
+            </li>
+            <li>
+                <b>A serial between -1 and 0</b> under <code>DATEDIF</code>, <code>YEARFRAC</code>, <code>HOUR</code>,
+                <code>MINUTE</code> and <code>SECOND</code> is <code>#VALUE!</code> until Excel has been asked: cut
+                down to -1 it would be <code>#NUM!</code>, and read as a time of day <code>HOUR(-0.5)</code> would be
+                12. At -1 and below they are <code>#NUM!</code>, as Excel was seen to answer at -1.
+            </li>
+            <li>
+                <b>A refused Formula that would spill.</b> Where its text settles the shape of its array, as
+                <code>=B1:B3*2</code> over a refused B2 does, every cell the array covers is refused with it, so a
+                Formula that reads one is refused too; where something stands in the way, it is <code>#SPILL!</code>. Where the shape could depend on a Value, as with <code>FILTER</code>,
+                <code>UNIQUE</code>, <code>SORT</code>, <code>SEQUENCE</code>, <code>LET</code> or
+                <code>=LEN(A1:A3)</code>, nothing spills, and the cells its array would cover read as blank: a known
+                limitation of 0.1.0.
             </li>
         </ul>
         <DocsExample Title="A seeded simulation" Builtin="typeof(SeededDraws)" Mud="typeof(SeededDrawsMud)" Files="@(["Examples/Sheet/DiceRolls.cs"])">
@@ -203,8 +318,13 @@
             <li>
                 <b>Pointing.</b> Wherever a Reference can go — after <code>=</code>, an operator, <code>(</code> or
                 <code>,</code> — the arrow keys and the mouse point at cells and write their Reference. Shift and an
-                arrow, or a drag, writes a range. F4 cycles the Reference at the caret through <code>$A$1</code>,
-                <code>A$1</code>, <code>$A1</code> and <code>A1</code>.
+                arrow, or a drag, writes a range, and Shift+Home a range to the row's first column. Typed into the
+                Formula Bar, the arrow keys move the caret instead, as they do in Excel's bar, until <kbd>F2</kbd>
+                points. F4 cycles the Reference at the caret through <code>$A$1</code>, <code>A$1</code>,
+                <code>$A1</code> and <code>A1</code>; in a range typed out only the end at the caret cycles, and its
+                column letters are written in upper case, while a range being pointed at cycles whole. Where the caret
+                was moved with a key or a press, the rewritten Reference is left selected, so the next F4 cycles it
+                again; where typing left the caret, the caret stands after it.
             </li>
             <li>
                 <b>Reference outlines.</b> Each Reference in the Formula being edited wears a colour, and the cells it

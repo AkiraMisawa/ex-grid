@@ -1,0 +1,68 @@
+node v24.14.1, dotnet 10.0.203
+== 2026-10-12T13:09:45Z host=wasm tag=diag-9.2.0 diagnostic spec
+Running 2 tests using 1 worker
+FLOOR-FOCUS active=INPUT[type=text].mud-input-slot.mud-input-root
+  62ms focusout BUTTON[type=button][role=menuitem].mud-button-root.mud-button
+  63ms focusin BUTTON[type=button][role=menuitem].mud-button-root.mud-button
+  196ms focusout BUTTON[type=button][role=menuitem].mud-button-root.mud-button
+  203ms focusin BUTTON[type=button].mud-button-root.mud-button
+  206ms focusout BUTTON[type=button].mud-button-root.mud-button
+  207ms focusin INPUT[type=text].mud-input-slot.mud-input-root
+  ✓  1 [chrome] › zz-floor-focus.spec.mjs:9:1 › floor diagnostic: focus events while Field Settings opens (6.3s)
+FLOOR-OPERATOR elements=[{"tag":"INPUT","type":"hidden","tabindex":null,"role":null,"label":null,"focused":false},{"tag":"DIV","type":null,"tabindex":"0","role":null,"label":null,"focused":true}] getByRole(combobox, Operator)=0
+  ✓  2 [chrome] › zz-floor-focus.spec.mjs:44:1 › floor diagnostic: the filter panel Operator as focused, and where its role and name are (900ms)
+  2 passed (31.5s)
+== 2026-10-12T13:10:18Z host=wasm tag=diag-9.2.0 base=http://localhost:5491 head=0c0ab368 locations=popovers.spec.mjs:399 mud-app.spec.mjs:355 pivot.spec.mjs:603 pivot.spec.mjs:787
+Running 4 tests using 1 worker
+  ✘  1 [chrome] › mud-app.spec.mjs:355:1 › WR-7: a grid in a MudDialog opens its popovers whole inside its box, and its Inner Popups above the dialog (ADR-0040/0039) (1.1m)
+  ✓  2 [chrome] › pivot.spec.mjs:603:9 › under the mud Chrome › ADR-0061 (PV-11): a press on a pane caption dismisses only the field menu (mud) (4.9s)
+  ✓  3 [chrome] › pivot.spec.mjs:787:9 › under the mud Chrome › ADR-0061: a cramped Field List keeps its heading close button reachable while scrolling (mud) (1.5s)
+  ✘  4 [chrome] › popovers.spec.mjs:399:9 › under the mud Chrome › Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044) (1.2m)
+
+  1) [chrome] › mud-app.spec.mjs:355:1 › WR-7: a grid in a MudDialog opens its popovers whole inside its box, and its Inner Popups above the dialog (ADR-0040/0039) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('#dialog-paper .ex-grid').locator('.ex-popover').getByRole('combobox', { name: 'Operator' })
+    Expected: visible
+    Timeout: 60000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 60000ms
+      - waiting for locator('#dialog-paper .ex-grid').locator('.ex-popover').getByRole('combobox', { name: 'Operator' })
+
+
+      402 |     await dialogGrid.locator('.ex-menu-button').nth(3).click();
+      403 |     const operator = popover.getByRole('combobox', { name: 'Operator' });
+    > 404 |     await expect(operator).toBeVisible();
+          |                            ^
+      405 |     await operator.click();
+      406 |     const item = page.locator('.mud-popover-open .mud-list-item').first();
+      407 |     await expect(item).toBeVisible();
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/mud-app.spec.mjs:404:28
+
+
+  2) [chrome] › popovers.spec.mjs:399:9 › under the mud Chrome › Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    Call Log:
+    - Timeout 60000ms exceeded while waiting on the predicate
+
+      65 |     await expect(panel).toBeVisible();
+      66 |     await page.keyboard.press('Tab');
+    > 67 |     await expect.poll(() => activeIsOperator(page)).toBe(true);
+         |                                                     ^
+      68 |     return panel;
+      69 | }
+      70 |
+        at openNotionalPanel (/home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:67:53)
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/popovers.spec.mjs:400:13
+
+  2 failed
+  2 passed (3.0m)
+== exit 1 at 2026-10-12T13:13:21Z

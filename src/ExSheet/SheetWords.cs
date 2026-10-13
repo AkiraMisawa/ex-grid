@@ -69,6 +69,33 @@ internal static class SheetWords
     internal static string PasteReadsDifferently(string field, CultureInfo culture) =>
         $"Nothing was pasted: '{field}' came as a value no culture changes, and typed under {culture.Name} it would not read as that value.";
 
+    /// <summary>
+    /// A paste of a Sheet's copy that holds a cell ExSheet marked refused, other than this Sheet's own
+    /// copy of one range, whose Formulas are pasted (ADR-0047; 2026-10-12, decided with the user: a
+    /// refusal is never caught, anywhere): pasted as a value, the refusal would become an Error Value a
+    /// Formula can catch. <paramref name="refused"/> is the cell it was copied from.
+    /// </summary>
+    internal static string PasteRefusedFormula(CellAddress refused) =>
+        $"Nothing was pasted: the copy holds {refused}, whose Formula ExSheet refused because it cannot answer it as Excel does. Pasted as a value, its refusal would become an Error Value a Formula can catch. To paste its Formula, copy one range alone, without the headers, and paste it into the Sheet it was copied from.";
+
+    /// <summary>
+    /// ExSheet's English for <see cref="SheetCommandIds.SummaryRefused"/>, <c>{0}</c> standing for the cell and
+    /// <c>{1}</c> for what it shows, <c>#VALUE!</c> or <c>#NAME?</c>: why the Selection Summary shows no figure
+    /// over a refused cell (2026-10-13, decided with the user: no figure, and why).
+    /// </summary>
+    internal const string SummaryRefusedEnglish =
+        "No figures: ExSheet refused the Formula in {0} with {1} because it cannot answer it as Excel does, so a figure over it would not be Excel's.";
+
+    /// <summary>
+    /// Why the Selection Summary is declined over <paramref name="refused"/> (2026-10-13, decided with the
+    /// user): the words for <see cref="SheetCommandIds.SummaryRefused"/> through <paramref name="label"/>,
+    /// else ExSheet's English, with the cell's address for <c>{0}</c> and what it shows for <c>{1}</c>.
+    /// </summary>
+    internal static string SummaryRefused(CellAddress refused, string shown, Func<string, string?> label) =>
+        (label(SheetCommandIds.SummaryRefused) ?? SummaryRefusedEnglish)
+            .Replace("{0}", refused.ToString(), StringComparison.Ordinal)
+            .Replace("{1}", shown, StringComparison.Ordinal);
+
     internal static string PasteTooNarrowToShow(string field, CellAddress at) =>
         $"Nothing was pasted: the field for {at} is '{field}', which is how the source shows a value too wide for its column. The source column was too narrow to show the value, so the value itself was not copied. Widen the column there and copy again.";
 

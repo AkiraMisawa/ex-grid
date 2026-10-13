@@ -7,7 +7,8 @@ internal static partial class FunctionLibrary
     /// MROUND for whole-number multiples. Decimal multiples are refused: the Windows run's
     /// 6.05, 7.05, 0.15 and 0.35 midpoints cannot all be reproduced by one ordinary binary
     /// rounding operation, and Microsoft's MROUND documentation leaves their direction undefined.
-    /// ADR-0047 permits this refusal, never an invented epsilon or a different numeric answer.
+    /// ADR-0047 permits this refusal (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's),
+    /// never an invented epsilon or a different numeric answer.
     /// </summary>
     private static Operand MRound(FunctionCall call)
     {
@@ -15,7 +16,7 @@ internal static partial class FunctionLibrary
         if (!TryMroundNumber(call, 1, out var multiple, out failure)) return failure;
         if (number == 0 || multiple == 0) return Operand.Of(Value.FromNumber(0));
         if (Math.Sign(number) != Math.Sign(multiple)) return Operand.Of(ErrorValue.Num);
-        if (multiple != Math.Truncate(multiple)) return Operand.Of(ErrorValue.Value);
+        if (multiple != Math.Truncate(multiple)) return call.Evaluator.Refuse();
         return Operand.Of(Evaluator.Number(Math.Round(number / multiple, MidpointRounding.AwayFromZero) * multiple));
     }
 
@@ -47,11 +48,11 @@ internal static partial class FunctionLibrary
         var quotient = number / significance;
         if (quotient == 0) return Operand.Of(ErrorValue.Num);
         // The run pins half-multiples, not which side Excel takes when division is almost
-        // integral. Refuse that boundary at the existing 15-digit precision; never use
-        // that precision as an epsilon to choose a rounded numeric answer.
+        // integral. Refuse that boundary at the existing 15-digit precision (the Formula's refusal);
+        // never use that precision as an epsilon to choose a rounded numeric answer.
         var nearest = Math.Round(quotient);
         if (quotient != nearest && Arithmetic.ApproximatelyEqual(quotient, nearest))
-            return Operand.Of(ErrorValue.Value);
+            return call.Evaluator.Refuse();
         if (number < 0 && mode != 0) ceiling = !ceiling;
         return Operand.Of(Evaluator.Number((ceiling ? Math.Ceiling(quotient) : Math.Floor(quotient)) * significance));
     }

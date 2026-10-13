@@ -1,6 +1,6 @@
-import { test, expect, alterPage } from './fixtures.mjs';
-import { sheet, cell, pressCell, editor, bar, stretchesOf } from './sheet-helpers.mjs';
-import { painted, sameColour, resolvedColour, contrast, onDeviceGrid, pixelsApart, stillPictures } from './pixels.mjs';
+import { test, expect, alterPage, circuitQuiet, twoFrames } from './fixtures.mjs';
+import { sheet, cell, pressCell, clickCell, expectFocusAt, editor, bar, stretchesOf } from './sheet-helpers.mjs';
+import { painted, sameColour, resolvedColour, contrast, onDeviceGrid, pixelsApart, stillPictures, edgePixels, onDevicePixels, acrossEdges, paints } from './pixels.mjs';
 
 // ExSheet paints Font and Fill on white Paper (ticket 48; ADR-0071, "Paper and Ink"; SH-39, SH-40,
 // DC-58). The Paper is Excel's white and the Ink Excel's black under the light and the dark scheme
@@ -22,6 +22,8 @@ const SCHEMES = ['light', 'dark'];
 
 const WHITE = [255, 255, 255];
 const BLACK = [0, 0, 0];
+// Excel's outline green (the eleventh Windows run, case 11; the readings of 2026-10-12, R4).
+const GREEN = [0x21, 0x73, 0x46];
 
 async function openCase(page, name, scheme, chrome) {
     await page.goto(`/sheet?case=${name}&scheme=${scheme}${chrome}`);
@@ -186,6 +188,120 @@ for (const [chrome, query] of CHROMES) {
         expect(read.dark.bar, 'the Formula Bar follows the scheme').not.toEqual(read.light.bar);
     });
 }
+
+// The Focus among several ranges on the Paper (ADR-0008, 2026-10-12): the core's thin border of one
+// Device Pixel inside the cell, in the Focus outline's colour (2026-10-12, decided with the user:
+// #217346 on the Paper, as the readings of 2026-10-12 measured Excel's, R4), in either scheme. Under
+// ExSheet.MudBlazor it is the palette's primary, which the Focus outline is there: this branch's
+// reading, as SH-54's outline is. Read where something
+// above the selection layer stands beside the cell — the Headings, a Pinned Column, the header — and
+// in the open: lying inside the cell, no side is covered. The page's own scale here, and a real 150%
+// under the chrome-150 project, as an OS sets it (Playwright's emulated scale is not read: its
+// pixels are the emulation's, device-pixel-225.spec.mjs's note).
+for (const [chrome, query] of CHROMES) {
+    test(`UX-19/SH-39 (${chrome} Chrome): on the Paper the Focus among several ranges is one Device Pixel inside its cell in the Focus outline's colour, beside the Headings, a Pinned Column and the header and in the open, in either scheme (ADR-0008, 2026-10-12; ADR-0071)`, async ({ page }, testInfo) => {
+        for (const scheme of SCHEMES) {
+            await page.goto(`/sheet?case=paper&pin=1&scheme=${scheme}${query}`);
+            const grid = sheet(page);
+            await expect(cell(grid, 'A1')).toHaveText('red');
+            await expect(page.locator('#sheet-positions .ex-row').first()).toBeVisible();
+            // The Focus outline's colour, one cell selected: #217346 under the built-in Chrome.
+            await clickCell(grid, 'D9');
+            await expectFocusAt(grid, 'D9');
+            const outline = await resolvedColour(page, await grid.locator('.ex-focus').first().evaluate((el) => getComputedStyle(el, '::after').borderTopColor));
+            if (!query) expect(outline, `${scheme}: the Focus outline on the Paper`).toEqual(GREEN);
+            const found = {};
+            // A8 beside the Headings and pinned, B8 beside the pinned A, E1 under the header, E8 in the open.
+            for (const address of ['A8', 'B8', 'E1', 'E8']) {
+                await clickCell(grid, 'B3');
+                await clickCell(grid, 'C4', { modifiers: ['Shift'] });
+                await expect(grid.locator('.ex-range-single')).toHaveCount(1);
+                await clickCell(grid, address, { modifiers: ['ControlOrMeta'] });
+                await expectFocusAt(grid, address);
+                await expect(grid.locator('.ex-focus.ex-focus-among-ranges')).toHaveCount(1);
+                await expect(grid.locator('.ex-range-single')).toHaveCount(0);
+                await page.mouse.move(0, 0);
+                await circuitQuiet();
+                await twoFrames(page);
+                const border = await resolvedColour(page, await grid.locator('.ex-focus-among-ranges').evaluate((el) => getComputedStyle(el, '::after').borderTopColor));
+                expect(border, `${scheme}, ${address}: the border is the Focus outline's colour`).toEqual(outline);
+                found[address] = await edgePixels(page, await onDevicePixels(page, cell(grid, address)), border);
+            }
+            for (const [address, edges] of Object.entries(found)) {
+                // A gridline is whole Device Pixels: one at 100% and 150% (ADR-0090).
+                const gridline = Math.max(1, Math.floor(edges.scale + 1e-9));
+                // The display's scale, as its project sets it: under chrome-150 the reading is at 150%.
+                expect(edges.scale).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
+                expect(edges, `${scheme}, ${address}: ${JSON.stringify(edges)}`).toEqual({
+                    scale: edges.scale, left: [1], top: [1], right: [gridline + 1], bottom: [gridline + 1],
+                });
+            }
+        }
+    });
+}
+
+// The readings of 2026-10-12 (R4) put Excel's active cell among several areas in three selections,
+// at Excel's 100% and 150% zoom on a 150% display, and read four short lines across its edges. Here
+// the same three on the Paper, on a blank Sheet with nothing pinned as Excel's was, read on the same
+// lines: the border, one device pixel of #217346 a device pixel inside the cell; the white line
+// between it and the gridline; and, past the gridline, a neighbour in the area shaded #C7C7C7 (white
+// Paper × 0.78) and one outside it white. R4 read them on a 150% display, at Excel's 100% and 150%
+// zoom, which chrome-150 lays out; at 100% they are read the same, by generalisation (no run read
+// Excel on a 100% display). The gridline's
+// own pixel round the cell is not read: R4 read it #AFAFAF, and the Paper paints its gridline there
+// (#E0E0E0), a difference no decision has taken up. Nor are the Headings beside A1, which R4 read as
+// Excel's 2 px of #217346 and the Paper does not draw.
+test('UX-19/SH-54 (built-in Chrome): R4\'s three selections on the Paper: the active cell\'s border, the white line outside it and what lies past its gridline (ADR-0008, 2026-10-12; ADR-0071)', async ({ page }, testInfo) => {
+    await page.goto('/sheet?case=13');
+    const grid = sheet(page);
+    await expect(grid.locator('.ex-row').first()).toBeVisible();
+    await expect(page.locator('#sheet-positions .ex-row').first()).toBeVisible();
+    const scale = await page.evaluate(() => devicePixelRatio);
+    expect(scale).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
+    const gridline = Math.max(1, Math.floor(scale + 1e-9));
+    const SHADE = WHITE.map((v) => v * 0.78);
+    const readAt = async (focus, beyond, what) => {
+        await page.mouse.move(0, 0);
+        await circuitQuiet();
+        await twoFrames(page);
+        const box = await onDevicePixels(page, cell(grid, focus));
+        const edges = await edgePixels(page, box, GREEN);
+        expect(edges, `${what}: the border at ${focus}`).toEqual({ scale, left: [1], top: [1], right: [gridline + 1], bottom: [gridline + 1] });
+        const { at } = await acrossEdges(page, box);
+        // The white line between the border and the gridline, on every side.
+        for (const [side, index] of [['left', 0], ['top', 0], ['right', gridline], ['bottom', gridline]]) {
+            expect(at(side, index), `${what}: white between the border and the gridline, ${side} of ${focus}`).toEqual(WHITE);
+        }
+        // Past the gridline on the right and the bottom: shaded where the area goes on, else white.
+        for (const side of ['right', 'bottom']) {
+            const pixel = at(side, -1);
+            const want = beyond[side] ? SHADE : WHITE;
+            expect(paints(pixel, want), `${what}: past ${focus}'s ${side} gridline ${JSON.stringify(pixel)}, want ${JSON.stringify(want)}`).toBe(true);
+        }
+    };
+
+    // (1) A1:B2, then D4:E6 with Ctrl: D4 is the active cell, and E4 and D5 are in its area.
+    await clickCell(grid, 'A1');
+    await clickCell(grid, 'B2', { modifiers: ['Shift'] });
+    await clickCell(grid, 'D4', { modifiers: ['ControlOrMeta'] });
+    await clickCell(grid, 'E6', { modifiers: ['ControlOrMeta', 'Shift'] });
+    await expectFocusAt(grid, 'D4');
+    await expect(grid.locator('.ex-focus.ex-focus-among-ranges')).toHaveCount(1);
+    await readAt('D4', { right: true, bottom: true }, '(1)');
+    // (2) Enter six times: D5, D6, E4, E5, E6, then A1, in A1:B2 (as R4 recorded, ADR-0052).
+    for (let i = 0; i < 6; i++) await page.keyboard.press('Enter');
+    await expectFocusAt(grid, 'A1');
+    await expect(grid.locator('.ex-focus.ex-focus-among-ranges')).toHaveCount(1);
+    await readAt('A1', { right: true, bottom: true }, '(2)');
+    // (3) A1:B2, then D4 alone with Ctrl: D4's area is D4, so E4 and D5 are white.
+    await clickCell(grid, 'C9');
+    await clickCell(grid, 'A1');
+    await clickCell(grid, 'B2', { modifiers: ['Shift'] });
+    await clickCell(grid, 'D4', { modifiers: ['ControlOrMeta'] });
+    await expectFocusAt(grid, 'D4');
+    await expect(grid.locator('.ex-focus.ex-focus-among-ranges')).toHaveCount(1);
+    await readAt('D4', { right: false, bottom: false }, '(3)');
+});
 
 test('SH-39: setting --ex-sheet-paper and --ex-sheet-ink changes the Paper and the Ink (ADR-0071, ADR-0027)', async ({ page }) => {
     await openCase(page, 'paper', 'light', '');

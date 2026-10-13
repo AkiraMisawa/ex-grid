@@ -57,6 +57,27 @@ rounds each Value and spills three. Every function of the declared set would nee
 this, and it comes as later tickets. Until a function is lifted, an array where it wants one Value
 stays `#VALUE!`, as ADR-0047 had it: an Error Value, never another answer.
 
+*(2026-10-12: **the refusal is the Formula's**, as ADR-0047 makes a Formula that meets `#CIRC!`
+`#CIRC!`. A call that refused returned `#VALUE!` as an Error Value, and what was around it read it as
+one: `=IFERROR(LEN(A1:A3),0)` was 0, `=ISERROR(ROUND(A1:A3,0))` TRUE and `=COUNTA(ROUND(A1:A3,0))` 1,
+answers about a `#VALUE!` the engine made where Excel 365 lifts the function, though
+`=IFERROR(A1:A2,0)` was already `#VALUE!` (IFERROR-009). Now nothing in the Formula reads the
+refusal, given the range or around a call that was given it (IFERROR-017).)*
+
+*(2026-10-12, decided with the user: a refusal is never caught, anywhere: a cell that reads such a Formula's cell is refused in
+turn, whatever it does with it, as ADR-0047's note of that date says. Before, it read `#VALUE!` as an Error
+Value: with B1 `=LEN(A1:A3)`, `=IFERROR(B1,0)` was 0 and `=ISERROR(B1)` TRUE, where Excel's B1 spills a
+Value for each cell.)*
+
+*(2026-10-13, decided with the user: **a refused Anchor whose array's shape its text settles spills
+refusals over that shape**, so that a cell of it read elsewhere, `=E2+1` or `=ISBLANK(E2)`, is refused
+as the Anchor is. The text settles it where the array is References the text names, operators over them,
+`TRANSPOSE`, or a call given one Value for each argument. Where the shape could depend on a Value —
+`FILTER`, `UNIQUE`, `SORT`, `SORTBY`, `SEQUENCE`, a call that can give a Reference, `LET`, or a function
+given an array where it wants one Value, as `=LEN(A1:A3)` — nothing spills, and the cells its array would
+cover read as blank: a Known limitation of `0.1.0` (ADR-0202). Where something stands in the way of the
+known shape, the Anchor is `#SPILL!`, as Excel's array of that shape would be.)*
+
 ## What becomes Excel's answer
 
 The ADR-0047 refusals that this replaces become Excel's answers, and their corpus cases change
@@ -76,6 +97,42 @@ under this ADR wrote, kept before the tag under ADR-0202. Excel answers 7 for `=
 (SORT-011, UNIQUE-009), and the Anchor shows only that a blank does not sort first as 0 would. Following it would
 guess where the blank goes, what its spilled cell shows, how a descending sort places it and whether `UNIQUE` counts
 it one of a kind with 0; SORT-012 to 014 and UNIQUE-010 and 011 ask those.)*
+
+*(2026-10-12, after the two area passes, `verification/2026-10-12-windows-area/` and
+`verification/2026-10-12-windows-area-2/`: **a blank among `SORT`'s and `SORTBY`'s keys, and in `UNIQUE`'s array, is
+answered, and so is the blank they keep, read inside the Formula, where Excel's answers or the agreement of every
+reading settle it, or by generalisation from them, which no run has read (this note names them).** The refusal of the
+note above is withdrawn. What Excel answered: over 7 and a blank, `=SORT(Q1:Q2)` spills 7 and then 0, ascending or
+descending, and over b, a blank and a, `=SORT(A1:A3)` is a first: a blank key sorts after numbers and text in either
+order and after a boolean ascending, neither as 0 nor as empty text, and two blank keys keep their order in a
+descending sort (SORT-011 to 014, 016 to 020, 023 to 025). `SORTBY` sorts a blank key after a number so, key by key,
+in an ascending key (SORTBY-007 to 009). In `UNIQUE` a blank is one of a kind only with another blank, never with 0 or
+empty text (UNIQUE-011 to 015). A blank spills as 0 (SORT-012, UNIQUE-010, 016, and `TRANSPOSE`'s, TRANSPOSE-004).
+Read inside the Formula, the blank `SORT` keeps is the empty value a blank cell holds:
+`=ISBLANK(INDEX(SORT(Q1:Q2),2))` is TRUE (SORT-022), so it is neither the 0 it spills as nor empty text. `UNIQUE`'s is
+not the 0 it spills as: `=INDEX(UNIQUE(Q1:Q2),2)=""` is TRUE (UNIQUE-018), which 0 would not be, and
+`=SUM(--(LEN(UNIQUE(A1:A3))>0))` over a, a blank and b is 2 (UNIQUE-019), where `LEN(0)` is 1; whether it is blank or
+empty text, UNIQUE-020 asks. `COUNTA` counts it in the array: `=COUNTA(SORT(Q1:Q2))` and `=COUNTA(UNIQUE(Q1:Q2))` are
+2 (SORT-021, UNIQUE-017). What the engine answers beyond those, and why, none of it Excel's answer until its case is
+observed: a blank key sorts after a boolean in a descending sort too, blank keys keep their order ascending, as equal
+keys did (SORT-004), and `SORTBY` sorts a blank in its other keys as `SORT` does (SORT-040, 041 and SORTBY-014 ask);
+beside an Error Value key no order is answered, and the Formula is `#VALUE!` (SORT-031 asks). `UNIQUE`'s is taken to
+be the empty value a blank cell holds, as `SORT`'s is (UNIQUE-020 asks). `SORTBY`, `FILTER` and `TRANSPOSE` keep a
+blank as `SORT` does, so theirs is taken to be the same blank, read as `SORT`'s is; before this, the engine's
+`=COUNTA(FILTER(...))` passed over a blank that its `=COUNTA(SORT(FILTER(...)))` counted, though a reorder cannot
+change a count (SORTBY-011 to 013, FILTER-012 and 013, TRANSPOSE-005 and 006 ask). Most functions that read one Value,
+`LEN`, `ISTEXT` and `MATCH`'s and `VLOOKUP`'s lookup value among them, read the blank `INDEX` takes out as a blank
+cell's, as `ISBLANK` was seen to read `SORT`'s; the rest, `XLOOKUP`'s and `XMATCH`'s lookup value, `ROUND` and
+`ERROR.TYPE` among them, make the Formula `#VALUE!`. An operator reads each Value as a blank cell's, which `=` finding
+`UNIQUE`'s equal to empty text fits (UNIQUE-024 asks `&`). `SUMPRODUCT` and `CONCAT` add nothing for it whichever way
+they read it, and `SUM` neither, except where it would be the last number, which decides whether a sum that nearly
+cancels is 0 (SORT-033 and 037 ask). `VLOOKUP`, `HLOOKUP` and `XLOOKUP` take an array that holds it where it is
+neither a key they search nor what they return. Where a function's reading of it parts — `AVERAGE`, `MIN`, `MAX`,
+`COUNT` or `PRODUCT` passing over it or taking it as 0, `COUNTA` given it as one Value, a search through it, `IF`,
+`CHOOSE`, `IFERROR` or `IFNA` given it, another of the five — the Formula is `#VALUE!`. The refusal is the Formula's,
+not an Error Value the call returns, so `IFERROR` cannot catch it and `COUNTA` cannot count it, as a Formula that
+meets `#CIRC!` is `#CIRC!` (ADR-0047); SORT-034, 035, 038, 039, UNIQUE-021 to 023, FILTER-014 and TRANSPOSE-007 ask.
+`LEN` is not yet lifted (above), so UNIQUE-019 stays `#VALUE!` where Excel gives 2.)*
 
 ## Considered options
 

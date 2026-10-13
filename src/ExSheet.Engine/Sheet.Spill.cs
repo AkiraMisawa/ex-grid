@@ -116,7 +116,7 @@ public sealed partial class Sheet
 
         void Set(Cell cell, Value? value)
         {
-            if (Nullable.Equals(cell.Value, value)) return;
+            if (Value.Unchanged(cell.Value, value)) return;
             cell.Value = value;
             changed.Add(cell.Address);
         }

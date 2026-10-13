@@ -1,0 +1,86 @@
+# Each pin's build (scratch tag, then the pin, then the MudBlazor each host's build output carries).
+# The 9.0.0 full runs' build was the builder's, before the clean-build step; the targeted 9.0.0 build is below.
+== sel-9.6.0
+19:    <PackageReference Include="MudBlazor" Version="9.6.0" />
+samples/ExGrid.DemoHost:     0 Error(s)
+samples/ExGrid.DemoHost.Server:     0 Error(s)
+samples/ExGrid.DemoApi:     0 Error(s)
+wasm loads MudBlazor 9.6.0.0
+server loads MudBlazor 9.6.0.0
+== sel-9.5.0
+19:    <PackageReference Include="MudBlazor" Version="9.5.0" />
+samples/ExGrid.DemoHost:     0 Error(s)
+samples/ExGrid.DemoHost.Server:     0 Error(s)
+samples/ExGrid.DemoApi:     0 Error(s)
+wasm loads MudBlazor 9.5.0.0
+server loads MudBlazor 9.5.0.0
+== diag-9.4.0
+19:    <PackageReference Include="MudBlazor" Version="9.4.0" />
+samples/ExGrid.DemoHost:     0 Error(s)
+samples/ExGrid.DemoHost.Server:     0 Error(s)
+samples/ExGrid.DemoApi:     0 Error(s)
+wasm loads MudBlazor 9.4.0.0
+server loads MudBlazor 9.4.0.0
+== diag-9.3.0
+19:    <PackageReference Include="MudBlazor" Version="9.3.0" />
+samples/ExGrid.DemoHost:     0 Error(s)
+samples/ExGrid.DemoHost.Server:     0 Error(s)
+samples/ExGrid.DemoApi:     0 Error(s)
+wasm loads MudBlazor 9.3.0.0
+server loads MudBlazor 9.3.0.0
+== diag-9.2.0
+19:    <PackageReference Include="MudBlazor" Version="9.2.0" />
+samples/ExGrid.DemoHost:     0 Error(s)
+samples/ExGrid.DemoHost.Server:     0 Error(s)
+samples/ExGrid.DemoApi:     0 Error(s)
+wasm loads MudBlazor 9.2.0.0
+server loads MudBlazor 9.2.0.0
+== diag-9.1.0
+19:    <PackageReference Include="MudBlazor" Version="9.1.0" />
+samples/ExGrid.DemoHost:     0 Error(s)
+samples/ExGrid.DemoHost.Server:     0 Error(s)
+samples/ExGrid.DemoApi:     0 Error(s)
+wasm loads MudBlazor 9.1.0.0
+server loads MudBlazor 9.1.0.0
+== diag-9.0.0
+19:    <PackageReference Include="MudBlazor" Version="9.0.0" />
+samples/ExGrid.DemoHost:     0 Error(s)
+samples/ExGrid.DemoHost.Server:     0 Error(s)
+samples/ExGrid.DemoApi:     0 Error(s)
+wasm loads MudBlazor 9.0.0.0
+server loads MudBlazor 9.0.0.0
+== diag-9.9.0
+19:    <PackageReference Include="MudBlazor" Version="9.9.0" />
+samples/ExGrid.DemoHost:     0 Error(s)
+samples/ExGrid.DemoHost.Server:     0 Error(s)
+samples/ExGrid.DemoApi:     0 Error(s)
+wasm loads MudBlazor 9.9.0.0
+server loads MudBlazor 9.9.0.0
+== ed30b-9.6.0
+19:    <PackageReference Include="MudBlazor" Version="9.6.0" />
+samples/ExGrid.DemoHost:     0 Error(s)
+samples/ExGrid.DemoHost.Server:     0 Error(s)
+samples/ExGrid.DemoApi:     0 Error(s)
+wasm loads MudBlazor 9.6.0.0
+server loads MudBlazor 9.6.0.0
+== ed30b-9.7.0
+19:    <PackageReference Include="MudBlazor" Version="9.7.0" />
+samples/ExGrid.DemoHost:     0 Error(s)
+samples/ExGrid.DemoHost.Server:     0 Error(s)
+samples/ExGrid.DemoApi:     0 Error(s)
+wasm loads MudBlazor 9.7.0.0
+server loads MudBlazor 9.7.0.0
+== ed30b-9.8.0
+19:    <PackageReference Include="MudBlazor" Version="9.8.0" />
+samples/ExGrid.DemoHost:     0 Error(s)
+samples/ExGrid.DemoHost.Server:     0 Error(s)
+samples/ExGrid.DemoApi:     0 Error(s)
+wasm loads MudBlazor 9.8.0.0
+server loads MudBlazor 9.8.0.0
+== merged-9.8.0 (the branch after its merge of main, 4f66422c)
+19:    <PackageReference Include="MudBlazor" Version="9.8.0" />
+samples/ExGrid.DemoHost:     0 Error(s)
+samples/ExGrid.DemoHost.Server:     0 Error(s)
+samples/ExGrid.DemoApi:     0 Error(s)
+wasm loads MudBlazor 9.8.0.0
+server loads MudBlazor 9.8.0.0

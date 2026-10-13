@@ -1,0 +1,157 @@
+{
+ "recording": "narrator-chrome.wav",
+ "meta": {
+  "startUtcMs": 1791834107669,
+  "rate": 48000,
+  "channels": 2,
+  "blockAlign": 8,
+  "frames": 4694377,
+  "packets": 6074,
+  "paddedFrames": 1778857,
+  "device": "{0.0.0.00000000}.{6909bfe6-8151-4779-96b0-a9a1bfb18382}"
+ },
+ "clockOffset": 0.06,
+ "model": "ggml-small.en.bin",
+ "steps": [
+  {
+   "start": "without-focus",
+   "step": "fresh page",
+   "from": 4.1,
+   "to": 12.24,
+   "peak": 0.5617,
+   "heard": "Scan, loading. 7 of 10, Run 17 Chrome 11702 has finished loading, Run 17 Chrome 11702",
+   "activeElement": "body",
+   "focus": null
+  },
+  {
+   "start": "without-focus",
+   "step": "0-focus-given-by-script-to-revalue",
+   "from": 12.24,
+   "to": 18.39,
+   "peak": 0.5592,
+   "heard": "1.02 has finished loading, link, all link, pages sheet heading level 1 sheet, x sheet drawn by",
+   "activeElement": "button#sheet-revalue",
+   "focus": null
+  },
+  {
+   "start": "without-focus",
+   "step": "1-tab",
+   "from": 18.39,
+   "to": 24.61,
+   "peak": 0.5306,
+   "heard": "Undo button.",
+   "activeElement": "button#sheet-undo",
+   "focus": null
+  },
+  {
+   "start": "without-focus",
+   "step": "1b-tab-again",
+   "from": 24.61,
+   "to": 30.79,
+   "peak": 0.5075,
+   "heard": "Redo button",
+   "activeElement": "button#sheet-redo",
+   "focus": null
+  },
+  {
+   "start": "without-focus",
+   "step": "2-down",
+   "from": 30.79,
+   "to": 36.98,
+   "peak": 0.532,
+   "heard": "Format cells, button",
+   "activeElement": "button#sheet-format-cells",
+   "focus": null
+  },
+  {
+   "start": "without-focus",
+   "step": "3-right",
+   "from": 36.98,
+   "to": 43.16,
+   "peak": 0.45,
+   "heard": "O",
+   "activeElement": "button#sheet-format-cells",
+   "focus": null
+  },
+  {
+   "start": "without-focus",
+   "step": "4-down",
+   "from": 43.16,
+   "to": 49.34,
+   "peak": 0.5417,
+   "heard": "Insert a row above row 2, button.",
+   "activeElement": "button#sheet-insert-row",
+   "focus": null
+  },
+  {
+   "start": "without-focus",
+   "step": "5-down",
+   "from": 49.34,
+   "to": 55.52,
+   "peak": 0.5375,
+   "heard": "Revalue the positions by +1%, button.",
+   "activeElement": "button#sheet-revalue",
+   "focus": null
+  },
+  {
+   "start": "with-focus",
+   "step": "fresh page",
+   "from": 55.52,
+   "to": 64.89,
+   "peak": 0.4601,
+   "heard": "Loading. XGrid demo host has finished loading. Loading. Unavailable.",
+   "activeElement": "body",
+   "focus": null
+  },
+  {
+   "start": "with-focus",
+   "step": "1-press-d10",
+   "from": 64.89,
+   "to": 71.14,
+   "peak": 0.5575,
+   "heard": "Enter table 1,048,576 by 16,300 and",
+   "activeElement": "key-field input.ex-key-field",
+   "focus": "D10"
+  },
+  {
+   "start": "with-focus",
+   "step": "2-down",
+   "from": 71.14,
+   "to": 77.32,
+   "peak": 0.5109,
+   "heard": "column header copy, column 5 of 16384.",
+   "activeElement": "body",
+   "focus": "D10"
+  },
+  {
+   "start": "with-focus",
+   "step": "3-right",
+   "from": 77.32,
+   "to": 83.51,
+   "peak": 0.3344,
+   "heard": "New line.",
+   "activeElement": "body",
+   "focus": "D10"
+  },
+  {
+   "start": "with-focus",
+   "step": "4-down",
+   "from": 83.51,
+   "to": 89.69,
+   "peak": 0.5311,
+   "heard": "column header cap F column six of sixteen thousand three hundred and eighty four",
+   "activeElement": "body",
+   "focus": "D10"
+  },
+  {
+   "start": "with-focus",
+   "step": "5-down",
+   "from": 89.69,
+   "to": 95.89,
+   "peak": 0.5175,
+   "heard": "column header cap J column 7 of 16,384",
+   "activeElement": "body",
+   "focus": null
+  }
+ ]
+}

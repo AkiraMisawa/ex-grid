@@ -67,7 +67,7 @@
     },
     {
       "id": "SIN-008",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 2*PI() less twice Excel's pi, at another quadrant than SIN-004 (the double's true sine is -2.4492935982947064E-16)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=SIN(2*PI())"},

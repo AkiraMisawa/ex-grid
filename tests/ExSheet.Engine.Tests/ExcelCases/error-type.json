@@ -184,6 +184,15 @@
       "expect": {"value2": "#VALUE!"},
       "engineDiffersByDecision": "ADR-0125: functions are not lifted over arrays yet; an array where the function wants one Value is #VALUE!, where Excel 365 lifts it and spills",
       "excelExpect": {"value2": "#N/A"}
+    },
+    {
+      "id": "ERRORTYPE-022",
+      "source": "uncertain",
+      "description": "ERROR.TYPE does not number a refused cell's #VALUE!: B1 is MROUND(0.35,0.1), refused, which Excel answered 0.4 (MROUND-004); what ERROR.TYPE(B1) gives is asked",
+      "cells": {"B1": "=MROUND(0.35,0.1)", "ZZ1000": "=ERROR.TYPE(B1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND's fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell is refused, where ERROR.TYPE gave 3 before"
     }
   ]
 }

@@ -50,7 +50,8 @@ text section give together:
 - In three sections ending in `@`, zero is the first section's, as in a format of two.
 - Booleans and Error Values still show as themselves, in no colour (as `TRUE` and `#DIV/0!` did in
   `[Red]0` in the same case).
-- `@;0` and `0;@;0` stay refused: no run has seen `@` before the last section.
+- `@;0` and `0;@;0` stay refused: no run has seen `@` before the last section. *(Excel refuses both:
+  the seventeenth Windows run, h12, below.)*
 
 ### DemoHost
 
@@ -65,3 +66,9 @@ text section give together:
 - **Layer 2.** `SheetAppearanceTests.No_section_that_shows_the_value_means_no_colour` now holds case
   3b's A4: `5`, with no Font class.
 - ExSheet.Engine.Tests 2333 and ExSheet.Components.Tests 560 passed.
+
+*(2026-10-12, the seventeenth Windows run, h12; branch `claude/run17gh-readings`.)* **Excel refuses `@;0` and
+`0;@;0`**, on 12 and on `abc`. Through COM: "Unable to set the NumberFormat property of the Range class". Typed into
+Format Cells' Custom box, OK leaves the dialog open with the code selected and says nothing; both cells stay General.
+ExSheet refuses both, by name (SH-45), so the refusal is now observed. `NumberFormatTests.An_unsupported_code_is_refused`
+says so. `0;0;@;0` was not asked.

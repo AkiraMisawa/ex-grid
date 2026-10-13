@@ -1,0 +1,48 @@
+node v24.14.1, dotnet 10.0.203
+== 2026-10-12T13:48:12Z host=wasm tag=diag-9.9.0 diagnostic spec
+Running 2 tests using 1 worker
+FLOOR-FOCUS active=INPUT[type=text][role=combobox].mud-input-slot.mud-input-root
+  88ms focusout BUTTON[type=button][role=menuitem].mud-button-root.mud-button
+  88ms focusin BUTTON[type=button][role=menuitem].mud-button-root.mud-button
+  360ms focusout BUTTON[type=button][role=menuitem].mud-button-root.mud-button
+  388ms focusin BUTTON[type=button].mud-button-root.mud-button
+  398ms focusout BUTTON[type=button].mud-button-root.mud-button
+  399ms focusin INPUT[type=text][role=combobox].mud-input-slot.mud-input-root
+  ✓  1 [chrome] › zz-floor-focus.spec.mjs:9:1 › floor diagnostic: focus events while Field Settings opens (8.4s)
+FLOOR-OPERATOR elements=[{"tag":"INPUT","type":"hidden","tabindex":null,"role":"combobox","label":"Operator","focused":false},{"tag":"DIV","type":null,"tabindex":"0","role":"combobox","label":"Operator","focused":true}] getByRole(combobox, Operator)=1
+  ✓  2 [chrome] › zz-floor-focus.spec.mjs:44:1 › floor diagnostic: the filter panel Operator as focused, and where its role and name are (1.5s)
+  2 passed (56.7s)
+== 2026-10-12T13:49:10Z host=wasm tag=diag-9.9.0 base=http://localhost:5491 head=0c0ab368 locations=copied-range.spec.mjs:159 popovers.spec.mjs:399 pivot.spec.mjs:603
+Running 3 tests using 1 worker
+  ✘  1 [chrome] › copied-range.spec.mjs:159:1 › on a Sheet the dashes are its outline's colour, with and without a Wrapper (ADR-0170, ADR-0071) (1.2m)
+  ✓  2 [chrome] › pivot.spec.mjs:603:9 › under the mud Chrome › ADR-0061 (PV-11): a press on a pane caption dismisses only the field menu (mud) (7.3s)
+  ✓  3 [chrome] › popovers.spec.mjs:399:9 › under the mud Chrome › Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044) (9.4s)
+
+  1) [chrome] › copied-range.spec.mjs:159:1 › on a Sheet the dashes are its outline's colour, with and without a Wrapper (ADR-0170, ADR-0071) 
+
+    Error: expect(locator).not.toHaveCount(expected) failed
+
+    Locator:  locator('.ex-sheet .ex-grid').first().locator('.ex-copied-range')
+    Expected: not 0
+    Received: 0
+    Timeout:  60000ms
+
+    Call log:
+      - Expect "not toHaveCount" with timeout 60000ms
+      - waiting for locator('.ex-sheet .ex-grid').first().locator('.ex-copied-range')
+        122 × locator resolved to 0 elements
+            - unexpected value "0"
+
+
+      165 |         await page.keyboard.press('Shift+ArrowRight');
+      166 |         await page.keyboard.press('ControlOrMeta+C');
+    > 167 |         await expect(sheet.locator('.ex-copied-range')).not.toHaveCount(0);
+          |                                                             ^
+      168 |
+      169 |         const colours = await sheet.evaluate((root) => ({
+      170 |             outline: getComputedStyle(root.querySelector('.ex-range-single'), '::after').borderTopColor,
+        at /home/user/ex-grid/.claude/worktrees/mudblazor-rm/tests/ExGrid.Browser/copied-range.spec.mjs:167:61
+
+  1 failed
+  2 passed (2.2m)
+== exit 1 at 2026-10-12T13:51:26Z

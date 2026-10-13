@@ -265,6 +265,93 @@ public class ConsumerPopoverTests : GridTestContext
         Assert.True(Js.FocusReclaimed.Invocations.Count > reclaims);
     }
 
+    // A grid whose Context Menu carries one command of the Consumer's, which opens a popover of the
+    // Consumer's in the grid's frame — in the menu's place, as ExSheet's Format Cells… does under the
+    // built-in Chrome.
+    private IRenderedComponent<ExGrid<TestRow>> RenderGridWithPopoverCommand(Probe probe)
+    {
+        IRenderedComponent<ExGrid<TestRow>>? cut = null;
+        cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(50))
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, (IReadOnlyList<GridColumn<TestRow>>)
+            [
+                new("Book", ColumnType.Text, r => r.Book, width: Fixed100, editable: true),
+                new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100),
+            ])
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, ViewportSize.Stretch)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.ContextCommands, _ =>
+            [
+                new GridCommand("consumer.popover", true, () => cut!.Instance.OpenPopoverAsync(probe.Content, "Probe")),
+            ]));
+        return cut;
+    }
+
+    [Fact] // ADR-0039 (2026-10-13) / ADR-0050 item 16 / ADR-0010: a popover opened in a menu's place asks for the root's focus while the menu still stands, behind the hand-off, and its contents have the last word
+    public async Task A_popover_opened_in_a_menus_place_keeps_the_keyboard_on_the_root_until_its_contents_take_it()
+    {
+        // On a circuit the render that swaps the menu for the popover removed the item holding DOM
+        // focus, and the contents took it a round trip later: a key typed in between fell on body,
+        // which the key gate never hears. The request for the root reaches the browser ahead of that
+        // render, and after the gate has been told the keyboard is going to the popover, so the key
+        // lands where the gate holds it for the contents.
+        var probe = new Probe();
+        var cut = RenderGridWithPopoverCommand(probe);
+        await Report(cut, 300);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "F10", shift: true);
+        // What stood at each moment the grid asked for the root's focus: (menus, Consumer's popovers,
+        // hand-offs told).
+        var standing = new List<(int, int, int)>();
+        Js.OnFocusReclaimed(() => standing.Add((
+            cut.FindAll(".ex-popover[role=menu]").Count, cut.FindAll(".ex-popover-consumer").Count, Js.HandedOff.Invocations.Count)));
+        var asked = Js.FocusCalls;
+
+        await cut.FindAll("[role=menu] button[role=menuitem]").Single(b => b.TextContent == "consumer.popover").ClickAsync(new MouseEventArgs());
+
+        Assert.Single(cut.FindAll(".ex-popover"));
+        Assert.Single(cut.FindAll(".ex-popover-consumer"));
+        Assert.Equal([(1, 0, 1)], standing);
+        Assert.Equal(["popover"], Js.HandedOff.Invocations.Select(i => (string)i.Arguments[0]!));
+        // Nothing is asked after the render: the contents take the keyboard on their count.
+        cut.WaitForAssertion(() => Assert.Equal([Js.RootReferenceId], Js.Focused.Skip(asked)));
+        Assert.True(probe.Context!.FocusRequest > 0);
+    }
+
+    [Fact] // ADR-0039 (2026-10-13): a popover opened in another's place — the status line's figures menu again, a toolbar's choices — asks for the root's focus while that one stands
+    public async Task A_popover_opened_in_another_popovers_place_asks_for_the_root_while_that_one_stands()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+        await ClickCellAsync(cut, 50, 10);
+        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
+        var standing = new List<(int, int)>();
+        Js.OnFocusReclaimed(() => standing.Add((cut.FindAll(".ex-popover").Count, cut.FindAll(".ex-popover-consumer").Count)));
+
+        await OpenAsync(cut, new Probe());
+        await OpenAsync(cut, new Probe());
+
+        // The column's menu, then the first Consumer's popover, each standing when the root was asked.
+        Assert.Equal([(1, 0), (1, 1)], standing);
+        Assert.Single(cut.FindAll(".ex-popover-consumer"));
+    }
+
+    [Fact] // ADR-0039 (2026-10-13) / ADR-0050 item 16: a popover opened over none replaces nothing, and asks nothing of the root — the keyboard is where the opening found it
+    public async Task A_popover_opened_over_none_asks_nothing_of_the_root()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+        await ClickCellAsync(cut, 50, 10);
+        var reclaims = Js.FocusReclaimed.Invocations.Count;
+
+        await OpenAsync(cut, new Probe());
+
+        Assert.Single(cut.FindAll(".ex-popover-consumer"));
+        Assert.Equal(reclaims, Js.FocusReclaimed.Invocations.Count);
+    }
+
     [Fact] // ADR-0039 / ADR-0044: a command that opens nothing still hands the keyboard back to the root
     public async Task A_command_that_opens_nothing_hands_the_keyboard_back_to_the_root()
     {
