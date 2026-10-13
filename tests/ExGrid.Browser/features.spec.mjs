@@ -570,6 +570,55 @@ test('CP-19 / ADR-0005/0036: a menu copy writes with no permission granted and n
     expect(await clipboardAfterwards(page, context)).toBe(`Trader\n${await cellText(page, 0, 1)}`);
 });
 
+// CP-10 (ADR-0005): the page's text, selected with the mouse, is never what Ctrl+C on the grid
+// copies. The browser aims a copy at the element holding the document's selection, and at the
+// focused element only while there is none, so a selection left standing outside the grid would
+// take the command from it. Dragged across the paragraph above the second instance, then a grid
+// takes the keyboard: by a press on a cell of the grid that edits (its Keyboard Field, ADR-0080),
+// and on the display-only second instance by a press, and by Tab, which leaves the page's
+// selection standing as Ctrl+C arrives.
+async function selectTextWithMouse(page, paragraph) {
+    const box = await paragraph.boundingBox();
+    await page.mouse.move(box.x + 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width - 2, box.y + box.height / 2, { steps: 8 });
+    await page.mouse.up();
+    const selected = await page.evaluate(() => document.getSelection().toString());
+    expect(selected.length, 'the mouse selected the paragraph\'s text').toBeGreaterThan(10);
+    return selected;
+}
+
+for (const way of ['a press on the grid that edits', 'a press on the display-only grid', 'Tab back to the display-only grid']) {
+    test(`CP-10 / ADR-0005: text selected with the mouse, then ${way}: Ctrl+C copies the grid's cell, not the text`, async ({ page }) => {
+        const second = way !== 'a press on the grid that edits';
+        const target = second ? page.locator('.ex-grid').nth(1) : grid(page);
+        const cell = target.locator("[id$='r0c1']");
+        const expected = (await cell.textContent()).trim();
+        await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+
+        if (way.startsWith('Tab')) {
+            // The Focus first, then the text: Tab brings the keyboard back to the grid with its
+            // Focus where it was, and Ctrl+C is the first key the grid hears.
+            await cell.click({ force: true });
+            await expectKeyboardOn(target);
+            const selected = await selectTextWithMouse(page, page.locator('h2 + p'));
+            await page.keyboard.press('Tab');
+            await expectKeyboardOn(target);
+            // The page's selection still stands as Ctrl+C arrives: it is the grid's to drop.
+            expect(await page.evaluate(() => document.getSelection().toString())).toBe(selected);
+        } else {
+            await selectTextWithMouse(page, page.locator('h2 + p'));
+            await cell.click({ force: true });
+            await expectKeyboardOn(target);
+        }
+        await page.keyboard.press('ControlOrMeta+C');
+
+        // On the Server host the copy lands a round trip later (ADR-0005).
+        await expect.poll(async () => (await page.evaluate(() => navigator.clipboard.readText())).trimEnd(), { timeout: 5000 })
+            .toBe(expected);
+    });
+}
+
 test('a Reject holds the editor with real keys, and Escape is the way out (ED-15, ADR-0034)', async ({ page }) => {
     await clickCell(page, 0, 2);                   // Notional, which carries the verdict
     await page.keyboard.type('abc');
