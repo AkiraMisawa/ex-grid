@@ -414,7 +414,7 @@ test('under a dark scheme the untouched grid stays readable (UX-8)', async ({ pa
     expect(contrast.ratio, JSON.stringify(contrast)).toBeGreaterThanOrEqual(4.5);
 });
 
-test('inside an RTL ancestor the grid stays an LTR island (DIR-2/DIR-3)', async ({ page }) => {
+test('inside an RTL ancestor the grid stays an LTR island (DIR-2)', async ({ page }) => {
     await open(page);
     // The grid's parent is #app on WebAssembly and body on the Server host, neither of which
     // leaving the page clears: alterPage puts the direction back as the test ends (ADR-0056).
@@ -446,10 +446,65 @@ test('inside an RTL ancestor the grid stays an LTR island (DIR-2/DIR-3)', async 
         [...document.querySelectorAll('.ex-grid .ex-header-cell')].slice(0, 2)
             .map((el) => el.getBoundingClientRect().left));
     expect(headers[0]).toBeLessThan(headers[1]);
+});
 
-    // And the Arabic value renders inside its cell (DIR-3): present, not displaced.
-    const arabic = grid(page).locator('.ex-cell', { hasText: 'عمر' }).first();
-    await expect(arabic).toBeVisible();
+/** The Arabic Trader on /features — عمر, three letters — read where it is painted: its cell's
+ * box, the Trader header's, and each letter's box in logical order, from the text itself. */
+function arabicLayout(page) {
+    return grid(page).evaluate((g) => {
+        const cell = [...g.querySelectorAll('.ex-cell')].find((el) => el.textContent.trim() === 'عمر');
+        const header = [...g.querySelectorAll('.ex-header-cell')].find((el) => el.textContent.trim() === 'Trader');
+        const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+        let text;
+        while ((text = walker.nextNode()) && !text.data.includes('ع'));
+        const start = text.data.indexOf('ع');
+        const letters = [0, 1, 2].map((i) => {
+            const range = document.createRange();
+            range.setStart(text, start + i);
+            range.setEnd(text, start + i + 1);
+            const r = range.getBoundingClientRect();
+            return { left: r.left, right: r.right };
+        });
+        const box = (el) => { const r = el.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, width: r.width }; };
+        return { id: cell.id, cell: box(cell), header: box(header), letters, direction: getComputedStyle(cell).direction };
+    });
+}
+
+test('DIR-3 / ADR-0031: an Arabic value reads right to left inside its cell, and the cell does not move, under an RTL page', async ({ page }) => {
+    await open(page);
+    const before = await arabicLayout(page);
+
+    await alterPage(page, () => {
+        const parent = document.querySelector('.ex-grid').parentElement;
+        const was = parent.getAttribute('dir');
+        parent.setAttribute('dir', 'rtl');
+        return () => (was === null ? parent.removeAttribute('dir') : parent.setAttribute('dir', was));
+    });
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.querySelector('.ex-grid').parentElement).direction))
+        .toBe('rtl');
+    const after = await arabicLayout(page);
+
+    for (const [when, layout] of [['in an LTR page', before], ['in an RTL page', after]]) {
+        // The cell is an LTR cell: the grid is an island (ADR-0031).
+        expect(layout.direction, when).toBe('ltr');
+        // The value reads right to left: its first letter, ع, stands rightmost, its last, ر,
+        // leftmost — the bidi algorithm inside an LTR context, as Excel shows it.
+        const [first, second, third] = layout.letters;
+        expect(first.left, `${when}: ع stands right of م`).toBeGreaterThanOrEqual(second.right - 0.5);
+        expect(second.left, `${when}: م stands right of ر`).toBeGreaterThanOrEqual(third.right - 0.5);
+        // Every letter is inside its cell.
+        for (const letter of layout.letters) {
+            expect(letter.left, when).toBeGreaterThanOrEqual(layout.cell.left);
+            expect(letter.right, when).toBeLessThanOrEqual(layout.cell.right);
+        }
+        // The cell stands under its own column's header.
+        expect(layout.cell.left, `${when}: the cell is under Trader`).toBe(layout.header.left);
+        expect(layout.cell.width, when).toBe(layout.header.width);
+    }
+    // And the RTL page moved neither the cell nor its letters.
+    expect(after.id).toBe(before.id);
+    expect(after.cell).toEqual(before.cell);
+    expect(after.letters).toEqual(before.letters);
 });
 
 test('a Header Group label is centred, and nothing aligns it vertically (HG-13, ADR-0032)', async ({ page }) => {
