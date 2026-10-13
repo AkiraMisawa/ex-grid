@@ -161,6 +161,32 @@ refers to it. The chart knows a hazard rate only by its column's declarations �
   on a Japanese Windows otherwise reads Shift_JIS), invariant, unformatted, every digit; a missing
   value is an empty field, never a zero.
 
+## What it costs (measured 2026-10-13)
+
+The exposure page, the whole table charted (12 series), Blazor Server in Release on this cloud
+container (4 vCPUs, Linux), headless Chromium on the same machine — so **no network latency and no
+bandwidth limit**; a real circuit adds both. `?every=7` and `?every=1` swap the tenor grid for a
+weekly or daily one to 30Y. Server time is read from `data-build-ms` (model, both drawings, both
+CSVs); bytes are the WebSocket frames the browser received.
+
+| Dates | Server build (redraw) | Drawing / file SVG / CSVs | Open the chart | Redraw (legend click) | Hover to the next date | DOM nodes |
+|---|---|---|---|---|---|---|
+| 67 (tenor grid) | 5 ms | 131 KB / 155 KB / 9 + 29 KB | 249 ms, 462 KB | 83 ms, **428 KB** | 30 ms, 3 KB | 1,875 |
+| 1,566 (weekly) | 88 ms | 2.7 MB / 3.3 MB / 0.2 + 0.7 MB | 1.3 s, 9.0 MB | 705 ms, **9.0 MB** | 60 ms, 3 KB | 33,678 |
+| 10,959 (daily) | — | 18 MB / 22 MB / 1.3 + 4.6 MB | 11.7 s, 61 MB | 6.7 s, **61 MB** | 263 ms, 3 KB | 224,145 |
+
+What it says:
+
+- **The server is not the cost; the circuit and the DOM are.** Building is milliseconds; every
+  redraw then sends the whole drawing again, and the page's download links carry the file SVG and
+  both CSVs as `data:` URLs, URL-encoded — more than half of the 428 KB at 67 dates.
+- **The hover layer is dates × series.** Each date's band holds a guide and a dot per series,
+  written into the drawing: 1,618 of the page's 1,875 nodes at 67 dates, 224k at daily.
+- **The tooltip stays cheap** (3 KB per date crossed) because the listener reports only a change
+  of date — the shape ADR-0029 chose — but it slows with the DOM it lands in.
+- **Past the plot's width in pixels, points stop adding information** and keep adding cost: 10,959
+  dates on 816 px.
+
 ## What it showed
 
 1. **One axis is unreadable for this table**, as predicted: CVA (tens of thousands) lies flat on

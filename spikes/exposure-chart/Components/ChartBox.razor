@@ -289,7 +289,8 @@
                 <span class="legend-note">Click to hide or show.</span>
             </div>
         }
-        <div class="chart-body" @ref="_chartBody">
+        <div class="chart-body" @ref="_chartBody" data-build-ms="@_buildMs.ToString("0.0", Invariant)"
+             data-sizes="@($"{_pageSvg!.Length},{_svg!.Length},{_csv!.Length},{_csvLong!.Length}")">
             @((MarkupString)_pageSvg!)
             @if (_band is { } band && band < model.Xs.Count)
             {
@@ -362,6 +363,7 @@
     [Parameter] public ChartSpec? InitialDefinition { get; set; }
 
     private ChartLayout _layout;
+    private double _buildMs;
     private LegendStyle _legend = LegendStyle.Default;
 
     // The legend changes only what it is about, on the style as it is when the event is handled.
@@ -553,6 +555,7 @@
     private void Redraw()
     {
         if (_definition is null) return;
+        var watch = System.Diagnostics.Stopwatch.StartNew();
         var look = new ChartLook(_layout, _view, OnRight, StyleOfColumn, UnitOf, SlotOf);
         var model = _definition switch
         {
@@ -567,6 +570,8 @@
         _pageSvg = ChartSvg.Write(_model, _drawing, forFile: false);
         _csv = ChartCsv.Write(_model);
         _csvLong = ChartCsv.WriteLong(_model);
+        // Measured, for the spike's record: how long the model, the drawings and the files took.
+        _buildMs = watch.Elapsed.TotalMilliseconds;
     }
 
     private void ShowColumns(IEnumerable<string> columns, bool show)

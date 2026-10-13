@@ -21,6 +21,15 @@ public static class ExposureData
     /// 10Y and yearly to 30Y. Uneven on purpose — on a category axis it would look evenly spaced
     /// and the hump would sit in the wrong place.
     /// </summary>
+    /// <summary>A grid as fine as a simulation may report: every <paramref name="days"/> days to 30Y,
+    /// for measuring what the chart costs as the dates grow.</summary>
+    public static IReadOnlyList<DateOnly> EveryDays(int days)
+    {
+        var dates = new List<DateOnly>();
+        for (var d = AsOf; d <= AsOf.AddYears(30); d = d.AddDays(days)) dates.Add(d);
+        return dates;
+    }
+
     public static IReadOnlyList<DateOnly> TenorGrid()
     {
         var dates = new List<DateOnly> { AsOf };
@@ -33,11 +42,11 @@ public static class ExposureData
 
     /// <param name="afterScale">How strongly the proposed trade offsets the book: 1 is the
     /// proposal as booked, more is a larger hedge.</param>
-    public static IReadOnlyList<ExposureRow> Profile(double afterScale = 1.0)
+    public static IReadOnlyList<ExposureRow> Profile(double afterScale = 1.0, IReadOnlyList<DateOnly>? grid = null)
     {
         var rows = new List<ExposureRow>();
         DateOnly? previous = null;
-        foreach (var date in TenorGrid())
+        foreach (var date in grid ?? TenorGrid())
         {
             var t = (date.DayNumber - AsOf.DayNumber) / 365.25;
             var dt = previous is { } p ? (date.DayNumber - p.DayNumber) / 365.25 : 0;

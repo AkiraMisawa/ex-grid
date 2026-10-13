@@ -72,7 +72,11 @@
 
     private ChartBox<ExposureRow> _chart = null!;
 
-    private IReadOnlyList<ExposureRow> _rows = ExposureData.Profile();
+    // ?every=7 or ?every=1: a weekly or daily grid to 30Y instead of the tenor grid, to measure with.
+    [SupplyParameterFromQuery(Name = "every")] public int? EveryDays { get; set; }
+    private IReadOnlyList<DateOnly>? Grid => EveryDays is > 0 and var d ? ExposureData.EveryDays(d) : null;
+
+    private IReadOnlyList<ExposureRow> _rows = null!;
     private InMemoryGridSource<ExposureRow> _source = null!;
     private readonly IReadOnlyList<GridColumn<ExposureRow>> _columns = AllColumns;
     private readonly IReadOnlyList<HeaderGroup> _groups = Groups;
@@ -88,6 +92,7 @@
 
     protected override void OnInitialized()
     {
+        _rows = ExposureData.Profile(1.0, Grid);
         _source = GridSource.From(_rows, r => r.Date);
         _contextCommands = context =>
         [
@@ -113,7 +118,7 @@
     private void Recalculate()
     {
         _hedge += 0.5;
-        _rows = ExposureData.Profile(_hedge);
+        _rows = ExposureData.Profile(_hedge, Grid);
         _source.ReplaceAll(_rows);
     }
 }
