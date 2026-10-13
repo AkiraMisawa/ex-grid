@@ -43,7 +43,7 @@
     <section class="chart">
         <div class="chart-head">
             <span class="definition">
-                x: <b>@_definition!.XColumn</b> · @_definition.SeriesColumns.Count series · @_definition.RowKeys.Count dates
+                x: <b>@_definition!.XColumn</b> · @_definition.Series.Count series · @_definition.AllKeys.Count dates
                 @if (model.Missing > 0)
                 {
                     <span class="refusal"> — @model.Missing of them no longer in the data</span>
@@ -54,6 +54,7 @@
             <button type="button" class="filter-toggle @(_filterOpen ? "open" : "")" aria-expanded="@(_filterOpen ? "true" : "false")"
                     @onclick="() => _filterOpen = !_filterOpen">Filter @(FilterSummary(model)) ▾</button>
             <a class="download" href="@ChartCsv.DataUrl(_csv!, "text/csv")" download="exposure-profile.csv">Download CSV</a>
+            <a class="download" href="@ChartCsv.DataUrl(_csvLong!, "text/csv")" download="exposure-profile-long.csv" title="One row per point: Series, Date, Value">CSV (long)</a>
             <a class="download" href="@ChartCsv.DataUrl(_svg!, "image/svg+xml")" download="exposure-profile.svg">Download SVG</a>
             <button type="button" @onclick="CloseChart">Close</button>
         </div>
@@ -235,7 +236,8 @@
                             <div class="tip-row">
                                 <span class="swatch ex-chart-swatch-@(series.Slot % 5)"></span>
                                 <span class="tip-name">@(panel.Title.Length > 0 ? series.Leaf : series.Name)</span>
-                                <span class="tip-value">@(series.Points[band].Y is { } v ? series.Text(v) : "(no value)")</span>
+                                @{ var point = series.At(model.Dates[band]); }
+                                <span class="tip-value @(point is null ? "absent" : "")">@(point is null ? "—" : point.Value.Y is { } v ? series.Text(v) : "(no value)")</span>
                             </div>
                         }
                     }
@@ -311,43 +313,36 @@
 
     private void AddPicked()
     {
-        // In the grid's column order, so a group's series keep its Before, After, Diff order.
-        AddColumns(_columns.Select(c => c.Name).Where(_picked.Contains).ToList());
+        // In the grid's column order, so a group's series keep its Before, After, Diff order;
+        // at the chart's dates, since a list of columns names no rows.
+        var keys = _definition!.AllKeys;
+        AddSeries(_columns.Select(c => c.Name).Where(_picked.Contains).Select(n => new SeriesDefinition(n, keys)).ToList());
         _picked.Clear();
         _pickerOpen = false;
     }
 
     /// <summary>
-    /// Excel's "add the range to the chart": the selection's number columns join it. The chart
-    /// keeps its own dates — a series is read at them — and when the selection covered other
-    /// rows, that is said rather than silently ignored.
+    /// Excel's "add the range to the chart": the selection's number columns join it, each at the
+    /// rows the selection covered in it — its own dates, not the chart's.
     /// </summary>
     private void AddSelection()
     {
         _refusal = null;
         if (_selection.IsEmpty) { _refusal = "Select the columns to add in the grid first."; return; }
         if (_selectionVersion != _source.RowSequenceVersion) { _refusal = "The rows were reordered after the selection was made. Select again."; return; }
-        var indices = _selection.Ranges.SelectMany(r => Enumerable.Range(r.LeftColumn, r.ColumnCount)).Distinct().Order().ToList();
-        var notNumbers = indices.Where(i => _columns[i].Type is not (ColumnType.Number or ColumnType.Date)).ToList();
-        if (notNumbers.Count > 0) { _refusal = $"{string.Join(", ", notNumbers.Select(i => _columns[i].Header))} cannot be plotted: not a number column."; return; }
-        var names = indices.Where(i => _columns[i].Type == ColumnType.Number).Select(i => _columns[i].Name)
-            .Where(n => !_definition!.SeriesColumns.Contains(n)).ToList();
-        if (names.Count == 0) { _refusal = "Every column in the selection is already in the chart."; return; }
-
         var x = _columns.First(c => c.Name == _definition!.XColumn);
-        var covered = _selection.Ranges.SelectMany(r => Enumerable.Range(r.TopRow, r.RowCount)).Distinct()
-            .Select(i => x.Value(_source.Window[i])).OfType<DateOnly>().ToHashSet();
-        _notice = covered.SetEquals(_definition!.RowKeys)
-            ? null
-            : $"Added for the chart's {_definition.RowKeys.Count} dates; the selection covered {covered.Count(_definition.RowKeys.Contains)} of them.";
-        AddColumns(names);
+        var (series, refusal) = ChartRequest.SeriesOf(_selection.Ranges, _columns, _source.Window, x, _definition!.SeriesColumns);
+        if (refusal is not null) { _refusal = refusal; return; }
+        if (series.Count == 0) { _refusal = "Every column in the selection is already in the chart."; return; }
+        AddSeries(series);
         _pickerOpen = false;
     }
 
-    private void AddColumns(IReadOnlyList<string> names)
+    private void AddSeries(IReadOnlyList<SeriesDefinition> series)
     {
-        if (names.Count == 0) return;
-        _definition = _definition! with { SeriesColumns = [.. _definition.SeriesColumns, .. names] };
+        if (series.Count == 0) return;
+        _definition = _definition! with { Series = [.. _definition.Series, .. series] };
+        _notice = $"Added {string.Join(", ", series.Select(s => $"{s.Column} ({s.RowKeys.Count} dates)"))}.";
         Redraw();
     }
 
@@ -404,7 +399,7 @@
 
     private ChartDefinition? _definition;
     private ChartModel? _model;
-    private string? _svg, _pageSvg, _csv, _refusal, _notice;
+    private string? _svg, _pageSvg, _csv, _csvLong, _refusal, _notice;
 
     // The tooltip: which date the pointer is over, as the chart's listener reports it.
     private int _drawing;
@@ -473,6 +468,7 @@
         _svg = ChartSvg.Write(_model);
         _pageSvg = ChartSvg.Write(_model, _drawing, forFile: false);
         _csv = ChartCsv.Write(_model);
+        _csvLong = ChartCsv.WriteLong(_model);
     }
 
     private void ShowColumns(IEnumerable<string> columns, bool show)

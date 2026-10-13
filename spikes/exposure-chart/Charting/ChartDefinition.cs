@@ -3,19 +3,24 @@ using ExGrid.Selection;
 
 namespace ExposureChart.Charting;
 
+/// <summary>One series: a column, and the rows it is charted at, named by their axis value.</summary>
+public sealed record SeriesDefinition(string Column, IReadOnlySet<DateOnly> RowKeys);
+
 /// <summary>
-/// What a chart is of, in the data's own terms: the column that is the horizontal axis, the
-/// columns that are series, and the rows — named by their value in the axis column, never by
-/// where they are painted. A sort, a column drag or a recalculation leaves it meaning the same
-/// thing, which a definition by selection indices would not (ADR-0011 drops a selection on
-/// reorder for exactly that reason).
+/// What a chart is of, in the data's own terms: the column that is the horizontal axis, and its
+/// series — each a column with dates of its own, never "where it was painted". A sort, a column
+/// drag or a recalculation leaves it meaning the same thing, which a definition by selection
+/// indices would not (ADR-0011 drops a selection on reorder for exactly that reason). Each
+/// series' rows are its own, as each Excel series has its own ranges: a series added later, or a
+/// range selected over other rows, is charted at the dates it was given.
 /// </summary>
-/// <param name="RowKeys">The axis values of the rows charted: the rows the selection covered,
-/// as they were shown (a filter in force narrows them, as it narrows what was selectable).</param>
-public sealed record ChartDefinition(
-    string XColumn,
-    IReadOnlyList<string> SeriesColumns,
-    IReadOnlySet<DateOnly> RowKeys);
+public sealed record ChartDefinition(string XColumn, IReadOnlyList<SeriesDefinition> Series)
+{
+    public IReadOnlyList<string> SeriesColumns => Series.Select(s => s.Column).ToList();
+
+    /// <summary>Every date some series is charted at.</summary>
+    public IReadOnlySet<DateOnly> AllKeys => Series.SelectMany(s => s.RowKeys).ToHashSet();
+}
 
 /// <summary>A chart that could be made, or the sentence that says why not.</summary>
 public sealed record ChartOutcome(ChartDefinition? Definition, string? Refusal)
@@ -46,19 +51,10 @@ public static class ChartRequest
             return ChartOutcome.Refused("The rows were reordered after the selection was made. Select again.");
 
         // One cell is Excel's "chart the table around it".
-        var wholeTable = ranges is [{ RowCount: 1, ColumnCount: 1 }];
-        var columnIndices = wholeTable
-            ? Enumerable.Range(0, columns.Count).ToList()
-            : ranges.SelectMany(r => Enumerable.Range(r.LeftColumn, r.ColumnCount)).Distinct().Order().ToList();
+        if (ranges is [{ RowCount: 1, ColumnCount: 1 }])
+            ranges = [new SelectionRange(0, 0, window.Count, columns.Count)];
 
-        if (!wholeTable)
-        {
-            // Several ranges make one chart only when they cover the same rows, as in Excel.
-            var first = ranges[0];
-            if (ranges.Any(r => r.TopRow != first.TopRow || r.RowCount != first.RowCount))
-                return ChartOutcome.Refused("The selected ranges cover different rows, so their points cannot be paired.");
-        }
-
+        var columnIndices = ranges.SelectMany(r => Enumerable.Range(r.LeftColumn, r.ColumnCount)).Distinct().Order().ToList();
         var dates = columnIndices.Where(i => columns[i].Type == ColumnType.Date).ToList();
         if (dates.Count == 0)
             return ChartOutcome.Refused("The selection has no date column to put on the horizontal axis.");
@@ -66,21 +62,41 @@ public static class ChartRequest
             return ChartOutcome.Refused(
                 $"The selection has {dates.Count} date columns ({string.Join(", ", dates.Select(i => columns[i].Header))}); choose one for the horizontal axis.");
 
-        var others = columnIndices.Where(i => columns[i].Type != ColumnType.Date).ToList();
-        var notNumbers = others.Where(i => columns[i].Type != ColumnType.Number).ToList();
-        if (notNumbers.Count > 0)
-            return ChartOutcome.Refused(
-                $"{string.Join(", ", notNumbers.Select(i => columns[i].Header))} cannot be plotted: not a number column.");
-        if (others.Count == 0)
-            return ChartOutcome.Refused("The selection has only the date column; select the figures to plot beside it.");
-
         var x = columns[dates[0]];
-        var (top, count) = wholeTable ? (0, window.Count) : (ranges[0].TopRow, ranges[0].RowCount);
-        var keys = Enumerable.Range(top, count)
-            .Select(i => x.Value(window[i]))
-            .OfType<DateOnly>()
-            .ToHashSet();
+        var series = SeriesOf(ranges, columns, window, x, exclude: []);
+        if (series.Refusal is not null) return ChartOutcome.Refused(series.Refusal);
+        if (series.Series.Count == 0)
+            return ChartOutcome.Refused("The selection has only the date column; select the figures to plot beside it.");
+        return new(new ChartDefinition(x.Name, series.Series), null);
+    }
 
-        return new(new ChartDefinition(x.Name, others.Select(i => columns[i].Name).ToArray(), keys), null);
+    /// <summary>
+    /// The selection's number columns as series, each at the rows of the ranges that cover it —
+    /// so a column selected over two separate stretches of rows is charted at both.
+    /// </summary>
+    public static (IReadOnlyList<SeriesDefinition> Series, string? Refusal) SeriesOf<TRow>(
+        IReadOnlyList<SelectionRange> ranges,
+        IReadOnlyList<GridColumn<TRow>> columns,
+        IReadOnlyList<TRow> window,
+        GridColumn<TRow> x,
+        IReadOnlyCollection<string> exclude)
+    {
+        var columnIndices = ranges.SelectMany(r => Enumerable.Range(r.LeftColumn, r.ColumnCount)).Distinct().Order().ToList();
+        var notNumbers = columnIndices.Where(i => columns[i].Type is not (ColumnType.Number or ColumnType.Date)).ToList();
+        if (notNumbers.Count > 0)
+            return ([], $"{string.Join(", ", notNumbers.Select(i => columns[i].Header))} cannot be plotted: not a number column.");
+
+        var series = new List<SeriesDefinition>();
+        foreach (var i in columnIndices.Where(i => columns[i].Type == ColumnType.Number && !exclude.Contains(columns[i].Name)))
+        {
+            var keys = ranges
+                .Where(r => i >= r.LeftColumn && i <= r.RightColumn)
+                .SelectMany(r => Enumerable.Range(r.TopRow, r.RowCount))
+                .Select(row => x.Value(window[row]))
+                .OfType<DateOnly>()
+                .ToHashSet();
+            series.Add(new SeriesDefinition(columns[i].Name, keys));
+        }
+        return (series, null);
     }
 }

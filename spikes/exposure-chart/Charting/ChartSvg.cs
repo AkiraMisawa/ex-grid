@@ -176,9 +176,10 @@ public static class ChartSvg
             foreach (var (panel, top, leftAxis, rightAxis) in layouts)
                 foreach (var series in panel.Series)
                 {
-                    var y = series.Points[i].Y;
-                    readout.Append('\n').Append(series.Name).Append(": ").Append(y is { } v ? series.Text(v) : "(no value)");
-                    if (y is not { } value) continue;
+                    var point = series.At(date);
+                    readout.Append('\n').Append(series.Name).Append(": ")
+                        .Append(point is null ? "—" : point.Value.Y is { } v ? series.Text(v) : "(no value)");
+                    if (point?.Y is not { } value) continue;
                     var axis = series.Secondary ? rightAxis!.Value : leftAxis;
                     var cy = top + panelHeight - panelHeight * axis.Fraction(value);
                     svg.Append(Invariant, $"""<circle class="ex-chart-dot ex-chart-slot-{series.Slot % 5}" cx="{X(date):0.##}" cy="{cy:0.##}" r="3.5"/>""");
@@ -269,13 +270,14 @@ public static class ChartSvg
             if (points[i].Y is not { } v) continue;
             var level = y(v);
             closed.Add((x(points[i].X), level));
-            // (tᵢ₋₁, tᵢ] runs back to the previous date; [tᵢ, tᵢ₊₁) forward to the next.
-            var j = preceding ? i - 1 : i + 1;
-            if (j < 0 || j >= points.Count) continue;
-            var otherEnd = x(points[j].X);
-            d.Append(Invariant, $"M{otherEnd:0.##} {level:0.##}H{x(points[i].X):0.##}");
-            // Open where the neighbour's own value differs: there the function jumps.
-            if (points[j].Y != v) opens.Add((otherEnd, level));
+            // (tᵢ₋₁, tᵢ] runs back to the data's previous date; [tᵢ, tᵢ₊₁) forward to its next —
+            // the bucket is the data's, whether this series is charted at its other end or not.
+            if ((preceding ? points[i].Previous : points[i].Next) is not { } end) continue;
+            var otherEnd = x(end);
+            var clipped = Math.Clamp(otherEnd, Left, Width - Right);
+            d.Append(Invariant, $"M{clipped:0.##} {level:0.##}H{x(points[i].X):0.##}");
+            // Open where the function takes another value at that end — or none in this series.
+            if (clipped == otherEnd && series.At(end)?.Y != v) opens.Add((otherEnd, level));
         }
         svg.Append(Invariant, $"""<path class="ex-chart-line ex-chart-slot-{slot} ex-chart-group-{dash}" d="{d}"><title>{Escape(series.Name)}</title></path>""");
         foreach (var (cx, cy) in opens) Marker(svg, series.Style.Marker, slot, cx, cy, open: true, size: 2.6);
@@ -309,13 +311,16 @@ public static class ChartSvg
     private static string PathOf(IReadOnlyList<ChartPoint> points, Func<DateOnly, double> x, Func<decimal, double> y)
     {
         var d = new StringBuilder();
-        var pen = false;
+        DateOnly? penAt = null;
         foreach (var point in points)
         {
-            if (point.Y is not { } v) { pen = false; continue; }
-            d.Append(pen ? 'L' : 'M').Append(x(point.X).ToString("0.##", Invariant)).Append(' ')
+            if (point.Y is not { } v) { penAt = null; continue; }
+            // Joined only to the data's previous date: a series charted over two stretches of
+            // rows is not drawn across the rows between them, whose values it does not show.
+            var joined = penAt is { } at && point.Previous == at;
+            d.Append(joined ? 'L' : 'M').Append(x(point.X).ToString("0.##", Invariant)).Append(' ')
                 .Append(y(v).ToString("0.##", Invariant)).Append(' ');
-            pen = true;
+            penAt = point.X;
         }
         return d.ToString().TrimEnd();
     }

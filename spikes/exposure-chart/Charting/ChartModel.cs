@@ -13,8 +13,12 @@ public enum ChartLayout
     OneAxis,
 }
 
-/// <summary>A point; a missing value is a gap, never a zero.</summary>
-public readonly record struct ChartPoint(DateOnly X, decimal? Y);
+/// <summary>
+/// A point; a missing value is a gap, never a zero. It knows the data's dates on either side of
+/// it, charted in this series or not: a line joins it to the previous point only when that
+/// point is the previous date in the data, and a step's interval runs to the data's neighbour.
+/// </summary>
+public readonly record struct ChartPoint(DateOnly X, decimal? Y, DateOnly? Previous = null, DateOnly? Next = null);
 
 /// <param name="Slot">The series' colour, by its leaf header: every "After" is one colour in every panel.</param>
 /// <param name="Group">The Header Group the column stands under, or empty.</param>
@@ -22,6 +26,25 @@ public readonly record struct ChartPoint(DateOnly X, decimal? Y);
 public sealed record ChartSeries(
     string Column, string Name, string Group, string Leaf, int Slot, int GroupIndex,
     bool Secondary, IReadOnlyList<ChartPoint> Points, Func<decimal, string> Text, SeriesStyle Style);
+
+public static class ChartSeriesExtensions
+{
+    /// <summary>The series' point at a date, or null where the series is not charted at it —
+    /// which is not the same as a point whose value is missing.</summary>
+    public static ChartPoint? At(this ChartSeries series, DateOnly date)
+    {
+        var points = series.Points;
+        int lo = 0, hi = points.Count - 1;
+        while (lo <= hi)
+        {
+            var mid = (lo + hi) / 2;
+            var c = points[mid].X.CompareTo(date);
+            if (c == 0) return points[mid];
+            if (c < 0) lo = mid + 1; else hi = mid - 1;
+        }
+        return null;
+    }
+}
 
 public sealed record ChartPanel(string Title, IReadOnlyList<ChartSeries> Series);
 
@@ -37,8 +60,10 @@ public sealed record ChartView(IReadOnlySet<string> HiddenSeries, DateOnly? From
 
 /// <summary>What is drawn, resolved against the data as it is now.</summary>
 /// <param name="AllSeries">Every series of the definition, shown or not, for the filter's list.</param>
+/// <param name="Dates">Every date some shown series is charted at, in order: the axis' extent,
+/// and one hover band each.</param>
 /// <param name="AllDates">Every date of the definition the data holds, for the filter's range.</param>
-/// <param name="Missing">Row keys of the definition the data no longer holds.</param>
+/// <param name="Missing">Series dates of the definition the data no longer holds.</param>
 public sealed record ChartModel(
     string XHeader,
     IReadOnlyList<DateOnly> Dates,
@@ -70,14 +95,16 @@ public static class ChartModelBuilder
         var byName = columns.ToDictionary(c => c.Name);
         var x = byName[definition.XColumn];
 
-        // A date axis plots by value, so the grid's row order plays no part.
-        var charted = rows
-            .Select(r => (Row: r, X: x.Value(r) is DateOnly d ? d : (DateOnly?)null))
-            .Where(p => p.X is { } d && definition.RowKeys.Contains(d))
-            .OrderBy(p => p.X)
-            .ToList();
-        var dates = charted.Select(p => p.X!.Value).ToList();
-        var missing = definition.RowKeys.Count - dates.Distinct().Count();
+        // A date axis plots by value, so the grid's row order plays no part. The axis value is
+        // the row's identity here: one row per date.
+        var byDate = new Dictionary<DateOnly, TRow>();
+        foreach (var r in rows)
+            if (x.Value(r) is DateOnly d) byDate[d] = r;
+        var missing = definition.Series.Sum(s => s.RowKeys.Count(k => !byDate.ContainsKey(k)));
+        var dataDates = byDate.Keys.Order().ToList();
+        var position = dataDates.Select((d, i) => (d, i)).ToDictionary(p => p.d, p => p.i);
+        DateOnly? Neighbour(DateOnly d, int step) =>
+            position[d] + step is var j && j >= 0 && j < dataDates.Count ? dataDates[j] : null;
 
         var tierOne = groups.Where(g => g.Tier == 1).ToList();
         string GroupOf(string column) => tierOne.FirstOrDefault(g => g.Columns.Contains(column))?.Label ?? "";
@@ -85,8 +112,9 @@ public static class ChartModelBuilder
         var leaves = new List<string>();
         var groupNames = new List<string>();
         var series = new List<ChartSeries>();
-        foreach (var name in definition.SeriesColumns)
+        foreach (var seriesDefinition in definition.Series)
         {
+            var name = seriesDefinition.Column;
             var column = byName[name];
             var group = GroupOf(name);
             if (!leaves.Contains(column.Header)) leaves.Add(column.Header);
@@ -95,7 +123,8 @@ public static class ChartModelBuilder
             // Every tier's label above the leaf, top-down, then the leaf: "EPE(0) · Before".
             var path = groups.Where(g => g.Columns.Contains(name)).OrderByDescending(g => g.Tier)
                 .Select(g => g.Label).Append(column.Header);
-            var points = charted.Select(p => new ChartPoint(p.X!.Value, ToDecimal(column.Value(p.Row)))).ToList();
+            var points = seriesDefinition.RowKeys.Where(byDate.ContainsKey).Order()
+                .Select(d => new ChartPoint(d, ToDecimal(column.Value(byDate[d])), Neighbour(d, -1), Neighbour(d, 1))).ToList();
             var format = column.Format;
             series.Add(new ChartSeries(
                 name, string.Join(" · ", path), group, column.Header,
@@ -110,16 +139,17 @@ public static class ChartModelBuilder
         // leaves "After" the colour it had.
         var from = view.From ?? DateOnly.MinValue;
         var to = view.To ?? DateOnly.MaxValue;
-        var shownIndices = Enumerable.Range(0, dates.Count).Where(i => dates[i] >= from && dates[i] <= to).ToList();
         var shown = series
             .Where(s => !view.HiddenSeries.Contains(s.Column))
-            .Select(s => s with { Points = shownIndices.Select(i => s.Points[i]).ToList() })
+            .Select(s => s with { Points = s.Points.Where(p => p.X >= from && p.X <= to).ToList() })
             .ToList();
+        var dates = shown.SelectMany(s => s.Points).Select(p => p.X).Distinct().Order().ToList();
+        var allDates = series.SelectMany(s => s.Points).Select(p => p.X).Distinct().Order().ToList();
 
         var panels = layout == ChartLayout.OneAxis
             ? shown.Count == 0 ? [] : [new ChartPanel("", shown)]
             : shown.GroupBy(s => s.Group).Select(g => new ChartPanel(g.Key, g.ToList())).ToList();
-        return new ChartModel(x.Header, shownIndices.Select(i => dates[i]).ToList(), panels, leaves, missing, series, dates);
+        return new ChartModel(x.Header, dates, panels, leaves, missing, series, allDates);
     }
 
     private static decimal? ToDecimal(object? value) => value switch

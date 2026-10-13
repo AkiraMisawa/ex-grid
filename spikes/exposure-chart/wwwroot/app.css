@@ -35,3 +35,4 @@ h1 { font-size: 18px; margin: 0 0 4px; }
 .add-toggle.open { background: #e0e7ff; }
 .notice { color: #92400e; }
 .sep-text { color: #6b7280; }
+.tip-value.absent { color: #9ca3af; }

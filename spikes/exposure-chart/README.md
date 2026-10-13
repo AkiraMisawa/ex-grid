@@ -23,14 +23,21 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
 | ![Steps and markers, first five years](screenshots/step-5y.png) | ![Style panel](screenshots/style-panel.png) |
 | ![Every date, yyyy-MM-dd at 90°](screenshots/x-every-date-90.png) | ![Tenor ticks and labels](screenshots/x-tenors.png) |
 | ![Every date at 45°, first five years](screenshots/x-every-date-45-5y.png) | ![Axis panel](screenshots/x-every-date-45-5y-panel.png) |
+| ![ENE(0) added over its own six dates](screenshots/own-dates.png) | ![One column over two stretches of rows](screenshots/own-dates-gap.png) |
 
 ## How it is built
 
 - **No change to the core.** The context menu's Consumer command (ADR-0036) already carries the
   selected ranges and the Row Sequence Version they were taken under; that is all a chart needs.
-- **The chart is defined in the data's terms** (`ChartDefinition`): the axis column, the series
-  columns by name, the rows by their date. A sort or a recalculation leaves it meaning the same
-  thing; a stale version is refused (spine rule 6).
+- **The chart is defined in the data's terms** (`ChartDefinition`): the axis column, and series
+  each made of a column and **dates of its own** (decided with the user, 2026-10-13), as each Excel
+  series has its own ranges. A sort or a recalculation leaves it meaning the same thing; a stale
+  version is refused (spine rule 6). Ranges selected over different rows no longer refuse: each
+  column is charted at the rows its ranges covered. The axis spans every series' dates, with a
+  hover band at each; a series with no point at a date reads "—" there, which is not "(no value)".
+- **A line joins only neighbours in the data.** A series charted over two stretches of rows is
+  not drawn across the rows between them, whose values it does not show; a step's interval runs
+  to the data's previous or next date, the bucket being the data's, not the series'.
 - **Nothing is guessed.** Headers are not data; series names and panels come from the Header
   Groups ("EPE(0) · Before"); the axis is the one Date column, and a selection without one, with
   two, or with a text column is refused by name.
@@ -68,10 +75,12 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
   the last panel grows with the angle and the longest label. Labels are not measured: an
   estimate per character decides both (ADR-0021).
 - **Series are added to a chart already drawn** (Excel's Select Data → Add): "+ Add series" lists
-  the number columns not yet in it, by Header Group, or adds the grid's current selection. An
-  added series is read at the chart's own dates; when the selection covered other rows, the page
-  says how many of the chart's dates it covered rather than quietly matching them. A new group
+  the number columns not yet in it, by Header Group — added at the chart's dates, since a list of
+  columns names no rows — or adds the grid's current selection, each column at the rows it covered. A new group
   becomes a new panel, and its Before / After / Diff take the colours those leaves already have.
+- **Two CSVs.** The wide one (a row per date, a column per series) cannot tell an empty cell
+  that is a missing value from one where the series is not charted; the long one (Series, Date,
+  Value — a row per point) can, its empty Value being only ever a missing one.
 - **CSV with no script**: a `data:` URL behind `<a download>`, UTF-8 with a byte-order mark (Excel
   on a Japanese Windows otherwise reads Shift_JIS), invariant, unformatted, every digit; a missing
   value is an empty field, never a zero.

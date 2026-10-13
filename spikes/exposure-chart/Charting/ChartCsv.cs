@@ -4,7 +4,10 @@ using System.Text;
 namespace ExposureChart.Charting;
 
 /// <summary>
-/// The chart's data as CSV: one row per date, one column per series, in the order drawn. Values
+/// The chart's data as CSV: one row per date, one column per series, in the order drawn — or,
+/// long, one row per point. The wide file has a cell for every date and series, so an empty one
+/// means either "missing" or "not charted at this date"; the long file has no such cell, and its
+/// empty Value is only ever a missing one. Values
 /// are the data's own — invariant, unformatted, every digit — because a file read back into a
 /// risk system must not carry "12.5M" or a thousands separator of the reader's culture. A
 /// missing value is an empty field, never a zero.
@@ -24,9 +27,20 @@ public static class ChartCsv
         {
             csv.Append(model.Dates[i].ToString("yyyy-MM-dd", Invariant));
             foreach (var s in series)
-                csv.Append(',').Append(s.Points[i].Y is { } v ? v.ToString(Invariant) : "");
+                csv.Append(',').Append(s.At(model.Dates[i])?.Y is { } v ? v.ToString(Invariant) : "");
             csv.Append("\r\n");
         }
+        return csv.ToString();
+    }
+
+    public static string WriteLong(ChartModel model)
+    {
+        var csv = new StringBuilder();
+        csv.Append(Field("Series")).Append(',').Append(Field(model.XHeader)).Append(",Value\r\n");
+        foreach (var s in model.Panels.SelectMany(p => p.Series))
+            foreach (var p in s.Points)
+                csv.Append(Field(s.Name)).Append(',').Append(p.X.ToString("yyyy-MM-dd", Invariant)).Append(',')
+                    .Append(p.Y is { } v ? v.ToString(Invariant) : "").Append("\r\n");
         return csv.ToString();
     }
 
