@@ -128,7 +128,8 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   and it kept both: over the core's own actions the keyboard stays on the root and
   `aria-activedescendant` moves to the chosen action's **button** — the attribute may name any
   descendant, and Chromium's accessibility tree resolves it to that button (checked over CDP;
-  what a screen reader then says is still owed a real one, like the wording below). Only a
+  what a screen reader then says is still owed a real one, like the wording below — *no longer
+  owed: the tree is the check, 2026-10-13, "Verified against the accessibility tree" below*). Only a
   Template's control takes DOM focus, which it already did when clicked; leaving it by Escape
   puts both back.)*
 - **On a grid that edits, the tab stop and `aria-activedescendant` are the Keyboard Field's**
@@ -144,6 +145,10 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   *(The sixteenth Windows run, 2026-10-02, tried Narrator: Tab into `/sheet` read "Enter Table, 1048576
   by 16384, edit", and ↓ sent DOM focus to `body`, though the run's own way of recording the speech
   may have caused that. Not settled; the real screen reader stays owed, as the user chose. ADR-0080.)*
+  *(2026-10-13, decided with the user: no screen reader is owed; see "Verified against the
+  accessibility tree" below. Where DOM focus goes after ↓ was read by the seventeenth Windows run's
+  Part F under NVDA, under Narrator and with neither: on the Keyboard Field after every ↓, so ↓ to
+  `body` was the sixteenth run's recording, not a keyboard defect.)*
 - **The scroller is not a tab stop either** *(found while implementing, 2026-09-26)*. Chrome makes
   a scroll container with no tabbable content a tab stop of its own once it overflows, so every
   overflowing display-only grid had a second stop inside it — `/wide` at any size, and `/cells`
@@ -197,6 +202,8 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   when it takes focus. The live region keeps its two writers.
 - **Whether the announcement should name the corner cells by column header or by index** is a
   wording question, settled against a real screen reader in layer 3 rather than in prose here.
+  *(2026-10-13: no screen reader settles it, "Verified against the accessibility tree" below. The
+  sentence stays as built, the corners by index, until a user's report asks for a change.)*
 
 ## Added after the fifth Windows run: a collapse to one cell empties the range sentence *(2026-09-29, decided with the user)*
 
@@ -212,3 +219,33 @@ no longer selected is the plausible wrong answer this design refuses.
 **The decision:** when the Selection becomes one cell or none, the region is emptied if it holds a
 range sentence. Emptying a `role="status"` region is not read aloud. A relayed Reject or a copy
 refusal stays where it is. A Focus move that changes no Selection still writes nothing (A11Y-10).
+
+## Verified against the accessibility tree, not a screen reader *(2026-10-13, decided with the user)*
+
+**The accessibility surface is verified against the browser's accessibility tree. No screen reader
+is run to verify a release.**
+- **The checklist** is the W3C ARIA Authoring Practices grid pattern: the roles, names and states,
+  and the keys its tables list.
+- **Layer 2** asserts the roles and `aria-*` attributes the core renders, before and after an
+  interaction (A11Y-1 to A11Y-20).
+- **Layer 3** reads Chromium's tree over the DevTools protocol's `Accessibility` domain (A11Y-21).
+  It also reads where DOM focus is after a key: `key-field.spec.mjs`'s ADR-0080 and KB-12 tests.
+
+**The model.** This is how MudBlazor verifies its components. Its contributor guide says a screen
+reader is not required: it diagnoses against the tree and the APG pattern, with axe-core optional.
+The user weighed it against the grid's heavier pattern — a single tab stop, an active descendant,
+counts and indexes across a virtualised Window, a live region — and chose it on 2026-10-13. Those
+are all properties of the tree, and the tree is what a screen reader reads.
+
+**What it gives up, said plainly:** what a particular screen reader makes of a correct tree. It is
+learned from users' reports and taken up then.
+- The sixteenth Windows run's Narrator transcript ("Scan" for ↓) was such a case. The seventeenth
+  run's Part F found DOM focus on the Keyboard Field after every ↓, so the tree and the focus were
+  right.
+
+**What it closes.** The places above that kept a real screen reader owed are closed: the action
+button's spoken name, the Keyboard Field's active descendant, and the corner cells' wording. The
+Definition of Done's §21.11 row on the Cell Editor's own ARIA semantics leaves the checks by hand.
+- The richer announced contract — the mode announcements — stays out of `0.1.0`'s scope, as decided
+  on 2026-10-11.
+- A later version that takes it up specifies it as a tree and checks it in layer 3.
