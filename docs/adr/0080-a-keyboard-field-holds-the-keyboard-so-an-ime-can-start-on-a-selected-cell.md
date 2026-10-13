@@ -55,6 +55,31 @@ display-only grid has none, and keeps the keyboard on its root, as before.
     composition there; then it waits for that one's end. The IME sends its end and the next start
     together, and Chrome tells the page of the start only after the end's listeners and all they ran
     have returned. On WebAssembly the edit opened, rendered and asked for the keyboard inside that run.)*
+    *(Refined again 2026-10-12, decided with the user: granted once the IME's key has been told whole,
+    at a keyup heard on the root, or at once when a composition ends with no such key being told (a
+    candidate chosen with the pointer, a script's commit), and not if that key started the next
+    composition there; then it waits for that one's end. The task after the end was a time, not an
+    order, and the timer is gone. A script driving the IME tells an end and the next start as two
+    DevTools commands. In 60 instrumented runs of ED-30's third composition under the MudBlazor Chrome
+    on WebAssembly, the start reached the page 0.1 to 2.9 ms after the end in the 54 that passed, where
+    the timer fired 0.9 to 10.8 ms after it, and 5.8 to 85 ms after it in the 6 that failed, where the
+    timer had fired at 0.3 to 0.9 ms, granted the request between the two, and the start composed in
+    the Cell Editor. Every event the IME owes a key reaches the page before that key's keyup, so the
+    keyup is the moment the next start, if there is one, has been told. The keyboard leaving the field
+    or the root ends the key as well, at the root's `focusout`: whatever the key still owes is told
+    wherever the keyboard went. Alt+Tab mid-composition is such a key. In the sixteenth run's k15 the
+    IME took Alt's keydown, the window switch ended the composition, and in 7 of 12 configurations no
+    keyup reached the page, since it went to the other window; at the keyup alone, the request would
+    have waited for whatever key came next. A request waiting on that key is decided where the keyboard
+    is going, by ADR-0021's rule for the editor's own focus: a control outside the grid that the user
+    moved to keeps the keyboard. This `focusout` clause is how the rule just decided is implemented,
+    written with it, and not a decision of its own. A browser driven through DevTools, as Playwright
+    drives one, emulates focus and tells a page nothing of a window switch, so a Windows run driven
+    that way sees the request wait for the next keyup heard on the root; layer 3 leaves the field from
+    script for k15. And the text the hold has for the edit goes into it as the editor takes the
+    keyboard, in the same task. Typed at the next animation frame, it came after a composition the IME
+    started in the editor at once: D10 read `かなｄ感じです` in 4 of the 6 failing runs above. The keyup is
+    heard by `keyup` on the root, which ADR-0021's seventh entry gains.)*
   - A second composition the IME finishes in the field before the first one's editor has the keyboard
     (a circuit, a fast typist) is typed into the edit at its caret, in order.
   - A primary press anywhere in the root during a composition ends it first: the field gives up the
@@ -160,7 +185,9 @@ user. What a screen reader then says is still owed a real one, as ADR-0033 alrea
 - **ADR-0021.** A seventh entry: the Keyboard Field's composition and focus listeners on the root.
   Two more decisions about focus are made in script (the root's own focus passed on; the field given
   up by a press during a composition), and the third is refined (the editor's request waits while the
-  field composes).
+  field composes). *(2026-10-12, decided with the user: the seventh entry gains `keyup` on the root,
+  and the editor's request also waits while a key the IME took is still being told, until a keyup, or
+  until the keyboard leaves the root.)*
 - **ADR-0033.** The one tab stop moves to the field on a grid that edits, and so does
   `aria-activedescendant`.
 - **ADR-0057.** The coloured text's `compositionend`, heard only while an edit is open, is unchanged;

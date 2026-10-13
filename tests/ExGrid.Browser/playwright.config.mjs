@@ -160,9 +160,13 @@ export default defineConfig({
         // line's widths and dashes are device pixels, which only a real display scale lays out.
         // And SH-41's sweep of the bold edge (VZ-19): at 150% a Device Pixel is two thirds of a CSS
         // pixel, which is what a column's edges round to and what a number may use of its padding.
+        // And the Focus among several ranges (UX-19, ADR-0008 of 2026-10-12): ExGrid's own on /wide,
+        // on the Paper beside R4's three selections, and under ExGrid.MudBlazor on /mud. A border of
+        // one Device Pixel inside its cell, which only a real display scale lays out, and a
+        // screenshot reads, as an OS does.
         {
             name: 'chrome-150',
-            grep: /BIG-1\b|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3|MK-6|item 3:|item 5:|active cell, cases 7 and 8|far reveal|DC-59|VZ-19/,
+            grep: /BIG-1\b|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3|MK-6|item 3:|item 5:|active cell, cases 7 and 8|far reveal|DC-59|VZ-19|UX-19\/SH-39|UX-19\/SH-54|UX-19\/UX-9|UX-19 at the display's scale/,
             use: {
                 channel: 'chrome',
                 viewport: null,

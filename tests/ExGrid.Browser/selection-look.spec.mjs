@@ -1,11 +1,12 @@
-import { test, expect, alterPage } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, twoFrames } from './fixtures.mjs';
 import { sheet, cell, clickCell, expectFocusAt, expectCovers, pressAt } from './sheet-helpers.mjs';
-import { painted, runsOf, sameColour, resolvedColour, paints, onDeviceGrid, wholePixelCentres } from './pixels.mjs';
+import { painted, runsOf, sameColour, resolvedColour, paints, onDeviceGrid, wholePixelCentres, edgePixels, onDevicePixels } from './pixels.mjs';
 
 // Excel's look for the Focus and a single range, and a whole header rule (ADR-0008 and ADR-0030
-// of 2026-09-29, ticket 24), read in device pixels from what the browser painted: UX-17, UX-18
-// and UX-19. A computed style would say what the cascade resolved; these criteria are about a
-// layer above the selection covering part of an outline, which only the pixels show.
+// of 2026-09-29, ticket 24), and for the Focus among several ranges (ADR-0008 of 2026-10-12), read
+// in device pixels from what the browser painted: UX-17, UX-18 and UX-19. A computed style would
+// say what the cascade resolved; these criteria are about a layer above the selection covering part
+// of an outline, and a line lying on Device Pixels, which only the pixels show.
 //
 // /sheet is the page that has every neighbour at once — the Headings, a Pinned Column (A), the
 // header — under the built-in Chrome and, with ?chrome=mud, under ExGrid.MudBlazor's. /wide has
@@ -13,7 +14,10 @@ import { painted, runsOf, sameColour, resolvedColour, paints, onDeviceGrid, whol
 // of its text, which is padded further in, and of the fill handle on the opposite corner.
 
 // Tall enough for the whole Sheet, as sheet.spec.mjs has it.
-test.use({ viewport: { width: 1280, height: 1000 } });
+// Under chrome-150 the window Chrome draws at the display scale its command line sets, as an OS sets
+// it: a viewport of Playwright's own is emulated at a scale of 1, which would take the 150% away. Only
+// the Focus among several ranges at the display's scale runs there (playwright.config.mjs).
+test.use({ viewport: async ({}, use, testInfo) => use(testInfo.project.name === 'chrome-150' ? null : { width: 1280, height: 1000 }) });
 
 const CHROMES = [['built-in', ''], ['MudBlazor', '?chrome=mud']];
 
@@ -219,33 +223,53 @@ for (const [chrome, query] of CHROMES) {
         expect(sameColour(edge, colour, 8), JSON.stringify({ edge, colour })).toBe(true);
     });
 
-    test(`UX-19 (${chrome} Chrome): several ranges are each tinted with no outline, and their tint never covers the Focus, which is outlined (ADR-0008)`, async ({ page }) => {
+    test(`UX-19 (${chrome} Chrome): several ranges are each tinted with no outline and no fill handle, and the Focus among them is untinted, with a thin border of one Device Pixel inside its cell in the Focus outline's colour (ADR-0008, 2026-10-12)`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         await clickCell(grid, 'B3');
+        await expectFocusAt(grid, 'B3');
+        // The Focus outline's colour, while one cell stands.
+        const outline = await outlineColour(grid);
         await clickCell(grid, 'C4', { modifiers: ['Shift'] });
         await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'B3', 'C4');
+        await expect(grid.locator('.ex-fill-handle')).toHaveCount(1);
         await clickCell(grid, 'E6', { modifiers: ['ControlOrMeta'] });
         await clickCell(grid, 'F7', { modifiers: ['ControlOrMeta', 'Shift'] });
         await expect(grid.locator('.ex-selection .ex-range')).toHaveCount(2);
         await expectCovers(grid.locator('.ex-selection .ex-range').nth(1), grid, 'E6', 'F7');
         await expectFocusAt(grid, 'E6');
+        await expect(grid.locator('.ex-focus.ex-focus-among-ranges')).toHaveCount(1);
+        await expect(grid.locator('.ex-fill-handle')).toHaveCount(0);
         await parkPointer(page, grid);
+        // E6's edges on device pixels, where its border is read; every box is read after.
+        const e6 = await onDevicePixels(page, cell(grid, 'E6'));
 
         const ground = await groundOf(page, cell(grid, 'D9'));
-        const colour = await outlineColour(grid);
         expect(sameColour(await groundOf(page, cell(grid, 'C4')), ground), 'the first range is tinted').toBe(false);
         expect(sameColour(await groundOf(page, cell(grid, 'F6')), ground), 'the second range is tinted').toBe(false);
         expect(await groundOf(page, cell(grid, 'E6')), 'the selection\'s tint does not cover the Focus').toEqual(ground);
-        // The first range has no outline: nothing across its top row or down its first column.
-        const first = await runsAround(grid, await cell(grid, 'B3').boundingBox(), colour);
+        // The border is the Focus outline's colour (2026-10-12, decided with the user: where nothing
+        // names its own token), so it is the outline's green on the Paper and the palette's primary
+        // under the MudBlazor Chrome.
+        const border = await resolvedColour(page, await grid.locator('.ex-focus-among-ranges').evaluate((el) => getComputedStyle(el, '::after').borderTopColor));
+        expect(border, JSON.stringify({ border, outline })).toEqual(outline);
+        // No range has an outline: nothing across the first one's top row or down its first column,
+        // and nothing past the second one's right edge. Round the Focus, nothing in that colour but
+        // its border, one device pixel a side.
+        const first = await runsAround(grid, await cell(grid, 'B3').boundingBox(), outline);
         expect(first, JSON.stringify(first)).toEqual({ across: [], down: [] });
-        // The Focus has its own, and the range it is in has none past it: F6's right edge is bare.
-        const focus = await focusEdges(grid, cell(grid, 'E6'));
-        expect([focus.across.length, focus.down.length], JSON.stringify(focus)).toEqual([2, 2]);
         const f6 = await cell(grid, 'F6').boundingBox();
         const beyond = await painted(page, { x: f6.x + 4, y: f6.y, width: f6.width + 2, height: 8 });
-        expect(runsOf(beyond.across(f6.y + 4, f6.x + 4, f6.x + f6.width + 2), colour)).toEqual([]);
+        expect(runsOf(beyond.across(f6.y + 4, f6.x + 4, f6.x + f6.width + 2), outline)).toEqual([]);
+        const around = await runsAround(grid, e6, outline);
+        expect(around, JSON.stringify(around)).toEqual({ across: [1, 1], down: [1, 1] });
+        // That border: one Device Pixel on each side, a Device Pixel in from the top and left edges
+        // and from the gridline it holds on the right and the bottom (ADR-0008, 2026-10-12).
+        const edges = await edgePixels(page, e6, border);
+        const gridline = Math.max(1, Math.floor(edges.scale + 1e-9));
+        expect(edges, JSON.stringify(edges)).toEqual({
+            scale: edges.scale, left: [1], top: [1], right: [gridline + 1], bottom: [gridline + 1],
+        });
     });
 
     test(`UX-19 (${chrome} Chrome): a single range across the pinned boundary shows no seam there, and slides beneath the pinned block (ADR-0008/0004)`, async ({ page }) => {
@@ -287,6 +311,62 @@ for (const [chrome, query] of CHROMES) {
         await grid.locator('.ex-scroller').evaluate((scroller) => { scroller.scrollLeft = 0; });
     });
 }
+
+test('UX-19 at the display\'s scale: ExGrid\'s own Focus among several ranges is one Device Pixel inside its cell in the Focus outline\'s colour, and its own token recolours it (ADR-0008, 2026-10-12; ADR-0090)', async ({ page }, testInfo) => {
+    // /wide: ExGrid with no Theme, Pinned Columns A and B and no Headings, read at the scale the
+    // display gives: 100% here, and a real 150% under the chrome-150 project, as an OS sets it. A
+    // scale emulated through the DevTools protocol is not read: the screenshot is not taken at it,
+    // and its pixels are the emulation's (device-pixel-225.spec.mjs's note).
+    await page.goto('/wide');
+    const grid = page.locator('.ex-grid').first();
+    await expect(grid.locator('.ex-row').first()).toBeVisible();
+    const at = (id) => grid.locator(`[id$='-${id}']`);
+    const canvasText = await resolvedColour(page, 'CanvasText');
+    const scale = await page.evaluate(() => devicePixelRatio);
+    expect(scale).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
+    // The grid has been told its Device Pixel (ADR-0090), and every line reads it.
+    await expect.poll(() => grid.evaluate((root) => /--ex-dp:\s*([\d.]+)px/.exec(root.getAttribute('style') ?? '')?.[1])).toBe(`${1 / scale}`);
+    await at('r3c3').click({ force: true });
+    await at('r4c4').click({ force: true, modifiers: ['Shift'] });
+    await expect(grid).toHaveAttribute('aria-activedescendant', /-r3c3$/);
+    await expect(grid.locator('.ex-range-single')).toHaveCount(1);
+    await expect(grid.locator('.ex-focus-among-ranges')).toHaveCount(0);
+    await at('r6c5').click({ force: true, modifiers: ['ControlOrMeta'] });
+    await at('r7c6').click({ force: true, modifiers: ['ControlOrMeta', 'Shift'] });
+    await expect(grid).toHaveAttribute('aria-activedescendant', /-r6c5$/);
+    await expect(grid.locator('.ex-focus.ex-focus-among-ranges')).toHaveCount(1);
+    await expect(grid.locator('.ex-range-single')).toHaveCount(0);
+    await page.mouse.move(0, 0);
+    await circuitQuiet();
+    await twoFrames(page);
+    // The page lays /wide's rows at a fraction of a pixel: moved onto device pixels to be read.
+    const box = await onDevicePixels(page, at('r6c5'));
+
+    // Each side's device pixels. A gridline is whole Device Pixels, one at 100% and 150% (ADR-0090).
+    const gridline = Math.max(1, Math.floor(scale + 1e-9));
+    const expected = { scale, left: [1], top: [1], right: [gridline + 1], bottom: [gridline + 1] };
+    // With no Theme, the Focus outline's colour, which is CanvasText.
+    const plain = await edgePixels(page, box, canvasText);
+    expect(plain, JSON.stringify(plain)).toEqual(expected);
+
+    // A Theme that colours the Focus colours this border with it (2026-10-12, decided with the user:
+    // where nothing names its own token, the border is the Focus outline's colour)…
+    await alterPage(page, () => {
+        document.body.style.setProperty('--ex-focus-outline', 'rgb(0, 0, 200)');
+        return () => document.body.style.removeProperty('--ex-focus-outline');
+    });
+    await twoFrames(page);
+    const followed = await edgePixels(page, box, [0, 0, 200]);
+    expect(followed, JSON.stringify(followed)).toEqual(expected);
+    // …and its own token, where a Theme names it, wins over the Focus outline's.
+    await alterPage(page, () => {
+        document.body.style.setProperty('--ex-focus-among-ranges-outline', 'rgb(200, 0, 0)');
+        return () => document.body.style.removeProperty('--ex-focus-among-ranges-outline');
+    });
+    await twoFrames(page);
+    const own = await edgePixels(page, box, [200, 0, 0]);
+    expect(own, JSON.stringify(own)).toEqual(expected);
+});
 
 test('UX-19: the range outline reads --ex-selection-outline, and a Theme that sets only the Focus outline colours both (ADR-0008/0029)', async ({ page }) => {
     await openSheet(page, '');
@@ -474,4 +554,43 @@ test('DC-12: every cell (Ctrl+A) shows no fill handle, as Excel showed none in v
     await expect(grid.locator('.ex-selection .ex-range')).not.toHaveCount(0);
     await expectFocusAt(grid, 'F12');
     await expect(grid.locator('.ex-fill-handle')).toHaveCount(0);
+});
+
+test('UX-19: under forced colors the Focus among several ranges takes its outline back in place of its thin border, and every range is outlined (ADR-0008, 2026-10-12)', async ({ page }) => {
+    await openSheet(page, '');
+    const grid = sheet(page);
+    await clickCell(grid, 'B3');
+    await clickCell(grid, 'D6', { modifiers: ['Shift'] });
+    await clickCell(grid, 'F8', { modifiers: ['ControlOrMeta'] });
+    await clickCell(grid, 'G9', { modifiers: ['ControlOrMeta', 'Shift'] });
+    await expect(grid.locator('.ex-selection .ex-range')).toHaveCount(2);
+    await expectFocusAt(grid, 'F8');
+    await expect(grid.locator('.ex-focus.ex-focus-among-ranges')).toHaveCount(1);
+    const outlines = () => grid.evaluate((root) => {
+        const read = (el) => {
+            const s = getComputedStyle(el);
+            const box = getComputedStyle(el, '::after');
+            return { style: s.outlineStyle, offset: s.outlineOffset, box: box.content === 'none' ? 'none' : `${box.borderTopStyle} ${box.borderTopWidth}` };
+        };
+        return {
+            ranges: [...root.querySelectorAll('.ex-selection .ex-range')].map(read),
+            focus: read(root.querySelector('.ex-focus-among-ranges')),
+            width: getComputedStyle(root.querySelector('.ex-focus-among-ranges')).outlineWidth,
+        };
+    });
+    // The thin border is the Focus's box of its own, no wider than a CSS pixel, and no outline;
+    // neither range draws anything of its own.
+    const normal = await outlines();
+    expect(normal.focus.style, JSON.stringify(normal)).toBe('none');
+    expect(normal.focus.box, JSON.stringify(normal)).toMatch(/^solid [\d.]+px$/);
+    expect(parseFloat(normal.focus.box.slice('solid '.length)), JSON.stringify(normal)).toBeLessThanOrEqual(1);
+    expect(normal.ranges.map((range) => [range.style, range.box]), JSON.stringify(normal)).toEqual([['none', 'none'], ['none', 'none']]);
+
+    // Forced colors draw no box: the Focus is outlined inside its cell, as everywhere there, and
+    // each range is outlined too.
+    await page.emulateMedia({ forcedColors: 'active' });
+    await expect.poll(async () => (await outlines()).focus.style).toBe('solid');
+    const forced = await outlines();
+    expect(forced.focus, JSON.stringify(forced)).toEqual({ style: 'solid', offset: `-${forced.width}`, box: 'none' });
+    expect(forced.ranges.map((range) => [range.style, range.box]), JSON.stringify(forced)).toEqual([['solid', 'none'], ['solid', 'none']]);
 });

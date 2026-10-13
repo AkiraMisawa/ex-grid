@@ -1,0 +1,9 @@
+set de-DE at 10:39:11
+a new PowerShell reads en-GB
+pass com-de-DE started 10:39:11
+10:39:13 TEXTFN-009   agree       0,3 s
+10:39:13 TEXTFN-010   agree       0,1 s
+
+agree 2, disagree 0, blocked 0, recorded 0 -> %LOCALAPPDATA%\exgrid-layer3\area-2026-10-12\oracle\ExcelOracle\results-2026-10-12-area-com-de-DE.json
+-Update: 2 agreeing cases now say source "observed"; disagreeing ones are untouched.
+pass com-de-DE ended 10:39:16

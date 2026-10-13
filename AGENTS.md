@@ -38,7 +38,8 @@ two turn on a distinction worth keeping: the grid never **measures** (a synchron
 performs, on the path to a paint), it is **told** when something the browser already knows has
 changed or settled. The sixth is a `ResizeObserver` reporting the Layout Ceiling, the tallest
 element the browser lays out at the current scale and zoom (ADR-0053). The seventh is the Keyboard
-Field's composition and focus on the root, so an IME can start on a selected cell (ADR-0080). The
+Field's composition, focus and `keyup` on the root, so an IME can start on a selected cell and the
+editor takes the keyboard only once the IME's key has been told whole (ADR-0080). The
 eighth is a `matchMedia` listener that reports the Device Pixel when the resolution changes, so lines
 and column edges lie on Device Pixels at every scale and zoom (ADR-0090). The ninth reports the
 browser's time zone once at attach, when a Consumer asks, so `TODAY()` is the user's day and not

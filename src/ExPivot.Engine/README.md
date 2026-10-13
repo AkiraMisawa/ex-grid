@@ -23,8 +23,9 @@ Excel's PivotTable lays them out.
 The engine's behaviour is the specification of ExPivot's semantics (ADR-0060 in the repository):
 a server that answers a pivot itself is held to it.
 
-> **This is a prerelease (`0.x`).** ExPivot ships with ExGrid, at the same version; upgrade them
-> together. The API may change between prereleases.
+> **ExPivot ships with ExGrid, at the same version;** upgrade them together. While the version is
+> `0.x`, the API may change from one version to the next; each version's
+> [Release Notes](https://akiramisawa.github.io/ex-grid/release-notes) say what changed.
 
 ## Requirements
 
@@ -33,8 +34,10 @@ a server that answers a pivot itself is held to it.
 ## Install
 
 ```sh
-dotnet add package ExPivot.Engine --prerelease
+dotnet add package ExPivot.Engine
 ```
+
+Add `--prerelease` for a prerelease, a version with a suffix such as `-rc.1`.
 
 ## Declaring the fields: the standard way
 

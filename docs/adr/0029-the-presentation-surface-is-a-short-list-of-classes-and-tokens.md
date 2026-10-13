@@ -82,6 +82,7 @@ Geometry tokens (written inline by C#, read-only — ADR-0027/0028):
 --ex-row-height   --ex-header-height   --ex-font-size   --ex-cell-padding-x
 --ex-action-padding-x   --ex-action-border-width   --ex-action-gap
 --ex-menu-button-width   --ex-menu-button-inset   --ex-sort-mark-width
+--ex-resize-grip-width   --ex-column-guide-width
 ```
 
 *(The menu-button pair was added when review found the ▾'s 16px/6px living as a CSS
@@ -90,6 +91,10 @@ dissolved, re-entering through a new element. `--ex-sort-mark-width` was added f
 reason on 2026-09-26: the header estimate began charging the sort mark
 ([ADR-0016](./0016-column-width-and-overflow.md)), and the mark's `" ▲"` was a stylesheet
 literal.)*
+*(2026-10-12, decided with the user: `--ex-resize-grip-width` and `--ex-column-guide-width` come from
+Grid Metrics, emitted inline on the instance root as the other geometry is. The grip's 5px and the resize
+guide's and drop indicator's 2px were the last bare geometric pixels in `ex-grid.css`. The guide and the indicator
+lie on Device Pixels ([ADR-0090](./0090-the-grid-is-told-its-device-pixel-and-puts-column-edges-on-it.md)).)*
 
 Visual tokens (defaults in `ex-grid.css`, overridden on any ancestor). The existing eleven are
 kept with their names and defaults; the vocabulary this ADR fixes is:
@@ -101,7 +106,7 @@ kept with their names and defaults; the vocabulary this ADR fixes is:
 | Rules | `--ex-row-rule-color`, `--ex-column-rule-color`, `--ex-rule-width` — painted as gradients/inset shadows, **never borders** ([ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)) |
 | Hover | `--ex-row-hover-background` *(unimplementable as stated — see the correction below)* |
 | Pinned | `--ex-pinned-background` *(exists)* |
-| Selection | `--ex-selection-fill` *(exists)*, `--ex-focus-row-fill` *(the Focus band, [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*, `--ex-selection-outline` *(the border Excel draws around the range's perimeter, reserved here and taken up by [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) on 2026-09-29; it defaults to `--ex-focus-outline`)*, `--ex-focus-outline` *(exists)*, `--ex-grid-focus-outline` *(exists)* |
+| Selection | `--ex-selection-fill` *(exists)*, `--ex-focus-row-fill` *(the Focus band, [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*, `--ex-selection-outline` *(the border Excel draws around the range's perimeter, reserved here and taken up by [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) on 2026-09-29; it defaults to `--ex-focus-outline`)*, `--ex-focus-outline` *(exists)*, `--ex-focus-among-ranges-outline` *(the thin border of the Focus among several ranges, added by [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) on 2026-10-12; (2026-10-12, decided with the user: it defaults to `--ex-focus-outline`))*, `--ex-grid-focus-outline` *(exists)* |
 | Cell State | the six `--ex-state-*` *(exist)* — each a colour; `--ex-state-modified-mark` is the corner mark's *(a whole `box-shadow` until 2026-10-07; see the fourth correction below)* |
 | Tone | `--ex-tone-positive-color`, `--ex-tone-negative-color` — default `inherit`, so a declared tone paints nothing until a theme says what colour it is ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) |
 | Row Kind | the four `--ex-row-group/total-*` *(exist)* |
@@ -427,3 +432,17 @@ per cell, so P5 is untouched.
 - **No new token.** The dashes take `--ex-focus-outline`, as ADR-0058's do, over a band of
   `--ex-background`, so they read on the Selection's own outline; `--ex-selection-outline` stays
   the range outline's alone. Forced colours restate them in `Highlight` over `Canvas`.
+
+## Added by ADR-0008's note of 2026-10-12
+
+- **Internal class**, which may change without notice: `ex-focus-among-ranges`. It joins `ex-focus`
+  on the Focus's element while the Selection has several ranges. The core decides it from the
+  Selection, because a layer may hold the Focus and no range's box. UX-4's walk names it.
+- **Visual Token**: `--ex-focus-among-ranges-outline`, the colour of that Focus's border of one
+  Device Pixel *(2026-10-12, decided with the user: where nothing names it, it is the Focus
+  outline's colour, `--ex-focus-outline`, so a Theme or a Wrapper that colours the Focus colours it
+  too and no Wrapper maps it; on a Sheet's Paper it is `#217346`, as the readings of 2026-10-12
+  measured (R4))*. On the Paper that is the Focus outline's colour too.
+  Its width is one Device Pixel, `--ex-dp`, and is not a token.
+- **Forced colours** do not draw the border, and restate the Focus by its outline, as everywhere
+  there.

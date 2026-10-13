@@ -14,8 +14,9 @@ clipboard. The application persists the **Pivot Layout**.
 - A number that does not fit is `####`, never a shorter number; a copy carries the full-precision
   values; money is summed exactly.
 
-> **This is a prerelease (`0.x`).** ExPivot ships with ExGrid, at the same version; upgrade them
-> together. The API may change between prereleases.
+> **ExPivot ships with ExGrid, at the same version;** upgrade them together. While the version is
+> `0.x`, the API may change from one version to the next; each version's
+> [Release Notes](https://akiramisawa.github.io/ex-grid/release-notes) say what changed.
 
 ## Requirements
 
@@ -24,8 +25,10 @@ clipboard. The application persists the **Pivot Layout**.
 ## Install
 
 ```sh
-dotnet add package ExPivot --prerelease
+dotnet add package ExPivot
 ```
+
+Add `--prerelease` for a prerelease, a version with a suffix such as `-rc.1`.
 
 Place both stylesheet components in the head, each at the address of the file its package was
 built with: `<ExGridStylesheet />` and `<ExPivotStylesheet />` in `App.razor`'s `<head>` in a Blazor

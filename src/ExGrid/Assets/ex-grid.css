@@ -183,11 +183,15 @@
 .ex-header-cell, .ex-header .ex-gap { pointer-events: none; }
 .ex-header-cell { position: relative; }
 /* The grip in the header cell's right-hand edge (ADR-0016): the one part of a header
-   cell that takes its own pointer, because it starts a different gesture. */
-.ex-resize-grip { position: absolute; top: 0; right: 0; width: 5px; height: 100%; cursor: col-resize; pointer-events: auto; }
+   cell that takes its own pointer, because it starts a different gesture. Its width is a
+   hit target, a Geometry Token from Grid Metrics (ADR-0027/0028; UX-1). */
+.ex-resize-grip { position: absolute; top: 0; right: 0; width: var(--ex-resize-grip-width); height: 100%; cursor: col-resize; pointer-events: auto; }
 /* The guide a resize drags (ADR-0016) and the reorder drop indicator (ADR-0011):
-   painted, never laid out — their colours are Visual Tokens (ADR-0029). */
-.ex-resize-guide, .ex-drop-indicator { position: absolute; top: 0; bottom: 0; width: 2px; z-index: 7; pointer-events: none; }
+   painted, never laid out — their colours are Visual Tokens (ADR-0029). Their width is a
+   Geometry Token, drawn as a rule is (--ex-rule-dp, ADR-0090): rounded down to the Device
+   Pixel and never under one, so whole Device Pixels at every scale and zoom. C# puts their
+   left edge on a Device Pixel (UX-1). */
+.ex-resize-guide, .ex-drop-indicator { position: absolute; top: 0; bottom: 0; width: max(var(--ex-dp), round(down, var(--ex-column-guide-width), var(--ex-dp))); z-index: 7; pointer-events: none; }
 .ex-resize-guide { background: var(--ex-resize-guide-color, rgba(60, 120, 216, 0.7)); }
 .ex-drop-indicator { background: var(--ex-drop-indicator-color, rgba(60, 120, 216, 0.9)); }
 /* The sort indicator is painted from the same attribute the accessibility tree reads
@@ -635,6 +639,28 @@
    cell out. Its element stays, because under forced colors no tint is painted to mark it, and the
    forced-colors block below outlines it again. */
 .ex-range-single ~ .ex-focus::after { content: none; }
+/* The Focus among several ranges (ADR-0008, 2026-10-12). (2026-10-12, decided with the user: no
+   range carries an outline there, and the Focus takes a thin border of one Device Pixel in a token
+   of its own, --ex-focus-among-ranges-outline; where nothing names that token it is the Focus
+   outline's colour.) So a Theme or a Wrapper that colours the Focus colours this border too, with no
+   mapping of its own. The core marks that Focus with a class of its own, decided from the Selection.
+   The first decision followed the seventeenth Windows run's h2, which read neither of Excel's ranges
+   as carrying a single range's outline (observed: run 17, h2); the line of one device pixel the
+   readings of 2026-10-12 read round each of Excel's areas (observed: R4) is not drawn here
+   (2026-10-13, decided with the user: recorded as observed and not followed). The border lies inside the cell, a Device Pixel in from its top and left edges
+   and from its own gridline (this stylesheet's choice), where Excel's active cell among several areas
+   lay at Excel's 100% and 150% zoom on a 150% display (observed: the readings of 2026-10-12, R4; at a
+   100% display by generalisation). Inside, nothing above the selection layer covers any side of it,
+   beside the Headings, a Pinned Column or under the header, so it needs none of the sides the core
+   marks (UX-18); and every side is a whole Device Pixel from an edge that lies on one, so it lies on
+   Device Pixels as the other lines do (ADR-0090). Paint only: nothing in C# reads its width. */
+.ex-focus.ex-focus-among-ranges::after {
+    top: var(--ex-dp, 1px);
+    left: var(--ex-dp, 1px);
+    right: calc(var(--ex-rule-dp, 1px) + var(--ex-dp, 1px));
+    bottom: calc(var(--ex-rule-dp, 1px) + var(--ex-dp, 1px));
+    border: var(--ex-dp, 1px) solid var(--ex-focus-among-ranges-outline, var(--ex-focus-outline, CanvasText));
+}
 /* The Copied Range (ADR-0170): dashes round a rectangle the clipboard holds as the grid copied it,
    Excel's moving border standing still (ADR-0027 P8). They lie where the Selection's outline lies,
    and are painted after it, because a copy usually shares its range: a band of the grid's ground
@@ -1162,7 +1188,9 @@
     /* The selection and the Focus stay visible: outlines, which forced colors keeps, drawn
        inside the range on every side, so none is covered (UX-18). The Focus inside a single
        range is marked only by its missing tint, and no tint is painted here, so it takes its
-       outline back. */
+       outline back. The Focus among several ranges is restated as the Focus is everywhere here:
+       its outline, in place of its thin border (ADR-0008, 2026-10-12), beside ranges that are
+       each outlined. */
     .ex-range { outline-style: solid; outline-color: Highlight; }
     .ex-focus { outline-style: solid; }
     /* The tints are not painted at all (ADR-0206): stated here rather than left to how a browser

@@ -63,6 +63,19 @@ Rejected:
 - **Raising the floor is a breaking change.** It happens only as a deliberate decision — a
   major version bump and a rewrite of this ADR, as this one was — never as a side effect of
   wanting a newer API.
+  *(2026-10-12, decided with the user, with [ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)'s
+  note of the same day. **This rule covers the MudBlazor floor of the three Wrappers**, which take
+  the one dependency each adds by this ADR's rule: its lowest version, resolved upward by the
+  application. **A `0.x` prerelease line may raise a floor without a major version bump**, as a
+  deliberate decision written in an ADR and told to Consumers by a Breaking Change Note. No version
+  without a suffix has been published, so a raise reaches only `0.1.0-beta.N` Consumers, whom
+  [ADR-0042](./0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)
+  already tells that a beta may break between numbers; SemVer promises nothing across `0.x`; and
+  this ADR's rewrite of 2026-09-25 raised the runtime floor under a published prerelease, as its
+  correction of that day records. The first raise made under this note is the Wrappers' MudBlazor
+  floor, from 9.0.0 to 9.6.0, because below 9.6.0 they are wrong in ways the screen does not show
+  (ADR-0205). This note does not decide what a raise needs once a version without a suffix has been
+  published.)*
 - **The gating tests execute on the target runtime.** They target `net10.0`, the same runtime
   the SDK carries, so the dev shell no longer needs a second runtime alongside the SDK.
 - **The hosts (`samples/`) and `spikes/render-bench` are unaffected.** They are not shipped
