@@ -250,25 +250,6 @@
       "note": "Checked on 2026-10-08 on that PC against a v0.1.0-beta.2 build carrying the repaint, published to the Docs Site (ADR-0012's note), but no record under verification/ names its commit; verification/2026-10-09-windows-remote-isolation/README.md records the investigation that followed, not the row. Put out of 0.1.0 by the user's decision of 2026-10-12, in 'knownLimitation'."
     },
     {
-      "row": "§21.11",
-      "where": "Windows",
-      "paths": [
-        "src/ExGrid/Assets/",
-        "src/ExGrid/wwwroot/",
-        "src/ExGrid/Chrome/",
-        "src/ExGrid/Components/",
-        "src/ExGrid/Keys/",
-        "src/ExGrid/Selection/",
-        "src/ExSheet/Assets/",
-        "src/ExSheet/wwwroot/",
-        "src/ExSheet/Components/",
-        "samples/ExGrid.DemoPages/Pages/SheetPage.razor",
-        "samples/ExGrid.DemoPages/SheetCases.cs"
-      ],
-      "record": null,
-      "note": "The sixteenth run's Part D listened under Narrator for the wording. Where DOM focus is after an arrow key, under NVDA and Narrator, with and without a Focus, which is the check §21.11 names since 2026-10-11, has not been run: the seventeenth run's Part F is its first."
-    },
-    {
       "row": "WR-10",
       "where": "Windows or Linux",
       "paths": [
