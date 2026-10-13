@@ -280,4 +280,38 @@ public class PinnedColumnTests : GridTestContext
         // just clear of the block, in a 30px band that shows less than a third of it.
         Assert.Equal(170d, Js.ScrolledTo[^1].Left);
     }
+
+    private static Task ClickViewportAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
+        => cut.Find(".ex-viewport").MouseDownAsync(new() { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y });
+
+    private static string? StatusOf(IRenderedComponent<ExGrid<TestRow>> cut)
+        => cut.FindAll(".ex-status span").FirstOrDefault()?.TextContent;
+
+    [Fact] // FN-19, ADR-0014: a selection scrolled out sideways, on rows still in view, is reported off screen
+    public async Task FN19_a_selection_scrolled_out_sideways_is_reported_outside_the_visible_range()
+    {
+        var cut = RenderGrid();
+        await ClickViewportAsync(cut, 250, 10); // row 0, C02 — the first scrollable column
+        Assert.Null(StatusOf(cut));             // on screen: no indicator
+
+        // The rows are unchanged; only the columns move. Two ordinary moves, not a fling.
+        await ScrollToAsync(cut.Find(".ex-scroller"), top: 0, left: 300);
+        await ScrollToAsync(cut.Find(".ex-scroller"), top: 0, left: 600);
+        Assert.DoesNotContain("C02", ScrollableColumnsOf(cut));
+
+        Assert.Equal("1 cells selected (outside the visible range)", StatusOf(cut));
+        Assert.Contains(cut.FindAll(".ex-status button"), b => b.TextContent == "Go to selection");
+    }
+
+    [Fact] // FN-19, ADR-0014/0004: a selection on a Pinned Column is on screen at every sideways offset
+    public async Task FN19_a_selection_on_a_pinned_column_stays_inside_the_visible_range()
+    {
+        var cut = RenderGrid();
+        await ClickViewportAsync(cut, 50, 10); // row 0, C00 — pinned
+
+        await ScrollToAsync(cut.Find(".ex-scroller"), top: 0, left: 300);
+        await ScrollToAsync(cut.Find(".ex-scroller"), top: 0, left: 600);
+
+        Assert.Null(StatusOf(cut));
+    }
 }

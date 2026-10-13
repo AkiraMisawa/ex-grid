@@ -10,11 +10,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The lowest 9.x: the application resolves it upward (ADR-0022's rule applied to
-         the one dependency this package adds). Where its net10.0 build asks for a
-         higher Microsoft.AspNetCore.Components.Web than the core's 10.0.0, that is
-         MudBlazor's floor, not a choice made here. -->
-    <PackageReference Include="MudBlazor" Version="9.0.0" />
+    <!-- MudBlazor 9 from 9.6.0: the application resolves it upward within 9.x (ADR-0022's
+         rule applied to the one dependency this package adds; its note of 2026-10-12 says
+         why a 0.x line may raise it). Below 9.6.0 the filter panel's Operator has no role
+         and no name where the keyboard is, and from 9.3.0 to 9.5.0 a refused operand loses
+         its words (ADR-0205; verification/2026-10-12-linux-mudblazor-floor/). An application
+         that references an earlier 9.x is stopped at restore (NU1605, an error by default);
+         one on MudBlazor 10 is warned (NU1608), as Apache.Arrow's range warns (ADR-0065).
+         The demo pages pin a later 9.x; the floor is run before a sign-off, this package's
+         tests resolve it on every run, and CI's package job reads the range back from the
+         .nuspec. Where MudBlazor's net10.0 build asks for a higher
+         Microsoft.AspNetCore.Components.Web than the core's 10.0.0, that is MudBlazor's
+         floor, not a choice made here. -->
+    <PackageReference Include="MudBlazor" Version="[9.6.0,10.0.0)" />
   </ItemGroup>
 
   <ItemGroup>

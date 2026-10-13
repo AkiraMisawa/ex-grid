@@ -1,0 +1,285 @@
+# The floor run's selection: Playwright's --list of the command in results.md, against this commit.
+# --grep [Mm]ud|is not the grid's \(KB-35|apply the condition \(KB-31, SRV-5\)|Escape, Escape straight after an Inner Popup|a menu taking the keyboard a round trip late|with and without a Wrapper|SH-46/DC-59: the Selection's outline|the palette reaches the pane|RI-3: every page opens|inspectors\.spec\.mjs|WR-7a|DC-58: a bold number that fits
+[chrome] › appearance.spec.mjs:224:1 › DC-58: a bold number that fits at the regular widths and not at the bold ones is #### (ADR-0050 item 15, ADR-0016)
+[chrome] › circuit.spec.mjs:153:5 › a search typed straight after E lands whole in the search box, and Enter applies it (ADR-0044, ADR-0010, SRV-5, mud)
+[chrome] › circuit.spec.mjs:181:5 › a search matching nothing, typed straight after E with its Enter, applies nothing (ADR-0009/0023, SRV-5, ticket 76, mud)
+[chrome] › circuit.spec.mjs:260:5 › an Escape pressed straight after the operator list opens is not the grid's (KB-35, ADR-0039)
+[chrome] › circuit.spec.mjs:260:5 › an Escape pressed straight after the date calendar opens is not the grid's (KB-35, ADR-0039)
+[chrome] › circuit.spec.mjs:309:1 › a value typed and Enter pressed at once apply the condition (KB-31, SRV-5)
+[chrome] › circuit.spec.mjs:328:1 › Escape, Escape straight after an Inner Popup closes it and then the panel (ADR-0039, SRV-5)
+[chrome] › circuit.spec.mjs:345:1 › a menu taking the keyboard a round trip late keeps the scroll the user gave it (ADR-0039/0040, SRV-5)
+[chrome] › circuit.spec.mjs:589:9 › typing into an open field on a 150 ms circuit loses nothing (SRV-5, ED-22) › the Cell Editor, at 10 keys a second (mud)
+[chrome] › circuit.spec.mjs:688:9 › text typed at full speed into the grid's own fields arrives whole, under the mud Chrome (SRV-7) › in the Cell Editor
+[chrome] › circuit.spec.mjs:704:9 › text typed at full speed into the grid's own fields arrives whole, under the mud Chrome (SRV-7) › in the find field (ADR-0055)
+[chrome] › circuit.spec.mjs:716:9 › text typed at full speed into the grid's own fields arrives whole, under the mud Chrome (SRV-7) › in the filter's search box (ADR-0009)
+[chrome] › circuit.spec.mjs:729:9 › text typed at full speed into the grid's own fields arrives whole, under the mud Chrome (SRV-7) › in the filter's condition value (ADR-0009)
+[chrome] › copied-range.spec.mjs:159:1 › on a Sheet the dashes are its outline's colour, with and without a Wrapper (ADR-0170, ADR-0071)
+[chrome] › declarations.spec.mjs:51:9 › under the mud Chrome › DC-17: the candidate list opens under the editor, inside the grid's box; Tab accepts
+[chrome] › declarations.spec.mjs:94:9 › under the mud Chrome › DC-17: Escape closes the list and leaves the edit open; the next Escape cancels
+[chrome] › declarations.spec.mjs:107:9 › under the mud Chrome › DC-31: with the list open, ← and → move the caret and the list stays
+[chrome] › declarations.spec.mjs:137:9 › under the mud Chrome › DC-31: a repeated letter (=SS) completes the span at the caret, and the caret sits after it
+[chrome] › declarations.spec.mjs:172:9 › under the mud Chrome › DC-17: completion works from the Formula Bar, its list inside the grid's box
+[chrome] › declarations.spec.mjs:222:9 › SH-36 under the mud Chrome › SH-36: → at an open value list points — E10, shown selected — and closes the list (the tenth run, case 6)
+[chrome] › declarations.spec.mjs:248:9 › SH-36 under the mud Chrome › SH-36: ← at an open value list points too; in a list of names ← and → move the caret and the list stays
+[chrome] › declarations.spec.mjs:278:9 › SH-36 under the mud Chrome › SH-36: Tab closes the list after a value, a column and a table's name, and it is not opened again on what Tab wrote (the tenth run, cases 1–5)
+[chrome] › declarations.spec.mjs:337:9 › SH-36 under the mud Chrome › SH-36: with the caret moved back before a value nothing is listed, the hint stays, and Tab commits (Part B of the ninth run, x1)
+[chrome] › declarations.spec.mjs:362:9 › SH-36 under the mud Chrome › SH-36: a letter at match_mode lists every value, 0 selected, and Tab writes 0 over it; 4 lists nothing (the thirteenth run, Q54)
+[chrome] › declarations.spec.mjs:396:9 › SH-36 under the mud Chrome › SH-36: with the caret before two spaces nothing is listed, and Tab commits the Formula with the spaces kept (the thirteenth run, Q55; 11a)
+[chrome] › declarations.spec.mjs:422:9 › SH-36 under the mud Chrome › SH-36: Home at an open value list points at A10 and closes the list; End closes it and writes nothing, list or no list (Part B of the ninth run, x4 and x5; Q53)
+[chrome] › declarations.spec.mjs:480:9 › SH-36 under the mud Chrome › SH-36: Shift+→ at an open value list points at D10:E10 and closes the list; in a list of names Home moves the caret (Part B of the ninth run, x6)
+[chrome] › declarations.spec.mjs:529:9 › ticket 75 under the mud Chrome › ticket 75 / SH-36: Home, and Shift+→ instead, at an open value list after =XLOOKUP(1,A2:A4,B2:B4,, in D10 show what they wrote (the thirteenth run, b3 and b5)
+[chrome] › declarations.spec.mjs:551:9 › ticket 75 under the mud Chrome › ticket 75: ↓ and a press on the Sheet show what they wrote at the end of a Formula longer than the Cell Editor
+[chrome] › declarations.spec.mjs:573:9 › ticket 75 under the mud Chrome › ticket 75: ↓ and a press on the Sheet show what they wrote in the Formula Bar, at the end of a Formula longer than the bar
+[chrome] › declarations.spec.mjs:706:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome)
+[chrome] › declarations.spec.mjs:757:5 › DC-19/DC-34: a press in the Formula Bar's text before a 150 ms circuit has placed the caret after a pointed Reference ends pointing (mud Chrome)
+[chrome] › declarations.spec.mjs:792:5 › DC-19/ADR-0010: keys typed into the Formula Bar before a 150 ms circuit has answered the press into it keep their meaning (mud Chrome)
+[chrome] › declarations.spec.mjs:868:9 › ED-29: =A1+B1 typed into the bar, then Home, → and three Deletes, leaves =B1 in the bar, the edit open and the Focus on D10 (mud Chrome)
+[chrome] › declarations.spec.mjs:868:9 › ED-29: =A1+B1 pointed from the bar, then typed on, then Home, → and three Deletes, leaves =B1 in the bar, the edit open and the Focus on D10 (mud Chrome)
+[chrome] › declarations.spec.mjs:868:9 › ED-29: =A1+B1 begun in the cell, then pressed into the bar, then Home, → and three Deletes, leaves =B1 in the bar, the edit open and the Focus on D10 (mud Chrome)
+[chrome] › declarations.spec.mjs:905:5 › ED-22/ED-29: =A1+ typed in the cell, the Formula Bar pressed and B1 typed at once, on a 150 ms circuit, commits =A1+B1 (mud Chrome)
+[chrome] › declarations.spec.mjs:934:5 › ED-29: =A1+B1 typed into the bar, then F2 and Home, enters the Formula into D10 and moves the Focus to A10, as Excel does (case 7k; mud Chrome)
+[chrome] › declarations.spec.mjs:963:5 › ADR-0021: a row press's late hand-back does not take the keyboard from the Formula Bar or the Name Box pressed after it, on a 150 ms circuit (mud Chrome)
+[chrome] › declarations.spec.mjs:1031:5 › ADR-0021: an edit's request for the Cell Editor, landing after a press into the Formula Bar, leaves the keyboard in the bar, on a 150 ms circuit (mud Chrome)
+[chrome] › declarations.spec.mjs:1172:5 › DC-45: =B2 and four F4 presses in a cell give $B$2, B$2, $B2 and B2, the caret after each (mud Chrome)
+[chrome] › declarations.spec.mjs:1196:5 › DC-45: =B2 and four F4 presses in the Formula Bar give the same four forms, and the bar keeps the keyboard (mud Chrome)
+[chrome] › declarations.spec.mjs:1577:5 › DC-13/DC-27: dragging the fill handle continues a series; the Selection is source and target (mud Chrome)
+[chrome] › declarations.spec.mjs:1696:5 › CP-6/CP-10/CP-14: Ctrl+C and Ctrl+V reach the grid after every way out of an edit (mud Chrome)
+[chrome] › declarations.spec.mjs:1773:5 › ED-22/ADR-0010: Ctrl+C and Ctrl+V typed at once behind an edit's end, a press and F2 are done in their turn on a 150 ms circuit (mud Chrome)
+[chrome] › edit-stands.spec.mjs:60:9 › /sheet under the mud Chrome › ADR-0018/ED-26: an edit left for another grid stands, that grid's keys are its own, and a press back points with the keyboard in the edit
+[chrome] › edit-stands.spec.mjs:96:9 › /sheet under the mud Chrome › ADR-0018/ADR-0080/ED-26: a press back where no Reference can go commits, moves, and gives the Sheet the keyboard
+[chrome] › edit-stands.spec.mjs:118:9 › /sheet under the mud Chrome › ADR-0018/ED-26: an edit last typed in the Formula Bar gets the keyboard back in the bar
+[chrome] › edit-stands.spec.mjs:136:9 › /sheet under the mud Chrome › ADR-0018/ADR-0021/ADR-0080/ED-26: a press back that commits an edit last typed in the Formula Bar gives the grid the keyboard, not the bar
+[chrome] › edit-stands.spec.mjs:158:9 › /sheet under the mud Chrome › ADR-0021/ADR-0080/ED-26: a press on the rows that commits an edit typed in the Formula Bar gives the grid the keyboard
+[chrome] › edit-stands.spec.mjs:174:9 › /sheet under the mud Chrome › ADR-0018/ED-26: an edit left for a control on the page stands, and a press back commits it
+[chrome] › edit-stands.spec.mjs:363:5 › ADR-0018/ED-27: an edit whose keyboard is elsewhere is outlined 1px wide, and at full width once it returns (mud Chrome)
+[chrome] › edit-stands.spec.mjs:444:9 › ADR-0021/ED-28: an edit opening on the left Sheet, and a press on the right at once, 40 ms round trip (mud Chrome) › = typed on the left and the right pressed at once, thirty times: the right keeps the keyboard, and the left edit stands
+[chrome] › edit-stands.spec.mjs:469:9 › ADR-0021/ED-28: an edit opening on the left Sheet, and a press on the right at once, 40 ms round trip (mud Chrome) › =1 typed at full speed and the right pressed at once: the 1 held behind the = goes into the left edit, not the right
+[chrome] › edit-stands.spec.mjs:681:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, no injected latency › ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that points go into the edit after its Reference, in order (mud Chrome)
+[chrome] › edit-stands.spec.mjs:705:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, no injected latency › ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that commits open an edit on the pressed cell and go into it in order (mud Chrome)
+[chrome] › edit-stands.spec.mjs:726:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, no injected latency › ADR-0010/ADR-0018/ED-22: on /sheet, a key, a second press and keys after it, straight after a press back, are answered in order (mud Chrome)
+[chrome] › edit-stands.spec.mjs:681:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, 150 ms round trip › ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that points go into the edit after its Reference, in order (mud Chrome)
+[chrome] › edit-stands.spec.mjs:705:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, 150 ms round trip › ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that commits open an edit on the pressed cell and go into it in order (mud Chrome)
+[chrome] › edit-stands.spec.mjs:726:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, 150 ms round trip › ADR-0010/ADR-0018/ED-22: on /sheet, a key, a second press and keys after it, straight after a press back, are answered in order (mud Chrome)
+[chrome] › find.spec.mjs:29:9 › under the mud Chrome › Ctrl+F opens the grid's panel, the keys typed after it land in its field, and Enter steps (FD-1/FD-3/FD-5, ADR-0055)
+[chrome] › find.spec.mjs:53:9 › under the mud Chrome › a capital and a Shift+Enter typed straight after Ctrl+F keep their meaning (ADR-0055/0010, ED-22)
+[chrome] › find.spec.mjs:66:9 › under the mud Chrome › a match beyond the painted rows is reached and revealed (FD-5, ADR-0055)
+[chrome] › find.spec.mjs:78:9 › under the mud Chrome › with a range selected, Find searches it and the selection stands (FD-4/FD-5, ADR-0055)
+[chrome] › find.spec.mjs:93:9 › under the mud Chrome › nothing found is said, in a live region (FD-6, ADR-0055)
+[chrome] › find.spec.mjs:104:9 › under the mud Chrome › Ctrl+F in the find field selects its text, and the browser's find stays shut (FD-1, ADR-0055)
+[chrome] › find.spec.mjs:118:9 › under the mud Chrome › Ctrl+F in a column's popover opens Find in its place (FD-1, ADR-0055)
+[chrome] › find.spec.mjs:131:9 › under the mud Chrome › Ctrl+F in the Context Menu, and in the filter's text field, opens Find in its place (FD-1, ADR-0055)
+[chrome] › find.spec.mjs:154:9 › under the mud Chrome › a Ctrl+F typed straight after Alt+Down opens Find, and the letters after it land in its field (FD-1, ED-22, ADR-0055)
+[chrome] › find.spec.mjs:168:9 › under the mud Chrome › Escape closes the panel and hands the keyboard back to the grid (FD-3, ADR-0055)
+[chrome] › format-cells-keys.spec.mjs:62:13 › under the mud Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0050: a digit typed straight after a press is Format Cells' or dropped, and never starts an edit
+[chrome] › format-cells-keys.spec.mjs:62:13 › under the mud Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0050: a digit typed straight after a press, then a round trip is Format Cells' or dropped, and never starts an edit
+[chrome] › format-cells-keys.spec.mjs:62:13 › under the mud Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0050: a digit typed straight after Enter is Format Cells' or dropped, and never starts an edit
+[chrome] › format-cells-keys.spec.mjs:62:13 › under the mud Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0050: a digit typed straight after Ctrl+1 is Format Cells' or dropped, and never starts an edit
+[chrome] › format-cells-keys.spec.mjs:86:13 › under the mud Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0039: End typed straight after Enter reaches Format Cells' tabs, in order behind the digit
+[chrome] › format-cells-keys.spec.mjs:86:13 › under the mud Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0039: End typed straight after Ctrl+1 reaches Format Cells' tabs, in order behind the digit
+[chrome] › format-cells-keys.spec.mjs:118:9 › two Sheets on /sheets under the mud Chrome › ticket 93/ADR-0018: the keys held for one Sheet's Format Cells are never the other's, and the other types as ever
+[chrome] › format-cells-mud.spec.mjs:42:5 › on /sheet?chrome=mud › SH-45/ADR-0071: the Context Menu opens Format Cells as a MudDialog outside the Sheet, with the keyboard on its tab, and the arrows switch the tabs
+[chrome] › format-cells-mud.spec.mjs:64:5 › on /sheet?chrome=mud › SH-45: OK sets the part touched as one undo step, and the keyboard is the Sheet's again
+[chrome] › format-cells-mud.spec.mjs:86:5 › on /sheet?chrome=mud › SH-42/SH-45: Ctrl+1 opens Format Cells on Number, and Escape closes it with the keyboard the Sheet's
+[chrome] › format-cells-mud.spec.mjs:100:5 › on /sheet?chrome=mud › SH-45 (Part C): opened again on Border, every tab is in view and the strip does not scroll (ticket 147)
+[chrome] › format-cells-mud.spec.mjs:136:5 › on /sheet?chrome=mud › SH-45: Escape sets nothing, and the next arrow moves the Focus
+[chrome] › format-cells-mud.spec.mjs:150:5 › on /sheet?chrome=mud › SH-45/ADR-0071: Escape in an open dropdown closes only its list; the next Escape cancels Format Cells
+[chrome] › format-cells-mud.spec.mjs:180:5 › on /sheet?chrome=mud › SH-45: a press on the dialog's backdrop is a Cancel, and the keyboard is the Sheet's again
+[chrome] › format-cells-mud.spec.mjs:194:5 › on /sheet?chrome=mud › SH-45: a Custom code ExSheet does not read is refused by name, and the dialog stays open
+[chrome] › format-cells-mud.spec.mjs:208:5 › on /sheet?chrome=mud › SH-45/SRV-7: a Custom code typed at full speed arrives whole, and Enter is OK
+[chrome] › format-cells-mud.spec.mjs:224:5 › on /sheet?chrome=mud › SH-45: Tab and Shift+Tab stay inside the dialog
+[chrome] › format-cells-mud.spec.mjs:237:5 › on /sheet?chrome=mud › SH-45/ADR-0071: More Colours is MudBlazor's colour picker, and the colour it picks is what OK sets
+[chrome] › format-cells-mud.spec.mjs:275:5 › two Sheets on /sheets?chrome=mud › ADR-0018/ADR-0071: each Sheet's Format Cells is its own, and closing it hands the keyboard to that Sheet
+[chrome] › grid-live.spec.mjs:163:5 › DC-66/ADR-0068: marks paint without animating, forced colours restate them, and the live region says nothing (mud)
+[chrome] › inspectors.spec.mjs:89:5 › RI-4: modal, by click, handler returning once the dialog is shown: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037)
+[chrome] › inspectors.spec.mjs:106:5 › RI-26: modal, by click from outside the grid, handler returning once the dialog is shown: closing gives the keyboard back to where it was, not to the grid (ADR-0037)
+[chrome] › inspectors.spec.mjs:117:5 › RI-5: modal, by Space, handler returning once the dialog is shown: the keyboard is in the inspector (ADR-0020/0037)
+[chrome] › inspectors.spec.mjs:89:5 › RI-4: modal, by click, handler awaiting the dialog's result: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037)
+[chrome] › inspectors.spec.mjs:106:5 › RI-26: modal, by click from outside the grid, handler awaiting the dialog's result: closing gives the keyboard back to where it was, not to the grid (ADR-0037)
+[chrome] › inspectors.spec.mjs:117:5 › RI-5: modal, by Space, handler awaiting the dialog's result: the keyboard is in the inspector (ADR-0020/0037)
+[chrome] › inspectors.spec.mjs:125:1 › RI-6: floating, by click: the keyboard is in the inspector just opened (ADR-0020/0037)
+[chrome] › inspectors.spec.mjs:137:1 › RI-7: floating, by Space: the keyboard is in the inspector (ADR-0020/0037)
+[chrome] › inspectors.spec.mjs:145:1 › RI-8: floating: a row whose inspector is open brings it to the front instead of opening another
+[chrome] › inspectors.spec.mjs:158:1 › RI-9: floating: an inspector is dragged by its title bar, and closes on its own
+[chrome] › inspectors.spec.mjs:184:1 › RI-10: the marked rows open as inspectors, one each, and the count names the ones outside the filter (ADR-0043)
+[chrome] › inspectors.spec.mjs:203:1 › RI-11: the marks survive a sort, so the rows opened are the rows ticked (ADR-0043)
+[chrome] › inspectors.spec.mjs:218:1 › RI-12: above the cap the marked rows are refused by count, and nothing opens
+[chrome] › inspectors.spec.mjs:231:1 › RI-13: modal: the marked rows open one after another, and Escape ends the queue
+[chrome] › inspectors.spec.mjs:256:1 › RI-14: Enter on the Inspect cell moves down and opens nothing (ADR-0020)
+[chrome] › inspectors.spec.mjs:267:1 › RI-15: while a modal inspector stands, the grid behind it cannot be pressed
+[chrome] › key-field.spec.mjs:152:9 › /sheet under the mud Chrome › ADR-0080: with a cell selected and no edit open, the keyboard is the Keyboard Field's, inside the root, unseen, over the Focus cell
+[chrome] › key-field.spec.mjs:179:9 › /sheet under the mud Chrome › ED-30 (i1): a composition on a selected cell is drawn over the cell, nothing moves while it lasts, and its end opens the Cell Editor holding it; Enter commits and moves
+[chrome] › key-field.spec.mjs:216:9 › /sheet under the mud Chrome › ED-30 (i2): a composition the IME cancels leaves an edit open and empty, as Excel's does; Escape then cancels it
+[chrome] › key-field.spec.mjs:239:9 › /sheet under the mud Chrome › ED-30: a press on another cell while composing puts the composition in the cell it was composed on, commits it there and selects the pressed cell
+[chrome] › key-field.spec.mjs:264:9 › /sheet under the mud Chrome › ED-30 / ADR-0010 (the hold): a second composition ended before the first one's editor has the keyboard is appended to it, and a key typed at once waits for both (150 ms on the Server host)
+[chrome] › key-field.spec.mjs:293:9 › /sheet under the mud Chrome › ED-30 / ADR-0080 (the sixteenth run's k6): the key that ends a composition and starts the next leaves DOM focus in the Keyboard Field until the second ends, and D10 holds both in order (150 ms on the Server host)
+[chrome] › key-field.spec.mjs:341:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host)
+[chrome] › key-field.spec.mjs:385:9 › /sheet under the mud Chrome › ADR-0080 / CP-6: Ctrl+C and Ctrl+V from the Keyboard Field are the grid's copy and paste, and type nothing into it
+[chrome] › key-field.spec.mjs:407:9 › /sheet under the mud Chrome › A11Y-4 / ADR-0080: the Keyboard Field is the Sheet's one tab stop — Tab in from before it and out, Shift+Tab in from after it and out
+[chrome] › key-field.spec.mjs:432:9 › /sheet under the mud Chrome › KB-8 / ADR-0012 / ADR-0080: Escape, Escape, a press on a control elsewhere on the page, then Tab back into the Sheet — the release has ended, and Tab cycles inside the selection
+[chrome] › key-field.spec.mjs:457:9 › /sheet under the mud Chrome › KB-8 / ADR-0012 / ADR-0080: Escape, the released Tab out of the Sheet, Shift+Tab back in — Tab cycles inside the selection again
+[chrome] › key-field.spec.mjs:473:9 › /sheet under the mud Chrome › KB-12 / ADR-0080: the root's ring shows when the keyboard arrives by Tab, and not after a click
+[chrome] › key-field.spec.mjs:507:9 › /sheet under the mud Chrome › A11Y-21 / ADR-0080: over the DevTools protocol, the focused node is the Keyboard Field and its active descendant resolves to the Focus cell
+[chrome] › key-field.spec.mjs:612:9 › /features under the mud Chrome › A11Y-4 / ADR-0080: Tab from before the first grid, which edits, reaches its field past every ▾, and the next Tab leaves the grid; Shift+Tab likewise
+[chrome] › key-field.spec.mjs:644:9 › /features under the mud Chrome › A11Y-4 / ADR-0080: on the second grid, which edits nothing, Tab and Shift+Tab reach its root and pass no ▾ on the way out
+[chrome] › key-field.spec.mjs:746:5 › A11Y-21 / ADR-0080 / ADR-0037 under the mud Chrome: on /cells, while Interactive, the field's active descendant resolves to the chosen action's button
+[chrome] › mud-app.spec.mjs:137:1 › WR-7: a grid in a tab that was hidden paints correctly once its tab is shown (ADR-0028)
+[chrome] › mud-app.spec.mjs:191:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028)
+[chrome] › mud-app.spec.mjs:247:1 › WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018, ADR-0052)
+[chrome] › mud-app.spec.mjs:294:1 › WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039/0052)
+[chrome] › mud-app.spec.mjs:355:1 › WR-7: a grid in a MudDialog opens its popovers whole inside its box, and its Inner Popups above the dialog (ADR-0040/0039)
+[chrome] › mud-app.spec.mjs:431:1 › WR-9: the application's own controls — theme, tabs, dialog — keep the console clean (CON-1/2/3/6)
+[chrome] › mud-app.spec.mjs:450:1 › WR-5 (setup): /features?chrome=mud runs its grids under MudGridChrome, and the column menu opens (FN-17, UX-11)
+[chrome] › mud-app.spec.mjs:477:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1)
+[chrome] › mud.spec.mjs:24:1 › the painted geometry equals the declared metrics under the real Wrapper stylesheet (UX-3)
+[chrome] › mud.spec.mjs:45:1 › nothing under the Viewport transitions or animates with the Wrapper loaded (UX-6)
+[chrome] › mud.spec.mjs:79:1 › the focus outline and the selection fill stay visible under the Wrapper theme, light and dark (UX-9)
+[chrome] › mud.spec.mjs:157:1 › a loss is painted in the palette's error colour by the Consumer's tone rule, and only there (ADR-0006, FN-7a)
+[chrome] › mud.spec.mjs:179:1 › a theme switch re-renders nothing inside the grid: the rows are the same elements (RR-1)
+[chrome] › mud.spec.mjs:197:1 › the row under the pointer is highlighted by an overlay band, in the hovered instance only (UX-13)
+[chrome] › mud.spec.mjs:225:1 › the Wrapper's editor opens inside the core's box with the typed character, and commits (ED-4, ADR-0030)
+[chrome] › mud.spec.mjs:256:1 › the loading bar is a MudProgressLinear where the core places its seam, only while loading
+[chrome] › mud.spec.mjs:268:1 › the paper's corners: rounded with an inset, square flush; the grid's own box is untouched
+[chrome] › mud.spec.mjs:285:1 › the Wrapper's row rule runs on across the Pinned Column, light and dark (ticket 92, ADR-0030)
+[chrome] › navigation.spec.mjs:54:1 › RI-3: every page opens from the index, names itself, and leads back to it (clean console)
+[chrome] › part-c.spec.mjs:96:1 › SH-54/DC-59 (MudBlazor Chrome): the outline is the palette's primary and the shade the primary mixed into white, and a black line inside stays black (ADR-0071, case 11)
+[chrome] › pivot-csv.spec.mjs:85:9 › under the mud Chrome › ADR-0064: /pivot's trades written as the trade export read back under the declared Schema to the very report /pivot paints (mud)
+[chrome] › pivot-csv.spec.mjs:109:9 › under the mud Chrome › ADR-0064: a file with a malformed row is refused whole, by its row and column, and nothing is pivoted (mud)
+[chrome] › pivot-csv.spec.mjs:133:9 › under the mud Chrome › ADR-0064: a large file paints its progress while it is read, and Cancel stops it with nothing read (mud)
+[chrome] › pivot-csv.spec.mjs:164:9 › under the mud Chrome › ADR-0064: an unknown file's suggested Schema is shown with what is not clear, and the file is read under it only once confirmed (mud)
+[chrome] › pivot-csv.spec.mjs:217:9 › under the mud Chrome › ADR-0064: the page's two samples, one under the declared Schema and one under a suggested one, read the same trades to the same total (mud)
+[chrome] › pivot-csv.spec.mjs:243:9 › under the mud Chrome › ADR-0069: the code the page shows is the code it runs (mud)
+[chrome] › pivot-db.spec.mjs:299:9 › under the mud Chrome › PV-20/ADR-0069: the database read over Arrow and asked through PivotReportSource.Fetch shows the same numbers (mud)
+[chrome] › pivot-db.spec.mjs:319:9 › under the mud Chrome › PV-20/ADR-0069: a layout changed on one, shown on the other, gives the same numbers there too (mud)
+[chrome] › pivot-db.spec.mjs:334:9 › under the mud Chrome › PV-20/ADR-0066: Show Details pages the server's records as the Details tab scrolls (mud)
+[chrome] › pivot-live.spec.mjs:153:9 › under the mud Chrome › PV-36/ADR-0067: Change Batches folded into the bundled source mark the values they changed, and a collapse marks nothing (mud)
+[chrome] › pivot-live.spec.mjs:195:13 › under the mud Chrome › PV-37/ADR-0067/UX-8: a server cut off leaves a Stale Report whose value cells paint muted and readable, its labels as they were, until Retry brings the newest back (mud, light)
+[chrome] › pivot-live.spec.mjs:195:13 › under the mud Chrome › PV-37/ADR-0067/UX-8: a server cut off leaves a Stale Report whose value cells paint muted and readable, its labels as they were, until Retry brings the newest back (mud, dark)
+[chrome] › pivot-live.spec.mjs:275:9 › under the mud Chrome › PV-36/ADR-0067: the server's changing data marks the values it changed, and the page turns its live updates off (mud)
+[chrome] › pivot-risk.spec.mjs:70:9 › under the mud Chrome › ADR-0060: the tenors stand in the Order Key's order, ON to 30Y, with 18M and 1Y6M two Items side by side (mud)
+[chrome] › pivot-risk.spec.mjs:86:9 › under the mud Chrome › ADR-0060: the tenor's Filter… lists its Items in the Order Key's order (mud)
+[chrome] › pivot-risk.spec.mjs:108:9 › under the mud Chrome › ADR-0060: without the Order Key the tenors fall back to the order of their labels (mud)
+[chrome] › pivot-risk.spec.mjs:123:9 › under the mud Chrome › ADR-0060: every total painted is the sum of what it totals, and the report's is the page's own sum of the positions (mud)
+[chrome] › pivot-risk.spec.mjs:158:9 › under the mud Chrome › ADR-0069: the code the page shows is the code it runs, the README's Order Key among it (mud)
+[chrome] › pivot.spec.mjs:116:9 › under the mud Chrome › ADR-0061: a field dragged from the list onto an Area stands there (mud)
+[chrome] › pivot.spec.mjs:127:9 › under the mud Chrome › ADR-0061: an entry dragged before another reorders, and dragged to the list of fields is removed (mud)
+[chrome] › pivot.spec.mjs:140:9 › under the mud Chrome › ADR-0061: entries dropped on the report are removed from Rows and Columns (mud)
+[chrome] › pivot.spec.mjs:150:9 › under the mud Chrome › ADR-0061: a report removal waits for Defer Layout Update (mud)
+[chrome] › pivot.spec.mjs:164:9 › under the mud Chrome › ADR-0061: an unused field and a details grid do not accept report removal (mud)
+[chrome] › pivot.spec.mjs:178:9 › under the mud Chrome › ADR-0061: cancelling over the report clears the removal indication without removing (mud)
+[chrome] › pivot.spec.mjs:194:9 › under the mud Chrome › ADR-0059: the − button collapses an Item, and the Focus stays on it (mud)
+[chrome] › pivot.spec.mjs:207:9 › under the mud Chrome › ADR-0059/0063: a double click on a value opens a tab at the report's foot, titled by the cell, holding the trades behind it (mud)
+[chrome] › pivot.spec.mjs:264:9 › under the mud Chrome › ADR-0059: Show Details opens ExPivot's dialog when the page asks for one, which takes the keyboard and closes on Escape (mud)
+[chrome] › pivot.spec.mjs:286:9 › under the mud Chrome › ADR-0070: Escape in the dialog's grid peels the grid's own layers, then closes the dialog, and the arrows move the report's Focus again (mud)
+[chrome] › pivot.spec.mjs:323:9 › under the mud Chrome › ADR-0070/0012: Escape held in the dialog's grid closes the dialog once, and its repeats leave the report the keyboard (mud)
+[chrome] › pivot.spec.mjs:352:9 › under the mud Chrome › ADR-0070: however the dialog closes — Escape on Close, Close, the backdrop — the arrows move the report's Focus again (mud)
+[chrome] › pivot.spec.mjs:377:9 › under the mud Chrome › ADR-0070: Escape in a details tab's grid closes nothing; the selected tab closed hands the keyboard to the tab selected next, and the last one back to the report (mud)
+[chrome] › pivot.spec.mjs:442:9 › under the mud Chrome › ADR-0070/0033 (PV-41): the keyboard put in the dialog's records before Close's request lands stays there, on their root (mud)
+[chrome] › pivot.spec.mjs:466:9 › under the mud Chrome › ADR-0070/0033 (PV-41): the keyboard put in a new tab's records before the tab's request lands stays there, on their root (mud)
+[chrome] › pivot.spec.mjs:488:9 › under the mud Chrome › ADR-0063: a page that listens to Show Details takes the trades, and neither a tab nor a dialog opens (mud)
+[chrome] › pivot.spec.mjs:500:9 › under the mud Chrome › ADR-0039/0061: the keyboard goes into a field's menu and back to its entry (mud)
+[chrome] › pivot.spec.mjs:517:9 › under the mud Chrome › ADR-0061 (PV-11): pressing the report dismisses a field menu and keeps the cell and keyboard (mud)
+[chrome] › pivot.spec.mjs:533:9 › under the mud Chrome › ADR-0061 (PV-11): a disabled item or padding keeps Escape inside the field menu (mud)
+[chrome] › pivot.spec.mjs:553:9 › under the mud Chrome › ADR-0061 (PV-11): focus outside a field menu dismisses it without taking the keyboard back (mud)
+[chrome] › pivot.spec.mjs:571:9 › under the mud Chrome › ADR-0061 (PV-11): the field menu opener still toggles and another entry opens its own menu (mud)
+[chrome] › pivot.spec.mjs:603:9 › under the mud Chrome › ADR-0061 (PV-11): a press on a pane caption dismisses only the field menu (mud)
+[chrome] › pivot.spec.mjs:629:9 › under the mud Chrome › ADR-0061 (PV-11): back-to-back field menu dismissal and opening keep the new keyboard behind a round trip (mud)
+[chrome] › pivot.spec.mjs:646:9 › under the mud Chrome › ADR-0061: a menu drops down under its entry, as wide as the pane and over what follows (mud)
+[chrome] › pivot.spec.mjs:670:9 › under the mud Chrome › ADR-0061: a command from a field's menu moves the field (mud)
+[chrome] › pivot.spec.mjs:681:9 › under the mud Chrome › ADR-0061: the Pivot Toolbar above the report holds the report filter band on its left, then Layout and the Field List's toggle on its right (mud)
+[chrome] › pivot.spec.mjs:697:9 › under the mud Chrome › ADR-0061: the report filter band filters the report (mud)
+[chrome] › pivot.spec.mjs:717:9 › under the mud Chrome › ADR-0061: the band's Filter… opens under the Pivot Toolbar, over the report, and a press beside it closes it (mud)
+[chrome] › pivot.spec.mjs:740:9 › under the mud Chrome › ADR-0061: the Layout menu opens under its button, over the report; a choice lays the report out again and the keyboard goes back to Layout (mud)
+[chrome] › pivot.spec.mjs:771:9 › under the mud Chrome › ADR-0061: the Field List's toggle hides and shows the pane, and the page binds it (mud)
+[chrome] › pivot.spec.mjs:787:9 › under the mud Chrome › ADR-0061: a cramped Field List keeps its heading close button reachable while scrolling (mud)
+[chrome] › pivot.spec.mjs:833:9 › under the mud Chrome › ADR-0061: while Defer Layout Update is ticked the pane's changes wait for Update (mud)
+[chrome] › pivot.spec.mjs:856:9 › under the mud Chrome › ADR-0060: the words switch speaks Excel's Japanese edition, and back (mud)
+[chrome] › pivot.spec.mjs:875:9 › under the mud Chrome › ADR-0060: Month is the month of the trade date, painted Jan to Sep in the calendar's order, in either words (mud)
+[chrome] › pivot.spec.mjs:898:9 › under the mud Chrome › ADR-0069: the code the page shows is the code it runs: the fields declared with PivotFields.Of, Month a part of the trade date (mud)
+[chrome] › pivot.spec.mjs:975:1 › ADR-0039/0062: a MudSelect list inside Value Field Settings takes Escape before its panel
+[chrome] › pivot.spec.mjs:997:1 › ADR-0062/0030: the palette reaches the pane, the entries and the − button, light and dark
+[chrome] › popovers.spec.mjs:132:9 › under the mud Chrome › a secondary click opens the grid's menu, not the browser's (CTX-1/CTX-5, ADR-0036)
+[chrome] › popovers.spec.mjs:158:9 › under the mud Chrome › a secondary click outside the selection moves it first (CTX-1, ADR-0036)
+[chrome] › popovers.spec.mjs:169:9 › under the mud Chrome › a Consumer command receives the clicked row and the selection (CTX-3, ADR-0036)
+[chrome] › popovers.spec.mjs:179:9 › under the mud Chrome › the ContextMenu key opens it on the Focus (CTX-4, ADR-0036)
+[chrome] › popovers.spec.mjs:190:9 › under the mud Chrome › popovers are not clipped by the scroll container and stay per instance (UX-11)
+[chrome] › popovers.spec.mjs:212:9 › under the mud Chrome › a popover taller than its grid stays inside the grid's box and scrolls (UX-11, ADR-0040)
+[chrome] › popovers.spec.mjs:230:9 › under the mud Chrome › Alt+↓ opens the Focus column's menu, and the menu takes the keyboard (KB-28/KB-29, ADR-0039)
+[chrome] › popovers.spec.mjs:241:9 › under the mud Chrome › every popover takes the keyboard when it opens, by pointer or by key (KB-29, ADR-0039)
+[chrome] › popovers.spec.mjs:263:9 › under the mud Chrome › a grid that goes while keys wait for its popover leaves nothing running (ADR-0010, CON-2)
+[chrome] › popovers.spec.mjs:283:9 › under the mud Chrome › however a popover closes, the keyboard is back on the grid and the arrows move the Focus (KB-32, ADR-0039)
+[chrome] › popovers.spec.mjs:322:9 › under the mud Chrome › in a menu the arrows, Home and End move among the enabled items and wrap (KB-30, ADR-0039)
+[chrome] › popovers.spec.mjs:350:13 › under the mud Chrome › in a menu Enter runs the item and closes it (KB-30, ADR-0039)
+[chrome] › popovers.spec.mjs:350:13 › under the mud Chrome › in a menu Space runs the item and closes it (KB-30, ADR-0039)
+[chrome] › popovers.spec.mjs:366:13 › under the mud Chrome › over a filter, Tab on a command moves to the search box — nothing runs, nothing closes (FL-12, KB-30, ADR-0044)
+[chrome] › popovers.spec.mjs:366:13 › under the mud Chrome › over a filter, Shift+Tab on a command moves to Cancel — nothing runs, nothing closes (FL-12, KB-30, ADR-0044)
+[chrome] › popovers.spec.mjs:384:9 › under the mud Chrome › the Context Menu answers the same keys, and Tab closes it (KB-30, ADR-0039)
+[chrome] › popovers.spec.mjs:399:9 › under the mud Chrome › Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044)
+[chrome] › popovers.spec.mjs:429:9 › under the mud Chrome › the letters: S sorts, E goes to the search box where "e" is text, C clears (FL-15, FL-16, ADR-0044)
+[chrome] › popovers.spec.mjs:473:9 › under the mud Chrome › on the value list the letters act too: E goes back to the search box, O sorts (FL-15, ADR-0044)
+[chrome] › popovers.spec.mjs:508:9 › under the mud Chrome › where no value list stands, E goes to the condition's value, where a search is typed (FL-15, ADR-0044)
+[chrome] › popovers.spec.mjs:525:9 › under the mud Chrome › E on a checkbox outside the value list holds nothing: a Space after it ticks at once (ADR-0010/0044)
+[chrome] › popovers.spec.mjs:556:9 › under the mud Chrome › Enter in the value field applies exactly what OK applies (KB-31, ADR-0039)
+[chrome] › popovers.spec.mjs:565:9 › under the mud Chrome › with nothing ticked the value filter is not applied: Apply shows it is unavailable, and neither Apply nor Enter applies it (ADR-0009/0023, WR-2, ticket 76)
+[chrome] › popovers.spec.mjs:598:9 › under the mud Chrome › a pointer-down elsewhere in the instance dismisses a popover and keeps its own meaning (KB-17, ADR-0010/0039)
+[chrome] › popovers.spec.mjs:615:9 › under the mud Chrome › a column's popover is a dialog holding a menu, both named by its header; the Context Menu a menu (A11Y-19, ADR-0039/0044)
+[chrome] › popovers.spec.mjs:664:5 › Inner Popups under the mud Chrome › an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21)
+[chrome] › popovers.spec.mjs:690:9 › Inner Popups under the mud Chrome › a pointer-down elsewhere in the instance closes the operator list and the panel, and keeps its meaning (FN-21, ModalOverlay off)
+[chrome] › popovers.spec.mjs:690:9 › Inner Popups under the mud Chrome › a pointer-down elsewhere in the instance closes the date calendar and the panel, and keeps its meaning (FN-21, ModalOverlay off)
+[chrome] › popovers.spec.mjs:718:9 › Inner Popups under the mud Chrome › Escape closes the operator list first, and the next Escape the panel (FN-21, KB-32)
+[chrome] › popovers.spec.mjs:718:9 › Inner Popups under the mud Chrome › Escape closes the date calendar first, and the next Escape the panel (FN-21, KB-32)
+[chrome] › popovers.spec.mjs:740:5 › Inner Popups under the mud Chrome › under ModalOverlay the press is the overlay's: only the Inner Popup closes, and Escape then closes the panel (FN-21)
+[chrome] › popovers.spec.mjs:765:5 › Inner Popups under the mud Chrome › choosing from an Inner Popup keeps the panel, and applying hands the keyboard back to the grid (FN-21, KB-32, ADR-0080)
+[chrome] › reference-text.spec.mjs:136:5 › DC-47: a burst of typing on a 150 ms circuit never shows transparent field text over a layer that differs, and the colours come back when it pauses (mud Chrome)
+[chrome] › reference-text.spec.mjs:161:5 › DC-47: on WebAssembly the colours follow each keystroke, each Reference in a colour of its own (mud Chrome)
+[chrome] › reference-text.spec.mjs:191:5 › DC-47: an edit opened on a Formula, by F2 or by a press into the Formula Bar, is coloured in that surface before anything is typed, and the other stays plain (mud Chrome)
+[chrome] › reference-text.spec.mjs:224:5 › DC-47: the colours follow the edit from the Cell Editor into the Formula Bar and back, the other surface plain (mud Chrome)
+[chrome] › reference-text.spec.mjs:256:5 › DC-47: an IME composition shows the field's own text while it lasts, never the layer over it, and the colours come back when it ends (mud Chrome)
+[chrome] › reference-text.spec.mjs:297:1 › ADR-0057: under the Mud Chrome without the Wrapper's stylesheet, the Cell Editor's text still shows, in the layer's colours
+[chrome] › reference-text.spec.mjs:364:5 › ADR-0051/0057: after =SUM( the Reference Point writes is shown selected in the Cell Editor, and the Formula Bar stays plain (mud Chrome)
+[chrome] › reference-text.spec.mjs:382:5 › ADR-0051/0057: pointed from the Formula Bar after =SUM(, the Reference is shown selected there, and the Cell Editor stays plain (mud Chrome)
+[chrome] › reference-text.spec.mjs:402:5 › ADR-0051/0057: = ↓ ↓ writes =F5 with no grey, however often it is pointed (mud Chrome)
+[chrome] › reference-text.spec.mjs:424:5 › ADR-0051/0057: 5 typed after =D11+ ↓ ↓ follows the Reference, and the grey goes with Point (mud Chrome)
+[chrome] › reference-text.spec.mjs:446:5 › DC-56: the pointed Reference's text is Excel's shade of its colour — #0401a2 for the first, #630101 for the second — on #c6c6c6 (mud Chrome)
+[chrome] › reference-text.spec.mjs:565:9 › DC-48: a Formula longer than the Cell Editor keeps its colours over the right characters at either end (mud Chrome)
+[chrome] › reference-text.spec.mjs:565:9 › DC-48: a Formula longer than the Formula Bar keeps its colours over the right characters at either end (mud Chrome)
+[chrome] › reference-text.spec.mjs:609:9 › DC-48: the comparison finds a layer half a pixel out, in another font or with other letter spacing, in the Cell Editor (mud Chrome)
+[chrome] › reference-text.spec.mjs:609:9 › DC-48: the comparison finds a layer half a pixel out, in another font or with other letter spacing, in the Formula Bar (mud Chrome)
+[chrome] › selection-look.spec.mjs:72:5 › UX-17 (MudBlazor Chrome): the header's rule runs under the Headings' corner and a pinned header as under any other (ADR-0029/0050)
+[chrome] › selection-look.spec.mjs:177:5 › UX-19 (MudBlazor Chrome): one cell selected is the Focus outline alone, with no selection tint (ADR-0008)
+[chrome] › selection-look.spec.mjs:190:5 › UX-19 (MudBlazor Chrome): a single range carries one outline round it, and its tint leaves out the Focus inside it, which has no outline (ADR-0008/0029)
+[chrome] › selection-look.spec.mjs:222:5 › UX-19 (MudBlazor Chrome): several ranges are each tinted with no outline, and their tint never covers the Focus, which is outlined (ADR-0008)
+[chrome] › selection-look.spec.mjs:251:5 › UX-19 (MudBlazor Chrome): a single range across the pinned boundary shows no seam there, and slides beneath the pinned block (ADR-0008/0004)
+[chrome] › selection-summary.spec.mjs:43:9 › under the mud Chrome › a selection of numbers shows Average, Count and Sum from every selected cell (SM-9/SM-11, ADR-0130)
+[chrome] › selection-summary.spec.mjs:62:9 › under the mud Chrome › text is counted and never summed; one cell shows nothing (SM-6, ADR-0130)
+[chrome] › selection-summary.spec.mjs:71:9 › under the mud Chrome › selecting does not move the Viewport: the strip stands before the first selection (SM-9, ADR-0130)
+[chrome] › sheet-borders.spec.mjs:260:5 › SH-46: Fills and lines beside Excel's › SH-46/DC-59: the Selection's outline lies on the gridline and a pixel outside the range on all four sides, over the outer lines, and the lines inside stay drawn over its shade (ADR-0071, ADR-0008, case 11)
+[chrome] › sheet-observed-functions.spec.mjs:10:9 › observed functions under mud › ADR-0047/0051: observed function completion commits and recalculates the extended SUMIF range
+[chrome] › sheet-observed-functions.spec.mjs:39:9 › observed functions under mud › ADR-0047: lookup, rounding, calendar and text functions show their Values through the Sheet
+[chrome] › sheet-observed-functions.spec.mjs:58:9 › observed functions under mud › ADR-0058: the lookup mode list writes the chosen value with Tab
+[chrome] › sheet-paper.spec.mjs:55:9 › SH-39/SH-40/DC-58 (MudBlazor Chrome, light scheme): the Paper is white, the Ink black, and recorded colours read as recorded (ADR-0071, ticket 48)
+[chrome] › sheet-paper.spec.mjs:55:9 › SH-39/SH-40/DC-58 (MudBlazor Chrome, dark scheme): the Paper is white, the Ink black, and recorded colours read as recorded (ADR-0071, ticket 48)
+[chrome] › sheet-paper.spec.mjs:115:5 › SH-39 (MudBlazor Chrome): on the Paper the Selection and the Cell Editor keep their light-scheme look in the dark scheme (ADR-0071, ticket 48)
+[chrome] › sheet-paper.spec.mjs:152:5 › SH-39 (MudBlazor Chrome): Reference Outlines and the pointed shade keep their light-scheme colours on the Paper, and the Formula Bar's References follow the scheme (ADR-0071, ADR-0057)
+[chrome] › sheet-paper.spec.mjs:209:5 › SH-39 (MudBlazor Chrome): a pinned cell that draws a line layer keeps its row gridline beneath it (ADR-0071, ADR-0050 item 15, ticket 90)
+[chrome] › sheet-paper.spec.mjs:257:9 › DC-58/SH-39 (MudBlazor Chrome, light scheme): the Cell Editor keeps the edited cell's Font, in the Font's own colour, and its box (ADR-0050 item 15, ADR-0071, ticket 88)
+[chrome] › sheet-paper.spec.mjs:257:9 › DC-58/SH-39 (MudBlazor Chrome, dark scheme): the Cell Editor keeps the edited cell's Font, in the Font's own colour, and its box (ADR-0050 item 15, ADR-0071, ticket 88)
+[chrome] › sheet-paper.spec.mjs:295:5 › DC-58/SH-39 (MudBlazor Chrome): the Cell Editor keeps a Fill as its ground, and ADR-0057's coloured References read over it (ADR-0050 item 15, ADR-0071, ticket 88)
+[chrome] › sheet-paper.spec.mjs:429:5 › SH-41 (MudBlazor Chrome): a bold number is #### exactly when it does not fit at the bold widths (ADR-0071, ADR-0016)
+[chrome] › sheet-paper.spec.mjs:446:5 › SH-41/VZ-19 (MudBlazor Chrome): a bold number shown a hundredth over the bold edge is painted whole, wherever its column's edges fall on Device Pixels (ADR-0071, ADR-0016, ADR-0090)
+[chrome] › sheet-paper.spec.mjs:468:5 › SH-41 (MudBlazor Chrome): General fits a bold number to the bold widths, and both are painted whole (ADR-0071, ADR-0047)
+[chrome] › sheet-paper.spec.mjs:482:5 › SH-41 (MudBlazor Chrome): an italic number that fits is not cut at either edge (ADR-0071, ADR-0016)
+[chrome] › sheet-spill.spec.mjs:12:9 › mud Chrome › ADR-0125: a spill paints, and a spilled cell's bar shows the Anchor's Formula dimmed (mud)
+[chrome] › sheet-spill.spec.mjs:30:9 › mud Chrome › ADR-0125: typing into a spilled cell makes the Anchor #SPILL!, and Delete lets it spill again (mud)
+[chrome] › sheet-toolbar.spec.mjs:26:9 › under the mud Chrome › SH-48/ADR-0100: the toolbar stands above the Formula Bar, outside the grid's root, and the grid below it (mud)
+[chrome] › sheet-toolbar.spec.mjs:49:9 › under the mud Chrome › SH-50/ADR-0100: Bold sets bold, is shown pressed over a bold Focus, and the keyboard stays on the Sheet (mud)
+[chrome] › sheet-toolbar.spec.mjs:70:9 › under the mud Chrome › SH-50/ADR-0100: while a cell is edited every item is greyed out, the page's own included (mud)
+[chrome] › sheet-toolbar.spec.mjs:87:9 › under the mud Chrome › ADR-0100: a Fill chosen from the palette is painted, and the face then sets it again (mud)
+[chrome] › sheet-toolbar.spec.mjs:102:9 › under the mud Chrome › ADR-0100: the page's own action runs over the Selection (mud)
+[chrome] › sheet-toolbar.spec.mjs:140:5 › SH-52/ADR-0100: Alt released alone shows the rows' KeyTips, H shows Excel's letters, and 1 sets bold with the keyboard back on the Sheet (mud)
+[chrome] › sheet.spec.mjs:239:9 › ticket 78 under the mud Chrome › ticket 78/ADR-0051: a press into the Name Box selects its text, B2 typed replaces it and Enter goes there; a second press places the caret
+[chrome] › sheet.spec.mjs:268:9 › ticket 78 under the mud Chrome › ticket 78/ADR-0051: the commit a press into the Name Box makes renames it, and what is typed replaces the new name; a Reject still takes the keyboard back
+[chrome] › sheet.spec.mjs:306:9 › ticket 78 under the mud Chrome › ticket 78/ADR-0051: on a 150 ms circuit, a render that renames the Name Box after the press leaves what is typed replacing the name
+[chrome] › sheet.spec.mjs:739:5 › KB-8 under the mud Chrome: a character, Escape, Escape, a character opens an edit in the selected cell
+[chrome] › sheet.spec.mjs:767:5 › KB-8 under the mud Chrome: after Escape and an arrow, or a press, Tab cycles; after Escape alone it leaves the Sheet
+[chrome] › stretch.spec.mjs:56:5 › in parents with a definite height › inside the paper: the Stretch grid takes what the toolbar leaves; a declared grid is unchanged (WR-7a, ADR-0030)
+Total: 282 tests in 31 files
