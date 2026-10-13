@@ -17,21 +17,39 @@ verification**: VZ-10's real clause is about platforms whose scrollbars take spa
 A machine without Edge fails the `msedge` project by name — the honest outcome
 (ADR-0017 requires both browsers; passing on one does not satisfy it).
 
-A third project, `chrome-150`, runs the tests the Layout Ceiling broke (ADR-0053, VZ-15):
-BIG-1, BIG-5, VZ-15, the Focus against the scrollbars, and the Sheet's SH-2, SH-18/DC-2/3/7;
-and every test that scrolls a compressed grid to a row (MK-6, `sheet-vs-excel` items 3 and 5,
-active-cell cases 7 and 8). Those go through `scrollRowToTop` in `fixtures.mjs`, which maps a
-row to a scroll offset through ADR-0053's `c(s) = s × k`: a `scrollTop` of rows × row height
-shows a later row once the height is compressed, which only a run at 150% can see. It returns
-once the grid has painted the slice for the offset the browser holds, as the offset the grid
-wrote on the Viewport says: compressed, the rows move when the grid is told of the scroll, a
-round trip later on the Server host, and a reading taken before that is of rows that are leaving.
-It also reads pixels that only a real 150% lays out: the Border lines (DC-59), the Selection's shade
-over them in a Pinned Column (DC-59, ADR-0206), and SH-41's sweep of
-the bold edge (VZ-19), where a number may use one Device Pixel of its cell's right padding
-(ADR-0090). `sheet-paper.spec.mjs` emulates its viewport everywhere else, and leaves the window to
-Chrome there, since an emulated viewport is painted at a scale of 1.
-It launches Chrome with `--force-device-scale-factor=1.5` and `viewport: null`, headed, so
+A third project, `chrome-150`, runs at a real 150% the tests its `grep` in `playwright.config.mjs`
+names. They are these, by file:
+
+- **What the Layout Ceiling broke (ADR-0053, VZ-15).** `virtualisation.spec.mjs`'s BIG-1, BIG-5
+  (twice) and VZ-15; `scrollbar.spec.mjs`'s three tests of the Focus never behind a scrollbar, and
+  VZ-14's, which skips itself off Windows; `sheet.spec.mjs`'s SH-2, SH-18/DC-7 and SH-18/DC-2/DC-3.
+- **Every test that scrolls a compressed grid to a row.** MK-6 (`marks.spec.mjs`);
+  `sheet-vs-excel.spec.mjs`'s items 3 and 5 and active-cell cases 7 and 8, and the fourth run's
+  active-cell item 3, which the grep's `item 3:` takes too; and the far reveal (`circuit.spec.mjs`).
+  Those go through `scrollRowToTop` in `fixtures.mjs`, which maps a row to a scroll offset through
+  ADR-0053's `c(s) = s × k`: a `scrollTop` of rows × row height shows a later row once the height
+  is compressed, which only a run at 150% can see. It returns once the grid has painted the slice
+  for the offset the browser holds, as the offset the grid wrote on the Viewport says: compressed,
+  the rows move when the grid is told of the scroll, a round trip later on the Server host, and a
+  reading taken before that is of rows that are leaving.
+- **Pixels that only a real 150% lays out.** Every test named DC-59: the Border lines on
+  `/appearance` (`appearance.spec.mjs`), with a Fill beneath and the Selection above; on the Sheet
+  (`sheet-borders.spec.mjs`, with SH-46's); and in `part-c.spec.mjs` the Selection's outline and
+  shade on the Paper under both Chromes (SH-54), its shade over the lines in a Pinned Column and
+  across the pinned boundary (ADR-0206), and across it in the dark scheme under both Chromes, a
+  Consumer's coloured shade over a pinned Fill and line, the lines outside a pinned tint kept on
+  their Device Pixels with the page a third of a pixel off, column A's shade while scrolling, no
+  tint over a pinned range under forced colors, and VZ-17's vertical gridline. SH-41's sweep of the
+  bold edge under both Chromes (VZ-19, `sheet-paper.spec.mjs`), where a number may use one Device
+  Pixel of its cell's right padding (ADR-0090). And the Focus among several ranges, a border of one
+  Device Pixel inside its cell (UX-19, ADR-0008 of 2026-10-12): ExGrid's own on `/wide`
+  (`selection-look.spec.mjs`), on the Paper under both Chromes and in the three selections of the
+  readings of 2026-10-12 (R4) (`sheet-paper.spec.mjs`), and under `ExGrid.MudBlazor` on `/mud`
+  (`mud.spec.mjs`).
+
+`selection-look.spec.mjs` and `sheet-paper.spec.mjs` emulate their viewport everywhere else, and
+leave the window to Chrome there, since an emulated viewport is painted at a scale of 1.
+`chrome-150` launches Chrome with `--force-device-scale-factor=1.5` and `viewport: null`, headed, so
 the display scale reaches layout the way the OS's does and Chrome clamps at 22,369,618 CSS
 px. Playwright's `deviceScaleFactor` would not do: it raises `devicePixelRatio` and leaves
 the clamp where it was. Its 1280×800 window is 1920×1200 device pixels, so the screen it
@@ -230,7 +248,11 @@ arrived between two pictures. So:
 - **Read where the boundary lies on a device pixel.** A device pixel an edge cuts through is a
   blend of both sides. `offDevicePixels(box, scale)` in `pixels.mjs` names the edges of a box
   that are not on the device pixel grid; a test reading at an edge checks it first and fails
-  there, saying so. A paint is read on the pixels a box covers whole (`wholePixelCentres`),
+  there, saying so. `acrossEdges` and `edgePixels`, which read across a box's edges, refuse such a
+  box themselves. A page lays its grid wherever its own content puts it, often a fraction of a
+  device pixel off (`/wide`'s rows start at 471.875 CSS px), so `onDevicePixels` moves the page
+  onto the grid first: it offsets the body by the fraction, through `alterPage`, which lays
+  nothing out again and is undone when the test ends. A paint is read on the pixels a box covers whole (`wholePixelCentres`),
   through a region grown out to the device grid (`onDeviceGrid`), so each pixel of the picture
   is one of the page's.
 - **The one allowance for rounding is `paints(pixel, exact)`, with `blend`.** A channel whose
@@ -527,7 +549,9 @@ nobody had asked for. What that means when writing a test:
 - `mud.spec.mjs` — the Wrapper contract with a real Wrapper, `ExGrid.MudBlazor` on
   `/mud` (ADR-0030): painted geometry equals declared under the Wrapper's stylesheet
   and Roboto (UX-3), nothing under the Viewport animates (UX-6), the Focus outline
-  keeps 3:1 against the surface in both palettes (UX-9), a theme switch re-renders no
+  keeps 3:1 against the surface in both palettes (UX-9), the Focus among several ranges
+  taking its thin border in the Focus outline's colour, the primary, with no mapping of the
+  Wrapper's own (UX-19, ADR-0008 of 2026-10-12), a theme switch re-renders no
   row (RR-1), the hover band follows the pointer in the hovered instance only (UX-13,
   ADR-0021's fifth entry), the Wrapper's editor fits the core's box and commits
   (ED-4), the loading bar shows only while loading, and the paper's corners never
@@ -644,7 +668,12 @@ nobody had asked for. What that means when writing a test:
   Formula Bar dark in the dark scheme and light in the light one; the Selection, the Cell Editor,
   a Reference Outline and the pointed shade keeping their light-scheme look on the Paper, and the
   Formula Bar's References taking the dark scheme's; and `--ex-sheet-paper` and `--ex-sheet-ink`
-  set by a Consumer changing the Paper and the Ink. And what fits (SH-41; ADR-0071, "Bold, and what
+  set by a Consumer changing the Paper and the Ink. The Focus among several ranges on the Paper
+  (UX-19, ADR-0008 of 2026-10-12): one Device Pixel inside its cell in the Focus outline's colour,
+  `#217346` under the built-in Chrome and the primary under `ExSheet.MudBlazor`, beside the Headings,
+  a Pinned Column and the header and in the open, in both schemes; and the readings of 2026-10-12's
+  three selections (R4) on a blank Sheet, the border, the white line between it and the gridline, and
+  past the gridline the shade or the Paper, as R4 read them. And what fits (SH-41; ADR-0071, "Bold, and what
   fits") under both Chromes, on `/sheet?case=bold` and `?case=fit`, whose columns stand a hundredth
   of a pixel from where a number stops fitting in the Sheet's own Cell Metrics: a bold 12% `####`
   under its bold edge where the plain one shows; General fitting a bold number to the bold widths;

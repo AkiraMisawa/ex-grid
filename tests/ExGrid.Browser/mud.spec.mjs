@@ -1,5 +1,5 @@
-import { test, expect } from './fixtures.mjs';
-import { painted, contrast, resolvedColour, sameColour } from './pixels.mjs';
+import { test, expect, circuitQuiet, twoFrames } from './fixtures.mjs';
+import { painted, contrast, resolvedColour, sameColour, edgePixels, onDevicePixels } from './pixels.mjs';
 
 // The Wrapper contract, measured with a real Wrapper (ADR-0030): ExGrid.MudBlazor on
 // /mud. The Definition of Done wrote UX-3/6/9 against a "stub Wrapper stylesheet";
@@ -154,6 +154,49 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
         expect(withRange.range, JSON.stringify(withRange)).toEqual(oneCell.focus);
         expect(withRange.fill, JSON.stringify(withRange)).not.toBeNull();
         expect(withRange.fill).not.toBe('rgba(0, 0, 0, 0)');
+    }
+});
+
+test('UX-19/UX-9: among several ranges the Focus\'s thin border is the Focus outline\'s colour, the primary in both palettes, with no mapping of its own (ADR-0008, 2026-10-12; ADR-0030)', async ({ page }, testInfo) => {
+    await open(page);
+    const scale = await page.evaluate(() => devicePixelRatio);
+    expect(scale).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
+    const cellAt = (row, column) => gridA(page).locator('.ex-row').nth(row).locator('.ex-cell').nth(column);
+    // The Wrapper names the Focus outline and not this border's own token, which follows the Focus
+    // outline where nothing names it (2026-10-12, decided with the user).
+    expect(await gridA(page).evaluate((g) => getComputedStyle(g).getPropertyValue('--ex-focus-among-ranges-outline').trim())).toBe('');
+    const borderOf = (selector) => gridA(page).evaluate((g, s) => {
+        const focus = [...g.querySelectorAll(s)].find((el) => el.getBoundingClientRect().width > 0);
+        return getComputedStyle(focus, '::after').borderTopColor;
+    }, selector);
+    for (const dark of [false, true]) {
+        if (dark) {
+            await page.locator('#toggle-dark').click();
+            await expect(page.locator('#dark-status')).toHaveText('Dark: True');
+        }
+        // One cell: the Focus outline, the primary (raised in the dark scheme, ADR-0030).
+        await cellAt(2, 2).click({ force: true });
+        await expect(gridA(page).locator('.ex-focus')).not.toHaveCount(0);
+        await expect(gridA(page).locator('.ex-focus-among-ranges')).toHaveCount(0);
+        const outline = await borderOf('.ex-focus');
+        // A range, then another with Ctrl: the Focus among several ranges, in the outline's colour.
+        await cellAt(3, 3).click({ force: true, modifiers: ['Shift'] });
+        await cellAt(5, 2).click({ force: true, modifiers: ['ControlOrMeta'] });
+        await expect(gridA(page).locator('.ex-focus.ex-focus-among-ranges')).toHaveCount(1);
+        const border = await borderOf('.ex-focus-among-ranges');
+        expect(border, `dark=${dark}`).toBe(outline);
+        if (!dark) {
+            // Painted: one Device Pixel of the primary inside the cell, on every side, at the
+            // display's scale. The dark scheme's is an oklch() the cascade resolves, compared above.
+            const primary = await resolvedColour(page, await gridA(page).evaluate((g) => getComputedStyle(g).getPropertyValue('--mud-palette-primary')));
+            expect(await resolvedColour(page, border)).toEqual(primary);
+            await page.mouse.move(0, 0);
+            await circuitQuiet();
+            await twoFrames(page);
+            const edges = await edgePixels(page, await onDevicePixels(page, cellAt(5, 2)), primary);
+            const gridline = Math.max(1, Math.floor(scale + 1e-9));
+            expect(edges, JSON.stringify(edges)).toEqual({ scale, left: [1], top: [1], right: [gridline + 1], bottom: [gridline + 1] });
+        }
     }
 });
 

@@ -418,7 +418,7 @@ const STABLE_CLASSES = [
 ];
 
 /** ADR-0029's internal list, with the entries added there by ADR-0050/0051, ADR-0057, ADR-0058,
- * ADR-0130 and ADR-0170. */
+ * ADR-0130, ADR-0170 and ADR-0008 (2026-10-12). */
 const INTERNAL_CLASSES = [
     'ex-scroller', 'ex-spacer', 'ex-viewport', 'ex-gap', 'ex-selection', 'ex-selection-pinned',
     'ex-header-groups-pinned', 'ex-focus-row', 'ex-pager', 'ex-status', 'ex-mark-count',
@@ -440,6 +440,8 @@ const INTERNAL_CLASSES = [
     'ex-key-field', 'ex-key-field-layer', 'ex-key-field-held', 'ex-key-field-composing',
     // The same section: the selection's tint and the pinned shade layer (ADR-0206).
     'ex-range-tint', 'ex-shade-pinned',
+    // The Focus among several ranges (ADR-0008 of 2026-10-12, entered in ADR-0029).
+    'ex-focus-among-ranges',
 ];
 
 /** The same section's prefixes: every popover part not named above, and every part of Find. */
@@ -538,10 +540,11 @@ test('every class under the root is one ADR-0029 names, stable or internal (UX-4
         });
     }
     // A second range beside it, two cells wide: a range of one cell is painted as the Focus
-    // alone, with no ex-range of its own.
+    // alone, with no ex-range of its own. The Focus now stands among several ranges.
     await at(3, 2).click({ force: true, modifiers: ['ControlOrMeta'] });
     await page.keyboard.press('Shift+ArrowRight');
     await expect(features.locator('.ex-range')).toHaveCount(2);
+    await expect(features.locator('.ex-focus-among-ranges')).toHaveCount(1);
     // The Cell Editor, typed into, and left.
     await at(0, 1).click({ force: true });
     await page.keyboard.type('X');
@@ -638,7 +641,7 @@ test('every class under the root is one ADR-0029 names, stable or internal (UX-4
     // the change mark, and a loading grid, met only in passing — is named in the README.
     const reached = ['ex-grid', 'ex-header', 'ex-header-cell', 'ex-header-group', 'ex-row', 'ex-cell',
         'ex-cell-numeric', 'ex-pinned', 'ex-state-error', 'ex-state-stale', 'ex-state-missing', 'ex-state-modified',
-        'ex-row-group', 'ex-row-total', 'ex-row-stripe', 'ex-tone-negative', 'ex-tone-positive', 'ex-status', 'ex-range', 'ex-focus', 'ex-editor', 'ex-editing', 'ex-action', 'ex-action-chosen',
+        'ex-row-group', 'ex-row-total', 'ex-row-stripe', 'ex-tone-negative', 'ex-tone-positive', 'ex-status', 'ex-range', 'ex-focus', 'ex-focus-among-ranges', 'ex-editor', 'ex-editing', 'ex-action', 'ex-action-chosen',
         'ex-mark', 'ex-mark-all', 'ex-resize-guide', 'ex-drop-indicator', 'ex-row-heading', 'ex-headings-corner',
         'ex-formula-bar', 'ex-name-box', 'ex-fill-handle', 'ex-popover', ...(clipboardWatched ? ['ex-copied-range'] : []),
         'ex-completion', 'ex-reference-outline'];
