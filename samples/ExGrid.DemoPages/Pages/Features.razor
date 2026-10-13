@@ -91,8 +91,11 @@
         Chrome="_chrome" />
 
 @* The Header Groups as this page declared them, written out after every render: a drag never
-   changes them (ADR-0032, HG-15). *@
-<p class="demo-status"><span id="groups-status">Groups: @string.Join("; ", _groups.Select(g => $"{g.Label} [{string.Join(",", g.Columns)}] tier {g.Tier} span {g.TierSpan}"))</span></p>
+   changes them (ADR-0032, HG-15). Only under ?groups=1, so the page's default layout is unchanged. *@
+@if (ShowGroups)
+{
+    <p class="demo-status"><span id="groups-status">Groups: @string.Join("; ", _groups.Select(g => $"{g.Label} [{string.Join(",", g.Columns)}] tier {g.Tier} span {g.TierSpan}"))</span></p>
+}
 
 <h2>A second, independent instance</h2>
 <p>Two grids on one page hold independent DOM, tokens and handles (ADR-0018).</p>
@@ -171,6 +174,15 @@
 
     private static readonly string[] UpstreamKeys = ["F9"];
     private static readonly string[] UpstreamAndResortKeys = ["F9", "F8"];
+
+    /// <summary>
+    /// <c>?groups=1</c> writes the Header Groups the page declared under the main grid after every
+    /// render, so the browser layer can read that a drag never changes them (ADR-0032, HG-15).
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "groups")]
+    public string? GroupsParameter { get; set; }
+
+    private bool ShowGroups => GroupsParameter == "1";
 
     /// <summary>
     /// <c>?summary=held</c> adds a third grid whose Selection Summary the page answers itself

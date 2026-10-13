@@ -10,8 +10,8 @@ function grid(page) {
     return page.locator('.ex-grid').first();
 }
 
-async function open(page) {
-    await page.goto('/features');
+async function open(page, path = '/features') {
+    await page.goto(path);
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
 }
 
@@ -70,7 +70,7 @@ function drawnGroups(page) {
 }
 
 test('HG-15 / ADR-0032: HeaderGroups survives a reorder within a group and a whole-group move unchanged', async ({ page }) => {
-    await open(page);
+    await open(page, '/features?groups=1');
     const groups = page.locator('#groups-status');
     const declared = 'Groups: Who [Book,Trader] tier 1 span 1; What [Notional,Narrow,TradeDate,Confirmed] tier 1 span 1';
     await expect(groups).toHaveText(declared);

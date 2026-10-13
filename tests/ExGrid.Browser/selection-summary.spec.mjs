@@ -220,7 +220,7 @@ for (const chrome of ['builtin', 'mud']) {
 
             // At no render did figures stand beside a selection they were not taken over.
             const seen = await page.evaluate(() => window.__heldSummarySeen);
-            expect(seen.length).toBeGreaterThan(0);
+            expect(seen.some(({ text }) => /Count: \d+/.test(text)), 'a render with figures was observed').toBe(true);
             for (const { rows, text } of seen) {
                 const count = /Count: (\d+)/.exec(text);
                 if (count) {
