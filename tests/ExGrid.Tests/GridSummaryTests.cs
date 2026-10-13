@@ -153,6 +153,35 @@ public class GridSummaryTests
         Assert.Equal(3_530.25m, result[SummaryFigures.Sum]!.Value.Exact);
     }
 
+    [Fact] // SM-6, ADR-0130: a hidden column is never summarised — the request's Columns are the visible ones
+    public async Task SM6_a_hidden_column_is_never_summarised()
+    {
+        // The Source knows all three; the Consumer has hidden Notional, so the grid asks
+        // about Book and Rate only, and the range spans both visible columns.
+        var source = GridSource.From(Rows);
+        source.OnColumnsChanged(
+        [
+            new GridColumn<Trade>("Book", ColumnType.Text, t => t.Book).Info,
+            new GridColumn<Trade>("Notional", ColumnType.Number, t => t.Notional).Info,
+            new GridColumn<Trade>("Rate", ColumnType.Number, t => t.Rate).Info,
+        ]);
+
+        var result = await source.SummarizeAsync(
+            new GridSummaryRequest
+            {
+                Ranges = [new SelectionRange(0, 0, 4, 2)],
+                Columns = ["Book", "Rate"],
+                RowSequenceVersion = 0,
+                Figures = SummaryFigures.Count | SummaryFigures.NumericalCount | SummaryFigures.Max,
+            },
+            CancellationToken.None);
+
+        // Four Books and four Rates; Notional's three numbers and its 2,500.25 maximum are absent.
+        Assert.Equal(8m, result[SummaryFigures.Count]!.Value.Exact);
+        Assert.Equal(4m, result[SummaryFigures.NumericalCount]!.Value.Exact);
+        Assert.Equal(4d, result[SummaryFigures.Max]!.Value.Number);
+    }
+
     [Fact] // ADR-0130 / SM-6: the in-memory Source summarises the result in its order
     public async Task ADR0130_the_in_memory_source_summarises_the_result_in_its_order()
     {

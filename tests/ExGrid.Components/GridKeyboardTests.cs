@@ -306,6 +306,25 @@ public class GridKeyboardTests : GridTestContext
         Assert.Contains("top: 20px", cut.Find(".ex-focus").GetAttribute("style"));
     }
 
+    [Fact] // RR-7, ADR-0003: a key that moves nothing renders nothing, and the next one still renders
+    public async Task RR7_a_key_that_moves_nothing_renders_nothing()
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(s => selection = s);
+        await ClickAsync(cut, 50, 10);          // row 0
+        var before = cut.RenderCount;
+
+        await PressAsync(cut, "ArrowUp");       // already at the top: nothing moves
+        await PressAsync(cut, "ArrowLeft");     // already at the left edge: nothing moves
+
+        Assert.Equal(before, cut.RenderCount);
+
+        await PressAsync(cut, "ArrowDown");     // this one moves, and is painted
+        Assert.True(cut.RenderCount > before);
+        Assert.Equal(new CellPosition(1, 0), selection!.Focus);
+        Assert.Contains("top: 20px", cut.Find(".ex-focus").GetAttribute("style"));
+    }
+
     [Fact] // ADR-0001: and it must not swallow the next Window either
     public async Task A_key_that_moves_nothing_leaves_the_next_window_alone()
     {

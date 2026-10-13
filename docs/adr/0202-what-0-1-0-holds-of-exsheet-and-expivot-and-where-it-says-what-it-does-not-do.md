@@ -133,3 +133,6 @@ The run ExGrid's own by-hand rows need anyway (VZ-14, VZ-16, FN-12e, ED-30, SM-7
   case it decided, a 10,000 × 20 block with its twenty whole-column totals beside it, where an edit takes
   tens of milliseconds; with such a `SUM` on every row instead, an edit was measured at about 40 to 48
   seconds and holds the circuit that long. `verification/2026-10-11-linux-sh19/` has both.)*
+  *(2026-10-12, decided with the user: also ExGrid's VZ-18 on the remote-isolation PC. The
+  repaint after a reveal is in, and its layer-3 test gates; the check on that PC is not run for `0.1.0`,
+  and the observation of 2026-10-08, which names no commit, is not taken as its record.)*

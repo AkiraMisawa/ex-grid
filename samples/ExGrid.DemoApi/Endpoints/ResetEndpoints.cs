@@ -16,11 +16,15 @@ internal static class ResetEndpoints
     /// generated trades put back in one transaction that moves the Source Version on
     /// (<see cref="TradeStore.ResetAsync"/>). The hub says the change as it says a tick's, so a page
     /// still open asks again. Every reset moves the version on, even one that puts nothing back.
+    /// It also opens the report Window gate and forgets the Windows it recorded
+    /// (<see cref="PivotWindowGate.Reset"/>).
     /// </summary>
     public static IEndpointRouteBuilder MapResetEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/reset", async (TradeStore store, LiveUpdater live, HttpResponse response, CancellationToken cancellationToken) =>
+        app.MapPost("/api/reset", async (TradeStore store, LiveUpdater live, PivotWindowGate gate, HttpResponse response,
+            CancellationToken cancellationToken) =>
         {
+            gate.Reset();
             if (store.State != TradeStoreState.Ready)
                 return ApiResults.NotReady(store, response);
             var settings = await live.SetAsync(live.Settings with { On = false }, cancellationToken);
