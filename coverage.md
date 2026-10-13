@@ -5,25 +5,25 @@
 | ExGrid | 95.7% | 88.5% |
 | ExSheet | 96.1% | 89.7% |
 | ExPivot | 94.2% | 85.2% |
-| Data | 94.4% | 90.2% |
+| Data | 94.5% | 90.3% |
 
 # Summary
 <details open><summary>Summary</summary>
 
 |||
 |:---|:---|
-| Generated on: | 10/13/2026 - 18:29:38 |
+| Generated on: | 10/13/2026 - 18:43:51 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 839 |
 | Files: | 461 |
-| **Line coverage:** | 95.3% (56695 of 59482) |
-| Covered lines: | 56695 |
-| Uncovered lines: | 2787 |
+| **Line coverage:** | 95.3% (56696 of 59482) |
+| Covered lines: | 56696 |
+| Uncovered lines: | 2786 |
 | Coverable lines: | 59482 |
-| Total lines: | 100635 |
-| **Branch coverage:** | 88.3% (32918 of 37241) |
-| Covered branches: | 32918 |
+| Total lines: | 100636 |
+| **Branch coverage:** | 88.3% (32919 of 37241) |
+| Covered branches: | 32919 |
 | Total branches: | 37241 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -277,7 +277,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.5%**|
+|**ExGrid.Data**|**94.6%**|**90.6%**|
 |ExGrid.Data.AggregateAccumulator|86%|87.8%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -366,7 +366,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
