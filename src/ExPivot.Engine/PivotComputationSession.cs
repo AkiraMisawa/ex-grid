@@ -3,7 +3,7 @@ using ExGrid.Data;
 namespace ExPivot.Engine;
 
 /// <summary>One complete computation or a named refusal (ADR-0153).</summary>
-public sealed class PivotComputationResult
+internal sealed class PivotComputationResult
 {
     internal PivotComputationResult(PivotReport? report, PivotSourceRefusal? refusal, bool reset,
         IReadOnlyList<PivotReportRow>? labels = null,
@@ -48,7 +48,7 @@ public sealed class PivotComputationResult
 /// the preceding result returned, whenever the cancellations landed.
 /// </para>
 /// </summary>
-public sealed class PivotComputationSession : IDisposable
+internal sealed class PivotComputationSession : IDisposable
 {
     private readonly PivotSource _source;
     private readonly IReadOnlyList<PivotField> _fields;

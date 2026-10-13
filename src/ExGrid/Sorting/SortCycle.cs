@@ -12,7 +12,7 @@ namespace ExGrid;
 /// a column menu that wants it (ADR-0010). The third state exists so the Consumer's
 /// own order is reachable again without reloading.</para>
 /// </summary>
-public static class SortCycle
+internal static class SortCycle
 {
     /// <summary>The whole next Sorts list after a click on <paramref name="column"/>'s
     /// header: a single ascending sort on it becomes descending, a single descending sort

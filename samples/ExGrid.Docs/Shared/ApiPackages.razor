@@ -1,0 +1,20 @@
+@* A product's packages on the API reference (ADR-0201): each package of ADR-0042's table under the
+   product, with its contract's types. What is public and not the contract is listed apart, at the end
+   of the page (ApiNotContract). *@
+@foreach (var package in Packages.ByProduct.FirstOrDefault(g => g.Key == Product) ?? Enumerable.Empty<DocsPackage>())
+{
+    var count = ApiSurface.TypesOf(package.Id, contract: true).Count();
+    <MudText Typo="Typo.h6" HtmlTag="h3" Class="docs-reference-heading">
+        <code>@package.Id</code>
+        <span class="docs-reference-heading-cites">
+            <span class="docs-muted">@count @(count == 1 ? "type" : "types")</span>
+            <a href="@package.ReadmeUrl" target="_blank" rel="noopener">Readme</a>
+        </span>
+    </MudText>
+    <ApiTypes Package="@package.Id" Contract="true" />
+}
+
+@code {
+    /// <summary>The product, as ADR-0042's table names it: <c>ExGrid</c>, <c>The Snapshot</c>.</summary>
+    [Parameter, EditorRequired] public string Product { get; set; } = "";
+}

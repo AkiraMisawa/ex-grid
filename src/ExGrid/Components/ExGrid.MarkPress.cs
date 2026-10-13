@@ -102,7 +102,9 @@ public partial class ExGrid<TRow>
     /// <param name="row">The row a row's checkbox stood in, as its cell's id names it, or −1.</param>
     /// <param name="pageRows">How many rows the page the header's checkbox named under a pager held
     /// (<c>data-ex-page-rows</c>), or −1.</param>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public async Task MarkPressTakenAt(int paint, int pageStart = -1, int row = -1, int pageRows = -1)
     {
         if (_disposed)

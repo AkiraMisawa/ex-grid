@@ -12,4 +12,4 @@ namespace ExGrid.Components;
 /// </summary>
 /// <param name="Top">The scroller's <c>scrollTop</c>.</param>
 /// <param name="Left">The scroller's <c>scrollLeft</c>.</param>
-public readonly record struct ScrollOffset(double Top, double Left);
+internal readonly record struct ScrollOffset(double Top, double Left);

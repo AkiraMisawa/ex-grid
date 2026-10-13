@@ -6,7 +6,7 @@ namespace ExGrid.Cells;
 /// A Consumer's declaration that a grid is pointed at from outside (ADR-0058): a Formula edited
 /// elsewhere on the page points at this grid's cells, and a press on them is the pointing Sheet's, not
 /// the grid's. The Consumer passes one to the grid (<c>ExGrid.PointedAt</c>) and changes it as pointing
-/// starts and ends; the grid re-renders when it is told of a change (<see cref="Changed"/>). Any
+/// starts and ends; the grid repaints when one of its properties changes. Any
 /// Consumer may make one. The grid learns nothing of Formulas, Sheets or Linked Tables from it.
 ///
 /// <para>While <see cref="IsPointedAt"/> holds, a primary press on the grid's rows or column headers
@@ -16,9 +16,8 @@ namespace ExGrid.Cells;
 /// or not it holds, the grid draws the <see cref="Dashes"/> and the <see cref="OutlinedColumns"/>
 /// asked for here.</para>
 ///
-/// <para>Changed from the Consumer's own renderer context, as a parameter is. Each property raises
-/// <see cref="Changed"/> when it is set to something new, and nothing when it is set to what it
-/// holds.</para>
+/// <para>Changed from the Consumer's own renderer context, as a parameter is. Each property tells
+/// the grid when it is set to something new, and nothing when it is set to what it holds.</para>
 /// </summary>
 public sealed class GridPointedAt<TRow>
     where TRow : class
@@ -143,7 +142,7 @@ public sealed class GridPointedAt<TRow>
 
     /// <summary>Raised after <see cref="IsPointedAt"/>, <see cref="PointingRootId"/>,
     /// <see cref="Dashes"/> or <see cref="OutlinedColumns"/> changed, so the grid repaints.</summary>
-    public event Action? Changed;
+    internal event Action? Changed;
 
     // The grid this declaration is passed to, which answers the requests below: set as the grid
     // takes the declaration, and cleared as it lets it go.

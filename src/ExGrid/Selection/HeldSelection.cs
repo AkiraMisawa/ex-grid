@@ -9,8 +9,8 @@ namespace ExGrid.Selection;
 /// goes through the same gate.
 ///
 /// (<c>default(HeldSelection)</c> has a null Selection — the same tolerated
-/// struct-default hole as <c>default(SelectionRange)</c>; start from
-/// <see cref="Empty"/>.)
+/// struct-default hole as <c>default(SelectionRange)</c>; start from one holding
+/// <see cref="GridSelection.Empty"/>.)
 /// </summary>
 /// <param name="RowSequenceVersion">The Row Sequence Version the selection was made under.</param>
 /// <param name="Selection">The selection, in positions of that version's order.</param>
@@ -18,7 +18,7 @@ public readonly record struct HeldSelection(int RowSequenceVersion, GridSelectio
 {
     /// <summary>Nothing selected, held under <paramref name="rowSequenceVersion"/> — where
     /// a holder starts.</summary>
-    public static HeldSelection Empty(int rowSequenceVersion) => new(rowSequenceVersion, GridSelection.Empty);
+    internal static HeldSelection Empty(int rowSequenceVersion) => new(rowSequenceVersion, GridSelection.Empty);
 
     /// <summary>
     /// Reconciles with the version now current: the same version keeps the selection,
@@ -31,7 +31,7 @@ public readonly record struct HeldSelection(int RowSequenceVersion, GridSelectio
 
     /// <summary>Replaces the selection under the same version — the ordinary result of
     /// a selection gesture.</summary>
-    public HeldSelection With(GridSelection selection)
+    internal HeldSelection With(GridSelection selection)
     {
         ArgumentNullException.ThrowIfNull(selection);
         return this with { Selection = selection };

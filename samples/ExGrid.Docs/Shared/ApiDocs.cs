@@ -13,6 +13,9 @@ internal static partial class ApiDocs
     public static string? Summary(MemberInfo member) =>
         Summaries.TryGetValue(Id(member), out var html) ? html : null;
 
+    /// <summary>The summary the documentation id <paramref name="id"/> keys, or null when it has none.</summary>
+    public static string? SummaryOf(string id) => Summaries.TryGetValue(id, out var html) ? html : null;
+
     /// <summary>The documentation id the compiler wrote for <paramref name="member"/>.</summary>
     public static string Id(MemberInfo member) => member switch
     {

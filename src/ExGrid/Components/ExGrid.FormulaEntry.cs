@@ -252,7 +252,9 @@ public partial class ExGrid<TRow>
     /// or a caret key the browser carried out. Such a caret is the user's even while a
     /// placement is in flight: it was made after the core wrote the text, the listener does not
     /// carry that placement out, and the core does not wait for it.</param>
-    [JSInvokable]
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnEditorCaretAsync(string text, int caret, bool moved = false)
     {
         if (_disposed || _editMode == EditMode.None || text is null || caret < 0 || caret > text.Length)

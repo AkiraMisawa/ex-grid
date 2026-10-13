@@ -113,7 +113,14 @@ changed in each version, what is coming, the whole API, and a search. The frame 
   - **The API reference is not built yet.** A page per public type would publish a surface nobody has
     reviewed, and Consumers would start depending on types that are public only so the tests can reach
     them (ADR-0042). It waits for the decision about the public C# surface. Until then each topic page
-    keeps its API table.
+    keeps its API table. *(2026-10-12, after
+    [ADR-0201](./0201-the-public-surface-is-what-consumers-chromes-and-the-sibling-products-use.md): the
+    **API reference** is built, at `/reference/api`. It lists every public type of the packages by product,
+    in ADR-0042's order, read by the build from the shipped assemblies, each with its summary; a type's
+    name opens its API table, the same table a topic page places. What is public and not the contract —
+    the types marked `[EditorBrowsable(Never)]`, and the members of contract types the grid's script calls
+    or that are so marked — is listed apart under "Not the contract: may change in any version", and every
+    API table lists such members apart the same way. The topic pages keep their API tables.)*
 - **A site map is generated at build time** from the pages: each route, title, section and Example.
   It feeds the rail, the search, the Feature matrix and the checks on Release Notes' links. A route
   missing from the navigation, a navigation entry with no page, a section title that is not a literal

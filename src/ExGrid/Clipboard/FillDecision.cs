@@ -8,7 +8,7 @@ namespace ExGrid.Clipboard;
 /// paste arithmetic of ADR-0014 — a source one row tall (one column wide) tiles its target
 /// exactly.
 /// </summary>
-public sealed class FillPlan
+internal sealed class FillPlan
 {
     internal FillPlan(SelectionRange source, PastePlan paste)
     {
@@ -28,7 +28,7 @@ public sealed class FillPlan
 /// A fill key's answer (ADR-0035): an approved <see cref="FillPlan"/>, or the paste reason
 /// it was refused for. Read <see cref="Plan"/> only when not refused.
 /// </summary>
-public sealed class FillDecision
+internal sealed class FillDecision
 {
     private readonly FillPlan? _plan;
     private readonly PasteRefusalReason _reason;

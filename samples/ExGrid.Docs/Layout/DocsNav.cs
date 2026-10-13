@@ -129,6 +129,7 @@ public static class DocsNav
         new("Reference", DocsNavSection.Reference,
         [
             new("Keyboard", "reference/keyboard"),
+            new("API reference", "reference/api"),
         ]),
         new("Project", DocsNavSection.Project,
         [

@@ -2,33 +2,42 @@
 @using Microsoft.AspNetCore.Components
 
 @* A type's API (ADR-0110), read from the type itself and from the summaries the build took from
-   the shipped assemblies' XML documentation: a component's parameters and events, or a type's
-   properties, and its public methods. A member public only so that the grid's own script can call
-   it ([JSInvokable]), or hidden from a Consumer's editor ([EditorBrowsable(Never)]), is not a
-   Consumer's API, and is left out. *@
+   the shipped assemblies' XML documentation: a component's parameters, events, properties and
+   methods, or a type's constructors, properties, fields, events and methods, or an enum's values.
+   What is public and not the contract (ADR-0201) — a member the grid's own script calls
+   ([JSInvokable]) or one hidden from a Consumer's editor ([EditorBrowsable(Never)]), as the build read
+   them (ApiSurface) — is listed apart, under "Not the contract: may change in any version"; a type
+   that is itself not the contract says so under its name. *@
 <div class="docs-api">
-    <MudText Typo="Typo.h6" HtmlTag="h3" Class="docs-api-title"><code>@ApiDocs.Display(Type)</code></MudText>
-    @foreach (var (heading, rows) in Groups())
+    @if (ShowTitle)
+    {
+        <MudText Typo="Typo.h6" HtmlTag="h3" Class="docs-api-title"><code>@ApiDocs.Display(Type)</code></MudText>
+    }
+    @if (!_contract)
+    {
+        <p class="docs-api-notcontract-note">
+            @ApiSurface.NotTheContract. Public because @(_entry?.Kind == "component" ? "Razor places only a public component" : "a part the grid renders, or the grid's own script, names it"),
+            and hidden from a Consumer's editor.
+        </p>
+    }
+    @foreach (var (heading, rows) in _groups)
     {
         @if (rows.Count > 0)
         {
             <MudText Typo="Typo.subtitle2" Class="docs-api-heading">@heading</MudText>
-            <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
-                <thead>
-                    <tr><th class="docs-api-name">Name</th><th class="docs-api-type">Type</th><th>Description</th></tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in rows)
-                    {
-                        <tr>
-                            <td class="docs-api-name"><code>@row.Name</code></td>
-                            <td class="docs-api-type"><code>@row.Type</code></td>
-                            <td><ApiSummary Html="@row.Summary" /></td>
-                        </tr>
-                    }
-                </tbody>
-            </MudSimpleTable>
+            @RowsOf(rows)
         }
+    }
+    @if (_notContract.Count > 0)
+    {
+        <details class="docs-api-more docs-api-notcontract">
+            <summary>@ApiSurface.NotTheContract (@_notContract.Count)</summary>
+            <p class="docs-api-notcontract-note">
+                Hidden from a Consumer's editor, and public only because the grid's own script, or a part it renders,
+                reaches them. A Consumer, a Chrome or a Wrapper does not use them.
+            </p>
+            @RowsOf(_notContract)
+        </details>
     }
 </div>
 
@@ -36,53 +45,146 @@
     /// <summary>The type: a component (<c>typeof(ExGrid&lt;&gt;)</c>) or any public type.</summary>
     [Parameter, EditorRequired] public Type Type { get; set; } = default!;
 
-    private sealed record Row(string Name, string Type, string? Summary);
+    /// <summary>Whether to show the type's name above its table; the API reference shows it in its own row.</summary>
+    [Parameter] public bool ShowTitle { get; set; } = true;
+
+    /// <summary>A row of a table: a member's name, its type and its summary.</summary>
+    internal sealed record Row(string Name, string Type, string? Summary);
 
     private Type Definition => Type.IsGenericType ? Type.GetGenericTypeDefinition() : Type;
+
+    private ApiType? _entry;
+    private bool _contract;
+    private List<(string, List<Row>)> _groups = [];
+    private List<Row> _notContract = [];
+
+    protected override void OnParametersSet()
+    {
+        _entry = ApiSurface.Of(Definition);
+        _contract = _entry?.Contract ?? true;
+        _notContract = [];
+        _groups = Groups().ToList();
+    }
+
+    // Whether a member is listed with the contract; when not, it goes to the table apart. A type that is not
+    // the contract lists every member in its groups, since the notice above says it of all of them.
+    private bool Contract(MemberInfo member, Func<Row> row)
+    {
+        if (!_contract || !ApiSurface.IsNotContract(member))
+            return true;
+        _notContract.Add(row());
+        return false;
+    }
 
     private IEnumerable<(string, List<Row>)> Groups()
     {
         var nullability = new NullabilityInfoContext();
-        var properties = Definition.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(p => p.DeclaringType is { } d && d.Assembly == Definition.Assembly)
-            .Where(ForConsumers)
+        var flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
+        bool Ours(MemberInfo m) => m.DeclaringType is { } d && d.Assembly == Definition.Assembly;
+
+        if (Definition.IsEnum)
+        {
+            yield return ("Values", Definition.GetFields(BindingFlags.Public | BindingFlags.Static)
+                .Select(f => new Row(f.Name, Convert.ToString(f.GetRawConstantValue(), System.Globalization.CultureInfo.InvariantCulture) ?? "", ApiDocs.Summary(f)))
+                .ToList());
+            yield break;
+        }
+        if (typeof(Delegate).IsAssignableFrom(Definition) && Definition.GetMethod("Invoke") is { } invoke)
+        {
+            yield return ("Signature", [new Row(ShortName(Definition) + Parameters(invoke), ApiDocs.Display(invoke.ReturnType), null)]);
+            yield break;
+        }
+
+        var properties = Definition.GetProperties(flags)
+            .Where(Ours)
             .OrderBy(p => p.Name, StringComparer.Ordinal)
+            .Select(p => (Property: p, Row: PropertyRow(p, nullability)))
+            .Where(p => Contract(p.Property, () => p.Row))
             .ToList();
         if (typeof(IComponent).IsAssignableFrom(Definition))
         {
-            var parameters = properties.Where(p => p.GetCustomAttribute<ParameterAttribute>() is not null).ToList();
+            bool IsParameter(PropertyInfo p) => p.GetCustomAttribute<ParameterAttribute>() is not null;
             bool IsEvent(PropertyInfo p) => p.PropertyType == typeof(EventCallback)
                 || p.PropertyType.IsGenericType && p.PropertyType.GetGenericTypeDefinition() == typeof(EventCallback<>);
-            yield return ("Parameters", parameters.Where(p => !IsEvent(p)).Select(p => PropertyRow(p, nullability)).ToList());
-            yield return ("Events", parameters.Where(IsEvent).Select(p => PropertyRow(p, nullability)).ToList());
+            yield return ("Parameters", properties.Where(p => IsParameter(p.Property) && !IsEvent(p.Property)).Select(p => p.Row).ToList());
+            yield return ("Events", properties.Where(p => IsParameter(p.Property) && IsEvent(p.Property)).Select(p => p.Row).ToList());
+            yield return ("Properties", properties.Where(p => !IsParameter(p.Property)).Select(p => p.Row).ToList());
         }
         else
         {
-            yield return ("Properties", properties.Select(p => PropertyRow(p, nullability)).ToList());
+            yield return ("Constructors", Definition.IsAbstract ? [] : Definition.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
+                .OrderBy(c => c.GetParameters().Length)
+                .Select(c => (Ctor: c, Row: new Row(ShortName(Definition) + Parameters(c), "", ApiDocs.Summary(c))))
+                .Where(c => Contract(c.Ctor, () => c.Row))
+                .Select(c => c.Row)
+                .ToList());
+            yield return ("Properties", properties.Select(p => p.Row).ToList());
+            yield return ("Fields", Definition.GetFields(flags | BindingFlags.DeclaredOnly)
+                .OrderBy(f => f.Name, StringComparer.Ordinal)
+                .Select(f => (Field: f, Row: new Row(Static(f.IsStatic) + f.Name, ApiDocs.Display(f.FieldType, Nullable(f.FieldType, () => nullability.Create(f))), ApiDocs.Summary(f))))
+                .Where(f => Contract(f.Field, () => f.Row))
+                .Select(f => f.Row)
+                .ToList());
+            yield return ("Events", Definition.GetEvents(flags)
+                .Where(Ours)
+                .OrderBy(e => e.Name, StringComparer.Ordinal)
+                .Select(e => (Event: e, Row: new Row(Static(e.AddMethod?.IsStatic == true) + e.Name, ApiDocs.Display(e.EventHandlerType!), ApiDocs.Summary(e))))
+                .Where(e => Contract(e.Event, () => e.Row))
+                .Select(e => e.Row)
+                .ToList());
         }
-        var methods = Definition.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
+        var methods = Definition.GetMethods(flags | BindingFlags.DeclaredOnly)
             .Where(m => !m.IsSpecialName && m.GetBaseDefinition().DeclaringType == m.DeclaringType)
             .Where(m => m.Name is not ("Dispose" or "DisposeAsync" or "Equals" or "GetHashCode" or "ToString" or "Deconstruct" or "<Clone>$" or "PrintMembers"))
-            .Where(ForConsumers)
             .OrderBy(m => m.Name, StringComparer.Ordinal)
-            .Select(m => new Row(
-                m.Name + "(" + string.Join(", ", m.GetParameters().Select(p => ApiDocs.Display(p.ParameterType) + " " + p.Name)) + ")",
+            .Select(m => (Method: m, Row: new Row(
+                Static(m.IsStatic) + m.Name + Parameters(m),
                 ApiDocs.Display(m.ReturnType),
-                ApiDocs.Summary(m)))
+                ApiDocs.Summary(m))))
+            .Where(m => Contract(m.Method, () => m.Row))
+            .Select(m => m.Row)
             .ToList();
         yield return ("Methods", methods);
     }
 
-    // Not a Consumer's API: called by the grid's own script, or hidden from a Consumer's editor.
-    private static bool ForConsumers(MemberInfo member) =>
-        member.GetCustomAttribute<JSInvokableAttribute>() is null
-        && member.GetCustomAttribute<System.ComponentModel.EditorBrowsableAttribute>()
-            is not { State: System.ComponentModel.EditorBrowsableState.Never };
+    // A table of rows: a member's name, its type and its summary, with "More" behind the first paragraph.
+    private static RenderFragment RowsOf(IReadOnlyList<Row> rows) =>
+        @<MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
+            <thead>
+                <tr><th class="docs-api-name">Name</th><th class="docs-api-type">Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var row in rows)
+                {
+                    <tr>
+                        <td class="docs-api-name"><code>@row.Name</code></td>
+                        <td class="docs-api-type">@if (row.Type.Length > 0) { <code>@row.Type</code> }</td>
+                        <td><ApiSummary Html="@row.Summary" /></td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>;
+
+    private static string Static(bool isStatic) => isStatic ? "static " : "";
+
+    private static string Parameters(MethodBase method) =>
+        "(" + string.Join(", ", method.GetParameters().Select(p => ApiDocs.Display(p.ParameterType) + " " + p.Name)) + ")";
+
+    // ExGrid<TRow> as ExGrid, for a constructor's name.
+    private static string ShortName(Type type)
+    {
+        var name = type.Name;
+        var tick = name.IndexOf('`');
+        return tick < 0 ? name : name[..tick];
+    }
+
+    private static bool Nullable(Type type, Func<NullabilityInfo> read) =>
+        !type.IsValueType && read().ReadState == NullabilityState.Nullable;
 
     private static Row PropertyRow(PropertyInfo property, NullabilityInfoContext nullability)
     {
-        var nullable = !property.PropertyType.IsValueType
-            && nullability.Create(property).ReadState == NullabilityState.Nullable;
-        return new Row(property.Name, ApiDocs.Display(property.PropertyType, nullable), ApiDocs.Summary(property));
+        var isStatic = property.GetMethod?.IsStatic ?? property.SetMethod?.IsStatic ?? false;
+        var nullable = Nullable(property.PropertyType, () => nullability.Create(property));
+        return new Row(Static(isStatic) + property.Name, ApiDocs.Display(property.PropertyType, nullable), ApiDocs.Summary(property));
     }
 }
