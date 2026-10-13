@@ -88,7 +88,7 @@
         if (Context.FocusRequest != 0 && Context.FocusRequest != _acted)
         {
             _acted = Context.FocusRequest;
-            await _search.FocusAsync();
+            await Context.TakeKeyboard(_search);
         }
     }
 }

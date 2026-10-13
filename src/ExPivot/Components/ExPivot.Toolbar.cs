@@ -58,12 +58,16 @@ public partial class ExPivot
 
     private void ToggleLayoutMenu()
     {
-        if (_open is { Kind: Surface.LayoutMenu })
+        if (_open is { Kind: Surface.LayoutMenu } open)
         {
+            if (TakeOpenerPress(open))
+                return;
             CloseOpen();
             return;
         }
-        Open(new OpenSurface { Kind = Surface.LayoutMenu, FocusRequest = ++_focusSequence });
+        var menu = new OpenSurface { Kind = Surface.LayoutMenu, FocusRequest = ++_focusSequence };
+        Open(menu);
+        BeginOpening(menu, OpenerRegion.Toolbar);
     }
 
     /// <summary>The Layout menu's commands (ADR-0061): Excel's Design tab choices, the current one

@@ -298,6 +298,8 @@ ExPivot.Chrome.PivotItemFilterContext.SetAll.get -> System.Action<bool>!
 ExPivot.Chrome.PivotItemFilterContext.SetAll.init -> void
 ExPivot.Chrome.PivotItemFilterContext.SetTicked.get -> System.Action<ExPivot.Engine.PivotItemKey!, bool>!
 ExPivot.Chrome.PivotItemFilterContext.SetTicked.init -> void
+ExPivot.Chrome.PivotItemFilterContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotItemFilterContext.TakeKeyboard.init -> void
 ExPivot.Chrome.PivotItemFilterContext.Unavailable.get -> string?
 ExPivot.Chrome.PivotItemFilterContext.Unavailable.init -> void
 ExPivot.Chrome.PivotItemFilterContext.Word.get -> System.Func<string!, string!>!

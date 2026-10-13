@@ -148,7 +148,11 @@ public partial class ExPivot
         _gridFragment = RenderGrid;
         _escape = new EventCallback(null, (Func<Task>)OnEscapeAsync);
         _onPopupKey = new EventCallback<KeyboardEventArgs>(null, (Func<KeyboardEventArgs, Task>)OnPopupKeyAsync);
-        _onPopupFocusIn = new EventCallback(null, (Action)OnPopupFocusIn);
+        _onPopupFocusIn = new EventCallback(null, (Func<Task>)OnPopupFocusInAsync);
+        // Heard where the buttons that open a menu or a panel stand, without a render: a key held for a
+        // menu opening repaints nothing (decided with the user, 2026-10-13).
+        _onFieldListKey = new EventCallback<KeyboardEventArgs>(null, (Action<KeyboardEventArgs>)(e => HeardWhereOpenersStand(OpenerRegion.FieldList, e)));
+        _onToolbarKey = new EventCallback<KeyboardEventArgs>(null, (Action<KeyboardEventArgs>)(e => HeardWhereOpenersStand(OpenerRegion.Toolbar, e)));
         _onPopupFocusOut = new EventCallback(null, (Func<Task>)OnPopupFocusOutAsync);
         _closeDialog = new EventCallback(null, (Action)CloseDialog);
         _onDialogKey = new EventCallback<KeyboardEventArgs>(null, (Action<KeyboardEventArgs>)OnDialogKey);

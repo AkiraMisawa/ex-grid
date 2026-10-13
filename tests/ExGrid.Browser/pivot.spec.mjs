@@ -577,6 +577,57 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(entry(page, 'Region')).toBeFocused();
         });
 
+        test(`ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, Enter on a field's entry and Enter typed at once press the menu's first command, as typed slowly (${chrome})`, async ({ page }) => {
+            test.skip(!SERVER, 'WebAssembly opens the menu in the task of the press: no key is typed while it opens');
+            await open(page, chrome);
+            await entry(page, 'Region').click();
+            const menu = page.getByRole('menu', { name: 'Options for Region' });
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await page.keyboard.press('Escape');
+            await expect(menu).toHaveCount(0);
+            await expect(entry(page, 'Region')).toBeFocused();
+            await setRoundTrip(150);
+
+            // The menu takes the keyboard a round trip after the first Enter: the second, typed on the
+            // entry meanwhile, is held for the menu and presses its first command, Move Down, rather
+            // than pressing the entry again and closing the menu.
+            await page.keyboard.press('Enter');
+            await page.keyboard.press('Enter');
+
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Desk', 'Region']);
+            await expect(menu).toHaveCount(0);
+            await expect(entry(page, 'Region')).toBeFocused();
+            await circuitQuiet();
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Desk', 'Region']);
+            await expect(menu).toHaveCount(0);
+        });
+
+        test(`ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, letters typed straight after Enter on a report filter are typed into its Filter…'s search, as typed slowly (${chrome})`, async ({ page }) => {
+            test.skip(!SERVER, 'WebAssembly opens the panel in the task of the press: no key is typed while it opens');
+            await open(page, chrome);
+            const button = toolbarButton(page, 'Filter Currency');
+            await button.focus();
+            await expect(button).toBeFocused();
+            await setRoundTrip(150);
+
+            // The panel's search takes the keyboard a round trip after Enter: the letters typed on the
+            // button meanwhile are carried through the report's grid and typed into the search.
+            await page.keyboard.press('Enter');
+            await page.keyboard.type('US');
+
+            const panel = page.getByRole('dialog', { name: 'Filter Currency' });
+            const search = panel.locator('input').first();
+            await expect(search).toHaveValue('US');
+            await expect(search).toBeFocused();
+            await expect(panel.getByRole('checkbox', { name: 'USD', exact: true })).toBeVisible();
+            await expect(panel.getByRole('checkbox', { name: 'EUR', exact: true })).toHaveCount(0);
+            await circuitQuiet();
+            await expect(search).toHaveValue('US');
+            await page.keyboard.press('Escape');
+            await expect(panel).toHaveCount(0);
+            await expect(button).toBeFocused();
+        });
+
         test(`ADR-0061 (PV-11): pressing the report dismisses a field menu and keeps the cell and keyboard (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             await entry(page, 'Region').click();

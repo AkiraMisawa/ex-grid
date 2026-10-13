@@ -31,10 +31,14 @@
             </li>
             <li>
                 <strong>Every drag has a keyboard route.</strong> Space on a field's checkbox places it, and Enter
-                on an entry's ▾ opens the menu that moves it. A menu or a panel takes the keyboard as it opens;
+                on an entry's ▾ opens the menu that moves it. A menu or a panel takes the keyboard as it opens,
+                with the keys typed on its button meanwhile: Enter typed straight after the Enter that opens a
+                field's menu, or Layout ▾, presses its first command rather than closing it again, and letters
+                typed straight after Enter on a report filter above the report are typed into its search while the
+                report is shown (with no report to carry them, they are dropped rather than typed elsewhere).
                 Escape closes it, a panel's changes are discarded unless OK applied them, and the keyboard goes
                 back to what opened it, with the keys typed as it closes: Enter typed straight after Escape opens the
-                menu again rather than running one of its commands, over Blazor Server too.
+                menu again rather than running one of its commands. Both hold over Blazor Server too.
             </li>
             <li>
                 <strong>Defer Layout Update</strong>, at the pane's foot, holds the pane's changes until you
