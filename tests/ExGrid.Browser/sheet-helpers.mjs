@@ -265,6 +265,48 @@ export async function enter(page, grid, address, typed) {
     await expect(editor(grid)).toHaveCount(0);
 }
 
+/** A Column Heading of the Sheet by its letters. */
+export function columnHeader(grid, name) {
+    return grid.locator('.ex-header-cell', { hasText: new RegExp(`^${name}$`) });
+}
+
+/**
+ * The seventeenth Windows run's h7 set-up, for what widens a column over #### (ADR-0071): E1 and F1
+ * hold 123456789.12 in `#,##0.00`, which shows #### at the standard width, and nothing has widened
+ * either column. Each reads C9, so the number arrives by recalculation, which widens nothing, as
+ * Excel's set through COM did: typed into E1 it would have widened E. While C9 is empty each shows
+ * 89.12, which fits, so neither the Formulas nor the format widens. F is sized narrower first, by its
+ * grip as a user sizes it, to about h7's width 5. E1:F1 is selected at the end. Answers the
+ * standard width and F's sized one, in CSS pixels.
+ */
+export async function hashesAtTheStandardWidth(page, grid) {
+    await enter(page, grid, 'E1', '=C9*100+89.12');
+    await enter(page, grid, 'F1', '=E1');
+    await pressCell(grid, 'E1');
+    await page.keyboard.press('Shift+ArrowRight');
+    await page.keyboard.press('ControlOrMeta+Shift+Digit1');
+    await expect(page.locator('#sheet-focus-number-format')).toHaveText('#,##0.00');
+    await expect(cell(grid, 'F1')).toHaveText('89.12');
+    const standard = (await boxOf(columnHeader(grid, 'E'))).width;
+
+    const grip = await boxOf(columnHeader(grid, 'F').locator('.ex-resize-grip'));
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(grip.x + grip.width / 2 - 40, grip.y + grip.height / 2, { steps: 6 });
+    await page.mouse.up();
+    await expect.poll(async () => Math.round(standard - (await boxOf(columnHeader(grid, 'F'))).width)).toBeGreaterThanOrEqual(35);
+    const sized = (await boxOf(columnHeader(grid, 'F'))).width;
+
+    // 1234567 fits C in General, so C stays; E1 and F1 now hold 123456789.12, which shows ####.
+    await enter(page, grid, 'C9', '1234567');
+    await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+    await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
+    expect((await boxOf(columnHeader(grid, 'E'))).width).toBeCloseTo(standard, 0);
+    await pressCell(grid, 'E1');
+    await page.keyboard.press('Shift+ArrowRight');
+    return { standard, sized };
+}
+
 /**
  * The painted rectangles of a layer of the selection overlay, as boxes in cell units relative
  * to a cell's box: what the Selection, the pointing outline or the fill target covers.
