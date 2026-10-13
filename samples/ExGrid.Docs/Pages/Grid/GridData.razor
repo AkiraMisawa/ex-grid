@@ -21,7 +21,11 @@
         <p>
             Two rules hold whatever you choose. <strong>A row repaints when its instance changes</strong>: replace
             rows, never rewrite them in place. And keep the source and the column list in fields, so they are the
-            same objects on every render.
+            same objects on every render. A column list you change in place — a column added, replaced, removed or
+            moved — shows when you hand it to the grid again, as a new list would: the grid draws from the copy it
+            took when it was handed the list, and what it holds for a column follows the column by its Name.
+            Rows are not copied: a row put into an array you have already handed shows wherever the grid paints
+            it next, which can be before you hand the array again, so change rows by handing a new array.
         </p>
     </DocsSection>
 

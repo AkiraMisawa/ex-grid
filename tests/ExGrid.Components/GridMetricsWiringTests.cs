@@ -85,6 +85,34 @@ public class GridMetricsWiringTests : GridTestContext
         Assert.Equal("101", cut.FindAll(".ex-row")[0].GetAttribute("aria-rowindex"));
     }
 
+    [Fact] // ADR-0028/0053 / ST-1: at the end of the content, the re-anchored offset is clamped to what the new content reaches
+    public async Task A_row_height_change_at_the_end_anchors_within_the_new_maximum()
+    {
+        // 100 rows of 30px under a 20px header in a 200px Viewport: the rows' room is 180px and
+        // the end is at 3000 - 180 = 2820, the first visible row there 94 (found by ST-1, seed
+        // 20260901).
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(100))
+            .Add(g => g.TotalCount, 100)
+            .Add(g => g.Columns, TestRows.Wide(3))
+            .Add(g => g.RowHeight, 30d)
+            .Add(g => g.HeaderHeight, 20d)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 350));
+        await ScrollToAsync(cut.Find(".ex-scroller"), 2_820, 0);
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+
+        cut.Render(ps => ps.Add(g => g.RowHeight, 22d));
+
+        // At 22px the end is 2200 - 180 = 2020. The anchor asks for no more than that: a
+        // position past it is one the browser cannot stand at, and the grid's own model of
+        // where it stands would be past the end until the browser said otherwise.
+        var (top, _) = Js.Anchored[^1];
+        Assert.InRange(top, 0, 2_020);
+        // The last full Viewport is painted: rows 90-99.
+        Assert.Equal("91", cut.FindAll(".ex-row")[0].GetAttribute("aria-rowindex"));
+    }
+
     [Fact] // ADR-0028 / RR-2: a row-height-only change re-renders no surviving row
     public async Task A_row_height_change_skips_surviving_rows()
     {

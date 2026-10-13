@@ -263,4 +263,44 @@ public class ActionAndTemplateColumnTests : GridTestContext
             Assert.Equal(1, row.RenderCount);
         }
     }
+
+    [Fact] // FN-9, ADR-0020/0003: Action and Template cells are markup, not components — instances are a function of painted rows only
+    public void FN9_component_instances_grow_with_painted_rows_and_never_with_cells()
+    {
+        GridColumn<TestRow>[] columns =
+        [
+            new("Book", ColumnType.Text, r => r.Book),
+            GridColumn<TestRow>.ActionColumn("Actions",
+                [new GridAction("open", "Open"), new GridAction("close", "Close"), new GridAction("copy", "Copy")],
+                width: new ColumnWidthSpec(ColumnWidth.Fixed(180))),
+            GridColumn<TestRow>.TemplateColumn("Bar", ColumnType.Text, r => r.Book, Bar),
+            GridColumn<TestRow>.TemplateColumn("Bar2", ColumnType.Text, r => r.Book, Bar),
+        ];
+        (int Rows, int Components, int Buttons, int Bars) Measure(double viewportHeight)
+        {
+            var cut = Render<ExGrid<TestRow>>(ps => ps
+                .Add(g => g.Window, TestRows.Many(200))
+                .Add(g => g.TotalCount, 200)
+                .Add(g => g.Columns, columns)
+                .Add(g => g.RowHeight, 20d)
+                .Add(g => g.ViewportHeight, viewportHeight)
+                .Add(g => g.ViewportWidth, 2000)
+                .Add(g => g.OnAction, (GridActionEventArgs<TestRow> _) => { }));
+            var rows = cut.FindComponents<ExGridRow<TestRow>>().Count;
+            // Each row is one component and holds none: its action and template cells are markup.
+            Assert.All(cut.FindComponents<ExGridRow<TestRow>>(), row => Assert.Empty(row.FindComponents<IComponent>()));
+            return (rows, cut.FindComponents<IComponent>().Count, cut.FindAll(".ex-action").Count, cut.FindAll(".bar").Count);
+        }
+
+        var small = Measure(120);
+        var large = Measure(420);
+
+        Assert.True(large.Rows > small.Rows);
+        // Three buttons and two template cells a row, painted …
+        Assert.Equal(3 * small.Rows, small.Buttons);
+        Assert.Equal(3 * large.Rows, large.Buttons);
+        Assert.Equal(2 * large.Rows, large.Bars);
+        // … and the component count moves by exactly one per painted row, nothing per cell.
+        Assert.Equal(large.Rows - small.Rows, large.Components - small.Components);
+    }
 }
