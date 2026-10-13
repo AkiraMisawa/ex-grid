@@ -39,7 +39,8 @@ numbered list below, in the repository's voice.
 - **ExSheet and ExPivot inherit it through ExGrid.** ExSheet's Column Headings are the header row, so A1's row is 2 and
   `aria-rowcount` is 1,048,577; with `ShowColumnHeadings` off, A1's row is 1 and the count 1,048,576. ExPivot's report
   counts a row per tier of its column Items' Header Groups before its header row. Saying the Sheet's own row number
-  (`aria-rowindextext` or rowheader cells) is decided after the next Windows run reads support, as the user decided.
+  (`aria-rowindextext` or rowheader cells) is left open, while building, until the next Windows run reads support. That
+  deferral is the branch's, not the user's: the user said on 2026-10-13 that it was not their decision.
 
 Tests, each named with its ADR:
 
@@ -98,6 +99,15 @@ Tests, each named with its ADR:
     near the top and far down, and leave the reader's number far down to the next Windows run.
   - `aria-rows.spec.mjs` checks that `/sheet`'s header row holds no cell at the top as well as far down, and waits
     for the circuit to go quiet before each read of the accessibility tree.
+- **After the user's answers of 2026-10-13**, which the requester relayed:
+  - Leaving the Sheet's own row number to the next Windows run was not the user's decision. Edit 5's note now credits
+    the user with the header's rows alone, and the deferral stands apart as left open while building, as it does in
+    "What was done".
+  - NVDA's first-pass silence, "recorded only", is the user's decision, as edits 4, 7 and 10 already say.
+  - The Docs Site's Narrator sentences are credited to no one, as before (edit 11).
+  - §21.11's row stays open. Edit 10 gains the user's dated note: the sign-off build's Windows run checks DOM focus
+    after ↓ again under NVDA and Narrator, and a defect found then may be fixed after the tag. For this row, that
+    replaces the 2026-10-11 note's "a defect is fixed before the tag".
 - No other `aria-rowindex` arithmetic is left in the test tree. The archived harness copies under `verification/`
   (`2026-10-06-macos-*/harness/*.txt`, `2026-10-10-linux-merged-live-costs/harness/profile-question.cjs.txt`) read
   `aria-rowcount`, as records of runs already made; they are not edited.
@@ -211,9 +221,11 @@ row among them. Far down, where the DOM holds a Window, the only number the page
 `aria-rowindex`. The same row could have been given two numbers, one at the top and one a scroll
 away.
 
-*(2026-10-12, decided with the user: **ARIA's row indices count the header's rows first.** **Saying
-the Sheet's own row number** — `aria-rowindextext`, or a Row Heading as a `rowheader` cell — **is
-decided after the next Windows run** reads what NVDA and Narrator do with each.)*
+*(2026-10-12, decided with the user: **ARIA's row indices count the header's rows first.**)*
+
+*(Left open while building, 2026-10-12.)* Saying the Sheet's own row number — `aria-rowindextext`,
+or a Row Heading as a `rowheader` cell — waits for the next Windows run to read what NVDA and Narrator
+do with each.
 
 - The header row is `aria-rowindex="1"`. A data row's `aria-rowindex` is its position plus the
   header's rows plus one; `aria-rowcount` is the data rows' total plus the header's rows. A hidden
@@ -344,7 +356,7 @@ Old:
 New:
 
 ````text
-| **The Cell Editor's own ARIA semantics** | the editor exists; its input is a bare, focused `<input>` whose interaction semantics are the platform's. A richer announced contract (mode announcements) stays open against a real screen reader, with the live-region wording ([ADR-0033](adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)). *(2026-10-11, decided with the user: **the richer contract is accepted in writing as out of `0.1.0`'s scope.** What the sixteenth Windows run heard — ↓ read as "Scan", DOM focus on `body` — may be a keyboard defect rather than wording, so the sign-off's Windows run checks where DOM focus is after ↓, with and without a Focus, under NVDA (recorded through its Speech Viewer) and Narrator (heard, with no copy command sent); a defect is fixed before the tag.)* *(2026-10-12, the seventeenth Windows run, Part F, `/sheet` in Chrome and Edge ([ADR-0080](adr/0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md); commits 76bd2116 and 2fc23f56 on `claude/exsheet-windows-verify-17`): after every ↓, with and without a Focus, DOM focus stayed on the Keyboard Field without a reader and under NVDA 2026.2, which read the press on D10 as `table` / `row 11  D  column 4` and the next ↓ as `row 12  D  column 4`. A pass whose first step was the probe's scripted focus said nothing from that focus to its last ↓, only the page's load before it (`ExGrid demo host` / `Loading…`); one that began with a real press read every step. Narrator, in the scan mode it starts in, let no arrow reach the page: DOM focus went to `body` at the first ↓, but in Chrome without a Focus the grid was never reached, and DOM focus "moved among the page's buttons" (`button#sheet-undo`, `button#sheet-redo`, `button#sheet-format-cells`, `button#sheet-insert-row`, `button#sheet-revalue`); ↓ from D10 read `column header cap E, column 5 of 16384.`. With scan mode off (Insert+Space, "Scan off"), every arrow reached the field, and Narrator read `Item, column header cap A, row 2 of 1,048,576, column 1` after the first ↓ and `Row 12 of 1,048,576.` after ↓ from D10.)* *(2026-10-12, decided with the user: **Narrator's scan mode taking the arrows is not a keyboard defect** — with scan mode off every arrow reached the grid, and Narrator turns scan mode on again with each new page; **NVDA's silence on the first pass comes from the probe's scripted focus before any user input, and is recorded only.**)* |
+| **The Cell Editor's own ARIA semantics** | the editor exists; its input is a bare, focused `<input>` whose interaction semantics are the platform's. A richer announced contract (mode announcements) stays open against a real screen reader, with the live-region wording ([ADR-0033](adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)). *(2026-10-11, decided with the user: **the richer contract is accepted in writing as out of `0.1.0`'s scope.** What the sixteenth Windows run heard — ↓ read as "Scan", DOM focus on `body` — may be a keyboard defect rather than wording, so the sign-off's Windows run checks where DOM focus is after ↓, with and without a Focus, under NVDA (recorded through its Speech Viewer) and Narrator (heard, with no copy command sent); a defect is fixed before the tag.)* *(2026-10-12, the seventeenth Windows run, Part F, `/sheet` in Chrome and Edge ([ADR-0080](adr/0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md); commits 76bd2116 and 2fc23f56 on `claude/exsheet-windows-verify-17`): after every ↓, with and without a Focus, DOM focus stayed on the Keyboard Field without a reader and under NVDA 2026.2, which read the press on D10 as `table` / `row 11  D  column 4` and the next ↓ as `row 12  D  column 4`. A pass whose first step was the probe's scripted focus said nothing from that focus to its last ↓, only the page's load before it (`ExGrid demo host` / `Loading…`); one that began with a real press read every step. Narrator, in the scan mode it starts in, let no arrow reach the page: DOM focus went to `body` at the first ↓, but in Chrome without a Focus the grid was never reached, and DOM focus "moved among the page's buttons" (`button#sheet-undo`, `button#sheet-redo`, `button#sheet-format-cells`, `button#sheet-insert-row`, `button#sheet-revalue`); ↓ from D10 read `column header cap E, column 5 of 16384.`. With scan mode off (Insert+Space, "Scan off"), every arrow reached the field, and Narrator read `Item, column header cap A, row 2 of 1,048,576, column 1` after the first ↓ and `Row 12 of 1,048,576.` after ↓ from D10.)* *(2026-10-12, decided with the user: **Narrator's scan mode taking the arrows is not a keyboard defect** — with scan mode off every arrow reached the grid, and Narrator turns scan mode on again with each new page; **NVDA's silence on the first pass comes from the probe's scripted focus before any user input, and is recorded only.**)* *(2026-10-13, decided with the user: **the row stays open.** The sign-off build's Windows run checks DOM focus after ↓ again, under NVDA and Narrator, and a defect found then may be fixed after the tag; for this row, that replaces the 2026-10-11 note's "a defect is fixed before the tag".)* |
 ````
 
 ### 11. `samples/ExGrid.Docs/Pages/Grid/GridSelectionAndKeys.razor`
@@ -460,18 +472,18 @@ an edit whose old text is not found exactly once on whole lines, or a Definition
 line number is the old text's in the file as the edits before it left it.
 
 ```
-13 edits in docs/agents/proposals/run17cf-aria-rows.md, checked against 812708d9
+13 edits in docs/agents/proposals/run17cf-aria-rows.md, checked against 4ecbdbea
 ok   1. docs/adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md: old text once, at line 22; 1 line(s) -> 1
 ok   2. docs/adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md: old text once, at line 23; 1 line(s) -> 1
 ok   3. docs/adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md: old text once, at line 50; 5 line(s) -> 6
 ok   4. docs/adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md (optional): old text once, at line 147; 1 line(s) -> 4
-ok   5. docs/adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md: old text once, at line 218; 1 line(s) -> 34
+ok   5. docs/adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md: old text once, at line 218; 1 line(s) -> 37
 ok   6. docs/adr/0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md (optional): old text once, at line 132; 1 line(s) -> 1
-ok   7. docs/adr/0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md: old text once, at line 201; 5 line(s) -> 25
+ok   7. docs/adr/0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md: old text once, at line 201; 5 line(s) -> 27
 ok   8. docs/definition-of-done.md: old text once, at line 249; 1 line(s) -> 1
 ok   9. docs/definition-of-done.md: old text once, at line 250; 1 line(s) -> 1
 ok   10. docs/definition-of-done.md: old text once, at line 817; 1 line(s) -> 1
-ok   11. samples/ExGrid.Docs/Pages/Grid/GridSelectionAndKeys.razor: old text once, at line 37; 1 line(s) -> 13
+ok   11. samples/ExGrid.Docs/Pages/Grid/GridSelectionAndKeys.razor: old text once, at line 37; 1 line(s) -> 12
 ok   12. samples/ExGrid.Docs/Pages/Sheet/SheetOverview.razor: old text once, at line 60; 1 line(s) -> 2
 ok   13. samples/ExGrid.Docs/Pages/Pivot/PivotOverview.razor: old text once, at line 27; 1 line(s) -> 2
 all edits apply in order
