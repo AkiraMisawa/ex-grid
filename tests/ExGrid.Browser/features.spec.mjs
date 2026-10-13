@@ -464,20 +464,110 @@ test('a refusal is announced in the root\'s live region in the built-in words, a
     await expect(region).toHaveText(words);
 });
 
-test('a menu copy writes without a prompt, and with headers (CP-19/CP-17, ADR-0005/0036)', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+// What a copy did, read from beside the grid (ADR-0005's routes): every `copy` event the document
+// heard after the grid's own listener — what it carried and whether the grid took it — and every
+// call to the asynchronous Clipboard API, with how its promise settled. A write the browser would
+// only make after asking leaves its promise pending, or rejects it: either is a prompt, and neither
+// settles as written. Through alterPage, since it wraps a native and listens on document (ADR-0056).
+async function watchCopyRoutes(page) {
+    await alterPage(page, () => {
+        const seen = { events: [], writes: [] };
+        window.__copyRoutes = seen;
+        const write = navigator.clipboard.write;
+        const writeText = navigator.clipboard.writeText;
+        const watched = (name, original) => function (...args) {
+            const call = { name, state: 'pending' };
+            seen.writes.push(call);
+            const promise = original.apply(this, args);
+            promise.then(() => { call.state = 'written'; }, (error) => { call.state = `rejected: ${error?.name ?? error}`; });
+            return promise;
+        };
+        navigator.clipboard.write = watched('write', write);
+        navigator.clipboard.writeText = watched('writeText', writeText);
+        const onCopy = (event) => seen.events.push({
+            taken: event.defaultPrevented,
+            plain: event.clipboardData?.getData('text/plain') ?? '',
+        });
+        document.addEventListener('copy', onCopy);
+        return () => {
+            navigator.clipboard.write = write;
+            navigator.clipboard.writeText = writeText;
+            document.removeEventListener('copy', onCopy);
+            delete window.__copyRoutes;
+        };
+    });
+}
+const copyRoutes = (page) => page.evaluate(() => JSON.parse(JSON.stringify(window.__copyRoutes)));
+
+// The state the browser holds for a clipboard permission, as the page would ask it.
+const permission = (page, name) => page.evaluate(async (n) => (await navigator.permissions.query({ name: n })).state, name);
+
+// Takes back the clipboard permissions the file's beforeEach granted, after leaving a sentinel, so
+// the copy that follows is made as a user's page makes it: with nothing the test granted, under the
+// browser's own defaults (CP-6, CP-19). Chromium's default holds a sanitised write granted to the
+// focused tab, which is the property under test, and a read at "prompt": a read made now would wait
+// on a prompt, so "prompt" here says the test's grants are gone. Granted, `clipboard-read` would
+// have let a write through on its own.
+async function grantsTakenBack(page, context) {
+    await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+    await context.clearPermissions();
+    expect(await permission(page, 'clipboard-read'), 'the test\'s grants are taken back before the copy').toBe('prompt');
+}
+
+// Reads the clipboard once the copy has been made, granting the read only then.
+async function clipboardAfterwards(page, context) {
+    await context.grantPermissions(['clipboard-read']);
+    return (await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, '\n').trimEnd();
+}
+
+const cellText = async (page, row, column) => (await grid(page).locator(`[id$='r${row}c${column}']`).textContent()).trim();
+
+test('CP-6 / ADR-0005: a Ctrl+C inside the Window writes with no permission granted and no prompt, by the copy event on WebAssembly', async ({ page, context }) => {
+    const expected = `${await cellText(page, 0, 1)}\n${await cellText(page, 1, 1)}`;
+    await grantsTakenBack(page, context);
+    await watchCopyRoutes(page);
     await clickCell(page, 0, 1);
     await page.keyboard.press('Shift+ArrowDown');
+    await page.keyboard.press('ControlOrMeta+C');
+
+    if (SERVER) {
+        // No synchronous channel on a circuit: every copy takes the asynchronous route, and what
+        // CP-6 protects there is the missing prompt (ADR-0005, SRV-2). The grid takes the event and
+        // starts its write in it; the write settles as written, unasked.
+        await expect.poll(async () => (await copyRoutes(page)).writes, { timeout: 5000 })
+            .toEqual([{ name: 'write', state: 'written' }]);
+        expect((await copyRoutes(page)).events.map((e) => e.taken)).toEqual([true]);
+    } else {
+        // The copy event route: the grid set both flavours on the event itself, and the
+        // asynchronous Clipboard API was never called.
+        const { events, writes } = await copyRoutes(page);
+        expect(events, 'the grid took the copy event and set its data on it').toEqual([{ taken: true, plain: expect.any(String) }]);
+        expect(events[0].plain.replace(/\r\n/g, '\n').trimEnd()).toBe(expected);
+        expect(writes, 'navigator.clipboard was not called: the copy took the event route').toEqual([]);
+    }
+    await circuitQuiet();
+    await expect(page.locator('#copy-status')).toHaveText('Copy refused: —');
+    expect(await clipboardAfterwards(page, context), 'the copy landed on the clipboard').toBe(expected);
+});
+
+test('CP-19 / ADR-0005/0036: a menu copy writes with no permission granted and no prompt, by the asynchronous route, with headers (CP-17)', async ({ page, context }) => {
+    await grantsTakenBack(page, context);
+    await watchCopyRoutes(page);
+    await clickCell(page, 0, 1);
 
     await grid(page).locator("[id$='r0c1']").click({ button: 'right', force: true });
     await grid(page).locator('[role=menu] button[role=menuitem]')
         .filter({ hasText: 'Copy with headers' }).click();
 
-    // A menu item's click fires no copy event, so this went through the asynchronous
-    // clipboard API. Chromium grants clipboard-write to the active tab, so no prompt is
-    // expected — if one ever appears this test hangs, which is the finding, not a pass.
-    await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 })
-        .toMatch(/^Trader\r?\n/);
+    // A menu item's click fires no copy event, so a one-cell selection takes the asynchronous
+    // Clipboard API too (ADR-0005, "A menu copy has no copy event"). Chromium grants a write to the
+    // focused tab, so it settles as written; a prompt would leave it pending or reject it, and
+    // this fails then, which is the finding ADR-0005 asks layer 3 to record.
+    await expect.poll(async () => (await copyRoutes(page)).writes, { timeout: 5000 })
+        .toEqual([{ name: 'write', state: 'written' }]);
+    expect((await copyRoutes(page)).events, 'no copy event was fired or needed').toEqual([]);
+    await expect(page.locator('#copy-status')).toHaveText('Copy refused: —');
+    expect(await clipboardAfterwards(page, context)).toBe(`Trader\n${await cellText(page, 0, 1)}`);
 });
 
 test('a Reject holds the editor with real keys, and Escape is the way out (ED-15, ADR-0034)', async ({ page }) => {
