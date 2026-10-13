@@ -5,26 +5,26 @@
 | ExGrid | 95.7% | 88.7% |
 | ExSheet | 95.7% | 89.1% |
 | ExPivot | 94.2% | 85.2% |
-| Data | 94.5% | 90.3% |
+| Data | 94.4% | 90.2% |
 
 # Summary
 <details open><summary>Summary</summary>
 
 |||
 |:---|:---|
-| Generated on: | 10/13/2026 - 12:10:09 |
+| Generated on: | 10/13/2026 - 12:47:53 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 827 |
 | Files: | 455 |
-| **Line coverage:** | 95.1% (55650 of 58468) |
-| Covered lines: | 55650 |
-| Uncovered lines: | 2818 |
-| Coverable lines: | 58468 |
-| Total lines: | 97975 |
-| **Branch coverage:** | 88.2% (31854 of 36108) |
-| Covered branches: | 31854 |
-| Total branches: | 36108 |
+| **Line coverage:** | 95.1% (55649 of 58469) |
+| Covered lines: | 55649 |
+| Uncovered lines: | 2820 |
+| Coverable lines: | 58469 |
+| Total lines: | 97984 |
+| **Branch coverage:** | 88.2% (31857 of 36110) |
+| Covered branches: | 31857 |
+| Total branches: | 36110 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -160,8 +160,8 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|95.5%|90.3%|
-|ExGrid.Components.ExGrid<TRow>|91%|87.9%|
+|ExGrid.Components.ExGrid<TRow>|95.5%|90.4%|
+|ExGrid.Components.ExGrid<TRow>|90.9%|88%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
@@ -276,7 +276,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.6%**|
+|**ExGrid.Data**|**94.6%**|**90.5%**|
 |ExGrid.Data.AggregateAccumulator|86%|87.8%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -365,7 +365,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
