@@ -283,10 +283,22 @@ and a key landing on the root in between would find no mode that claims it. A ke
 to open the Cell Editor (F2, a printable key, Space) and, while editing, every key it
 claims (each commits, cancels, moves or switches). On replay a held key goes through the
 gate again: a key the core claims in the new mode is forwarded (and may hold the rest
-again); a printable key while the editor stands is typed into it at its caret, as if it had
-been pressed there; anything else is the browser's, as it would have been. If the answer is
+again); a key the editor's field would have handled itself, while the editor stands, is
+handled as the field would have, as if it had been pressed there — a printable key typed at
+its caret, a deletion deleting, a caret key moving the caret or, with Shift, extending the
+selection from its anchor, by a word or to the text's end with the modifier the platform does
+that with — read from the field's value and selection alone (ADR-0021); anything else is the
+browser's, as it would have been. If the answer is
 that nothing opened — the Focus cell is not Editable, say — the held keys replay as ordinary
 keys, which is exactly what they would have done had the answer come first.
+
+*(2026-10-13: the replay is restated to what it does.)* The text named only a printable key,
+while a held deletion and a held Home, End, ← or → were already applied as the field applies
+them. A held chord was dropped. In CI on Edge (PR #101), End and Ctrl+← typed straight after
+F2 were held, the End applied and the Ctrl+← dropped, so where the caret landed turned on
+whether the keys arrived before F2's answer. A held key the field would have handled, a chord
+among them, is now handled as the field would have; any other chord is still dropped. The rule
+itself, that a held key does what it would have done unheld, is unchanged.
 
 Plain navigation is not held. An arrow outside editing changes no mode; holding behind it
 would pace a held-down arrow key to one row per round trip on Server, for no correctness

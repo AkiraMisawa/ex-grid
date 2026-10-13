@@ -26,3 +26,10 @@ selection in it read through UI Automation after each key, and no key sent to re
 8. **`=` then Shift+Home, with no key between.** R1 read it with a Ctrl+C before Shift+Home and a
    Ctrl+C after it (`A10:D10`); the text, its selection and the mode were not read: `=A10:D10`, in
    Point?
+9. **Chords held behind F2, on Windows and macOS** (ExGrid, ED-2, ADR-0010; added 2026-10-13). A held
+   chord in an edit is now applied as the field would apply it, read from the field's value and
+   selection. `features.spec.mjs`'s two ED-2 tests ("in Caret Ctrl+← and Ctrl+→ move the caret by a
+   word …" on both hosts, and "with a 150 ms round trip, End, Ctrl+←, Shift+End …" on the Server
+   host) have run only in the container's Chromium on Linux. On Windows, in Chrome and Edge: do both
+   pass, with a word move forward landing at the next word's start? On macOS (at rc, on the user's
+   Mac): Option+←/→ move by a word and ⌘+←/→ go to the text's ends, held or not, as the field does.
