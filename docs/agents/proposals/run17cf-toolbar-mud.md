@@ -1,13 +1,13 @@
 # Run 17, Parts C to F: the toolbar under MudBlazor, and Format Cells' letters
 
-Branch `claude/run17cf-toolbar-mud`, 2026-10-12, three rounds. Findings D-mud-lists, D-mud-console and D-letter-O
-of the seventeenth Windows run (`verification/2026-10-11-windows-17/report.md`, Part D); readings R2 (a) and (b) of
-the Windows readings of 2026-10-12 (`verification/2026-10-12-windows-readings/report.md` on
-`claude/exsheet-windows-readings-2026-10-12`); the user's decisions of 2026-10-12 listed below; and the verifier's
-six findings on round 2. This file holds the text for the files a background agent does not edit — ADR-0100,
-ADR-0050, ADR-0044, ADR-0021, ADR-0071, the Definition of Done and the Docs Site — as numbered edits of whole lines
-under "Edits", each old text occurring once at the branch tip and the list applying in order; and what the third
-round stopped on.
+Branch `claude/run17cf-toolbar-mud`, 2026-10-12 and 2026-10-13, four rounds. Findings D-mud-lists, D-mud-console
+and D-letter-O of the seventeenth Windows run (`verification/2026-10-11-windows-17/report.md`, Part D); readings R2
+(a) and (b) of the Windows readings of 2026-10-12 (`verification/2026-10-12-windows-readings/report.md` on
+`claude/exsheet-windows-readings-2026-10-12`); the user's decisions of 2026-10-12 and 2026-10-13 listed below; the
+verifier's six findings on round 2 and its findings on round 3. This file holds the text for the files a background
+agent does not edit — ADR-0100, ADR-0050, ADR-0044, ADR-0021, ADR-0061, ADR-0070, ADR-0071, the Definition of Done
+and the Docs Site — as numbered edits of whole lines under "Edits", each old text occurring once at the branch tip
+and the list applying in order; and what the fourth round stopped on.
 
 ## The user's decisions this file carries
 
@@ -22,7 +22,101 @@ round stopped on.
   a choice, under the built-in Chrome and under MudBlazor; the MudBlazor Chrome gets a seam member that hands on
   the keys typed into a list while it closes; the outcome is the same at any speed on both hosts.)
 
+- (2026-10-13, decided with the user: an Alt pressed alone while keys are held — the grid's script hears Alt's
+  `keyup` on the root and holds it in order with the keys. It shares ED-30's root `keyup` listener: no listener is
+  added. This reverses ADR-0100's "rather than adding a listener to the grid" and ADR-0050 item 14's "No listener
+  is added to the grid", and widens what ADR-0021's seventh entry's listener is for.)
+- (2026-10-13, decided with the user: keys typed on the toolbar's band while a list opens go to the list, through
+  a second seam member, by the same rule as the close direction.)
+- (2026-10-13, decided with the user: under `MudSheetChrome` the toolbar item's lists take no Tab, keeping SH-50's
+  one Tab stop.)
+- (2026-10-13, decided with the user: the hold is family-wide — ExSheet's and ExPivot's own dialogs, menus and
+  panels outside the grid's root too, `ExSheet.MudBlazor`'s Format Cells and ExPivot's Show Details dialog among
+  them. As for the toolbar, a key typed as the keyboard goes back is held and delivered in order, never dropped, on
+  both hosts.)
+
 The user also said that round 2's stop 1 stands. How it reads now is my reading of decision (B), below.
+
+## What the fourth round built (2026-10-13)
+
+The user decided round 3's four stops on 2026-10-13 (above). What each decision built, and what holds it:
+
+- **Alt pressed alone while keys are held (stop 1).** The grid's script hears the Alt key's release on the root, in
+  the capture phase, through the one `keyup` listener ED-30 added for the Keyboard Field (ADR-0021's seventh entry,
+  `onRootKeyUp`): no listener is added, and MEM-4's count stands. Where the Consumer declares `Alt+Alt`:
+  - While the gate holds keys, the release is kept from the Consumer's handler and held in its place. Its press,
+    held too, is no longer skipped as a modifier's: the drain hands the press to the core in its turn, then the
+    release, as the keyup it was, where the keyboard is then (the root, or the frame or control the keys went to),
+    and then asks the empty question (`Ping`) whose answer travels behind it.
+  - Not held, the release reaches the Consumer, and the keys after it wait for the same question, asked in the
+    task after the release's dispatch rather than inferred from the next key: `afterAltAlone`, `altGoesFirst` and
+    the marks they left are gone.
+  - Whether an Alt went down alone is the gate's to tell, since it hears every key between the press and the
+    release in order: a chord's release, or one whose press it did not hear, never reaches the Consumer. ExSheet no
+    longer reads other keys' releases, which, typed while keys are held, reach it ahead of the held Alt's; a key
+    typed on the band forgets an Alt press whose release the gate kept. Alt released before the ↓ of Alt+↓ no
+    longer shows the KeyTips (ADR-0100 had left that case "rather than adding a listener to the grid").
+  - The toolbar's band holds an Alt's release typed on it while the keyboard is in flight, with the keys, and the
+    Sheet's handler, which hears it next, leaves it. A closing MudBlazor list passes its Alt release on with its
+    keys.
+  - Layer 2: `An_alt_released_on_the_band_while_the_keyboard_goes_back_is_held_with_its_press` and
+    `Whether_the_alt_was_alone_is_the_gates_to_tell` (SheetToolbarKeyTipTests),
+    `The_alt_keys_release_is_held_in_order_by_the_roots_one_keyup_listener` (ShippedStylesheetTests). Layer 3
+    (sheet-toolbar.spec.mjs, both Chromes, 80 ms on the Server host and WebAssembly): Enter on an edit, then Alt, H,
+    1, typed at once; Alt, Alt, H, 1 typed slowly, then at once; three Escapes in a list a KeyTip opened, then Alt,
+    H, H, all at once.
+- **Keys typed on the band while a list opens (stop 2).** From the toolbar's request for a list (`OpenRequest`),
+  the band holds the keys typed on it.
+  - A Chrome whose list is its own calls the seam's second member, `ToolbarItemContext.ChoicesOpened(true)`, once
+    its list holds the keyboard, and answers the keys it returns as typed in the list, ahead of any typed there
+    since; `ChoicesOpened(false)`, for a list that did not open, gives them back to the band. `MudSheetChrome` does
+    both.
+  - Under the built-in Chrome the list is the grid's popover. As it opens, the grid takes the keyboard from the
+    band (`ReturnKeyboardAsync(from, typedOnTheWay)`) with the keys held; a keyboard already in the grid's popover
+    stays there, and the grid's hold hands them to the list once it holds the keyboard.
+  - Escape typed on the band before the list has the keyboard is one of those keys: handed to the list, it goes
+    back a level there (R2 (b)). The band no longer closes the list through `CloseRequest` for it; `CloseRequest`
+    still closes a list on its way when the toolbar gives the keyboard back for any other reason.
+  - Layer 2: `Keys_typed_on_the_toolbar_while_a_keytips_list_opens_go_to_the_list`,
+    `A_chromes_own_list_is_handed_the_keys_typed_while_it_opened` and `A_list_that_did_not_open_gives_its_keys_to_the_band`
+    (SheetToolbarKeyTipTests), `The_keys_held_while_the_list_opened_are_answered_in_it` (MudToolbarTests). Layer 3:
+    Alt, H, H, then ↓, →, Enter, typed at once, fill the cell from the palette, both Chromes.
+- **One Tab stop under `MudSheetChrome` (stop 3).** `MudToolbarItem` draws Number Format's button and the split
+  controls' arrows itself, `tabindex="-1"`, and opens a MudMenu that has no Label, Icon or ActivatorContent, and so
+  draws no button: MudBlazor's own takes no tabindex a Chrome can set, and the wrapper its ActivatorContent is drawn
+  in carries `tabindex="0"`. The menu stands, empty, at the item's foot, where its list opens. Layer 2:
+  `No_control_inside_the_band_takes_tab` (MudToolbarTests); layer 3: the Tab case finds the band the one stop under
+  either Chrome.
+- **The hold, family-wide (stop 4).**
+  - `ExSheet.MudBlazor`'s Format Cells: Escape (now the dialog's own: MudBlazor's `CloseOnEscapeKey` is off), OK
+    and Cancel close through the frame. OK sets what was touched as it is pressed; Cancel ends Format Cells; the
+    frame's element comes back and takes the keyboard out of the dialog; the dialog closes; and the core takes the
+    keyboard back from the element (`FormatCellsContext.ReturnKeyboardFrom`, new) with the keys typed in the dialog
+    from the closing key on — the dialog's form and the box around its buttons pass them to the frame — and on the
+    element. ExSheet keeps a Chrome's frame on the page after OK or Cancel until it has given the keyboard back. The
+    ×, the backdrop and an Escape an open dropdown's list takes are as they were.
+  - ExPivot's Show Details dialog: its records' grid passes the keys after the leaving Escape out to the dialog's
+    frame (`ExGrid.PassKeysOutAsync`, new, called from `OnLeave` before its first await; while a Consumer listens to
+    `OnLeave`, the keys after a plain Escape on the root wait for its answer). However the dialog closes, the frame
+    holds the keys typed in it from then on; a render takes the report's `inert` away while the dialog stands, the
+    report's grid takes the keyboard back from the dialog with those keys, and then the dialog goes.
+  - ExPivot's menus and panels, the Field List's and the Pivot Toolbar's, closed from inside with DOM focus in them:
+    they stand until the keyboard has left them for their button (the frame's focusout), their commands and OK doing
+    nothing meanwhile, and the keys typed in them are the button's, in order. Enter or Space presses it; Tab is
+    dropped with every key after it (ADR-0010); anything else means nothing on a button. Closed with the keyboard
+    outside them — their button pressed again, a press elsewhere — they go at once, as before.
+  - Layer 2: `Keys_typed_after_escape_go_to_the_sheet_with_the_keyboard` and `Ok_sets_what_was_touched_as_it_is_pressed`
+    (MudFormatCellsTests), `A_frame_gives_the_keyboard_back_from_its_element_with_the_keys_typed_on_the_way`
+    (FormatCellsTests), `Keys_typed_while_the_dialog_closes_go_to_the_report` (KeyboardBackTests),
+    `Keys_typed_while_a_menu_closes_are_its_buttons` and `A_menu_closed_from_its_button_goes_at_once`
+    (FieldListTests), `The_gate_hears_of_onleave_and_the_keys_after_it_go_out_when_told`
+    (LeaveAndReturnKeyboardTests), `The_keys_after_a_leaving_escape_go_out_to_the_element_around_the_root`
+    (ShippedStylesheetTests). Layer 3, 80 ms on the Server host and WebAssembly: in MudBlazor's Format Cells,
+    Escape then ↓, ↓, and OK then ↓ (format-cells-mud.spec.mjs); under both of ExPivot's Chromes, Escape in the
+    dialog's grid then ↓, Escape on its Close then ↓, ↓, and Escape in a field's menu then Enter (pivot.spec.mjs).
+    Each gives the outcome typed slowly.
+- **The verifier's round-3 texts.** ADR-0100's decision (C) bullet and the SheetFormatting sentence claim only the
+  cases layer 3 types at once, each with the outcome typed slowly, on either host; what no case reaches is said.
 
 ## What the third round built
 
@@ -105,111 +199,25 @@ already knows where the keyboard goes. Layer 2 pins it
 (`A_close_request_closes_a_list_that_holds_the_keyboard_back_to_the_keytips`); layer 3 does not reach the window,
 which is a round trip wide.
 
+## Round 3's stops, decided
+
+Round 3 stopped on four questions: the Alt-alone hold, keys typed on the band while a list opens, MudMenu's own
+buttons as Tab stops, and the popovers and dialogs outside the grid's root. The user decided all four on 2026-10-13
+(above), and the fourth round built them. Each stop's case, evidence and options are in this file at c313c369.
+
 ## Stops, for the user
 
-### 1. The Alt-alone hold cannot give one outcome at every speed without a decision (finding 2)
+### 1. Keys typed while one of ExPivot's menus or panels opens
 
-**The case.** The gate hears no `keyup` (ADR-0021), and the release of the Alt key is the Consumer's to hear: ADR-0100
-chose the Sheet's own Blazor `keyup` for it "rather than adding a listener to the grid", and ADR-0050 item 14's note
-says "No listener is added to the grid". The gate knows the release of a declared Alt that went down alone by the
-key after it, and holds that key until the Sheet has answered the release; the Sheet decides on the release from the
-press it heard through the declared key. Whenever an Alt goes down alone while the gate holds keys, its press and
-its release reach the Sheet in an order that depends on the round trip:
-
-- Held in its turn, its press reaches the Sheet after its own release, which the Sheet then heard as no Alt's:
-  Enter (an edit's commit), then Alt typed at once, and the KeyTips never show.
-- Forwarded at once (round 2's `altGoesFirst`), its press overtakes the keys held before it: Alt, Alt, H, 1 typed
-  slowly turns the KeyTips off and types "h1"; typed at once the second Alt restarts them and sets bold. Forwarded
-  ahead of keys a frame heard on the way back, whose contents are not yet known, it overtakes them too.
-- Replayed to the band, as any key, it would be skipped as a modifier, and its release would already have reached
-  the Sheet.
-- Typed on the toolbar's band while it gives the keyboard back, or in a MudBlazor list as it closes, its press is
-  held there with the keys, and its release reaches the Sheet, or nothing at all from MudBlazor's popover, which is
-  outside the Sheet's element.
-
-Evidence: the trace of these orders is in the code (`afterAltAlone`, `altGoesFirst`, the drain's modifier skip,
-`ExSheet.OnKeyUpAsync`, `SheetToolbar.OnKeyAsync`); the first two are the verifier's observations on round 2. No
-layer-3 case pins them: a case would pin a defect. Pairing the Sheet's `keyup` with the gate's presses by counting
-them needs a count both sides keep, which a key pressed or released outside the Sheet's element breaks for every key
-after it.
-
-**Options.** Each but (c) makes every order give the slow outcome; each but (c) changes a recorded decision or adds
-an ask of the core.
-
-- (a) **The gate hears Alt's `keyup` on the root, in the capture phase, and holds it with the keys** while it holds
-  any, replaying it in turn as it replays a key: the Sheet's handler hears the release where it was typed, on the
-  root or on the band, and every order gives the slow outcome. The inference by the next key, `altGoesFirst` and the
-  empty question go. The band and a MudBlazor list hold the `keyup`s typed on them in flight with their keys (Blazor
-  handlers, no script). It is a listener ADR-0021's first entry does not name, and it reverses ADR-0100's and
-  ADR-0050 item 14's "no listener is added to the grid": a widening of the first entry, or a new one. A capture-phase
-  `keyup` listener on the root is already proposed on `claude/ed30-composition-race` (23c6e9de, marked there as
-  pending a decision), for the Keyboard Field's IME under ADR-0021's seventh entry; (a) would widen what that
-  listener is for, rather than add a second one.
-- (d) **The core hears the release through a Blazor `keyup` on its own root** (no script; ADR-0021 unchanged): the
-  gate tells the core of a held Alt as it holds it, the core pairs the release it hears after that with it, and
-  raises the press in its turn with whether it was already released (a new member of `GridDeclaredKeyPress`). It
-  still reverses ADR-0050 item 14's "No listener is added to the grid", and the band and a MudBlazor list still hold
-  the `keyup`s typed on them in flight, as in (a).
-- (h) **The release stays the Consumer's, and the core raises a held Alt twice**: its press at once, marked as ahead of
-  held keys, so that the release the Consumer hears comes after it, and its turn once the keys before it have been
-  answered, or word that it went to a frame or a popover, or was dropped; the Consumer acts on the release only at
-  the turn. No listener, and no recorded decision reversed; new members of `GridDeclaredKeyPress` and a ticket per
-  held Alt, which the toolbar's band also issues for an Alt typed on it while it gives the keyboard back. The
-  heaviest, and an Alt typed in a MudBlazor list as it closes is still not heard released (its popover is outside
-  the Sheet's element) unless the list passes its `keyup`s on too.
-- (b) **The core raises the Alt key alone in turn and the Consumer answers the press, not the release**: the KeyTips
-  start on Alt's keydown, a chord's key after it ends them. ADR-0100's "pressed and released alone" changes, and so
-  does what a Consumer hears for `Alt+Alt`.
-- (c) **Keep the Alt-alone hold as built**, and let ADR-0100 and the Change Notes say that an Alt typed while keys are
-  held can have an outcome that depends on the round trip: a known limitation against the spine's sixth principle.
-
-My recommendation, not a decision: (a), the one queue every key and its release go through, and the smallest change.
-
-Until this is decided the branch keeps round 2's code for Alt; the texts below claim no more than its tests ran (one
-Alt, or F10, then letters, typed at once).
-
-### 2. Keys typed on the band while a list opens
-
-Not covered by the decisions. Under either Chrome a list a KeyTip or the band's ↓ opened takes the keyboard a round
-trip later on a circuit, and a key typed on the band meanwhile is the band's: ↓ moves nothing in the list, and Enter
-presses the band's item. Escape is handled (it goes back a level, R2 (b)). Holding the others for the list needs the
-toolbar to hand keys to a Chrome's list — a second seam member — and the built-in popover's hold to take keys from
-the band. Options: (a) build both; (b) leave it, and let ADR-0100 say so.
-
-### 3. MudMenu's own buttons are tab stops under `MudSheetChrome`
-
-ADR-0100 and SH-50 hold the toolbar to one Tab stop. Under MudBlazor's Chrome Tab also reaches Number Format's button
-and the three split controls' arrows, which MudMenu draws (its activator wrapper carries `tabindex="0"` even with
-`ActivatorContent`). The trap is gone, and a key typed there is the button's. Options: (a) leave the extra stops and
-let ADR-0100 say so; (b) draw the menus' lists in a MudPopover of the Chrome's own, with buttons of its own that take
-no Tab (a rewrite of `MudToolbarItem`'s lists, re-run on both hosts).
-
-### 4. Popovers and dialogs outside the grid's root
-
-The decision of 2026-10-12 names "any popover the grid or a Chrome shows … filter panels, Format Cells' and other
-dialogs' lists … under the built-in Chrome and under MudBlazor". Two kinds stand outside the grid's root, where its
-key gate does not reach, and were not built:
-
-- ExPivot's own frames (ADR-0061): the Field List's menus and panels (an item filter among them) and the Pivot
-  Toolbar's, `PivotPopupFrame` and `PivotDialogFrame`, under both of ExPivot's Chromes. Escape or a choice closes
-  one in a render, and the button that opened it takes the keyboard a round trip later (`PivotFocusButton`).
-- `ExSheet.MudBlazor`'s Format Cells, a MudDialog (ADR-0071), closed by Escape, OK or Cancel; under the built-in
-  Chrome Format Cells is the grid's popover and holds.
-
-Observed once for ExPivot's dialog (an untracked probe, Server host at an 80 ms round trip, 2026-10-13, both
-Chromes): Show Details' dialog closed by Escape with ↓ typed at once, the ↓ landed in the closing dialog and the
-report's Focus stayed on r1c1; with ↓ typed after the dialog had gone it moved to r2c1. The rest is read off the
-code: on a circuit a key typed while such a frame closes reaches its control, or nothing once the frame is gone and
-before the button has the keyboard; no run read ExPivot's menus and panels or MudBlazor's Format Cells dialog.
-Holding it needs its default prevented the
-moment it is typed — Tab, an arrow on a radio, Space on a checkbox act at once — and a Blazor handler's
-`preventDefault` is the render's, a round trip late; ADR-0021 keeps script out of these frames. Options: (a) leave
-them, and let ADR-0044's note say the hold covers the grid's popovers and the Sheet Toolbar's lists, with these a
-known limitation; (b) each frame holds the keys it hears once its close has begun and hands them on where the
-keyboard lands, with the defaults of keys typed before that render reaches the browser still acting in the closing
-frame (narrower, not deterministic); (c) open them in the grid's popover frame (`OpenPopoverAsync`), where the gate
-holds: ExPivot's frames stand outside any grid by ADR-0061, and MudBlazor's dialog is ADR-0071's choice; (d) a
-listener of the grid's script on these frames, a new ADR-0021 entry.
+Not covered by the decisions: the decision of 2026-10-13 on keys typed while a list opens was made for the Sheet
+Toolbar, and ExPivot's openings were not built. A Field List entry or a Pivot Toolbar button opens its menu or panel
+in a render, and the menu takes the keyboard a round trip later on a circuit: a key typed on the button meanwhile is
+the button's (Enter pressed it again and closed the menu). The closing direction now holds the keys typed as the
+keyboard goes back and hands them to the button; a held Enter that presses the button opens the menu again, and
+the keys held behind that Enter, which belong to the menu now opening, are dropped — against the decision's
+"never dropped", which they cannot keep without the opening held too. Read off the code; no run typed them.
+Options: (a) leave, and let ADR-0061 say so; (b) hold the keys typed on the button while its menu or panel opens,
+and hand them to it once it holds the keyboard, as the Sheet Toolbar's band does (`ChoicesOpened`'s rule).
 
 ## Choices of mine
 
@@ -226,9 +234,31 @@ listener of the grid's script on these frames, a new ADR-0021 entry.
   left as a stop. The mark is a class, `ex-popover-closes`, as `ex-value-list` is, on the buttons and nowhere
   else; Enter in a field of a form whose submit button carries it holds too, in the fields the browser submits
   from (text, search, url, tel, password, email, number).
-- ExPivot's frames and MudBlazor's Format Cells dialog left to stop 4 rather than built.
+- ExPivot's frames and MudBlazor's Format Cells dialog left to stop 4 rather than built (round 3; the user decided
+  stop 4 on 2026-10-13, and round 4 built them).
 - The F10 and the ↓ cases, rather than narrowing the texts that name them.
 - Stop 1's options (d) and (h), and the recommendation of (a).
+- *(Round 4.)* The answer to a release not held is asked in the task after the release's dispatch, a timer of no
+  delay: that orders it behind every listener of the keyup, Blazor's among them, which sends the release to the
+  Consumer later in the same dispatch. It waits for no time, and no outcome depends on how long it takes.
+- *(Round 4.)* Whether the Alt went down alone told by the gate, and ExSheet reading no other key's release; a key
+  typed on the band forgetting an Alt press the Sheet heard.
+- *(Round 4.)* `ChoicesOpened`'s shape: `Func<bool, IReadOnlyList<KeyboardEventArgs>>`, a positional parameter after
+  `ChoicesClosing`, answering the keys held for the list.
+- *(Round 4.)* Under the built-in Chrome, the band's keys for an opening list handed to the grid with the keyboard,
+  through the core's hand-back from a frame, rather than a new member.
+- *(Round 4.)* The MudBlazor lists' buttons drawn by the item, and a MudMenu with no activator, rather than a
+  MudPopover of the Chrome's own (round 3's option (b)).
+- *(Round 4.)* `FormatCellsContext.ReturnKeyboardFrom` as an init-only member, not a positional one; OK set as it is
+  pressed; ExSheet keeping a Chrome's Format Cells frame after OK or Cancel until it gives the keyboard back. A
+  Chrome of a Consumer's own that never calls `ReturnKeyboard` sees its fragment stay rendered (a Change Note says
+  so).
+- *(Round 4.)* `ExGrid.PassKeysOutAsync`, a new public member of the core (ADR-0201), and the hold behind a plain
+  Escape on the root of a grid whose Consumer listens to `OnLeave`: the keys after it are passed out as the keydowns
+  they were, dispatched on the root's parent. It is not ADR-0070's rejected "the grid lets Escape bubble": the
+  Escape itself is the grid's as before, and only the keys after it go out, and only when the Consumer asks.
+- *(Round 4.)* ExPivot's menus and panels standing until the frame's focusout says the keyboard has left them, and
+  the keys held then answered as the button's.
 
 ## Edits
 
@@ -356,9 +386,11 @@ New:
   - A list closes through an empty element of the item's own, inside the toolbar's band, from which the
     toolbar takes the keyboard on. MudBlazor's provider removes the list in a render of its own, outside
     the band.
-  - *(As built, 2026-10-12.)* MudMenu draws its own button for Number Format and for each split control's
-    arrow, and Tab reaches them: under MudBlazor's Chrome the toolbar is not one Tab stop. A key typed on
-    one is the button's, and the toolbar holds none of it.
+  - *(As built, 2026-10-12; replaced 2026-10-13, decided with the user: the MudBlazor toolbar item's lists
+    take no Tab, keeping SH-50's one Tab stop.)* MudMenu drew its own button for Number Format and for each
+    split control's arrow, and Tab reached them. The item now draws those buttons itself, out of the Tab
+    order, and its MudMenu, given no Label, Icon or ActivatorContent, draws none: under either Chrome the
+    toolbar is one Tab stop.
 
 ### The toolbar's keys, held in order *(2026-10-12)*
 
@@ -367,15 +399,22 @@ where what a key did on the toolbar depended on when it was typed (the spine's s
 
 - *(2026-10-12, decided with the user, decision (C): the letters typed after the release of the Alt key
   alone wait for the KeyTips.)* On a circuit the KeyTips take the keyboard a round trip after Alt's
-  release, and A4 pressed, Alt, H, 1 typed at machine speed opened an edit in A4 holding `h1`.
+  release, and A4 pressed, Alt, H, 1 typed at machine speed opened an edit in A4 holding `h1` (the
+    seventeenth run's Part D, layer 3 at an 80 ms round trip).
   - The grid's key gate holds the keys typed after the release of a declared Alt that went down alone,
     until the Sheet has answered the release (ADR-0050 item 16's note of 2026-10-12). The Sheet, starting
     the KeyTips, tells the gate the keyboard is going to a frame of its own, the toolbar, before it first
     waits, and gives the band the keyboard through the core, which gives it in turn, with the held keys,
     in order. A Tab among them is dropped with the keys behind it. F10 takes the same way.
-  - *(As built.)* One Alt, or F10, then letters, typed at once: the same outcome as typed slowly, on
-    either host. An Alt pressed alone again while keys are held is not: its press and its release can
-    reach the Sheet in either order. Open.
+  - *(2026-10-13, decided with the user: the grid's script hears Alt's `keyup` on the root and holds it in
+    order with the keys, sharing ED-30's root `keyup` listener.)* The release reaches the Sheet through the
+    gate: held in its place while keys are held, and handed on after the press it releases. Whether the Alt
+    went down alone is the gate's to tell: a chord's release never reaches the Sheet, which reads no other
+    key's release. ADR-0021's seventh entry, widened; no listener is added.
+  - *(As built.)* Layer 3 types these at once, under both Chromes, on the Server host at an 80 ms round
+    trip and on WebAssembly, and each has the outcome it has typed slowly: Alt, H, 1; F10, H, 2; Enter on
+    an edit, then Alt, H, 1; Alt, Alt, H, 1, which is also typed slowly; Alt, H, F, C and three Escapes;
+    three Escapes in a list a KeyTip opened, then Alt, H, H. No case types at a speed between the two.
 - *(2026-10-12, decided with the user, decision (B): a Chrome whose list is its own closes it when
   `CloseRequest` changes and does not call `ChoicesClosed` for that close; `MudToolbarItem` closes its
   MudMenu and drops a focus not yet landed.)* Escape typed on the toolbar before a list a KeyTip opened
@@ -389,6 +428,10 @@ where what a key did on the toolbar depended on when it was typed (the spine's s
     holds the keyboard by the time the close is answered. It closes through its own element as any close
     of its own does, calls `ChoicesClosing` and `ChoicesClosed`, and the toolbar takes the keyboard on as
     it stands: to the Sheet, or, after Escape on the toolbar, to the KeyTips.
+  - *(Replaced 2026-10-13, decided with the user: keys typed on the band while a list opens go to the
+    list.)* Escape typed on the toolbar before the list has the keyboard is now one of the keys held for the
+    list, and goes back a level there. `CloseRequest` still closes a list on its way when the toolbar gives
+    the keyboard back for any other reason.
 - *(2026-10-12, decided with the user: keys typed while the keyboard is in flight back from a closing
   popover are held and handed on in order to where the keyboard lands; the MudBlazor Chrome gets a seam
   member that hands on the keys typed into a list while it closes.)*
@@ -406,6 +449,14 @@ where what a key did on the toolbar depended on when it was typed (the spine's s
     until it has gone; the keys typed on its element inside the band reach the band. The toolbar holds
     them all and hands them on with the keyboard: to the Sheet, or, after Escape in a list a KeyTip opened,
     to its KeyTips once the band holds the keyboard.
+  - *(2026-10-13, decided with the user: keys typed on the band while a list opens go to the list, by the
+    same rule as the close direction.)* From the toolbar's request for a list (`OpenRequest`) the band holds
+    the keys typed on it. A Chrome whose list is its own calls `ToolbarItemContext.ChoicesOpened(true)` once
+    the list holds the keyboard, and answers the keys returned as typed in the list, ahead of any typed there
+    since; with false, for a list that did not open, the band takes them back. Under the built-in Chrome the
+    grid takes the keyboard from the band as its popover opens, with those keys, and its hold hands them to
+    the list (a keyboard already in the grid's popover stays there). Layer 3: Alt, H, H, ↓, →, Enter typed
+    at once fill the cell, under both Chromes, on both hosts.
   - Format Cells' item gives the keyboard back after its press from the keys, as every item does. It
     declined that, because the hand-back would have taken the keyboard from the built-in popover. The
     core's hand-back from a frame now leaves a keyboard already inside the grid where it is, and the grid
@@ -434,19 +485,26 @@ New:
   frame of the Consumer's own, a popover of the Consumer's closing, and the release of the Alt key.**
   - *(2026-10-12, decided with the user, decision (C): the letters typed after the release of the Alt key
     alone wait for the KeyTips.)* **After the release of a declared Alt that went down alone, the keys wait
-    for the Consumer.** The release is the Consumer's to hear (ExSheet's `keyup`, ADR-0100); the gate hears
-    no keyup (ADR-0021) and knows the release by the key after it: one that does not carry Alt, or Alt
-    pressed again. That key and every key after it are held until an empty question to the core (`Ping`),
-    which travels behind the release, is answered. The gate waits for nothing else, so the Consumer's
+    for the Consumer.** The release is the Consumer's to answer (ExSheet's `keyup`, ADR-0100). *(Until
+    2026-10-13 the gate heard no keyup, and knew the release by the key after it: one that does not carry
+    Alt, or Alt pressed again.)* The gate hears it on the root (ADR-0021's seventh entry, widened 2026-10-13),
+    and every key after it is held until an empty question to the core (`Ping`), asked once the release has
+    been dispatched, travels behind it and is answered. The gate waits for nothing else, so the Consumer's
     handler tells it before its first `await`: `HandKeyboardToFrameAsync`, then `HandKeyboardToAsync` for
     the frame's control. Handed off, the keys go to the frame, or are dropped with every key behind one it
-    cannot take, a Tab; told nothing, they are the grid's. A chord (a key carrying Alt while it is down), a
-    press on the grid and DOM focus leaving it end the wait before it starts.
-  - *(As built; open, ADR-0100's note of 2026-10-12.)* An Alt pressed alone again while keys are held is
-    forwarded at once when nothing but such releases and the keys a frame heard on the way back stand
-    before it, and leaves a mark a frame's hand-off waits behind; otherwise it is held as a modifier. Its
-    press and its release can then reach the Consumer in either order, and the outcome can depend on the
-    round trip.
+    cannot take, a Tab; told nothing, they are the grid's. A press on the grid and DOM focus leaving it
+    forget an Alt that is down.
+  - *(2026-10-13, decided with the user: the grid's script hears Alt's `keyup` on the root and holds it in
+    order with the keys.)* **While keys are held, the release is held in its place**, kept from the
+    Consumer's handler, and handed on in its turn, as the keyup it was, where the keyboard is then — the
+    root, or the frame or control the keys went to — after its press, which the hold hands to the core in
+    its turn rather than skip as a modifier's; the question is asked after it. Whether the Alt went down
+    alone is the gate's to tell, since it hears every key between the press and the release in order: a
+    chord's release (a key carrying Alt came between), or one whose press it did not hear, never reaches
+    the Consumer, and the Consumer reads no other key's release, one typed while keys are held reaching it
+    out of turn. A frame's band holds an Alt's release typed on it while the keyboard is in flight, with the
+    keys. *(Until then an Alt pressed alone again while keys were held was forwarded at once or held as a
+    modifier, and its press and its release could reach the Consumer in either order.)*
   - **A hand-off told while the hold drains keeps the hold until the keyboard arrives,** so the keys typed
     meanwhile go where the keyboard is going, and none is gated against the root.
   - **A frame gives the keyboard back with the keys typed on it on the way:**
@@ -501,7 +559,11 @@ New:
   decision and of ADR-0010's rule for a key that closes a popover.)* So do a panel's OK, Apply and
   Cancel, which each Chrome marks `ex-popover-closes` (ADR-0010's note of 2026-10-12): pressed, or by
   Enter or Space, and Enter in a field of a form whose OK is one. ↓ typed straight after Enter on a
-  filter panel's OK was lost on the closing button. E held on a checkbox outside
+  filter panel's OK was lost on the closing button. *(2026-10-13, decided with the user: the hold is
+  family-wide — ExSheet's and ExPivot's own dialogs, menus and panels outside the root too.)* Outside the
+  root the frame holds the keys itself and hands them on with the keyboard: ADR-0071's note of 2026-10-13
+  for `ExSheet.MudBlazor`'s Format Cells, ADR-0061's and ADR-0070's for ExPivot's menus, panels and Show
+  Details' dialog. E held on a checkbox outside
 ```
 
 ### 7. docs/adr/0010-chrome-seams-column-menu-editor-loading.md
@@ -566,6 +628,18 @@ New:
         where the core will take it back.
       - *(2026-10-12.)* The element is not `aria-hidden`: it holds focus, and Chromium refuses to hide
         a focused element and says so in the console (ADR-0100's note of 2026-10-12).
+      - *(2026-10-13, decided with the user: the keys typed as the keyboard goes back are held and handed
+        on in order, `ExSheet.MudBlazor`'s Format Cells among the frames.)* On a circuit the dialog stands a
+        round trip after Escape, OK or Cancel, and once MudBlazor removed it DOM focus was on nothing: ↓
+        typed straight after Escape was lost. Escape is now the dialog's own, not MudBlazor's
+        `CloseOnEscapeKey`, and those three close through the frame: OK sets what was touched as it is
+        pressed, so nothing typed after it changes what it sets; the frame's element takes the keyboard out
+        of the dialog before it closes; and the core takes the keyboard back from the element with the keys
+        typed in the dialog from the closing key on and on the element
+        (`FormatCellsContext.ReturnKeyboardFrom`, ADR-0050 item 16's note of 2026-10-12). ExSheet keeps a
+        Chrome's frame on the page after OK or Cancel until it has given the keyboard back. The ×, the
+        backdrop and an Escape an open dropdown's list takes are as they were. Layer 3: Escape then ↓, ↓,
+        and OK then ↓, typed at once on both hosts.
 ```
 
 ### 10. docs/definition-of-done.md
@@ -579,7 +653,7 @@ Old:
 New:
 
 ```
-| **SH-52** | MUST | While the Sheet holds the keyboard, its Sheet Toolbar is shown and no edit is open, Alt (Option on macOS) released alone, or F10, shows a KeyTip per Toolbar Row (the formatting row's is H); a row's letter shows its items' letters, Excel's Home tab letters where Excel has one, Format Cells' through Excel's Format menu (O, E), and ExSheet's own otherwise (Strikethrough's 4, never a letter Excel's Home tab uses); a letter runs its item and leaves the keyboard on the Sheet; Escape goes back one level and ends from the top — from a list a KeyTip opened to its row's KeyTips, from letters that narrow a level to that level's (*2026-10-12, the readings' R2 (a) and (b), observed*); an unmatched key ends it doing nothing; Alt with another key stays a chord (Alt+↓, Alt+Enter); a Consumer's letters are only those declared, and two colliding at one level are refused at render naming both; while an edit is open they start nothing, and with the toolbar hidden Alt and F10 stay the browser's; on Windows the browser's menu does not open from a Sheet whose toolbar is shown (ADR-0100, ADR-0021) | Layer 2; Layer 3; beside Excel and by hand on Windows for the browser's keys (a Windows run) | as Excel, where Excel has the letter |
+| **SH-52** | MUST | While the Sheet holds the keyboard, its Sheet Toolbar is shown and no edit is open, Alt (Option on macOS) released alone, or F10, shows a KeyTip per Toolbar Row (the formatting row's is H); a row's letter shows its items' letters, Excel's Home tab letters where Excel has one, Format Cells' through Excel's Format menu (O, E), and ExSheet's own otherwise (Strikethrough's 4, never a letter Excel's Home tab uses); a letter runs its item and leaves the keyboard on the Sheet; Escape goes back one level and ends from the top — from a list a KeyTip opened to its row's KeyTips, from letters that narrow a level to that level's (*2026-10-12, the readings' R2 (a) and (b), observed*); an unmatched key ends it doing nothing; Alt with another key stays a chord (Alt+↓, Alt+Enter); an Alt pressed alone, and the letters after it, typed at once while the grid still holds keys, have the outcome they have typed slowly (*2026-10-13, decided with the user*); a Consumer's letters are only those declared, and two colliding at one level are refused at render naming both; while an edit is open they start nothing, and with the toolbar hidden Alt and F10 stay the browser's; on Windows the browser's menu does not open from a Sheet whose toolbar is shown (ADR-0100, ADR-0021) | Layer 2; Layer 3, the keys at once on the Server host at an 80 ms round trip and on WebAssembly; beside Excel and by hand on Windows for the browser's keys (a Windows run) | as Excel, where Excel has the letter |
 ```
 
 ### 11. docs/definition-of-done.md
@@ -617,20 +691,23 @@ New:
 ```
                 <b>KeyTips.</b> Release Alt on its own, or press F10, and each row shows its letter: ExSheet's row is H,
                 as Excel's Home tab is, and its items carry Excel's letters, so Alt, H, 1 sets bold and Alt, H, O, E
-                opens Format Cells, as Excel's Format menu reaches it (read on Windows). The letters can be typed
-                straight after Alt, over Blazor Server too: those typed before the KeyTips show wait for them. A list a
-                KeyTip opens takes the keyboard under either Chrome: the arrows move among its choices and Enter makes
-                one. Escape goes back one level, as Excel's did when read on Windows: from a list to its row's letters,
-                then to the rows', then to the Sheet. A letter, an arrow, Enter or Escape typed while a list closes, or
-                while the keyboard goes back to the Sheet, goes where the keyboard lands. Your rows and buttons have a
-                KeyTip where you set <code>KeyTip</code>; two letters that collide at one level are refused when the
-                toolbar renders.
+                opens Format Cells, as Excel's Format menu reaches it (read on Windows). A list a KeyTip opens takes
+                the keyboard under either Chrome: the arrows move among its choices and Enter makes one. Escape goes
+                back one level, as Excel's did when read on Windows: from a list to its row's letters, then to the
+                rows', then to the Sheet. The keys can be typed at once, over Blazor Server too: the letters straight
+                after Alt or F10 wait for the KeyTips, and the keys typed while a list opens or closes, or while the
+                keyboard goes back to the Sheet, wait for the keyboard and go where it lands, so Alt, H, 1 typed straight
+                off sets bold, and Alt, H, H, ↓, →, Enter fills the cell from the palette, as typed one at a time. Your
+                rows and buttons have a KeyTip where you set <code>KeyTip</code>; two letters that collide at one level
+                are refused when the toolbar renders.
             </li>
             <li>
                 <b>The look is the Chrome's.</b> The built-in Chrome draws plain buttons with inline-SVG pictures;
-                <code>MudSheetChrome</code> draws MudBlazor's controls. A Chrome of your own draws each item from its
-                <code>ToolbarItemContext</code>: a list of its own opens when <code>OpenRequest</code> changes and closes
-                when <code>CloseRequest</code> does; as it begins to close from a key or a choice it calls
+                <code>MudSheetChrome</code> draws MudBlazor's controls; under either the toolbar is one Tab stop. A Chrome
+                of your own draws each item from its <code>ToolbarItemContext</code>: a list of its own opens when
+                <code>OpenRequest</code> changes, and once it holds the keyboard it calls <code>ChoicesOpened(true)</code>
+                and answers the keys that returns, typed on the toolbar while the list was on its way; it closes when
+                <code>CloseRequest</code> changes; as it begins to close from a key or a choice it calls
                 <code>ChoicesClosing</code> with that key and passes on every key typed in it, and once it has gone it
                 calls <code>ChoicesClosed</code>, and the toolbar takes the keyboard on from there.
             </li>
@@ -701,6 +778,250 @@ New:
             frame's element and the keys it heard on the way. A popover of yours in the grid's frame
             (<code>OpenPopoverAsync</code>) can ask to hear Escape close it, and hand the keyboard on from there. Over
             Blazor Server each of these lands a round trip late, and the grid holds the keys typed meanwhile and
-            hands them on, in order, to where the keyboard lands. ExSheet's Sheet Toolbar is built this way.
+            hands them on, in order, to where the keyboard lands. ExSheet's Sheet Toolbar is built this way. A dialog
+            of yours with a grid inside, closing on the Escape that raises the grid's <code>OnLeave</code>, calls
+            <code>PassKeysOutAsync</code> there: the keys typed after the Escape go out to your dialog, for it to hand
+            on with the keyboard, as ExPivot's Show Details dialog does.
         </p>
+```
+
+### 16. docs/adr/0050-what-exsheet-asks-of-exgrids-core.md
+
+Old:
+
+```
+  - The release is the Consumer's to hear, from a `keyup` that reaches it from the grid's root.
+    No listener is added to the grid.
+```
+
+New:
+
+```
+  - The release is the Consumer's to hear, from a `keyup` that reaches it from the grid's root.
+    No listener is added to the grid.
+    *(Reversed 2026-10-13, decided with the user: the grid's script hears Alt's `keyup` on the root and
+    holds it in order with the keys, sharing ED-30's root `keyup` listener, ADR-0021's seventh entry; no
+    listener is added. Item 16's note of 2026-10-12 says how.)*
+```
+
+### 17. docs/adr/0100-the-sheet-toolbar-ships-as-an-opt-in-part-of-exsheet.md
+
+Old:
+
+```
+- **The Alt key's release is heard from a `keyup` on the Sheet's own element.** That listener is
+  there only while the toolbar is shown. Another key's release in between makes the Alt a chord's.
+  - The grid stops the keys it claims at keydown, so a chord such as Alt+↓ is seen only by its
+    release.
+  - Alt released before the ↓ of Alt+↓ therefore shows the KeyTips. Escape takes them away. This
+    is left as it is, rather than adding a listener to the grid.
+```
+
+New:
+
+```
+- **The Alt key's release is heard from a `keyup` on the Sheet's own element.** That listener is
+  there only while the toolbar is shown. Another key's release in between makes the Alt a chord's.
+  - The grid stops the keys it claims at keydown, so a chord such as Alt+↓ is seen only by its
+    release.
+  - Alt released before the ↓ of Alt+↓ therefore shows the KeyTips. Escape takes them away. This
+    is left as it is, rather than adding a listener to the grid.
+  - *(2026-10-13, decided with the user: the grid's script hears Alt's `keyup` on the root and holds it
+    in order with the keys, sharing ED-30's root `keyup` listener.)* The Sheet's listener stays, and hears
+    the release through the grid: held in order with the keys while the grid holds any, and never a
+    chord's, which the grid's key gate tells by the keys it hears between the press and the release. So
+    another key's release no longer makes the Alt a chord's in the Sheet, and Alt released before the ↓
+    of Alt+↓ no longer shows the KeyTips. This reverses "rather than adding a listener to the grid" above:
+    the grid's own `keyup` listener, ED-30's, is widened (ADR-0021's seventh entry), and none is added.
+```
+
+### 18. docs/adr/0021-javascript-is-allowlisted-not-minimised.md
+
+Old:
+
+```
+| **The Keyboard Field's composition and focus, on the grid root** | Added 2026-10-02 ([ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md)). An IME starts only in an element that is editable, and no Blazor API gives the root, a `div`, an input context. So on a grid that edits a text field of the grid's own holds the keyboard. Its composition's end has to take its place among the held keys and presses, which exist only in the browser (the first entry's hold), so `compositionstart` and `compositionend` on the root are heard there, always on. The root's own `focus` is passed on to the field at once: Blazor's `@onfocus` and `FocusAsync` land a round trip later on a circuit, and a key typed in between was read as a descendant's (ADR-0033's scroller, 2026-09-26). The root's `focusout` empties the field as it is left, and ends the release of Tab when DOM focus leaves the grid (ADR-0012). No layout is read. *(`keyup` added 2026-10-12 ([ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md)), decided with the user: the root's `keyup` says that a key the IME took in the field has been told whole. The editor's request for the keyboard waits for it, so that it is granted in order with the IME's events, where the task after a composition's end missed a start the browser told a moment later. A key the IME took is told from its keydown, which the first entry already leaves to the IME, to the next keyup heard on the root, or until the keyboard leaves the root, which the root's `focusout` tells: Alt+Tab mid-composition sends its keyup to the other window. Nothing is measured, and no timer is set.)* |
+```
+
+New:
+
+```
+| **The Keyboard Field's composition and focus, on the grid root** | Added 2026-10-02 ([ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md)). An IME starts only in an element that is editable, and no Blazor API gives the root, a `div`, an input context. So on a grid that edits a text field of the grid's own holds the keyboard. Its composition's end has to take its place among the held keys and presses, which exist only in the browser (the first entry's hold), so `compositionstart` and `compositionend` on the root are heard there, always on. The root's own `focus` is passed on to the field at once: Blazor's `@onfocus` and `FocusAsync` land a round trip later on a circuit, and a key typed in between was read as a descendant's (ADR-0033's scroller, 2026-09-26). The root's `focusout` empties the field as it is left, and ends the release of Tab when DOM focus leaves the grid (ADR-0012). No layout is read. *(`keyup` added 2026-10-12 ([ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md)), decided with the user: the root's `keyup` says that a key the IME took in the field has been told whole. The editor's request for the keyboard waits for it, so that it is granted in order with the IME's events, where the task after a composition's end missed a start the browser told a moment later. A key the IME took is told from its keydown, which the first entry already leaves to the IME, to the next keyup heard on the root, or until the keyboard leaves the root, which the root's `focusout` tells: Alt+Tab mid-composition sends its keyup to the other window. Nothing is measured, and no timer is set.)* *(Widened 2026-10-13, decided with the user: the same `keyup` listener hears the Alt key's release where the Consumer declares the Alt key alone (ADR-0050 item 14, ADR-0100's KeyTips). While the first entry's hold holds keys, the release is kept from the Consumer and held in its place, and handed on, in its turn, as the keyup it was; a chord's release is kept from the Consumer. No listener is added, and the count MEM-4 reads is unchanged. Nothing is measured.)* |
+```
+
+### 19. docs/adr/0070-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md
+
+Old:
+
+```
+- **DC-61 says what the method does, and PV-41 what ExPivot does with it.** Layer 2 checks that each
+  request goes through the report's grid, under both Chromes. Layer 3 puts DOM focus in the records
+  in the task that draws them, where a press there would put it, before the control's request can
+  land. With either fix taken out, every run of those tests failed on the Server host; with both,
+  every run passed on both hosts.
+
+## Considered options
+```
+
+New:
+
+```
+- **DC-61 says what the method does, and PV-41 what ExPivot does with it.** Layer 2 checks that each
+  request goes through the report's grid, under both Chromes. Layer 3 puts DOM focus in the records
+  in the task that draws them, where a press there would put it, before the control's request can
+  land. With either fix taken out, every run of those tests failed on the Server host; with both,
+  every run passed on both hosts.
+
+## Keys passed out as a dialog closes *(2026-10-13)*
+
+*(Decided with the user: the keys typed as the keyboard goes back are held and handed on in order,
+family-wide — ExPivot's Show Details dialog among the frames.)* On a circuit the dialog stood a round trip
+and more after the Escape its grid raised `OnLeave` on, and the keyboard stayed in the dialog's grid
+until it had gone: ↓ typed straight after the Escape moved in the closing grid and was lost, the report's
+Focus staying where it was (observed 2026-10-13, the Server host at 80 ms, both Chromes).
+
+- **`ExGrid.PassKeysOutAsync()`**, called from `OnLeave` before its first await, tells the grid the
+  keyboard is leaving it for the Consumer's element around it. The keys the gate held behind that Escape,
+  and those typed on the root until DOM focus leaves it, are passed to the root's parent, in order, as the
+  keydowns they were, and the grid acts on none. A press on the grid takes the keyboard back into it.
+- **While a Consumer listens to `OnLeave`, the keys after a plain Escape on the root wait for its answer**,
+  as the keys after a declared key do, so none is the grid's before the Consumer has said where they go.
+- It is not "the grid lets Escape bubble", rejected below: the Escape is the grid's as before, and only the
+  keys after it go out, and only when the Consumer asks.
+- **ExPivot's dialog closes the other way round.** However it closes, its frame holds the keys typed in it
+  from then on, its grid passing its own out to it; a render takes the report's `inert` away while the
+  dialog stands; the report's grid takes the keyboard back from the dialog with those keys
+  (`ReturnKeyboardAsync(from, typedOnTheWay)`, ADR-0050 item 16's note of 2026-10-12); and then the dialog
+  goes. Layer 3: Escape in the dialog's grid then ↓, and Escape on its Close then ↓, ↓, typed at once,
+  under both Chromes, on both hosts.
+
+## Considered options
+```
+
+### 20. docs/adr/0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md
+
+Old:
+
+```
+- One menu or panel is open at a time in each ExPivot, and two ExPivots on one page share nothing
+  ([ADR-0018](./0018-multiple-instances-must-be-independent.md)).
+```
+
+New:
+
+```
+- One menu or panel is open at a time in each ExPivot, and two ExPivots on one page share nothing
+  ([ADR-0018](./0018-multiple-instances-must-be-independent.md)).
+
+*(2026-10-13, decided with the user: the keys typed as the keyboard goes back are held and handed on in
+order, family-wide — ExPivot's menus and panels among the frames.)* A menu or a panel closed from inside
+it — Escape, a command, OK, Cancel — gives the keyboard back to its button a round trip later on a
+circuit, and a key typed meanwhile was the closing menu's: Enter typed straight after Escape ran its first
+command.
+
+- **Closed from inside with DOM focus in it, it stands until the keyboard has left it** for its button,
+  which the frame's `focusout` tells; its commands and OK do nothing meanwhile.
+- **The keys typed in it meanwhile are the button's**, in order: Enter or Space presses it; Tab, which only
+  the browser can act on, is dropped with every key after it (ADR-0010); anything else means nothing on a
+  button.
+- Closed with the keyboard outside it — its button pressed again, a press elsewhere — it goes at once.
+- Nothing listens on `document`, nothing is measured, and no JavaScript is added: the frame's own Blazor
+  `keydown`, `focusin` and `focusout` (ADR-0021).
+- Layer 3: Escape in a field's menu, then Enter typed at once, runs no command and opens the menu again,
+  under both Chromes, on both hosts.
+```
+
+### 21. docs/definition-of-done.md
+
+Old:
+
+```
+| **SH-50** | MUST | Whenever the Selection changes, each formatting item shows the Focus cell's `CellFormatAt` (Bold pressed over a bold cell, `aria-pressed`); a press acts on the grid's Selection as it is now, as one undo step; while an edit is open every Toolbar Item, the Consumer's included, is unavailable; a pointer press leaves DOM focus on the Sheet, the toolbar is one Tab stop with ← and → among its items, and a command run from the keyboard gives the keyboard back to the Sheet. The same markup draws plain buttons under the built-in Chrome and MudBlazor's controls under `ExSheet.MudBlazor`, with the same behaviour; its dropdowns take Format Cells' frames; no script is added (ADR-0100, ADR-0071, ADR-0010, ADR-0021) | Layer 2 under both Chromes; Layer 3 on both hosts under both Chromes, with a clean console | as stated; a press straight after Shift+ArrowDown on the Server host formats the extended range |
+```
+
+New:
+
+```
+| **SH-50** | MUST | Whenever the Selection changes, each formatting item shows the Focus cell's `CellFormatAt` (Bold pressed over a bold cell, `aria-pressed`); a press acts on the grid's Selection as it is now, as one undo step; while an edit is open every Toolbar Item, the Consumer's included, is unavailable; a pointer press leaves DOM focus on the Sheet, the toolbar is one Tab stop under either Chrome (*2026-10-13, decided with the user*: no control inside it takes Tab) with ← and → among its items, and a command run from the keyboard gives the keyboard back to the Sheet. The same markup draws plain buttons under the built-in Chrome and MudBlazor's controls under `ExSheet.MudBlazor`, with the same behaviour; its dropdowns take Format Cells' frames; no script is added (ADR-0100, ADR-0071, ADR-0010, ADR-0021) | Layer 2 under both Chromes; Layer 3 on both hosts under both Chromes, with a clean console | as stated; a press straight after Shift+ArrowDown on the Server host formats the extended range |
+```
+
+### 22. docs/definition-of-done.md
+
+Old:
+
+```
+| **SH-45** | MUST | Format Cells opens from Ctrl+1, from the Context Menu's "Format Cells…" and from `OpenFormatCellsAsync`; it offers Number, Alignment, Font, Border and Fill; Accounting and Fraction are shown disabled with the reason; a Custom code ExSheet does not read is refused by name; it opens on the Focus cell's Cell Format; OK sets only what the user touched as one undo step, and Cancel or Esc sets nothing; the tabs switch with the arrow keys; on closing the keyboard is the Sheet's again. Under the built-in Chrome it is a popover inside the Sheet's box (DC-60); under `ExSheet.MudBlazor` it is a `MudDialog` (ADR-0071, ADR-0010) | Layer 2 under both Chromes; Layer 3 on both hosts under both Chromes | as stated |
+```
+
+New:
+
+```
+| **SH-45** | MUST | Format Cells opens from Ctrl+1, from the Context Menu's "Format Cells…" and from `OpenFormatCellsAsync`; it offers Number, Alignment, Font, Border and Fill; Accounting and Fraction are shown disabled with the reason; a Custom code ExSheet does not read is refused by name; it opens on the Focus cell's Cell Format; OK sets only what the user touched as one undo step, and Cancel or Esc sets nothing; the tabs switch with the arrow keys; on closing the keyboard is the Sheet's again, and the keys typed as it closes from Escape, OK or Cancel reach the Sheet in order, OK setting what was touched as it is pressed (*2026-10-13, decided with the user*). Under the built-in Chrome it is a popover inside the Sheet's box (DC-60); under `ExSheet.MudBlazor` it is a `MudDialog` (ADR-0071, ADR-0010) | Layer 2 under both Chromes; Layer 3 on both hosts under both Chromes, the keys after Escape and OK typed at once at an 80 ms round trip on the Server host | as stated |
+```
+
+### 23. docs/definition-of-done.md
+
+Old:
+
+```
+| **PV-39** | MUST | Show Details' dialog closes on an Escape its grid has nothing left to dismiss. However the dialog closes — Escape, Close, the backdrop — the report's grid takes the keyboard back. A details tab that closes while selected hands the keyboard to the tab selected next: the report's grid, when that is the report's tab. Escape in a details tab's grid closes nothing (ADR-0070) | Layer 2; Layer 3 on `/pivot?details=dialog` and `/pivot` | as stated, under both Chromes |
+```
+
+New:
+
+```
+| **PV-39** | MUST | Show Details' dialog closes on an Escape its grid has nothing left to dismiss. However the dialog closes — Escape, Close, the backdrop — the report's grid takes the keyboard back, with the keys typed in the dialog as it closes, in order (*2026-10-13, decided with the user*); a field's menu or panel closed from inside gives the keys typed as it closes to its button. A details tab that closes while selected hands the keyboard to the tab selected next: the report's grid, when that is the report's tab. Escape in a details tab's grid closes nothing (ADR-0070) | Layer 2; Layer 3 on `/pivot?details=dialog` and `/pivot`, the keys after Escape typed at once at an 80 ms round trip on the Server host | as stated, under both Chromes |
+```
+
+### 24. samples/ExGrid.Docs/Pages/Sheet/SheetFormatting.razor
+
+Old:
+
+```
+                <b>Under <code>MudSheetChrome</code></b> (<code>ExSheet.MudBlazor</code>) it is a page-level, modal
+                <code>MudDialog</code>, with MudBlazor's colour picker for More Colours. It needs a
+                <code>&lt;MudDialogProvider /&gt;</code> in your layout, and is refused by name when it first opens
+                without one.
+```
+
+New:
+
+```
+                <b>Under <code>MudSheetChrome</code></b> (<code>ExSheet.MudBlazor</code>) it is a page-level, modal
+                <code>MudDialog</code>, with MudBlazor's colour picker for More Colours. It needs a
+                <code>&lt;MudDialogProvider /&gt;</code> in your layout, and is refused by name when it first opens
+                without one. The keys typed as it closes from Escape, OK or Cancel are the Sheet's, in order, over
+                Blazor Server too: ↓ typed straight after Escape moves the Focus, and OK sets what was touched as it is
+                pressed.
+```
+
+### 25. samples/ExGrid.Docs/Pages/Pivot/PivotValues.razor
+
+Old:
+
+```
+            behind it, Excel's drill-down. They open in a tab at the report's foot, beside the <em>PivotTable</em> tab that leads back, or in a dialog with <code>DetailsView="PivotDetailsView.Dialog"</code>, which Escape closes, leaving the report the keyboard. The records are read
+```
+
+New:
+
+```
+            behind it, Excel's drill-down. They open in a tab at the report's foot, beside the <em>PivotTable</em> tab that leads back, or in a dialog with <code>DetailsView="PivotDetailsView.Dialog"</code>, which Escape closes, leaving the report the keyboard, with the keys typed as it closes: ↓ typed straight after Escape moves the report's Focus, over Blazor Server too. The records are read
+```
+
+### 26. samples/ExGrid.Docs/Pages/Pivot/PivotLayoutPage.razor
+
+Old:
+
+```
+                Escape closes it, a panel's changes are discarded unless OK applied them, and the keyboard goes
+                back to what opened it.
+```
+
+New:
+
+```
+                Escape closes it, a panel's changes are discarded unless OK applied them, and the keyboard goes
+                back to what opened it, with the keys typed as it closes: Enter typed straight after Escape opens the
+                menu again rather than running one of its commands, over Blazor Server too.
 ```
