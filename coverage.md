@@ -2,7 +2,7 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 95.7% | 88.4% |
+| ExGrid | 95.7% | 88.5% |
 | ExSheet | 96.1% | 89.7% |
 | ExPivot | 94.2% | 85.2% |
 | Data | 94.4% | 90.2% |
@@ -12,19 +12,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/13/2026 - 15:28:00 |
+| Generated on: | 10/13/2026 - 18:29:38 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 839 |
 | Files: | 461 |
-| **Line coverage:** | 95.3% (56692 of 59479) |
-| Covered lines: | 56692 |
+| **Line coverage:** | 95.3% (56695 of 59482) |
+| Covered lines: | 56695 |
 | Uncovered lines: | 2787 |
-| Coverable lines: | 59479 |
-| Total lines: | 100606 |
-| **Branch coverage:** | 88.3% (32915 of 37239) |
-| Covered branches: | 32915 |
-| Total branches: | 37239 |
+| Coverable lines: | 59482 |
+| Total lines: | 100635 |
+| **Branch coverage:** | 88.3% (32918 of 37241) |
+| Covered branches: | 32918 |
+| Total branches: | 37241 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -65,7 +65,7 @@
 |ExGrid.Cells.RgbColour|100%|100%|
 |ExGrid.Cells.TemplateCellContext<TRow>|100%||
 |ExGrid.ChangeGatherer|97.8%|90.9%|
-|ExGrid.Chrome.BuiltInCommandLabels|100%|69.2%|
+|ExGrid.Chrome.BuiltInCommandLabels|100%|69.7%|
 |ExGrid.Chrome.CellEditorContext|93.7%||
 |ExGrid.Chrome.CellMessageContext|100%||
 |ExGrid.Chrome.ChromeStylesheet|100%||
