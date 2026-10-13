@@ -1,0 +1,281 @@
+@page "/rates"
+@using System.Globalization
+@using ExGrid.Cells
+@using ExGrid.Validation
+
+<PageTitle>Rate curve PoC</PageTitle>
+
+<Nav />
+
+@* An interest-rate curve three ways — its market quotes, its zero rates, its discount factors —
+   after what a market screen's swap-pricing curve tab and forward-curve analysis show: a curve
+   configuration, one table with every figure of each pillar as columns, and a chart. The quotes,
+   the bootstrap and every figure are Analytics/RateCurve.cs's; the grid and the chart compute none. *@
+
+<div class="fx-head">
+    <label>Curve
+        <select class="pair" value="@_curve" @onchange="e => Change(() => _curve = (string)e.Value!)">
+            @foreach (var c in RateCurve.Curves) { <option value="@c">@c</option> }
+        </select>
+    </label>
+    <span class="fx-compare">Curve date
+        <button type="button" aria-label="Previous weekday" @onclick="() => Change(() => _date = FxVol.StepWeekday(_date, -1))">◀</button>
+        <input type="date" value="@Iso(_date)" @onchange="e => Change(() => _date = ParseOr(e.Value, _date))" />
+        <button type="button" aria-label="Next weekday" @onclick="() => Change(() => _date = FxVol.StepWeekday(_date, 1))">▶</button>
+    </span>
+    <span>Side
+        @foreach (var side in Sides)
+        {
+            <label><input type="radio" name="side" checked="@(_side == side)" @onchange="() => Change(() => _side = side)" /> @side</label>
+        }
+    </span>
+    <label>Interpolation
+        <select value="@_interpolation" @onchange="e => Change(() => _interpolation = (string)e.Value!)">
+            @foreach (var i in RateCurve.Interpolations) { <option value="@i">@i</option> }
+        </select>
+    </label>
+    <label>Zero rates
+        <select value="@_compounding" @onchange="e => Change(() => _compounding = (string)e.Value!)">
+            <option value="Continuous">continuously compounded</option>
+            <option value="Annual">annually compounded</option>
+        </select>
+    </label>
+    <span>Shift
+        <button type="button" @onclick="() => Change(() => Shift(-10))">−10bp</button>
+        <button type="button" @onclick="() => Change(() => Shift(10))">+10bp</button>
+        <button type="button" disabled="@(_shifts.Count == 0)" @onclick="() => Change(() => _shifts.Clear())">Reset</button>
+    </span>
+</div>
+<p class="fx-note">
+    Deposits, then par swaps paying a fixed rate once a year; instruments accrue ACT/360, the curve is in ACT/365 years. A pillar
+    stands at each instrument's maturity; edit a term's <b>Shift (bp)</b> to move that quote alone. <b>Implied</b> is each
+    instrument repriced off the built curve — equal to its rate when the curve fits it.
+</p>
+
+<ExGrid TRow="RateRow" Source="_source" Columns="_columns" HeaderGroups="_groups" PinnedColumnCount="1"
+        OnEdit="OnEdit" ViewportHeight="610" ViewportWidth="ViewportSize.Stretch" />
+<p class="fx-note fit">Fit: the largest gap between an instrument's rate and its rate repriced off the curve is
+    <b>@Num(_rows.Count == 0 ? 0 : _rows.Max(r => Math.Abs(r.Pillar.ImpliedQuote - r.ShiftedRate)) * 10_000, 6) bp</b>.</p>
+
+<div class="fx-row">
+    <b>Chart</b>
+    @foreach (var (view, label) in Views)
+    {
+        <button type="button" class="chip @(_view == view ? "on" : "")" @onclick="() => Redraw(() => _view = view)">@label</button>
+    }
+    <span class="sep-text">·</span>
+    <span class="fx-compare">
+        <input type="checkbox" checked="@_compareOn" aria-label="Compare with another date" @onchange="() => Redraw(() => _compareOn = !_compareOn)" />
+        Compare with
+        <button type="button" aria-label="Previous weekday" @onclick="() => Redraw(() => _compare = FxVol.StepWeekday(_compare, -1))">◀</button>
+        <input type="date" value="@Iso(_compare)" @onchange="e => Redraw(() => _compare = ParseOr(e.Value, _compare))" />
+        <button type="button" aria-label="Next weekday" @onclick="() => Redraw(() => _compare = FxVol.StepWeekday(_compare, 1))">▶</button>
+    </span>
+</div>
+<ChartBox TRow="RateRow" @ref="_chart" Columns="NoColumns" Rows="NoRows" Window="NoRows"
+          OnRight="_onRight" UnitOf="_unitOf" InitialLayout="ChartLayout.OnePanel"
+          InitialXAxis="TenorAxis" InitialDefinition="ChartSpec()" FileName="@($"{_curve.Replace(' ', '-')}-curve")" />
+<p class="fx-note">@ViewNote()</p>
+
+@code {
+    /// <summary>One pillar as the table shows it: the instrument, its quote, the shift, and what the curve made of it.</summary>
+    public sealed record RateRow(RateCurve.Pillar Pillar, double MarketRate, double ShiftBp, double ShiftedRate, double Zero);
+
+    private enum View { Zero, Discount, Par, Forward, Overlay }
+    private static readonly (View, string)[] Views =
+        [(View.Zero, "Zero rates"), (View.Discount, "Discount factors"), (View.Par, "Market quotes"), (View.Forward, "Forwards"), (View.Overlay, "Quotes, zeros and forwards")];
+    private static readonly string[] Sides = ["Bid", "Mid", "Ask"];
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+    private static readonly IReadOnlyList<GridColumn<RateRow>> NoColumns = [];
+    private static readonly IReadOnlyList<RateRow> NoRows = [];
+
+    // Time-proportional, labelled by the market's tenors: the pillars bunch at the short end, as on the screens.
+    private static readonly XAxisStyle TenorAxis = new(XTicks.Tenors, XLabel.Tenor, 0);
+
+    private string _curve = "USD OIS", _side = "Mid", _interpolation = RateCurve.Interpolations[0], _compounding = "Continuous";
+    private DateOnly _date = new(2026, 10, 13), _compare = new(2026, 9, 14);
+    private bool _compareOn;
+    private View _view = View.Zero;
+    private readonly Dictionary<string, double> _shifts = [];
+
+    private IReadOnlyList<RateRow> _rows = [];
+    private InMemoryGridSource<RateRow> _source = null!;
+    private IReadOnlyList<GridColumn<RateRow>> _columns = [];
+    private IReadOnlyList<HeaderGroup> _groups = [];
+    private ChartBox<RateRow>? _chart;
+
+    // The discount factor reads on the right wherever it shares a chart with rates.
+    private readonly Func<string, bool> _onRight = id => id.StartsWith("DF", StringComparison.Ordinal);
+    private readonly Func<string, string?> _unitOf = id => id.StartsWith("DF", StringComparison.Ordinal) ? "Discount factor" : "Rate (%)";
+
+    protected override void OnInitialized()
+    {
+        _columns = Columns();
+        _groups =
+        [
+            new HeaderGroup("Instrument", ["Instrument", "Maturity"]),
+            new HeaderGroup("Market", ["Rate", "Shift", "Shifted"]),
+            new HeaderGroup("Built curve", ["Zero", "Discount", "Forward", "Implied"]),
+        ];
+        Rebuild();
+    }
+
+    private IReadOnlyList<GridColumn<RateRow>> Columns() =>
+    [
+        new("Term", ColumnType.Text, r => r.Pillar.Quote.Tenor),
+        new("Instrument", ColumnType.Text, r => r.Pillar.Quote.Instrument, header: "Type"),
+        new("Maturity", ColumnType.Date, r => r.Pillar.Quote.Maturity, dateType: DateType.DateOnly),
+        new("Rate", ColumnType.Number, r => r.MarketRate * 100, header: "Market rate (%)", format: v => Num((double)v, 4)),
+        new("Shift", ColumnType.Number, r => r.ShiftBp, header: "Shift (bp)", editable: true, format: v => Num((double)v, 1),
+            validate: (_, text) => double.TryParse(text, NumberStyles.Float, Invariant, out var bp) && Math.Abs(bp) <= 500
+                ? EditVerdict.Accept : EditVerdict.Reject("A shift in basis points, between −500 and 500")),
+        new("Shifted", ColumnType.Number, r => r.ShiftedRate * 100, header: "Shifted rate (%)", format: v => Num((double)v, 4)),
+        new("Zero", ColumnType.Number, r => r.Zero * 100, header: "Zero rate (%)", format: v => Num((double)v, 4)),
+        new("Discount", ColumnType.Number, r => r.Pillar.Discount, header: "Discount factor", format: v => Num((double)v, 6)),
+        new("Forward", ColumnType.Number, r => r.Pillar.Forward1Y * 100, header: "1Y forward (%)", format: v => Num((double)v, 4)),
+        new("Implied", ColumnType.Number, r => r.Pillar.ImpliedQuote * 100, header: "Implied (%)", format: v => Num((double)v, 4)),
+    ];
+
+    // The curve as the analytics build it from the chosen side and the shifts.
+    private (IReadOnlyList<RateCurve.Pillar> Pillars, IReadOnlyList<RateCurve.Quote> Market) Curve(DateOnly date)
+    {
+        var market = RateCurve.Quotes(_curve, date);
+        double Side(RateCurve.Quote q) => _side switch { "Bid" => q.Bid, "Ask" => q.Ask, _ => q.Mid };
+        var shifted = market.Select(q =>
+        {
+            var rate = Side(q) + _shifts.GetValueOrDefault(q.Tenor) / 10_000;
+            return q with { Bid = rate, Ask = rate };
+        }).ToList();
+        return (RateCurve.Build(shifted, _interpolation), market);
+    }
+
+    private double Zero(RateCurve.Pillar p) => _compounding == "Annual" ? p.ZeroAnnual : p.ZeroContinuous;
+
+    private void Rebuild()
+    {
+        var (pillars, market) = Curve(_date);
+        _rows = [.. pillars.Select((p, i) =>
+        {
+            var q = market[i];
+            var rate = _side switch { "Bid" => q.Bid, "Ask" => q.Ask, _ => q.Mid };
+            var shift = _shifts.GetValueOrDefault(q.Tenor);
+            return new RateRow(p, rate, shift, p.Quote.Mid, Zero(p));
+        })];
+        if (_source is null) _source = GridSource.From(_rows, r => r.Pillar.Quote.Tenor);
+        else _source.ReplaceAll(_rows);
+    }
+
+    private void Change(Action change)
+    {
+        change();
+        Rebuild();
+        Redraw(() => { });
+    }
+
+    private void Redraw(Action change)
+    {
+        change();
+        _chart?.Show(new ChartOutcome(ChartSpec(), null), keepView: true);
+    }
+
+    private void Shift(double bp)
+    {
+        foreach (var q in RateCurve.Quotes(_curve, _date)) _shifts[q.Tenor] = _shifts.GetValueOrDefault(q.Tenor) + bp;
+    }
+
+    // A term's shift typed into the grid: that quote moves, and the curve is built again.
+    private void OnEdit(GridEditIntent<RateRow> edit)
+    {
+        if (edit.Column != "Shift" || !double.TryParse(edit.Value, NumberStyles.Float, Invariant, out var bp)) return;
+        Change(() => { if (bp == 0) _shifts.Remove(edit.Row.Pillar.Quote.Tenor); else _shifts[edit.Row.Pillar.Quote.Tenor] = bp; });
+    }
+
+    private PrebuiltChart ChartSpec() => new($"{_curve} · {Views.First(v => v.Item1 == _view).Item2}", 3, look =>
+    {
+        var series = new List<ChartSeries>();
+        void Add(DateOnly date, int shade)
+        {
+            var label = Iso(date);
+            var (pillars, _) = Curve(date);
+            var interpolated = Between(pillars);
+            ChartSeries Make(string id, string name, int slot, IReadOnlyList<(double X, double Y)> points, SeriesDraw draw, int digits, bool fromZero = false) =>
+                new($"{id}|{label}", $"{name} · {label}", label, name, slot, 0, look.OnRight(id),
+                    [.. points.Select((p, i) => new ChartPoint(p.X, (decimal)Math.Round(p.Y, digits + 2),
+                        i > 0 ? points[i - 1].X : 0, i + 1 < points.Count ? points[i + 1].X : null))],
+                    v => v.ToString("N" + digits, Invariant), new SeriesStyle(draw, MarkerShape.Circle), look.UnitOf?.Invoke(id), shade, fromZero);
+
+            var pillarZero = pillars.Select(p => (p.Years, Zero(p) * 100)).ToList();
+            var curveZero = interpolated.Select(c => (c.T, ZeroAt(c.T, c.Df) * 100)).ToList();
+            var quotes = pillars.Select(p => (p.Years, p.Quote.Mid * 100)).ToList();
+            // A log-linear discount factor makes the instantaneous forward flat between pillars:
+            // a step over (tᵢ₋₁, tᵢ]. A linear zero rate makes it move: drawn through the points between.
+            var logLinear = _interpolation.StartsWith("Log", StringComparison.Ordinal);
+            var forwards = logLinear
+                ? pillars.Select((p, i) => (p.Years, (i == 0 ? -Math.Log(p.Discount) / p.Years : Math.Log(pillars[i - 1].Discount / p.Discount) / (p.Years - pillars[i - 1].Years)) * 100)).ToList()
+                : interpolated.Zip(interpolated.Skip(1), (a, b) => (b.T, Math.Log(a.Df / b.Df) / (b.T - a.T) * 100)).ToList();
+            var forwardDraw = logLinear ? SeriesDraw.StepPreceding : SeriesDraw.Line;
+
+            switch (_view)
+            {
+                case View.Zero:
+                    series.Add(Make("Zero", "Zero rate", 1, curveZero, SeriesDraw.Line, 4));
+                    series.Add(Make("ZeroP", "Zero rate at the pillars", 1, pillarZero, SeriesDraw.Points, 4));
+                    break;
+                case View.Discount:
+                    series.Add(Make("DF", "Discount factor", 6, interpolated.Select(c => (c.T, c.Df)).ToList(), SeriesDraw.Line, 6, fromZero: true));
+                    series.Add(Make("DFP", "Discount factor at the pillars", 6, pillars.Select(p => (p.Years, p.Discount)).ToList(), SeriesDraw.Points, 6, fromZero: true));
+                    break;
+                case View.Par:
+                    series.Add(Make("Par", "Market rate", 2, quotes, SeriesDraw.LinePoints, 4));
+                    break;
+                case View.Forward:
+                    series.Add(Make("Fwd", "Instantaneous forward", 4, forwards, forwardDraw, 4));
+                    break;
+                default:
+                    series.Add(Make("Par", "Market rate", 2, quotes, SeriesDraw.LinePoints, 4));
+                    series.Add(Make("Zero", "Zero rate", 1, curveZero, SeriesDraw.Line, 4));
+                    series.Add(Make("Fwd", "Instantaneous forward", 4, forwards, forwardDraw, 4));
+                    break;
+            }
+        }
+        Add(_date, 0);
+        if (_compareOn) Add(_compare, 1);
+        return ChartModelBuilder.Assemble("Tenor", series, look, XScale.TenorYears);
+    });
+
+    // The curve between the pillars, as the interpolation reads it: eight points in each interval.
+    private IReadOnlyList<(double T, double Df)> Between(IReadOnlyList<RateCurve.Pillar> pillars)
+    {
+        var points = new List<(double, double)>();
+        var previous = 0.0;
+        foreach (var p in pillars)
+        {
+            for (var k = 1; k <= 8; k++)
+            {
+                // The last point is the pillar itself, not a sum that rounds next to it.
+                var t = k == 8 ? p.Years : previous + (p.Years - previous) * k / 8;
+                points.Add((t, RateCurve.DiscountAt(pillars, t, _interpolation)));
+            }
+            previous = p.Years;
+        }
+        return points;
+    }
+
+    private double ZeroAt(double t, double df) => _compounding == "Annual" ? Math.Pow(df, -1 / t) - 1 : -Math.Log(df) / t;
+
+    private string ViewNote() => _view switch
+    {
+        View.Zero => $"Zero rates, {(_compounding == "Annual" ? "annually" : "continuously")} compounded: a point at each pillar, the line between them as the {_interpolation.ToLowerInvariant()} reads the curve.",
+        View.Discount => "Discount factors: the value today of one unit paid at each tenor, from 1 at today; the line between pillars is the interpolation's.",
+        View.Par => "The market quotes the curve is built from — the deposits' and the par swaps' rates, after the shifts.",
+        View.Forward => _interpolation.StartsWith("Log", StringComparison.Ordinal)
+            ? "Instantaneous forwards: with log-linear discount factors they are flat over each (tᵢ₋₁, tᵢ] — filled where the rate holds, open where it does not."
+            : "Instantaneous forwards: with linear zero rates they move between pillars, and jump at each.",
+        _ => "The par quotes, the zero rates and the forwards on one axis, as a forward-curve analysis overlays them.",
+    };
+
+    private static string Iso(DateOnly d) => d.ToString("yyyy-MM-dd", Invariant);
+    private static DateOnly ParseOr(object? value, DateOnly fallback) =>
+        DateOnly.TryParseExact(value as string, "yyyy-MM-dd", Invariant, DateTimeStyles.None, out var d) ? d : fallback;
+    private static string Num(double v, int digits) => v.ToString("N" + digits, Invariant);
+}

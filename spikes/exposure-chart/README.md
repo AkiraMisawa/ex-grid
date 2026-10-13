@@ -133,6 +133,42 @@ How it is drawn:
 Run on both hosts, every tab driven by Playwright, the same readings and no console warnings on
 Server and on WebAssembly.
 
+## The rate curve page
+
+![Zero rates, the table above](screenshots/rates/zero.png)
+
+| | |
+|---|---|
+| ![Discount factors](screenshots/rates/discount.png) | ![Forwards, log-linear discount factors](screenshots/rates/forwards.png) |
+| ![Quotes, zeros and forwards with 5Y shifted +25bp](screenshots/rates/overlay-5y-shift.png) | ![Forwards, linear zero rates](screenshots/rates/forwards-linear-zero.png) |
+
+`/rates` shows a rate curve as its market quotes, its zero rates and its discount factors. Its shape
+follows what research into a market screen found (another Claude session, on the user's machine,
+read a swap-pricing manual's curve-tab section and a forward-curve analysis note; no terminal
+screen was seen): **a curve configuration, one table in which every figure of a pillar is a
+column, and a chart** — rather than a view per figure.
+
+- **Configuration**: the curve, its date with weekday steppers, the side (bid, mid, ask — a source
+  setting there, not a column), the interpolation, the zero rates' compounding, and shifts.
+- **The table**: Term, then the instrument's type and maturity (not documented for that screen;
+  added because a reader needs them), Market rate, **Shift (bp)** — editable per term, as there —
+  Shifted rate, Zero rate, Discount factor, a 1Y forward, and **Implied**: the instrument repriced
+  off the built curve. Under the table, the largest gap between a rate and its repricing: 0 bp
+  when the curve fits, which it must.
+- **The chart**: Zero rates (the default, as the screen's only chart), Discount factors, Market
+  quotes, Forwards, or quotes, zeros and forwards on one axis, as the forward-curve analysis
+  overlays them. Time-proportional, labelled by tenor, the pillars bunched at the short end as on
+  both screens. A point at each pillar, the line between them **as the chosen interpolation reads
+  the curve** — so changing it changes the picture: with log-linear discount factors the
+  instantaneous forward is a step over (tᵢ₋₁, tᵢ]; with linear zero rates it saw-tooths. A
+  comparison date overlays the same view, shaded.
+- **The bootstrap** (`Analytics/RateCurve.cs`): deposits give their discount factor directly,
+  annual par swaps solve theirs with the coupon dates between pillars read off the curve so far.
+  Invented quotes; the analytics', not the chart's.
+
+Run on both hosts: the fit 0.000000 bp on each, a 5Y shift of +25 bp typed into the grid rebuilt
+the curve and moved only the forwards either side of 5Y, no console warnings.
+
 ## The legend
 
 | | |
