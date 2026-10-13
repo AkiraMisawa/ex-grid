@@ -4,6 +4,7 @@
 @using ExGrid.Clipboard
 @using ExGrid.Finding
 @using ExGrid.Keys
+@using ExGrid.Summarizing
 @* global::, for the reason MudApp.razor gives (AGENTS.md, the name collisions). *@
 @using global::MudBlazor
 
@@ -104,6 +105,31 @@
         ViewportWidth="480"
         Chrome="_chrome" />
 
+@if (HeldSummaryOn)
+{
+    <h2>A Selection Summary the page answers when asked to</h2>
+    <p>
+        A grid the page pushes rows to answers its Selection Summary through <code>OnSummarize</code>
+        (ADR-0130). This one holds each answer until the button is pressed, so the pending mark
+        stands meanwhile, and declines a selection of more than @HeldSummaryMostCells cells with a
+        reason, which the line shows in place of the figures.
+    </p>
+    <p class="demo-status">
+        <button id="summary-answer" @onclick="AnswerHeldSummary">Answer the summary</button>
+        <span id="summary-asked">Asked: @_heldAsked; cancelled: @_heldCancelled; answered: @_heldAnswered</span>
+    </p>
+    <div id="held-summary">
+        <ExGrid TRow="DemoTrade"
+                Window="_heldRows"
+                Columns="_heldColumns"
+                RowHeight="20"
+                ViewportHeight="140"
+                ViewportWidth="480"
+                OnSummarize="_heldSummarize"
+                Chrome="_chrome" />
+    </div>
+}
+
 @code {
     /// <summary>Which Chrome the grids run with (<see cref="DemoChrome"/>).</summary>
     [SupplyParameterFromQuery(Name = "chrome")]
@@ -145,6 +171,70 @@
 
     private static readonly string[] UpstreamKeys = ["F9"];
     private static readonly string[] UpstreamAndResortKeys = ["F9", "F8"];
+
+    /// <summary>
+    /// <c>?summary=held</c> adds a third grid whose Selection Summary the page answers itself
+    /// (ADR-0130, SM-11): each question waits for the page's button, and one over more than
+    /// <see cref="HeldSummaryMostCells"/> cells is declined at once, with a reason. The browser layer
+    /// reads the pending mark and the reason under each Chrome.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "summary")]
+    public string? SummaryName { get; set; }
+
+    private bool HeldSummaryOn => SummaryName == "held";
+
+    private const int HeldSummaryMostCells = 4;
+
+    private DemoTrade[] _heldRows = [];
+    private IReadOnlyList<GridColumn<DemoTrade>> _heldColumns = default!;
+    // Held in a field: a delegate made per render would reach the grid as a change (ADR-0003).
+    private Func<GridSummaryRequest, CancellationToken, Task<GridSummaryResult>>? _heldSummarize;
+    private TaskCompletionSource<GridSummaryResult>? _heldAnswer;
+    private GridSummaryRequest? _heldRequest;
+    private int _heldAsked;
+    private int _heldCancelled;
+    private int _heldAnswered;
+
+    private Task<GridSummaryResult> SummarizeHeldAsync(GridSummaryRequest request, CancellationToken cancellation)
+    {
+        _heldAsked++;
+        _ = ShowHeldCountsAsync();
+        if (GridSummary.Cells(request, _heldRows.Length).Count() > HeldSummaryMostCells)
+            return Task.FromResult(GridSummaryResult.Declined($"Not summed: this page sums {HeldSummaryMostCells} cells at most."));
+        var answer = new TaskCompletionSource<GridSummaryResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        cancellation.Register(() =>
+        {
+            if (answer.TrySetCanceled(cancellation))
+            {
+                _heldCancelled++;
+                _ = ShowHeldCountsAsync();
+            }
+        });
+        _heldAnswer = answer;
+        _heldRequest = request;
+        return answer.Task;
+    }
+
+    /// <summary>Answers the question waiting, the latest asked: a cancelled one can no longer be.</summary>
+    private void AnswerHeldSummary()
+    {
+        if (_heldAnswer is not { } answer || _heldRequest is not { } request)
+            return;
+        _heldAnswer = null;
+        _heldRequest = null;
+        if (answer.TrySetResult(GridSummary.Of(_heldRows, request, HeldValueOf)))
+            _heldAnswered++;
+    }
+
+    private Func<DemoTrade, object?>? HeldValueOf(string column)
+        => _heldColumns.FirstOrDefault(c => c.Name == column)?.Value;
+
+    // The counts are shown after the grid's own render, which is where it asks and cancels.
+    private async Task ShowHeldCountsAsync()
+    {
+        await Task.Yield();
+        await InvokeAsync(StateHasChanged);
+    }
 
     [Inject] private Microsoft.Extensions.Options.IOptions<PopoverOptions> MudPopovers { get; set; } = default!;
 
@@ -191,6 +281,13 @@
 
         _source = RowKeyOn ? GridSource.From(rows, static t => t.Id) : GridSource.From(rows);
         _second = GridSource.From(rows.Take(20).ToArray());
+        _heldRows = rows.Take(20).ToArray();
+        _heldColumns =
+        [
+            new GridColumn<DemoTrade>("Book", ColumnType.Text, t => t.Book),
+            new GridColumn<DemoTrade>("Notional", ColumnType.Number, t => t.Notional),
+        ];
+        _heldSummarize = SummarizeHeldAsync;
         _rules
             .Column("Notional", (_, text) => !decimal.TryParse(text, out var value)
                 ? EditVerdict.Reject($"'{text}' is not a number")
