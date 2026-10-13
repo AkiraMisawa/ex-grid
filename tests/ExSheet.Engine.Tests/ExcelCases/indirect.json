@@ -561,7 +561,7 @@
     },
     {
       "id": "INDIRECT-067",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: RC2 from C3 is B3, an R with no number beside an absolute column, the Formula's own row as in RC[-1] (INDIRECT-044)",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "C3": "=INDIRECT(\"RC2\",FALSE)"},
       "check": "C3",
@@ -569,7 +569,7 @@
     },
     {
       "id": "INDIRECT-068",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R2C from B6 is B2, a C with no number beside an absolute row, the Formula's own column as in R[2]C (INDIRECT-066)",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "B6": "=INDIRECT(\"R2C\",FALSE)"},
       "check": "B6",
@@ -577,7 +577,7 @@
     },
     {
       "id": "INDIRECT-069",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R[1]C[-1]:RC[-1] from C2 is B2:B3, an R with no number in a rectangle's second cell, which SUM reads",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "C2": "=SUM(INDIRECT(\"R[1]C[-1]:RC[-1]\",FALSE))"},
       "check": "C2",
@@ -585,7 +585,7 @@
     },
     {
       "id": "INDIRECT-070",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R[1]C[0] from B1 is B2, a zero offset on the column, the Formula's own column as R[0] is its own row (INDIRECT-064)",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "B1": "=INDIRECT(\"R[1]C[0]\",FALSE)"},
       "check": "B1",
@@ -593,7 +593,7 @@
     },
     {
       "id": "INDIRECT-071",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R[01]C[-1] from C2 is B3, an offset written with a leading 0, read as the number as R03C2's row is (INDIRECT-059)",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "C2": "=INDIRECT(\"R[01]C[-1]\",FALSE)"},
       "check": "C2",
@@ -601,7 +601,7 @@
     },
     {
       "id": "INDIRECT-072",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R3C02 is B3, a column number written with a leading 0, read as R03C2's row is (INDIRECT-059)",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"R3C02\",FALSE)"},
       "check": "ZZ1000",
@@ -643,7 +643,7 @@
     },
     {
       "id": "INDIRECT-077",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R1C1 text joining a whole column to a whole row, C2:R3, names no place, as INDIRECT-062's row and column the other way round do",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=ROWS(INDIRECT(\"C2:R3\",FALSE))"},
       "check": "ZZ1000",
@@ -651,7 +651,7 @@
     },
     {
       "id": "INDIRECT-078",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: RC[-1]# from B1 reads the Spill Range of =SEQUENCE(3) in A1, as R1C1# does (INDIRECT-060), from relative text, which SUM reads",
       "cells": {"A1": "=SEQUENCE(3)", "B1": "=SUM(INDIRECT(\"RC[-1]#\",FALSE))"},
       "check": "B1",
@@ -659,7 +659,7 @@
     },
     {
       "id": "INDIRECT-079",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R1C1# naming a cell that does not spill is #REF!, as A1# is (INDIRECT-042)",
       "cells": {"A1": "7", "ZZ1000": "=SUM(INDIRECT(\"R1C1#\",FALSE))"},
       "check": "ZZ1000",
@@ -667,7 +667,7 @@
     },
     {
       "id": "INDIRECT-080",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a structured reference's text in double brackets read in R1C1 style reads the column, as in A1 style (INDIRECT-039, INDIRECT-061)",
       "cells": {"ZZ1000": "=INDIRECT(\"Positions[[PV]]\",FALSE)"},
       "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5]]}},
@@ -676,7 +676,7 @@
     },
     {
       "id": "INDIRECT-081",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a structured reference's text naming a table that does not exist, read in R1C1 style, names no place, as in A1 style (INDIRECT-040, INDIRECT-061)",
       "cells": {"ZZ1000": "=INDIRECT(\"Missing[PV]\",FALSE)"},
       "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5]]}},
@@ -739,7 +739,7 @@
     },
     {
       "id": "INDIRECT-093",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R1C1 text naming another Sheet, Sheet2!R3C2, names no place, as Sheet2!B2 does in A1 style (INDIRECT-008)",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=INDIRECT(\"Sheet2!R3C2\",FALSE)"},
       "check": "ZZ1000",

@@ -1,0 +1,1283 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\node-v24.14.1-win-x64\\node.exe",
+      "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-18a\\browser\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "features.spec.mjs",
+      "--grep",
+      "ED-2",
+      "--project=chrome",
+      "--project=msedge",
+      "--repeat-each=3",
+      "--reporter=list,json"
+    ],
+    "configFile": "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-18a\\browser\\playwright.config.mjs",
+    "rootDir": "C:/Users/amisa/AppData/Local/exgrid-layer3/run-18a/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/amisa/AppData/Local/exgrid-layer3/run-18a/browser/test-results",
+        "repeatEach": 3,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chrome",
+        "name": "chrome",
+        "testDir": "C:/Users/amisa/AppData/Local/exgrid-layer3/run-18a/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 300000
+      },
+      {
+        "outputDir": "C:/Users/amisa/AppData/Local/exgrid-layer3/run-18a/browser/test-results",
+        "repeatEach": 3,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "msedge",
+        "name": "msedge",
+        "testDir": "C:/Users/amisa/AppData/Local/exgrid-layer3/run-18a/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 300000
+      },
+      {
+        "outputDir": "C:/Users/amisa/AppData/Local/exgrid-layer3/run-18a/browser/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chrome-150",
+        "name": "chrome-150",
+        "testDir": "C:/Users/amisa/AppData/Local/exgrid-layer3/run-18a/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 300000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "features.spec.mjs",
+      "file": "features.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "typing opens Overwrite containing the character, Enter commits and moves (ED-2/ED-4)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1482,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:40.457Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1086,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:44.978Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1085,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:49.082Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1551,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:53.222Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1534,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:58.208Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1148,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:59:03.065Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a7cc3e0d8b87f53ee022-2669e99071d9c3bea71c",
+          "file": "features.spec.mjs",
+          "line": 33,
+          "column": 1
+        },
+        {
+          "title": "in Overwrite an arrow commits and moves; in Caret it moves the caret (ED-2)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 184,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:42.835Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 194,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:46.953Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 182,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:51.047Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 186,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:55.830Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 184,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:59:00.729Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 185,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:59:05.187Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a7cc3e0d8b87f53ee022-22aa5d0fa24c3f0096cf",
+          "file": "features.spec.mjs",
+          "line": 54,
+          "column": 1
+        },
+        {
+          "title": "in Overwrite Shift+Home and Shift+↓ commit and extend the Selection; in Caret Shift+Home selects the text (ED-2, ADR-0010)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 304,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:43.028Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 305,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:47.155Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 301,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:51.237Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 328,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:56.026Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 325,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:59:00.921Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 304,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:59:05.380Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a7cc3e0d8b87f53ee022-40ea7e786ee8f44948e0",
+          "file": "features.spec.mjs",
+          "line": 503,
+          "column": 1
+        },
+        {
+          "title": "in Overwrite Ctrl+← commits and moves to the row's first column, Ctrl+Shift+← commits and extends to it; in Caret Ctrl+← moves the caret (ED-2, ADR-0010)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 294,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:43.339Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 272,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:47.467Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 278,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:51.544Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 301,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:56.364Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 294,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:59:01.254Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 293,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:59:05.692Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a7cc3e0d8b87f53ee022-309edbb56fb2756937f6",
+          "file": "features.spec.mjs",
+          "line": 541,
+          "column": 1
+        },
+        {
+          "title": "in Caret Ctrl+← and Ctrl+→ move the caret by a word, with Shift extend the selection, and Ctrl+Backspace and Ctrl+Delete delete a word, in the field itself (ED-2, ADR-0010)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 346,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:43.642Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 342,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:47.748Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 336,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:51.829Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 384,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:56.675Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 356,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:59:01.559Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 348,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:59:05.992Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a7cc3e0d8b87f53ee022-6dcaf66a1ca4cded2199",
+          "file": "features.spec.mjs",
+          "line": 608,
+          "column": 1
+        },
+        {
+          "title": "with a 150 ms round trip, End, Ctrl+←, Shift+End typed straight after F2 move and extend as the field would; so do Ctrl+→, Ctrl+Shift+→, Ctrl+Backspace and Ctrl+Delete (ED-2, ADR-0010)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "WebAssembly answers F2 before most keys: nothing is held for certain",
+                  "location": {
+                    "file": "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-18a\\browser\\features.spec.mjs",
+                    "line": 655,
+                    "column": 10
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 91,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:43.998Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "WebAssembly answers F2 before most keys: nothing is held for certain",
+                      "location": {
+                        "file": "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-18a\\browser\\features.spec.mjs",
+                        "line": 655,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "WebAssembly answers F2 before most keys: nothing is held for certain",
+                  "location": {
+                    "file": "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-18a\\browser\\features.spec.mjs",
+                    "line": 655,
+                    "column": 10
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 92,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:48.098Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "WebAssembly answers F2 before most keys: nothing is held for certain",
+                      "location": {
+                        "file": "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-18a\\browser\\features.spec.mjs",
+                        "line": 655,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "WebAssembly answers F2 before most keys: nothing is held for certain",
+                  "location": {
+                    "file": "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-18a\\browser\\features.spec.mjs",
+                    "line": 655,
+                    "column": 10
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 88,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:52.174Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "WebAssembly answers F2 before most keys: nothing is held for certain",
+                      "location": {
+                        "file": "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-18a\\browser\\features.spec.mjs",
+                        "line": 655,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "WebAssembly answers F2 before most keys: nothing is held for certain",
+                  "location": {
+                    "file": "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-18a\\browser\\features.spec.mjs",
+                    "line": 655,
+                    "column": 10
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 108,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:57.069Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "WebAssembly answers F2 before most keys: nothing is held for certain",
+                      "location": {
+                        "file": "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-18a\\browser\\features.spec.mjs",
+                        "line": 655,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "WebAssembly answers F2 before most keys: nothing is held for certain",
+                  "location": {
+                    "file": "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-18a\\browser\\features.spec.mjs",
+                    "line": 655,
+                    "column": 10
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 100,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:59:01.924Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "WebAssembly answers F2 before most keys: nothing is held for certain",
+                      "location": {
+                        "file": "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-18a\\browser\\features.spec.mjs",
+                        "line": 655,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "WebAssembly answers F2 before most keys: nothing is held for certain",
+                  "location": {
+                    "file": "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-18a\\browser\\features.spec.mjs",
+                    "line": 655,
+                    "column": 10
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 92,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:59:06.349Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "WebAssembly answers F2 before most keys: nothing is held for certain",
+                      "location": {
+                        "file": "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-18a\\browser\\features.spec.mjs",
+                        "line": 655,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "a7cc3e0d8b87f53ee022-2976d8600077a488998c",
+          "file": "features.spec.mjs",
+          "line": 654,
+          "column": 1
+        },
+        {
+          "title": "a Reject holds the commit Shift+↓ asks for in Overwrite, and the Selection stays (ED-2, ED-15, ADR-0034)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 174,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:44.098Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 171,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:48.199Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chrome",
+              "projectName": "chrome",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 167,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:52.272Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 174,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:58:57.186Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 174,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:59:02.033Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            },
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "msedge",
+              "projectName": "msedge",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 166,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-13T21:59:06.449Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a7cc3e0d8b87f53ee022-f42afdec93d113a2a0f7",
+          "file": "features.spec.mjs",
+          "line": 692,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-13T21:58:40.043Z",
+    "duration": 27104.471,
+    "expected": 36,
+    "skipped": 6,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
