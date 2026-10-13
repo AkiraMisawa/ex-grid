@@ -1,0 +1,122 @@
+@using System.Globalization
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@* A surface in 3D: the values decided here, projected and turned in surface3d.js. *@
+
+<div class="surface">
+    <div class="surface-tools">
+        <span class="surface-tools-label">View</span>
+        @foreach (var (label, yaw, pitch) in Views)
+        {
+            <button type="button" class="chip @(_yaw == yaw && _pitch == pitch ? "on" : "")" @onclick="() => SetView(yaw, pitch)">@label</button>
+        }
+        <span class="surface-angle">yaw @_yaw°, pitch @_pitch° — drag to turn</span>
+        <span class="sep"></span>
+        <button type="button" @onclick="PrepareDownload">Image as SVG</button>
+        @if (_download is not null)
+        {
+            <a class="download" href="@_download" download="@($"{FileName}.svg")">Save</a>
+        }
+    </div>
+    <div class="surface-body">
+        <div class="surface-scale" aria-label="Colour scale">
+            <span>@Max.ToString("N" + ValueDigits, Invariant)</span>
+            <div class="surface-ramp"></div>
+            <span>@Min.ToString("N" + ValueDigits, Invariant)</span>
+            <span class="surface-unit">@Unit</span>
+        </div>
+        <div class="surface-host" @ref="_host"></div>
+    </div>
+</div>
+
+@code {
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+    private static readonly (string, int, int)[] Views = [("Default", -35, 28), ("Front", 0, 12), ("Side", -90, 12), ("Flat", 0, 90)];
+
+    [Parameter, EditorRequired] public IReadOnlyList<string> XLabels { get; set; } = [];
+    [Parameter, EditorRequired] public IReadOnlyList<string> YLabels { get; set; } = [];
+
+    /// <summary>By row (y) then column (x); null where there is no quote.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<IReadOnlyList<double?>> Values { get; set; } = [];
+    [Parameter] public string XTitle { get; set; } = "";
+    [Parameter] public string YTitle { get; set; } = "";
+    [Parameter] public string Unit { get; set; } = "";
+    [Parameter] public int ValueDigits { get; set; } = 3;
+    [Parameter] public string FileName { get; set; } = "surface";
+
+    private ElementReference _host;
+    private IJSObjectReference? _module, _handle;
+    private DotNetObjectReference<Surface3D>? _self;
+    private int _yaw = -35, _pitch = 28;
+    private object? _drawn;
+    private string? _download;
+
+    private double Min => Values.SelectMany(r => r).OfType<double>().DefaultIfEmpty(0).Min();
+    private double Max => Values.SelectMany(r => r).OfType<double>().DefaultIfEmpty(1).Max();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/ExposureChart.Pages/surface3d.js");
+            _self = DotNetObjectReference.Create(this);
+            _handle = await _module.InvokeAsync<IJSObjectReference>("attach", _host, _self);
+        }
+        // Drawn again only when the values are another list: the page hands a new one on a change.
+        if (_handle is not null && !ReferenceEquals(_drawn, Values))
+        {
+            _drawn = Values;
+            _download = null;
+            await Render();
+        }
+    }
+
+    private async Task Render()
+    {
+        var all = Values.SelectMany(r => r).OfType<double>().ToList();
+        var axis = Axis.Nice(all.Select(v => (decimal)v), includeZero: false);
+        var mesh = new
+        {
+            xLabels = XLabels, yLabels = YLabels, values = Values, xTitle = XTitle, yTitle = YTitle,
+            zMin = (double)axis.Min, zMax = (double)axis.Max, zTicks = axis.Ticks().Select(t => (double)t).ToArray(),
+            zDigits = axis.Step < 1 ? 1 : 0, valueDigits = ValueDigits,
+        };
+        await _handle!.InvokeVoidAsync("render", mesh, _yaw, _pitch);
+    }
+
+    private async Task SetView(int yaw, int pitch)
+    {
+        (_yaw, _pitch) = (yaw, pitch);
+        _download = null;
+        if (_handle is not null) await Render();
+    }
+
+    /// <summary>The angles a drag ended at: the view is the page's, so a redraw keeps it.</summary>
+    [JSInvokable]
+    public void OnViewChanged(int yaw, int pitch)
+    {
+        (_yaw, _pitch, _download) = (yaw, pitch, null);
+        StateHasChanged();
+    }
+
+    // The picture as it stands now, taken when asked for rather than at every redraw.
+    private async Task PrepareDownload()
+    {
+        if (_handle is null) return;
+        var text = await _handle.InvokeAsync<string>("svgText");
+        _download = ChartCsv.DataUrl(text, "image/svg+xml");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_handle is not null) { await _handle.InvokeVoidAsync("dispose"); await _handle.DisposeAsync(); }
+            if (_module is not null) await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException) { }
+        _self?.Dispose();
+    }
+}

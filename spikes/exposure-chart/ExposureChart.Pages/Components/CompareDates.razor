@@ -1,0 +1,36 @@
+@using System.Globalization
+
+@* Earlier dates to draw beside today's, each on or off, stepped a weekday at a time. *@
+<div class="fx-row">
+    <span>Compare with</span>
+    @foreach (var entry in Dates)
+    {
+        <span class="fx-compare">
+            <input type="checkbox" checked="@entry.On" aria-label="Show this date" @onchange="() => Set(entry, () => entry.On = !entry.On)" />
+            <button type="button" aria-label="Previous weekday" @onclick="() => Set(entry, () => entry.Date = FxVol.StepWeekday(entry.Date, -1))">◀</button>
+            <input type="date" value="@entry.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+                   @onchange="e => Set(entry, () => entry.Date = Parse(e.Value) ?? entry.Date)" />
+            <button type="button" aria-label="Next weekday" @onclick="() => Set(entry, () => entry.Date = FxVol.StepWeekday(entry.Date, 1))">▶</button>
+        </span>
+    }
+</div>
+
+@code {
+    public sealed class Entry(bool on, DateOnly date)
+    {
+        public bool On { get; set; } = on;
+        public DateOnly Date { get; set; } = date;
+    }
+
+    [Parameter, EditorRequired] public IReadOnlyList<Entry> Dates { get; set; } = [];
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private Task Set(Entry entry, Action change)
+    {
+        change();
+        return Changed.InvokeAsync();
+    }
+
+    private static DateOnly? Parse(object? value) =>
+        DateOnly.TryParseExact(value as string, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : null;
+}

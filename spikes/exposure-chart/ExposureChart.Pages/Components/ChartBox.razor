@@ -32,8 +32,11 @@
                 <option value="@ChartLayout.OnePanel">One panel, two axes</option>
                 <option value="@ChartLayout.OneAxis">One axis (Excel's default)</option>
             </select>
+            @if (_definition is not PrebuiltChart)
+            {
             <button type="button" class="add-toggle @(_pickerOpen ? "open" : "")" aria-expanded="@(_pickerOpen ? "true" : "false")"
                     @onclick="() => _pickerOpen = !_pickerOpen">+ Add series</button>
+            }
             <button type="button" class="filter-toggle @(_filterOpen ? "open" : "")" aria-expanded="@(_filterOpen ? "true" : "false")"
                     @onclick="() => _filterOpen = !_filterOpen">Filter @(FilterSummary(model)) ▾</button>
             <a class="download" href="@ChartCsv.DataUrl(_csv!, "text/csv")" download="@($"{FileName}.csv")">Download CSV</a>
@@ -512,14 +515,15 @@
     private IJSObjectReference? _module, _listener;
     private DotNetObjectReference<ChartBox<TRow>>? _self;
 
-    /// <summary>Shows a chart of the definition, or the refusal that stands for one.</summary>
-    public void Show(ChartOutcome outcome)
+    /// <summary>Shows a chart of the definition, or the refusal that stands for one. A page that
+    /// redraws its own model with new inputs keeps what the viewer filtered.</summary>
+    public void Show(ChartOutcome outcome, bool keepView = false)
     {
         _refusal = outcome.Refusal;
         if (outcome.Definition is { } definition)
         {
             _definition = definition;
-            _view = ChartView.All;
+            if (!keepView) _view = ChartView.All;
             _notice = null;
             Redraw();
         }
@@ -560,6 +564,7 @@
         var model = _definition switch
         {
             RowChartDefinition rows => ChartModelBuilder.BuildRows(rows, RowSpec!, Columns, Groups, Rows, look),
+            PrebuiltChart prebuilt => prebuilt.Build(look),
             ChartDefinition columns => ChartModelBuilder.Build(columns, Columns, Groups, Rows, look),
             _ => throw new InvalidOperationException(),
         };

@@ -43,6 +43,9 @@ public static class ChartSvg
         .ex-chart-hit:hover .ex-chart-hover { visibility: visible; }
         .ex-chart-guide { stroke: var(--ex-chart-guide, #6b7280); stroke-width: 1; stroke-dasharray: 3 3; }
         .ex-chart-root .ex-chart-marker { stroke-width: 1.3; }
+        .ex-chart-shade-1 { opacity: 0.62; }
+        .ex-chart-shade-2 { opacity: 0.38; }
+        .ex-chart-shade-3 { opacity: 0.22; }
         .ex-chart-root .ex-chart-open { fill: var(--ex-chart-surface, #fff); }
         .ex-chart-dot { stroke: var(--ex-chart-surface, #fff); stroke-width: 1.5; }
         """;
@@ -104,12 +107,19 @@ public static class ChartSvg
         var y0 = (double)legendHeight;
         foreach (var panel in model.Panels)
         {
-            var leftAxis = Axis.Nice(panel.Series.Where(s => !s.Secondary).SelectMany(Values));
+            // An axis reaches zero when every series on it must; aligned zeros only when both do.
+            var lefts = panel.Series.Where(s => !s.Secondary).ToList();
+            var rights = panel.Series.Where(s => s.Secondary).ToList();
+            var leftAxis = Axis.Nice(lefts.SelectMany(Values), includeZero: lefts.All(s => s.FromZero));
             ValueAxis? rightAxis = null;
-            if (panel.Series.Any(s => s.Secondary))
+            if (lefts.Count == 0)
+                // Only a right-hand axis, as a market screen draws a smile: the grid follows it.
+                (leftAxis, rightAxis) = (Axis.Nice(rights.SelectMany(Values), includeZero: false), null);
+            else if (rights.Count > 0)
             {
-                var right = Axis.Nice(panel.Series.Where(s => s.Secondary).SelectMany(Values));
-                (leftAxis, right) = Axis.AlignZeros(leftAxis, right);
+                var right = Axis.Nice(rights.SelectMany(Values), includeZero: rights.All(s => s.FromZero));
+                if (lefts.All(s => s.FromZero) && rights.All(s => s.FromZero))
+                    (leftAxis, right) = Axis.AlignZeros(leftAxis, right);
                 rightAxis = right;
             }
             layouts.Add((panel, y0 + Top, leftAxis, rightAxis));
@@ -125,15 +135,17 @@ public static class ChartSvg
                 Text(svg, Left, top - 10, panel.Title, "start", "ex-chart-title");
             // Each axis says its unit, from the series that read against it.
             var mid = top + panelHeight / 2;
-            if (UnitsOf(panel, secondary: false) is { Length: > 0 } leftUnit)
+            if (!panel.Series.All(s => s.Secondary) && UnitsOf(panel, secondary: false) is { Length: > 0 } leftUnit)
                 svg.Append(Invariant, $"""<text class="ex-chart-unit" x="14" y="{mid:0.##}" text-anchor="middle" transform="rotate(-90 14 {mid:0.##})">{Escape(leftUnit)}</text>""");
             if (UnitsOf(panel, secondary: true) is { Length: > 0 } rightUnit)
                 svg.Append(Invariant, $"""<text class="ex-chart-unit" x="{Width - 12}" y="{mid:0.##}" text-anchor="middle" transform="rotate(90 {Width - 12} {mid:0.##})">{Escape(rightUnit)}</text>""");
+            var rightOnly = panel.Series.All(s => s.Secondary);
             foreach (var tick in leftAxis.Ticks())
             {
                 var y = Y(leftAxis, tick);
                 Line(svg, Left, y, Width - Right, y, tick == 0 ? "ex-chart-zero" : "ex-chart-grid");
-                Text(svg, Left - 6, y + 4, Axis.Compact(tick, leftAxis), "end", null);
+                if (rightOnly) Text(svg, Width - Right + 6, y + 4, Axis.Compact(tick, leftAxis), "start", null);
+                else Text(svg, Left - 6, y + 4, Axis.Compact(tick, leftAxis), "end", null);
             }
             if (rightAxis is { } r)
             {
@@ -148,7 +160,7 @@ public static class ChartSvg
 
             foreach (var series in panel.Series)
             {
-                var axis = series.Secondary ? rightAxis!.Value : leftAxis;
+                var axis = series.Secondary && rightAxis is { } ra ? ra : leftAxis;
                 var dash = series.GroupIndex % 4;
                 WriteSeries(svg, series, dash, X, v => Y(axis, v));
             }
@@ -187,7 +199,7 @@ public static class ChartSvg
                     readout.Append('\n').Append(series.Name).Append(": ")
                         .Append(point is null ? "—" : point.Value.Y is { } v ? series.Text(v) : "(no value)");
                     if (point?.Y is not { } value) continue;
-                    var axis = series.Secondary ? rightAxis!.Value : leftAxis;
+                    var axis = series.Secondary && rightAxis is { } ra ? ra : leftAxis;
                     var cy = top + panelHeight - panelHeight * axis.Fraction(value);
                     svg.Append(Invariant, $"""<circle class="ex-chart-dot ex-chart-slot-{series.Slot % 8}" cx="{X(date):0.##}" cy="{cy:0.##}" r="3.5"/>""");
                 }
@@ -277,6 +289,7 @@ public static class ChartSvg
     {
         var slot = series.Slot % 8;
         var style = series.Style;
+        if (series.Shade > 0) svg.Append(Invariant, $"""<g class="ex-chart-shade-{Math.Min(series.Shade, 3)}">""");
         var title = $"<title>{Escape(series.Name)}</title>";
         if (style.Draw is SeriesDraw.Line or SeriesDraw.LinePoints)
             svg.Append(Invariant, $"""<path class="ex-chart-line ex-chart-slot-{slot} ex-chart-group-{dash}" d="{PathOf(series.Points, x, y)}">{title}</path>""");
@@ -284,6 +297,7 @@ public static class ChartSvg
             foreach (var p in series.Points)
                 if (p.Y is { } v) Marker(svg, style.Marker, slot, x(p.X), y(v), open: false, size: 3.2);
         if (style.IsStep) WriteSteps(svg, series, slot, dash, x, y);
+        if (series.Shade > 0) svg.Append("</g>");
     }
 
     /// <summary>

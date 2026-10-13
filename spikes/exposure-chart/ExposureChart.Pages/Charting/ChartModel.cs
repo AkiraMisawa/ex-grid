@@ -27,6 +27,16 @@ public enum ChartLayout
 /// starts at 0, where the first interval of a term structure begins.</param>
 public sealed record XScale(bool IsDate, Func<double, string> Format, Func<double, string> Raw, double? Origin = null)
 {
+    /// <summary>Positions that are only an order — 1W, 1M, 1Y, or 25P, ATM, 25C — spaced evenly, as
+    /// a market screen draws a term structure or a smile. The position is the label's index.</summary>
+    public bool IsCategory { get; init; }
+
+    public static XScale Categories(IReadOnlyList<string> labels) =>
+        new(false, i => Label(labels, i), i => Label(labels, i)) { IsCategory = true };
+
+    private static string Label(IReadOnlyList<string> labels, double i) =>
+        (int)Math.Round(i) is var k && k >= 0 && k < labels.Count ? labels[k] : "";
+
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     public static XScale Dates { get; } = new(true, Iso, Iso);
@@ -64,10 +74,13 @@ public readonly record struct ChartPoint(double X, decimal? Y, double? Previous 
 /// so every "After" is one colour in every panel.</param>
 /// <param name="Group">The Header Group the series stands under, or empty.</param>
 /// <param name="Text">The column's own format, so a value reads as its cell does.</param>
+/// <param name="FromZero">Whether its axis must reach zero: an exposure must, a forward rate need not.</param>
 public sealed record ChartSeries(
     string Id, string Name, string Group, string Leaf, int Slot, int GroupIndex,
     bool Secondary, IReadOnlyList<ChartPoint> Points, Func<decimal, string> Text, SeriesStyle Style,
-    string? Unit = null);
+    string? Unit = null,
+    int Shade = 0,
+    bool FromZero = true);
 
 public static class ChartSeriesExtensions
 {
@@ -121,6 +134,8 @@ public sealed record ChartModel(
 
     /// <summary>The axis' extent: the shown positions, from the scale's origin where it has one.</summary>
     public (double From, double To) Domain => Xs.Count == 0 ? (0, 1)
+        // A category takes a slot of its own: half a step of room at either end.
+        : Scale.IsCategory ? (Xs[0] - 0.5, Xs[^1] + 0.5)
         : (Math.Min(Scale.Origin ?? Xs[0], Xs[0]), Xs[^1]);
 }
 
@@ -242,6 +257,10 @@ public static class ChartModelBuilder
         var leaves = series.Select(s => s.Leaf).Distinct().ToList();
         return Assemble(spec.XHeader, series, leaves, missing, look) with { Scale = spec.Scale };
     }
+
+    /// <summary>A model the page assembled itself, from series it built: the filter still applies.</summary>
+    public static ChartModel Assemble(string xHeader, IReadOnlyList<ChartSeries> series, ChartLook look, XScale scale) =>
+        Assemble(xHeader, [.. series], [.. series.Select(s => s.Leaf).Distinct()], 0, look) with { Scale = scale };
 
     // The filter applies after the colours and dashes are given out, so that hiding "Before"
     // leaves "After" the colour it had.

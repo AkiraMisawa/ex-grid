@@ -82,6 +82,57 @@ chart reads it so (`RowChartDefinition`, `RowChartSpec`):
   curves. A number column with no position — the recovery rate — selected with tenors is refused
   by name: it was chosen, and this axis has no place for it.
 
+## The FX volatility surface page
+
+![The FX volatility page](screenshots/fxvol/fxvol.gif)
+
+| | |
+|---|---|
+| ![Vol table](screenshots/fxvol/table-putcall.png) | ![3D surface](screenshots/fxvol/surface-default.png) |
+| ![Smile against two earlier dates](screenshots/fxvol/smile-3m.png) | ![Term structure](screenshots/fxvol/term.png) |
+| ![Seen from above](screenshots/fxvol/surface-flat.png) | ![Deposits and forwards](screenshots/fxvol/rates.png) |
+
+`/fxvol` follows what a market screen's FX volatility surface offers — as a training video of one
+showed it, summarised for this session by another Claude session on the user's machine — in
+ExGrid's own look, not the screen's. Every figure is invented, in `Analytics/FxVol.cs`: the
+surface by pair, source and date, in both quoting forms, bid and ask; the deposits and forwards;
+a quick pricer (Garman–Kohlhagen, the strike from a forward delta without premium adjustment).
+
+- **Header**: the pair, the source, the volatility calendar (said, not chosen: weekdays), the date
+  with weekday steppers, and Settings — the expiries and deltas kept, the quoting form and the side.
+- **Vol table**: expiries down; each pillar a Header Group over its two columns — ATM, then each
+  delta's call and put (Put/Call) or its risk reversal and butterfly (RR/BF), each as Bid/Ask or
+  Mid/Spread. Both forms are the analytics'; the grid only shows the one asked for. Selecting a vol
+  prices it in the strip below: strike, premium at the bid and the ask, forward, spot, deposits.
+- **3D surface**: delta across (5P … ATM … 5C), expiry along, vol up, coloured green → yellow →
+  orange → red with its scale beside, the mesh over the faces and a point at each quote; an
+  expiry range; turned with the pointer, or set Default, Front, Side or Flat (seen from above, a
+  heat map). Saved as SVG on request. The delta convention is said under it.
+- **Term**: a delta list, two earlier dates to compare, an expiry range; expiries evenly spaced as
+  categories (`XScale.Categories`), the vol axis on the right only, not from zero.
+- **Smile**: an expiry list and two comparison dates stepped a weekday at a time; deltas as
+  categories, puts on the left; each date a shade of its expiry's colour, today the full one
+  (`ChartSeries.Shade`); the legend a table of expiry by date.
+- **Deposits and forwards**: the table, and both deposits on the left with the forward on the right,
+  which is not drawn from zero (`ChartSeries.FromZero`) — a forward rate read from 0 is a flat line.
+
+How it is drawn:
+
+- **The term structure, the smile and the rates are `ChartBox`**, through a `PrebuiltChart`: the
+  page assembles the series, and the tooltip, the legend, the filter, the styles and the files are
+  the same as on every other page.
+- **The 3D surface is JavaScript** (`wwwroot/surface3d.js`; allowed by the user for 3D rotation,
+  2026-10-13 — the ADR is the grilling's to write). .NET decides the mesh, its colour scale and its
+  ticks and hands them over whole; the module only projects, sorts the faces far to near, fits the
+  drawing to its box at every angle, and follows a drag with no round trip. It reports the angles
+  when a drag ends, so the view is the page's and a redraw keeps it.
+- Writing it met two of CLAUDE.md's traps again: the page named `FxVol` hid the analytics' class
+  `FxVol` (the page is `FxVolPage`), and a grid's columns built inside markup are a new list every
+  render (they are built once per change).
+
+Run on both hosts, every tab driven by Playwright, the same readings and no console warnings on
+Server and on WebAssembly.
+
 ## The legend
 
 | | |

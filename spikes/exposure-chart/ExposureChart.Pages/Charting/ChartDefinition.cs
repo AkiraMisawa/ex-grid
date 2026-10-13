@@ -33,6 +33,16 @@ public abstract record ChartSpec
     public abstract string Describe();
 }
 
+/// <summary>
+/// A chart whose model the page builds itself — a smile across deltas, a term structure across
+/// expiries, compared at several dates — when the series are not columns or rows of the grid.
+/// </summary>
+public sealed record PrebuiltChart(string Description, int Count, Func<ChartLook, ChartModel> Build) : ChartSpec
+{
+    public override int SeriesCount => Count;
+    public override string Describe() => Description;
+}
+
 /// <summary>One series in rows: a row, by its key, across some of one Header Group's columns.</summary>
 public sealed record RowSeriesDefinition(object RowKey, string Group, IReadOnlyList<string> Columns);
 

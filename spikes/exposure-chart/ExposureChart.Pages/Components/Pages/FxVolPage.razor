@@ -1,0 +1,391 @@
+@page "/fxvol"
+@using System.Globalization
+
+<PageTitle>FX volatility surface PoC</PageTitle>
+
+<Nav />
+
+@* What a market screen's FX volatility surface shows, in ExGrid's own look: a vol table in both
+   quoting forms, a surface in 3D, a term structure, a smile against earlier dates, and the deposit
+   rates and forwards. Every figure comes from Analytics/FxVol.cs — the grid and the charts compute
+   none of it. *@
+
+<div class="fx-head">
+    <label>
+        <select class="pair" value="@_pair" @onchange="e => Change(() => _pair = (string)e.Value!)">
+            @foreach (var p in FxVol.Pairs) { <option value="@p">@p</option> }
+        </select>
+    </label>
+    <label>Source
+        <select value="@_source" @onchange="e => Change(() => _source = (string)e.Value!)">
+            @foreach (var s in FxVol.Sources) { <option value="@s">@s</option> }
+        </select>
+    </label>
+    <span class="fx-note" title="Days on which the surface assumes the market moves">Vol calendar: weekdays</span>
+    <span class="fx-compare">As of
+        <button type="button" aria-label="Previous weekday" @onclick="() => Change(() => _asOf = FxVol.StepWeekday(_asOf, -1))">◀</button>
+        <input type="date" value="@Iso(_asOf)" @onchange="e => Change(() => _asOf = ParseOr(e.Value, _asOf))" />
+        <button type="button" aria-label="Next weekday" @onclick="() => Change(() => _asOf = FxVol.StepWeekday(_asOf, 1))">▶</button>
+    </span>
+    <button type="button" class="@(_settingsOpen ? "on" : "")" @onclick="() => _settingsOpen = !_settingsOpen">Settings ▾</button>
+    <span class="title">Volatility surface</span>
+</div>
+
+@if (_settingsOpen)
+{
+    <div class="fx-settings" role="group" aria-label="Surface view settings">
+        <div class="fx-row"><b>Expiries</b>
+            @foreach (var (name, _) in FxVol.Expiries)
+            {
+                var on = _expiries.Contains(name);
+                <label><input type="checkbox" checked="@on" @onchange="() => Change(() => Toggle(_expiries, name))" /> @name</label>
+            }
+        </div>
+        <div class="fx-row"><b>Deltas</b>
+            <label><input type="checkbox" checked disabled /> ATM</label>
+            @foreach (var d in FxVol.Deltas)
+            {
+                var on = _deltas.Contains(d);
+                <label><input type="checkbox" checked="@on" @onchange="() => Change(() => Toggle(_deltas, d))" /> @d</label>
+            }
+        </div>
+        <div class="fx-row">
+            <b>Format</b>
+            <label><input type="radio" name="format" checked="@(!_rrbf)" @onchange="() => Change(() => _rrbf = false)" /> Put/Call</label>
+            <label><input type="radio" name="format" checked="@_rrbf" @onchange="() => Change(() => _rrbf = true)" /> RR/BF</label>
+            <b>Side</b>
+            <label><input type="radio" name="side" checked="@(!_midSpread)" @onchange="() => Change(() => _midSpread = false)" /> Bid/Ask</label>
+            <label><input type="radio" name="side" checked="@_midSpread" @onchange="() => Change(() => _midSpread = true)" /> Mid/Spread</label>
+        </div>
+    </div>
+}
+
+<div class="fx-tabs" role="tablist">
+    @foreach (var (tab, label) in Tabs)
+    {
+        <button type="button" role="tab" class="@(_tab == tab ? "on" : "")" aria-selected="@(_tab == tab ? "true" : "false")"
+                @onclick="() => _tab = tab">@label</button>
+    }
+</div>
+
+@switch (_tab)
+{
+    case Tab.Table:
+        <div class="fx-row">
+            <label><input type="radio" name="tformat" checked="@(!_rrbf)" @onchange="() => Change(() => _rrbf = false)" /> Put/Call</label>
+            <label><input type="radio" name="tformat" checked="@_rrbf" @onchange="() => Change(() => _rrbf = true)" /> RR/BF</label>
+            <span class="sep-text">·</span>
+            <label><input type="radio" name="tside" checked="@(!_midSpread)" @onchange="() => Change(() => _midSpread = false)" /> Bid/Ask</label>
+            <label><input type="radio" name="tside" checked="@_midSpread" @onchange="() => Change(() => _midSpread = true)" /> Mid/Spread</label>
+            <span class="fx-note">Select a vol to price it below.</span>
+        </div>
+        <ExGrid TRow="FxVol.Row" Source="_tableSource" Columns="_tableColumns" HeaderGroups="_tableGroups" PinnedColumnCount="1"
+                SelectionChanged="OnTableSelection" ViewportHeight="420" ViewportWidth="ViewportSize.Stretch" />
+        <div class="fx-pricer" aria-label="Quick pricer">
+            @if (_priced is { } p)
+            {
+                <span>Expiry <b>@p.Row.Expiry</b> (@Iso(p.Row.ExpiryDate))</span>
+                <span>Delta <b>@p.Delta</b></span>
+                <span>Strike <b>@Fx(p.Price.Strike)</b></span>
+                <span>Vol <b>@Num(p.Quote.Bid, 3) / @Num(p.Quote.Ask, 3)</b></span>
+                <span>Premium <b>@Num(p.Price.PriceBid, 3)% / @Num(p.Price.PriceAsk, 3)%</b> of @_pairInfo.Foreign</span>
+                <span>Fwd <b>@Fx(p.Row.Forward)</b></span>
+                <span>Spot <b>@Fx(_pairInfo.Spot)</b></span>
+                <span>Deposit @_pairInfo.Foreign <b>@Num(p.Row.DepositForeign * 100, 3)%</b> · @_pairInfo.Domestic <b>@Num(p.Row.DepositDomestic * 100, 3)%</b></span>
+            }
+            else
+            {
+                <span class="fx-note">Select a vol in the table: its strike and its premium at the bid and the ask show here.</span>
+            }
+        </div>
+        break;
+
+    case Tab.Surface:
+        <div class="fx-row">
+            <span>Expiries</span>
+            <select value="@_from3d" @onchange="e => Change(() => _from3d = (string)e.Value!)">
+                @foreach (var (name, _) in FxVol.Expiries) { <option value="@name">@name</option> }
+            </select>
+            <span>to</span>
+            <select value="@_to3d" @onchange="e => Change(() => _to3d = (string)e.Value!)">
+                @foreach (var (name, _) in FxVol.Expiries) { <option value="@name">@name</option> }
+            </select>
+        </div>
+        <Surface3D XLabels="_surfaceX" YLabels="_surfaceY" Values="_surfaceValues" XTitle="Delta" YTitle="Expiry"
+                   Unit="Implied vol (%)" ValueDigits="3" FileName="@($"{_pair}-surface")" />
+        <p class="fx-note">@FxVol.Convention (@_pairInfo.Foreign call/put). Mid vols; the faces between the quotes are drawn, not quoted.</p>
+        break;
+
+    case Tab.Term:
+        <div class="fx-side">
+            <div class="fx-list">
+                <h3>Delta</h3>
+                @foreach (var d in TermDeltas)
+                {
+                    var on = _termDeltas.Contains(d);
+                    <label><input type="checkbox" checked="@on" @onchange="() => Redraw(() => Toggle(_termDeltas, d))" /> @d</label>
+                }
+            </div>
+            <div class="fx-main">
+                <CompareDates Dates="_compare" Changed="() => Redraw(() => { })" />
+                <div class="fx-row">
+                    <span>Expiries</span>
+                    <select value="@_fromTerm" @onchange="e => Redraw(() => _fromTerm = (string)e.Value!)">
+                        @foreach (var (name, _) in FxVol.Expiries) { <option value="@name">@name</option> }
+                    </select>
+                    <span>to</span>
+                    <select value="@_toTerm" @onchange="e => Redraw(() => _toTerm = (string)e.Value!)">
+                        @foreach (var (name, _) in FxVol.Expiries) { <option value="@name">@name</option> }
+                    </select>
+                </div>
+                <ChartBox TRow="FxVol.Row" @key="Tab.Term" @ref="_termChart" Columns="NoColumns" Rows="NoRows" Window="NoRows"
+                          OnRight="AllRight" InitialStyles="LinePoints" InitialLayout="ChartLayout.OnePanel"
+                          InitialDefinition="TermSpec()" FileName="@($"{_pair}-term")" />
+                <p class="fx-note">Expiries evenly spaced, as categories: the axis is their order, not their time.</p>
+            </div>
+        </div>
+        break;
+
+    case Tab.Smile:
+        <div class="fx-side">
+            <div class="fx-list">
+                <h3>Expiry</h3>
+                @foreach (var (name, _) in FxVol.Expiries)
+                {
+                    var on = _smileExpiries.Contains(name);
+                    <label><input type="checkbox" checked="@on" @onchange="() => Redraw(() => Toggle(_smileExpiries, name))" /> @name</label>
+                }
+            </div>
+            <div class="fx-main">
+                <CompareDates Dates="_compare" Changed="() => Redraw(() => { })" />
+                <ChartBox TRow="FxVol.Row" @key="Tab.Smile" @ref="_smileChart" Columns="NoColumns" Rows="NoRows" Window="NoRows"
+                          OnRight="AllRight" InitialStyles="LinePoints" InitialLayout="ChartLayout.OnePanel"
+                          InitialDefinition="SmileSpec()" FileName="@($"{_pair}-smile")" />
+                <p class="fx-note">@FxVol.Convention (@_pairInfo.Foreign call/put). Read the shift between dates, and the slope from 5P to 5C: the price of protection on the downside.</p>
+            </div>
+        </div>
+        break;
+
+    case Tab.Rates:
+        <div class="fx-side">
+            <div class="fx-main" style="flex: 0 0 420px">
+                <ExGrid TRow="FxVol.Row" Source="_tableSource" Columns="_rateColumns" ViewportHeight="420" ViewportWidth="ViewportSize.Stretch" />
+            </div>
+            <div class="fx-main">
+                <ChartBox TRow="FxVol.Row" @key="Tab.Rates" @ref="_ratesChart" Columns="NoColumns" Rows="NoRows" Window="NoRows"
+                          OnRight="ForwardRight" UnitOf="RateUnit" InitialStyles="LinePoints" InitialLayout="ChartLayout.OnePanel"
+                          InitialDefinition="RatesSpec()" FileName="@($"{_pair}-rates")" />
+            </div>
+        </div>
+        break;
+}
+
+@code {
+    private enum Tab { Table, Surface, Term, Smile, Rates }
+    private static readonly (Tab, string)[] Tabs =
+        [(Tab.Table, "Vol table"), (Tab.Surface, "3D surface"), (Tab.Term, "Term"), (Tab.Smile, "Smile"), (Tab.Rates, "Deposits and forwards")];
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+    private static readonly IReadOnlyList<GridColumn<FxVol.Row>> NoColumns = [];
+    private static readonly IReadOnlyList<FxVol.Row> NoRows = [];
+    private static readonly Func<string, bool> AllRight = _ => true;
+    private static readonly Func<string, bool> ForwardRight = id => id.StartsWith("Fwd", StringComparison.Ordinal);
+    private static readonly Func<string, string?> RateUnit = id => id.StartsWith("Fwd", StringComparison.Ordinal) ? "Forward" : "Deposit (%)";
+    private static readonly Dictionary<string, SeriesStyle> LinePoints = new() { [""] = new(SeriesDraw.LinePoints, MarkerShape.Circle) };
+
+    // The term structure's delta list, calls at the top as on the screen: 45C … 5C, ATM, 45P … 5P.
+    private static readonly string[] TermDeltas =
+        [.. FxVol.Deltas.Reverse().Select(d => $"{d}C"), "ATM", .. FxVol.Deltas.Select(d => $"{d}P")];
+
+    private Tab _tab = Tab.Table;
+    private string _pair = "AUDUSD", _source = "Composite";
+    private DateOnly _asOf = new(2026, 10, 13);
+    private bool _settingsOpen, _rrbf, _midSpread;
+    private readonly HashSet<string> _expiries = [.. FxVol.Expiries.Select(e => e.Name).Where(n => n is not ("3Y" or "4Y" or "5Y" or "7Y" or "10Y"))];
+    private readonly HashSet<int> _deltas = [35, 25, 15, 10, 5];
+    private string _from3d = "1W", _to3d = "1Y", _fromTerm = "1W", _toTerm = "1Y";
+    private readonly HashSet<string> _termDeltas = ["25C", "ATM", "25P"];
+    private readonly HashSet<string> _smileExpiries = ["1M"];
+    private readonly List<CompareDates.Entry> _compare = [];
+
+    private FxVol.Pair _pairInfo = FxVol.Of("AUDUSD");
+    private IReadOnlyList<FxVol.Row> _rows = [];
+    private InMemoryGridSource<FxVol.Row> _tableSource = null!;
+    private IReadOnlyList<GridColumn<FxVol.Row>> _tableColumns = [];
+    private IReadOnlyList<HeaderGroup> _tableGroups = [];
+    private IReadOnlyList<GridColumn<FxVol.Row>> _rateColumns = [];
+    private IReadOnlyList<string> _surfaceX = [], _surfaceY = [];
+    private IReadOnlyList<IReadOnlyList<double?>> _surfaceValues = [];
+    private ChartBox<FxVol.Row>? _termChart, _smileChart, _ratesChart;
+    private (FxVol.Row Row, string Delta, FxVol.Quote Quote, FxVol.Priced Price)? _priced;
+
+    protected override void OnInitialized()
+    {
+        _compare.Add(new CompareDates.Entry(true, FxVol.StepWeekday(_asOf, -5)));
+        _compare.Add(new CompareDates.Entry(true, _asOf.AddDays(-28)));
+        Rebuild();
+    }
+
+    // Anything the surface depends on changed: read it again and redraw every view of it.
+    private void Change(Action change)
+    {
+        change();
+        Rebuild();
+        Redraw(() => { });
+    }
+
+    private void Rebuild()
+    {
+        _pairInfo = FxVol.Of(_pair);
+        _rows = [.. FxVol.Surface(_pair, _asOf, _source).Where(r => _expiries.Contains(r.Expiry))];
+        _tableSource = GridSource.From(_rows, r => r.Expiry);
+        (_tableColumns, _tableGroups) = TableColumns();
+        _rateColumns = RateColumns();
+        _priced = null;
+
+        // The 3D surface: its own expiry range, every delta the settings keep.
+        var all = FxVol.Surface(_pair, _asOf, _source);
+        var (from, to) = (IndexOf(_from3d), IndexOf(_to3d));
+        if (from > to) (from, to) = (to, from);
+        var rows = all.Where((_, i) => i >= from && i <= to).ToList();
+        _surfaceX = SmileAxis();
+        _surfaceY = [.. rows.Select(r => r.Expiry)];
+        _surfaceValues = [.. rows.Select(r => (IReadOnlyList<double?>)[.. _surfaceX.Select(d => (double?)FxVol.At(r, d).Mid)])];
+    }
+
+    private void Redraw(Action change)
+    {
+        change();
+        _termChart?.Show(new ChartOutcome(TermSpec(), null), keepView: true);
+        _smileChart?.Show(new ChartOutcome(SmileSpec(), null), keepView: true);
+        _ratesChart?.Show(new ChartOutcome(RatesSpec(), null), keepView: true);
+    }
+
+    // The table: ATM, then each delta's call and put — or its risk reversal and butterfly — each a
+    // Header Group over its bid and ask, or its mid and spread.
+    private (IReadOnlyList<GridColumn<FxVol.Row>>, IReadOnlyList<HeaderGroup>) TableColumns()
+    {
+        var columns = new List<GridColumn<FxVol.Row>> { new("Exp", ColumnType.Text, r => r.Expiry) };
+        var groups = new List<HeaderGroup>();
+        void Pillar(string key, string label, Func<FxVol.Row, FxVol.Quote> quote)
+        {
+            var (a, b) = _midSpread ? ("Mid", "Spread") : ("Bid", "Ask");
+            Func<FxVol.Quote, double> first = _midSpread ? q => q.Mid : q => q.Bid;
+            Func<FxVol.Quote, double> second = _midSpread ? q => q.Spread : q => q.Ask;
+            columns.Add(new($"{key}|{a}", ColumnType.Number, r => first(quote(r)), header: a, format: v => Num((double)v, 3)));
+            columns.Add(new($"{key}|{b}", ColumnType.Number, r => second(quote(r)), header: b, format: v => Num((double)v, 3)));
+            groups.Add(new HeaderGroup(label, [$"{key}|{a}", $"{key}|{b}"]));
+        }
+        Pillar("ATM", "ATM", r => r.Atm);
+        foreach (var d in FxVol.Deltas.Where(_deltas.Contains))
+        {
+            if (_rrbf)
+            {
+                Pillar($"{d}RR", $"{d}D RR", r => r.RiskReversals[d]);
+                Pillar($"{d}BF", $"{d}D BF", r => r.Butterflies[d]);
+            }
+            else
+            {
+                Pillar($"{d}C", $"{d}D Call {_pairInfo.Foreign}", r => r.Calls[d]);
+                Pillar($"{d}P", $"{d}D Put {_pairInfo.Foreign}", r => r.Puts[d]);
+            }
+        }
+        return (columns, groups);
+    }
+
+    private IReadOnlyList<GridColumn<FxVol.Row>> RateColumns() =>
+    [
+        new("Exp", ColumnType.Text, r => r.Expiry),
+        new("DepF", ColumnType.Number, r => r.DepositForeign * 100, header: $"{_pairInfo.Foreign} deposit (%)", format: v => Num((double)v, 3)),
+        new("DepD", ColumnType.Number, r => r.DepositDomestic * 100, header: $"{_pairInfo.Domestic} deposit (%)", format: v => Num((double)v, 3)),
+        new("Fwd", ColumnType.Number, r => r.Forward, header: $"{_pair} forward", format: v => Fx((double)v)),
+    ];
+
+    // A selected vol is priced: its column names the delta, its row the expiry.
+    private void OnTableSelection(GridSelection selection)
+    {
+        if (selection.IsEmpty || selection.Focus.Column == 0 || selection.Focus.Row >= _tableSource.Window.Count) { _priced = null; return; }
+        var row = _tableSource.Window[selection.Focus.Row];
+        var key = _tableColumns[selection.Focus.Column].Name.Split('|')[0];
+        // A risk reversal or a butterfly prices its delta's call.
+        var delta = key == "ATM" ? "ATM" : key.EndsWith("RR") || key.EndsWith("BF") ? key[..^2] + "C" : key;
+        _priced = (row, delta, FxVol.At(row, delta), FxVol.Price(_pairInfo, row, delta));
+    }
+
+    private IReadOnlyList<string> SmileAxis() =>
+        [.. FxVol.SmileAxis.Where(d => d == "ATM" || _deltas.Contains(int.Parse(d[..^1])))];
+
+    private IReadOnlyList<(string Label, DateOnly Date)> Dates() =>
+        [($"{Iso(_asOf)}", _asOf), .. _compare.Where(c => c.On).Select(c => (Iso(c.Date), c.Date))];
+
+    // The term structure: a series per delta and date, the date as the shade — today the full colour.
+    private PrebuiltChart TermSpec() => new($"{_pair} term structure", _termDeltas.Count, look =>
+    {
+        var (from, to) = (IndexOf(_fromTerm), IndexOf(_toTerm));
+        if (from > to) (from, to) = (to, from);
+        var expiries = FxVol.Expiries[from..(to + 1)].Select(e => e.Name).ToList();
+        var series = new List<ChartSeries>();
+        foreach (var (label, date, shade) in Dates().Select((d, i) => (d.Label, d.Date, i)))
+        {
+            var surface = FxVol.Surface(_pair, date, _source).ToDictionary(r => r.Expiry);
+            foreach (var delta in TermDeltas.Where(_termDeltas.Contains))
+            {
+                var points = expiries.Select((e, i) => new ChartPoint(i, (decimal)Math.Round(FxVol.At(surface[e], delta).Mid, 3), i - 1, i + 1)).ToList();
+                series.Add(Series($"{delta}|{label}", delta, label, DeltaColour(delta), shade, points, look));
+            }
+        }
+        return ChartModelBuilder.Assemble("Expiry", series, look, XScale.Categories(expiries));
+    });
+
+    // The smile: a series per expiry and date, across the deltas, puts on the left.
+    private PrebuiltChart SmileSpec() => new($"{_pair} smile", _smileExpiries.Count, look =>
+    {
+        var axis = SmileAxis();
+        var series = new List<ChartSeries>();
+        foreach (var (label, date, shade) in Dates().Select((d, i) => (d.Label, d.Date, i)))
+        {
+            var surface = FxVol.Surface(_pair, date, _source).ToDictionary(r => r.Expiry);
+            foreach (var expiry in FxVol.Expiries.Select(e => e.Name).Where(_smileExpiries.Contains))
+            {
+                var points = axis.Select((d, i) => new ChartPoint(i, (decimal)Math.Round(FxVol.At(surface[expiry], d).Mid, 3), i - 1, i + 1)).ToList();
+                series.Add(Series($"{expiry}|{label}", expiry, label, IndexOf(expiry), shade, points, look));
+            }
+        }
+        return ChartModelBuilder.Assemble("Delta", series, look, XScale.Categories(axis));
+    });
+
+    // Deposits on the left, the forward on the right, by expiry.
+    private PrebuiltChart RatesSpec() => new($"{_pair} deposits and forwards", 3, look =>
+    {
+        var expiries = _rows.Select(r => r.Expiry).ToList();
+        ChartSeries Make(string id, string name, int slot, Func<FxVol.Row, double> value, int digits) =>
+            new(id, name, "", name, slot, 0, look.OnRight(id),
+                [.. _rows.Select((r, i) => new ChartPoint(i, (decimal)Math.Round(value(r), digits), i - 1, i + 1))],
+                v => v.ToString("N" + digits, Invariant), look.StyleOf?.Invoke("") ?? SeriesStyle.Default, look.UnitOf?.Invoke(id),
+                FromZero: id != "Fwd");
+        return ChartModelBuilder.Assemble("Expiry",
+        [
+            Make("DepF", $"{_pairInfo.Foreign} deposit (%)", 4, r => r.DepositForeign * 100, 3),
+            Make("DepD", $"{_pairInfo.Domestic} deposit (%)", 3, r => r.DepositDomestic * 100, 3),
+            Make("Fwd", $"{_pair} forward", 1, r => r.Forward, _pair == "USDJPY" ? 2 : 4),
+        ], look, XScale.Categories(expiries));
+    });
+
+    // A colour per delta, calls warm, puts cool, at-the-money blue — the same in every chart.
+    private static int DeltaColour(string delta) => delta switch
+    {
+        "ATM" => 0, "25C" or "15C" => 1, "10C" or "5C" => 3, "35C" or "45C" => 6,
+        "25P" or "15P" => 5, "10P" or "5P" => 4, _ => 2,
+    };
+
+    private static ChartSeries Series(string id, string leaf, string group, int colour, int shade, List<ChartPoint> points, ChartLook look) =>
+        new(id, $"{leaf} · {group}", group, leaf, colour % 7 + 1, 0, true, points, v => v.ToString("N3", Invariant),
+            look.StyleOf?.Invoke(group) ?? SeriesStyle.Default, "Implied vol (%)", shade);
+
+    private static int IndexOf(string expiry) => Array.FindIndex(FxVol.Expiries, e => e.Name == expiry);
+    private static void Toggle<T>(HashSet<T> set, T item) { if (!set.Remove(item)) set.Add(item); }
+    private static string Iso(DateOnly d) => d.ToString("yyyy-MM-dd", Invariant);
+    private static DateOnly ParseOr(object? value, DateOnly fallback) =>
+        DateOnly.TryParseExact(value as string, "yyyy-MM-dd", Invariant, DateTimeStyles.None, out var d) ? d : fallback;
+    private static string Num(double v, int digits) => v.ToString("N" + digits, Invariant);
+    private string Fx(double v) => v.ToString(_pair == "USDJPY" ? "N2" : "N4", Invariant);
+}

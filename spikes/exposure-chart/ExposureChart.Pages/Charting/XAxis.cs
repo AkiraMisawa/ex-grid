@@ -43,7 +43,8 @@ public static class XAxis
     public static IReadOnlyList<XTick> Ticks(IReadOnlyList<double> xs, (double From, double To) domain, XScale scale,
         XAxisStyle style, Func<double, double> x)
     {
-        var (positions, auto) = scale.IsDate ? DatePositions(xs, style) : NumberPositions(xs, domain, style);
+        var (positions, auto) = scale.IsCategory ? ([.. xs], XLabel.Column)
+            : scale.IsDate ? DatePositions(xs, style) : NumberPositions(xs, domain, style);
         var label = style.Label == XLabel.Auto ? auto : style.Label;
         var first = scale.IsDate ? XScale.DateOf(xs[0]) : default;
 
@@ -53,7 +54,8 @@ public static class XAxis
         var clearUntil = double.NegativeInfinity;
         foreach (var position in positions)
         {
-            var text = label == XLabel.Column && style.LabelOf?.Invoke(position) is { } own ? own
+            var text = scale.IsCategory ? scale.Format(position)
+                : label == XLabel.Column && style.LabelOf?.Invoke(position) is { } own ? own
                 : scale.IsDate ? Format(XScale.DateOf(position), first, label)
                 : label == XLabel.Tenor || label == XLabel.Column ? XScale.Tenor(position) : scale.Format(position);
             var footprint = style.Angle == 0 ? text.Length * CharWidth + 10 : LineHeight / Math.Sin(style.Angle * Math.PI / 180) + 2;

@@ -18,14 +18,17 @@ public static class Axis
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     /// <summary>
-    /// The "nice" axis over the values, always including zero: an exposure read against an axis
-    /// that starts at 9M looks like it went to nothing when it halved.
+    /// The "nice" axis over the values, including zero unless told otherwise: an exposure read
+    /// against an axis that starts at 9M looks like it went to nothing when it halved. A vol is
+    /// read for its shape, as every market screen draws it, and may be told not to.
     /// </summary>
-    public static ValueAxis Nice(IEnumerable<decimal> values, int target = 5)
+    public static ValueAxis Nice(IEnumerable<decimal> values, int target = 5, bool includeZero = true)
     {
         decimal lo = 0, hi = 0;
+        var first = true;
         foreach (var v in values)
         {
+            if (first && !includeZero) (lo, hi, first) = (v, v, false);
             if (v < lo) lo = v;
             if (v > hi) hi = v;
         }
