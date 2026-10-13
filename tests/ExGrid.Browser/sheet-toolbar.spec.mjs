@@ -339,8 +339,9 @@ for (const chrome of ['builtin', 'mud']) {
 }
 
 // The verifier's round-2 finding 1: under MudSheetChrome the toolbar held every key typed on a control
-// inside it while its band did not hold the keyboard, taking MudMenu's buttons, which a Tab reaches, for
-// the element a list leaves through, and never let go. A key is held only while a hand-back is under way.
+// inside it while its band did not hold the keyboard, taking MudMenu's buttons, which a Tab reached, for
+// the element a list leaves through, and never let go. A key is held only while a hand-back is under way,
+// and since 2026-10-13 (decided with the user) no control inside the band takes Tab under either Chrome.
 for (const chrome of ['builtin', 'mud']) {
     test(`ADR-0100: Tab goes through every control of the toolbar and out of it; the keys typed on each are that control's, nothing is held, and the band's own keys work after (${chrome})`, async ({ page }) => {
         await openSheet(page, chrome);
@@ -369,8 +370,9 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('x');
             await expect.poll(where).toBe(at);
         }
-        // The built-in Chrome's band is the one stop; MudBlazor's menus keep buttons of their own.
-        expect(stops).toEqual(chrome === 'mud' ? ['Font Colour, more', 'Fill Colour, more', 'Borders, more', 'Number Format'] : []);
+        // The band is the one stop under either Chrome: MudBlazor's lists draw no button that takes Tab
+        // (SH-50; decided with the user, 2026-10-13). Tab from the band leaves the toolbar.
+        expect(stops).toEqual([]);
         await expect(openLists(page)).toHaveCount(0);
         await expect(cell(grid, 'B3')).toHaveText(before);
 

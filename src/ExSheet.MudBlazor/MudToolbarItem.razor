@@ -17,8 +17,10 @@
 @*
     A Toolbar Item as the MudBlazor Chrome draws it (ADR-0100): MudBlazor's controls, the same item
     ExSheet describes. A toggle is a MudToggleIconButton, pressed in the palette's primary while the
-    Focus cell has what it sets; a menu is a MudMenu; a split control is the face's MudIconButton
-    beside a MudMenu that holds the choices, colours drawn as Excel's palette ten across. Nothing here
+    Focus cell has what it sets; a menu is a MudButton that opens a MudMenu; a split control is the
+    face's MudIconButton beside an arrow's that opens a MudMenu holding the choices, colours drawn as
+    Excel's palette ten across. The MudMenu draws no button of its own, and the item's buttons take
+    no Tab, so the toolbar stays one Tab stop (SH-50; decided with the user, 2026-10-13). Nothing here
     decides what an item means: every press and choice calls back into the context.
 
     The wrapper prevents mousedown's default, so a pointer press does not take DOM focus and the
