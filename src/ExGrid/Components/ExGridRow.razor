@@ -36,8 +36,9 @@
 *@
 @* role and the absolute index (ADR-0033): the DOM holds a Window, so the position
    among siblings is wrong in exactly the way virtualisation makes it — aria-rowindex
-   states the 1-based absolute one, counted after the header's rows (2026-10-12), so a
-   reader that counts painted rows at the top says what it reads here far down.
+   states the 1-based absolute one, counted after the header's rows (2026-10-12): the
+   number a reader counted from the painted rows near the top (NVDA, the seventeenth
+   Windows run), written alike far down. What a reader says far down is a run's to hear.
    aria-busy while a Placeholder: values that have not arrived must not be read out as
    though they had (ADR-0004). *@
 @{ _paintingHighlightEnd = null; }

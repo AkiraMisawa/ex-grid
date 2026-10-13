@@ -5,10 +5,12 @@ things from the seventeenth Windows run's Part F (`verification/2026-10-11-windo
 `claude/exsheet-windows-verify-17`):
 
 - **Decision (A) of 2026-10-12, taken with the user, after the NVDA reading.** Near the top of `/sheet` NVDA named D10's
-  row `row 11` and A1's `row 2`, while `aria-rowindex` said 10 and 1. A reader counts the rows painted before a row near
-  the top, the header row among them, and reads `aria-rowindex` far down, where the DOM holds a Window; the header row
-  carried no index of its own, so the two numbers for one row differed by one. ExGrid's row indices are now ARIA's: the
-  header's rows are counted first. Built on the branch; edits 1 to 3, 5, 6, 8, 9 and 11 to 13 below.
+  row `row 11` and A1's `row 2`, while `aria-rowindex` said 10 and 1: near the top it counted the rows painted before a
+  row, the header row among them, which carried no index of its own. Far down, where the DOM holds a Window, the only
+  number the page gives a reader is `aria-rowindex`, so the grid could give one row two numbers. ExGrid's row indices
+  are now ARIA's: the header's rows are counted first, and the grid writes the number counted near the top on every
+  row, near the top and far down. What a reader says far down is owed to the next Windows run: the seventeenth heard
+  readers near the top only. Built on the branch; edits 1 to 3, 5, 6, 8, 9 and 11 to 13 below.
 - **The decisions of 2026-10-12 on the Narrator and NVDA passes**, as the requester relays them: Narrator's scan mode
   taking the arrows is not a keyboard defect (with scan mode off every arrow reached the grid, and Narrator turns scan
   mode on again with each new page), and NVDA's silence on the first pass comes from the probe's scripted focus before
@@ -84,6 +86,18 @@ Tests, each named with its ADR:
   Features.razor's 400 trades (`402`) and the second grid's 20 (`21`), and checks `dataRowCount` against them. After the
   scroll far down it checks that each header row is the row it was at the top (its index, the column headers it owns,
   no cells, not ignored), and that every data row holds cells and no column header, on `/features` and `/sheet`.
+- **After the third round's review** (2026-10-13):
+  - The Docs Site's Narrator key is Insert+Space alone, the key the seventeenth run used; "Caps Lock+Space" had been
+    seen by no run (edit 11).
+  - ADR-0080's note and §21.11's row say that in Chrome without a Focus Narrator's scan mode never let the grid be
+    reached: DOM focus "moved among the page's buttons" (edits 7 and 10).
+  - What a reader says far down is no longer stated as fact. No run heard a reader far down; near the top both said a
+    number other than the `aria-rowindex` then written (D10's 10, NVDA `row 11`; D11's 11, Narrator
+    `Row 12 of 1,048,576.`). The intro, edit 5, edits 11 to 13, both Change Notes, `aria-rows.spec.mjs`' header
+    comment and the comments in `ExGrid.razor` and `ExGridRow.razor` now say what the grid writes, the same number
+    near the top and far down, and leave the reader's number far down to the next Windows run.
+  - `aria-rows.spec.mjs` checks that `/sheet`'s header row holds no cell at the top as well as far down, and waits
+    for the circuit to go quiet before each read of the accessibility tree.
 - No other `aria-rowindex` arithmetic is left in the test tree. The archived harness copies under `verification/`
   (`2026-10-06-macos-*/harness/*.txt`, `2026-10-10-linux-merged-live-costs/harness/profile-question.cjs.txt`) read
   `aria-rowcount`, as records of runs already made; they are not edited.
@@ -190,12 +204,12 @@ refusal stays where it is. A Focus move that changes no Selection still writes n
 ## Added after the seventeenth Windows run: the header's rows are counted *(2026-10-12)*
 
 The indices above counted the data rows alone: the first data row was `aria-rowindex="1"`, and the
-header row carried no index. A reader does not read one number for a row everywhere. Near the top it
-counts the rows before a row, the header row among them; far down, where the DOM holds a Window, it
-has only `aria-rowindex`. The seventeenth Windows run read NVDA on `/sheet`
-(`verification/2026-10-11-windows-17/report.md`, Part F): D10's row was `row 11` and A1's `row 2`,
-while the attribute said 10 and 1. The same row would have had two numbers, one at the top and one a
-scroll away.
+header row carried no index. The seventeenth Windows run read NVDA on `/sheet`
+(`verification/2026-10-11-windows-17/report.md`, Part F): near the top D10's row was `row 11` and
+A1's `row 2`, while the attribute said 10 and 1, so NVDA counted the rows before a row, the header
+row among them. Far down, where the DOM holds a Window, the only number the page gives a reader is
+`aria-rowindex`. The same row could have been given two numbers, one at the top and one a scroll
+away.
 
 *(2026-10-12, decided with the user: **ARIA's row indices count the header's rows first.** **Saying
 the Sheet's own row number** — `aria-rowindextext`, or a Row Heading as a `rowheader` cell — **is
@@ -207,8 +221,9 @@ decided after the next Windows run** reads what NVDA and Narrator do with each.)
   is 1 again.
 - Cell ids are unchanged: `ex-7-r412-c3` still names the row at position 412, now
   `aria-rowindex="414"`.
-- ExSheet and ExPivot inherit it. Under ExSheet's Column Headings, A1 is row 2, so a reader names a
-  Sheet row by its number plus one, at the top and far down alike.
+- ExSheet and ExPivot inherit it. Under ExSheet's Column Headings, A1 is row 2, so the grid gives a
+  Sheet row its number plus one, at the top and far down alike: the number NVDA and Narrator counted
+  near the top.
 - *(Found while building, 2026-10-12.)* Under Header Groups
   ([ADR-0032](./0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md)) each tier is a row
   of its own, top first, before the header row, and the header is a `rowgroup` holding them. Each of
@@ -269,9 +284,11 @@ New:
   page's load before it (`ExGrid demo host` / `Loading…`); one that began with a real press, on the
   heading's empty right end or on the button, read every step (`Item  row 2  A  column 1` after the
   first ↓). Narrator 10.0.26100.8972, heard from the playback device, starts in scan mode, and there
-  no arrow reached the page: DOM focus left the field for `body` at the first ↓, and after the press
-  on D10, ↓ read `column header cap E, column 5 of 16384.`, Narrator's own cursor on the column
-  headers. With scan mode turned off by Insert+Space (Narrator said "Scan off"), every arrow's
+  no arrow reached the page: DOM focus left the field for `body` at the first ↓, but in Chrome
+  without a Focus the grid was never reached, and DOM focus "moved among the page's buttons"
+  (`button#sheet-undo`, `button#sheet-redo`, `button#sheet-format-cells`, `button#sheet-insert-row`,
+  `button#sheet-revalue`). After the press on D10, ↓ read `column header cap E, column 5 of 16384.`,
+  Narrator's own cursor on the column headers. With scan mode turned off by Insert+Space (Narrator said "Scan off"), every arrow's
   keydown reached the field, which kept DOM focus, and Narrator read
   `Item, column header cap A, row 2 of 1,048,576, column 1` after the first ↓ and
   `Row 12 of 1,048,576.` after ↓ from D10. As the second page loaded, Narrator said "Scan" again.)*
@@ -327,13 +344,14 @@ Old:
 New:
 
 ````text
-| **The Cell Editor's own ARIA semantics** | the editor exists; its input is a bare, focused `<input>` whose interaction semantics are the platform's. A richer announced contract (mode announcements) stays open against a real screen reader, with the live-region wording ([ADR-0033](adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)). *(2026-10-11, decided with the user: **the richer contract is accepted in writing as out of `0.1.0`'s scope.** What the sixteenth Windows run heard — ↓ read as "Scan", DOM focus on `body` — may be a keyboard defect rather than wording, so the sign-off's Windows run checks where DOM focus is after ↓, with and without a Focus, under NVDA (recorded through its Speech Viewer) and Narrator (heard, with no copy command sent); a defect is fixed before the tag.)* *(2026-10-12, the seventeenth Windows run, Part F, `/sheet` in Chrome and Edge ([ADR-0080](adr/0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md); commits 76bd2116 and 2fc23f56 on `claude/exsheet-windows-verify-17`): after every ↓, with and without a Focus, DOM focus stayed on the Keyboard Field without a reader and under NVDA 2026.2, which read the press on D10 as `table` / `row 11  D  column 4` and the next ↓ as `row 12  D  column 4`. A pass whose first step was the probe's scripted focus said nothing from that focus to its last ↓, only the page's load before it (`ExGrid demo host` / `Loading…`); one that began with a real press read every step. Narrator, in the scan mode it starts in, let no arrow reach the page: DOM focus went to `body` at the first ↓, and ↓ from D10 read `column header cap E, column 5 of 16384.`. With scan mode off (Insert+Space, "Scan off"), every arrow reached the field, and Narrator read `Item, column header cap A, row 2 of 1,048,576, column 1` after the first ↓ and `Row 12 of 1,048,576.` after ↓ from D10.)* *(2026-10-12, decided with the user: **Narrator's scan mode taking the arrows is not a keyboard defect** — with scan mode off every arrow reached the grid, and Narrator turns scan mode on again with each new page; **NVDA's silence on the first pass comes from the probe's scripted focus before any user input, and is recorded only.**)* |
+| **The Cell Editor's own ARIA semantics** | the editor exists; its input is a bare, focused `<input>` whose interaction semantics are the platform's. A richer announced contract (mode announcements) stays open against a real screen reader, with the live-region wording ([ADR-0033](adr/0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)). *(2026-10-11, decided with the user: **the richer contract is accepted in writing as out of `0.1.0`'s scope.** What the sixteenth Windows run heard — ↓ read as "Scan", DOM focus on `body` — may be a keyboard defect rather than wording, so the sign-off's Windows run checks where DOM focus is after ↓, with and without a Focus, under NVDA (recorded through its Speech Viewer) and Narrator (heard, with no copy command sent); a defect is fixed before the tag.)* *(2026-10-12, the seventeenth Windows run, Part F, `/sheet` in Chrome and Edge ([ADR-0080](adr/0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md); commits 76bd2116 and 2fc23f56 on `claude/exsheet-windows-verify-17`): after every ↓, with and without a Focus, DOM focus stayed on the Keyboard Field without a reader and under NVDA 2026.2, which read the press on D10 as `table` / `row 11  D  column 4` and the next ↓ as `row 12  D  column 4`. A pass whose first step was the probe's scripted focus said nothing from that focus to its last ↓, only the page's load before it (`ExGrid demo host` / `Loading…`); one that began with a real press read every step. Narrator, in the scan mode it starts in, let no arrow reach the page: DOM focus went to `body` at the first ↓, but in Chrome without a Focus the grid was never reached, and DOM focus "moved among the page's buttons" (`button#sheet-undo`, `button#sheet-redo`, `button#sheet-format-cells`, `button#sheet-insert-row`, `button#sheet-revalue`); ↓ from D10 read `column header cap E, column 5 of 16384.`. With scan mode off (Insert+Space, "Scan off"), every arrow reached the field, and Narrator read `Item, column header cap A, row 2 of 1,048,576, column 1` after the first ↓ and `Row 12 of 1,048,576.` after ↓ from D10.)* *(2026-10-12, decided with the user: **Narrator's scan mode taking the arrows is not a keyboard defect** — with scan mode off every arrow reached the grid, and Narrator turns scan mode on again with each new page; **NVDA's silence on the first pass comes from the probe's scripted focus before any user input, and is recorded only.**)* |
 ````
 
 ### 11. `samples/ExGrid.Docs/Pages/Grid/GridSelectionAndKeys.razor`
 
 "The keyboard" (the ExGrid Change Note's `Docs:` link, `exgrid/selection#the-keyboard`): Narrator's scan mode, then the
-rows as a reader counts them.
+rows as the grid numbers them. Insert+Space is the key the seventeenth Windows run turned scan mode off with (Part F);
+the page names no other.
 
 Old:
 
@@ -346,16 +364,15 @@ New:
 ````text
         <p>Click into the grid, or tab to it: the grid is one tab stop, and its keys are Excel's.</p>
         <p>
-            With Narrator, turn scan mode off before you use the grid's keys, as for any web grid: Narrator's key
-            and Space, Caps Lock+Space or Insert+Space. In scan mode the arrow keys move Narrator's own reading
-            cursor through the page and never reach the grid. Narrator turns scan mode on again on each new page.
+            With Narrator, turn scan mode off before you use the grid's keys, as for any web grid: the Narrator key
+            and Space (Insert+Space). In scan mode the arrow keys move Narrator's own reading cursor through the
+            page and never reach the grid. Narrator turns scan mode on again on each new page.
         </p>
         <p>
-            A screen reader reads the grid as a table. The header row is its row 1 and the first row of data its row 2,
-            so a reader says the same number for a row near the top, where it counts the rows before it, and a million
-            rows down, where it reads the number the grid writes. Each tier of Header Groups is a row of its own above
-            the header row, and the rows of data are counted after them; with <code>HideHeader</code>, the first row of
-            data is row 1.
+            A screen reader is given the grid as a table. The header row is its row 1 and the first row of data its
+            row 2, and the grid writes each row's number the same way near the top and a million rows down. Each
+            tier of Header Groups is a row of its own above the header row, and the rows of data are counted after
+            them; with <code>HideHeader</code>, the first row of data is row 1.
         </p>
 ````
 
@@ -373,7 +390,7 @@ New:
 
 ````text
             <li><code>ShowRowHeadings</code>, <code>ShowColumnHeadings</code> and <code>ShowFormulaBar</code> hide the Headings or the Formula Bar; the cells are still addressed A1.</li>
-            <li>A screen reader counts the Column Headings as the table's row 1, so it names a Sheet row by its number plus one: A1 is in row 2, near the top and far down. With <code>ShowColumnHeadings</code> off, the two numbers agree.</li>
+            <li>For a screen reader the Column Headings are the table's row 1, so the grid numbers a Sheet row as its number plus one, near the top and far down: A1 is in row 2. With <code>ShowColumnHeadings</code> off, the two numbers agree.</li>
 ````
 
 ### 13. `samples/ExGrid.Docs/Pages/Pivot/PivotOverview.razor`
@@ -389,14 +406,16 @@ Old:
 New:
 
 ````text
-            the Value Fields' Aggregations are computed from. A screen reader counts the report's header rows before its
-            first row: a row for each tier of column Items, then the row of column headers.
+            the Value Fields' Aggregations are computed from. For a screen reader the report's header rows come before
+            its first row: a row for each tier of column Items, then the row of column headers.
 ````
 
 ## Change Notes
 
-- `docs/releases/unreleased/run17cf-aria-rows-header-rows-counted.md` (ExGrid, Behaviour, ADR-0033), unchanged.
-- `docs/releases/unreleased/run17cf-aria-rows-sheet-row-numbers.md` (ExSheet, Behaviour, ADR-0033), unchanged.
+- `docs/releases/unreleased/run17cf-aria-rows-header-rows-counted.md` (ExGrid, Behaviour, ADR-0033) and
+  `docs/releases/unreleased/run17cf-aria-rows-sheet-row-numbers.md` (ExSheet, Behaviour, ADR-0033). Reworded in the
+  third round: each says the number the grid writes near the top and far down, the one NVDA and Narrator counted near
+  the top, and that no screen reader has yet been heard on it far down.
 - None for the screen readers' passes: nothing in the product changed. The Narrator sentences are edit 11.
 
 ## For the merge
@@ -411,17 +430,27 @@ New:
   spine's sixth principle, left to whoever owns the fixture.
 - `verification/2026-10-11-windows-17/part-e/pivot-probe.mjs` (on `claude/exsheet-windows-verify-17`) reads the
   report's rows by `aria-rowindex`; a later run of it subtracts the header's rows.
-- Seen in the third round, in tests this branch does not touch, and only in a whole-solution run while the machine
-  was loaded (load average about 20 to 28, other checkouts building and running layer 3):
+- Seen in the third round, only in a whole-solution run while the machine was loaded (load average about 20 to 28,
+  other checkouts building and running layer 3):
   `EditingNotificationTests.The_opening_and_the_end_are_raised_before_the_browser_has_answered` failed twice with
   "Collection was modified; enumeration operation may not execute" at its `Assert.Equal([true, false], told)`, and
-  `AllocationTests.Scrolling_allocates_the_same_at_a_thousand_and_a_million_rows` (MEM-1) failed once. In five whole
-  runs of each over the same hour, the last three alternated, the branch failed three times and `origin/main`
-  (`2265cda6`) none; `ExGrid.Components` alone passed every time. The first reads a list that the grid's notification appends to, so a
-  continuation on another thread can still be appending while it is read; the second takes
-  `GC.GetAllocatedBytesForCurrentThread` across awaits, whose continuations can run on another thread. Neither path
-  is one this branch changed. Whether the branch makes them likelier is not settled by five runs: a candidate for the
-  spine's sixth principle, left to whoever owns those tests.
+  `AllocationTests.Scrolling_allocates_the_same_at_a_thousand_and_a_million_rows` (MEM-1) failed once.
+  - **What the branch leaves as it was is each test's file and its threading pattern**, not the code they drive. The
+    first reads a list that the grid's notification appends to, so a continuation on another thread can still be
+    appending while it is read. The second takes `GC.GetAllocatedBytesForCurrentThread` across awaits, whose
+    continuations can run on another thread, and it measures scroll renders through `ExGrid.razor`'s Viewport and
+    `ExGridRow`, both of which the branch changed (`HeaderRowCount` in `ShouldRender` and in `aria-rowindex`; the
+    header and the Placeholders).
+  - **The runs, and which left a log.** Five whole runs of each over the same hour: the branch failed three times
+    (EditingNotificationTests twice, AllocationTests once) and `origin/main` (`2265cda6`) none. Two logs survive, both
+    outside the repository in the session's scratch space: `alternate.log`, the last three runs of each alternated, with
+    the one branch failure (AllocationTests, the second branch run); and the task output of the first two runs on
+    `origin/main`, both passing. The branch's first two runs, the ones EditingNotificationTests failed, left no log
+    file. `ExGrid.Components` alone passed every time it was run.
+  - **The verifier's runs**: EditingNotificationTests, AllocationTests, AccessibilityTests and PointedStepTests, 72 of
+    72 three times, at load average 1.5 to 3.
+  - Whether the branch makes either failure likelier is not settled: a candidate for the spine's sixth principle, left
+    to whoever owns those tests.
 
 ## The check's output
 

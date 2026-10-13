@@ -117,9 +117,10 @@
             @if (!HideHeader)
             {
             @* Every row is counted where ARIA counts it (ADR-0033, 2026-10-12): the header's rows
-               first, from 1, and the data rows after them, so a reader names the same row by the
-               same number at the top, where it counts the rows painted before it, and far down,
-               where it reads aria-rowindex. Untiered, the header is the one row it always was.
+               first, from 1, and the data rows after them, so aria-rowindex gives a row the number
+               a reader counted from the rows painted before it near the top (NVDA, the seventeenth
+               Windows run), and the same number far down, where the DOM holds a Window. What a
+               reader says far down is a run's to hear. Untiered, the header is the one row it always was.
                Tiered, it holds a row per tier of Header Groups, top first, and the leaf row below
                them; each is display: contents, so the band lays out, paints and stacks exactly as
                one element of cells and rectangles did (ADR-0032), and only the tree says rows. *@

@@ -1,12 +1,12 @@
-import { test, expect, dataRowCount, headerRowsOf, scrollRowToTop } from './fixtures.mjs';
+import { test, expect, circuitQuiet, dataRowCount, headerRowsOf, scrollRowToTop } from './fixtures.mjs';
 import { sheet, openSheet, at } from './sheet-helpers.mjs';
 
 // The rows as ARIA counts them (ADR-0033, decided with the user 2026-10-12, after the seventeenth
 // Windows run's NVDA reading). The header's rows come first: the header row is row 1, and each tier
 // of Header Groups is a row of its own before it. The data rows are counted after them, and
-// aria-rowcount holds both. A screen reader works a row's number out from the rows painted before it
-// near the top, and reads it from aria-rowindex far down, so the two now agree: NVDA said "row 11"
-// for D10 near the top, where aria-rowindex said 10.
+// aria-rowcount holds both. Near the top NVDA counted the rows painted before a row: it said "row 11"
+// for D10, where aria-rowindex said 10. aria-rowindex now writes that number, near the top and far
+// down alike; what a reader says far down is still a Windows run's to hear.
 //
 // What a reader says is a Windows run's. What is read here is Chromium's accessibility tree, over
 // the DevTools protocol: which rows it holds, in its order, and which column headers or cells each
@@ -23,6 +23,9 @@ test.use({ viewport: { width: 1280, height: 1000 } });
  * listed as ignored, so the test can say so.
  */
 async function accessibleRows(page, selector, index = 0) {
+    // The tree is read whole, then a DOM node per row. On the Server host the circuit goes quiet
+    // first, so the reads see all the host will say (ADR-0056).
+    await circuitQuiet();
     const client = await page.context().newCDPSession(page);
     try {
         await client.send('DOM.enable');
@@ -164,6 +167,7 @@ test.describe('ADR-0033: /sheet', () => {
         expect(rows.filter((row) => row.ignored)).toEqual([]);
         expect(rows[0].index).toBe('1');
         expect(rows[0].headers.slice(0, 3)).toEqual(['A', 'B', 'C']);
+        expect(rows[0].cells).toBe(0);
         expect(rows.slice(1).map((row) => row.index)).toEqual(numbers(2, rows.length - 1));
         // D10, which NVDA read as "row 11" in the seventeenth run while aria-rowindex said 10.
         await expect(rowHolding(page, grid, 'D10')).toHaveAttribute('aria-rowindex', '11');
