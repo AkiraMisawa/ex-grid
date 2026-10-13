@@ -206,3 +206,19 @@ Until then, focus is on `body`, and a key typed in that gap lands wherever the b
 - **A held Tab is dropped with the keys behind it**, as ADR-0010's hold already does. Script can
   neither reproduce Tab nor move focus in its place. Typing then stops short where the user can see
   it, rather than running on in the wrong field. That is a deliberate limit, not a defect.
+
+*(2026-10-13, decided with the user.)* **A popover the core opens in a menu's place holds the keys
+typed while it opens, too.**
+- **The gap.** Opened from a menu command, a Consumer's popover replaces the menu in one render. That
+  render removed the element holding DOM focus, and the popover's contents took the keyboard a round
+  trip later. In between, DOM focus was on `body`, where the gate hears nothing. Whether a letter typed
+  there was lost turned on the round trip. The cases: ExSheet's Format Cells… from the Context Menu,
+  the status line's figures menu, and the Sheet Toolbar's choices. Find had the same gap, closed by
+  FD-1's fix (#107).
+- **The fix.** The core asks for the root's focus ahead of that render, as a close does. The keys land
+  on the root, are held, and are handed to the contents in order once they hold the keyboard.
+- **A Tab or Shift+Tab among them is dropped with the keys behind it**, as above. On this path, the
+  first bullet's Shift+Tab no longer reaches the trailing sentinel from behind and enters at the last
+  control. It is held and dropped, and DC-60's test changes with it. The other options were left: the
+  gap kept, and the timing with it; or a new message for the core to answer a held Tab with the first
+  or last control.
