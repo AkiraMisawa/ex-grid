@@ -1,4 +1,5 @@
-import { test, expect, setRoundTrip } from './fixtures.mjs';
+import { test, expect, setRoundTrip, circuitQuiet } from './fixtures.mjs';
+import { SERVER } from './hosting.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
@@ -140,16 +141,54 @@ test.describe('on /sheet', () => {
         await expect(cell(grid, 'C2')).toHaveText('0.5000');
     });
 
-    test('DC-60: Tab and Shift+Tab wrap inside Format Cells', async ({ page }) => {
+    test('DC-60/ADR-0039: Tab and Shift+Tab wrap inside Format Cells once it holds the keyboard', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(grid, 'C2');
         const cancel = formatCells(grid).getByRole('button', { name: 'Cancel' });
+        // Pressed once its tab holds the keyboard: one typed while it opens is held and dropped (below).
+        await expect(tab(grid, 'Number')).toBeFocused();
 
         await page.keyboard.press('Shift+Tab');
         await expect(cancel).toBeFocused();
         await page.keyboard.press('Tab');
         await expect(tab(grid, 'Number')).toBeFocused();
         await expect(formatCells(grid)).toBeVisible();
+    });
+
+    // ADR-0039's note of 2026-10-13. Format Cells replaces the Context Menu in one render, and its tab
+    // takes the keyboard a round trip after it on a circuit. The Sheet's root has the keyboard in
+    // between, and holds what is typed there for Format Cells; a Shift+Tab among it is dropped with
+    // the keys behind it (ADR-0010). Before, the keyboard was on nothing in that gap, and a Shift+Tab
+    // reached Format Cells' trailing sentinel from behind and entered at Cancel — DC-60's earlier test
+    // passed or not as the round trip fell. The keys are typed once the render that swaps the menu for
+    // Format Cells has landed, looked for frame by frame, inside the 150 ms the tab's focus is behind it.
+    test('DC-60/ADR-0039: with a 150 ms round trip, a Shift+Tab typed while Format Cells opens from the menu is dropped with the keys behind it', async ({ page }) => {
+        test.skip(!SERVER, 'WebAssembly hands Format Cells the keyboard in the task that draws it: nothing is typed in between');
+        const grid = sheet(page);
+        const item = page.getByRole('menuitem', { name: 'Format Cells…' });
+        await pressCell(grid, 'C2');
+        await pressAt(cell(grid, 'C2'), { button: 'right' });
+        await expect(item).toBeVisible();
+        await setRoundTrip(150);
+
+        await item.click();
+        await page.waitForFunction(() => document.querySelector('.ex-popover-consumer') !== null, null, { polling: 'raf' });
+        await page.keyboard.press('Shift+Tab');
+        await page.keyboard.press('ArrowRight');
+
+        // The tab takes the keyboard on Format Cells' own opening, and neither key moved it: not to
+        // Cancel, nor on to the Alignment tab.
+        await expect(tab(grid, 'Number')).toBeFocused();
+        await circuitQuiet();
+        await expect(tab(grid, 'Number')).toBeFocused();
+        await expect(tab(grid, 'Number')).toHaveAttribute('aria-selected', 'true');
+        await expect(grid.locator('.ex-viewport .ex-editor')).toHaveCount(0);
+
+        // From here the keyboard is Format Cells', and Shift+Tab wraps as ever.
+        await page.keyboard.press('Shift+Tab');
+        await expect(formatCells(grid).getByRole('button', { name: 'Cancel' })).toBeFocused();
+        await page.keyboard.press('Tab');
+        await expect(tab(grid, 'Number')).toBeFocused();
     });
 
     test('SH-45, case 24: over cells that differ the Font style is empty and the Fill is No Colour', async ({ page }) => {
