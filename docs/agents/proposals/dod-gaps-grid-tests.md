@@ -92,12 +92,22 @@ treated exactly as if a new list had been handed. The column state the grid itse
 across by column Name, as AG Grid carries its column state by colId when columnDefs are re-applied.
 
 **What the grid does now:**
-- **One code path.** `SetParametersAsync` notes each of the three lists' element references.
+- **Drawn from the copy (decided with the user on 2026-10-13).** The grid takes a read-only copy of
+  each of the three lists when it is handed one, and draws from the copy. A Consumer's change to
+  its own list shows when the list is handed again, never through a render of the grid's own (a
+  scroll, a key) in between. Handing back the copy the grid exposes is no change.
+- **One code path.** `SetParametersAsync` compares each handed list with the copy, element by
+  element, by reference.
 - **When the same instance arrives with other elements,** the grid takes a copy of it, a new
   instance. Everything keyed on the list's identity then rebuilds exactly as for a new list, and the
   skip is not taken.
 - **Handed again unchanged,** the copy is kept, so nothing rebuilds and UX-5 still skips.
-- **The Window** keeps its painted-rows check (ADR-0141).
+- **The Window** keeps its painted-rows check (ADR-0141). It is not copied, so the same reasoning
+  does apply to it, and that is a question for the user. A row replaced in place in a pushed Window
+  array, off screen, shows as soon as a scroll of the grid's own paints it, before the Consumer hands
+  the array again. A row replaced in place on screen repaints when the array is handed again, by the
+  painted-rows check. Copying the Window on each handing would cost a pass over the whole Window,
+  which ADR-0141 refused, so it was not done.
 
 **Column state, on any new or changed Columns list:**
 - **Carried by Name:**
@@ -108,12 +118,6 @@ across by column Name, as AG Grid carries its column state by colId when columnD
     (ADR-0003's note of 2026-10-11).
 - **Ended, not carried:** a header reorder drag. It lifted a unit of columns by position, and a drop
   against the new order would report a move of other columns (principle 6).
-- **Not covered: a list changed in place and not yet handed again.** The grid copies a list only
-  once it has been handed again changed. Until then it reads the Consumer's own instance, as it always
-  has, so a render of the grid's own (a scroll) between the Consumer's edit and its next render reads
-  the new elements against the old layout. Holding a copy from the first handing would close this. It
-  was tried. It made every re-handing of `cut.Instance.Columns` a new list. It also hid from
-  `HeaderGroupRenderingTests` the resolutions it counts on the Consumer's list. So it was left out.
 - **Not carried, as ADR-0011 decides:** the Selection, the Copied Range and an open edit. They are
   matched by column names in order, and dropped when the visible columns change.
 - **Not held by the grid, nothing to carry:**
@@ -149,7 +153,9 @@ new ->
   dragging, a column's measured Auto width for the same instance — is carried across by the column's
   Name, as AG Grid matches re-applied columnDefs by colId. What is derived from a definition is not
   carried across instances, by the note above. The Selection, the Copied Range and an open edit still
-  go when the visible columns change (ADR-0011).)*
+  go when the visible columns change (ADR-0011). A list handed to the grid is drawn from the copy the
+  grid takes when it is handed; a Consumer's in-place mutation shows when the list is handed again,
+  never through a render of the grid's own in between.)*
 ```
 
 ### Definition of Done, a new row after FN-21 (FN-22 is the first free FN number)
@@ -161,7 +167,7 @@ old ->
 new ->
 ```
 | **FN-21** | MUST | A Chrome seam's contents may hold an **Inner Popup** drawn outside the instance root. While one is open: Escape closes the Inner Popup first and the next Escape the popover; under the design system's default (`ModalOverlay = false`) a pointer-down elsewhere in the instance closes both and keeps its own meaning, and under `ModalOverlay = true` only the Inner Popup closes; closing the popover any way removes the Inner Popup; DOM focus returns to the root (ADR-0039) | Layer 2: the contents report the popup through `InnerPopupChanged`, and the gate is told; Layer 3 with `ExGrid.MudBlazor`'s filter panel — a `MudSelect` and a `MudDatePicker` — by pointer and by key, under both settings, with two grids on the page and with one inside a `MudDialog` | every clause observed; the other grid unaffected |
-| **FN-22** | MUST | A `Columns`, `HeaderGroups` or `Sorts` list handed again as the same instance with other elements is taken as a new list — a column added, replaced, removed or moved in place repaints header and cells — and the column state the grid holds (an open column popover, a resize in progress, a measured Auto width of the same instance) follows its column by Name; the same list holding the same elements renders nothing (ADR-0003, note of 2026-10-13; ADR-0027 P3) | Layer 2: a Consumer changing its lists in place and rendering | each change painted; the open menu on its column after a move; no render when nothing changed |
+| **FN-22** | MUST | A `Columns`, `HeaderGroups` or `Sorts` list handed again as the same instance with other elements is taken as a new list — a column added, replaced, removed or moved in place repaints header and cells when the list is handed again, and never before, through a render of the grid's own: the grid draws from the copy it took when handed the list — and the column state the grid holds (an open column popover, a resize in progress, a measured Auto width of the same instance) follows its column by Name; the same list holding the same elements renders nothing (ADR-0003, note of 2026-10-13; ADR-0027 P3) | Layer 2: a Consumer changing its lists in place, the grid rendering for its own reasons, then the Consumer rendering | the old state painted until the list is handed again, then each change; the open menu on its column after a move; no render when nothing changed |
 ```
 
 ### Docs Site (pages are off limits to this branch)
@@ -177,6 +183,7 @@ new ->
 ```
             rows, never rewrite them in place. And keep the source and the column list in fields, so they are the
             same objects on every render. A column list you change in place — a column added, replaced, removed or
-            moved — is taken as a new list, and what the grid holds for a column follows it by its Name.
+            moved — shows when you hand it to the grid again, as a new list would: the grid draws from the copy it
+            took when it was handed the list, and what it holds for a column follows the column by its Name.
 ```
 

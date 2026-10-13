@@ -375,15 +375,15 @@ public class HeaderGroupRenderingTests : GridTestContext
     }
 
     /// <summary>
-    /// A declaration that counts resolutions from outside the component. It counts
-    /// **indexer reads, not `Count` reads**: `HeaderGroupLayout.Resolve` reads the length
-    /// several times over (its own guard, the result's size, the loop condition) and the
-    /// component reads it once more to decide whether to resolve at all, so a length
-    /// counter measures reads and not resolutions. It takes each group exactly once, so
-    /// with a single group declared this counter *is* the resolution count.
+    /// A declaration that counts how often the grid reads it, from outside the component. It
+    /// counts **indexer reads, not `Count` reads**, and it takes each group exactly once, so with a
+    /// single group declared this counter is the number of times the grid took the declaration in.
     ///
-    /// <para>Nothing else in the component reads the parameter: the painting reads the
-    /// resolved layout, which is the whole of HG-11.</para>
+    /// <para>The grid takes a declaration in once, as the copy it draws from (ADR-0003, the note of
+    /// 2026-10-13), and resolves membership from that copy; the resolutions themselves are counted
+    /// where they happen, by <c>HeaderGroupResolutions</c>. Both are asserted: the Consumer's list is
+    /// read once per push, and membership is resolved once per push and never on the render path —
+    /// the whole of HG-11.</para>
     /// </summary>
     private sealed class CountingGroups(IReadOnlyList<HeaderGroup> inner) : IReadOnlyList<HeaderGroup>
     {
@@ -421,6 +421,7 @@ public class HeaderGroupRenderingTests : GridTestContext
         // of them the declaration was resolved exactly once, on the push that brought it.
         Assert.True(cut.RenderCount > renders, "the scrolls rendered nothing, so this proves nothing");
         Assert.Equal(1, groups.Resolutions);
+        Assert.Equal(1, cut.Instance.HeaderGroupResolutions);
         Assert.NotEmpty(cut.FindAll(".ex-header-group"));
     }
 
@@ -431,6 +432,7 @@ public class HeaderGroupRenderingTests : GridTestContext
             [new HeaderGroup("CVA", [TestRows.ColumnName(1), TestRows.ColumnName(2)])]);
         var cut = RenderGrid(groups: groups);
         Assert.Equal(1, groups.Resolutions);
+        Assert.Equal(1, cut.Instance.HeaderGroupResolutions);
 
         var pushed = new CountingGroups(
             [new HeaderGroup("CVA", [TestRows.ColumnName(2), TestRows.ColumnName(3)])]);
@@ -440,6 +442,7 @@ public class HeaderGroupRenderingTests : GridTestContext
         // re-read, and the new one is resolved rather than assumed unchanged.
         Assert.Equal(1, groups.Resolutions);
         Assert.Equal(1, pushed.Resolutions);
+        Assert.Equal(2, cut.Instance.HeaderGroupResolutions);
         Assert.Contains("left: 200px", cut.FindAll(".ex-header-group")[0].GetAttribute("style"));
     }
 

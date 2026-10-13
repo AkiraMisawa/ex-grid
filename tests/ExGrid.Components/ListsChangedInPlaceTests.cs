@@ -249,4 +249,32 @@ public class ListsChangedInPlaceTests : GridTestContext
 
         Assert.Empty(host.FindAll(".stub-menu"));
     }
+
+    [Fact] // FN-22, ADR-0003 (2026-10-13): the grid draws from the copy it took when handed the list — a change in place shows when the list is handed again, never through a render of the grid's own in between
+    public async Task FN22_a_change_in_place_waits_for_the_list_to_be_handed_again()
+    {
+        var host = RenderConsumer();
+        var grid = host.FindComponent<ExGrid<TestRow>>();
+
+        host.Instance.Columns.Add(new GridColumn<TestRow>("Extra", ColumnType.Text, r => "x" + r.Book));
+        host.Instance.Columns[1] = new GridColumn<TestRow>("Replaced", ColumnType.Text, r => "y" + r.Book);
+        var renders = grid.RenderCount;
+        // The grid renders for its own reasons before the Consumer renders again: a scroll.
+        await ScrollToAsync(host.Find(".ex-scroller"), 3 * 20);
+        await host.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+
+        Assert.True(grid.RenderCount > renders, "the scroll rendered nothing, so this proves nothing");
+        Assert.Equal(["Book", "Amount", "AsOf"], Headers(host).Take(3));
+        Assert.DoesNotContain("Extra", Headers(host));
+        Assert.Equal("Row 000003", FirstRowCells(host)[0]);
+        Assert.DoesNotContain(FirstRowCells(host), cell => cell.StartsWith('x') || cell.StartsWith('y'));
+
+        // Handed again, the list is taken anew and the change shows.
+        Rerender(host);
+
+        Assert.Equal("Replaced", Headers(host)[1]);
+        Assert.Equal("Extra", Headers(host)[^1]);
+        Assert.Equal("yRow 000003", FirstRowCells(host)[1]);
+        Assert.Equal("xRow 000003", FirstRowCells(host)[^1]);
+    }
 }

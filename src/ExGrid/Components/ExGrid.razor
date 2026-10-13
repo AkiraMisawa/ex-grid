@@ -2732,13 +2732,16 @@
         var same = _bound && parameters.GetEnumerator().MoveNext();
         foreach (var parameter in parameters)
         {
+            // Columns, HeaderGroups and Sorts are judged by the copy the grid took of them
+            // (2026-10-13, decided with the user); every other parameter by what it was handed.
+            if (TakeInList(parameter.Name, parameter.Value) is { } unchanged)
+            {
+                same &= unchanged;
+                continue;
+            }
             if (same && !(_heldParameters.TryGetValue(parameter.Name, out var held) && SameParameter(held, parameter.Value)))
                 same = false;
             _heldParameters[parameter.Name] = parameter.Value;
-            // Columns, HeaderGroups and Sorts: the same instance whose elements changed is a new
-            // list (2026-10-13, decided with the user).
-            if (TakeInList(parameter.Name, parameter.Value))
-                same = false;
         }
         // Last, so a scalar that moved spares the walk of the painted rows.
         if (same && parameters.TryGetValue<IReadOnlyList<TRow>>(nameof(Window), out var window) && window is not null)
@@ -2763,87 +2766,125 @@
             || _editorNeedsFocus
             || _focusRequest is not null;
 
-    // Columns, HeaderGroups and Sorts, as handed and as the grid takes them (decided with the user
-    // on 2026-10-13, after AG Grid's re-applied columnDefs). A list handed again as the same
-    // instance whose elements changed — a column added, replaced, removed or moved in place — is
-    // taken exactly as a new list would be: the grid takes a copy of it, a new instance, and
-    // everything keyed on the list's identity (ADR-0003) rebuilds through the one path a new list
-    // takes. Handed again unchanged, the grid keeps the instance it took, so nothing rebuilds. The
-    // elements are compared by reference against a snapshot taken once per list taken in, by one
-    // enumeration and with nothing allocated beyond it; these lists are short.
-    private sealed class TakenList(object? handed, object? taken, object?[] elements)
+    /// <summary>How many times this grid has read a group out of its own copies of the Header
+    /// Groups declaration, by index: with one group declared, how many times it resolved the
+    /// membership (ADR-0032, HG-11), wherever it did so. The grid resolves from its copy and never
+    /// reads the Consumer's list for it, so this is where a resolution can be seen.</summary>
+    internal int HeaderGroupResolutions
+        => _retiredGroupReads + (_takenLists.TryGetValue(nameof(HeaderGroups), out var groups) && groups.Copy is TakenCopy<HeaderGroup> copy ? copy.Reads : 0);
+
+    private int _retiredGroupReads;
+
+    // Columns, HeaderGroups and Sorts are drawn from the copy the grid takes when it is handed
+    // one (decided with the user on 2026-10-13, after AG Grid's re-applied columnDefs). A
+    // Consumer's change to its own list shows when the list is handed again, and never through a
+    // render of the grid's own in between — a scroll, a key — which reads the copy. Handed again,
+    // the list is compared with the copy element by element, by reference: the same elements, or
+    // the copy itself handed back, are no change, and nothing is taken or rebuilt; anything else
+    // is a new list, of which a new copy is taken, so everything keyed on the list's identity
+    // (ADR-0003) rebuilds through the one path a new list takes. The comparison reads the handed
+    // list once, by its enumerator, and allocates nothing beyond it; a copy is made once per
+    // handing that differs, read through the list's indexer.
+    private sealed class TakenList(object? handed, object? copy)
     {
         public object? Handed { get; set; } = handed;
-        public object? Taken { get; set; } = taken;
-        public object?[] Elements { get; set; } = elements;
+        public object? Copy { get; set; } = copy;
     }
 
     private readonly Dictionary<string, TakenList> _takenLists = new(StringComparer.Ordinal);
 
-    /// <summary>Notes a handed Columns, HeaderGroups or Sorts list against the one taken before;
-    /// true when it is the same instance with other elements, which is a change.</summary>
-    private bool TakeInList(string name, object? handed)
+    /// <summary>Takes in a handed Columns, HeaderGroups or Sorts list: null for any other
+    /// parameter; otherwise whether it is unchanged against the copy the grid holds — the copy
+    /// itself, or a list holding the copy's elements in order. A changed or new list is copied.</summary>
+    private bool? TakeInList(string name, object? handed)
     {
         if (name is not (nameof(Columns) or nameof(HeaderGroups) or nameof(Sorts)))
-            return false;
-        if (_takenLists.TryGetValue(name, out var taken) && ReferenceEquals(taken.Handed, handed) && handed is not null)
+            return null;
+        _takenLists.TryGetValue(name, out var taken);
+        if (handed is null)
         {
-            if (SameElements(taken.Elements, handed))
-                return false;
-            taken.Taken = CopyOf(name, handed);
-            taken.Elements = ElementsOf(handed);
+            var wasNull = taken is not null && taken.Copy is null;
+            if (taken?.Copy is TakenCopy<HeaderGroup> nulled)
+                _retiredGroupReads += nulled.Reads;
+            _takenLists[name] = new TakenList(null, null);
+            return wasNull;
+        }
+        if (taken is not null && (ReferenceEquals(handed, taken.Copy)
+            || (ReferenceEquals(handed, taken.Handed) && SameElements((System.Collections.IEnumerable)taken.Copy!, handed))))
+        {
             return true;
         }
-        _takenLists[name] = new TakenList(handed, handed, ElementsOf(handed));
+        if (taken?.Copy is TakenCopy<HeaderGroup> retired)
+            _retiredGroupReads += retired.Reads;
+        _takenLists[name] = new TakenList(handed, CopyOf(name, handed));
         return false;
     }
 
-    private static object?[] ElementsOf(object? handed)
-        => handed is System.Collections.IEnumerable sequence ? [.. sequence.Cast<object?>()] : [];
-
-    /// <summary>Whether <paramref name="handed"/> holds exactly <paramref name="held"/>, element by
-    /// element, read once by its enumerator — never its indexer, which a Consumer's list may count.</summary>
-    private static bool SameElements(object?[] held, object handed)
+    /// <summary>Whether <paramref name="handed"/> holds exactly the copy's elements, in order: both
+    /// read once by their enumerators, never an indexer.</summary>
+    private static bool SameElements(System.Collections.IEnumerable copy, object handed)
     {
         if (handed is not System.Collections.IEnumerable sequence)
             return false;
-        var at = 0;
+        var mine = copy.GetEnumerator();
         foreach (var element in sequence)
         {
-            if (at == held.Length || !ReferenceEquals(held[at], element))
+            if (!mine.MoveNext() || !ReferenceEquals(mine.Current, element))
                 return false;
-            at++;
         }
-        return at == held.Length;
+        return !mine.MoveNext();
     }
 
+    /// <summary>The grid's own copy of a handed list, read once through its indexer.</summary>
     private static object CopyOf(string name, object handed) => name switch
     {
-        nameof(Columns) => ((IReadOnlyList<GridColumn<TRow>>)handed).ToArray(),
-        nameof(HeaderGroups) => ((IReadOnlyList<HeaderGroup>)handed).ToArray(),
-        _ => ((IReadOnlyList<SortSpec>)handed).ToArray(),
+        nameof(Columns) => new TakenCopy<GridColumn<TRow>>((IReadOnlyList<GridColumn<TRow>>)handed),
+        nameof(HeaderGroups) => new TakenCopy<HeaderGroup>((IReadOnlyList<HeaderGroup>)handed),
+        _ => new TakenCopy<SortSpec>((IReadOnlyList<SortSpec>)handed),
     };
 
-    /// <summary>Puts the lists the grid took in place of the ones handed, first thing in
-    /// <see cref="OnParametersSet"/>: the copy taken for a list changed in place, kept for as
-    /// long as it is handed again unchanged.</summary>
+    /// <summary>A read-only copy of a handed list, which counts the reads made through its indexer
+    /// (<see cref="HeaderGroupResolutions"/>); its enumerator counts nothing.</summary>
+    private sealed class TakenCopy<T> : IReadOnlyList<T>
+    {
+        private readonly T[] _items;
+
+        public TakenCopy(IReadOnlyList<T> handed)
+        {
+            _items = new T[handed.Count];
+            for (var i = 0; i < _items.Length; i++)
+                _items[i] = handed[i];
+        }
+
+        public int Reads { get; private set; }
+
+        public T this[int index]
+        {
+            get
+            {
+                Reads++;
+                return _items[index];
+            }
+        }
+
+        public int Count => _items.Length;
+
+        public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)_items).GetEnumerator();
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => _items.GetEnumerator();
+    }
+
+    /// <summary>Puts the copies the grid took in place of the lists handed, first thing in
+    /// <see cref="OnParametersSet"/>, so that nothing of the grid ever reads a Consumer's own
+    /// list.</summary>
     private void UseTakenLists()
     {
-        if (_takenLists.TryGetValue(nameof(Columns), out var columns) && ReferenceEquals(columns.Handed, Columns)
-            && columns.Taken is IReadOnlyList<GridColumn<TRow>> takenColumns)
-        {
+        if (_takenLists.TryGetValue(nameof(Columns), out var columns) && columns.Copy is IReadOnlyList<GridColumn<TRow>> takenColumns)
             Columns = takenColumns;
-        }
-        if (_takenLists.TryGetValue(nameof(HeaderGroups), out var groups) && HeaderGroups is not null
-            && ReferenceEquals(groups.Handed, HeaderGroups) && groups.Taken is IReadOnlyList<HeaderGroup> takenGroups)
-        {
-            HeaderGroups = takenGroups;
-        }
-        if (_takenLists.TryGetValue(nameof(Sorts), out var sorts) && Sorts is not null
-            && ReferenceEquals(sorts.Handed, Sorts) && sorts.Taken is IReadOnlyList<SortSpec> takenSorts)
-        {
-            Sorts = takenSorts;
-        }
+        if (_takenLists.TryGetValue(nameof(HeaderGroups), out var groups))
+            HeaderGroups = groups.Copy as IReadOnlyList<HeaderGroup>;
+        if (_takenLists.TryGetValue(nameof(Sorts), out var sorts))
+            Sorts = sorts.Copy as IReadOnlyList<SortSpec>;
     }
 
     private static bool SameParameter(object? held, object? handed)
