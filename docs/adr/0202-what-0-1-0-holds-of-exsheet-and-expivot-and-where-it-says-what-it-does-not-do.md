@@ -164,6 +164,10 @@ The run ExGrid's own by-hand rows need anyway (VZ-14, VZ-16, FN-12e, ED-30, SM-7
   *(2026-10-12, decided with the user: also ExGrid's VZ-18 on the remote-isolation PC. The
   repaint after a reveal is in, and its layer-3 test gates; the check on that PC is not run for `0.1.0`,
   and the observation of 2026-10-08, which names no commit, is not taken as its record.)*
+  *(2026-10-12, decided with the user: also the Number and Date widths under a Windows display language
+  other than English and Japanese. `system-ui` is the face Windows sets for its display language, and only
+  those two were measured (FN-12e, ADR-0016); under another, a glyph its face paints wider than the table
+  charges is charged under what it paints.)*
   *(2026-10-12, decided with the user: also how far ExSheet widens a column for an italic number over `####`. Over
   123456789.12 in `0.00` at the standard width, Excel's Format Cells' Font tab widened column A to
   12.45 for Italic alone, and to 11.73 for a single underline or a colour alone (the readings of

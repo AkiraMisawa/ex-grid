@@ -115,8 +115,17 @@ at `f5b9f093` as at `8436e45e`. The class members are the script's, as run 17 us
 
 - **By class, every widest glyph is within its default**, in both faces and both browsers. Three are within 0.05 px:
   the digit `₺` at both sizes, and the other class's `ѝ` at 14 px bold.
+  *(Corrected 2026-10-12, when the records were folded on `claude/run17gh-glyphs`: `ѝ` is a letter the core's table
+  holds, so it is charged its entry, not the other class, and was charged 9.82 px at 14 px, under what Yu Gothic UI
+  paints; the table now charges it 15.45. The widest glyph no table holds is `؋` in Tahoma, 14.328 px against 15.46
+  (12.281 against 13.26 at 12 px). Within 0.05 px are the digit `₺` at both sizes, by 0.047 and 0.032 px, and the
+  wide class's `−` at both sizes, regular, by 0.04 px.)*
 - `roboto` under the Japanese display is within too, as under the English one (wide 12.453, digit 9.344, narrow 4.672
   at 14 px).
+  *(Corrected 2026-10-12: those are compared with the core's defaults. Against the widths `MudExGridPresentation`
+  cascades for Roboto, `%` and `E` are past the wide and digit classes (10.4 and 8.3). And they are not Roboto's:
+  every glyph the records name Roboto as the painter of reads Arial's advance, 446 of 451 exactly, so the widths
+  were read before Roboto applied. Layer 1 does not read these two records; `tests/GlyphWidths/README.md` says why.)*
 - **Per glyph** (layer 1's `Every_glyph_is_charged_at_least_its_width`, and `tables.mjs`'s tables) is not run here. The
   requester folds these records into `tests/GlyphWidths/` and runs `tables.mjs` there.
 

@@ -834,7 +834,9 @@ UI under this English display language) and the grid's face, Roboto. The records
   - `No_text_a_built_in_format_paints_is_wider_than_its_estimate` passes for every Windows record: no string the
     built-in formats paint is wider than its estimate.
   - Layer 1 reads `system-ui` and DejaVu Sans. The Windows Roboto records are not among its faces, and were compared by
-    class only.
+    class only, against the core's defaults rather than Roboto's own widths. *(Corrected 2026-10-12: against Roboto's
+    widths every class is within, by as little as 0.005px, and `RobotoGlyphWidthCorpusTests` now reads these records
+    and passes.)*
   - The row's first clause, "each `CellTextMetrics` default is at least the widest glyph measured for its class on
     Windows", is therefore met by class and not met by these seven glyphs.
 - **ADR-0016's table** is not changed by this run. The Windows measurements are recorded here, beside it.

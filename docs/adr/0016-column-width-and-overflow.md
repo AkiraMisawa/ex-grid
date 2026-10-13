@@ -276,6 +276,64 @@ costs a hover, a clipped number costs a misread — applied across platforms ins
 It costs a slightly early `####` on the narrower families, which is the direction the rule allows.
 Windows and macOS are measured by hand, like the other checks only a person can run, and the
 numbers are recorded here. Until they are, the defaults are the widest measured so far.
+*(2026-10-12, the seventeenth Windows run, FN-12e: **Windows measured.** Chrome 154 and Edge 155,
+headless, on Windows 11 with an English (United Kingdom) display at 150%, measured `system-ui` (Segoe
+UI, and Segoe UI Semibold at 500 and 600) and ExGrid.MudBlazor's Roboto with `tests/GlyphWidths`'
+tool, over the corpus of 3,091 strings. The two browsers read the same widths. Each class's widest
+glyph at 400, 500 and 600 (regular) and at 700 (bold), against the width that charges it; "other" is
+the widest glyph no table holds, full-width aside, which is an em on Windows too:)*
+
+| Segoe UI | 14px regular | 14px bold | 12px regular | 12px bold |
+|---|---|---|---|---|
+| wide | 11.766 (`%`) / 14.04 | 12.141 (`%`) / 14.36 | 10.094 (`%`) / 12.04 | 10.406 (`%`) / 12.44 |
+| digit | 8.625 (`₫`) / 9.75 | 9.078 (`₫`) / 9.75 | 7.391 (`₫`) / 8.36 | 7.781 (`₫`) / 8.36 |
+| narrow | 5.797 (`/`) / 6.41 | 6.219 (`/`) / 6.41 | 4.969 (`/`) / 5.49 | 5.328 (`/`) / 5.49 |
+| other | 11.328 (`₼`) / 15.46 | 11.656 (`₼`) / 15.46 | 9.703 (`₼`) / 13.26 | 10.000 (`₼`) / 13.26 |
+
+| Roboto | 14px regular | 14px bold | 12px regular | 12px bold |
+|---|---|---|---|---|
+| wide | 10.344 (`%`) / 10.40 | 10.359 (`%`) / 10.40 | 8.859 (`%`) / 8.91 | 8.875 (`%`) / 8.91 |
+| digit | 8.281 (`£`) / 8.30 | 8.328 (`£`) / 8.34 | 7.109 (`£`) / 7.11 | 7.141 (`£`) / 7.15 |
+| narrow | 5.781 (`/`) / 5.80 | 5.203 (`/`) / 5.25 | 4.953 (`/`) / 4.97 | 4.453 (`/`) / 4.50 |
+| other | 11.547 (`₾`, Arial) / 12.44 | 11.547 (`₾`, Arial) / 12.28 | 9.891 (`₾`, Arial) / 10.66 | 9.891 (`₾`, Arial) / 10.53 |
+
+*(Every class holds on Windows. Roboto's widths at 12px are its 14px ones scaled, as the core scales them.
+Seven letters did not: Segoe UI paints `ƒ` at every weight (7.547px against 6.10 at 14px, 400; 8.063 at
+700), `ť` at 700 (7.188 against 6.71), and the Hebrew `ג` `ט` `י` `ס` `פ` at some weights wider than the
+table charged them, by 0.001 to 0.76px. A Number or Date holding one was charged under what it paints. The
+records are now in `tests/GlyphWidths` (`<face>.windows.<browser>.json`), and the table takes each glyph at
+the widest of every record, so the seven are charged what Segoe UI paints: `ƒ` 7.79 and bold 8.07 at 14px,
+6.68 and 6.92 at 12px. On Windows, Thai is painted in Tahoma, the ideographs in Microsoft YaHei (Chrome) or
+Noto Sans JP (Edge) and Hangul in Malgun Gothic, in both faces; they are the other class's or the
+full-width class's, as on macOS.)*
+*(2026-10-12, FN-12e: **Windows under a Japanese display measured.** The same tool, browsers and desk at
+150%, with Windows' display language Japanese and its regional format left English (United Kingdom).
+`system-ui` is the message font Windows sets for its display language: Yu Gothic UI under Japanese, and
+Yu Gothic UI Semibold at 500 and 600, for 467 of the 523 glyphs measured. The Hebrew letters and `֏`,
+which it lacks, stay in Segoe UI; Thai, `؋` and `₭ ₲ ₴ ₵ ₼ ₽ ₾ ₿` go to Tahoma. The two browsers read
+the same widths. Each class's widest glyph, as above:)*
+
+| Yu Gothic UI | 14px regular | 14px bold | 12px regular | 12px bold |
+|---|---|---|---|---|
+| wide | 14.000 (`−`) / 14.04 | 14.000 (`−`) / 14.36 | 12.000 (`−`) / 12.04 | 12.000 (`−`) / 12.44 |
+| digit | 9.703 (`₺`) / 9.75 | 9.703 (`₺`) / 9.75 | 8.328 (`₺`) / 8.36 | 8.328 (`₺`) / 8.36 |
+| narrow | 5.797 (`/`) / 6.41 | 5.797 (`/`) / 6.41 | 4.969 (`/`) / 5.49 | 4.969 (`/`) / 5.49 |
+| other | 14.328 (`؋`, Tahoma) / 15.46 | 14.328 (`؋`, Tahoma) / 15.46 | 12.281 (`؋`, Tahoma) / 13.26 | 12.281 (`؋`, Tahoma) / 13.26 |
+
+*Every class holds under a Japanese display, by little: the wide class by 0.04px at both sizes, since Yu
+Gothic UI draws `−` an em wide, and the digit class by 0.047px at 14px and 0.032px at 12px (`₺`). Eight
+letters and signs the table holds did not: Yu Gothic UI paints the Cyrillic `Ѐ` `ѐ` `ѝ` an em wide or more
+(`ѝ` 15.438px at 14px, against 9.82 charged), `₦` `₱` `₡` `฿` wider than the table charged them (`₦`
+11.609 against 9.76), and `ď` at 500 and 600 by 0.006px. The records are in `tests/GlyphWidths` as
+`system-ui.windows-ja.<browser>.json`, and the table takes them: `ѝ` is charged 15.45 at 14px and 13.24 at
+12px. ExGrid.MudBlazor's Roboto was measured in the same run, and its records are not read: every glyph
+they name Roboto as the painter of reads Arial's advance (446 of 451, exactly), so the widths were read
+before Roboto applied and the painters after. `measure.mjs` now reads each glyph again after its painter
+and refuses a record whose widths changed in between. Roboto is a web font the page serves, so its own
+widths should not change with the display language, and the glyphs it lacks read the same widths as
+under English. No other display language is measured.)* *(2026-10-12, decided with the user: Windows
+under a display language other than English and Japanese is a Known limitation of `0.1.0`, listed in
+[ADR-0202](./0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md).)*
 
 **`−`, `+` and `#` move to the wide class** *(decided with the user, 2026-09-25)*. At 11.731px
 they break the digit class by more than a quarter, and the wide class already covers them. On a
@@ -433,8 +491,10 @@ runtime object** (`CONTEXT.md`). Only the interaction with saved views needs set
   - *(2026-10-01, ticket 83, built.)* **Letters and currency signs are charged their own measured
     widths.** Each face's `GlyphWidthTable` holds every letter and currency sign it draws, regular and
     bold, measured at every weight painted.
-    - The core's table has 438 glyphs: those DejaVu draws, each at the wider of DejaVu and macOS
-      system-ui, measured at 14px and at 12px. Roboto's has 415.
+    - The core's table has 438 glyphs: those DejaVu draws, each at the widest of DejaVu, macOS's
+      system-ui and Windows' (Segoe UI under an English display and Yu Gothic UI under a Japanese
+      one, in Chrome and Edge; from 2026-10-12), measured at 14px and at 12px. Roboto's has 415, each
+      at the widest of macOS and Windows under an English display.
     - **Glyphs no table holds** fall to a fifth class, **other**, charged at the widest such glyph
       (15.46px in the core, 12.44 in Roboto). That covers glyphs a face lacks, unforeseen glyphs,
       and a Consumer's font that supplies no table.
