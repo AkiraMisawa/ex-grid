@@ -12,9 +12,12 @@ nix develop -c dotnet run --project spikes/exposure-chart -- --urls http://local
 Select **Date** and the figures (drag, or click a header and Ctrl+click others), then right-click
 → **Chart selection**, or the button. One selected cell charts the whole table, as in Excel.
 
+![Select, chart, filter, compare](screenshots/poc.gif)
+
 | | |
 |---|---|
 | ![Panel per group, hovered](screenshots/hover.png) | ![One axis](screenshots/one-axis.png) |
+| ![Chart Filters](screenshots/filter.png) | |
 
 ## How it is built
 
@@ -29,6 +32,11 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
 - **SVG written in C#** (`ChartSvg`), one string that is both the picture and the download. The
   hover guide, the dots and the readout are CSS `:hover` and a native `<title>` — no JavaScript,
   nothing over the circuit while the pointer moves.
+- **Chart Filters, as Excel's funnel beside a chart** (`ChartView`): series by checkbox, by
+  Header Group, or by leaf across every group ("hide every Before"); dates by a From/To range or a
+  horizon (1Y / 5Y / 10Y / All) rather than Excel's one checkbox per category, which for 67 dates
+  is a list nobody reads. It narrows the chart and its CSV, never the grid or the definition, and
+  a hidden series keeps its colour slot so "After" stays blue when "Before" goes.
 - **CSV with no script**: a `data:` URL behind `<a download>`, UTF-8 with a byte-order mark (Excel
   on a Japanese Windows otherwise reads Shift_JIS), invariant, unformatted, every digit; a missing
   value is an empty field, never a zero.

@@ -25,14 +25,28 @@ public sealed record ChartSeries(
 
 public sealed record ChartPanel(string Title, IReadOnlyList<ChartSeries> Series);
 
+/// <summary>
+/// Excel's Chart Filters: which series are shown and which stretch of the axis. It narrows what
+/// the chart draws and what its CSV holds, and leaves the grid and the definition alone, so
+/// showing a series again needs no new selection.
+/// </summary>
+public sealed record ChartView(IReadOnlySet<string> HiddenSeries, DateOnly? From, DateOnly? To)
+{
+    public static ChartView All { get; } = new(new HashSet<string>(), null, null);
+}
+
 /// <summary>What is drawn, resolved against the data as it is now.</summary>
+/// <param name="AllSeries">Every series of the definition, shown or not, for the filter's list.</param>
+/// <param name="AllDates">Every date of the definition the data holds, for the filter's range.</param>
 /// <param name="Missing">Row keys of the definition the data no longer holds.</param>
 public sealed record ChartModel(
     string XHeader,
     IReadOnlyList<DateOnly> Dates,
     IReadOnlyList<ChartPanel> Panels,
     IReadOnlyList<string> Leaves,
-    int Missing);
+    int Missing,
+    IReadOnlyList<ChartSeries> AllSeries,
+    IReadOnlyList<DateOnly> AllDates);
 
 public static class ChartModelBuilder
 {
@@ -45,7 +59,8 @@ public static class ChartModelBuilder
         IReadOnlyList<HeaderGroup> groups,
         IReadOnlyList<TRow> rows,
         Func<string, bool> isChange,
-        ChartLayout layout)
+        ChartLayout layout,
+        ChartView view)
     {
         var byName = columns.ToDictionary(c => c.Name);
         var x = byName[definition.XColumn];
@@ -85,10 +100,20 @@ public static class ChartModelBuilder
                 format is null ? v => v.ToString("N2") : v => format(v)));
         }
 
+        // The filter applies after the colours and dashes are given out, so that hiding "Before"
+        // leaves "After" the colour it had.
+        var from = view.From ?? DateOnly.MinValue;
+        var to = view.To ?? DateOnly.MaxValue;
+        var shownIndices = Enumerable.Range(0, dates.Count).Where(i => dates[i] >= from && dates[i] <= to).ToList();
+        var shown = series
+            .Where(s => !view.HiddenSeries.Contains(s.Column))
+            .Select(s => s with { Points = shownIndices.Select(i => s.Points[i]).ToList() })
+            .ToList();
+
         var panels = layout == ChartLayout.OneAxis
-            ? [new ChartPanel("", series)]
-            : series.GroupBy(s => s.Group).Select(g => new ChartPanel(g.Key, g.ToList())).ToList();
-        return new ChartModel(x.Header, dates, panels, leaves, missing);
+            ? shown.Count == 0 ? [] : [new ChartPanel("", shown)]
+            : shown.GroupBy(s => s.Group).Select(g => new ChartPanel(g.Key, g.ToList())).ToList();
+        return new ChartModel(x.Header, shownIndices.Select(i => dates[i]).ToList(), panels, leaves, missing, series, dates);
     }
 
     private static decimal? ToDecimal(object? value) => value switch

@@ -13,7 +13,7 @@
 <ExGrid TRow="ExposureRow" Source="_source" Columns="_columns" HeaderGroups="_groups" PinnedColumnCount="1"
         HeaderClickSelects="true" SelectionChanged="OnSelectionChanged"
         ContextCommands="_contextCommands" CommandLabel="_commandLabel"
-        ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+        ViewportHeight="230" ViewportWidth="ViewportSize.Stretch" />
 
 <div class="toolbar">
     <button type="button" @onclick="ChartCurrentSelection">Chart selection</button>
@@ -42,10 +42,74 @@
                     <span class="refusal"> — @model.Missing of them no longer in the data</span>
                 }
             </span>
+            <button type="button" class="filter-toggle @(_filterOpen ? "open" : "")" aria-expanded="@(_filterOpen ? "true" : "false")"
+                    @onclick="() => _filterOpen = !_filterOpen">Filter @(FilterSummary(model)) ▾</button>
             <a class="download" href="@ChartCsv.DataUrl(_csv!, "text/csv")" download="exposure-profile.csv">Download CSV</a>
             <a class="download" href="@ChartCsv.DataUrl(_svg!, "image/svg+xml")" download="exposure-profile.svg">Download SVG</a>
             <button type="button" @onclick="CloseChart">Close</button>
         </div>
+        @if (_filterOpen)
+        {
+            <div class="chart-filter" role="group" aria-label="Chart filter">
+                <div class="filter-section">
+                    <div class="filter-heading">
+                        <span>Series</span>
+                        <span class="leaf-toggles">
+                            @foreach (var leaf in model.Leaves)
+                            {
+                                var on = model.AllSeries.Where(s => s.Leaf == leaf).All(s => !_view.HiddenSeries.Contains(s.Column));
+                                <button type="button" class="chip @(on ? "on" : "")" aria-pressed="@(on ? "true" : "false")"
+                                        @onclick="() => ShowLeaf(leaf, !on)">@leaf</button>
+                            }
+                        </span>
+                    </div>
+                    @foreach (var group in model.AllSeries.GroupBy(s => s.Group))
+                    {
+                        var all = group.All(s => !_view.HiddenSeries.Contains(s.Column));
+                        <div class="filter-row">
+                            <label class="group-label">
+                                <input type="checkbox" checked="@all" @onchange="() => ShowColumns(group.Select(s => s.Column), !all)" />
+                                @(group.Key.Length == 0 ? "(no group)" : group.Key)
+                            </label>
+                            @foreach (var series in group)
+                            {
+                                var shown = !_view.HiddenSeries.Contains(series.Column);
+                                <label class="series-label">
+                                    <input type="checkbox" checked="@shown" @onchange="() => ShowColumns([series.Column], !shown)" />
+                                    <span class="swatch ex-chart-swatch-@(series.Slot % 5)"></span>@series.Leaf
+                                </label>
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="filter-section">
+                    <div class="filter-heading"><span>Dates</span></div>
+                    <div class="filter-row">
+                        <label>From
+                            <select value="@Key(_view.From ?? model.AllDates[0])" @onchange="e => SetRange(Parse(e.Value), _view.To)">
+                                @foreach (var d in model.AllDates)
+                                {
+                                    <option value="@Key(d)">@Key(d)</option>
+                                }
+                            </select>
+                        </label>
+                        <label>To
+                            <select value="@Key(_view.To ?? model.AllDates[^1])" @onchange="e => SetRange(_view.From, Parse(e.Value))">
+                                @foreach (var d in model.AllDates)
+                                {
+                                    <option value="@Key(d)">@Key(d)</option>
+                                }
+                            </select>
+                        </label>
+                        @foreach (var (label, years) in Presets)
+                        {
+                            <button type="button" class="chip" @onclick="() => SetHorizon(model, years)">@label</button>
+                        }
+                    </div>
+                </div>
+                <p class="filter-note">The CSV holds what the chart shows.</p>
+            </div>
+        }
         <div class="chart-body">@((MarkupString)_svg!)</div>
     </section>
 }
@@ -96,6 +160,10 @@
     private double _hedge = 1.0;
     private ChartLayout _layout = ChartLayout.PanelPerGroup;
 
+    private ChartView _view = ChartView.All;
+    private bool _filterOpen;
+    private static readonly (string Label, int? Years)[] Presets = [("1Y", 1), ("5Y", 5), ("10Y", 10), ("All", null)];
+
     private ChartDefinition? _definition;
     private ChartModel? _model;
     private string? _svg, _csv, _refusal;
@@ -129,6 +197,7 @@
         if (outcome.Definition is { } definition)
         {
             _definition = definition;
+            _view = ChartView.All;
             Redraw();
         }
     }
@@ -151,11 +220,47 @@
     private void Redraw()
     {
         if (_definition is null) return;
-        _model = ChartModelBuilder.Build(_definition, _columns, _groups, _rows, IsChange, _layout);
+        _model = ChartModelBuilder.Build(_definition, _columns, _groups, _rows, IsChange, _layout, _view);
         _svg = ChartSvg.Write(_model);
         _csv = ChartCsv.Write(_model);
     }
 
-    private void CloseChart() => (_definition, _model, _svg, _csv) = (null, null, null, null);
+    private void ShowColumns(IEnumerable<string> columns, bool show)
+    {
+        var hidden = new HashSet<string>(_view.HiddenSeries);
+        foreach (var c in columns)
+            if (show) hidden.Remove(c); else hidden.Add(c);
+        _view = _view with { HiddenSeries = hidden };
+        Redraw();
+    }
+
+    private void ShowLeaf(string leaf, bool show) =>
+        ShowColumns(_model!.AllSeries.Where(s => s.Leaf == leaf).Select(s => s.Column), show);
+
+    private void SetRange(DateOnly? from, DateOnly? to)
+    {
+        // A range turned inside out is put the right way round rather than drawn empty.
+        if (from is { } f && to is { } t && f > t) (from, to) = (t, f);
+        _view = _view with { From = from, To = to };
+        Redraw();
+    }
+
+    private void SetHorizon(ChartModel model, int? years) =>
+        SetRange(null, years is { } y ? model.AllDates[0].AddYears(y) : null);
+
+    private static string FilterSummary(ChartModel model)
+    {
+        var shown = model.Panels.Sum(p => p.Series.Count);
+        var dates = model.Dates.Count;
+        return shown == model.AllSeries.Count && dates == model.AllDates.Count
+            ? ""
+            : $"({shown}/{model.AllSeries.Count} series, {dates}/{model.AllDates.Count} dates)";
+    }
+
+    private static string Key(DateOnly d) => d.ToString("yyyy-MM-dd", Invariant);
+    private static DateOnly? Parse(object? value) =>
+        DateOnly.TryParseExact(value as string, "yyyy-MM-dd", Invariant, DateTimeStyles.None, out var d) ? d : null;
+
+    private void CloseChart() => (_definition, _model, _svg, _csv, _filterOpen) = (null, null, null, null, false);
 
 }

@@ -43,6 +43,8 @@ public static class ChartSvg
     public static string Write(ChartModel model)
     {
         var panels = model.Panels.Count;
+        if (panels == 0 || model.Dates.Count == 0)
+            return Empty(model, panels);
         var panelHeight = panels == 1 ? 360 : 190;
         var legendHeight = LegendRows(model) * 18 + 6;
         var height = legendHeight + panels * (Top + panelHeight) + (panels - 1) * Gap + Bottom;
@@ -51,11 +53,6 @@ public static class ChartSvg
         svg.Append(Invariant, $"""<svg xmlns="http://www.w3.org/2000/svg" class="ex-chart-root" viewBox="0 0 {Width} {height}" width="{Width}" height="{height}" role="img">""");
         svg.Append("<style>").Append(Style).Append("</style>");
 
-        if (model.Dates.Count == 0)
-        {
-            Text(svg, Width / 2, height / 2.0, "None of the charted rows is in the data any more.", "middle", "ex-chart-title");
-            return svg.Append("</svg>").ToString();
-        }
 
         var first = model.Dates[0];
         var last = model.Dates[^1];
@@ -163,6 +160,16 @@ public static class ChartSvg
             x += EntryWidth(name);
         }
         return rows;
+    }
+
+    private static string Empty(ChartModel model, int panels)
+    {
+        var why = panels == 0 ? "Every series is filtered out." : "No charted date is in the filter's range, or in the data.";
+        var svg = new StringBuilder();
+        svg.Append(Invariant, $"""<svg xmlns="http://www.w3.org/2000/svg" class="ex-chart-root" viewBox="0 0 {Width} 120" width="{Width}" height="120" role="img">""");
+        svg.Append("<style>").Append(Style).Append("</style>");
+        Text(svg, Width / 2, 64, why, "middle", "ex-chart-title");
+        return svg.Append("</svg>").ToString();
     }
 
     private static void WriteLegend(StringBuilder svg, ChartModel model, double height)
