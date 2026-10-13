@@ -212,9 +212,13 @@ typed while it opens, too.**
 - **The gap.** Opened from a menu command, a Consumer's popover replaces the menu in one render. That
   render removed the element holding DOM focus, and the popover's contents took the keyboard a round
   trip later. In between, DOM focus was on `body`, where the gate hears nothing. Whether a letter typed
-  there was lost turned on the round trip. The cases: ExSheet's Format Cells… from the Context Menu,
-  the status line's figures menu, and the Sheet Toolbar's choices. Find had the same gap, closed by
-  FD-1's fix (#107).
+  there was lost turned on the round trip. The case seen: ExSheet's Format Cells… from the Context
+  Menu under the built-in Chrome; with the fix off, a digit typed once the menu was gone was lost 8 of
+  8 times on the Server host. The rule covers any popover the core opens in a standing one's place.
+  The status line's figures menu and the Sheet Toolbar's choices were named at first, but read from the
+  code they do not take this path: the first opens from a right-click, whose press already puts the
+  keyboard on the root, and the toolbar closes its choices before it opens another popover. Find had
+  the same gap, closed by FD-1's fix (#107).
 - **The fix.** The core asks for the root's focus ahead of that render, as a close does. The keys land
   on the root, are held, and are handed to the contents in order once they hold the keyboard.
 - **A Tab or Shift+Tab among them is dropped with the keys behind it**, as above. On this path, the
