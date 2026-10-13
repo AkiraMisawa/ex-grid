@@ -180,6 +180,43 @@ test.describe('on /sheet?chrome=mud', () => {
         await expectFocusAt(grid, 'C3');
     });
 
+    test('SH-45/ADR-0071 (decided with the user, 2026-10-13): Escape, then ↓ and ↓ typed at once, cancels Format Cells and moves the Focus two rows, as typed slowly', async ({ page }) => {
+        const grid = sheet(page);
+        await openFromMenu(page, grid, 'C2');
+        await expect(tab(page, 'Number')).toBeFocused();
+        await choice(page, 'Percentage').check();
+        await setRoundTrip(80);
+
+        // On a circuit the dialog stands a round trip after the Escape: the arrows typed meanwhile are the
+        // Sheet's, held and handed to it with the keyboard, never the closing dialog's or nobody's.
+        await page.keyboard.press('Escape');
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
+
+        await expectFocusAt(grid, 'C4');
+        await expect(formatCells(page)).toHaveCount(0);
+        await expect(cell(grid, 'C2')).toHaveText('0.5');
+        await expectKeyboardOn(grid);
+    });
+
+    test('SH-45/ADR-0071 (decided with the user, 2026-10-13): OK, then ↓ typed at once, sets what was touched and moves the Focus, as typed slowly', async ({ page }) => {
+        const grid = sheet(page);
+        await openFromMenu(page, grid, 'C2');
+        await choice(page, 'Percentage').check();
+        await setRoundTrip(80);
+
+        await formatCells(page).getByRole('button', { name: 'OK', exact: true }).click();
+        await page.keyboard.press('ArrowDown');
+
+        await expectFocusAt(grid, 'C3');
+        await expect(formatCells(page)).toHaveCount(0);
+        await expect(cell(grid, 'C2')).toHaveText('50.00%');
+        await expect(cell(grid, 'C3')).not.toHaveText(/%$/);
+        await expectKeyboardOn(grid);
+        await page.keyboard.press('ControlOrMeta+Z');
+        await expect(cell(grid, 'C2')).toHaveText('0.5');
+    });
+
     test('SH-45/ADR-0071: Escape in an open dropdown closes only its list; the next Escape cancels Format Cells', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(page, grid, 'C2');

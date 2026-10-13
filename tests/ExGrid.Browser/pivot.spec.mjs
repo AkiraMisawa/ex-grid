@@ -320,6 +320,47 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
         });
 
+        test(`ADR-0070 (decided with the user, 2026-10-13): Escape in the dialog's grid, then ↓ typed at once, closes the dialog and moves the report's Focus, as typed slowly (${chrome})`, async ({ page }) => {
+            await open(page, chrome, '&details=dialog');
+            await firstValue(page).dblclick({ force: true });
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
+            const dialog = page.getByRole('dialog', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
+            const records = dialog.locator('.ex-grid');
+            await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
+            await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
+            await expect(records).toBeFocused();
+            await expect(records).toHaveAttribute('aria-activedescendant', /-r0c0$/);
+            await setRoundTrip(80);
+
+            // On a circuit the dialog stands a round trip and more after the Escape: the ↓ typed meanwhile
+            // is the report's, passed out of the records' grid, held and handed on with the keyboard.
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('ArrowDown');
+
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+            await expect(dialog).toHaveCount(0);
+            await expect(report(page)).toBeFocused();
+            await circuitQuiet();
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+        });
+
+        test(`ADR-0070 (decided with the user, 2026-10-13): Escape on the dialog's Close, then ↓, ↓ typed at once, closes it and moves the report's Focus two rows (${chrome})`, async ({ page }) => {
+            await open(page, chrome, '&details=dialog');
+            await firstValue(page).dblclick({ force: true });
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
+            const dialog = page.getByRole('dialog', { name: /^Details: / });
+            await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
+            await setRoundTrip(80);
+
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('ArrowDown');
+            await page.keyboard.press('ArrowDown');
+
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
+            await expect(dialog).toHaveCount(0);
+            await expect(report(page)).toBeFocused();
+        });
+
         test(`ADR-0070/0012: Escape held in the dialog's grid closes the dialog once, and its repeats leave the report the keyboard (${chrome})`, async ({ page }) => {
             await open(page, chrome, '&details=dialog');
             await firstValue(page).dblclick({ force: true });
@@ -512,6 +553,28 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(menu).toHaveCount(0);
             await expect(entry(page, 'Region')).toBeFocused();
             await expect(entry(page, 'Region')).toHaveAttribute('aria-expanded', 'false');
+        });
+
+        test(`ADR-0061 (decided with the user, 2026-10-13): Escape in a field's menu, then Enter typed at once, runs no command and opens the menu again from its entry, as typed slowly (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await entry(page, 'Region').click();
+            const menu = page.getByRole('menu', { name: 'Options for Region' });
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await setRoundTrip(80);
+
+            // On a circuit the menu stands a round trip after the Escape, Move Down holding the keyboard:
+            // the Enter typed meanwhile is the entry's, which the keyboard goes back to, not Move Down's.
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('Enter');
+
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await expect(entry(page, 'Region')).toHaveAttribute('aria-expanded', 'true');
+            await circuitQuiet();
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+            await expect(menu).toHaveCount(1);
+            await page.keyboard.press('Escape');
+            await expect(menu).toHaveCount(0);
+            await expect(entry(page, 'Region')).toBeFocused();
         });
 
         test(`ADR-0061 (PV-11): pressing the report dismisses a field menu and keeps the cell and keyboard (${chrome})`, async ({ page }) => {
