@@ -1,5 +1,8 @@
 # exposure-chart — a disposable proof of concept
 
+*What this spike found, the user's statements it was built on and the questions left for the
+grilling are gathered in [`docs/research/excharts-charting-from-the-grid.md`](../../docs/research/excharts-charting-from-the-grid.md).*
+
 What charting an ExGrid selection would look like, before any ADR is written: an exposure profile
 (Date × EPE(0) / ENE(0) / CVA, each Before / After / Diff, under Header Groups), a selection
 turned into a chart, and the chart's data exported as CSV. **Nothing here is a decision**; it is
