@@ -190,6 +190,19 @@ again on each visit), and no scroll spy on the rail.
   - **So the release publishes the site, after the push.** `release.yml` gains a last job that calls
     `docs.yml` with the version, the tag and the UTC day of the push (ADR-0190). The site therefore
     states a version only once nuget.org has it. `docs.yml` is no longer started by a tag.
+  - *(2026-10-11, decided with the user,
+    [ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md);
+    and 2026-10-12, decided with the user, for a stable version that a stable tag is above.)* **Once a
+    stable version exists, a prerelease's release publishes no site, and neither does a stable version
+    that a stable tag is above.**
+    - The site describes the latest stable version. A prerelease's notes are on its GitHub release,
+      and reach the site with the next stable publish.
+    - A stable version exists once the repository has a tag without a suffix.
+    - A patch to an older line, such as `0.1.1` from `release/0.1` after `0.2.0`, publishes no site:
+      versions are compared by SemVer precedence, and its pages would replace a later version's.
+    - `release.yml`'s first job decides it, and says so. `docs.yml` refuses a call that comes anyway,
+      and refuses too when it cannot read the repository's tags.
+    - The on-demand publish of `main` or a `lab/*` branch stays, under its banner.
   - **On demand stays, from `main` or a `lab/*` branch**, and refuses any other. A lab publish is how
     an experiment reaches a machine nobody can run a build on, and it stays possible.
   - **A site not published from a tag says so on every page**: a banner above the page names the

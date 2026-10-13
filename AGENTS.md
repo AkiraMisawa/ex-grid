@@ -97,9 +97,12 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
   `nix develop .#browser -c bash -c 'cd tools/assets && npm ci && npm run minify'` and commit what
   it writes. A minified file older than its source fails `ShippedAssetTests`
 - **Only `src/` packs, and only a tag writes a version.** The projects say `0.0.0-dev`; pushing
-  a `v*` tag runs `release.yml`, which publishes a prerelease and refuses a version without a
-  suffix until the Definition of Done is signed off (ADR-0042). Every public member of a shipped
-  project needs an XML doc comment — a missing one fails the build
+  a `v*` tag runs `release.yml`, which publishes a prerelease, and refuses a version without a
+  suffix unless its Release Notes name a sign-off, made against a release candidate, that the
+  workflow can check (ADR-0042, ADR-0205). It refuses that version, and a release candidate
+  (`-rc.N`), while a question to Excel is open or a row checked by hand does not hold on its record
+  (ADR-0208). Every public member of a shipped project needs an XML doc comment — a missing one
+  fails the build
 - **Every public member of a shipped project is declared in its `PublicAPI.Unshipped.txt`**
   (ADR-0201): one added and not declared fails the build (RS0016), and so does one declared and gone
   (RS0017), a Razor component's `@code` members included. Let the analyzer write the line, never type
