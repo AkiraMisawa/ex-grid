@@ -293,9 +293,17 @@ test('UX-21: under forced colors the line is kept, two Device Pixels on the edge
     await circuitQuiet();
     await twoFrames(page);
     await onDevicePixels(page, header(3));
-    expect(await marked(page, header(3), colour)).toEqual(ON_THE_BOTTOM);
-    expect(await marked(page, header(4), colour)).toEqual(ON_THE_BOTTOM);
-    expect(await marked(page, header(2), colour)).toEqual(NOWHERE);
+    // Every edge but the top. Above the header is the root's own edge, where its focus ring stands
+    // whenever the browser shows it, and under forced colors that ring is Highlight too: whether it shows
+    // depends on how the browser judges the keyboard last arrived, not on the mark. (The first repeats
+    // on the Server host failed this reading at one edge in two of three, before the top was left out.)
+    const below = async (column) => {
+        const { top, ...edges } = await marked(page, header(column), colour);
+        return edges;
+    };
+    expect(await below(3)).toEqual({ left: [], right: [], bottom: [0, 1] });
+    expect(await below(4)).toEqual({ left: [], right: [], bottom: [0, 1] });
+    expect(await below(2)).toEqual({ left: [], right: [], bottom: [] });
 });
 
 for (const [chrome, mode] of CHROMES) {
