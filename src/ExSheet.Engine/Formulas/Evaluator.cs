@@ -83,21 +83,26 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     {
         // A Formula computed on demand while another is evaluated has its own refusal; the outer
         // Formula's is put back after it.
-        var outerRefused = _refused;
-        _refused = false;
+        var outerRefusal = _refusal;
+        _refusal = null;
         try
         {
             var result = Result(node);
-            return _refused ? Formulas.Operand.Of(Value.Refusal) : result;
+            return _refusal is { } refusal ? Formulas.Operand.Of(refusal) : result;
         }
         finally
         {
-            _refused = outerRefused;
+            _refusal = outerRefusal;
         }
     }
 
-    /// <summary>Whether a function has refused the Formula being evaluated (<see cref="Refuse"/>).</summary>
-    private bool _refused;
+    /// <summary>
+    /// The refusal of the Formula being evaluated, or <see langword="null"/>: <see cref="Value.Refusal"/> once a
+    /// function or an operator has refused it (<see cref="Refuse"/>), else <see cref="Value.RefusedName"/> once it
+    /// has called a function Excel has and ExSheet does not declare, or named a Linked Table bare
+    /// (<see cref="RefuseName"/>).
+    /// </summary>
+    private Value? _refusal;
 
     /// <summary>
     /// Refuses the Formula being evaluated: its result is the refusal, <c>#VALUE!</c>
@@ -116,8 +121,22 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     /// </summary>
     public Operand Refuse()
     {
-        _refused = true;
+        _refusal = Value.Refusal;
         return Formulas.Operand.Of(Value.Refusal);
+    }
+
+    /// <summary>
+    /// Refuses the Formula being evaluated with <c>#NAME?</c> (<see cref="Value.RefusedName"/>): a call of a
+    /// function Excel has and ExSheet does not declare (<see cref="ExcelFunctionNames"/>), or a declared Linked
+    /// Table's bare name, which Excel reads as the table's data (TABLE-024). The cell shows the <c>#NAME?</c> it
+    /// showed before, but no Formula catches it, in its own cell or in any cell that reads it (2026-10-13,
+    /// decided with the user): Excel answers these, and an ordinary <c>#NAME?</c> that <c>IFERROR</c> caught
+    /// would answer otherwise. A refusal by <see cref="Refuse"/> in the same Formula comes before it.
+    /// </summary>
+    public Operand RefuseName()
+    {
+        _refusal ??= Value.RefusedName;
+        return Formulas.Operand.Of(Value.RefusedName);
     }
 
     /// <summary>
@@ -126,7 +145,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     /// </summary>
     public Value Refused()
     {
-        _refused = true;
+        _refusal = Value.Refusal;
         return Value.Refusal;
     }
 
@@ -219,15 +238,24 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
             : Formulas.Operand.Of(r.Reference.Area),
         StructuredReferenceNode s => Cells.TableColumn(s.Table, s.Column),
         NameNode { Binding: { } binding } => Read(binding),
-        NameNode or IntersectionNode => Formulas.Operand.Of(ErrorValue.Name),
+        NameNode or IntersectionNode => NamesLinkedTable(node) ? RefuseName() : Formulas.Operand.Of(ErrorValue.Name),
         LetNode l => Let(l),
         ParenthesesNode p => Operand(p.Inner),
         UnaryNode u => Map(Operand(u.Operand), value => Negate(u.Operator, value)),
         PercentNode p => Map(Operand(p.Operand), Percent),
         BinaryNode b => Binary(b),
-        FunctionNode f => f.Function is null ? Formulas.Operand.Of(ErrorValue.Name)
+        FunctionNode f => f.Function is null ? ExcelFunctionNames.Undeclared(f.Name) ? RefuseName() : Formulas.Operand.Of(ErrorValue.Name)
             : f.Function.Invoke(new FunctionCall(this, f.Arguments) { Place = f.Place }),
         _ => throw new InvalidOperationException($"No evaluation for {node.GetType().Name}."),
+    };
+
+    /// <summary>Whether an unbound name, or a side of an intersection, is a declared Linked Table's bare name (ADR-0049).</summary>
+    private bool NamesLinkedTable(Node node) => node switch
+    {
+        NameNode { Binding: null } name => Cells.IsLinkedTable(name.Name),
+        IntersectionNode i => NamesLinkedTable(i.Left) || NamesLinkedTable(i.Right),
+        ParenthesesNode p => NamesLinkedTable(p.Inner),
+        _ => false,
     };
 
     /// <summary>

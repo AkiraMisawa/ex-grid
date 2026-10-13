@@ -679,8 +679,10 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// XLOOKUP's and XMATCH's search of <paramref name="vector"/> for argument 0, with
     /// <c>match_mode</c> and <c>search_mode</c> at <paramref name="modesAt"/> and the one after. A mode
-    /// outside Excel's list is <c>#VALUE!</c>, as Excel's <c>search_mode</c> 3 was (XLOOKUP-058), and so is
-    /// the regular expression mode under a binary search (XLOOKUP-104). Refused
+    /// outside Excel's list is Excel's own <c>#VALUE!</c>, not a refusal: observed for XLOOKUP's
+    /// <c>search_mode</c> 3 (XLOOKUP-058), and for every other mode outside the lists, XMATCH's among them,
+    /// by generalisation from it (2026-10-13). So is the regular expression mode under a binary search
+    /// (XLOOKUP-104, observed). Refused
     /// (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's): a binary search over data that is
     /// not sorted as the mode says (<see cref="TryBinarySearch"/>), and a regular expression
     /// <see cref="PortableRegex"/> does not take, or a text it would read otherwise than PCRE2. The engine

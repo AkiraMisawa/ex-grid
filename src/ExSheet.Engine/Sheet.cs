@@ -499,7 +499,7 @@ public sealed partial class Sheet
                 cell.Value = value;
                 if (cell.IsEmpty) _cells.Remove(address);
             }
-            if (!Nullable.Equals(old, value))
+            if (!Value.Unchanged(old, value))
             {
                 valueChanges.Add(address);
                 rows.Add(address.Row);
@@ -560,6 +560,19 @@ public sealed partial class Sheet
                         : StillBlocked(_cells[address], array) ? Value.FromError(ErrorValue.Spill)
                         : array[0, 0] ?? Value.FromNumber(0);
                 }
+            }
+            // A refused Anchor whose array's shape its text settles spills refusals over that shape, so that
+            // each cell of it reads as refused (2026-10-13, decided with the user); where the shape could
+            // depend on a Value, nothing spills (KnownShape).
+            if (value.IsRefused && KnownShape.Of(node, IsLocal) is { } shape && (shape.Rows > 1 || shape.Columns > 1))
+            {
+                var refusals = new ValueArray(shape.Rows, shape.Columns);
+                for (var r = 0; r < shape.Rows; r++)
+                {
+                    for (var c = 0; c < shape.Columns; c++) refusals[r, c] = Value.Refusal;
+                }
+                arrays[address] = refusals;
+                if (StillBlocked(_cells[address], refusals)) value = Value.FromError(ErrorValue.Spill);
             }
             reader.Met = outerMet;
             reader.MetRefusal = outerMetRefusal;

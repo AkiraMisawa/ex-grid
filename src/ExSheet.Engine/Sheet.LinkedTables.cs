@@ -313,20 +313,43 @@ public sealed partial class Sheet
         return false;
     }
 
+    /// <summary>
+    /// The tables a Formula reads: those its structured references name, and every bare name it holds, which
+    /// is refused once a Linked Table of that name is declared (TABLE-024; 2026-10-13, decided with the user),
+    /// so that the declaration recalculates it.
+    /// </summary>
+    private static IEnumerable<string> TablesRead(Node formula) =>
+        formula.StructuredReferences.Select(r => r.Table).Concat(BareNames(formula)).Distinct(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The names a Formula holds that no <c>LET</c> binds, which a Linked Table's name could be.</summary>
+    private static IEnumerable<string> BareNames(Node node) => node switch
+    {
+        NameNode { Binding: null } name => [name.Name],
+        NameNode => [],
+        IntersectionNode i => BareNames(i.Left).Concat(BareNames(i.Right)),
+        ParenthesesNode p => BareNames(p.Inner),
+        UnaryNode u => BareNames(u.Operand),
+        PercentNode p => BareNames(p.Operand),
+        BinaryNode b => BareNames(b.Left).Concat(BareNames(b.Right)),
+        FunctionNode f => f.Arguments.SelectMany(BareNames),
+        LetNode l => l.Bindings.SelectMany(b => BareNames(b.Value)).Concat(BareNames(l.Calculation)),
+        _ => [],
+    };
+
     private void RegisterTableReaders(CellAddress formulaCell, Node formula)
     {
-        foreach (var reference in formula.StructuredReferences)
+        foreach (var table in TablesRead(formula))
         {
-            if (!_tableReaders.TryGetValue(reference.Table, out var set)) _tableReaders[reference.Table] = set = [];
+            if (!_tableReaders.TryGetValue(table, out var set)) _tableReaders[table] = set = [];
             set.Add(formulaCell);
         }
     }
 
     private void UnregisterTableReaders(CellAddress formulaCell, Node formula)
     {
-        foreach (var reference in formula.StructuredReferences)
+        foreach (var table in TablesRead(formula))
         {
-            if (_tableReaders.TryGetValue(reference.Table, out var set) && set.Remove(formulaCell) && set.Count == 0) _tableReaders.Remove(reference.Table);
+            if (_tableReaders.TryGetValue(table, out var set) && set.Remove(formulaCell) && set.Count == 0) _tableReaders.Remove(table);
         }
     }
 

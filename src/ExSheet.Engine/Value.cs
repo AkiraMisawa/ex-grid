@@ -48,9 +48,19 @@ public readonly struct Value : IEquatable<Value>
     internal static Value Refusal { get; } = new(ValueKind.Error, (int)ErrorValue.Value, null, refusal: true);
 
     /// <summary>
+    /// A refusal shown as <c>#NAME?</c> (2026-10-13, decided with the user: a call of a function Excel has and
+    /// ExSheet does not declare, or a declared Linked Table's bare name, is a Refused Formula): the cell shows
+    /// the <c>#NAME?</c> it showed before, and the engine carries it as <see cref="Refusal"/> is carried. A Formula
+    /// that reads such a cell is refused with <see cref="Refusal"/>.
+    /// </summary>
+    internal static Value RefusedName { get; } = new(ValueKind.Error, (int)ErrorValue.Name, null, refusal: true);
+
+    /// <summary>
     /// Whether this <c>#VALUE!</c> is a Refused Formula's: the Value of a cell whose Formula ExSheet refused, because
     /// it cannot answer it as Excel — the readings of the evaluation part, or no run has settled the answer
-    /// (ADR-0047). It is <c>#VALUE!</c> in every other way, and equal to it; no Formula can catch it, in its
+    /// (ADR-0047). It is <c>#VALUE!</c> in every other way, and equal to it; or <c>#NAME?</c>, equal to it, where
+    /// the Formula calls a function Excel has and ExSheet does not declare, or names a declared Linked Table bare
+    /// (2026-10-13, decided with the user); no Formula can catch it, in its
     /// own cell or in any cell that reads it (2026-10-12, decided with the user: a refusal is never caught,
     /// anywhere), and it is no constant an Entry can hold (<see cref="Entry.FromValue"/>). A Consumer that
     /// passes it on, into a Linked Table, passes the refusal on with it.
@@ -101,6 +111,15 @@ public readonly struct Value : IEquatable<Value>
     /// </summary>
     public bool Equals(Value other) =>
         Kind == other.Kind && _number.Equals(other._number) && string.Equals(_text, other._text, StringComparison.Ordinal);
+
+    /// <summary>
+    /// Whether a cell's Value did not change: equal (<see cref="Equals(Value)"/>) and both refused or neither
+    /// (<see cref="IsRefused"/>), or both absent. A <c>#VALUE!</c> that turns from Excel's own into a refusal, or
+    /// back, changes what every Formula reading the cell answers, so a recalculation reports it and a Spill
+    /// Range takes it, though the two are equal as Values.
+    /// </summary>
+    internal static bool Unchanged(Value? before, Value? after) =>
+        Nullable.Equals(before, after) && before?.IsRefused == after?.IsRefused;
 
     /// <inheritdoc />
     public override bool Equals(object? obj) => obj is Value other && Equals(other);

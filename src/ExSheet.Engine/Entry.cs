@@ -47,7 +47,7 @@ public sealed class Entry : IEquatable<Entry>
     /// <exception cref="ArgumentException"><paramref name="constant"/> is one of those.</exception>
     public static Entry FromValue(Value constant) =>
         constant.IsRefused
-            ? throw new ArgumentException("This #VALUE! is a Formula ExSheet refused, because it cannot answer it as Excel; held as a constant it would be an Error Value a Formula can catch.", nameof(constant))
+            ? throw new ArgumentException($"This {constant.Error.ToText()} is a Formula ExSheet refused, because it cannot answer it as Excel; held as a constant it would be an Error Value a Formula can catch.", nameof(constant))
             : constant.IsError && constant.Error is ErrorValue.GettingData or ErrorValue.Circ
             ? throw new ArgumentException($"{constant.Error.ToText()} is not a constant a cell can hold.", nameof(constant))
             : new(constant);
