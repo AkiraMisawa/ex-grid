@@ -1,5 +1,7 @@
 # Windows, 2026-10-12: ExPivot's captions in Excel's English (US) edition
 
+**Verified commit:** `8436e45e73083944e413e92340f73dbba0b521c4` — tagged `verified/2026-10-12-windows-pivot-en-us` (the orchestrator's reading of 2026-10-13: the ExPivot it compares is R3's, built at 8436e45e; 89e0b5ad is only the branch's base)
+
 **Branch `claude/exsheet-windows-pivot-en-us-2026-10-12`, from `claude/exsheet-windows-readings-2026-10-12` at
 `89e0b5ad`**, whose R3 this follows. It is the requesting session's item 5, run at the user's ask to carry on with
 whatever was still possible, 22:06 to 22:24 BST. Run by a Claude Code session in WSL2 on the Windows desktop of the
