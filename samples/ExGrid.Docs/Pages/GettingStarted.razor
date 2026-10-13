@@ -165,5 +165,11 @@
             the service to except its address. This Docs Site is on
             GitHub Pages, so a user behind such a service may see it mirrored.
         </p>
+        <p>
+            On a page seen through such a mirror, the rows that Ctrl+↓, Ctrl+↑ or PageDown reveal could stay
+            white until the next scroll. The grid repaints them over the two frames after such a move, which
+            a browser test checks. <b>Behind a remote browser isolation service that repaint has not been
+            checked for 0.1.0</b>: it is one of this version's Known limitations.
+        </p>
     </DocsSection>
 </DocsPage>

@@ -1,5 +1,4 @@
 import { test, expect } from './fixtures.mjs';
-import { SERVER } from './hosting.mjs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
@@ -22,9 +21,8 @@ import { fileURLToPath } from 'node:url';
 // built in this checkout: a running DemoHost is never rebuilt under itself. The first version is
 // served and loaded, the files are replaced by the second's in place, and the page is reloaded.
 //
-// It drives a host of its own, so it needs neither DemoHost: it runs once, beside the WebAssembly
-// host.
-test.skip(SERVER, 'a standalone application of its own: it does not depend on the host, and runs beside the WebAssembly one');
+// It drives a host of its own, so it needs neither DemoHost, and it runs the same beside either: SRV-2
+// lets a test skip on the Server host only for its four named exceptions, and this is none of them.
 
 const repository = fileURLToPath(new URL('../..', import.meta.url));
 const sha256 = (text) => createHash('sha256').update(text.replace(/\r\n/g, '\n'), 'utf8').digest('hex');

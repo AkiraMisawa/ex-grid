@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using ExPivot.Engine;
 using Xunit;
 
@@ -51,5 +52,39 @@ public sealed class ReportWindowTests(PivotApiServer server) : IClassFixture<Piv
             response.EnsureSuccessStatusCode();
             return PivotReportJson.Read<TAnswer>(await response.Content.ReadAsStringAsync(ct));
         }
+    }
+
+    [Fact] // LV-34/FN-3a, SRV-2: a test holds a Window question at the demo API's gate, from either host, and reads the Window it named
+    public async Task A_window_question_waits_at_a_held_gate_until_it_is_opened_and_reset_forgets_it()
+    {
+        using var http = server.Factory.CreateClient();
+        var ct = TestContext.Current.CancellationToken;
+        var path = "/api/pivot/reports/" + Guid.NewGuid().ToString("N") + "/window";
+        var request = new PivotReportRequest("held", new PivotLayout { Rows = [new("Region")], Values = [new("Pnl")] },
+            PivotReportSettings.Invariant, new(3, 4));
+        using (var reset = await http.PostAsync("/api/reset", null, ct)) reset.EnsureSuccessStatusCode();
+        Assert.Empty((await Gate()).GetProperty("windows").EnumerateArray());
+
+        using (var hold = await http.PostAsync("/api/pivot/window-gate", Json("""{ "hold": true }"""), ct)) hold.EnsureSuccessStatusCode();
+        var asked = http.PostAsync(path, new StringContent(PivotReportJson.Write(request), Encoding.UTF8, "application/json"), ct);
+        // Recorded as it arrives, before it waits: once the Window is read back, the question is at the gate.
+        JsonElement state;
+        do state = await Gate(); while (state.GetProperty("windows").GetArrayLength() == 0 && !asked.IsCompleted);
+        Assert.True(state.GetProperty("hold").GetBoolean());
+        Assert.Equal(3, state.GetProperty("windows")[0].GetProperty("start").GetInt32());
+        Assert.Equal(4, state.GetProperty("windows")[0].GetProperty("count").GetInt32());
+        Assert.False(asked.IsCompleted);
+
+        using (var open = await http.PostAsync("/api/pivot/window-gate", Json("""{ "hold": false }"""), ct)) open.EnsureSuccessStatusCode();
+        using (var answer = await asked)
+        {
+            answer.EnsureSuccessStatusCode();
+            Assert.Null(PivotReportJson.Read<PivotReportUpdate>(await answer.Content.ReadAsStringAsync(ct)).Refusal);
+        }
+        using (var reset = await http.PostAsync("/api/reset", null, ct)) reset.EnsureSuccessStatusCode();
+        Assert.Empty((await Gate()).GetProperty("windows").EnumerateArray());
+
+        async Task<JsonElement> Gate() => JsonDocument.Parse(await http.GetStringAsync("/api/pivot/window-gate", ct)).RootElement;
+        static StringContent Json(string text) => new(text, Encoding.UTF8, "application/json");
     }
 }

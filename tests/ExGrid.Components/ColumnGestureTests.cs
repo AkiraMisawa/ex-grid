@@ -95,6 +95,20 @@ public class ColumnGestureTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-resize-guide"));
     }
 
+    [Fact] // ADR-0090 / ADR-0027 / UX-1: told its Device Pixel, the guide a drag leaves between two stands on one
+    public async Task The_resize_guide_stands_on_a_device_pixel()
+    {
+        var cut = RenderGrid(onWidth: _ => { });
+        await cut.InvokeAsync(() => cut.Instance.OnDevicePixelAsync(1.5));
+
+        // Column 1's edge is 200px, 300 Device Pixels; a drag of 20.5px puts the pointer at
+        // 330.75 Device Pixels, and the guide is drawn at the nearest, 331.
+        await cut.FindAll(".ex-resize-grip")[1].MouseDownAsync(new MouseEventArgs { Button = 0, ClientX = 200 });
+        await cut.Find(".ex-grid").MouseMoveAsync(new MouseEventArgs { Buttons = 1, ClientX = 220.5 });
+
+        Assert.Contains(FormattableString.Invariant($"left: {331 / 1.5}px"), cut.Find(".ex-resize-guide").GetAttribute("style"));
+    }
+
     [Fact] // ADR-0016: bounded below by MinWidth, unbounded above
     public async Task A_resize_clamps_at_min_width_only()
     {
