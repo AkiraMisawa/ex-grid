@@ -90,6 +90,7 @@
         OnColumnHidden="OnHidden"
         OnPinnedCountChanged="OnPinned"
         ContextCommands="ContextCommands"
+        CopyAnswer="@(CopyThrowsOn ? CopyThatThrows : null)"
         CellState="_rules.State"
         CellMessageOf="_rules.Message"
         Chrome="_chrome" />
@@ -180,6 +181,19 @@
     public string? RowKeyParameter { get; set; }
 
     private bool RowKeyOn => UpstreamOn && RowKeyParameter == "1";
+
+    /// <summary>
+    /// <c>?copythrows=1</c> gives the first grid a <c>CopyAnswer</c> that throws, as a Consumer's
+    /// delegate with a defect would: a genuine .NET failure on either copy route, which the grid
+    /// must report rather than make a silent no-op (ADR-0005, CON-8).
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "copythrows")]
+    public string? CopyThrows { get; set; }
+
+    private bool CopyThrowsOn => CopyThrows == "1";
+
+    private static GridCopyAnswer CopyThatThrows(GridCopyRequest request)
+        => throw new InvalidOperationException("The demo's CopyAnswer fails on purpose (?copythrows=1).");
 
     private static readonly string[] UpstreamKeys = ["F9"];
     private static readonly string[] UpstreamAndResortKeys = ["F9", "F8"];
