@@ -18,7 +18,7 @@ in order.
    Edit 5.
 3. **(c) UX-1**: the three bare pixel values in `ex-grid.css` come from Grid Metrics, emitted inline on the
    instance root, and lie on Device Pixels. Code and tests on this branch (merged from `claude/dod-gaps-ux1`);
-   edits 10, 11 and 12, and edit 13 names the tests.
+   edits 10, 11 and 12; edit 13 names the tests (c) asked for.
 4. **(g) VZ-18's check on the remote-isolation (Citrix) PC is a Known limitation of `0.1.0`.** It is not run,
    and the 2026-10-08 observation, which names no commit, is not taken as its record. Edits 6, 7, 8 and 9, and
    the Release Notes line below. The release check's side (`verification/by-hand.json` and the table of rows
@@ -43,8 +43,14 @@ Not decisions, the audit's:
 carry this line, in the form ADR-0202 gives:
 
 ```md
-- **ExGrid:** the repaint after Ctrl+↓, Ctrl+↑ or PageDown is not checked on a PC under Citrix with the browser's hardware acceleration off, or behind a remote browser isolation service: its browser test gates, the check on such a PC was not run for this version ([Getting started](getting-started)) (VZ-18, ADR-0202).
+- **ExGrid:** the repaint after Ctrl+↓, Ctrl+↑ or PageDown is not checked on a PC under Citrix with the browser's hardware acceleration off, or behind a remote browser isolation service: its browser test passes; the check on such a PC was not run for this version ([Getting started](getting-started)) (VZ-18, ADR-0202).
 ```
+
+**Not done, for the orchestrator:** the line links Getting started, whose "Behind a remote browser isolation
+service" section says nothing yet of Citrix, hardware acceleration or the unchecked repaint, so it does not say
+the limitation in full as ADR-0202 asks. A sentence there, and an anchor for the link, are the Docs Site's, which
+this branch does not edit. ADR-0012's "Checked 2026-10-08 on that PC" and "VZ-18 is checked as it is written"
+still read as if that observation were VZ-18's record; decision (g) named no edit to ADR-0012, so none is made.
 
 ## Where this list meets other branches' lists
 
@@ -66,7 +72,7 @@ carry this line, in the form ADR-0202 gives:
 10. **ADR-0029: the Geometry Tokens gain the grip's and the guide's widths.** Decision (c).
 11. **ADR-0029: a dated note on why.** Decision (c).
 12. **ADR-0028: the two metrics in "What geometry consists of".** Decision (c).
-13. **UX-1: the tests that hold it.** The audit's: the row had no test; uncredited.
+13. **UX-1: the tests that hold it.** Decision (c): the row gains the tests it lacked.
 
 ### 1. docs/definition-of-done.md
 
@@ -158,7 +164,7 @@ Old:
 New:
 
 ````text
-| **WR-2** | MUST | A condition's operator is a `MudSelect` offering exactly `Allowed`, in the core's order; its value is a `MudTextField` for text, a `MudTextField` for a number, read in the current culture, an editable `MudDatePicker` for a date — a `MudTextField` for a `DateTimeOffset` column *(amended 2026-10-02, ticket 98: a calendar's day has no offset, which such a column refuses, ADR-0023)* *(2026-10-12, decided with the user: a number's control is a `MudTextField` read in the current culture, as ticket 96 made it. The row said a `MudNumericField`, which reopened `1234.5` as `1234,5` under de-DE and read it back as 12345; ticket 96 reads the text through `FilterPanelChoices.ReadOperand` in the culture the form shows numbers in, refusing by name a text that reads two ways, and both Chromes read it so. `MudFilterPanelTests` pins the `MudTextField`.)* — and a `MudSelect` of true / false **with nothing chosen at first** for a boolean; Apply is unavailable until the operator's value is given (ADR-0009/0039) | Layer 2 per column type | the controls and the gating as stated |
+| **WR-2** | MUST | A condition's operator is a `MudSelect` offering exactly `Allowed`, in the core's order; its value is a `MudTextField` for text, a `MudTextField` for a number, read in the current culture *(2026-10-12, decided with the user: a number's control is a `MudTextField` read in the current culture, as ticket 96 made it. The row said a `MudNumericField`, which reopened `1234.5` as `1234,5` under de-DE and read it back as 12345; ticket 96 reads the text through `FilterPanelChoices.ReadOperand` in the culture the form shows numbers in, refusing by name a text that reads two ways, and both Chromes read it so. `MudFilterPanelTests` pins the `MudTextField`.)*, an editable `MudDatePicker` for a date — a `MudTextField` for a `DateTimeOffset` column *(amended 2026-10-02, ticket 98: a calendar's day has no offset, which such a column refuses, ADR-0023)* — and a `MudSelect` of true / false **with nothing chosen at first** for a boolean; Apply is unavailable until the operator's value is given (ADR-0009/0039) | Layer 2 per column type | the controls and the gating as stated |
 ````
 
 ### 6. docs/definition-of-done.md
@@ -261,7 +267,7 @@ New:
 literal.)*
 *(2026-10-12, decided with the user: `--ex-resize-grip-width` and `--ex-column-guide-width` come from
 Grid Metrics, emitted inline on the instance root as the other geometry is. The grip's 5px and the resize
-guide's and drop indicator's 2px were the last bare pixels in `ex-grid.css`. The guide and the indicator
+guide's and drop indicator's 2px were the last bare geometric pixels in `ex-grid.css`. The guide and the indicator
 lie on Device Pixels ([ADR-0090](./0090-the-grid-is-told-its-device-pixel-and-puts-column-edges-on-it.md)).)*
 ````
 
@@ -291,5 +297,5 @@ Old:
 New:
 
 ````text
-| **UX-1** | MUST | No colour is a C# parameter, and no pixel is only a stylesheet value (ADR-0027) | grep the public surface for colour-typed parameters; grep `ex-grid.css` for length literals. Layer 2 holds both: `NoColourParameterTests` and `StylesheetLengthTests` *(2026-10-12, not a decision: the row had no test; the second reads every length in `ex-grid.css` against the Geometry Tokens the root emits and an allowlist of non-geometric visual values, each with its reason)* | zero colour parameters; every length in the stylesheet is a `var(--ex-*)` read or a non-geometric visual value |
+| **UX-1** | MUST | No colour is a C# parameter, and no pixel is only a stylesheet value (ADR-0027) | grep the public surface for colour-typed parameters; grep `ex-grid.css` for length literals. Layer 2 holds both: `NoColourParameterTests` and `StylesheetLengthTests` *(2026-10-12, decided with the user: the row gains the tests it lacked. The second reads every length in `ex-grid.css` against the Geometry Tokens the root emits and an allowlist of non-geometric visual values, each with its reason)* | zero colour parameters; every length in the stylesheet is a `var(--ex-*)` read or a non-geometric visual value |
 ````

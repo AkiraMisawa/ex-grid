@@ -21,6 +21,11 @@ namespace ExSheet.MudBlazor.Tests;
 /// <c>OnReferenceKeyColoursChanged</c> tells which reference took which colour index — and is not
 /// a colour given to the grid, so it is not read. A delegate the grid calls is inbound: what it
 /// returns is read.</para>
+/// <para>The members of a type a parameter carries are not read. So <c>ExGrid.CellAppearance</c>, a
+/// delegate returning <c>CellAppearance</c>, whose <c>RgbColour</c> is a Sheet's own cell format, passes:
+/// that colour is the Consumer's data, which ADR-0050 and ADR-0071 let a Consumer give per cell, not the
+/// grid's appearance. A colour put inside another carried type would pass the same way, and is not held
+/// here.</para>
 /// </summary>
 public class NoColourParameterTests
 {
