@@ -450,7 +450,7 @@ public class ClipboardWiringTests : SheetTestContext
         await GoToAsync(cut, "E5");
         await PasteAsync(cut, payload.Text!, payload.Html);
 
-        cut.WaitForAssertion(() => Assert.Contains("the copy holds C1, whose Formula ExSheet refused with #VALUE!", Notice(cut)));
+        cut.WaitForAssertion(() => Assert.Contains("the copy holds C1, whose Formula ExSheet refused because", Notice(cut)));
         Assert.Equal("", CellText(cut, "E5"));
         Assert.Equal("", CellText(cut, "F5"));
     }
@@ -478,7 +478,7 @@ public class ClipboardWiringTests : SheetTestContext
         await GoToAsync(into, "C3");
         await PasteAsync(into, payload.Text!, payload.Html);
 
-        into.WaitForAssertion(() => Assert.Contains("the copy holds A2, whose Formula ExSheet refused with #VALUE!", Notice(into)));
+        into.WaitForAssertion(() => Assert.Contains("the copy holds A2, whose Formula ExSheet refused because", Notice(into)));
         Assert.Equal("", CellText(into, "C3"));
         Assert.Equal("", CellText(into, "C4"));
     }

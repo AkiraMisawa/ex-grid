@@ -243,7 +243,7 @@
         _commandLabel = id => CommandLabel?.Invoke(id) ?? SheetCommandIds.EnglishFor(id);
         _summaryWords = id => Chrome?.Words(id) ?? _commandLabel(id);
         _summarize = (request, _) => Task.FromResult(request.RowSequenceVersion == _sequence && _sheet is { } sheet
-            ? SheetSummary.Answer(sheet, request, at => SheetWords.SummaryRefused(at, _summaryWords))
+            ? SheetSummary.Answer(sheet, request, at => SheetWords.SummaryRefused(at, sheet.GetValue(at)?.ToString() ?? "#VALUE!", _summaryWords))
             : new global::ExGrid.Summarizing.GridSummaryCells().Answer(request.Figures));
         _summaryFiguresChanged = new EventCallback<global::ExGrid.Summarizing.SummaryFigures>(null,
             (Func<global::ExGrid.Summarizing.SummaryFigures, Task>)(async figures =>

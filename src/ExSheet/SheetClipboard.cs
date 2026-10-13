@@ -55,8 +55,8 @@ internal static partial class SheetClipboard
     /// <item>Several ranges combined into one block, or a copy with the headers, carry the same
     /// Values cell by cell, and no Entries: a block of several ranges was never one place its
     /// References were relative to.</item>
-    /// <item>Either way, a refused cell (<see cref="Value.IsRefused"/>) is written <c>#VALUE!</c>, as it
-    /// shows, in both flavours, and its cell of the HTML table carries ExSheet's mark
+    /// <item>Either way, a refused cell (<see cref="Value.IsRefused"/>) is written as it shows,
+    /// <c>#VALUE!</c> or <c>#NAME?</c>, in both flavours, and its cell of the HTML table carries ExSheet's mark
     /// (<see cref="RefusedMarkFor"/> in <see cref="ClipboardData.MarkAttribute"/>), which another
     /// program ignores. A paste into a Sheet that reads the mark is refused by name rather than typed:
     /// as a value, the refusal would become an Error Value a Formula can catch (ADR-0047; 2026-10-12,

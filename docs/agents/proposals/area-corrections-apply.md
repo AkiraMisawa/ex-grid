@@ -61,10 +61,11 @@ each is written as a dated note credited to the user where it lands:
    could depend on a Value nothing spills and those cells read as blank, a Known limitation of `0.1.0`; in the
    way, the Anchor is `#SPILL!`, as Excel's array of that shape would be: ADR-0125 (edit 20), ADR-0202's Known
    limitations (edit 24), the README (edit 32), the Formulas page (edit 78), the Release Notes lines below.
-7. **The Selection Summary shows no figure over a refused cell, and says why, naming the cell**, in
-   `SheetCommandIds.SummaryRefused`'s words through `CommandLabel` for another language: ADR-0130 (edit 67),
-   SM-12 (edit 69), the Sheet's Overview (edit 75), the Formulas page (edit 57). That Count is withheld too is
-   the implementer's reading of ADR-0130's "a partial figure is never shown", written uncredited.
+7. **The Selection Summary shows no numeric figure over a refused cell, and says why**: ADR-0130 (edit 67),
+   SM-12 (edit 69), the Sheet's Overview (edit 75), the Formulas page (edit 57). The implementer's, written
+   uncredited: Count is withheld too (ADR-0130's "a partial figure is never shown"), the reason names the cell
+   and what it shows, and its words are `SheetCommandIds.SummaryRefused`, asked of a substituted Chrome and then
+   of `CommandLabel` for another language (ADR-0203).
 8. **A serial between -1 and 0** under `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` is refused until
    Excel is asked, -1 and below staying `#NUM!`, and **`SORT`'s fractional `sort_index`** is refused with SORT-042
    `uncertain`: the orchestrator's readings, written uncredited. ADR-0047 (edits 4 and 13), the README (edits 35
@@ -103,7 +104,7 @@ for it.
   refused again where it still refuses. Any other paste that carries the mark — a copy of several ranges, or with
   the headers, or a paste into another Sheet on the page — is refused whole by name ("Nothing was pasted: the copy
   holds C1, whose Formula ExSheet refused…"). Another program reads the HTML's text, or the plain text, as
-  `#VALUE!`, Excel's Error Value.
+  the cell shows it, `#VALUE!` (or `#NAME?`), Excel's Error Value.
 - **The display.** The cell, the Formula Bar and the clipboard show `#VALUE!` (or `#NAME?`); ExSheet has no error
   popover for a Value. The Selection Summary over a refused cell shows no figure, Count included, and its reason
   names the cell. The Formulas page says what a refusal is.
@@ -263,7 +264,7 @@ New:
   `GridPasteIntent.MarkFor`, ADR-0050 item 9). This Sheet's own copy of one range pastes its Entries, the
   Formula refused again where it lands; any other paste that carries the mark — of several ranges, with
   the headers, or into another Sheet on the page — is refused whole, by name. Another program reads the
-  cell as the text `#VALUE!`.)*
+  cell as the text it shows, `#VALUE!` (or `#NAME?`).)*
 ````
 
 ### 3. docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md
@@ -2144,12 +2145,13 @@ New:
 
 ````
   figures. **A partial figure is never shown.** `InMemoryGridSource` never declines.
-  *(2026-10-13, decided with the user: ExSheet declines when the Selection holds a cell whose Formula it
-  refused (a Refused Formula, ADR-0047), and its reason names the cell: "No figures: ExSheet refused the
-  Formula in A3 with #VALUE! because it cannot answer it as Excel does, so a figure over it would not be
-  Excel's." `SheetCommandIds.SummaryRefused` words it in another language through `CommandLabel`, `{0}`
-  standing for the cell.)* *(2026-10-13: Count is withheld too, as every other figure is, since a partial
-  figure is never shown.)*
+  *(2026-10-13, decided with the user: ExSheet shows no numeric figure when the Selection holds a cell whose
+  Formula it refused (a Refused Formula, ADR-0047), and says why.)* *(2026-10-13: it declines, Count withheld
+  too, as every other figure is, since a partial figure is never shown; its reason names the cell and what it
+  shows: "No figures: ExSheet refused the Formula in A3 with #VALUE! because it cannot answer it as Excel does,
+  so a figure over it would not be Excel's." `SheetCommandIds.SummaryRefused` words it in another language,
+  asked of a substituted Chrome first and then of `CommandLabel` (ADR-0203), `{0}` standing for the cell and
+  `{1}` for what it shows.)*
 ````
 
 ### 68. docs/adr/0050-what-exsheet-asks-of-exgrids-core.md
@@ -2189,7 +2191,7 @@ Old:
 New:
 
 ````
-| **SM-12** | MUST | ExSheet answers from its own cells: a formula's value, every cell of a spilled array, by the same table (ADR-0130). *(2026-10-13, decided with the user: a Selection holding a cell whose Formula ExSheet refused is declined, its reason naming the cell, in `SheetCommandIds.SummaryRefused`'s words.)* *(2026-10-13: no figure is shown, Count included.)* | Layer 1; Layer 2 (`SheetSummaryTests`) | as stated |
+| **SM-12** | MUST | ExSheet answers from its own cells: a formula's value, every cell of a spilled array, by the same table (ADR-0130). *(2026-10-13, decided with the user: a Selection holding a cell whose Formula ExSheet refused shows no numeric figure, and says why.)* *(2026-10-13: it is declined, no figure shown, Count included, its reason naming the cell in `SheetCommandIds.SummaryRefused`'s words.)* | Layer 1; Layer 2 (`SheetSummaryTests`) | as stated |
 ````
 
 ### 70. samples/ExGrid.Docs/Pages/Design.razor
@@ -2207,7 +2209,7 @@ New:
 ````
             <li>
                 A Formula ExSheet cannot compute as Excel does is <code>#VALUE!</code>, or <code>#NAME?</code> for a
-                function it does not support, never an approximation, and no Formula catches it.
+                function Excel has that it does not support, never an approximation, and no Formula catches it.
             </li>
 ````
 
@@ -2301,8 +2303,8 @@ New:
 ````
             leaves Count and Numerical Count, and no other figure, as in Excel. A cell whose Formula ExSheet refused
             leaves no figure at all, and the line says why, naming the cell;
-            <code>SheetCommandIds.SummaryRefused</code> words it in another language through
-            <code>CommandLabel</code>, its <code>{0}</code> the cell. Average, Min, Max and Sum wear the
+            <code>SheetCommandIds.SummaryRefused</code> words it in another language, asked of a substituted
+            Chrome and then of <code>CommandLabel</code>, its <code>{0}</code> the cell and <code>{1}</code> what it shows. Average, Min, Max and Sum wear the
 ````
 
 ### 76. samples/ExGrid.Docs/Pages/Sheet/SheetLinkedTables.razor

@@ -25,11 +25,12 @@ public static class SheetCommandIds
 
     /// <summary>
     /// The words the Selection Summary shows in place of its figures when the Selection holds a cell
-    /// whose Formula ExSheet refused (a Refused Formula, its cell <c>#VALUE!</c>): no figure is shown
+    /// whose Formula ExSheet refused (a Refused Formula, its cell <c>#VALUE!</c> or <c>#NAME?</c>): no figure is shown
     /// over it, since Excel would answer that Formula. Not a command; asked as a refusal's words are
     /// (ADR-0203) — a substituted Chrome's, else <c>ExSheet.CommandLabel</c> — so a Consumer can
     /// translate it. In the words,
-    /// <c>{0}</c> stands for the refused cell's address, the first in reading order.
+    /// <c>{0}</c> stands for the refused cell's address, the first in reading order, and <c>{1}</c> for
+    /// what that cell shows.
     /// </summary>
     public const string SummaryRefused = "exsheet.summary-refused";
 

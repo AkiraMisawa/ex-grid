@@ -18,7 +18,7 @@ namespace ExSheet;
 /// the whole summary, its reason in ExSheet's words in place of the figures (2026-10-13, decided with the
 /// user: no numeric figure stands over a refused cell, and the line says why). Excel would answer that
 /// Formula, so a Sum, an Average, a Min, a Max or a Numerical Count over it would not be Excel's; nor would
-/// Count, where Excel's answer spills and the refused Formula spills nothing. A partial summary is never
+/// Count, where Excel's answer spills and a refused Formula of unknown shape spills nothing. A partial summary is never
 /// shown (ADR-0130), so Count goes with the rest.
 /// </para>
 /// </summary>

@@ -141,6 +141,22 @@ public class SheetSummaryTests : SheetTestContext
         Assert.Empty(Figures(cut));
     }
 
+    [Fact] // ADR-0130, ADR-0047 (2026-10-13): a refused #NAME? — a function Excel has that ExSheet does not declare — leaves no figure, and the line names what the cell shows
+    public async Task ADR0130_a_refused_name_leaves_no_figure_and_the_line_says_it_shows_NAME()
+    {
+        var cut = RenderWithEveryFigure();
+        await EnterAsync(cut, "A1", "1");
+        await EnterAsync(cut, "A2", "=NPV(0.1,1,2)");
+        Assert.Equal("#NAME?", CellText(cut, "A2"));
+
+        await GoToAsync(cut, "A1:A2");
+
+        cut.WaitForAssertion(() => Assert.Equal(
+            "No figures: ExSheet refused the Formula in A2 with #NAME? because it cannot answer it as Excel does, so a figure over it would not be Excel's.",
+            Declined(cut)));
+        Assert.Empty(Figures(cut));
+    }
+
     [Fact] // ADR-0130 (2026-10-13): a Formula that reads a refused cell is refused too; the first refused cell in reading order is named, and the figures come back once none is left
     public async Task ADR0130_the_first_refused_cell_is_named_and_the_figures_return_without_one()
     {

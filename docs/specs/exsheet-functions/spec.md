@@ -405,9 +405,9 @@ function Excel adds is listed here.
     39,602 evaluations gives its 29 observed payments at a rate other than 0, and Excel's differed from the
     engine's at 19 of them by 1 to 11 units in the last place (PMT-026). *(The decision was taken on digits no
     format displays, and that holds at none of PMT-013 and PMT-026, below; "its last digits" is what was
-    observed. At the start of each period, decided with the user on 2026-10-13, the engine gives the exact
-    payment at the start rounded once, and Excel's differs from the engine's at 23 of the 30 observed payments,
-    two of them in the 15th significant digit, PMT-013 and PMT-026.)* Its cases that differ are recorded as
+    observed. Decided with the user on 2026-10-13: at the start of each period too the engine gives the exact
+    payment rounded once. Excel's differs from the engine's at 23 of the 30 observed payments, at the end and at
+    the start; at two of them, PMT-013 and PMT-026, both payments at the end, in the 15th significant digit.)* Its cases that differ are recorded as
     differences by that decision. 0.1.0 lists its last digits under Known limitations (ADR-0202). `NPV` is not
     part of the exception.
     *(2026-10-12, the third and fourth rounds, the branch's application, not the user's; three questions of it

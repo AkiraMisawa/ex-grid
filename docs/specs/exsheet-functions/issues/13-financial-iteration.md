@@ -80,7 +80,7 @@ platform, and the logarithm too, which no observed double tells from glibc's (FV
 FV take the same power, and every one of their observed doubles and Error Values is its. `NPV` stays here,
 undeclared: none of the 5,796 evaluations gives all 21 observed doubles, and the best give 7 (NPV-009 to 022
 are recorded with Excel's doubles). None of the 39,602 evaluations gives all 29 of `PMT`'s observed payments
-at a rate other than 0, and the best give 16; PMT-013 to 016, 018, 020, 021 and 023 to 032 differ from the
+at a rate other than 0, and the best give 16; PMT-013 to 016, 018, 020, 021 and 023 to 032 differed (before 2026-10-13) from the
 engine's by 1 to 11 units in the last place.
 
 2026-10-12, decided with the user: `PMT` is kept, with an exception to ADR-0047 for `PMT` alone. Its result
