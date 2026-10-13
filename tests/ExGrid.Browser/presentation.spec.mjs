@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, twoFrames } from './fixtures.mjs';
 import { painted, sameColour } from './pixels.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
 import { sheet, openSheet, pressCell as pressSheetCell, editor as sheetEditor } from './sheet-helpers.mjs';
@@ -145,6 +145,41 @@ test('UX-3 / ST-3 / ADR-0027 P6, ADR-0028: after each density change the rows, h
         expect({ left: p.focus.left, top: p.focus.top, width: p.focus.width, height: p.focus.height }, at('the Focus'))
             .toEqual({ left: p.from.left, top: p.from.top, width: p.from.width, height: m.row });
     }
+});
+
+test('CON-4 / ADR-0013: no ResizeObserver loop error through density changes and window resizes', async ({ page }) => {
+    await page.goto('/density');
+    await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+    // Chrome reports the loop as an error event on window, which need not reach the console:
+    // listened for here, on window, so alterPage takes the listener off as the test ends.
+    await alterPage(page, () => {
+        const seen = [];
+        const listen = (e) => seen.push(String(e.message));
+        window.addEventListener('error', listen);
+        window.__exgridErrorEvents = seen;
+        return () => {
+            window.removeEventListener('error', listen);
+            delete window.__exgridErrorEvents;
+        };
+    });
+
+    const viewport = page.viewportSize();
+    const sizes = [{ width: 900, height: 600 }, { width: 520, height: 420 }, viewport];
+    for (const [step, name] of Object.keys(PRESETS).entries()) {
+        await page.locator(`#density-${name}`).click();
+        await expect.poll(() => grid(page).locator('.ex-row').first().evaluate((row) => row.getBoundingClientRect().height))
+            .toBe(PRESETS[name].row);
+        // A resize of the window between density changes: the Stretch grid's width follows it.
+        if (step < sizes.length) {
+            await page.setViewportSize(sizes[step]);
+            await expect.poll(() => grid(page).evaluate((g, width) => Math.round(g.getBoundingClientRect().right) <= width, sizes[step].width))
+                .toBe(true);
+        }
+        await twoFrames(page);
+    }
+    await circuitQuiet();
+    await twoFrames(page);
+    expect(await page.evaluate(() => window.__exgridErrorEvents)).toEqual([]);
 });
 
 test('a Visual Token set on an ancestor recolours the paint (UX-5, the paint half)', async ({ page }) => {
