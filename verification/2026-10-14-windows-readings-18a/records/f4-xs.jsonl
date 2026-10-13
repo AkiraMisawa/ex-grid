@@ -1,0 +1,615 @@
+{"t": "22:28:58", "cmd": "select D10", "answer": "ok select D10 t=31873"}
+{"t": "22:28:58", "cmd": "geo C8 F14 D10", "answer": "ok geo C8:233,557,329,585 F14:521,729,617,759 D10:329,614,425,644 t=31982"}
+{"t": "22:28:59", "cmd": "uia", "answer": "ok uia Formula Bar:328,267,3840,324 Name Box:not found Status Bar:0,2055,3840,2088 Sheet Tab:not found Sheet1:160,2007,259,2055 Sheet2:259,2007,361,2055 t=33229"}
+{"t": "22:28:59", "cmd": "layout", "answer": "ok layout 0x08090809 t=33251"}
+{"t": "22:28:59", "cmd": "ps $xl.International(32)", "answer": "ok ps 0 t=33263"}
+{"t": "22:29:01", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=34707"}
+{"t": "22:29:01", "cmd": "select D10", "answer": "ok select D10 t=34731"}
+{"t": "22:29:01", "cmd": "shot f4-q1-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-0.png windows: XLMAIN@-11,-11,3851,2099 t=35273"}
+{"t": "22:29:01", "cmd": "crop f4-q1-0 0 255 1400 80 f4-q1-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-0-bar.png t=35305"}
+{"t": "22:29:01", "cmd": "crop f4-q1-0 0 2055 600 33 f4-q1-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-0-mode.png t=35348"}
+{"t": "22:29:01", "cmd": "crop f4-q1-0 183 507 444 262 f4-q1-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-0-cells.png t=35405"}
+{"t": "22:29:02", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":false}] t=35626"}
+{"t": "22:29:02", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=35677"}
+{"t": "22:29:02", "cmd": "click 3793 295", "answer": "ok click t=36179"}
+{"t": "22:29:03", "cmd": "shot f4-q1-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-1.png windows: XLMAIN@-11,-11,3851,2099 t=36946"}
+{"t": "22:29:03", "cmd": "crop f4-q1-1 0 255 1400 80 f4-q1-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-1-bar.png t=36982"}
+{"t": "22:29:03", "cmd": "crop f4-q1-1 0 2055 600 33 f4-q1-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-1-mode.png t=37039"}
+{"t": "22:29:03", "cmd": "crop f4-q1-1 183 507 444 262 f4-q1-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-1-cells.png t=37095"}
+{"t": "22:29:03", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=37321"}
+{"t": "22:29:04", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=37381"}
+{"t": "22:29:04", "cmd": "keys 80 =A1{+}B2", "answer": "ok keys 6 t=37975"}
+{"t": "22:29:05", "cmd": "shot f4-q1-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-2.png windows: XLMAIN@-11,-11,3851,2099 t=38762"}
+{"t": "22:29:05", "cmd": "crop f4-q1-2 0 255 1400 80 f4-q1-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-2-bar.png t=38798"}
+{"t": "22:29:05", "cmd": "crop f4-q1-2 0 2055 600 33 f4-q1-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-2-mode.png t=38855"}
+{"t": "22:29:05", "cmd": "crop f4-q1-2 183 507 444 262 f4-q1-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-2-cells.png t=38914"}
+{"t": "22:29:05", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+B2\",\"selection\":[{\"text\":\"\",\"start\":6,\"end\":6}],\"focus\":true}] t=39160"}
+{"t": "22:29:05", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=39189"}
+{"t": "22:29:06", "cmd": "keys 80 {F2}", "answer": "ok keys 1 t=39317"}
+{"t": "22:29:06", "cmd": "shot f4-q1-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-3.png windows: XLMAIN@-11,-11,3851,2099 t=40100"}
+{"t": "22:29:06", "cmd": "crop f4-q1-3 0 255 1400 80 f4-q1-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-3-bar.png t=40150"}
+{"t": "22:29:06", "cmd": "crop f4-q1-3 0 2055 600 33 f4-q1-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-3-mode.png t=40206"}
+{"t": "22:29:07", "cmd": "crop f4-q1-3 183 507 444 262 f4-q1-3-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-3-cells.png t=40264"}
+{"t": "22:29:07", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+B2\",\"selection\":[{\"text\":\"\",\"start\":6,\"end\":6}],\"focus\":true}] t=40508"}
+{"t": "22:29:07", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=40539"}
+{"t": "22:29:07", "cmd": "keys 80 {F4}", "answer": "ok keys 1 t=40675"}
+{"t": "22:29:08", "cmd": "shot f4-q1-4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-4.png windows: XLMAIN@-11,-11,3851,2099 t=41462"}
+{"t": "22:29:08", "cmd": "crop f4-q1-4 0 255 1400 80 f4-q1-4-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-4-bar.png t=41510"}
+{"t": "22:29:08", "cmd": "crop f4-q1-4 0 2055 600 33 f4-q1-4-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-4-mode.png t=41566"}
+{"t": "22:29:08", "cmd": "crop f4-q1-4 183 507 444 262 f4-q1-4-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-4-cells.png t=41624"}
+{"t": "22:29:08", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+$B$2\",\"selection\":[{\"text\":\"\",\"start\":8,\"end\":8}],\"focus\":true}] t=41861"}
+{"t": "22:29:07", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=41901"}
+{"t": "22:29:07", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=41957"}
+{"t": "22:29:07", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=42005"}
+{"t": "22:29:07", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=42105"}
+{"t": "22:29:08", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=42538"}
+{"t": "22:29:08", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=42644"}
+{"t": "22:29:08", "cmd": "select D10", "answer": "ok select D10 t=42691"}
+{"t": "22:29:08", "cmd": "shot f4-q2a-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-0.png windows: XLMAIN@-11,-11,3851,2099 t=43173"}
+{"t": "22:29:08", "cmd": "crop f4-q2a-0 0 255 1400 80 f4-q2a-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-0-bar.png t=43206"}
+{"t": "22:29:09", "cmd": "crop f4-q2a-0 0 2055 600 33 f4-q2a-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-0-mode.png t=43264"}
+{"t": "22:29:09", "cmd": "crop f4-q2a-0 183 507 444 262 f4-q2a-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-0-cells.png t=43323"}
+{"t": "22:29:09", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=43558"}
+{"t": "22:29:09", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=43597"}
+{"t": "22:29:09", "cmd": "click 3793 295", "answer": "ok click t=44105"}
+{"t": "22:29:10", "cmd": "shot f4-q2a-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-1.png windows: XLMAIN@-11,-11,3851,2099 t=44887"}
+{"t": "22:29:10", "cmd": "crop f4-q2a-1 0 255 1400 80 f4-q2a-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-1-bar.png t=44925"}
+{"t": "22:29:10", "cmd": "crop f4-q2a-1 0 2055 600 33 f4-q2a-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-1-mode.png t=44983"}
+{"t": "22:29:10", "cmd": "crop f4-q2a-1 183 507 444 262 f4-q2a-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-1-cells.png t=45041"}
+{"t": "22:29:11", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=45267"}
+{"t": "22:29:11", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=45316"}
+{"t": "22:29:11", "cmd": "keys 80 =A1{+}B2", "answer": "ok keys 6 t=45926"}
+{"t": "22:29:12", "cmd": "shot f4-q2a-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-2.png windows: XLMAIN@-11,-11,3851,2099 t=46714"}
+{"t": "22:29:12", "cmd": "crop f4-q2a-2 0 255 1400 80 f4-q2a-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-2-bar.png t=46747"}
+{"t": "22:29:12", "cmd": "crop f4-q2a-2 0 2055 600 33 f4-q2a-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-2-mode.png t=46806"}
+{"t": "22:29:12", "cmd": "crop f4-q2a-2 183 507 444 262 f4-q2a-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-2-cells.png t=46861"}
+{"t": "22:29:12", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+B2\",\"selection\":[{\"text\":\"\",\"start\":6,\"end\":6}],\"focus\":true}] t=47085"}
+{"t": "22:29:12", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=47139"}
+{"t": "22:29:13", "cmd": "keys 80 {LEFT}", "answer": "ok keys 1 t=47269"}
+{"t": "22:29:13", "cmd": "shot f4-q2a-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-3.png windows: XLMAIN@-11,-11,3851,2099 t=48021"}
+{"t": "22:29:13", "cmd": "crop f4-q2a-3 0 255 1400 80 f4-q2a-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-3-bar.png t=48054"}
+{"t": "22:29:13", "cmd": "crop f4-q2a-3 0 2055 600 33 f4-q2a-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-3-mode.png t=48111"}
+{"t": "22:29:14", "cmd": "crop f4-q2a-3 183 507 444 262 f4-q2a-3-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-3-cells.png t=48171"}
+{"t": "22:29:14", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+B2\",\"selection\":[{\"text\":\"\",\"start\":5,\"end\":5}],\"focus\":true}] t=48413"}
+{"t": "22:29:14", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=48447"}
+{"t": "22:29:14", "cmd": "keys 80 {RIGHT}", "answer": "ok keys 1 t=48582"}
+{"t": "22:29:15", "cmd": "shot f4-q2a-4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-4.png windows: XLMAIN@-11,-11,3851,2099 t=49345"}
+{"t": "22:29:15", "cmd": "crop f4-q2a-4 0 255 1400 80 f4-q2a-4-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-4-bar.png t=49368"}
+{"t": "22:29:15", "cmd": "crop f4-q2a-4 0 2055 600 33 f4-q2a-4-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-4-mode.png t=49424"}
+{"t": "22:29:15", "cmd": "crop f4-q2a-4 183 507 444 262 f4-q2a-4-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-4-cells.png t=49482"}
+{"t": "22:29:15", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+B2\",\"selection\":[{\"text\":\"\",\"start\":6,\"end\":6}],\"focus\":true}] t=49706"}
+{"t": "22:29:15", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=49757"}
+{"t": "22:29:15", "cmd": "keys 80 {F4}", "answer": "ok keys 1 t=49896"}
+{"t": "22:29:16", "cmd": "shot f4-q2a-5", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-5.png windows: XLMAIN@-11,-11,3851,2099 t=50634"}
+{"t": "22:29:16", "cmd": "crop f4-q2a-5 0 255 1400 80 f4-q2a-5-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-5-bar.png t=50670"}
+{"t": "22:29:16", "cmd": "crop f4-q2a-5 0 2055 600 33 f4-q2a-5-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-5-mode.png t=50726"}
+{"t": "22:29:16", "cmd": "crop f4-q2a-5 183 507 444 262 f4-q2a-5-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2a-5-cells.png t=50783"}
+{"t": "22:29:16", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+$B$2\",\"selection\":[{\"text\":\"\",\"start\":8,\"end\":8}],\"focus\":true}] t=51003"}
+{"t": "22:29:17", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=51056"}
+{"t": "22:29:17", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=51104"}
+{"t": "22:29:17", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=51161"}
+{"t": "22:29:17", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=51259"}
+{"t": "22:29:17", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=51673"}
+{"t": "22:29:17", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=51791"}
+{"t": "22:29:17", "cmd": "select D10", "answer": "ok select D10 t=51835"}
+{"t": "22:29:18", "cmd": "shot f4-q2b-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-0.png windows: XLMAIN@-11,-11,3851,2099 t=52313"}
+{"t": "22:29:18", "cmd": "crop f4-q2b-0 0 255 1400 80 f4-q2b-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-0-bar.png t=52352"}
+{"t": "22:29:18", "cmd": "crop f4-q2b-0 0 2055 600 33 f4-q2b-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-0-mode.png t=52408"}
+{"t": "22:29:18", "cmd": "crop f4-q2b-0 183 507 444 262 f4-q2b-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-0-cells.png t=52464"}
+{"t": "22:29:18", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=52694"}
+{"t": "22:29:18", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=52742"}
+{"t": "22:29:19", "cmd": "click 3793 295", "answer": "ok click t=53238"}
+{"t": "22:29:20", "cmd": "shot f4-q2b-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-1.png windows: XLMAIN@-11,-11,3851,2099 t=53987"}
+{"t": "22:29:20", "cmd": "crop f4-q2b-1 0 255 1400 80 f4-q2b-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-1-bar.png t=54022"}
+{"t": "22:29:20", "cmd": "crop f4-q2b-1 0 2055 600 33 f4-q2b-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-1-mode.png t=54080"}
+{"t": "22:29:20", "cmd": "crop f4-q2b-1 183 507 444 262 f4-q2b-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-1-cells.png t=54137"}
+{"t": "22:29:20", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=54364"}
+{"t": "22:29:20", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=54413"}
+{"t": "22:29:21", "cmd": "keys 80 =A1{+}B2", "answer": "ok keys 6 t=55020"}
+{"t": "22:29:22", "cmd": "shot f4-q2b-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-2.png windows: XLMAIN@-11,-11,3851,2099 t=55807"}
+{"t": "22:29:22", "cmd": "crop f4-q2b-2 0 255 1400 80 f4-q2b-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-2-bar.png t=55842"}
+{"t": "22:29:22", "cmd": "crop f4-q2b-2 0 2055 600 33 f4-q2b-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-2-mode.png t=55898"}
+{"t": "22:29:22", "cmd": "crop f4-q2b-2 183 507 444 262 f4-q2b-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-2-cells.png t=55956"}
+{"t": "22:29:22", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+B2\",\"selection\":[{\"text\":\"\",\"start\":6,\"end\":6}],\"focus\":true}] t=56180"}
+{"t": "22:29:22", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=56230"}
+{"t": "22:29:22", "cmd": "keys 80 {LEFT}", "answer": "ok keys 1 t=56363"}
+{"t": "22:29:23", "cmd": "shot f4-q2b-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-3.png windows: XLMAIN@-11,-11,3851,2099 t=57120"}
+{"t": "22:29:23", "cmd": "crop f4-q2b-3 0 255 1400 80 f4-q2b-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-3-bar.png t=57149"}
+{"t": "22:29:23", "cmd": "crop f4-q2b-3 0 2055 600 33 f4-q2b-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-3-mode.png t=57206"}
+{"t": "22:29:23", "cmd": "crop f4-q2b-3 183 507 444 262 f4-q2b-3-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-3-cells.png t=57264"}
+{"t": "22:29:23", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+B2\",\"selection\":[{\"text\":\"\",\"start\":5,\"end\":5}],\"focus\":true}] t=57505"}
+{"t": "22:29:23", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=57540"}
+{"t": "22:29:23", "cmd": "keys 80 {LEFT}", "answer": "ok keys 1 t=57677"}
+{"t": "22:29:24", "cmd": "shot f4-q2b-4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-4.png windows: XLMAIN@-11,-11,3851,2099 t=58433"}
+{"t": "22:29:24", "cmd": "crop f4-q2b-4 0 255 1400 80 f4-q2b-4-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-4-bar.png t=58459"}
+{"t": "22:29:24", "cmd": "crop f4-q2b-4 0 2055 600 33 f4-q2b-4-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-4-mode.png t=58517"}
+{"t": "22:29:24", "cmd": "crop f4-q2b-4 183 507 444 262 f4-q2b-4-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-4-cells.png t=58575"}
+{"t": "22:29:25", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+B2\",\"selection\":[{\"text\":\"\",\"start\":4,\"end\":4}],\"focus\":true}] t=58798"}
+{"t": "22:29:25", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=58850"}
+{"t": "22:29:25", "cmd": "keys 80 {LEFT}", "answer": "ok keys 1 t=58989"}
+{"t": "22:29:26", "cmd": "shot f4-q2b-5", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-5.png windows: XLMAIN@-11,-11,3851,2099 t=59729"}
+{"t": "22:29:26", "cmd": "crop f4-q2b-5 0 255 1400 80 f4-q2b-5-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-5-bar.png t=59766"}
+{"t": "22:29:26", "cmd": "crop f4-q2b-5 0 2055 600 33 f4-q2b-5-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-5-mode.png t=59822"}
+{"t": "22:29:26", "cmd": "crop f4-q2b-5 183 507 444 262 f4-q2b-5-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-5-cells.png t=59881"}
+{"t": "22:29:26", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+B2\",\"selection\":[{\"text\":\"\",\"start\":3,\"end\":3}],\"focus\":true}] t=60103"}
+{"t": "22:29:26", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=60156"}
+{"t": "22:29:26", "cmd": "keys 80 0", "answer": "ok keys 1 t=60287"}
+{"t": "22:29:27", "cmd": "shot f4-q2b-6", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-6.png windows: XLMAIN@-11,-11,3851,2099 t=61038"}
+{"t": "22:29:27", "cmd": "crop f4-q2b-6 0 255 1400 80 f4-q2b-6-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-6-bar.png t=61079"}
+{"t": "22:29:27", "cmd": "crop f4-q2b-6 0 2055 600 33 f4-q2b-6-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-6-mode.png t=61136"}
+{"t": "22:29:27", "cmd": "crop f4-q2b-6 183 507 444 262 f4-q2b-6-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-6-cells.png t=61194"}
+{"t": "22:29:27", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A10+B2\",\"selection\":[{\"text\":\"\",\"start\":4,\"end\":4}],\"focus\":true}] t=61430"}
+{"t": "22:29:27", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=61469"}
+{"t": "22:29:27", "cmd": "keys 80 {F4}", "answer": "ok keys 1 t=61599"}
+{"t": "22:29:28", "cmd": "shot f4-q2b-7", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-7.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@380,234,393,257 t=62344"}
+{"t": "22:29:28", "cmd": "crop f4-q2b-7 0 255 1400 80 f4-q2b-7-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-7-bar.png t=62377"}
+{"t": "22:29:28", "cmd": "crop f4-q2b-7 0 2055 600 33 f4-q2b-7-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-7-mode.png t=62433"}
+{"t": "22:29:28", "cmd": "crop f4-q2b-7 183 507 444 262 f4-q2b-7-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-7-cells.png t=62491"}
+{"t": "22:29:29", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=$A$10+B2\",\"selection\":[{\"text\":\"$A$10\",\"start\":1,\"end\":6}],\"focus\":true}] t=62717"}
+{"t": "22:29:29", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=62772"}
+{"t": "22:29:29", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=62812"}
+{"t": "22:29:29", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=62870"}
+{"t": "22:29:29", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=62974"}
+{"t": "22:29:29", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=63443"}
+{"t": "22:30:36", "cmd": "geo C8 F14 D10", "answer": "ok geo C8:233,557,329,585 F14:521,729,617,759 D10:329,614,425,644 t=130261"}
+{"t": "22:30:38", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=131485"}
+{"t": "22:30:38", "cmd": "select D10", "answer": "ok select D10 t=131540"}
+{"t": "22:30:38", "cmd": "setup D10 =A1+B2", "answer": "ok setup D10 t=131896"}
+{"t": "22:30:39", "cmd": "click 377 700", "answer": "ok click t=132416"}
+{"t": "22:30:40", "cmd": "click 377 629", "answer": "ok click t=133525"}
+{"t": "22:30:41", "cmd": "move 3700 1900", "answer": "ok move t=134490"}
+{"t": "22:30:41", "cmd": "shot f4-q2c-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-0.png windows: XLMAIN@-11,-11,3851,2099 t=135056"}
+{"t": "22:30:41", "cmd": "crop f4-q2c-0 0 255 1400 80 f4-q2c-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-0-bar.png t=135091"}
+{"t": "22:30:41", "cmd": "crop f4-q2c-0 0 2055 600 33 f4-q2c-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-0-mode.png t=135148"}
+{"t": "22:30:41", "cmd": "crop f4-q2c-0 183 507 444 262 f4-q2c-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-0-cells.png t=135209"}
+{"t": "22:30:42", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+B2\",\"selection\":[{\"text\":\"\",\"start\":6,\"end\":6}],\"focus\":true}] t=135436"}
+{"t": "22:30:42", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=135484"}
+{"t": "22:30:41", "cmd": "click 383 295", "answer": "ok click t=135991"}
+{"t": "22:30:42", "cmd": "shot f4-q2c-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-1.png windows: XLMAIN@-11,-11,3851,2099 t=136771"}
+{"t": "22:30:42", "cmd": "crop f4-q2c-1 0 255 1400 80 f4-q2c-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-1-bar.png t=136801"}
+{"t": "22:30:42", "cmd": "crop f4-q2c-1 0 2055 600 33 f4-q2c-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-1-mode.png t=136858"}
+{"t": "22:30:42", "cmd": "crop f4-q2c-1 183 507 444 262 f4-q2c-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-1-cells.png t=136916"}
+{"t": "22:30:42", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+B2\",\"selection\":[{\"text\":\"\",\"start\":3,\"end\":3}],\"focus\":true}] t=137140"}
+{"t": "22:30:42", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=137191"}
+{"t": "22:30:43", "cmd": "keys 80 {F4}", "answer": "ok keys 1 t=137332"}
+{"t": "22:30:43", "cmd": "shot f4-q2c-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-2.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@374,234,387,257 t=138070"}
+{"t": "22:30:43", "cmd": "crop f4-q2c-2 0 255 1400 80 f4-q2c-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-2-bar.png t=138105"}
+{"t": "22:30:43", "cmd": "crop f4-q2c-2 0 2055 600 33 f4-q2c-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-2-mode.png t=138159"}
+{"t": "22:30:44", "cmd": "crop f4-q2c-2 183 507 444 262 f4-q2c-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-2-cells.png t=138217"}
+{"t": "22:30:44", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=$A$1+B2\",\"selection\":[{\"text\":\"$A$1\",\"start\":1,\"end\":5}],\"focus\":true}] t=138451"}
+{"t": "22:30:44", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=138499"}
+{"t": "22:30:44", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=138542"}
+{"t": "22:30:44", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=138600"}
+{"t": "22:30:44", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=138711"}
+{"t": "22:30:45", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=139172"}
+{"t": "22:30:50", "cmd": "select D10", "answer": "ok select D10 t=144503"}
+{"t": "22:30:50", "cmd": "geo C8 F14 D10", "answer": "ok geo C8:233,557,329,585 F14:521,729,617,759 D10:329,614,425,644 t=144574"}
+{"t": "22:30:51", "cmd": "uia", "answer": "ok uia Formula Bar:328,267,3840,324 Name Box:not found Status Bar:0,2055,3840,2088 Sheet Tab:not found Sheet1:160,2007,259,2055 Sheet2:259,2007,361,2055 t=145661"}
+{"t": "22:30:51", "cmd": "layout", "answer": "ok layout 0x08090809 t=145693"}
+{"t": "22:30:51", "cmd": "ps $xl.International(32)", "answer": "ok ps 0 t=145700"}
+{"t": "22:30:51", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=145828"}
+{"t": "22:30:51", "cmd": "select D10", "answer": "ok select D10 t=145881"}
+{"t": "22:30:52", "cmd": "shot f4-q3-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-0.png windows: XLMAIN@-11,-11,3851,2099 t=146368"}
+{"t": "22:30:52", "cmd": "crop f4-q3-0 0 255 1400 80 f4-q3-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-0-bar.png t=146402"}
+{"t": "22:30:52", "cmd": "crop f4-q3-0 0 2055 600 33 f4-q3-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-0-mode.png t=146456"}
+{"t": "22:30:52", "cmd": "crop f4-q3-0 183 507 444 262 f4-q3-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-0-cells.png t=146515"}
+{"t": "22:30:52", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=146740"}
+{"t": "22:30:52", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=146791"}
+{"t": "22:30:52", "cmd": "keys 80 =", "answer": "ok keys 1 t=146926"}
+{"t": "22:30:53", "cmd": "shot f4-q3-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-1.png windows: XLMAIN@-11,-11,3851,2099 t=147656"}
+{"t": "22:30:53", "cmd": "crop f4-q3-1 0 255 1400 80 f4-q3-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-1-bar.png t=147698"}
+{"t": "22:30:53", "cmd": "crop f4-q3-1 0 2055 600 33 f4-q3-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-1-mode.png t=147755"}
+{"t": "22:30:53", "cmd": "crop f4-q3-1 183 507 444 262 f4-q3-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-1-cells.png t=147813"}
+{"t": "22:30:54", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=\",\"selection\":[{\"text\":\"\",\"start\":1,\"end\":1}],\"focus\":true}] t=148040"}
+{"t": "22:30:54", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=148089"}
+{"t": "22:30:54", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=148225"}
+{"t": "22:30:55", "cmd": "shot f4-q3-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-2.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@354,581,367,604 t=148975"}
+{"t": "22:30:55", "cmd": "crop f4-q3-2 0 255 1400 80 f4-q3-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-2-bar.png t=148997"}
+{"t": "22:30:55", "cmd": "crop f4-q3-2 0 2055 600 33 f4-q3-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-2-mode.png t=149055"}
+{"t": "22:30:55", "cmd": "crop f4-q3-2 183 507 444 262 f4-q3-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-2-cells.png t=149116"}
+{"t": "22:30:55", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=D11\",\"selection\":[{\"text\":\"D11\",\"start\":1,\"end\":4}],\"focus\":true}] t=149351"}
+{"t": "22:30:55", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=149399"}
+{"t": "22:30:55", "cmd": "keys 80 +{DOWN}", "answer": "ok keys 1 t=149536"}
+{"t": "22:30:56", "cmd": "shot f4-q3-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-3.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@362,581,400,604 t=150313"}
+{"t": "22:30:56", "cmd": "crop f4-q3-3 0 255 1400 80 f4-q3-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-3-bar.png t=150346"}
+{"t": "22:30:56", "cmd": "crop f4-q3-3 0 2055 600 33 f4-q3-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-3-mode.png t=150403"}
+{"t": "22:30:56", "cmd": "crop f4-q3-3 183 507 444 262 f4-q3-3-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-3-cells.png t=150459"}
+{"t": "22:30:56", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=D11:D12\",\"selection\":[{\"text\":\"D11:D12\",\"start\":1,\"end\":8}],\"focus\":true}] t=150699"}
+{"t": "22:30:56", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=150752"}
+{"t": "22:30:57", "cmd": "keys 80 +{HOME}", "answer": "ok keys 1 t=150894"}
+{"t": "22:30:57", "cmd": "shot f4-q3-4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-4.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@322,581,438,604 t=151673"}
+{"t": "22:30:57", "cmd": "crop f4-q3-4 0 255 1400 80 f4-q3-4-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-4-bar.png t=151695"}
+{"t": "22:30:57", "cmd": "crop f4-q3-4 0 2055 600 33 f4-q3-4-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-4-mode.png t=151751"}
+{"t": "22:30:57", "cmd": "crop f4-q3-4 183 507 444 262 f4-q3-4-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-4-cells.png t=151810"}
+{"t": "22:30:58", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A11:D12\",\"selection\":[{\"text\":\"A11:D12\",\"start\":1,\"end\":8}],\"focus\":true}] t=152041"}
+{"t": "22:30:58", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=152089"}
+{"t": "22:30:58", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=152131"}
+{"t": "22:30:58", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=152191"}
+{"t": "22:30:58", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=152294"}
+{"t": "22:30:58", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=152763"}
+{"t": "22:30:59", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=152939"}
+{"t": "22:30:59", "cmd": "select D10", "answer": "ok select D10 t=152982"}
+{"t": "22:30:59", "cmd": "shot f4-q4-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-0.png windows: XLMAIN@-11,-11,3851,2099 t=153461"}
+{"t": "22:30:59", "cmd": "crop f4-q4-0 0 255 1400 80 f4-q4-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-0-bar.png t=153494"}
+{"t": "22:30:59", "cmd": "crop f4-q4-0 0 2055 600 33 f4-q4-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-0-mode.png t=153551"}
+{"t": "22:30:59", "cmd": "crop f4-q4-0 183 507 444 262 f4-q4-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-0-cells.png t=153611"}
+{"t": "22:31:00", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=153842"}
+{"t": "22:31:00", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=153887"}
+{"t": "22:31:00", "cmd": "keys 80 {F2}", "answer": "ok keys 1 t=154019"}
+{"t": "22:31:01", "cmd": "shot f4-q4-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-1.png windows: XLMAIN@-11,-11,3851,2099 t=154767"}
+{"t": "22:31:01", "cmd": "crop f4-q4-1 0 255 1400 80 f4-q4-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-1-bar.png t=154802"}
+{"t": "22:31:01", "cmd": "crop f4-q4-1 0 2055 600 33 f4-q4-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-1-mode.png t=154860"}
+{"t": "22:31:01", "cmd": "crop f4-q4-1 183 507 444 262 f4-q4-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-1-cells.png t=154918"}
+{"t": "22:31:01", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=155143"}
+{"t": "22:31:01", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=155193"}
+{"t": "22:31:02", "cmd": "keys 80 =Sheet2!A1", "answer": "ok keys 10 t=156191"}
+{"t": "22:31:03", "cmd": "shot f4-q4-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-2.png windows: XLMAIN@-11,-11,3851,2099 t=156927"}
+{"t": "22:31:03", "cmd": "crop f4-q4-2 0 255 1400 80 f4-q4-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-2-bar.png t=156966"}
+{"t": "22:31:03", "cmd": "crop f4-q4-2 0 2055 600 33 f4-q4-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-2-mode.png t=157020"}
+{"t": "22:31:03", "cmd": "crop f4-q4-2 183 507 444 262 f4-q4-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-2-cells.png t=157080"}
+{"t": "22:31:03", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=Sheet2!A1\",\"selection\":[{\"text\":\"\",\"start\":10,\"end\":10}],\"focus\":true}] t=157305"}
+{"t": "22:31:03", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=157357"}
+{"t": "22:31:03", "cmd": "keys 80 {F4}", "answer": "ok keys 1 t=157488"}
+{"t": "22:31:04", "cmd": "shot f4-q4-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-3.png windows: XLMAIN@-11,-11,3851,2099 t=158221"}
+{"t": "22:31:04", "cmd": "crop f4-q4-3 0 255 1400 80 f4-q4-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-3-bar.png t=158256"}
+{"t": "22:31:04", "cmd": "crop f4-q4-3 0 2055 600 33 f4-q4-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-3-mode.png t=158313"}
+{"t": "22:31:04", "cmd": "crop f4-q4-3 183 507 444 262 f4-q4-3-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4-3-cells.png t=158371"}
+{"t": "22:31:04", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=Sheet2!$A$1\",\"selection\":[{\"text\":\"\",\"start\":12,\"end\":12}],\"focus\":true}] t=158592"}
+{"t": "22:31:05", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=158644"}
+{"t": "22:31:05", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=158692"}
+{"t": "22:31:05", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=158749"}
+{"t": "22:31:05", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=158850"}
+{"t": "22:31:05", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=159260"}
+{"t": "22:31:05", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=159436"}
+{"t": "22:31:05", "cmd": "select D10", "answer": "ok select D10 t=159474"}
+{"t": "22:31:06", "cmd": "shot f4-q5a-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5a-0.png windows: XLMAIN@-11,-11,3851,2099 t=159952"}
+{"t": "22:31:06", "cmd": "crop f4-q5a-0 0 255 1400 80 f4-q5a-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5a-0-bar.png t=159986"}
+{"t": "22:31:06", "cmd": "crop f4-q5a-0 0 2055 600 33 f4-q5a-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5a-0-mode.png t=160043"}
+{"t": "22:31:06", "cmd": "crop f4-q5a-0 183 507 444 262 f4-q5a-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5a-0-cells.png t=160102"}
+{"t": "22:31:06", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=160332"}
+{"t": "22:31:06", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=160375"}
+{"t": "22:31:06", "cmd": "keys 80 =", "answer": "ok keys 1 t=160503"}
+{"t": "22:31:07", "cmd": "shot f4-q5a-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5a-1.png windows: XLMAIN@-11,-11,3851,2099 t=161243"}
+{"t": "22:31:07", "cmd": "crop f4-q5a-1 0 255 1400 80 f4-q5a-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5a-1-bar.png t=161280"}
+{"t": "22:31:07", "cmd": "crop f4-q5a-1 0 2055 600 33 f4-q5a-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5a-1-mode.png t=161338"}
+{"t": "22:31:07", "cmd": "crop f4-q5a-1 183 507 444 262 f4-q5a-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5a-1-cells.png t=161399"}
+{"t": "22:31:08", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=\",\"selection\":[{\"text\":\"\",\"start\":1,\"end\":1}],\"focus\":true}] t=161618"}
+{"t": "22:31:08", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=161672"}
+{"t": "22:31:08", "cmd": "keys 80 ^{DOWN}", "answer": "ok keys 1 t=161817"}
+{"t": "22:31:09", "cmd": "shot f4-q5a-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5a-2.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@381,581,394,604 t=162555"}
+{"t": "22:31:09", "cmd": "crop f4-q5a-2 0 255 1400 80 f4-q5a-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5a-2-bar.png t=162573"}
+{"t": "22:31:09", "cmd": "crop f4-q5a-2 0 2055 600 33 f4-q5a-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5a-2-mode.png t=162629"}
+{"t": "22:31:09", "cmd": "crop f4-q5a-2 183 507 444 262 f4-q5a-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5a-2-cells.png t=162687"}
+{"t": "22:31:09", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=D1048576\",\"selection\":[{\"text\":\"D1048576\",\"start\":1,\"end\":9}],\"focus\":true}] t=163029"}
+{"t": "22:31:09", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=163067"}
+{"t": "22:31:09", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=163111"}
+{"t": "22:31:09", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=163169"}
+{"t": "22:31:09", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=163270"}
+{"t": "22:31:10", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=163680"}
+{"t": "22:31:10", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=163777"}
+{"t": "22:31:10", "cmd": "select D10", "answer": "ok select D10 t=163794"}
+{"t": "22:31:10", "cmd": "shot f4-q5b-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5b-0.png windows: XLMAIN@-11,-11,3851,2099 t=164258"}
+{"t": "22:31:10", "cmd": "crop f4-q5b-0 0 255 1400 80 f4-q5b-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5b-0-bar.png t=164307"}
+{"t": "22:31:10", "cmd": "crop f4-q5b-0 0 2055 600 33 f4-q5b-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5b-0-mode.png t=164365"}
+{"t": "22:31:11", "cmd": "crop f4-q5b-0 183 507 444 262 f4-q5b-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5b-0-cells.png t=164423"}
+{"t": "22:31:11", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=164782"}
+{"t": "22:31:11", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=164849"}
+{"t": "22:31:11", "cmd": "keys 80 =", "answer": "ok keys 1 t=164989"}
+{"t": "22:31:12", "cmd": "shot f4-q5b-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5b-1.png windows: XLMAIN@-11,-11,3851,2099 t=165718"}
+{"t": "22:31:12", "cmd": "crop f4-q5b-1 0 255 1400 80 f4-q5b-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5b-1-bar.png t=165750"}
+{"t": "22:31:12", "cmd": "crop f4-q5b-1 0 2055 600 33 f4-q5b-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5b-1-mode.png t=165807"}
+{"t": "22:31:12", "cmd": "crop f4-q5b-1 183 507 444 262 f4-q5b-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5b-1-cells.png t=165866"}
+{"t": "22:31:12", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=\",\"selection\":[{\"text\":\"\",\"start\":1,\"end\":1}],\"focus\":true}] t=166087"}
+{"t": "22:31:12", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=166140"}
+{"t": "22:31:12", "cmd": "keys 80 ^+{DOWN}", "answer": "ok keys 1 t=166285"}
+{"t": "22:31:12", "cmd": "shot f4-q5b-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5b-2.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@74,320,742,343 t=167074"}
+{"t": "22:31:12", "cmd": "crop f4-q5b-2 0 255 1400 80 f4-q5b-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5b-2-bar.png t=167100"}
+{"t": "22:31:12", "cmd": "crop f4-q5b-2 0 2055 600 33 f4-q5b-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5b-2-mode.png t=167157"}
+{"t": "22:31:12", "cmd": "crop f4-q5b-2 183 507 444 262 f4-q5b-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q5b-2-cells.png t=167215"}
+{"t": "22:31:13", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=D10:D1048576\",\"selection\":[{\"text\":\"D10:D1048576\",\"start\":1,\"end\":13}],\"focus\":true}] t=167571"}
+{"t": "22:31:13", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=167652"}
+{"t": "22:31:13", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=167693"}
+{"t": "22:31:13", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=167753"}
+{"t": "22:31:13", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=167855"}
+{"t": "22:31:14", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=168265"}
+{"t": "22:31:14", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=168482"}
+{"t": "22:31:14", "cmd": "select D10", "answer": "ok select D10 t=168532"}
+{"t": "22:31:14", "cmd": "shot f4-q6a-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6a-0.png windows: XLMAIN@-11,-11,3851,2099 t=169021"}
+{"t": "22:31:14", "cmd": "crop f4-q6a-0 0 255 1400 80 f4-q6a-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6a-0-bar.png t=169053"}
+{"t": "22:31:14", "cmd": "crop f4-q6a-0 0 2055 600 33 f4-q6a-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6a-0-mode.png t=169109"}
+{"t": "22:31:14", "cmd": "crop f4-q6a-0 183 507 444 262 f4-q6a-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6a-0-cells.png t=169166"}
+{"t": "22:31:15", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=169521"}
+{"t": "22:31:15", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=169595"}
+{"t": "22:31:15", "cmd": "keys 80 =", "answer": "ok keys 1 t=169723"}
+{"t": "22:31:16", "cmd": "shot f4-q6a-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6a-1.png windows: XLMAIN@-11,-11,3851,2099 t=170466"}
+{"t": "22:31:16", "cmd": "crop f4-q6a-1 0 255 1400 80 f4-q6a-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6a-1-bar.png t=170505"}
+{"t": "22:31:16", "cmd": "crop f4-q6a-1 0 2055 600 33 f4-q6a-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6a-1-mode.png t=170562"}
+{"t": "22:31:16", "cmd": "crop f4-q6a-1 183 507 444 262 f4-q6a-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6a-1-cells.png t=170621"}
+{"t": "22:31:16", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=\",\"selection\":[{\"text\":\"\",\"start\":1,\"end\":1}],\"focus\":true}] t=170844"}
+{"t": "22:31:16", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=170896"}
+{"t": "22:31:16", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=171036"}
+{"t": "22:31:17", "cmd": "shot f4-q6a-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6a-2.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@354,581,367,604 t=171783"}
+{"t": "22:31:17", "cmd": "crop f4-q6a-2 0 255 1400 80 f4-q6a-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6a-2-bar.png t=171802"}
+{"t": "22:31:17", "cmd": "crop f4-q6a-2 0 2055 600 33 f4-q6a-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6a-2-mode.png t=171859"}
+{"t": "22:31:17", "cmd": "crop f4-q6a-2 183 507 444 262 f4-q6a-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6a-2-cells.png t=171918"}
+{"t": "22:31:18", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=D11\",\"selection\":[{\"text\":\"D11\",\"start\":1,\"end\":4}],\"focus\":true}] t=172145"}
+{"t": "22:31:18", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=172197"}
+{"t": "22:31:18", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=172250"}
+{"t": "22:31:18", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=172300"}
+{"t": "22:31:18", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=172402"}
+{"t": "22:31:18", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=172816"}
+{"t": "22:31:19", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=173187"}
+{"t": "22:31:19", "cmd": "select D10", "answer": "ok select D10 t=173235"}
+{"t": "22:31:19", "cmd": "shot f4-q6b-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-0.png windows: XLMAIN@-11,-11,3851,2099 t=173712"}
+{"t": "22:31:19", "cmd": "crop f4-q6b-0 0 255 1400 80 f4-q6b-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-0-bar.png t=173751"}
+{"t": "22:31:19", "cmd": "crop f4-q6b-0 0 2055 600 33 f4-q6b-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-0-mode.png t=173807"}
+{"t": "22:31:19", "cmd": "crop f4-q6b-0 183 507 444 262 f4-q6b-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-0-cells.png t=173867"}
+{"t": "22:31:20", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=174092"}
+{"t": "22:31:20", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=174142"}
+{"t": "22:31:20", "cmd": "keys 80 =", "answer": "ok keys 1 t=174272"}
+{"t": "22:31:20", "cmd": "shot f4-q6b-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-1.png windows: XLMAIN@-11,-11,3851,2099 t=175020"}
+{"t": "22:31:21", "cmd": "crop f4-q6b-1 0 255 1400 80 f4-q6b-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-1-bar.png t=175058"}
+{"t": "22:31:21", "cmd": "crop f4-q6b-1 0 2055 600 33 f4-q6b-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-1-mode.png t=175117"}
+{"t": "22:31:21", "cmd": "crop f4-q6b-1 183 507 444 262 f4-q6b-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-1-cells.png t=175175"}
+{"t": "22:31:21", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=\",\"selection\":[{\"text\":\"\",\"start\":1,\"end\":1}],\"focus\":true}] t=175404"}
+{"t": "22:31:21", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=175448"}
+{"t": "22:31:21", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=175582"}
+{"t": "22:31:22", "cmd": "shot f4-q6b-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-2.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@354,581,367,604 t=176338"}
+{"t": "22:31:22", "cmd": "crop f4-q6b-2 0 255 1400 80 f4-q6b-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-2-bar.png t=176373"}
+{"t": "22:31:22", "cmd": "crop f4-q6b-2 0 2055 600 33 f4-q6b-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-2-mode.png t=176430"}
+{"t": "22:31:22", "cmd": "crop f4-q6b-2 183 507 444 262 f4-q6b-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-2-cells.png t=176490"}
+{"t": "22:31:22", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=D11\",\"selection\":[{\"text\":\"D11\",\"start\":1,\"end\":4}],\"focus\":true}] t=176722"}
+{"t": "22:31:22", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=176771"}
+{"t": "22:31:22", "cmd": "keys 80 {DOWN}", "answer": "ok keys 1 t=176909"}
+{"t": "22:31:23", "cmd": "shot f4-q6b-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-3.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@354,581,367,604 t=177698"}
+{"t": "22:31:23", "cmd": "crop f4-q6b-3 0 255 1400 80 f4-q6b-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-3-bar.png t=177725"}
+{"t": "22:31:23", "cmd": "crop f4-q6b-3 0 2055 600 33 f4-q6b-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-3-mode.png t=177782"}
+{"t": "22:31:23", "cmd": "crop f4-q6b-3 183 507 444 262 f4-q6b-3-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-3-cells.png t=177841"}
+{"t": "22:31:24", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=D12\",\"selection\":[{\"text\":\"D12\",\"start\":1,\"end\":4}],\"focus\":true}] t=178065"}
+{"t": "22:31:24", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=178122"}
+{"t": "22:31:24", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=178167"}
+{"t": "22:31:24", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=178224"}
+{"t": "22:31:24", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=178338"}
+{"t": "22:31:24", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=178791"}
+{"t": "22:31:25", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=178975"}
+{"t": "22:31:25", "cmd": "select D10", "answer": "ok select D10 t=179008"}
+{"t": "22:31:25", "cmd": "shot f4-q8-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q8-0.png windows: XLMAIN@-11,-11,3851,2099 t=179483"}
+{"t": "22:31:25", "cmd": "crop f4-q8-0 0 255 1400 80 f4-q8-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q8-0-bar.png t=179521"}
+{"t": "22:31:25", "cmd": "crop f4-q8-0 0 2055 600 33 f4-q8-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q8-0-mode.png t=179579"}
+{"t": "22:31:25", "cmd": "crop f4-q8-0 183 507 444 262 f4-q8-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q8-0-cells.png t=179636"}
+{"t": "22:31:25", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=179877"}
+{"t": "22:31:26", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=179911"}
+{"t": "22:31:26", "cmd": "keys 80 =", "answer": "ok keys 1 t=180050"}
+{"t": "22:31:26", "cmd": "shot f4-q8-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q8-1.png windows: XLMAIN@-11,-11,3851,2099 t=180784"}
+{"t": "22:31:26", "cmd": "crop f4-q8-1 0 255 1400 80 f4-q8-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q8-1-bar.png t=180818"}
+{"t": "22:31:27", "cmd": "crop f4-q8-1 0 2055 600 33 f4-q8-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q8-1-mode.png t=180876"}
+{"t": "22:31:27", "cmd": "crop f4-q8-1 183 507 444 262 f4-q8-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q8-1-cells.png t=180936"}
+{"t": "22:31:27", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=\",\"selection\":[{\"text\":\"\",\"start\":1,\"end\":1}],\"focus\":true}] t=181172"}
+{"t": "22:31:27", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=181213"}
+{"t": "22:31:27", "cmd": "keys 80 +{HOME}", "answer": "ok keys 1 t=181349"}
+{"t": "22:31:28", "cmd": "shot f4-q8-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q8-2.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@348,581,412,604 t=182106"}
+{"t": "22:31:28", "cmd": "crop f4-q8-2 0 255 1400 80 f4-q8-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q8-2-bar.png t=182131"}
+{"t": "22:31:28", "cmd": "crop f4-q8-2 0 2055 600 33 f4-q8-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q8-2-mode.png t=182189"}
+{"t": "22:31:28", "cmd": "crop f4-q8-2 183 507 444 262 f4-q8-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q8-2-cells.png t=182247"}
+{"t": "22:31:28", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A10:D10\",\"selection\":[{\"text\":\"A10:D10\",\"start\":1,\"end\":8}],\"focus\":true}] t=182481"}
+{"t": "22:31:28", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=182527"}
+{"t": "22:31:28", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=182571"}
+{"t": "22:31:28", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=182627"}
+{"t": "22:31:28", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=182730"}
+{"t": "22:31:29", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=183139"}
+{"t": "22:31:29", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=183330"}
+{"t": "22:31:29", "cmd": "select D10", "answer": "ok select D10 t=183364"}
+{"t": "22:31:30", "cmd": "shot f4-q7-1-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-1-0.png windows: XLMAIN@-11,-11,3851,2099 t=183853"}
+{"t": "22:31:30", "cmd": "crop f4-q7-1-0 0 255 1400 80 f4-q7-1-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-1-0-bar.png t=183881"}
+{"t": "22:31:30", "cmd": "crop f4-q7-1-0 0 2055 600 33 f4-q7-1-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-1-0-mode.png t=183939"}
+{"t": "22:31:30", "cmd": "crop f4-q7-1-0 183 507 444 262 f4-q7-1-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-1-0-cells.png t=183998"}
+{"t": "22:31:30", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=184221"}
+{"t": "22:31:30", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=184275"}
+{"t": "22:31:30", "cmd": "keys 80 abc", "answer": "ok keys 3 t=184597"}
+{"t": "22:31:31", "cmd": "shot f4-q7-1-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-1-1.png windows: XLMAIN@-11,-11,3851,2099 t=185365"}
+{"t": "22:31:31", "cmd": "crop f4-q7-1-1 0 255 1400 80 f4-q7-1-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-1-1-bar.png t=185402"}
+{"t": "22:31:31", "cmd": "crop f4-q7-1-1 0 2055 600 33 f4-q7-1-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-1-1-mode.png t=185457"}
+{"t": "22:31:31", "cmd": "crop f4-q7-1-1 183 507 444 262 f4-q7-1-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-1-1-cells.png t=185516"}
+{"t": "22:31:32", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"abc\",\"selection\":[{\"text\":\"\",\"start\":3,\"end\":3}],\"focus\":true}] t=185741"}
+{"t": "22:31:32", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=185791"}
+{"t": "22:31:32", "cmd": "keys 80 +{UP}", "answer": "ok keys 1 t=185927"}
+{"t": "22:31:33", "cmd": "shot f4-q7-1-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-1-2.png windows: XLMAIN@-11,-11,3851,2099 t=186661"}
+{"t": "22:31:33", "cmd": "crop f4-q7-1-2 0 255 1400 80 f4-q7-1-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-1-2-bar.png t=186700"}
+{"t": "22:31:33", "cmd": "crop f4-q7-1-2 0 2055 600 33 f4-q7-1-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-1-2-mode.png t=186757"}
+{"t": "22:31:33", "cmd": "crop f4-q7-1-2 183 507 444 262 f4-q7-1-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-1-2-cells.png t=186816"}
+{"t": "22:31:33", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"abc\",\"selection\":[{\"text\":\"\",\"start\":3,\"end\":3}],\"focus\":true}] t=187156"}
+{"t": "22:31:33", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=187194"}
+{"t": "22:31:33", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D9:D10 t=187245"}
+{"t": "22:31:34", "cmd": "cell D10 D11 D12 E10 C10", "answer": "ok cell D10: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D12: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=187947"}
+{"t": "22:31:35", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=189136"}
+{"t": "22:31:35", "cmd": "select D10", "answer": "ok select D10 t=189200"}
+{"t": "22:31:36", "cmd": "shot f4-q7-2-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-2-0.png windows: XLMAIN@-11,-11,3851,2099 t=189684"}
+{"t": "22:31:36", "cmd": "crop f4-q7-2-0 0 255 1400 80 f4-q7-2-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-2-0-bar.png t=189723"}
+{"t": "22:31:36", "cmd": "crop f4-q7-2-0 0 2055 600 33 f4-q7-2-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-2-0-mode.png t=189779"}
+{"t": "22:31:36", "cmd": "crop f4-q7-2-0 183 507 444 262 f4-q7-2-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-2-0-cells.png t=189838"}
+{"t": "22:31:36", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=190066"}
+{"t": "22:31:36", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=190114"}
+{"t": "22:31:36", "cmd": "keys 80 abc", "answer": "ok keys 3 t=190441"}
+{"t": "22:31:37", "cmd": "shot f4-q7-2-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-2-1.png windows: XLMAIN@-11,-11,3851,2099 t=191195"}
+{"t": "22:31:37", "cmd": "crop f4-q7-2-1 0 255 1400 80 f4-q7-2-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-2-1-bar.png t=191226"}
+{"t": "22:31:37", "cmd": "crop f4-q7-2-1 0 2055 600 33 f4-q7-2-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-2-1-mode.png t=191283"}
+{"t": "22:31:37", "cmd": "crop f4-q7-2-1 183 507 444 262 f4-q7-2-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-2-1-cells.png t=191342"}
+{"t": "22:31:38", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"abc\",\"selection\":[{\"text\":\"\",\"start\":3,\"end\":3}],\"focus\":true}] t=191568"}
+{"t": "22:31:38", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=191619"}
+{"t": "22:31:38", "cmd": "keys 80 ^{LEFT}", "answer": "ok keys 1 t=191755"}
+{"t": "22:31:39", "cmd": "shot f4-q7-2-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-2-2.png windows: XLMAIN@-11,-11,3851,2099 t=192491"}
+{"t": "22:31:39", "cmd": "crop f4-q7-2-2 0 255 1400 80 f4-q7-2-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-2-2-bar.png t=192530"}
+{"t": "22:31:39", "cmd": "crop f4-q7-2-2 0 2055 600 33 f4-q7-2-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-2-2-mode.png t=192588"}
+{"t": "22:31:39", "cmd": "crop f4-q7-2-2 183 507 444 262 f4-q7-2-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-2-2-cells.png t=192647"}
+{"t": "22:31:39", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=192999"}
+{"t": "22:31:39", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=193074"}
+{"t": "22:31:39", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A10 selection=A10 t=193126"}
+{"t": "22:31:40", "cmd": "cell D10 D11 D12 E10 C10", "answer": "ok cell D10: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D12: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=193827"}
+{"t": "22:31:41", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=195024"}
+{"t": "22:31:41", "cmd": "select D10", "answer": "ok select D10 t=195082"}
+{"t": "22:31:42", "cmd": "shot f4-q7-3-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-3-0.png windows: XLMAIN@-11,-11,3851,2099 t=195563"}
+{"t": "22:31:42", "cmd": "crop f4-q7-3-0 0 255 1400 80 f4-q7-3-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-3-0-bar.png t=195605"}
+{"t": "22:31:42", "cmd": "crop f4-q7-3-0 0 2055 600 33 f4-q7-3-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-3-0-mode.png t=195660"}
+{"t": "22:31:42", "cmd": "crop f4-q7-3-0 183 507 444 262 f4-q7-3-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-3-0-cells.png t=195719"}
+{"t": "22:31:42", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=195946"}
+{"t": "22:31:42", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=195996"}
+{"t": "22:31:42", "cmd": "keys 80 abc", "answer": "ok keys 3 t=196317"}
+{"t": "22:31:43", "cmd": "shot f4-q7-3-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-3-1.png windows: XLMAIN@-11,-11,3851,2099 t=197081"}
+{"t": "22:31:43", "cmd": "crop f4-q7-3-1 0 255 1400 80 f4-q7-3-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-3-1-bar.png t=197121"}
+{"t": "22:31:43", "cmd": "crop f4-q7-3-1 0 2055 600 33 f4-q7-3-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-3-1-mode.png t=197179"}
+{"t": "22:31:43", "cmd": "crop f4-q7-3-1 183 507 444 262 f4-q7-3-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-3-1-cells.png t=197239"}
+{"t": "22:31:44", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"abc\",\"selection\":[{\"text\":\"\",\"start\":3,\"end\":3}],\"focus\":true}] t=197471"}
+{"t": "22:31:44", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=197515"}
+{"t": "22:31:44", "cmd": "keys 80 ^{UP}", "answer": "ok keys 1 t=197660"}
+{"t": "22:31:44", "cmd": "shot f4-q7-3-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-3-2.png windows: XLMAIN@-11,-11,3851,2099 t=198447"}
+{"t": "22:31:44", "cmd": "crop f4-q7-3-2 0 255 1400 80 f4-q7-3-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-3-2-bar.png t=198475"}
+{"t": "22:31:44", "cmd": "crop f4-q7-3-2 0 2055 600 33 f4-q7-3-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-3-2-mode.png t=198533"}
+{"t": "22:31:44", "cmd": "crop f4-q7-3-2 183 507 444 262 f4-q7-3-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-3-2-cells.png t=198591"}
+{"t": "22:31:44", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=198932"}
+{"t": "22:31:44", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=198970"}
+{"t": "22:31:44", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D1 selection=D1 t=199022"}
+{"t": "22:31:45", "cmd": "cell D10 D11 D12 E10 C10", "answer": "ok cell D10: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D12: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=199734"}
+{"t": "22:31:46", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=200974"}
+{"t": "22:31:46", "cmd": "select D10", "answer": "ok select D10 t=201028"}
+{"t": "22:31:47", "cmd": "shot f4-q7-4-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-4-0.png windows: XLMAIN@-11,-11,3851,2099 t=201515"}
+{"t": "22:31:47", "cmd": "crop f4-q7-4-0 0 255 1400 80 f4-q7-4-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-4-0-bar.png t=201551"}
+{"t": "22:31:47", "cmd": "crop f4-q7-4-0 0 2055 600 33 f4-q7-4-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-4-0-mode.png t=201605"}
+{"t": "22:31:47", "cmd": "crop f4-q7-4-0 183 507 444 262 f4-q7-4-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-4-0-cells.png t=201666"}
+{"t": "22:31:47", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=201896"}
+{"t": "22:31:47", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=201939"}
+{"t": "22:31:48", "cmd": "keys 80 abc", "answer": "ok keys 3 t=202270"}
+{"t": "22:31:48", "cmd": "shot f4-q7-4-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-4-1.png windows: XLMAIN@-11,-11,3851,2099 t=203024"}
+{"t": "22:31:48", "cmd": "crop f4-q7-4-1 0 255 1400 80 f4-q7-4-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-4-1-bar.png t=203062"}
+{"t": "22:31:49", "cmd": "crop f4-q7-4-1 0 2055 600 33 f4-q7-4-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-4-1-mode.png t=203120"}
+{"t": "22:31:49", "cmd": "crop f4-q7-4-1 183 507 444 262 f4-q7-4-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-4-1-cells.png t=203180"}
+{"t": "22:31:49", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"abc\",\"selection\":[{\"text\":\"\",\"start\":3,\"end\":3}],\"focus\":true}] t=203407"}
+{"t": "22:31:49", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=203456"}
+{"t": "22:31:49", "cmd": "keys 80 ^{DOWN}", "answer": "ok keys 1 t=203599"}
+{"t": "22:31:50", "cmd": "shot f4-q7-4-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-4-2.png windows: XLMAIN@-11,-11,3851,2099 t=204378"}
+{"t": "22:31:50", "cmd": "crop f4-q7-4-2 0 255 1400 80 f4-q7-4-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-4-2-bar.png t=204415"}
+{"t": "22:31:50", "cmd": "crop f4-q7-4-2 0 2055 600 33 f4-q7-4-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-4-2-mode.png t=204471"}
+{"t": "22:31:50", "cmd": "crop f4-q7-4-2 183 507 444 262 f4-q7-4-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-4-2-cells.png t=204530"}
+{"t": "22:31:50", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=204854"}
+{"t": "22:31:50", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=204907"}
+{"t": "22:31:50", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D1048576 selection=D1048576 t=204957"}
+{"t": "22:31:51", "cmd": "cell D10 D11 D12 E10 C10", "answer": "ok cell D10: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D12: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=205637"}
+{"t": "22:31:52", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=206958"}
+{"t": "22:31:53", "cmd": "select D10", "answer": "ok select D10 t=207018"}
+{"t": "22:31:53", "cmd": "shot f4-q7-5-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-5-0.png windows: XLMAIN@-11,-11,3851,2099 t=207504"}
+{"t": "22:31:53", "cmd": "crop f4-q7-5-0 0 255 1400 80 f4-q7-5-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-5-0-bar.png t=207540"}
+{"t": "22:31:53", "cmd": "crop f4-q7-5-0 0 2055 600 33 f4-q7-5-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-5-0-mode.png t=207597"}
+{"t": "22:31:53", "cmd": "crop f4-q7-5-0 183 507 444 262 f4-q7-5-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-5-0-cells.png t=207657"}
+{"t": "22:31:54", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=208004"}
+{"t": "22:31:54", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=208032"}
+{"t": "22:31:54", "cmd": "keys 80 abc", "answer": "ok keys 3 t=208363"}
+{"t": "22:31:55", "cmd": "shot f4-q7-5-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-5-1.png windows: XLMAIN@-11,-11,3851,2099 t=209123"}
+{"t": "22:31:55", "cmd": "crop f4-q7-5-1 0 255 1400 80 f4-q7-5-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-5-1-bar.png t=209159"}
+{"t": "22:31:55", "cmd": "crop f4-q7-5-1 0 2055 600 33 f4-q7-5-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-5-1-mode.png t=209219"}
+{"t": "22:31:55", "cmd": "crop f4-q7-5-1 183 507 444 262 f4-q7-5-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-5-1-cells.png t=209281"}
+{"t": "22:31:55", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"abc\",\"selection\":[{\"text\":\"\",\"start\":3,\"end\":3}],\"focus\":true}] t=209520"}
+{"t": "22:31:55", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=209555"}
+{"t": "22:31:55", "cmd": "keys 80 ^+{LEFT}", "answer": "ok keys 1 t=209708"}
+{"t": "22:31:56", "cmd": "shot f4-q7-5-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-5-2.png windows: XLMAIN@-11,-11,3851,2099 t=210478"}
+{"t": "22:31:56", "cmd": "crop f4-q7-5-2 0 255 1400 80 f4-q7-5-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-5-2-bar.png t=210517"}
+{"t": "22:31:56", "cmd": "crop f4-q7-5-2 0 2055 600 33 f4-q7-5-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-5-2-mode.png t=210574"}
+{"t": "22:31:56", "cmd": "crop f4-q7-5-2 183 507 444 262 f4-q7-5-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-5-2-cells.png t=210634"}
+{"t": "22:31:57", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"abc\",\"selection\":[{\"text\":\"\",\"start\":3,\"end\":3}],\"focus\":true}] t=210997"}
+{"t": "22:31:57", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=211066"}
+{"t": "22:31:57", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=A10:D10 t=211118"}
+{"t": "22:31:57", "cmd": "cell D10 D11 D12 E10 C10", "answer": "ok cell D10: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D12: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=211826"}
+{"t": "22:31:59", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=213197"}
+{"t": "22:31:59", "cmd": "select D10", "answer": "ok select D10 t=213230"}
+{"t": "22:31:59", "cmd": "shot f4-q7-6-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-6-0.png windows: XLMAIN@-11,-11,3851,2099 t=213715"}
+{"t": "22:31:59", "cmd": "crop f4-q7-6-0 0 255 1400 80 f4-q7-6-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-6-0-bar.png t=213749"}
+{"t": "22:32:00", "cmd": "crop f4-q7-6-0 0 2055 600 33 f4-q7-6-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-6-0-mode.png t=213806"}
+{"t": "22:32:00", "cmd": "crop f4-q7-6-0 183 507 444 262 f4-q7-6-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-6-0-cells.png t=213865"}
+{"t": "22:32:00", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=214090"}
+{"t": "22:32:00", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=214145"}
+{"t": "22:32:00", "cmd": "keys 80 abc", "answer": "ok keys 3 t=214472"}
+{"t": "22:32:01", "cmd": "shot f4-q7-6-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-6-1.png windows: XLMAIN@-11,-11,3851,2099 t=215217"}
+{"t": "22:32:01", "cmd": "crop f4-q7-6-1 0 255 1400 80 f4-q7-6-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-6-1-bar.png t=215257"}
+{"t": "22:32:01", "cmd": "crop f4-q7-6-1 0 2055 600 33 f4-q7-6-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-6-1-mode.png t=215312"}
+{"t": "22:32:01", "cmd": "crop f4-q7-6-1 183 507 444 262 f4-q7-6-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-6-1-cells.png t=215372"}
+{"t": "22:32:01", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"abc\",\"selection\":[{\"text\":\"\",\"start\":3,\"end\":3}],\"focus\":true}] t=215598"}
+{"t": "22:32:01", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=215647"}
+{"t": "22:32:02", "cmd": "keys 80 ^+{UP}", "answer": "ok keys 1 t=215802"}
+{"t": "22:32:02", "cmd": "shot f4-q7-6-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-6-2.png windows: XLMAIN@-11,-11,3851,2099 t=216571"}
+{"t": "22:32:02", "cmd": "crop f4-q7-6-2 0 255 1400 80 f4-q7-6-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-6-2-bar.png t=216607"}
+{"t": "22:32:02", "cmd": "crop f4-q7-6-2 0 2055 600 33 f4-q7-6-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-6-2-mode.png t=216665"}
+{"t": "22:32:03", "cmd": "crop f4-q7-6-2 183 507 444 262 f4-q7-6-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-6-2-cells.png t=216724"}
+{"t": "22:32:03", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"abc\",\"selection\":[{\"text\":\"\",\"start\":3,\"end\":3}],\"focus\":true}] t=217064"}
+{"t": "22:32:03", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=217106"}
+{"t": "22:32:03", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D1:D10 t=217156"}
+{"t": "22:32:04", "cmd": "cell D10 D11 D12 E10 C10", "answer": "ok cell D10: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D12: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=217856"}
+{"t": "22:32:05", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=219066"}
+{"t": "22:32:05", "cmd": "select D10", "answer": "ok select D10 t=219116"}
+{"t": "22:32:05", "cmd": "shot f4-q7-7-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-7-0.png windows: XLMAIN@-11,-11,3851,2099 t=219602"}
+{"t": "22:32:06", "cmd": "crop f4-q7-7-0 0 255 1400 80 f4-q7-7-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-7-0-bar.png t=219636"}
+{"t": "22:32:06", "cmd": "crop f4-q7-7-0 0 2055 600 33 f4-q7-7-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-7-0-mode.png t=219695"}
+{"t": "22:32:06", "cmd": "crop f4-q7-7-0 183 507 444 262 f4-q7-7-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-7-0-cells.png t=219753"}
+{"t": "22:32:06", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=219974"}
+{"t": "22:32:06", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=220033"}
+{"t": "22:32:06", "cmd": "keys 80 abc", "answer": "ok keys 3 t=220363"}
+{"t": "22:32:07", "cmd": "shot f4-q7-7-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-7-1.png windows: XLMAIN@-11,-11,3851,2099 t=221125"}
+{"t": "22:32:07", "cmd": "crop f4-q7-7-1 0 255 1400 80 f4-q7-7-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-7-1-bar.png t=221161"}
+{"t": "22:32:07", "cmd": "crop f4-q7-7-1 0 2055 600 33 f4-q7-7-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-7-1-mode.png t=221217"}
+{"t": "22:32:07", "cmd": "crop f4-q7-7-1 183 507 444 262 f4-q7-7-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-7-1-cells.png t=221279"}
+{"t": "22:32:07", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"abc\",\"selection\":[{\"text\":\"\",\"start\":3,\"end\":3}],\"focus\":true}] t=221510"}
+{"t": "22:32:08", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=221554"}
+{"t": "22:32:08", "cmd": "keys 80 ^+{DOWN}", "answer": "ok keys 1 t=221708"}
+{"t": "22:32:08", "cmd": "shot f4-q7-7-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-7-2.png windows: XLMAIN@-11,-11,3851,2099 t=222489"}
+{"t": "22:32:09", "cmd": "crop f4-q7-7-2 0 255 1400 80 f4-q7-7-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-7-2-bar.png t=222515"}
+{"t": "22:32:09", "cmd": "crop f4-q7-7-2 0 2055 600 33 f4-q7-7-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-7-2-mode.png t=222573"}
+{"t": "22:32:09", "cmd": "crop f4-q7-7-2 183 507 444 262 f4-q7-7-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q7-7-2-cells.png t=222633"}
+{"t": "22:32:09", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"abc\",\"selection\":[{\"text\":\"\",\"start\":3,\"end\":3}],\"focus\":true}] t=222965"}
+{"t": "22:32:09", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=223010"}
+{"t": "22:32:09", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10:D1048576 t=223064"}
+{"t": "22:32:10", "cmd": "cell D10 D11 D12 E10 C10", "answer": "ok cell D10: String \"abc\" | formula \"abc\" | text \"abc\" | numberFormat \"General\" ;; D11: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D12: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E10: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; C10: empty | formula \"\" | text \"\" | numberFormat \"General\" t=223728"}
+{"t": "22:32:16", "cmd": "geo C8 F14 D10", "answer": "ok geo C8:276,-30406494,372,-30406468 F14:564,-30406324,660,-30406292 D10:372,-30406436,468,-30406408 t=231178"}
+{"t": "22:32:18", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=232488"}
+{"t": "22:32:18", "cmd": "select D10", "answer": "ok select D10 t=232516"}
+{"t": "22:32:18", "cmd": "shot f4-q4b-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-0.png windows: XLMAIN@-11,-11,3851,2099 t=233002"}
+{"t": "22:32:18", "cmd": "crop f4-q4b-0 0 255 1400 80 f4-q4b-0-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-0-bar.png t=233035"}
+{"t": "22:32:18", "cmd": "crop f4-q4b-0 0 2055 600 33 f4-q4b-0-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-0-mode.png t=233094"}
+{"t": "22:32:19", "cmd": "crop f4-q4b-0 226 -30406544 444 262 f4-q4b-0-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-0-cells.png t=233157"}
+{"t": "22:32:19", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=233500"}
+{"t": "22:32:19", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=233532"}
+{"t": "22:32:19", "cmd": "keys 80 {F2}", "answer": "ok keys 1 t=233676"}
+{"t": "22:32:20", "cmd": "shot f4-q4b-1", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-1.png windows: XLMAIN@-11,-11,3851,2099 t=234430"}
+{"t": "22:32:20", "cmd": "crop f4-q4b-1 0 255 1400 80 f4-q4b-1-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-1-bar.png t=234456"}
+{"t": "22:32:20", "cmd": "crop f4-q4b-1 0 2055 600 33 f4-q4b-1-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-1-mode.png t=234514"}
+{"t": "22:32:20", "cmd": "crop f4-q4b-1 226 -30406544 444 262 f4-q4b-1-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-1-cells.png t=234572"}
+{"t": "22:32:20", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=234794"}
+{"t": "22:32:20", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=234850"}
+{"t": "22:32:21", "cmd": "keys 80 =Sheet2!A1{+}1", "answer": "ok keys 12 t=236019"}
+{"t": "22:32:22", "cmd": "shot f4-q4b-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-2.png windows: XLMAIN@-11,-11,3851,2099 t=236818"}
+{"t": "22:32:22", "cmd": "crop f4-q4b-2 0 255 1400 80 f4-q4b-2-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-2-bar.png t=236847"}
+{"t": "22:32:22", "cmd": "crop f4-q4b-2 0 2055 600 33 f4-q4b-2-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-2-mode.png t=236905"}
+{"t": "22:32:22", "cmd": "crop f4-q4b-2 226 -30406544 444 262 f4-q4b-2-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-2-cells.png t=236964"}
+{"t": "22:32:23", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=Sheet2!A1+1\",\"selection\":[{\"text\":\"\",\"start\":12,\"end\":12}],\"focus\":true}] t=237191"}
+{"t": "22:32:23", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=237243"}
+{"t": "22:32:23", "cmd": "keys 80 {LEFT}", "answer": "ok keys 1 t=237378"}
+{"t": "22:32:24", "cmd": "shot f4-q4b-3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-3.png windows: XLMAIN@-11,-11,3851,2099 t=238137"}
+{"t": "22:32:24", "cmd": "crop f4-q4b-3 0 255 1400 80 f4-q4b-3-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-3-bar.png t=238168"}
+{"t": "22:32:24", "cmd": "crop f4-q4b-3 0 2055 600 33 f4-q4b-3-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-3-mode.png t=238226"}
+{"t": "22:32:24", "cmd": "crop f4-q4b-3 226 -30406544 444 262 f4-q4b-3-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-3-cells.png t=238284"}
+{"t": "22:32:24", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=Sheet2!A1+1\",\"selection\":[{\"text\":\"\",\"start\":11,\"end\":11}],\"focus\":true}] t=238526"}
+{"t": "22:32:24", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=238562"}
+{"t": "22:32:24", "cmd": "keys 80 {LEFT}", "answer": "ok keys 1 t=238708"}
+{"t": "22:32:25", "cmd": "shot f4-q4b-4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-4.png windows: XLMAIN@-11,-11,3851,2099 t=239449"}
+{"t": "22:32:25", "cmd": "crop f4-q4b-4 0 255 1400 80 f4-q4b-4-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-4-bar.png t=239473"}
+{"t": "22:32:25", "cmd": "crop f4-q4b-4 0 2055 600 33 f4-q4b-4-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-4-mode.png t=239534"}
+{"t": "22:32:25", "cmd": "crop f4-q4b-4 226 -30406544 444 262 f4-q4b-4-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-4-cells.png t=239589"}
+{"t": "22:32:25", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=Sheet2!A1+1\",\"selection\":[{\"text\":\"\",\"start\":10,\"end\":10}],\"focus\":true}] t=239813"}
+{"t": "22:32:25", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=239867"}
+{"t": "22:32:26", "cmd": "keys 80 {F4}", "answer": "ok keys 1 t=240004"}
+{"t": "22:32:26", "cmd": "shot f4-q4b-5", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-5.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@427,581,440,604 t=240767"}
+{"t": "22:32:26", "cmd": "crop f4-q4b-5 0 255 1400 80 f4-q4b-5-bar 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-5-bar.png t=240795"}
+{"t": "22:32:26", "cmd": "crop f4-q4b-5 0 2055 600 33 f4-q4b-5-mode 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-5-mode.png t=240855"}
+{"t": "22:32:27", "cmd": "crop f4-q4b-5 226 -30406544 444 262 f4-q4b-5-cells 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q4b-5-cells.png t=240913"}
+{"t": "22:32:27", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=Sheet2!$A$1+1\",\"selection\":[{\"text\":\"$A$1\",\"start\":8,\"end\":12}],\"focus\":true}] t=241153"}
+{"t": "22:32:27", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Edit\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=241199"}
+{"t": "22:32:27", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=241240"}
+{"t": "22:32:27", "cmd": "ready", "answer": "ok ready refused: Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=241299"}
+{"t": "22:32:27", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=241402"}
+{"t": "22:32:27", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=241826"}

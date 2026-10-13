@@ -601,7 +601,7 @@
     },
     {
       "id": "AGGREGATE-068",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: SMALL's k above the count of the numbers is #NUM! before it is truncated, as SMALL's is (SMALL-008): 9.5 over nine numbers, which truncated would be the 9th smallest, 96",
       "fixture": "aggregateData",
       "cells": {"ZZ1000": "=AGGREGATE(15,6,A1:A11,9.5)"},

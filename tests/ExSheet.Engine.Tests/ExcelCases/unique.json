@@ -171,7 +171,7 @@
     },
     {
       "id": "UNIQUE-020",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the blank kept in UNIQUE's array, taken out by INDEX, is blank to ISBLANK, as Excel read SORT's (SORT-022)",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=ISBLANK(INDEX(UNIQUE(Q1:Q2),2))"},
@@ -207,7 +207,7 @@
     },
     {
       "id": "UNIQUE-024",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: & reads a blank kept in UNIQUE's array as empty text, as it reads a blank cell, so over a, a blank and b the second cell is empty text",
       "cells": {"A1": "a", "A3": "b", "ZZ1000": "=UNIQUE(A1:A3)&\"\""},
       "check": "ZZ1001",

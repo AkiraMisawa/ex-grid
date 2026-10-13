@@ -17,7 +17,9 @@ public partial class RepositoryTests
     /// The rows ADR-0208 names as checked by hand, and WR-10, the Wrappers' MudBlazor floor run, which a
     /// person makes once and its record carries forward (ADR-0205's notes of 2026-10-12).
     /// </summary>
-    private static readonly string[] IndexedRows = ["VZ-14", "VZ-16", "FN-12e", "ED-30", "SH-42", "SH-51", "SH-52", "KB-3", "VZ-18", "§21.11", "WR-10"];
+    // §21.11's screen-reader check left the rows on 2026-10-13: no screen reader is run to verify a
+    // release (ADR-0033, ADR-0208's note of that date).
+    private static readonly string[] IndexedRows = ["VZ-14", "VZ-16", "FN-12e", "ED-30", "SH-42", "SH-51", "SH-52", "KB-3", "VZ-18", "WR-10"];
 
     [Fact] // ADR-0208: the record index and the Definition of Done's table cannot drift
     public void The_record_index_and_the_table_name_the_same_rows_and_paths()

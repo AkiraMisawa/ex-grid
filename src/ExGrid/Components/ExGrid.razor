@@ -9523,9 +9523,10 @@
     }
 
     /// <summary>
-    /// The extent in one sentence, naming the corners (ADR-0033). The wording is
-    /// provisional — ADR-0033 leaves header-versus-index to a real screen reader in
-    /// layer 3 — but the shape is not: one sentence, the extent, at any moment.
+    /// The extent in one sentence, naming the corners by index (ADR-0033). No screen
+    /// reader settles the wording: the accessibility tree is what is checked (ADR-0033,
+    /// 2026-10-13), and the wording changes on a user's report. The shape is fixed:
+    /// one sentence, the extent, at any moment.
     /// </summary>
     private string DescribeSelection(GridSelection selection)
     {

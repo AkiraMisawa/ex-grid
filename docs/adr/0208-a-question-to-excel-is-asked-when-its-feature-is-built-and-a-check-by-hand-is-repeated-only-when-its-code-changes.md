@@ -54,7 +54,10 @@ What the run does by hand is two kinds of work, and they age differently:
 - **Every row the Definition of Done verifies by hand names the code it covers**: the paths whose change
   could change its result. The rows are VZ-14, VZ-16's real zoom and real 225%, FN-12e's measurements on
   each platform, ED-30's real IME, SH-42's and SH-51 and SH-52's browser keys, KB-3 on macOS, VZ-18 on
-  the remote-isolation PC, and §21.11's screen-reader check.
+  the remote-isolation PC, and §21.11's screen-reader check. *(2026-10-13, decided with the user: §21.11's
+  screen-reader check is withdrawn. No screen reader is run to verify a release; the accessibility tree is
+  checked in layers 2 and 3 instead, [ADR-0033](./0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)'s
+  section of that date. The row leaves the table and the index.)*
 - **A row's record holds until a commit changes one of its paths.**
   - A release needs a new record only for the rows whose paths changed between the commit of their last
     record and the commit being signed off.
@@ -129,7 +132,8 @@ What the run does by hand is two kinds of work, and they age differently:
   It is not a dry run.
 - **The eighteenth run is made only for the rows whose paths change between that commit and
   `0.1.0-rc.1`**, and runs only those rows. Its likely causes, among the work still to land:
-  - ADR-0204's page that follows the Focus, and its scripted focus (ED-30, the screen-reader check);
+  - ADR-0204's page that follows the Focus, and its scripted focus (ED-30, and the screen-reader check, withdrawn
+    on 2026-10-13);
   - ADR-0206's tints and pinned shade (VZ-16's lines).
 - **If none of them changes, there is no eighteenth run.**
 - *(2026-10-12, decided with the user.)* **The questions the seventeenth run's corrections raised are

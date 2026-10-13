@@ -1,0 +1,277 @@
+{"t": "22:25:18", "cmd": "start", "answer": "err Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=6740"}
+{"t": "22:25:18", "cmd": "ps $xl.International(32)", "answer": "ok ps 0 t=6770"}
+{"t": "22:25:18", "cmd": "ps (Get-Culture).Name", "answer": "ok ps en-US t=6813"}
+{"t": "22:25:18", "cmd": "geo A1 E10", "answer": "err Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=6879"}
+{"t": "22:25:18", "cmd": "uia", "answer": "err Exception calling \"FromHandle\" with \"1\" argument(s): \"hwnd cannot be IntPtr.Zero or null.\" t=6932"}
+{"t": "22:25:27", "cmd": "allwindows", "answer": "ok allwindows 20713554|ThumbnailDeviceHelperWnd|explorer|0,0,1,1 ;; 1379938|ThumbnailDeviceHelperWnd|explorer|0,0,1,1 ;; 66248|Shell_TrayWnd|explorer|0,2088,3840,2160 ;; 528830|XLMAIN|EXCEL|-11,-11,3851,2099 ;; 1311630|Chrome_WidgetWin_1|chrome|1911,0,3849,2097 ;; 592760|org.wezfurlong.wezterm|wezterm-gui|1911,1044,3849,2097 ;; 1573902|TaskManagerWindow|Taskmgr|0,894,1938,2088 ;; 4326684|HwndWrapper[SelfService.exe;main;ed21b060-1dbd-4296-95a9-f766830db2e5]|SelfService|-32768,-32768,-31140,-31575 ;; 593372|Windows.UI.Core.CoreWindow|SystemSettings|0,1,1194,930 ;; 5705186|ApplicationFrameWindow|ApplicationFrameHost|2155,1053,3371,1994 ;; 65784|CORETEMP|Core Temp|0,0,501,891 ;; 67206|Windows.UI.Core.CoreWindow|TextInputHost|0,0,3840,2160 ;; 66370|EdgeUiInputTopWndClass|explorer|23,0,3840,4 ;; 67652|Notepad|Notepad|-32000,-32000,-31763,-31961 ;; 3280414|WindowsForms10.Window.8.app.0.2b89eaa_r9_ad1|CDViewer|-48000,-48000,-47644,-47941 ;; 199976|Chrome_WidgetWin_1|browser|-32000,-32000,-31763,-31961 ;; 66278|Progman|explorer|0,0,3840,2160 t=15662"}
+{"t": "22:25:27", "cmd": "ps $xl.Workbooks.Count", "answer": "ok ps  t=15686"}
+{"t": "22:25:27", "cmd": "ps $xl.Version", "answer": "ok ps 16.0 t=15742"}
+{"t": "22:25:40", "cmd": "stop", "answer": "ok stop 28940 ended by Stop-Process (its own) t=29426"}
+{"t": "22:25:45", "cmd": "start", "answer": "ok start pid=46120 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=34278"}
+{"t": "22:25:45", "cmd": "geo A1 E10", "answer": "ok geo A1:41,353,137,381 E10:425,614,521,644 t=34368"}
+{"t": "22:25:46", "cmd": "uia", "answer": "ok uia Formula Bar:328,267,3840,324 Name Box:not found Status Bar:0,2055,3840,2088 Sheet Tab:not found Sheet1:160,2007,259,2055 t=35473"}
+{"t": "22:25:46", "cmd": "ps $xl.International(32)", "answer": "ok ps 0 t=35504"}
+{"t": "22:26:22", "cmd": "stop", "answer": "ok stop 46120 ended by Stop-Process (its own) t=70825"}
+{"t": "22:28:28", "cmd": "start", "answer": "ok start pid=46896 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=2487"}
+{"t": "22:28:29", "cmd": "select D10", "answer": "ok select D10 t=2550"}
+{"t": "22:28:29", "cmd": "keys 80 {=}A1{+}B2", "answer": "ok keys 6 t=3193"}
+{"t": "22:28:30", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+B2\",\"selection\":[{\"text\":\"\",\"start\":6,\"end\":6}],\"focus\":false}] t=3602"}
+{"t": "22:28:30", "cmd": "keys 80 {LEFT}", "answer": "ok keys 1 t=3724"}
+{"t": "22:28:30", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":false}] t=4064"}
+{"t": "22:28:30", "cmd": "keys 80 {ESC}", "answer": "ok keys 1 t=4192"}
+{"t": "22:28:58", "cmd": "addsheet Sheet2", "answer": "ok addsheet Sheet2 t=31772"}
+{"t": "22:28:58", "cmd": "ps $wb.Worksheets.Count", "answer": "ok ps 2 t=31806"}
+{"t": "22:29:34", "cmd": "crop f4-q1-4 0 255 700 80 f4-q1-4-barleft 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q1-4-barleft.png t=67855"}
+{"t": "22:29:34", "cmd": "crop f4-q2b-7 0 255 700 80 f4-q2b-7-barleft 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2b-7-barleft.png t=67909"}
+{"t": "22:29:43", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=77775"}
+{"t": "22:29:43", "cmd": "setup D10 =A1+B2", "answer": "ok setup D10 t=77814"}
+{"t": "22:29:43", "cmd": "select D10", "answer": "ok select D10 t=77867"}
+{"t": "22:29:43", "cmd": "shot f4-q2c-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-0.png windows: XLMAIN@-11,-11,3851,2099 t=78045"}
+{"t": "22:29:50", "cmd": "crop f4-q2c-0 0 255 700 80 f4-q2c-0-barleft 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-0-barleft.png t=84576"}
+{"t": "22:29:54", "cmd": "cell D10", "answer": "ok cell D10: number 0 | formula \"=A1+B2\" | text \"0\" | numberFormat \"General\" t=88016"}
+{"t": "22:29:54", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=88082"}
+{"t": "22:29:54", "cmd": "select A1", "answer": "ok select A1 t=88139"}
+{"t": "22:29:54", "cmd": "select D10", "answer": "ok select D10 t=88197"}
+{"t": "22:29:54", "cmd": "shot f4-q2c-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-0.png windows: XLMAIN@-11,-11,3851,2099 t=88386"}
+{"t": "22:29:54", "cmd": "crop f4-q2c-0 0 255 700 80 f4-q2c-0-barleft 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-0-barleft.png t=88417"}
+{"t": "22:29:55", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+B2\",\"selection\":[{\"text\":\"\",\"start\":6,\"end\":6}],\"focus\":true}] t=88646"}
+{"t": "22:30:00", "cmd": "click 377 629", "answer": "ok click t=93992"}
+{"t": "22:30:00", "cmd": "move 3700 1900", "answer": "ok move t=94364"}
+{"t": "22:30:01", "cmd": "shot f4-q2c-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-0.png windows: XLMAIN@-11,-11,3851,2099 t=94530"}
+{"t": "22:30:01", "cmd": "crop f4-q2c-0 0 255 700 80 f4-q2c-0-barleft 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-0-barleft.png t=94571"}
+{"t": "22:30:07", "cmd": "keys 80 {ESC}", "answer": "ok keys 1 t=100411"}
+{"t": "22:30:07", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=100439"}
+{"t": "22:30:07", "cmd": "cell D10", "answer": "ok cell D10: number 0 | formula \"=A1+B2\" | text \"0\" | numberFormat \"General\" t=100614"}
+{"t": "22:30:07", "cmd": "click 377 700", "answer": "ok click t=101114"}
+{"t": "22:30:08", "cmd": "click 377 629", "answer": "ok click t=101632"}
+{"t": "22:30:08", "cmd": "move 3700 1900", "answer": "ok move t=102004"}
+{"t": "22:30:08", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=102060"}
+{"t": "22:30:09", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":true}] t=102400"}
+{"t": "22:30:09", "cmd": "shot f4-q2c-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-0.png windows: XLMAIN@-11,-11,3851,2099 t=102550"}
+{"t": "22:30:09", "cmd": "crop f4-q2c-0 0 255 700 80 f4-q2c-0-barleft 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-0-barleft.png t=102587"}
+{"t": "22:30:15", "cmd": "geo D9 D10", "answer": "ok geo D9:329,585,425,614 D10:329,614,425,644 t=109503"}
+{"t": "22:30:15", "cmd": "ps $xl.ActiveWindow.ScrollRow", "answer": "ok ps 1 t=109559"}
+{"t": "22:30:15", "cmd": "shot g", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\g.png windows: XLMAIN@-11,-11,3851,2099 t=109740"}
+{"t": "22:30:15", "cmd": "crop g 0 255 900 500 g-top 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\g-top.png t=109780"}
+{"t": "22:30:22", "cmd": "move 377 629", "answer": "ok move t=116098"}
+{"t": "22:30:22", "cmd": "ps $xl.ActiveWindow.RangeFromPoint(377,629).Address(0,0)", "answer": "ok ps D10 t=116141"}
+{"t": "22:30:22", "cmd": "ps [System.Windows.Forms.Cursor]::Position", "answer": "ok ps {X=377,Y=629} t=116186"}
+{"t": "22:30:22", "cmd": "ps [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea", "answer": "ok ps {X=0,Y=0,Width=3840,Height=2088} t=116244"}
+{"t": "22:30:22", "cmd": "ps [System.Windows.Forms.Screen]::PrimaryScreen.Bounds", "answer": "ok ps {X=0,Y=0,Width=3840,Height=2160} t=116299"}
+{"t": "22:30:26", "cmd": "click 377 629", "answer": "ok click t=120367"}
+{"t": "22:30:27", "cmd": "move 3700 1900", "answer": "ok move t=120739"}
+{"t": "22:30:27", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D10 selection=D10 t=120787"}
+{"t": "22:30:27", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=A1+B2\",\"selection\":[{\"text\":\"\",\"start\":6,\"end\":6}],\"focus\":true}] t=121019"}
+{"t": "22:30:27", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=121067"}
+{"t": "22:30:31", "cmd": "shot f4-q2c-0", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q2c-0.png windows: XLMAIN@-11,-11,3851,2099 t=124887"}
+{"t": "22:32:33", "cmd": "crop f4-q6a-2 0 255 700 80 f4-q6a-2-barleft 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6a-2-barleft.png t=247372"}
+{"t": "22:32:33", "cmd": "crop f4-q6b-3 0 255 700 80 f4-q6b-3-barleft 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q6b-3-barleft.png t=247431"}
+{"t": "22:32:33", "cmd": "crop f4-q8-2 0 255 700 80 f4-q8-2-barleft 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q8-2-barleft.png t=247487"}
+{"t": "22:32:33", "cmd": "crop f4-q3-4 0 255 700 80 f4-q3-4-barleft 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\f4-q3-4-barleft.png t=247545"}
+{"t": "22:33:50", "cmd": "keys 80 {ESC}", "answer": "ok keys 1 t=324333"}
+{"t": "22:33:50", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D4 selection=A1:B2,D4:E6 t=324364"}
+{"t": "22:35:16", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=410343"}
+{"t": "22:35:16", "cmd": "ps $xl.ActiveWindow.ScrollRow=1; $xl.ActiveWindow.ScrollColumn=1", "answer": "ok ps  t=410393"}
+{"t": "22:35:16", "cmd": "keys 200 ^a", "answer": "ok keys 1 t=410645"}
+{"t": "22:35:17", "cmd": "move 3700 1900", "answer": "ok move t=411019"}
+{"t": "22:35:17", "cmd": "shot fh-1-0-ctrl-a", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-1-0-ctrl-a.png windows: XLMAIN@-11,-11,3851,2099 t=411199"}
+{"t": "22:35:17", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=1:1048576 t=411233"}
+{"t": "22:35:38", "cmd": "uiaboxes ^(Name Box|Line right|Line down|Page right|Column right|Row down)", "answer": "ok uiaboxes [\"Line down | ControlType.Button | 3812,1984,3838,2010 = \",\"Page right | ControlType.Button | 3758,2017,3786,2043 = \",\"Column right | ControlType.Button | 3786,2017,3812,2043 = \"] t=433114"}
+{"t": "22:35:38", "cmd": "geo XFD1048576", "answer": "ok geo XFD1048576:1572809,30409028,1572905,30409056 t=433132"}
+{"t": "22:35:44", "cmd": "click 60 295", "answer": "ok click t=438259"}
+{"t": "22:35:45", "cmd": "keys 60 XFD1048576{ENTER}", "answer": "ok keys 11 t=439089"}
+{"t": "22:35:45", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!XFD1048576 selection=XFD1048576 t=439182"}
+{"t": "22:35:45", "cmd": "keys 200 ^a", "answer": "ok keys 1 t=439412"}
+{"t": "22:35:45", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!XFD1048576 selection=1:1048576 t=439474"}
+{"t": "22:35:45", "cmd": "keys 200 ^{BS}", "answer": "ok keys 1 t=439735"}
+{"t": "22:35:46", "cmd": "move 3700 1900", "answer": "ok move t=440114"}
+{"t": "22:35:46", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!XFD1048576 selection=1:1048576 t=440162"}
+{"t": "22:35:46", "cmd": "geo XFD1048576 XFC1048575", "answer": "ok geo XFD1048576:3636,1979,3732,2006 XFC1048575:3540,1949,3636,1979 t=440220"}
+{"t": "22:35:46", "cmd": "shot fh-1-1-far-corner", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-1-1-far-corner.png windows: XLMAIN@-11,-11,3851,2099 t=440406"}
+{"t": "22:35:46", "cmd": "ps $xl.ActiveWindow.ScrollRow; $xl.ActiveWindow.ScrollColumn", "answer": "ok ps 1048520 | 16347 t=440443"}
+{"t": "22:36:11", "cmd": "crop fh-1-1-far-corner 3400 1880 440 140 fh-1-1-far-corner-c 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-1-1-far-corner-c.png t=465459"}
+{"t": "22:36:11", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=465553"}
+{"t": "22:36:11", "cmd": "ps $xl.ActiveWindow.ScrollRow=1; $xl.ActiveWindow.ScrollColumn=1", "answer": "ok ps  t=465581"}
+{"t": "22:36:11", "cmd": "geo B1 D1 A2 A4", "answer": "ok geo B1:137,353,233,381 D1:329,353,425,381 A2:41,381,137,411 A4:41,441,137,470 t=465648"}
+{"t": "22:36:16", "cmd": "click 377 340", "answer": "ok click t=470571"}
+{"t": "22:36:17", "cmd": "shiftclick 185 340", "answer": "ok shiftclick t=471138"}
+{"t": "22:36:17", "cmd": "move 3700 1900", "answer": "ok move t=471520"}
+{"t": "22:36:17", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D1 selection=B:D t=471567"}
+{"t": "22:36:17", "cmd": "shot fh-2a-d-then-b", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-2a-d-then-b.png windows: XLMAIN@-11,-11,3851,2099 t=471751"}
+{"t": "22:36:17", "cmd": "crop fh-2a-d-then-b 0 310 600 120 fh-2a-d-then-b-c 3", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-2a-d-then-b-c.png t=471793"}
+{"t": "22:36:19", "cmd": "click 20 455", "answer": "ok click t=473026"}
+{"t": "22:36:19", "cmd": "shiftclick 20 396", "answer": "ok shiftclick t=473592"}
+{"t": "22:36:20", "cmd": "move 3700 1900", "answer": "ok move t=473957"}
+{"t": "22:36:20", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A4 selection=2:4 t=474020"}
+{"t": "22:36:20", "cmd": "shot fh-2b-4-then-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-2b-4-then-2.png windows: XLMAIN@-11,-11,3851,2099 t=474198"}
+{"t": "22:36:20", "cmd": "crop fh-2b-4-then-2 0 320 300 200 fh-2b-4-then-2-c 3", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-2b-4-then-2-c.png t=474244"}
+{"t": "22:36:29", "cmd": "ps $xl.ActiveWindow.ScrollRow=1; $xl.ActiveWindow.ScrollColumn=1", "answer": "ok ps  t=483344"}
+{"t": "22:36:30", "cmd": "click 20 425", "answer": "ok click t=483888"}
+{"t": "22:36:30", "cmd": "move 3700 1900", "answer": "ok move t=484240"}
+{"t": "22:36:30", "cmd": "shot fh-3-0-row3", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-3-0-row3.png windows: XLMAIN@-11,-11,3851,2099 t=484408"}
+{"t": "22:36:31", "cmd": "click 3799 2030", "answer": "ok click t=484898"}
+{"t": "22:36:31", "cmd": "click 3799 2030", "answer": "ok click t=485365"}
+{"t": "22:36:32", "cmd": "click 3799 2030", "answer": "ok click t=485835"}
+{"t": "22:36:32", "cmd": "move 3700 1900", "answer": "ok move t=486208"}
+{"t": "22:36:32", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A3 selection=3:3 t=486267"}
+{"t": "22:36:32", "cmd": "ps $xl.ActiveWindow.ScrollColumn", "answer": "ok ps 4 t=486326"}
+{"t": "22:36:32", "cmd": "shot fh-3-1-scrolled", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-3-1-scrolled.png windows: XLMAIN@-11,-11,3851,2099 t=486507"}
+{"t": "22:36:33", "cmd": "crop fh-3-1-scrolled 0 310 400 200 fh-3-1-scrolled-c 3", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-3-1-scrolled-c.png t=486552"}
+{"t": "22:36:33", "cmd": "crop fh-3-0-row3 0 310 400 200 fh-3-0-row3-c 3", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-3-0-row3-c.png t=486612"}
+{"t": "22:38:44", "cmd": "geo D3", "answer": "ok geo D3:41,411,137,441 t=619048"}
+{"t": "22:38:44", "cmd": "crop fh-3-1-scrolled 0 310 400 200 fh-3-1-scrolled-c 3", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-3-1-scrolled-c.png t=619113"}
+{"t": "22:39:10", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=643633"}
+{"t": "22:39:10", "cmd": "setup C1 1", "answer": "ok setup C1 t=643658"}
+{"t": "22:39:10", "cmd": "setup C2 5", "answer": "ok setup C2 t=643715"}
+{"t": "22:39:10", "cmd": "select range", "answer": "err Exception from HRESULT: 0x800A03EC t=643790"}
+{"t": "22:39:10", "cmd": "move 3700 1900", "answer": "ok move t=644176"}
+{"t": "22:39:11", "cmd": "move 3700 1900", "answer": "ok move t=644566"}
+{"t": "22:39:11", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=644596"}
+{"t": "22:39:11", "cmd": "shot fh-4a-before", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-4a-before.png windows: XLMAIN@-11,-11,3851,2099 t=644785"}
+{"t": "22:39:12", "cmd": "drag 0 0 500 515", "answer": "ok drag t=646040"}
+{"t": "22:39:13", "cmd": "move 3700 1900", "answer": "ok move t=646394"}
+{"t": "22:39:13", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=646454"}
+{"t": "22:39:13", "cmd": "shot fh-4a-after", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-4a-after.png windows: XLMAIN@-11,-11,3851,2099 t=646634"}
+{"t": "22:39:14", "cmd": "cell D1 E1 D2 E2", "answer": "ok cell D1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E2: empty | formula \"\" | text \"\" | numberFormat \"General\" t=647384"}
+{"t": "22:39:14", "cmd": "keys 100 ^z", "answer": "ok keys 1 t=647555"}
+{"t": "22:39:14", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=647628"}
+{"t": "22:39:14", "cmd": "setup C1 1", "answer": "ok setup C1 t=647666"}
+{"t": "22:39:15", "cmd": "cell D1 E1 D2 E2", "answer": "ok cell D1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E2: empty | formula \"\" | text \"\" | numberFormat \"General\" t=648282"}
+{"t": "22:39:15", "cmd": "select range", "answer": "err Exception from HRESULT: 0x800A03EC t=648312"}
+{"t": "22:39:14", "cmd": "move 3700 1900", "answer": "ok move t=648691"}
+{"t": "22:39:14", "cmd": "move 3700 1900", "answer": "ok move t=649067"}
+{"t": "22:39:14", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=649123"}
+{"t": "22:39:15", "cmd": "shot fh-4b-before", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-4b-before.png windows: XLMAIN@-11,-11,3851,2099 t=649305"}
+{"t": "22:39:16", "cmd": "drag 0 0 500 515", "answer": "ok drag t=650571"}
+{"t": "22:39:16", "cmd": "move 3700 1900", "answer": "ok move t=650927"}
+{"t": "22:39:16", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=650975"}
+{"t": "22:39:16", "cmd": "shot fh-4b-after", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-4b-after.png windows: XLMAIN@-11,-11,3851,2099 t=651154"}
+{"t": "22:39:17", "cmd": "cell C1 C2 D1 E1 D2 E2", "answer": "ok cell C1: number 1 | formula \"1\" | text \"1\" | numberFormat \"General\" ;; C2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E2: empty | formula \"\" | text \"\" | numberFormat \"General\" t=651991"}
+{"t": "22:39:22", "cmd": "ps $xl.ActiveWindow.WindowState; $xl.WindowState", "answer": "ok ps -4137 | xlMaximized t=656989"}
+{"t": "22:39:23", "cmd": "windows", "answer": "ok windows 332020|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=657042"}
+{"t": "22:39:23", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=657104"}
+{"t": "22:39:27", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=661261"}
+{"t": "22:39:27", "cmd": "setup C1 1", "answer": "ok setup C1 t=661299"}
+{"t": "22:39:27", "cmd": "setup C2 5", "answer": "ok setup C2 t=661359"}
+{"t": "22:39:27", "cmd": "select C1:C2", "answer": "ok select C1:C2 t=661437"}
+{"t": "22:39:27", "cmd": "move 3700 1900", "answer": "ok move t=661816"}
+{"t": "22:39:27", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C1:C2 t=661879"}
+{"t": "22:39:28", "cmd": "shot fh-4a-before", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-4a-before.png windows: XLMAIN@-11,-11,3851,2099 t=662061"}
+{"t": "22:39:29", "cmd": "drag 326 409 515 409", "answer": "ok drag t=663619"}
+{"t": "22:39:30", "cmd": "move 3700 1900", "answer": "ok move t=663988"}
+{"t": "22:39:30", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C1:E2 t=664035"}
+{"t": "22:39:30", "cmd": "shot fh-4a-after", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-4a-after.png windows: XLMAIN@-11,-11,3851,2099 t=664229"}
+{"t": "22:39:30", "cmd": "cell D1 E1 D2 E2", "answer": "ok cell D1: number 1 | formula \"1\" | text \"1\" | numberFormat \"General\" ;; E1: number 1 | formula \"1\" | text \"1\" | numberFormat \"General\" ;; D2: number 5 | formula \"5\" | text \"5\" | numberFormat \"General\" ;; E2: number 5 | formula \"5\" | text \"5\" | numberFormat \"General\" t=664890"}
+{"t": "22:39:34", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=668064"}
+{"t": "22:39:34", "cmd": "setup C1 1", "answer": "ok setup C1 t=668094"}
+{"t": "22:39:34", "cmd": "select C1:C2", "answer": "ok select C1:C2 t=668169"}
+{"t": "22:39:34", "cmd": "move 3700 1900", "answer": "ok move t=668552"}
+{"t": "22:39:34", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C1:C2 t=668605"}
+{"t": "22:39:34", "cmd": "shot fh-4b-before", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-4b-before.png windows: XLMAIN@-11,-11,3851,2099 t=668794"}
+{"t": "22:39:36", "cmd": "drag 326 409 515 409", "answer": "ok drag t=670338"}
+{"t": "22:39:36", "cmd": "move 3700 1900", "answer": "ok move t=670692"}
+{"t": "22:39:37", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C1:E2 t=670756"}
+{"t": "22:39:37", "cmd": "shot fh-4b-after", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-4b-after.png windows: XLMAIN@-11,-11,3851,2099 t=670937"}
+{"t": "22:39:38", "cmd": "cell C1 C2 D1 E1 D2 E2", "answer": "ok cell C1: number 1 | formula \"1\" | text \"1\" | numberFormat \"General\" ;; C2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D1: number 2 | formula \"2\" | text \"2\" | numberFormat \"General\" ;; E1: number 3 | formula \"3\" | text \"3\" | numberFormat \"General\" ;; D2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E2: empty | formula \"\" | text \"\" | numberFormat \"General\" t=671882"}
+{"t": "22:39:45", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=679021"}
+{"t": "22:39:45", "cmd": "setup B1 1", "answer": "ok setup B1 t=679057"}
+{"t": "22:39:46", "cmd": "click 185 340", "answer": "ok click t=679586"}
+{"t": "22:39:45", "cmd": "shiftclick 281 340", "answer": "ok shiftclick t=680150"}
+{"t": "22:39:46", "cmd": "move 3700 1900", "answer": "ok move t=680535"}
+{"t": "22:39:46", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B1 selection=B:C t=680590"}
+{"t": "22:39:46", "cmd": "shot fh-5-before", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-5-before.png windows: XLMAIN@-11,-11,3851,2099 t=680788"}
+{"t": "22:39:48", "cmd": "drag 326 353 515 354", "answer": "ok drag t=682259"}
+{"t": "22:39:48", "cmd": "move 3700 1900", "answer": "ok move t=682613"}
+{"t": "22:39:48", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B1 selection=B:E t=682675"}
+{"t": "22:39:48", "cmd": "shot fh-5-after", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-5-after.png windows: XLMAIN@-11,-11,3851,2099 t=682864"}
+{"t": "22:39:49", "cmd": "cell B1 C1 D1 E1 D2 E2", "answer": "ok cell B1: number 1 | formula \"1\" | text \"1\" | numberFormat \"General\" ;; C1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D1: number 2 | formula \"2\" | text \"2\" | numberFormat \"General\" ;; E1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; D2: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; E2: empty | formula \"\" | text \"\" | numberFormat \"General\" t=683733"}
+{"t": "22:39:57", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=691445"}
+{"t": "22:39:57", "cmd": "setup C1 1", "answer": "ok setup C1 t=691507"}
+{"t": "22:39:58", "cmd": "click 281 340", "answer": "ok click t=692025"}
+{"t": "22:39:58", "cmd": "keys 100 ^b", "answer": "ok keys 1 t=692197"}
+{"t": "22:39:58", "cmd": "move 3700 1900", "answer": "ok move t=692568"}
+{"t": "22:39:58", "cmd": "ps $ws.Range(\"C100\").Font.Bold; $ws.Range(\"C1\").Font.Bold; $ws.Columns(3).Font.Bold; $ws.UsedRange.Address(0,0)", "answer": "ok ps True | True | True | C1 t=692652"}
+{"t": "22:39:58", "cmd": "savexml fh-6-before", "answer": "ok savexml fh-6-before t=692719"}
+{"t": "22:39:59", "cmd": "click 281 340", "answer": "ok click t=693259"}
+{"t": "22:40:00", "cmd": "shiftclick 281 340", "answer": "ok shiftclick t=693828"}
+{"t": "22:40:00", "cmd": "move 3700 1900", "answer": "ok move t=694207"}
+{"t": "22:40:00", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C:C t=694261"}
+{"t": "22:40:00", "cmd": "shot fh-6-before", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-6-before.png windows: XLMAIN@-11,-11,3851,2099 t=694446"}
+{"t": "22:40:02", "cmd": "drag 326 353 515 354", "answer": "ok drag t=695899"}
+{"t": "22:40:02", "cmd": "move 3700 1900", "answer": "ok move t=696239"}
+{"t": "22:40:02", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C:E t=696290"}
+{"t": "22:40:02", "cmd": "shot fh-6-after", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-6-after.png windows: XLMAIN@-11,-11,3851,2099 t=696473"}
+{"t": "22:40:02", "cmd": "ps \"D100 \" + $ws.Range(\"D100\").Font.Bold; \"E100 \" + $ws.Range(\"E100\").Font.Bold; \"E1048576 \" + $ws.Range(\"E1048576\").Font.Bold; \"F100 \" + $ws.Range(\"F100\").Font.Bold; \"cols D,E \" + $ws.Columns(4).Font.Bold + \",\" + $ws.Columns(5).Font.Bold; \"used \" + $ws.UsedRange.Address(0,0)", "answer": "ok ps D100 True | E100 True | E1048576 True | F100 False | cols D,E True,True | used C1:E1 t=696544"}
+{"t": "22:40:03", "cmd": "cell D1 E1", "answer": "ok cell D1: number 2 | formula \"2\" | text \"2\" | numberFormat \"General\" ;; E1: number 3 | formula \"3\" | text \"3\" | numberFormat \"General\" t=696863"}
+{"t": "22:40:03", "cmd": "savexml fh-6-after", "answer": "ok savexml fh-6-after t=696906"}
+{"t": "22:40:13", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=706935"}
+{"t": "22:40:13", "cmd": "setup C1 5", "answer": "ok setup C1 t=706977"}
+{"t": "22:40:14", "cmd": "click 281 340", "answer": "ok click t=707508"}
+{"t": "22:40:14", "cmd": "shiftclick 281 340", "answer": "ok shiftclick t=708076"}
+{"t": "22:40:15", "cmd": "move 3700 1900", "answer": "ok move t=708457"}
+{"t": "22:40:15", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C:C t=708522"}
+{"t": "22:40:15", "cmd": "shot fh-7a-before", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-7a-before.png windows: XLMAIN@-11,-11,3851,2099 t=708709"}
+{"t": "22:40:16", "cmd": "drag 326 353 89 354", "answer": "ok drag t=710118"}
+{"t": "22:40:17", "cmd": "move 3700 1900", "answer": "ok move t=710488"}
+{"t": "22:40:17", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=B:C t=710541"}
+{"t": "22:40:17", "cmd": "shot fh-7a-after", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-7a-after.png windows: XLMAIN@-11,-11,3851,2099 t=710738"}
+{"t": "22:40:17", "cmd": "cell A1 B1 C1 A2", "answer": "ok cell A1: empty | formula \"\" | text \"\" | numberFormat \"General\" ;; B1: number 4 | formula \"4\" | text \"4\" | numberFormat \"General\" ;; C1: number 5 | formula \"5\" | text \"5\" | numberFormat \"General\" ;; A2: empty | formula \"\" | text \"\" | numberFormat \"General\" t=711282"}
+{"t": "22:40:18", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=712630"}
+{"t": "22:40:18", "cmd": "select C1", "answer": "ok select C1 t=712686"}
+{"t": "22:40:19", "cmd": "keys 80 9/26/2026{ENTER}", "answer": "ok keys 10 t=713676"}
+{"t": "22:40:19", "cmd": "cell C1", "answer": "ok cell C1: number 46291 | formula \"46291\" | text \"9/26/2026\" | numberFormat \"m/d/yyyy\" t=713862"}
+{"t": "22:40:19", "cmd": "cell C1", "answer": "ok cell C1: number 46291 | formula \"46291\" | text \"9/26/2026\" | numberFormat \"m/d/yyyy\" t=714023"}
+{"t": "22:40:20", "cmd": "click 281 340", "answer": "ok click t=714527"}
+{"t": "22:40:20", "cmd": "shiftclick 281 340", "answer": "ok shiftclick t=715124"}
+{"t": "22:40:21", "cmd": "move 3700 1900", "answer": "ok move t=715489"}
+{"t": "22:40:21", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C:C t=715544"}
+{"t": "22:40:21", "cmd": "shot fh-7b-before", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-7b-before.png windows: XLMAIN@-11,-11,3851,2099 t=715739"}
+{"t": "22:40:23", "cmd": "drag 330 353 515 354", "answer": "ok drag t=717164"}
+{"t": "22:40:23", "cmd": "move 3700 1900", "answer": "ok move t=717520"}
+{"t": "22:40:23", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C:E t=717568"}
+{"t": "22:40:23", "cmd": "shot fh-7b-after", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-7b-after.png windows: XLMAIN@-11,-11,3851,2099 t=717757"}
+{"t": "22:40:24", "cmd": "cell C1 D1 E1 D2", "answer": "ok cell C1: number 46291 | formula \"46291\" | text \"9/26/2026\" | numberFormat \"m/d/yyyy\" ;; D1: number 46292 | formula \"46292\" | text \"9/27/2026\" | numberFormat \"m/d/yyyy\" ;; E1: number 46293 | formula \"46293\" | text \"9/28/2026\" | numberFormat \"m/d/yyyy\" ;; D2: empty | formula \"\" | text \"\" | numberFormat \"General\" t=718316"}
+{"t": "22:40:30", "cmd": "keys 100 ^z", "answer": "ok keys 1 t=724303"}
+{"t": "22:40:30", "cmd": "keys 100 ^z", "answer": "ok keys 1 t=724458"}
+{"t": "22:40:30", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=724662"}
+{"t": "22:40:31", "cmd": "ps $ws.Columns(3).ColumnWidth = $ws.StandardWidth; $ws.Columns(3).UseStandardWidth = $true", "answer": "ok ps  t=724851"}
+{"t": "22:40:31", "cmd": "setup C1 5", "answer": "ok setup C1 t=724904"}
+{"t": "22:40:31", "cmd": "click 281 340", "answer": "ok click t=725416"}
+{"t": "22:40:32", "cmd": "shiftclick 281 340", "answer": "ok shiftclick t=725976"}
+{"t": "22:40:32", "cmd": "move 3700 1900", "answer": "ok move t=726363"}
+{"t": "22:40:32", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C:C t=726423"}
+{"t": "22:40:32", "cmd": "shot fh-7a2-before", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-7a2-before.png windows: XLMAIN@-11,-11,3851,2099 t=726616"}
+{"t": "22:40:34", "cmd": "drag 326 353 50 354", "answer": "ok drag t=728025"}
+{"t": "22:40:34", "cmd": "move 3700 1900", "answer": "ok move t=728394"}
+{"t": "22:40:34", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=A:C t=728447"}
+{"t": "22:40:34", "cmd": "shot fh-7a2-after", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\fh-7a2-after.png windows: XLMAIN@-11,-11,3851,2099 t=728642"}
+{"t": "22:40:35", "cmd": "cell A1 B1 C1", "answer": "ok cell A1: number 3 | formula \"3\" | text \"3\" | numberFormat \"General\" ;; B1: number 4 | formula \"4\" | text \"4\" | numberFormat \"General\" ;; C1: number 5 | formula \"5\" | text \"5\" | numberFormat \"General\" t=729122"}
+{"t": "22:40:44", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=737842"}
+{"t": "22:40:44", "cmd": "select A1", "answer": "ok select A1 t=737882"}
+{"t": "22:40:44", "cmd": "keys 100 ^1", "answer": "ok keys 1 t=738055"}
+{"t": "22:40:46", "cmd": "windows", "answer": "ok windows 29102302|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 332020|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=739596"}
+{"t": "22:40:47", "cmd": "uiaboxes ^(Font|Alignment|Border|Fill|Number|Protection|OK|Cancel|Strikethrough|Normal font|Superscript|Subscript|Horizontal:|Vertical:|Outline|None|Inside|Colour:|Color:|Style:|Underline:|Font style:|Size:)$", "answer": "ok uiaboxes [\"Font | ControlType.Group | 272,120,623,264\",\"Font | ControlType.ComboBox | 284,135,465,171 = Aptos Narrow\",\"Font | ControlType.Edit | 285,137,446,168 = Aptos Narrow\",\"Alignment | ControlType.Group | 623,120,1073,264\",\"Number | ControlType.Group | 1073,120,1315,264\",\"Fill | ControlType.MenuItem | 2610,162,2698,198\"] t=740266"}
+{"t": "22:40:58", "cmd": "windows", "answer": "ok windows 29102302|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 332020|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=752070"}
+{"t": "22:41:04", "cmd": "click 287 537", "answer": "ok click t=758551"}
+{"t": "22:41:05", "cmd": "shot w-dlg-font", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\w-dlg-font.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=758779"}
+{"t": "22:41:05", "cmd": "crop w-dlg-font 42 462 774 780 w-dlg-font-c 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\w-dlg-font-c.png t=758830"}
+{"t": "22:41:12", "cmd": "click 196 537", "answer": "ok click t=765776"}
+{"t": "22:41:12", "cmd": "shot w-dlg-align", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\w-dlg-align.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=765999"}
+{"t": "22:41:12", "cmd": "crop w-dlg-align 42 462 774 780 w-dlg-align-c 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\w-dlg-align-c.png t=766059"}
+{"t": "22:41:13", "cmd": "click 367 537", "answer": "ok click t=766568"}
+{"t": "22:41:13", "cmd": "shot w-dlg-border", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\w-dlg-border.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=766788"}
+{"t": "22:41:13", "cmd": "crop w-dlg-border 42 462 774 780 w-dlg-border-c 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\w-dlg-border-c.png t=766844"}
+{"t": "22:41:17", "cmd": "click 196 537", "answer": "ok click t=770352"}
+{"t": "22:41:18", "cmd": "shot w-dlg-align", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\w-dlg-align.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=771750"}
+{"t": "22:41:18", "cmd": "crop w-dlg-align 42 462 774 780 w-dlg-align-c 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\w-dlg-align-c.png t=771826"}
+{"t": "22:41:22", "cmd": "keys 100 {ESC}", "answer": "ok keys 1 t=776228"}
+{"t": "22:41:22", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=776292"}
+{"t": "22:41:22", "cmd": "uiaboxes ^(Font Colou?r|Bold|Italic|Underline)", "answer": "ok uiaboxes [\"Bold | ControlType.Button | 284,183,320,219\",\"Italic | ControlType.Button | 323,183,359,219\",\"Underline | ControlType.SplitButton | 362,183,420,219 = \",\"Underline | ControlType.Button | 362,183,398,219\",\"Font Colour | ControlType.SplitButton | 553,183,611,219 = RGB(255, 0, 0)\",\"Font Colour RGB(255, 0, 0) | ControlType.Button | 553,183,589,219\"] t=777022"}
+{"t": "22:42:34", "cmd": "ps (Get-Process excel | % { \"$($_.Id) $($_.StartTime)\" }) -join \"; \"", "answer": "ok ps 49192 10/13/2026 22:42:15 t=848815"}
+{"t": "22:48:39", "cmd": "crop w-q5b-font-colour-blue-1-palette 400 150 700 700 w-q5b-palette-c 1", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\w-q5b-palette-c.png t=1212530"}
+{"t": "22:48:48", "cmd": "ps (Get-Process excel | % { \"$($_.Id) $($_.StartTime)\" }) -join \"; \"", "answer": "ok ps 10704 10/13/2026 22:48:30 t=1221978"}
+{"t": "22:53:07", "cmd": "stop", "answer": "ok stop 51848 ended by Stop-Process (its own) t=1481335"}
+{"t": "22:53:08", "cmd": "start", "answer": "ok start pid=52304 book=Book1 sheet=Sheet1 openedByItself= before=51848 layout=0x08090809 version=16.0 t=1482749"}
+{"t": "22:53:08", "cmd": "ps $b=$ws.Range(\"A1\").Borders.Item(9); $b.LineStyle=1; $b.Weight=4; $b=$ws.Range(\"A2\").Borders.Item(8); $b.LineStyle=1; $b.Weight=2", "answer": "ok ps  t=1482850"}
+{"t": "22:53:08", "cmd": "savexml fc-8-file", "answer": "ok savexml fc-8-file t=1482909"}
+{"t": "22:57:16", "cmd": "stop", "answer": "ok stop 52268 ended by Stop-Process (its own) t=1730310"}
