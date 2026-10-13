@@ -106,6 +106,9 @@
     // An item's list asked to open from the keys, whose keyboard has not yet landed in it: the keys held
     // meanwhile are its own (decided with the user, 2026-10-13).
     private ToolbarItemBase? _openingList;
+    // DOM focus has left the band since the list was asked for: the list took the keyboard, or something
+    // else did. Back on the band with the list still not saying it holds the keyboard, the hold ends.
+    private bool _leftWhileOpening;
     // A Chrome's list closing (ChoicesClosing), whether Escape closed it, until it says it has closed.
     private ToolbarItemBase? _closingList;
     private bool _closingByEscape;
@@ -270,6 +273,7 @@
     private void ListOpening(ToolbarItemBase item)
     {
         _openingList = item;
+        _leftWhileOpening = false;
         if (_typedOnTheWay is null)
         {
             _typedOnTheWay = [];
@@ -509,8 +513,15 @@
     {
         _hasFocus = true;
         _bandTakePending = false;
-        // A list on its way keeps its hold: the band holding the keyboard is where its keys are typed.
-        if (_typedOnTheWay is { } held && (_heldForBand || !_handingBack) && (_openingList is null || _heldForBand))
+        // A list on its way keeps its hold while the band holds the keyboard it was asked from. The keyboard
+        // back on the band after leaving it, with the list never having said it took it (a Chrome that does not
+        // call ChoicesOpened, a list that never drew), ends the hold: the keys are the band's, in order, rather
+        // than held from a band that has the keyboard (a trap).
+        if (_openingList is { } opening && _leftWhileOpening && !_heldForBand && !_handingBack)
+        {
+            if (TakeOpeningHold(opening, out var keys)) await AnswerOnBandAsync(keys);
+        }
+        else if (_typedOnTheWay is { } held && (_heldForBand || !_handingBack) && (_openingList is null || _heldForBand))
         {
             // The keyboard has landed here: the keys held for the band are its own, in order — one of them
             // giving the keyboard back holds the rest for the Sheet. A hold nothing is handing back, a
@@ -536,6 +547,7 @@
     private void OnFocusOut(FocusEventArgs _)
     {
         _hasFocus = false;
+        if (_openingList is not null) _leftWhileOpening = true;
         // The KeyTips end when the keyboard leaves: a list an item opened, or a press elsewhere. Not while
         // the band is taking the keyboard itself, from an element inside it or one the grid hands it from.
         if (_bandTakePending) return;

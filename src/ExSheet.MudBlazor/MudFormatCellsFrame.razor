@@ -79,7 +79,8 @@
         // Escape is the dialog's own, through this frame (MudFormatCellsDialog.Closing).
         CloseOnEscapeKey = false,
         BackdropClick = true,
-        CloseButton = true,
+        // The × is the dialog's own, inside the box that hears Escape (MudFormatCellsDialog).
+        CloseButton = false,
         MaxWidth = MaxWidth.Small,
         FullWidth = true,
     };
@@ -103,7 +104,7 @@
     private List<KeyboardEventArgs>? _closingKeys;
     private bool _closingOk;
     private bool _leaveThenClose;
-    private readonly Func<bool, Task> _closing;
+    private readonly Func<bool, Task<bool>> _closing;
     private readonly Action<KeyboardEventArgs> _keyWhileClosing;
     private readonly Func<IReadOnlyList<KeyboardEventArgs>> _takeClosingKeys;
     // Completed by the render that follows the dialog's closing, once the browser has drawn it.
@@ -136,33 +137,43 @@
     // Escape, OK or Cancel in the dialog: OK sets what was touched now, or Cancel ends Format Cells, and
     // the element takes the keyboard out of the dialog before it closes (decided with the user,
     // 2026-10-13). Without the core's hand-back from a frame, the dialog closes as it always has.
-    private async Task CloseFromKeysAsync(bool ok)
+    private async Task<bool> CloseFromKeysAsync(bool ok)
     {
-        if (_closingKeys is not null || _disposed) return;
+        if (_disposed) return false;
+        if (_closingKeys is not null) return true;
         if (Context.ReturnKeyboardFrom is null)
         {
             _dialog?.Close(ok ? DialogResult.Ok(true) : DialogResult.Cancel());
-            return;
+            return true;
         }
         _closingKeys = [];
         _closingOk = ok;
-        if (ok)
+        try
         {
-            if (!await Context.Ok())
+            if (ok)
             {
-                // A refusal the dialog did not see: Format Cells stays, and so does the dialog.
-                _closingKeys = null;
-                return;
+                if (!await Context.Ok())
+                {
+                    // A refusal the dialog did not see: Format Cells stays, and so does the dialog.
+                    _closingKeys = null;
+                    return false;
+                }
+            }
+            else
+            {
+                Context.Cancel();
             }
         }
-        else
+        catch
         {
-            Context.Cancel();
+            _closingKeys = null;
+            throw;
         }
         _leaving = true;
         _leaveThenClose = true;
         _changed = true;
         StateHasChanged();
+        return true;
     }
 
     // The core has taken the keyboard back from the element: the keys held on the way are the grid's.

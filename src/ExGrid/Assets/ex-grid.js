@@ -82,7 +82,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     let declared = new Set(declaredKeys ?? []);
     // Whether the Consumer hears the Escape that leaves the grid (OnLeave, ADR-0070), and may take the
     // keyboard out of it on that Escape: the keys after a plain Escape on the root then wait for its
-    // answer (passKeysOut; decided with the user, 2026-10-13).
+    // answer (passKeysOut).
     let leaves = leaveDeclared === true;
     // The keyboard is leaving this grid for the Consumer's element around it (passKeysOut): the keys
     // held behind the Escape that led here, and those typed on the root until DOM focus leaves it, are
@@ -1123,13 +1123,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // rather than at once, where a key typed straight on it could overtake the keys still held for it
     // — Alt, H, O typed at once, the O on the band before the held H (ADR-0100's KeyTips, 2026-10-12).
     let frameInTurn = null;
-    // Whether `k` is a declared Alt going down alone, on the root or in an edit.
-    const altAlone = (k) => k.key === 'Alt' && k.repeat !== true && canonicalOf(k) === 'Alt+Alt' && declared.has('Alt+Alt')
-        && (k.onRoot || k.inEditor);
+    // Whether `k` is a declared Alt going down alone: on the root or in an edit, or anywhere under the root
+    // while keys are held (`held`), where what it means is decided where it is handed on — on the root, the
+    // Consumer's; in a frame it went to, the frame's.
+    const altAlone = (k, held = false) => k.key === 'Alt' && k.repeat !== true && canonicalOf(k) === 'Alt+Alt' && declared.has('Alt+Alt')
+        && (held || k.onRoot || k.inEditor);
     // A keydown noted against the Alt that may be down: a declared Alt alone starts one, held or not, and
     // a key that carries Alt makes the one down a chord's.
     const noteAlt = (k, entry) => {
-        if (altAlone(k)) {
+        if (altAlone(k, entry !== null)) {
             altPending = { alone: true, entry };
             if (entry) {
                 entry.altAlone = true;
@@ -3423,16 +3425,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
         },
         // The keyboard is leaving this grid for the Consumer's element around it (keysOut; ExGrid's
-        // PassKeysOutAsync, decided with the user, 2026-10-13): told before the answer to the Escape
+        // PassKeysOutAsync): told before the answer to the Escape
         // that led here, so the keys held behind that Escape go out too, in order.
         passKeysOut: () => {
             if (!core) {
                 return;
             }
+            // Every key held now was typed after the Escape that led here: out they go, at once, ahead of any
+            // typed from now, which go out as they are typed. Kept until the Escape is answered, they could be
+            // overtaken by a key typed meanwhile, or by the keyboard leaving first, which ends this (keysOut).
             keysOut = true;
-            if (!answering) {
-                passHeldOut();
-            }
+            passHeldOut();
         },
         // A popover's contents reported a popup of their own opening or closing
         // (ADR-0039): while one is open, a descendant's Escape is left to it.

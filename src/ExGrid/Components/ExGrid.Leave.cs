@@ -34,19 +34,10 @@ public partial class ExGrid<TRow>
     [Parameter] public EventCallback OnLeave { get; set; }
 
     /// <summary>
-    /// The Escape with nothing left to dismiss, pressed on the root (ADR-0012, ADR-0070): the
-    /// grid's way out of Enter/Tab cycling. Tab is released (ADR-0012, rewritten 2026-10-01), and a
-    /// Consumer that declared <see cref="OnLeave"/> hears it too (ADR-0070, 2026-10-02). The release
-    /// is sent first, so it reaches the gate before anything the Consumer's handler sends — a render
-    /// that closes its dialog, the keyboard given to another grid — and before this Escape's answer,
-    /// as a circuit delivers in order; the handler does not wait for its round trip. Once per press:
-    /// a held Escape's repeats never reach here (<see cref="OnKeyAsync"/>), and they leave a release
-    /// standing in the gate.
-    /// </summary>
-    /// <summary>
     /// The keyboard is leaving this grid for the Consumer's element around it — a dialog the grid stands
-    /// in, closing on the Escape that raised <see cref="OnLeave"/> (ADR-0070; decided with the user,
-    /// 2026-10-13). Called from the <see cref="OnLeave"/> handler, before its first await.
+    /// in, closing on the Escape that raised <see cref="OnLeave"/> (ADR-0070's note of 2026-10-13, where
+    /// the user decided that the keys typed as the keyboard goes back are held and handed on in order).
+    /// Called from the <see cref="OnLeave"/> handler, before its first await.
     ///
     /// <para>On Blazor Server the Consumer's dialog stands a round trip or more after that Escape, and the
     /// keyboard stays in this grid until the Consumer has put it elsewhere: a key typed meanwhile was
@@ -56,8 +47,9 @@ public partial class ExGrid<TRow>
     /// order, as the keydowns they were. A handler of the Consumer's there holds them and hands them on
     /// where the keyboard lands — to another grid, with
     /// <see cref="ReturnKeyboardAsync(ElementReference, Func{IReadOnlyList{KeyboardEventArgs}})"/> — so
-    /// the outcome is the one typed slowly, whatever the round trip. A press on the grid takes the
-    /// keyboard back into it, and the keys are its own again.</para>
+    /// the outcome is the one typed slowly. A press on the grid takes the keyboard back into it, and the
+    /// keys are its own again. Until one of these, every key typed on the root goes out, Tab among them:
+    /// a Consumer that calls this moves the keyboard out of the grid.</para>
     ///
     /// <para>It moves no focus and reads no layout: the key gate passes on what it hears (ADR-0021).
     /// Before the grid is attached to the page, and after it is gone, it does nothing.</para>
@@ -77,6 +69,16 @@ public partial class ExGrid<TRow>
             }
         });
 
+    /// <summary>
+    /// The Escape with nothing left to dismiss, pressed on the root (ADR-0012, ADR-0070): the
+    /// grid's way out of Enter/Tab cycling. Tab is released (ADR-0012, rewritten 2026-10-01), and a
+    /// Consumer that declared <see cref="OnLeave"/> hears it too (ADR-0070, 2026-10-02). The release
+    /// is sent first, so it reaches the gate before anything the Consumer's handler sends — a render
+    /// that closes its dialog, the keyboard given to another grid — and before this Escape's answer,
+    /// as a circuit delivers in order; the handler does not wait for its round trip. Once per press:
+    /// a held Escape's repeats never reach here (<see cref="OnKeyAsync"/>), and they leave a release
+    /// standing in the gate.
+    /// </summary>
     private async Task LeaveAsync()
     {
         var released = ReleaseTabAsync();

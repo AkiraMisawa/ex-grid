@@ -310,13 +310,53 @@ public class FieldListTests : PivotTestContext
         Assert.Equal(["Region"], AreaEntries(cut, "Rows"));
         Assert.Equal(["Online"], AreaEntries(cut, "Columns"));
 
-        // The button has the keyboard: the menu goes, and the Enter is the button's: the menu opens again.
-        await cut.Find(".ex-pivot-popup").FocusOutAsync(new FocusEventArgs());
+        // Still closing: its entry is no longer open, though the menu stands.
+        Assert.Equal("false", EntryButton(cut, "Region").GetAttribute("aria-expanded"));
 
+        // The button has the keyboard — its focus reaches the root: the menu goes, and the Enter is the
+        // button's: the menu opens again.
+        await cut.Find(".ex-pivot").FocusInAsync(new FocusEventArgs());
+
+        Assert.Equal("true", EntryButton(cut, "Region").GetAttribute("aria-expanded"));
         var reopened = cut.FindAll(".ex-pivot-popup");
         Assert.Single(reopened);
         Assert.Contains(label, reopened[0].TextContent);
         Assert.Equal(["Region"], AreaEntries(cut, "Rows"));
+    }
+
+    [Fact] // ADR-0061, ADR-0010 (decided with the user, 2026-10-13): a Tab typed in a menu as it closes, which only the browser can act on, is dropped with every key behind it: the Enter after it presses nothing
+    public async Task A_tab_typed_while_a_menu_closes_drops_the_keys_after_it()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")] });
+        await OpenMenuAsync(cut, "Rows", "Region");
+        await cut.Find(".ex-pivot-popup").FocusInAsync(new FocusEventArgs());
+
+        await cut.Find(".ex-pivot-popup").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+        await cut.Find(".ex-pivot-popup").KeyDownAsync(new KeyboardEventArgs { Key = "Tab" });
+        await cut.Find(".ex-pivot-popup").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        await cut.Find(".ex-pivot").FocusInAsync(new FocusEventArgs());
+
+        Assert.Empty(cut.FindAll(".ex-pivot-popup"));
+    }
+
+    [Fact] // ADR-0061 (decided with the user, 2026-10-13): a panel closed by Escape with the keyboard in it stands until the keyboard has left it, and its OK sets nothing meanwhile
+    public async Task A_panels_ok_does_nothing_while_it_closes()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")], SubtotalsAtTop = false });
+        await OpenMenuAsync(cut, "Rows", "Region");
+        await RunMenuAsync(cut, "Field Settings…");
+        await cut.Find(".ex-pivot-popup").FocusInAsync(new FocusEventArgs());
+        await cut.FindAll(".ex-pivot-field-settings input[type=radio]")[1].ChangeAsync(new ChangeEventArgs { Value = "on" });
+        var before = cut.Instance.CurrentLayout;
+
+        await cut.Find(".ex-pivot-popup").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+        Assert.Single(cut.FindAll(".ex-pivot-popup"));
+        await cut.Find(".ex-pivot-popup .ex-pivot-ok").ClickAsync(new MouseEventArgs());
+
+        Assert.Same(before, cut.Instance.CurrentLayout);
+        await cut.Find(".ex-pivot").FocusInAsync(new FocusEventArgs());
+        Assert.Empty(cut.FindAll(".ex-pivot-popup"));
+        Assert.Same(before, cut.Instance.CurrentLayout);
     }
 
     [Fact] // ADR-0061 (decided with the user, 2026-10-13): a menu closed while the keyboard is not in it — its own button pressed again — goes at once, holding nothing
@@ -329,6 +369,9 @@ public class FieldListTests : PivotTestContext
 
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
     }
+
+    private static AngleSharp.Dom.IElement EntryButton(IRenderedComponent<global::ExPivot.Components.ExPivot> cut, string caption)
+        => cut.FindAll(".ex-pivot-entry-button").Single(b => b.QuerySelector(".ex-pivot-entry-caption")!.TextContent.Trim() == caption);
 
     [Fact] // ADR-0061: one menu or panel at a time; opening another closes the first
     public async Task One_menu_at_a_time()

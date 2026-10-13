@@ -157,7 +157,7 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         Assert.Equal(["frame"], HandOffs);
 
         // A release whose press the Sheet did not hear starts nothing, and tells nothing: a chord's never
-        // reaches it, the key gate keeping it (decided with the user, 2026-10-13).
+        // reaches it, the key gate keeping it.
         await TypeOnToolbarAsync(cut, "Escape");
         await KeyUpAsync(cut, "Alt");
         Assert.Equal(["frame"], HandOffs);
@@ -190,7 +190,7 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         Assert.Equal(["keydown:Alt", "keyup:Alt", "keydown:h"], keys.Select(k => $"{k.Type}:{k.Key}"));
     }
 
-    [Fact] // ADR-0100, SH-52 (decided with the user, 2026-10-13): whether the Alt went down alone is the key gate's to tell, which hears every key between the press and the release in order and keeps a chord's release from the Sheet; another key's release reaching the Sheet — out of turn while the gate holds keys — changes nothing, and a key typed on the band forgets a press whose release the gate kept
+    [Fact] // ADR-0100, SH-52 (the release heard by the gate, decided with the user, 2026-10-13): whether the Alt went down alone is the key gate's to tell, which hears every key between the press and the release in order and keeps a chord's release from the Sheet; another key's release reaching the Sheet — out of turn while the gate holds keys — changes nothing, and a key typed on the band forgets a press whose release the gate kept
     public async Task Whether_the_alt_was_alone_is_the_gates_to_tell()
     {
         var cut = RenderToolbarSheet();
@@ -202,6 +202,8 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         Assert.Equal(["H"], ShownKeyTips(cut));
         await TypeOnToolbarAsync(cut, "Escape");
         Assert.Empty(ShownKeyTips(cut));
+        // The grid has the keyboard back: the band holds nothing.
+        Assert.Empty(AnswerTakeBacks(cut));
 
         // A chord's press the Sheet heard, whose release the gate kept; then a key and an Alt's release
         // typed on the band: nothing starts.
@@ -322,6 +324,51 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         Assert.False(cut.Find(".ex-sheet-toolbar").HasAttribute("blazor:onkeydown:preventdefault"));
     }
 
+    [Fact] // ADR-0100's ToolbarItemContext.ChoicesOpened: a Chrome that never says its list holds the keyboard does not trap it on the band — once the keyboard has left the band and comes back, the keys held are the band's and its own keys work again
+    public async Task A_list_that_never_says_it_took_the_keyboard_leaves_the_band_its_keys()
+    {
+        var chrome = new OwnListsChrome();
+        var cut = RenderToolbarSheet(ps => ps.Add(s => s.Chrome, chrome));
+        await GoToAsync(cut, "B2");
+        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
+        foreach (var _ in Enumerable.Range(0, 10)) await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowLeft" });
+        Assert.True(chrome.Last("Number Format").Active);
+        // Refocused without leaving, the band keeps the hold for the list on its way.
+        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
+        Assert.True(chrome.Last("Number Format").Active);
+
+        // The keyboard leaves the band — for a list that never says so — and comes back.
+        await cut.Find(".ex-sheet-toolbar").FocusOutAsync(new FocusEventArgs());
+        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
+
+        cut.WaitForAssertion(() => Assert.True(chrome.Last("Align Right").Active));
+        cut.WaitForAssertion(() => Assert.False(cut.Find(".ex-sheet-toolbar").HasAttribute("blazor:onkeydown:preventdefault")));
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowLeft" });
+        Assert.True(chrome.Last("Centre").Active);
+    }
+
+    [Fact] // ADR-0100 (decided with the user, 2026-10-13: the keys typed while a list opens are its own): the built-in list makes the choice its keys are on when Enter reaches it, not the one DOM focus is still on, and the browser's click of that Enter chooses nothing more
+    public async Task Enter_in_the_built_in_list_makes_the_choice_the_keys_are_on()
+    {
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        await PressAsync(cut, "F10");
+        await TypeOnToolbarAsync(cut, "H");
+        await TypeOnToolbarAsync(cut, "H");
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".ex-popover .ex-sheet-swatch-choice")));
+        Assert.Empty(AnswerTakeBacks(cut));
+        var list = cut.Find(".ex-popover .ex-sheet-choices");
+
+        // ↓ and → move the place before DOM focus has followed; Enter there, as the grid's hold hands it on.
+        await list.KeyDownAsync(new KeyboardEventArgs { Key = "ArrowDown" });
+        await cut.Find(".ex-popover .ex-sheet-choices").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
+        await cut.Find(".ex-popover .ex-sheet-choices").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+
+        cut.WaitForAssertion(() => Assert.Equal(CellColour.FromRgb(0x000000), FormatAt(cut, "B2").Fill.Colour));
+    }
+
     [Fact] // ADR-0100's ToolbarItemContext.ChoicesOpened (decided with the user, 2026-10-13): a list that did not open gives the keys held for it back to the band, which answers them in order
     public async Task A_list_that_did_not_open_gives_its_keys_to_the_band()
     {
@@ -383,7 +430,7 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         foreach (var _ in Enumerable.Range(0, 5)) await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
         await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowDown" });
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".ex-popover .ex-sheet-swatch-choice")));
-        // The grid takes the keyboard from the band as the list opens (decided with the user, 2026-10-13).
+        // The grid takes the keyboard from the band as the list opens.
         Assert.Empty(AnswerTakeBacks(cut));
         await cut.Find(".ex-popover-consumer > .ex-popover-body").FocusInAsync(new FocusEventArgs());
         await cut.Find(".ex-sheet-toolbar").FocusOutAsync(new FocusEventArgs());
@@ -402,7 +449,7 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         await TypeOnToolbarAsync(cut, "H");
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".ex-popover .ex-sheet-swatch-choice")));
         Assert.Empty(AnswerTakeBacks(cut));
-        await cut.FindAll(".ex-popover .ex-sheet-swatch-choice").First().ClickAsync(new MouseEventArgs());
+        await cut.FindAll(".ex-popover .ex-sheet-swatch-choice").First().ClickAsync(new MouseEventArgs { Detail = 1 });
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-popover")));
         Assert.NotEqual(CellFill.None, FormatAt(cut, "B2").Fill);
         Assert.Empty(ShownKeyTips(cut));
@@ -521,8 +568,7 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         Assert.Contains("ADR-0100", ex.Message);
     }
 
-    /// <summary>A Chrome that draws the built-in items and records each context it is handed.</summary>
-    // Draws every item itself, and opens no list: what a Chrome whose lists are its own is told.
+    /// <summary>A Chrome that draws every item itself and opens no list: what a Chrome whose lists are its own is told.</summary>
     private sealed class OwnListsChrome : ISheetChrome
     {
         private readonly List<ToolbarItemContext> _drawn = [];
@@ -549,6 +595,7 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         }
     }
 
+    /// <summary>A Chrome that draws the built-in items and records each context it is handed.</summary>
     private sealed class RecordingChrome : ISheetChrome
     {
         public List<ToolbarItemContext> Drawn { get; } = [];

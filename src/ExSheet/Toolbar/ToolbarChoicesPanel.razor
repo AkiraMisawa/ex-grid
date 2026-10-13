@@ -38,7 +38,7 @@
             <button type="button" role="menuitemradio" class="ex-sheet-swatch-choice" title="@choice.Label"
                     aria-label="@choice.Label" aria-checked="@(choice.Selected ? "true" : "false")"
                     tabindex="@(at == _focused ? 0 : -1)" @ref="_buttons[at]"
-                    @onclick="() => ChooseAsync(at)" @onfocus="() => Focused(at)">
+                    @onclick="e => ClickedAsync(at, e)" @onfocus="() => Focused(at)">
                 <span class="ex-sheet-swatch" style="@SwatchStyle(colour)"></span>
             </button>
         }
@@ -47,7 +47,7 @@
             <button type="button" role="menuitemradio" class="ex-sheet-choice" aria-checked="@(choice.Selected ? "true" : "false")"
                     aria-disabled="@(choice.DisabledReason is null ? null : "true")" title="@choice.DisabledReason"
                     tabindex="@(at == _focused ? 0 : -1)" @ref="_buttons[at]"
-                    @onclick="() => ChooseAsync(at)" @onfocus="() => Focused(at)">
+                    @onclick="e => ClickedAsync(at, e)" @onfocus="() => Focused(at)">
                 <span class="ex-sheet-choice-label">@choice.Label</span>
                 @if (choice.DisabledReason is { } reason)
                 {
@@ -155,8 +155,18 @@
         return Math.Clamp(from, 0, Math.Max(0, Choices.Count - 1));
     }
 
-    private void OnKeyAsync(KeyboardEventArgs e)
+    private async Task OnKeyAsync(KeyboardEventArgs e)
     {
+        // Enter or Space makes the choice the keys are on, which on a circuit DOM focus reaches a round trip
+        // later: one typed straight after an arrow made the choice focus was still on, and one the grid's
+        // hold hands on, a keydown dispatched from script, made none (decided with the user, 2026-10-13:
+        // the keys typed as a list opens are its own). The click the browser makes of that key is not a
+        // second choice (ClickedAsync).
+        if (e is { Key: "Enter" or " ", CtrlKey: false, AltKey: false, MetaKey: false, ShiftKey: false })
+        {
+            await ChooseAsync(_focused);
+            return;
+        }
         var across = Choices.Count > 0 && Choices[_focused].Colour is not null ? SwatchesAcross : 1;
         var moved = e.Key switch
         {
@@ -173,10 +183,19 @@
         _focusMoved = true;
     }
 
+    // A press on a choice. The browser's click of Enter or Space, its detail zero, was the key's, which
+    // the keydown has answered.
+    private Task ClickedAsync(int at, MouseEventArgs e) => e.Detail == 0 ? Task.CompletedTask : ChooseAsync(at);
+
+    // One choice per list: it closes on the first.
+    private bool _chosen;
+
     private async Task ChooseAsync(int at)
     {
+        if (_chosen || at < 0 || at >= Choices.Count) return;
         var choice = Choices[at];
         if (choice.DisabledReason is not null) return;
+        _chosen = true;
         // The frame closes first and gives the keyboard back; the choice is then made on the Sheet.
         Popover.Close();
         await choice.Choose();

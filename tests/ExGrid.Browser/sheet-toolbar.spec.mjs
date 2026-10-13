@@ -625,7 +625,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('h');
             await page.keyboard.press('1');
             await expect(editor(grid)).toHaveCount(1);
-            await expect(editor(grid).locator('input, textarea').first()).toHaveValue('h1');
+            await expect(editor(grid)).toHaveValue('h1');
             await page.keyboard.press('Escape');
             await expect(editor(grid)).toHaveCount(0);
 
@@ -634,7 +634,7 @@ for (const chrome of ['builtin', 'mud']) {
             await keyTips(page, 'Alt', 'h', '1');
 
             await expect(editor(grid)).toHaveCount(1);
-            await expect(editor(grid).locator('input, textarea').first()).toHaveValue('h1');
+            await expect(editor(grid)).toHaveValue('h1');
             await circuitQuiet();
             await expect(tips(page)).toHaveCount(0);
             await expect(page.locator('#sheet-focus-font')).toHaveText('regular');

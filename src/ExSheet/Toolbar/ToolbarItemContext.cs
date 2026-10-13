@@ -140,7 +140,7 @@ public sealed record ToolbarChoice(
 /// any typed in it since; with false it answers none and gives them to the toolbar itself. The keys of a
 /// list the toolbar closes before it is opened (<see cref="CloseRequest"/>) go where the toolbar takes the
 /// keyboard, and a call after that answers none. A Chrome that never calls it leaves the toolbar holding
-/// them until the keyboard leaves the toolbar.</param>
+/// them until the keyboard, having left the toolbar's band, comes back to it: they are then the band's.</param>
 /// <param name="Content">A Consumer item's own content, drawn in place of a picture and text; null for
 /// ExSheet's items.</param>
 /// <param name="KeyTip">The item's KeyTip letters; null for none.</param>

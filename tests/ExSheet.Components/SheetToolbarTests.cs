@@ -296,7 +296,7 @@ public class SheetToolbarTests : SheetTestContext
 
         await Item(cut, "Fill Colour").QuerySelector(".ex-sheet-toolbar-arrow")!.ClickAsync(new MouseEventArgs());
         var blue = cut.FindAll(".ex-popover .ex-sheet-swatch-choice").First(b => b.GetAttribute("aria-label") == "Blue");
-        await blue.ClickAsync(new MouseEventArgs());
+        await blue.ClickAsync(new MouseEventArgs { Detail = 1 });
         Assert.Equal(CellFill.Solid(CellColour.FromRgb(0x0070C0)), FormatAt(cut, "B2").Fill);
         Assert.Empty(cut.FindAll(".ex-popover .ex-sheet-choices"));
 
@@ -320,7 +320,7 @@ public class SheetToolbarTests : SheetTestContext
         Assert.Equal("true", choices.Single(c => c.TextContent.StartsWith("Accounting")).GetAttribute("aria-disabled"));
         Assert.Equal("true", choices.Single(c => c.TextContent.StartsWith("Fraction")).GetAttribute("aria-disabled"));
 
-        await choices.Single(c => c.TextContent.StartsWith("Percentage")).ClickAsync(new MouseEventArgs());
+        await choices.Single(c => c.TextContent.StartsWith("Percentage")).ClickAsync(new MouseEventArgs { Detail = 1 });
         Assert.Equal("0.00%", FormatAt(cut, "B2").NumberFormat.Code);
         Assert.Contains("Percentage", Item(cut, "Number Format").TextContent);
     }
