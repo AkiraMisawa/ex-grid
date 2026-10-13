@@ -164,6 +164,33 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         Assert.Equal(["frame"], HandOffs);
     }
 
+    [Fact] // ADR-0100's KeyTips (decided with the user, 2026-10-13: the Alt key's release is held in order with the keys): an Alt pressed and released on the band while the keyboard goes back to the Sheet is held there, its release with its press, and handed to the grid in order; the Sheet's own keyup handler, which hears the same release, starts nothing with it
+    public async Task An_alt_released_on_the_band_while_the_keyboard_goes_back_is_held_with_its_press()
+    {
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        await PressAsync(cut, "F10");
+        await TypeOnToolbarAsync(cut, "H");
+        // 1 sets bold and gives the keyboard back: the band holds what is typed on it from now.
+        await TypeOnToolbarAsync(cut, "1");
+        Assert.True(FormatAt(cut, "B2").Font.Bold);
+        var handOffs = HandOffs.Count;
+
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Alt", AltKey = true, Type = "keydown" });
+        // Even with an Alt press the Sheet has heard standing, the release held on the band is not its to
+        // answer now: it reaches the Sheet in its turn, after the press held with it.
+        await AltDownAsync(cut);
+        await cut.Find(".ex-sheet-toolbar").KeyUpAsync(new KeyboardEventArgs { Key = "Alt", Type = "keyup" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "h", Type = "keydown" });
+
+        // Nothing started early: the release was not the Sheet's to answer yet.
+        Assert.Empty(ShownKeyTips(cut));
+        Assert.Equal(handOffs, HandOffs.Count);
+        // The grid has the keyboard and asks for the keys: the press, its release, then H, in order.
+        var keys = AnswerTakeBacks(cut);
+        Assert.Equal(["keydown:Alt", "keyup:Alt", "keydown:h"], keys.Select(k => $"{k.Type}:{k.Key}"));
+    }
+
     [Fact] // ADR-0100, SH-52: Alt held with another key is a chord, and its release shows nothing
     public async Task Alt_with_another_key_is_a_chord()
     {

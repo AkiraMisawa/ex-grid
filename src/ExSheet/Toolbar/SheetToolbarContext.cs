@@ -165,6 +165,20 @@ public sealed class SheetToolbarContext
         if (ReferenceEquals(KeyTipList, item)) KeyTipList = null;
     }
 
+    /// <summary>
+    /// The toolbar's band held the release it heard just now, among the keys in flight: the Sheet's handler,
+    /// which hears the same release next, leaves it (decided with the user, 2026-10-13).
+    /// </summary>
+    internal bool KeyUpHeld { get; set; }
+
+    /// <summary>Whether the band held the release the Sheet hears now; asked once.</summary>
+    internal bool TakeKeyUpHeld()
+    {
+        var held = KeyUpHeld;
+        KeyUpHeld = false;
+        return held;
+    }
+
     /// <summary>The toolbar's own way of giving the keyboard back, while it is shown.</summary>
     internal Func<Task>? LeaveToolbar { get; set; }
 

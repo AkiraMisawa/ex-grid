@@ -843,6 +843,39 @@ public class ShippedStylesheetTests
         return match.Value;
     }
 
+    [Fact] // ADR-0100's KeyTips, ADR-0021's seventh entry, MEM-4 (decided with the user, 2026-10-13): the release of a declared Alt that went down alone is heard on the root by the one keyup listener the seventh entry has, held in its place while keys are held and handed on in its turn after its press; the keys after a release wait for its answer; no key is inferred to be a release
+    public void The_alt_keys_release_is_held_in_order_by_the_roots_one_keyup_listener()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var keyUp = ListenerBody(script, "onRootKeyUp");
+        var keyDown = ListenerBody(script, "onKeyDown");
+        var drain = Regex.Match(script, @"const drain = async \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(drain);
+
+        // One keyup listener, on the root, in the capture phase: no listener is added (MEM-4's count).
+        Assert.Single(Regex.Matches(script, @"addEventListener\('keyup'"));
+        Assert.Contains("root.addEventListener('keyup', onRootKeyUp, true);", script, StringComparison.Ordinal);
+        // While keys are held, the release is kept from the Consumer's handler and held in its place.
+        Assert.Matches(new Regex(@"if \(answering\) \{\s*event\.stopPropagation\(\);\s*event\.preventDefault\(\);\s*held\.push\(\{ altUp: true, altAlone: pending\?\.alone === true, key: 'Alt' \}\);\s*return;\s*\}"), keyUp);
+        // Otherwise it reaches the Consumer now, and the keys after it wait for the answer to it.
+        Assert.Matches(new Regex(@"if \(pending\?\.alone === true\) \{\s*startHold\(altReleaseAnswered\(\)\);\s*\}"), keyUp);
+        // A release this listener hands on itself is not held again.
+        Assert.Contains("if (!core || replaying || event.key !== 'Alt') {", keyUp, StringComparison.Ordinal);
+        // Its turn: handed on as the keyup it was, then its answer asked; its press is not skipped as a
+        // modifier's, so the Consumer hears the press before the release.
+        Assert.Matches(new Regex(@"if \(k\.altUp\) \{\s*if \(k\.altAlone\) \{\s*await replayAltRelease\(\);\s*await editorSettled\(\);"), drain);
+        Assert.Contains("if (modifierKeys.has(k.key) && !(k.key === 'Alt' && k.altAlone === true", drain, StringComparison.Ordinal);
+        Assert.True(drain.IndexOf("if (k.altUp)", StringComparison.Ordinal) < drain.IndexOf("if (modifierKeys.has(k.key)", StringComparison.Ordinal));
+        // A held Alt is noted as it is held, so its release finds it, and a chord unmarks it.
+        Assert.Contains("noteAlt(k, isClipboardKey(k) ? null : k);", keyDown, StringComparison.Ordinal);
+        // The release is no longer inferred from the key after it, and no Alt overtakes the keys held before it.
+        Assert.DoesNotContain("afterAltAlone", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("altGoesFirst", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("altReleased", script, StringComparison.Ordinal);
+        // Nothing measured.
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), keyUp);
+    }
+
     [Fact] // ADR-0080 / ADR-0021's seventh entry / ADR-0018: the Keyboard Field's listeners are on the root, on every grid, and go with the instance
     public void ADR0080_the_keyboard_fields_listeners_are_on_every_root_and_go_with_the_instance()
     {
@@ -850,14 +883,14 @@ public class ShippedStylesheetTests
 
         // At attach's own level, behind no condition: every grid hears them, with a field or not —
         // the release of Tab ends on a display-only grid too (ADR-0012).
-        Assert.Matches(new Regex(@"\n    root\.addEventListener\('compositionstart', onKeyFieldCompositionStart, true\);\n    root\.addEventListener\('compositionend', onKeyFieldCompositionEnd, true\);\n    root\.addEventListener\('keyup', onKeyFieldKeyUp, true\);"), script);
+        Assert.Matches(new Regex(@"\n    root\.addEventListener\('compositionstart', onKeyFieldCompositionStart, true\);\n    root\.addEventListener\('compositionend', onKeyFieldCompositionEnd, true\);\n    root\.addEventListener\('keyup', onRootKeyUp, true\);"), script);
         Assert.Matches(new Regex(@"\n    root\.addEventListener\('focus', onFocused, true\);\n    root\.addEventListener\('focusout', onFocusLeft, true\);"), script);
         var dispose = Regex.Match(script, @"dispose: \(\) => \{.*?root = null;", RegexOptions.Singleline).Value;
         foreach (var removed in new[]
         {
             "root.removeEventListener('compositionstart', onKeyFieldCompositionStart, true);",
             "root.removeEventListener('compositionend', onKeyFieldCompositionEnd, true);",
-            "root.removeEventListener('keyup', onKeyFieldKeyUp, true);",
+            "root.removeEventListener('keyup', onRootKeyUp, true);",
             "root.removeEventListener('focus', onFocused, true);",
             "root.removeEventListener('focusout', onFocusLeft, true);",
         })
@@ -924,7 +957,7 @@ public class ShippedStylesheetTests
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
         var carry = Regex.Match(script, @"const carryKeyFieldText = \(field\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
         var grant = Regex.Match(script, @"const grantEditorFocus = \(toward\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
-        var keyUp = Regex.Match(script, @"const onKeyFieldKeyUp = \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        var keyUp = Regex.Match(script, @"const onRootKeyUp = \(event\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
         Assert.NotEmpty(carry);
         Assert.NotEmpty(grant);
         Assert.NotEmpty(keyUp);
@@ -975,7 +1008,7 @@ public class ShippedStylesheetTests
         // the keyboard leaving, and the instance's end. Nothing else leaves a request waiting on it.
         Assert.Single(Regex.Matches(script, @"imeKeyTold = true;"));
         Assert.Equal(3, Regex.Matches(script, @"(?<!let )imeKeyTold = false;").Count);
-        Assert.Matches(new Regex(@"const onKeyFieldKeyUp = \(\) => \{\s*if \(imeKeyTold\) \{\s*imeKeyTold = false;\s*grantEditorFocus\(\);"), script);
+        Assert.Matches(new Regex(@"const onRootKeyUp = \(event\) => \{\s*if \(imeKeyTold\) \{\s*imeKeyTold = false;\s*grantEditorFocus\(\);"), script);
         // The grant goes through focusEditor's own rule, judged where the keyboard is going.
         Assert.Contains("handle.focusEditor(pending.bar, pending.fromField, toward);", script, StringComparison.Ordinal);
         Assert.Contains("const active = toward instanceof Element ? toward : document.activeElement;", script, StringComparison.Ordinal);

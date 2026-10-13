@@ -63,7 +63,8 @@
 *@
 <div class="ex-sheet-toolbar" role="toolbar" aria-label="@SheetWords.ToolbarName" aria-orientation="horizontal"
      tabindex="0" style="@Style" aria-activedescendant="@ActiveId" @ref="_band"
-     @onkeydown="OnKeyAsync" @onkeydown:preventDefault="@(_keysAreKeyTips || _typedOnTheWay is not null || _defaultsHeld)" @onfocus="OnFocus" @onfocusout="OnFocusOut">
+     @onkeydown="OnKeyAsync" @onkeydown:preventDefault="@(_keysAreKeyTips || _typedOnTheWay is not null || _defaultsHeld)"
+     @onkeyup="OnKeyUp" @onfocus="OnFocus" @onfocusout="OnFocusOut">
     @if (Context.KeyTips == KeyTipStage.Rows && Context.Rows.Count == 0)
     {
         <span class="ex-sheet-keytip ex-sheet-row-keytip" aria-hidden="true">@SheetToolbarContext.ImplicitRowKeyTip</span>
@@ -558,8 +559,20 @@
 
     private IEnumerable<ToolbarItemBase> Pressable() => Context.Items.Where(item => item.CanPress);
 
+    // The Alt key's release typed on the band while the keyboard is in flight: held in its place among the
+    // keys, so that it reaches the Sheet after the press it releases (decided with the user, 2026-10-13).
+    // The Sheet's own keyup handler, on the element around the band, hears it next and leaves it.
+    private void OnKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key != "Alt" || _typedOnTheWay is not { } held) return;
+        held.Add(e);
+        Context.KeyUpHeld = true;
+    }
+
     private async Task OnKeyAsync(KeyboardEventArgs e)
     {
+        // A release held among the keys is the Sheet's, not the band's.
+        if (e.Type == "keyup") return;
         // While the keyboard is in flight — back to the Sheet, on its way here, or out of a Chrome's list
         // closing — the keys are held, in order, for where it lands. Only then: a hold stands only while a
         // hand-back or a list's close is under way.

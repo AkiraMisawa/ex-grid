@@ -442,6 +442,9 @@
     // behaviour (ADR-0100, ADR-0039).
     private Task OnChoiceKeyAsync(KeyboardEventArgs e)
     {
+        // A release means something only as the Alt key's, held while the list closes, for the Sheet
+        // (decided with the user, 2026-10-13); the list answers presses.
+        if (e.Type == "keyup" && (e.Key != "Alt" || !_closing)) return Task.CompletedTask;
         // Behind keys the toolbar handed on, which are answered first.
         if (_inTurn is { } waiting)
         {
@@ -552,7 +555,8 @@
             builder.AddAttribute(3, "onkeydown", EventCallback.Factory.Create<KeyboardEventArgs>(this, OnKeyAsync));
             builder.AddEventPreventDefaultAttribute(4, "onkeydown", true);
             builder.AddEventStopPropagationAttribute(5, "onkeydown", true);
-            builder.AddContent(6, ChildContent);
+            builder.AddAttribute(6, "onkeyup", EventCallback.Factory.Create<KeyboardEventArgs>(this, OnKeyAsync));
+            builder.AddContent(7, ChildContent);
             builder.CloseElement();
         }
 

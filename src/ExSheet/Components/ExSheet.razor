@@ -1769,9 +1769,13 @@
     }
 
     // Every key's release, heard while the toolbar is shown: the Alt key's starts the KeyTips when
-    // it went down alone, and any other key's makes the Alt a chord's.
+    // it went down alone, and any other key's makes the Alt a chord's. The grid's key gate holds an
+    // Alt's release typed on its root while it holds keys, and hands it here in its turn, after the
+    // press it releases; the toolbar's band does the same for one typed on it while the keyboard is in
+    // flight, and that one is left here (decided with the user, 2026-10-13).
     private async Task OnKeyUpAsync(KeyboardEventArgs e)
     {
+        if (_toolbar.TakeKeyUpHeld()) return;
         if (e.Key != "Alt")
         {
             _altAlone = false;
