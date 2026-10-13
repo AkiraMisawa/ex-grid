@@ -623,6 +623,10 @@ settled.)*
     - -5 and 0 show in the first section, with no colour.
     - Text shows in the last section's red.
     - In three sections that end in `@`, zero takes the first section.
+    - *(2026-10-12, the seventeenth Windows run, h12.)* Excel refused `@;0` and `0;@;0`, as ExSheet
+      refuses `@` before the last section. Through COM it answered "Unable to set the NumberFormat
+      property of the Range class", and its Format Cells kept the dialog open with the code selected
+      and said nothing. ExSheet's Format Cells refuses them by name (SH-45). `0;0;@;0` was not asked.
 - **Not a reading but an estimate.** ExSheet widens column A for `05-Jan-26`, which fitted Excel's 8.09
   in case 19. ExSheet's fitting charges every character one digit width (ADR-0047). That is the same
   estimate that otherwise decides `####`, and it errs towards widening, never towards hiding text.
@@ -669,6 +673,17 @@ written. This section says what the run changed, and what it still left to a rea
     nothing more of Excel's, so the version stays.
   - The same rule holds under every culture. Under en-GB, `d-mmm-yy` typed into Format Cells shows
     `5-Jan-26`, not built-in 15's `05-Jan-26`. No run has typed it there.
+    *(2026-10-12, the seventeenth Windows run, h9, on 12 October 2026 at 13:30 and on 13:30 alone.
+    Observed under en-GB: `d-mmm-yy` and `m/d/yyyy` typed into Custom are codes of their own. On
+    13:30 alone `d-mmm-yy` showed `0-Jan-00`, where built-in 15, which Excel spells `dd-mmm-yy`
+    under en-GB (the twelfth run's case 19), would show `00-Jan-00` by that code. `m/d/yyyy` put the
+    month first, `10/12/2026` and `1/0/1900`, where built-in 14 shows the day first under en-GB
+    (`26/09/2026`, the second Windows run). `h:mm` showed `13:30` on both values, as built-in 20
+    would, so h9 did not show it to be a code of its own. Observed under ja-JP: `mmmmm` shows `1`,
+    the first character of `10月` and of `1月`. Not asked: a code of its own reopened under en-US,
+    and the month names under zh-CN and ko-KR. The readings of 2026-10-12 (R7) then observed under
+    en-GB `h:mm` typed into Custom as `9:05`, not `09:05`, and this bullet's `d-mmm-yy` as
+    `5-Jan-26`.)*
   - Format Cells' Custom list and its code box spell each code in the Sheet's culture, so a Custom OK
     never turns a built-in into a code of its own unasked.
 
@@ -681,8 +696,37 @@ written. This section says what the run changed, and what it still left to a rea
   records differ (the eleventh run's case 24).
   - OK still sets only what the user touched (SH-45). Taking the shown top away clears that edge on
     both sides, as clearing an edge does. That is a reading; no run pressed it.
+    *(Observed 2026-10-12, the seventeenth Windows run, h10: over A2 under A1's thick bottom, Format
+    Cells opened with a thick top, its button pressed. The Top button alone (Alt+T) took it away,
+    and after OK A1's bottom was gone too. Neither cell keeps a line there.)*
+  - **Over one cell, the Border tab's line opened on the line its top or bottom showed**
+    *(2026-10-12, the seventeenth Windows run, h10)*. Excel's Style list opened on Thick over A2
+    under A1's thick Automatic bottom, and on Thin where the line on that edge was thin, its Colour
+    Automatic both times. In case 13 it opened on Thick and black for A1's thick black bottom, over
+    A2 and over A1. So one press of the edge's button takes the line away, where ExSheet's Thin
+    would have set a thin top. Format Cells now opens the Style and the Colour on the line shown
+    where the Selection is one cell and exactly one of its four edges shows a line, and on Thin and
+    Automatic everywhere else, as before. Excel was seen to open on the line shown only for a top
+    edge and a bottom edge, in Automatic or black; the rest of that rule is a reading.
+    - Observed on Thin and Automatic, in the readings of 2026-10-12 (R8): B2 with a thin top and a
+      thick right of its own; the range A2:B3, with a different line on four of its cells' sides;
+      and D5 with no line, as the eleventh run's case 22 saw over A1.
+    - A reading, asked of the next Windows run: one cell whose one line is on its left or right; a
+      line in a style other than Thick or Thin, or in a colour other than Automatic or black; one
+      cell with lines on two edges, none of them thin (R8's thin top cannot tell Thin from the top's
+      line); one cell with the same line on two edges; a range whose edges show one line; and
+      several one-cell ranges.
   - Where both cells record a line on an outer edge, the dialog shows the one drawn, the upper or
     left cell's (ticket 102). No run looked.
+    *(2026-10-12, the seventeenth Windows run, h10: still not asked. By the twelfth run's model, a
+    line set on an edge, through COM or Format Cells, clears the neighbour's record of it, and h10
+    agrees: A2's thin top set through COM after A1's thick bottom read back as A1's bottom thin too,
+    and Format Cells over A2 showed that thin line. COM reads the edge as drawn, not each cell's
+    record, so h10 did not see the records themselves. By the model, setting lines cannot make the
+    state. A paste makes it: case 12 above read the saved file after a paste, and B2 recorded a
+    thick red right while C2 kept its thin blue left. That is the one run that read two records on
+    one edge. The twelfth run's cases 1, 3, 6, 7 and 9 read COM and the pixels, which show the edge
+    and not each cell's record. A run asks this by case 12's paste, then Format Cells over C2.)*
 - **Inside over whole rows sets every vertical side, A's left and XFD's right included**, and the
   lines between the rows (case 14). Excel records it as a row format: row 3 holds left, right and
   bottom, and row 4 left, right and top.

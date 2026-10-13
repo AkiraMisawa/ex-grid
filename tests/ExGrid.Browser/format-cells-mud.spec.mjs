@@ -83,6 +83,41 @@ test.describe('on /sheet?chrome=mud', () => {
         await expect(cell(grid, 'C2')).toHaveText('0.5');
     });
 
+    test('SH-45, run 17 h10: over A2 under A1\'s thick bottom the Border tab opens on Thick, and the Top button alone takes the line away on both sides', async ({ page }) => {
+        const grid = sheet(page);
+        const edge = (name) => formatCells(page).getByRole('button', { name, exact: true });
+        // A1's bottom thick, set through Format Cells itself. Over A1, with no line, it opens on Thin.
+        await openFromMenu(page, grid, 'A1');
+        await tab(page, 'Border').click();
+        await expect(choice(page, 'Thin')).toBeChecked();
+        await choice(page, 'Thick').check();
+        await edge('Bottom').click();
+        await formatCells(page).getByRole('button', { name: 'OK', exact: true }).click();
+        await expect(formatCells(page)).toHaveCount(0);
+
+        // Over A2 it opens on the one line A2 shows, as Excel's did: MudBlazor's radio group shows
+        // the draft's choice from its first render.
+        await openFromMenu(page, grid, 'A2');
+        await expect(tab(page, 'Border')).toHaveAttribute('aria-selected', 'true');
+        await expect(choice(page, 'Thick')).toBeChecked();
+        await expect(edge('Top')).toHaveAttribute('aria-pressed', 'true');
+
+        // What the run pressed: the Top button, then OK.
+        await edge('Top').click();
+        await expect(edge('Top')).toHaveAttribute('aria-pressed', 'false');
+        await formatCells(page).getByRole('button', { name: 'OK', exact: true }).click();
+        await expect(formatCells(page)).toHaveCount(0);
+
+        // Neither cell keeps a line there: A2 shows no top, and A1 no bottom.
+        await openFromMenu(page, grid, 'A2');
+        await expect(edge('Top')).toHaveAttribute('aria-pressed', 'false');
+        await expect(choice(page, 'Thin')).toBeChecked();
+        await formatCells(page).getByRole('button', { name: 'Cancel', exact: true }).click();
+        await expect(formatCells(page)).toHaveCount(0);
+        await openFromMenu(page, grid, 'A1');
+        await expect(edge('Bottom')).toHaveAttribute('aria-pressed', 'false');
+    });
+
     test('SH-42/SH-45: Ctrl+1 opens Format Cells on Number, and Escape closes it with the keyboard the Sheet\'s', async ({ page }) => {
         const grid = sheet(page);
         await pressCell(grid, 'C2');
