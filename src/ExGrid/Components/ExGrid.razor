@@ -7432,6 +7432,18 @@
     /// Ctrl+F (ADR-0055): the find panel, taking the keyboard as every popover does
     /// (ADR-0039) — or, where nothing can search, a refusal and nothing opened, because the
     /// browser's own find would look complete and see only the painted rows.
+    ///
+    /// <para>Typed in a popover — a column's menu or its filter, the Context Menu, the panel's own
+    /// controls — Ctrl+F closes that popover as the core, and so asks for the root's focus ahead of
+    /// the render that swaps it for the panel, as <see cref="ClosePopoverAndReturnFocus"/> does
+    /// (ADR-0039). That render removes the element holding DOM focus, and the field takes it a round
+    /// trip later on a circuit. In between, DOM focus was on <c>body</c>, where the capture-phase
+    /// listener hears nothing, and every key typed there was lost: <c>Osei</c>, typed straight after
+    /// Alt+↓ and Ctrl+F, came out <c>O</c>, <c>Os</c> or <c>Ose</c> as the round trip fell (FD-1, the
+    /// Server host). On the root those keys are held behind the Ctrl+F, in order, and handed to the
+    /// field once it holds the keyboard (ADR-0010), however long the round trip; the gate holds
+    /// from the Ctrl+F's own keydown, so none of them is taken as the grid's. Nothing is asked after
+    /// the render: the field's own focus has the last word.</para>
     /// </summary>
     private async Task OpenFindAsync()
     {
@@ -7441,6 +7453,8 @@
                 await OnFindRefused.InvokeAsync(FindRefusalReason.Unavailable);
             return;
         }
+        if (AnyPopoverOpen)
+            _ = ReclaimFocusAsync();
         CloseMenus();
         _findOpen = true;
         _findOutcome = FindOutcome.None;
