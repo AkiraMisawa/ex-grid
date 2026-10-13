@@ -107,7 +107,7 @@ internal static partial class FunctionLibrary
         var lookupArray = ArrayOrValue(call.Operand(1));
         if (!lookupArray.IsRange) return lookupArray.IsError ? lookupArray : Operand.Of(ErrorValue.Value);
         if (Vector.Of(lookupArray) is not { } vector) return Operand.Of(ErrorValue.Value);
-        if (Search(call, vector, modesAt: 2) is not { } outcome) return Operand.Of(ErrorValue.Value);
+        var outcome = Search(call, vector, modesAt: 2);
         if (outcome.Failure is { } failure) return failure;
         return outcome.Found is { } index ? Operand.Of(Value.FromNumber(index + 1)) : Operand.Of(ErrorValue.NA);
     }
@@ -234,8 +234,9 @@ internal static partial class FunctionLibrary
     /// other A1 text that goes on past its Reference, the engine's rule generalised from the intersection
     /// (INDIRECT-021); a row past 1048576, as <c>XFE1</c>'s column is (2026-10-12, decided with the user:
     /// A1 text past the Sheet's edge stays <c>#REF!</c>); and other text that is not R1C1 notation read in
-    /// R1C1 style, as <c>B3</c> is (INDIRECT-035). <c>#VALUE!</c> until a run observes them, where the
-    /// observed answers leave the readings apart. In R1C1 style: a row or column number 0 (<c>R0C2</c>,
+    /// R1C1 style, as <c>B3</c> is (INDIRECT-035). Refused (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>,
+    /// the Formula's, which no Formula can catch) until a run observes them, where the observed answers
+    /// leave the readings apart. In R1C1 style: a row or column number 0 (<c>R0C2</c>,
     /// INDIRECT-073); a row or column number past the Sheet's edge (<c>R1048577C2</c>, <c>R2C16385</c>),
     /// whatever an offset beside it reads (2026-10-12, decided with the user: an R1C1 number past the edge
     /// is refused with <c>#VALUE!</c> until Excel is asked; INDIRECT-074 asks it), and INDIRECT-095 asks a
@@ -245,7 +246,7 @@ internal static partial class FunctionLibrary
     /// whatever the parts joined (<c>A1:A2#</c>, <c>A:A#</c>, <c>R2C2:R3C2#</c>, <c>R3#</c>, <c>C2#</c>,
     /// <c>R2C2:R3#</c>; INDIRECT-090 to 092, 094, 096 and 097 ask it); a <c>#</c> inside a join, after
     /// its first part (<c>A1#:A2</c>, <c>R1C1#:R2C1</c>; INDIRECT-098 and 099 ask it); and the structured
-    /// forms a Formula does not take (<c>#All</c>, <c>@</c>). <c>#VALUE!</c> by decision, in either
+    /// forms a Formula does not take (<c>#All</c>, <c>@</c>). Refused by decision, in either
     /// style: a declared Linked Table's bare name, which Excel reads as the table's data (INDIRECT-043,
     /// 053 to 057), since a Linked Table is read by key, never by position (ADR-0049's rule 2; 2026-10-12,
     /// decided with the user: the bare name is refused, in either style). Relative R1C1 text in a Formula
@@ -282,7 +283,7 @@ internal static partial class FunctionLibrary
         // Another Sheet's name is judged first, #REF!, as below, since every reading of the rest names a
         // place on a Sheet that is not there. A part past the Sheet's edge makes no join, and is #REF!
         // below, whatever comes before it.
-        if (HashInsideJoin(text) is { } join) return Operand.Of(cells.IsLocal(join) ? ErrorValue.Value : ErrorValue.Ref);
+        if (HashInsideJoin(text) is { } join) return cells.IsLocal(join) ? call.Evaluator.Refuse() : Operand.Of(ErrorValue.Ref);
         // A column past XFD names no place, as XFE1 was observed to (INDIRECT-017), and a row past 1048576
         // by the same rule (2026-10-12, decided with the user: A1 text past the Sheet's edge stays #REF!).
         // The reader reads no Reference there, and every reading of the text meets that place, so it is
@@ -301,7 +302,7 @@ internal static partial class FunctionLibrary
             // cells themselves, the # passed over; or the first cell joined to the second's Spill Range,
             // A1:(A2#), the # binding to the cell before it. Refused until Excel is asked, as in R1C1 style
             // (INDIRECT-092, 096).
-            return Operand.Of(ErrorValue.Value);
+            return call.Evaluator.Refuse();
         }
         // Text that goes on past the Reference is no Reference: the engine's rule, generalised from the
         // intersection Excel was observed to refuse (INDIRECT-021).
@@ -348,8 +349,8 @@ internal static partial class FunctionLibrary
             var column = cells.TableColumn(structured.Table, structured.Column);
             return column.IsError && column.Scalar!.Value.Error == ErrorValue.Name ? Operand.Of(ErrorValue.Ref) : column;
         }
-        if (StructuredText().IsMatch(text)) return Operand.Of(ErrorValue.Value);
-        if (cells.IsLinkedTable(text)) return Operand.Of(ErrorValue.Value);
+        if (StructuredText().IsMatch(text)) return call.Evaluator.Refuse();
+        if (cells.IsLinkedTable(text)) return call.Evaluator.Refuse();
         return null;
     }
 
@@ -411,7 +412,7 @@ internal static partial class FunctionLibrary
         // place; the first cell's Spill Range joined to the second part, (R1C1#):R2C1, the # bound to the
         // cell before it as R1C1# is read; or the cells themselves, the # passed over. Refused until
         // Excel is asked, as in A1 style (INDIRECT-090, 091, 094, 097, 099).
-        if (inside || spilled && (joined || !first.IsCell)) return Operand.Of(ErrorValue.Value);
+        if (inside || spilled && (joined || !first.IsCell)) return call.Evaluator.Refuse();
         // Parts of two kinds joined are no Reference: a cell and a whole row (INDIRECT-058), a whole row
         // and a whole column (INDIRECT-062), and so a cell and a column, whichever comes first, whatever
         // their parts would read.
@@ -430,7 +431,7 @@ internal static partial class FunctionLibrary
         // offset past the edge does (2026-10-12, decided with the user: refused until Excel is asked;
         // INDIRECT-074 asks it), INDIRECT-095 asking a column; and an offset past its edge, which Excel
         // reads as a place no run has yet told (INDIRECT-052; 082 to 084 ask it).
-        if (row1 < 0 || row2 < 0 || column1 < 0 || column2 < 0) return Operand.Of(ErrorValue.Value);
+        if (row1 < 0 || row2 < 0 || column1 < 0 || column2 < 0) return call.Evaluator.Refuse();
         if (spilled) return call.Evaluator.Cells.Spill(new CellAddress(row1, column1));
         var reference = Reference.Rectangle(sheet, Math.Min(row1, row2), Math.Min(column1, column2), Math.Max(row1, row2), Math.Max(column1, column2), true, true, true, true);
         return Operand.Of(reference.Area);

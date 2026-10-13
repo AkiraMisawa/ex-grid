@@ -38,9 +38,17 @@ public sealed class Entry : IEquatable<Entry>
 
     internal Node? Parsed { get; }
 
-    /// <summary>A constant Entry. <c>#GETTING_DATA</c> and <c>#CIRC!</c> are states of a computation and cannot be one.</summary>
+    /// <summary>
+    /// A constant Entry. <c>#GETTING_DATA</c> and <c>#CIRC!</c> are states of a computation and cannot be one,
+    /// and neither can the <c>#VALUE!</c> of a cell whose Formula ExSheet refuses, read from it: held as a
+    /// constant it would be an Error Value a Formula can catch (ADR-0047; 2026-10-12, decided with the user:
+    /// a refusal is never caught, anywhere).
+    /// </summary>
+    /// <exception cref="ArgumentException"><paramref name="constant"/> is one of those.</exception>
     public static Entry FromValue(Value constant) =>
-        constant.IsError && constant.Error is ErrorValue.GettingData or ErrorValue.Circ
+        constant.IsRefusal
+            ? throw new ArgumentException("This #VALUE! is a Formula ExSheet refused, because it cannot answer it as Excel; held as a constant it would be an Error Value a Formula can catch.", nameof(constant))
+            : constant.IsError && constant.Error is ErrorValue.GettingData or ErrorValue.Circ
             ? throw new ArgumentException($"{constant.Error.ToText()} is not a constant a cell can hold.", nameof(constant))
             : new(constant);
 

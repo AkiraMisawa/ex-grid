@@ -69,6 +69,14 @@ internal static class SheetWords
     internal static string PasteReadsDifferently(string field, CultureInfo culture) =>
         $"Nothing was pasted: '{field}' came as a value no culture changes, and typed under {culture.Name} it would not read as that value.";
 
+    /// <summary>
+    /// A paste of the Sheet's own copy of Values alone that holds a refused cell (ADR-0047; 2026-10-12,
+    /// decided with the user: a refusal is never caught, anywhere): pasted as a value, the refusal would
+    /// become an Error Value a Formula can catch.
+    /// </summary>
+    internal static string PasteRefusedFormula(CellAddress refused) =>
+        $"Nothing was pasted: the copy holds {refused}, whose Formula ExSheet refused with #VALUE! because it cannot answer it as Excel does. Pasted as a value, that #VALUE! would become an Error Value a Formula can catch. Copy one range alone, without the headers, to paste its Formulas.";
+
     internal static string PasteTooNarrowToShow(string field, CellAddress at) =>
         $"Nothing was pasted: the field for {at} is '{field}', which is how the source shows a value too wide for its column. The source column was too narrow to show the value, so the value itself was not copied. Widen the column there and copy again.";
 

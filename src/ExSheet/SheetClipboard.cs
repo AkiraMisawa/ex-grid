@@ -10,11 +10,16 @@ namespace ExSheet;
 /// The copy ExSheet last put on the clipboard (ADR-0048, ADR-0050 item 9): the Entries it copied,
 /// and the fields the grid's paste parse reads back from what was written. A later paste whose
 /// fields equal these, field for field, is taken to be this copy, and its Entries are pasted. A
-/// browser clipboard names no owner, so equal content is the strongest evidence a page has.
+/// browser clipboard names no owner, so equal content is the strongest evidence a page has. A copy
+/// that carries Values alone is kept only where it holds a refused cell (<see cref="Refused"/>), so that
+/// a paste of it back is refused rather than turn the refusal into an Error Value a Formula can catch.
 /// </summary>
-/// <param name="Block">The Entries, formats and alignment copied, and where from.</param>
+/// <param name="Block">The Entries, formats and alignment copied, and where from; <see langword="null"/>
+/// for a copy that carries Values alone.</param>
 /// <param name="Fields">What <see cref="ClipboardParse.Parse"/> reads from the two flavours written.</param>
-internal sealed record SheetOwnCopy(SheetBlock Block, IReadOnlyList<IReadOnlyList<string>> Fields)
+/// <param name="Refused">For a copy that carries Values alone, the first cell it holds whose Formula ExSheet
+/// refused (<see cref="Value.IsRefusal"/>); <see langword="null"/> for none.</param>
+internal sealed record SheetOwnCopy(SheetBlock? Block, IReadOnlyList<IReadOnlyList<string>> Fields, CellAddress? Refused = null)
 {
     /// <summary>Whether a paste's fields are this copy's, field for field.</summary>
     internal bool IsPastedAs(IReadOnlyList<IReadOnlyList<string>> pasted)
@@ -54,7 +59,10 @@ internal static partial class SheetClipboard
     /// invariant (ADR-0050 item 10). Its Entries are kept for a paste back into this Sheet.</item>
     /// <item>Several ranges combined into one block, or a copy with the headers, carry the same
     /// Values cell by cell, and no Entries: a block of several ranges was never one place its
-    /// References were relative to.</item>
+    /// References were relative to. A refused cell among them is written <c>#VALUE!</c>, as it shows,
+    /// and the copy is kept with the first such cell, so that a paste of it back into this Sheet is
+    /// refused: pasted as a value, the refusal would become an Error Value a Formula can catch
+    /// (ADR-0047; 2026-10-12, decided with the user: a refusal is never caught, anywhere).</item>
     /// </list>
     /// </summary>
     internal static (GridCopyAnswer Answer, SheetOwnCopy? Own) Answer(Sheet sheet, GridCopyRequest request)
@@ -77,12 +85,23 @@ internal static partial class SheetClipboard
             return (GridCopyAnswer.Write(copy.Text!, html), new SheetOwnCopy(copy.Block!, fields));
         }
 
+        CellAddress? refused = null;
         var (text, combined) = ClipboardData.Assemble(
             plan,
             (row, column) => ShownText(sheet, new CellAddress(row, column)),
-            (row, column) => sheet.GetValue(new CellAddress(row, column))?.ToString() ?? "",
+            (row, column) => Raw(new CellAddress(row, column)),
             request.WithHeaders ? CellAddress.ColumnName : null);
-        return (GridCopyAnswer.Write(text, combined), null);
+        var own = refused is { } at
+            ? new SheetOwnCopy(null, ClipboardParse.Parse(combined, text) ?? throw new InvalidOperationException("The Sheet's copy read back as nothing."), at)
+            : null;
+        return (GridCopyAnswer.Write(text, combined), own);
+
+        string Raw(CellAddress address)
+        {
+            var value = sheet.GetValue(address);
+            if (value is { IsRefusal: true }) refused ??= address;
+            return value?.ToString() ?? "";
+        }
     }
 
     /// <summary>

@@ -467,12 +467,12 @@
     {
       "id": "INDIRECT-056",
       "source": "observed",
-      "description": "A declared table's bare name is refused by decision, and COUNTA counts the refusal, #VALUE!, as one Value, as it counts any Error Value. Excel's answer is 4, the table's four Values, as the second area pass of 2026-10-12 observed",
+      "description": "A declared table's bare name is refused by decision, and the refusal is the Formula's, which COUNTA does not count: #VALUE!, where COUNTA counted it as one Value, 1, until refusals were never caught. Excel's answer is 4, the table's four Values, as the second area pass of 2026-10-12 observed",
       "cells": {"ZZ1000": "=COUNTA(INDIRECT(\"Positions\"))"},
       "tables": {"Positions": {"columns": ["Id", "PV"], "rows": [["R-1", 250.5], ["R-2", 50]]}},
       "check": "ZZ1000",
-      "expect": {"value2": 1},
-      "engineDiffersByDecision": "ADR-0049 (rule 2: a Linked Table is read by key, never by position) and ADR-0124 (2026-10-12, decided with the user: a declared Linked Table's bare name through INDIRECT stays #VALUE!, in either style): it is #VALUE!, though Excel reads it as the table's data, every column and every row without the header, which a Formula could then read by position; Excel's answer is excelExpect, a difference by decision listed under Known limitations",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0049 (rule 2: a Linked Table is read by key, never by position) and ADR-0124 (2026-10-12, decided with the user: a declared Linked Table's bare name through INDIRECT stays #VALUE!, in either style): it is #VALUE!, though Excel reads it as the table's data, every column and every row without the header, which a Formula could then read by position; and ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): COUNTA does not count it, and the Formula is refused; Excel's answer is excelExpect, a difference by decision listed under Known limitations",
       "excelExpect": {"value2": 4}
     },
     {
@@ -798,6 +798,15 @@
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
       "engineDiffersByDecision": "ADR-0124 (2026-10-12): a # inside an R1C1 join is #VALUE! until a run observes it, as in A1 style, since the observed answers read # after one cell only (INDIRECT-060) and the readings part; the engine answered #REF! before, as text that is not R1C1 notation; recorded, so that a run reads Excel's answer"
+    },
+    {
+      "id": "INDIRECT-100",
+      "source": "uncertain",
+      "description": "INDIRECT to a refused cell does not let IFERROR catch it: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001); what IFERROR(INDIRECT(\"B1\"),0) gives is asked",
+      "cells": {"B1": "=MROUND(6.05,0.1)", "ZZ1000": "=IFERROR(INDIRECT(\"B1\"),0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND's fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell through INDIRECT is refused, where IFERROR gave 0 before"
     }
   ]
 }

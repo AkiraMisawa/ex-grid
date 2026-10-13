@@ -645,7 +645,7 @@ internal static partial class FunctionLibrary
             _ => vector.Vertical ? (returnArray.Column!.Count, 1) : (1, returnArray.Column!.Count),
         };
         if (along != vector.Length) return Operand.Of(ErrorValue.Value);
-        if (Search(call, vector, modesAt: 4) is not { } outcome) return Operand.Of(ErrorValue.Value);
+        var outcome = Search(call, vector, modesAt: 4);
         if (outcome.Failure is { } failure) return failure;
         if (outcome.Found is not { } index) return call.Has(3) ? call.Operand(3) : Operand.Of(ErrorValue.NA);
         if (across == 1)
@@ -678,11 +678,16 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// XLOOKUP's and XMATCH's search of <paramref name="vector"/> for argument 0, with
-    /// <c>match_mode</c> and <c>search_mode</c> at <paramref name="modesAt"/> and the one after.
-    /// <see langword="null"/> is a refusal (<c>#VALUE!</c>): a mode outside Excel's list, or a binary
-    /// search over data that is not sorted as the mode says (<see cref="TryBinarySearch"/>).
+    /// <c>match_mode</c> and <c>search_mode</c> at <paramref name="modesAt"/> and the one after. A mode
+    /// outside Excel's list is <c>#VALUE!</c>, as Excel's <c>search_mode</c> 3 was (XLOOKUP-058), and so is
+    /// the regular expression mode under a binary search (XLOOKUP-104). Refused
+    /// (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's): a binary search over data that is
+    /// not sorted as the mode says (<see cref="TryBinarySearch"/>), and a regular expression
+    /// <see cref="PortableRegex"/> does not take, or a text it would read otherwise than PCRE2. The engine
+    /// cannot tell a pattern PCRE2 rejects from one it reads otherwise, so it refuses both, also where Excel
+    /// was seen to give <c>#VALUE!</c> (XLOOKUP-103, 157).
     /// </summary>
-    private static SearchOutcome? Search(FunctionCall call, Vector vector, int modesAt)
+    private static SearchOutcome Search(FunctionCall call, Vector vector, int modesAt)
     {
         var evaluator = call.Evaluator;
         var lookupOperand = call.Operand(0);
@@ -695,20 +700,21 @@ internal static partial class FunctionLibrary
         {
             if (!TryNumber(call, modesAt, out var mode, out var modeFailure)) return new SearchOutcome(null, modeFailure);
             matchMode = (int)Math.Truncate(mode);
-            if (matchMode is not (0 or -1 or 1 or 2 or 3)) return null;
+            if (matchMode is not (0 or -1 or 1 or 2 or 3)) return new SearchOutcome(null, Operand.Of(ErrorValue.Value));
         }
         var searchMode = 1;
         if (call.Has(modesAt + 1))
         {
             if (!TryNumber(call, modesAt + 1, out var mode, out var modeFailure)) return new SearchOutcome(null, modeFailure);
             searchMode = (int)Math.Truncate(mode);
-            if (searchMode is not (1 or -1 or 2 or -2)) return null;
+            if (searchMode is not (1 or -1 or 2 or -2)) return new SearchOutcome(null, Operand.Of(ErrorValue.Value));
         }
 
         int? found = null;
         if (searchMode is 2 or -2)
         {
-            if (!TryBinarySearch(vector, evaluator, lookup, matchMode, ascending: searchMode == 2, out found)) return null;
+            if (matchMode == 3) return new SearchOutcome(null, Operand.Of(ErrorValue.Value));
+            if (!TryBinarySearch(vector, evaluator, lookup, matchMode, ascending: searchMode == 2, out found)) return new SearchOutcome(null, evaluator.Refuse());
         }
         else if (lookup is { } wanted)
         {
@@ -718,7 +724,7 @@ internal static partial class FunctionLibrary
             {
                 // Numbers and booleans are matched by their text; Error Values match nothing.
                 var texts = candidates.Where(c => !c.Value.IsError).Select(c => (c.Index, evaluator.ToText(c.Value)));
-                if (!PortableRegex.TryFirstMatch(evaluator.ToText(wanted), texts, out found)) return null;
+                if (!PortableRegex.TryFirstMatch(evaluator.ToText(wanted), texts, out found)) return new SearchOutcome(null, evaluator.Refuse());
             }
             else
             {
@@ -741,12 +747,12 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// XLOOKUP's binary search (<c>search_mode</c> 2 and −2), admitted only over a lookup array that
     /// is sorted as the mode says, ascending for 2 and descending for −2 (ADR-0047).
-    /// <see langword="false"/> is a refusal (<c>#VALUE!</c>): the array is not sorted as the mode
+    /// <see langword="false"/> is a refusal (<see cref="Evaluator.Refuse"/>): the array is not sorted as the mode
     /// says; it holds blanks, Error Values, or values of more than one kind (Excel's ordering across
     /// kinds is not pinned here, so mixed kinds count as unsorted); the lookup value is blank or of
     /// another kind; text holds anything but ASCII letters, digits and spaces (Excel's collation of
-    /// other characters is not pinned here); or the match mode is the wildcard or the regular
-    /// expression one.
+    /// other characters is not pinned here); or the match mode is the wildcard one. The regular
+    /// expression one never comes here: Excel's answer to it is <c>#VALUE!</c> (XLOOKUP-104; <see cref="Search"/>).
     /// </summary>
     /// <remarks>
     /// Where the matching key appears more than once, the one returned is the one Excel was observed

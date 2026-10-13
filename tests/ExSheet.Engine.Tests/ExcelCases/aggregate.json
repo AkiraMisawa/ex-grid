@@ -607,6 +607,15 @@
       "cells": {"ZZ1000": "=AGGREGATE(15,6,A1:A11,9.5)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "AGGREGATE-069",
+      "source": "uncertain",
+      "description": "AGGREGATE's option 6, which passes over Error Values, does not pass over a refused cell: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001), and B2 is 1; what AGGREGATE(9,6,B1:B2) gives is asked",
+      "cells": {"B1": "=MROUND(6.05,0.1)", "B2": "1", "ZZ1000": "=AGGREGATE(9,6,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND's fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell is refused, where option 6 passed over its #VALUE! and gave 1 before"
     }
   ]
 }

@@ -75,8 +75,9 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     /// <summary>
     /// A Formula's result as it spills (ADR-0125): a range or an array of more than one Value is
     /// returned as it is, for the Sheet to spill; anything else is one Value, never blank, with the
-    /// final addition's rule applied as in <see cref="Evaluate"/>. A Formula a call refused
-    /// (<see cref="Refuse"/>) is <c>#VALUE!</c>, whatever the rest of it made of the refusal.
+    /// final addition's rule applied as in <see cref="Evaluate"/>. A Formula a call or an operator
+    /// refused (<see cref="Refuse"/>) is the refusal, <c>#VALUE!</c>, whatever the rest of it made of it
+    /// (<see cref="Value.Refusal"/>).
     /// </summary>
     public Operand EvaluateResult(Node node)
     {
@@ -87,7 +88,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         try
         {
             var result = Result(node);
-            return _refused ? Formulas.Operand.Of(ErrorValue.Value) : result;
+            return _refused ? Formulas.Operand.Of(Value.Refusal) : result;
         }
         finally
         {
@@ -99,20 +100,34 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     private bool _refused;
 
     /// <summary>
-    /// Refuses the Formula being evaluated: its result is <c>#VALUE!</c> whatever the functions and
-    /// operators around the refusal make of the Error Value returned here, so <c>IFERROR</c> cannot
-    /// catch it, <c>ISBLANK</c> cannot read it as not blank and <c>COUNTA</c> cannot count it as one
-    /// Value, as a Formula that meets <c>#CIRC!</c> is <c>#CIRC!</c> (ADR-0047). A function refuses so
-    /// where it is given an array and wants one Value, which it is not yet applied to each Value of
-    /// (ADR-0125, "Not yet: functions lifted over arrays"; IFERROR-009); where it would read a kept
-    /// blank, and no run has settled how (ADR-0125, <see cref="FunctionCall.Operand"/>); and where
-    /// <c>SORT</c> or <c>SORTBY</c> would order an Error Value key whose place no run has read
-    /// (ADR-0047).
+    /// Refuses the Formula being evaluated: its result is the refusal, <c>#VALUE!</c>
+    /// (<see cref="Value.Refusal"/>), whatever the functions and operators around it make of the
+    /// Error Value returned here, so <c>IFERROR</c> cannot catch it, <c>ISBLANK</c> cannot read it as
+    /// not blank and <c>COUNTA</c> cannot count it as one Value, as a Formula that meets <c>#CIRC!</c> is
+    /// <c>#CIRC!</c> (ADR-0047). The cell's Value carries the refusal on: a Formula that reads it is
+    /// refused in turn, whatever it does with it (2026-10-12, decided with the user: a refusal is never
+    /// caught, anywhere). Every function and operator refuses so, and never with a plain <c>#VALUE!</c>,
+    /// where the readings of its evaluation part or no run has settled the answer: where it is given an
+    /// array and wants one Value, which it is not yet applied to each Value of (ADR-0125, "Not yet:
+    /// functions lifted over arrays"; IFERROR-009); where it would read a kept blank, and no run has
+    /// settled how (ADR-0125, <see cref="FunctionCall.Operand"/>); and at every argument value "admitted
+    /// with some argument values refused" keeps out (ADR-0047). A <c>#VALUE!</c> that is Excel's own
+    /// answer, such as <c>=1+"a"</c>'s, is an Error Value like any other.
     /// </summary>
     public Operand Refuse()
     {
         _refused = true;
-        return Formulas.Operand.Of(ErrorValue.Value);
+        return Formulas.Operand.Of(Value.Refusal);
+    }
+
+    /// <summary>
+    /// <see cref="Refuse"/>, for a function that answers with a Value: the Formula is refused, and the
+    /// refusal is returned to stand where the Value would.
+    /// </summary>
+    public Value Refused()
+    {
+        _refused = true;
+        return Value.Refusal;
     }
 
     private Operand Result(Node node)
@@ -216,18 +231,19 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     };
 
     /// <summary>
-    /// An operand used as one Value: a single cell is read; a rectangle of more than one cell is
-    /// <c>#VALUE!</c>, because ExSheet has no spilled arrays and will not pick one cell of it
-    /// silently. An empty argument is blank.
+    /// An operand used as one Value: a single cell is read; a rectangle of more than one cell refuses
+    /// the Formula (<see cref="Refused"/>), because Excel 365 applies what wants one Value to each Value
+    /// of it, which ExSheet does not yet (ADR-0125), and ExSheet will not pick one cell of it silently.
+    /// An empty argument is blank.
     /// </summary>
     public Value? ScalarOf(Operand operand) => operand.Kind switch
     {
         OperandKind.Scalar => operand.Scalar,
         OperandKind.Area when operand.Area.IsSingleCell => Cells.Read(new CellAddress(operand.Area.Row1, operand.Area.Column1)),
-        OperandKind.Area => Value.FromError(ErrorValue.Value),
+        OperandKind.Area => Refused(),
         OperandKind.Column when operand.Column!.Count == 1 => operand.Column[0],
-        OperandKind.Column => Value.FromError(ErrorValue.Value),
-        OperandKind.Array => operand.Array!.IsSingle ? operand.Array[0, 0] : Value.FromError(ErrorValue.Value),
+        OperandKind.Column => Refused(),
+        OperandKind.Array => operand.Array!.IsSingle ? operand.Array[0, 0] : Refused(),
         _ => null,
     };
 

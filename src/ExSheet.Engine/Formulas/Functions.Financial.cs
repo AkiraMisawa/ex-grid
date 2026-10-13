@@ -22,8 +22,10 @@ internal static partial class FunctionLibrary
     /// left out) and <c>type</c>. <c>type</c> is read as a truth value, as Excel reads it: 0 is
     /// payment at the end of each period, and any other number at the start (PMT-008 to PMT-010:
     /// 2, 0.5 and -1 each give the payment at the start; 0.5 is not truncated to 0). At a rate other
-    /// than 0, an <c>nper</c> whose absolute value is a whole number past 2^53 is refused with
-    /// <c>#VALUE!</c>, as before the area passes: how Excel raises 1+rate to one has not been observed.
+    /// than 0, an <c>nper</c> whose absolute value is a whole number past 2^53 is refused
+    /// (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's), as before the area passes: how Excel
+    /// raises 1+rate to one has not been observed. Every refusal of PMT, PV, FV and XNPV below is the
+    /// Formula's so.
     /// </summary>
     private static bool TryAnnuity(FunctionCall call, out double rate, out double periods, out double third, out double fourth, out bool atStart, out Operand failure)
     {
@@ -37,7 +39,7 @@ internal static partial class FunctionLibrary
         if (call.Has(4) && !TryNumber(call, 4, out type, out failure)) return false;
         if (rate != 0 && Math.Abs(periods) > WholePeriods)
         {
-            failure = Operand.Of(ErrorValue.Value);
+            failure = call.Evaluator.Refuse();
             return false;
         }
         atStart = type != 0;
@@ -179,10 +181,10 @@ internal static partial class FunctionLibrary
     private static Operand Pmt(FunctionCall call)
     {
         if (!TryAnnuity(call, out var rate, out var periods, out var present, out var future, out var atStart, out var failure)) return failure;
-        if (periods == 0) return Operand.Of(atStart && rate > -1 && rate != 0 ? ErrorValue.Value : ErrorValue.Num);
+        if (periods == 0) return atStart && rate > -1 && rate != 0 ? call.Evaluator.Refuse() : Operand.Of(ErrorValue.Num);
         if (rate == 0) return Operand.Of(Evaluator.Number(-(present + future) / periods));
-        if (rate <= -1) return Operand.Of(rate < -1 && PowerError(1 + rate, periods) == ErrorValue.Num ? ErrorValue.Num : ErrorValue.Value);
-        return ExactPayment.Of(rate, periods, present, future, atStart) is { } payment ? Operand.Of(Evaluator.Number(payment)) : Operand.Of(ErrorValue.Value);
+        if (rate <= -1) return rate < -1 && PowerError(1 + rate, periods) == ErrorValue.Num ? Operand.Of(ErrorValue.Num) : call.Evaluator.Refuse();
+        return ExactPayment.Of(rate, periods, present, future, atStart) is { } payment ? Operand.Of(Evaluator.Number(payment)) : call.Evaluator.Refuse();
     }
 
     /// <summary>
@@ -201,7 +203,7 @@ internal static partial class FunctionLibrary
         if (!TryAnnuity(call, out var rate, out var periods, out var payment, out var future, out var atStart, out var failure)) return failure;
         if (rate == 0) return Operand.Of(Evaluator.Number(-(future + (payment * periods))));
         if (!TryRaise(1 + rate, periods, out var growth, out var error)) return Operand.Of(error);
-        if (1 + rate == 0) return Operand.Of(ErrorValue.Value);
+        if (1 + rate == 0) return call.Evaluator.Refuse();
         var due = 1 + (rate * (atStart ? 1 : 0));
         return Operand.Of(Evaluator.Number(-(future + (payment * (due * ((growth - 1) / rate)))) / growth));
     }
@@ -288,8 +290,11 @@ internal static partial class FunctionLibrary
         var answers = new HashSet<ErrorValue>();
         var rateRead = TryNumber(call, 0, out var rate, out var failure);
         if (!rateRead) answers.Add(failure.Scalar!.Value.Error);
-        var values = NumbersOf(call, 1, answers);
-        var dates = NumbersOf(call, 2, answers);
+        // A cell that is not a number is refused: what Excel gives for one has not been observed.
+        var notNumber = false;
+        var values = NumbersOf(call, 1, answers, ref notNumber);
+        var dates = NumbersOf(call, 2, answers, ref notNumber);
+        if (notNumber) return call.Evaluator.Refuse();
         if (CellCount(call.Operand(1)) != CellCount(call.Operand(2))) answers.Add(ErrorValue.Num);
         // A date before the first, among the dates that are numbers, where the first is one.
         if (dates.Count > 0 && dates[0] is { } first && dates.Any(d => d is { } date && Math.Floor(date) < Math.Floor(first))) answers.Add(ErrorValue.Num);
@@ -297,10 +302,10 @@ internal static partial class FunctionLibrary
         if (rateRead && rate == 0)
         {
             // "0 or below" gives #NUM!; "below 0" passes the rate to the other checks, or to the sum.
-            if (answers.Count == 0) return Operand.Of(ErrorValue.Value);
+            if (answers.Count == 0) return call.Evaluator.Refuse();
             answers.Add(ErrorValue.Num);
         }
-        if (answers.Count > 0) return Operand.Of(answers.Count == 1 ? answers.Single() : ErrorValue.Value);
+        if (answers.Count > 0) return answers.Count == 1 ? Operand.Of(answers.Single()) : call.Evaluator.Refuse();
         var onePlusRate = 1 + rate;
         var origin = dates.Count > 0 ? Math.Floor(dates[0]!.Value) : 0;
         var total = 0.0;
@@ -308,7 +313,7 @@ internal static partial class FunctionLibrary
         {
             if (!TryRaise(onePlusRate, (Math.Floor(dates[i]!.Value) - origin) / 365, out var discount, out var error)) return Operand.Of(error);
             var term = values[i]!.Value / discount;
-            if (i == values.Count - 1 && Arithmetic.FinalAdd(total, term) != total + term) return Operand.Of(ErrorValue.Value);
+            if (i == values.Count - 1 && Arithmetic.FinalAdd(total, term) != total + term) return call.Evaluator.Refuse();
             total += term;
         }
         return Operand.Of(Evaluator.Number(total));
@@ -325,11 +330,11 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// Every cell of a range, each a number or null: a cell that is an Error Value adds that Error Value to
-    /// <paramref name="answers"/>, and a blank or anything else that is not a number adds <c>#VALUE!</c>. Every
-    /// cell is read, so that the answer does not depend on where the first that fails lies. A range of more
-    /// than 1,000,000 cells is one null.
+    /// <paramref name="answers"/>, and a blank or anything else that is not a number sets
+    /// <paramref name="notNumber"/>, which XNPV refuses. Every cell is read, so that the answer does not depend
+    /// on where the first that fails lies. A range of more than 1,000,000 cells is one null.
     /// </summary>
-    private static List<double?> NumbersOf(FunctionCall call, int index, HashSet<ErrorValue> answers)
+    private static List<double?> NumbersOf(FunctionCall call, int index, HashSet<ErrorValue> answers, ref bool notNumber)
     {
         var numbers = new List<double?>();
         var operand = call.Operand(index);
@@ -344,7 +349,7 @@ internal static partial class FunctionLibrary
         foreach (var cell in cells)
         {
             if (cell is { IsError: true } error) answers.Add(error.Error);
-            else if (cell is not { Kind: ValueKind.Number }) answers.Add(ErrorValue.Value);
+            else if (cell is not { Kind: ValueKind.Number }) notNumber = true;
             numbers.Add(cell is { Kind: ValueKind.Number } number ? number.Number : null);
         }
         return numbers;

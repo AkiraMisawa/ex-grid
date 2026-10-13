@@ -153,6 +153,34 @@
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
       "engineDiffersByDecision": "ADR-0125: functions are not lifted over arrays yet; LEN given a range is #VALUE!, where Excel 365 applies it to each Value and spills, and the refusal is the Formula's, which IFERROR does not catch"
+    },
+    {
+      "id": "IFERROR-018",
+      "source": "uncertain",
+      "description": "IFERROR does not catch the refusal of a function the engine does not support, AGGREGATE's 16, PERCENTILE.INC, inside it. Excel's AGGREGATE(16,6,A1:A11,0.5) alone was 34 (AGGREGATE-028); what it gives under IFERROR is asked",
+      "cells": {"ZZ1000": "=IFERROR(AGGREGATE(16,6,A1:A11,0.5),0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): the Formula is refused whatever IFERROR would make of it, where IFERROR caught the refusal before",
+      "fixture": "aggregateData"
+    },
+    {
+      "id": "IFERROR-019",
+      "source": "uncertain",
+      "description": "IFERROR in another cell does not catch a refused cell: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001); what IFERROR over B1 gives is asked",
+      "cells": {"B1": "=MROUND(6.05,0.1)", "ZZ1000": "=IFERROR(B1,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND's fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell is refused, whatever it does with it, where IFERROR gave 0 before"
+    },
+    {
+      "id": "IFERROR-020",
+      "source": "uncertain",
+      "description": "A refusal is carried along a chain of three cells: B1 is MROUND(7.05,0.1), refused, which Excel answered 7.1000000000000005 (MROUND-002); C1 is IFERROR(B1,0) and the checked cell IFERROR(C1,1), each refused in turn. What Excel gives is asked",
+      "cells": {"B1": "=MROUND(7.05,0.1)", "C1": "=IFERROR(B1,0)", "ZZ1000": "=IFERROR(C1,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND's fractional multiple is refused (ADR-0047), and each Formula that reads a refused cell is refused in turn, along the chain"
     }
   ]
 }

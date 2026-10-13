@@ -108,15 +108,18 @@ internal static partial class FunctionLibrary
     /// <c>@</c>, is General at its own limit, 11 characters beside the minus sign
     /// (<see cref="TextGeneral"/>). An empty code shows a number as empty text, as Excel was
     /// observed to (TEXTFN-018), and text and booleans as any code without a text section shows
-    /// them. A code the cell formats refuse and a number the format cannot show are
-    /// <c>#VALUE!</c>; the code's colour is dropped.
+    /// them. A number the format cannot show is <c>#VALUE!</c>, as Excel's <c>TEXT(-1,"yyyy")</c> was
+    /// (TEXTFN-015). A code the cell formats refuse is refused (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>,
+    /// the Formula's): Excel reads codes outside their subset, a fraction or a condition (TEXTFN-019, 020),
+    /// and the system locale's own spelling (TEXTFN-010), so whether Excel would answer is not known. The
+    /// code's colour is dropped.
     /// </summary>
     private static Operand FormatAsText(FunctionCall call)
     {
         if (!TryScalar(call, 0, out var value, out var failure)) return failure;
         if (!TryText(call, 1, out var code, out failure)) return failure;
         var format = NumberFormat.General;
-        if (code.Length > 0 && !NumberFormat.TryParseAsWritten(code, out format)) return Operand.Of(ErrorValue.Value);
+        if (code.Length > 0 && !NumberFormat.TryParseAsWritten(code, out format)) return call.Evaluator.Refuse();
 
         var culture = call.Evaluator.Culture;
         var shown = value switch

@@ -566,6 +566,7 @@ ExSheet.Engine.Value.Boolean.get -> bool
 ExSheet.Engine.Value.Equals(ExSheet.Engine.Value other) -> bool
 ExSheet.Engine.Value.Error.get -> ExSheet.Engine.ErrorValue
 ExSheet.Engine.Value.IsError.get -> bool
+ExSheet.Engine.Value.IsRefusal.get -> bool
 ExSheet.Engine.Value.Kind.get -> ExSheet.Engine.ValueKind
 ExSheet.Engine.Value.Number.get -> double
 ExSheet.Engine.Value.Text.get -> string!

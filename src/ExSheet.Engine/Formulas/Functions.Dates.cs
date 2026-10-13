@@ -99,7 +99,7 @@ internal static partial class FunctionLibrary
     /// EDATE-009, the seventeenth Windows run).
     /// </summary>
     /// <remarks>
-    /// Refused with <c>#VALUE!</c> until Excel is asked:
+    /// Refused (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's) until Excel is asked:
     /// <list type="bullet">
     /// <item>EDATE from serial 0 to January 1900, to March 1900 and to January 10000 (EDATE-018 to
     /// 020). The readings that give every observed answer part there
@@ -120,7 +120,8 @@ internal static partial class FunctionLibrary
         for (var i = 0; i < 2; i++)
         {
             if (!TryScalar(call, i, out var value, out var failure)) return failure;
-            if (value is { Kind: ValueKind.Boolean }) return Operand.Of(ErrorValue.Value);
+            // EOMONTH's months and EDATE's start were observed; the other argument of each is refused.
+            if (value is { Kind: ValueKind.Boolean }) return (i == 1) == endOfMonth ? Operand.Of(ErrorValue.Value) : call.Evaluator.Refuse();
         }
         if (!TryNumber(call, 0, out var start, out var error)) return error;
         if (!TryNumber(call, 1, out var months, out error)) return error;
@@ -134,7 +135,7 @@ internal static partial class FunctionLibrary
         if (toYear < 1900 || toYear > 10000) return Operand.Of(ErrorValue.Num);
         var toMonth = (int)(total - toYear * 12) + 1;
         var fromDayZero = !endOfMonth && day == 0;
-        if (fromDayZero && ((int)toYear, toMonth) is (1900, 1) or (1900, 3) or (10000, 1)) return Operand.Of(ErrorValue.Value);
+        if (fromDayZero && ((int)toYear, toMonth) is (1900, 1) or (1900, 3) or (10000, 1)) return call.Evaluator.Refuse();
         if (toYear > 9999) return Operand.Of(ErrorValue.Num);
         if (fromDayZero) return Operand.Of(Value.FromNumber(DateSerial.FromDate((int)toYear, toMonth, 1)!.Value - 1));
         var length = DateTime.DaysInMonth((int)toYear, toMonth);
@@ -186,7 +187,7 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// A date argument of NETWORKDAYS and WORKDAY, cut down to its day: a boolean typed is refused
-    /// with <c>#VALUE!</c> until Excel is asked (NETWORKDAYS-010, WORKDAY-011); below 0 or past 31
+    /// (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's) until Excel is asked (NETWORKDAYS-010, WORKDAY-011); below 0 or past 31
     /// December 9999 is <c>#NUM!</c>, -0.5 included (NETWORKDAYS-009, WORKDAY-010).
     /// Every serial from 0 is a day, the ones before 1 March 1900 included, and takes the day of
     /// the week WEEKDAY gives it (<see cref="DateSerial.DayOfWeek"/>): serial 0 a Saturday, 1 a
@@ -199,7 +200,7 @@ internal static partial class FunctionLibrary
         if (!TryScalar(call, index, out var value, out failure)) return false;
         if (value is { Kind: ValueKind.Boolean })
         {
-            failure = Operand.Of(ErrorValue.Value);
+            failure = call.Evaluator.Refuse();
             return false;
         }
         if (!TryNumber(call, index, out var number, out failure)) return false;
@@ -215,8 +216,8 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// The holidays argument: a range's numbers and a typed number, each truncated to its day. Text
-    /// among them is <c>#VALUE!</c>, as Excel's is (WORKDAY-005); a boolean among them is refused with
-    /// <c>#VALUE!</c> until Excel is asked; an Error Value is the result.
+    /// among them is <c>#VALUE!</c>, as Excel's is (WORKDAY-005); a boolean among them is refused
+    /// (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's) until Excel is asked; an Error Value is the result.
     /// </summary>
     private static bool TryHolidays(FunctionCall call, int index, out HashSet<int> holidays, out Operand failure)
     {
@@ -246,7 +247,7 @@ internal static partial class FunctionLibrary
             }
             if (value.Kind != ValueKind.Number)
             {
-                failure = Operand.Of(ErrorValue.Value);
+                failure = value.Kind == ValueKind.Boolean ? call.Evaluator.Refuse() : Operand.Of(ErrorValue.Value);
                 return false;
             }
             holidays.Add((int)Math.Floor(value.Number));

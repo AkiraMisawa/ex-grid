@@ -1310,6 +1310,9 @@
     /// that cannot be read as a Formula is taken as text, as Excel takes it (ADR-0048). A shown
     /// field that is a run of <c>#</c> is a value too wide for its source column, the value itself
     /// missing, and refuses the whole paste by name (<see cref="SheetClipboard.IsTooNarrowToShow"/>).
+    /// This Sheet's own copy of Values alone that holds a refused cell is refused whole by name too:
+    /// pasted as a value, the refusal would become an Error Value a Formula can catch (ADR-0047;
+    /// 2026-10-12, decided with the user: a refusal is never caught, anywhere).
     /// Every refusal is told to the grid (<see cref="global::ExGrid.Clipboard.GridPasteIntent.Refuse"/>)
     /// before this completes, so the Selection stays where it was, as in Excel (ADR-0050 item 3),
     /// and the notice stands until the user's own next action.
@@ -1342,8 +1345,20 @@
         }
         if (OwnCopy is { } own && own.IsPastedAs(intent.Values))
         {
-            await PasteEntriesAsync(own.Block, intent);
-            return;
+            if (own.Block is { } block)
+            {
+                await PasteEntriesAsync(block, intent);
+                return;
+            }
+            // The Sheet's own copy of Values alone, holding a refused cell: refused whole, rather than
+            // turn the refusal into an Error Value a Formula can catch (ADR-0047, 2026-10-12).
+            if (own.Refused is { } refused)
+            {
+                intent.Refuse();
+                Tell(SheetWords.PasteRefusedFormula(refused));
+                StateHasChanged();
+                return;
+            }
         }
         var sheet = CurrentSheet;
         var typed = new Dictionary<CellAddress, string>();

@@ -34,8 +34,8 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// MOD: <c>number - divisor*INT(number/divisor)</c>, as Microsoft defines it, so the result takes
     /// the divisor's sign, computed as every evaluation at the hardware's widths (a double's 53 bits, an
-    /// x87 register's 64) that gives each answer Excel was seen to give computes it, and <c>#VALUE!</c>
-    /// where they part (ADR-0047, ADR-0202). The remainder is exact: Excel's
+    /// x87 register's 64) that gives each answer Excel was seen to give computes it, and refused where
+    /// they part (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's; ADR-0047, ADR-0202). The remainder is exact: Excel's
     /// <c>MOD(123456789012,0.7)</c> is 0.5000078322611261 (MOD-017), where the identity in doubles is
     /// 0.5000152587890625, and its <c>MOD(1,0.1)</c> 0.09999999999999995 (MOD-020), where the double
     /// quotient, 10, gives 0. Where the remainder has the number's sign, the divisor is added and the sum
@@ -69,7 +69,7 @@ internal static partial class FunctionLibrary
         if (remainder == 0 || (remainder < 0) == (divisor < 0)) return Operand.Of(Evaluator.Number(remainder));
         return TurnedRemainder(remainder, divisor) is { } turned
             ? Operand.Of(Evaluator.Number(turned))
-            : Operand.Of(ErrorValue.Value);
+            : call.Evaluator.Refuse();
     }
 
     /// <summary>

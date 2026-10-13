@@ -631,7 +631,7 @@ public class SortAndUniqueBlankTests
         Assert.Equal(1, sheet.Evaluate(formula).Number);
     }
 
-    [Fact] // ADR-0125, ADR-0124: a Formula computed on demand inside another keeps its own refusal
+    [Fact] // ADR-0125, ADR-0124: a Formula computed on demand inside another keeps its own refusal, and the refusal it shows refuses the one that reads it
     public void ADR0125_a_formula_computed_on_demand_keeps_its_own_refusal()
     {
         var sheet = NewSheet();
@@ -646,11 +646,14 @@ public class SortAndUniqueBlankTests
 
         sheet.Enter("D1", "3");
 
-        Assert.Equal(ErrorValue.Value, sheet.Error("A6"));
+        Assert.True(sheet.Value("A6") is { IsRefusal: true });
+        // B2's own refusal, made before it computes A7 on demand, is not A7's.
         Assert.Equal(3, sheet.Number("A7"));
         Assert.Equal(0, sheet.Number("A9"));
-        Assert.Equal(4, sheet.Number("B1"));
-        Assert.Equal(ErrorValue.Value, sheet.Error("B2"));
+        // ISERROR does not catch A6's refusal read through INDIRECT: B1 is refused in turn (ADR-0047;
+        // 2026-10-12, decided with the user: a refusal is never caught, anywhere). It was 4 before.
+        Assert.True(sheet.Value("B1") is { IsRefusal: true });
+        Assert.True(sheet.Value("B2") is { IsRefusal: true });
         Assert.Equal(6, sheet.Number("B3"));
     }
 }

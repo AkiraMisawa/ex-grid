@@ -24,8 +24,8 @@ internal static partial class FunctionLibrary
     /// STDEV.P, SUM, VAR.S, VAR.P — over its references, each function as it reads a range; 101 to
     /// 111 give the same while no row can be hidden. A function number that is not whole is truncated
     /// toward zero, as Excel's is (SUBTOTAL-027: 9.5 is 9). A nested cell (<see cref="IsNested"/>)
-    /// is passed over. Refused with <c>#VALUE!</c>: another function number, and an argument that
-    /// is no reference when it is computed (a Formula that gives one something that can never be a
+    /// is passed over. <c>#VALUE!</c>, as Excel's was for 12 and 0 (SUBTOTAL-025, 026): another function
+    /// number; and an argument that is no reference when it is computed (a Formula that gives one something that can never be a
     /// Reference is refused on entry, <see cref="FunctionDefinition.ReferenceOnly"/>).
     /// </summary>
     private static Operand Subtotal(FunctionCall call)
@@ -52,8 +52,9 @@ internal static partial class FunctionLibrary
     /// array form takes a Value given directly as an array of that one Value: a number is its one
     /// number (AGGREGATE-039), and text or a boolean leaves no number, so <c>#NUM!</c> (AGGREGATE-061).
     /// Its k is read as LARGE's and SMALL's (<see cref="KthOf"/>).
-    /// Refused with <c>#VALUE!</c>: the function numbers of functions the engine does not support
-    /// (13, MODE.SNGL; 16 to 19, PERCENTILE and QUARTILE), a number or option outside Excel's, LARGE
+    /// Refused (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's): the function numbers of
+    /// functions the engine does not support (13, MODE.SNGL; 16 to 19, PERCENTILE and QUARTILE), where Excel
+    /// answers (AGGREGATE-027 to 031). <c>#VALUE!</c>, as Excel's: a number or option outside Excel's, LARGE
     /// or SMALL without its k (as Microsoft documents) or with an argument after it, and an argument
     /// of the reference form that is no reference when it is computed.
     /// </summary>
@@ -63,8 +64,8 @@ internal static partial class FunctionLibrary
         var option = 0;
         if (call.Has(1) && !TryTruncated(call, 1, out option, out failure)) return failure;
         if (function is < 1 or > 19 || option is < 0 or > 7) return Operand.Of(ErrorValue.Value);
-        // MODE.SNGL, PERCENTILE.INC, QUARTILE.INC, PERCENTILE.EXC and QUARTILE.EXC are not declared.
-        if (function is 13 or > 15) return Operand.Of(ErrorValue.Value);
+        // MODE.SNGL, PERCENTILE.INC, QUARTILE.INC, PERCENTILE.EXC and QUARTILE.EXC are not declared: refused.
+        if (function is 13 or > 15) return call.Evaluator.Refuse();
         var skipNested = option <= 3;
         var passOverErrors = option is 2 or 3 or 6 or 7;
         var values = new List<Value>();
