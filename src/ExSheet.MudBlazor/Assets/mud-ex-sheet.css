@@ -137,7 +137,9 @@ button.mud-ex-sheet-swatch { padding: 0; }
 .mud-ex-sheet-toolbar-item .mud-button-root { text-transform: none; }
 .mud-ex-sheet-toolbar-item .mud-icon-button { padding: 4px; }
 .mud-ex-sheet-toolbar-split { display: inline-flex; align-items: center; }
-.mud-ex-sheet-toolbar-arrow .mud-icon-button { padding: 4px 0; min-width: 0; }
-.mud-ex-sheet-toolbar-arrow .mud-icon-button .mud-icon-root { font-size: 1.1rem; }
-.mud-ex-sheet-toolbar-menu .mud-button-root { min-width: 0; padding: 2px 6px; }
+.mud-ex-sheet-toolbar-item .mud-ex-sheet-toolbar-arrow { padding: 4px 0; min-width: 0; }
+.mud-ex-sheet-toolbar-arrow .mud-icon-root { font-size: 1.1rem; }
+.mud-ex-sheet-toolbar-item .mud-ex-sheet-toolbar-menu { min-width: 0; padding: 2px 6px; }
+/* A list's MudMenu draws no button: it stands, empty, at its item's foot, where the list opens. */
+.mud-ex-sheet-toolbar-list { width: 0; height: 0; }
 .mud-ex-sheet-toolbar-separator { margin: 6px 2px; }

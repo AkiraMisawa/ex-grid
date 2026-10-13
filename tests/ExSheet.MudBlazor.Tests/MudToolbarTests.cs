@@ -69,6 +69,25 @@ public class MudToolbarTests : MudSheetTestContext
         Assert.NotNull(Wrapper(page, "Number Format").QuerySelector(".mud-menu"));
     }
 
+    [Fact] // ADR-0100, SH-50 (decided with the user, 2026-10-13): the toolbar is one Tab stop under MudBlazor too: no control inside the band, a list's button among them, takes Tab
+    public void No_control_inside_the_band_takes_tab()
+    {
+        var page = RenderPage(showToolbar: true);
+
+        var band = page.Find(".ex-sheet-toolbar");
+        Assert.Equal("0", band.GetAttribute("tabindex"));
+        // Every button inside it is out of the Tab order, and nothing inside it is put into it: MudMenu's
+        // own button, and the wrapper its ActivatorContent is drawn in, both took Tab.
+        var tabbable = band.QuerySelectorAll("button, a[href], input, select, textarea, [tabindex]")
+            .Where(e => e.GetAttribute("tabindex") is not { } at || int.Parse(at, System.Globalization.CultureInfo.InvariantCulture) >= 0)
+            .Select(e => e.GetAttribute("aria-label") ?? e.ClassName)
+            .ToList();
+        Assert.Empty(tabbable);
+        // The lists' buttons are still there to press.
+        Assert.NotNull(Wrapper(page, "Number Format").QuerySelector("button.mud-ex-sheet-toolbar-menu[tabindex='-1']"));
+        Assert.Equal(3, page.FindAll("button.mud-ex-sheet-toolbar-arrow[tabindex='-1']").Count);
+    }
+
     [Fact] // ADR-0100, SH-50: a pointer press on a MudBlazor item does not take DOM focus
     public void A_pointer_press_does_not_take_focus()
     {
@@ -112,7 +131,7 @@ public class MudToolbarTests : MudSheetTestContext
         var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
         await GoToAsync(page, "B2");
 
-        await Wrapper(page, "Fill Colour").QuerySelector(".mud-ex-sheet-toolbar-arrow button")!.ClickAsync(new MouseEventArgs());
+        await Wrapper(page, "Fill Colour").QuerySelector("button.mud-ex-sheet-toolbar-arrow")!.ClickAsync(new MouseEventArgs());
         page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("button.mud-ex-sheet-swatch")));
         await page.FindAll("button.mud-ex-sheet-swatch").Single(b => b.GetAttribute("aria-label") == "Green").ClickAsync(new MouseEventArgs());
 
@@ -175,7 +194,7 @@ public class MudToolbarTests : MudSheetTestContext
     {
         var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
         await GoToAsync(page, "B2");
-        await Wrapper(page, "Borders").QuerySelector(".mud-ex-sheet-toolbar-arrow button")!.ClickAsync(new MouseEventArgs());
+        await Wrapper(page, "Borders").QuerySelector("button.mud-ex-sheet-toolbar-arrow")!.ClickAsync(new MouseEventArgs());
         page.WaitForAssertion(() => Assert.Single(Lists(page)));
         // A choice holds DOM focus, as MudBlazor's own keys would have put it there.
         await page.FindAll(".mud-ex-sheet-toolbar-choices .mud-menu-item").First().FocusAsync(new FocusEventArgs());
@@ -239,7 +258,7 @@ public class MudToolbarTests : MudSheetTestContext
     {
         var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
         await GoToAsync(page, "B2");
-        await Wrapper(page, "Borders").QuerySelector(".mud-ex-sheet-toolbar-arrow button")!.ClickAsync(new MouseEventArgs());
+        await Wrapper(page, "Borders").QuerySelector("button.mud-ex-sheet-toolbar-arrow")!.ClickAsync(new MouseEventArgs());
         page.WaitForAssertion(() => Assert.Single(Lists(page)));
         var taken = TakeBackCount;
 
@@ -307,15 +326,15 @@ public class MudToolbarTests : MudSheetTestContext
         Assert.Equal(taken + 1, TakeBackCount);
     }
 
-    [Fact] // ADR-0100 (the verifier's round-2 finding 1, a keyboard trap): a key typed on MudMenu's button, which a Tab reaches inside the band, is the button's: the band holds nothing and presses nothing
+    [Fact] // ADR-0100 (the verifier's round-2 finding 1, a keyboard trap): a key typed on a list's button inside the band, should DOM focus reach it (a script, assistive technology), is the button's: the band holds nothing and presses nothing
     public async Task A_key_on_a_menus_button_is_its_own()
     {
         var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
         await GoToAsync(page, "B2");
         await page.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
-        // Tab takes DOM focus on to the Font Colour's arrow, MudMenu's own button.
+        // DOM focus moves on to the Font Colour's arrow, which Tab no longer reaches but a script can.
         await page.Find(".ex-sheet-toolbar").FocusOutAsync(new FocusEventArgs());
-        var arrow = Wrapper(page, "Font Colour").QuerySelector(".mud-ex-sheet-toolbar-arrow button")!;
+        var arrow = Wrapper(page, "Font Colour").QuerySelector("button.mud-ex-sheet-toolbar-arrow")!;
         var taken = TakeBackCount;
 
         await arrow.KeyDownAsync(new KeyboardEventArgs { Key = "x" });

@@ -67,13 +67,12 @@
             break;
         case ToolbarItemKind.Menu:
             <MudTooltip Text="@Context.Tooltip" Placement="Placement.Top">
-                <MudMenu @ref="_menu" Label="@(Context.Text ?? Context.Name)" EndIcon="@Icons.Material.Filled.ArrowDropDown"
-                         Size="Size.Small" Variant="Variant.Text" Dense="true" Disabled="!Context.Enabled"
-                         AriaLabel="@Context.Name" OpenChanged="OnOpenChangedAsync" MaxHeight="360"
-                         AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="mud-ex-sheet-toolbar-menu">
-                    @Choices
-                </MudMenu>
+                <MudButton Variant="Variant.Text" Size="Size.Small" EndIcon="@Icons.Material.Filled.ArrowDropDown"
+                           Disabled="!Context.Enabled" tabindex="-1" aria-label="@Context.Name" aria-haspopup="menu"
+                           aria-expanded="@(_open ? "true" : "false")" OnClick="ToggleListAsync"
+                           Class="mud-ex-sheet-toolbar-menu">@(Context.Text ?? Context.Name)</MudButton>
             </MudTooltip>
+            @List(360)
             break;
         case ToolbarItemKind.Split:
             <span class="mud-ex-sheet-toolbar-split" role="group" aria-label="@Context.Name">
@@ -82,12 +81,12 @@
                                    tabindex="-1" aria-label="@Context.Name" OnClick="() => Context.Invoke()"
                                    Style="@SwatchStyle" Class="mud-ex-sheet-toolbar-face" />
                 </MudTooltip>
-                <MudMenu @ref="_menu" Icon="@Icons.Material.Filled.ArrowDropDown" Size="Size.Small" Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft"
-                         Disabled="!Context.Enabled" AriaLabel="@($"{Context.Name}, more")" OpenChanged="OnOpenChangedAsync"
-                         MaxHeight="420" Class="mud-ex-sheet-toolbar-arrow">
-                    @Choices
-                </MudMenu>
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowDropDown" Size="Size.Small" Disabled="!Context.Enabled"
+                               tabindex="-1" aria-label="@($"{Context.Name}, more")" aria-haspopup="menu"
+                               aria-expanded="@(_open ? "true" : "false")" OnClick="ToggleListAsync"
+                               Class="mud-ex-sheet-toolbar-arrow" />
             </span>
+            @List(420)
             break;
         default:
             <MudTooltip Text="@Context.Tooltip" Placement="Placement.Top">
@@ -174,6 +173,24 @@
     private string? SwatchStyle => Context.Colour is { IsAutomatic: false } colour
         ? $"border-bottom: 3px solid {colour}; border-radius: 0"
         : null;
+
+    // The list: a MudMenu that draws no button of its own (no Label, Icon or ActivatorContent), so the
+    // toolbar keeps its one Tab stop (SH-50; decided with the user, 2026-10-13). MudMenu's own button
+    // carries no tabindex a Chrome can set, and the wrapper its ActivatorContent is drawn in takes Tab.
+    // The item's own button opens it, as MudMenu's would; the menu stands at the item's foot, where
+    // its list opens.
+    private RenderFragment List(int maxHeight) => __builder =>
+    {
+        <MudMenu @ref="_menu" Disabled="!Context.Enabled" OpenChanged="OnOpenChangedAsync" MaxHeight="maxHeight"
+                 AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Dense="true"
+                 Class="mud-ex-sheet-toolbar-list" Style="left: 0; bottom: 0">
+            @Choices
+        </MudMenu>
+    };
+
+    // A press on the item's button, as MudMenu's own button would answer it: the list opens, or closes.
+    private Task ToggleListAsync() =>
+        _menu is null ? Task.CompletedTask : _open ? _menu.CloseMenuAsync() : _menu.OpenMenuAsync(EventArgs.Empty);
 
     private RenderFragment Choices => builder =>
     {
