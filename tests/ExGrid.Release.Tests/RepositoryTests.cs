@@ -212,7 +212,7 @@ public partial class RepositoryTests
         var vz18 = Assert.Single(index, r => r.Row == "VZ-18");
         Assert.Null(vz18.Record);
         Assert.Equal(new KnownLimitation("0.1.0", "2026-10-12",
-            "VZ-18, the check on the remote-isolation (Citrix) PC, is a Known limitation of 0.1.0. It is not run, and the 2026-10-08 observation, which names no commit, is not taken as its record."), vz18.Limitation);
+            "VZ-18, the check on the remote-isolation PC, is a Known limitation of 0.1.0. It is not run, and the 2026-10-08 observation, which names no commit, is not taken as its record."), vz18.Limitation);
         Assert.Equal("0.1.0", Assert.Single(table.Rows, r => r.Row == "VZ-18").KnownLimitation);
         Assert.All(index.Where(r => r.Row != "VZ-18"), r => Assert.Null(r.Limitation));
     }

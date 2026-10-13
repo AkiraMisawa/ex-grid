@@ -226,7 +226,7 @@
     },
     {
       "row": "VZ-18",
-      "where": "the Citrix PC",
+      "where": "the remote-isolation PC",
       "paths": [
         "src/ExGrid/Assets/",
         "src/ExGrid/wwwroot/",
@@ -245,7 +245,7 @@
       "knownLimitation": {
         "version": "0.1.0",
         "decided": "2026-10-12",
-        "decision": "VZ-18, the check on the remote-isolation (Citrix) PC, is a Known limitation of 0.1.0. It is not run, and the 2026-10-08 observation, which names no commit, is not taken as its record."
+        "decision": "VZ-18, the check on the remote-isolation PC, is a Known limitation of 0.1.0. It is not run, and the 2026-10-08 observation, which names no commit, is not taken as its record."
       },
       "note": "Checked on 2026-10-08 on that PC against a v0.1.0-beta.2 build carrying the repaint, published to the Docs Site (ADR-0012's note), but no record under verification/ names its commit; verification/2026-10-09-windows-remote-isolation/README.md records the investigation that followed, not the row. Put out of 0.1.0 by the user's decision of 2026-10-12, in 'knownLimitation'."
     },

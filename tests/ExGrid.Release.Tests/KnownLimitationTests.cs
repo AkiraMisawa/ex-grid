@@ -21,7 +21,7 @@ public class KnownLimitationTests
     private static string Marked(Repo repo, Limited? limited, (string Commit, string Path, string Verdict)? record = null)
     {
         repo.Write("src/Code/a.cs", "a");
-        var row = new Row("VZ-18", "the Citrix PC", ["src/Code/"], record, Limited: limited);
+        var row = new Row("VZ-18", "the remote-isolation PC", ["src/Code/"], record, Limited: limited);
         return repo.Write("verification/by-hand.json", Fixture.Index(row)).Write("docs/definition-of-done.md", Fixture.Table(row)).Commit();
     }
 
@@ -37,7 +37,7 @@ public class KnownLimitationTests
         var report = Check(repo, commit, version);
 
         Assert.Empty(report.Refusals);
-        Assert.Contains(report.Notices, n => n.Contains("Not run, and not holding, as a Known limitation of 0.1.0 by decision: VZ-18 on the Citrix PC")
+        Assert.Contains(report.Notices, n => n.Contains("Not run, and not holding, as a Known limitation of 0.1.0 by decision: VZ-18 on the remote-isolation PC")
             && n.Contains("decision of 2026-10-12") && n.Contains("VZ-18 is a Known limitation of 0.1.0."));
         Assert.DoesNotContain(report.Notices, n => n.Contains("Holding on their records"));
         Assert.Contains(report.Notices, n => n.Contains("holds at") && n.Contains("but the Known limitations of 0.1.0 named above"));
@@ -54,7 +54,7 @@ public class KnownLimitationTests
 
         var refusal = Assert.Single(Check(repo, commit, version).Refusals);
 
-        Assert.Contains("VZ-18 on the Citrix PC has never been recorded", refusal.Message);
+        Assert.Contains("VZ-18 on the remote-isolation PC has never been recorded", refusal.Message);
         Assert.Contains("It is a Known limitation of 0.1.0 by the decision of 2026-10-12, which does not reach", refusal.Message);
     }
 
@@ -66,7 +66,7 @@ public class KnownLimitationTests
 
         var refusal = Assert.Single(Check(repo, commit, "0.1.0").Refusals);
 
-        Assert.Contains("VZ-18 on the Citrix PC has never been recorded", refusal.Message);
+        Assert.Contains("VZ-18 on the remote-isolation PC has never been recorded", refusal.Message);
         Assert.DoesNotContain("Known limitation", refusal.Message);
     }
 
@@ -81,7 +81,7 @@ public class KnownLimitationTests
 
         var report = Check(repo, commit, "0.1.0");
 
-        Assert.Contains(report.Refusals, r => r.Message.Contains("VZ-18 on the Citrix PC in verification/by-hand.json names a record and 'knownLimitation'"));
+        Assert.Contains(report.Refusals, r => r.Message.Contains("VZ-18 on the remote-isolation PC in verification/by-hand.json names a record and 'knownLimitation'"));
     }
 
     [Theory] // ADR-0208 (2026-10-12): a mark without its version, its day or its decision is refused, so a row never stops being asked for without saying why
@@ -98,7 +98,7 @@ public class KnownLimitationTests
 
         var report = Check(repo, commit, "0.1.0");
 
-        Assert.Contains(report.Refusals, r => r.Message.Contains($"VZ-18 on the Citrix PC's 'knownLimitation' in verification/by-hand.json {expected}"));
+        Assert.Contains(report.Refusals, r => r.Message.Contains($"VZ-18 on the remote-isolation PC's 'knownLimitation' in verification/by-hand.json {expected}"));
         // Malformed, it puts nothing out: the row is refused as never recorded too.
         Assert.Contains(report.Refusals, r => r.Message.Contains("has never been recorded"));
     }
@@ -108,8 +108,8 @@ public class KnownLimitationTests
     {
         using var repo = new Repo();
         repo.Write("src/Code/a.cs", "a")
-            .Write("verification/by-hand.json", "{\"rows\": [{\"row\": \"VZ-18\", \"where\": \"the Citrix PC\", \"paths\": [\"src/Code/\"], \"record\": null, \"knownLimitation\": \"0.1.0\"}]}")
-            .Write("docs/definition-of-done.md", Fixture.Table(new Row("VZ-18", "the Citrix PC", ["src/Code/"])));
+            .Write("verification/by-hand.json", "{\"rows\": [{\"row\": \"VZ-18\", \"where\": \"the remote-isolation PC\", \"paths\": [\"src/Code/\"], \"record\": null, \"knownLimitation\": \"0.1.0\"}]}")
+            .Write("docs/definition-of-done.md", Fixture.Table(new Row("VZ-18", "the remote-isolation PC", ["src/Code/"])));
         var commit = repo.Commit();
 
         var report = Check(repo, commit, "0.1.0");
@@ -125,7 +125,7 @@ public class KnownLimitationTests
 
         var refusal = Assert.Single(Check(repo, commit, "0.1.0").Refusals);
 
-        Assert.Contains("VZ-18 on the Citrix PC: verification/by-hand.json marks it a Known limitation of 0.1.0, and docs/definition-of-done.md's table does not say so", refusal.Message);
+        Assert.Contains("VZ-18 on the remote-isolation PC: verification/by-hand.json marks it a Known limitation of 0.1.0, and docs/definition-of-done.md's table does not say so", refusal.Message);
     }
 
     [Fact] // ADR-0208 (2026-10-12): a table that says a row is a Known limitation the index does not mark is refused, and the row is not put out
@@ -133,8 +133,8 @@ public class KnownLimitationTests
     {
         using var repo = new Repo();
         repo.Write("src/Code/a.cs", "a")
-            .Write("verification/by-hand.json", Fixture.Index(new Row("VZ-18", "the Citrix PC", ["src/Code/"])))
-            .Write("docs/definition-of-done.md", Fixture.Table(new Row("VZ-18", "the Citrix PC", ["src/Code/"], Limited: new Limited())));
+            .Write("verification/by-hand.json", Fixture.Index(new Row("VZ-18", "the remote-isolation PC", ["src/Code/"])))
+            .Write("docs/definition-of-done.md", Fixture.Table(new Row("VZ-18", "the remote-isolation PC", ["src/Code/"], Limited: new Limited())));
         var commit = repo.Commit();
 
         var refusals = Check(repo, commit, "0.1.0").Refusals;
@@ -149,7 +149,7 @@ public class KnownLimitationTests
         var report = new Report();
         var table = ByHandTable.Parse("dod.md",
             "**Rows checked by hand, and the code each covers**\n\n| Row | Where | Checked by hand | The code it covers |\n|---|---|---|---|\n"
-            + "| **VZ-18** | the Citrix PC | A check. *(2026-10-12, decided with the user: a Known limitation of `0.1.0`.)* | `src/A/` |\n"
+            + "| **VZ-18** | the remote-isolation PC | A check. *(2026-10-12, decided with the user: a Known limitation of `0.1.0`.)* | `src/A/` |\n"
             + "| **VZ-14** | Windows | A check. | `src/B/` |\n"
             + "| **KB-3** | macOS | A Known limitation of `0.1.0` and a Known limitation of `0.2.0`. | `src/C/` |\n",
             report)!;
@@ -163,7 +163,7 @@ public class KnownLimitationTests
     {
         using var repo = new Repo();
         var x = Fixture.ReadyToSignOff(repo);
-        var row = new Row("VZ-18", "the Citrix PC", ["src/Code/"], Limited: new Limited());
+        var row = new Row("VZ-18", "the remote-isolation PC", ["src/Code/"], Limited: new Limited());
         var held = new Row("VZ-14", "Windows", ["src/Code/"], (repo.Git.Commit($"{x}~1")!, $"{Fixture.RunDirectory}/report.md", "pass"));
         var commit = repo.Write("verification/by-hand.json", Fixture.Index(held, row)).Write("docs/definition-of-done.md", Fixture.Table(held, row)).Commit();
 
@@ -174,6 +174,6 @@ public class KnownLimitationTests
 
         Assert.Empty(candidate.Refusals);
         Assert.Contains(candidate.Notices, n => n.Contains("as a Known limitation of 0.1.0 by decision"));
-        Assert.Contains("VZ-18 on the Citrix PC has never been recorded", Assert.Single(next.Refusals).Message);
+        Assert.Contains("VZ-18 on the remote-isolation PC has never been recorded", Assert.Single(next.Refusals).Message);
     }
 }

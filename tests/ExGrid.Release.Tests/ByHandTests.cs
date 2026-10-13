@@ -982,10 +982,10 @@ public class ByHandTests
         var table = ByHandTable.Parse("dod.md",
             $"**{ByHandTable.Heading}**\n\n| Row | Where | Checked by hand | The code it covers |\n|---|---|---|---|\n"
             + "| **§21.11** | Windows | Where focus is, as `document.activeElement` reads it | `src/A/`, `src/B.cs` |\n"
-            + "| `FN-12e` | the Citrix PC | A check | `src/C/` |\n\nAfter the table.\n", report);
+            + "| `FN-12e` | the remote-isolation PC | A check | `src/C/` |\n\nAfter the table.\n", report);
 
         Assert.Empty(report.Refusals);
-        Assert.Equal(["§21.11 on Windows", "FN-12e on the Citrix PC"], table!.Rows.Select(r => r.Name));
+        Assert.Equal(["§21.11 on Windows", "FN-12e on the remote-isolation PC"], table!.Rows.Select(r => r.Name));
         Assert.Equal(["src/A/", "src/B.cs"], table.Rows[0].Paths);
     }
 
