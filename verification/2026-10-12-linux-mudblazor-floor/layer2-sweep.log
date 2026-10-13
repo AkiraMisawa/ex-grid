@@ -1,0 +1,180 @@
+# Layer 2 of the three Wrappers with MudBlazor pinned in the test project to each published 9.x (results.md §6).
+# The branch at be20e74e. For each version: <PackageReference Include="MudBlazor" Version="<v>" /> added to the
+# test project, then 'nix develop -c dotnet test tests/<project>'; the project put back after. Trimmed to each run's
+# summary, each failing test's name and first assertion line, and the probes' readings (zz-layer2-probes.cs).
+# The two Wrappers below had no probe; the MudBlazor.dll their last run (9.11.0) loaded was read back as 9.11.0.0.
+
+## ExGrid.MudBlazor.Tests (with the Operator probe, which asserts nothing: 236 = 235 tests + the probe)
+== 9.0.0
+Passed! - Failed: 0, Passed: 236, Skipped: 0, Total: 236 - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  operator probe: focusable DIV role= aria-label=
+  operator probe: input type=hidden role= aria-label=
+== 9.1.0
+Passed! - Failed: 0, Passed: 236, Skipped: 0, Total: 236 - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  operator probe: focusable DIV role= aria-label=
+  operator probe: input type=hidden role= aria-label=
+== 9.2.0
+Passed! - Failed: 0, Passed: 236, Skipped: 0, Total: 236 - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  operator probe: focusable DIV role= aria-label=
+  operator probe: input type=hidden role= aria-label=
+== 9.3.0
+Failed! - Failed: 7, Passed: 229, Skipped: 0, Total: 236 - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "de-DE", typed: "1234.5", said: "is not a value"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "de-DE", typed: "1.234", said: "reads two ways"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "en-US", typed: "1234,5", said: "is not a value"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "ja-JP", typed: "1234,5", said: "is not a value"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "fr-FR", typed: "1.234", said: "is not a value"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.The_chromes_own_word_for_a_refusal_stands: Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudDeclaredDateOperandTests.A_date_not_of_the_declared_type_is_refused_by_name(dateType: DateTimeOffset, typed: "2026-01-05 09:00:00", said: "has no offset"): Assert.Contains() Failure: Sub-string not found
+    String:    "ValueValue"
+    Not found: "“1234.5” is not a value"
+    String:    "ValueValue"
+    Not found: "“1.234” reads two ways"
+    String:    "ValueValue"
+    Not found: "“1234,5” is not a value"
+    String:    "ValueValue"
+    Not found: "“1234,5” is not a value"
+    String:    "ValueValue"
+    Not found: "“1.234” is not a value"
+    String:    "ValueValue"
+    Not found: "Zweideutig: ohne Punkt eingeben."
+    String:    "ValueValue"
+    Not found: "“2026-01-05 09:00:00” has no offset"
+  operator probe: focusable DIV role= aria-label=
+  operator probe: input type=hidden role= aria-label=
+== 9.4.0
+Failed! - Failed: 7, Passed: 229, Skipped: 0, Total: 236 - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "de-DE", typed: "1234.5", said: "is not a value"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "de-DE", typed: "1.234", said: "reads two ways"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "en-US", typed: "1234,5", said: "is not a value"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "ja-JP", typed: "1234,5", said: "is not a value"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "fr-FR", typed: "1.234", said: "is not a value"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.The_chromes_own_word_for_a_refusal_stands: Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudDeclaredDateOperandTests.A_date_not_of_the_declared_type_is_refused_by_name(dateType: DateTimeOffset, typed: "2026-01-05 09:00:00", said: "has no offset"): Assert.Contains() Failure: Sub-string not found
+    String:    "ValueValue"
+    Not found: "“1234.5” is not a value"
+    String:    "ValueValue"
+    Not found: "“1.234” reads two ways"
+    String:    "ValueValue"
+    Not found: "“1234,5” is not a value"
+    String:    "ValueValue"
+    Not found: "“1234,5” is not a value"
+    String:    "ValueValue"
+    Not found: "“1.234” is not a value"
+    String:    "ValueValue"
+    Not found: "Zweideutig: ohne Punkt eingeben."
+    String:    "ValueValue"
+    Not found: "“2026-01-05 09:00:00” has no offset"
+  operator probe: focusable DIV role= aria-label=
+  operator probe: input type=hidden role=combobox aria-label=Operator
+== 9.5.0
+Failed! - Failed: 7, Passed: 229, Skipped: 0, Total: 236 - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  failed: ExGrid.MudBlazor.Tests.MudDeclaredDateOperandTests.A_date_not_of_the_declared_type_is_refused_by_name(dateType: DateTimeOffset, typed: "2026-01-05 09:00:00", said: "has no offset"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "de-DE", typed: "1234.5", said: "is not a value"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "de-DE", typed: "1.234", said: "reads two ways"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "en-US", typed: "1234,5", said: "is not a value"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "ja-JP", typed: "1234,5", said: "is not a value"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.A_text_that_does_not_read_one_way_is_refused_by_name(culture: "fr-FR", typed: "1.234", said: "is not a value"): Assert.Contains() Failure: Sub-string not found
+  failed: ExGrid.MudBlazor.Tests.MudNumberOperandTests.The_chromes_own_word_for_a_refusal_stands: Assert.Contains() Failure: Sub-string not found
+    String:    "ValueValue"
+    Not found: "“2026-01-05 09:00:00” has no offset"
+    String:    "ValueValue"
+    Not found: "“1234.5” is not a value"
+    String:    "ValueValue"
+    Not found: "“1.234” reads two ways"
+    String:    "ValueValue"
+    Not found: "“1234,5” is not a value"
+    String:    "ValueValue"
+    Not found: "“1234,5” is not a value"
+    String:    "ValueValue"
+    Not found: "“1.234” is not a value"
+    String:    "ValueValue"
+    Not found: "Zweideutig: ohne Punkt eingeben."
+  operator probe: focusable DIV role= aria-label=
+  operator probe: input type=hidden role=combobox aria-label=Operator
+== 9.6.0
+Passed! - Failed: 0, Passed: 236, Skipped: 0, Total: 236 - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  operator probe: focusable DIV role=combobox aria-label=Operator
+  operator probe: input type=hidden role=combobox aria-label=Operator
+== 9.7.0
+Passed! - Failed: 0, Passed: 236, Skipped: 0, Total: 236 - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  operator probe: focusable DIV role=combobox aria-label=Operator
+  operator probe: input type=hidden role=combobox aria-label=Operator
+== 9.8.0
+Passed! - Failed: 0, Passed: 236, Skipped: 0, Total: 236 - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  operator probe: focusable DIV role=combobox aria-label=Operator
+  operator probe: input type=hidden role=combobox aria-label=Operator
+== 9.9.0
+Passed! - Failed: 0, Passed: 236, Skipped: 0, Total: 236 - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  operator probe: focusable DIV role=combobox aria-label=Operator
+  operator probe: input type=hidden role=combobox aria-label=Operator
+== 9.10.0
+Passed! - Failed: 0, Passed: 236, Skipped: 0, Total: 236 - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  operator probe: focusable DIV role=combobox aria-label=Operator
+  operator probe: input type=hidden role=combobox aria-label=Operator
+== 9.11.0
+Passed! - Failed: 0, Passed: 236, Skipped: 0, Total: 236 - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  operator probe: focusable DIV role=combobox aria-label=Operator
+  operator probe: input type=hidden role=combobox aria-label=Operator
+
+## The operand probe, run alone at 9.5.0 and 9.6.0 (the refused operand's markup after typing 1.234 in de-DE)
+== 9.5.0
+<div blazor:onclick="7" class="mud-input-control mud-input-control-margin-dense mud-input-outlined-with-label mud-input-input-control mud-input-sizing-fixed mud-ex-grid-filter-operand"><div class="mud-input-control-input-container"><div class="mud-input mud-input-outlined mud-input-outlined-with-label mud-input-margin-dense mud-shrink mud-typography-subtitle1 mud-input-sizing-fixed"><input class="mud-input-slot mud-input-root mud-input-root-outlined mud-input-root-margin-dense" id="mudinputf8atuwpa" type="text" blazor:onblur="19" inputmode="text" blazor:onkeydown="20" blazor:onkeyup="21" maxlength="524288" aria-invalid="false" aria-required="false" value="1.234" blazor:oninput="36" blazor:elementreference=""><div class="mud-input-slot mud-input-root mud-input-root-outlined mud-input-root-margin-dense" style="display:none" tabindex="-1" blazor:elementreference=""></div><fieldset class="mud-input-outlined-border"><legend>Value</legend></fieldset></div><label class="mud-input-label mud-input-label-animated mud-input-label-outlined mud-input-label-margin-dense mud-input-label-inputcontrol" for="mudinputf8atuwpa">Value</label></div></div>
+== 9.6.0
+<div blazor:onclick="7" class="mud-input-control mud-input-control-margin-dense mud-input-error mud-input-outlined-with-label mud-input-input-control mud-input-sizing-fixed mud-ex-grid-filter-operand"><div class="mud-input-control-input-container"><div class="mud-input mud-input-outlined mud-input-outlined-with-label mud-input-margin-dense mud-shrink mud-input-error mud-typography-subtitle1 mud-input-sizing-fixed"><input class="mud-input-slot mud-input-root mud-input-root-outlined mud-input-root-margin-dense" id="mudinput8inyyn1t" type="text" blazor:onblur="19" inputmode="text" blazor:onkeydown="20" blazor:onkeyup="21" maxlength="524288" aria-invalid="true" aria-required="false" value="1.234" blazor:oninput="36" blazor:elementreference=""><div class="mud-input-slot mud-input-root mud-input-root-outlined mud-input-root-margin-dense" style="display:none" tabindex="-1" blazor:elementreference=""></div><fieldset class="mud-input-outlined-border"><legend>Value</legend></fieldset></div><label class="mud-input-label mud-input-label-animated mud-input-label-outlined mud-input-label-margin-dense mud-input-error mud-input-label-inputcontrol" for="mudinput8inyyn1t">Value</label></div><div class="mud-input-control-helper-container px-2"><div class="d-flex mud-input-helper-text mud-input-error"><div class="me-auto">“1.234” reads two ways: as 1234, and as 1.234. Type 1234 without separators, or 1,234 for the other.</div></div></div></div>
+
+## The Apply probe, run alone at 9.5.0
+== 9.5.0
+apply disabled=True applied=0 operand text=ValueValue
+
+## ExSheet.MudBlazor.Tests
+== 9.0.0
+Passed! - Failed: 0, Passed: 62, Skipped: 0, Total: 62 - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+== 9.1.0
+Passed! - Failed: 0, Passed: 62, Skipped: 0, Total: 62 - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+== 9.2.0
+Passed! - Failed: 0, Passed: 62, Skipped: 0, Total: 62 - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+== 9.3.0
+Passed! - Failed: 0, Passed: 62, Skipped: 0, Total: 62 - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+== 9.4.0
+Passed! - Failed: 0, Passed: 62, Skipped: 0, Total: 62 - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+== 9.5.0
+Passed! - Failed: 0, Passed: 62, Skipped: 0, Total: 62 - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+== 9.6.0
+Passed! - Failed: 0, Passed: 62, Skipped: 0, Total: 62 - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+== 9.7.0
+Passed! - Failed: 0, Passed: 62, Skipped: 0, Total: 62 - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+== 9.8.0
+Passed! - Failed: 0, Passed: 62, Skipped: 0, Total: 62 - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+== 9.9.0
+Passed! - Failed: 0, Passed: 62, Skipped: 0, Total: 62 - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+== 9.10.0
+Passed! - Failed: 0, Passed: 62, Skipped: 0, Total: 62 - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+== 9.11.0
+Passed! - Failed: 0, Passed: 62, Skipped: 0, Total: 62 - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+
+## ExPivot.MudBlazor.Tests
+== 9.0.0
+Passed! - Failed: 0, Passed: 76, Skipped: 0, Total: 76 - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+== 9.1.0
+Passed! - Failed: 0, Passed: 76, Skipped: 0, Total: 76 - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+== 9.2.0
+Passed! - Failed: 0, Passed: 76, Skipped: 0, Total: 76 - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+== 9.3.0
+Passed! - Failed: 0, Passed: 76, Skipped: 0, Total: 76 - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+== 9.4.0
+Passed! - Failed: 0, Passed: 76, Skipped: 0, Total: 76 - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+== 9.5.0
+Passed! - Failed: 0, Passed: 76, Skipped: 0, Total: 76 - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+== 9.6.0
+Passed! - Failed: 0, Passed: 76, Skipped: 0, Total: 76 - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+== 9.7.0
+Passed! - Failed: 0, Passed: 76, Skipped: 0, Total: 76 - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+== 9.8.0
+Passed! - Failed: 0, Passed: 76, Skipped: 0, Total: 76 - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+== 9.9.0
+Passed! - Failed: 0, Passed: 76, Skipped: 0, Total: 76 - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+== 9.10.0
+Passed! - Failed: 0, Passed: 76, Skipped: 0, Total: 76 - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+== 9.11.0
+Passed! - Failed: 0, Passed: 76, Skipped: 0, Total: 76 - ExPivot.MudBlazor.Tests.dll (net10.0|x64)

@@ -91,6 +91,40 @@ public class MudNumberOperandTests : MudTestContext
         Assert.Empty(_applied);
     }
 
+    [Fact] // WR-10 / ADR-0205, WR-2 / ADR-0023, principle 1: a refused operand keeps its words — the field marked in error, aria-invalid, the refusal under it — through the echo of its own text, a second refusal after a reading, a submit and the renders after it. MudBlazor 9.3.0 to 9.5.0 re-validated a touched field on that echo and wrote its Error back to false over the Wrapper's: Apply stayed unavailable and nothing said why
+    public async Task A_refused_operand_keeps_its_words()
+    {
+        using var _ = new CultureScope("de-DE");
+        var cut = RenderPanel(null);
+        var input = () => cut.Find(".mud-ex-grid-filter-operand input");
+
+        await input().InputAsync(new ChangeEventArgs { Value = "1.234" });
+        SaysTheRefusal(cut, "“1.234” reads two ways");
+
+        await input().InputAsync(new ChangeEventArgs { Value = "1234" });
+        Assert.Equal("false", input().GetAttribute("aria-invalid"));
+        Assert.False(cut.Find(".mud-ex-grid-filter-apply").HasAttribute("disabled"));
+
+        await input().InputAsync(new ChangeEventArgs { Value = "1234.5" });
+        SaysTheRefusal(cut, "“1234.5” is not a value");
+        await cut.Find("form").SubmitAsync();
+        SaysTheRefusal(cut, "“1234.5” is not a value");
+        cut.Render();
+        SaysTheRefusal(cut, "“1234.5” is not a value");
+
+        Assert.True(cut.Find(".mud-ex-grid-filter-apply").HasAttribute("disabled"));
+        Assert.Empty(_applied);
+    }
+
+    // The field says the refusal as MudBlazor says any field's error: marked, invalid, and the words under it.
+    private static void SaysTheRefusal(IRenderedComponent<ContainerFragment> cut, string words)
+    {
+        var field = cut.Find(".mud-ex-grid-filter-operand");
+        Assert.True(field.QuerySelector(".mud-input-error") is not null, field.OuterHtml);
+        Assert.Equal("true", field.QuerySelector("input")!.GetAttribute("aria-invalid"));
+        Assert.Contains(words, field.QuerySelector(".mud-input-helper-text")?.TextContent ?? "");
+    }
+
     [Fact] // ADR-0030 / WR-3: the Chrome's own word for a refusal stands in place of the core's English
     public async Task The_chromes_own_word_for_a_refusal_stands()
     {
