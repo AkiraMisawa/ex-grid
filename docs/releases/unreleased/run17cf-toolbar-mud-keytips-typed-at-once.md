@@ -3,4 +3,4 @@ Kind: Fixed
 Docs: exsheet/formatting#the-sheet-toolbar
 ADR: 0100, 0050
 
-KeyTips can be typed at once after one Alt or F10: the letters typed before the KeyTips have taken the keyboard are held and handed to them in order, so on a Blazor Server circuit Alt, H, 1 typed straight off sets bold instead of opening an edit holding "h1" (a Tab among them is dropped with the keys after it). A second Alt typed while keys are still held for the toolbar or for the Sheet can still have an outcome that depends on the round trip (a known limitation, not yet decided).
+KeyTips can be typed at once: the letters typed before the KeyTips have taken the keyboard are held and handed to them in order, so on a Blazor Server circuit Alt, H, 1 typed straight off sets bold instead of opening an edit holding "h1" (a Tab among them is dropped with the keys after it). An Alt typed while keys are still held — straight after Enter on an edit, or a second Alt — has the outcome it has when typed slowly: Enter, Alt, H, 1 commits the edit and sets bold below it, and Alt, Alt, H, 1 turns the KeyTips on and off and types "h1". Alt released before the ↓ of Alt+↓ no longer shows the KeyTips.
