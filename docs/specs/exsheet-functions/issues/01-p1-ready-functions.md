@@ -46,3 +46,14 @@ serial 0 in January 1900 and serial 60 the 29th of February, and the months are 
 serial 0 truncated and -1 cut down to its day, until Excel is asked which (EOMONTH-016 and 017, EDATE-017).
 EOMONTH-012 to 017 and EDATE-013 to 017 are `uncertain` for the next pass, and YEAR-008, MONTH-005 and DAY-005
 ask how those read a serial between -1 and 0 (ADR-0047's note).
+
+2026-10-12, the second area pass (`verification/2026-10-12-windows-area-2/`): Excel answered EOMONTH-012 to 017 and
+EDATE-013 to 017, and `YEAR`, `MONTH` and `DAY` of -0.5 (YEAR-008, MONTH-005, DAY-005). A start between -1 and 0
+is cut down to its day, -1, and `#NUM!`, as `YEAR` reads a serial, and `EOMONTH` and `EDATE` follow it. `EDATE(0,1)`
+is 31: serial 0 keeps its day 0, which is the day before the 1st of the month reached. Six of 112 readings give every
+observed answer (`spikes/exsheet-date-readings/`); they part at `EDATE` from serial 0 to January 1900, March 1900 and
+January 10000, which stay refused, and EDATE-018 to 022 are `uncertain` for the next pass (ADR-0047's note).
+A boolean typed as `EOMONTH`'s start or as `EDATE`'s months stays refused with `#VALUE!` too, and EOMONTH-018 and
+EDATE-023 ask it: the seventeenth run typed one as `EOMONTH`'s months and as `EDATE`'s start alone (EOMONTH-009,
+EDATE-009), and Excel reads a boolean typed as a start date as 1 under `DATEDIF` (DATEDIF-046) and gives `#VALUE!`
+under `YEARFRAC` (YEARFRAC-054), so neither answers the other argument.

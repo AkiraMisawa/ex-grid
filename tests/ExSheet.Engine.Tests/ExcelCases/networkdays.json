@@ -73,11 +73,20 @@
     {
       "id": "NETWORKDAYS-009",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a start between -1 and 0 is cut down to its day, -1, below 0, and #NUM!; truncated, it would be serial 0, a Saturday, and serials 0 to 6 hold five workdays, 5",
+      "description": "A start between -1 and 0 is cut down to its day, -1, below 0, and #NUM!; it is not truncated to serial 0, a Saturday",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NETWORKDAYS(-0.5,6)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "NETWORKDAYS-010",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a boolean typed as a date, which EDATE answers with #VALUE! (EDATE-009); read as 1, serial 1 is a Sunday and serials 1 to 6 hold five workdays, 5",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NETWORKDAYS(TRUE,6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

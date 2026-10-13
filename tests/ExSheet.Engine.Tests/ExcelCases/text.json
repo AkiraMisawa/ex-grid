@@ -265,7 +265,7 @@
     {
       "id": "TEXTFN-029",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a negative number of twelve digits goes scientific in General's 11 characters, the minus sign beside them, as TEXTFN-026 and TEXTFN-025 show",
+      "description": "A negative number of twelve digits goes scientific in General's 11 characters, the minus sign beside them, as TEXTFN-026 and TEXTFN-025 show",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(-123456789012,\"General\")"},
       "check": "ZZ1000",
@@ -274,7 +274,7 @@
     {
       "id": "TEXTFN-030",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a negative number of eleven digits stays whole in General, its minus sign not one of the 11 characters",
+      "description": "A negative number of eleven digits stays whole in General, its minus sign not one of the 11 characters",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(-12345678901,\"General\")"},
       "check": "ZZ1000",
@@ -283,7 +283,7 @@
     {
       "id": "TEXTFN-031",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a negative number under a lone @ shows as TEXT's General shows it, the minus sign beside the 11 characters",
+      "description": "A negative number under a lone @ shows as TEXT's General shows it, the minus sign beside the 11 characters",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(-1/3,\"@\")"},
       "check": "ZZ1000",
@@ -292,7 +292,7 @@
     {
       "id": "TEXTFN-032",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: twelve digits under a lone @ go scientific, as in TEXT's General (TEXTFN-026)",
+      "description": "Twelve digits under a lone @ go scientific, as in TEXT's General (TEXTFN-026)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(123456789012,\"@\")"},
       "check": "ZZ1000",
@@ -301,7 +301,7 @@
     {
       "id": "TEXTFN-033",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a small number under a lone @ stays decimal, as TEXT's General shows it (TEXTFN-027), not General in full (1E-05)",
+      "description": "A small number under a lone @ stays decimal, as TEXT's General shows it (TEXTFN-027), not as General in full (1E-05)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(0.00001,\"@\")"},
       "check": "ZZ1000",
@@ -310,7 +310,7 @@
     {
       "id": "TEXTFN-034",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a text section with a literal shows a number as a lone @ does, in TEXT's General, the literal left out",
+      "description": "A text section with a literal shows a number as a lone @ does, in TEXT's General, the literal left out",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=TEXT(1/3,\"\"\"x\"\"@\")"},
       "check": "ZZ1000",

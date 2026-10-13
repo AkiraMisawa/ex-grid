@@ -1,124 +1,147 @@
-# The area pass, dates and text: what the orchestrator writes
+# The area passes, dates and text: what the orchestrator writes
 
-Branch `claude/area-dates-and-text`, from `claude/exsheet-windows-area-2026-10-12`. The area pass of 2026-10-12
-(`verification/2026-10-12-windows-area/report.md`, "Every disagreement (29)";
-`tests/ExSheet.Engine.Tests/ExcelOracle/results-2026-10-12-area-com-en-US.json`) disagreed with the corpus on four
-cases of this area. Each was refused "until Excel is asked"; Excel answered, and each now follows the answer under
-ADR-0202's rule and ADR-0047's admission rule. Nothing here changes an ADR, `CONTEXT.md`, the Definition of Done,
-the engine's README, `NumberText.cs` or the Docs Site: the text for each is below, in the repository's voice, as
-exact old -> new edits. Each old and new text is a fenced block of whole lines, each line with the target file's own
-leading indentation (a bullet's continuation two spaces, a sub-bullet's four, a doc comment's four); each old text is
-exact and occurs once in its file.
+Branches `claude/area-dates-and-text` (the first area pass) and `claude/area2-dates-and-text` (the second), from
+`claude/area-corrections`. The first pass (`verification/2026-10-12-windows-area/`) disagreed with four cases of this
+area, and the second (`verification/2026-10-12-windows-area-2/`, Excel 16.0.20430.20146, en-US, through COM) asked the
+24 `uncertain` cases the first round's corrections added: 20 agreed and were promoted by `-Update`, and four disagreed.
+Each disagreement was a refusal "until Excel is asked"; Excel answered, and each now follows the answer under ADR-0202's
+rule and ADR-0047's admission rule. Nothing here changes an ADR, `CONTEXT.md`, the Definition of Done, the engine's
+README, the function catalogue or the Docs Site: the text for each is below, in the repository's voice, as exact old ->
+new edits. Each old and new text is a fenced block of whole lines, each line with the target file's own leading
+indentation (a bullet's continuation two spaces, a sub-bullet's four); each old text is exact and occurs once in its
+file at `claude/area2-dates-and-text`.
 
 ## What was done, case by case
 
-| Case | Excel (area pass) | Was | Now | The rule it takes |
+| Case | Excel | Was | Now | The rule it takes |
 |---|---|---|---|---|
-| EOMONTH-010 `=EOMONTH(0,1)` | 59 | `#VALUE!` (refused) | **59**, observed | the start read as `MONTH` reads it (MONTH-004: serial 0 is in January 1900); months on the real calendar |
-| EDATE-010 `=EDATE(60,1)` | 89 | `#VALUE!` (refused) | **89**, observed | the start read as `DAY` reads it (DAY-002: serial 60 is the 29th of February 1900); the day kept, or the month's last |
-| TEXTFN-025 `=TEXT(-1/3,"General")` | `-0.333333333` | `#VALUE!` (refused) | **`-0.333333333`**, observed | General at its own limit, 11 characters, the minus sign beside them |
-| TEXTFN-028 `=TEXT(1/3,"@")` | `0.333333333` | `#VALUE!` (refused) | **`0.333333333`**, observed | a code of a text section alone shows a number as `TEXT`'s General does |
+| EOMONTH-010 `=EOMONTH(0,1)` | 59 (pass 1) | `#VALUE!` (refused) | **59**, observed | the start read as `MONTH` reads it (MONTH-004: serial 0 is in January 1900); months on the real calendar |
+| EDATE-010 `=EDATE(60,1)` | 89 (pass 1) | `#VALUE!` (refused) | **89**, observed | the start read as `DAY` reads it (DAY-002: serial 60 is the 29th of February 1900); the day kept, or the month's last |
+| TEXTFN-025 `=TEXT(-1/3,"General")` | `-0.333333333` (pass 1) | `#VALUE!` (refused) | **`-0.333333333`**, observed | General at its own limit, 11 characters, the minus sign beside them |
+| TEXTFN-028 `=TEXT(1/3,"@")` | `0.333333333` (pass 1) | `#VALUE!` (refused) | **`0.333333333`**, observed | a code of a text section alone shows a number as `TEXT`'s General does |
+| EDATE-016 `=EDATE(0,1)` | 31 (pass 2) | `#VALUE!` (refused) | **31**, observed | serial 0 keeps its day 0 (DAY-004), the day before the 1st of the month reached |
+| EDATE-017 `=EDATE(-0.5,1)` | `#NUM!` (pass 2) | `#VALUE!` (refused) | **`#NUM!`**, observed | the start cut down to its day, -1, as `YEAR` reads a serial (YEAR-008) |
+| EOMONTH-016 `=EOMONTH(-0.5,0)` | `#NUM!` (pass 2) | `#VALUE!` (refused) | **`#NUM!`**, observed | the same |
+| EOMONTH-017 `=EOMONTH(-0.5,1)` | `#NUM!` (pass 2) | `#VALUE!` (refused) | **`#NUM!`**, observed | the same |
 
-**Settled, or one point of it.** Each answer settles the rule its refusal waited for, but one:
+**Agreed in the second pass, and promoted** (the engine's answer was Excel's): EDATE-013 to 015 (59, 425, 29),
+EOMONTH-012 to 015 (59, 91, 31, `#NUM!`), YEAR-008, MONTH-005, DAY-005, WEEKDAY-008, DAYS-005, NETWORKDAYS-009 and
+WORKDAY-010 (each `#NUM!` for a serial of -0.5), and TEXTFN-029 to 034 (`-1.23457E+11`, `-12345678901`,
+`-0.333333333`, `1.23457E+11`, `0.00001`, `0.333333333`). Their descriptions no longer say "Excel to be asked". Every
+case of `text.json`, `year.json`, `month.json`, `day.json`, `weekday.json` and `days.json` is `observed`, and every
+case of `eomonth.json` but EOMONTH-018, added after the pass (below).
 
-- `EOMONTH` reads only its start's year and month. With serial 0 in January 1900 and serial 60 in February 1900, as
-  `YEAR` and `MONTH` were observed to read them, EOMONTH-010 settles `EOMONTH` from either: the refusal goes.
-- `EDATE` reads the start's day too. EDATE-010 shows that the 29th of February 1900 is kept as a 29th where the
-  month has one. Serial 0's day is 0 (DAY-004), and no observation says what day 0 of a month becomes, so **`EDATE`
-  from serial 0 stays `#VALUE!`** (`DateSerial.FromDate` has no day 0 either). EDATE-016 asks it.
-- TEXTFN-025 settles the minus sign: it is not one of General's 11 characters. TEXTFN-028 settles the reading of a
-  code of a text section alone: fitted General, not General in full.
+**The rule, checked against every observed case.** `spikes/exsheet-date-readings/readings.py` writes out 112 whole
+readings of `EDATE` and `EOMONTH` (how the start is made whole, what serial 0 is, what `EDATE`'s day 0 becomes, what 31
+December 1899 is as a result, and the months' lengths) and counts the 32 observed cases of the two functions each
+reproduces (EDATE-009 and EOMONTH-009, a boolean typed, are no question of reading):
 
-**Not settled: a start between -1 and 0.** Truncated, as the months are, it is serial 0, and `EOMONTH(-0.5,0)`
-would be 31; cut down to its day, as the engine's `YEAR`, `MONTH` and `DAY` cut a serial, it is -1, below 0, and `#NUM!`, as
-a start of -1 is (EOMONTH-004, EDATE-007). No run has observed either reading, under these functions or under
-`YEAR`, so **`EOMONTH` and `EDATE` refuse a start between -1 and 0 with `#VALUE!`**, as the base did (it truncated
-the start to serial 0 and refused that). Outside that range the two readings agree. EOMONTH-016 and 017 and
-EDATE-017 ask it, and the functions that cut a serial down to its day are asked the same of their present answer,
-`#NUM!` (below).
+- **6 reproduce all 32.** The best of the rest reproduce 31: the engine before this round (a start between -1 and 0
+  refused, `EDATE` from day 0 refused) reproduces 28; a start truncated rather than cut down misses EOMONTH-016, 017
+  and EDATE-017; `EDATE`'s day 0 read as day 1 (32) or as `#NUM!` misses EDATE-016; serial 0 read as 31 December 1899
+  under `EOMONTH` misses EOMONTH-010 and 014; a result of 31 December 1899 read as serial 0 misses EOMONTH-015; months
+  on Excel's calendar (February 1900 of 29 days) miss EDATE-011 and 013 and EOMONTH-008 and 010 to 012.
+- **The six are one start reading** (cut down to its day; "below 0 `#NUM!`, then truncated" gives the same answer for
+  every start) **times three readings of `EDATE` from serial 0**: the day before the 1st of the month reached by
+  `DATE`'s arithmetic, which counts 29 February 1900; the month before's last day on the real calendar; and serial 0
+  read as 31 December 1899 under `EDATE` alone, which answers as the second.
+- **They part at three months**, each where day 0 falls on an edge: `EDATE(0,0)` is 0 or `#NUM!` (the day before 1
+  January 1900 is serial 0 by `DATE`'s arithmetic, 31 December 1899 on the real calendar); `EDATE(0,2)` is 60 or 59
+  (the day that never existed, or 28 February); `EDATE(0,97200)` is `#NUM!` or 2958465 (January 10000 is past the last
+  year; the month before ends on 31 December 9999). The same holds from a start between 0 and 1.
+- 16 observed cases of a serial of -1, -0.5 or 0 under `YEAR`, `MONTH`, `DAY`, `WEEKDAY`, `DAYS`, `NETWORKDAYS`,
+  `WORKDAY`, `EOMONTH` and `EDATE`: truncation reproduces 9, refusal 9, cutting down to the day 16.
 
-**In the engine.** `Functions.Dates.cs`: `MonthsAway` no longer refuses a start of 0 or 60; it refuses only
-`EDATE` from a start whose day is 0, which is serial 0 alone (the `NeverExisted` constant goes, unused), and a start
-between -1 and 0, `start is > -1 and < 0`, before the start is truncated. A verifier found the branch truncating the
-start before the sign check, so `EOMONTH(-0.5,0)` answered 31, and then cutting it down with `Math.Floor`, so it
-answered `#NUM!`; neither is observed, and the refusal replaces both. `DatePart` (`YEAR`, `MONTH`, `DAY`) is not
-touched: its `#NUM!` for a serial between -1 and 0 is pre-existing, and YEAR-008, MONTH-005 and DAY-005 ask it.
-`Functions.Text.cs`: `TextGeneral` is `NumberText.General(number, NumberText.GeneralLimit + 1 for a minus sign,
-culture)`, with no refusal where 11 and 12 characters differ and none where the fitted General is not General in
-full; `TextGeneralWidth` goes, as `NumberText.GeneralLimit` is the same 11. `NumberText.cs` is not touched. A code
-of a text section alone, as `NumberFormat.ShowsNumbersAsGeneral` reads it, takes the same rule as a lone `@`, so
-`TEXT(1/3,"""x""@")` is `0.333333333` (TEXTFN-034 asks).
+No digits decide in this area: every answer is a whole serial, an Error Value or a text.
 
-**Layer 1.** `tests/ExSheet.Engine.Tests/ObservedDatesAndTextTests.cs`:
-`Adr0047_EDate_and_EOMonth_refuse_serial_0_and_the_day_that_never_existed` became
-`Adr0047_EDate_and_EOMonth_read_serial_0_and_the_day_that_never_existed_as_Day_and_Month_do` (12 answers),
-`Adr0047_EOMonth_from_serial_0_to_before_1900_is_NUM` and `Adr0047_EDate_refuses_serial_0_whose_day_is_0`, and
-`Adr0047_EDate_and_EOMonth_refuse_a_start_between_minus_1_and_0` (7 formulas) and
-`Adr0047_EDate_and_EOMonth_from_minus_1_or_below_are_NUM` (4) were added.
-`Adr0120_Text_General_refuses_where_the_unobserved_readings_disagree` became
-`Adr0120_Text_General_leaves_the_minus_sign_out_of_its_11_characters` and
-`Adr0120_Text_under_a_text_section_alone_shows_a_number_as_its_General_does`, with two facts:
-`Adr0120_Text_General_and_a_lone_at_sign_agree` and
-`Adr0120_Text_General_of_a_negative_number_is_its_magnitudes_with_a_minus_sign`.
+**In the engine.** `Functions.Dates.cs`, `MonthsAway`: the start is `Math.Floor`ed, as `DatePart` does, and below 0 is
+`#NUM!` (the refusal of a start between -1 and 0 goes). `EDATE` from a start whose day is 0, serial 0 alone, answers the
+day before the 1st of the month reached, `DateSerial.FromDate(year, month, 1) - 1`, and is `#VALUE!` where the six
+part: the month reached is January 1900, March 1900 or January 10000. Its comments, and `DatePart`'s, `Weekday`'s,
+`Days`'s and `TryWorkdayDate`'s, say "cut down to its day", which is what they do, and cite the observed -0.5 cases.
+`MonthsAway`'s summary said a boolean typed as either argument is `#VALUE!` "as in Excel", citing EOMONTH-009 and
+EDATE-009; those typed one as `EOMONTH`'s months and as `EDATE`'s start alone. It now says so, and its remarks name
+a boolean as `EOMONTH`'s start or `EDATE`'s months as refused until Excel is asked (EOMONTH-018, EDATE-023, below).
+The code is unchanged: it refused a boolean in either argument before, and still does. The two observed cases'
+descriptions say which argument they type the boolean into.
+`Functions.Text.cs` and `NumberText.cs`: comments only, citing TEXTFN-029 and 030 (`NumberText.GeneralLimit`'s summary
+no longer calls the 11 characters uncertain; this round writes the edit the first round proposed).
 
-## For the next pass: the `uncertain` cases this area adds
+**Layer 1.** `tests/ExSheet.Engine.Tests/ObservedDatesAndTextTests.cs`: `Adr0047_EDate_refuses_serial_0_whose_day_is_0`
+became `Adr0047_EDate_from_serial_0_is_the_day_before_the_first_of_the_month_it_reaches` (7 answers),
+`Adr0047_EDate_from_serial_0_before_1900_or_past_9999_is_NUM` (4) and
+`Adr0047_EDate_from_serial_0_is_refused_where_the_readings_that_fit_part` (6), with
+`Adr0047_EOMonth_from_serial_0_answers_where_EDates_readings_part`. `Adr0047_EDate_and_EOMonth_refuse_a_start_between_minus_1_and_0`
+became `Adr0047_EDate_and_EOMonth_cut_a_start_between_minus_1_and_0_down_to_minus_1_which_is_NUM` (the same 7
+formulas), with `Adr0047_A_serial_between_minus_1_and_0_is_NUM_under_the_nine_functions_the_second_area_pass_asked`
+(12; it was named `…_under_every_function_that_reads_a_date`, and its comment said every such function cuts the serial
+down, which `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` do not) and
+`Adr0047_DateDif_YearFrac_and_the_time_parts_give_NUM_for_a_serial_below_0_by_generalisation` (7, the engine's answer:
+see "A serial between -1 and 0 under the five other functions" below).
+`Adr0047_EDate_and_EOMonth_before_1900_are_NUM` gains `EDATE(31,-1)`, 31 December 1899. The comments that said "to be
+asked" of observed cases say "observed".
 
-Each holds the engine's answer, or its refusal, for the next Windows run
-(`oracle.ps1 -Update -Area edate,eomonth,text,year,month,day,weekday,days,networkdays,workday`):
+## For the next pass: the `uncertain` cases this area holds
+
+`oracle.ps1 -Update -Area edate,eomonth,networkdays,workday`:
 
 | Case | Formula | Engine | What it tells apart |
 |---|---|---|---|
-| EDATE-013 | `=EDATE(60,0)` | 59 | the 29th of February 1900 cut to 28 February in its own month |
-| EDATE-014 | `=EDATE(60,12)` | 425 | the same in a year with no day that never existed, 28 February 1901 |
-| EDATE-015 | `=EDATE(60,-1)` | 29 | the 29th kept in a month that has one, backwards |
-| EDATE-016 | `=EDATE(0,1)` | `#VALUE!` (refused) | what day 0 of a month becomes |
-| EOMONTH-012 | `=EOMONTH(60,0)` | 59 | February 1900 ends on the 28th from serial 60 itself |
-| EOMONTH-013 | `=EOMONTH(60,1)` | 91 | from serial 60 into March |
-| EOMONTH-014 | `=EOMONTH(0,0)` | 31 | serial 0's own month |
-| EOMONTH-015 | `=EOMONTH(0,-1)` | `#NUM!` | from serial 0 to before 1900 |
-| EOMONTH-016 | `=EOMONTH(-0.5,0)` | `#VALUE!` (refused) | a start between -1 and 0 truncated to serial 0 (31) or cut down to -1 (`#NUM!`) |
-| EOMONTH-017 | `=EOMONTH(-0.5,1)` | `#VALUE!` (refused) | the same a month on (59, or `#NUM!`) |
-| EDATE-017 | `=EDATE(-0.5,1)` | `#VALUE!` (refused) | the same under `EDATE` (serial 0's day 0, or `#NUM!`) |
-| YEAR-008 | `=YEAR(-0.5)` | `#NUM!` | the engine's present answer, pre-existing: a serial between -1 and 0 cut down to -1, or truncated to serial 0 (1900) |
-| MONTH-005 | `=MONTH(-0.5)` | `#NUM!` | the same under `MONTH` (1 if truncated) |
-| DAY-005 | `=DAY(-0.5)` | `#NUM!` | the same under `DAY` (0 if truncated) |
-| WEEKDAY-008 | `=WEEKDAY(-0.5)` | `#NUM!` | the same under `WEEKDAY` (7, a Saturday, if truncated) |
-| DAYS-005 | `=DAYS(1,-0.5)` | `#NUM!` | the same under `DAYS` (1 if truncated) |
-| NETWORKDAYS-009 | `=NETWORKDAYS(-0.5,6)` | `#NUM!` | the same under `NETWORKDAYS` (5 if truncated) |
-| WORKDAY-010 | `=WORKDAY(-0.5,1)` | `#NUM!` | the same under `WORKDAY` (2, a Monday, if truncated) |
-| TEXTFN-029 | `=TEXT(-123456789012,"General")` | `-1.23457E+11` | a negative twelve digits, scientific beside the sign |
-| TEXTFN-030 | `=TEXT(-12345678901,"General")` | `-12345678901` | a negative eleven digits, whole beside the sign |
-| TEXTFN-031 | `=TEXT(-1/3,"@")` | `-0.333333333` | the sign under a lone `@` |
-| TEXTFN-032 | `=TEXT(123456789012,"@")` | `1.23457E+11` | twelve digits under a lone `@` |
-| TEXTFN-033 | `=TEXT(0.00001,"@")` | `0.00001` | fitted General under `@` where General in full is `1E-05` |
-| TEXTFN-034 | `=TEXT(1/3,"""x""@")` | `0.333333333` | a text section with a literal, as a lone `@` |
+| EDATE-018 | `=EDATE(0,2)` | `#VALUE!` (refused) | day 0 of March 1900: 60 by `DATE`'s arithmetic, 59 on the real calendar |
+| EDATE-019 | `=EDATE(0,0)` | `#VALUE!` (refused) | day 0 of January 1900: serial 0 by `DATE`'s arithmetic, 31 December 1899 (`#NUM!`) on the real calendar |
+| EDATE-020 | `=EDATE(0,97200)` | `#VALUE!` (refused) | day 0 of January 10000: `#NUM!` by `DATE`'s arithmetic, 31 December 9999 (2958465) as the month before's last day |
+| EDATE-021 | `=EDATE(0,3)` | 91 | the six agree: day 0 of April 1900 is 31 March |
+| EDATE-022 | `=EDATE(0.5,12)` | 366 | the six agree: a start between 0 and 1 is serial 0, and a year on is 31 December 1900 |
+| EDATE-023 | `=EDATE(45000,TRUE)` | `#VALUE!` (refused) | a boolean typed as the months: `#VALUE!` as under `EOMONTH`'s months (EOMONTH-009), or read as 1 (45031, 15 April 2023) |
+| EOMONTH-018 | `=EOMONTH(TRUE,1)` | `#VALUE!` (refused) | a boolean typed as the start: `#VALUE!` as under `EDATE`'s start (EDATE-009), or read as 1 as `DATEDIF` reads it (DATEDIF-046), 59 |
+| NETWORKDAYS-010 | `=NETWORKDAYS(TRUE,6)` | `#VALUE!` (refused) | a boolean typed as a date: `#VALUE!` as under `EDATE` (EDATE-009), or read as 1 (5) |
+| WORKDAY-011 | `=WORKDAY(TRUE,1)` | `#VALUE!` (refused) | the same under `WORKDAY` (`#VALUE!`, or 2) |
 
-YEAR-008 to WORKDAY-010 ask a pre-existing answer this change does not alter. `DATEDIF` and `YEARFRAC` answer
-`#NUM!` for a negative serial before truncating it (`TryDifferenceDate`), which is the same question. Their corpus
-files are ticket 11's, written from the run of 2026-10-03 in a form of their own (a culture, an observation, the
-bits), so no case is added there; two for the orchestrator to place, each the engine's `#NUM!`:
-`=DATEDIF(-0.5,1,"D")` (1 if truncated) and `=YEARFRAC(-0.5,1)` (a number if truncated).
+NETWORKDAYS-010 and WORKDAY-011 are new to the corpus but not to the engine: `NETWORKDAYS` and `WORKDAY` have refused a
+boolean typed as a date "until Excel is asked" since ticket 04, and no case asked it, so no run could.
+
+EOMONTH-018 and EDATE-023 are the same: `MonthsAway` has refused a boolean in either argument since ticket 01, and the
+seventeenth run asked one argument of each, `EOMONTH`'s months (EOMONTH-009) and `EDATE`'s start (EDATE-009). The
+other argument is not answered by agreement: Excel's reading of a boolean typed as a start date differs between
+functions, 1 under `DATEDIF` (DATEDIF-046) and `#VALUE!` under `YEARFRAC` (YEARFRAC-054), so each case holds the
+engine's `#VALUE!` and asks.
+
+**A serial between -1 and 0 under the five other functions that read a date.** `DATEDIF`, `YEARFRAC`, `HOUR`,
+`MINUTE` and `SECOND` answer `#NUM!` for it: `TryDifferenceDate` and `TimePart` refuse any serial below 0 before
+reading its day or time, and do not cut it down. Excel was observed to answer `#NUM!` at -1 under three of them
+(DATEDIF-045 and YEARFRAC-056, the run of 2026-10-03; MINUTE-002, the seventeenth run) and at -0.5 under the nine
+functions the second pass asked (above); between -1 and 0 under the five, and under `HOUR` and `SECOND` at all, it is
+the engine's answer, by generalisation, and no case asks it. `datedif.json` and `yearfrac.json` are ticket 11's,
+written from the run of 2026-10-03 in a form of their own (a culture, an observation, the bits), and `hour.json`,
+`minute.json` and `second.json` are not among this area's files, so no case is added there; five for the orchestrator
+to place, each `uncertain` with the engine's `#NUM!`: `=DATEDIF(-0.5,1,"D")`, `=YEARFRAC(-0.5,1)`, `=HOUR(-0.5)`,
+`=MINUTE(-0.5)` and `=SECOND(-0.5)`. The engine's README edit 3, below, says the same.
+
+**A decision for the orchestrator, or the user: does the generalisation stand under `DATEDIF`?** `DATEDIF`'s date
+coercion is not shown to be the nine functions': it reads a boolean typed as a start date as 1 (DATEDIF-046), where
+`EDATE` gives `#VALUE!` (EDATE-009) and so does `YEARFRAC` (YEARFRAC-054). The readings part between -1 and 0: cut
+down to -1, or refused below 0, `DATEDIF(-0.5,1,"D")` is `#NUM!`; truncated to serial 0, it is 1. The same question
+reaches the time parts, which no case asks below -1 or between -1 and 0: refused, `HOUR(-0.5)` is `#NUM!`; read as a
+time of day, 12:00, it is 12, and `MINUTE(-0.5)` and `SECOND(-0.5)` are 0. The options:
+
+1. **The generalisation stands.** The engine keeps `#NUM!` for a serial below 0 under the five, the README edit says
+   it is the engine's answer by generalisation, and the five cases above ask Excel. This branch is written so, and
+   its code is unchanged there.
+2. **THE RULE's refusal (ADR-0202).** Where the readings part and no run observed Excel's, the function refuses:
+   `DATEDIF` (and, if the same is held of them, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND`) answers `#VALUE!` for a
+   serial between -1 and 0 until Excel is asked, a serial of -1 staying `#NUM!` where DATEDIF-045, YEARFRAC-056 and
+   MINUTE-002 observed it. `TryDifferenceDate` and `TimePart` change, the five cases hold `#VALUE!`, and the README
+   edit and the catalogue's rows say so instead.
 
 A sibling the rule reaches and this area may not write: a cell's General in a wide column with a negative number.
-`general-width.json` has no such case (GW-004, 009 and 010 are positive). A case for the next pass, if the
+`general-width.json` has none (GW-003 and GW-024 are negative in narrow columns). A case for the next pass, if the
 orchestrator wants it there: `A1` `=-1/3` in a column 13 characters wide, the engine's `-0.333333333`.
 
 ## ADR-0047
 
-**1. The note of 2026-10-12 (the seventeenth Windows run), its first bullet** (line 642). Old:
-
-```markdown
-  calendar, and stays `#VALUE!` until Excel is asked. A boolean typed into either is `#VALUE!`, and that is
-```
-
-New:
-
-```markdown
-  calendar, and stays `#VALUE!` until Excel is asked *(answered by the area pass, but for `EDATE` from serial 0:
-  see the note of 2026-10-12, the area pass)*. A boolean typed into either is `#VALUE!`, and that is
-```
-
-**2. "The list grows: the first additions", the parenthesis** (lines 416 to 418). Old:
+**1. "The list grows: the first additions", the parentheses** (lines 416 to 418). The first is answered but for
+three months of `EDATE`; the second named no argument, and the seventeenth run typed a boolean into one argument of
+each function, `EOMONTH`'s months (EOMONTH-009) and `EDATE`'s start (EDATE-009). Old:
 
 ```markdown
 existed lies *(answered by the seventeenth Windows run, but for a start of serial 0 or 60: see the
@@ -129,12 +152,47 @@ note)*. The functions that answer about any Value —
 New:
 
 ```markdown
-existed lies *(answered by the seventeenth Windows run and the area pass, but for `EDATE` from serial 0 and
-for a start between -1 and 0: see the notes of 2026-10-12 at the end)*; and a boolean typed into `EOMONTH` or
-`EDATE` *(Excel's answer too, the seventeenth run's note)*. The functions that answer about any Value —
+existed lies *(answered by the seventeenth Windows run and the area passes, but for `EDATE` from serial 0 to
+January 1900, March 1900 or January 10000: see the notes of 2026-10-12 at the end)*; and a boolean typed into
+`EOMONTH` or `EDATE` *(Excel's answer too as `EOMONTH`'s months and as `EDATE`'s start, the arguments the
+seventeenth run typed one into; as `EOMONTH`'s start and as `EDATE`'s months it is refused until Excel is asked:
+see the notes of 2026-10-12 at the end)*. The functions that answer about any Value —
 ```
 
-**3. A note to add at the end**, after the file's last line (or after another area's note, if one is added there
+**2. The note of 2026-10-12 (the seventeenth Windows run), its first bullet** (lines 642 and 643). The bullet said
+a boolean typed into either function is `#VALUE!` as Excel's answer, and the run typed one as `EOMONTH`'s months
+(EOMONTH-009) and as `EDATE`'s start (EDATE-009) alone. Old:
+
+```markdown
+  calendar, and stays `#VALUE!` until Excel is asked. A boolean typed into either is `#VALUE!`, and that is
+  Excel's answer too (EOMONTH-009, EDATE-009).
+```
+
+New:
+
+```markdown
+  calendar, and stays `#VALUE!` until Excel is asked *(answered by the area passes, but for `EDATE` from serial
+  0 to January 1900, March 1900 or January 10000: see the note of 2026-10-12, the area passes)*. A boolean typed
+  as `EOMONTH`'s months or as `EDATE`'s start is `#VALUE!`, and that is Excel's answer too (EOMONTH-009,
+  EDATE-009) *(the bullet said "typed into either" until the area passes; the run typed it into these two
+  arguments alone, and as `EOMONTH`'s start and `EDATE`'s months the engine's `#VALUE!` is a refusal until Excel
+  is asked: see the note of 2026-10-12, the area passes)*.
+```
+
+**3. The same note, its second bullet** (line 647; the first area pass observed the cases it names). Old:
+
+```markdown
+  `WEEKDAY`'s day from the real calendar's are `uncertain` until a run asks them.
+```
+
+New:
+
+```markdown
+  `WEEKDAY`'s day from the real calendar's are `uncertain` until a run asks them *(the area pass asked them,
+  and Excel's day is `WEEKDAY`'s: NETWORKDAYS-006 to 008, WORKDAY-006 to 008)*.
+```
+
+**4. A note to add at the end**, after the file's last line (or after another area's note, if one is added there
 first). Old:
 
 ```markdown
@@ -146,22 +204,35 @@ New:
 ```markdown
 OR-010 ask it.
 
-*(2026-10-12, the area pass)* **`EOMONTH` from serial 0 or 60, and `EDATE` from serial 60, follow Excel's
-answer** (`verification/2026-10-12-windows-area/`, ADR-0202). `EOMONTH(0,1)` is 59 and `EDATE(60,1)` is 89, 29
-March 1900 (EOMONTH-010, EDATE-010).
+*(2026-10-12, the area passes)* **`EOMONTH` and `EDATE` from serial 0 or 60, and from a start between -1 and 0,
+follow Excel's answers** (`verification/2026-10-12-windows-area/` and `-area-2/`, ADR-0202). `EOMONTH(0,1)` is 59,
+`EDATE(60,1)` is 89 and `EDATE(0,1)` is 31 (EOMONTH-010, EDATE-010, EDATE-016), and `EOMONTH(-0.5,0)` is `#NUM!`
+(EOMONTH-016).
 
-- **The start is read as `YEAR`, `MONTH` and `DAY` read it**: serial 0 is 0 January 1900 and serial 60 is 29
-  February 1900 (YEAR-003, MONTH-002 and 004, DAY-002 and 004, observed). The months are counted from its year
-  and month on the real calendar, as the seventeenth run's note says, and `EDATE` keeps its day, or the
-  month's last day where the month is shorter.
-- **`EDATE` from serial 0 stays `#VALUE!`.** Its day is 0, and no run has observed what day 0 of a month
-  becomes (EDATE-016 asks).
-- **A start between -1 and 0 stays `#VALUE!`.** Truncated, as the months are, it is serial 0, and
-  `EOMONTH(-0.5,0)` would be 31; cut down to its day, as the engine's `YEAR`, `MONTH` and `DAY` cut a serial, it
-  is -1, below 0, and `#NUM!`, as a start of -1 is (EOMONTH-004, EDATE-007). No run has observed either reading:
-  EOMONTH-016 and 017 and EDATE-017 ask it, and YEAR-008, MONTH-005, DAY-005, WEEKDAY-008, DAYS-005,
-  NETWORKDAYS-009 and WORKDAY-010 ask the engine's present `#NUM!` of the functions that cut a serial down.
-- The rule's other cases are `uncertain` for the next pass: EOMONTH-012 to 015 and EDATE-013 to 015.
+- **The start is read as `YEAR`, `MONTH` and `DAY` read it**: cut down to its day, with serial 0 0 January 1900 and
+  serial 60 29 February 1900 (YEAR-003, MONTH-002 and 004, DAY-002 and 004). The months are counted from its year
+  and month on the real calendar, as the seventeenth run's note says, and `EDATE` keeps its day, or the month's last
+  day where the month is shorter (EOMONTH-012 to 015, EDATE-013 to 015).
+- **A date between -1 and 0 is cut down to -1, and is `#NUM!`**, under `YEAR`, `MONTH`, `DAY`, `WEEKDAY`, `DAYS`,
+  `NETWORKDAYS`, `WORKDAY`, `EOMONTH` and `EDATE` alike (YEAR-008, MONTH-005, DAY-005, WEEKDAY-008, DAYS-005,
+  NETWORKDAYS-009, WORKDAY-010, EOMONTH-016 and 017, EDATE-017). Under them, Excel does not truncate it to
+  serial 0. `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` give `#NUM!` for any serial below 0 and do not
+  cut it down; Excel was observed to at -1 under three of them (DATEDIF-045, YEARFRAC-056, MINUTE-002), and
+  between -1 and 0, and under `HOUR` and `SECOND` at all, `#NUM!` is the engine's answer, by generalisation,
+  until a case asks Excel.
+- **`EDATE` from serial 0 keeps its day 0, which is the day before the 1st of the month reached** (EDATE-016). Six
+  of the 112 readings `spikes/exsheet-date-readings/` writes out give every observed answer of the two functions, and
+  they part at three months: the day before 1 January 1900 is serial 0 by `DATE`'s arithmetic and 31 December 1899,
+  `#NUM!`, on the real calendar; the day before 1 March 1900 is 60, the day that never existed, or 28 February, 59;
+  and January 10000 is past the last year, while the month before ends on 31 December 9999. **`EDATE` from serial 0
+  to January 1900, March 1900 or January 10000 stays `#VALUE!`** until Excel is asked (EDATE-018 to 020); EDATE-021
+  and 022 ask two answers on which the six agree.
+- **A boolean typed into `EOMONTH` or `EDATE` was observed in one argument of each**: `#VALUE!` as `EOMONTH`'s
+  months and as `EDATE`'s start (EOMONTH-009, EDATE-009, the seventeenth run). Excel's reading of a boolean typed as
+  a start date differs between functions, 1 under `DATEDIF` (DATEDIF-046) and `#VALUE!` under `YEARFRAC`
+  (YEARFRAC-054), so neither observation answers the other argument: a boolean typed as `EOMONTH`'s start or as
+  `EDATE`'s months stays `#VALUE!` until Excel is asked (EOMONTH-018, EDATE-023). `NETWORKDAYS` and `WORKDAY` still
+  refuse a boolean typed as a date with `#VALUE!`; NETWORKDAYS-010 and WORKDAY-011 ask it.
 ```
 
 ## ADR-0120
@@ -176,10 +247,24 @@ New:
 
 ```markdown
   - The run asked a positive number only. Two readings it did not settle stay `#VALUE!` until Excel is asked
-    *(both answered by the area pass: see the note of 2026-10-12, the area pass, below)*.
+    *(both answered by the area pass: see the note of 2026-10-12, the area passes, below)*.
 ```
 
-**2. A note to add after that note's last bullet** (line 67), before "## What differs from Excel, by decision". Old:
+**2. The same note, the empty code's bullet** (lines 59 and 60; the first area pass observed both cases). Old:
+
+```markdown
+  code without a text section: text stays as it is, and a boolean stays `TRUE` or `FALSE` (TEXTFN-023 and 024,
+  `uncertain`).
+```
+
+New:
+
+```markdown
+  code without a text section: text stays as it is, and a boolean stays `TRUE` or `FALSE` (TEXTFN-023 and 024,
+  observed by the area pass).
+```
+
+**3. A note to add after that note's last bullet** (line 67), before "## What differs from Excel, by decision". Old:
 
 ```markdown
   - Both cases record Excel's answer beside the refusal.
@@ -190,17 +275,17 @@ New:
 ```markdown
   - Both cases record Excel's answer beside the refusal.
 
-*(2026-10-12, the area pass)* **Both readings the seventeenth run left open are answered, and follow Excel's
-answer** (`verification/2026-10-12-windows-area/`, ADR-0202). `TEXT(-1/3,"General")` is `-0.333333333`
-(TEXTFN-025) and `TEXT(1/3,"@")` is `0.333333333` (TEXTFN-028).
+*(2026-10-12, the area passes)* **Both readings the seventeenth run left open are answered, and follow Excel's
+answer** (`verification/2026-10-12-windows-area/` and `-area-2/`, ADR-0202). `TEXT(-1/3,"General")` is
+`-0.333333333` (TEXTFN-025) and `TEXT(1/3,"@")` is `0.333333333` (TEXTFN-028).
 
 - **`General` is General at its own limit, 11 characters, as a wide column shows a positive number (GW-004), and
-  the minus sign is not one of them**: a negative number takes one character more than its magnitude.
+  the minus sign is not one of them**: a negative number takes one character more than its magnitude, of eleven
+  digits and of twelve alike (TEXTFN-029, 030).
 - **A code of a text section alone, such as `@`, shows a number as `TEXT`'s General does**, fitted to those 11
-  characters, and not as General in full.
-- The rule's other cases are `uncertain` for the next pass: a negative number of twelve and of eleven digits
-  (TEXTFN-029, 030), under `@` a negative number, twelve digits and a small number (TEXTFN-031 to 033), and a
-  text section with a literal (TEXTFN-034).
+  characters, and not as General in full: a negative number, twelve digits, a small number and a section with a
+  literal, which is left out (TEXTFN-031 to 034).
+- Every case of `text.json` is `observed`.
 ```
 
 ## `src/ExSheet.Engine/README.md`
@@ -226,19 +311,19 @@ New:
   `#VALUE!`, a fraction or a condition among them, though Excel answers both.
 ```
 
-**2. The bullet "Asked of Excel before they are answered"** (lines 238 and 239; other areas edit the rest of it).
-Old:
+**2. The bullet "Asked of Excel before they are answered"**, its first clause (line 238 alone; other areas edit the
+rest of the bullet, and the next line, which begins `(`#VALUE!`); `NETWORKDAYS``, is kept). Old:
 
 ```markdown
   Excel gives: `EOMONTH` and `EDATE` from serial 0 or from serial 60, the day that never existed
-  (`#VALUE!`); `NETWORKDAYS` and `WORKDAY` with a boolean typed as a date (`#VALUE!`); `SMALL` with a
 ```
 
 New:
 
 ```markdown
-  Excel gives: `EDATE` from serial 0, whose day is 0, and `EOMONTH` and `EDATE` from a start between -1
-  and 0 (`#VALUE!`); `NETWORKDAYS` and `WORKDAY` with a boolean typed as a date (`#VALUE!`); `SMALL` with a
+  Excel gives: `EDATE` from serial 0 to January 1900, March 1900 or January 10000, where the readings
+  that give Excel's other answers part, `EOMONTH` with a boolean typed as its start, and `EDATE` with
+  one typed as its months
 ```
 
 **3. The bullet "Before 1 March 1900"** (lines 363 and 364). Old:
@@ -253,51 +338,48 @@ New:
 ```markdown
   (`NETWORKDAYS(30,100)` is 51), as Excel was observed to. A `WORKDAY` that falls before serial 0
   is `#NUM!`. `EDATE` and `EOMONTH` read a start of serial 0 or 60 as `MONTH` and `DAY` read it, in
-  January 1900 and on the 29th of February: `EOMONTH(0,1)` is 59 and `EDATE(60,1)` is 89.
+  January 1900 and on the 29th of February: `EOMONTH(0,1)` is 59 and `EDATE(60,1)` is 89, and from
+  serial 0 `EDATE` keeps day 0, the day before the 1st, so `EDATE(0,1)` is 31. A date between -1 and
+  0 is cut down to -1, and is `#NUM!`, under `YEAR`, `MONTH`, `DAY`, `WEEKDAY`, `DAYS`,
+  `NETWORKDAYS`, `WORKDAY`, `EOMONTH` and `EDATE`, as Excel was observed to answer at -0.5
+  (YEAR-008, MONTH-005, DAY-005, WEEKDAY-008, DAYS-005, NETWORKDAYS-009, WORKDAY-010, EOMONTH-016
+  and 017, EDATE-017). `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` give `#NUM!` for any
+  serial below 0, which they do not cut down. Excel was observed to at -1 under three of them
+  (DATEDIF-045, YEARFRAC-056, MINUTE-002); between -1 and 0, and under `HOUR` and `SECOND` at all,
+  it is the engine's answer, by generalisation, until a case asks Excel.
 ```
 
-## `src/ExSheet.Engine/NumberText.cs` (optional; its comment is now behind the corpus)
+## The catalogue, `docs/specs/exsheet-functions/spec.md` (shared with the financial area)
 
-`GeneralLimit`'s summary (lines 12 and 13). Old:
-
-```csharp
-    /// <c>1.23457E+11</c>. Microsoft documents only that twelve or more digits go scientific; the
-    /// eleven, and leaving the sign out of them, are uncertain in the case corpus (ADR-0047).
-```
-
-New:
-
-```csharp
-    /// <c>1.23457E+11</c>. Microsoft documents only that twelve or more digits go scientific; the
-    /// eleven were observed in a wide column (GW-004, GW-009, GW-010), and leaving the sign out of them
-    /// in <c>TEXT</c>'s General (TEXTFN-025, ADR-0120); a wide column has not been asked a negative number.
-```
-
-## The catalogue, `docs/specs/exsheet-functions/spec.md` (the financial area's file)
-
-No row is made false: the `EOMONTH`, `EDATE` and `TEXT` rows name no refusal this changes. Two additions, as other
-rows name the arguments they refuse (lines 201 and 202). Old:
+No row is made false. Four notes, as other rows name the arguments they refuse (lines 203 to 207). Old:
 
 ```markdown
 | `EOMONTH` | Supported | — | |
 | `EDATE` | Supported | — | |
+| `WEEKDAY` | Supported | — | |
+| `NETWORKDAYS` | Supported | — | |
+| `WORKDAY` | Supported | — | |
 ```
 
 New:
 
 ```markdown
-| `EOMONTH` | Supported | — | A start between -1 and 0 is `#VALUE!` until Excel is asked (ADR-0047) |
-| `EDATE` | Supported | — | From serial 0, whose day is 0, or a start between -1 and 0, `#VALUE!` until Excel is asked (ADR-0047) |
+| `EOMONTH` | Supported | — | A start of serial 0 is in January 1900, as `MONTH` reads it; a boolean typed as the start is `#VALUE!` until Excel is asked (ADR-0047) |
+| `EDATE` | Supported | — | From serial 0 to January 1900, March 1900 or January 10000, and with a boolean typed as the months, `#VALUE!` until Excel is asked (ADR-0047) |
+| `WEEKDAY` | Supported | — | |
+| `NETWORKDAYS` | Supported | — | A boolean typed as a date is `#VALUE!` until Excel is asked (ADR-0047) |
+| `WORKDAY` | Supported | — | A boolean typed as a date is `#VALUE!` until Excel is asked (ADR-0047) |
 ```
 
 ## The Docs Site
 
-`/exsheet/functions` lists each function's name, arguments and description from the engine's declarations; none
-of those changes, and no page states `EDATE` or `EOMONTH` from serial 0 or 60. **Nothing is proposed for them.**
+`/exsheet/functions` lists each function's name, arguments and description from the engine's declarations; none of
+those changes, and no page states `EDATE` or `EOMONTH` from serial 0 or 60, or a date between -1 and 0. **Nothing is
+proposed for them.**
 
-The Formulas page's `TEXT` bullet (`samples/ExGrid.Docs/Pages/Sheet/SheetFormulas.razor`, "Supported functions")
-is not made false, but it is where a reader meets `TEXT`, and it says nothing of what `General` shows, which now
-differs from General in full for every number that reaches 11 characters. Old:
+The Formulas page's `TEXT` bullet (`samples/ExGrid.Docs/Pages/Sheet/SheetFormulas.razor`, "Supported functions", lines
+177 and 178) is not made false, but it is where a reader meets `TEXT`, and it says nothing of what `General` shows,
+which differs from General in full for every number that reaches 11 characters. Old:
 
 ```razor
                 <b><code>TEXT</code></b> reads its code in the invariant spelling and shows what a cell in that format
@@ -317,19 +399,25 @@ New (Razor: `@` is written `@@`):
 ## Tickets
 
 Written on this branch (this area's files): a dated comment on `docs/specs/exsheet-functions/issues/01-p1-ready-functions.md`
-(EOMONTH-010, EDATE-010, the refusal of a start between -1 and 0, and YEAR-008, MONTH-005 and DAY-005) and on
-`docs/specs/exsheet-functions/issues/02-text.md` (TEXTFN-025, TEXTFN-028). Neither ticket's last box is ticked:
-each has `uncertain` cases for the next pass. The kth area's `MOD` comment on ticket 01 is the orchestrator's to
-apply. Ticket 04 (`WEEKDAY`, `DAYS`, `NETWORKDAYS`, `WORKDAY`) is shared and not written here; if the orchestrator
-wants a line there, WEEKDAY-008, DAYS-005, NETWORKDAYS-009 and WORKDAY-010 ask its functions' present `#NUM!` for
-a serial between -1 and 0.
+(the second pass: EOMONTH-012 to 017, EDATE-013 to 017, YEAR-008, MONTH-005, DAY-005; the six readings and where they
+part; EDATE-018 to 022; and the boolean typed as `EOMONTH`'s start or `EDATE`'s months, EOMONTH-018 and EDATE-023) and on `docs/specs/exsheet-functions/issues/02-text.md` (TEXTFN-029 to 034), whose last box,
+"The next Windows run asks the `uncertain` cases", is **ticked**: every case of `text.json` is `observed`. Ticket 01's
+last box stays open: EDATE-018 to 023 and EOMONTH-018 are `uncertain`, and so are the kth area's `MOD` cases. Ticket 04 (`WEEKDAY`,
+`DAYS`, `NETWORKDAYS`, `WORKDAY`) is shared and not written here; a line for it, if the orchestrator wants one:
+"2026-10-12, the second area pass: WEEKDAY-008, DAYS-005, NETWORKDAYS-009 and WORKDAY-010 are `#NUM!` in Excel, as
+the engine answers: a serial between -1 and 0 is cut down to -1. NETWORKDAYS-010 and WORKDAY-011 ask the refusal of a
+boolean typed as a date, which no case asked before." Ticket 11 (`YEARFRAC` and `DATEDIF`) and the ticket of `HOUR`,
+`MINUTE` and `SECOND` are not this area's either: the five cases of a serial between -1 and 0, and the decision on
+`DATEDIF`'s, are the orchestrator's (above, "A serial between -1 and 0 under the five other functions").
 
 ## Change Notes
 
-- Written: `docs/releases/unreleased/area-dates-and-text-serial-0-and-60.md` (ExSheet, Behaviour,
-  `exsheet/functions`, ADR-0047) and `docs/releases/unreleased/area-dates-and-text-text-general.md` (ExSheet,
-  Behaviour, `exsheet/formulas#supported-functions`, ADR-0120).
-- Corrected, outside this area's list, because each said what is no longer so and both are unreleased: the last
-  sentence of `run17-dates-text-dates-before-march-1900.md` ("`EDATE` and `EOMONTH` from serial 0 or 60 stay
-  `#VALUE!`, and a `WORKDAY` …" is now "A `WORKDAY` …") and of `run17-dates-text-text-general.md` (the sentence
-  on the two readings refused until Excel is asked is removed).
+- `docs/releases/unreleased/area-dates-and-text-serial-0-and-60.md` (ExSheet, Behaviour, `exsheet/functions`,
+  ADR-0047), rewritten to what is true now: `EOMONTH` and `EDATE` from serial 0 or 60 answer, `EDATE(0,1)` is 31, `EDATE`
+  from serial 0 to January 1900, March 1900 or January 10000 stays `#VALUE!`, and a start between -1 and 0 is `#NUM!`
+  where it gave `#VALUE!`.
+- `docs/releases/unreleased/area-dates-and-text-text-general.md` (ExSheet, Behaviour,
+  `exsheet/formulas#supported-functions`, ADR-0120): unchanged, and still true; the second pass agreed with every
+  `TEXT` case it asked.
+- Corrected by the first round, outside this area's list, because each said what is no longer so: the last sentence
+  of `run17-dates-text-dates-before-march-1900.md` and of `run17-dates-text-text-general.md`.
