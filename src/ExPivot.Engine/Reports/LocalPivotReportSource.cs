@@ -495,8 +495,12 @@ public sealed class LocalPivotReportSource : PivotReportSource
                     var (value, index, _) = columns[c];
                     if (!value)
                     {
-                        var label = held.Report.Rows[r].Labels[index].Text;
-                        cells.Add(new(label ?? "", label, false));
+                        // A number Item's label is shown in General; its copy carries the number in
+                        // full, as a value cell's does (PV-7, ADR-0005). Any other label is its text.
+                        var label = held.Report.Rows[r].Labels[index];
+                        cells.Add(label.Number is { } number
+                            ? new(label.Text ?? "", number.ToString(CultureInfo.InvariantCulture), true)
+                            : new(label.Text ?? "", label.Text, false));
                     }
                     else
                     {

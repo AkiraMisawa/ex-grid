@@ -177,6 +177,26 @@ public class PivotGeneralTests
     public void ADR0060_An_exact_decimal_is_shown_by_the_same_rule(string number, string shown)
         => Assert.Equal(shown, PivotGeneral.Text(decimal.Parse(number, NumberStyles.Float, Invariant), Invariant));
 
+    [Theory] // ADR-0060: the closer form is judged from the fifteen digits both forms are built from, never from a decimal's further ones — these showed 1E-01 and 1E+00
+    [InlineData("0.10000000049999999", "0.100000001")]
+    [InlineData("1.00000000049999999", "1.000000001")]
+    [InlineData("-0.10000000049999999", "-0.100000001")]
+    public void ADR0060_A_decimals_closer_form_is_judged_from_its_fifteen_digits(string number, string shown)
+    {
+        var exact = decimal.Parse(number, NumberStyles.Float, Invariant);
+
+        Assert.Equal(shown, PivotGeneral.Text(exact, Invariant));
+        Assert.Equal(PivotGeneral.Text((double)exact, Invariant), PivotGeneral.Text(exact, Invariant));
+    }
+
+    [Fact] // ADR-0060 (the edge, as stated): a double is judged against its own value, as ExSheet's General judges it, so where a decimal's fifteen digits tie between the two forms, its double can choose the other
+    public void ADR0060_A_decimal_and_its_double_can_part_where_fifteen_digits_tie()
+    {
+        // 0.1000000004999999 is 0.100000000500000 at fifteen digits, as near 0.100000001 as 1E-01.
+        Assert.Equal("0.100000001", PivotGeneral.Text(0.1000000004999999m, Invariant));
+        Assert.Equal("1E-01", PivotGeneral.Text(0.1000000004999999, Invariant));
+    }
+
     [Fact] // ADR-0060: an exact decimal and the double of the same digits show the same text
     public void ADR0060_A_decimal_and_its_double_agree()
     {

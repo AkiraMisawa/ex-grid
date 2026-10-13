@@ -40,13 +40,18 @@ internal static class PivotGeneral
 
     /// <summary>
     /// An exact <c>decimal</c> in General: its own digits are rounded, never a <c>double</c>'s, so a
-    /// sum of money is shown from the sum itself (ADR-0060, "Money stays exact").
+    /// sum of money is shown from the sum itself (ADR-0060, "Money stays exact"). The two forms are
+    /// built from its fifteen significant digits, and which is closer is judged against those same
+    /// digits, not against the decimal's further ones: 0.10000000049999999 is 0.100000000500000 at
+    /// fifteen digits, as near <c>0.100000001</c> as <c>1E-01</c>, and shows <c>0.100000001</c>, as
+    /// its <c>double</c> does.
     /// </summary>
     public static string Text(decimal number, CultureInfo culture)
     {
-        var magnitude = Math.Abs(number);
-        return Form(number < 0, magnitude.ToString("E14", CultureInfo.InvariantCulture),
-            (decimalForm, scientific) => Error(decimalForm, magnitude) <= Error(scientific, magnitude), culture);
+        var e14 = Math.Abs(number).ToString("E14", CultureInfo.InvariantCulture);
+        var fifteen = decimal.Parse(e14, NumberStyles.Float, CultureInfo.InvariantCulture);
+        return Form(number < 0, e14,
+            (decimalForm, scientific) => Error(decimalForm, fifteen) <= Error(scientific, fifteen), culture);
     }
 
     /// <summary>The form of a magnitude written <c>d.ddddddddddddddE±xxx</c>: fifteen significant

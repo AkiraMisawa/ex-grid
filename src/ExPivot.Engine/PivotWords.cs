@@ -179,9 +179,12 @@ public static class PivotWords
         ["field-list"] = "PivotTable Fields",
         // Both instruction lines end with a colon, as Excel's pane draws them in the English (UK)
         // and the Japanese editions (the readings of 2026-10-12, R3 (b)) and in the English (US)
-        // one (verification/2026-10-12-windows-pivot-en-us, (b)). It was read from pictures, as
-        // UI Automation's names leave it out; in Japanese it stands where U+003A stands, not
-        // U+FF1A, which the measurement cannot tell from a full-width colon drawn narrower.
+        // one (verification/2026-10-12-windows-pivot-en-us, (b)). It was read from pictures:
+        // UI Automation's names leave the colon out, so the character itself was not read. In
+        // Japanese the colon on screen sits where U+003A sits when the same text is drawn for
+        // comparison, and U+FF1A begins about 10 px later; a full-width colon that Office draws
+        // narrower (proportional metrics) is not excluded by that measurement. ExPivot writes ':'
+        // U+003A.
         ["choose-fields"] = "Choose fields to add to report:",
         ["drag-fields"] = "Drag fields between areas below:",
         ["search-fields"] = "Search",

@@ -102,4 +102,26 @@ public class PivotValueTextTests : PivotTestContext
 
         Assert.Equal(["1.23456789 | 1", "1.23457E+11 | 2", "Grand Total | 3"], RowTexts(cut));
     }
+
+    [Fact] // ADR-0060, PV-7, ADR-0005: a number Item's label copies as it is painted in the TSV, and as the whole number in the HTML Excel reads (R3 (c): Excel's label cell holds 123456789012.345)
+    public async Task ADR0060_PV7_A_number_Items_copy_carries_the_number_in_full()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Key")], Values = [Sum("Amount")] },
+            source: PivotSource.From<Keyed>([new(1.23456789012345m, 1), new(123456789012.345m, 2)],
+            [
+                new("Key", PivotFieldType.Number, k => k.Key),
+                new("Amount", PivotFieldType.Number, k => k.Amount),
+            ]));
+        var grid = Grid(cut).Instance;
+        await cut.InvokeAsync(() => grid.PlaceSelectionAsync(new SelectionRange(0, 0, 2, 1), new CellPosition(0, 0), grid.RowSequenceVersion));
+
+        var payload = await cut.InvokeAsync(() => grid.BuildCopyPayloadAsync());
+
+        Assert.NotNull(payload);
+        Assert.Equal(["1.23456789", "1.23457E+11"],
+            payload!.Text!.TrimEnd('\r', '\n').Split('\n').Select(line => line.TrimEnd('\r')));
+        Assert.Contains(">1.23456789012345<", payload.Html, StringComparison.Ordinal);
+        Assert.Contains(">123456789012.345<", payload.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("1.23457E", payload.Html, StringComparison.Ordinal);
+    }
 }

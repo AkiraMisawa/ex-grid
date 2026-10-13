@@ -78,6 +78,16 @@ public class PivotWordsTests
             Captions(EnUs, new("Value", PivotAggregation.Sum), new("Value", PivotAggregation.Sum), new("Value", PivotAggregation.Sum)));
     }
 
+    [Fact] // ADR-0060 (ExPivot's rule, not observed): the number also goes past a Pivot Field's caption, which a Value Field's caption may not repeat
+    public void ADR0060_A_default_caption_goes_past_a_Pivot_Fields_caption()
+    {
+        PivotField<Obs>[] fields = [.. ObsFields, new("Tally", PivotFieldType.Number, o => o.Value, caption: "Count of Value")];
+
+        var report = PivotEngine.Compute([new Obs("A", 1)], fields, new PivotLayout { Values = [Count] }, EnUs);
+
+        Assert.Equal(["Count of Value2"], report.ValueCaptions);
+    }
+
     [Fact] // ADR-0060 (ExPivot's rule, not observed): a caption the user set is kept as typed, and a generated one it would repeat takes the next number free of it
     public void ADR0060_A_caption_the_user_set_is_kept_and_the_generated_ones_go_round_it()
     {
@@ -102,12 +112,14 @@ public class PivotWordsTests
         Assert.Equal("Summarize value field by", PivotWords.EnglishFor("summarize-by"));
     }
 
-    [Fact] // ADR-0061, observed from pictures (R3 (b) in English (UK) and Japanese; the English (US) record, (b)): the Field List's two instruction lines end with a colon, ':' U+003A
+    [Fact] // ADR-0061, observed from pictures (R3 (b) in English (UK) and Japanese; the English (US) record, (b)): the Field List's two instruction lines end with a colon; ExPivot writes ':' U+003A, a code point no record read
     public void ADR0061_The_Field_Lists_two_instruction_lines_end_with_a_colon()
     {
         Assert.Equal("Choose fields to add to report:", PivotWords.EnglishFor("choose-fields"));
         Assert.Equal("Drag fields between areas below:", PivotWords.EnglishFor("drag-fields"));
-        // In Japanese the colon stood where U+003A stands, not U+FF1A; UI Automation's names leave it out (R3 (b)).
+        // R3 (b): UI Automation's names leave the colon out, so the character itself was not read. In
+        // Japanese the colon on screen sits where U+003A sits in a drawing of the same text, and U+FF1A
+        // begins about 10 px later; a full-width colon that Office draws narrower is not excluded.
         Assert.Equal("レポートに追加するフィールドを選択してください:", PivotWords.JapaneseFor("choose-fields"));
         Assert.Equal("次のボックス間でフィールドをドラッグしてください:", PivotWords.JapaneseFor("drag-fields"));
     }

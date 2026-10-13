@@ -24,6 +24,17 @@ internal sealed class ItemLabels(PivotOptions options)
         return label;
     }
 
+    /// <summary>The number a number Item's label shows, which its copy carries in full; null for
+    /// any other Item, a date part labelled by its words included.</summary>
+    public static double? NumberOf(ItemRef item, FieldMeta meta)
+    {
+        if (item.Key.Kind != PivotItemKind.Number)
+            return null;
+        if (meta.DatePart is { } part && PivotDateWords.Takes(part, item.Key.Number))
+            return null;
+        return item.Key.Number;
+    }
+
     private string Compute(ItemRef item, FieldMeta meta)
     {
         var culture = options.Culture;
