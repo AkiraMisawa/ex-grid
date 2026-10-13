@@ -181,6 +181,53 @@ public class HeaderGroupRenderingTests : GridTestContext
         Assert.Equal([new SortSpec(TestRows.ColumnName(0), SortDirection.Ascending)], raised);
     }
 
+    [Fact] // ADR-0032 / ADR-0050 / ADR-0012: a group's rectangle selects nothing — not plainly under HeaderClickSelects, not with Shift, not with Ctrl; the leaf tier does
+    public async Task A_group_press_selects_nothing_under_any_modifier_and_the_leaf_tier_does()
+    {
+        GridSelection? selection = null;
+        IReadOnlyList<SortSpec>? raised = null;
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(50))
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, TestRows.Wide(6))
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.HeaderHeight, HeaderPx)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.HeaderGroups, Groups())
+            .Add(g => g.HeaderClickSelects, true)
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s)
+            .Add(g => g.OnSortChanged, (IReadOnlyList<SortSpec> s) => raised = s));
+        string Selected() => selection is null ? "none" : $"{selection.Focus} [{string.Join(", ", selection.Ranges)}]";
+        async Task PressHeader(double y, bool shift = false, bool ctrl = false)
+        {
+            await cut.Find(".ex-header").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 150, OffsetY = y, ShiftKey = shift, CtrlKey = ctrl });
+            await cut.Find(".ex-header").ClickAsync(new MouseEventArgs { Button = 0, OffsetX = 150, OffsetY = y, ShiftKey = shift, CtrlKey = ctrl });
+        }
+
+        // One cell of column 3 selected, so a whole-column gesture on column 1 would change it.
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 330, OffsetY = 30 });
+        var before = Selected();
+        Assert.NotEqual("none", before);
+
+        // y=40 is inside CVA's rectangle over column 1 (tier 1 of a 3-tier band).
+        foreach (var (shift, ctrl) in new[] { (false, false), (true, false), (false, true) })
+        {
+            await PressHeader(40, shift, ctrl);
+            Assert.Equal(before, Selected());
+        }
+        Assert.Null(raised);
+
+        // The leaf tier of the same column: each gesture selects, so the presses above were heard.
+        // Ctrl adds the column beside the cell; then the plain press takes the column alone.
+        await PressHeader(3 * HeaderPx - 10, ctrl: true);
+        var added = Selected();
+        Assert.NotEqual(before, added);
+        await PressHeader(3 * HeaderPx - 10);
+        Assert.NotEqual(added, Selected());
+        Assert.Null(raised);
+    }
+
     // ---- HG-16: nothing below the band knows tiers exist ---------------------------------------
     // The same gestures on the same grid, once with no Header Groups and once with two tiers of
     // them: presses on the header at every tier, the keys that climb towards it, and both copies.
