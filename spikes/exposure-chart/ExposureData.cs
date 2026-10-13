@@ -9,7 +9,8 @@ public sealed record ExposureRow(
     DateOnly Date,
     decimal EpeBefore, decimal EpeAfter, decimal EpeDiff,
     decimal EneBefore, decimal EneAfter, decimal EneDiff,
-    decimal CvaBefore, decimal CvaAfter, decimal CvaDiff);
+    decimal CvaBefore, decimal CvaAfter, decimal CvaDiff,
+    decimal PfeBefore, decimal PfeAfter, decimal PfeDiff);
 
 public static class ExposureData
 {
@@ -55,11 +56,16 @@ public static class ExposureData
             var cvaBefore = -epeBefore * weight;
             var cvaAfter = -epeAfter * weight;
 
+            // PFE at 97.5%: a tail well above the mean, cut less by the hedge than EPE is.
+            var pfeBefore = 2.6 * epeBefore;
+            var pfeAfter = Math.Max(0, pfeBefore - 1.8 * hedge);
+
             rows.Add(new ExposureRow(
                 date,
                 Money(epeBefore), Money(epeAfter), Money(epeAfter) - Money(epeBefore),
                 Money(eneBefore), Money(eneAfter), Money(eneAfter) - Money(eneBefore),
-                Money(cvaBefore), Money(cvaAfter), Money(cvaAfter) - Money(cvaBefore)));
+                Money(cvaBefore), Money(cvaAfter), Money(cvaAfter) - Money(cvaBefore),
+                Money(pfeBefore), Money(pfeAfter), Money(pfeAfter) - Money(pfeBefore)));
         }
         return rows;
     }

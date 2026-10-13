@@ -14,6 +14,8 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
 
 ![Select, chart, filter, compare](screenshots/poc.gif)
 
+![Add series to a chart already drawn](screenshots/add-series.gif)
+
 | | |
 |---|---|
 | ![Panel per group, hovered](screenshots/hover.png) | ![One axis](screenshots/one-axis.png) |
@@ -65,6 +67,11 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
   the panel says how many of the ticks are labelled; every tick is still drawn. The room under
   the last panel grows with the angle and the longest label. Labels are not measured: an
   estimate per character decides both (ADR-0021).
+- **Series are added to a chart already drawn** (Excel's Select Data → Add): "+ Add series" lists
+  the number columns not yet in it, by Header Group, or adds the grid's current selection. An
+  added series is read at the chart's own dates; when the selection covered other rows, the page
+  says how many of the chart's dates it covered rather than quietly matching them. A new group
+  becomes a new panel, and its Before / After / Diff take the colours those leaves already have.
 - **CSV with no script**: a `data:` URL behind `<a download>`, UTF-8 with a byte-order mark (Excel
   on a Japanese Windows otherwise reads Shift_JIS), invariant, unformatted, every digit; a missing
   value is an empty field, never a zero.

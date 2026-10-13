@@ -33,6 +33,10 @@
 {
     <p class="refusal" role="alert">@_refusal</p>
 }
+@if (_notice is not null)
+{
+    <p class="notice" role="status">@_notice</p>
+}
 
 @if (_model is { } model)
 {
@@ -45,12 +49,51 @@
                     <span class="refusal"> — @model.Missing of them no longer in the data</span>
                 }
             </span>
+            <button type="button" class="add-toggle @(_pickerOpen ? "open" : "")" aria-expanded="@(_pickerOpen ? "true" : "false")"
+                    @onclick="() => _pickerOpen = !_pickerOpen">+ Add series</button>
             <button type="button" class="filter-toggle @(_filterOpen ? "open" : "")" aria-expanded="@(_filterOpen ? "true" : "false")"
                     @onclick="() => _filterOpen = !_filterOpen">Filter @(FilterSummary(model)) ▾</button>
             <a class="download" href="@ChartCsv.DataUrl(_csv!, "text/csv")" download="exposure-profile.csv">Download CSV</a>
             <a class="download" href="@ChartCsv.DataUrl(_svg!, "image/svg+xml")" download="exposure-profile.svg">Download SVG</a>
             <button type="button" @onclick="CloseChart">Close</button>
         </div>
+        @if (_pickerOpen)
+        {
+            var addable = _columns.Where(c => c.Type == ColumnType.Number && !_definition!.SeriesColumns.Contains(c.Name)).ToList();
+            <div class="chart-filter" role="group" aria-label="Add series">
+                <div class="filter-section">
+                    <div class="filter-heading"><span>Add series</span></div>
+                    @if (addable.Count == 0)
+                    {
+                        <p class="filter-note">Every number column is in the chart.</p>
+                    }
+                    @foreach (var group in addable.GroupBy(c => GroupLabelOf(c.Name)))
+                    {
+                        var all = group.All(c => _picked.Contains(c.Name));
+                        <div class="filter-row">
+                            <label class="group-label">
+                                <input type="checkbox" checked="@all" @onchange="() => Pick(group.Select(c => c.Name), !all)" />
+                                @(group.Key.Length == 0 ? "(no group)" : group.Key)
+                            </label>
+                            @foreach (var column in group)
+                            {
+                                var on = _picked.Contains(column.Name);
+                                <label class="series-label">
+                                    <input type="checkbox" checked="@on" @onchange="() => Pick([column.Name], !on)" />
+                                    @column.Header
+                                </label>
+                            }
+                        </div>
+                    }
+                    <div class="filter-row">
+                        <button type="button" disabled="@(_picked.Count == 0)" @onclick="AddPicked">Add @(_picked.Count == 0 ? "" : $"{_picked.Count} series")</button>
+                        <span class="sep-text">or</span>
+                        <button type="button" @onclick="AddSelection">Add the grid's selection</button>
+                        <span class="filter-note">@SelectionDescription()</span>
+                    </div>
+                </div>
+            </div>
+        }
         @if (_filterOpen)
         {
             <div class="chart-filter" role="group" aria-label="Chart filter">
@@ -220,6 +263,9 @@
         new("CvaBefore", ColumnType.Number, r => r.CvaBefore, header: "Before", format: Money),
         new("CvaAfter", ColumnType.Number, r => r.CvaAfter, header: "After", format: Money),
         new("CvaDiff", ColumnType.Number, r => r.CvaDiff, header: "Diff", format: Money),
+        new("PfeBefore", ColumnType.Number, r => r.PfeBefore, header: "Before", format: Money),
+        new("PfeAfter", ColumnType.Number, r => r.PfeAfter, header: "After", format: Money),
+        new("PfeDiff", ColumnType.Number, r => r.PfeDiff, header: "Diff", format: Money),
     ];
 
     private static readonly HeaderGroup[] Groups =
@@ -227,6 +273,7 @@
         new("EPE(0)", ["EpeBefore", "EpeAfter", "EpeDiff"]),
         new("ENE(0)", ["EneBefore", "EneAfter", "EneDiff"]),
         new("CVA", ["CvaBefore", "CvaAfter", "CvaDiff"]),
+        new("PFE(97.5%)", ["PfeBefore", "PfeAfter", "PfeDiff"]),
     ];
 
     // Which columns are a change rather than a level: the Consumer says so, the chart does not
@@ -249,6 +296,68 @@
     private ChartLayout _layout = ChartLayout.PanelPerGroup;
 
     private ChartView _view = ChartView.All;
+
+    // Adding series to a chart already drawn: the columns ticked in the picker.
+    private bool _pickerOpen;
+    private readonly HashSet<string> _picked = [];
+
+    private string GroupLabelOf(string column) => _groups.FirstOrDefault(g => g.Tier == 1 && g.Columns.Contains(column))?.Label ?? "";
+
+    private void Pick(IEnumerable<string> columns, bool on)
+    {
+        foreach (var c in columns)
+            if (on) _picked.Add(c); else _picked.Remove(c);
+    }
+
+    private void AddPicked()
+    {
+        // In the grid's column order, so a group's series keep its Before, After, Diff order.
+        AddColumns(_columns.Select(c => c.Name).Where(_picked.Contains).ToList());
+        _picked.Clear();
+        _pickerOpen = false;
+    }
+
+    /// <summary>
+    /// Excel's "add the range to the chart": the selection's number columns join it. The chart
+    /// keeps its own dates — a series is read at them — and when the selection covered other
+    /// rows, that is said rather than silently ignored.
+    /// </summary>
+    private void AddSelection()
+    {
+        _refusal = null;
+        if (_selection.IsEmpty) { _refusal = "Select the columns to add in the grid first."; return; }
+        if (_selectionVersion != _source.RowSequenceVersion) { _refusal = "The rows were reordered after the selection was made. Select again."; return; }
+        var indices = _selection.Ranges.SelectMany(r => Enumerable.Range(r.LeftColumn, r.ColumnCount)).Distinct().Order().ToList();
+        var notNumbers = indices.Where(i => _columns[i].Type is not (ColumnType.Number or ColumnType.Date)).ToList();
+        if (notNumbers.Count > 0) { _refusal = $"{string.Join(", ", notNumbers.Select(i => _columns[i].Header))} cannot be plotted: not a number column."; return; }
+        var names = indices.Where(i => _columns[i].Type == ColumnType.Number).Select(i => _columns[i].Name)
+            .Where(n => !_definition!.SeriesColumns.Contains(n)).ToList();
+        if (names.Count == 0) { _refusal = "Every column in the selection is already in the chart."; return; }
+
+        var x = _columns.First(c => c.Name == _definition!.XColumn);
+        var covered = _selection.Ranges.SelectMany(r => Enumerable.Range(r.TopRow, r.RowCount)).Distinct()
+            .Select(i => x.Value(_source.Window[i])).OfType<DateOnly>().ToHashSet();
+        _notice = covered.SetEquals(_definition!.RowKeys)
+            ? null
+            : $"Added for the chart's {_definition.RowKeys.Count} dates; the selection covered {covered.Count(_definition.RowKeys.Contains)} of them.";
+        AddColumns(names);
+        _pickerOpen = false;
+    }
+
+    private void AddColumns(IReadOnlyList<string> names)
+    {
+        if (names.Count == 0) return;
+        _definition = _definition! with { SeriesColumns = [.. _definition.SeriesColumns, .. names] };
+        Redraw();
+    }
+
+    private string SelectionDescription()
+    {
+        if (_selection.IsEmpty) return "nothing selected in the grid";
+        var count = _selection.Ranges.SelectMany(r => Enumerable.Range(r.LeftColumn, r.ColumnCount)).Distinct()
+            .Count(i => _columns[i].Type == ColumnType.Number && !_definition!.SeriesColumns.Contains(_columns[i].Name));
+        return count == 0 ? "the selection adds nothing new" : $"the selection adds {count} series";
+    }
     private XAxisStyle _xAxis = XAxisStyle.Default;
 
     private void SetAxis(Func<XAxisStyle, XAxisStyle> change)
@@ -295,7 +404,7 @@
 
     private ChartDefinition? _definition;
     private ChartModel? _model;
-    private string? _svg, _pageSvg, _csv, _refusal;
+    private string? _svg, _pageSvg, _csv, _refusal, _notice;
 
     // The tooltip: which date the pointer is over, as the chart's listener reports it.
     private int _drawing;
@@ -335,6 +444,7 @@
         {
             _definition = definition;
             _view = ChartView.All;
+            _notice = null;
             Redraw();
         }
     }
@@ -401,7 +511,7 @@
     private static DateOnly? Parse(object? value) =>
         DateOnly.TryParseExact(value as string, "yyyy-MM-dd", Invariant, DateTimeStyles.None, out var d) ? d : null;
 
-    private void CloseChart() => (_definition, _model, _svg, _pageSvg, _csv, _filterOpen, _band) = (null, null, null, null, null, false, null);
+    private void CloseChart() => (_definition, _model, _svg, _pageSvg, _csv, _filterOpen, _band, _pickerOpen, _notice) = (null, null, null, null, null, false, null, false, null);
 
     /// <summary>The listener's report. One taken against an earlier drawing names a date of a
     /// chart no longer shown, and is dropped rather than shown against this one.</summary>

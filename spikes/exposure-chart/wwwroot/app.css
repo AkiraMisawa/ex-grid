@@ -32,3 +32,6 @@ h1 { font-size: 18px; margin: 0 0 4px; }
 .tip-group { color: #6b7280; margin-top: 4px; font-size: 11px; }
 .tip-row { display: grid; grid-template-columns: 16px 1fr auto; gap: 6px; align-items: center; }
 .tip-value { font-variant-numeric: tabular-nums; text-align: right; }
+.add-toggle.open { background: #e0e7ff; }
+.notice { color: #92400e; }
+.sep-text { color: #6b7280; }
