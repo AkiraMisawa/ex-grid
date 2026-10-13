@@ -62,14 +62,14 @@ The brief names these as decided with the user on 2026-10-12; each is written as
    the passes, and no case asks it; rounding would sort by column 2. Options: (a) refuse it and add an `uncertain`
    case; (b) keep truncating and add the case; (c) leave it for the next run's list.
 7. **The term for a refused Formula's `#VALUE!`.** The engine and the ADRs call it a refusal, and a Consumer now
-   reads it as `Value.IsRefusal` (public, since ExSheet uses it, ADR-0201's rule 3). `CONTEXT.md`'s **Refusal** is
+   reads it as `Value.IsRefused` (public, since ExSheet uses it, ADR-0201's rule 3). `CONTEXT.md`'s **Refusal** is
    the grid's "no" on an operation. The `CONTEXT.md` edit below names the Formula's refusal inside **Error Value**
    and tells it from **Refusal**; whether that, another word, or another member's name is the user's call.
 
 ## This branch's choices (not the user's)
 
 - **How a refusal is carried.** A refused cell's Value is `#VALUE!` with a mark the engine reads
-  (`Value.IsRefusal`), equal to `#VALUE!` as a Value and shown, copied and compared as one. A Formula that reads a
+  (`Value.IsRefused`), equal to `#VALUE!` as a Value and shown, copied and compared as one. A Formula that reads a
   refused cell is refused as one that reads a cycle is `#CIRC!`: by every cell its text names, whether or not the
   branch naming it is taken (`=IF(TRUE,1,B1)`), and by every cell or Linked Table column a computed Reference reads
   (`INDIRECT`, `OFFSET`, `INDEX`, `A1#`). A cycle comes before a refusal, and a wait before one. A Linked Table's
@@ -213,7 +213,7 @@ New:
   answers 6 (MROUND-001), `=IFERROR(B1,0)` in another cell was 0. A Formula that meets a cycle is still
   `#CIRC!`, and one that meets data on its way still waits. Excel's own `#VALUE!`, such as `=1+"a"`'s, is
   an Error Value any Formula catches. A cell's refused Value is `#VALUE!` to a Consumer, shown and copied
-  as one, and says it is a refusal (`Value.IsRefusal`); it is no constant an Entry can hold. A copy of one
+  as one, and says it is a refusal (`Value.IsRefused`); it is no constant an Entry can hold. A copy of one
   range carries the refused cell's Formula; a copy of several ranges, or with the headers, that holds one
   is refused when pasted back into the Sheet, rather than turn the refusal into an Error Value a Formula
   can catch. Where Excel's answer to such a Formula is known, its corpus case records the refusal as a
@@ -1028,7 +1028,7 @@ New:
 
 ### 29. CONTEXT.md
 
-Error Value: a refused Formula's `#VALUE!` (a term for the user to settle: question 7) (from: this branch (point 2)).
+Error Value, and the new term **Refused Formula** (decided with the user on 2026-10-13).
 
 Old:
 
@@ -1047,13 +1047,18 @@ New:
 **Error Value**:
 A Value that is an error — `#DIV/0!`, `#NAME?`, `#REF!`, `#VALUE!`, `#N/A` and the rest of
 Excel's set, plus `#CIRC!` for a Formula that depends on itself, where Excel would show 0 —
-produced by a Formula and carried into every Formula that uses it. It is data, like a number. The `#VALUE!` ExSheet
-shows where it cannot answer a Formula as Excel is that Formula's refusal: no Formula catches it, in its own cell or in
-any cell that reads it, and a Consumer reads it as `Value.IsRefusal`
-([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md), 2026-10-12). It
-is not a **Refusal**, which stops an operation. **Not the Cell State Error**, which is the Consumer's verdict on a value, painted and
+produced by a Formula and carried into every Formula that uses it. It is data, like a number. The `#VALUE!` of a
+**Refused Formula** looks like one and is not Excel's: no Formula catches it. **Not the Cell State Error**, which is the Consumer's verdict on a value, painted and
 never computed ([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
 _Avoid_: error (that is a Cell State), exception
+
+**Refused Formula**:
+A Formula ExSheet does not answer because it cannot answer it as Excel would. Its cell shows `#VALUE!`, and every
+Formula that reads it is refused too; no Formula catches it, in its own cell or in any cell that reads it. A
+Consumer tells it from Excel's own `#VALUE!` by `Value.IsRefused`
+([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)). **Not a
+Refusal**, which is the grid's "no" to an operation and never computes a Value. *(2026-10-13, decided with the user.)*
+_Avoid_: refusal (for the Formula; that is the grid's), refused value
 ````
 
 ### 30. src/ExSheet.Engine/README.md
@@ -1130,7 +1135,7 @@ answer. Such a `#VALUE!` is a refusal, and no Formula catches it: not `IFERROR`,
 any other function around it in the same Formula, and not a Formula in another cell that reads it —
 directly, through a range, a name, `INDIRECT`, `OFFSET`, a Spill Range or a Linked Table — which is
 refused in turn, as one that reads a cycle is `#CIRC!` (ADR-0047, 2026-10-12, decided with the user).
-A cell's refused Value is `#VALUE!` in every other way, and `Value.IsRefusal` says it is one;
+A cell's refused Value is `#VALUE!` in every other way, and `Value.IsRefused` says it is one;
 `Entry.FromValue` refuses it. Excel's own `#VALUE!`, `=1+"a"`'s, is caught as Excel's is. The
 refusals:
 ````
