@@ -72,7 +72,9 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.1,10,1000,0,2)"},
       "check": "ZZ1000",
-      "expect": {"value2": -147.95035898410148}
+      "expect": {"value2": -147.95035898410146},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once; 2026-10-13, decided with the user: at the start of each period too, the exact payment at the start rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -147.95035898410148}
     },
     {
       "id": "PMT-009",
@@ -81,7 +83,9 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.1,10,1000,0,0.5)"},
       "check": "ZZ1000",
-      "expect": {"value2": -147.95035898410148}
+      "expect": {"value2": -147.95035898410146},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once; 2026-10-13, decided with the user: at the start of each period too, the exact payment at the start rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -147.95035898410148}
     },
     {
       "id": "PMT-010",
@@ -90,7 +94,9 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.1,10,1000,0,-1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -147.95035898410148}
+      "expect": {"value2": -147.95035898410146},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once; 2026-10-13, decided with the user: at the start of each period too, the exact payment at the start rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -147.95035898410148}
     },
     {
       "id": "PMT-011",
@@ -100,7 +106,7 @@
       "cells": {"ZZ1000": "=PMT(8%/12,10.5,10000)"},
       "check": "ZZ1000",
       "expect": {"value2": -989.2729401451878},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -989.2729401451879}
     },
     {
@@ -111,7 +117,7 @@
       "cells": {"ZZ1000": "=PMT(8%/12,-10,10000)"},
       "check": "ZZ1000",
       "expect": {"value2": 970.3654226924855},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": 970.3654226924854}
     },
     {
@@ -122,7 +128,7 @@
       "cells": {"ZZ1000": "=PMT(0.05/12,36,250000,-5000)"},
       "check": "ZZ1000",
       "expect": {"value2": -7363.703123976373},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -7363.7031239763755}
     },
     {
@@ -132,8 +138,8 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.0725/12,12,250000,0,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -21530.430018725492},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). At the start of each period the engine's double is the payment at the end's double divided by 1+rate and rounded again, which is the financial area's rule, not the decision, and which ticket 13 puts to the user. None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "expect": {"value2": -21530.43001872549},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -21530.430018725485}
     },
     {
@@ -143,8 +149,8 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.05/12,12,10000,0,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -852.5226402170998},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). At the start of each period the engine's double is the payment at the end's double divided by 1+rate and rounded again, which is the financial area's rule, not the decision, and which ticket 13 puts to the user. None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "expect": {"value2": -852.5226402170999},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -852.5226402171}
     },
     {
@@ -155,7 +161,7 @@
       "cells": {"ZZ1000": "=PMT(0.045/12,12,250000,-5000)"},
       "check": "ZZ1000",
       "expect": {"value2": -20936.48778866115},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -20936.487788661154}
     },
     {
@@ -175,7 +181,7 @@
       "cells": {"ZZ1000": "=PMT(0.0365/365,365,10000)"},
       "check": "ZZ1000",
       "expect": {"value2": -27.90167156122446},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -27.901671561224465}
     },
     {
@@ -185,7 +191,9 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.1,10,1000,0,0.1)"},
       "check": "ZZ1000",
-      "expect": {"value2": -147.95035898410148}
+      "expect": {"value2": -147.95035898410146},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once; 2026-10-13, decided with the user: at the start of each period too, the exact payment at the start rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "excelExpect": {"value2": -147.95035898410148}
     },
     {
       "id": "PMT-020",
@@ -195,7 +203,7 @@
       "cells": {"ZZ1000": "=PMT(0.15,12,1000,-5000,1)"},
       "check": "ZZ1000",
       "expect": {"value2": -10.501648240558218},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). At the start of each period the engine's double is the payment at the end's double divided by 1+rate and rounded again, which is the financial area's rule, not the decision, and which ticket 13 puts to the user. None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -10.501648240558216}
     },
     {
@@ -206,7 +214,7 @@
       "cells": {"ZZ1000": "=PMT(0.15,60,250000,-5000,1)"},
       "check": "ZZ1000",
       "expect": {"value2": -32615.986669943606},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). At the start of each period the engine's double is the payment at the end's double divided by 1+rate and rounded again, which is the financial area's rule, not the decision, and which ticket 13 puts to the user. None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -32615.986669943602}
     },
     {
@@ -226,7 +234,7 @@
       "cells": {"ZZ1000": "=PMT(0.0365/365,24,250000,20000,1)"},
       "check": "ZZ1000",
       "expect": {"value2": -11260.941796175352},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). At the start of each period the engine's double is the payment at the end's double divided by 1+rate and rounded again, which is the financial area's rule, not the decision, and which ticket 13 puts to the user. None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -11260.941796175353}
     },
     {
@@ -237,7 +245,7 @@
       "cells": {"ZZ1000": "=PMT(0.0525/12,24,250000,-5000,1)"},
       "check": "ZZ1000",
       "expect": {"value2": -10750.782380145603},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). At the start of each period the engine's double is the payment at the end's double divided by 1+rate and rounded again, which is the financial area's rule, not the decision, and which ticket 13 puts to the user. None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -10750.7823801456}
     },
     {
@@ -247,8 +255,8 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.065/12,60,1000,-5000,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": 50.90552130119935},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). At the start of each period the engine's double is the payment at the end's double divided by 1+rate and rounded again, which is the financial area's rule, not the decision, and which ticket 13 puts to the user. None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "expect": {"value2": 50.90552130119934},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": 50.90552130119933}
     },
     {
@@ -259,7 +267,7 @@
       "cells": {"ZZ1000": "=PMT(0.07/12,240,1000,-5000)"},
       "check": "ZZ1000",
       "expect": {"value2": 1.8452907580883144},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": 1.8452907580883169}
     },
     {
@@ -270,7 +278,7 @@
       "cells": {"ZZ1000": "=PMT(0.00001,360,10000,-5000,1)"},
       "check": "ZZ1000",
       "expect": {"value2": -13.963833694802405},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). At the start of each period the engine's double is the payment at the end's double divided by 1+rate and rounded again, which is the financial area's rule, not the decision, and which ticket 13 puts to the user. None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -13.963833694802407}
     },
     {
@@ -281,7 +289,7 @@
       "cells": {"ZZ1000": "=PMT(0.025/4,240,1000,-5000)"},
       "check": "ZZ1000",
       "expect": {"value2": 0.9737277420722884},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": 0.9737277420722876}
     },
     {
@@ -291,8 +299,8 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.06/52,60,1000,-5000,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": 63.197272167756275},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). At the start of each period the engine's double is the payment at the end's double divided by 1+rate and rounded again, which is the financial area's rule, not the decision, and which ticket 13 puts to the user. None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "expect": {"value2": 63.19727216775628},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": 63.197272167756296}
     },
     {
@@ -303,7 +311,7 @@
       "cells": {"ZZ1000": "=PMT(0.045/12,12,10000,-5000)"},
       "check": "ZZ1000",
       "expect": {"value2": -445.64260793186025},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -445.6426079318603}
     },
     {
@@ -314,7 +322,7 @@
       "cells": {"ZZ1000": "=PMT(0.001,12,250000,20000,1)"},
       "check": "ZZ1000",
       "expect": {"value2": -22603.91407630351},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). At the start of each period the engine's double is the payment at the end's double divided by 1+rate and rounded again, which is the financial area's rule, not the decision, and which ticket 13 puts to the user. None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -22603.914076303507}
     },
     {
@@ -325,7 +333,7 @@
       "cells": {"ZZ1000": "=PMT(0.03/12,12,250000,20000)"},
       "check": "ZZ1000",
       "expect": {"value2": -22817.298664792015},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in digits no format displays, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: PMT's result may differ from Excel's in its last digits, the engine giving the exact payment over Excel's doubles rounded once). None of the evaluations searched gives every payment Excel was observed to give (spikes/exsheet-financial-evaluation/). Listed under 0.1.0's Known limitations (ADR-0202)",
       "excelExpect": {"value2": -22817.29866479201}
     },
     {

@@ -16,9 +16,9 @@ namespace ExSheet.Engine.Tests;
 /// otherwise, an odd root of a negative 1+rate, and the ^ operator's Error Values at 1+rate = 0. XNPV
 /// divides each value by that power of its years and sums from the first, and is #NUM! at a rate below 0,
 /// a check no evaluation gives. Where PMT answers, it is the payment at the end carried beyond a double and
-/// rounded once, with 1+rate raised exactly, and at the start that double divided by 1+rate and rounded
-/// again (the financial area's rule, which ticket 13 puts to the user); 19 of the 30 payments Excel was asked
-/// are 1 to 11 units in the last place from the engine's. NPV is refused for 0.1.0
+/// rounded once, with 1+rate raised exactly, and at the start the exact payment at the start rounded once
+/// (2026-10-13, decided with the user); 23 of the 30 payments Excel was asked are 1 to 11 units in the last
+/// place from the engine's. NPV is refused for 0.1.0
 /// (ADR-0202, note of 2026-10-12): no evaluation searched gives every double Excel gave for it.
 /// </summary>
 public class FinancialEvaluationTests
@@ -172,43 +172,32 @@ public class FinancialEvaluationTests
     public void ADR0047_PMT_at_the_end_is_carried_beyond_a_double_and_rounded_once(string formula, double excel) =>
         Assert.Equal(excel, Number(formula));
 
-    [Theory] // ADR-0047: PMT-002 and PMT-008, at the start, are the payment at the end's double divided by 1+rate exactly and rounded again, the financial area's rule at the start (ticket 13 puts it to the user)
+    [Theory] // ADR-0047 (2026-10-13, decided with the user): PMT-002 and PMT-008, at the start, are the exact payment at the start rounded once; at PMT-008 Excel's double, -147.95035898410148, is a unit in the last place from it
     [InlineData("=PMT(8%/12,10,10000,0,1)", -1030.1643271779658)]
-    [InlineData("=PMT(0.1,10,1000,0,2)", -147.95035898410148)]
-    public void ADR0047_PMT_at_the_start_is_the_payment_at_the_end_over_one_plus_rate_rounded_again(string formula, double excel) =>
-        Assert.Equal(excel, Number(formula));
+    [InlineData("=PMT(0.1,10,1000,0,2)", -147.95035898410146)]
+    public void ADR0047_PMT_at_the_start_is_the_exact_payment_at_the_start_rounded_once(string formula, double exactOnce) =>
+        Assert.Equal(exactOnce, Number(formula));
 
-    [Fact] // ADR-0047: PMT-008, at the start, is the payment at the end over 1+rate unrounded; over the double 1.1 it is one unit lower, and so is the exact payment at the start rounded once (Python's decimal), which the engine's rule at the start does not give
-    public void ADR0047_PMT_at_the_start_divides_the_payment_at_the_end_by_one_plus_rate_unrounded()
+    [Theory] // ADR-0047 (2026-10-13, decided with the user): PMT-008, 014, 015, 025 and 029, the second area pass: the payment at the start is not the payment at the end's double over 1+rate rounded again, the earlier rule, which lay a unit in the last place from the exact payment at the start rounded once (Python's decimal) at each of these
+    [InlineData("=PMT(0.1,10,1000,0,1)", "=PMT(0.1,10,1000)", 0.1, -147.95035898410146)]
+    [InlineData("=PMT(0.0725/12,12,250000,0,1)", "=PMT(0.0725/12,12,250000)", 0.0725 / 12, -21530.43001872549)]
+    [InlineData("=PMT(0.05/12,12,10000,0,1)", "=PMT(0.05/12,12,10000)", 0.05 / 12, -852.5226402170999)]
+    [InlineData("=PMT(0.065/12,60,1000,-5000,1)", "=PMT(0.065/12,60,1000,-5000)", 0.065 / 12, 50.90552130119934)]
+    [InlineData("=PMT(0.06/52,60,1000,-5000,1)", "=PMT(0.06/52,60,1000,-5000)", 0.06 / 52, 63.19727216775628)]
+    public void ADR0047_PMT_at_the_start_is_not_the_payment_at_the_end_rounded_again(string atStart, string atEnd, double rate, double exactOnce)
     {
-        var atEnd = Number("=PMT(0.1,10,1000)");
-        var atStart = Number("=PMT(0.1,10,1000,0,1)");
-        Assert.Equal(-162.74539488251162, atEnd);
-        Assert.Equal(-147.95035898410148, atStart);
-        Assert.Equal(-147.95035898410146, atEnd / (1 + 0.1));
-        const double exactPaymentAtTheStartRoundedOnce = -147.95035898410146;
-        Assert.NotEqual(exactPaymentAtTheStartRoundedOnce, atStart);
-    }
-
-    [Theory] // ADR-0047: PMT-014, 015, 025 and 029, the second area pass: the engine's rule at the start lies a unit in the last place from the exact payment at the start rounded once (Python's decimal), and Excel's double on the other side of it; ticket 13 puts the rule at the start to the user
-    [InlineData("=PMT(0.0725/12,12,250000,0,1)", -21530.430018725492, -21530.43001872549, -21530.430018725485)]
-    [InlineData("=PMT(0.05/12,12,10000,0,1)", -852.5226402170998, -852.5226402170999, -852.5226402171)]
-    [InlineData("=PMT(0.065/12,60,1000,-5000,1)", 50.90552130119935, 50.90552130119934, 50.90552130119933)]
-    [InlineData("=PMT(0.06/52,60,1000,-5000,1)", 63.197272167756275, 63.19727216775628, 63.197272167756296)]
-    public void ADR0047_PMT_at_the_start_is_not_everywhere_the_exact_payment_rounded_once(string formula, double engine, double exactOnce, double excel)
-    {
-        Assert.Equal(engine, Number(formula));
-        Assert.Equal(1, Math.Abs(BitConverter.DoubleToInt64Bits(engine) - BitConverter.DoubleToInt64Bits(exactOnce)));
-        Assert.True(Math.Abs(excel - exactOnce) < Math.Abs(excel - engine));
+        Assert.Equal(exactOnce, Number(atStart));
+        var roundedAgain = Dyadic.QuotientToDouble(Dyadic.Of(Number(atEnd)), Dyadic.One + Dyadic.Of(rate));
+        Assert.Equal(1, Math.Abs(BitConverter.DoubleToInt64Bits(roundedAgain) - BitConverter.DoubleToInt64Bits(exactOnce)));
     }
 
     [Theory] // ADR-0047: the evaluation found, at inputs no run has asked; spikes/exsheet-financial-evaluation/ computes each exactly
     [InlineData("=PMT(-2/12/100,360,125000,20000,0)", -326.9633871434769)]
     [InlineData("=FV(-2/12/100,360,125000,20000,0)", -33870696.20924745)]
     [InlineData("=PV(-2/12/100,360,125000,20000,0)", -61763793.24623326)]
-    [InlineData("=PMT(8/12/100,480,-1000000,1000,1)", 6906.785212764484)]
+    [InlineData("=PMT(8/12/100,480,-1000000,1000,1)", 6906.785212764483)]
     [InlineData("=PV(8/12/100,480,-1000000,1000,1)", 144779153.72637767)]
-    [InlineData("=PMT(6/52/100,36,-250000,-1000,1)", 7112.692686159469)]
+    [InlineData("=PMT(6/52/100,36,-250000,-1000,1)", 7112.69268615947)]
     [InlineData("=FV(6/52/100,36,-250000,-1000,1)", 9195769.500246907)]
     [InlineData("=PV(6/52/100,36,-250000,-1000,1)", 8821786.639617125)]
     [InlineData("=PMT(9/1200/100,1000,-250000,0,0)", 259.501547004884)]
@@ -235,7 +224,7 @@ public class FinancialEvaluationTests
     [Fact] // ADR-0047: PMT-009, the area pass: a type of 0.5 is not truncated to 0, which would give the payment at the end
     public void ADR0047_A_fractional_type_is_not_truncated()
     {
-        Assert.Equal(-147.95035898410148, Number("=PMT(0.1,10,1000,0,0.5)"));
+        Assert.Equal(-147.95035898410146, Number("=PMT(0.1,10,1000,0,0.5)"));
         Assert.Equal(-162.74539488251162, Number("=PMT(0.1,10,1000,0,0)"));
     }
 
@@ -248,7 +237,7 @@ public class FinancialEvaluationTests
         Assert.Equal(1, Math.Abs(BitConverter.DoubleToInt64Bits(exact) - BitConverter.DoubleToInt64Bits(excel)));
     }
 
-    [Theory] // ADR-0047, the exception for PMT: the engine's payment, computed with Python's decimal (the exact payment rounded once at the end, and at the start that double over 1+rate rounded again), at inputs no run has asked; spikes/exsheet-financial-evaluation/pmt_exact.py checks 20,000 such inputs
+    [Theory] // ADR-0047, the exception for PMT: the engine's payment, computed with Python's decimal (the exact payment rounded once, at the end and at the start), at inputs no run has asked; spikes/exsheet-financial-evaluation/pmt_exact.py checks 20,000 such inputs
     [InlineData("=PMT(0.1,0.5,1000)", -2148.8088481701516)]
     [InlineData("=PMT(0.1,-1,1000,0,1)", 909.0909090909091)]
     [InlineData("=PMT(-0.3,-0.5,0,20000,0)", 30733.20053068151)]

@@ -1770,8 +1770,7 @@ static class Refusals
     /// are run instead, with a double's range, over the annuity grid and the extreme grid: where some give a number
     /// and others an Error Value, they part in kind and the engine must refuse (#VALUE!); where all give an Error
     /// Value, the engine must give one; where all give a number, the engine must give its payment by its rules,
-    /// computed here (<see cref="ExactPmt"/>: the exact payment at the end rounded once, and at the start that double
-    /// over 1+rate rounded again), or refuse for the reason it gives. Where the engine answers, no reading may lie
+    /// computed here (<see cref="ExactPmt"/>: the exact payment rounded once, at the end and at the start), or refuse for the reason it gives. Where the engine answers, no reading may lie
     /// more than 128 units in the last place from its payment (<see cref="PmtReadings.Apart"/>, the fourth round); the
     /// farthest is reported.
     /// </summary>
@@ -1986,10 +1985,9 @@ static class Refusals
         var sum = X.Add(X.Mul(X.Of(pv), g, P), X.Of(fv), P);
         if (Magnified(r, n, pv, fv, b, g, e, sum, atStart) is { } magnified) return ("#VALUE!", magnified);
         var owed = X.MulExact(X.Of(r), sum).Negate();
-        var end = X.Div(owed, e, 53).ToDouble();
-        if (end == 0) return ("0", null);
-        if (atStart) end = X.Div(X.Of(end), b, 53).ToDouble();
-        return (Format(end), null);
+        // The exact payment rounded once, at the end and at the start (2026-10-13, decided with the user).
+        var payment = X.Div(owed, atStart ? X.Mul(e, b, P) : e, 53).ToDouble();
+        return payment == 0 ? ("0", null) : (Format(payment), null);
     }
 
     private static long UnitsApart(double a, double b)

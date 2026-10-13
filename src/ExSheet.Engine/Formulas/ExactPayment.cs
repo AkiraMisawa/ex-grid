@@ -7,14 +7,13 @@ namespace ExSheet.Engine.Formulas;
 /// computed in <see cref="Enclosure"/>s, which hold it between two bounds, and the double is given only where
 /// both bounds round to it, the enclosures being computed again with twice the bits while they do not decide
 /// it. 1+rate is never rounded: g - 1 is raised from the rate itself, so that its relative precision does not
-/// fall however small the rate is. The payment at the start is not the exact payment at the start rounded
-/// once: it is the payment at the end's double divided by 1+rate exactly and rounded again. That is the
-/// financial area's choice (2026-10-12), not the user's decision, and ticket 13 puts it to the user: it gives
-/// Excel's double at PMT-008, -147.95035898410148, where the exact payment at the start rounded once is
-/// -147.95035898410146; at PMT-014, 015, 025 and 029 it lies a unit in the last place from the exact payment
-/// rounded once, and Excel's double lies on the other side of that one, nearer it than the engine's; and it
-/// lies a unit from the exact payment rounded once at 809 of the 4,132 payments at the start other than 0
-/// that <c>pmt_exact.py</c> draws (20%).
+/// fall however small the rate is. The payment at the start is the exact payment at the start,
+/// -rate (pv g + fv) / ((g - 1)(1+rate)), rounded once, held between bounds as the payment at the end is
+/// (2026-10-13, decided with the user: the payment at the start of each period is the exact payment rounded
+/// once too). It is a unit in the last place from Excel's double at PMT-008, -147.95035898410146 where Excel
+/// gave -147.95035898410148, which the financial area's earlier rule, the payment at the end's double over
+/// 1+rate rounded again, happened to give; that rule lay a unit from the exact payment rounded once at 809 of
+/// the 4,132 payments at the start other than 0 that <c>pmt_exact.py</c> draws (20%).
 /// </summary>
 /// <remarks>
 /// Refused (null), the financial area's rules (2026-10-12): where the readings of PMT, the evaluations of the
@@ -51,7 +50,7 @@ internal static class ExactPayment
     private static readonly Dyadic LeastGrowth = Dyadic.One.Scale(-52);
 
     /// <summary>
-    /// The exact payment at the end rounded once, and at the start that double over 1+rate rounded again, or null
+    /// The exact payment at the end, or at the start, rounded once, or null
     /// where PMT refuses (the remarks above). The caller has answered or refused a rate of 0, a rate of -1 or
     /// below, an <paramref name="periods"/> of 0 and one past 2^53.
     /// </summary>
@@ -75,10 +74,10 @@ internal static class ExactPayment
                 Enclosure.Add(Enclosure.Multiply(Enclosure.Exactly(pv), lessOne, bits), Enclosure.Exactly(sum), bits));
             if (bits == FirstBits && !Conditioned(r, onePlusRate, periods, pv, fv, sum, growth, lessOne, owed, atStart, bits)) return null;
             var atEnd = Enclosure.Divide(Enclosure.Multiply(Enclosure.Exactly(r.Negate()), owed, bits), lessOne, bits);
-            var low = atEnd.Low.ToDouble();
-            if (low != atEnd.High.ToDouble()) continue;
-            if (low == 0) return 0;
-            return atStart ? Dyadic.QuotientToDouble(Dyadic.Of(low), onePlusRate) : low;
+            var payment = atStart ? Enclosure.Divide(atEnd, Enclosure.Exactly(onePlusRate), bits) : atEnd;
+            var low = payment.Low.ToDouble();
+            if (low != payment.High.ToDouble()) continue;
+            return low == 0 ? 0 : low;
         }
         return null;
     }
@@ -195,9 +194,10 @@ internal static class ExactPayment
     /// weighed, which gives 0/0 where it comes out as 0 (=PMT(0.1,1E-17,0,0,1)).
     /// No observed payment has a factor above 2^5 (PMT-020, at 32.4). Where every factor is within the bound,
     /// every reading the spike runs lies within 93 units in the last place of the engine's payment over
-    /// <c>pmt_exact.py</c>'s 20,000 inputs, and within 48 over the grids of <c>Search.cs --refusals</c>
-    /// (<c>--pmt-readings</c> requires 128, twice the bound); ticket 13 puts the bound to the user
-    /// (PMT-047 to PMT-053 ask where it refuses).
+    /// <c>pmt_exact.py</c>'s 20,000 inputs (measured again with the payment at the start rounded once,
+    /// 2026-10-13), and within 48 over the grids of <c>Search.cs --refusals</c> (<c>--pmt-readings</c>
+    /// requires 128, twice the bound). The bound is kept (2026-10-13, decided with the user); PMT-047 to
+    /// PMT-053 ask where it refuses.
     /// </summary>
     private static bool Conditioned(Dyadic r, Dyadic onePlusRate, double periods, Dyadic pv, Dyadic fv, Dyadic sum, Enclosure growth, Enclosure lessOne, Enclosure owed, bool atStart, int bits)
     {

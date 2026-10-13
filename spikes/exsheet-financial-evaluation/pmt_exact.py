@@ -22,10 +22,10 @@ comments state them, re-implemented here over exact values rather than the engin
 - otherwise #VALUE! where a listed quantity (QUANTITIES, the engine's list) is not 0 and lies outside
   [2^-1021, 2^1022], where the growth lies below 2^-52, and where a reading magnifies its roundings more than
   2^6 times (magnified(), ExactPayment.Conditioned, the fourth round);
-- elsewhere, at the end of each period, the exact payment rounded once; at the start, the engine's rule, which
-  is not the exact payment at the start rounded once: the payment at the end's double divided by 1+rate exactly
-  and rounded again. --check also counts how many payments at the start that rule puts a unit in the last place
-  from the exact payment at the start rounded once.
+- elsewhere the exact payment rounded once, at the end of each period and at the start (2026-10-13, decided
+  with the user: at the start too). --check also counts how many payments at the start the earlier rule, the
+  payment at the end's double divided by 1+rate exactly and rounded again, put a unit in the last place from
+  the exact payment at the start rounded once.
 
 Nothing here ships.
 """
@@ -198,10 +198,8 @@ def expected(line):
             return "#VALUE!"
     if magnified(r, D(periods), pv, fv, b, g, e, start):
         return "#VALUE!"
-    at_end = float(-r * (pv * g + fv) / e)
-    if at_end == 0:
-        return "0"
-    return show(float(D(at_end) / b) if start else at_end)
+    payment = float(-r * (pv * g + fv) / e / b if start else -r * (pv * g + fv) / e)
+    return "0" if payment == 0 else show(payment)
 
 
 def magnified(r, n, pv, fv, b, g, e, start):
@@ -227,7 +225,7 @@ def magnified(r, n, pv, fv, b, g, e, start):
 
 
 def exact_at_start(line):
-    """At the start, the exact payment at the start rounded once, beside the engine's rule; None elsewhere."""
+    """At the start, the exact payment at the start rounded once, beside the earlier rule; None elsewhere."""
     rate, periods, present, future, start = parse(line)
     if not start:
         return None
@@ -241,7 +239,7 @@ def exact_at_start(line):
         g = b ** int(periods) if periods > 0 else 1 / (b ** int(-periods))
     else:
         g = (b.ln() * D(periods)).exp()
-    return show(float(-r * (pv * g + fv) / (g - 1) / b)), want
+    return want, show(float(D(float(-r * (pv * g + fv) / (g - 1))) / b))
 
 
 def units(a, b):
@@ -271,7 +269,7 @@ def check(formulas_path, engine_path):
         starts = [x for x in pool.map(exact_at_start, formulas, chunksize=20) if x is not None]
     apart = sum(1 for once, rule in starts if float(once) != float(rule))
     most = max((abs(units(float(once), float(rule))) for once, rule in starts), default=0)
-    print(f"  at the start, {len(starts)} payments other than 0: the engine's rule (the double at the end over 1+rate, rounded again) is"
+    print(f"  at the start, {len(starts)} payments other than 0: the earlier rule (the double at the end over 1+rate, rounded again) was"
           f" not the exact payment at the start rounded once at {apart} ({100 * apart / max(1, len(starts)):.0f}%), {most} unit(s) in the last place from it at most")
     rates = [parse(l)[0] for l, w in zip(formulas, wanted) if not w.startswith("#")]
     tiny = sum(1 for x in rates if 0 < abs(x) < 1e-15)

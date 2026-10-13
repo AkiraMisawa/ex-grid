@@ -9,9 +9,9 @@ namespace ExSheet.Engine.Formulas;
 /// <c>spikes/exsheet-financial-evaluation/</c>). XNPV is one of the two evaluations that give its nine
 /// observed doubles, with a check of the rate that no evaluation gives (<see cref="XNpv"/>). PMT is kept by
 /// ADR-0047's exception for PMT alone (decided with the user, 2026-10-12): no evaluation searched gives every
-/// payment Excel gave. Where it answers, PMT gives the exact payment at the end rounded once, and at the start
-/// that double over 1+rate rounded again, and Excel's double differs from the engine's by 1 to 11 units in the
-/// last place where it differs (<see cref="Pmt"/>). NPV is not declared,
+/// payment Excel gave. Where it answers, PMT gives the exact payment rounded once, at the end of each period
+/// and at the start (2026-10-13, decided with the user), and Excel's double differs from the engine's by 1 to
+/// 11 units in the last place where it differs (<see cref="Pmt"/>). NPV is not declared,
 /// and is <c>#NAME?</c> as IRR is: no evaluation searched gives every double Excel gave for it (ADR-0202,
 /// note of 2026-10-12).
 /// </summary>
@@ -120,23 +120,23 @@ internal static partial class FunctionLibrary
     /// PMT refuses (below), and where it answers (<see cref="ExactPayment"/>): at the end of each period the exact
     /// payment over Excel's doubles rounded once, held between two bounds whose nearest double is the same, with
     /// 1+rate never rounded and (1+rate)^nper - 1 raised from the rate, so that its relative precision holds
-    /// however small the rate; and at the start that double divided by 1+rate and rounded again, which is not
-    /// everywhere the exact payment at the start rounded once (the financial area's rule, which ticket 13 puts to
-    /// the user): it is Excel's double at PMT-008, where the exact payment at the start rounded once is a unit
-    /// from Excel's, and a unit from the exact payment rounded once at PMT-014, 015, 025 and 029, where Excel's
-    /// double lies on the other side of it. Excel's payment is not the doubles' evaluation of the identity,
-    /// which loses the rate's low bits in 1+rate; its PMT-001 to 003, 008 and 017 are the engine's.
+    /// however small the rate; and at the start the exact payment at the start rounded once, held the same way
+    /// (2026-10-13, decided with the user: the payment at the start of each period is the exact payment rounded
+    /// once too, not the payment at the end's double divided by 1+rate and rounded again, the financial area's
+    /// earlier rule, which gave Excel's double at PMT-008 to 010 and 019 and lay a unit from the exact payment
+    /// rounded once at PMT-014, 015, 025 and 029). Excel's payment is not the doubles' evaluation of the
+    /// identity, which loses the rate's low bits in 1+rate; its PMT-001 to 003, 017, 022 and 033 are the
+    /// engine's.
     /// </summary>
     /// <remarks>
     /// <para>This is ADR-0047's exception for PMT alone (decided with the user, 2026-10-12): none of the
     /// evaluations searched (<c>spikes/exsheet-financial-evaluation/</c>, over 50,000) gives every payment
-    /// Excel was observed to give. Excel's double differs from the engine's at PMT-011 to 016, 018, 020, 021
-    /// and 023 to 032, by 1 to 11 units in the last place (PMT-026, a relative difference of about 1.3e-15).
-    /// At PMT-013 and PMT-026, payments at the end, Excel's double and the exact payment rounded once, the
-    /// engine's, differ in the 15th significant digit, which General shows; at PMT-025, at the start, Excel's
-    /// double and the exact payment rounded once agree to 15 digits, and the engine's, rounded again, differs
-    /// there. Ticket 13 puts the 15th digit and the rule at the start to the user. 0.1.0 lists PMT's last
-    /// digits under Known limitations (ADR-0202).</para>
+    /// Excel was observed to give. Excel's double differs from the engine's at PMT-008 to 016, 018 to 021 and
+    /// 023 to 032, by 1 to 11 units in the last place (PMT-026, a relative difference of about 1.3e-15). At
+    /// PMT-013 and PMT-026, payments at the end, Excel's double and the exact payment rounded once, the
+    /// engine's, differ in the 15th significant digit, which General shows (2026-10-13, decided with the user:
+    /// the exception holds there too); elsewhere they agree to 15 digits. 0.1.0 lists PMT's last digits under
+    /// Known limitations (ADR-0202).</para>
     /// <para>The readings of PMT are the evaluations the observed payments leave: PMT-017, at 10^-7, rules out
     /// every one that rounds 1+rate to a double (millions of units in the last place from Excel's payments),
     /// and leaves those that carry (1+rate)^nper - 1 accurately, through ln(1+rate) (log1p and expm1 in
