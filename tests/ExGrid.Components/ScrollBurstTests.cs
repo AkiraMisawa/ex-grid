@@ -36,29 +36,33 @@ public class ScrollBurstTests : GridTestContext
         var first = cut.InvokeAsync(() => scroller.TriggerEventAsync("onscroll", EventArgs.Empty));
         await cut.InvokeAsync(() => scroller.TriggerEventAsync("onscroll", EventArgs.Empty));
         await cut.InvokeAsync(() => scroller.TriggerEventAsync("onscroll", EventArgs.Empty));
-        Assert.Equal(readsBefore + 1, Js.ScrollReads); // the burst sent one read, not three
+        Assert.Equal(readsBefore + 1, await ReadInTurnAsync(() => Js.ScrollReads)); // the burst sent one read, not three
 
-        // The first answer lands and is painted while the burst's one further read is out.
+        // The first answer lands and is painted while the burst's one further read is out. The
+        // answer posts the scroll handler's continuation to the dispatcher, and the reading is taken
+        // in a turn behind it, whenever the process gets round to it (ReadInTurnAsync).
         var secondRead = Js.UnansweredScrollRead();
         await cut.InvokeAsync(() => firstRead.SetResult(new ScrollOffset(60, 0)));
-        cut.WaitForAssertion(() => Assert.Equal(readsBefore + 2, Js.ScrollReads));
-        Assert.Contains(frames, f => f.First);
+        var afterFirst = await ReadInTurnAsync(() => (Reads: Js.ScrollReads, Frames: frames.ToArray()));
+        Assert.Equal(readsBefore + 2, afterFirst.Reads);
+        Assert.Contains(afterFirst.Frames, f => f.First);
 
         // The browser has moved on to the end of the burst; that answer is the one that stays.
         await cut.InvokeAsync(() => secondRead.SetResult(new ScrollOffset(8000, 0)));
         await first;
         // A jump this far is a fling: placeholders until the scroll settles (ADR-0004).
         await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+        var settled = await ReadInTurnAsync(() => (Reads: Js.ScrollReads, cut.Markup, Frames: frames.ToArray()));
 
         // One further read for the whole burst, never one per event, and its answer is what
         // stays painted.
-        Assert.Equal(readsBefore + 2, Js.ScrollReads);
-        Assert.Contains("Row 000400", cut.Markup);
-        Assert.DoesNotContain("Row 000003", cut.Markup);
+        Assert.Equal(readsBefore + 2, settled.Reads);
+        Assert.Contains("Row 000400", settled.Markup);
+        Assert.DoesNotContain("Row 000003", settled.Markup);
         // In order: every frame showing the first position comes before every frame showing
         // the last, and none goes back.
-        var lastShown = frames.FindIndex(f => f.Last);
-        Assert.True(lastShown > frames.FindLastIndex(f => f.First));
-        Assert.DoesNotContain(frames.Skip(lastShown), f => f.First);
+        var lastShown = Array.FindIndex(settled.Frames, f => f.Last);
+        Assert.True(lastShown > Array.FindLastIndex(settled.Frames, f => f.First));
+        Assert.DoesNotContain(settled.Frames.Skip(lastShown), f => f.First);
     }
 }

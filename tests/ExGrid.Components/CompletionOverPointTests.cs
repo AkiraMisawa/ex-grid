@@ -202,8 +202,10 @@ public class CompletionOverPointTests : GridTestContext
         await PressAsync(cut, "Tab", "=F(Pos");
         late.SetResult(Answer("=F(Positions", 12));
 
-        cut.WaitForAssertion(() => Assert.Equal("F(value, [mode])", cut.Find(".ex-completion .ex-completion-hint").TextContent));
-        Assert.Empty(Labels(cut));
+        // Read in a turn behind the answer's continuation, never against a clock (ReadInTurnAsync).
+        var shown = await ReadInTurnAsync(() => (Hint: cut.Find(".ex-completion .ex-completion-hint").TextContent, Labels: Labels(cut)));
+        Assert.Equal("F(value, [mode])", shown.Hint);
+        Assert.Empty(shown.Labels);
     }
 
     // ---- ← and → at a list open over Point ---------------------------------------------------

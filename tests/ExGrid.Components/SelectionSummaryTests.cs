@@ -159,26 +159,29 @@ public class SelectionSummaryTests : GridTestContext
 
         await ClickCellAsync(cut, 150, 10);
         await PressAsync(cut, "ArrowDown", shift: true);
-        Assert.Equal("Calculating…", SummaryText(cut));
+        Assert.Equal("Calculating…", await ReadInTurnAsync(() => SummaryText(cut)));
 
-        // The first answer arrives and stands.
+        // The first answer arrives and stands. Each answer posts the grid's continuation to the
+        // dispatcher; what it led to is read in a turn behind it, whenever the process gets round
+        // to it (ReadInTurnAsync) — a late answer read before it is taken in proves nothing.
         await cut.InvokeAsync(() => gates[0].SetResult(Answer(sum: 1m)));
-        cut.WaitForAssertion(() => Assert.Contains("Sum: 1", SummaryText(cut)));
+        Assert.Contains("Sum: 1", await ReadInTurnAsync(() => SummaryText(cut)));
 
         // The selection moves: the figures go in the render that shows the move.
         await PressAsync(cut, "ArrowDown", shift: true);
-        Assert.Equal("Calculating…", SummaryText(cut));
+        Assert.Equal("Calculating…", await ReadInTurnAsync(() => SummaryText(cut)));
 
         // It moves again while the second question is out: that one is cancelled, and its answer,
         // arriving late, is shown nowhere.
         await PressAsync(cut, "ArrowDown", shift: true);
-        Assert.True(heard.Tokens[1].IsCancellationRequested);
+        Assert.True(await ReadInTurnAsync(() => heard.Tokens[1].IsCancellationRequested));
         await cut.InvokeAsync(() => gates[1].SetResult(Answer(sum: 999m)));
-        Assert.Equal("Calculating…", SummaryText(cut));
-        Assert.DoesNotContain(heard.Changes, c => c.Result?[SummaryFigures.Sum]?.Exact == 999m);
+        var late = await ReadInTurnAsync(() => (Text: SummaryText(cut), Changes: heard.Changes.ToArray()));
+        Assert.Equal("Calculating…", late.Text);
+        Assert.DoesNotContain(late.Changes, c => c.Result?[SummaryFigures.Sum]?.Exact == 999m);
 
         await cut.InvokeAsync(() => gates[2].SetResult(Answer(sum: 3m)));
-        cut.WaitForAssertion(() => Assert.Contains("Sum: 3", SummaryText(cut)));
+        Assert.Contains("Sum: 3", await ReadInTurnAsync(() => SummaryText(cut)));
     }
 
     [Fact] // ADR-0130 / SM-2: an answer under a stale Row Sequence Version shows nothing
@@ -194,8 +197,12 @@ public class SelectionSummaryTests : GridTestContext
         cut.Render(ps => ps.Add(g => g.RowSequenceVersion, 1));
         await cut.InvokeAsync(() => gate.SetResult(Answer(sum: 1m)));
 
-        Assert.Empty(cut.FindAll(".ex-summary-figure"));
-        Assert.Equal(SelectionSummaryStatus.None, heard.Changes[^1].Status);
+        // Read once the late answer has been taken in: the answer posts the grid's continuation to
+        // the dispatcher, and the reading is a turn behind it (ReadInTurnAsync). Read straight after
+        // the answer, it could come before the answer was handled and pass whatever the grid did.
+        var after = await ReadInTurnAsync(() => (Figures: cut.FindAll(".ex-summary-figure").Count, Last: heard.Changes[^1].Status));
+        Assert.Equal(0, after.Figures);
+        Assert.Equal(SelectionSummaryStatus.None, after.Last);
     }
 
     [Fact] // ADR-0130 / SM-3: a row changing under the standing selection asks again; a scroll does not
