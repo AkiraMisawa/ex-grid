@@ -191,8 +191,9 @@ for (const [chrome, query] of CHROMES) {
 
 // The Focus among several ranges on the Paper (ADR-0008, 2026-10-12): the core's thin border of one
 // Device Pixel inside the cell, in the Focus outline's colour (2026-10-12, decided with the user:
-// #217346 on the Paper, as the readings of 2026-10-12 measured Excel's, R4; under ExSheet.MudBlazor
-// the palette's primary, which the Focus outline is there), in either scheme. Read where something
+// #217346 on the Paper, as the readings of 2026-10-12 measured Excel's, R4), in either scheme. Under
+// ExSheet.MudBlazor it is the palette's primary, which the Focus outline is there: this branch's
+// reading, as SH-54's outline is. Read where something
 // above the selection layer stands beside the cell — the Headings, a Pinned Column, the header — and
 // in the open: lying inside the cell, no side is covered. The page's own scale here, and a real 150%
 // under the chrome-150 project, as an OS sets it (Playwright's emulated scale is not read: its

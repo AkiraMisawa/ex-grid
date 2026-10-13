@@ -24,10 +24,10 @@ internal static class ShippedAssets
     internal const string StylesheetPath = "_content/ExGrid/ex-grid.min.css";
 
     /// <summary>The first 12 hex digits of the SHA-256 of that file as shipped: the version its address carries.</summary>
-    internal const string StylesheetVersion = "765a56b80cb7";
+    internal const string StylesheetVersion = "afb65b8f96ab";
 
     /// <summary>The SHA-256 of <c>Assets/ex-grid.css</c>, which the shipped file names and answers: its stamp.</summary>
-    internal const string StylesheetStamp = "fb18e73e6fa07087cd2a682598aa20f902bd7d064f1f51dcf094c426c1987c3d";
+    internal const string StylesheetStamp = "d9bb393cdaa721873300b98a5777625e5c1d1a34cc7a2e742f1432483ab10e32";
 
     /// <summary>The source's name, by which the stylesheet's notice rules find this package's notice.</summary>
     internal const string StylesheetName = "ex-grid.css";
