@@ -1,16 +1,17 @@
-import { test, expect, setRoundTrip } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage, circuitQuiet } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
 // Keys typed while Format Cells opens (ticket 93; ADR-0050 item 16 and ADR-0039, notes of
-// 2026-10-01). On a circuit, what a command or a key opens takes the keyboard a round trip or more
-// later, and a key typed in between reached the grid: a digit opened an edit behind Format Cells,
-// under both Chromes. Now the grid is told where the keyboard is going — its own popover under the
-// built-in Chrome, a frame of the Chrome's own under ExSheet.MudBlazor's — and holds the keys
-// typed meanwhile for it. Every row of the table the gap was shown with is run here: a key typed
-// straight after reaches Format Cells' focused control, or is dropped, and never starts an edit.
-// The round trip is injected on the Server host; on WebAssembly the same tests are the case
-// without one. C2 holds 0.5.
+// 2026-10-01 and 2026-10-13). On a circuit, what a command or a key opens takes the keyboard a round
+// trip or more later, and a key typed in between reached the grid: a digit opened an edit behind
+// Format Cells, under both Chromes. Now the grid is told where the keyboard is going — its own
+// popover under the built-in Chrome, a frame of the Chrome's own under ExSheet.MudBlazor's — and
+// holds the keys typed meanwhile for it. Every row of the table the gap was shown with is run here:
+// a key typed straight after reaches Format Cells' focused control, and never starts an edit. Under
+// the built-in Chrome a digit typed once the menu had gone was lost, on nothing until Format Cells
+// took the keyboard (ADR-0039, 2026-10-13); the root now has it in between. The round trip is
+// injected on the Server host; on WebAssembly the same tests are the case without one. C2 holds 0.5.
 
 // Tall enough that the Sheet, Formula Bar to scrollbar, is inside the window.
 test.use({ viewport: { width: 1280, height: 1000 } });
@@ -21,6 +22,37 @@ const ROUND_TRIP_MS = 80;
 function formatCellsOf(page, grid, chrome) {
     return chrome === 'mud' ? page.locator('.mud-dialog.mud-ex-sheet-format-cells') : grid.locator('.ex-popover-consumer');
 }
+
+// What a key reaching Format Cells lands on: the grid's popover under the built-in Chrome; under the
+// other, the MudDialog, or the frame's own element, which holds the keyboard until the dialog's tabs
+// take it and hands them the keys typed there (KeysOnTheirWay, in C#).
+const REACHING_FORMAT_CELLS = {
+    builtin: '.ex-popover-consumer',
+    mud: '.mud-dialog.mud-ex-sheet-format-cells, .mud-ex-sheet-format-cells-leaving',
+};
+
+/**
+ * Notes, from here on, every key that reaches Format Cells: typed on what holds the keyboard there,
+ * or handed to it by the grid's hold (ADR-0039, ADR-0010). A key held on the Sheet's root is not
+ * noted until it is handed on. Read with keysReachingFormatCells.
+ */
+async function noteKeysReachingFormatCells(page, chrome) {
+    await alterPage(page, (selector) => {
+        window.__keysReachingFormatCells = [];
+        const listener = (e) => {
+            if (e.target instanceof Element && e.target.closest(selector)) {
+                window.__keysReachingFormatCells.push(e.key);
+            }
+        };
+        document.addEventListener('keydown', listener, true);
+        return () => {
+            document.removeEventListener('keydown', listener, true);
+            delete window.__keysReachingFormatCells;
+        };
+    }, REACHING_FORMAT_CELLS[chrome]);
+}
+
+const keysReachingFormatCells = (page) => page.evaluate(() => window.__keysReachingFormatCells);
 
 /** Opens Format Cells over the Focus cell as the row of the table says, and returns at once. */
 async function openBy(page, grid, address, how) {
@@ -42,8 +74,10 @@ async function openBy(page, grid, address, how) {
         return;
     }
     await item.click();
-    if (how === 'a press, then a round trip') {
-        await page.waitForTimeout(100);
+    if (how === 'a press, then the menu gone') {
+        // The render that removes the menu has landed, looked for frame by frame: Format Cells takes
+        // the keyboard a round trip or more after it, so the key is typed in between.
+        await page.waitForFunction(() => document.querySelector('.ex-grid .ex-popover[role=menu]') === null, null, { polling: 'raf' });
     }
 }
 
@@ -58,19 +92,23 @@ for (const chrome of ['builtin', 'mud']) {
             await setRoundTrip(0);
         });
 
-        for (const how of ['a press', 'a press, then a round trip', 'Enter', 'Ctrl+1']) {
-            test(`ticket 93/ADR-0050: a digit typed straight after ${how} is Format Cells' or dropped, and never starts an edit`, async ({ page }) => {
+        for (const how of ['a press', 'a press, then the menu gone', 'Enter', 'Ctrl+1']) {
+            test(`ticket 93/ADR-0050/ADR-0039: a digit typed straight after ${how} reaches Format Cells, and never starts an edit`, async ({ page }) => {
                 const grid = sheet(page);
                 await pressCell(grid, 'C2');
                 const formatCells = formatCellsOf(page, grid, chrome);
+                await noteKeysReachingFormatCells(page, chrome);
 
                 await openBy(page, grid, 'C2', how);
                 await page.keyboard.type('5');
 
                 await expect(formatCells).toBeVisible();
                 await expect(formatCells.getByRole('tab', { name: 'Number', exact: true })).toBeFocused();
-                // The key, held while the keyboard was on its way, has been handed on by now.
-                await page.waitForTimeout(ROUND_TRIP_MS * 3);
+                // The key, held while the keyboard was on its way, is handed on to Format Cells once
+                // it holds the keyboard — or reaches it there, typed after — once, and nowhere else.
+                await expect.poll(() => keysReachingFormatCells(page)).toEqual(['5']);
+                await circuitQuiet();
+                expect(await keysReachingFormatCells(page)).toEqual(['5']);
                 await expect(grid.locator('.ex-viewport .ex-editor')).toHaveCount(0);
 
                 await page.keyboard.press('Escape');

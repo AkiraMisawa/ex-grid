@@ -814,4 +814,25 @@ public class FormatCellsTests : SheetTestContext
 
         Assert.Equal(["popover"], HandOffs);
     }
+
+    [Fact] // ADR-0039, 2026-10-13 / DC-60: Format Cells… from the Context Menu asks for the root's focus while the menu still stands, behind the hand-off, and nothing after
+    public async Task Format_cells_from_the_context_menu_keeps_the_keyboard_on_the_root_until_its_tab_takes_it()
+    {
+        // The render that swaps the menu for Format Cells removed the item holding DOM focus, and the
+        // tab took it a round trip later on a circuit: a key typed in between fell on body, where the
+        // grid hears nothing. On the root it is held, and handed to the tab.
+        var cut = RenderSheet();
+        await GoToAsync(cut, "B2");
+        await SecondaryClickAsync(cut, "B2");
+        var standing = new List<(int Menus, bool Open, int HandOffs)>();
+        OnReclaim(() => standing.Add((cut.FindAll(".ex-popover[role=menu]").Count, IsOpen(cut), HandOffs.Count)));
+        var reclaims = ReclaimCount;
+
+        await cut.FindAll("[role=menu] button[role=menuitem]").Single(b => b.TextContent == "Format Cells…").ClickAsync(new MouseEventArgs());
+
+        cut.WaitForAssertion(() => Assert.True(IsOpen(cut)));
+        Assert.Equal([(1, false, 1)], standing);
+        Assert.Equal(["popover"], HandOffs);
+        Assert.Equal(reclaims + 1, ReclaimCount);
+    }
 }

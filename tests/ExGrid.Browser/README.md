@@ -691,7 +691,10 @@ nobody had asked for. What that means when writing a test:
   tickets 52 and 56) on `/sheet` and `/sheets`: a popover inside the Sheet's box, opened from the
   Context Menu and Ctrl+1 (case 22) with the keyboard on its tab; the arrows switching the tabs; OK as
   one undo step; Escape and a refused Custom code each setting nothing; a Custom code typed at full
-  speed arriving whole, Enter as OK; Tab and Shift+Tab wrapping inside; cells that differ showing an
+  speed arriving whole, Enter as OK; Tab and Shift+Tab wrapping inside once its tab holds the
+  keyboard, and on a 150 ms circuit on the Server host a Shift+Tab typed in the round trip before it
+  does, once the menu has gone, held on the Sheet's root and dropped with the arrow behind it
+  (ADR-0039, 2026-10-13); cells that differ showing an
   empty Font style and No Colour (case 24); a cell under a neighbour's thick bottom opening with its
   top pressed, as drawn (case 14-13); scrolling inside a small box and closing as a Cancel when
   the box shrinks below one row; and two Sheets each with their own. On a 150 ms circuit on the
@@ -702,9 +705,10 @@ nobody had asked for. What that means when writing a test:
   sized by its grip, in OK's one step (ADR-0071, decided 2026-10-12; the seventeenth Windows run's
   h7).
 - `format-cells-keys.spec.mjs` — keys typed while Format Cells opens (ticket 93; ADR-0050 item 16
-  and ADR-0039, notes of 2026-10-01), under both Chromes, at an 80 ms round trip on the Server host:
-  a digit typed straight after a press on "Format Cells…", a press and a round trip, Enter on the
-  item and Ctrl+1 is Format Cells' or dropped, never an edit behind it; End typed straight after
+  and ADR-0039, notes of 2026-10-01 and 2026-10-13), under both Chromes, at an 80 ms round trip on
+  the Server host: a digit typed straight after a press on "Format Cells…", a press and the menu's
+  removal, Enter on the item and Ctrl+1 reaches Format Cells once, read by a listener on the document
+  for the keys that land on it, never an edit behind it; End typed straight after
   Enter or Ctrl+1 reaches its tabs, in order behind the digit; and on `/sheets` the keys held for
   one Sheet are never the other's, which types as ever afterwards (ADR-0018).
 - `format-cells-mud.spec.mjs` — Format Cells under `ExSheet.MudBlazor`'s Chrome (ADR-0071, SH-45;
