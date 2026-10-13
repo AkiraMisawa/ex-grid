@@ -46,7 +46,11 @@ public sealed record ChartModel(
     IReadOnlyList<string> Leaves,
     int Missing,
     IReadOnlyList<ChartSeries> AllSeries,
-    IReadOnlyList<DateOnly> AllDates);
+    IReadOnlyList<DateOnly> AllDates)
+{
+    /// <summary>How the horizontal axis is drawn: the page's choice, applied after the build.</summary>
+    public XAxisStyle XAxis { get; init; } = XAxisStyle.Default;
+}
 
 public static class ChartModelBuilder
 {

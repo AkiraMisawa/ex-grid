@@ -13,7 +13,7 @@ namespace ExposureChart.Charting;
 public static class ChartSvg
 {
     private const double Width = 960;
-    private const double Left = 72, Right = 72, Top = 34, Bottom = 26, Gap = 18;
+    private const double Left = 72, Right = 72, Top = 34, Gap = 18;
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     // Defaults for a file opened on its own; on the page the Visual Tokens win.
@@ -21,6 +21,7 @@ public static class ChartSvg
         .ex-chart-root { font: 11px system-ui, sans-serif; fill: var(--ex-chart-text, #374151); }
         .ex-chart-title { font-weight: 600; font-size: 12px; }
         .ex-chart-grid { stroke: var(--ex-chart-grid, #e5e7eb); stroke-width: 1; }
+        .ex-chart-root .ex-chart-minor { stroke-opacity: 0.45; }
         .ex-chart-zero { stroke: var(--ex-chart-zero, #9ca3af); stroke-width: 1; }
         .ex-chart-frame { fill: none; stroke: var(--ex-chart-grid, #e5e7eb); }
         .ex-chart-root .ex-chart-line { fill: none; stroke-width: 1.75; stroke-linejoin: round; }
@@ -60,8 +61,19 @@ public static class ChartSvg
         var panels = model.Panels.Count;
         double panelHeight = panels == 1 ? 360 : 190;
         double legendHeight = LegendRows(model) * 18 + 6;
-        return (panelHeight, legendHeight + panels * (Top + panelHeight) + (panels - 1) * Gap + Bottom, legendHeight);
+        var bottom = XAxis.Depth(TicksOf(model), model.XAxis.Angle);
+        return (panelHeight, legendHeight + panels * (Top + panelHeight) + (panels - 1) * Gap + bottom, legendHeight);
     }
+
+    private static double XOf(ChartModel model, DateOnly date)
+    {
+        var first = model.Dates[0].DayNumber;
+        var span = Math.Max(1, model.Dates[^1].DayNumber - first);
+        return Left + (Width - Left - Right) * (date.DayNumber - first) / span;
+    }
+
+    public static IReadOnlyList<XTick> TicksOf(ChartModel model) =>
+        model.Dates.Count == 0 ? [] : XAxis.Ticks(model.Dates, model.XAxis, d => XOf(model, d));
 
     /// <param name="version">Stamped on the drawing, so that a pointer report taken against an
     /// older drawing is recognised and dropped.</param>
@@ -86,7 +98,7 @@ public static class ChartSvg
 
         WriteLegend(svg, model, legendHeight);
 
-        var dateTicks = Axis.DateTicks(first, last);
+        var dateTicks = TicksOf(model);
         var layouts = new List<(ChartPanel Panel, double Top, ValueAxis Left, ValueAxis? Right)>();
         var y0 = (double)legendHeight;
         foreach (var panel in model.Panels)
@@ -123,8 +135,8 @@ public static class ChartSvg
                 var names = string.Join(", ", panel.Series.Where(s => s.Secondary).Select(s => s.Leaf).Distinct());
                 Text(svg, Width - Right, top - 10, $"{names} → right axis", "end", "ex-chart-secondary-label");
             }
-            foreach (var (date, _) in dateTicks)
-                Line(svg, X(date), top, X(date), bottom, "ex-chart-grid");
+            foreach (var tick in dateTicks)
+                Line(svg, X(tick.Date), top, X(tick.Date), bottom, tick.Label is null ? "ex-chart-grid ex-chart-minor" : "ex-chart-grid");
             svg.Append(Invariant, $"""<rect class="ex-chart-frame" x="{Left}" y="{top:0.##}" width="{plotWidth}" height="{panelHeight}"/>""");
 
             foreach (var series in panel.Series)
@@ -137,8 +149,17 @@ public static class ChartSvg
 
         // The date labels once, under the last panel.
         var lastBottom = layouts[^1].Top + panelHeight;
-        foreach (var (date, label) in dateTicks)
-            Text(svg, X(date), lastBottom + 16, label, "middle", null);
+        var angle = model.XAxis.Angle;
+        foreach (var tick in dateTicks)
+        {
+            Line(svg, X(tick.Date), lastBottom, X(tick.Date), lastBottom + 4, "ex-chart-zero");
+            if (tick.Label is not { } label) continue;
+            if (angle == 0)
+                Text(svg, X(tick.Date), lastBottom + 16, label, "middle", null);
+            else
+                // Turned about its own end, which stands under the tick: read upwards, as Excel does.
+                svg.Append(Invariant, $"""<text x="{X(tick.Date):0.##}" y="{lastBottom + 10:0.##}" text-anchor="end" dominant-baseline="middle" transform="rotate({-angle} {X(tick.Date):0.##} {lastBottom + 10:0.##})">{Escape(label)}</text>""");
+        }
 
         // One hover band per date across every panel: the guide, a dot per series and the readout.
         var plotTop = layouts[0].Top;

@@ -19,6 +19,8 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
 | ![Panel per group, hovered](screenshots/hover.png) | ![One axis](screenshots/one-axis.png) |
 | ![Chart Filters](screenshots/filter.png) | ![Tooltip](screenshots/tooltip.png) |
 | ![Steps and markers, first five years](screenshots/step-5y.png) | ![Style panel](screenshots/style-panel.png) |
+| ![Every date, yyyy-MM-dd at 90°](screenshots/x-every-date-90.png) | ![Tenor ticks and labels](screenshots/x-tenors.png) |
+| ![Every date at 45°, first five years](screenshots/x-every-date-45-5y.png) | ![Axis panel](screenshots/x-every-date-45-5y-panel.png) |
 
 ## How it is built
 
@@ -55,6 +57,14 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
   triangle. CVA defaults to the (tᵢ₋₁, tᵢ] step, because that is the piecewise-constant profile
   its bucket-by-bucket integral uses; a line between the dates would show a profile the
   calculation never saw.
+- **The horizontal axis is set in three independent choices** (`XAxisStyle`, Filter → Horizontal
+  axis): where the ticks go (calendar boundaries, every date in the data, or the market's tenors
+  from the first date — 1M, 3M, 6M, 1Y, 2Y, 5Y, 10Y …), how they are labelled (yyyy, yyyy-MM,
+  yyyy-MM-dd, MMM yyyy, or a tenor, "18M", "5Y"), and at what angle (0°, 45°, 90°, read upwards
+  as in Excel). A label that would touch its neighbour is left out — never overprinted — and
+  the panel says how many of the ticks are labelled; every tick is still drawn. The room under
+  the last panel grows with the angle and the longest label. Labels are not measured: an
+  estimate per character decides both (ADR-0021).
 - **CSV with no script**: a `data:` URL behind `<a download>`, UTF-8 with a byte-order mark (Excel
   on a Japanese Windows otherwise reads Shift_JIS), invariant, unformatted, every digit; a missing
   value is an empty field, never a zero.

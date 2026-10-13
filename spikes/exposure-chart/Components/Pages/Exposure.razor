@@ -112,6 +112,40 @@
                     }
                 </div>
                 <div class="filter-section">
+                    <div class="filter-heading"><span>Horizontal axis</span></div>
+                    <div class="filter-row">
+                        <label>Ticks
+                            <select value="@_xAxis.Ticks" @onchange="e => SetAxis(a => a with { Ticks = Enum.Parse<XTicks>((string)e.Value!) })">
+                                <option value="@XTicks.Calendar">Calendar</option>
+                                <option value="@XTicks.DataDates">Every date in the data</option>
+                                <option value="@XTicks.Tenors">Tenors (1M, 3M, 1Y …)</option>
+                            </select>
+                        </label>
+                        <label>Labels
+                            <select value="@_xAxis.Label" @onchange="e => SetAxis(a => a with { Label = Enum.Parse<XLabel>((string)e.Value!) })">
+                                <option value="@XLabel.Auto">Auto</option>
+                                <option value="@XLabel.Year">yyyy</option>
+                                <option value="@XLabel.YearMonth">yyyy-MM</option>
+                                <option value="@XLabel.IsoDate">yyyy-MM-dd</option>
+                                <option value="@XLabel.MonthNameYear">MMM yyyy</option>
+                                <option value="@XLabel.Tenor">Tenor (6M, 2Y)</option>
+                            </select>
+                        </label>
+                        <label>Angle
+                            <select value="@_xAxis.Angle" @onchange="e => SetAxis(a => a with { Angle = int.Parse((string)e.Value!, Invariant) })">
+                                <option value="0">0°</option>
+                                <option value="45">45°</option>
+                                <option value="90">90°</option>
+                            </select>
+                        </label>
+                        @{ var ticks = ChartSvg.TicksOf(model); var labelled = ticks.Count(t => t.Label is not null); }
+                        @if (labelled < ticks.Count)
+                        {
+                            <span class="filter-note">@labelled of @ticks.Count labels fit; every tick is still drawn.</span>
+                        }
+                    </div>
+                </div>
+                <div class="filter-section">
                     <div class="filter-heading"><span>Dates</span></div>
                     <div class="filter-row">
                         <label>From
@@ -215,6 +249,13 @@
     private ChartLayout _layout = ChartLayout.PanelPerGroup;
 
     private ChartView _view = ChartView.All;
+    private XAxisStyle _xAxis = XAxisStyle.Default;
+
+    private void SetAxis(Func<XAxisStyle, XAxisStyle> change)
+    {
+        _xAxis = change(_xAxis);
+        Redraw();
+    }
 
     // A style per Header Group. CVA is computed bucket by bucket from a piecewise-constant
     // profile, each bucket's value holding over (tᵢ₋₁, tᵢ], so that is how it is drawn by default.
@@ -316,7 +357,7 @@
     private void Redraw()
     {
         if (_definition is null) return;
-        _model = ChartModelBuilder.Build(_definition, _columns, _groups, _rows, IsChange, _layout, _view, StyleOfColumn);
+        _model = ChartModelBuilder.Build(_definition, _columns, _groups, _rows, IsChange, _layout, _view, StyleOfColumn) with { XAxis = _xAxis };
         _drawing++;
         _band = null;
         _svg = ChartSvg.Write(_model);
