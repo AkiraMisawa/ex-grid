@@ -11,7 +11,7 @@ namespace ExGrid.Columns;
 /// Formatting is not this rule's business: it receives the already-formatted string;
 /// default formats and culture live elsewhere.
 /// </summary>
-public static class OverflowRules
+internal static class OverflowRules
 {
     /// <summary>
     /// The one place the Number/Date-versus-Text/Boolean split lives. It answers both

@@ -26,7 +26,7 @@ namespace ExGrid.Keys;
 /// them first. <b>The mirror of this rule is in <c>ex-grid.js</c></b> — the two must move
 /// together.</para>
 /// </summary>
-public static class GridKeys
+internal static class GridKeys
 {
     // Declared before Taken on purpose: static field initialisers run in textual order,
     // and a Taken built above this line would read a null table.

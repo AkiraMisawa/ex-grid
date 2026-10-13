@@ -1,7 +1,7 @@
 namespace ExGrid.Rows;
 
 /// <summary>What the Mark Column's header checkbox shows (ADR-0043).</summary>
-public enum RowMarkHeaderState
+internal enum RowMarkHeaderState
 {
     /// <summary>No row of the current result is marked.</summary>
     None = 0,

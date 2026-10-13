@@ -1,4 +1,14 @@
 @typeparam TRow where TRow : class
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   The Web namespace is required for @@onscroll and friends to compile as event handlers rather
+   than as plain HTML attributes: without it the markup builds and renders while quietly listening
+   to nothing. *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@* Not the contract (ADR-0201): the grid places this component, and no Consumer does. It is
+   public only because Razor makes every component public, is hidden from a Consumer's editor, and
+   may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 @using global::ExGrid.Cells
 @using global::ExGrid.Rows
 @using global::ExGrid.Columns

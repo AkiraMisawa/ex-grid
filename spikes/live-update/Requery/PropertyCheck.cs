@@ -212,9 +212,31 @@ public static class PropertyCheck
         return new GridFilter(columns);
     }
 
+    // The operators each column type offers, as ADR-0023's table lists them: ExGrid decides them
+    // internally (ADR-0201), and a spike is no Consumer to be granted its internals.
+    private static IReadOnlyList<FilterOperator> AllowedFor(ColumnType type) => type switch
+    {
+        ColumnType.Text =>
+        [
+            FilterOperator.Equals, FilterOperator.NotEquals,
+            FilterOperator.Contains, FilterOperator.DoesNotContain,
+            FilterOperator.StartsWith, FilterOperator.EndsWith,
+            FilterOperator.In, FilterOperator.IsBlank, FilterOperator.IsNotBlank,
+        ],
+        ColumnType.Number or ColumnType.Date =>
+        [
+            FilterOperator.Equals, FilterOperator.NotEquals,
+            FilterOperator.GreaterThan, FilterOperator.GreaterThanOrEqual,
+            FilterOperator.LessThan, FilterOperator.LessThanOrEqual,
+            FilterOperator.In, FilterOperator.IsBlank, FilterOperator.IsNotBlank,
+        ],
+        ColumnType.Boolean => [FilterOperator.Equals, FilterOperator.In, FilterOperator.IsBlank, FilterOperator.IsNotBlank],
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
+    };
+
     private static FilterClause RandomClause(Random random, ColumnInfo<Trade> column)
     {
-        var allowed = FilterOperators.AllowedFor(column.Type);
+        var allowed = AllowedFor(column.Type);
         var op = allowed[random.Next(allowed.Count)];
         object? Operand() => column.Name switch
         {

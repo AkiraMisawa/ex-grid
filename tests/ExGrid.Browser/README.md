@@ -313,7 +313,10 @@ nobody had asked for. What that means when writing a test:
   `window` must be what they were when the file booted there, and the Clipboard API, the timers
   and the other natives in `fixtures.mjs`'s list — read as a caller reads them, so a stub on
   `document` counts as much as one on `Document.prototype` — must be the ones the app booted
-  with. A difference fails the test by name: "nothing left outside the test's own page". What it
+  with. Both readings are taken once every stylesheet the document links has loaded — on
+  WebAssembly the packages' stylesheets are rendered into the head after the app boots, and a
+  `<link>` joins `document.styleSheets` only when its file has arrived. A difference fails the
+  test by name: "nothing left outside the test's own page". What it
   cannot see — a listener on `window` or `document`, a timer or an observer left running, a
   native outside the list — is held by the rule alone.
 - **A test gets a document of its own** — a context of its own, every navigation real — with

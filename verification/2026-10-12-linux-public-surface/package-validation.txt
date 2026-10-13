@@ -1,0 +1,402 @@
+Package validation of the ten packages against 0.1.0-beta.2 (ADR-0201)
+
+Date: 2026-10-12, on Linux (a cloud container), .NET SDK 10.0.203 through nix.
+Branch claude/public-surface at 03e5a938, the baseline commit. Each package was packed once, in the
+order tests/ExGrid.PackageSmoke/check.sh packs them, with:
+
+  dotnet pack src/<Package> -c Release -o <feed> -p:Version=0.1.0-pv \
+    -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=0.1.0-beta.2
+
+The baseline packages came from nuget.org through the container's proxy. The two properties were
+passed on the command line and are not committed: ADR-0201 runs this once, for 0.1.0's Release Notes,
+and the PublicAPI files beside each project are the baseline from now on.
+
+ExGrid was packed again the same way after the verifiers' read, the only package whose surface that
+change moved. Its findings and its output below are that second run's. Fourteen more members of ExGrid
+are internal, as the lists settled: GridMetrics' eleven layout numbers, GlyphWidthTable.TryGetWidthPx,
+ReferenceColour.PaletteLength, InMemoryGridSource.DistinctValueCap and FetchingGridSource.DefaultPageRows.
+CellTextMetrics.For is public again, as ADR-0016 names it. The other nine packages' runs are the
+first ones, at 03e5a938; nothing in their surface has moved since.
+
+== Findings
+
+168 breaks, every one an error, none suppressed. CP0001 is a type gone from the surface, CP0002 a member
+gone or its signature changed, CP0011 an enum value changed.
+
+  ExGrid             130
+  ExGrid.MudBlazor     1
+  ExSheet.Engine       6
+  ExSheet              9
+  ExSheet.MudBlazor    1
+  ExGrid.Data          0
+  ExGrid.Data.Arrow    0
+  ExPivot.Engine      14
+  ExPivot              5
+  ExPivot.MudBlazor    2
+
+Every break has a Change Note under docs/releases/unreleased/. By note, the names in each break it covers:
+
+  editor-outlives-reorder.md: OrderChanged
+  report-state.md: Report
+  signatures-since-beta-2.md: ColumnMenuContext, ContextMenuContext, EditDiscardReason, Fetch, FilterPanelContext, FindContext
+  surface-exgrid-autowidth.md: AutoWidth, ResolveWidthPx
+  surface-exgrid-cellclasses.md: CellClasses
+  surface-exgrid-clipboard-filldecision.md: Clipboard.FillDecision
+  surface-exgrid-clipboard-fillplan.md: FillPlan
+  surface-exgrid-clipboardblock.md: ClipboardBlock, ParseBlock
+  surface-exgrid-clipboardpayload.md: ClipboardPayload
+  surface-exgrid-clipboardrules.md: ClipboardRules
+  surface-exgrid-columngeometry.md: ColumnGeometry, ColumnStyles, Geometry
+  surface-exgrid-copydecision.md: CopyDecision
+  surface-exgrid-cycleorder.md: CycleFocus, CycleOrder
+  surface-exgrid-edgeband.md: EdgeBand
+  surface-exgrid-editortextrules.md: EditorTextRules
+  surface-exgrid-fillextension.md: FillExtension
+  surface-exgrid-fillrules.md: FillRules
+  surface-exgrid-filteroperators.md: FilterOperators
+  surface-exgrid-gridkeyaction.md: GridKeyAction
+  surface-exgrid-gridkeyclaims.md: GridKeyClaims
+  surface-exgrid-gridkeykind.md: GridKeyKind
+  surface-exgrid-gridkeys.md: GridKeys
+  surface-exgrid-headergrouplayout.md: HeaderGroupLayout
+  surface-exgrid-headerreorder.md: HeaderReorder
+  surface-exgrid-imports.md: _Imports
+  surface-exgrid-interop.md: OnKeyAsync, OnKeyFieldTextAsync, OnPasteStreamsAsync
+  surface-exgrid-members.md: ActionBorderPx, ActionButtonChromePx, ActionGapPx, ActionPaddingXPx, AlignAt, CellMetricsAt, CellPaddingXPx, Changed, Clamp, Click, CollapseToFocus, DefaultPageRows, DistinctValueCap, Empty, EndOf, Extend, ExtendByViewport, ExtendTo, ExtendToColumn, ExtendToEdge, ExtendToRow, FillHandleSizePx, FocusOn, ForAppearance, FromCondition, FromCorners, Letter, Matches, MenuButtonBandPx, MenuButtonInsetPx, MenuButtonWidthPx, MessageOf, Move, MoveByViewport, MoveFocusToNextCorner, MoveToEdge, NameBoxWidthPx, OnPasteAsync, PaintsValue, PaletteLength, ParseOperand, PasteShape, Place, ReferenceColour, ResolveInColumnMenu, SelectAll, SelectColumn, SelectRow, SelectWholeColumns, SelectWholeRows, ShowingUntil, SizeToFit, SortMarkWidthPx, StateOf, Subtract, SubtractArea, TextFor, ToggleColumn, ToggleRange, ToggleRow, TryGetWidthPx, TypeAt, WidthOf, With, WithBoldWidths
+  surface-exgrid-mudblazor-imports.md: _Imports
+  surface-exgrid-overflowdecision.md: OverflowDecision
+  surface-exgrid-overflowrules.md: OverflowRules
+  surface-exgrid-pastedecision.md: PasteDecision
+  surface-exgrid-referencecolouring.md: ReferenceColouring
+  surface-exgrid-resolvedheadergroup.md: ResolvedHeaderGroup
+  surface-exgrid-rowclasses.md: RowClasses
+  surface-exgrid-rowmarkheaderstate.md: HeaderPress, HeaderState, RowMarkHeaderState
+  surface-exgrid-scrolloffset.md: ScrollOffset
+  surface-exgrid-selection-filldecision.md: Selection.FillDecision
+  surface-exgrid-sortcycle.md: SortCycle
+  surface-exgrid-sourcecell.md: SourceCell, SourceCellFor
+  surface-exgrid-viewportbox.md: ViewportBox
+  surface-exgrid-viewportgeometry.md: ViewportGeometry
+  surface-expivot-engine-members.md: Aggregate, CanReuse, Compute, Cube, CubeAsync, ItemsOf, RecordsBehind, Report, ReportAsync
+  surface-expivot-engine-pivotcube.md: PivotCube
+  surface-expivot-engine-pivotreport.md: PivotReport
+  surface-expivot-engine-pivotreportcolumn.md: PivotReportColumn
+  surface-expivot-engine-pivotreportrow.md: PivotReportRow
+  surface-expivot-engine-pivotvalue.md: PivotValue
+  surface-expivot-imports.md: _Imports
+  surface-expivot-members.md: ClassFor, GlyphFor, ItemListCap
+  surface-expivot-mudblazor-imports.md: _Imports
+  surface-expivot-mudblazor-mudpivoticons.md: MudPivotIcons
+  surface-exsheet-engine-errorvalues.md: ErrorValues
+  surface-exsheet-engine-members.md: AbbreviatedMonthNamesOf, FromFormula, PointedReferenceAt, Rename, SetEntry
+  surface-exsheet-imports.md: _Imports
+  surface-exsheet-mudblazor-imports.md: _Imports
+  surface-exsheet-sheetrow.md: SheetRow
+  surface-exsheet-toolbarorder.md: Order, ToolbarOrder
+
+Three notes were written after this run, for breaks it showed that no note named, all from changes
+merged on main after beta.2 rather than from ADR-0201's internalisation:
+  surface-exgrid-interop.md: OnKeyAsync, OnKeyFieldTextAsync and OnPasteStreamsAsync take the paint;
+  surface-exgrid-clipboardpayload.md: its constructor and Deconstruct take Landing;
+  signatures-since-beta-2.md: GridSource.Fetch's and four Chrome contexts' new optional parameters,
+    and EditDiscardReason's values, which moved down one when OrderChanged left.
+report-state.md, which told a Consumer to read PivotReport.ValueAt, was corrected: PivotReport is
+internal now, and a row's values are read from PivotReportState.Rows.
+
+ExGrid.Data and ExGrid.Data.Arrow break nothing: every member beta.2 exported is still public.
+
+== The full output (paths shortened: <repo> the worktree, <sdk> the SDK, <feed> a scratch folder)
+
+== dotnet pack src/ExGrid -c Release -p:Version=0.1.0-pv -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=0.1.0-beta.2
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored <repo>/src/ExGrid/ExGrid.csproj (in 372 ms).
+  Restored <repo>/src/ExGrid.Data/ExGrid.Data.csproj (in 370 ms).
+  ExGrid.Data -> <repo>/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid -> <repo>/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  Successfully created package '<feed>/ExGrid.0.1.0-pv.nupkg'.
+  Successfully created package '<feed>/ExGrid.0.1.0-pv.snupkg'.
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API compatibility errors between 'lib/net10.0/ExGrid.dll' (~/.nuget/packages/exgrid/0.1.0-beta.2/exgrid.0.1.0-beta.2.nupkg) and 'lib/net10.0/ExGrid.dll' (<feed>/ExGrid.0.1.0-pv.nupkg): [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.ColumnGeometry' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'string ExGrid.ColumnInfo<TRow>.TextFor(object?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'int ExGrid.FetchingGridSource<TRow>.DefaultPageRows' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.FilterOperators' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.ColumnType ExGrid.GridColumn<TRow>.TypeAt(TRow, System.Func<TRow, ExGrid.GridColumn<TRow>, ExGrid.ColumnType>?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Columns.CellAlign ExGrid.GridColumn<TRow>.AlignAt(TRow, System.Func<TRow, ExGrid.GridColumn<TRow>, ExGrid.Columns.CellAlign>?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'bool ExGrid.GridColumn<TRow>.PaintsValue.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.NameBoxWidthPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.FillHandleSizePx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.ActionPaddingXPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.ActionBorderPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.ActionGapPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.CellPaddingXPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.ActionButtonChromePx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.MenuButtonWidthPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.MenuButtonInsetPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.MenuButtonBandPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.GridMetrics.SortMarkWidthPx.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Columns.CellTextMetrics ExGrid.GridPresentationDefaults.CellMetricsAt(double, double)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'bool ExGrid.GridQueryEngine.Matches<TRow>(TRow, System.Collections.Generic.IReadOnlyList<ExGrid.ColumnInfo<TRow>>, ExGrid.GridFilter)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.FetchingGridSource<TRow> ExGrid.GridSource.Fetch<TRow>(System.Func<ExGrid.GridQuery, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.GridPage<TRow>>>, int, System.Func<string, ExGrid.GridFilter?, System.Threading.CancellationToken, System.Threading.Tasks.Task<ExGrid.Chrome.DistinctValues>>?, ExGrid.Rows.RowMarkAdapter<TRow>?, System.Func<ExGrid.Finding.GridFindRequest, ExGrid.GridFilter?, System.Collections.Generic.IReadOnlyList<ExGrid.SortSpec>, System.Threading.CancellationToken, System.Threading.Tasks.Task<ExGrid.Finding.GridFindResult>>?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'int ExGrid.InMemoryGridSource<TRow>.DistinctValueCap' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.SortCycle' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.ViewportBox' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.ViewportGeometry' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'System.DateTimeOffset ExGrid.Cells.ChangeHighlightRules.EndOf(System.DateTimeOffset, System.TimeSpan)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'System.DateTimeOffset? ExGrid.Cells.ChangeHighlightRules.ShowingUntil(System.DateTimeOffset?, System.TimeSpan, System.DateTimeOffset)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0011: Value of field 'ColumnsChanged' in enum 'EditDiscardReason' changed from '1' to '0'. [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0011: Value of field 'RowLeftTheWindow' in enum 'EditDiscardReason' changed from '2' to '1'. [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0011: Value of field 'ColumnNoLongerEditable' in enum 'EditDiscardReason' changed from '3' to '2'. [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0011: Value of field 'DiscardedByConsumer' in enum 'EditDiscardReason' changed from '4' to '3'. [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Cells.EditDiscardReason.OrderChanged' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Cells.EditorTextRules' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'void ExGrid.Cells.GridPointedAt<TRow>.Changed.add' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'void ExGrid.Cells.GridPointedAt<TRow>.Changed.remove' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'int ExGrid.Cells.ReferenceColour.PaletteLength' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Cells.ReferenceColour.ReferenceColour(int)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Cells.ReferenceColour ExGrid.Cells.ReferenceColour.ForAppearance(int)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Cells.ReferenceColouring' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.FilterSpec? ExGrid.Chrome.FilterPanelChoices.FromCondition(ExGrid.FilterOperator, object?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'object? ExGrid.Chrome.FilterPanelChoices.ParseOperand(ExGrid.ColumnType, string, ExGrid.DateType)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Chrome.FilterPanelContext.FilterPanelContext(string, ExGrid.ColumnType, ExGrid.FilterSpec?, System.Collections.Generic.IReadOnlyList<ExGrid.FilterOperator>, ExGrid.Chrome.FilterUiMode, System.Func<System.Threading.Tasks.Task<ExGrid.Chrome.DistinctValues>>, System.Action<ExGrid.FilterSpec?>, System.Action, System.Action, int, System.Func<object, string>?, System.Action<bool>?, int, System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs, System.Threading.Tasks.Task>?, int, ExGrid.DateType)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'void ExGrid.Chrome.FilterPanelContext.Deconstruct(out string, out ExGrid.ColumnType, out ExGrid.FilterSpec?, out System.Collections.Generic.IReadOnlyList<ExGrid.FilterOperator>, out ExGrid.Chrome.FilterUiMode, out System.Func<System.Threading.Tasks.Task<ExGrid.Chrome.DistinctValues>>, out System.Action<ExGrid.FilterSpec?>, out System.Action, out System.Action, out int, out System.Func<object, string>?, out System.Action<bool>?, out int, out System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs, System.Threading.Tasks.Task>?, out int, out ExGrid.DateType)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Chrome.ColumnMenuContext.ColumnMenuContext(string, ExGrid.ColumnType, System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand>, System.Action, int, System.Action<bool>?, ExGrid.Chrome.MenuKeyResolver?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'void ExGrid.Chrome.ColumnMenuContext.Deconstruct(out string, out ExGrid.ColumnType, out System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand>, out System.Action, out int, out System.Action<bool>?, out ExGrid.Chrome.MenuKeyResolver?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Chrome.ContextMenuContext<TRow>.ContextMenuContext(TRow, string, ExGrid.ColumnType, System.Collections.Generic.IReadOnlyList<ExGrid.Selection.SelectionRange>, int, System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand>, System.Action, int, System.Action<bool>?, ExGrid.Chrome.MenuKeyResolver?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'void ExGrid.Chrome.ContextMenuContext<TRow>.Deconstruct(out TRow, out string, out ExGrid.ColumnType, out System.Collections.Generic.IReadOnlyList<ExGrid.Selection.SelectionRange>, out int, out System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand>, out System.Action, out int, out System.Action<bool>?, out ExGrid.Chrome.MenuKeyResolver?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Chrome.FindContext.FindContext(string, bool, bool, ExGrid.Finding.FindOutcome, System.Action<string>, System.Action<bool>, System.Action<bool>, System.Func<System.Threading.Tasks.Task>, System.Func<System.Threading.Tasks.Task>, System.Action, int, System.Action<bool>?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'void ExGrid.Chrome.FindContext.Deconstruct(out string, out bool, out bool, out ExGrid.Finding.FindOutcome, out System.Action<string>, out System.Action<bool>, out System.Action<bool>, out System.Func<System.Threading.Tasks.Task>, out System.Func<System.Threading.Tasks.Task>, out System.Action, out int, out System.Action<bool>?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Chrome.MenuKey ExGrid.Chrome.MenuKeys.ResolveInColumnMenu(string, bool, bool, System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand>, int, bool)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Chrome.MenuKey ExGrid.Chrome.MenuKeys.Letter(string, bool, System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand>, bool)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Clipboard.ClipboardBlock? ExGrid.Clipboard.ClipboardParse.ParseBlock(string?, string?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Clipboard.ClipboardBlock' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Clipboard.ClipboardPayload.ClipboardPayload(string, string?, string?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'void ExGrid.Clipboard.ClipboardPayload.Deconstruct(out string, out string?, out string?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Clipboard.ClipboardRules' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Clipboard.CopyDecision' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Clipboard.FillPlan' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Clipboard.FillDecision' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Clipboard.SourceCell ExGrid.Clipboard.PastePlan.SourceCellFor(ExGrid.Selection.CellPosition)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Clipboard.PasteDecision' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Clipboard.PasteShape.PasteShape(int, int)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Clipboard.SourceCell' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Columns.AutoWidth' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Columns.CellTextMetrics ExGrid.Columns.CellTextMetrics.WithBoldWidths(double, double, double)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.Columns.CellTextMetrics.WidthOf(char)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.Columns.ColumnWidthSpec.Clamp(double)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Columns.ColumnWidth ExGrid.Columns.ColumnWidthSpec.SizeToFit(double)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'double ExGrid.Columns.ColumnWidthSpec.ResolveWidthPx(ExGrid.Columns.AutoWidth)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'bool ExGrid.Columns.GlyphWidthTable.TryGetWidthPx(int, bool, out double)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Columns.ResolvedHeaderGroup' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Columns.HeaderGroupLayout' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Columns.HeaderReorder' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Columns.OverflowDecision' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Columns.OverflowRules' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Components.CellClasses' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Components.ColumnStyles.ColumnStyles(ExGrid.ColumnGeometry)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.ColumnGeometry ExGrid.Components.ColumnStyles.Geometry.get' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'System.Threading.Tasks.Task<bool> ExGrid.Components.ExGrid<TRow>.OnKeyFieldTextAsync(string)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'System.Threading.Tasks.Task ExGrid.Components.ExGrid<TRow>.OnPasteStreamsAsync(Microsoft.JSInterop.IJSStreamReference?, Microsoft.JSInterop.IJSStreamReference?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'System.Threading.Tasks.Task ExGrid.Components.ExGrid<TRow>.OnPasteAsync(string?, string?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'System.Threading.Tasks.Task ExGrid.Components.ExGrid<TRow>.OnKeyAsync(string, bool, bool, bool, bool, bool, bool, string?, int, int, bool, bool)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Components.RowClasses' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Components.ScrollOffset' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Components._Imports' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Keys.GridKeyKind' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Keys.GridKeyAction' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Keys.GridKeyClaims' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Keys.GridKeys' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Rows.RowMarkHeaderState' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Rows.RowMarkHeaderState ExGrid.Rows.RowMarkRules.HeaderState(ExGrid.Rows.RowMarkCounts)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'bool ExGrid.Rows.RowMarkRules.HeaderPress(ExGrid.Rows.RowMarkHeaderState)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Selection.CycleOrder' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Selection.EdgeBand' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Selection.FillRules' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Selection.FillExtension' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.Selection.FillDecision' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.Click(ExGrid.Selection.CellPosition, ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.ExtendTo(ExGrid.Selection.CellPosition, ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.ToggleRange(ExGrid.Selection.CellPosition, ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.ToggleColumn(int, ExGrid.Selection.GridExtent, int)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.ToggleRow(int, ExGrid.Selection.GridExtent, int)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.Move(ExGrid.Selection.GridDirection, ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.Extend(ExGrid.Selection.GridDirection, ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.MoveToEdge(ExGrid.Selection.GridDirection, ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.ExtendToEdge(ExGrid.Selection.GridDirection, ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.MoveToEdge(ExGrid.Selection.GridDirection, ExGrid.Selection.GridExtent, System.Func<ExGrid.Selection.CellPosition, ExGrid.Selection.GridDirection, ExGrid.Selection.CellPosition>?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.ExtendToEdge(ExGrid.Selection.GridDirection, ExGrid.Selection.GridExtent, System.Func<ExGrid.Selection.CellPosition, ExGrid.Selection.GridDirection, ExGrid.Selection.CellPosition>?)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.MoveByViewport(int, ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.ExtendByViewport(int, ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.SelectAll(ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.SelectAll(ExGrid.Selection.GridExtent, int, int)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.SelectWholeColumns(ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.SelectWholeRows(ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.CycleFocus(ExGrid.Selection.CycleOrder, bool, ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.MoveFocusToNextCorner(ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.CollapseToFocus(ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.FocusOn(ExGrid.Selection.CellPosition)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.ExtendToColumn(int, ExGrid.Selection.GridExtent, int)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.Place(ExGrid.Selection.SelectionRange, ExGrid.Selection.CellPosition, ExGrid.Selection.GridExtent)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.SelectColumn(int, ExGrid.Selection.GridExtent, int)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.SelectRow(int, ExGrid.Selection.GridExtent, int)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.GridSelection ExGrid.Selection.GridSelection.ExtendToRow(int, ExGrid.Selection.GridExtent, int)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.HeldSelection ExGrid.Selection.HeldSelection.Empty(int)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.HeldSelection ExGrid.Selection.HeldSelection.With(ExGrid.Selection.GridSelection)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Selection.SelectionRange ExGrid.Selection.SelectionRange.FromCorners(ExGrid.Selection.CellPosition, ExGrid.Selection.CellPosition)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'System.Collections.Generic.IReadOnlyList<ExGrid.Selection.SelectionRange> ExGrid.Selection.SelectionRange.Subtract(ExGrid.Selection.CellPosition)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'System.Collections.Generic.IReadOnlyList<ExGrid.Selection.SelectionRange> ExGrid.Selection.SelectionRange.SubtractArea(ExGrid.Selection.SelectionRange)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExGrid.Cells.CellState ExGrid.Validation.GridRuleset<TRow>.StateOf(TRow, ExGrid.GridColumn<TRow>)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'string? ExGrid.Validation.GridRuleset<TRow>.MessageOf(TRow, ExGrid.GridColumn<TRow>)' exists on [Baseline] lib/net10.0/ExGrid.dll but not on lib/net10.0/ExGrid.dll [<repo>/src/ExGrid/ExGrid.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API breaking changes found. If those are intentional, the APICompat suppression file can be updated by rebuilding with '/p:ApiCompatGenerateSuppressionFile=true' [<repo>/src/ExGrid/ExGrid.csproj]
+== exit 1
+== dotnet pack src/ExGrid.MudBlazor -c Release -p:Version=0.1.0-pv -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=0.1.0-beta.2
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored <repo>/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj (in 2 sec).
+  2 of 3 projects are up-to-date for restore.
+  ExGrid.Data -> <repo>/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid -> <repo>/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExGrid.MudBlazor -> <repo>/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  Successfully created package '<feed>/ExGrid.MudBlazor.0.1.0-pv.nupkg'.
+  Successfully created package '<feed>/ExGrid.MudBlazor.0.1.0-pv.snupkg'.
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API compatibility errors between 'lib/net10.0/ExGrid.MudBlazor.dll' (~/.nuget/packages/exgrid.mudblazor/0.1.0-beta.2/exgrid.mudblazor.0.1.0-beta.2.nupkg) and 'lib/net10.0/ExGrid.MudBlazor.dll' (<feed>/ExGrid.MudBlazor.0.1.0-pv.nupkg): [<repo>/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExGrid.MudBlazor._Imports' exists on [Baseline] lib/net10.0/ExGrid.MudBlazor.dll but not on lib/net10.0/ExGrid.MudBlazor.dll [<repo>/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API breaking changes found. If those are intentional, the APICompat suppression file can be updated by rebuilding with '/p:ApiCompatGenerateSuppressionFile=true' [<repo>/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj]
+== exit 1
+== dotnet pack src/ExSheet.Engine -c Release -p:Version=0.1.0-pv -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=0.1.0-beta.2
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored <repo>/src/ExSheet.Engine/ExSheet.Engine.csproj (in 1.95 sec).
+  ExSheet.Engine -> <repo>/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  Successfully created package '<feed>/ExSheet.Engine.0.1.0-pv.nupkg'.
+  Successfully created package '<feed>/ExSheet.Engine.0.1.0-pv.snupkg'.
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API compatibility errors between 'lib/net10.0/ExSheet.Engine.dll' (~/.nuget/packages/exsheet.engine/0.1.0-beta.2/exsheet.engine.0.1.0-beta.2.nupkg) and 'lib/net10.0/ExSheet.Engine.dll' (<feed>/ExSheet.Engine.0.1.0-pv.nupkg): [<repo>/src/ExSheet.Engine/ExSheet.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExSheet.Engine.Entry ExSheet.Engine.Entry.FromFormula(string)' exists on [Baseline] lib/net10.0/ExSheet.Engine.dll but not on lib/net10.0/ExSheet.Engine.dll [<repo>/src/ExSheet.Engine/ExSheet.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExSheet.Engine.ErrorValues' exists on [Baseline] lib/net10.0/ExSheet.Engine.dll but not on lib/net10.0/ExSheet.Engine.dll [<repo>/src/ExSheet.Engine/ExSheet.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExSheet.Engine.PointSite? ExSheet.Engine.FormulaEntry.PointedReferenceAt(string, int)' exists on [Baseline] lib/net10.0/ExSheet.Engine.dll but not on lib/net10.0/ExSheet.Engine.dll [<repo>/src/ExSheet.Engine/ExSheet.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExSheet.Engine.SheetChange ExSheet.Engine.Sheet.SetEntry(ExSheet.Engine.CellAddress, ExSheet.Engine.Entry?)' exists on [Baseline] lib/net10.0/ExSheet.Engine.dll but not on lib/net10.0/ExSheet.Engine.dll [<repo>/src/ExSheet.Engine/ExSheet.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExSheet.Engine.SheetChange ExSheet.Engine.Sheet.Rename(string)' exists on [Baseline] lib/net10.0/ExSheet.Engine.dll but not on lib/net10.0/ExSheet.Engine.dll [<repo>/src/ExSheet.Engine/ExSheet.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'string[] ExSheet.Engine.NumberFormat.AbbreviatedMonthNamesOf(System.Globalization.CultureInfo)' exists on [Baseline] lib/net10.0/ExSheet.Engine.dll but not on lib/net10.0/ExSheet.Engine.dll [<repo>/src/ExSheet.Engine/ExSheet.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API breaking changes found. If those are intentional, the APICompat suppression file can be updated by rebuilding with '/p:ApiCompatGenerateSuppressionFile=true' [<repo>/src/ExSheet.Engine/ExSheet.Engine.csproj]
+== exit 1
+== dotnet pack src/ExSheet -c Release -p:Version=0.1.0-pv -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=0.1.0-beta.2
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored <repo>/src/ExSheet/ExSheet.csproj (in 3 sec).
+  3 of 4 projects are up-to-date for restore.
+  ExSheet.Engine -> <repo>/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  ExGrid.Data -> <repo>/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid -> <repo>/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExSheet -> <repo>/src/ExSheet/bin/Release/net10.0/ExSheet.dll
+  Successfully created package '<feed>/ExSheet.0.1.0-pv.nupkg'.
+  Successfully created package '<feed>/ExSheet.0.1.0-pv.snupkg'.
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API compatibility errors between 'lib/net10.0/ExSheet.dll' (~/.nuget/packages/exsheet/0.1.0-beta.2/exsheet.0.1.0-beta.2.nupkg) and 'lib/net10.0/ExSheet.dll' (<feed>/ExSheet.0.1.0-pv.nupkg): [<repo>/src/ExSheet/ExSheet.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExSheet.SheetRow' exists on [Baseline] lib/net10.0/ExSheet.dll but not on lib/net10.0/ExSheet.dll [<repo>/src/ExSheet/ExSheet.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExSheet.ToolbarOrder? ExSheet.ToolbarItemBase.Order.get' exists on [Baseline] lib/net10.0/ExSheet.dll but not on lib/net10.0/ExSheet.dll [<repo>/src/ExSheet/ExSheet.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'void ExSheet.ToolbarItemBase.Order.set' exists on [Baseline] lib/net10.0/ExSheet.dll but not on lib/net10.0/ExSheet.dll [<repo>/src/ExSheet/ExSheet.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExSheet.ToolbarOrder' exists on [Baseline] lib/net10.0/ExSheet.dll but not on lib/net10.0/ExSheet.dll [<repo>/src/ExSheet/ExSheet.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExSheet.ToolbarOrder? ExSheet.DefaultToolbarRow.Order.get' exists on [Baseline] lib/net10.0/ExSheet.dll but not on lib/net10.0/ExSheet.dll [<repo>/src/ExSheet/ExSheet.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'void ExSheet.DefaultToolbarRow.Order.set' exists on [Baseline] lib/net10.0/ExSheet.dll but not on lib/net10.0/ExSheet.dll [<repo>/src/ExSheet/ExSheet.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExSheet.ToolbarOrder? ExSheet.ToolbarRow.Order.get' exists on [Baseline] lib/net10.0/ExSheet.dll but not on lib/net10.0/ExSheet.dll [<repo>/src/ExSheet/ExSheet.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'void ExSheet.ToolbarRow.Order.set' exists on [Baseline] lib/net10.0/ExSheet.dll but not on lib/net10.0/ExSheet.dll [<repo>/src/ExSheet/ExSheet.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExSheet._Imports' exists on [Baseline] lib/net10.0/ExSheet.dll but not on lib/net10.0/ExSheet.dll [<repo>/src/ExSheet/ExSheet.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API breaking changes found. If those are intentional, the APICompat suppression file can be updated by rebuilding with '/p:ApiCompatGenerateSuppressionFile=true' [<repo>/src/ExSheet/ExSheet.csproj]
+== exit 1
+== dotnet pack src/ExSheet.MudBlazor -c Release -p:Version=0.1.0-pv -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=0.1.0-beta.2
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored <repo>/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj (in 2.84 sec).
+  5 of 6 projects are up-to-date for restore.
+  ExSheet.Engine -> <repo>/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  ExGrid.Data -> <repo>/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid -> <repo>/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExSheet -> <repo>/src/ExSheet/bin/Release/net10.0/ExSheet.dll
+  ExGrid.MudBlazor -> <repo>/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  ExSheet.MudBlazor -> <repo>/src/ExSheet.MudBlazor/bin/Release/net10.0/ExSheet.MudBlazor.dll
+  Successfully created package '<feed>/ExSheet.MudBlazor.0.1.0-pv.nupkg'.
+  Successfully created package '<feed>/ExSheet.MudBlazor.0.1.0-pv.snupkg'.
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API compatibility errors between 'lib/net10.0/ExSheet.MudBlazor.dll' (~/.nuget/packages/exsheet.mudblazor/0.1.0-beta.2/exsheet.mudblazor.0.1.0-beta.2.nupkg) and 'lib/net10.0/ExSheet.MudBlazor.dll' (<feed>/ExSheet.MudBlazor.0.1.0-pv.nupkg): [<repo>/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExSheet.MudBlazor._Imports' exists on [Baseline] lib/net10.0/ExSheet.MudBlazor.dll but not on lib/net10.0/ExSheet.MudBlazor.dll [<repo>/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API breaking changes found. If those are intentional, the APICompat suppression file can be updated by rebuilding with '/p:ApiCompatGenerateSuppressionFile=true' [<repo>/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj]
+== exit 1
+== dotnet pack src/ExGrid.Data -c Release -p:Version=0.1.0-pv -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=0.1.0-beta.2
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> <repo>/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  Successfully created package '<feed>/ExGrid.Data.0.1.0-pv.nupkg'.
+  Successfully created package '<feed>/ExGrid.Data.0.1.0-pv.snupkg'.
+== exit 0
+== dotnet pack src/ExGrid.Data.Arrow -c Release -p:Version=0.1.0-pv -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=0.1.0-beta.2
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored <repo>/src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj (in 2.32 sec).
+  1 of 2 projects are up-to-date for restore.
+  ExGrid.Data -> <repo>/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid.Data.Arrow -> <repo>/src/ExGrid.Data.Arrow/bin/Release/net10.0/ExGrid.Data.Arrow.dll
+  Successfully created package '<feed>/ExGrid.Data.Arrow.0.1.0-pv.nupkg'.
+  Successfully created package '<feed>/ExGrid.Data.Arrow.0.1.0-pv.snupkg'.
+== exit 0
+== dotnet pack src/ExPivot.Engine -c Release -p:Version=0.1.0-pv -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=0.1.0-beta.2
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored <repo>/src/ExPivot.Engine/ExPivot.Engine.csproj (in 1.68 sec).
+  1 of 2 projects are up-to-date for restore.
+  ExGrid.Data -> <repo>/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> <repo>/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  Successfully created package '<feed>/ExPivot.Engine.0.1.0-pv.nupkg'.
+  Successfully created package '<feed>/ExPivot.Engine.0.1.0-pv.snupkg'.
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API compatibility errors between 'lib/net10.0/ExPivot.Engine.dll' (~/.nuget/packages/expivot.engine/0.1.0-beta.2/expivot.engine.0.1.0-beta.2.nupkg) and 'lib/net10.0/ExPivot.Engine.dll' (<feed>/ExPivot.Engine.0.1.0-pv.nupkg): [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExPivot.Engine.PivotCube' exists on [Baseline] lib/net10.0/ExPivot.Engine.dll but not on lib/net10.0/ExPivot.Engine.dll [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExPivot.Engine.PivotReport ExPivot.Engine.PivotEngine.Compute<TRecord>(System.Collections.Generic.IReadOnlyList<TRecord>, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotField<TRecord>>, ExPivot.Engine.PivotLayout, ExPivot.Engine.PivotOptions?)' exists on [Baseline] lib/net10.0/ExPivot.Engine.dll but not on lib/net10.0/ExPivot.Engine.dll [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExPivot.Engine.PivotCube ExPivot.Engine.PivotEngine.Aggregate<TRecord>(System.Collections.Generic.IReadOnlyList<TRecord>, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotField<TRecord>>, ExPivot.Engine.PivotLayout)' exists on [Baseline] lib/net10.0/ExPivot.Engine.dll but not on lib/net10.0/ExPivot.Engine.dll [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExPivot.Engine.PivotCube ExPivot.Engine.PivotEngine.Cube(ExPivot.Engine.PivotQuery, ExPivot.Engine.PivotAnswer, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotField>)' exists on [Baseline] lib/net10.0/ExPivot.Engine.dll but not on lib/net10.0/ExPivot.Engine.dll [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'System.Threading.Tasks.ValueTask<ExPivot.Engine.PivotCube> ExPivot.Engine.PivotEngine.CubeAsync(ExPivot.Engine.PivotQuery, ExPivot.Engine.PivotAnswer, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotField>, ExPivot.Engine.PivotSlicing?, System.Threading.CancellationToken)' exists on [Baseline] lib/net10.0/ExPivot.Engine.dll but not on lib/net10.0/ExPivot.Engine.dll [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExPivot.Engine.PivotReport ExPivot.Engine.PivotEngine.Report(ExPivot.Engine.PivotCube, ExPivot.Engine.PivotLayout, ExPivot.Engine.PivotOptions?)' exists on [Baseline] lib/net10.0/ExPivot.Engine.dll but not on lib/net10.0/ExPivot.Engine.dll [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'System.Threading.Tasks.ValueTask<ExPivot.Engine.PivotReport> ExPivot.Engine.PivotEngine.ReportAsync(ExPivot.Engine.PivotCube, ExPivot.Engine.PivotLayout, ExPivot.Engine.PivotOptions?, ExPivot.Engine.PivotSlicing?, System.Threading.CancellationToken)' exists on [Baseline] lib/net10.0/ExPivot.Engine.dll but not on lib/net10.0/ExPivot.Engine.dll [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'bool ExPivot.Engine.PivotEngine.CanReuse<TRecord>(ExPivot.Engine.PivotCube?, System.Collections.Generic.IReadOnlyList<TRecord>, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotField<TRecord>>, ExPivot.Engine.PivotLayout)' exists on [Baseline] lib/net10.0/ExPivot.Engine.dll but not on lib/net10.0/ExPivot.Engine.dll [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotItemInfo> ExPivot.Engine.PivotEngine.ItemsOf(ExPivot.Engine.PivotCube, ExPivot.Engine.PivotLayout, string, ExPivot.Engine.PivotOptions?)' exists on [Baseline] lib/net10.0/ExPivot.Engine.dll but not on lib/net10.0/ExPivot.Engine.dll [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'System.Collections.Generic.IReadOnlyList<TRecord> ExPivot.Engine.PivotEngine.RecordsBehind<TRecord>(System.Collections.Generic.IReadOnlyList<TRecord>, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotField<TRecord>>, ExPivot.Engine.PivotReport, ExPivot.Engine.PivotReportRow, int)' exists on [Baseline] lib/net10.0/ExPivot.Engine.dll but not on lib/net10.0/ExPivot.Engine.dll [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExPivot.Engine.PivotReport' exists on [Baseline] lib/net10.0/ExPivot.Engine.dll but not on lib/net10.0/ExPivot.Engine.dll [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExPivot.Engine.PivotReportRow' exists on [Baseline] lib/net10.0/ExPivot.Engine.dll but not on lib/net10.0/ExPivot.Engine.dll [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExPivot.Engine.PivotReportColumn' exists on [Baseline] lib/net10.0/ExPivot.Engine.dll but not on lib/net10.0/ExPivot.Engine.dll [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExPivot.Engine.PivotValue' exists on [Baseline] lib/net10.0/ExPivot.Engine.dll but not on lib/net10.0/ExPivot.Engine.dll [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API breaking changes found. If those are intentional, the APICompat suppression file can be updated by rebuilding with '/p:ApiCompatGenerateSuppressionFile=true' [<repo>/src/ExPivot.Engine/ExPivot.Engine.csproj]
+== exit 1
+== dotnet pack src/ExPivot -c Release -p:Version=0.1.0-pv -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=0.1.0-beta.2
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored <repo>/src/ExPivot/ExPivot.csproj (in 1.63 sec).
+  3 of 4 projects are up-to-date for restore.
+  ExGrid.Data -> <repo>/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> <repo>/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExGrid -> <repo>/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExPivot -> <repo>/src/ExPivot/bin/Release/net10.0/ExPivot.dll
+  Successfully created package '<feed>/ExPivot.0.1.0-pv.nupkg'.
+  Successfully created package '<feed>/ExPivot.0.1.0-pv.snupkg'.
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API compatibility errors between 'lib/net10.0/ExPivot.dll' (~/.nuget/packages/expivot/0.1.0-beta.2/expivot.0.1.0-beta.2.nupkg) and 'lib/net10.0/ExPivot.dll' (<feed>/ExPivot.0.1.0-pv.nupkg): [<repo>/src/ExPivot/ExPivot.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExPivot._Imports' exists on [Baseline] lib/net10.0/ExPivot.dll but not on lib/net10.0/ExPivot.dll [<repo>/src/ExPivot/ExPivot.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'int ExPivot.Components.ExPivot.ItemListCap' exists on [Baseline] lib/net10.0/ExPivot.dll but not on lib/net10.0/ExPivot.dll [<repo>/src/ExPivot/ExPivot.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'ExPivot.Engine.PivotReport? ExPivot.Components.ExPivot.Report.get' exists on [Baseline] lib/net10.0/ExPivot.dll but not on lib/net10.0/ExPivot.dll [<repo>/src/ExPivot/ExPivot.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'string ExPivot.Components.PivotToggleButton.ClassFor(bool)' exists on [Baseline] lib/net10.0/ExPivot.dll but not on lib/net10.0/ExPivot.dll [<repo>/src/ExPivot/ExPivot.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0002: Member 'string ExPivot.Components.PivotToggleButton.GlyphFor(bool)' exists on [Baseline] lib/net10.0/ExPivot.dll but not on lib/net10.0/ExPivot.dll [<repo>/src/ExPivot/ExPivot.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API breaking changes found. If those are intentional, the APICompat suppression file can be updated by rebuilding with '/p:ApiCompatGenerateSuppressionFile=true' [<repo>/src/ExPivot/ExPivot.csproj]
+== exit 1
+== dotnet pack src/ExPivot.MudBlazor -c Release -p:Version=0.1.0-pv -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=0.1.0-beta.2
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored <repo>/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj (in 1.55 sec).
+  5 of 6 projects are up-to-date for restore.
+  ExGrid.Data -> <repo>/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> <repo>/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExGrid -> <repo>/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExGrid.MudBlazor -> <repo>/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  ExPivot -> <repo>/src/ExPivot/bin/Release/net10.0/ExPivot.dll
+  ExPivot.MudBlazor -> <repo>/src/ExPivot.MudBlazor/bin/Release/net10.0/ExPivot.MudBlazor.dll
+  Successfully created package '<feed>/ExPivot.MudBlazor.0.1.0-pv.nupkg'.
+  Successfully created package '<feed>/ExPivot.MudBlazor.0.1.0-pv.snupkg'.
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API compatibility errors between 'lib/net10.0/ExPivot.MudBlazor.dll' (~/.nuget/packages/expivot.mudblazor/0.1.0-beta.2/expivot.mudblazor.0.1.0-beta.2.nupkg) and 'lib/net10.0/ExPivot.MudBlazor.dll' (<feed>/ExPivot.MudBlazor.0.1.0-pv.nupkg): [<repo>/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExPivot.MudBlazor.MudPivotIcons' exists on [Baseline] lib/net10.0/ExPivot.MudBlazor.dll but not on lib/net10.0/ExPivot.MudBlazor.dll [<repo>/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error CP0001: Type 'ExPivot.MudBlazor._Imports' exists on [Baseline] lib/net10.0/ExPivot.MudBlazor.dll but not on lib/net10.0/ExPivot.MudBlazor.dll [<repo>/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj]
+<sdk>/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.ApiCompat.ValidatePackage.targets(39,5): error : API breaking changes found. If those are intentional, the APICompat suppression file can be updated by rebuilding with '/p:ApiCompatGenerateSuppressionFile=true' [<repo>/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj]
+== exit 1

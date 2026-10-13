@@ -33,7 +33,7 @@ public enum CopyRefusalReason
     TooLarge,
 
     /// <summary>The selection runs beyond the Window and the rows could not be had.
-    /// Raised by the component, never by <see cref="ClipboardRules"/>.</summary>
+    /// Raised by the component, never by the copy rules that plan a copy.</summary>
     RowsUnavailable,
 
     /// <summary>The browser rejected the clipboard write, so nothing landed and the
@@ -43,7 +43,7 @@ public enum CopyRefusalReason
 
     /// <summary>The Consumer's declared copy answer refused the copy (ADR-0050, item 9):
     /// nothing landed, and the Consumer's own sentence has been announced through the
-    /// root's live region. Raised by the component, never by <see cref="ClipboardRules"/>,
+    /// root's live region. Raised by the component, never by the copy rules that plan a copy,
     /// and never for a grid that declared no copy answer.</summary>
     RefusedByConsumer,
 }
@@ -109,7 +109,7 @@ public sealed class CopyPlan
 /// (ADR-0005). Reading the absent half throws rather than answering something
 /// plausible.
 /// </summary>
-public sealed class CopyDecision
+internal sealed class CopyDecision
 {
     private readonly CopyPlan? _plan;
     private readonly CopyRefusalReason _reason;

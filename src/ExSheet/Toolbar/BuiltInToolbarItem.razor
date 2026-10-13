@@ -1,5 +1,22 @@
 @namespace ExSheet
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   Every product using is written with global::. A component in ExSheet.Components would look a
+   plain "ExSheet.Engine" up against the ExSheet component class first, and a plain "ExGrid.X"
+   against sibling types (the CS0426 trap recorded in AGENTS.md). The Web namespace makes @on...
+   handlers compile as event handlers rather than as plain HTML attributes. *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExGrid
+@using global::ExGrid.Cells
+@using global::ExGrid.Chrome
+@using global::ExGrid.Components
+@using global::ExGrid.Keys
+@using global::ExGrid.Selection
 @using global::ExSheet.Engine
+@* Not the contract (ADR-0201): a Toolbar Item draws this when the Chrome draws nothing of its own,
+   and no Consumer places it. It is public only because Razor makes every component public, is
+   hidden from a Consumer's editor, and may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 
 @*
     A Toolbar Item as the built-in Chrome draws it (ADR-0100): a plain button with an inline-SVG

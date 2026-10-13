@@ -53,6 +53,14 @@
             one. Bind its <code>State</code> and <code>Message</code> to the grid's <code>CellState</code> and
             <code>CellMessageOf</code>; rest the pointer on a flagged cell to read why.
         </p>
+        <p>
+            <code>Column(name, rule)</code> holds a rule on one column's text, asked at the editor. A rule that spans
+            the row — an end date before its start, a total that must match its parts — is added with
+            <code>Row(rule)</code>, which answers a <code>RuleViolation</code> for each column that should wear the
+            mark, with its message. A row rule is judged by <code>Evaluate</code>, after the change is applied, so it
+            only ever Flags: at commit time the row it would judge does not exist yet, and there is nothing for it to
+            refuse.
+        </p>
     </DocsSection>
 
     <DocsSection Title="Bulk changes, Delete and Undo">
@@ -200,6 +208,7 @@
     <DocsSection Title="API">
         <ApiTable Type="typeof(ExGrid.Cells.EditVerdict)" />
         <ApiTable Type="typeof(ExGrid.Validation.GridRuleset<>)" />
+        <ApiTable Type="typeof(ExGrid.Validation.RuleViolation)" />
         <ApiTable Type="typeof(ExGrid.Selection.GridFillIntent)" />
         <ApiTable Type="typeof(ExGrid.Clipboard.GridClearIntent)" />
         <ApiTable Type="typeof(ExGrid.Cells.GridEditIntent<>)" />

@@ -119,6 +119,10 @@ A field naming a column the Snapshot does not have is refused by name.
 
 ## Computing a report
 
+A report is computed through a **report source** (ADR-0151): `PivotReportSource.From(source)` runs
+one report computation over a Pivot Source, and answers a **Window** — the rows asked for — with the
+whole report's metadata. It is what ExPivot reads, in the browser and on a server alike.
+
 ```csharp
 var layout = new PivotLayout
 {
@@ -127,35 +131,34 @@ var layout = new PivotLayout
     Values = [new PivotValueField("Pnl", PivotAggregation.Sum)],
 };
 
-var query = PivotQuery.For(layout);                      // what the layout asks; MaxLeaves caps it
-var answer = await source.AggregateAsync(query, ct);    // or a refusal: "this layout needs more than 200,000 cells"
-var cube = PivotEngine.Cube(query, answer, source.Fields);
-var report = PivotEngine.Report(cube, layout,
-    new PivotOptions { Culture = CultureInfo.GetCultureInfo("en-US") });
+await using var reports = PivotReportSource.From(source);
+var update = await reports.WindowAsync(new PivotReportRequest(
+    "first",                                          // a new id for each request, echoed back
+    layout,
+    new PivotReportSettings { CultureName = "en-US" },
+    new PivotReportWindow(0, int.MaxValue)), ct);     // every row; a page asks for fewer
 
-report.Rows[0].Labels[0].Text;    // the first region
-report.ValueAt(report.Rows[^1], 0)!.Text; // the grand total of January
+if (update.Refusal is { } refusal)                    // "this layout needs more than 200,000 cells"
+    return refusal.Message;
+var report = update.Metadata!;                        // the extent, the columns and their headers
+var rows = update.Rows!;
+
+rows[0].Labels[0].Text;          // the first region
+rows[^1].ValueAt(0)!.Text;       // the grand total of January
+report.RowCount;                 // every row of the report, the Window's or not
 ```
 
-A layout that changes only how the result is laid out — collapsing an Item, sorting, the form, the
-totals, a format, or an Aggregation whose parts the cube holds (Sum and Average share one) — is laid
-out from the same cube (`PivotCube.Holds`), with no new question.
-
-In a browser, the cube of a large answer and its report take seconds, so they are made in slices:
-
-```csharp
-var cube = await PivotEngine.CubeAsync(query, answer, source.Fields, slicing: null, ct);
-var report = await PivotEngine.ReportAsync(cube, layout, options, slicing: null, ct);
-```
-
-- **The same cube and the same report** as `Cube` and `Report`, made a piece at a time. The thread
-  is yielded whenever a slice of `PivotSlicing.Budget` (30 ms) is spent, so the page keeps painting.
-- **Cancelled, they stop at the next yield.**
-- **A small answer never reads the clock**, and its task is complete when it returns.
-- `PivotReport.HasSameRowsAsAsync` compares the rows of two reports the same way.
-
-Over records in memory, `PivotEngine.Compute(records, fields, layout)` does all of it in one step,
-on the calling thread.
+- **The rows are detached** (`PivotDisplayRow`): the labels, each value's exact `decimal` or
+  `double` with its shown text, and the row's Items. Nothing in them holds the aggregates, so a
+  server sends them as JSON (`PivotReportJson`) and keeps the computation.
+- **A request that asks the same question** — collapsing an Item, sorting, the form, the totals, a
+  format, or an Aggregation whose parts are held (Sum and Average share one) — is laid out from the
+  aggregates the report source holds, with no new question to the Pivot Source.
+- **In a browser, a large report is computed in slices.** The thread is yielded whenever a slice of
+  `PivotSlicing.Budget` (30 ms) is spent, so the page keeps painting
+  (`PivotReportSource.From(source, slicing: …)`).
+- **Over records in memory**, the source is `PivotSource.From(records, fields)`, and the request is
+  the same.
 
 ## Local and remote report Windows
 
@@ -204,7 +207,7 @@ merged from the leaves' parts, which combine exactly.
   transport to a server, which answers the same questions — from the same engine over a Snapshot,
   or from SQL, building its answer with `PivotAnswerBuilder` — and is held to `From`'s answers.
 - **Every answer carries its Source Version.** A field's Items (`ItemsAsync`) and the records behind
-  a cell (`DetailsAsync`, `PivotReport.DetailsQuery`) are asked for under it, and a source that can
+  a cell (`DetailsAsync`, `PivotReportMetadata.DetailsQuery`) are asked for under it, and a source that can
   no longer answer under it refuses, rather than show records that do not add up.
 - **`PivotJson`** writes every question and every answer as versioned JSON and reads it back:
   decimals exactly, doubles to the last bit, and the leaves column by column.
