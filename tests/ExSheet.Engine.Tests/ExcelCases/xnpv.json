@@ -209,6 +209,38 @@
       "cells": {"A1": "#N/A", "A2": "2750", "B1": "#DIV/0!", "B2": "39508", "ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-027",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a rate that is an Error Value beside an Error Value among the values: an Excel that reads the rate first gives #DIV/0!, and one that reads the values first #N/A; the engine reads the rate and every cell before it answers",
+      "cells": {"A1": "#N/A", "A2": "2750", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(1/0,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-028",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a rate that is an Error Value beside counts that differ: the rate read first gives #DIV/0!, and the counts checked first #NUM!, as at XNPV-003",
+      "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(1/0,A1:A3,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-029",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value among the dates, and a date before the first after it: dates read in order and the first failure answered give #N/A, and a check of every date against the first made before the dates' Error Values #NUM!, as at XNPV-002",
+      "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "B1": "39448", "B2": "#N/A", "B3": "39000", "ZZ1000": "=XNPV(0.09,A1:A3,B1:B3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-030",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: two different Error Values among the values: the values read from the first give #N/A, and any other order #DIV/0!",
+      "cells": {"A1": "#N/A", "A2": "#DIV/0!", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

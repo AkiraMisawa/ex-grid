@@ -11,6 +11,7 @@
 //     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --only PMT --pmt-spread   # how far each PMT candidate lies from Excel
 //     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --only PMT --pmt-show "=PMT(1,1020,1000)"   # PMT's readings at one input
 //     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --engine IN OUT   # the engine's answers, for pmt_exact.py
+//     dotnet run -c Release spikes/exsheet-financial-evaluation/Search.cs -- --only PMT --pmt-readings IN   # PMT's readings wherever the engine answers
 //
 // Acceptance experiment only (ADR-0047, ADR-0202): nothing here ships. search.py, the first search, tried
 // some 13,000 evaluations against the seventeenth run's doubles. This one runs under .NET, because the
@@ -156,6 +157,9 @@ output["legend"] = new
 foreach (var formula in predict) Predict(formula);
 if (args.Contains("--pmt-spread")) PmtSpread();
 for (var i = 0; i < args.Length - 1; i++) if (args[i] == "--pmt-show") Refusals.ShowPmt(args[i + 1]);
+// --pmt-readings IN (2026-10-12, the fourth round): at each Formula of IN where the engine gives PMT a number, every
+// reading's answer, which must be a number within 128 units in the last place of the engine's (exits 1 otherwise).
+for (var i = 0; i < args.Length - 1; i++) if (args[i] == "--pmt-readings" && !Refusals.PmtReadingsAt(File.ReadLines(args[i + 1]).Where(l => l.Length > 0).ToList())) return 1;
 if (args.Contains("--discriminate")) Discriminate();
 if (args.Contains("--refusals") && !Refusals.Check(survivorsByFunction)) return 1;
 if (args.Contains("--discriminate-xnpv")) DiscriminateXnpv(survivorsByFunction["XNPV"]);
@@ -690,6 +694,13 @@ static class PmtReadings
 {
     public const long Within = 64;
 
+    /// <summary>
+    /// The farthest a reading may lie from the engine's payment where the engine answers (the fourth round): twice
+    /// 2^6, the most the engine lets a reading magnify its own roundings (ExactPayment.Conditioned), each reading
+    /// rounding a few times. The farthest found is 93 units, over pmt_exact.py's 20,000 inputs.
+    /// </summary>
+    public const long Apart = 128;
+
     private delegate double NativeForm(double r, double pv, double fv, double t, double g, double e);
 
     // Annuity's PmtForms, with double for R: the same operations in the same order.
@@ -742,6 +753,14 @@ static class PmtReadings
     private static bool libreOffice;
 
     public static int Count => Admitted.Count + (libreOffice ? 1 : 0);
+
+    /// <summary>How many readings there are of each growth's class, form, way to the start and precision (the fourth round).</summary>
+    public static string Summary() =>
+        string.Join("; ", Admitted.GroupBy(a => a.Growth).OrderByDescending(g => g.Count()).Select(g => $"{g.Key} {g.Count()}"))
+        + $"; forms {string.Join(" ", Admitted.Select(a => a.Form).Distinct().OrderBy(f => int.Parse(f[1..])))}"
+        + $"; ways to the start {string.Join(" ", Admitted.GroupBy(a => a.Due).OrderBy(g => g.Key).Select(g => $"d{g.Key} {g.Count()}"))}"
+        + $"; precisions {string.Join(" ", Admitted.GroupBy(a => a.Precision).OrderBy(g => g.Key).Select(g => $"@{g.Key} {g.Count()}"))}"
+        + (libreOffice ? "; and LibreOffice's ScGetPMT" : "");
 
     public static void Admit(IEnumerable<Candidate> candidates)
     {
@@ -1750,9 +1769,11 @@ static class Refusals
     /// evaluation gives every observed payment, so PMT has no survivors to agree. Its readings (<see cref="PmtReadings"/>)
     /// are run instead, with a double's range, over the annuity grid and the extreme grid: where some give a number
     /// and others an Error Value, they part in kind and the engine must refuse (#VALUE!); where all give an Error
-    /// Value, the engine must give one; where all give a number, the engine must give the exact payment rounded
-    /// once, computed here (<see cref="ExactPmt"/>), or refuse for the reason it gives. How far the readings' numbers
-    /// lie from the exact payment, where the engine answers, is reported, not checked.
+    /// Value, the engine must give one; where all give a number, the engine must give its payment by its rules,
+    /// computed here (<see cref="ExactPmt"/>: the exact payment at the end rounded once, and at the start that double
+    /// over 1+rate rounded again), or refuse for the reason it gives. Where the engine answers, no reading may lie
+    /// more than 128 units in the last place from its payment (<see cref="PmtReadings.Apart"/>, the fourth round); the
+    /// farthest is reported.
     /// </summary>
     private static bool ReportPmt()
     {
@@ -1804,13 +1825,15 @@ static class Refusals
             {
                 var off = Math.Abs(UnitsApart(payment, double.Parse(answer, CultureInfo.InvariantCulture)));
                 if (off > worst.Ulps) worst = (off, $"{c.Formula} by {reading}");
+                // The fourth round: where PMT answers, no reading may lie farther from its payment than PmtReadings.Apart.
+                if (off > PmtReadings.Apart) failures.Add(("a reading farther than 128 units in the last place from the engine's payment", $"{c.Formula}: the engine {engine}, {reading} {answer}, {off} units away"));
             }
         }
-        Console.WriteLine($"\nPMT, its readings with a double's range ({PmtReadings.Count} of them) and the exact payment rounded once (ADR-0047's exception): {inputs} inputs");
+        Console.WriteLine($"\nPMT, its readings with a double's range ({PmtReadings.Count} of them) and the engine's payment by its rules (ADR-0047's exception): {inputs} inputs");
         Console.WriteLine($"  they part in kind at {parting}, where the engine must refuse; every one gives an Error Value at {allErrors}, where the engine must give one");
-        Console.WriteLine($"  every one gives a number at {allNumbers}: the engine gives the exact payment at {answered}{(notComputed > 0 ? $", and {notComputed} are left to pmt_exact.py, the spike's fixed point not reaching them" : "")}");
+        Console.WriteLine($"  every one gives a number at {allNumbers}: the engine gives its payment at {answered}{(notComputed > 0 ? $", and {notComputed} are left to pmt_exact.py, the spike's fixed point not reaching them" : "")}");
         foreach (var (reason, count) in refused) Console.WriteLine($"  {count} refused: {reason}");
-        Console.WriteLine($"  the farthest a reading lies from the exact payment where the engine answers: {worst.Ulps} units in the last place, {worst.At}");
+        Console.WriteLine($"  the farthest a reading lies from the engine's payment where the engine answers: {worst.Ulps} units in the last place, {worst.At}");
         Console.WriteLine(failures.Count == 0 ? "  the engine follows its rules at every input" : $"  {failures.Count} inputs where the engine does not:");
         foreach (var group in failures.GroupBy(f => f.Kind))
         {
@@ -1825,6 +1848,7 @@ static class Refusals
     {
         var g = Math.Pow(1 + input.Rate, input.Periods);
         if (input.Periods == 0) return $"no periods, {(input.Type != 0 ? "at the start" : "at the end")}";
+        if (Math.Abs(input.Periods) < 1E-5) return $"a tiny nper, {(input.Type != 0 ? "at the start" : "at the end")}";
         if (input.Rate <= -1) return "a rate of -1 or below";
         if (!double.IsFinite(g) || g > Math.ScaleB(1, 1000)) return "a growth past 2^1000";
         if (g < Math.ScaleB(1, -1000)) return "a growth below 2^-1000";
@@ -1832,10 +1856,64 @@ static class Refusals
         return $"elsewhere";
     }
 
+    private static bool shown;
+
+    /// <summary>
+    /// --pmt-readings (the fourth round): at each Formula where the engine gives PMT a number, every reading must
+    /// give a number within <see cref="PmtReadings.Apart"/> units in the last place of it: where one does not, PMT
+    /// answers where its readings part in kind or beyond the last digits.
+    /// </summary>
+    public static bool PmtReadingsAt(List<string> formulas)
+    {
+        int answered = 0, refused = 0, errors = 0;
+        var farthest = new List<(long Units, string Text)>();
+        var failures = new List<string>();
+        var spread = new SortedDictionary<long, int>();
+        foreach (var formula in formulas)
+        {
+            var engine = EngineAnswer(formula, []);
+            if (engine.StartsWith('#'))
+            {
+                if (engine == "#VALUE!") refused++; else errors++;
+                continue;
+            }
+            answered++;
+            if (engine == "0") continue;
+            var payment = double.Parse(engine, CultureInfo.InvariantCulture);
+            var most = 0L;
+            var at = "";
+            foreach (var (reading, answer) in PmtReadings.Answers(Observations.Parse(formula, [])))
+            {
+                if (answer.StartsWith('#'))
+                {
+                    failures.Add($"{formula}: the engine {engine}, {reading} {answer}");
+                    continue;
+                }
+                var off = Math.Abs(UnitsApart(payment, double.Parse(answer, CultureInfo.InvariantCulture)));
+                if (off > most) (most, at) = (off, $"{formula}: the engine {engine}, {reading} {answer}");
+            }
+            if (most > PmtReadings.Apart) failures.Add($"{at}, {most} units away");
+            var bucket = most == 0 ? 0 : 1L << (int)Math.Ceiling(Math.Log2(most));
+            spread[bucket] = spread.GetValueOrDefault(bucket) + 1;
+            farthest.Add((most, at));
+        }
+        Console.WriteLine($"\nPMT's readings ({PmtReadings.Count}) at {formulas.Count} Formulas: the engine gives a number at {answered}, #VALUE! at {refused} and another Error Value at {errors}");
+        Console.WriteLine("  where it gives a number other than 0, the farthest reading, in units in the last place (up to): " + string.Join(", ", spread.Select(p => $"{p.Key}: {p.Value}")));
+        foreach (var (units, text) in farthest.OrderByDescending(f => f.Units).Take(5)) Console.WriteLine($"    {units} {text}");
+        Console.WriteLine(failures.Count == 0 ? "  every reading gives a number within 128 units in the last place of the engine's, wherever it gives one" : $"  {failures.Count} where a reading does not:");
+        foreach (var f in failures.Take(25)) Console.WriteLine($"    {f}");
+        return failures.Count == 0;
+    }
+
     /// <summary>--pmt-show FORMULA: every distinct answer PMT's readings give at an input, with how many give it, and the engine's.</summary>
     public static void ShowPmt(string formula)
     {
         var input = Observations.Parse(formula, []);
+        if (!shown)
+        {
+            Console.WriteLine($"\nPMT's readings, {PmtReadings.Count}: {PmtReadings.Summary()}");
+            shown = true;
+        }
         Console.WriteLine($"\n{formula}: the engine {EngineAnswer(formula, [])}, the exact payment {ExactPmt(input)}");
         foreach (var group in PmtReadings.Answers(input).GroupBy(a => a.Answer).OrderByDescending(g => g.Count()))
             Console.WriteLine($"  {group.Count(),5}  {group.Key,-26}  e.g. {group.First().Reading}");
@@ -1844,12 +1922,14 @@ static class Refusals
     /// <summary>
     /// Inputs at the edges of a double's range (2026-10-12, the third round): rates from 1E10 to below the normal
     /// numbers, near and below -1; numbers of periods whose growth passes the range or falls below it; present and
-    /// future values from 1E-5 to 9E307.
+    /// future values from 1E-5 to 9E307. The fourth round added tiny numbers of periods, either sign, where
+    /// LibreOffice's reading at the start forms (1+rate)((1+rate)^nper - 1) by a difference that can come out as 0
+    /// (PMT-047, PMT-048).
     /// </summary>
     private static IEnumerable<Case> PmtExtremeGrid()
     {
         string[] rates = ["1", "0.5", "1E10", "1E-7", "1E-20", "1E-300", "1E-307", "-1.64435447903749E-307", "1E-320", "-0.5", "-0.99", "-0.999999", "-1", "-1.5", "-2", "-9"];
-        string[] periods = ["1", "12", "30", "160", "360", "1020", "1100", "1740", "0.5", "10.5", "283.5", "-10", "-1/3", "1/3", "0.0907921350606893"];
+        string[] periods = ["1", "12", "30", "160", "360", "1020", "1100", "1740", "0.5", "10.5", "283.5", "-10", "-1/3", "1/3", "0.0907921350606893", "1E-17", "-5E-17", "1E-12", "-1E-9", "1E-6"];
         string[] presents = ["1000", "1E-5", "1E300", "-1E10", "0"];
         string[] futures = ["0", "500", "-5000", "9E307"];
         foreach (var rate in rates)
@@ -1903,7 +1983,9 @@ static class Refusals
         var e = X.Add(g, X.Of(-1), P);
         if (e.Sign == 0 || X.Compare(e.Abs(), new X(1, -150)) < 0) return (null, null);
         if (!QuantitiesFit(X.Of(r), X.Of(pv), X.Of(fv), X.AddExact(X.Of(pv), X.Of(fv)), g, e, b, atStart)) return ("#VALUE!", OutOfRange);
-        var owed = X.MulExact(X.Of(r), X.Add(X.Mul(X.Of(pv), g, P), X.Of(fv), P)).Negate();
+        var sum = X.Add(X.Mul(X.Of(pv), g, P), X.Of(fv), P);
+        if (Magnified(r, n, pv, fv, b, g, e, sum, atStart) is { } magnified) return ("#VALUE!", magnified);
+        var owed = X.MulExact(X.Of(r), sum).Negate();
         var end = X.Div(owed, e, 53).ToDouble();
         if (end == 0) return ("0", null);
         if (atStart) end = X.Div(X.Of(end), b, 53).ToDouble();
@@ -1915,6 +1997,35 @@ static class Refusals
         static long Ordered(double x) => BitConverter.DoubleToInt64Bits(x) is var bits && bits < 0 ? long.MinValue - bits : BitConverter.DoubleToInt64Bits(x);
         return Ordered(b) - Ordered(a);
     }
+
+    /// <summary>
+    /// ExactPayment.Conditioned's rule (the fourth round), over the spike's exact values: the factor by which some
+    /// reading magnifies its roundings, named, where one exceeds 2^6, or null. N = pv g + fv, s = pv + fv,
+    /// x = n ln(1+r).
+    /// </summary>
+    private static string? Magnified(double r, double n, double pv, double fv, X b, X g, X e, X owed, bool atStart)
+    {
+        const int P = 200;
+        var owesNothing = pv == 0 && fv == 0; // every reading adds only zeros, but LibreOffice's divisor at the start
+        if (!owesNothing && owed.Sign == 0) return MagnifiedBy("the sum pv g + fv, exactly 0");
+        var limit = new X(1, 6);
+        bool Beyond(X terms, X result) => X.Compare(terms, X.Mul(limit, result, P)) > 0;
+        X Product(params X[] factors) => factors.Aggregate(X.One, (a, f) => X.Mul(a, f.Abs(), P));
+        var log = Fixed.Log1p(X.Of(r), P).Abs();
+        var x = X.Mul(X.Of(Math.Abs(n)), log, P);
+        var s = X.AddExact(X.Of(pv), X.Of(fv));
+        if (!owesNothing)
+        {
+            if (Beyond(X.AddExact(Product(X.Of(pv), X.AddExact(X.One, g)), X.Of(fv).Abs()), owed.Abs())) return MagnifiedBy("(|pv| (1+g) + |fv|) / |pv g + fv|");
+            if (Beyond(Product(x, s, g), Product(e, owed))) return MagnifiedBy("|x| |pv+fv| g / (|g-1| |pv g + fv|)");
+            if (atStart && Beyond(X.AddExact(b.Abs(), X.Of(r).Abs()), X.One)) return MagnifiedBy("at the start, |1+r| + |r|");
+            if (atStart && Beyond(Product(x, X.Of(pv), g), owed.Abs())) return MagnifiedBy("at the start, |x| |pv| g / |pv g + fv|, LibreOffice's power of pv");
+        }
+        if (atStart && Beyond(X.AddExact(Product(X.AddExact(X.Of(n), X.One), log, b, g), X.Of(r).Abs()), Product(b, e))) return MagnifiedBy("at the start, (|n+1| |ln(1+r)| (1+r) g + |r|) / ((1+r) |g-1|), LibreOffice's divisor");
+        return null;
+    }
+
+    private static string MagnifiedBy(string factor) => $"a reading magnifies its roundings beyond 2^6, by {factor} (ExactPayment.Conditioned)";
 
     private const string OutOfRange = "a quantity a reading computes outside [2^-1021, 2^1022], where the readings agree in kind here but the engine's rule refuses (ExactPayment.Quantities)";
 

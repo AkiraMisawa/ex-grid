@@ -1,26 +1,40 @@
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>
-/// PMT's payment at a rate above -1 other than 0: the exact payment over its arguments' doubles, rounded once
-/// to a double, or null where PMT refuses it (<c>Functions.Financial.cs</c>, ADR-0047's exception for PMT).
-/// The payment at the end of each period is -rate (pv g + fv) / (g - 1), g = (1+rate)^nper, computed in
-/// <see cref="Enclosure"/>s, which hold it between two bounds; the double is given only where both bounds
-/// round to it, so that it is the exact payment's nearest double, and the enclosures are computed again with
-/// twice the bits while they do not decide it. The payment at the start is that double divided by 1+rate
-/// exactly, rounded once. 1+rate is never rounded: g - 1 is raised from the rate itself, so its relative
-/// precision does not fall however small the rate is.
+/// PMT's payment at a rate above -1 other than 0, or null where PMT refuses it (<c>Functions.Financial.cs</c>,
+/// ADR-0047's exception for PMT). The payment at the end of each period is the exact payment over its
+/// arguments' doubles, -rate (pv g + fv) / (g - 1), g = (1+rate)^nper, rounded once to a double: it is
+/// computed in <see cref="Enclosure"/>s, which hold it between two bounds, and the double is given only where
+/// both bounds round to it, the enclosures being computed again with twice the bits while they do not decide
+/// it. 1+rate is never rounded: g - 1 is raised from the rate itself, so that its relative precision does not
+/// fall however small the rate is. The payment at the start is not the exact payment at the start rounded
+/// once: it is the payment at the end's double divided by 1+rate exactly and rounded again. That is the
+/// financial area's choice (2026-10-12), not the user's decision, and ticket 13 puts it to the user: it gives
+/// Excel's double at PMT-008, -147.95035898410148, where the exact payment at the start rounded once is
+/// -147.95035898410146; at PMT-014, 015, 025 and 029 it lies a unit in the last place from the exact payment
+/// rounded once, and Excel's double lies on the other side of that one, nearer it than the engine's; and it
+/// lies a unit from the exact payment rounded once at 809 of the 4,132 payments at the start other than 0
+/// that <c>pmt_exact.py</c> draws (20%).
 /// </summary>
 /// <remarks>
-/// Refused (null) where the readings of PMT, the evaluations of the identity Excel's observed payments leave,
-/// can part in kind, or beyond the last digits through a double's range: where some quantity one of them
-/// computes in doubles would pass a double's range, or fall below its normal numbers, which is where some give
-/// an Error Value or a number of few digits and others the payment. <see cref="Quantities"/> lists those quantities, each a product of
-/// powers of the rate, pv, fv, pv+fv, g, g-1, 1+rate and 1+rate*type, and each must lie between 2^-1021 and
-/// 2^1022, a factor of 2 inside the normal numbers and of 4 below the largest, so that a reading's own
-/// rounding, or a sum of two of them, cannot carry it out; and the growth must be 2^-52 or more
-/// (<see cref="LeastGrowth"/>). Refused as well where 1536 bits do not decide the double: where the exact
-/// payment is a tie between two doubles, or 0, and the enclosures cannot reach it exactly. Where the readings
-/// part beyond the last digits by cancellation, the payment is given; ticket 13 holds that question.
+/// Refused (null), the financial area's rules (2026-10-12): where the readings of PMT, the evaluations of the
+/// identity Excel's observed payments leave, can part in kind or beyond the last digits.
+/// <list type="bullet">
+/// <item>Through a double's range: where some quantity one of them computes in doubles would pass a double's
+/// range, or fall below its normal numbers, where some give an Error Value or a number of few digits and
+/// others the payment. <see cref="Quantities"/> lists those quantities, each a product of powers of the
+/// rate, pv, fv, pv+fv, g, g-1, 1+rate and 1+rate*type, and each must lie between 2^-1021 and 2^1022, a
+/// factor of 2 inside the normal numbers and of 4 below the largest, so that a reading's own rounding, or a
+/// sum of two of them, cannot carry it out; and the growth must be 2^-52 or more
+/// (<see cref="LeastGrowth"/>).</item>
+/// <item>Where a reading magnifies its own roundings more than 2^6 times (<see cref="Conditioned"/>): where
+/// the terms it adds nearly cancel, as pv g and fv at =PMT(0.1,2,1000,-1210), where readings give 0, numbers
+/// of the other sign, or a few significant digits; where a rounding of the exponent moves the payment far;
+/// and, at the start, where LibreOffice's reading divides by a difference that can come out as 0, as at a
+/// tiny nper, whose nper+1 rounds to 1, or where the payment at the end less its rate's share cancels.</item>
+/// <item>Where 1536 bits do not decide the double, as at a tie between two doubles that the enclosures cannot
+/// reach exactly.</item>
+/// </list>
 /// </remarks>
 internal static class ExactPayment
 {
@@ -37,8 +51,9 @@ internal static class ExactPayment
     private static readonly Dyadic LeastGrowth = Dyadic.One.Scale(-52);
 
     /// <summary>
-    /// The exact payment rounded once, or null where PMT refuses. The caller has answered or refused a rate of 0,
-    /// a rate of -1 or below, an <paramref name="periods"/> of 0 and one past 2^53.
+    /// The exact payment at the end rounded once, and at the start that double over 1+rate rounded again, or null
+    /// where PMT refuses (the remarks above). The caller has answered or refused a rate of 0, a rate of -1 or
+    /// below, an <paramref name="periods"/> of 0 and one past 2^53.
     /// </summary>
     public static double? Of(double rate, double periods, double present, double future, bool atStart)
     {
@@ -58,6 +73,7 @@ internal static class ExactPayment
             var owed = Enclosure.Both(
                 Enclosure.Add(Enclosure.Multiply(Enclosure.Exactly(pv), growth, bits), Enclosure.Exactly(fv), bits),
                 Enclosure.Add(Enclosure.Multiply(Enclosure.Exactly(pv), lessOne, bits), Enclosure.Exactly(sum), bits));
+            if (bits == FirstBits && !Conditioned(r, onePlusRate, periods, pv, fv, sum, growth, lessOne, owed, atStart, bits)) return null;
             var atEnd = Enclosure.Divide(Enclosure.Multiply(Enclosure.Exactly(r.Negate()), owed, bits), lessOne, bits);
             var low = atEnd.Low.ToDouble();
             if (low != atEnd.High.ToDouble()) continue;
@@ -155,6 +171,62 @@ internal static class ExactPayment
 
     private static bool Fits(Dyadic value) =>
         value.IsZero || (Dyadic.Compare(value.Abs(), Least) >= 0 && Dyadic.Compare(value.Abs(), Most) <= 0);
+
+    /// <summary>
+    /// Whether no reading of PMT magnifies its own roundings more than 2^<see cref="MostMagnification"/> times
+    /// (the financial area's bound, 2026-10-12, the fourth round). Each factor below is a sum of the magnitudes
+    /// of the terms some reading adds, over the magnitude of what they add up to, or how far a rounding of the
+    /// exponent moves the payment; where one is large the readings' results part far beyond their last digits
+    /// (to 0, the other sign, or a few significant digits, as at =PMT(0.1,2,1000,-1210), where pv g and fv
+    /// cancel), and PMT refuses. g = (1+rate)^nper, e = g - 1, N = pv g + fv, s = pv + fv, b = 1 + rate,
+    /// x = nper ln(1+rate):
+    /// <list type="bullet">
+    /// <item>(|pv| (1 + g) + |fv|) / |N|: the sum pv g + fv, and pv (g-1) + s and pv r + s r/e, which
+    /// add to the same, and a growth taken as 1 + (g-1), which holds |pv| in place of |pv g| (as at
+    /// =PMT(-0.5,36.25,-150,0,0), where g is 1.2E-11);</item>
+    /// <item>|x| |s| g / (|e| |N|): the exponent, which the readings through ln(1+rate) round, moves g and e
+    /// together (as at =PMT(1,1000,0,1000), where x is 693);</item>
+    /// <item>at the start, |b| + |r|: the payment at the end less its rate's share, p - p r/b;</item>
+    /// <item>at the start, (|nper+1| |ln b| b g + |r|) / (b |e|) and |x| |pv| g / |N|: LibreOffice's ScGetPMT,
+    /// which divides by e^((nper+1) ln b) - 1 - rate, a difference that comes out as 0 at a tiny nper,
+    /// where nper+1 rounds to 1 (=PMT(0.1,1E-17,1000,0,1)), and its own power of pv.</item>
+    /// </list>
+    /// With no pv and no fv every reading adds only zeros and the payment is 0, and only LibreOffice's divisor is
+    /// weighed, which gives 0/0 where it comes out as 0 (=PMT(0.1,1E-17,0,0,1)).
+    /// No observed payment has a factor above 2^5 (PMT-020, at 32.4). Where every factor is within the bound,
+    /// every reading the spike runs lies within 93 units in the last place of the engine's payment over
+    /// <c>pmt_exact.py</c>'s 20,000 inputs, and within 48 over the grids of <c>Search.cs --refusals</c>
+    /// (<c>--pmt-readings</c> requires 128, twice the bound); ticket 13 puts the bound to the user
+    /// (PMT-047 to PMT-053 ask where it refuses).
+    /// </summary>
+    private static bool Conditioned(Dyadic r, Dyadic onePlusRate, double periods, Dyadic pv, Dyadic fv, Dyadic sum, Enclosure growth, Enclosure lessOne, Enclosure owed, bool atStart, int bits)
+    {
+        if (lessOne.ContainsZero || growth.ContainsZero) return false;
+        // With no pv and no fv every reading adds only zeros, and its payment is 0; but LibreOffice's divisor at
+        // the start, which can come out as 0 and give 0/0.
+        var owesNothing = pv.IsZero && fv.IsZero;
+        if (!owesNothing && owed.ContainsZero) return false;
+        var most = growth.Magnitudes().Most;
+        var lessOneLeast = lessOne.Magnitudes().Least;
+        var log = Enclosure.Log1p(r, bits);
+        var logMost = Dyadic.Compare(log.High.Abs(), log.Low.Abs()) >= 0 ? log.High.Abs() : log.Low.Abs();
+        var exponentMost = Dyadic.Of(Math.Abs(periods)) * logMost;
+        var limit = Dyadic.One.Scale(MostMagnification);
+        bool Within(Dyadic terms, Dyadic result) => Dyadic.Compare(terms, limit * result) <= 0;
+        if (!owesNothing)
+        {
+            var owedLeast = owed.Magnitudes().Least;
+            if (!Within((pv.Abs() * (Dyadic.One + most)) + fv.Abs(), owedLeast)) return false;
+            if (!Within(exponentMost * sum.Abs() * most, lessOneLeast * owedLeast)) return false;
+            if (atStart && !Within(onePlusRate.Abs() + r.Abs(), Dyadic.One)) return false;
+            if (atStart && !Within(exponentMost * pv.Abs() * most, owedLeast)) return false;
+        }
+        var periodsPlusOne = (Dyadic.Of(periods) + Dyadic.One).Abs();
+        return !atStart || Within((periodsPlusOne * logMost * onePlusRate * most) + r.Abs(), onePlusRate * lessOneLeast);
+    }
+
+    /// <summary>The bound of <see cref="Conditioned"/>, as a power of 2.</summary>
+    private const int MostMagnification = 6;
 
     private static bool QuantitiesFit(Dyadic r, Dyadic pv, Dyadic fv, Dyadic sum, Enclosure growth, Enclosure lessOne, Dyadic onePlusRate, bool atStart)
     {
