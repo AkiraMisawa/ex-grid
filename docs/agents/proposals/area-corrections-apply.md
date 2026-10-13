@@ -10,10 +10,12 @@ branches' history (`git show <branch>:docs/agents/proposals/<file>`); what they 
 
 The targets: ADR-0047, ADR-0049, ADR-0120, ADR-0124, ADR-0125 and ADR-0202, the Definition of Done,
 `CONTEXT.md`, the engine's README, the function catalogue (`docs/specs/exsheet-functions/spec.md`), tickets 01,
-04, 05, 11, 16 and 18, and the Docs Site's Formulas page and Roadmap. Checked by script at the branch's tip:
+04, 05, 11, 16 and 18, and the Docs Site's Formulas page and Roadmap; after edit 65, ADR-0130, ADR-0050 and the
+Docs Site's Design, Functions, Overview, Linked Tables and Clipboard pages. Checked by script at the branch's tip:
 every old text is whole lines and occurs once in its target as the edits before it leave it, and the whole list
 applies in order. Applied to a scratch copy of the tip, `ExGrid.Docs.Generator.Tests` and the Docs Site's build
-pass there.
+pass there. The edits after 65 carry the decisions of 2026-10-13 to texts no earlier edit reaches: `CONTEXT.md`'s
+**Refusal**, ADR-0130, ADR-0050, the Definition of Done's SM-12, and the Docs Site's other pages.
 
 ## Decided with the user, and where each is written
 
@@ -32,85 +34,111 @@ The brief names these as decided with the user on 2026-10-12; each is written as
   ADR-0125, where it speaks of the unlifted refusal; the Definition of Done's SH-7 bullet; `CONTEXT.md`; the
   README; the catalogue's `IFERROR`, `ISERROR`, `IFNA` and `ERROR.TYPE` rows; ticket 18; the Formulas page.
 
-## Questions for the user (open; nothing in this list decides them)
+Decided with the user on 2026-10-13, the answers to the questions this list put to the user (it puts none now);
+each is written as a dated note credited to the user where it lands:
 
-1. **`PMT`'s 15th digit.** At PMT-013 and PMT-026, payments at the end, Excel's double and the exact payment
-   rounded once differ in the 15th significant digit, which General shows; at PMT-025 the engine's double, rounded
-   a second time at the start, differs there from both. The decision was taken on digits no format displays.
-   Options: (a) the exception as written here, its last digits, 1 to 11 units in the last place; (b) narrow it,
-   so that `PMT` refuses where its readings could differ at 15 digits; (c) `PMT` `#NAME?` for `0.1.0`.
-2. **`PMT` where its readings part by cancellation.** The financial branch refuses wherever a reading magnifies its
-   own roundings more than 2^6 times (PMT-047 to 053). Options: (a) keep the bound; (b) another bound; (c) answer
-   the exact payment there; (d) as 1(c).
-3. **`PMT` at the start of each period.** The engine gives the payment at the end's double divided by 1+rate and
-   rounded again: Excel's double at PMT-008, 009, 010 and 019, a unit from the exact payment at the start rounded
-   once at PMT-014, 015, 025 and 029 and at 809 of 4,132 random payments. Options: (a) the exact payment at the
-   start rounded once; (b) keep the double rounding, the exception naming it.
-4. **`MOD`'s judgment.** Of 34 evaluations that give every answer Excel gave, the engine follows the three at the
-   hardware's widths (53 and 64 bits) and refuses where they part (MOD-033 to 036, 13 of 1,915,648 inputs of up to
-   five digits); the 31 at widths no hardware holds give another double at 3.4% of those inputs, where the engine
-   answers (MOD-039 and 040 ask two). Options: (a) accept the judgment; (b) refuse wherever any of the 34 part
-   (3.4%); (c) refuse wherever the divisor is added and the sum is not exact (10.0%, MOD-029 and 032 then
-   differing by decision).
-5. **A serial between -1 and 0 under `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND`.** They give `#NUM!` for
-   any serial below 0, the engine's answer by generalisation; the readings part (`DATEDIF(-0.5,1,"D")` is `#NUM!`
-   cut down or refused, and 1 truncated; `HOUR(-0.5)` is 12 read as a time of day). DATEDIF-048, YEARFRAC-058,
-   HOUR-005, MINUTE-003 and SECOND-003 now ask Excel. Options: (a) the generalisation stands until they are read;
-   (b) the rule's refusal: `#VALUE!` between -1 and 0 until Excel is asked, -1 staying `#NUM!` where it was
-   observed.
-6. **`SORT`'s fractional `sort_index`** is truncated (`=SORT(G1:H5,1.5)` sorts by column 1), unchanged since before
-   the passes, and no case asks it; rounding would sort by column 2. Options: (a) refuse it and add an `uncertain`
-   case; (b) keep truncating and add the case; (c) leave it for the next run's list.
-7. **The term for a refused Formula's `#VALUE!`.** The engine and the ADRs call it a refusal, and a Consumer now
-   reads it as `Value.IsRefused` (public, since ExSheet uses it, ADR-0201's rule 3). `CONTEXT.md`'s **Refusal** is
-   the grid's "no" on an operation. The `CONTEXT.md` edit below names the Formula's refusal inside **Error Value**
-   and tells it from **Refusal**; whether that, another word, or another member's name is the user's call.
+1. **`PMT`'s exception, restated as observed** (the question of the 15th digit, option (a)): Excel's double and
+   the exact payment rounded once differ by 1 to 11 units in the last place, and at PMT-013 and PMT-026 that
+   shows in General's 15th digit; `PMT` is kept there too. ADR-0047 (edit 12), ADR-0202 (edits 23 and 24), the
+   README (edit 38), the Formulas page (edit 63), the Release Notes lines below; ticket 13, the catalogue's note
+   16 and `pmt.json`, edited in the branch.
+2. **The bound of 2^6 is kept** where a reading magnifies its own roundings (option (a)): ADR-0047 (edit 12);
+   ticket 13 and PMT-047 to 053's descriptions, edited in the branch.
+3. **`PMT`'s payment at the start of each period is the exact payment at the start rounded once** (option (a)):
+   ADR-0047 (edit 12), the README (edit 38), the Formulas page (edit 63), ticket 04 (edit 51); ticket 13, the
+   catalogue, `pmt.json` and `spikes/exsheet-financial-evaluation/README.md`, edited in the branch. Excel's
+   double now differs from the engine's at 23 of the 30 observed payments, at two of them in the 15th digit.
+4. **The term Refused Formula**, for a Formula's refused `#VALUE!` (the term question): `CONTEXT.md` (edits 29
+   and 66), ADR-0047 (edit 2). `Value.IsRefusal` is renamed `Value.IsRefused`.
+5. **A call of a function Excel has that ExSheet does not declare, and a declared Linked Table's bare name typed,
+   is a Refused Formula that shows `#NAME?`** (decided after the term): no Formula catches it, and a cell that
+   reads it is refused and shows `#VALUE!`; a name Excel does not have stays Excel's own `#NAME?`. The names
+   are the catalogue's 377 (`ExcelFunctionNames`, held to the catalogue by `FunctionCatalogueTests`).
+   ADR-0047 (edit 2), ADR-0049 (edit 14), ADR-0124 (edit 19), SH-7's row (edit 27), `CONTEXT.md` (edit 29), the
+   README (edit 32), the Docs Site (edits 62, 63, 70 to 74 and 76); TABLE-024's description, edited in the
+   branch.
+6. **A refused Anchor whose array's shape its text settles spills refusals over that shape**; where the shape
+   could depend on a Value nothing spills and those cells read as blank, a Known limitation of `0.1.0`; in the
+   way, the Anchor is `#SPILL!`, as Excel's array of that shape would be: ADR-0125 (edit 20), ADR-0202's Known
+   limitations (edit 24), the README (edit 32), the Formulas page (edit 78), the Release Notes lines below.
+7. **The Selection Summary shows no figure over a refused cell, and says why, naming the cell**, in
+   `SheetCommandIds.SummaryRefused`'s words through `CommandLabel` for another language: ADR-0130 (edit 67),
+   SM-12 (edit 69), the Sheet's Overview (edit 75), the Formulas page (edit 57). That Count is withheld too is
+   the implementer's reading of ADR-0130's "a partial figure is never shown", written uncredited.
+8. **A serial between -1 and 0** under `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` is refused until
+   Excel is asked, -1 and below staying `#NUM!`, and **`SORT`'s fractional `sort_index`** is refused with SORT-042
+   `uncertain`: the orchestrator's readings, written uncredited. ADR-0047 (edits 4 and 13), the README (edits 35
+   and 40), tickets 05 and 11 (edits 52 and 53), the Formulas page (edit 78); the catalogue, edited in the
+   branch.
+9. **`MOD`'s judgment** that only the evaluations at 53 and 64 bits are modelled is accepted, the orchestrator's
+   reading of the user's rule, written uncredited: ADR-0047 (edit 7). This branch did not find that rule in the
+   ADRs or this list, so the note names none.
+
+**For the user to confirm: a new ExGrid public seam implemented ahead of an ADR.** ExGrid's
+`ClipboardData.MarkAttribute` (`data-ex-mark`) and `GridPasteIntent.MarkFor` let a Consumer mark a cell of the
+family's own clipboard HTML and read the mark back on paste; ExSheet marks a refused cell with it. ADR-0050 item
+9 (edit 68) and the Clipboard page (edit 77) describe it in an uncredited note; ExGrid's ADRs record no decision
+for it.
 
 ## This branch's choices (not the user's)
 
 - **How a refusal is carried.** A refused cell's Value is `#VALUE!` with a mark the engine reads
-  (`Value.IsRefused`), equal to `#VALUE!` as a Value and shown, copied and compared as one. A Formula that reads a
-  refused cell is refused as one that reads a cycle is `#CIRC!`: by every cell its text names, whether or not the
-  branch naming it is taken (`=IF(TRUE,1,B1)`), and by every cell or Linked Table column a computed Reference reads
-  (`INDIRECT`, `OFFSET`, `INDEX`, `A1#`). A cycle comes before a refusal, and a wait before one. A Linked Table's
-  column holding a refusal the Consumer pushed refuses its readers. `Entry.FromValue` throws for a refusal, as for
-  `#CIRC!`.
-- **Copy and paste (point 2(c)).** The clipboard's text and HTML write a refused cell as `#VALUE!`. A copy of one
-  range carries Entries, so its paste brings the Formula, refused again where it still refuses. A copy that carries
-  Values alone (several ranges, or with the headers) and holds a refused cell is kept, and a paste of exactly it
-  back into the Sheet is refused whole by name ("Nothing was pasted: the copy holds C1, whose Formula ExSheet
-  refused…"). A paste the Sheet does not recognise as its own copy, from another program or another Sheet on the
-  page, types `#VALUE!` as Excel's Error Value: the clipboard names no owner (ADR-0050 item 9).
-- **The display (point 2(d)).** Nothing distinguished a refused cell before, and nothing does now: the cell, the
-  Formula Bar and the clipboard show `#VALUE!`; ExSheet has no error popover for a Value. Only the Formulas page's
-  sentence, below, says what a refusal is.
+  (`Value.IsRefused`), equal to `#VALUE!` as a Value and shown, copied and compared as one; a Refused Formula
+  that calls a function Excel has and ExSheet does not declare, or names a declared Linked Table bare, is `#NAME?`
+  with the same mark. A Formula that reads a refused cell is refused as one that reads a cycle is `#CIRC!`: by
+  every cell its text names, whether or not the branch naming it is taken (`=IF(TRUE,1,B1)`), and by every cell or
+  Linked Table column a computed Reference reads (`INDIRECT`, `OFFSET`, `INDEX`, `A1#`). A call of an undeclared
+  function in a branch not taken is not evaluated, and refuses nothing (`=IF(TRUE,1,NPV(0.1,1,2))` is 1). A cycle
+  comes before a refusal, and a wait before one. A Linked Table's column holding a refusal the Consumer pushed
+  refuses its readers. `Entry.FromValue` throws for a refusal, as for `#CIRC!`. A cell whose `#VALUE!` turns from
+  Excel's own into a refusal, or back, is in `SheetChange.ValueChanges`, and a Spill Range takes the change;
+  `Value.Equals` is unchanged.
+- **A refused Anchor's spill.** The shape its text settles (`KnownShape`): a constant, a Reference the text names
+  to a rectangle of this Sheet, an operator over those, `TRANSPOSE` of a known shape, and a call whose every
+  argument is one Value of a function that cannot give a Reference or an array from one Value. Everything else,
+  `INDIRECT`, `OFFSET` and `IF` among the calls that can give a Reference, is of a shape the text does not settle.
+- **Copy and paste.** The clipboard's text writes a refused cell as `#VALUE!`, and ExSheet's HTML marks it
+  (`data-ex-mark="exsheet-refused:C1"`, ExGrid's `ClipboardData.MarkAttribute`, read back through
+  `GridPasteIntent.MarkFor`). This Sheet's own copy of one range carries Entries, so its paste brings the Formula,
+  refused again where it still refuses. Any other paste that carries the mark — a copy of several ranges, or with
+  the headers, or a paste into another Sheet on the page — is refused whole by name ("Nothing was pasted: the copy
+  holds C1, whose Formula ExSheet refused…"). Another program reads the HTML's text, or the plain text, as
+  `#VALUE!`, Excel's Error Value.
+- **The display.** The cell, the Formula Bar and the clipboard show `#VALUE!` (or `#NAME?`); ExSheet has no error
+  popover for a Value. The Selection Summary over a refused cell shows no figure, Count included, and its reason
+  names the cell. The Formulas page says what a refusal is.
 - **Where the audit drew the line.** A `#VALUE!` is a refusal where its comment, its corpus case or the ADRs call it
   refused: `MOD`, `MROUND`, `CEILING.MATH` and `FLOOR.MATH`'s boundary, `RANDBETWEEN`, the criteria functions'
   unsettled domains and a computed footprint, `UPPER`, `LOWER`, `PROPER` and `SEARCH` outside the observed
-  characters, `TEXT` with a code outside the cell formats' subset, `DATEDIF`'s MD and YD, `EDATE`, `EOMONTH`,
-  `NETWORKDAYS` and `WORKDAY`'s booleans and serial-0 months, `PMT`, `PV` and `XNPV`, the legacy lookups' refused
-  searches, `XLOOKUP`'s and `XMATCH`'s binary search and regular expressions, `INDIRECT`'s refused forms and bare
-  name, `AGGREGATE`'s unsupported numbers, and a range where one Value is wanted. A layer-1 test checks every
-  corpus `#VALUE!`: a refusal exactly where the case is `uncertain` or differs by decision. Two observed cases are
-  refused although Excel gave `#VALUE!` too, XLOOKUP-103 and 157: the engine cannot tell a pattern PCRE2 rejects
-  from one it reads otherwise. `XNPV` refuses any cell that is not a number, which its doc already called a
-  refusal. Kept as Excel's own `#VALUE!`: a mode outside Excel's list, the regular expression mode under a binary
-  search (XLOOKUP-104), a `SUMIFS` shape mismatch, `MROUND`'s boolean, `YEARFRAC`'s boolean, `TEXT(-1,"yyyy")`,
-  `EOMONTH`'s months and `EDATE`'s start as a boolean, and the documented `#VALUE!` of the text functions.
+  characters, `TEXT` with a code outside the cell formats' subset, `DATEDIF`'s MD and YD, `DATEDIF`, `YEARFRAC`,
+  `HOUR`, `MINUTE` and `SECOND` between -1 and 0, `EDATE`, `EOMONTH`, `NETWORKDAYS` and `WORKDAY`'s booleans and
+  serial-0 months, `PMT`, `PV` and `XNPV`, `SORT`'s fractional `sort_index`, the legacy lookups' refused searches,
+  `XLOOKUP`'s and `XMATCH`'s binary search and regular expressions, `INDIRECT`'s refused forms and bare name,
+  `AGGREGATE`'s unsupported numbers, and a range where one Value is wanted. A layer-1 test checks every corpus
+  `#VALUE!`: a refusal exactly where the case is `uncertain` or differs by decision. Two observed cases are refused
+  although Excel gave `#VALUE!` too, XLOOKUP-103 and 157: the engine cannot tell a pattern PCRE2 rejects from one
+  it reads otherwise. `XNPV` refuses any cell of its values or dates that is not a number (text, a boolean or a
+  blank), whatever else is among them, which its doc already called a refusal. Kept as Excel's own `#VALUE!`: an
+  `XLOOKUP` or `XMATCH` mode outside Excel's list, observed at XLOOKUP-058 and by generalisation elsewhere, the
+  regular expression mode under a binary search (XLOOKUP-104), a `SUMIFS` shape mismatch, `MROUND`'s boolean,
+  `YEARFRAC`'s boolean, `TEXT(-1,"yyyy")`, `EOMONTH`'s months and `EDATE`'s start as a boolean, and the documented
+  `#VALUE!` of the text functions.
 - **The financial area's wording of the `PMT` decision.** Its edits wrote the exception as "digits no format
-  displays", which question 1 shows untrue at three payments. Here the dated notes say "its last digits", and
-  the ADR's note keeps the decision's own words as what it was taken on.
+  displays", which PMT-013 and PMT-026 show untrue. Here the dated notes say "its last digits", and the ADR's
+  note keeps the decision's own words as what it was taken on, beside the user's restatement of 2026-10-13.
 - **New cases placed here**: the dates area's five (DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003,
-  SECOND-003, each `uncertain` with the engine's `#NUM!`) and the `INDIRECT` area's TABLE-024 (the typed bare
-  name), added to the corpus in this branch.
+  SECOND-003, each `uncertain`, the engine refusing), SORT-042 (`uncertain`, refused) and the `INDIRECT` area's
+  TABLE-024 (the typed bare name, a Refused Formula showing `#NAME?`), added to the corpus in this branch.
 - **Tickets, by ADR-0208's note of 2026-10-12.** A ticket that is done stays done when the corrections add
   `uncertain` cases to it: the one `oracle.ps1 -Area` pass before `0.1.0-rc.1` asks them, and the release check
   refuses the tag while any is `uncertain`. Ticket 16, reopened before that note, stays `ready-for-human`, and its
   open box takes SMALL-011 (the kth area offered a box in ticket 04 instead) and AGGREGATE-069. Tickets 01, 04, 05,
   11 and 18 get comments, no box. No ticket closes: none's last question is answered.
 - **Applied in the branch, not listed here** (files a background agent may edit): the run-17 Change Note the
-  `INDIRECT` area corrected (`run17-lookup-arrays-indirect-observed-forms.md`), and ticket 16's two pointers to
-  `area-kth-and-mod.md`, which now point to this file.
+  `INDIRECT` area corrected (`run17-lookup-arrays-indirect-observed-forms.md`), ticket 16's two pointers to
+  `area-kth-and-mod.md`, which now point to this file, ticket 13's comments of 2026-10-13, the catalogue's rows
+  and note 16 for the decisions of 2026-10-13, the corpus's descriptions (`pmt.json`, TABLE-024) and
+  `spikes/exsheet-financial-evaluation/README.md`.
 
 ## Where two proposals edited the same text
 
@@ -132,15 +160,18 @@ The brief names these as decided with the user on 2026-10-12; each is written as
 - `NPV` is not supported and is `#NAME?`, as `IRR`, `XIRR` and `RATE` are: its last digits differ from
   Excel's, and no evaluation found gives every result Excel was seen to give
   ([Formulas](exsheet/formulas#supported-functions)).
-- `PMT`'s payment can differ from Excel's in its last digits: 19 of the 30 payments Excel was asked differ
+- `PMT`'s payment can differ from Excel's in its last digits: 23 of the 30 payments Excel was asked differ
   from ExSheet's by 1 to 11 units in the last place, a relative difference of at most about 1.3e-15, which
-  at three of them shows in the 15th significant digit; and where the evaluations Excel's payments leave
+  at two of them shows in the 15th significant digit; and where the evaluations Excel's payments leave
   part, `PMT` is `#VALUE!` ([Formulas](exsheet/formulas#supported-functions)).
 - `INDIRECT` over a Linked Table's name on its own, `INDIRECT("Positions")`, is `#VALUE!`, where Excel reads
   the table's data: a Linked Table is read by key, never by position
   ([Formulas](exsheet/formulas#supported-functions)).
 - `INDIRECT`'s R1C1 text with a row or column number past the Sheet's edge, `INDIRECT("R1048577C2",FALSE)`,
   is `#VALUE!` until Excel has been asked whether it names no place or a place
+  ([Formulas](exsheet/formulas#supported-functions)).
+- A Formula ExSheet refused whose array's shape could depend on a Value, such as a refused `FILTER` or
+  `=LEN(A1:A3)`, spills nothing, and the cells its array would cover read as blank
   ([Formulas](exsheet/formulas#supported-functions)).
 ```
 
@@ -220,6 +251,19 @@ New:
   difference by this decision (INDIRECT-056); IFERROR-018 to 020, ISERROR-011, ERRORTYPE-022, IFNA-008,
   COUNT-009, COUNTA-009, AGGREGATE-069, REF-015, LET-113, INDIRECT-100 and SEQUENCE-009 ask Excel the
   rest.)*
+  *(2026-10-13, decided with the user: such a Formula is a **Refused Formula** (`CONTEXT.md`), and a
+  Consumer tells it by `Value.IsRefused`. A call of a function Excel has that ExSheet does not declare — the
+  377 names of the catalogue's rows that are not Supported and of its list of Excel's other functions
+  (`ExcelFunctionNames`, held to the catalogue by `FunctionCatalogueTests`) — and a declared Linked Table's
+  bare name typed (TABLE-024) are Refused Formulas too, which show `#NAME?`: no Formula catches one, and a
+  cell that reads one is refused and shows `#VALUE!`. A name Excel does not have stays Excel's own `#NAME?`,
+  an Error Value a Formula catches.)*
+  *(2026-10-13: how a copy carries a refused cell. ExSheet's clipboard HTML marks it
+  (`data-ex-mark="exsheet-refused:C1"`, through ExGrid's `ClipboardData.MarkAttribute` and
+  `GridPasteIntent.MarkFor`, ADR-0050 item 9). This Sheet's own copy of one range pastes its Entries, the
+  Formula refused again where it lands; any other paste that carries the mark — of several ranges, with
+  the headers, or into another Sheet on the page — is refused whole, by name. Another program reads the
+  cell as the text `#VALUE!`.)*
 ````
 
 ### 3. docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md
@@ -274,7 +318,10 @@ an Error Value — and the Formula is `#VALUE!` with a number after it, beside t
 blank or another Error Value, and in a descending sort (SORT-026, 028 to 032 ask). `SORTBY` refuses
 every Error Value key: a `by_array`'s could as well be the result, as `FILTER`'s `include`'s is
 (SORTBY-010 asks). Each refusal is the Formula's, as a Formula that meets `#CIRC!` is `#CIRC!`, so
-`IFERROR` and `COUNTA` around it give no answer.)*
+`IFERROR` and `COUNTA` around it give no answer.)* *(2026-10-13: a `sort_index` that is not a whole
+number is refused. `=SORT(G1:H5,1.5)` was truncated to sort by the first column; rounded it would sort
+by the second, and no run has read which Excel does, or whether it takes a fraction there at all.
+SORT-042 asks.)*
 ````
 
 ### 5. docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md
@@ -388,7 +435,8 @@ New:
   1,915,648 random inputs of up to five digits, until a Windows run asks MOD-033 to MOD-036. It does not
   model the other widths: that only the hardware's formats are natural intermediates is a judgment, which
   no observed answer settles, and on it the engine answers 65,972 of those inputs (3.4%) where one of the
-  31 gives another double, about 2% at 54 bits; MOD-039 and MOD-040 ask two.)*
+  31 gives another double, about 2% at 54 bits; MOD-039 and MOD-040 ask two.)* *(2026-10-13: the
+  judgment is accepted, and the engine models the widths of 53 and 64 bits alone.)*
 ````
 
 ### 8. docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md
@@ -521,8 +569,9 @@ XNPV-020 is read, and refuses a rate of 0 until asked. The engine now computes e
 rounded on every platform; the platform's `Math.Exp` is a unit in the last place from Excel's
 discount at XNPV-013, and no observed double tells the logarithms apart. **PMT's evaluation is not
 settled**: of 39,602 evaluations searched, none gives all 29 observed payments at a rate other than
-0 and the best give 16; 19 of the 30 observed payments are 1 to 11 units in the last place from the
-engine's, which PMT keeps by the exception that follows.
+0 and the best give 16; 19 of the 30 observed payments were 1 to 11 units in the last place from the
+engine's, and 23 are since the payment at the start is rounded once (the note of 2026-10-13 below), which
+PMT keeps by the exception that follows.
 
 *(2026-10-12, decided with the user)* **An exception for `PMT` alone: it is kept though its result
 may differ from Excel's in its last digits, a Known limitation of `0.1.0`.** Two area passes asked Excel
@@ -542,13 +591,25 @@ double and the exact payment rounded once differ in the 15th significant digit, 
 and at PMT-025 the engine's double differs there from both, so that "no format displays" does not
 hold there.)*
 
+*(2026-10-13, decided with the user: **the exception, restated as observed.** Excel's double and the
+exact payment rounded once differ by 1 to 11 units in the last place, and at PMT-013 and PMT-026 that
+shows in General's 15th significant digit; `PMT` is kept there too. The payment at the start is the
+exact payment at the start rounded once, held between bounds as the payment at the end is, and the
+second rounding that gave Excel's double at PMT-008, 009, 010 and 019 is withdrawn: those four now
+differ from Excel's by a unit in the last place, and PMT-014, 015, 025 and 029 lie a unit nearer it.
+Excel's double differs from the engine's at 23 of the 30 observed payments, by 1 to 11 units in the
+last place, at two of them, PMT-013 and PMT-026, in the 15th significant digit; at PMT-025 the two agree
+to 15 digits. Where a reading magnifies its own roundings more than 2^6 times, `PMT` stays refused.)*
+
 *(2026-10-12, how the engine applies the exception: the financial area's choices, not the user's;
-three of them are put to the user.)* Where `PMT` answers, the payment at the end of each period is
+three of them were put to the user, and decided on 2026-10-13.)* Where `PMT` answers, the payment at
+the end of each period is
 held between two bounds, interval arithmetic over exact dyadic numbers with (1+rate)^nper − 1 raised
 from the rate itself, and its double, the exact payment rounded once however small the rate, is given
 only where both bounds round to it (PMT-011, PMT-012, each one unit in the last place from Excel's);
-the payment at the start is that double divided by 1+rate exactly and rounded again, which is not
-everywhere the exact payment at the start rounded once.
+the payment at the start is the exact payment at the start, held between bounds in the same way and
+rounded once *(2026-10-13, decided with the user; it was that double divided by 1+rate exactly and
+rounded a second time, which is not everywhere the exact payment at the start rounded once)*.
 `spikes/exsheet-financial-evaluation/pmt_exact.py` checked 20,000 inputs against Python's decimal at
 1200 digits. PMT's readings are taken as the evaluations within 64 units in the last place of Excel's
 at every observed payment, and where they part in kind, a number against an Error Value or one Error
@@ -598,10 +659,12 @@ follow Excel's answers** (`verification/2026-10-12-windows-area/` and `-area-2/`
 - **A date between -1 and 0 is cut down to -1, and is `#NUM!`**, under `YEAR`, `MONTH`, `DAY`, `WEEKDAY`, `DAYS`,
   `NETWORKDAYS`, `WORKDAY`, `EOMONTH` and `EDATE` alike (YEAR-008, MONTH-005, DAY-005, WEEKDAY-008, DAYS-005,
   NETWORKDAYS-009, WORKDAY-010, EOMONTH-016 and 017, EDATE-017). Under them, Excel does not truncate it to
-  serial 0. `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` give `#NUM!` for any serial below 0 and do not
-  cut it down; Excel was observed to at -1 under three of them (DATEDIF-045, YEARFRAC-056, MINUTE-002), and
-  between -1 and 0, and under `HOUR` and `SECOND` at all, `#NUM!` is the engine's answer, by generalisation,
-  until a case asks Excel.
+  serial 0. `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` give `#NUM!` for a serial of -1 or below and do
+  not cut it down; Excel was observed to at -1 under three of them (DATEDIF-045, YEARFRAC-056, MINUTE-002), and
+  below -1, and under `HOUR` and `SECOND` at all, it is the engine's answer, by generalisation. Between -1 and 0
+  their readings part: cut down to -1 it is `#NUM!`, and read as a date or a time of day it is an answer
+  (`DATEDIF(-0.5,1,"D")` 1, truncated to serial 0; `HOUR(-0.5)` 12, as 12:00), so they refuse it with `#VALUE!` until Excel is asked
+  *(2026-10-13; DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003 ask)*.
 - **`EDATE` from serial 0 keeps its day 0, which is the day before the 1st of the month reached** (EDATE-016). Six
   of the 112 readings `spikes/exsheet-date-readings/` writes out give every observed answer of the two functions, and
   they part at three months: the day before 1 January 1900 is serial 0 by `DATE`'s arithmetic and 31 December 1899,
@@ -639,7 +702,9 @@ New:
   does not offer. It is `#VALUE!` in either style, Excel's answers are recorded beside the refusal as a
   difference by decision, and it is a Known limitation of `0.1.0`
   ([ADR-0202](./0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md)).
-  Typed, the bare name stays `#NAME?`; `Table[Column]`, typed or as `INDIRECT`'s text, reads the column.
+  Typed, the bare name is a Refused Formula that shows `#NAME?` (TABLE-024) *(2026-10-13, decided with the
+  user: no Formula catches it, and a cell that reads it is refused)*; `Table[Column]`, typed or as
+  `INDIRECT`'s text, reads the column.
 ````
 
 ### 15. docs/adr/0120-text-reads-its-format-code-in-the-invariant-spelling-as-a-cell-format-shows-it.md
@@ -778,7 +843,8 @@ as a Formula's result spills the data (INDIRECT-053 to 057), which also gives th
 (INDIRECT-043) — but a Formula could then read the table by position, and
 [ADR-0049](./0049-linked-tables-are-the-consumers-data-read-by-key.md)'s rule 2 reads a Linked Table by key, never by
 position. The six cases hold Excel's answers beside the refusal, a difference by decision, and the refusal is a Known
-limitation of `0.1.0` (ADR-0202). Typed, a table's bare name is `#NAME?`, as an unknown name is.)*
+limitation of `0.1.0` (ADR-0202). Typed, a table's bare name shows `#NAME?` and is refused, which no Formula
+catches (2026-10-13, decided with the user; TABLE-024).)*
 ````
 
 ### 20. docs/adr/0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md
@@ -809,6 +875,15 @@ refusal, given the range or around a call that was given it (IFERROR-017).)*
 turn, whatever it does with it, as ADR-0047's note of that date says. Before, it read `#VALUE!` as an Error
 Value: with B1 `=LEN(A1:A3)`, `=IFERROR(B1,0)` was 0 and `=ISERROR(B1)` TRUE, where Excel's B1 spills a
 Value for each cell.)*
+
+*(2026-10-13, decided with the user: **a refused Anchor whose array's shape its text settles spills
+refusals over that shape**, so that a cell of it read elsewhere, `=E2+1` or `=ISBLANK(E2)`, is refused
+as the Anchor is. The text settles it where the array is References the text names, operators over them,
+`TRANSPOSE`, or a call given one Value for each argument. Where the shape could depend on a Value —
+`FILTER`, `UNIQUE`, `SORT`, `SORTBY`, `SEQUENCE`, a call that can give a Reference, `LET`, or a function
+given an array where it wants one Value, as `=LEN(A1:A3)` — nothing spills, and the cells its array would
+cover read as blank: a Known limitation of `0.1.0` (ADR-0202). Where something stands in the way of the
+known shape, the Anchor is `#SPILL!`, as Excel's array of that shape would be.)*
 ````
 
 ### 21. docs/adr/0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md
@@ -911,7 +986,8 @@ New:
   limitations: Excel answers the same values alike typed or in a range, which leaves 18 distinct observed
   doubles, and none of the 5,796 evaluations searched gives them all; the best give 7 of 21. **`PMT` at
   small rates agrees** (PMT-017, at 10^-7). **`PMT` at ordinary rates does not**: 19 of its 30 observed
-  payments are 1 to 11 units in the last place from the engine's, and none of the 39,602 evaluations
+  payments were 1 to 11 units in the last place from the engine's (23 since the payment at the start is
+  rounded once, ADR-0047's note of 2026-10-13), and none of the 39,602 evaluations
   searched gives every payment Excel gave. Decided with the user the same day: **`PMT` is kept, under
   ADR-0047's exception for `PMT` alone** (its note of this date), and its last digits are listed under
   Known limitations. **`XNPV` agrees at every observed double**: 4 of the 2,592 candidates searched give
@@ -947,6 +1023,11 @@ New:
   the table by position, which ADR-0049's rule 2 does not offer; and, in R1C1 style, a row or column number
   past the Sheet's edge, `INDIRECT("R1048577C2",FALSE)`, which is `#VALUE!` until Excel is asked whether it
   names no place or a place. ADR-0124's note of that date has Excel's answers and the readings.)*
+  *(2026-10-13, decided with the user: also a refused Anchor whose array's shape could depend on a Value —
+  a refused `FILTER`, `UNIQUE`, `SORT`, `SORTBY`, `SEQUENCE` or `LET`, a call that can give a Reference, or
+  a function given an array where it wants one Value, `=LEN(A1:A3)`: nothing spills, and the cells its
+  array would cover read as blank (ADR-0125's note of that date). And `PMT`'s last digits are 1 to 11
+  units in the last place at 23 of the 30 observed payments, at two of them in General's 15th digit.)*
 ````
 
 ### 25. docs/definition-of-done.md
@@ -1007,7 +1088,7 @@ Old:
 New:
 
 ````
-| **SH-7** | MUST | Each function of ADR-0047's set matches a table of Excel's observed results, blanks, text and Error Values in ranges included; an unknown name is `#NAME?` (ADR-0047). *(2026-10-12, decided with the user: `PMT` but in its last digits, ADR-0047's exception for `PMT` alone; its rows that differ are recorded as differences by that decision.)* | Layer 1 | every row of every table |
+| **SH-7** | MUST | Each function of ADR-0047's set matches a table of Excel's observed results, blanks, text and Error Values in ranges included; an unknown name is `#NAME?` (ADR-0047), and a call of a function Excel has that ExSheet does not declare is a Refused Formula, which shows `#NAME?` *(2026-10-13, decided with the user)*. *(2026-10-12, decided with the user: `PMT` but in its last digits, ADR-0047's exception for `PMT` alone; its rows that differ are recorded as differences by that decision.)* | Layer 1 | every row of every table |
 ````
 
 ### 28. docs/definition-of-done.md
@@ -1047,15 +1128,16 @@ New:
 **Error Value**:
 A Value that is an error — `#DIV/0!`, `#NAME?`, `#REF!`, `#VALUE!`, `#N/A` and the rest of
 Excel's set, plus `#CIRC!` for a Formula that depends on itself, where Excel would show 0 —
-produced by a Formula and carried into every Formula that uses it. It is data, like a number. The `#VALUE!` of a
-**Refused Formula** looks like one and is not Excel's: no Formula catches it. **Not the Cell State Error**, which is the Consumer's verdict on a value, painted and
+produced by a Formula and carried into every Formula that uses it. It is data, like a number. The `#VALUE!` or
+`#NAME?` of a **Refused Formula** looks like one and is not Excel's: no Formula catches it. **Not the Cell State Error**, which is the Consumer's verdict on a value, painted and
 never computed ([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
 _Avoid_: error (that is a Cell State), exception
 
 **Refused Formula**:
-A Formula ExSheet does not answer because it cannot answer it as Excel would. Its cell shows `#VALUE!`, and every
-Formula that reads it is refused too; no Formula catches it, in its own cell or in any cell that reads it. A
-Consumer tells it from Excel's own `#VALUE!` by `Value.IsRefused`
+A Formula ExSheet does not answer because it cannot answer it as Excel would. Its cell shows `#VALUE!`, or
+`#NAME?` where it calls a function Excel has that ExSheet does not declare, or names a declared Linked Table
+bare, and every Formula that reads it is refused too; no Formula catches it, in its own cell or in any cell that reads it. A
+Consumer tells it from Excel's own Error Value by `Value.IsRefused`
 ([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)). **Not a
 Refusal**, which is the grid's "no" to an operation and never computes a Value. *(2026-10-13, decided with the user.)*
 _Avoid_: refusal (for the Formula; that is the grid's), refused value
@@ -1136,8 +1218,12 @@ any other function around it in the same Formula, and not a Formula in another c
 directly, through a range, a name, `INDIRECT`, `OFFSET`, a Spill Range or a Linked Table — which is
 refused in turn, as one that reads a cycle is `#CIRC!` (ADR-0047, 2026-10-12, decided with the user).
 A cell's refused Value is `#VALUE!` in every other way, and `Value.IsRefused` says it is one;
-`Entry.FromValue` refuses it. Excel's own `#VALUE!`, `=1+"a"`'s, is caught as Excel's is. The
-refusals:
+`Entry.FromValue` refuses it. Excel's own `#VALUE!`, `=1+"a"`'s, is caught as Excel's is. A call of a
+function Excel has that ExSheet does not declare (`ExcelFunctionNames`), and a declared Linked Table's
+bare name typed, are refused too and show `#NAME?` (2026-10-13, decided with the user); a cell that
+reads one is refused and shows `#VALUE!`, and a name Excel does not have is Excel's own `#NAME?`. A
+refused Anchor whose array's shape its text settles spills refusals over that shape; where the shape
+could depend on a Value, nothing spills (ADR-0125, 2026-10-13). The refusals:
 ````
 
 ### 33. src/ExSheet.Engine/README.md
@@ -1222,7 +1308,9 @@ New:
   cancels, and where an Error Value in its rate or ranges fails beside another check that gives
   another answer (`#VALUE!`); `SORT` with an Error Value key that has a number after it, or beside
   text, a boolean, a blank or another Error Value, or in a descending sort, and `SORTBY` with any
-  Error Value key (`#VALUE!`); a blank `UNIQUE`, `SORT`, `SORTBY`, `FILTER` or `TRANSPOSE` keeps, read
+  Error Value key (`#VALUE!`); `SORT` with a `sort_index` that is not a whole number (`#VALUE!`;
+  SORT-042); `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` with a serial between -1 and 0
+  (`#VALUE!`; DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003); a blank `UNIQUE`, `SORT`, `SORTBY`, `FILTER` or `TRANSPOSE` keeps, read
   by a function whose readings of it part, such as `AVERAGE`, `MIN` or `COUNT` (`#VALUE!`). Each of
   these refusals is the Formula's, and every Formula's that reads its cell: no Formula catches it.
 ````
@@ -1307,14 +1395,16 @@ New:
   1/nper is odd and is `#NUM!` otherwise, and 1+rate of 0 is `#NUM!` to the power 0 and `#DIV/0!` to a
   negative one. `XNPV` divides each value by that power of its days over 365 and sums from the first;
   it checks the rate before it evaluates and is `#NUM!` below 0, Excel's answer at the rates asked
-  (-0.5 to -2) and the engine's at others, and refuses an Error Value in its rate or ranges beside
-  another check that would give another answer. `type` is a truth value: any number other than 0, 0.5
+  (-0.5 to -2) and the engine's at others, refuses any cell of its values or dates that is not a
+  number (text, a boolean or a blank), whatever else is among them, and refuses an Error Value in its
+  rate or ranges beside another check that would give another answer. `type` is a truth value: any number other than 0, 0.5
   included, is payment at the start. **`PMT` is kept under ADR-0047's exception for `PMT` alone**: where
   it answers, the payment at the end is the exact payment rounded once, held between two bounds that
   decide its double (`Enclosure`, interval arithmetic over exact dyadic numbers, (1+rate)^nper - 1
-  raised from the rate itself), and the payment at the start that double divided by 1+rate and rounded
-  again. Excel's payment differs from ExSheet's at 19 of the 30 observed, by 1 to 11 units in the last
-  place, and no evaluation searched gives every one (a Known limitation of 0.1.0). Where the
+  raised from the rate itself), and the payment at the start the exact payment at the start rounded
+  once, held between bounds as well (2026-10-13, decided with the user). Excel's payment differs from
+  ExSheet's at 23 of the 30 observed, by 1 to 11 units in the last place, at PMT-013 and PMT-026 in the
+  15th significant digit, and no evaluation searched gives every one (a Known limitation of 0.1.0). Where the
   evaluations Excel's payments leave part in kind, or beyond the last digits, `PMT` refuses
   (`ExactPayment`, `Functions.Financial.cs`).
 ````
@@ -1357,10 +1447,12 @@ New:
   0 is cut down to -1, and is `#NUM!`, under `YEAR`, `MONTH`, `DAY`, `WEEKDAY`, `DAYS`,
   `NETWORKDAYS`, `WORKDAY`, `EOMONTH` and `EDATE`, as Excel was observed to answer at -0.5
   (YEAR-008, MONTH-005, DAY-005, WEEKDAY-008, DAYS-005, NETWORKDAYS-009, WORKDAY-010, EOMONTH-016
-  and 017, EDATE-017). `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` give `#NUM!` for any
-  serial below 0, which they do not cut down. Excel was observed to at -1 under three of them
-  (DATEDIF-045, YEARFRAC-056, MINUTE-002); between -1 and 0, and under `HOUR` and `SECOND` at all,
-  it is the engine's answer, by generalisation, until a case asks Excel.
+  and 017, EDATE-017). `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` give `#NUM!` for a
+  serial of -1 or below, which they do not cut down. Excel was observed to at -1 under three of them
+  (DATEDIF-045, YEARFRAC-056, MINUTE-002); below -1, and under `HOUR` and `SECOND` at all, it is the
+  engine's answer, by generalisation. Between -1 and 0 their readings part — cut down to -1, `#NUM!`,
+  or read as a date or a time of day, an answer — and they refuse it with `#VALUE!` until Excel
+  is asked (DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003).
 ````
 
 ### 41. src/ExSheet.Engine/README.md
@@ -1588,8 +1680,7 @@ the logarithm correctly rounded (`spikes/exsheet-financial-evaluation/`, `Search
 a rate of -1 with an `nper` above 0 is refused until asked (PV-013). `PMT` is kept under ADR-0047's
 exception for `PMT` alone (decided with the user): its result may differ from Excel's in its last
 digits. Where it answers, the branch gives the exact payment rounded once at the end of each period,
-and that double over 1+rate rounded again at the start (the branch's rule, which ticket 13 puts to
-the user); it refuses where the evaluations its observed payments leave part in kind or beyond the
+and the exact payment rounded once at the start too (decided with the user, 2026-10-13); it refuses where the evaluations its observed payments leave part in kind or beyond the
 last digits, until asked (PMT-034 to 053).
 
 2026-10-12, with the area passes (`verification/2026-10-12-windows-area/report.md` and
@@ -1632,10 +1723,10 @@ ranges beside another check that would give another answer, until Excel is asked
 XNPV-021 to 030; `spikes/exsheet-financial-evaluation/`).
 
 2026-10-12, the area passes: `HOUR`, `MINUTE` and `SECOND` give `#NUM!` for any serial below 0, and do not
-cut it down to its day as `YEAR` and its kin do. Excel gave `#NUM!` at -1 under `MINUTE` (MINUTE-002); at
--0.5, between -1 and 0, it is the engine's answer, by generalisation, and HOUR-005, MINUTE-003 and SECOND-003
-ask it: read as a time of day, -0.5 is 12:00, and `HOUR` would be 12. Whether the engine refuses there
-instead, as the readings part, is a question for the user (`docs/agents/proposals/area-corrections-apply.md`).
+cut it down to its day as `YEAR` and its kin do. Excel gave `#NUM!` at -1 under `MINUTE` (MINUTE-002). At
+-0.5, between -1 and 0, the readings part: cut down to -1 it is `#NUM!`, and read as a time of day -0.5 is
+12:00, where `HOUR` would be 12. The engine refuses a serial between -1 and 0 with `#VALUE!` until Excel is
+asked (2026-10-13), and HOUR-005, MINUTE-003 and SECOND-003 ask it.
 The ticket stays done: they are asked by the one `oracle.ps1 -Area` pass before `0.1.0-rc.1` (ADR-0208's note
 of 2026-10-12).
 ````
@@ -1657,12 +1748,11 @@ Basis choices follow Microsoft's [YEARFRAC documentation](https://support.micros
 
 2026-10-12, the area passes: `DATEDIF` and `YEARFRAC` give `#NUM!` for any serial below 0, and do not cut it
 down to its day as the nine functions the second area pass asked at -0.5 do. Excel gave `#NUM!` at -1
-(DATEDIF-045, YEARFRAC-056); between -1 and 0 it is the engine's answer, by generalisation, and DATEDIF-048
-and YEARFRAC-058 ask it. The readings part under `DATEDIF`: cut down to -1, or refused below 0,
+(DATEDIF-045, YEARFRAC-056); between -1 and 0 the engine refuses it with `#VALUE!` until Excel is asked
+(2026-10-13), and DATEDIF-048 and YEARFRAC-058 ask it. The readings part under `DATEDIF`: cut down to -1, or refused below 0,
 `DATEDIF(-0.5,1,"D")` is `#NUM!`; truncated to serial 0, it is 1, and `DATEDIF` reads a boolean typed as a
 date as 1 (DATEDIF-046), where `YEARFRAC` gives `#VALUE!` (YEARFRAC-054), so its coercion is not shown to be
-the nine functions'. Whether the engine refuses there instead is a question for the user
-(`docs/agents/proposals/area-corrections-apply.md`). The ticket stays done: the cases are asked by the one
+the nine functions'. The ticket stays done: the cases are asked by the one
 `oracle.ps1 -Area` pass before `0.1.0-rc.1` (ADR-0208's note of 2026-10-12).
 ````
 
@@ -1749,8 +1839,10 @@ New:
             cell that reads it, directly, through a range, <code>INDIRECT</code>, a Spill Range or a Linked Table,
             which is refused in turn, as one that reads a circular reference is <code>#CIRC!</code>. Excel's own
             <code>#VALUE!</code>, such as <code>=1+"a"</code>'s, is caught as in Excel. A copy writes a refused
-            cell as <code>#VALUE!</code>; pasted back into the Sheet, a copy of one range brings its Formula, and a
-            copy of several ranges, or with the headers, that holds one is refused rather than pasted as a value.
+            cell as <code>#VALUE!</code>, which another program reads as Excel's Error Value. Pasted back into the
+            Sheet it was copied from, a copy of one range brings its Formula; any other paste of a copy that holds
+            one, of several ranges, with the headers, or into another Sheet on the page, is refused rather than
+            pasted as a value. The Selection Summary shows no figure over a refused cell, and says why.
         </p>
         <p>The refusals, and the other Error Values the engine gives in place of an answer:</p>
 ````
@@ -1918,7 +2010,7 @@ New:
                 Table's name on its own, <code>"Positions"</code>, is
                 <code>#VALUE!</code>, though Excel reads the table's data: a Linked Table is read by its columns
                 and by key, never by position, so that a Formula never reads a row by where it stands. Typed in a
-                Formula, the name on its own is <code>#NAME?</code>.
+                Formula, the name on its own is <code>#NAME?</code>, which no Formula catches.
 ````
 
 ### 63. samples/ExGrid.Docs/Pages/Sheet/SheetFormulas.razor
@@ -1959,14 +2051,16 @@ New:
                 been asked; a rate of exactly 0, or values whose last addition nearly cancels, are
                 <code>#VALUE!</code> until Excel has been asked. An Error Value in the rate, the values or the dates is
                 that Error Value, but <code>#VALUE!</code> where another check would give another answer (a rate below
-                0 or of 0, counts that differ, a date before the first, a cell that is not a number, or a different
-                Error Value anywhere among them), since the order Excel checks them in has not been observed.
-                <b><code>PMT</code></b>, where it answers, gives at the end of each period the exact payment, rounded
-                once, and at the start of each period that payment divided by 1+rate and rounded again; it reads
+                0 or of 0, counts that differ, a date before the first, or a different Error Value anywhere among
+                them), since the order Excel checks them in has not been observed. A cell of the values or the dates
+                that is not a number, whether text, a truth value or blank, is <code>#VALUE!</code> until Excel has
+                been asked, whatever else is among them.
+                <b><code>PMT</code></b>, where it answers, gives the exact payment, rounded once, at the end of each
+                period and at the start; it reads
                 <code>type</code> as <code>PV</code> and <code>FV</code> do. Excel's own payment can differ from
-                ExSheet's in its last digits: of the 30 payments Excel was asked, 19 differ by one to eleven units in
+                ExSheet's in its last digits: of the 30 payments Excel was asked, 23 differ by one to eleven units in
                 the last of a double's digits, a relative difference of at most about 1.3·10<sup>-15</sup>, which at
-                three of them shows in the 15th significant digit. No evaluation found gives every payment Excel gave,
+                two of them shows in the 15th significant digit. No evaluation found gives every payment Excel gave,
                 and this is a known limitation of 0.1.0. Where the evaluations Excel's payments leave give different
                 kinds of answer, or answers far apart, <code>PMT</code> is <code>#VALUE!</code> until Excel has been
                 asked: at a rate of -1 or below (there a number of periods that is a fraction whose reciprocal is not
@@ -1975,7 +2069,7 @@ New:
                 2<sup>-52</sup>, with no periods at the start of each period, and where the evaluations would lose more
                 than a few of their last digits, as where the present value grown and the future value nearly cancel
                 (<code>=PMT(0.1,2,1000,-1210)</code>) or a number of periods is tiny at the start of each period.
-                <b><code>NPV</code></b> is <code>#NAME?</code>, as <code>IRR</code> is: its last digits differ from
+                <b><code>NPV</code></b> is <code>#NAME?</code>, which no Formula catches, as <code>IRR</code>'s is: its last digits differ from
                 Excel's, and no evaluation found gives every result Excel was seen to give.
             </li>
 ````
@@ -2015,4 +2109,278 @@ New:
 
 ````
         new("What the stable version does not do is said where a reader meets it: on the product's page, and under Known limitations in its Release Notes. Among them: NPV, IRR, XIRR and RATE, which it does not support, PMT's last digits, which may differ from Excel's, and a Reference Outline, which cannot be dragged.",
+````
+
+### 66. CONTEXT.md
+
+**Refusal**: told from the **Refused Formula** (decided with the user on 2026-10-13, the term of edit 29).
+
+Old:
+
+````
+[ADR-0035](./docs/adr/0035-paste-and-fill-respect-the-editable-declaration.md)).
+_Avoid_: rejection, validation failure, error (that is a Cell State), denial
+````
+
+New:
+
+````
+[ADR-0035](./docs/adr/0035-paste-and-fill-respect-the-editable-declaration.md)).
+Not a **Refused Formula**, which is a Formula ExSheet does not answer and never an operation.
+_Avoid_: rejection, validation failure, error (that is a Cell State), denial
+````
+
+### 67. docs/adr/0130-the-selection-summary-is-asked-of-the-consumer-like-find.md
+
+"There is no cap": ExSheet declines the summary over a refused cell (decided with the user on 2026-10-13; Count included, the implementer's reading, uncredited).
+
+Old:
+
+````
+  figures. **A partial figure is never shown.** `InMemoryGridSource` never declines.
+````
+
+New:
+
+````
+  figures. **A partial figure is never shown.** `InMemoryGridSource` never declines.
+  *(2026-10-13, decided with the user: ExSheet declines when the Selection holds a cell whose Formula it
+  refused (a Refused Formula, ADR-0047), and its reason names the cell: "No figures: ExSheet refused the
+  Formula in A3 with #VALUE! because it cannot answer it as Excel does, so a figure over it would not be
+  Excel's." `SheetCommandIds.SummaryRefused` words it in another language through `CommandLabel`, `{0}`
+  standing for the cell.)* *(2026-10-13: Count is withheld too, as every other figure is, since a partial
+  figure is never shown.)*
+````
+
+### 68. docs/adr/0050-what-exsheet-asks-of-exgrids-core.md
+
+Item 9: the mark a Consumer writes into the family's own clipboard HTML (this branch's implementation, ahead of an ADR; the list's header puts it to the user).
+
+Old:
+
+````
+  put exactly that block there, and even then it pastes the Entries that showed exactly those
+  Values.
+````
+
+New:
+
+````
+  put exactly that block there, and even then it pastes the Entries that showed exactly those
+  Values.
+- *(2026-10-13: a cell of the family's own clipboard HTML may carry a mark, `ClipboardData.MarkAttribute`
+  (`data-ex-mark`), which the grid hands back beside the pasted field (`GridPasteIntent.MarkFor`) and
+  gives no meaning; another program ignores it. ExSheet marks a refused cell,
+  `data-ex-mark="exsheet-refused:C1"`, so that a paste of it as a Value is refused by name, wherever on
+  the page it lands, rather than turn a Refused Formula into an Error Value a Formula can catch
+  (ADR-0047).)*
+````
+
+### 69. docs/definition-of-done.md
+
+SM-12's row: a refused cell leaves no figure (decided with the user on 2026-10-13; Count included, uncredited).
+
+Old:
+
+````
+| **SM-12** | MUST | ExSheet answers from its own cells: a formula's value, every cell of a spilled array, by the same table (ADR-0130) | Layer 1 | as stated |
+````
+
+New:
+
+````
+| **SM-12** | MUST | ExSheet answers from its own cells: a formula's value, every cell of a spilled array, by the same table (ADR-0130). *(2026-10-13, decided with the user: a Selection holding a cell whose Formula ExSheet refused is declined, its reason naming the cell, in `SheetCommandIds.SummaryRefused`'s words.)* *(2026-10-13: no figure is shown, Count included.)* | Layer 1; Layer 2 (`SheetSummaryTests`) | as stated |
+````
+
+### 70. samples/ExGrid.Docs/Pages/Design.razor
+
+The rule's bullet: a Formula ExSheet cannot answer as Excel does (decided with the user on 2026-10-13).
+
+Old:
+
+````
+            <li>A Formula ExSheet cannot compute as Excel does is <code>#NAME?</code>, never an approximation.</li>
+````
+
+New:
+
+````
+            <li>
+                A Formula ExSheet cannot compute as Excel does is <code>#VALUE!</code>, or <code>#NAME?</code> for a
+                function it does not support, never an approximation, and no Formula catches it.
+            </li>
+````
+
+### 71. samples/ExGrid.Docs/Pages/Sheet/SheetFunctions.razor
+
+The page's lead (decided with the user on 2026-10-13).
+
+Old:
+
+````
+          Lead="Every function ExSheet's engine supports, by category, with its arguments as Excel writes them. Each gives Excel's result; a name outside this list is #NAME?, never an approximation.">
+````
+
+New:
+
+````
+          Lead="Every function ExSheet's engine supports, by category, with its arguments as Excel writes them. Each gives Excel's result; a function outside this list is #NAME?, never an approximation, and where Excel has it, no Formula catches that #NAME?.">
+````
+
+### 72. samples/ExGrid.Docs/Pages/Sheet/SheetFunctions.razor
+
+The functions not yet answered (decided with the user on 2026-10-13).
+
+Old:
+
+````
+                Excel functions the catalogue lists, which the engine does not answer yet: in a Formula each is
+                <code>#NAME?</code> today. Each links the place on the Roadmap that holds the work on it.
+````
+
+New:
+
+````
+                Excel functions the catalogue lists, which the engine does not answer yet: in a Formula each is
+                <code>#NAME?</code> today, which no Formula catches: <code>=IFERROR(NPV(0.1,A1:A3),0)</code> is not
+                0, and a cell that reads such a Formula is <code>#VALUE!</code>. Each links the place on the Roadmap
+                that holds the work on it.
+````
+
+### 73. samples/ExGrid.Docs/Pages/Sheet/SheetFormulas.razor
+
+"Supported functions": a name outside the set (decided with the user on 2026-10-13).
+
+Old:
+
+````
+            Each function gives Excel's result. A name outside this set is <code>#NAME?</code>, never an
+            approximation of what the function might have meant.
+````
+
+New:
+
+````
+            Each function gives Excel's result. A name outside this set is <code>#NAME?</code>, never an
+            approximation of what the function might have meant. Where Excel has the function, that
+            <code>#NAME?</code> is ExSheet's refusal, which no Formula catches; a name Excel does not have either is
+            Excel's own <code>#NAME?</code>.
+````
+
+### 74. samples/ExGrid.Docs/Pages/Sheet/SheetOverview.razor
+
+"It answers as Excel does, or says it cannot" (decided with the user on 2026-10-13).
+
+Old:
+
+````
+                <b>It answers as Excel does, or says it cannot.</b> A function outside the supported set is
+                <code>#NAME?</code>, a circular reference is <code>#CIRC!</code>, and a number that does not fit its
+````
+
+New:
+
+````
+                <b>It answers as Excel does, or says it cannot.</b> A function Excel has that ExSheet does not support
+                is <code>#NAME?</code>, which no Formula catches, a name Excel does not have is Excel's own
+                <code>#NAME?</code>, a circular reference is <code>#CIRC!</code>, and a number that does not fit its
+````
+
+### 75. samples/ExGrid.Docs/Pages/Sheet/SheetOverview.razor
+
+"Status-bar figures": a refused cell (decided with the user on 2026-10-13).
+
+Old:
+
+````
+            leaves Count and Numerical Count, and no other figure, as in Excel. Average, Min, Max and Sum wear the
+````
+
+New:
+
+````
+            leaves Count and Numerical Count, and no other figure, as in Excel. A cell whose Formula ExSheet refused
+            leaves no figure at all, and the line says why, naming the cell;
+            <code>SheetCommandIds.SummaryRefused</code> words it in another language through
+            <code>CommandLabel</code>, its <code>{0}</code> the cell. Average, Min, Max and Sum wear the
+````
+
+### 76. samples/ExGrid.Docs/Pages/Sheet/SheetLinkedTables.razor
+
+A declared table's bare name typed (decided with the user on 2026-10-13).
+
+Old:
+
+````
+            <li>A column the table does not have is <code>#REF!</code>; a table that is not declared is <code>#NAME?</code>.</li>
+````
+
+New:
+
+````
+            <li>
+                A column the table does not have is <code>#REF!</code>; a table that is not declared is
+                <code>#NAME?</code>. A declared table's name typed on its own is <code>#NAME?</code> as well, which no
+                Formula catches: a Linked Table is read by its columns, never whole.
+            </li>
+````
+
+### 77. samples/ExGrid.Docs/Pages/Grid/GridClipboard.razor
+
+"Paste": the mark a Consumer writes into the family's own HTML (this branch's implementation, ADR-0050 item 9's note of 2026-10-13).
+
+Old:
+
+````
+            arrive at full precision, and <code>Origins</code> tells you whether a field is invariant-culture text
+            from Excel's own data or text as it was shown.
+````
+
+New:
+
+````
+            arrive at full precision, and <code>Origins</code> tells you whether a field is invariant-culture text
+            from Excel's own data or text as it was shown. In the family's own HTML a cell may carry
+            <code>ClipboardData.MarkAttribute</code>; <code>MarkFor</code> hands its value to the Consumer that
+            wrote it, and another program ignores it. ExSheet marks a refused cell so that a paste into a Sheet is
+            refused.
+````
+
+### 78. samples/ExGrid.Docs/Pages/Sheet/SheetFormulas.razor
+
+"Supported functions": three refusals of 2026-10-13 — `SORT`'s fractional `sort_index`, a serial between -1 and 0 under five functions, and a refused Anchor's spill (decided with the user: the spill).
+
+Old:
+
+````
+                <code>[&lt;=9]</code>.
+            </li>
+        </ul>
+````
+
+New:
+
+````
+                <code>[&lt;=9]</code>.
+            </li>
+            <li>
+                <b><code>SORT</code>'s <code>sort_index</code></b> that is not a whole number,
+                <code>=SORT(G1:H5,1.5)</code>, is <code>#VALUE!</code> until Excel has been asked whether it truncates
+                it, rounds it or takes no fraction at all.
+            </li>
+            <li>
+                <b>A serial between -1 and 0</b> under <code>DATEDIF</code>, <code>YEARFRAC</code>, <code>HOUR</code>,
+                <code>MINUTE</code> and <code>SECOND</code> is <code>#VALUE!</code> until Excel has been asked: cut
+                down to -1 it would be <code>#NUM!</code>, and read as a time of day <code>HOUR(-0.5)</code> would be
+                12. At -1 and below they are <code>#NUM!</code>, as Excel was seen to answer at -1.
+            </li>
+            <li>
+                <b>A refused Formula that would spill.</b> Where its text settles the shape of its array, as
+                <code>=B1:B3*2</code> over a refused B2 does, every cell the array covers is refused with it, so a
+                Formula that reads one is refused too; where something stands in the way, it is <code>#SPILL!</code>. Where the shape could depend on a Value, as with <code>FILTER</code>,
+                <code>UNIQUE</code>, <code>SORT</code>, <code>SEQUENCE</code>, <code>LET</code> or
+                <code>=LEN(A1:A3)</code>, nothing spills, and the cells its array would cover read as blank: a known
+                limitation of 0.1.0.
+            </li>
+        </ul>
 ````

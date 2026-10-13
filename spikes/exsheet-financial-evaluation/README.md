@@ -212,14 +212,15 @@ from Excel's in its last digits, the engine giving the exact payment rounded onc
 Known limitations. PMT-001 to 003, 017, 022 and 033 are the engine's doubles, and so were 008 to 010 and 019
 until the payment at the start was decided (below). *(The third
 and fourth rounds, 2026-10-12, put to the user: at PMT-013 and PMT-026, at the end, Excel's double and the exact
-payment rounded once differ in the 15th significant digit, which General shows. At the start the engine divides
-the payment at the end's double by 1+rate and rounds again, the branch's rule: that is Excel's double at PMT-008,
+payment rounded once differ in the 15th significant digit, which General shows. At the start the engine divided
+the payment at the end's double by 1+rate and rounded it a second time, the branch's rule then: that was Excel's double at PMT-008,
 009, 010 and 019, where the exact payment at the start rounded once is a unit away, and a unit from the exact
-payment rounded once at PMT-014, 015, 025 and 029, where Excel's lies on its other side; at PMT-025 it is the
-engine's double that shows another 15th digit. Decided with the user on 2026-10-13: the payment at the start
+payment rounded once at PMT-014, 015, 025 and 029, where Excel's lies on its other side; at PMT-025 it was the
+engine's double that showed another 15th digit. Decided with the user on 2026-10-13: the payment at the start
 is the exact payment at the start rounded once, so the engine's double at PMT-025 agrees with Excel's at 15
 digits, and Excel's differs from the engine's at 23 of the 30 observed payments, a unit at PMT-008, 009, 010 and
-019.)* PMT-011 and 012, an `nper` of 10.5 and −10, are answered by the
+019. Decided with the user the same day: the exception holds where the difference shows in General's 15th
+digit, PMT-013 and PMT-026, and the bound of 2^6 below is kept.)* PMT-011 and 012, an `nper` of 10.5 and −10, are answered by the
 same exact payment: Excel's doubles lie −1.03 and −1.23 units from it, each one unit from the engine's.
 
 `--pmt-spread` (the third round) says how far each family lies from Excel at its farthest observed payment, in
@@ -257,8 +258,7 @@ the x87's), and in an x87's register where it is at 64. Over the annuity grid an
 (rates from 1E10 to 1E-320 and near and below −1; growths past 2^1000 and below 2^−1000; values from 1E−5 to
 9E307), where the readings part in kind the engine must refuse; where all give an Error Value it must give
 one; where all give a number it must give its payment, computed in the spike's exact arithmetic by the
-engine's rules (the exact payment at the end rounded once, and at the start that double over 1+rate rounded
-again; where its 256-bit fixed point reaches it, `pmt_exact.py` checks the rest), or refuse for a reason the
+engine's rules (the exact payment rounded once, at the end and at the start; where its 256-bit fixed point reaches it, `pmt_exact.py` checks the rest), or refuse for a reason the
 check names; and where it answers, no reading may lie more than 128 units in the last place from its payment
 (the fourth round, `PmtReadings.Apart`). The fourth round added tiny numbers of periods, either sign, to the
 extreme grid, which now holds 12,800 inputs. The last run (2026-10-12, the fourth round):
@@ -277,11 +277,11 @@ negative fractions, where FV's settle PV's power; FV's 9 at 96, where g20 gives 
 `#NUM!`.) In the third round PMT answered where its readings part beyond the last digits by cancellation, up to
 21,345,331,117 units in the last place from the exact payment at `=PMT(-0.5,36.25,-150,0,0)`. The fourth round
 refuses wherever a reading magnifies its own roundings more than 2^6 times (`ExactPayment.Conditioned`, the
-branch's bound, put to the user), and now, where PMT answers, the farthest reading lies 48 units in the last
+branch's bound, put to the user and kept by decision with the user on 2026-10-13), and now, where PMT answers, the farthest reading lies 48 units in the last
 place from its payment (`=PMT(-0.99,-10,0,-5000,1)`, LibreOffice's `ScGetPMT`). `--pmt-readings` runs the
 readings at `pmt_exact.py`'s 20,000 inputs: the engine gives a number at 12,101 of them, and every reading
 gives a number there; of the 11,588 that are not 0, the farthest reading lies within 8 units in the last place
-at 11,310, and within 93 at all (at `=PMT(0.00371655630722511,-1100,28486236.273849,44.6175619860253,0)`, where
+at 11,312, and within 93 at all (at `=PMT(0.00371655630722511,-1100,28486236.273849,44.6175619860253,0)`, where
 (|pv|·(1+g) + |fv|) / |pv·g + fv| is 60; `--pmt-readings` requires 128, twice the bound). `--pmt-show` prints
 what the readings give at one input; at the third and fourth rounds' new cases:
 
@@ -317,8 +317,8 @@ subnormal parts: over `pmt_exact.py`'s 20,000 inputs it was 1 or 2 units in the 
 payment at 874 of the 3,167 payments at a rate below 1e−15 and at 53 others. After the third round the engine
 gave decimal's answer at all 20,000 drawn then. The fourth round's draw (seed 20261012, tiny numbers of periods
 and the new refusals among them) gives 12,101 numbers, 3,285 of them at a rate below 1e−15, 623 `#NUM!` and
-7,276 refused, and the engine gives decimal's answer by its rules at every one. At the start that rule is the
-payment at the end's double over 1+rate, rounded again: at 809 of the 4,132 payments at the start other than 0
+7,276 refused, and the engine gives decimal's answer by its rules at every one. At the start the earlier rule,
+before the decision of 2026-10-13, was the payment at the end's double over 1+rate, rounded a second time: at 809 of the 4,132 payments at the start other than 0
 (20%) it is a unit in the last place from the exact payment at the start rounded once, which `--check` counts.
 
 ## Files

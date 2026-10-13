@@ -99,7 +99,8 @@ not the user's). Where `PMT` answers, the engine holds the payment at the end of
 decide its double, with (1+rate)^nper - 1 raised from the rate itself, so that it is the exact payment rounded
 once however small the rate: the second round's double-double lost the rate below about 1e-15 and at subnormal
 parts, and was 1 or 2 units in the last place off at 874 of 3,167 such payments. The payment at the start is that
-double divided by 1+rate and rounded again (question 3 below). `spikes/exsheet-financial-evaluation/pmt_exact.py`
+double divided by 1+rate and rounded again (question 3 below, decided on 2026-10-13: the exact payment at the start
+rounded once). `spikes/exsheet-financial-evaluation/pmt_exact.py`
 checked the engine against Python's decimal at 1200 digits over 20,000 inputs, and it gave decimal's answer by
 those rules at every one. PMT-011 and 012 (an `nper` of 10.5 and of -10) are answered so, each one unit in the
 last place from Excel's. PMT's readings are taken as the evaluations within 64 units in the last place of Excel's
@@ -142,4 +143,10 @@ exact payment at the start rounded once, as the exception names, not the payment
 1+rate and rounded again. Excel's payment differs from the engine's at 23 of the 30 observed payments, by 1 to 11
 units in the last place: a unit at PMT-008, 009, 010 and 019, where the double rounding gave Excel's double, and a
 unit nearer Excel's at PMT-014, 015, 025 and 029. Two of them differ in the 15th significant digit, PMT-013 and
-PMT-026, both at the end; PMT-025 agrees with Excel's at 15 digits. Questions 1 and 2 stay open.
+PMT-026, both at the end; PMT-025 agrees with Excel's at 15 digits.
+
+2026-10-13, decided with the user (questions 1 and 2, option (a) each): the exception is restated as observed.
+Excel's double and the exact payment rounded once differ by 1 to 11 units in the last place, and at PMT-013 and
+PMT-026 that shows in General's 15th digit; `PMT` is kept there too (ADR-0047's note of that date). The bound of
+2^6 is kept: where a reading magnifies its own roundings more than 2^6 times, `PMT` refuses until Excel is asked
+(PMT-047 to PMT-053). No question of this ticket's `PMT` part is open.
