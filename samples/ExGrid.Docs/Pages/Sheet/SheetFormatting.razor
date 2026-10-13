@@ -124,7 +124,9 @@
                 <b>Under <code>MudSheetChrome</code></b> (<code>ExSheet.MudBlazor</code>) it is a page-level, modal
                 <code>MudDialog</code>, with MudBlazor's colour picker for More Colours. It needs a
                 <code>&lt;MudDialogProvider /&gt;</code> in your layout, and is refused by name when it first opens
-                without one.
+                without one. The keys typed as it closes from Escape, OK or Cancel are the Sheet's, in order, over
+                Blazor Server too: ↓ typed straight after Escape moves the Focus, and OK sets what was touched as it is
+                pressed.
             </li>
         </ul>
         <p>
@@ -161,13 +163,26 @@
             </li>
             <li>
                 <b>KeyTips.</b> Release Alt on its own, or press F10, and each row shows its letter: ExSheet's row is H,
-                as Excel's Home tab is, and its items carry Excel's letters, so Alt, H, 1 sets bold. Your rows and
-                buttons have a KeyTip where you set <code>KeyTip</code>; two letters that collide at one level are
-                refused when the toolbar renders.
+                as Excel's Home tab is, and its items carry Excel's letters, so Alt, H, 1 sets bold and Alt, H, O, E
+                opens Format Cells, as Excel's Format menu reaches it (read on Windows). A list a KeyTip opens takes
+                the keyboard under either Chrome: the arrows move among its choices and Enter makes one. Escape goes
+                back one level, as Excel's did when read on Windows: from a list to its row's letters, then to the
+                rows', then to the Sheet. The keys can be typed at once, over Blazor Server too: the letters straight
+                after Alt or F10 wait for the KeyTips, and the keys typed while a list opens or closes, or while the
+                keyboard goes back to the Sheet, wait for the keyboard and go where it lands, so Alt, H, 1 typed straight
+                off sets bold, and Alt, H, H, ↓, →, Enter fills the cell from the palette, as typed one at a time. Your
+                rows and buttons have a KeyTip where you set <code>KeyTip</code>; two letters that collide at one level
+                are refused when the toolbar renders.
             </li>
             <li>
                 <b>The look is the Chrome's.</b> The built-in Chrome draws plain buttons with inline-SVG pictures;
-                <code>MudSheetChrome</code> draws MudBlazor's controls.
+                <code>MudSheetChrome</code> draws MudBlazor's controls; under either the toolbar is one Tab stop. A Chrome
+                of your own draws each item from its <code>ToolbarItemContext</code>: a list of its own opens when
+                <code>OpenRequest</code> changes, and once it holds the keyboard it calls <code>ChoicesOpened(true)</code>
+                and answers the keys that returns, typed on the toolbar while the list was on its way; it closes when
+                <code>CloseRequest</code> changes; as it begins to close from a key or a choice it calls
+                <code>ChoicesClosing</code> with that key and passes on every key typed in it, and once it has gone it
+                calls <code>ChoicesClosed</code>, and the toolbar takes the keyboard on from there.
             </li>
         </ul>
         <DocsExample Builtin="typeof(Toolbar)" Mud="typeof(ToolbarMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])" CodeOpen="true">

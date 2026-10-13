@@ -145,6 +145,20 @@
             the meantime keeps it there. And <code>IGridChrome.Words</code> answers the words a refusal is
             announced in, by the ids in <code>RefusalLabelIds</code>; answering <code>null</code> leaves the
             built-in English (<a href="exgrid/clipboard#what-a-refusal-sounds-like">what a refusal sounds like</a>).
+            A third: a button that closes its panel — OK, Apply, Cancel — carries the class
+            <code>ex-popover-closes</code>, as the built-in and MudBlazor panels' do, so that the keys typed while
+            the panel goes wait for the keyboard to land rather than reach a button that is going.
+        </p>
+        <p>
+            <strong>A frame of your own</strong> outside the grid — a dialog, a toolbar — takes the keyboard through
+            <code>HandKeyboardToFrameAsync</code> and gives it back through <code>ReturnKeyboardAsync</code>, with the
+            frame's element and the keys it heard on the way. A popover of yours in the grid's frame
+            (<code>OpenPopoverAsync</code>) can ask to hear Escape close it, and hand the keyboard on from there. Over
+            Blazor Server each of these lands a round trip late, and the grid holds the keys typed meanwhile and
+            hands them on, in order, to where the keyboard lands. ExSheet's Sheet Toolbar is built this way. A dialog
+            of yours with a grid inside, closing on the Escape that raises the grid's <code>OnLeave</code>, calls
+            <code>PassKeysOutAsync</code> there: the keys typed after the Escape go out to your dialog, for it to hand
+            on with the keyboard, as ExPivot's Show Details dialog does.
         </p>
     </DocsSection>
 

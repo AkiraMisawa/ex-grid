@@ -53,6 +53,12 @@
             no blank rows, and finding a block's edge would need every row.
         </p>
         <p>
+            <strong>Keys typed at once arrive in order.</strong> Over Blazor Server a popover opens or closes a round
+            trip after the key or the press that asked, and the keys typed meanwhile wait and then go where the
+            keyboard lands: ↓, ↓ typed straight after Escape in a column's menu, or after Enter on a filter panel's OK,
+            move the Focus two rows, rather than moving in a menu that is going or being lost on a button.
+        </p>
+        <p>
             Every key of the three products, each with the page that explains it, is in the
             <a href="reference/keyboard">Keyboard reference</a>.
         </p>
