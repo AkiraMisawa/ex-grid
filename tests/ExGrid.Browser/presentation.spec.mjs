@@ -214,30 +214,45 @@ test('nothing inside the Viewport transitions or animates (UX-6)', async ({ page
     expect(offenders).toEqual([]);
 });
 
-test('forced colors keep every Cell State and Row Kind tellable (UX-7, on /cells)', async ({ page }) => {
+test('UX-7 / ADR-0027, ADR-0029: under forced colors every Cell State and Row Kind stays tellable without its background, on /cells', async ({ page }) => {
     await page.emulateMedia({ forcedColors: 'active' });
     await page.goto('/cells');
-    await expect(page.locator('.ex-grid').first().locator('.ex-row').first()).toBeVisible();
+    await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+    await expect(grid(page).locator('.ex-row-total')).toBeVisible();
 
-    const states = await page.evaluate(() => {
-        const normal = document.querySelector('.ex-cell:not([class*=ex-state])');
+    // What forced colors leave: the text's colour, weight, style and decoration, and the
+    // outline. A background image is discarded, so it is not read — a state or a kind whose
+    // only mark is its ground comes out the same as a plain cell here and fails.
+    const looks = await grid(page).evaluate((g) => {
         const describe = (el) => {
             if (!el) return null;
             const s = getComputedStyle(el);
-            return [s.color, s.fontStyle, s.outlineStyle, s.textDecorationLine].join('|');
+            return [s.color, s.fontWeight, s.fontStyle, s.outlineStyle, s.outlineColor, s.textDecorationLine].join('|');
         };
+        const plain = ':not([class*=ex-state])';
+        const detail = '.ex-row:not(.ex-row-group):not(.ex-row-total)';
         return {
-            normal: describe(normal),
-            stale: describe(document.querySelector('.ex-state-stale')),
-            missing: describe(document.querySelector('.ex-state-missing')),
-            error: describe(document.querySelector('.ex-state-error')),
-            modified: describe(document.querySelector('.ex-state-modified')),
+            // The Cell States, on detail rows.
+            normal: describe(g.querySelector(`${detail} .ex-cell${plain}`)),
+            stale: describe(g.querySelector(`${detail} .ex-state-stale`)),
+            missing: describe(g.querySelector(`${detail} .ex-state-missing`)),
+            error: describe(g.querySelector(`${detail} .ex-state-error`)),
+            modified: describe(g.querySelector(`${detail} .ex-state-modified`)),
+            // The Row Kinds, each read on its Book cell, as the plain one above is.
+            group: describe(g.querySelector(`.ex-row-group .ex-cell${plain}`)),
+            total: describe(g.querySelector(`.ex-row-total .ex-cell${plain}`)),
+            groupGround: g.querySelector('.ex-row-group .ex-cell') && getComputedStyle(g.querySelector('.ex-row-group .ex-cell')).backgroundImage,
         };
     });
-    // Every present state is distinguishable from Normal, and from each other.
-    const present = Object.entries(states).filter(([, v]) => v !== null);
-    const values = present.map(([, v]) => v);
-    expect(new Set(values).size, JSON.stringify(states)).toBe(values.length);
+    const { groupGround, ...kinds } = looks;
+    // The forced-colors emulation took: the group row's tint, a background image, is gone.
+    expect(groupGround, 'the browser discards the group tint under forced colors').toBe('none');
+    // Every state and kind is on the page — none is passed for being absent — and no two look alike.
+    for (const [name, look] of Object.entries(kinds)) {
+        expect(look, `${name} is on /cells`).not.toBeNull();
+    }
+    const values = Object.values(kinds);
+    expect(new Set(values).size, JSON.stringify(kinds, null, 1)).toBe(values.length);
 });
 
 // Tone and Cell State on /tones (ticket 84): the page's theme sets the tone tokens on an element
