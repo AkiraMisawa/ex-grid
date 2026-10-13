@@ -208,14 +208,18 @@ PMT-015 −1.3, PMT-020 +1.1, PMT-023 −1.4, PMT-024 +2.3, PMT-025 −2.2, PMT-
 So PMT's evaluation is not settled. Its likely cause is a library log1p or expm1 that is not correctly
 rounded, which no portable evaluation reproduces; that is a reading of the data, not a finding. **Decided
 with the user (2026-10-12): PMT is kept, with an exception to ADR-0047 for PMT alone**: its result may differ
-from Excel's in digits no format displays, the engine giving the exact payment rounded once, and 0.1.0 lists it
-under Known limitations. PMT-001 to 003, 008 to 010, 017, 019, 022 and 033 are the engine's doubles. *(The third
+from Excel's in its last digits, the engine giving the exact payment rounded once, and 0.1.0 lists it under
+Known limitations. PMT-001 to 003, 017, 022 and 033 are the engine's doubles, and so were 008 to 010 and 019
+until the payment at the start was decided (below). *(The third
 and fourth rounds, 2026-10-12, put to the user: at PMT-013 and PMT-026, at the end, Excel's double and the exact
 payment rounded once differ in the 15th significant digit, which General shows. At the start the engine divides
 the payment at the end's double by 1+rate and rounds again, the branch's rule: that is Excel's double at PMT-008,
 009, 010 and 019, where the exact payment at the start rounded once is a unit away, and a unit from the exact
 payment rounded once at PMT-014, 015, 025 and 029, where Excel's lies on its other side; at PMT-025 it is the
-engine's double that shows another 15th digit.)* PMT-011 and 012, an `nper` of 10.5 and −10, are answered by the
+engine's double that shows another 15th digit. Decided with the user on 2026-10-13: the payment at the start
+is the exact payment at the start rounded once, so the engine's double at PMT-025 agrees with Excel's at 15
+digits, and Excel's differs from the engine's at 23 of the 30 observed payments, a unit at PMT-008, 009, 010 and
+019.)* PMT-011 and 012, an `nper` of 10.5 and −10, are answered by the
 same exact payment: Excel's doubles lie −1.03 and −1.23 units from it, each one unit from the engine's.
 
 `--pmt-spread` (the third round) says how far each family lies from Excel at its farthest observed payment, in

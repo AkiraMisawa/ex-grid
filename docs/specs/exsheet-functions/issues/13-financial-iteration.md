@@ -84,9 +84,12 @@ at a rate other than 0, and the best give 16; PMT-013 to 016, 018, 020, 021 and 
 engine's by 1 to 11 units in the last place.
 
 2026-10-12, decided with the user: `PMT` is kept, with an exception to ADR-0047 for `PMT` alone. Its result
-may differ from Excel's in digits no format displays (observed up to 11 units in the last place, PMT-026, a
-relative error of about 1e-15), because the engine gives the exact payment rounded once and the difference is
-Excel's own rounding; 0.1.0 lists it under Known limitations (ADR-0202). The payments that differ are recorded
+may differ from Excel's in its last digits (observed up to 11 units in the last place, PMT-026, a relative
+error of about 1e-15), the engine giving the exact payment rounded once; 0.1.0 lists it under Known limitations
+(ADR-0202). *(The decision was taken on digits no format displays, and on the difference being Excel's own
+rounding. Neither is observed: at PMT-013 and PMT-026 the difference shows in the 15th significant digit, which
+General shows (question 1 below), and no run has read how Excel rounds its payment; that it is Excel's own
+rounding is a reading of the searches, which no evaluation reproduces.)* The payments that differ are recorded
 as differences by that decision. `PMT` leaves this ticket's questions; an evaluation found later that gives
 every payment Excel gave would end the exception. `NPV` is not part of the exception and stays here,
 undeclared.
@@ -133,3 +136,10 @@ within 93 units in the last place of its payment. Three questions for the user c
    where Excel's double lies on the other side of it. The exact payment at the start rounded once would differ
    from Excel's at 23 of the 30 observed payments instead of 19, lie a unit nearer Excel's at PMT-014, 015, 025
    and 029, and agree with Excel's at 15 digits at PMT-025.
+
+2026-10-13, decided with the user (question 3, option (a)): the payment at the start of each period is the
+exact payment at the start rounded once, as the exception names, not the payment at the end's double divided by
+1+rate and rounded again. Excel's payment differs from the engine's at 23 of the 30 observed payments, by 1 to 11
+units in the last place: a unit at PMT-008, 009, 010 and 019, where the double rounding gave Excel's double, and a
+unit nearer Excel's at PMT-014, 015, 025 and 029. Two of them differ in the 15th significant digit, PMT-013 and
+PMT-026, both at the end; PMT-025 agrees with Excel's at 15 digits. Questions 1 and 2 stay open.
