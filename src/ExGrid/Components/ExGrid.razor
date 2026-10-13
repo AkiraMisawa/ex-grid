@@ -2697,7 +2697,7 @@
         // Consumer that only restyled its own wrapping element — a Visual Token set on an
         // ancestor — would cost a render of the root for a change only the browser paints
         // (ADR-0027 P3, UX-5). Handed nothing new, the grid has nothing to render.
-        if (HandsNothingNew(parameters))
+        if (HandsNothingNew(parameters) && !OwesAfterRenderWork())
             return Task.CompletedTask;
 
         _bound = true;
@@ -2739,6 +2739,23 @@
             same = PaintedRowsStand(window);
         return same;
     }
+
+    /// <summary>Whether the grid has state that only its next render's <c>OnAfterRenderAsync</c>
+    /// tells: the editing mode and the Point state to the key gate and the Consumer, the keys it
+    /// claims, a focus or a sentence owed. A path that changed one of these and left the telling
+    /// to whatever renders next may have relied on the Consumer's render; skipping that render
+    /// would leave the gate holding keys against a mode it was never told (ED-22 on the Server
+    /// host, found by the layer-3 run of 2026-10-13). So nothing is skipped while anything is
+    /// owed.</summary>
+    private bool OwesAfterRenderWork()
+        => _jsEditingDirty
+            || (_editMode != EditMode.None) != _consumerHeardEditOpen
+            || (OnPointStateChanged.HasDelegate && CurrentPointState() != _pointStateTold)
+            || (_scrollHandle is not null && (KeyClaims() != _jsClaims || !ReferenceEquals(_declared, _jsDeclared)))
+            || _announcePending is not null
+            || _scrollerFocusOwed
+            || _editorNeedsFocus
+            || _focusRequest is not null;
 
     private static bool SameParameter(object? held, object? handed)
         => ReferenceEquals(held, handed)
