@@ -69,6 +69,12 @@ What the run does by hand is two kinds of work, and they age differently:
   both hosts and both browsers, the soak, the package check. Only the rows a person runs are judged by
   their code. "A criterion that could not be verified is not passed" holds: a row whose code is
   unchanged since its record was verified on that code.
+  *(2026-10-12, decided with the user: **one automated run is an exception**: the Wrappers' MudBlazor
+  floor run, with the layer-2 runs recorded beside it, is carried forward by its record, as
+  [ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)'s
+  notes of that date under "The Wrappers' MudBlazor range" say.)*
+  *(2026-10-12, decided with the user: a layer-2 run at a 9.x published after the floor record is a run
+  of its own, and its record is carried forward too.)*
 
 ### For `0.1.0`
 

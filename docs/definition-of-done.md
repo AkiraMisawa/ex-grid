@@ -154,7 +154,7 @@ allowed are the ones its own rows already state; the rows below cite them rather
 |---|---|---|---|---|
 | **PRE-1** | MUST | The whole solution builds with zero warnings | `nix develop -c dotnet build ExGrid.slnx` | `0 Warning(s)` and `0 Error(s)` |
 | **PRE-2** | MUST | The shipped packages — the ten under `src/` — target `net10.0` only, and raise no `LangVersion` (ADR-0022). *(Widened 2026-10-11, decided with the user, ADR-0200: it inspected `src/ExGrid/ExGrid.csproj` alone.)* | `grep -n "<TargetFramework" src/*/*.csproj`, and `grep -rn --include='*.csproj' --include='*.props' --include='*.targets' "<LangVersion" src/ Directory.Build.props` | one `<TargetFramework>net10.0</TargetFramework>` in each of the ten project files, and no `<TargetFrameworks>`; the second grep finds nothing |
-| **PRE-3** | MUST | No shipped package takes a package dependency its rows do not name, and `ExGrid` takes no third-party one: its `.nuspec` declares exactly `Microsoft.AspNetCore.Components.Web` at ADR-0022's floor (10.0.0) and `ExGrid.Data` at exactly the same version (ADR-0019; ADR-0130, DA-18). Every dependency on a package of the family is on exactly the same version (ADR-0042), and the other nine declare what these rows state: `ExGrid.MudBlazor` — `ExGrid` and MudBlazor (PRE-4, SH-47, DA-1); `ExGrid.Data` — nothing (DA-1); `ExGrid.Data.Arrow` — `ExGrid.Data` and `Apache.Arrow` within a stated range (DA-1); `ExSheet.Engine` — nothing (SH-1); `ExSheet` — `ExSheet.Engine` and `ExGrid` (SH-1); `ExSheet.MudBlazor` — `ExSheet`, `ExGrid.MudBlazor` and MudBlazor (SH-47); `ExPivot.Engine` — `ExGrid.Data` (PV-1); `ExPivot` — `ExPivot.Engine` and `ExGrid` (PV-1); `ExPivot.MudBlazor` — `ExPivot`, `ExGrid.MudBlazor` and MudBlazor from 9.0.0 (PV-1). Each Wrapper takes MudBlazor in the one range [ADR-0205](adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md) sets, `[9.0.0,10.0.0)`. *(Restated 2026-10-11, decided with the user. It said "`ExGrid` has no package dependency", checked with `dotnet list … package` for "no top-level package other than framework references", which a correct tree fails twice: `Microsoft.AspNetCore.Components.Web` is a package reference, at the floor ADR-0022 fixes, and `ExGrid.Data` has been one since ADR-0130. What it guarded — no third-party dependency in the core — is unchanged. Widened the same day to the ten packages, ADR-0200, with the Wrappers' MudBlazor range ADR-0205 decided.)* | `nix develop -c tests/ExGrid.PackageSmoke/check.sh`, which packs the ten packages and reads each `.nuspec`'s dependencies against these lists | it ends `package check: <version> passed` |
+| **PRE-3** | MUST | No shipped package takes a package dependency its rows do not name, and `ExGrid` takes no third-party one: its `.nuspec` declares exactly `Microsoft.AspNetCore.Components.Web` at ADR-0022's floor (10.0.0) and `ExGrid.Data` at exactly the same version (ADR-0019; ADR-0130, DA-18). Every dependency on a package of the family is on exactly the same version (ADR-0042), and the other nine declare what these rows state: `ExGrid.MudBlazor` — `ExGrid` and MudBlazor (PRE-4, SH-47, DA-1); `ExGrid.Data` — nothing (DA-1); `ExGrid.Data.Arrow` — `ExGrid.Data` and `Apache.Arrow` within a stated range (DA-1); `ExSheet.Engine` — nothing (SH-1); `ExSheet` — `ExSheet.Engine` and `ExGrid` (SH-1); `ExSheet.MudBlazor` — `ExSheet`, `ExGrid.MudBlazor` and MudBlazor (SH-47); `ExPivot.Engine` — `ExGrid.Data` (PV-1); `ExPivot` — `ExPivot.Engine` and `ExGrid` (PV-1); `ExPivot.MudBlazor` — `ExPivot`, `ExGrid.MudBlazor` and MudBlazor (PV-1). Each Wrapper takes MudBlazor in the one range [ADR-0205](adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md) sets, `[9.6.0,10.0.0)`. *(Restated 2026-10-11, decided with the user. It said "`ExGrid` has no package dependency", checked with `dotnet list … package` for "no top-level package other than framework references", which a correct tree fails twice: `Microsoft.AspNetCore.Components.Web` is a package reference, at the floor ADR-0022 fixes, and `ExGrid.Data` has been one since ADR-0130. What it guarded — no third-party dependency in the core — is unchanged. Widened the same day to the ten packages, ADR-0200, with the Wrappers' MudBlazor range ADR-0205 decided.)* *(2026-10-12, decided with the user: the range's floor is 9.6.0, raised from 9.0.0 (ADR-0205's note of that date), and `ExPivot.MudBlazor`'s entry no longer says "from 9.0.0", which read as a floor with no ceiling.)* | `nix develop -c tests/ExGrid.PackageSmoke/check.sh`, which packs the ten packages and reads each `.nuspec`'s dependencies against these lists | it ends `package check: <version> passed` |
 | **PRE-4** | MUST | The core, `src/ExGrid/`, references no Wrapper and no design system (ADR-0019/0030); the Wrapper packages beside it in `src/` depend on the core, never the reverse. Each of the ten packages references exactly the projects its rows state: `ExGrid` — `ExGrid.Data` (DA-1, DA-18); `ExGrid.MudBlazor` — `ExGrid`; `ExGrid.Data` — none (DA-1); `ExGrid.Data.Arrow` — `ExGrid.Data` (DA-1); `ExSheet.Engine` — none (SH-1); `ExSheet` — `ExSheet.Engine` and `ExGrid` (SH-1); `ExSheet.MudBlazor` — `ExSheet` and `ExGrid.MudBlazor` (SH-47); `ExPivot.Engine` — `ExGrid.Data` (PV-1); `ExPivot` — `ExPivot.Engine` and `ExGrid` (PV-1); `ExPivot.MudBlazor` — `ExPivot` and `ExGrid.MudBlazor` (PV-1). Only the three Wrappers use MudBlazor | `dotnet list <project> reference` for each of the ten (§22 Step 0), and grep the seven packages that are not Wrappers for a `using` of `MudBlazor` or `Fluxor` (§22 Step 3) | the references exactly as listed — for the core, the only project reference is `ExGrid.Data`; no match. *(Rewritten 2026-09-24: it used to grep all of `src/` for the bare words, which `src/ExGrid.MudBlazor/` — the Wrapper, living there by ADR-0019 — matches throughout, and so does a comment in the core naming `MudDataGrid`. What it asks is unchanged: that the dependency points one way)* *(Restated 2026-10-11, decided with the user: its pass said "no project reference", which a correct tree fails — the core has referenced `ExGrid.Data` since ADR-0130, for the Aggregations' one definition (DA-18). Widened the same day to the ten packages, ADR-0200; the grep for a `using` stays, over every package that is not a Wrapper.)* |
 | **PRE-5** | MUST | The layer-3 project declares **both** target browsers (ADR-0017, ADR-0026) | inspect `tests/ExGrid.Browser/playwright.config.mjs` | a `projects` array naming `chrome` and `msedge`; a single-browser config fails this outright |
 | **PRE-6** | MUST | Every file the build of the ten packages needs is git-tracked. *(Widened 2026-10-11, decided with the user, ADR-0200: it said "the build". All ten live under `src/`, so the check already read them; the statement now says so, and it is not ExGrid's alone.)* | `git status --porcelain -- src/` after a clean build | no untracked (`??`) file under `src/` |
@@ -1019,6 +1019,130 @@ EXGRID_HOSTING=server EXGRID_MEASURE=pointer npx playwright test measure.spec.mj
 Discharges UX-2..11/15/16, VZ-1/10, ED-2/3/4/9/11, KB-1/8/11/12/28..32, CP-4/5/6/10/14, BIG,
 PST-3/5, CON-1..6/8, DOM, ST-3, FN-21, and §23's layer-3 rows — the Wrapper's specs run in the
 same command, against the proof-of-concept page.
+*(2026-10-12, decided with the user: §23's layer-3 rows but WR-10, which the floor run below
+discharges.)*
+
+**The Wrappers' MudBlazor floor** ([ADR-0205](adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md), WR-10).
+*(Added 2026-10-12, decided with the user, when the floor was raised to 9.6.0.)* Once before the
+sign-off, the layer-3 tests that run under a Wrapper run against a DemoHost built with the MudBlazor
+every Wrapper declares as its floor, 9.6.0, on both hosts, in Chrome and in Edge, and at 150 % where
+`chrome-150` runs some of them. Every other run stays on the version the demo pages pin. The run is made
+at a commit, `C` below, from a clean tree, and its record goes in a directory of its own under
+`verification/`, `R` below. The demo pages are pinned for the run only, both hosts are built from
+clean, and the version each will load is read back before the run:
+
+```sh
+C=$(git rev-parse HEAD)            # the commit the run verifies
+R=verification/<date>-<name>       # the record's own directory
+mkdir -p "$R"
+sed -i -E 's|(Include="MudBlazor" Version=")[^"]*"|\19.6.0"|' samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj
+rm -rf samples/ExGrid.DemoHost/bin samples/ExGrid.DemoHost/obj/Debug \
+       samples/ExGrid.DemoHost.Server/bin samples/ExGrid.DemoHost.Server/obj/Debug
+nix develop -c dotnet build samples/ExGrid.DemoHost
+nix develop -c dotnet build samples/ExGrid.DemoHost.Server
+nix develop -c dotnet build samples/ExGrid.DemoApi
+# both name 9.6.0
+strings -el samples/ExGrid.DemoHost/bin/Debug/net10.0/wwwroot/_framework/MudBlazor.*.wasm | grep -A1 '^FileVersion'
+strings -el samples/ExGrid.DemoHost.Server/bin/Debug/net10.0/MudBlazor.dll | grep -A1 '^FileVersion'
+
+cd tests/ExGrid.Browser
+G="[Mm]ud|is not the grid's \(KB-35|apply the condition \(KB-31, SRV-5\)|Escape, Escape straight after an Inner Popup|a menu taking the keyboard a round trip late|with and without a Wrapper|SH-46/DC-59: the Selection's outline|the palette reaches the pane|RI-3: every page opens|inspectors\.spec\.mjs|WR-7a|DC-58: a bold number that fits"
+# every project: chrome, msedge, and chrome-150's Wrapper tests
+npx playwright test --grep "$G" 2>&1 | tee "../../$R/mudblazor-floor.log"
+EXGRID_HOSTING=server npx playwright test --grep "$G" 2>&1 \
+  | tee "../../$R/mudblazor-floor-server.log"
+cd ../..
+git checkout -- samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj
+```
+
+`G` is the tests that run under a Wrapper: those whose file, `describe` or title names MudBlazor or
+`mud` (the `?chrome=mud` variants among them), and, by name, those that open a page under a Wrapper
+without saying so. A test of the second kind joins `G` when it is written. On a machine without GNU
+`strings`, each `MudBlazor` file's version is read back another way; it is never assumed.
+
+Beside it, each Wrapper's layer-2 suite runs with MudBlazor pinned in its test project to every
+published version of the declared range: each 9.x from 9.6.0 on nuget.org at the time of the run, which
+the record names. The pin is the nearest reference, so NuGet takes it over the Wrapper's range, and the
+version each run loaded is read back. Layer 2 sees markup and a component's state, not focus or timing:
+it adds to the floor run and replaces nothing. Each version's output goes to a log of its own, which
+names the commit it ran at.
+
+```sh
+versions=$(curl -s https://api.nuget.org/v3-flatcontainer/mudblazor/index.json \
+  | grep -oE '"9\.[0-9]+\.[0-9]+"' | tr -d '"' | awk -F. '$2 >= 6' | sort -V)
+for v in $versions; do
+  for t in ExGrid.MudBlazor.Tests ExSheet.MudBlazor.Tests ExPivot.MudBlazor.Tests; do
+    sed -i "s|</Project>|  <ItemGroup><PackageReference Include=\"MudBlazor\" Version=\"$v\" /></ItemGroup>\n</Project>|" \
+      tests/$t/$t.csproj
+    echo "== $t, MudBlazor $v, at $(git rev-parse HEAD)"
+    nix develop -c dotnet test tests/$t
+    strings -el tests/$t/bin/Debug/net10.0/MudBlazor.dll | grep -A1 '^FileVersion'   # names $v
+    git checkout -- tests/$t/$t.csproj
+  done 2>&1 | tee "$R/mudblazor-layer2-$v.log"
+done
+```
+
+**The run tags the commit it verified.** *(2026-10-12, decided with the user: a verified commit's tag
+is `verified/` followed by the name of the record's directory under `verification/`, and nothing else,
+one tag per record directory.)* The record names `C` in full. In the same commit as the record, WR-10's
+entry in `verification/by-hand.json` names the commit, the tag, the record's path, the verdict and the
+MudBlazor versions its layer-2 runs covered, and empties `laterRecords`: a new floor run's layer-2 runs
+cover every published version of the range, and earlier later records were made on the Wrappers it
+replaces. The session that made the run then pushes the tag:
+
+```sh
+git add "$R" verification/by-hand.json
+git commit -m "WR-10: the Wrappers' MudBlazor floor run"
+git tag -a "verified/${R#verification/}" "$C" -m "The commit the Wrappers' MudBlazor floor run verified"
+git push origin "verified/${R#verification/}"
+```
+
+**The floor run's record, with the layer-2 runs beside it, holds while `src/*.MudBlazor/` and
+`samples/ExGrid.DemoPages/` are unchanged from the commit it was made at up to X** (ADR-0205's note of
+2026-10-12, the shape of ADR-0208's rows checked by hand). It is the one automated run of this step that
+a record carries forward, an exception to the note of 2026-10-11 above. *(2026-10-12, decided with the
+user: a later layer-2 run's record, a run of its own, is carried forward too.)* Whether a record still holds is
+read with git, from the commit its tag names, the glob spelled out so that it reaches every file below
+each Wrapper:
+
+```sh
+git diff --quiet <the record's tag> X -- ':(glob)src/*.MudBlazor/**' samples/ExGrid.DemoPages/ \
+  && echo "the floor record holds"
+```
+
+A change to either path asks for the floor run and the layer-2 runs again, at the floor then declared.
+*(2026-10-12, decided with the user: **a MudBlazor 9.x published after the floor record and before X
+asks for the layer-2 runs at that version only.** The floor run (layer 3 at 9.6.0) holds while its paths
+are unchanged.)* *(2026-10-12, decided with the user: **an unlisted version is not asked for.** The
+release check reports it as out of the check because it is unlisted.)*
+
+**A layer-2 run at a later 9.x is a run of its own.** *(2026-10-12, decided with the user: its record
+goes in its own `verification/<date>-<name>/` directory, and the run tags the commit it verified
+`verified/` followed by that directory's name, as every run does. WR-10's entry in
+`verification/by-hand.json` names that record (commit, tag, path, verdict, the version it covered)
+besides the floor record. The release check reads every record WR-10's entry names: the floor record's
+paths hold since its commit, and each later record's tag names its commit.)* The run is the loop above,
+with `C`, `R` and `versions` set for it first:
+
+```sh
+C=$(git rev-parse HEAD)                  # the commit the run verifies
+R=verification/<date>-<name>             # a directory of its own
+mkdir -p "$R"
+versions=<the new version>
+```
+
+In the same commit as its record, WR-10's entry names the record in `laterRecords`, and the floor record
+stays in `record`; the session that made the run then pushes its tag. The later record holds, as every
+record checked by hand does (ADR-0208) and as the floor record does, while `src/*.MudBlazor/` and
+`samples/ExGrid.DemoPages/` are unchanged between its commit and X; a run made where they differ from X's
+does not count.
+
+```sh
+git add "$R" verification/by-hand.json
+git commit -m "WR-10: the Wrappers' layer-2 runs at MudBlazor $versions"
+git tag -a "verified/${R#verification/}" "$C" -m "The commit the Wrappers' layer-2 runs at MudBlazor $versions verified"
+git push origin "verified/${R#verification/}"
+```
 
 ### Step 5 — The randomised consistency run
 
@@ -1130,6 +1254,7 @@ holding nothing of any real Consumer's domain.
 | **WR-7a** | MUST | Inside `MudExGridPaper` a Stretch-height grid takes the paper's height below the toolbar; a declared-height grid lays out as before (ADR-0030, 2026-09-26) | Layer 3 on the MudBlazor pages | the grid's bottom meets the paper's content bottom; the declared grids' boxes are unchanged |
 | **WR-8** | MUST | The Wrapper adds no script: no `.js` in the package and no interop call of its own; what MudBlazor's components run for themselves is MudBlazor's (ADR-0021 as narrowed by ADR-0039) | inspect the package; grep for `IJSRuntime`, `IJSObjectReference`, `.js` | none |
 | **WR-9** | MUST | The Wrapper's own suites hold the core's console rules: zero errors, zero page errors, zero warnings from ExGrid's or the Wrapper's code, no unhandled exception (CON-1/2/3/6) | the shared layer-3 fixture; layer 2's unobserved-exception handler | as the core's |
+| **WR-10** | MUST | Each MudBlazor Wrapper works at the floor it declares, 9.6.0, and across its declared range: the layer-3 tests run under `ExGrid.MudBlazor`, `ExSheet.MudBlazor` and `ExPivot.MudBlazor` pass against a DemoHost built with the floor's MudBlazor, on both hosts, in Chrome and in Edge; and each Wrapper's layer-2 suite passes with MudBlazor pinned to every published version of its declared range ([ADR-0205](adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)). *(Added 2026-10-12, decided with the user, when the floor was raised to 9.6.0: the Wrappers' layer-3 tests, run that day on Playwright's Chromium against a DemoHost at 9.0.0, failed on both hosts, and bisected over 9.0.0 to 9.9.0, the lowest version at which they passed, but for two failures that are not MudBlazor's, was 9.6.0. That record is not this row's floor run.)* | Step 4's floor run and its layer-2 runs, recorded under `verification/`. The record holds while `src/*.MudBlazor/` and `samples/ExGrid.DemoPages/` are unchanged from the commit it was made at up to X (ADR-0205's note of 2026-10-12, the shape of ADR-0208). *(2026-10-12, decided with the user: a MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only. The floor run (layer 3 at 9.6.0) holds while its paths are unchanged.)* *(2026-10-12, decided with the user: an unlisted version is not asked for; the release check reports it as out of the check because it is unlisted.)* *(2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own, whose record goes in its own `verification/<date>-<name>/` directory, and the run tags the commit it verified `verified/` followed by that directory's name; WR-10's entry in `verification/by-hand.json` names that record besides the floor record; the release check reads every record the entry names.)* Between floor runs, Step 1 holds the floor on every run: the Wrappers' suites resolve 9.6.0, and their WR-10 tests pin the role and name on the focusable element of every MudSelect a Wrapper draws, and a refused operand's words | zero failures; a layer-3 failure that also fails at the demo pages' version is that test's, and is judged by the run at that version |
 
 ---
 
@@ -1398,7 +1523,7 @@ combination cap are recorded in Step 6 and said as a known limitation; they do n
 
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
-| **PV-1** | MUST | `ExPivot.Engine` references `ExGrid.Data` exactly and no package. `ExPivot` references it and `ExGrid`, both exactly. `ExPivot.MudBlazor` references `ExPivot` and `ExGrid.MudBlazor` exactly, and MudBlazor from 9.0.0. Nothing references ExPivot but its Wrapper, the demo pages and the tests (ADR-0059/0062/0064) | the package check (`tests/ExGrid.PackageSmoke/check.sh`) | as stated |
+| **PV-1** | MUST | `ExPivot.Engine` references `ExGrid.Data` exactly and no package. `ExPivot` references it and `ExGrid`, both exactly. `ExPivot.MudBlazor` references `ExPivot` and `ExGrid.MudBlazor` exactly, and MudBlazor `[9.6.0,10.0.0)` (ADR-0205). Nothing references ExPivot but its Wrapper, the demo pages and the tests (ADR-0059/0062/0064/0205) *(restated 2026-10-12, decided with the user: it said "MudBlazor from 9.0.0", a floor with no ceiling, which ADR-0205 replaced with a range whose floor is now 9.6.0)* | the package check (`tests/ExGrid.PackageSmoke/check.sh`) | as stated |
 | **PV-2** | MUST | The report is one ExGrid. Local and server report sources supply the requested Window with the report's full extent through the same asynchronous contract (ADR-0151/0153, LV-25). The label columns are pinned Template Columns, and the column Items are Header Groups over the value columns. Group rows paint as Group and totals as Total. No column is Editable, and the header click selects. There is no column menu, sort or filter (ADR-0059/0151/0153) | Layer 2 | as stated |
 | **PV-3** | MUST | Items: text is told apart ignoring case and labelled by the first spelling to arrive among the records present; numbers by value, across Integer, Decimal and Double columns; dates by their clock value; a Blank as `(blank)`. They are ordered Number, Date, Text, Boolean, Error, Blank, with Blank last in either direction and a declared order first (ADR-0060) | Layer 1 | every clause a named test |
 | **PV-4** | MUST | The eleven Aggregations answer as Excel's, with blanks, text and errors among the records included. A total is aggregated from its records, never from the totals below it. Integer and Decimal columns are summed exactly. Only the parts the Value Fields ask for are accumulated (ADR-0060/0066) | Layer 1 | every row of each table |
