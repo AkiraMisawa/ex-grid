@@ -159,7 +159,7 @@
             if (Context.OpenRequest != Context.CloseRequest)
             {
                 _opened = true;
-                await Item.OpenChoicesAsync();
+                await Item.OpenChoicesFromKeyboardAsync();
             }
         }
     }

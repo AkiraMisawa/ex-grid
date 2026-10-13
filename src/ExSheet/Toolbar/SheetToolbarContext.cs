@@ -15,7 +15,7 @@ namespace ExSheet;
 public sealed class SheetToolbarContext
 {
     private readonly List<ToolbarItemBase> _items = [];
-    private readonly Func<string, IReadOnlyList<ToolbarChoice>, Func<Task>?, Action?, Task> _openChoices;
+    private readonly Func<string, IReadOnlyList<ToolbarChoice>, Func<Task>?, Action?, Task<bool>> _openChoices;
     private readonly Func<Task> _returnKeyboard;
     private readonly Action<string> _tell;
     private readonly Action _rowsChanged;
@@ -23,7 +23,7 @@ public sealed class SheetToolbarContext
     private int _nextId;
 
     internal SheetToolbarContext(
-        SheetComponent sheet, string idPrefix, Func<string, IReadOnlyList<ToolbarChoice>, Func<Task>?, Action?, Task> openChoices,
+        SheetComponent sheet, string idPrefix, Func<string, IReadOnlyList<ToolbarChoice>, Func<Task>?, Action?, Task<bool>> openChoices,
         Func<Task> returnKeyboard, Action<string> tell, Action rowsChanged)
     {
         Sheet = sheet;
@@ -134,6 +134,24 @@ public sealed class SheetToolbarContext
     /// <summary>Escape closed an item's list in the Sheet's built-in frame. Set by the toolbar.</summary>
     internal Func<ToolbarItemBase, Task>? ListEscapedHook { get; set; }
 
+    /// <summary>An item's list is asked to open from the toolbar's keys (decided with the user, 2026-10-13). Set by the toolbar.</summary>
+    internal Action<ToolbarItemBase>? ListOpeningHook { get; set; }
+
+    /// <summary>A Chrome's list holds the keyboard, or will not (<see cref="ToolbarItemContext.ChoicesOpened"/>). Set by the toolbar.</summary>
+    internal Func<ToolbarItemBase, bool, IReadOnlyList<KeyboardEventArgs>>? ListOpenedHook { get; set; }
+
+    /// <summary>The built-in frame's list was asked to open, and opened or not. Set by the toolbar.</summary>
+    internal Func<ToolbarItemBase, bool, Task>? ListOpenedInGridHook { get; set; }
+
+    /// <summary>The list of <paramref name="item"/> is asked to open from the toolbar's keys: the keys typed on the toolbar are held for it.</summary>
+    internal void ListOpening(ToolbarItemBase item) => ListOpeningHook?.Invoke(item);
+
+    /// <summary>A Chrome's list of <paramref name="item"/> holds the keyboard (<paramref name="took"/>), or will not: the keys held for it.</summary>
+    internal IReadOnlyList<KeyboardEventArgs> ListOpened(ToolbarItemBase item, bool took) => ListOpenedHook?.Invoke(item, took) ?? [];
+
+    /// <summary>The built-in frame's list of <paramref name="item"/> was asked to open: the keys held for it go to the grid.</summary>
+    internal Task ListOpenedInGridAsync(ToolbarItemBase item, bool opened) => ListOpenedInGridHook?.Invoke(item, opened) ?? Task.CompletedTask;
+
     /// <summary>A Chrome's list of <paramref name="item"/> begins to close: where the keys typed in it go meanwhile.</summary>
     internal Action<KeyboardEventArgs> ListClosing(ToolbarItemBase item, KeyboardEventArgs? closedBy) =>
         ListClosingHook?.Invoke(item, closedBy) ?? (static _ => { });
@@ -190,9 +208,10 @@ public sealed class SheetToolbarContext
 
     /// <summary>
     /// Opens <paramref name="item"/>'s choices in the Sheet's built-in frame, which tells the toolbar
-    /// when Escape closes them and when they have gone (ADR-0100's note of 2026-10-12).
+    /// when Escape closes them and when they have gone (ADR-0100's note of 2026-10-12), answering whether
+    /// they opened.
     /// </summary>
-    internal Task OpenChoicesOfAsync(ToolbarItemBase item, string title, IReadOnlyList<ToolbarChoice> choices) =>
+    internal Task<bool> OpenChoicesOfAsync(ToolbarItemBase item, string title, IReadOnlyList<ToolbarChoice> choices) =>
         _openChoices(title, choices, () => ListEscapedHook?.Invoke(item) ?? Task.CompletedTask, () => ListGone(item));
 
     internal string NextId() => $"{IdPrefix}-item-{_nextId++}";

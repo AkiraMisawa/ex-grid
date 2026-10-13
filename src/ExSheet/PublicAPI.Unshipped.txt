@@ -389,13 +389,15 @@ ExSheet.ToolbarItemContext.ChoicesClosed.get -> System.Func<System.Threading.Tas
 ExSheet.ToolbarItemContext.ChoicesClosed.init -> void
 ExSheet.ToolbarItemContext.ChoicesClosing.get -> System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs?, System.Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>!
 ExSheet.ToolbarItemContext.ChoicesClosing.init -> void
+ExSheet.ToolbarItemContext.ChoicesOpened.get -> System.Func<bool, System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>!
+ExSheet.ToolbarItemContext.ChoicesOpened.init -> void
 ExSheet.ToolbarItemContext.CloseRequest.get -> int
 ExSheet.ToolbarItemContext.CloseRequest.init -> void
 ExSheet.ToolbarItemContext.Colour.get -> ExSheet.Engine.CellColour?
 ExSheet.ToolbarItemContext.Colour.init -> void
 ExSheet.ToolbarItemContext.Content.get -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.ToolbarItemContext.Content.init -> void
-ExSheet.ToolbarItemContext.Deconstruct(out string! Id, out ExSheet.ToolbarItemKind Kind, out string! Name, out string? Shortcut, out ExSheet.ToolbarIcon Icon, out string? Text, out bool Pressed, out bool Enabled, out string? DisabledReason, out System.Func<System.Threading.Tasks.Task!>! Invoke, out System.Collections.Generic.IReadOnlyList<ExSheet.ToolbarChoice!>! Choices, out ExSheet.Engine.CellColour? Colour, out bool Active, out int OpenRequest, out int CloseRequest, out System.Func<System.Threading.Tasks.Task!>! ChoicesClosed, out System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs?, System.Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>! ChoicesClosing, out Microsoft.AspNetCore.Components.RenderFragment? Content, out string? KeyTip, out bool ShowKeyTip) -> void
+ExSheet.ToolbarItemContext.Deconstruct(out string! Id, out ExSheet.ToolbarItemKind Kind, out string! Name, out string? Shortcut, out ExSheet.ToolbarIcon Icon, out string? Text, out bool Pressed, out bool Enabled, out string? DisabledReason, out System.Func<System.Threading.Tasks.Task!>! Invoke, out System.Collections.Generic.IReadOnlyList<ExSheet.ToolbarChoice!>! Choices, out ExSheet.Engine.CellColour? Colour, out bool Active, out int OpenRequest, out int CloseRequest, out System.Func<System.Threading.Tasks.Task!>! ChoicesClosed, out System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs?, System.Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>! ChoicesClosing, out System.Func<bool, System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>! ChoicesOpened, out Microsoft.AspNetCore.Components.RenderFragment? Content, out string? KeyTip, out bool ShowKeyTip) -> void
 ExSheet.ToolbarItemContext.DisabledReason.get -> string?
 ExSheet.ToolbarItemContext.DisabledReason.init -> void
 ExSheet.ToolbarItemContext.Enabled.get -> bool
@@ -423,7 +425,7 @@ ExSheet.ToolbarItemContext.ShowKeyTip.get -> bool
 ExSheet.ToolbarItemContext.ShowKeyTip.init -> void
 ExSheet.ToolbarItemContext.Text.get -> string?
 ExSheet.ToolbarItemContext.Text.init -> void
-ExSheet.ToolbarItemContext.ToolbarItemContext(string! Id, ExSheet.ToolbarItemKind Kind, string! Name, string? Shortcut, ExSheet.ToolbarIcon Icon, string? Text, bool Pressed, bool Enabled, string? DisabledReason, System.Func<System.Threading.Tasks.Task!>! Invoke, System.Collections.Generic.IReadOnlyList<ExSheet.ToolbarChoice!>! Choices, ExSheet.Engine.CellColour? Colour, bool Active, int OpenRequest, int CloseRequest, System.Func<System.Threading.Tasks.Task!>! ChoicesClosed, System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs?, System.Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>! ChoicesClosing, Microsoft.AspNetCore.Components.RenderFragment? Content, string? KeyTip, bool ShowKeyTip) -> void
+ExSheet.ToolbarItemContext.ToolbarItemContext(string! Id, ExSheet.ToolbarItemKind Kind, string! Name, string? Shortcut, ExSheet.ToolbarIcon Icon, string? Text, bool Pressed, bool Enabled, string? DisabledReason, System.Func<System.Threading.Tasks.Task!>! Invoke, System.Collections.Generic.IReadOnlyList<ExSheet.ToolbarChoice!>! Choices, ExSheet.Engine.CellColour? Colour, bool Active, int OpenRequest, int CloseRequest, System.Func<System.Threading.Tasks.Task!>! ChoicesClosed, System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs?, System.Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>! ChoicesClosing, System.Func<bool, System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>! ChoicesOpened, Microsoft.AspNetCore.Components.RenderFragment? Content, string? KeyTip, bool ShowKeyTip) -> void
 ExSheet.ToolbarItemContext.Tooltip.get -> string!
 ExSheet.ToolbarItemFace
 ExSheet.ToolbarItemFace.<Clone>$() -> ExSheet.ToolbarItemFace!

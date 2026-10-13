@@ -131,6 +131,16 @@ public sealed record ToolbarChoice(
 /// the keys typed on its band, and hands them all on, in order, to where the keyboard goes when
 /// <see cref="ChoicesClosed"/> is called. A Chrome that does not call it leaves those keys to its list, which
 /// is about to go.</param>
+/// <param name="ChoicesOpened">A Chrome whose list is its own calls this once the list it opened for
+/// <see cref="OpenRequest"/> holds the keyboard, with true, or once it knows the list will not take it — it
+/// did not open — with false (decided with the user, 2026-10-13). On a circuit the list takes the keyboard a
+/// round trip after the toolbar asked for it, and the keys typed on the toolbar meanwhile are the list's, as
+/// they would be had they been typed a moment later: the Sheet Toolbar holds them from the moment it asks,
+/// and answers them, in order, to a call with true, for the Chrome to answer as typed in the list, ahead of
+/// any typed in it since; with false it answers none and gives them to the toolbar itself. The keys of a
+/// list the toolbar closes before it is opened (<see cref="CloseRequest"/>) go where the toolbar takes the
+/// keyboard, and a call after that answers none. A Chrome that never calls it leaves the toolbar holding
+/// them until the keyboard leaves the toolbar.</param>
 /// <param name="Content">A Consumer item's own content, drawn in place of a picture and text; null for
 /// ExSheet's items.</param>
 /// <param name="KeyTip">The item's KeyTip letters; null for none.</param>
@@ -153,6 +163,7 @@ public sealed record ToolbarItemContext(
     int CloseRequest,
     Func<Task> ChoicesClosed,
     Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs?, Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs>> ChoicesClosing,
+    Func<bool, IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs>> ChoicesOpened,
     Microsoft.AspNetCore.Components.RenderFragment? Content,
     string? KeyTip,
     bool ShowKeyTip)
@@ -170,6 +181,7 @@ public sealed record ToolbarItemContext(
         && Choices.SequenceEqual(other.Choices) && Colour == other.Colour && Active == other.Active
         && OpenRequest == other.OpenRequest && CloseRequest == other.CloseRequest
         && ReferenceEquals(ChoicesClosed, other.ChoicesClosed) && ReferenceEquals(ChoicesClosing, other.ChoicesClosing)
+        && ReferenceEquals(ChoicesOpened, other.ChoicesOpened)
         && ReferenceEquals(Content, other.Content) && KeyTip == other.KeyTip && ShowKeyTip == other.ShowKeyTip;
 
     /// <inheritdoc />

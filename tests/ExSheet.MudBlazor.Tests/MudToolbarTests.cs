@@ -369,6 +369,33 @@ public class MudToolbarTests : MudSheetTestContext
         Assert.Equal(0, closed);
     }
 
+    [Fact] // ADR-0100's ToolbarItemContext.ChoicesOpened (decided with the user, 2026-10-13): once its list holds the keyboard, the MudBlazor item answers the keys the toolbar held for it, in order, as typed in the list
+    public void The_keys_held_while_the_list_opened_are_answered_in_it()
+    {
+        SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("Server", isInteractive: true));
+        var chosen = new List<string>();
+        var asked = new List<bool>();
+        var provider = Render<MudProviders.MudPopoverProvider>();
+        ToolbarItemContext Context(int open) => new(
+            "test-fill", ToolbarItemKind.Split, "Fill Colour", null, ToolbarIcon.Fill, null, false, true, null,
+            () => Task.CompletedTask,
+            [new ToolbarChoice("No Fill", () => { chosen.Add("No Fill"); return Task.CompletedTask; }),
+             new ToolbarChoice("Red", () => { chosen.Add("Red"); return Task.CompletedTask; }, Colour: CellColour.FromRgb(0xFF0000))],
+            null, false, open, 0, () => Task.CompletedTask, _ => _ => { },
+            took =>
+            {
+                asked.Add(took);
+                return [new KeyboardEventArgs { Key = "ArrowDown" }, new KeyboardEventArgs { Key = "Enter" }];
+            }, null, null, false);
+        var item = Render<MudToolbarItem>(ps => ps.Add(p => p.Context, Context(0)));
+
+        item.Render(ps => ps.Add(p => p.Context, Context(1)));
+
+        // ↓ from No Fill to Red, then Enter chooses it: the list closes with the choice made.
+        item.WaitForAssertion(() => Assert.Equal(["Red"], chosen));
+        Assert.Equal([true], asked);
+    }
+
     private static ToolbarItemContext ItemContext(int open, int close, Action closed) => new(
         "test-fill", ToolbarItemKind.Split, "Fill Colour", null, ToolbarIcon.Fill, null, false, true, null,
         () => Task.CompletedTask, [new ToolbarChoice("No Fill", () => Task.CompletedTask), new ToolbarChoice("Red", () => Task.CompletedTask, Colour: CellColour.FromRgb(0xFF0000))],
@@ -376,5 +403,5 @@ public class MudToolbarTests : MudSheetTestContext
         {
             closed();
             return Task.CompletedTask;
-        }, _ => _ => { }, null, null, false);
+        }, _ => _ => { }, _ => [], null, null, false);
 }

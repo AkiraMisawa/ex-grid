@@ -55,6 +55,7 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     private Func<Task>? _invoke;
     private Func<Task>? _choicesClosed;
     private Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs?, Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs>>? _choicesClosing;
+    private Func<bool, IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs>>? _choicesOpened;
     private string? _id;
 
     /// <summary>The Sheet Toolbar this item stands in.</summary>
@@ -113,11 +114,12 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
             return Context.ListClosedAsync(this);
         };
         _choicesClosing ??= closedBy => Context.ListClosing(this, closedBy);
+        _choicesOpened ??= took => Context.ListOpened(this, took);
         return new ToolbarItemContext(
             _id, face.Kind, face.Name, face.Shortcut, face.Icon, face.Text, face.Pressed,
             Enabled: face.Kind != ToolbarItemKind.Separator && disabledReason is null,
             disabledReason, _invoke, face.Choices, face.Colour,
-            Active: ReferenceEquals(context.Active, this), _openRequest, _closeRequest, _choicesClosed, _choicesClosing, face.Content,
+            Active: ReferenceEquals(context.Active, this), _openRequest, _closeRequest, _choicesClosed, _choicesClosing, _choicesOpened, face.Content,
             KeyTipLetters, ShowKeyTip: context.ShowsKeyTip(this));
     }
 
@@ -132,6 +134,9 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
         {
             // Opened from a KeyTip, Escape goes back to the KeyTips (ADR-0100's note of 2026-10-12).
             Context.KeyTipList = fromKeyTip ? this : null;
+            // The keys typed on the toolbar until the list holds the keyboard are the list's (decided
+            // with the user, 2026-10-13): held from now.
+            Context.ListOpening(this);
             _openRequest++;
             _choicesMayBeOpen = true;
             StateHasChanged();
@@ -143,6 +148,17 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
 
     /// <summary>Opens the item's choices in the Sheet's built-in frame.</summary>
     internal Task OpenChoicesAsync() => Context.OpenChoicesOfAsync(this, Face().Name, Face().Choices);
+
+    /// <summary>
+    /// Opens the item's choices in the Sheet's built-in frame for the toolbar's keys (<see cref="ToolbarItemContext.OpenRequest"/>):
+    /// the keys the toolbar held meanwhile go to the grid, which hands them to the list once it holds the
+    /// keyboard (decided with the user, 2026-10-13).
+    /// </summary>
+    internal async Task OpenChoicesFromKeyboardAsync()
+    {
+        var opened = await Context.OpenChoicesOfAsync(this, Face().Name, Face().Choices);
+        await Context.ListOpenedInGridAsync(this, opened);
+    }
 
     /// <summary>Closes the item's choices in the Sheet's built-in frame, if they are what it shows.</summary>
     internal Task CloseChoicesAsync() => Context.CloseChoicesAsync(Face().Name);

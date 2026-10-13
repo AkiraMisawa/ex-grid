@@ -307,7 +307,12 @@
                 // A list a press opened is drawn already, and takes the keyboard now; one that did
                 // not open (its item disabled meanwhile) takes nothing.
                 if (standing) await OnListDrawnAsync();
-                else if (!_open) _keyboardIntoList = false;
+                else if (!_open)
+                {
+                    // It did not open: the keys the toolbar held for it are the toolbar's.
+                    _keyboardIntoList = false;
+                    Context.ChoicesOpened(false);
+                }
             }
         }
         if (_leaving && !_leftFromElement)
@@ -404,6 +409,25 @@
         _focused = selected.choice is null ? Next(-1, 1) : selected.at;
         _keyboardInList = true;
         await FocusChoiceAsync(_focused, preventScroll: true);
+        // The keys typed on the toolbar while the list was on its way are the list's, in order, ahead of
+        // any typed in it since (decided with the user, 2026-10-13).
+        await AnswerInTurnAsync(Context.ChoicesOpened(true));
+    }
+
+    // Keys answered in turn: those handed on first, and those typed in the list meanwhile behind them.
+    private List<KeyboardEventArgs>? _inTurn;
+
+    private async Task AnswerInTurnAsync(IReadOnlyList<KeyboardEventArgs> keys)
+    {
+        if (keys.Count == 0) return;
+        _inTurn = [.. keys];
+        while (_inTurn.Count > 0)
+        {
+            var key = _inTurn[0];
+            _inTurn.RemoveAt(0);
+            await AnswerChoiceKeyAsync(key);
+        }
+        _inTurn = null;
     }
 
     // A choice took DOM focus by other means than the keys here — a press, Tab from the page: the
@@ -416,7 +440,18 @@
 
     // A key in the list: the built-in list's meanings, so that swapping the Chrome changes no
     // behaviour (ADR-0100, ADR-0039).
-    private async Task OnChoiceKeyAsync(KeyboardEventArgs e)
+    private Task OnChoiceKeyAsync(KeyboardEventArgs e)
+    {
+        // Behind keys the toolbar handed on, which are answered first.
+        if (_inTurn is { } waiting)
+        {
+            waiting.Add(e);
+            return Task.CompletedTask;
+        }
+        return AnswerChoiceKeyAsync(e);
+    }
+
+    private async Task AnswerChoiceKeyAsync(KeyboardEventArgs e)
     {
         // Typed while the list closes: the toolbar's to hold, in order, for where the keyboard lands.
         if (_closing)

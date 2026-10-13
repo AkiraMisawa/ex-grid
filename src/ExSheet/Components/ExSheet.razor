@@ -1823,13 +1823,14 @@
     // opened them, as Excel went back one level when read on Windows (observed, the readings of 2026-10-12,
     // R2 (b); ADR-0100's note of that day), so the toolbar hears it
     // as the grid closes the popover, and hears when they have gone, however they closed.
-    private async Task OpenToolbarChoicesAsync(string title, IReadOnlyList<ToolbarChoice> choices, Func<Task>? escaped, Action? gone)
+    private async Task<bool> OpenToolbarChoicesAsync(string title, IReadOnlyList<ToolbarChoice> choices, Func<Task>? escaped, Action? gone)
     {
-        if (_grid is not { } grid || choices.Count == 0) return;
+        if (_grid is not { } grid || choices.Count == 0) return false;
         var opened = escaped is null
             ? await grid.OpenPopoverAsync(popover => ToolbarChoices(title, choices, popover, gone), title)
             : await grid.OpenPopoverAsync(popover => ToolbarChoices(title, choices, popover, gone), title, escaped);
         if (opened) _toolbarChoicesTitle = title;
+        return opened;
     }
 
     // The toolbar list the grid's popover frame was last opened with, by its title: the one a close

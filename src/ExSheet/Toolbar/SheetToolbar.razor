@@ -51,7 +51,12 @@
     own, as Excel's Format menu is behind O (observed, R2 (a): three Escapes after Alt, H, O left Excel
     Ready). A list closing is the keyboard in flight: the keys typed
     meanwhile, in the list itself (ToolbarItemContext.ChoicesClosing) or on the band, are held and
-    handed on in order to where the keyboard lands (decided with the user, 2026-10-12).
+    handed on in order to where the keyboard lands (decided with the user, 2026-10-12). So is a list
+    opening from the toolbar's keys: the keys typed on the band until the list holds the keyboard are
+    the list's, handed to it in order (decided with the user, 2026-10-13) — to a Chrome's own list
+    when it says it holds the keyboard (ToolbarItemContext.ChoicesOpened), and to the built-in list
+    through the grid, which takes them with the keyboard from the band and hands them to its popover
+    once that holds the keyboard (ADR-0050 item 16's note of 2026-10-12).
 
     The band answers only its own keys. A Chrome's control inside it that a Tab reaches — MudMenu's
     button — keeps the keys typed on it: none of them is held, and none presses another item.
@@ -97,6 +102,9 @@
     private bool _heldForBand;
     // The toolbar has asked the grid to take the keyboard back, and the grid has not yet asked for the keys.
     private bool _handingBack;
+    // An item's list asked to open from the keys, whose keyboard has not yet landed in it: the keys held
+    // meanwhile are its own (decided with the user, 2026-10-13).
+    private ToolbarItemBase? _openingList;
     // A Chrome's list closing (ChoicesClosing), whether Escape closed it, until it says it has closed.
     private ToolbarItemBase? _closingList;
     private bool _closingByEscape;
@@ -124,6 +132,9 @@
     {
         Context.LeaveToolbar = GiveKeyboardBackAsync;
         Context.StartKeyTips = StartKeyTipsAsync;
+        Context.ListOpeningHook = ListOpening;
+        Context.ListOpenedHook = ListOpened;
+        Context.ListOpenedInGridHook = ListOpenedInGridAsync;
         Context.ListClosingHook = ListClosing;
         Context.ListClosedHook = ListClosedAsync;
         Context.ListEscapedHook = ListEscapedAsync;
@@ -249,6 +260,78 @@
         await Context.ReturnKeyboardAsync();
     }
 
+    // ---- A list opening (decided with the user, 2026-10-13) ----
+
+    /// <summary>
+    /// An item's list is asked to open from the toolbar's keys: on a circuit it takes the keyboard a round
+    /// trip later, and the keys typed on the band meanwhile are its own. They are held from now.
+    /// </summary>
+    private void ListOpening(ToolbarItemBase item)
+    {
+        _openingList = item;
+        if (_typedOnTheWay is null)
+        {
+            _typedOnTheWay = [];
+            _heldForBand = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// A Chrome's own list holds the keyboard (<see cref="ToolbarItemContext.ChoicesOpened"/>): the keys held
+    /// for it are its own, answered for the Chrome to hand to it. One that will not take the keyboard gives
+    /// them back to the band, which holds it still. A list the toolbar has since closed, or that another way
+    /// of the keyboard has taken the keys from, has none.
+    /// </summary>
+    private IReadOnlyList<KeyboardEventArgs> ListOpened(ToolbarItemBase item, bool took)
+    {
+        if (!TakeOpeningHold(item, out var keys)) return [];
+        if (took) return keys;
+        _ = AnswerOnBandAsync(keys);
+        return [];
+    }
+
+    /// <summary>
+    /// The built-in frame's list was asked to open from the toolbar's keys: the grid takes the keyboard from
+    /// the band, with the keys held for the list, and hands them to its popover once that holds the keyboard
+    /// (ADR-0050 item 16's note of 2026-10-12: a keyboard already in the grid's popover stays there). A list
+    /// that did not open leaves them to the band.
+    /// </summary>
+    private Task ListOpenedInGridAsync(ToolbarItemBase item, bool opened)
+    {
+        if (!ReferenceEquals(_openingList, item)) return Task.CompletedTask;
+        if (!opened)
+        {
+            if (TakeOpeningHold(item, out var keys)) _ = AnswerOnBandAsync(keys);
+            return Task.CompletedTask;
+        }
+        _openingList = null;
+        if (Context.TakeKeyboardBack is not { } takeBack) return Task.CompletedTask;
+        _heldForBand = false;
+        _handingBack = true;
+        _typedOnTheWay ??= [];
+        return takeBack(_band, _handKeysOn);
+    }
+
+    // The hold for a list opening, ended: its keys, unless a hand-back or a close has taken the hold over.
+    private bool TakeOpeningHold(ToolbarItemBase item, out IReadOnlyList<KeyboardEventArgs> keys)
+    {
+        keys = [];
+        if (!ReferenceEquals(_openingList, item)) return false;
+        _openingList = null;
+        if (_handingBack || _closingList is not null || _heldForBand) return false;
+        keys = _typedOnTheWay ?? [];
+        _typedOnTheWay = null;
+        StateHasChanged();
+        return true;
+    }
+
+    // Keys held for a list that did not take the keyboard: the band's own, in order.
+    private async Task AnswerOnBandAsync(IReadOnlyList<KeyboardEventArgs> keys)
+    {
+        foreach (var key in keys) await OnKeyAsync(key);
+    }
+
     // ---- A list closing (ADR-0100's note of 2026-10-12, decided with the user) ----
 
     /// <summary>
@@ -258,6 +341,7 @@
     /// </summary>
     private Action<KeyboardEventArgs> ListClosing(ToolbarItemBase item, KeyboardEventArgs? closedBy)
     {
+        if (ReferenceEquals(_openingList, item)) _openingList = null;
         _closingList = item;
         _closingByEscape = closedBy is { Key: "Escape" };
         if (_typedOnTheWay is null)
@@ -325,6 +409,7 @@
     /// </summary>
     private async Task BandTakesKeyboardBackAsync()
     {
+        _openingList = null;
         _typedOnTheWay ??= [];
         _heldForBand = true;
         _handingBack = false;
@@ -351,6 +436,8 @@
     private Task GiveKeyboardBackAsync()
     {
         _bandTakePending = false;
+        // A list on its way: its keys are the Sheet's now, with the keyboard (CloseRequest).
+        _openingList = null;
         if (Context.TakeKeyboardBack is not { } takeBack) return Context.ReturnKeyboardToSheetAsync();
         // The keys held for this band, or for a list closing, are the Sheet's now, ahead of any typed after.
         _heldForBand = false;
@@ -371,6 +458,7 @@
         _typedOnTheWay = null;
         _handingBack = false;
         _closingList = null;
+        _openingList = null;
         _defaultsHeld = true;
         _ = LetDefaultsGoAsync();
         return keys;
@@ -407,6 +495,9 @@
         Context.Changed -= OnToolbarChanged;
         if (Context.LeaveToolbar == GiveKeyboardBackAsync) Context.LeaveToolbar = null;
         if (Context.StartKeyTips == StartKeyTipsAsync) Context.StartKeyTips = null;
+        if (Context.ListOpeningHook == ListOpening) Context.ListOpeningHook = null;
+        if (Context.ListOpenedHook == ListOpened) Context.ListOpenedHook = null;
+        if (Context.ListOpenedInGridHook == ListOpenedInGridAsync) Context.ListOpenedInGridHook = null;
         if (Context.ListClosingHook == ListClosing) Context.ListClosingHook = null;
         if (Context.ListClosedHook == ListClosedAsync) Context.ListClosedHook = null;
         if (Context.ListEscapedHook == ListEscapedAsync) Context.ListEscapedHook = null;
@@ -417,7 +508,8 @@
     {
         _hasFocus = true;
         _bandTakePending = false;
-        if (_typedOnTheWay is { } held && (_heldForBand || !_handingBack))
+        // A list on its way keeps its hold: the band holding the keyboard is where its keys are typed.
+        if (_typedOnTheWay is { } held && (_heldForBand || !_handingBack) && (_openingList is null || _heldForBand))
         {
             // The keyboard has landed here: the keys held for the band are its own, in order — one of them
             // giving the keyboard back holds the rest for the Sheet. A hold nothing is handing back, a
