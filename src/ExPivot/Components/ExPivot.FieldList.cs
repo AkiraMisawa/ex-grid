@@ -455,13 +455,15 @@ public partial class ExPivot
         // A panel's first control is a field, where what a key types only the browser can do. The
         // report's grid, where one is shown, takes the keyboard from the button with the keys typed on
         // it, holds those typed after, and hands them to the field, in turn, once the field takes the
-        // keyboard from it (ADR-0050 item 16's notes of 2026-10-12). A menu's keys are answered here.
+        // keyboard from it (ADR-0050 item 16's notes of 2026-10-12). The hand-off to the panel is told
+        // after the keyboard is asked back, so it is not taken as reached on the button, which holds the
+        // keyboard until the grid has it. A menu's keys are answered here.
         if (surface.Kind is not (Surface.Menu or Surface.LayoutMenu)
             && _grid is { } grid && _selectedSheet is null && _dialog is null && _report is { IsEmpty: false })
         {
             surface.ThroughGrid = true;
-            _ = grid.HandKeyboardToFrameAsync();
             _ = grid.ReturnKeyboardAsync(_pivotElement, TypedOnTheWay);
+            _ = grid.HandKeyboardToFrameAsync();
         }
     }
 

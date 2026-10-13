@@ -905,6 +905,19 @@ public class ShippedStylesheetTests
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), passOut);
     }
 
+    [Fact] // ADR-0061 (decided with the user, 2026-10-13) / ADR-0050 item 16: the keys a frame hands back while a hand-off stands wait for it, and go on there
+    public void Keys_a_frame_hands_back_while_a_hand_off_stands_wait_for_it()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var drain = Regex.Match(script, @"const drain = async \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        var typedOnTheWay = Regex.Match(drain, @"if \(k\.typedOnTheWay !== undefined\) \{.*?\n                continue;\n            \}", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(typedOnTheWay);
+
+        // In their place, ahead of every key typed on the root since; and, a hand-off standing — the keyboard
+        // going on from this root to a frame of the Consumer's own — held until it arrives, then handed there.
+        Assert.Matches(new Regex(@"held\.unshift\(.*?\)\)\)\);\s*(//[^\n]*\s*)*if \(handOff !== null\) \{\s*await editorSettled\(\);\s*\}\s*continue;", RegexOptions.Singleline), typedOnTheWay);
+    }
+
     [Fact] // ADR-0080 / ADR-0021's seventh entry / ADR-0018: the Keyboard Field's listeners are on the root, on every grid, and go with the instance
     public void ADR0080_the_keyboard_fields_listeners_are_on_every_root_and_go_with_the_instance()
     {

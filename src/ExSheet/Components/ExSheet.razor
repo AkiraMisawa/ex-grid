@@ -916,8 +916,13 @@
             if (_formatCells is not null && _formatCellsFrame is null) await grid.ClosePopoverAsync();
             // The keyboard is the frame's from here, however Format Cells was opened — the menu's
             // command, Ctrl+1 or the Consumer's own call: the keys typed until the frame takes it
-            // are held for it, never the grid's (ADR-0050 item 16, 2026-10-01).
-            await grid.HandKeyboardToFrameAsync();
+            // are held for it, never the grid's (ADR-0050 item 16, 2026-10-01). Chosen in a toolbar
+            // list of the Chrome's own as it closes, the keyboard is on the toolbar and comes back
+            // through the grid: the hand-off is told once the grid has asked for it back, so the keys
+            // the toolbar hands back go on to Format Cells (TakeKeyboardBackFromToolbarAsync). Told now,
+            // it would be taken as reached on the toolbar (ADR-0039's note of 2026-10-13).
+            if (_toolbar?.ClosingList == true) _formatCellsHandOffAfterToolbar = true;
+            else await grid.HandKeyboardToFrameAsync();
             _formatCells = context;
             _formatCellsFrame = frame;
             StateHasChanged();
@@ -989,6 +994,7 @@
     private async Task EndFormatCellsAsync(bool byTheFrame)
     {
         if (_formatCells is null) return;
+        _formatCellsHandOffAfterToolbar = false;
         var ownFrame = _formatCellsFrame is not null;
         _leavingFormatCellsFrame = byTheFrame ? _formatCellsFrame : null;
         _formatCells = null;
@@ -1941,13 +1947,27 @@
     }
 
     // The core's focus function from the toolbar, with the keys typed on it on the way. Without a grid
-    // there is nothing to hand them to.
+    // there is nothing to hand them to. Format Cells opened by a choice in the closing list: the keyboard
+    // goes on to its frame, with those keys (ShowFormatCellsAsync).
     private Task TakeKeyboardBackFromToolbarAsync(ElementReference from, Func<IReadOnlyList<KeyboardEventArgs>> typedOnTheWay)
     {
-        if (_grid is { } grid) return grid.ReturnKeyboardAsync(from, typedOnTheWay);
-        typedOnTheWay();
-        return Task.CompletedTask;
+        if (_grid is not { } grid)
+        {
+            typedOnTheWay();
+            return Task.CompletedTask;
+        }
+        var back = grid.ReturnKeyboardAsync(from, typedOnTheWay);
+        if (_formatCellsHandOffAfterToolbar)
+        {
+            _formatCellsHandOffAfterToolbar = false;
+            if (_formatCellsFrame is not null) _ = grid.HandKeyboardToFrameAsync();
+        }
+        return back;
     }
+
+    // Format Cells' frame opened as a toolbar list of the Chrome's own closed: its hand-off waits for the
+    // toolbar to give the keyboard back through the grid.
+    private bool _formatCellsHandOffAfterToolbar;
 
     private RenderFragment ToolbarChoices(string title, IReadOnlyList<ToolbarChoice> choices, GridPopoverContext popover, Action? gone) =>
         @<ToolbarChoicesPanel Title="@title" Choices="choices" Popover="popover" Gone="gone" Standing="@(() => _toolbarChoicesTitle == title)" />;

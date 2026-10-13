@@ -253,6 +253,21 @@ public class MudToolbarTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.Equal(CellFill.Solid(below.Colour), FormatAt(page, "B2").Fill));
     }
 
+    [Fact] // ADR-0039 (2026-10-13) / ADR-0050 item 16: More Number Formats… in a MudBlazor list opens Format Cells, and the hand-off to its frame is told after the toolbar gives the keyboard back through the grid, so the keys handed back go on to it
+    public async Task More_number_formats_hands_the_keyboard_on_to_format_cells_after_the_toolbar_gives_it_back()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
+        await GoToAsync(page, "B2");
+        await Wrapper(page, "Number Format").QuerySelector("button[aria-label=\"Number Format\"]")!.ClickAsync(new MouseEventArgs());
+        page.WaitForAssertion(() => Assert.Single(Lists(page)));
+        var ways = KeyboardWays.Count;
+
+        await page.FindAll(".mud-ex-sheet-toolbar-choices .mud-menu-item").Single(i => i.TextContent.Trim() == "More Number Formats…").ClickAsync(new MouseEventArgs());
+
+        page.WaitForAssertion(() => Assert.True(IsOpen(page)));
+        page.WaitForAssertion(() => Assert.Equal(["takeKeyboardBack", "handOff:frame"], KeyboardWays.Skip(ways)));
+    }
+
     [Fact] // ADR-0100, SH-50: a choice pressed with the pointer closes the list and gives the keyboard back to the Sheet
     public async Task A_pressed_choice_closes_the_list_and_gives_the_keyboard_back()
     {

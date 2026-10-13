@@ -61,6 +61,12 @@ public abstract class MudSheetTestContext : BunitContext
     /// keys typed there on the way (ADR-0050 item 16's note of 2026-10-12).</summary>
     protected int TakeBackCount => _handle.Invocations["takeKeyboardBack"].Count;
 
+    /// <summary>The grid's asks of its key gate about where the keyboard goes — a hand-off, or a hand-back
+    /// from a frame — in the order made: <c>handOff:frame</c>, <c>takeKeyboardBack</c>.</summary>
+    protected IReadOnlyList<string> KeyboardWays =>
+        [.. _handle.Invocations.Where(i => i.Identifier is "handOff" or "takeKeyboardBack")
+            .Select(i => i.Identifier == "handOff" ? "handOff:" + (string)i.Arguments[0]! : i.Identifier)];
+
     /// <summary>How many times the keyboard has been asked back for the Sheet, either way: the plain
     /// hand-back, or the hand-back from a frame with the keys typed on the way (decided with the user,
     /// 2026-10-13).</summary>

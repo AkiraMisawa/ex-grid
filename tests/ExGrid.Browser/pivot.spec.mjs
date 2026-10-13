@@ -596,10 +596,13 @@ for (const chrome of ['builtin', 'mud']) {
 
             await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Desk', 'Region']);
             await expect(menu).toHaveCount(0);
-            await expect(entry(page, 'Region')).toBeFocused();
+            // The keyboard goes back to the pane's entries, as after Move Down pressed by hand.
+            const focusedEntry = () => page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '');
+            await expect.poll(focusedEntry).toMatch(/^Options for /);
             await circuitQuiet();
             await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Desk', 'Region']);
             await expect(menu).toHaveCount(0);
+            await expect.poll(focusedEntry).toMatch(/^Options for /);
         });
 
         test(`ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, letters typed straight after Enter on a report filter are typed into its Filter…'s search, as typed slowly (${chrome})`, async ({ page }) => {

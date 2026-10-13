@@ -1126,6 +1126,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // keeps the keyboard where it can (the hand-back after a command, into the Keyboard Field on
     // a grid that edits), so the keys are heard here: one typed on nothing reaches no grid at all.
     let handOff = null;
+    // The control outside this root that held DOM focus when a hand-off to a frame was told: the frame
+    // the keyboard is coming from — ExPivot's button whose panel is opening, ExSheet's toolbar closing a
+    // list as Format Cells opens — not the one it is going to, which the hand-off has reached only once
+    // another control outside the root holds the keyboard. The keys come on through this root, handed
+    // back with those typed on the way (takeKeyboardBack), and go on to the frame in order (decided with
+    // the user, 2026-10-13: ADR-0061's keys typed while a menu or panel opens; ADR-0050 item 16).
+    let handOffFrom = null;
     // ExSheet's KeyTips (ADR-0100; ADR-0050 item 16's note of 2026-10-12): the Alt key gone down alone, on
     // the root or in an edit, while the Consumer declares it (Alt+Alt), and not yet released — and, while
     // keys are held, the held keydown it was. The release is the Consumer's to answer — a Blazor keyup on
@@ -1234,7 +1241,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // to, and the keys held here are not that grid's (ADR-0018).
     const inOtherGrid = () => outsideControl()?.closest('.ex-grid') != null;
     const handedOver = () => handOff === null
-        || (handOff === 'popover' ? popoverFocused() : outsideControl() !== null && !inOtherGrid());
+        || (handOff === 'popover' ? popoverFocused()
+            : outsideControl() !== null && outsideControl() !== handOffFrom && !inOtherGrid());
 
     // The keyboard handed on inside a popover, or out of it (ADR-0044): Tab, Shift+Tab or E on
     // a command moves it into the filter below, E on the value list to the search box, and a
@@ -1397,6 +1405,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     handOffMissed = !disposed && !handedOver();
                     deliveringOutside = handOff === 'frame' && !handOffMissed;
                     handOff = null;
+                    handOffFrom = null;
                 }
                 frameInTurn = null;
                 resolve();
@@ -1799,6 +1808,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     inFindField: false,
                     paint: k.paint,
                 })).filter((t) => t.key.length > 0 && (t.altUp !== true || t.key === 'Alt'))));
+                // The keyboard taken back through this root to go on to a frame of the Consumer's own, told
+                // while the frame's keys were asked for — ExPivot's report filter whose Filter… is opening
+                // (decided with the user, 2026-10-13, ADR-0061): they wait for it to arrive and go there, in
+                // order, as every key held while a hand-off stands does, and none is gated against the root
+                // (ADR-0050 item 16's note of 2026-10-12).
+                if (handOff !== null) {
+                    await editorSettled();
+                }
                 continue;
             }
             // A composition that ended in the Keyboard Field (ADR-0080): with no edit open, the
@@ -3556,6 +3573,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 return;
             }
             handOff = to;
+            handOffFrom = to === 'frame' ? outsideControl() : null;
             handOffMissed = false;
             if (answering) {
                 holdStartedAt = performance.now();

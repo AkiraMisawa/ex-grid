@@ -397,6 +397,46 @@ for (const chrome of ['builtin', 'mud']) {
         await expectKeyboardOn(grid);
     });
 
+    test(`ADR-0039 (2026-10-13)/ADR-0100: More Number Formats… opens Format Cells with the keyboard in it, and Escape typed straight after the choice closes it, as typed slowly (${chrome})`, async ({ page }) => {
+        await openSheet(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'C2');
+        const formatCells = formatCellsOf(page, grid, chrome);
+        const before = await page.locator('#sheet-focus-number-format').textContent();
+        // The Number Format's list from its KeyTip, holding the keyboard on its last choice.
+        const onMoreNumberFormats = async () => {
+            await keyTips(page, 'h', 'n');
+            await expect(openLists(page).locator(':focus')).toHaveCount(1);
+            await page.keyboard.press('End');
+            await expect(openLists(page).locator(':focus')).toContainText('More Number Formats');
+        };
+
+        // Slowly: Enter opens Format Cells, which takes the keyboard; Escape closes it.
+        await onMoreNumberFormats();
+        await page.keyboard.press('Enter');
+        await expect(formatCells).toBeVisible();
+        await expect(openLists(page)).toHaveCount(0);
+        await expect.poll(() => formatCells.evaluate((f) => f.contains(document.activeElement))).toBe(true);
+        await page.keyboard.press('Escape');
+        await expect(formatCells).toHaveCount(0);
+        await expectKeyboardOn(grid);
+
+        // At once, at an 80 ms round trip on the Server host: the Escape typed while the list closes and
+        // Format Cells opens is Format Cells', and closes it, never the grid's.
+        await onMoreNumberFormats();
+        await setRoundTrip(80);
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('Escape');
+
+        await expect(openLists(page)).toHaveCount(0);
+        await circuitQuiet();
+        await expect(formatCells).toHaveCount(0);
+        await expectKeyboardOn(grid);
+        await setRoundTrip(0);
+        // Format Cells closed by Escape set nothing.
+        await expect(page.locator('#sheet-focus-number-format')).toHaveText(before ?? '');
+    });
+
     test(`ADR-0100 (the seventeenth Windows run, Part D): the keyboard handed back from the toolbar leaves no console warning while the accessibility tree is on (${chrome})`, async ({ page }) => {
         await openSheet(page, chrome);
         const grid = sheet(page);

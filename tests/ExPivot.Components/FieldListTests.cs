@@ -413,7 +413,10 @@ public class FieldListTests : PivotTestContext
 
         await cut.InvokeAsync(() => cut.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs()));
 
-        // The grid is told the keyboard is going to a frame of ExPivot's, and takes it from the button.
+        // The grid takes the keyboard from the button, and then is told it is going on to a frame of
+        // ExPivot's: told first, the hand-off would be taken as reached on the button.
+        Assert.Equal(["takeKeyboardBack", "handOff"],
+            handle.Invocations.Where(i => i.Identifier is "takeKeyboardBack" or "handOff").Select(i => i.Identifier));
         Assert.Contains(handle.Invocations, i => i.Identifier == "handOff" && (string?)i.Arguments[0] == "frame");
         var takeBack = handle.Invocations.Single(i => i.Identifier == "takeKeyboardBack");
         // Enter and E typed on the button before the grid has the keyboard: held, and Enter's press is none.

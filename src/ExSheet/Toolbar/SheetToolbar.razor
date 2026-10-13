@@ -344,6 +344,7 @@
     {
         if (ReferenceEquals(_openingList, item)) _openingList = null;
         _closingList = item;
+        Context.ClosingList = true;
         _closingByEscape = closedBy is { Key: "Escape" };
         if (_typedOnTheWay is null)
         {
@@ -367,6 +368,7 @@
     {
         var escaped = ReferenceEquals(_closingList, item) && _closingByEscape;
         if (ReferenceEquals(_closingList, item)) _closingList = null;
+        Context.ClosingList = false;
         var fromKeyTip = ReferenceEquals(Context.KeyTipList, item);
         if (fromKeyTip) Context.KeyTipList = null;
         if (KeyTipsShown || (escaped && fromKeyTip))
