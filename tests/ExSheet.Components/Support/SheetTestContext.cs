@@ -57,6 +57,16 @@ public abstract class SheetTestContext : BunitContext
     /// <summary>Where the grid told its key gate the keyboard is going, in order (ADR-0050 item 16, 2026-10-01).</summary>
     internal IReadOnlyList<string> HandOffs => [.. _handle.Invocations["handOff"].Select(i => (string)i.Arguments[0]!)];
 
+    /// <summary>Runs <paramref name="heard"/> at each request for the keyboard back on the root, as the
+    /// grid makes it, so a test can read what stood on screen at that moment (ADR-0039). A handler that
+    /// matches nothing, registered after the one that answers: bUnit asks it first.</summary>
+    internal void OnReclaim(Action heard)
+        => _handle.SetupVoid(invocation =>
+        {
+            if (invocation.Identifier == "reclaimFocus") heard();
+            return false;
+        });
+
     /// <summary>How many times Escape with nothing to dismiss has told the gate to release Tab
     /// (ADR-0012, rewritten 2026-10-01). The handle has no blur: a call to one fails the strict
     /// stub.</summary>
