@@ -1,5 +1,7 @@
 # Windows, 2026-10-12: FN-12e's glyph widths under a Japanese display language
 
+**Verified commit:** `f5b9f093dd22b0977f13f0886d971aef2a855e13` — tagged `verified/2026-10-12-windows-glyphs-ja` (the orchestrator's reading of 2026-10-13: the measure.mjs and corpus.json it ran are f5b9f093's)
+
 **Branch `claude/exsheet-windows-glyphs-ja-2026-10-12`, from `claude/run17gh-glyphs` at `f5b9f093`**, which carries
 the fixed `tests/GlyphWidths/measure.mjs` (it runs on Windows and in Edge) and the English (United Kingdom) Windows
 records of the seventeenth run. Asked by the requesting session, before `0.1.0-rc.1`, with the user's agreement. Run
