@@ -1,5 +1,8 @@
 @page "/"
 @using System.Globalization
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 
 <PageTitle>Exposure chart PoC</PageTitle>
 
@@ -110,7 +113,32 @@
                 <p class="filter-note">The CSV holds what the chart shows.</p>
             </div>
         }
-        <div class="chart-body">@((MarkupString)_svg!)</div>
+        <div class="chart-body" @ref="_chartBody">
+            @((MarkupString)_pageSvg!)
+            @if (_band is { } band && band < model.Dates.Count)
+            {
+                var anchor = ChartSvg.Anchor(model, band);
+                <div class="chart-tip @(anchor.OnLeft ? "on-left" : "")" role="tooltip"
+                     style="left: @Percent(anchor.X); top: @Percent(anchor.Top)">
+                    <div class="tip-date">@Key(model.Dates[band])</div>
+                    @foreach (var panel in model.Panels)
+                    {
+                        @if (panel.Title.Length > 0)
+                        {
+                            <div class="tip-group">@panel.Title</div>
+                        }
+                        @foreach (var series in panel.Series)
+                        {
+                            <div class="tip-row">
+                                <span class="swatch ex-chart-swatch-@(series.Slot % 5)"></span>
+                                <span class="tip-name">@(panel.Title.Length > 0 ? series.Leaf : series.Name)</span>
+                                <span class="tip-value">@(series.Points[band].Y is { } v ? series.Text(v) : "(no value)")</span>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+        </div>
     </section>
 }
 
@@ -166,7 +194,15 @@
 
     private ChartDefinition? _definition;
     private ChartModel? _model;
-    private string? _svg, _csv, _refusal;
+    private string? _svg, _pageSvg, _csv, _refusal;
+
+    // The tooltip: which date the pointer is over, as the chart's listener reports it.
+    private int _drawing;
+    private int? _band;
+    private ElementReference _chartBody;
+    private string? _attachedTo;
+    private IJSObjectReference? _module, _listener;
+    private DotNetObjectReference<Exposure>? _self;
 
     protected override void OnInitialized()
     {
@@ -221,7 +257,10 @@
     {
         if (_definition is null) return;
         _model = ChartModelBuilder.Build(_definition, _columns, _groups, _rows, IsChange, _layout, _view);
+        _drawing++;
+        _band = null;
         _svg = ChartSvg.Write(_model);
+        _pageSvg = ChartSvg.Write(_model, _drawing, forFile: false);
         _csv = ChartCsv.Write(_model);
     }
 
@@ -261,6 +300,44 @@
     private static DateOnly? Parse(object? value) =>
         DateOnly.TryParseExact(value as string, "yyyy-MM-dd", Invariant, DateTimeStyles.None, out var d) ? d : null;
 
-    private void CloseChart() => (_definition, _model, _svg, _csv, _filterOpen) = (null, null, null, null, false);
+    private void CloseChart() => (_definition, _model, _svg, _pageSvg, _csv, _filterOpen, _band) = (null, null, null, null, null, false, null);
+
+    /// <summary>The listener's report. One taken against an earlier drawing names a date of a
+    /// chart no longer shown, and is dropped rather than shown against this one.</summary>
+    [JSInvokable]
+    public void OnBand(int drawing, int band)
+    {
+        if (drawing != _drawing) return;
+        int? next = band >= 0 ? band : null;
+        if (next == _band) return;
+        _band = next;
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // The chart's element is new each time a chart opens; the listener follows it.
+        var id = _model is null ? null : _chartBody.Id;
+        if (id == _attachedTo) return;
+        _attachedTo = id;
+        if (_listener is not null) { await _listener.DisposeAsync(); _listener = null; }
+        if (id is null) return;
+        _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./exposure-chart.js");
+        _self ??= DotNetObjectReference.Create(this);
+        _listener = await _module.InvokeAsync<IJSObjectReference>("attach", _chartBody, _self);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_listener is not null) await _listener.DisposeAsync();
+            if (_module is not null) await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException) { }
+        _self?.Dispose();
+    }
+
+    private static string Percent(double fraction) => (fraction * 100).ToString("0.###", Invariant) + "%";
 
 }

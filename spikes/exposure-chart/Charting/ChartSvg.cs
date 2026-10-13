@@ -40,17 +40,40 @@ public static class ChartSvg
         .ex-chart-dot { stroke: var(--ex-chart-surface, #fff); stroke-width: 1.5; }
         """;
 
-    public static string Write(ChartModel model)
+    /// <summary>Where a tooltip stands, as fractions of the drawn chart, so the page places it
+    /// with percentages and never measures the SVG.</summary>
+    public readonly record struct TipAnchor(double X, double Top, bool OnLeft);
+
+    public static TipAnchor Anchor(ChartModel model, int index)
+    {
+        var (_, height, legendHeight) = Heights(model);
+        var first = model.Dates[0].DayNumber;
+        var span = Math.Max(1, model.Dates[^1].DayNumber - first);
+        var x = Left + (Width - Left - Right) * (model.Dates[index].DayNumber - first) / span;
+        return new TipAnchor(x / Width, (legendHeight + Top) / height, x / Width > 0.6);
+    }
+
+    private static (double PanelHeight, double Height, double Legend) Heights(ChartModel model)
+    {
+        var panels = model.Panels.Count;
+        double panelHeight = panels == 1 ? 360 : 190;
+        double legendHeight = LegendRows(model) * 18 + 6;
+        return (panelHeight, legendHeight + panels * (Top + panelHeight) + (panels - 1) * Gap + Bottom, legendHeight);
+    }
+
+    /// <param name="version">Stamped on the drawing, so that a pointer report taken against an
+    /// older drawing is recognised and dropped.</param>
+    /// <param name="forFile">A file opened on its own has no page to draw a tooltip: it carries
+    /// a native <c>&lt;title&gt;</c> per date instead.</param>
+    public static string Write(ChartModel model, int version = 0, bool forFile = true)
     {
         var panels = model.Panels.Count;
         if (panels == 0 || model.Dates.Count == 0)
             return Empty(model, panels);
-        var panelHeight = panels == 1 ? 360 : 190;
-        var legendHeight = LegendRows(model) * 18 + 6;
-        var height = legendHeight + panels * (Top + panelHeight) + (panels - 1) * Gap + Bottom;
+        var (panelHeight, height, legendHeight) = Heights(model);
         var plotWidth = Width - Left - Right;
         var svg = new StringBuilder();
-        svg.Append(Invariant, $"""<svg xmlns="http://www.w3.org/2000/svg" class="ex-chart-root" viewBox="0 0 {Width} {height}" width="{Width}" height="{height}" role="img">""");
+        svg.Append(Invariant, $"""<svg xmlns="http://www.w3.org/2000/svg" class="ex-chart-root" data-ex-chart-version="{version}" viewBox="0 0 {Width} {height}" width="{Width}" height="{height}" role="img">""");
         svg.Append("<style>").Append(Style).Append("</style>");
 
 
@@ -121,7 +144,7 @@ public static class ChartSvg
             var date = model.Dates[i];
             var from = i == 0 ? Left : (X(model.Dates[i - 1]) + X(date)) / 2;
             var to = i == model.Dates.Count - 1 ? Width - Right : (X(date) + X(model.Dates[i + 1])) / 2;
-            svg.Append("""<g class="ex-chart-hit">""");
+            svg.Append(Invariant, $"""<g class="ex-chart-hit" data-ex-chart-band="{i}">""");
             svg.Append(Invariant, $"""<rect x="{from:0.##}" y="{plotTop:0.##}" width="{Math.Max(1, to - from):0.##}" height="{lastBottom - plotTop:0.##}"/>""");
             svg.Append("""<g class="ex-chart-hover">""");
             Line(svg, X(date), plotTop, X(date), lastBottom, "ex-chart-guide");
@@ -136,7 +159,9 @@ public static class ChartSvg
                     var cy = top + panelHeight - panelHeight * axis.Fraction(value);
                     svg.Append(Invariant, $"""<circle class="ex-chart-dot ex-chart-slot-{series.Slot % 5}" cx="{X(date):0.##}" cy="{cy:0.##}" r="3.5"/>""");
                 }
-            svg.Append("</g><title>").Append(Escape(readout.ToString())).Append("</title></g>");
+            svg.Append("</g>");
+            if (forFile) svg.Append("<title>").Append(Escape(readout.ToString())).Append("</title>");
+            svg.Append("</g>");
         }
 
         return svg.Append("</svg>").ToString();

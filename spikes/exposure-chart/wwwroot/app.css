@@ -24,3 +24,11 @@ h1 { font-size: 18px; margin: 0 0 4px; }
 .ex-chart-swatch-0 { background: var(--ex-chart-slot-0); }
 .ex-chart-swatch-1 { background: var(--ex-chart-slot-1); }
 .ex-chart-swatch-2 { background: var(--ex-chart-slot-2); }
+.chart-body { position: relative; }
+.chart-tip { position: absolute; transform: translateX(12px); pointer-events: none; background: #fff; border: 1px solid #d1d5db;
+  border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.12); padding: 8px 10px; font-size: 12px; min-width: 180px; z-index: 2; }
+.chart-tip.on-left { transform: translateX(calc(-100% - 12px)); }
+.tip-date { font-weight: 600; margin-bottom: 4px; }
+.tip-group { color: #6b7280; margin-top: 4px; font-size: 11px; }
+.tip-row { display: grid; grid-template-columns: 16px 1fr auto; gap: 6px; align-items: center; }
+.tip-value { font-variant-numeric: tabular-nums; text-align: right; }

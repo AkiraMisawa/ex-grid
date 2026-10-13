@@ -17,7 +17,7 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
 | | |
 |---|---|
 | ![Panel per group, hovered](screenshots/hover.png) | ![One axis](screenshots/one-axis.png) |
-| ![Chart Filters](screenshots/filter.png) | |
+| ![Chart Filters](screenshots/filter.png) | ![Tooltip](screenshots/tooltip.png) |
 
 ## How it is built
 
@@ -29,9 +29,17 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
 - **Nothing is guessed.** Headers are not data; series names and panels come from the Header
   Groups ("EPE(0) · Before"); the axis is the one Date column, and a selection without one, with
   two, or with a text column is refused by name.
-- **SVG written in C#** (`ChartSvg`), one string that is both the picture and the download. The
-  hover guide, the dots and the readout are CSS `:hover` and a native `<title>` — no JavaScript,
-  nothing over the circuit while the pointer moves.
+- **SVG written in C#** (`ChartSvg`). The hover guide and the dots are CSS `:hover`, instant and
+  with no circuit traffic. The downloaded file carries a native `<title>` per date instead of a
+  tooltip, since it has no page to draw one.
+- **The tooltip is one listener, in ADR-0029's shape** (`wwwroot/exposure-chart.js`; the user
+  allowed widening the JavaScript allowlist for it, 2026-10-13 — the ADR is for the grilling to
+  write). It reports the date under the pointer **only when it changes** and when the pointer
+  leaves — 48 frames on the circuit for 89 mousemoves across 44 dates — and never measures: Blazor
+  draws the tooltip at a percentage of the chart's width that C# computed. Each report carries the
+  drawing's version, and one taken against an earlier drawing (a filter changed meanwhile) is
+  dropped, not shown against the new one (spine rule 6). Values read through the column's own
+  format, so the tooltip and the cell say the same digits.
 - **Chart Filters, as Excel's funnel beside a chart** (`ChartView`): series by checkbox, by
   Header Group, or by leaf across every group ("hide every Before"); dates by a From/To range or a
   horizon (1Y / 5Y / 10Y / All) rather than Excel's one checkbox per category, which for 67 dates
@@ -52,9 +60,9 @@ Select **Date** and the figures (drag, or click a header and Ctrl+click others),
    the tenor grid widens from monthly to quarterly to yearly, so the line jumps where the bucket
    width does. A series needs a declared kind — a level (EPE) or an amount per period (CVA by
    bucket), drawn as steps or bars, or normalised by the bucket's length.
-4. **The tooltip is the weak point of "no JavaScript".** A native `<title>` appears after about a
-   second and cannot be styled. A real readout needs the pointer reported, which is ADR-0029's
-   kind of listener — an allowlist question.
+4. **The tooltip was the weak point of "no JavaScript"**: a native `<title>` appears after about a
+   second and cannot be styled. It is now a listener (above). On the Server host the tooltip
+   follows the pointer one round trip behind; the guide line, being CSS, does not.
 5. **Text is not measured**, so the legend wraps on an estimate per character (ADR-0021).
 6. **The rows a selection names are the shown rows.** Under a filter, the chart is of what was
    visible; "the whole table" means the Window, not the Consumer's data.
