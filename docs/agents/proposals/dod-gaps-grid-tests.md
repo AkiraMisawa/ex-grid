@@ -145,17 +145,19 @@ new ->
   surviving row and the same instance re-renders none; the Definition of Done's RR-5, which asked
   that a fresh-but-equal array re-render nothing, was restated to match, since "equal" columns would
   call two `Format` delegates equal that paint differently.)*
-  *(2026-10-13, decided with the user: the same instance with other elements counts as a change, for
-  `Columns`, `HeaderGroups` and `Sorts` alike — a column added, replaced, removed or moved in place is
-  taken as a new list, compared element by element by reference, so a fresh copy is what the grid
-  holds and everything keyed on the list's identity rebuilds by the one path a new list takes. The
-  column state the grid itself holds — the column whose popover is open, the column a resize grip is
-  dragging, a column's measured Auto width for the same instance — is carried across by the column's
-  Name, as AG Grid matches re-applied columnDefs by colId. What is derived from a definition is not
-  carried across instances, by the note above. The Selection, the Copied Range and an open edit still
-  go when the visible columns change (ADR-0011). A list handed to the grid is drawn from the copy the
-  grid takes when it is handed; a Consumer's in-place mutation shows when the list is handed again,
-  never through a render of the grid's own in between.)*
+  *(2026-10-13, decided with the user: a list handed to the grid is drawn from the copy the grid
+  takes when it is handed — for `Columns`, `HeaderGroups` and `Sorts`, a read-only copy, which is
+  also what the grid's property answers. A Consumer's in-place mutation shows when the list is
+  handed again, never through a render of the grid's own in between. Handed again, the list is
+  compared with the copy element by element, by reference: the same instance with other elements —
+  a column added, replaced, removed or moved in place — is a new list, of which a new copy is taken,
+  and everything keyed on the list's identity rebuilds by the one path a new list takes; the copy
+  itself handed back, or a list holding its elements, is no change. The column state the grid
+  itself holds — the column whose popover is open, the column a resize grip is dragging, a
+  column's measured Auto width for the same instance — is carried across by the column's Name, as
+  AG Grid matches re-applied columnDefs by colId. What is derived from a definition is not carried
+  across instances, by the note above. The Selection, the Copied Range and an open edit still go
+  when the visible columns change (ADR-0011).)*
 ```
 
 ### Definition of Done, a new row after FN-21 (FN-22 is the first free FN number)
@@ -167,7 +169,7 @@ old ->
 new ->
 ```
 | **FN-21** | MUST | A Chrome seam's contents may hold an **Inner Popup** drawn outside the instance root. While one is open: Escape closes the Inner Popup first and the next Escape the popover; under the design system's default (`ModalOverlay = false`) a pointer-down elsewhere in the instance closes both and keeps its own meaning, and under `ModalOverlay = true` only the Inner Popup closes; closing the popover any way removes the Inner Popup; DOM focus returns to the root (ADR-0039) | Layer 2: the contents report the popup through `InnerPopupChanged`, and the gate is told; Layer 3 with `ExGrid.MudBlazor`'s filter panel — a `MudSelect` and a `MudDatePicker` — by pointer and by key, under both settings, with two grids on the page and with one inside a `MudDialog` | every clause observed; the other grid unaffected |
-| **FN-22** | MUST | A `Columns`, `HeaderGroups` or `Sorts` list handed again as the same instance with other elements is taken as a new list — a column added, replaced, removed or moved in place repaints header and cells when the list is handed again, and never before, through a render of the grid's own: the grid draws from the copy it took when handed the list — and the column state the grid holds (an open column popover, a resize in progress, a measured Auto width of the same instance) follows its column by Name; the same list holding the same elements renders nothing (ADR-0003, note of 2026-10-13; ADR-0027 P3) | Layer 2: a Consumer changing its lists in place, the grid rendering for its own reasons, then the Consumer rendering | the old state painted until the list is handed again, then each change; the open menu on its column after a move; no render when nothing changed |
+| **FN-22** | MUST | A `Columns`, `HeaderGroups` or `Sorts` list handed again as the same instance with other elements is taken as a new list — a column added, replaced, removed or moved in place repaints header and cells when the list is handed again, never before (not through a render of the grid's own in between), since the grid draws from the read-only copy it took when handed the list — and the column state the grid holds (an open column popover, a resize in progress, a measured Auto width of the same instance) follows its column by Name; the same list holding the same elements renders nothing (ADR-0003, note of 2026-10-13; ADR-0027 P3) | Layer 2: a Consumer changing its lists in place, the grid rendering for its own reasons, then the Consumer rendering | the old state painted until the list is handed again, then each change; the open menu on its column after a move; no render when nothing changed |
 ```
 
 ### Docs Site (pages are off limits to this branch)

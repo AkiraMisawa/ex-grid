@@ -1115,7 +1115,9 @@
     /// of them are pinned. Which columns show and in what order is View State the Consumer
     /// holds (ADR-0001/0010). A new list, or the same list with other columns in it, is a
     /// change; the same list holding the same column instances is none (ADR-0003, its note of
-    /// 2026-10-13). What the grid holds per column follows the column by its
+    /// 2026-10-13). The grid draws from a read-only copy it takes when it is handed the list, and
+    /// reading this property answers that copy: a change made in place shows when the list is
+    /// handed again, never before. What the grid holds per column follows the column by its
     /// <see cref="GridColumn{TRow}.Name"/>.
     /// </summary>
     [Parameter, EditorRequired] public IReadOnlyList<GridColumn<TRow>> Columns { get; set; } = [];
@@ -1125,7 +1127,9 @@
     /// row, declared by member names (ADR-0032). Null or empty means the band is the
     /// one header row it always was. Refused by name at resolution: an unknown member,
     /// members not adjacent in the current order, overlapping rectangles, a rectangle
-    /// straddling the pinned boundary.
+    /// straddling the pinned boundary. As with <see cref="Columns"/>, the grid draws from a
+    /// read-only copy taken when the list is handed, which this property answers; a change made
+    /// in place shows when the list is handed again (ADR-0003, the note of 2026-10-13).
     /// </summary>
     [Parameter] public IReadOnlyList<HeaderGroup>? HeaderGroups { get; set; }
 
@@ -1325,7 +1329,10 @@
     /// The Sort in force, outermost first — what the header indicator and
     /// <c>aria-sort</c> are painted from, and what the next header click cycles from
     /// (ADR-0012/0023). The grid never sorts: the Consumer applies this and pushes the
-    /// reordered Window in, bumping <see cref="RowSequenceVersion"/> (ADR-0001/0011).
+    /// reordered Window in, bumping <see cref="RowSequenceVersion"/> (ADR-0001/0011). As with
+    /// <see cref="Columns"/>, the grid draws from a read-only copy taken when the list is handed,
+    /// which this property answers; a change made in place shows when the list is handed again
+    /// (ADR-0003, the note of 2026-10-13).
     /// </summary>
     [Parameter] public IReadOnlyList<SortSpec>? Sorts { get; set; }
 
@@ -2766,9 +2773,9 @@
             || _editorNeedsFocus
             || _focusRequest is not null;
 
-    /// <summary>How many times this grid has read a group out of its own copies of the Header
-    /// Groups declaration, by index: with one group declared, how many times it resolved the
-    /// membership (ADR-0032, HG-11), wherever it did so. The grid resolves from its copy and never
+    /// <summary>How many times this grid has read its own copies of the Header Groups declaration,
+    /// a group by index or the whole by enumeration: with one group declared, how many times it
+    /// resolved the membership (ADR-0032, HG-11), wherever and however it did so. The grid resolves from its copy and never
     /// reads the Consumer's list for it, so this is where a resolution can be seen.</summary>
     internal int HeaderGroupResolutions
         => _retiredGroupReads + (_takenLists.TryGetValue(nameof(HeaderGroups), out var groups) && groups.Copy is TakenCopy<HeaderGroup> copy ? copy.Reads : 0);
@@ -2810,7 +2817,7 @@
             return wasNull;
         }
         if (taken is not null && (ReferenceEquals(handed, taken.Copy)
-            || (ReferenceEquals(handed, taken.Handed) && SameElements((System.Collections.IEnumerable)taken.Copy!, handed))))
+            || (ReferenceEquals(handed, taken.Handed) && SameElements(taken.Copy!, handed))))
         {
             return true;
         }
@@ -2820,19 +2827,28 @@
         return false;
     }
 
-    /// <summary>Whether <paramref name="handed"/> holds exactly the copy's elements, in order: both
-    /// read once by their enumerators, never an indexer.</summary>
-    private static bool SameElements(System.Collections.IEnumerable copy, object handed)
+    /// <summary>Whether <paramref name="handed"/> holds exactly the copy's elements, in order: the
+    /// handed list read once by its enumerator, never its indexer, and the copy's elements read
+    /// without being counted.</summary>
+    private static bool SameElements(object copy, object handed)
     {
         if (handed is not System.Collections.IEnumerable sequence)
             return false;
-        var mine = copy.GetEnumerator();
+        System.Collections.IList items = copy switch
+        {
+            TakenCopy<GridColumn<TRow>> columns => columns.Items,
+            TakenCopy<HeaderGroup> groups => groups.Items,
+            TakenCopy<SortSpec> sorts => sorts.Items,
+            _ => Array.Empty<object>(),
+        };
+        var at = 0;
         foreach (var element in sequence)
         {
-            if (!mine.MoveNext() || !ReferenceEquals(mine.Current, element))
+            if (at == items.Count || !ReferenceEquals(items[at], element))
                 return false;
+            at++;
         }
-        return !mine.MoveNext();
+        return at == items.Count;
     }
 
     /// <summary>The grid's own copy of a handed list, read once through its indexer.</summary>
@@ -2843,8 +2859,9 @@
         _ => new TakenCopy<SortSpec>((IReadOnlyList<SortSpec>)handed),
     };
 
-    /// <summary>A read-only copy of a handed list, which counts the reads made through its indexer
-    /// (<see cref="HeaderGroupResolutions"/>); its enumerator counts nothing.</summary>
+    /// <summary>A read-only copy of a handed list, which counts every read made of it — each
+    /// element read by index, and each enumeration (<see cref="HeaderGroupResolutions"/>) —
+    /// apart from the grid's own comparison, which reads <see cref="Items"/>.</summary>
     private sealed class TakenCopy<T> : IReadOnlyList<T>
     {
         private readonly T[] _items;
@@ -2869,9 +2886,17 @@
 
         public int Count => _items.Length;
 
-        public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)_items).GetEnumerator();
+        /// <summary>The elements, read without being counted: the grid's own comparison with a
+        /// list handed again.</summary>
+        public T[] Items => _items;
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => _items.GetEnumerator();
+        public IEnumerator<T> GetEnumerator()
+        {
+            Reads++;
+            return ((IEnumerable<T>)_items).GetEnumerator();
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
     /// <summary>Puts the copies the grid took in place of the lists handed, first thing in

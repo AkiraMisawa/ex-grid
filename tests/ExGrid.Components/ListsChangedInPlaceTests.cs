@@ -277,4 +277,56 @@ public class ListsChangedInPlaceTests : GridTestContext
         Assert.Equal("yRow 000003", FirstRowCells(host)[1]);
         Assert.Equal("xRow 000003", FirstRowCells(host)[^1]);
     }
+
+    private async Task ScrollOnItsOwnAsync(IRenderedComponent<InPlaceConsumer> host)
+    {
+        var grid = host.FindComponent<ExGrid<TestRow>>();
+        var renders = grid.RenderCount;
+        await ScrollToAsync(host.Find(".ex-scroller"), 3 * 20);
+        await host.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+        Assert.True(grid.RenderCount > renders, "the scroll rendered nothing, so this proves nothing");
+    }
+
+    [Fact] // FN-22, ADR-0003 (2026-10-13): Sorts changed in place show when handed again, not through a render of the grid's own
+    public async Task FN22_sorts_changed_in_place_wait_for_the_list_to_be_handed_again()
+    {
+        var host = RenderConsumer();
+
+        host.Instance.Sorts.Add(new SortSpec("Book", SortDirection.Ascending));
+        await ScrollOnItsOwnAsync(host);
+        Assert.NotEqual("ascending", host.FindAll(".ex-header-cell")[0].GetAttribute("aria-sort"));
+
+        Rerender(host);
+        Assert.Equal("ascending", host.FindAll(".ex-header-cell")[0].GetAttribute("aria-sort"));
+    }
+
+    [Fact] // FN-22, ADR-0003 (2026-10-13) / ADR-0032: Header Groups changed in place show when handed again, not through a render of the grid's own
+    public async Task FN22_header_groups_changed_in_place_wait_for_the_list_to_be_handed_again()
+    {
+        var host = RenderConsumer();
+
+        host.Instance.Groups.Add(new HeaderGroup("Pair", ["Book", "Amount"]));
+        await ScrollOnItsOwnAsync(host);
+        Assert.Empty(host.FindAll(".ex-header-group"));
+
+        Rerender(host);
+        Assert.Equal("Pair", Assert.Single(host.FindAll(".ex-header-group")).TextContent);
+    }
+
+    [Fact] // FN-22, ADR-0003 (2026-10-13): a list shortened from its end in place is a change — Sorts cleared, the last column removed
+    public void FN22_a_list_shortened_from_its_end_in_place_repaints()
+    {
+        var host = RenderConsumer();
+        host.Instance.Sorts.Add(new SortSpec("Book", SortDirection.Ascending));
+        Rerender(host);
+        Assert.Equal("ascending", host.FindAll(".ex-header-cell")[0].GetAttribute("aria-sort"));
+        var last = Headers(host)[^1];
+
+        host.Instance.Sorts.Clear();
+        host.Instance.Columns.RemoveAt(host.Instance.Columns.Count - 1);
+        Rerender(host);
+
+        Assert.NotEqual("ascending", host.FindAll(".ex-header-cell")[0].GetAttribute("aria-sort"));
+        Assert.DoesNotContain(last, Headers(host));
+    }
 }
