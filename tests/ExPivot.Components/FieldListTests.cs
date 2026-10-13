@@ -290,6 +290,46 @@ public class FieldListTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
     }
 
+    [Fact] // ADR-0061 (decided with the user, 2026-10-13: keys typed as the keyboard goes back are held and handed on in order, ExPivot's menus and panels too): Escape in a menu that holds the keyboard leaves it standing, its commands doing nothing, until the keyboard has left it for its button; the keys typed in it meanwhile are the button's — Enter opens the menu again — and none runs a command
+    public async Task Keys_typed_while_a_menu_closes_are_its_buttons()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Columns = [P("Online")] });
+        await OpenMenuAsync(cut, "Rows", "Region");
+        var frame = cut.Find(".ex-pivot-popup");
+        // The menu holds the keyboard: its first command took it.
+        await frame.FocusInAsync(new FocusEventArgs());
+
+        await cut.Find(".ex-pivot-popup").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+        // The keyboard is on its way to the button, and the menu stands until it has left.
+        Assert.Single(cut.FindAll(".ex-pivot-popup"));
+        // Enter typed on the menu's command as the keyboard goes: held, and the command it presses does nothing.
+        await cut.Find(".ex-pivot-popup").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        var command = cut.FindAll(".ex-pivot-popup .ex-pivot-menu-item").First(b => !b.HasAttribute("disabled"));
+        var label = command.TextContent;
+        await command.ClickAsync(new MouseEventArgs());
+        Assert.Equal(["Region"], AreaEntries(cut, "Rows"));
+        Assert.Equal(["Online"], AreaEntries(cut, "Columns"));
+
+        // The button has the keyboard: the menu goes, and the Enter is the button's: the menu opens again.
+        await cut.Find(".ex-pivot-popup").FocusOutAsync(new FocusEventArgs());
+
+        var reopened = cut.FindAll(".ex-pivot-popup");
+        Assert.Single(reopened);
+        Assert.Contains(label, reopened[0].TextContent);
+        Assert.Equal(["Region"], AreaEntries(cut, "Rows"));
+    }
+
+    [Fact] // ADR-0061 (decided with the user, 2026-10-13): a menu closed while the keyboard is not in it — its own button pressed again — goes at once, holding nothing
+    public async Task A_menu_closed_from_its_button_goes_at_once()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")] });
+        await OpenMenuAsync(cut, "Rows", "Region");
+
+        await OpenMenuAsync(cut, "Rows", "Region");
+
+        Assert.Empty(cut.FindAll(".ex-pivot-popup"));
+    }
+
     [Fact] // ADR-0061: one menu or panel at a time; opening another closes the first
     public async Task One_menu_at_a_time()
     {

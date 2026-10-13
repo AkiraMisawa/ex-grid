@@ -147,6 +147,9 @@ public partial class ExPivot
         _summaryFiguresChanged = new EventCallback<SummaryFigures>(null, (Func<SummaryFigures, Task>)OnSummaryFiguresChangedAsync);
         _gridFragment = RenderGrid;
         _escape = new EventCallback(null, (Func<Task>)OnEscapeAsync);
+        _onPopupKey = new EventCallback<KeyboardEventArgs>(null, (Func<KeyboardEventArgs, Task>)OnPopupKeyAsync);
+        _onPopupFocusIn = new EventCallback(null, (Action)OnPopupFocusIn);
+        _onPopupFocusOut = new EventCallback(null, (Func<Task>)OnPopupFocusOutAsync);
         _closeDialog = new EventCallback(null, (Action)CloseDialog);
         _onDialogKey = new EventCallback<KeyboardEventArgs>(null, (Action<KeyboardEventArgs>)OnDialogKey);
         _idPrefix = "ex-pivot-" + Guid.NewGuid().ToString("N")[..12];

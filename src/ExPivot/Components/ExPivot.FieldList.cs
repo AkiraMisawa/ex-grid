@@ -2,6 +2,7 @@ using System.Globalization;
 using ExPivot.Chrome;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 
 namespace ExPivot.Components;
 
@@ -279,7 +280,9 @@ public partial class ExPivot
 
     private void Open(OpenSurface surface)
     {
+        EndClosing();
         _open = surface;
+        _popupFocusInside = false;
         StateHasChanged();
     }
 
@@ -295,10 +298,107 @@ public partial class ExPivot
             _bandFocus[field] = ++_focusSequence;
         else if (open.Kind == Surface.LayoutMenu)
             _layoutMenuFocus = ++_focusSequence;
+        // Closed from inside it — Escape, a command, OK, Cancel — with the keyboard in it: the keyboard is
+        // in flight back to the button that opened it, a round trip later on a circuit, and a key typed
+        // meanwhile was the closing menu's: Enter after Escape ran its first command (decided with the
+        // user, 2026-10-13: the keys typed as the keyboard goes back are held and handed on in order).
+        // The menu or panel stays on the page until the keyboard has left it, its commands and its OK
+        // doing nothing, and the keys typed in it are held for the button (PopupLeftAsync).
+        if (_popupFocusInside)
+        {
+            _closingSurface = open;
+            _popupKeys = [];
+        }
         StateHasChanged();
     }
 
-    private void CloseOpenQuietly() => _open = null;
+    private void CloseOpenQuietly()
+    {
+        _open = null;
+        EndClosing();
+    }
+
+    // ---- A menu or a panel closing (decided with the user, 2026-10-13) ----------------------------
+
+    // The menu or panel closed from inside it, standing until the keyboard has left it; the keys typed
+    // in it since, held for the button the keyboard goes back to; and whether DOM focus is inside the
+    // frame, as its focusin and focusout have said, in the order they were heard.
+    private OpenSurface? _closingSurface;
+    private List<KeyboardEventArgs>? _popupKeys;
+    private bool _popupFocusInside;
+    private EventCallback<KeyboardEventArgs> _onPopupKey;
+    private EventCallback _onPopupFocusIn;
+    private EventCallback _onPopupFocusOut;
+
+    /// <summary>What stands on the page: the open menu or panel, or one closing.</summary>
+    private OpenSurface? Shown => _open ?? _closingSurface;
+
+    private void EndClosing()
+    {
+        _closingSurface = null;
+        _popupKeys = null;
+    }
+
+    // A key heard in the frame: held while it closes, Escape otherwise.
+    private Task OnPopupKeyAsync(KeyboardEventArgs e)
+    {
+        if (_popupKeys is { } held)
+        {
+            held.Add(e);
+            return Task.CompletedTask;
+        }
+        return e.Key == "Escape" ? OnEscapeAsync() : Task.CompletedTask;
+    }
+
+    private void OnPopupFocusIn() => _popupFocusInside = true;
+
+    private Task OnPopupFocusOutAsync()
+    {
+        _popupFocusInside = false;
+        return _closingSurface is { } closing ? PopupLeftAsync(closing) : Task.CompletedTask;
+    }
+
+    // The keyboard has left the closing menu or panel — for the button that opened it, which takes it a
+    // round trip after the close: the menu goes, and the keys held are the button's, in order, as if
+    // typed on it. Enter or Space presses it; Tab, which only the browser can act on, is dropped with
+    // every key after it (ADR-0010); a key that means nothing on a button does nothing. A press that
+    // opens the menu again opens it with the keyboard on its way into it, and the keys after the press
+    // are dropped, as keys typed while a menu opens are (the proposal's stop on ExPivot's openings).
+    private async Task PopupLeftAsync(OpenSurface closing)
+    {
+        var keys = _popupKeys ?? [];
+        EndClosing();
+        StateHasChanged();
+        foreach (var key in keys)
+        {
+            if (key.Type == "keyup")
+                continue;
+            if (key.Key == "Tab")
+                return;
+            if (key is { Key: "Enter" or " ", CtrlKey: false, AltKey: false, MetaKey: false, ShiftKey: false })
+            {
+                PressOpener(closing);
+                return;
+            }
+        }
+        await Task.CompletedTask;
+    }
+
+    // A press on the button the closing menu or panel opened from.
+    private void PressOpener(OpenSurface closing)
+    {
+        if (closing.BandField is { } field)
+            ToggleBand(field);
+        else if (closing.Kind == Surface.LayoutMenu)
+            ToggleLayoutMenu();
+        else if (closing.Entry is { } entry)
+            ToggleMenu(entry);
+    }
+
+    // A menu's commands, doing nothing once the menu has closed: a key typed in it after the close is
+    // the opener's (CloseOpen).
+    private IReadOnlyList<PivotCommand> WhileOpen(OpenSurface open, IReadOnlyList<PivotCommand> commands)
+        => [.. commands.Select(command => command with { Invoke = () => ReferenceEquals(_open, open) ? command.Invoke() : Task.CompletedTask })];
 
     private void DismissFieldMenu(OpenSurface? menu)
     {
@@ -525,9 +625,9 @@ public partial class ExPivot
 
     private PivotAreaEntryView EntryView(PivotEntry entry, string caption, bool filtered)
     {
-        var open = _open is { OnToolbar: false } surface && surface.Entry == entry;
+        var open = Shown is { OnToolbar: false } surface && surface.Entry == entry;
         return new PivotAreaEntryView(entry, caption, filtered, open, () => ToggleMenu(entry),
-            open ? PopupFragment(_open!) : null, _entryFocus.GetValueOrDefault(entry));
+            open ? PopupFragment(Shown!) : null, _entryFocus.GetValueOrDefault(entry));
     }
 
     private static string AreaWord(PivotArea area) => area switch
@@ -702,6 +802,9 @@ public partial class ExPivot
         builder.AddComponentParameter(4, nameof(PivotPopupFrame.AlignEnd), open.Kind == Surface.LayoutMenu);
         builder.AddComponentParameter(5, nameof(PivotPopupFrame.OnEscape), _escape);
         builder.AddComponentParameter(6, nameof(PivotPopupFrame.ChildContent), Content(open));
+        builder.AddComponentParameter(7, nameof(PivotPopupFrame.OnKey), _onPopupKey);
+        builder.AddComponentParameter(8, nameof(PivotPopupFrame.OnFocusIn), _onPopupFocusIn);
+        builder.AddComponentParameter(9, nameof(PivotPopupFrame.OnFocusOut), _onPopupFocusOut);
         builder.CloseComponent();
     };
 
@@ -728,12 +831,12 @@ public partial class ExPivot
         {
             case Surface.Menu:
             {
-                var context = new PivotMenuContext(TitleOf(open), MenuFor(open.Entry!.Value), CloseOpen, open.FocusRequest);
+                var context = new PivotMenuContext(TitleOf(open), WhileOpen(open, MenuFor(open.Entry!.Value)), CloseOpen, open.FocusRequest);
                 return PivotChrome?.Menu(context) ?? View<PivotMenuView, PivotMenuContext>(context);
             }
             case Surface.LayoutMenu:
             {
-                var context = new PivotMenuContext(TitleOf(open), LayoutMenuCommands(), CloseOpen, open.FocusRequest);
+                var context = new PivotMenuContext(TitleOf(open), WhileOpen(open, LayoutMenuCommands()), CloseOpen, open.FocusRequest);
                 return PivotChrome?.Menu(context) ?? View<PivotMenuView, PivotMenuContext>(context);
             }
             case Surface.ItemFilter:
@@ -891,6 +994,9 @@ public partial class ExPivot
 
     private Task ApplyItemFilterAsync(OpenSurface open, IReadOnlyList<PivotItemKey> held, bool allHeld)
     {
+        // Pressed after the panel closed — a key typed in it as the keyboard went back: nothing (CloseOpen).
+        if (!ReferenceEquals(_open, open))
+            return Task.CompletedTask;
         // With more Items than Filter… holds, that every one is unticked cannot be told, and
         // nothing is refused for it: the rule needs every Item (ADR-0060).
         IReadOnlyCollection<PivotItemKey> items = allHeld ? held.ToArray() : [];
@@ -930,6 +1036,8 @@ public partial class ExPivot
             open.Sorts,
             () =>
             {
+                if (!ReferenceEquals(_open, open))
+                    return Task.CompletedTask;
                 var layout = PivotLayoutEdits.SetSubtotals(PaneLayout, open.Field, open.Subtotals);
                 layout = PivotLayoutEdits.SetSort(layout, open.Field, open.Sorts[open.Sort].Value);
                 CloseOpen();
@@ -995,6 +1103,8 @@ public partial class ExPivot
             open.Refusal,
             () =>
             {
+                if (!ReferenceEquals(_open, open))
+                    return Task.CompletedTask;
                 var layout = PaneLayout;
                 if (!features.Offers(open.Aggregation))
                 {

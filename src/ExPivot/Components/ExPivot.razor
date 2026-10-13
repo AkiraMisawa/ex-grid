@@ -97,7 +97,7 @@
             <div class="ex-pivot-field-list-scroll">@FieldList()</div>
         </div>
     }
-    @if (_open is { OnToolbar: true })
+    @if (Shown is { OnToolbar: true })
     {
         <div class="ex-pivot-backdrop" @onclick="CloseOpen" aria-hidden="true"></div>
     }
