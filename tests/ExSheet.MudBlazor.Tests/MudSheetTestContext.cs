@@ -61,6 +61,11 @@ public abstract class MudSheetTestContext : BunitContext
     /// keys typed there on the way (ADR-0050 item 16's note of 2026-10-12).</summary>
     protected int TakeBackCount => _handle.Invocations["takeKeyboardBack"].Count;
 
+    /// <summary>How many times the keyboard has been asked back for the Sheet, either way: the plain
+    /// hand-back, or the hand-back from a frame with the keys typed on the way (decided with the user,
+    /// 2026-10-13).</summary>
+    protected int KeyboardReturns => ReclaimCount + TakeBackCount;
+
     private int _takeBacksAnswered;
 
     /// <summary>
@@ -198,9 +203,9 @@ public abstract class MudSheetTestContext : BunitContext
     /// </summary>
     protected async Task OkAsync(IRenderedComponent<ContainerFragment> page)
     {
-        var reclaims = ReclaimCount;
+        var returns = KeyboardReturns;
         await page.Find(".mud-ex-sheet-format-cells-ok").ClickAsync(new MouseEventArgs());
-        page.WaitForAssertion(() => Assert.True(ReclaimCount > reclaims));
+        page.WaitForAssertion(() => Assert.True(KeyboardReturns > returns));
     }
 
     /// <summary>Presses Cancel.</summary>

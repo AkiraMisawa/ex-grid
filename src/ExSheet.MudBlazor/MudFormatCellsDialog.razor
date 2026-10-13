@@ -26,9 +26,13 @@
     Chrome draws them: MudBlazor has no palette of its own.
 
     Enter in a field is OK, through the browser's implicit submission of the form and a hidden
-    default button, as in ExGrid.MudBlazor's panels. Escape, the dialog's × and a press on its
-    backdrop are MudBlazor's own Cancel, which the frame turns into the context's. MudBlazor's focus
-    trap wraps Tab inside the dialog. No script is added.
+    default button, as in ExGrid.MudBlazor's panels. The dialog's × and a press on its backdrop are
+    MudBlazor's own Cancel, which the frame turns into the context's. Escape, OK and Cancel close it
+    through the frame (Closing), which takes the keyboard out of the dialog before it goes; the keys
+    typed in the dialog from that moment are passed to the frame (KeyWhileClosing), in order, for
+    the Sheet (decided with the user, 2026-10-13). An Escape a dropdown's open list takes closes the
+    list alone: MudSelect keeps it from the dialog. MudBlazor's focus trap wraps Tab inside the
+    dialog. No script is added.
 *@
 @* No first focus of MudBlazor's own: the tabs take the keyboard themselves (MudFormatCellsTabs), and
    until they do it waits on the frame's element, which holds the keys typed meanwhile. MudBlazor 9
@@ -40,7 +44,7 @@
         <MudText Typo="Typo.h6">@Title</MudText>
     </TitleContent>
     <DialogContent>
-        <form class="mud-ex-sheet-format-cells-form" @onsubmit="Ok" @onsubmit:preventDefault @onfocusin="OnFocusIn">
+        <form class="mud-ex-sheet-format-cells-form" @onsubmit="Ok" @onsubmit:preventDefault @onfocusin="OnFocusIn" @onkeydown="OnKeyInDialogAsync">
             @* The form's default button: the first submit button, which implicit submission clicks. *@
             <button type="submit" class="mud-ex-sheet-format-cells-default" hidden tabindex="-1" aria-hidden="true"></button>
             @Tabs
@@ -51,8 +55,10 @@
         </form>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Ok" Class="mud-ex-sheet-format-cells-ok">OK</MudButton>
-        <MudButton Variant="Variant.Text" OnClick="Cancel" Class="mud-ex-sheet-format-cells-cancel">Cancel</MudButton>
+        <div class="mud-ex-sheet-format-cells-actions" @onkeydown="OnKeyInDialogAsync">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Ok" Class="mud-ex-sheet-format-cells-ok">OK</MudButton>
+            <MudButton Variant="Variant.Text" OnClick="Cancel" Class="mud-ex-sheet-format-cells-cancel">Cancel</MudButton>
+        </div>
     </DialogActions>
 </MudDialog>
 
@@ -86,6 +92,19 @@
     /// handing on.
     /// </summary>
     [Parameter] public Func<Func<KeyboardEventArgs, Task<bool>>, Task>? KeysArrive { get; set; }
+
+    /// <summary>
+    /// Closes the dialog from a key or a choice — Escape, OK, Cancel — through the frame, true for OK:
+    /// the frame takes the keyboard out of the dialog before it goes (decided with the user,
+    /// 2026-10-13). Null closes it through MudBlazor's dialog directly.
+    /// </summary>
+    [Parameter] public Func<bool, Task>? Closing { get; set; }
+
+    /// <summary>Where a key typed in the dialog after its close began goes: the frame's hold, for the Sheet.</summary>
+    [Parameter] public Action<KeyboardEventArgs>? KeyWhileClosing { get; set; }
+
+    // The close has begun: the keys typed in the dialog from now are the frame's to hold.
+    private bool _closing;
 
     private MudFormatCellsTabs? _tabs;
     private Func<Task>? _tabsHoldTheKeyboard;
@@ -164,13 +183,40 @@
     // keeps the dialog open and says why, as ExSheet's OK would refuse it (SH-45). Otherwise the
     // dialog closes, and the frame sets what was touched, as one undo step, once the dialog has
     // left the page (MudFormatCellsFrame says why).
-    private void Ok()
+    private Task Ok()
     {
+        if (_closing) return Task.CompletedTask;
         _refusal = Draft.Refusal;
-        if (_refusal is null) Dialog?.Close(DialogResult.Ok(true));
+        if (_refusal is not null) return Task.CompletedTask;
+        return CloseAsync(ok: true);
     }
 
-    private void Cancel() => Dialog?.Cancel();
+    private Task Cancel() => _closing ? Task.CompletedTask : CloseAsync(ok: false);
+
+    private Task CloseAsync(bool ok)
+    {
+        if (Closing is not { } closing)
+        {
+            if (ok) Dialog?.Close(DialogResult.Ok(true));
+            else Dialog?.Cancel();
+            return Task.CompletedTask;
+        }
+        _closing = true;
+        return closing(ok);
+    }
+
+    // A key in the dialog, heard on the form and around its buttons. Once its close has begun, it is the
+    // Sheet's, held by the frame; before, Escape cancels, as MudBlazor's own Escape did (decided with the
+    // user, 2026-10-13: through the frame, so the keys typed behind it are not lost).
+    private Task OnKeyInDialogAsync(KeyboardEventArgs e)
+    {
+        if (_closing)
+        {
+            KeyWhileClosing?.Invoke(e);
+            return Task.CompletedTask;
+        }
+        return e is { Key: "Escape", Repeat: false, CtrlKey: false, AltKey: false, ShiftKey: false, MetaKey: false } ? Cancel() : Task.CompletedTask;
+    }
 
     // A key typed before the tabs held the keyboard, now theirs, as it would have acted on the tab
     // shown: the arrows, Home and End move between the tabs, and Escape is MudBlazor's Cancel. Tab
@@ -182,7 +228,7 @@
         switch (key.Key)
         {
             case "Escape":
-                Cancel();
+                await Cancel();
                 return false;
             case "Tab":
                 return false;

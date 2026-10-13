@@ -1,6 +1,7 @@
 using ExGrid.Chrome;
 using ExSheet.Engine;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 
 namespace ExSheet;
 
@@ -175,7 +176,22 @@ public sealed record FormatCellsContext(
     Action<FormatCellsTab> TabShown,
     Func<Task<bool>> Ok,
     Action Cancel,
-    Func<Task> ReturnKeyboard);
+    Func<Task> ReturnKeyboard)
+{
+    /// <summary>
+    /// The core's focus function from the Chrome's frame (ADR-0050 item 16's note of 2026-10-12): the
+    /// keyboard goes back to the Sheet from <c>from</c>, the frame's element that holds it, granted while
+    /// DOM focus is still there, with the keys typed in the frame since its close began, which the
+    /// second argument hands over once the grid asks, as the grid's ahead of any typed after (decided
+    /// with the user, 2026-10-13). A Chrome whose frame closes from a key or a choice — Escape, OK,
+    /// Cancel — calls <see cref="Ok"/> or <see cref="Cancel"/> as the key is pressed, puts the keyboard
+    /// on an element of the frame's own outside its dialog, holds what is typed from the closing key on,
+    /// closes the dialog, and then calls this in place of <see cref="ReturnKeyboard"/>. ExSheet keeps the
+    /// frame on the page after OK or Cancel until this, or <see cref="ReturnKeyboard"/>, has been called,
+    /// so the element stands until the keyboard has left it. Null for a context ExSheet did not make.
+    /// </summary>
+    public Func<ElementReference, Func<IReadOnlyList<KeyboardEventArgs>>, Task>? ReturnKeyboardFrom { get; init; }
+}
 
 /// <summary>
 /// ExSheet's Chrome seam (ADR-0071, ADR-0010's note of 2026-09-30): Format Cells, the one seam whose

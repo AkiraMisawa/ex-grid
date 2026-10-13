@@ -153,6 +153,8 @@ ExSheet.FormatCellsContext.Ok.get -> System.Func<System.Threading.Tasks.Task<boo
 ExSheet.FormatCellsContext.Ok.init -> void
 ExSheet.FormatCellsContext.ReturnKeyboard.get -> System.Func<System.Threading.Tasks.Task!>!
 ExSheet.FormatCellsContext.ReturnKeyboard.init -> void
+ExSheet.FormatCellsContext.ReturnKeyboardFrom.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Func<System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>!, System.Threading.Tasks.Task!>?
+ExSheet.FormatCellsContext.ReturnKeyboardFrom.init -> void
 ExSheet.FormatCellsContext.Tab.get -> ExSheet.FormatCellsTab
 ExSheet.FormatCellsContext.Tab.init -> void
 ExSheet.FormatCellsContext.TabShown.get -> System.Action<ExSheet.FormatCellsTab>!

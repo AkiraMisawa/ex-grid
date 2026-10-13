@@ -1326,14 +1326,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // A frame of the Consumer's own whose control is to take the keyboard in turn (frameInTurn)
             // takes it now, when everything held before it has gone where it was going: the keys held
             // for the frame are handed to it in this same task, so none typed after can overtake them.
-            // Not while an Alt's release is still to be handed on among the held keys (altUp): the hold
-            // goes on to hand it on and ask its answer, and the frame takes the keyboard after the
-            // answer, with the keys behind it, rather than take the keys typed meanwhile ahead of them.
+            // An Alt's release held among them is one of them: handed on in its turn, it reaches the
+            // frame after its press, as typed (altPending).
             if (!disposed && handOff === 'frame' && frameInTurn !== null && editorReady && popoverReady && moved()) {
-                if (held.some((h) => h.altUp === true && h.altAlone === true)) {
-                    resolve();
-                    return;
-                }
                 const frame = frameInTurn;
                 frameInTurn = null;
                 handle.handKeyboardTo(frame, true);

@@ -563,7 +563,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
         });
 
-        test(`SH-52/ADR-0100/ADR-0050: Escape three times in a list a KeyTip opened, typed at once, then Alt, H, H opens the next list, the only one (${chrome})`, async ({ page }) => {
+        test(`SH-52/ADR-0100/ADR-0050: Escape three times in a list a KeyTip opened, then Alt, H, H, all typed at once, opens the next list, the only one (${chrome})`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'B3');
             await keyTips(page, 'h', 'f', 'c');
@@ -572,13 +572,11 @@ for (const chrome of ['builtin', 'mud']) {
             await setRoundTrip(80);
 
             // In the list, then on its way to the band and back to the Sheet: each Escape goes back a level.
+            // The Alt and the letters at once too: its press and its release are held in order with the
+            // keys (decided with the user, 2026-10-13), so it is heard alone wherever the keyboard is.
             await page.keyboard.press('Escape');
             await page.keyboard.press('Escape');
             await page.keyboard.press('Escape');
-            // An Alt typed while the keyboard is still on its way back to the Sheet is not yet heard as
-            // alone (the stop on the Alt-alone hold in docs/agents/proposals/run17cf-toolbar-mud.md): the
-            // Alt goes down once the keyboard is back on the Sheet, the letters at once.
-            await expectKeyboardOn(grid);
             await keyTips(page, 'h', 'h');
 
             await expect(openLists(page)).toHaveCount(1);
@@ -589,6 +587,84 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Escape');
             await expect(openLists(page)).toHaveCount(0);
             await expect(tips(page).filter({ hasText: /^FC$/ })).toHaveCount(1);
+        });
+
+        test(`SH-52/ADR-0100 (decided with the user, 2026-10-13): Enter on an edit, then Alt, H, 1, all typed at once, commits the edit and sets bold below it, as typed slowly (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'A4');
+            await page.keyboard.press('F2');
+            await expect(editor(grid)).toHaveCount(1);
+            await setRoundTrip(80);
+
+            // The Alt goes down and comes up while the grid still holds the keys behind Enter: its press and
+            // its release reach the Sheet in their turn, the release after the press, and the KeyTips show.
+            await page.keyboard.press('Enter');
+            await keyTips(page, 'h', '1');
+
+            await expectFocusAt(grid, 'A5');
+            await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
+            await circuitQuiet();
+            await expect(tips(page)).toHaveCount(0);
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'A4')).toHaveText('Plums');
+            await expectKeyboardOn(grid);
+            await page.keyboard.press('Control+z');
+            await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
+        });
+
+        test(`SH-52/ADR-0100 (decided with the user, 2026-10-13): Alt, Alt, H, 1 typed at once turns the KeyTips on and off and types h1 into the cell, as typed slowly (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'A4');
+
+            // Slowly first: the second Alt, on the toolbar, ends the KeyTips, and the letters are the cell's.
+            await page.keyboard.press('Alt');
+            await expect(tips(page)).not.toHaveCount(0);
+            await page.keyboard.press('Alt');
+            await expectKeyboardOn(grid);
+            await expect(tips(page)).toHaveCount(0);
+            await page.keyboard.press('h');
+            await page.keyboard.press('1');
+            await expect(editor(grid)).toHaveCount(1);
+            await expect(editor(grid).locator('input, textarea').first()).toHaveValue('h1');
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+
+            // At once, on a circuit: the same.
+            await setRoundTrip(80);
+            await keyTips(page, 'Alt', 'h', '1');
+
+            await expect(editor(grid)).toHaveCount(1);
+            await expect(editor(grid).locator('input, textarea').first()).toHaveValue('h1');
+            await circuitQuiet();
+            await expect(tips(page)).toHaveCount(0);
+            await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'A4')).toHaveText('Plums');
+        });
+
+        test(`ADR-0100 (decided with the user, 2026-10-13): Alt, H, H, then ↓, →, Enter typed at once fills the cell from the list, the keys typed before it had the keyboard being its own (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'B3');
+            const landed = await watchWhereKeysLand(page);
+            const circuit = await setRoundTrip(80);
+
+            await keyTips(page, 'h', 'h', 'ArrowDown', 'ArrowRight', 'Enter');
+
+            await expect(cell(grid, 'B3')).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+            await circuitQuiet();
+            await expect(openLists(page)).toHaveCount(0);
+            await expect(tips(page)).toHaveCount(0);
+            await expect(editor(grid)).toHaveCount(0);
+            await expectKeyboardOn(grid);
+            await page.keyboard.press('ArrowDown');
+            await expectFocusAt(grid, 'B4');
+            if (circuit) {
+                // On a circuit the list took the keyboard a round trip after the second H: the arrows and Enter
+                // were typed before it had, outside the list.
+                const keys = await landed();
+                expect(keys.find((k) => k.key === 'ArrowDown')?.where).not.toBe('list');
+            }
         });
 
         test(`ADR-0100/ADR-0050: Enter typed at once after a KeyTip's command reaches the Sheet, not the toolbar (${chrome})`, async ({ page }) => {

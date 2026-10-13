@@ -83,13 +83,13 @@ public class MudFormatCellsTests : MudSheetTestContext
         await OpenAsync(page, "B2");
         var before = Sheet(page).ToDocument().ToJson();
         await ChooseAsync(page, "Percentage");
-        var reclaims = ReclaimCount;
+        var reclaims = KeyboardReturns;
 
         await page.Find(".mud-dialog .mud-button-close").ClickAsync(new MouseEventArgs());
 
         page.WaitForAssertion(() => Assert.False(IsOpen(page)));
         Assert.Equal(before, Sheet(page).ToDocument().ToJson());
-        page.WaitForAssertion(() => Assert.True(ReclaimCount > reclaims));
+        page.WaitForAssertion(() => Assert.True(KeyboardReturns > reclaims));
         Assert.Empty(page.FindAll(".mud-ex-sheet-format-cells-leaving"));
     }
 
@@ -156,11 +156,11 @@ public class MudFormatCellsTests : MudSheetTestContext
         var page = RenderPage(DocumentOf(("B2", "12")));
         await OpenAsync(page, "B2");
         await ChooseAsync(page, "Percentage");
-        var reclaims = ReclaimCount;
+        var reclaims = KeyboardReturns;
 
         await page.Find(".mud-ex-sheet-format-cells-leaving").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
 
-        page.WaitForAssertion(() => Assert.True(ReclaimCount > reclaims));
+        page.WaitForAssertion(() => Assert.True(KeyboardReturns > reclaims));
         Assert.False(IsOpen(page));
         Assert.Equal("General", FormatAt(page, "B2").NumberFormat.Code);
     }
@@ -283,13 +283,60 @@ public class MudFormatCellsTests : MudSheetTestContext
         var before = Sheet(page).ToDocument().ToJson();
         await ShowTabAsync(page, "Font");
         await ChooseAsync(page, "Bold");
-        var reclaims = ReclaimCount;
+        var returns = KeyboardReturns;
 
         await CancelAsync(page);
 
         page.WaitForAssertion(() => Assert.False(IsOpen(page)));
         Assert.Equal(before, Sheet(page).ToDocument().ToJson());
-        page.WaitForAssertion(() => Assert.True(ReclaimCount > reclaims));
+        page.WaitForAssertion(() => Assert.True(KeyboardReturns > returns));
+    }
+
+    [Fact] // ADR-0071, ADR-0050 item 16's note of 2026-10-12 (decided with the user, 2026-10-13: the keys typed while the keyboard comes back are held and handed on in order, under MudBlazor's Format Cells too): Escape closes the dialog through the frame, whose element takes the keyboard out of it first; the keys typed in the dialog after the Escape are held, and the core takes the keyboard back from the element with them
+    public async Task Keys_typed_after_escape_go_to_the_sheet_with_the_keyboard()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        var before = Sheet(page).ToDocument().ToJson();
+        var taken = TakeBackCount;
+        // The element's focus lands when the test says: until then the dialog stands, as it does on a
+        // circuit for a round trip after the Escape.
+        var focus = JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true);
+
+        await page.Find("form.mud-ex-sheet-format-cells-form").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+        page.WaitForAssertion(() => Assert.Single(page.FindAll(".mud-ex-sheet-format-cells-leaving")));
+        Assert.True(IsOpen(page));
+        // Typed in the dialog after the Escape, before it has gone: not the dialog's.
+        await page.Find("form.mud-ex-sheet-format-cells-form").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowDown" });
+        await page.Find(".mud-ex-sheet-format-cells-actions").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
+        Assert.Equal(taken, TakeBackCount);
+        foreach (var invocation in focus.Invocations) focus.SetVoidResult();
+
+        page.WaitForAssertion(() => Assert.False(IsOpen(page)));
+        page.WaitForAssertion(() => Assert.Equal(taken + 1, TakeBackCount));
+        Assert.Equal(["ArrowDown", "ArrowRight"], AnswerTakeBacks(page.FindComponent<global::ExGrid.Components.ExGrid<global::ExSheet.SheetRow>>()).Select(k => k.Key));
+        Assert.Equal(before, Sheet(page).ToDocument().ToJson());
+        // The frame goes once the keyboard is back.
+        page.WaitForAssertion(() => Assert.Empty(page.FindAll(".mud-ex-sheet-format-cells-leaving")));
+    }
+
+    [Fact] // ADR-0071 (decided with the user, 2026-10-13): OK sets what was touched as it is pressed, so a key typed in the dialog after it changes nothing it sets, and is the Sheet's
+    public async Task Ok_sets_what_was_touched_as_it_is_pressed()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Font");
+        await ChooseAsync(page, "Bold");
+
+        await page.Find(".mud-ex-sheet-format-cells-ok").ClickAsync(new MouseEventArgs());
+        Assert.True(FormatAt(page, "B2").Font.Bold);
+        // Italic chosen after OK: too late for what OK set.
+        if (page.FindAll(".mud-ex-sheet-format-cells label").Any(l => l.TextContent.Trim() == "Italic"))
+            await ChooseAsync(page, "Italic");
+
+        page.WaitForAssertion(() => Assert.False(IsOpen(page)));
+        Assert.False(FormatAt(page, "B2").Font.Italic);
+        Assert.True(FormatAt(page, "B2").Font.Bold);
     }
 
     [Fact] // ADR-0071 / SH-45: a Custom code ExSheet does not read is refused by name, the dialog stays open, and nothing is set
@@ -315,10 +362,10 @@ public class MudFormatCellsTests : MudSheetTestContext
         await ChooseAsync(page, "Custom");
 
         await page.Find(".mud-ex-sheet-format-cells-code input").InputAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "#,##0.0000" });
-        var reclaims = ReclaimCount;
+        var reclaims = KeyboardReturns;
         await page.Find("form.mud-ex-sheet-format-cells-form").SubmitAsync();
 
-        page.WaitForAssertion(() => Assert.True(ReclaimCount > reclaims));
+        page.WaitForAssertion(() => Assert.True(KeyboardReturns > reclaims));
         Assert.False(IsOpen(page));
         Assert.Equal("#,##0.0000", FormatAt(page, "B2").NumberFormat.Code);
     }
