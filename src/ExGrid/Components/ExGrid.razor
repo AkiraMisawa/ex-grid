@@ -1113,8 +1113,10 @@
     /// <summary>
     /// The visible Columns, in display order; the leading <see cref="PinnedColumnCount"/>
     /// of them are pinned. Which columns show and in what order is View State the Consumer
-    /// holds (ADR-0001/0010). The list instance is the change signal: hand over a new list
-    /// when anything about the columns changes, never an edited one (ADR-0003).
+    /// holds (ADR-0001/0010). A new list, or the same list with other columns in it, is a
+    /// change; the same list holding the same column instances is none (ADR-0003, its note of
+    /// 2026-10-13). What the grid holds per column follows the column by its
+    /// <see cref="GridColumn{TRow}.Name"/>.
     /// </summary>
     [Parameter, EditorRequired] public IReadOnlyList<GridColumn<TRow>> Columns { get; set; } = [];
 
@@ -2733,6 +2735,10 @@
             if (same && !(_heldParameters.TryGetValue(parameter.Name, out var held) && SameParameter(held, parameter.Value)))
                 same = false;
             _heldParameters[parameter.Name] = parameter.Value;
+            // Columns, HeaderGroups and Sorts: the same instance whose elements changed is a new
+            // list (2026-10-13, decided with the user).
+            if (TakeInList(parameter.Name, parameter.Value))
+                same = false;
         }
         // Last, so a scalar that moved spares the walk of the painted rows.
         if (same && parameters.TryGetValue<IReadOnlyList<TRow>>(nameof(Window), out var window) && window is not null)
@@ -2756,6 +2762,81 @@
             || _scrollerFocusOwed
             || _editorNeedsFocus
             || _focusRequest is not null;
+
+    // Columns, HeaderGroups and Sorts, as handed and as the grid takes them (decided with the user
+    // on 2026-10-13, after AG Grid's re-applied columnDefs). A list handed again as the same
+    // instance whose elements changed — a column added, replaced, removed or moved in place —
+    // is taken exactly as a new list would be: the grid takes a copy of it, a new instance, and
+    // everything keyed on the list's identity (ADR-0003) rebuilds through the one path a new
+    // list takes. Handed again unchanged, the grid keeps the instance it took, so nothing
+    // rebuilds. The elements are compared by reference; these lists are short.
+    private sealed class TakenList(object? handed, object? taken, object?[] elements)
+    {
+        public object? Handed { get; set; } = handed;
+        public object? Taken { get; set; } = taken;
+        public object?[] Elements { get; set; } = elements;
+    }
+
+    private readonly Dictionary<string, TakenList> _takenLists = new(StringComparer.Ordinal);
+
+    /// <summary>Notes a handed Columns, HeaderGroups or Sorts list against the one taken before;
+    /// true when it is the same instance with other elements, which is a change.</summary>
+    private bool TakeInList(string name, object? handed)
+    {
+        if (name is not (nameof(Columns) or nameof(HeaderGroups) or nameof(Sorts)))
+            return false;
+        object?[] elements = handed is System.Collections.IEnumerable sequence
+            ? [.. sequence.Cast<object?>()]
+            : [];
+        if (_takenLists.TryGetValue(name, out var taken) && ReferenceEquals(taken.Handed, handed) && handed is not null)
+        {
+            if (taken.Elements.AsSpan().SequenceEqual(elements, ReferenceComparer.Instance))
+                return false;
+            taken.Taken = CopyOf(name, handed);
+            taken.Elements = elements;
+            return true;
+        }
+        _takenLists[name] = new TakenList(handed, handed, elements);
+        return false;
+    }
+
+    private sealed class ReferenceComparer : IEqualityComparer<object?>
+    {
+        public static readonly ReferenceComparer Instance = new();
+
+        public new bool Equals(object? x, object? y) => ReferenceEquals(x, y);
+
+        public int GetHashCode(object? obj) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj!);
+    }
+
+    private static object CopyOf(string name, object handed) => name switch
+    {
+        nameof(Columns) => ((IReadOnlyList<GridColumn<TRow>>)handed).ToArray(),
+        nameof(HeaderGroups) => ((IReadOnlyList<HeaderGroup>)handed).ToArray(),
+        _ => ((IReadOnlyList<SortSpec>)handed).ToArray(),
+    };
+
+    /// <summary>Puts the lists the grid took in place of the ones handed, first thing in
+    /// <see cref="OnParametersSet"/>: the copy taken for a list changed in place, kept for as
+    /// long as it is handed again unchanged.</summary>
+    private void UseTakenLists()
+    {
+        if (_takenLists.TryGetValue(nameof(Columns), out var columns) && ReferenceEquals(columns.Handed, Columns)
+            && columns.Taken is IReadOnlyList<GridColumn<TRow>> takenColumns)
+        {
+            Columns = takenColumns;
+        }
+        if (_takenLists.TryGetValue(nameof(HeaderGroups), out var groups) && HeaderGroups is not null
+            && ReferenceEquals(groups.Handed, HeaderGroups) && groups.Taken is IReadOnlyList<HeaderGroup> takenGroups)
+        {
+            HeaderGroups = takenGroups;
+        }
+        if (_takenLists.TryGetValue(nameof(Sorts), out var sorts) && Sorts is not null
+            && ReferenceEquals(sorts.Handed, Sorts) && sorts.Taken is IReadOnlyList<SortSpec> takenSorts)
+        {
+            Sorts = takenSorts;
+        }
+    }
 
     private static bool SameParameter(object? held, object? handed)
         => ReferenceEquals(held, handed)
@@ -2794,6 +2875,7 @@
 
     protected override void OnParametersSet()
     {
+        UseTakenLists();
         ValidatePointDeclaration();
         ValidateChangeHighlight();
         ResolveDeclaredKeys();
@@ -3081,9 +3163,27 @@
             // is painted next (ADR-0016); the metrics feed the estimates, so they reset
             // with it. The header label is content the column paints too — unobserved,
             // every short Auto column would stand with a chopped header.
+            // What the grid holds per column is carried to the new list by the column's Name, as
+            // AG Grid carries its column state by colId (decided with the user on 2026-10-13):
+            // never by position, which a move changes, nor by instance alone. What is derived
+            // from the definition — the Auto width measured from its content — is carried only
+            // for the same instance under unchanged metrics (ADR-0003's note of 2026-10-11: two
+            // equal columns may paint differently).
+            var previous = _observedColumnElements;
+            var previousAutoWidths = _autoWidths;
+            var previousAt = new Dictionary<string, int>(previous.Length, StringComparer.Ordinal);
+            for (var i = 0; i < previous.Length; i++)
+                previousAt.TryAdd(previous[i].Name, i);
+            CarryColumnStateByName(previous);
             _autoWidths = new AutoWidth[Columns.Count];
             for (var i = 0; i < Columns.Count; i++)
             {
+                if (!metricsChanged && previousAt.TryGetValue(Columns[i].Name, out var was)
+                    && ReferenceEquals(previous[was], Columns[i]) && was < previousAutoWidths.Length)
+                {
+                    _autoWidths[i] = previousAutoWidths[was];
+                    continue;
+                }
                 var spec = Columns[i].Width;
                 var auto = new AutoWidth(spec);
                 if (spec.Width.IsAuto)
@@ -3122,6 +3222,7 @@
                 _autoWidths[i] = auto;
             }
             _observedColumns = Columns;
+            _observedColumnElements = [.. Columns];
             _observedMetrics = _metrics.CellMetrics;
             _measured = false;
         }
@@ -3248,6 +3349,41 @@
         // The Copied Range is written in the same coordinates, and dropped on the same triggers; it
         // also goes when a copied cell comes to read otherwise (ADR-0170).
         ReconcileCopiedRange(columnsMoved: _columnsMoved || _sourceReplaced);
+    }
+
+    // The columns as they stood when last taken in, element by element, so that what the grid
+    // holds per column can be found by Name in a list the Consumer changed in place.
+    private GridColumn<TRow>[] _observedColumnElements = [];
+
+    /// <summary>The column state the grid itself holds, moved to where each column now stands by
+    /// its Name: the column whose popover is open, and the column a resize grip is dragging. A
+    /// column no longer in the list takes its state with it — the popover closes, the drag
+    /// ends. The Selection, the Copied Range and an open edit are not carried: a change of the
+    /// visible columns drops them (ADR-0011).</summary>
+    private void CarryColumnStateByName(GridColumn<TRow>[] previous)
+    {
+        int Now(int was)
+        {
+            if (was < 0 || was >= previous.Length)
+                return -1;
+            var name = previous[was].Name;
+            for (var i = 0; i < Columns.Count; i++)
+            {
+                if (Columns[i].Name == name)
+                    return i;
+            }
+            return -1;
+        }
+        if (_menuColumn >= 0)
+        {
+            var now = Now(_menuColumn);
+            if (now < 0)
+                CloseMenus();
+            else
+                _menuColumn = now;
+        }
+        if (_resizeColumn >= 0)
+            _resizeColumn = Now(_resizeColumn);
     }
 
     private bool ColumnsAreAsBefore()

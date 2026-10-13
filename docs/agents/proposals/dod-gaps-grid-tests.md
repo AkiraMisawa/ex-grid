@@ -84,17 +84,84 @@ new ->
                 costs no render.
 ```
 
-## Finding, not acted on: a Columns list changed in place crashes the grid, before this branch and after
+## Lists changed in place: Columns, HeaderGroups and Sorts are taken as new lists (decided with the user on 2026-10-13)
 
-**What happens.** A Consumer adds a column to the `Columns` list it already handed the grid, then
-renders. The grid throws `IndexOutOfRangeException` in `ResolveColumnGeometry`. A column replaced
-in the same list shows the new header over the old column's cells. Both happen with the parameter-unchanged skip disabled
-too, as at a37c276a. The grid keys its column caches on the `Columns` instance (ADR-0003/0006's
-"identity is the change signal", and ADR-0003's note of 2026-10-11: the same Columns instance
-re-renders nothing). The skip compares Columns by instance, and changes nothing here.
+The user decided on the finding this branch reported: **take it, do not refuse it.** A Columns,
+HeaderGroups or Sorts list handed again as the same instance, with elements that changed, is
+treated exactly as if a new list had been handed. The column state the grid itself holds is carried
+across by column Name, as AG Grid carries its column state by colId when columnDefs are re-applied.
 
-**The problem.** A crash is not quiet. But a stale column is quietly wrong (principle 1). Whether
-to refuse an in-place change by name, or to take it, is a decision:
-- **(a)** Refuse by name. Compare the column elements at each render, and throw naming ADR-0003:
-  "hand a new list".
-- **(b)** Take it. Treat changed elements as a new Columns list.
+**What the grid does now:**
+- **One code path.** `SetParametersAsync` notes each of the three lists' element references.
+- **When the same instance arrives with other elements,** the grid takes a copy of it, a new
+  instance. Everything keyed on the list's identity then rebuilds exactly as for a new list, and the
+  skip is not taken.
+- **Handed again unchanged,** the copy is kept, so nothing rebuilds and UX-5 still skips.
+- **The Window** keeps its painted-rows check (ADR-0141).
+
+**Column state, on any new or changed Columns list:**
+- **Carried by Name:**
+  - the column whose popover is open (closed if the column is gone);
+  - the column a resize grip is dragging (the drag ends if the column is gone);
+  - the Auto width measured for a column, kept for the same column instance under unchanged metrics
+    and measured afresh for any other instance (ADR-0003's note of 2026-10-11).
+- **Not carried, as ADR-0011 decides:** the Selection, the Copied Range and an open edit. They are
+  matched by column names in order, and dropped when the visible columns change.
+- **Not held by the grid, nothing to carry:**
+  - Sorts and filters, which are the Consumer's or the Source's and keyed by Name;
+  - column widths a user dragged, which the grid reports through `OnColumnWidthChanged` and the
+    Consumer holds;
+  - the pinned boundary, which is a parameter.
+- **Derived, rebuilt as for any new list:** the header layout, the column geometry, the Cell
+  Appearance cache and the rows' contents.
+
+No ADR forbids any of this, so there is no state left over to propose.
+
+### ADR-0003, a dated note under the note of 2026-10-11
+
+old ->
+```
+{adr_old}
+```
+new ->
+```
+{adr_old}
+  *(2026-10-13, decided with the user: the same instance with other elements counts as a change, for
+  `Columns`, `HeaderGroups` and `Sorts` alike — a column added, replaced, removed or moved in place is
+  taken as a new list, compared element by element by reference, so a fresh copy is what the grid
+  holds and everything keyed on the list's identity rebuilds by the one path a new list takes. The
+  column state the grid itself holds — the column whose popover is open, the column a resize grip is
+  dragging, a column's measured Auto width for the same instance — is carried across by the column's
+  Name, as AG Grid matches re-applied columnDefs by colId. What is derived from a definition is not
+  carried across instances, by the note above. The Selection, the Copied Range and an open edit still
+  go when the visible columns change (ADR-0011).)*
+```
+
+### Definition of Done, a new row after FN-21 (FN-22 is the first free FN number)
+
+old ->
+```
+{fn21}
+```
+new ->
+```
+{fn21}
+| **FN-22** | MUST | A `Columns`, `HeaderGroups` or `Sorts` list handed again as the same instance with other elements is taken as a new list — a column added, replaced, removed or moved in place repaints header and cells — and the column state the grid holds (an open column popover, a resize in progress, a measured Auto width of the same instance) follows its column by Name; the same list holding the same elements renders nothing (ADR-0003, note of 2026-10-13; ADR-0027 P3) | Layer 2: a Consumer changing its lists in place and rendering | each change painted; the open menu on its column after a move; no render when nothing changed |
+```
+
+### Docs Site (pages are off limits to this branch)
+
+`samples/ExGrid.Docs/Pages/Grid/GridData.razor`:
+
+old ->
+```
+            rows, never rewrite them in place. And keep the source and the column list in fields, so they are the
+            same objects on every render.
+```
+new ->
+```
+            rows, never rewrite them in place. And keep the source and the column list in fields, so they are the
+            same objects on every render. A column list you change in place — a column added, replaced, removed or
+            moved — is taken as a new list, and what the grid holds for a column follows it by its Name.
+```
+

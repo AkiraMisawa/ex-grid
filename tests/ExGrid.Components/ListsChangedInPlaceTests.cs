@@ -1,0 +1,185 @@
+using Bunit;
+using ExGrid.Chrome;
+using ExGrid.Columns;
+using ExGrid.Components.Tests.Support;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
+using Microsoft.AspNetCore.Components.Web;
+using Xunit;
+
+namespace ExGrid.Components.Tests;
+
+/// <summary>
+/// FN-22 (ADR-0003, its note of 2026-10-13): a Columns, HeaderGroups or Sorts list handed again
+/// as the same instance whose elements changed is taken exactly as a new list, and the column
+/// state the grid holds is carried across by column Name. Each Consumer here keeps its lists in
+/// fields, changes them in place, and renders.
+/// </summary>
+public class ListsChangedInPlaceTests : GridTestContext
+{
+    /// <summary>Records the column whose menu the grid last asked for.</summary>
+    private sealed class MenuChrome : IGridChrome
+    {
+        public string? MenuColumn { get; private set; }
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context)
+        {
+            MenuColumn = context.Column;
+            return b => b.AddMarkupContent(0, "<div class='stub-menu'></div>");
+        }
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+    }
+
+    /// <summary>A Consumer holding its lists in fields and changing them in place.</summary>
+    private sealed class InPlaceConsumer : ComponentBase
+    {
+        public TestRow[] Window { get; } = TestRows.Many(30);
+
+        public List<GridColumn<TestRow>> Columns { get; } = [.. TestRows.Columns()];
+
+        public List<HeaderGroup> Groups { get; } = [];
+
+        public List<SortSpec> Sorts { get; } = [];
+
+        public MenuChrome Chrome { get; } = new();
+
+        [Parameter] public int Tick { get; set; }
+
+        private void HeardSort(IReadOnlyList<SortSpec> sorts)
+        {
+        }
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "data-tick", Tick);
+            builder.OpenComponent<ExGrid<TestRow>>(2);
+            builder.AddComponentParameter(3, nameof(ExGrid<TestRow>.Window), Window);
+            builder.AddComponentParameter(4, nameof(ExGrid<TestRow>.TotalCount), (int?)Window.Length);
+            builder.AddComponentParameter(5, nameof(ExGrid<TestRow>.Columns), (IReadOnlyList<GridColumn<TestRow>>)Columns);
+            builder.AddComponentParameter(6, nameof(ExGrid<TestRow>.HeaderGroups), (IReadOnlyList<HeaderGroup>)Groups);
+            builder.AddComponentParameter(7, nameof(ExGrid<TestRow>.Sorts), (IReadOnlyList<SortSpec>)Sorts);
+            builder.AddComponentParameter(8, nameof(ExGrid<TestRow>.RowHeight), 20d);
+            builder.AddComponentParameter(9, nameof(ExGrid<TestRow>.ViewportHeight), (ViewportSize)200);
+            builder.AddComponentParameter(10, nameof(ExGrid<TestRow>.ViewportWidth), (ViewportSize)900);
+            builder.AddComponentParameter(11, nameof(ExGrid<TestRow>.Chrome), (IGridChrome)Chrome);
+            // A sort listener, so the headers carry their menu buttons.
+            builder.AddComponentParameter(12, nameof(ExGrid<TestRow>.OnSortChanged),
+                EventCallback.Factory.Create<IReadOnlyList<SortSpec>>(this, HeardSort));
+            builder.CloseComponent();
+            builder.CloseElement();
+        }
+    }
+
+    private IRenderedComponent<InPlaceConsumer> RenderConsumer() => Render<InPlaceConsumer>(ps => ps.Add(c => c.Tick, 0));
+
+    /// <summary>The Consumer renders again, handing every list as the same instance.</summary>
+    private static void Rerender(IRenderedComponent<InPlaceConsumer> host)
+        => host.Render(ps => ps.Add(c => c.Tick, host.Instance.Tick + 1));
+
+    private static string[] Headers(IRenderedComponent<InPlaceConsumer> host)
+        => [.. host.FindAll(".ex-header-cell").Select(h => h.TextContent.Trim())];
+
+    private static string[] FirstRowCells(IRenderedComponent<InPlaceConsumer> host)
+        => [.. host.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell").Select(c => c.TextContent.Trim())];
+
+    [Fact] // FN-22, ADR-0003 (2026-10-13): a column added to the same Columns list is taken as a new list
+    public void FN22_a_column_added_in_place_repaints()
+    {
+        var host = RenderConsumer();
+
+        host.Instance.Columns.Add(new GridColumn<TestRow>("Extra", ColumnType.Text, r => "x" + r.Book));
+        Rerender(host);
+
+        Assert.Equal("Extra", Headers(host)[^1]);
+        Assert.Equal("xRow 000000", FirstRowCells(host)[^1]);
+    }
+
+    [Fact] // FN-22, ADR-0003 (2026-10-13): a column replaced in the same list repaints its cells, not only its header
+    public void FN22_a_column_replaced_in_place_repaints_its_cells()
+    {
+        var host = RenderConsumer();
+
+        host.Instance.Columns[1] = new GridColumn<TestRow>("Replaced", ColumnType.Text, r => "y" + r.Book);
+        Rerender(host);
+
+        Assert.Equal("Replaced", Headers(host)[1]);
+        Assert.Equal("yRow 000000", FirstRowCells(host)[1]);
+    }
+
+    [Fact] // FN-22, ADR-0003 (2026-10-13): a column removed from the same list is gone from header and cells
+    public void FN22_a_column_removed_in_place_repaints()
+    {
+        var host = RenderConsumer();
+        var before = Headers(host).Length;
+
+        host.Instance.Columns.RemoveAt(1);
+        Rerender(host);
+
+        Assert.Equal(before - 1, Headers(host).Length);
+        Assert.DoesNotContain("Amount", Headers(host));
+        Assert.Equal(before - 1, FirstRowCells(host).Length);
+    }
+
+    [Fact] // FN-22, ADR-0003 (2026-10-13) / ADR-0032: Header Groups edited in place are resolved again
+    public void FN22_header_groups_edited_in_place_repaint()
+    {
+        var host = RenderConsumer();
+        Assert.Empty(host.FindAll(".ex-header-group"));
+
+        host.Instance.Groups.Add(new HeaderGroup("Pair", ["Book", "Amount"]));
+        Rerender(host);
+
+        Assert.Equal("Pair", Assert.Single(host.FindAll(".ex-header-group")).TextContent);
+    }
+
+    [Fact] // FN-22, ADR-0003 (2026-10-13) / ADR-0012: Sorts edited in place reach the headers
+    public void FN22_sorts_edited_in_place_repaint()
+    {
+        var host = RenderConsumer();
+        Assert.NotEqual("ascending", host.FindAll(".ex-header-cell")[0].GetAttribute("aria-sort"));
+
+        host.Instance.Sorts.Add(new SortSpec("Book", SortDirection.Ascending));
+        Rerender(host);
+
+        Assert.Equal("ascending", host.FindAll(".ex-header-cell")[0].GetAttribute("aria-sort"));
+    }
+
+    [Fact] // FN-22, ADR-0003 (2026-10-13): column state the grid holds follows the column by Name — an open column menu stays on its column when the list is reordered in place
+    public async Task FN22_column_state_the_grid_holds_is_carried_by_name()
+    {
+        var host = RenderConsumer();
+        await host.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs()); // Amount's menu
+        Assert.Equal("Amount", host.Instance.Chrome.MenuColumn);
+
+        // The Consumer moves Amount to the front of the same list.
+        var amount = host.Instance.Columns[1];
+        host.Instance.Columns.RemoveAt(1);
+        host.Instance.Columns.Insert(0, amount);
+        Rerender(host);
+        // And the grid renders again for something else, an empty push.
+        var grid = host.FindComponent<ExGrid<TestRow>>();
+        grid.Render();
+
+        Assert.Equal("Amount", Headers(host)[0]);
+        Assert.Equal("Amount", host.Instance.Chrome.MenuColumn);
+        Assert.Single(host.FindAll(".stub-menu"));
+    }
+
+    [Fact] // FN-22 / UX-5: lists handed again unchanged still render nothing
+    public void FN22_lists_handed_again_unchanged_render_nothing()
+    {
+        var host = RenderConsumer();
+        var grid = host.FindComponent<ExGrid<TestRow>>();
+        var renders = grid.RenderCount;
+
+        Rerender(host);
+
+        Assert.Equal(renders, grid.RenderCount);
+    }
+}
