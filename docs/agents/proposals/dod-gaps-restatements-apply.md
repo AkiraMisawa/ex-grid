@@ -29,10 +29,12 @@ Not decisions, the audit's:
 - **(d) SRV-2**: three layer-3 tests skipped on the Server host without naming an exception; they run there
   now, on both hosts and both browsers, and no SRV-2 restatement is needed (merged from `claude/dod-gaps-srv2`).
   `pivot-db.spec.mjs`'s LV-34 test holds the Window question at a test gate in the demo API, which the
-  Server host's question passes through, instead of at a browser route it never reaches. Noticed, not
-  changed: on a Release-published Server host, which pins the script by integrity, `shipped-files.spec.mjs`'s
-  ERR-10 test at :172 skips and its integrity-pinned sibling at :215 runs, and the other way round on
-  WebAssembly; whether SRV-2 accepts that pair is the user's.
+  Server host's question passes through, instead of at a browser route it never reaches.
+- **SRV-2's ERR-10 pair** (decided with the user on 2026-10-13: check, then name). Run against hosts published
+  in Release, in Chrome and Edge: on WebAssembly `shipped-files.spec.mjs`'s two stamp tests pass and the
+  integrity-pinned test skips; on the Server host the reverse. The integrity-pinned test now also asserts the
+  refusal is announced once per grid, as the stamp's do, so the pair asserts the same on each host; edit 17
+  names it SRV-2's fifth exception.
 - **(e) "twelve test projects"**: §22 Step 1's restatement note said twelve; edit 4 notes the count, in a note
   not credited to the user. §1's Evidence ("twelve in all") is `claude/release-workflow-checks`' list's edit 26,
   whose old text no edit here touches.
@@ -76,6 +78,7 @@ notes that the 2026-10-08 observation is not VZ-18's record (edits 15 and 16).)*
 14. **Docs Site, Getting started: the Known limitation behind a remote browser isolation service.** Decision (g), worded as the user decided on 2026-10-13: no Citrix.
 15. **ADR-0012: "Checked 2026-10-08 on that PC" is not VZ-18's record.** Decision (g), with the user's of 2026-10-13.
 16. **ADR-0012: "VZ-18 is checked as it is written".** The same.
+17. **SRV-2: ERR-10's pair, the fifth exception.** The user's decision of 2026-10-13, whole row.
 
 ### 1. docs/definition-of-done.md
 
@@ -367,4 +370,18 @@ checked as it is written.
 its layer-3 half still gates. 2026-10-13, decided with the user: `0.1.0`'s notes and the Docs Site name the
 remote browser isolation service, not Citrix: the PC reaches the web through such a service from inside an
 organisation whose desktops run under Citrix, and the service is the likelier cause.)*
+````
+
+### 17. docs/definition-of-done.md
+
+Old:
+
+````text
+| **SRV-2** | MUST | Every layer-3 test passes against the Server host, on both browsers, with the same outcome as on WebAssembly — except where a criterion is WebAssembly's by definition, and those are only: **CP-6**'s "the `copy` event route" (on Server every copy takes the asynchronous route, ADR-0005; its no-prompt property is asserted instead); the host counters behind **MEM-6** (read from the server process, as MEM-6 says); and the two measurements whose rows define them in the browser, on a published build without AOT, which on a circuit would time the server's .NET instead: `measure-live.spec.mjs`, **LV-15**'s in-process half, and `measure-pivot.spec.mjs`, **PV-21**'s and **DA-17**'s browser half. *(Restated 2026-10-11, decided with the user, [ADR-0200](adr/0200-the-first-stable-version-is-0-1-0-and-carries-the-whole-family.md). It named two exceptions and held every test skipped on Server to them, which the tree failed: the two measurements skipped there unnamed, and so did DC-47's per-keystroke colours in `reference-text.spec.mjs` and the test named RI-22 in `inspector-edits.spec.mjs`. The measurements are named, being WebAssembly's by their rows' own words; the other two are to run on the Server host instead. MEM-5's soak is no exception and is recorded on both hosts (§22 Step 4).)* | `EXGRID_HOSTING=server npx playwright test`, §22 Step 4; CI's Server-host layer-3 job (ADR-0041) | all pass; a test that runs on WebAssembly and skips on the Server host names one of these four exceptions. A test that skips on both hosts — VZ-14's run on a Windows desktop, an ordering guard whose earlier test did not run, a `test.fixme` — is judged by its own row's criterion, not by this one |
+````
+
+New:
+
+````text
+| **SRV-2** | MUST | Every layer-3 test passes against the Server host, on both browsers, with the same outcome as on WebAssembly — except where a criterion is WebAssembly's by definition, and those are only: **CP-6**'s "the `copy` event route" (on Server every copy takes the asynchronous route, ADR-0005; its no-prompt property is asserted instead); the host counters behind **MEM-6** (read from the server process, as MEM-6 says); and the two measurements whose rows define them in the browser, on a published build without AOT, which on a circuit would time the server's .NET instead: `measure-live.spec.mjs`, **LV-15**'s in-process half, and `measure-pivot.spec.mjs`, **PV-21**'s and **DA-17**'s browser half; and **ERR-10**'s stale script, which a host that pins the script by integrity, as the published Server host does, refuses in the browser before the grid's own stamp can: `shipped-files.spec.mjs` asserts the grid's refusal there through its integrity-pinned test, and through the stamp's tests on a host that does not pin. *(Restated 2026-10-11, decided with the user, [ADR-0200](adr/0200-the-first-stable-version-is-0-1-0-and-carries-the-whole-family.md). It named two exceptions and held every test skipped on Server to them, which the tree failed: the two measurements skipped there unnamed, and so did DC-47's per-keystroke colours in `reference-text.spec.mjs` and the test named RI-22 in `inspector-edits.spec.mjs`. The measurements are named, being WebAssembly's by their rows' own words; the other two are to run on the Server host instead. MEM-5's soak is no exception and is recorded on both hosts (§22 Step 4).)* *(2026-10-13, decided with the user: ERR-10's pair is the fifth exception, named once it was checked against hosts published in Release: on WebAssembly, which pins no script, the stamp's two tests run and the integrity-pinned one skips; on the Server host the reverse. The integrity-pinned test asserts what the stamp's do — the refusal shown and announced once per grid, nothing attached, never busy — for a body the browser refuses first.)* | `EXGRID_HOSTING=server npx playwright test`, §22 Step 4; CI's Server-host layer-3 job (ADR-0041) | all pass; a test that runs on WebAssembly and skips on the Server host names one of these five exceptions. A test that skips on both hosts — VZ-14's run on a Windows desktop, an ordering guard whose earlier test did not run, a `test.fixme` — is judged by its own row's criterion, not by this one |
 ````

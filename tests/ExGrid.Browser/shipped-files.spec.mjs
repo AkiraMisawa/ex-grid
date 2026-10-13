@@ -231,6 +231,11 @@ test.describe('ERR-10: a script that is not the one the grid was built with', ()
             await expect(grid).not.toHaveAttribute('tabindex');
             await expect(grid).not.toHaveClass(/\bex-loading\b/);
             await expect(grid.locator('.ex-row')).toHaveCount(0);
+            // Said once per grid, however long the page stands, as where the grid's own stamp refuses it.
+            await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 500)));
+            const said = await page.evaluate(() => window.__exAnnounced);
+            const grids = await page.locator('.ex-grid').count();
+            expect(said.filter((s) => s.text === SCRIPT_REFUSED)).toHaveLength(grids);
         });
     });
 });
