@@ -5,26 +5,26 @@
 | ExGrid | 95.6% | 88.6% |
 | ExSheet | 95.7% | 89% |
 | ExPivot | 94.2% | 85.2% |
-| Data | 94.5% | 90.3% |
+| Data | 94.4% | 90.2% |
 
 # Summary
 <details open><summary>Summary</summary>
 
 |||
 |:---|:---|
-| Generated on: | 10/13/2026 - 11:28:20 |
+| Generated on: | 10/13/2026 - 11:57:12 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 825 |
 | Files: | 455 |
-| **Line coverage:** | 95.1% (55435 of 58246) |
-| Covered lines: | 55435 |
-| Uncovered lines: | 2811 |
-| Coverable lines: | 58246 |
-| Total lines: | 97616 |
-| **Branch coverage:** | 88.1% (31683 of 35934) |
-| Covered branches: | 31683 |
-| Total branches: | 35934 |
+| **Line coverage:** | 95.1% (55457 of 58270) |
+| Covered lines: | 55457 |
+| Uncovered lines: | 2813 |
+| Coverable lines: | 58270 |
+| Total lines: | 97635 |
+| **Branch coverage:** | 88.1% (31704 of 35954) |
+| Covered branches: | 31704 |
+| Total branches: | 35954 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -158,8 +158,8 @@
 |ExGrid.Components.ExGrid.SummaryQuestion<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenAt<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|95.5%|90.2%|
 |ExGrid.Components.ExGrid<TRow>|91%|87.8%|
+|ExGrid.Components.ExGrid<TRow>|95.5%|90.2%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
@@ -274,7 +274,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.6%**|
+|**ExGrid.Data**|**94.6%**|**90.5%**|
 |ExGrid.Data.AggregateAccumulator|86%|87.8%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -363,7 +363,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -470,7 +470,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot**|**91%**|**81%**|
+|**ExPivot**|**91%**|**81.1%**|
 |ExPivot.Chrome.IPivotChrome|41.6%||
 |ExPivot.Chrome.PivotAreaEntryView|100%||
 |ExPivot.Chrome.PivotAreaView|100%||
@@ -492,12 +492,12 @@
 |ExPivot.Chrome.PivotToolbarContext|85.7%||
 |ExPivot.Chrome.PivotToolbarMenuView|100%||
 |ExPivot.Chrome.PivotValueFieldSettingsContext|100%||
-|ExPivot.Components.ExPivot|90.8%|80.9%|
+|ExPivot.Components.ExPivot|90.9%|81%|
 |ExPivot.Components.ExPivot.FieldDrag|100%||
 |ExPivot.Components.ExPivot.ItemsLoad|100%|100%|
 |ExPivot.Components.ExPivot.ItemsView|100%|100%|
 |ExPivot.Components.ExPivot.OpenSurface|100%|100%|
-|ExPivot.Components.ExPivot<TView, TContext>|90.8%|80.9%|
+|ExPivot.Components.ExPivot<TView, TContext>|90.9%|81%|
 |ExPivot.Components.ExPivotStylesheet|100%||
 |ExPivot.Components.PivotDetailsDialogView|100%||
 |ExPivot.Components.PivotDetailsGrid|93.1%|70%|
@@ -564,7 +564,7 @@
 |ExPivot.Engine.ItemSpace|98.4%|98.7%|
 |ExPivot.Engine.ItemsPass|100%|97%|
 |ExPivot.Engine.LeafIndex|84%|85.8%|
-|ExPivot.Engine.LocalPivotReportSource|97.6%|88.1%|
+|ExPivot.Engine.LocalPivotReportSource|97.8%|88.6%|
 |ExPivot.Engine.LocalPivotReportSource.HeldReport|100%||
 |ExPivot.Engine.LocalPivotReportSource.HighlightVersion|100%|100%|
 |ExPivot.Engine.LocalPivotReportSource.Unpublished|100%|100%|
@@ -681,11 +681,11 @@
 |ExPivot.Engine.ValueFieldPlan|100%||
 
 </details>
-<details><summary>ExPivot.MudBlazor - 96%</summary>
+<details><summary>ExPivot.MudBlazor - 95.6%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot.MudBlazor**|**96%**|**88%**|
+|**ExPivot.MudBlazor**|**95.6%**|**88%**|
 |ExPivot.MudBlazor.MudExPivotStylesheet|100%||
 |ExPivot.MudBlazor.MudPivotButton|78.5%|100%|
 |ExPivot.MudBlazor.MudPivotChrome|100%|75%|
@@ -693,7 +693,7 @@
 |ExPivot.MudBlazor.MudPivotDetailsDialog|100%||
 |ExPivot.MudBlazor.MudPivotDetailsTabs|99.4%|93.3%|
 |ExPivot.MudBlazor.MudPivotFieldList|95.8%|96.6%|
-|ExPivot.MudBlazor.MudPivotFieldSettings|100%|62.5%|
+|ExPivot.MudBlazor.MudPivotFieldSettings|94.4%|62.5%|
 |ExPivot.MudBlazor.MudPivotFocus|78.5%|100%|
 |ExPivot.MudBlazor.MudPivotIcons|96.8%|100%|
 |ExPivot.MudBlazor.MudPivotItemFilter|76.9%|75%|
@@ -701,7 +701,7 @@
 |ExPivot.MudBlazor.MudPivotReportFilters|100%|100%|
 |ExPivot.MudBlazor.MudPivotStaleReport|100%||
 |ExPivot.MudBlazor.MudPivotToolbar|100%|100%|
-|ExPivot.MudBlazor.MudPivotValueFieldSettings|100%|77.2%|
+|ExPivot.MudBlazor.MudPivotValueFieldSettings|96.8%|77.2%|
 
 </details>
 <details><summary>ExSheet - 92.2%</summary>
