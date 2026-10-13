@@ -170,7 +170,7 @@ and `AGGREGATE(14,6,…,0.5)` (`#NUM!`), `AGGREGATE(14,6,TRUE,1)` and `AGGREGATE
 `ready-for-human` until a pass asks them. The Change Notes are
 `docs/releases/unreleased/area-kth-and-mod-small-k.md` and `area-kth-and-mod-aggregate-text.md`; the
 Formulas page's sentence, ADR-0047's note and the README's are proposed in
-`docs/agents/proposals/area-kth-and-mod.md`.
+`docs/agents/proposals/area-corrections-apply.md`.
 
 2026-10-12, with the second area pass (`verification/2026-10-12-windows-area-2/report.md`, Excel
 16.0.20430.20146): AGGREGATE-062 to 067 agreed and are `observed` — `AGGREGATE`'s 14 and 15 with a k of
@@ -184,4 +184,4 @@ alike; `LARGE`'s answers do not move, since a k rounded up passes the count exac
 asks it of `AGGREGATE`'s 15 (`AGGREGATE(15,6,A1:A11,9.5)`, `#NUM!`), for the box above, and SMALL-011 of
 `SMALL` at 9.2, which rounded to nearest would be 9. The Status stays `ready-for-human` until a pass asks
 them. The Change Note is `docs/releases/unreleased/area-kth-and-mod-small-k.md`; ADR-0047's note, the
-README's and the Formulas page's sentences are proposed in `docs/agents/proposals/area-kth-and-mod.md`.
+README's and the Formulas page's sentences are proposed in `docs/agents/proposals/area-corrections-apply.md`.
