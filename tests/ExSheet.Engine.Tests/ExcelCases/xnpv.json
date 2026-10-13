@@ -13,7 +13,7 @@
     {
       "id": "XNPV-002",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a date before the first is #NUM!",
+      "description": "A date before the first is #NUM!",
       "cells": {"A1": "100", "A2": "100", "B1": "40000", "B2": "39000", "ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
@@ -21,7 +21,7 @@
     {
       "id": "XNPV-003",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: values and dates of different counts are #NUM!",
+      "description": "Values and dates of different counts are #NUM!",
       "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "A4": "3250", "A5": "2750", "B1": "39448", "B2": "39508", "B3": "39751", "B4": "39859", "B5": "39904", "ZZ1000": "=XNPV(0.09,A1:A3,B1:B2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
@@ -36,105 +36,209 @@
     },
     {
       "id": "XNPV-005",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: whole years apart, refused: e^(x ln(1+rate)), XNPV-001's and 004's evaluation at fractions of a year, gives 2023.0065393622895, and squaring, as PV and FV raise to a whole number, and Math.Pow, as the ^ operator does, give 2023.0065393622904",
+      "source": "observed",
+      "description": "Whole years apart: 1+rate raised by squaring, as PV and FV raise it to a whole number, gives Excel's double (Math.Pow gives it too here), where e^(x ln(1+rate)) gives 2023.0065393622895",
       "cells": {"A1": "-10000", "A2": "3000", "A3": "4200", "A4": "6800", "B1": "39448", "B2": "39813", "B3": "40178", "B4": "40543", "ZZ1000": "=XNPV(0.07,A1:A4,B1:B4)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 2023.0065393622904}
     },
     {
       "id": "XNPV-006",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: whole years apart, refused: squaring, as PV and FV raise to a whole number, gives 2277.5848519247406, and e^(x ln(1+rate)) and Math.Pow give 2277.5848519247415",
+      "source": "observed",
+      "description": "Whole years apart: squaring gives Excel's double, where e^(x ln(1+rate)) and Math.Pow give 2277.5848519247415",
       "cells": {"A1": "-10000", "A2": "3000", "A3": "4200", "A4": "6800", "B1": "39448", "B2": "39813", "B3": "40178", "B4": "40543", "ZZ1000": "=XNPV(0.06,A1:A4,B1:B4)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 2277.5848519247406}
     },
     {
       "id": "XNPV-007",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a rate of -1, refused; Math.Pow, which the engine took before, and e^(x ln(1+rate)) both give #NUM! here, dividing by a discount of 0 or by no discount",
+      "source": "observed",
+      "description": "A rate of -1: #NUM!",
       "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "B1": "39448", "B2": "39508", "B3": "39751", "ZZ1000": "=XNPV(-1,A1:A3,B1:B3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#NUM!"}
     },
     {
       "id": "XNPV-008",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a rate of -1 with every date the first, refused; Math.Pow, which the engine took before, gives -7250 (0 to the power 0 is 1), and e^(x ln(1+rate)) #NUM! (0 times ln 0 has no value)",
+      "source": "observed",
+      "description": "A rate of -1 with every date the first: #NUM!, where Math.Pow, which the engine took before, gave -7250 (0 to the power 0 is 1)",
       "cells": {"A1": "-10000", "A2": "2750", "B1": "39448", "B2": "39448", "ZZ1000": "=XNPV(-1,A1:A2,B1:B2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#NUM!"}
     },
     {
       "id": "XNPV-009",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a rate below -1 with the dates whole years apart, refused; Math.Pow, which the engine took before, gives 400 (-0.5 to the powers 1 and 2), and e^(x ln(1+rate)) #NUM! (a negative number has no logarithm)",
+      "source": "observed",
+      "description": "A rate below -1 with the dates whole years apart: #NUM!, where squaring and Math.Pow give 400",
       "cells": {"A1": "-1000", "A2": "300", "A3": "500", "B1": "39448", "B2": "39813", "B3": "40178", "ZZ1000": "=XNPV(-1.5,A1:A3,B1:B3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#NUM!"}
     },
     {
       "id": "XNPV-010",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a rate below -1 with the dates not whole years apart, refused; Math.Pow, which the engine took before, and e^(x ln(1+rate)) both give #NUM! here",
+      "source": "observed",
+      "description": "A rate of -2: #NUM!",
       "cells": {"A1": "-1000", "A2": "300", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(-2,A1:A2,B1:B2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#NUM!"}
     },
     {
       "id": "XNPV-011",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: 101 days, refused: the days divided by 365 give -7286.877809009438, and the days multiplied by 1/365 -7286.877809009439, and both give XNPV-001 and 004",
+      "source": "observed",
+      "description": "101 days: the days divided by 365, where the days multiplied by 1/365 give -7286.877809009439",
       "cells": {"A1": "-10000", "A2": "2750", "B1": "39448", "B2": "39549", "ZZ1000": "=XNPV(0.05,A1:A2,B1:B2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": -7286.877809009438}
     },
     {
       "id": "XNPV-012",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: the evaluations that give XNPV-001 and 004 (Search.cs, 72) give 8 doubles here, split by how the years are reached, the discount, and the order of summing (discriminate-xnpv.txt); the six the engine computes part here too, so it refuses it",
+      "source": "observed",
+      "description": "A rate of -0.5, above -1: #NUM!, as XNPV-017's; Excel answered no rate below 0 it was asked",
       "cells": {"A1": "3000", "A2": "3250", "A3": "1000", "A4": "-10000", "A5": "-10000", "A6": "1000", "A7": "2500", "B1": "39448", "B2": "40565", "B3": "39813", "B4": "40443", "B5": "40184", "B6": "39951", "B7": "41390", "ZZ1000": "=XNPV(-0.5,A1:A7,B1:B7)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#NUM!"}
     },
     {
       "id": "XNPV-013",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: the evaluations that give XNPV-001 and 004 (Search.cs, 72) give 6 doubles here, split by how the years are reached, the discount, and the order of summing (discriminate-xnpv.txt); the six the engine computes give this one",
+      "source": "observed",
+      "description": "Values in no order of their dates: each discount e^(x ln(1+rate)) with the exponential correctly rounded. At 797 days the platform's (glibc's) exp gives 1.2313555711418422, one unit in the last place below the correctly rounded 1.2313555711418425, and the sum 700.2269770028581, 4 units away (spikes/exsheet-financial-evaluation/, Search.cs)",
       "cells": {"A1": "1000", "A2": "4200", "A3": "-10000", "A4": "3000", "A5": "-1000", "A6": "3250", "B1": "39448", "B2": "41204", "B3": "41007", "B4": "40245", "B5": "40272", "B6": "41174", "ZZ1000": "=XNPV(0.1,A1:A6,B1:B6)"},
       "check": "ZZ1000",
-      "expect": {"value2": 700.2269770028581}
+      "expect": {"value2": 700.2269770028577}
     },
     {
       "id": "XNPV-014",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: the evaluations that give XNPV-001 and 004 (Search.cs, 72) give 3 doubles here, split by how the years are reached, the discount, and the order of summing (discriminate-xnpv.txt); the six the engine computes part here too, so it refuses it",
+      "source": "observed",
+      "description": "Values in no order of their dates, chosen to tell the evaluations that give XNPV-001 and 004 apart (discriminate-xnpv.txt): the days over 365, squaring at whole years and e^(x ln(1+rate)) otherwise, each value divided and summed in the order given",
       "cells": {"A1": "300", "A2": "2500", "A3": "-1000", "A4": "4200", "A5": "300", "B1": "39448", "B2": "40543", "B3": "39538", "B4": "39472", "B5": "39477", "ZZ1000": "=XNPV(0.06,A1:A5,B1:B5)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 5895.866486179551}
     },
     {
       "id": "XNPV-015",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: the evaluations that give XNPV-001 and 004 (Search.cs, 72) give 5 doubles here, split by how the years are reached, the discount, and the order of summing (discriminate-xnpv.txt); the six the engine computes part here too, so it refuses it",
+      "source": "observed",
+      "description": "As XNPV-014, with seven values: Excel's double is that evaluation's",
       "cells": {"A1": "1000", "A2": "300", "A3": "6800", "A4": "1000", "A5": "3000", "A6": "-10000", "A7": "3000", "B1": "39448", "B2": "40178", "B3": "40353", "B4": "41412", "B5": "40511", "B6": "40543", "B7": "40702", "ZZ1000": "=XNPV(0.07,A1:A7,B1:B7)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 4384.942714531475}
     },
     {
       "id": "XNPV-016",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: the evaluations that give XNPV-001 and 004 (Search.cs, 72) give 2 doubles here, split by how the years are reached, the discount, and the order of summing (discriminate-xnpv.txt); the six the engine computes give this one",
+      "description": "An input chosen to tell the evaluations that give XNPV-001 and 004 apart (discriminate-xnpv.txt): Excel's double is the engine's",
       "cells": {"A1": "3250", "A2": "-10000", "B1": "39448", "B2": "40502", "ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"},
       "check": "ZZ1000",
       "expect": {"value2": -4546.946936260144}
     },
     {
       "id": "XNPV-017",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: the evaluations that give XNPV-001 and 004 (Search.cs, 72) give 5 doubles here, split by how the years are reached, the discount, and the order of summing (discriminate-xnpv.txt); the six the engine computes part here too, so it refuses it",
+      "source": "observed",
+      "description": "A rate of -0.5: #NUM!, as XNPV-012's",
       "cells": {"A1": "4250", "A2": "500", "A3": "-10000", "A4": "1000", "A5": "4200", "A6": "3250", "A7": "-10000", "B1": "39448", "B2": "41222", "B3": "40017", "B4": "40178", "B5": "41509", "B6": "40128", "B7": "41485", "ZZ1000": "=XNPV(-0.5,A1:A7,B1:B7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "XNPV-018",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: the sum from the first value gives 1.1368683772161603E-13, and Excel's last-addition adjustment (as a Formula's last addition, and SUM's, is adjusted) gives 0; both evaluations give every observed XNPV double (Search.cs)",
+      "cells": {"A1": "1000", "A2": "-1100", "B1": "39448", "B2": "39813", "ZZ1000": "=XNPV(0.1,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-019",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a rate of 0, which a rule of \"0 or below\" makes #NUM! and a rule of \"below 0\" answers with the sum of the values, 3000; Excel's #NUM! at -0.5 to -2 (XNPV-007 to 010, 012, 017) does not tell which",
+      "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "A4": "3250", "A5": "2750", "B1": "39448", "B2": "39508", "B3": "39751", "B4": "39859", "B5": "39904", "ZZ1000": "=XNPV(0,A1:A5,B1:B5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-020",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a small negative rate is #NUM!, the engine's check of the rate, which Excel gave at every negative rate it was asked, -0.5, -1, -1.5 and -2, and which none of the evaluations that give XNPV's observed doubles gives",
+      "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "A4": "3250", "A5": "2750", "B1": "39448", "B2": "39508", "B3": "39751", "B4": "39859", "B5": "39904", "ZZ1000": "=XNPV(-0.01,A1:A5,B1:B5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "XNPV-021",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value among the values at a rate below 0: an Excel that checks the rate first gives #NUM!, as at XNPV-012, and one that reads the values first gives #N/A; which Excel does has not been observed",
+      "cells": {"A1": "#N/A", "A2": "2750", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(-0.5,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-022",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: text among the values at a rate below 0: an Excel that checks the rate first gives #NUM!, and what one that reads the values first gives for text has not been observed either (the engine refuses text among them)",
+      "cells": {"A1": "text", "A2": "2750", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(-0.5,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-023",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value among the values at a rate of 0: a check of \"0 or below\" made first gives #NUM!, and \"below 0\", or the values read first, #N/A (XNPV-019 asks the rate of 0 itself)",
+      "cells": {"A1": "#N/A", "A2": "2750", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(0,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-024",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value among the values beside counts that differ: the counts checked first give #NUM!, as at XNPV-003, and the values read first #N/A",
+      "cells": {"A1": "#N/A", "A2": "2750", "A3": "4250", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(0.09,A1:A3,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-025",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value among the values beside a date before the first: the dates checked first give #NUM!, as at XNPV-002, and the values read first #N/A",
+      "cells": {"A1": "#N/A", "A2": "2750", "B1": "40000", "B2": "39508", "ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-026",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value among the values and another among the dates: the values read first give #N/A, and the dates read first #DIV/0!",
+      "cells": {"A1": "#N/A", "A2": "2750", "B1": "#DIV/0!", "B2": "39508", "ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-027",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a rate that is an Error Value beside an Error Value among the values: an Excel that reads the rate first gives #DIV/0!, and one that reads the values first #N/A; the engine reads the rate and every cell before it answers",
+      "cells": {"A1": "#N/A", "A2": "2750", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(1/0,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-028",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a rate that is an Error Value beside counts that differ: the rate read first gives #DIV/0!, and the counts checked first #NUM!, as at XNPV-003",
+      "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(1/0,A1:A3,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-029",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value among the dates, and a date before the first after it: dates read in order and the first failure answered give #N/A, and a check of every date against the first made before the dates' Error Values #NUM!, as at XNPV-002",
+      "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "B1": "39448", "B2": "#N/A", "B3": "39000", "ZZ1000": "=XNPV(0.09,A1:A3,B1:B3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "XNPV-030",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: two different Error Values among the values: the values read from the first give #N/A, and any other order #DIV/0!",
+      "cells": {"A1": "#N/A", "A2": "#DIV/0!", "B1": "39448", "B2": "39508", "ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"}
     }

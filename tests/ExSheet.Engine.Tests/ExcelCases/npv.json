@@ -5,7 +5,7 @@
     {
       "id": "NPV-001",
       "source": "observed",
-      "description": "Refused: Microsoft's example, an investment and three years' returns. Excel's double is 4 units in the last place from the doubles' sum of each value over Math.Pow(1+rate, i), and of the evaluations searched only the running product summed forward, and Horner's rule from the first value with a fused multiply-add, give it",
+      "description": "Refused: Microsoft's example, an investment and three years' returns. Excel's double is 4 units in the last place from the doubles' sum of each value over Math.Pow(1+rate, i); 87 of the 5,796 evaluations searched give it, and none of them every NPV double Excel gave",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(10%,-10000,3000,4200,6800)"},
       "check": "ZZ1000",
@@ -88,143 +88,157 @@
     },
     {
       "id": "NPV-009",
-      "source": "uncertain",
-      "description": "Refused, and recorded for the search: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate; discriminate.txt lists which gives what)",
+      "source": "observed",
+      "description": "Refused, and recorded: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read Excel's double, and none of the 5,796 evaluations of the third search gives it together with every other NPV double Excel gave (the best give 7 of 21)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.12,-25000,6000,8000,9000,7500,4000)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12): NPV is undeclared, #NAME?, for 0.1.0; recorded, so that a run reads Excel's double for the search (spikes/exsheet-financial-evaluation/)"
+      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12, NPV and PMT asked of Excel before they are corrected or refused, and the answers decide): NPV is undeclared, #NAME? as IRR is, for 0.1.0, because no evaluation searched gives every double Excel gave for it (spikes/exsheet-financial-evaluation/, search.py and Search.cs)",
+      "excelExpect": {"value2": 157.86528462709433}
     },
     {
       "id": "NPV-010",
-      "source": "uncertain",
-      "description": "Refused, and recorded for the search: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate; discriminate.txt lists which gives what)",
+      "source": "observed",
+      "description": "Refused, and recorded: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read Excel's double, and none of the 5,796 evaluations of the third search gives it together with every other NPV double Excel gave (the best give 7 of 21)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.045,-10000,2000,2000,2000,2000,2000,2000,2000)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12): NPV is undeclared, #NAME?, for 0.1.0; recorded, so that a run reads Excel's double for the search (spikes/exsheet-financial-evaluation/)"
+      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12, NPV and PMT asked of Excel before they are corrected or refused, and the answers decide): NPV is undeclared, #NAME? as IRR is, for 0.1.0, because no evaluation searched gives every double Excel gave for it (spikes/exsheet-financial-evaluation/, search.py and Search.cs)",
+      "excelExpect": {"value2": 1708.5185462007141}
     },
     {
       "id": "NPV-011",
-      "source": "uncertain",
-      "description": "Refused, and recorded for the search: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate; discriminate.txt lists which gives what)",
+      "source": "observed",
+      "description": "Refused, and recorded: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read Excel's double, and none of the 5,796 evaluations of the third search gives it together with every other NPV double Excel gave (the best give 7 of 21)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.045,100,200,300,400,500,600,700,800,900,1000)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12): NPV is undeclared, #NAME?, for 0.1.0; recorded, so that a run reads Excel's double for the search (spikes/exsheet-financial-evaluation/)"
+      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12, NPV and PMT asked of Excel before they are corrected or refused, and the answers decide): NPV is undeclared, #NAME? as IRR is, for 0.1.0, because no evaluation searched gives every double Excel gave for it (spikes/exsheet-financial-evaluation/, search.py and Search.cs)",
+      "excelExpect": {"value2": 4065.5859439548863}
     },
     {
       "id": "NPV-012",
-      "source": "uncertain",
-      "description": "Refused, and recorded for the search: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate; discriminate.txt lists which gives what)",
+      "source": "observed",
+      "description": "Refused, and recorded: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read Excel's double, and none of the 5,796 evaluations of the third search gives it together with every other NPV double Excel gave (the best give 7 of 21)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.05,-25000,6000,8000,9000,7500,4000)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12): NPV is undeclared, #NAME?, for 0.1.0; recorded, so that a run reads Excel's double for the search (spikes/exsheet-financial-evaluation/)"
+      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12, NPV and PMT asked of Excel before they are corrected or refused, and the answers decide): NPV is undeclared, #NAME? as IRR is, for 0.1.0, because no evaluation searched gives every double Excel gave for it (spikes/exsheet-financial-evaluation/, search.py and Search.cs)",
+      "excelExpect": {"value2": 4808.983957663187}
     },
     {
       "id": "NPV-013",
-      "source": "uncertain",
-      "description": "Refused, and recorded for the search: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate; discriminate.txt lists which gives what)",
+      "source": "observed",
+      "description": "Refused, and recorded: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read Excel's double, and none of the 5,796 evaluations of the third search gives it together with every other NPV double Excel gave (the best give 7 of 21)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.08,-120000,39000,30000,21000,37000,46000)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12): NPV is undeclared, #NAME?, for 0.1.0; recorded, so that a run reads Excel's double for the search (spikes/exsheet-financial-evaluation/)"
+      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12, NPV and PMT asked of Excel before they are corrected or refused, and the answers decide): NPV is undeclared, #NAME? as IRR is, for 0.1.0, because no evaluation searched gives every double Excel gave for it (spikes/exsheet-financial-evaluation/, search.py and Search.cs)",
+      "excelExpect": {"value2": 15745.078146860713}
     },
     {
       "id": "NPV-014",
-      "source": "uncertain",
-      "description": "Refused, and recorded for the search: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate; discriminate.txt lists which gives what)",
+      "source": "observed",
+      "description": "Refused, and recorded: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read Excel's double, and none of the 5,796 evaluations of the third search gives it together with every other NPV double Excel gave (the best give 7 of 21)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.09,-10000,2000,2000,2000,2000,2000,2000,2000)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12): NPV is undeclared, #NAME?, for 0.1.0; recorded, so that a run reads Excel's double for the search (spikes/exsheet-financial-evaluation/)"
+      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12, NPV and PMT asked of Excel before they are corrected or refused, and the answers decide): NPV is undeclared, #NAME? as IRR is, for 0.1.0, because no evaluation searched gives every double Excel gave for it (spikes/exsheet-financial-evaluation/, search.py and Search.cs)",
+      "excelExpect": {"value2": 60.463917567430045}
     },
     {
       "id": "NPV-015",
-      "source": "uncertain",
-      "description": "Refused, and recorded for the search: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate; discriminate.txt lists which gives what)",
+      "source": "observed",
+      "description": "Refused, and recorded: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read Excel's double, and none of the 5,796 evaluations of the third search gives it together with every other NPV double Excel gave (the best give 7 of 21)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.1,-10000,2000,2000,2000,2000,2000,2000,2000)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12): NPV is undeclared, #NAME?, for 0.1.0; recorded, so that a run reads Excel's double for the search (spikes/exsheet-financial-evaluation/)"
+      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12, NPV and PMT asked of Excel before they are corrected or refused, and the answers decide): NPV is undeclared, #NAME? as IRR is, for 0.1.0, because no evaluation searched gives every double Excel gave for it (spikes/exsheet-financial-evaluation/, search.py and Search.cs)",
+      "excelExpect": {"value2": -239.2385132855801}
     },
     {
       "id": "NPV-016",
-      "source": "uncertain",
-      "description": "Refused, and recorded for the search: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate; discriminate.txt lists which gives what)",
+      "source": "observed",
+      "description": "Refused, and recorded: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read Excel's double, and none of the 5,796 evaluations of the third search gives it together with every other NPV double Excel gave (the best give 7 of 21)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.1,-25000,6000,8000,9000,7500,4000)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12): NPV is undeclared, #NAME?, for 0.1.0; recorded, so that a run reads Excel's double for the search (spikes/exsheet-financial-evaluation/)"
+      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12, NPV and PMT asked of Excel before they are corrected or refused, and the answers decide): NPV is undeclared, #NAME? as IRR is, for 0.1.0, because no evaluation searched gives every double Excel gave for it (spikes/exsheet-financial-evaluation/, search.py and Search.cs)",
+      "excelExpect": {"value2": 1303.8501073347138}
     },
     {
       "id": "NPV-017",
-      "source": "uncertain",
-      "description": "Refused, and recorded for the search: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate; discriminate.txt lists which gives what)",
+      "source": "observed",
+      "description": "Refused, and recorded: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read Excel's double, and none of the 5,796 evaluations of the third search gives it together with every other NPV double Excel gave (the best give 7 of 21)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.07,-10000,2000,2000,2000,2000,2000,2000,2000)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12): NPV is undeclared, #NAME?, for 0.1.0; recorded, so that a run reads Excel's double for the search (spikes/exsheet-financial-evaluation/)"
+      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12, NPV and PMT asked of Excel before they are corrected or refused, and the answers decide): NPV is undeclared, #NAME? as IRR is, for 0.1.0, because no evaluation searched gives every double Excel gave for it (spikes/exsheet-financial-evaluation/, search.py and Search.cs)",
+      "excelExpect": {"value2": 727.6437413994329}
     },
     {
       "id": "NPV-018",
-      "source": "uncertain",
-      "description": "Refused, and recorded for the search: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate; discriminate.txt lists which gives what)",
+      "source": "observed",
+      "description": "Refused, and recorded: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read Excel's double, and none of the 5,796 evaluations of the third search gives it together with every other NPV double Excel gave (the best give 7 of 21)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.07,-25000,6000,8000,9000,7500,4000)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12): NPV is undeclared, #NAME?, for 0.1.0; recorded, so that a run reads Excel's double for the search (spikes/exsheet-financial-evaluation/)"
+      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12, NPV and PMT asked of Excel before they are corrected or refused, and the answers decide): NPV is undeclared, #NAME? as IRR is, for 0.1.0, because no evaluation searched gives every double Excel gave for it (spikes/exsheet-financial-evaluation/, search.py and Search.cs)",
+      "excelExpect": {"value2": 3285.3515532789606}
     },
     {
       "id": "NPV-019",
-      "source": "uncertain",
-      "description": "Refused, and recorded for the search: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate; discriminate.txt lists which gives what)",
+      "source": "observed",
+      "description": "Refused, and recorded: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read Excel's double, and none of the 5,796 evaluations of the third search gives it together with every other NPV double Excel gave (the best give 7 of 21)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.045,-120000,39000,30000,21000,37000,46000)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12): NPV is undeclared, #NAME?, for 0.1.0; recorded, so that a run reads Excel's double for the search (spikes/exsheet-financial-evaluation/)"
+      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12, NPV and PMT asked of Excel before they are corrected or refused, and the answers decide): NPV is undeclared, #NAME? as IRR is, for 0.1.0, because no evaluation searched gives every double Excel gave for it (spikes/exsheet-financial-evaluation/, search.py and Search.cs)",
+      "excelExpect": {"value2": 29793.511231516124}
     },
     {
       "id": "NPV-020",
-      "source": "uncertain",
-      "description": "Refused, and recorded for the search: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate; discriminate.txt lists which gives what)",
+      "source": "observed",
+      "description": "Refused, and recorded: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read Excel's double, and none of the 5,796 evaluations of the third search gives it together with every other NPV double Excel gave (the best give 7 of 21)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.08,-7500,3000,3000,3000)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12): NPV is undeclared, #NAME?, for 0.1.0; recorded, so that a run reads Excel's double for the search (spikes/exsheet-financial-evaluation/)"
+      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12, NPV and PMT asked of Excel before they are corrected or refused, and the answers decide): NPV is undeclared, #NAME? as IRR is, for 0.1.0, because no evaluation searched gives every double Excel gave for it (spikes/exsheet-financial-evaluation/, search.py and Search.cs)",
+      "excelExpect": {"value2": 214.15829791077385}
     },
     {
       "id": "NPV-021",
-      "source": "uncertain",
-      "description": "Refused, and recorded for the search: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate; discriminate.txt lists which gives what)",
+      "source": "observed",
+      "description": "Refused, and recorded: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read Excel's double, and none of the 5,796 evaluations of the third search gives it together with every other NPV double Excel gave (the best give 7 of 21)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.09,-40000,8000,9200,10000,12000,14500)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12): NPV is undeclared, #NAME?, for 0.1.0; recorded, so that a run reads Excel's double for the search (spikes/exsheet-financial-evaluation/)"
+      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12, NPV and PMT asked of Excel before they are corrected or refused, and the answers decide): NPV is undeclared, #NAME? as IRR is, for 0.1.0, because no evaluation searched gives every double Excel gave for it (spikes/exsheet-financial-evaluation/, search.py and Search.cs)",
+      "excelExpect": {"value2": 669.5852422529917}
     },
     {
       "id": "NPV-022",
-      "source": "uncertain",
-      "description": "Refused, and recorded for the search: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate; discriminate.txt lists which gives what)",
+      "source": "observed",
+      "description": "Refused, and recorded: an input chosen so that the evaluations nearest Excel's NPV give different doubles for it (Search.cs --discriminate). The second area pass of 2026-10-12 read Excel's double, and none of the 5,796 evaluations of the third search gives it together with every other NPV double Excel gave (the best give 7 of 21)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NPV(0.15,-25000,6000,8000,9000,7500,4000)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12): NPV is undeclared, #NAME?, for 0.1.0; recorded, so that a run reads Excel's double for the search (spikes/exsheet-financial-evaluation/)"
+      "engineDiffersByDecision": "ADR-0202 (note of 2026-10-12, NPV and PMT asked of Excel before they are corrected or refused, and the answers decide): NPV is undeclared, #NAME? as IRR is, for 0.1.0, because no evaluation searched gives every double Excel gave for it (spikes/exsheet-financial-evaluation/, search.py and Search.cs)",
+      "excelExpect": {"value2": -1338.223462825282}
     }
   ]
 }
