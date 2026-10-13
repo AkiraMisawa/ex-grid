@@ -199,6 +199,21 @@ test.describe('on /sheet?chrome=mud', () => {
         await expectKeyboardOn(grid);
     });
 
+    test('SH-45/ADR-0071 (decided with the user, 2026-10-13): Cancel, then ↓ typed at once, sets nothing and moves the Focus, as typed slowly', async ({ page }) => {
+        const grid = sheet(page);
+        await openFromMenu(page, grid, 'C2');
+        await choice(page, 'Percentage').check();
+        await setRoundTrip(80);
+
+        await formatCells(page).getByRole('button', { name: 'Cancel', exact: true }).click();
+        await page.keyboard.press('ArrowDown');
+
+        await expectFocusAt(grid, 'C3');
+        await expect(formatCells(page)).toHaveCount(0);
+        await expect(cell(grid, 'C2')).toHaveText('0.5');
+        await expectKeyboardOn(grid);
+    });
+
     test('SH-45/ADR-0071 (decided with the user, 2026-10-13): OK, then ↓ typed at once, sets what was touched and moves the Focus, as typed slowly', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(page, grid, 'C2');
