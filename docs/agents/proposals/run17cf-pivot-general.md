@@ -254,9 +254,11 @@ labelled with up to 15 significant digits, where Excel labels it in General, at 
 - `tests/ExGrid.Browser/pivot-csv.spec.mjs` (layer 3): e16.csv given to `/pivot-csv` through its unknown-file path, as
   the run gave it, and painted under both Chromes as Excel showed it, each value whole in its column and never
   `####`; round 3: e16b.csv given the same way, its Schema suggested as the run's (Key a Decimal, Amount an Integer),
-  Key moved to Rows from its menu, and its Items painted `1.23456789` and `1.23457E+11`. Rounds 1 and 2 ran it with
-  Playwright's bundled Chromium; round 3 ran it with the installed Chrome and Edge, on both hosts (the report gives
-  the counts).
+  Key moved to Rows from its menu, and its Items painted `1.23456789` and `1.23457E+11`; round 4: e16b's Key moved
+  to Column Labels and its value row copied with headers through the Context Menu, the text flavour reading
+  `1.23456789`, `1.23457E+11` and `Grand Total` as painted and the HTML
+  `<th>1.23456789012345</th><th>123456789012.345</th>`. Rounds 1 and 2 ran it with Playwright's bundled Chromium;
+  rounds 3 and 4 with the installed Chrome and Edge, on both hosts (the reports give the counts).
 
 ## The edits, in order
 
@@ -835,8 +837,10 @@ Nothing else public changes: `PivotRowLabel.Number` and the value column's `Head
 - `src/ExPivot.Engine/PivotReport.cs` and `PivotValue.cs` merge without conflict: main made `PivotReport`,
   `PivotReportRow`, `PivotReportColumn` and `PivotValue` internal, and this branch adds internal members and
   comments elsewhere in those files.
-- After the merge, check that main's tests of the copy, the captions and the words still pass with this branch's
-  answers: main's suites predate `Count of` for Count Numbers, General labels and the Japanese `個数`.
+- **Checked**, in a scratch worktree since removed: origin/main (c817a87b) merged with this branch at f8a4df4d,
+  `PivotSummary.cs` taken as deleted and the lines above written. The build failed first on exactly the RS0016 and
+  RS0017 those lines answer (the analyzer's own symbol text matches them). With them, `ExGrid.slnx` builds with no
+  warning, and layers 1 and 2 pass whole: 11,480 passed, 11 skipped, none failed. No other file conflicted.
 
 
 ## What waits on a decision
