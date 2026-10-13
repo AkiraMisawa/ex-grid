@@ -147,39 +147,39 @@ test('UX-3 / ST-3 / ADR-0027 P6, ADR-0028: after each density change the rows, h
     }
 });
 
-test('CON-4 / ADR-0013: no ResizeObserver loop error through density changes and window resizes', async ({ page }) => {
-    await page.goto('/density');
-    await expect(grid(page).locator('.ex-row').first()).toBeVisible();
-    // Chrome reports the loop as an error event on window, which need not reach the console:
-    // listened for here, on window, so alterPage takes the listener off as the test ends.
-    await alterPage(page, () => {
-        const seen = [];
-        const listen = (e) => seen.push(String(e.message));
-        window.addEventListener('error', listen);
-        window.__exgridErrorEvents = seen;
-        return () => {
-            window.removeEventListener('error', listen);
-            delete window.__exgridErrorEvents;
-        };
-    });
+// A document of its own, so the listener is on window before the grid attaches: the loop at attach
+// counts as much as one after a density change, and the harness's console capture never sees it
+// (Chrome raises it on window only). On WebAssembly the first gutter report, told from inside the
+// observer's callback, rendered the gutter's strip there and looped on /density (2026-10-13). The
+// resizes stay in this test's own context.
+test.describe(() => {
+    test.use({ freshDocument: true });
+    test('CON-4 / ADR-0013: no ResizeObserver loop error from attach through density changes and window resizes', async ({ page }) => {
+        await page.addInitScript(() => {
+            window.__exgridErrorEvents = [];
+            window.addEventListener('error', (e) => window.__exgridErrorEvents.push(String(e.message)));
+        });
+        await page.goto('/density');
+        await expect(grid(page).locator('.ex-row').first()).toBeVisible();
 
-    const viewport = page.viewportSize();
-    const sizes = [{ width: 900, height: 600 }, { width: 520, height: 420 }, viewport];
-    for (const [step, name] of Object.keys(PRESETS).entries()) {
-        await page.locator(`#density-${name}`).click();
-        await expect.poll(() => grid(page).locator('.ex-row').first().evaluate((row) => row.getBoundingClientRect().height))
-            .toBe(PRESETS[name].row);
-        // A resize of the window between density changes: the Stretch grid's width follows it.
-        if (step < sizes.length) {
-            await page.setViewportSize(sizes[step]);
-            await expect.poll(() => grid(page).evaluate((g, width) => Math.round(g.getBoundingClientRect().right) <= width, sizes[step].width))
-                .toBe(true);
+        const viewport = page.viewportSize();
+        const sizes = [{ width: 900, height: 600 }, { width: 520, height: 420 }, viewport];
+        for (const [step, name] of Object.keys(PRESETS).entries()) {
+            await page.locator(`#density-${name}`).click();
+            await expect.poll(() => grid(page).locator('.ex-row').first().evaluate((row) => row.getBoundingClientRect().height))
+                .toBe(PRESETS[name].row);
+            // A resize of the window between density changes: the Stretch grid's width follows it.
+            if (step < sizes.length) {
+                await page.setViewportSize(sizes[step]);
+                await expect.poll(() => grid(page).evaluate((g, width) => Math.round(g.getBoundingClientRect().right) <= width, sizes[step].width))
+                    .toBe(true);
+            }
+            await twoFrames(page);
         }
+        await circuitQuiet();
         await twoFrames(page);
-    }
-    await circuitQuiet();
-    await twoFrames(page);
-    expect(await page.evaluate(() => window.__exgridErrorEvents)).toEqual([]);
+        expect(await page.evaluate(() => window.__exgridErrorEvents)).toEqual([]);
+    });
 });
 
 test('a Visual Token set on an ancestor recolours the paint (UX-5, the paint half)', async ({ page }) => {
