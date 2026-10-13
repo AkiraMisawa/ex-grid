@@ -11,7 +11,8 @@ Windows run settled", ticket 57's model:
 - **An inside edge shows mixed where the two cells' own records differ** (the eleventh run's case 24),
   as today.
 - **OK sets only what the user touched** (SH-45). A shown edge left alone writes nothing. Taking it away
-  clears that edge on both sides, as clearing an edge does. *(A reading: no run pressed it.)*
+  clears that edge on both sides, as clearing an edge does. *(A reading: no run pressed it. Observed
+  2026-10-12, the seventeenth Windows run, h10.)*
 
 **Blocked by:** None (can start immediately)
 
@@ -69,4 +70,22 @@ Windows run settled", ticket 57's model:
   - `nix develop -c dotnet test ExGrid.slnx`: ExGrid.Tests 1089, ExGrid.MudBlazor.Tests 198,
     ExSheet.Engine.Tests 2340, ExGrid.Components 1356 (+1 skipped), ExSheet.MudBlazor.Tests 47,
     ExSheet.Components.Tests 605. All pass.
+
+*(2026-10-12, the seventeenth Windows run, h10; branch `claude/run17gh-readings`.)*
+- **Taking the shown top away is observed.** Over A2 under A1's thick bottom, Excel's Format Cells opened with a thick
+  top, its button pressed; the Top button alone (Alt+T) took it away, and after OK A1's bottom was gone too.
+- **Excel's Border tab opened on that thick line**, Automatic as the line was, where ExSheet opened on Thin. The same
+  single press of Top would have set a thin top in ExSheet. `FormatCellsDraft` now opens on the line shown where the
+  Selection is one cell and exactly one of its edges shows a line. Excel was seen to do so only for a top edge and a
+  bottom edge, in Automatic or black; the rest is a reading (ticket 52's comment of this date). The tests that took
+  the line away chose Thick first; they now press only Top, then OK, as the run did: `FormatCellsDraftTests`,
+  `FormatCellsTests` and `MudFormatCellsTests`, `Taking_…_case_14_13`, and a new test in each of
+  `format-cells.spec.mjs` and `format-cells-mud.spec.mjs`.
+- **Where both cells record a line on an outer edge, which one the dialog shows is still not asked.** By the twelfth
+  run's model, setting lines cannot make the state, and the run agrees: through COM, A2's thin top after A1's thick
+  bottom read back as A1's bottom thin too, one line drawn on the edge. COM reads the edge as drawn, not each cell's
+  record. A paste makes it: the fourteenth run's case 12 read the saved file after E5 was pasted over B2, and B2
+  recorded a thick red right while C2 kept its thin blue left. That is the only run that read two records on one
+  edge; the twelfth run's cases read COM and the pixels, which show the edge only. The next run asks it there: case
+  12's paste, then Format Cells over C2.
 

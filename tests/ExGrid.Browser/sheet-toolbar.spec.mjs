@@ -1,7 +1,8 @@
 import { test, expect, setRoundTrip, circuitQuiet, alterPage } from './fixtures.mjs';
-import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { watchHiddenFocus } from './hidden-focus.mjs';
+import { resolvedColour } from './pixels.mjs';
 
 // The Sheet Toolbar (ADR-0100, ticket 54; SH-48 to SH-50), on /sheet under both Chromes: above the
 // Formula Bar, inside the Sheet's box and outside the grid's root, the grid keeping the rows the page
@@ -94,6 +95,11 @@ async function watchWhereKeysLand(page) {
     return () => page.evaluate(() => window.__keysLanded);
 }
 
+/** The colour a cell's text is painted in, as sRGB. */
+async function inkOf(locator) {
+    return resolvedColour(locator.page(), await locator.evaluate((el) => getComputedStyle(el).color));
+}
+
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
         test.beforeEach(async ({ page }) => {
@@ -174,6 +180,86 @@ for (const chrome of ['builtin', 'mud']) {
             await expectFocusAt(grid, 'C3');
             await toolbarItem(page, 'Fill Colour').click();
             await expect(cell(grid, 'C3')).toHaveCSS('background-color', 'rgb(0, 176, 240)');
+        });
+
+        // Decided with the user on 2026-10-12 (ADR-0071): each toggle widens a column over #### as
+        // the key it names does — Underline as Ctrl+U (the seventeenth Windows run's h7),
+        // Strikethrough as Ctrl+5 (the fourteenth's case 7) — and Bold and Italic widen nothing, as
+        // Ctrl+B and Ctrl+I do not.
+        test(`ADR-0100/ADR-0071 (decided 2026-10-12): over #### Italic and Bold widen no column; Underline and Strikethrough widen one at the standard width, never one sized by its grip, each taken back by one Ctrl+Z (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
+            const width = async (name) => (await boxOf(columnHeader(grid, name))).width;
+            const focusFont = page.locator('#sheet-focus-font');
+
+            await toolbarItem(page, 'Italic').click();
+            await expect(focusFont).toHaveText('italic');
+            await toolbarItem(page, 'Bold').click();
+            await expect(focusFont).toHaveText('bold italic');
+            // That nothing widened is read once every round trip has landed (ADR-0056).
+            await circuitQuiet();
+            await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+            expect(await width('E')).toBeCloseTo(standard, 0);
+
+            for (const [item, shown] of [['Underline', 'bold italic underline'], ['Strikethrough', 'bold italic strikethrough']]) {
+                await toolbarItem(page, item).click();
+                await expect(focusFont).toHaveText(shown);
+                await expect(cell(grid, 'E1')).toHaveText('123,456,789.12');
+                await expect.poll(() => width('E')).toBeGreaterThan(standard + 10);
+                await circuitQuiet();
+                await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
+                expect(await width('F')).toBeCloseTo(sized, 0);
+
+                // The width is a step of the press's own: one Ctrl+Z takes back the emphasis and the width.
+                await expectKeyboardOn(grid);
+                await page.keyboard.press('ControlOrMeta+Z');
+                await expect(focusFont).toHaveText('bold italic');
+                await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+                await expect.poll(() => width('E')).toBeCloseTo(standard, 0);
+            }
+        });
+
+        // Decided with the user on 2026-10-12 (ADR-0071): SetCellFormatAsync widens as the formatting
+        // keys do, and the Font Colour face and its list set through it, so a colour widens nothing.
+        // The readings of 2026-10-12 (R6) pressed the Home tab's Bold, Italic and Underline over ####,
+        // not Font Color, so that Excel's Font Color widens nothing is a reading. The Fill Colour face
+        // widens nothing, as the fourteenth Windows run's Fill Colour button did not (case 7).
+        test(`ADR-0100/ADR-0071: over #### the Font Colour face and a colour from its list widen no column (decided 2026-10-12), nor does the Fill Colour face (the fourteenth run's case 7); Underline then widens the one at the standard width and leaves a sized one (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
+            const width = async (name) => (await boxOf(columnHeader(grid, name))).width;
+
+            await toolbarItem(page, 'Font Colour').click();
+            await expect.poll(() => inkOf(cell(grid, 'E1'))).toEqual([255, 0, 0]);
+            // That nothing widened is read once every round trip has landed (ADR-0056).
+            await circuitQuiet();
+            await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+            expect(await width('E')).toBeCloseTo(standard, 0);
+
+            await toolbarArrow(page, 'Font Colour').click();
+            await page.locator('[role="menuitemradio"][aria-label="Blue"]').first().click();
+            await expect.poll(() => inkOf(cell(grid, 'E1'))).toEqual([0x00, 0x70, 0xc0]);
+            await circuitQuiet();
+            await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+            expect(await width('E')).toBeCloseTo(standard, 0);
+
+            await expectKeyboardOn(grid);
+            await toolbarItem(page, 'Fill Colour').click();
+            await expect(cell(grid, 'E1')).toHaveCSS('background-color', 'rgb(255, 255, 0)');
+            await circuitQuiet();
+            await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+            expect(await width('E')).toBeCloseTo(standard, 0);
+            await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
+            expect(await width('F')).toBeCloseTo(sized, 0);
+
+            // The same number widens for a toggle that widens, so the colours' leaving it is theirs.
+            await toolbarItem(page, 'Underline').click();
+            await expect(page.locator('#sheet-focus-font')).toHaveText('underline');
+            await expect(cell(grid, 'E1')).toHaveText('123,456,789.12');
+            await expect.poll(() => width('E')).toBeGreaterThan(standard + 10);
+            await circuitQuiet();
+            await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
+            expect(await width('F')).toBeCloseTo(sized, 0);
         });
 
         test(`ADR-0100: the page's own action runs over the Selection (${chrome})`, async ({ page }) => {

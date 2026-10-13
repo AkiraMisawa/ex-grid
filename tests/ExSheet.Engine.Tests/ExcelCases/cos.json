@@ -49,7 +49,7 @@
     },
     {
       "id": "COS-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a large angle reduced by Excel's pi/2 (the double's true cosine is -0.3633850893556905)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COS(100000000)"},

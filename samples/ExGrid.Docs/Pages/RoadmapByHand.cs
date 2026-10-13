@@ -30,7 +30,7 @@ internal static class RoadmapByHand
             ["ExSheet"], ["ADR-0202", "DoD §27"]),
         new("ExPivot's readings of Excel are run beside Excel. Where one that changes a number on screen disagrees, the decision is corrected first and the code after it; a difference in layout or wording is said as a known limitation.",
             ["ExPivot"], ["ADR-0202", "DoD §29"]),
-        new("What the stable version does not do is said where a reader meets it: on the product's page, and under Known limitations in its Release Notes. Among them: IRR, XIRR and RATE, which it does not support, and a Reference Outline, which cannot be dragged.",
+        new("What the stable version does not do is said where a reader meets it: on the product's page, and under Known limitations in its Release Notes. Among them: NPV, IRR, XIRR and RATE, which it does not support, PMT's last digits, which may differ from Excel's, and a Reference Outline, which cannot be dragged.",
             ["ExGrid", "ExSheet", "ExPivot", "Data"], ["ADR-0202"]),
         new("A refusal is worded by default: the built-in Chrome says and announces why a paste or a copy was refused, and what to do next where something can be done, unless your application words it.",
             ["ExGrid"], ["ADR-0203"]),

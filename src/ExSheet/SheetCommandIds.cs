@@ -24,6 +24,17 @@ public static class SheetCommandIds
     public const string FormatCells = "exsheet.format-cells";
 
     /// <summary>
+    /// The words the Selection Summary shows in place of its figures when the Selection holds a cell
+    /// whose Formula ExSheet refused (a Refused Formula, its cell <c>#VALUE!</c> or <c>#NAME?</c>): no figure is shown
+    /// over it, since Excel would answer that Formula. Not a command; asked as a refusal's words are
+    /// (ADR-0203) — a substituted Chrome's, else <c>ExSheet.CommandLabel</c> — so a Consumer can
+    /// translate it. In the words,
+    /// <c>{0}</c> stands for the refused cell's address, the first in reading order, and <c>{1}</c> for
+    /// what that cell shows.
+    /// </summary>
+    public const string SummaryRefused = "exsheet.summary-refused";
+
+    /// <summary>
     /// ExSheet's own English for one of its ids, or null for an id that is not ExSheet's: what the
     /// menu shows where <c>ExSheet.CommandLabel</c> says nothing, and what a substituted Chrome,
     /// which words a command from its id (ADR-0036), falls back to for ExSheet's. It also words the
@@ -38,6 +49,7 @@ public static class SheetCommandIds
         InsertColumns => "Insert columns to the left",
         DeleteColumns => "Delete columns",
         FormatCells => "Format Cells…",
+        SummaryRefused => SheetWords.SummaryRefusedEnglish,
         _ => SheetWords.RefusalWords(id),
     };
 }

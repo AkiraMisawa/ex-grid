@@ -1257,6 +1257,16 @@
         "value2": 1
       },
       "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
+    },
+    {
+      "id": "LET-113",
+      "source": "uncertain",
+      "description": "A LET name bound to a refused cell does not let IFERROR catch it: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001); what LET(x,B1,IFERROR(x,0)) gives is asked",
+      "cells": {"B1": "=MROUND(6.05,0.1)", "A10": "=LET(x,B1,IFERROR(x,0))"},
+      "check": "A10",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND's fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell through a name is refused",
+      "oracleSkip": "Typed with real keys, the way ExSheet's Formulas are entered: the keyboard can refuse what Formula2 accepts (LET-023); ask by keys"
     }
   ]
 }

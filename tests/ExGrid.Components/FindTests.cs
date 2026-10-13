@@ -374,6 +374,42 @@ public class FindTests : GridTestContext
         Assert.Single(cut.FindAll(".ex-popover-find"));
     }
 
+    [Fact] // ADR-0055 / ADR-0039 / ADR-0010 / FD-1: Ctrl+F in a column's menu asks for the root's focus while the menu still stands, and the find field has the last word
+    public async Task Ctrl_f_from_a_column_menu_keeps_the_keyboard_on_the_root_until_the_field_takes_it()
+    {
+        // On a circuit the render that swaps the menu for the panel removed the item holding DOM
+        // focus, and the field took it a round trip later: the letters typed in between fell on
+        // body, which the key gate never hears, and `Osei` came out `Os`. The request for the
+        // root reaches the browser ahead of that render, so they land where the gate holds them.
+        var cut = RenderGrid(new Heard(), Answer(0, "Book"));
+        cut.Render(ps => ps.Add(g => g.OnSortChanged, (IReadOnlyList<SortSpec> _) => { }));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "ArrowDown", alt: true);
+        // What stood at each moment the grid asked for the root's focus: (popovers, find panels).
+        var standing = new List<(int, int)>();
+        Js.OnFocusReclaimed(() => standing.Add((cut.FindAll(".ex-popover").Count, cut.FindAll(".ex-popover-find").Count)));
+        var asked = Js.FocusCalls;
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("f", true, false, false, false, false, fromDescendant: true));
+
+        Assert.Equal([(1, 0)], standing);
+        var field = cut.Find("input.ex-find-field").GetAttribute("blazor:elementreference");
+        cut.WaitForAssertion(() => Assert.Equal([Js.RootReferenceId, field], Js.Focused.Skip(asked)));
+    }
+
+    [Fact] // ADR-0055 / ADR-0039: Ctrl+F on the grid replaces nothing, and asks nothing of the root — the root holds the keyboard already
+    public async Task Ctrl_f_on_the_grid_asks_nothing_of_the_root()
+    {
+        var cut = RenderGrid(new Heard(), Answer(0, "Book"));
+        await ClickCellAsync(cut, 50, 10);
+        var reclaims = Js.FocusReclaimed.Invocations.Count;
+
+        await PressAsync(cut, "f", ctrl: true);
+
+        Assert.Single(cut.FindAll(".ex-popover-find"));
+        Assert.Equal(reclaims, Js.FocusReclaimed.Invocations.Count);
+    }
+
     [Fact] // ADR-0055 / ADR-0001: OnFind passed alone is a callback, not data — neither Window nor Source is refused
     public void On_find_alone_is_not_a_window()
     {

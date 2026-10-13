@@ -1,0 +1,4887 @@
+[
+    {
+        "id":  "e02",
+        "item":  2,
+        "steps":  [
+                      "Region to Rows"
+                  ],
+        "excelProcess":  48880,
+        "source":  [
+                       [
+                           {
+                               "text":  "Region",
+                               "value2":  "Region",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "10",
+                               "value2":  "10",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "east",
+                               "value2":  "east",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "20",
+                               "value2":  "20",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "EAST",
+                               "value2":  "EAST",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "30",
+                               "value2":  "30",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "5",
+                               "value2":  "5",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:B6",
+        "tableRange2":  "A3:B6",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "East",
+                              "value2":  "East",
+                              "format":  "General",
+                              "wideText":  "East"
+                          },
+                          {
+                              "text":  "60",
+                              "value2":  "60",
+                              "format":  "General",
+                              "wideText":  "60"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "West",
+                              "value2":  "West",
+                              "format":  "General",
+                              "wideText":  "West"
+                          },
+                          {
+                              "text":  "5",
+                              "value2":  "5",
+                              "format":  "General",
+                              "wideText":  "5"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "65",
+                              "value2":  "65",
+                              "format":  "General",
+                              "wideText":  "65"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             13
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e02-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e03",
+        "item":  3,
+        "steps":  [
+                      "Region to Rows"
+                  ],
+        "excelProcess":  43936,
+        "source":  [
+                       [
+                           {
+                               "text":  "Region",
+                               "value2":  "Region",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "10",
+                               "value2":  "10",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "",
+                               "value2":  null,
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "20",
+                               "value2":  "20",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "5",
+                               "value2":  "5",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "",
+                               "value2":  null,
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "1",
+                               "value2":  "1",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Region",
+                                "agg":  "Count",
+                                "show":  null,
+                                "caption":  "Count of Region",
+                                "function":  -4112,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Amount",
+                                "agg":  "Count",
+                                "show":  null,
+                                "caption":  "Count of Amount",
+                                "function":  -4112,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:D7",
+        "tableRange2":  "A3:D7",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Count of Region",
+                              "value2":  "Count of Region",
+                              "format":  "General",
+                              "wideText":  "Count of Region"
+                          },
+                          {
+                              "text":  "Count of Amount",
+                              "value2":  "Count of Amount",
+                              "format":  "General",
+                              "wideText":  "Count of Amount"
+                          },
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "East",
+                              "value2":  "East",
+                              "format":  "General",
+                              "wideText":  "East"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          },
+                          {
+                              "text":  "10",
+                              "value2":  "10",
+                              "format":  "General",
+                              "wideText":  "10"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "West",
+                              "value2":  "West",
+                              "format":  "General",
+                              "wideText":  "West"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          },
+                          {
+                              "text":  "5",
+                              "value2":  "5",
+                              "format":  "General",
+                              "wideText":  "5"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "(blank)",
+                              "value2":  "(blank)",
+                              "format":  "General",
+                              "wideText":  "(blank)"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "21",
+                              "value2":  "21",
+                              "format":  "General",
+                              "wideText":  "21"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "4",
+                              "value2":  "4",
+                              "format":  "General",
+                              "wideText":  "4"
+                          },
+                          {
+                              "text":  "36",
+                              "value2":  "36",
+                              "format":  "General",
+                              "wideText":  "36"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             13.45,
+                             14.27,
+                             13
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e03-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e04",
+        "item":  4,
+        "steps":  [
+                      "Group to Rows"
+                  ],
+        "excelProcess":  38052,
+        "source":  [
+                       [
+                           {
+                               "text":  "Group",
+                               "value2":  "Group",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Value",
+                               "value2":  "Value",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "A",
+                               "value2":  "A",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "10",
+                               "value2":  "10",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "A",
+                               "value2":  "A",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "x",
+                               "value2":  "x",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "A",
+                               "value2":  "A",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "",
+                               "value2":  null,
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "B",
+                               "value2":  "B",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "20",
+                               "value2":  "20",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "B",
+                               "value2":  "B",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "30",
+                               "value2":  "30",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Value",
+                                "agg":  "Count",
+                                "show":  null,
+                                "caption":  "Count of Value",
+                                "function":  -4112,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Value",
+                                "agg":  "Count Numbers",
+                                "show":  null,
+                                "caption":  "Count of Value2",
+                                "function":  11,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:C6",
+        "tableRange2":  "A3:C6",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Count of Value",
+                              "value2":  "Count of Value",
+                              "format":  "General",
+                              "wideText":  "Count of Value"
+                          },
+                          {
+                              "text":  "Count of Value2",
+                              "value2":  "Count of Value2",
+                              "format":  "General",
+                              "wideText":  "Count of Value2"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "A",
+                              "value2":  "A",
+                              "format":  "General",
+                              "wideText":  "A"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "B",
+                              "value2":  "B",
+                              "format":  "General",
+                              "wideText":  "B"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "4",
+                              "value2":  "4",
+                              "format":  "General",
+                              "wideText":  "4"
+                          },
+                          {
+                              "text":  "3",
+                              "value2":  "3",
+                              "format":  "General",
+                              "wideText":  "3"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             12.45,
+                             13.45
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e04-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e05a",
+        "item":  5,
+        "steps":  [
+                      "Group to Rows"
+                  ],
+        "excelProcess":  45416,
+        "source":  [
+                       [
+                           {
+                               "text":  "Group",
+                               "value2":  "Group",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "A",
+                               "value2":  "A",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "",
+                               "value2":  null,
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "A",
+                               "value2":  "A",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "",
+                               "value2":  null,
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "C",
+                               "value2":  "C",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "1",
+                               "value2":  "1",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "C",
+                               "value2":  "C",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "3",
+                               "value2":  "3",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Average",
+                                "show":  null,
+                                "caption":  "Average of Amount",
+                                "function":  -4106,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Amount",
+                                "agg":  "StdDev",
+                                "show":  null,
+                                "caption":  "StdDev of Amount",
+                                "function":  -4155,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Amount",
+                                "agg":  "Var",
+                                "show":  null,
+                                "caption":  "Var of Amount",
+                                "function":  -4164,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:D6",
+        "tableRange2":  "A3:D6",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Average of Amount",
+                              "value2":  "Average of Amount",
+                              "format":  "General",
+                              "wideText":  "Average of Amount"
+                          },
+                          {
+                              "text":  "StdDev of Amount",
+                              "value2":  "StdDev of Amount",
+                              "format":  "General",
+                              "wideText":  "StdDev of Amount"
+                          },
+                          {
+                              "text":  "Var of Amount",
+                              "value2":  "Var of Amount",
+                              "format":  "General",
+                              "wideText":  "Var of Amount"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "A",
+                              "value2":  "A",
+                              "format":  "General",
+                              "wideText":  "A"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "C",
+                              "value2":  "C",
+                              "format":  "General",
+                              "wideText":  "C"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "1.414213562",
+                              "value2":  "1.4142135623730951",
+                              "format":  "General",
+                              "wideText":  "1.414213562"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "1.414213562",
+                              "value2":  "1.4142135623730951",
+                              "format":  "General",
+                              "wideText":  "1.414213562"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             15.73,
+                             15.18,
+                             11.82
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e05a-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e05b",
+        "item":  5,
+        "steps":  [
+                      "Group to Rows"
+                  ],
+        "excelProcess":  11400,
+        "source":  [
+                       [
+                           {
+                               "text":  "Group",
+                               "value2":  "Group",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "B",
+                               "value2":  "B",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "5",
+                               "value2":  "5",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "C",
+                               "value2":  "C",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "1",
+                               "value2":  "1",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "C",
+                               "value2":  "C",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "3",
+                               "value2":  "3",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "StdDev",
+                                "show":  null,
+                                "caption":  "StdDev of Amount",
+                                "function":  -4155,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Amount",
+                                "agg":  "Var",
+                                "show":  null,
+                                "caption":  "Var of Amount",
+                                "function":  -4164,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Amount",
+                                "agg":  "StdDevp",
+                                "show":  null,
+                                "caption":  "StdDevp of Amount",
+                                "function":  -4156,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Amount",
+                                "agg":  "Varp",
+                                "show":  null,
+                                "caption":  "Varp of Amount",
+                                "function":  -4165,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:E6",
+        "tableRange2":  "A3:E6",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "StdDev of Amount",
+                              "value2":  "StdDev of Amount",
+                              "format":  "General",
+                              "wideText":  "StdDev of Amount"
+                          },
+                          {
+                              "text":  "Var of Amount",
+                              "value2":  "Var of Amount",
+                              "format":  "General",
+                              "wideText":  "Var of Amount"
+                          },
+                          {
+                              "text":  "StdDevp of Amount",
+                              "value2":  "StdDevp of Amount",
+                              "format":  "General",
+                              "wideText":  "StdDevp of Amount"
+                          },
+                          {
+                              "text":  "Varp of Amount",
+                              "value2":  "Varp of Amount",
+                              "format":  "General",
+                              "wideText":  "Varp of Amount"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "B",
+                              "value2":  "B",
+                              "format":  "General",
+                              "wideText":  "B"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "#DIV/0!",
+                              "value2":  "error -2146826281",
+                              "format":  "General",
+                              "wideText":  "#DIV/0!"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "C",
+                              "value2":  "C",
+                              "format":  "General",
+                              "wideText":  "C"
+                          },
+                          {
+                              "text":  "1.414213562",
+                              "value2":  "1.4142135623730951",
+                              "format":  "General",
+                              "wideText":  "1.414213562"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "4",
+                              "value2":  "4",
+                              "format":  "General",
+                              "wideText":  "4"
+                          },
+                          {
+                              "text":  "1.632993162",
+                              "value2":  "1.6329931618554521",
+                              "format":  "General",
+                              "wideText":  "1.632993162"
+                          },
+                          {
+                              "text":  "2.666666667",
+                              "value2":  "2.6666666666666665",
+                              "format":  "General",
+                              "wideText":  "2.666666667"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             15.18,
+                             11.82,
+                             16.36,
+                             13
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e05b-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e06a",
+        "item":  6,
+        "steps":  [
+                      "Group to Rows"
+                  ],
+        "excelProcess":  43832,
+        "source":  [
+                       [
+                           {
+                               "text":  "Group",
+                               "value2":  "Group",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "A",
+                               "value2":  "A",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "",
+                               "value2":  null,
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "A",
+                               "value2":  "A",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "",
+                               "value2":  null,
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "C",
+                               "value2":  "C",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "2",
+                               "value2":  "2",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "C",
+                               "value2":  "C",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "3",
+                               "value2":  "3",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Product",
+                                "show":  null,
+                                "caption":  "Product of Amount",
+                                "function":  -4149,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:B6",
+        "tableRange2":  "A3:B6",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Product of Amount",
+                              "value2":  "Product of Amount",
+                              "format":  "General",
+                              "wideText":  "Product of Amount"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "A",
+                              "value2":  "A",
+                              "format":  "General",
+                              "wideText":  "A"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "C",
+                              "value2":  "C",
+                              "format":  "General",
+                              "wideText":  "C"
+                          },
+                          {
+                              "text":  "6",
+                              "value2":  "6",
+                              "format":  "General",
+                              "wideText":  "6"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "6",
+                              "value2":  "6",
+                              "format":  "General",
+                              "wideText":  "6"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             15.73
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e06a-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e06b",
+        "item":  6,
+        "steps":  [
+                      "Group to Rows"
+                  ],
+        "excelProcess":  43896,
+        "source":  [
+                       [
+                           {
+                               "text":  "Group",
+                               "value2":  "Group",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Note",
+                               "value2":  "Note",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "B",
+                               "value2":  "B",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "x",
+                               "value2":  "x",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "B",
+                               "value2":  "B",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "y",
+                               "value2":  "y",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "C",
+                               "value2":  "C",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "z",
+                               "value2":  "z",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Note",
+                                "agg":  "Product",
+                                "show":  null,
+                                "caption":  "Product of Note",
+                                "function":  -4149,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:B6",
+        "tableRange2":  "A3:B6",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Product of Note",
+                              "value2":  "Product of Note",
+                              "format":  "General",
+                              "wideText":  "Product of Note"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "B",
+                              "value2":  "B",
+                              "format":  "General",
+                              "wideText":  "B"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "C",
+                              "value2":  "C",
+                              "format":  "General",
+                              "wideText":  "C"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "0",
+                              "value2":  "0",
+                              "format":  "General",
+                              "wideText":  "0"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             13.09
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e06b-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e07",
+        "item":  7,
+        "steps":  [
+                      "Region to Rows",
+                      "Product to Columns"
+                  ],
+        "excelProcess":  49752,
+        "source":  [
+                       [
+                           {
+                               "text":  "Region",
+                               "value2":  "Region",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Product",
+                               "value2":  "Product",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Apple",
+                               "value2":  "Apple",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "10",
+                               "value2":  "10",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Pear",
+                               "value2":  "Pear",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "5",
+                               "value2":  "5",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:D7",
+        "tableRange2":  "A3:D7",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          },
+                          {
+                              "text":  "Column Labels",
+                              "value2":  "Column Labels",
+                              "format":  "General",
+                              "wideText":  "Column Labels"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Apple",
+                              "value2":  "Apple",
+                              "format":  "General",
+                              "wideText":  "Apple"
+                          },
+                          {
+                              "text":  "Pear",
+                              "value2":  "Pear",
+                              "format":  "General",
+                              "wideText":  "Pear"
+                          },
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "East",
+                              "value2":  "East",
+                              "format":  "General",
+                              "wideText":  "East"
+                          },
+                          {
+                              "text":  "10",
+                              "value2":  "10",
+                              "format":  "General",
+                              "wideText":  "10"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "10",
+                              "value2":  "10",
+                              "format":  "General",
+                              "wideText":  "10"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "West",
+                              "value2":  "West",
+                              "format":  "General",
+                              "wideText":  "West"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "5",
+                              "value2":  "5",
+                              "format":  "General",
+                              "wideText":  "5"
+                          },
+                          {
+                              "text":  "5",
+                              "value2":  "5",
+                              "format":  "General",
+                              "wideText":  "5"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "10",
+                              "value2":  "10",
+                              "format":  "General",
+                              "wideText":  "10"
+                          },
+                          {
+                              "text":  "5",
+                              "value2":  "5",
+                              "format":  "General",
+                              "wideText":  "5"
+                          },
+                          {
+                              "text":  "15",
+                              "value2":  "15",
+                              "format":  "General",
+                              "wideText":  "15"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             13,
+                             15,
+                             3.91,
+                             9.73
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e07-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e08",
+        "item":  8,
+        "steps":  [
+                      "Region to Rows",
+                      "Desk to Rows"
+                  ],
+        "excelProcess":  45404,
+        "source":  [
+                       [
+                           {
+                               "text":  "Region",
+                               "value2":  "Region",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Desk",
+                               "value2":  "Desk",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "D1",
+                               "value2":  "D1",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "1",
+                               "value2":  "1",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "D1",
+                               "value2":  "D1",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "2",
+                               "value2":  "2",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "D1",
+                               "value2":  "D1",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "3",
+                               "value2":  "3",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "D2",
+                               "value2":  "D2",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "10",
+                               "value2":  "10",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "D3",
+                               "value2":  "D3",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "100",
+                               "value2":  "100",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Average",
+                                "show":  null,
+                                "caption":  "Average of Amount",
+                                "function":  -4106,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Amount",
+                                "agg":  "Count",
+                                "show":  null,
+                                "caption":  "Count of Amount",
+                                "function":  -4112,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:C9",
+        "tableRange2":  "A3:C9",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Average of Amount",
+                              "value2":  "Average of Amount",
+                              "format":  "General",
+                              "wideText":  "Average of Amount"
+                          },
+                          {
+                              "text":  "Count of Amount",
+                              "value2":  "Count of Amount",
+                              "format":  "General",
+                              "wideText":  "Count of Amount"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "East",
+                              "value2":  "East",
+                              "format":  "General",
+                              "wideText":  "East"
+                          },
+                          {
+                              "text":  "4",
+                              "value2":  "4",
+                              "format":  "General",
+                              "wideText":  "4"
+                          },
+                          {
+                              "text":  "4",
+                              "value2":  "4",
+                              "format":  "General",
+                              "wideText":  "4"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "D1",
+                              "value2":  "D1",
+                              "format":  "General",
+                              "wideText":  "D1"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "3",
+                              "value2":  "3",
+                              "format":  "General",
+                              "wideText":  "3"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "D2",
+                              "value2":  "D2",
+                              "format":  "General",
+                              "wideText":  "D2"
+                          },
+                          {
+                              "text":  "10",
+                              "value2":  "10",
+                              "format":  "General",
+                              "wideText":  "10"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "West",
+                              "value2":  "West",
+                              "format":  "General",
+                              "wideText":  "West"
+                          },
+                          {
+                              "text":  "100",
+                              "value2":  "100",
+                              "format":  "General",
+                              "wideText":  "100"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "D3",
+                              "value2":  "D3",
+                              "format":  "General",
+                              "wideText":  "D3"
+                          },
+                          {
+                              "text":  "100",
+                              "value2":  "100",
+                              "format":  "General",
+                              "wideText":  "100"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "23.2",
+                              "value2":  "23.2",
+                              "format":  "General",
+                              "wideText":  "23.2"
+                          },
+                          {
+                              "text":  "5",
+                              "value2":  "5",
+                              "format":  "General",
+                              "wideText":  "5"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             15.73,
+                             14.27
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e08-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e15a",
+        "item":  15,
+        "steps":  [
+                      "Region to Rows",
+                      "Product to Columns"
+                  ],
+        "excelProcess":  16796,
+        "source":  [
+                       [
+                           {
+                               "text":  "Region",
+                               "value2":  "Region",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Product",
+                               "value2":  "Product",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Apple",
+                               "value2":  "Apple",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "10",
+                               "value2":  "10",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Pear",
+                               "value2":  "Pear",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "30",
+                               "value2":  "30",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Apple",
+                               "value2":  "Apple",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "20",
+                               "value2":  "20",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Pear",
+                               "value2":  "Pear",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "40",
+                               "value2":  "40",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  "% of Grand Total",
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  8,
+                                "numberFormat":  "0.00%"
+                            }
+                        ],
+        "tableRange1":  "A3:D7",
+        "tableRange2":  "A3:D7",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          },
+                          {
+                              "text":  "Column Labels",
+                              "value2":  "Column Labels",
+                              "format":  "General",
+                              "wideText":  "Column Labels"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Apple",
+                              "value2":  "Apple",
+                              "format":  "General",
+                              "wideText":  "Apple"
+                          },
+                          {
+                              "text":  "Pear",
+                              "value2":  "Pear",
+                              "format":  "General",
+                              "wideText":  "Pear"
+                          },
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "East",
+                              "value2":  "East",
+                              "format":  "General",
+                              "wideText":  "East"
+                          },
+                          {
+                              "text":  "10.00%",
+                              "value2":  "0.1",
+                              "format":  "0.00%",
+                              "wideText":  "10.00%"
+                          },
+                          {
+                              "text":  "30.00%",
+                              "value2":  "0.3",
+                              "format":  "0.00%",
+                              "wideText":  "30.00%"
+                          },
+                          {
+                              "text":  "40.00%",
+                              "value2":  "0.4",
+                              "format":  "0.00%",
+                              "wideText":  "40.00%"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "West",
+                              "value2":  "West",
+                              "format":  "General",
+                              "wideText":  "West"
+                          },
+                          {
+                              "text":  "20.00%",
+                              "value2":  "0.2",
+                              "format":  "0.00%",
+                              "wideText":  "20.00%"
+                          },
+                          {
+                              "text":  "40.00%",
+                              "value2":  "0.4",
+                              "format":  "0.00%",
+                              "wideText":  "40.00%"
+                          },
+                          {
+                              "text":  "60.00%",
+                              "value2":  "0.6",
+                              "format":  "0.00%",
+                              "wideText":  "60.00%"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "30.00%",
+                              "value2":  "0.3",
+                              "format":  "0.00%",
+                              "wideText":  "30.00%"
+                          },
+                          {
+                              "text":  "70.00%",
+                              "value2":  "0.7",
+                              "format":  "0.00%",
+                              "wideText":  "70.00%"
+                          },
+                          {
+                              "text":  "100.00%",
+                              "value2":  "1",
+                              "format":  "0.00%",
+                              "wideText":  "100.00%"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             13,
+                             15,
+                             6.27,
+                             9.73
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e15a-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e15b",
+        "item":  15,
+        "steps":  [
+                      "Region to Rows",
+                      "Product to Columns"
+                  ],
+        "excelProcess":  46464,
+        "source":  [
+                       [
+                           {
+                               "text":  "Region",
+                               "value2":  "Region",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Product",
+                               "value2":  "Product",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Apple",
+                               "value2":  "Apple",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "10",
+                               "value2":  "10",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Pear",
+                               "value2":  "Pear",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "30",
+                               "value2":  "30",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Apple",
+                               "value2":  "Apple",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "20",
+                               "value2":  "20",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Pear",
+                               "value2":  "Pear",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "40",
+                               "value2":  "40",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  "% of Column Total",
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  7,
+                                "numberFormat":  "0.00%"
+                            }
+                        ],
+        "tableRange1":  "A3:D7",
+        "tableRange2":  "A3:D7",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          },
+                          {
+                              "text":  "Column Labels",
+                              "value2":  "Column Labels",
+                              "format":  "General",
+                              "wideText":  "Column Labels"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Apple",
+                              "value2":  "Apple",
+                              "format":  "General",
+                              "wideText":  "Apple"
+                          },
+                          {
+                              "text":  "Pear",
+                              "value2":  "Pear",
+                              "format":  "General",
+                              "wideText":  "Pear"
+                          },
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "East",
+                              "value2":  "East",
+                              "format":  "General",
+                              "wideText":  "East"
+                          },
+                          {
+                              "text":  "33.33%",
+                              "value2":  "0.33333333333333331",
+                              "format":  "0.00%",
+                              "wideText":  "33.33%"
+                          },
+                          {
+                              "text":  "42.86%",
+                              "value2":  "0.42857142857142855",
+                              "format":  "0.00%",
+                              "wideText":  "42.86%"
+                          },
+                          {
+                              "text":  "40.00%",
+                              "value2":  "0.4",
+                              "format":  "0.00%",
+                              "wideText":  "40.00%"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "West",
+                              "value2":  "West",
+                              "format":  "General",
+                              "wideText":  "West"
+                          },
+                          {
+                              "text":  "66.67%",
+                              "value2":  "0.66666666666666663",
+                              "format":  "0.00%",
+                              "wideText":  "66.67%"
+                          },
+                          {
+                              "text":  "57.14%",
+                              "value2":  "0.5714285714285714",
+                              "format":  "0.00%",
+                              "wideText":  "57.14%"
+                          },
+                          {
+                              "text":  "60.00%",
+                              "value2":  "0.6",
+                              "format":  "0.00%",
+                              "wideText":  "60.00%"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "100.00%",
+                              "value2":  "1",
+                              "format":  "0.00%",
+                              "wideText":  "100.00%"
+                          },
+                          {
+                              "text":  "100.00%",
+                              "value2":  "1",
+                              "format":  "0.00%",
+                              "wideText":  "100.00%"
+                          },
+                          {
+                              "text":  "100.00%",
+                              "value2":  "1",
+                              "format":  "0.00%",
+                              "wideText":  "100.00%"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             13,
+                             15,
+                             7.27,
+                             9.73
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e15b-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e15c",
+        "item":  15,
+        "steps":  [
+                      "Region to Rows",
+                      "Product to Columns"
+                  ],
+        "excelProcess":  27744,
+        "source":  [
+                       [
+                           {
+                               "text":  "Region",
+                               "value2":  "Region",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Product",
+                               "value2":  "Product",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Apple",
+                               "value2":  "Apple",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "10",
+                               "value2":  "10",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Pear",
+                               "value2":  "Pear",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "30",
+                               "value2":  "30",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Apple",
+                               "value2":  "Apple",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "20",
+                               "value2":  "20",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Pear",
+                               "value2":  "Pear",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "40",
+                               "value2":  "40",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  "% of Row Total",
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  6,
+                                "numberFormat":  "0.00%"
+                            }
+                        ],
+        "tableRange1":  "A3:D7",
+        "tableRange2":  "A3:D7",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          },
+                          {
+                              "text":  "Column Labels",
+                              "value2":  "Column Labels",
+                              "format":  "General",
+                              "wideText":  "Column Labels"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Apple",
+                              "value2":  "Apple",
+                              "format":  "General",
+                              "wideText":  "Apple"
+                          },
+                          {
+                              "text":  "Pear",
+                              "value2":  "Pear",
+                              "format":  "General",
+                              "wideText":  "Pear"
+                          },
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "East",
+                              "value2":  "East",
+                              "format":  "General",
+                              "wideText":  "East"
+                          },
+                          {
+                              "text":  "25.00%",
+                              "value2":  "0.25",
+                              "format":  "0.00%",
+                              "wideText":  "25.00%"
+                          },
+                          {
+                              "text":  "75.00%",
+                              "value2":  "0.75",
+                              "format":  "0.00%",
+                              "wideText":  "75.00%"
+                          },
+                          {
+                              "text":  "100.00%",
+                              "value2":  "1",
+                              "format":  "0.00%",
+                              "wideText":  "100.00%"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "West",
+                              "value2":  "West",
+                              "format":  "General",
+                              "wideText":  "West"
+                          },
+                          {
+                              "text":  "33.33%",
+                              "value2":  "0.33333333333333331",
+                              "format":  "0.00%",
+                              "wideText":  "33.33%"
+                          },
+                          {
+                              "text":  "66.67%",
+                              "value2":  "0.66666666666666663",
+                              "format":  "0.00%",
+                              "wideText":  "66.67%"
+                          },
+                          {
+                              "text":  "100.00%",
+                              "value2":  "1",
+                              "format":  "0.00%",
+                              "wideText":  "100.00%"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "30.00%",
+                              "value2":  "0.3",
+                              "format":  "0.00%",
+                              "wideText":  "30.00%"
+                          },
+                          {
+                              "text":  "70.00%",
+                              "value2":  "0.7",
+                              "format":  "0.00%",
+                              "wideText":  "70.00%"
+                          },
+                          {
+                              "text":  "100.00%",
+                              "value2":  "1",
+                              "format":  "0.00%",
+                              "wideText":  "100.00%"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             13,
+                             15,
+                             6.27,
+                             9.73
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e15c-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e16",
+        "item":  16,
+        "steps":  [
+                      "Group to Rows"
+                  ],
+        "excelProcess":  20736,
+        "source":  [
+                       [
+                           {
+                               "text":  "Group",
+                               "value2":  "Group",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "A",
+                               "value2":  "A",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "0.1",
+                               "value2":  "0.1",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "A",
+                               "value2":  "A",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "0.2",
+                               "value2":  "0.2",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "B",
+                               "value2":  "B",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "1.23E+11",
+                               "value2":  "123456789012.345",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "C",
+                               "value2":  "C",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "1.234568",
+                               "value2":  "1.23456789012345",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "D",
+                               "value2":  "D",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "1.23E-05",
+                               "value2":  "1.23456789012345E-05",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:B8",
+        "tableRange2":  "A3:B8",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "A",
+                              "value2":  "A",
+                              "format":  "General",
+                              "wideText":  "A"
+                          },
+                          {
+                              "text":  "0.3",
+                              "value2":  "0.30000000000000004",
+                              "format":  "General",
+                              "wideText":  "0.3"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "B",
+                              "value2":  "B",
+                              "format":  "General",
+                              "wideText":  "B"
+                          },
+                          {
+                              "text":  "1.23457E+11",
+                              "value2":  "123456789012.345",
+                              "format":  "General",
+                              "wideText":  "1.23457E+11"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "C",
+                              "value2":  "C",
+                              "format":  "General",
+                              "wideText":  "C"
+                          },
+                          {
+                              "text":  "1.23456789",
+                              "value2":  "1.23456789012345",
+                              "format":  "General",
+                              "wideText":  "1.23456789"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "D",
+                              "value2":  "D",
+                              "format":  "General",
+                              "wideText":  "D"
+                          },
+                          {
+                              "text":  "1.23457E-05",
+                              "value2":  "1.23456789012345E-05",
+                              "format":  "General",
+                              "wideText":  "1.23457E-05"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "1.23457E+11",
+                              "value2":  "123456789013.87959",
+                              "format":  "General",
+                              "wideText":  "1.23457E+11"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             13
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e16-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e17",
+        "item":  17,
+        "steps":  [
+                      "Region to Rows",
+                      "North hidden in Region"
+                  ],
+        "excelProcess":  44592,
+        "source":  [
+                       [
+                           {
+                               "text":  "Region",
+                               "value2":  "Region",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "10",
+                               "value2":  "10",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "20",
+                               "value2":  "20",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "North",
+                               "value2":  "North",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "30",
+                               "value2":  "30",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:B6",
+        "tableRange2":  "A3:B6",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "East",
+                              "value2":  "East",
+                              "format":  "General",
+                              "wideText":  "East"
+                          },
+                          {
+                              "text":  "10",
+                              "value2":  "10",
+                              "format":  "General",
+                              "wideText":  "10"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "West",
+                              "value2":  "West",
+                              "format":  "General",
+                              "wideText":  "West"
+                          },
+                          {
+                              "text":  "20",
+                              "value2":  "20",
+                              "format":  "General",
+                              "wideText":  "20"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "30",
+                              "value2":  "30",
+                              "format":  "General",
+                              "wideText":  "30"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             13
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e17-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e01",
+        "item":  1,
+        "steps":  [
+                      "Key to Rows"
+                  ],
+        "excelProcess":  39856,
+        "source":  [
+                       [
+                           {
+                               "text":  "Key",
+                               "value2":  "Key",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "banana",
+                               "value2":  "banana",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "1",
+                               "value2":  "1",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "Apple",
+                               "value2":  "Apple",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "2",
+                               "value2":  "2",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "cherry",
+                               "value2":  "cherry",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "3",
+                               "value2":  "3",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "Apple",
+                               "value2":  "Apple",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "4",
+                               "value2":  "4",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "",
+                               "value2":  null,
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "5",
+                               "value2":  "5",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "Banana",
+                               "value2":  "Banana",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "6",
+                               "value2":  "6",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:B8",
+        "tableRange2":  "A3:B8",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Apple",
+                              "value2":  "Apple",
+                              "format":  "General",
+                              "wideText":  "Apple"
+                          },
+                          {
+                              "text":  "6",
+                              "value2":  "6",
+                              "format":  "General",
+                              "wideText":  "6"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "banana",
+                              "value2":  "banana",
+                              "format":  "General",
+                              "wideText":  "banana"
+                          },
+                          {
+                              "text":  "7",
+                              "value2":  "7",
+                              "format":  "General",
+                              "wideText":  "7"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "cherry",
+                              "value2":  "cherry",
+                              "format":  "General",
+                              "wideText":  "cherry"
+                          },
+                          {
+                              "text":  "3",
+                              "value2":  "3",
+                              "format":  "General",
+                              "wideText":  "3"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "(blank)",
+                              "value2":  "(blank)",
+                              "format":  "General",
+                              "wideText":  "(blank)"
+                          },
+                          {
+                              "text":  "5",
+                              "value2":  "5",
+                              "format":  "General",
+                              "wideText":  "5"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "21",
+                              "value2":  "21",
+                              "format":  "General",
+                              "wideText":  "21"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             13
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e01-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e09a",
+        "item":  9,
+        "steps":  [
+                      "Region to Rows",
+                      "Desk to Rows",
+                      "RowAxisLayout compact"
+                  ],
+        "excelProcess":  35848,
+        "source":  [
+                       [
+                           {
+                               "text":  "Region",
+                               "value2":  "Region",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Desk",
+                               "value2":  "Desk",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "D1",
+                               "value2":  "D1",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "1",
+                               "value2":  "1",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "D2",
+                               "value2":  "D2",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "2",
+                               "value2":  "2",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "D3",
+                               "value2":  "D3",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "4",
+                               "value2":  "4",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:B9",
+        "tableRange2":  "A3:B9",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "East",
+                              "value2":  "East",
+                              "format":  "General",
+                              "wideText":  "East"
+                          },
+                          {
+                              "text":  "3",
+                              "value2":  "3",
+                              "format":  "General",
+                              "wideText":  "3"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "D1",
+                              "value2":  "D1",
+                              "format":  "General",
+                              "wideText":  "D1"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "D2",
+                              "value2":  "D2",
+                              "format":  "General",
+                              "wideText":  "D2"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "West",
+                              "value2":  "West",
+                              "format":  "General",
+                              "wideText":  "West"
+                          },
+                          {
+                              "text":  "4",
+                              "value2":  "4",
+                              "format":  "General",
+                              "wideText":  "4"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "D3",
+                              "value2":  "D3",
+                              "format":  "General",
+                              "wideText":  "D3"
+                          },
+                          {
+                              "text":  "4",
+                              "value2":  "4",
+                              "format":  "General",
+                              "wideText":  "4"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "7",
+                              "value2":  "7",
+                              "format":  "General",
+                              "wideText":  "7"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             13
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  "compact",
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e09a-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e09b",
+        "item":  9,
+        "steps":  [
+                      "Region to Rows",
+                      "Desk to Rows",
+                      "RowAxisLayout outline"
+                  ],
+        "excelProcess":  45136,
+        "source":  [
+                       [
+                           {
+                               "text":  "Region",
+                               "value2":  "Region",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Desk",
+                               "value2":  "Desk",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "D1",
+                               "value2":  "D1",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "1",
+                               "value2":  "1",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "D2",
+                               "value2":  "D2",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "2",
+                               "value2":  "2",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "D3",
+                               "value2":  "D3",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "4",
+                               "value2":  "4",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:C9",
+        "tableRange2":  "A3:C9",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Region",
+                              "value2":  "Region",
+                              "format":  "General",
+                              "wideText":  "Region"
+                          },
+                          {
+                              "text":  "Desk",
+                              "value2":  "Desk",
+                              "format":  "General",
+                              "wideText":  "Desk"
+                          },
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "East",
+                              "value2":  "East",
+                              "format":  "General",
+                              "wideText":  "East"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "3",
+                              "value2":  "3",
+                              "format":  "General",
+                              "wideText":  "3"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "D1",
+                              "value2":  "D1",
+                              "format":  "General",
+                              "wideText":  "D1"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "D2",
+                              "value2":  "D2",
+                              "format":  "General",
+                              "wideText":  "D2"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "West",
+                              "value2":  "West",
+                              "format":  "General",
+                              "wideText":  "West"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "4",
+                              "value2":  "4",
+                              "format":  "General",
+                              "wideText":  "4"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "D3",
+                              "value2":  "D3",
+                              "format":  "General",
+                              "wideText":  "D3"
+                          },
+                          {
+                              "text":  "4",
+                              "value2":  "4",
+                              "format":  "General",
+                              "wideText":  "4"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "7",
+                              "value2":  "7",
+                              "format":  "General",
+                              "wideText":  "7"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             6.64,
+                             13
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  "outline",
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e09b-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e09c",
+        "item":  9,
+        "steps":  [
+                      "Region to Rows",
+                      "Desk to Rows",
+                      "RowAxisLayout tabular"
+                  ],
+        "excelProcess":  49656,
+        "source":  [
+                       [
+                           {
+                               "text":  "Region",
+                               "value2":  "Region",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Desk",
+                               "value2":  "Desk",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "D1",
+                               "value2":  "D1",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "1",
+                               "value2":  "1",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "D2",
+                               "value2":  "D2",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "2",
+                               "value2":  "2",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "D3",
+                               "value2":  "D3",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "4",
+                               "value2":  "4",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:C9",
+        "tableRange2":  "A3:C9",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Region",
+                              "value2":  "Region",
+                              "format":  "General",
+                              "wideText":  "Region"
+                          },
+                          {
+                              "text":  "Desk",
+                              "value2":  "Desk",
+                              "format":  "General",
+                              "wideText":  "Desk"
+                          },
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "East",
+                              "value2":  "East",
+                              "format":  "General",
+                              "wideText":  "East"
+                          },
+                          {
+                              "text":  "D1",
+                              "value2":  "D1",
+                              "format":  "General",
+                              "wideText":  "D1"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "D2",
+                              "value2":  "D2",
+                              "format":  "General",
+                              "wideText":  "D2"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "East Total",
+                              "value2":  "East Total",
+                              "format":  "General",
+                              "wideText":  "East Total"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "3",
+                              "value2":  "3",
+                              "format":  "General",
+                              "wideText":  "3"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "West",
+                              "value2":  "West",
+                              "format":  "General",
+                              "wideText":  "West"
+                          },
+                          {
+                              "text":  "D3",
+                              "value2":  "D3",
+                              "format":  "General",
+                              "wideText":  "D3"
+                          },
+                          {
+                              "text":  "4",
+                              "value2":  "4",
+                              "format":  "General",
+                              "wideText":  "4"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "West Total",
+                              "value2":  "West Total",
+                              "format":  "General",
+                              "wideText":  "West Total"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "4",
+                              "value2":  "4",
+                              "format":  "General",
+                              "wideText":  "4"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "7",
+                              "value2":  "7",
+                              "format":  "General",
+                              "wideText":  "7"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             6.64,
+                             13
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  "tabular",
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e09c-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e12",
+        "item":  12,
+        "steps":  [
+                      "Region to Rows",
+                      "Flag to Columns",
+                      "Side to Columns"
+                  ],
+        "excelProcess":  49632,
+        "source":  [
+                       [
+                           {
+                               "text":  "Region",
+                               "value2":  "Region",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Flag",
+                               "value2":  "Flag",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Side",
+                               "value2":  "Side",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "TRUE",
+                               "value2":  "True",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Buy",
+                               "value2":  "Buy",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "1",
+                               "value2":  "1",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "FALSE",
+                               "value2":  "False",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Sell",
+                               "value2":  "Sell",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "2",
+                               "value2":  "2",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "FALSE",
+                               "value2":  "False",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Buy",
+                               "value2":  "Buy",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "4",
+                               "value2":  "4",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "TRUE",
+                               "value2":  "True",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Sell",
+                               "value2":  "Sell",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "8",
+                               "value2":  "8",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:H8",
+        "tableRange2":  "A3:H8",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          },
+                          {
+                              "text":  "Column Labels",
+                              "value2":  "Column Labels",
+                              "format":  "General",
+                              "wideText":  "Column Labels"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "FALSE",
+                              "value2":  "FALSE",
+                              "format":  "General",
+                              "wideText":  "FALSE"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "FALSE Total",
+                              "value2":  "FALSE Total",
+                              "format":  "General",
+                              "wideText":  "FALSE Total"
+                          },
+                          {
+                              "text":  "TRUE",
+                              "value2":  "TRUE",
+                              "format":  "General",
+                              "wideText":  "TRUE"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "TRUE Total",
+                              "value2":  "TRUE Total",
+                              "format":  "General",
+                              "wideText":  "TRUE Total"
+                          },
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Buy",
+                              "value2":  "Buy",
+                              "format":  "General",
+                              "wideText":  "Buy"
+                          },
+                          {
+                              "text":  "Sell",
+                              "value2":  "Sell",
+                              "format":  "General",
+                              "wideText":  "Sell"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "Buy",
+                              "value2":  "Buy",
+                              "format":  "General",
+                              "wideText":  "Buy"
+                          },
+                          {
+                              "text":  "Sell",
+                              "value2":  "Sell",
+                              "format":  "General",
+                              "wideText":  "Sell"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "East",
+                              "value2":  "East",
+                              "format":  "General",
+                              "wideText":  "East"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          },
+                          {
+                              "text":  "3",
+                              "value2":  "3",
+                              "format":  "General",
+                              "wideText":  "3"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "West",
+                              "value2":  "West",
+                              "format":  "General",
+                              "wideText":  "West"
+                          },
+                          {
+                              "text":  "4",
+                              "value2":  "4",
+                              "format":  "General",
+                              "wideText":  "4"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "4",
+                              "value2":  "4",
+                              "format":  "General",
+                              "wideText":  "4"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "8",
+                              "value2":  "8",
+                              "format":  "General",
+                              "wideText":  "8"
+                          },
+                          {
+                              "text":  "8",
+                              "value2":  "8",
+                              "format":  "General",
+                              "wideText":  "8"
+                          },
+                          {
+                              "text":  "12",
+                              "value2":  "12",
+                              "format":  "General",
+                              "wideText":  "12"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "4",
+                              "value2":  "4",
+                              "format":  "General",
+                              "wideText":  "4"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "6",
+                              "value2":  "6",
+                              "format":  "General",
+                              "wideText":  "6"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          },
+                          {
+                              "text":  "8",
+                              "value2":  "8",
+                              "format":  "General",
+                              "wideText":  "8"
+                          },
+                          {
+                              "text":  "9",
+                              "value2":  "9",
+                              "format":  "General",
+                              "wideText":  "9"
+                          },
+                          {
+                              "text":  "15",
+                              "value2":  "15",
+                              "format":  "General",
+                              "wideText":  "15"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             13,
+                             15,
+                             3.36,
+                             9.73,
+                             6.27,
+                             3.36,
+                             9,
+                             9.73
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e12-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e13",
+        "item":  13,
+        "steps":  [
+                      "Region to Rows",
+                      "Product to Columns"
+                  ],
+        "excelProcess":  49532,
+        "source":  [
+                       [
+                           {
+                               "text":  "Region",
+                               "value2":  "Region",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Product",
+                               "value2":  "Product",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Qty",
+                               "value2":  "Qty",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Apple",
+                               "value2":  "Apple",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "10",
+                               "value2":  "10",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "1",
+                               "value2":  "1",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Pear",
+                               "value2":  "Pear",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "5",
+                               "value2":  "5",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "2",
+                               "value2":  "2",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Qty",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Qty",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:G8",
+        "tableRange2":  "A3:G8",
+        "cells":  [
+                      [
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "Column Labels",
+                              "value2":  "Column Labels",
+                              "format":  "General",
+                              "wideText":  "Column Labels"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "Apple",
+                              "value2":  "Apple",
+                              "format":  "General",
+                              "wideText":  "Apple"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "Pear",
+                              "value2":  "Pear",
+                              "format":  "General",
+                              "wideText":  "Pear"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "Total Sum of Amount",
+                              "value2":  "Total Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Total Sum of Amount"
+                          },
+                          {
+                              "text":  "Total Sum of Qty",
+                              "value2":  "Total Sum of Qty",
+                              "format":  "General",
+                              "wideText":  "Total Sum of Qty"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Row Labels",
+                              "value2":  "Row Labels",
+                              "format":  "General",
+                              "wideText":  "Row Labels"
+                          },
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          },
+                          {
+                              "text":  "Sum of Qty",
+                              "value2":  "Sum of Qty",
+                              "format":  "General",
+                              "wideText":  "Sum of Qty"
+                          },
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          },
+                          {
+                              "text":  "Sum of Qty",
+                              "value2":  "Sum of Qty",
+                              "format":  "General",
+                              "wideText":  "Sum of Qty"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "East",
+                              "value2":  "East",
+                              "format":  "General",
+                              "wideText":  "East"
+                          },
+                          {
+                              "text":  "10",
+                              "value2":  "10",
+                              "format":  "General",
+                              "wideText":  "10"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "10",
+                              "value2":  "10",
+                              "format":  "General",
+                              "wideText":  "10"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "West",
+                              "value2":  "West",
+                              "format":  "General",
+                              "wideText":  "West"
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "",
+                              "value2":  null,
+                              "format":  "General",
+                              "wideText":  ""
+                          },
+                          {
+                              "text":  "5",
+                              "value2":  "5",
+                              "format":  "General",
+                              "wideText":  "5"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "5",
+                              "value2":  "5",
+                              "format":  "General",
+                              "wideText":  "5"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "Grand Total",
+                              "value2":  "Grand Total",
+                              "format":  "General",
+                              "wideText":  "Grand Total"
+                          },
+                          {
+                              "text":  "10",
+                              "value2":  "10",
+                              "format":  "General",
+                              "wideText":  "10"
+                          },
+                          {
+                              "text":  "1",
+                              "value2":  "1",
+                              "format":  "General",
+                              "wideText":  "1"
+                          },
+                          {
+                              "text":  "5",
+                              "value2":  "5",
+                              "format":  "General",
+                              "wideText":  "5"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "15",
+                              "value2":  "15",
+                              "format":  "General",
+                              "wideText":  "15"
+                          },
+                          {
+                              "text":  "3",
+                              "value2":  "3",
+                              "format":  "General",
+                              "wideText":  "3"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             11.82,
+                             15,
+                             9.18,
+                             13,
+                             9.18,
+                             17.55,
+                             13.73
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e13-excel.png",
+        "ended":  "Stop-Process (its own)"
+    },
+    {
+        "id":  "e14",
+        "item":  14,
+        "steps":  [
+
+                  ],
+        "excelProcess":  35360,
+        "source":  [
+                       [
+                           {
+                               "text":  "Region",
+                               "value2":  "Region",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "Amount",
+                               "value2":  "Amount",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "East",
+                               "value2":  "East",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "10",
+                               "value2":  "10",
+                               "format":  "General"
+                           }
+                       ],
+                       [
+                           {
+                               "text":  "West",
+                               "value2":  "West",
+                               "format":  "General"
+                           },
+                           {
+                               "text":  "5",
+                               "value2":  "5",
+                               "format":  "General"
+                           }
+                       ]
+                   ],
+        "valueFields":  [
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Amount",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Region",
+                                "agg":  "Count",
+                                "show":  null,
+                                "caption":  "Count of Region",
+                                "function":  -4112,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            },
+                            {
+                                "field":  "Amount",
+                                "agg":  "Sum",
+                                "show":  null,
+                                "caption":  "Sum of Amount2",
+                                "function":  -4157,
+                                "calculation":  -4143,
+                                "numberFormat":  "General"
+                            }
+                        ],
+        "tableRange1":  "A3:C4",
+        "tableRange2":  "A3:C4",
+        "cells":  [
+                      [
+                          {
+                              "text":  "Sum of Amount",
+                              "value2":  "Sum of Amount",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount"
+                          },
+                          {
+                              "text":  "Count of Region",
+                              "value2":  "Count of Region",
+                              "format":  "General",
+                              "wideText":  "Count of Region"
+                          },
+                          {
+                              "text":  "Sum of Amount2",
+                              "value2":  "Sum of Amount2",
+                              "format":  "General",
+                              "wideText":  "Sum of Amount2"
+                          }
+                      ],
+                      [
+                          {
+                              "text":  "15",
+                              "value2":  "15",
+                              "format":  "General",
+                              "wideText":  "15"
+                          },
+                          {
+                              "text":  "2",
+                              "value2":  "2",
+                              "format":  "General",
+                              "wideText":  "2"
+                          },
+                          {
+                              "text":  "15",
+                              "value2":  "15",
+                              "format":  "General",
+                              "wideText":  "15"
+                          }
+                      ]
+                  ],
+        "columnWidths":  [
+                             13,
+                             13.45,
+                             14
+                         ],
+        "layout":  {
+                       "rowAxisLayout":  null,
+                       "compactLayoutRowHeader":  "Row Labels",
+                       "compactLayoutColumnHeader":  "Column Labels",
+                       "grandTotalName":  "Grand Total",
+                       "rowGrand":  true,
+                       "columnGrand":  true
+                   },
+        "shot":  "e14-excel.png",
+        "ended":  "Stop-Process (its own)"
+    }
+]

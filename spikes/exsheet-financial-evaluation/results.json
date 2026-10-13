@@ -23,6 +23,36 @@
    "excel": 1000.0
   },
   {
+   "id": "FV-005",
+   "formula": "=FV(0.06/12,10,-200,-500,2)",
+   "excel": 2581.4033740601185
+  },
+  {
+   "id": "FV-006",
+   "formula": "=FV(0.06/12,10.5,-200)",
+   "excel": 2150.588229777517
+  },
+  {
+   "id": "FV-007",
+   "formula": "=FV(0.06/12,-10,-200)",
+   "excel": -1946.0823721571962
+  },
+  {
+   "id": "FV-008",
+   "formula": "=FV(0,10.5,-100)",
+   "excel": 1050.0
+  },
+  {
+   "id": "FV-009",
+   "formula": "=FV(0.05/12,12,-150,0,1)",
+   "excel": 1849.5026084246633
+  },
+  {
+   "id": "FV-010",
+   "formula": "=FV(0.05/12,360,-150)",
+   "excel": 124838.79530422161
+  },
+  {
    "id": "NPV-001",
    "formula": "=NPV(10%,-10000,3000,4200,6800)",
    "excel": 1188.4434123352207
@@ -36,6 +66,26 @@
    "id": "NPV-003",
    "formula": "=NPV(0.1,A1:A7)",
    "excel": 5.56724267468069
+  },
+  {
+   "id": "NPV-005",
+   "formula": "=NPV(0.08,8000,9200,10000,12000,14500)",
+   "excel": 41922.06155493237
+  },
+  {
+   "id": "NPV-006",
+   "formula": "=NPV(A1,A3:A7)",
+   "excel": 41922.06155493237
+  },
+  {
+   "id": "NPV-007",
+   "formula": "=NPV(0.1,A1:A4)",
+   "excel": 1188.4434123352207
+  },
+  {
+   "id": "NPV-008",
+   "formula": "=NPV(A1,-10000,3000,4200,6800)",
+   "excel": 1188.4434123352207
   },
   {
    "id": "PMT-001",
@@ -63,6 +113,56 @@
    "excel": -147.95035898410148
   },
   {
+   "id": "PMT-009",
+   "formula": "=PMT(0.1,10,1000,0,0.5)",
+   "excel": -147.95035898410148
+  },
+  {
+   "id": "PMT-010",
+   "formula": "=PMT(0.1,10,1000,0,-1)",
+   "excel": -147.95035898410148
+  },
+  {
+   "id": "PMT-011",
+   "formula": "=PMT(8%/12,10.5,10000)",
+   "excel": -989.2729401451879
+  },
+  {
+   "id": "PMT-012",
+   "formula": "=PMT(8%/12,-10,10000)",
+   "excel": 970.3654226924854
+  },
+  {
+   "id": "PMT-013",
+   "formula": "=PMT(0.05/12,36,250000,-5000)",
+   "excel": -7363.7031239763755
+  },
+  {
+   "id": "PMT-014",
+   "formula": "=PMT(0.0725/12,12,250000,0,1)",
+   "excel": -21530.430018725485
+  },
+  {
+   "id": "PMT-015",
+   "formula": "=PMT(0.05/12,12,10000,0,1)",
+   "excel": -852.5226402171
+  },
+  {
+   "id": "PMT-016",
+   "formula": "=PMT(0.045/12,12,250000,-5000)",
+   "excel": -20936.487788661154
+  },
+  {
+   "id": "PMT-017",
+   "formula": "=PMT(1/10000000,12,1000)",
+   "excel": -83.33338750000993
+  },
+  {
+   "id": "PMT-018",
+   "formula": "=PMT(0.0365/365,365,10000)",
+   "excel": -27.901671561224465
+  },
+  {
    "id": "PV-001",
    "formula": "=PV(0.08/12,12*20,500,,0)",
    "excel": -59777.14585118782
@@ -78,9 +178,34 @@
    "excel": 196.8689140236461
   },
   {
+   "id": "PV-004",
+   "formula": "=PV(0.05,10,-100,1000,2)",
+   "excel": 196.8689140236461
+  },
+  {
+   "id": "PV-005",
+   "formula": "=PV(0.05,10.5,-100)",
+   "excel": 801.7640221710038
+  },
+  {
+   "id": "PV-006",
+   "formula": "=PV(0.05/12,37,2500,1000,0)",
+   "excel": -86415.16626124813
+  },
+  {
+   "id": "PV-007",
+   "formula": "=PV(0.05/12,12,-150,0,1)",
+   "excel": 1759.484064397425
+  },
+  {
    "id": "XNPV-001",
    "formula": "=XNPV(0.09,A1:A5,B1:B5)",
    "excel": 2086.647602031535
+  },
+  {
+   "id": "XNPV-004",
+   "formula": "=XNPV(0.12,A1:A5,B1:B5)",
+   "excel": 342.0430874765725
   }
  ],
  "functions": {
@@ -88,334 +213,442 @@
    "cases": [
     "FV-001",
     "FV-002",
-    "FV-003"
+    "FV-003",
+    "FV-005",
+    "FV-006",
+    "FV-007",
+    "FV-009",
+    "FV-010"
    ],
-   "candidates": 1008,
+   "candidates": 1022,
    "matchCounts": {
-    "3/3": 4,
-    "2/3": 6,
-    "1/3": 64,
-    "0/3": 934
+    "8/8": 2,
+    "7/8": 3,
+    "6/8": 3,
+    "5/8": 10,
+    "4/8": 1,
+    "3/8": 7,
+    "2/8": 19,
+    "1/8": 70,
+    "0/8": 907
    },
    "reproduceAll": [
-    "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=square-rtl@53 | rest@53",
-    "F4 -(pv*g + pmt*((1+r*t)*((g-1)/r))) | g=square-rtl@53 | rest@53",
-    "F6 -(pmt*(1+r*t)*((g-1)/r) + pv*g) | g=square-rtl@53 | rest@53",
-    "F7 -(pv*g + pmt*(1+r*t)*(g-1)/r), (g-1)/r first then *(1+r*t)*pmt | g=square-rtl@53 | rest@53"
+    "F4 -(pv*g + pmt*((1+r*t)*((g-1)/r))) | g=pv-fv@53 | rest@53",
+    "F7 -(pv*g + pmt*(1+r*t)*(g-1)/r), (g-1)/r first then *(1+r*t)*pmt | g=pv-fv@53 | rest@53"
    ],
    "bestOthers": [
     {
-     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=square-rtl@53 | rest@53",
-     "matches": 2,
+     "candidate": "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=pv-fv@53 | rest@53",
+     "matches": 7,
+     "ulpsOff": {
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=pv-fv@53 | rest@53",
+     "matches": 7,
      "ulpsOff": {
       "FV-003": -1
      }
     },
     {
+     "candidate": "F6 -(pmt*(1+r*t)*((g-1)/r) + pv*g) | g=pv-fv@53 | rest@53",
+     "matches": 7,
+     "ulpsOff": {
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F3 -(pv*g + (pmt*(1+r*t)/r)*(g-1)) | g=pv-fv@53 | rest@53",
+     "matches": 6,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F4 -(pv*g + pmt*((1+r*t)*((g-1)/r))) | g=square-rtl@53 | rest@53",
+     "matches": 6,
+     "ulpsOff": {
+      "FV-006": "none",
+      "FV-007": "none"
+     }
+    },
+    {
+     "candidate": "F7 -(pv*g + pmt*(1+r*t)*(g-1)/r), (g-1)/r first then *(1+r*t)*pmt | g=square-rtl@53 | rest@53",
+     "matches": 6,
+     "ulpsOff": {
+      "FV-006": "none",
+      "FV-007": "none"
+     }
+    },
+    {
+     "candidate": "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=pv-fv@53 | rest@64",
+     "matches": 5,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-003": -1,
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=pv-fv@53 | rest@64",
+     "matches": 5,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-003": -1,
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F3 -(pv*g + (pmt*(1+r*t)/r)*(g-1)) | g=pv-fv@53 | rest@64",
+     "matches": 5,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-003": -1,
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F4 -(pv*g + pmt*((1+r*t)*((g-1)/r))) | g=pv-fv@53 | rest@64",
+     "matches": 5,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-003": -1,
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F5 -((pv + pmt*(1+r*t)/r)*g - pmt*(1+r*t)/r) | g=pv-fv@53 | rest@64",
+     "matches": 5,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-003": -1,
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F6 -(pmt*(1+r*t)*((g-1)/r) + pv*g) | g=pv-fv@53 | rest@64",
+     "matches": 5,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-003": -1,
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F7 -(pv*g + pmt*(1+r*t)*(g-1)/r), (g-1)/r first then *(1+r*t)*pmt | g=pv-fv@53 | rest@64",
+     "matches": 5,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-003": -1,
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=square-rtl@53 | rest@53",
+     "matches": 5,
+     "ulpsOff": {
+      "FV-006": "none",
+      "FV-007": "none",
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=square-rtl@53 | rest@53",
+     "matches": 5,
+     "ulpsOff": {
+      "FV-003": -1,
+      "FV-006": "none",
+      "FV-007": "none"
+     }
+    },
+    {
+     "candidate": "F6 -(pmt*(1+r*t)*((g-1)/r) + pv*g) | g=square-rtl@53 | rest@53",
+     "matches": 5,
+     "ulpsOff": {
+      "FV-006": "none",
+      "FV-007": "none",
+      "FV-009": -1
+     }
+    },
+    {
      "candidate": "F3 -(pv*g + (pmt*(1+r*t)/r)*(g-1)) | g=square-rtl@53 | rest@53",
+     "matches": 4,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-006": "none",
+      "FV-007": "none",
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=square-rtl@53 | rest@64",
+     "matches": 3,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-003": -1,
+      "FV-006": "none",
+      "FV-007": "none",
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=square-rtl@53 | rest@64",
+     "matches": 3,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-003": -1,
+      "FV-006": "none",
+      "FV-007": "none",
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F3 -(pv*g + (pmt*(1+r*t)/r)*(g-1)) | g=square-rtl@53 | rest@64",
+     "matches": 3,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-003": -1,
+      "FV-006": "none",
+      "FV-007": "none",
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F4 -(pv*g + pmt*((1+r*t)*((g-1)/r))) | g=square-rtl@53 | rest@64",
+     "matches": 3,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-003": -1,
+      "FV-006": "none",
+      "FV-007": "none",
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F5 -((pv + pmt*(1+r*t)/r)*g - pmt*(1+r*t)/r) | g=square-rtl@53 | rest@64",
+     "matches": 3,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-003": -1,
+      "FV-006": "none",
+      "FV-007": "none",
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F6 -(pmt*(1+r*t)*((g-1)/r) + pv*g) | g=square-rtl@53 | rest@64",
+     "matches": 3,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-003": -1,
+      "FV-006": "none",
+      "FV-007": "none",
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F7 -(pv*g + pmt*(1+r*t)*(g-1)/r), (g-1)/r first then *(1+r*t)*pmt | g=square-rtl@53 | rest@64",
+     "matches": 3,
+     "ulpsOff": {
+      "FV-002": 1,
+      "FV-003": -1,
+      "FV-006": "none",
+      "FV-007": "none",
+      "FV-009": -1
+     }
+    },
+    {
+     "candidate": "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=pow@53 | rest@53",
      "matches": 2,
      "ulpsOff": {
-      "FV-002": 1
+      "FV-001": 39,
+      "FV-003": 4,
+      "FV-005": 39,
+      "FV-007": 58,
+      "FV-009": -71,
+      "FV-010": -117
+     }
+    },
+    {
+     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=pow@53 | rest@53",
+     "matches": 2,
+     "ulpsOff": {
+      "FV-001": 39,
+      "FV-003": 3,
+      "FV-005": 39,
+      "FV-007": 59,
+      "FV-009": -72,
+      "FV-010": -117
+     }
+    },
+    {
+     "candidate": "F4 -(pv*g + pmt*((1+r*t)*((g-1)/r))) | g=pow@53 | rest@53",
+     "matches": 2,
+     "ulpsOff": {
+      "FV-001": 40,
+      "FV-003": 4,
+      "FV-005": 40,
+      "FV-007": 58,
+      "FV-009": -72,
+      "FV-010": -117
+     }
+    },
+    {
+     "candidate": "F6 -(pmt*(1+r*t)*((g-1)/r) + pv*g) | g=pow@53 | rest@53",
+     "matches": 2,
+     "ulpsOff": {
+      "FV-001": 39,
+      "FV-003": 4,
+      "FV-005": 39,
+      "FV-007": 58,
+      "FV-009": -71,
+      "FV-010": -117
+     }
+    },
+    {
+     "candidate": "F7 -(pv*g + pmt*(1+r*t)*(g-1)/r), (g-1)/r first then *(1+r*t)*pmt | g=pow@53 | rest@53",
+     "matches": 2,
+     "ulpsOff": {
+      "FV-001": 40,
+      "FV-003": 4,
+      "FV-005": 40,
+      "FV-007": 58,
+      "FV-009": -72,
+      "FV-010": -117
      }
     },
     {
      "candidate": "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=repeat@53 | rest@53",
      "matches": 2,
      "ulpsOff": {
-      "FV-001": 20
+      "FV-001": 20,
+      "FV-005": 20,
+      "FV-006": "none",
+      "FV-007": "none",
+      "FV-009": -71,
+      "FV-010": -125
      }
     },
     {
      "candidate": "F4 -(pv*g + pmt*((1+r*t)*((g-1)/r))) | g=repeat@53 | rest@53",
      "matches": 2,
      "ulpsOff": {
-      "FV-001": 20
+      "FV-001": 20,
+      "FV-005": 20,
+      "FV-006": "none",
+      "FV-007": "none",
+      "FV-009": -72,
+      "FV-010": -125
      }
     },
     {
      "candidate": "F6 -(pmt*(1+r*t)*((g-1)/r) + pv*g) | g=repeat@53 | rest@53",
      "matches": 2,
      "ulpsOff": {
-      "FV-001": 20
+      "FV-001": 20,
+      "FV-005": 20,
+      "FV-006": "none",
+      "FV-007": "none",
+      "FV-009": -71,
+      "FV-010": -125
      }
     },
     {
      "candidate": "F7 -(pv*g + pmt*(1+r*t)*(g-1)/r), (g-1)/r first then *(1+r*t)*pmt | g=repeat@53 | rest@53",
      "matches": 2,
      "ulpsOff": {
-      "FV-001": 20
+      "FV-001": 20,
+      "FV-005": 20,
+      "FV-006": "none",
+      "FV-007": "none",
+      "FV-009": -72,
+      "FV-010": -125
      }
     },
     {
-     "candidate": "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=pow@53 | rest@53",
-     "matches": 1,
+     "candidate": "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=exp-log@53 | rest@53",
+     "matches": 2,
      "ulpsOff": {
       "FV-001": 39,
-      "FV-003": 4
+      "FV-003": 4,
+      "FV-005": 39,
+      "FV-007": 58,
+      "FV-009": -71,
+      "FV-010": -117
      }
     },
     {
-     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=pow@53 | rest@53",
-     "matches": 1,
+     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=exp-log@53 | rest@53",
+     "matches": 2,
      "ulpsOff": {
       "FV-001": 39,
-      "FV-003": 3
+      "FV-003": 3,
+      "FV-005": 39,
+      "FV-007": 59,
+      "FV-009": -72,
+      "FV-010": -117
      }
     },
     {
-     "candidate": "F4 -(pv*g + pmt*((1+r*t)*((g-1)/r))) | g=pow@53 | rest@53",
-     "matches": 1,
+     "candidate": "F4 -(pv*g + pmt*((1+r*t)*((g-1)/r))) | g=exp-log@53 | rest@53",
+     "matches": 2,
      "ulpsOff": {
       "FV-001": 40,
-      "FV-003": 4
+      "FV-003": 4,
+      "FV-005": 40,
+      "FV-007": 58,
+      "FV-009": -72,
+      "FV-010": -117
      }
     },
     {
-     "candidate": "F6 -(pmt*(1+r*t)*((g-1)/r) + pv*g) | g=pow@53 | rest@53",
-     "matches": 1,
+     "candidate": "F6 -(pmt*(1+r*t)*((g-1)/r) + pv*g) | g=exp-log@53 | rest@53",
+     "matches": 2,
      "ulpsOff": {
       "FV-001": 39,
-      "FV-003": 4
+      "FV-003": 4,
+      "FV-005": 39,
+      "FV-007": 58,
+      "FV-009": -71,
+      "FV-010": -117
      }
     },
     {
-     "candidate": "F7 -(pv*g + pmt*(1+r*t)*(g-1)/r), (g-1)/r first then *(1+r*t)*pmt | g=pow@53 | rest@53",
-     "matches": 1,
+     "candidate": "F7 -(pv*g + pmt*(1+r*t)*(g-1)/r), (g-1)/r first then *(1+r*t)*pmt | g=exp-log@53 | rest@53",
+     "matches": 2,
      "ulpsOff": {
       "FV-001": 40,
-      "FV-003": 4
+      "FV-003": 4,
+      "FV-005": 40,
+      "FV-007": 58,
+      "FV-009": -72,
+      "FV-010": -117
      }
     },
     {
-     "candidate": "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=pow@64 | rest@53",
-     "matches": 1,
+     "candidate": "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=crt-pow@53 | rest@53",
+     "matches": 2,
      "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
+      "FV-001": 39,
+      "FV-003": 4,
+      "FV-005": 39,
+      "FV-007": 58,
+      "FV-009": -71,
+      "FV-010": -117
      }
     },
     {
-     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=pow@64 | rest@53",
-     "matches": 1,
+     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=crt-pow@53 | rest@53",
+     "matches": 2,
      "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F4 -(pv*g + pmt*((1+r*t)*((g-1)/r))) | g=pow@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F6 -(pmt*(1+r*t)*((g-1)/r) + pv*g) | g=pow@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F7 -(pv*g + pmt*(1+r*t)*(g-1)/r), (g-1)/r first then *(1+r*t)*pmt | g=pow@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=square-rtl@53 | rest@64",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-002": 1,
-      "FV-003": -1
-     }
-    },
-    {
-     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=square-rtl@53 | rest@64",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-002": 1,
-      "FV-003": -1
-     }
-    },
-    {
-     "candidate": "F3 -(pv*g + (pmt*(1+r*t)/r)*(g-1)) | g=square-rtl@53 | rest@64",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-002": 1,
-      "FV-003": -1
-     }
-    },
-    {
-     "candidate": "F4 -(pv*g + pmt*((1+r*t)*((g-1)/r))) | g=square-rtl@53 | rest@64",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-002": 1,
-      "FV-003": -1
-     }
-    },
-    {
-     "candidate": "F5 -((pv + pmt*(1+r*t)/r)*g - pmt*(1+r*t)/r) | g=square-rtl@53 | rest@64",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-002": 1,
-      "FV-003": -1
-     }
-    },
-    {
-     "candidate": "F6 -(pmt*(1+r*t)*((g-1)/r) + pv*g) | g=square-rtl@53 | rest@64",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-002": 1,
-      "FV-003": -1
-     }
-    },
-    {
-     "candidate": "F7 -(pv*g + pmt*(1+r*t)*(g-1)/r), (g-1)/r first then *(1+r*t)*pmt | g=square-rtl@53 | rest@64",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-002": 1,
-      "FV-003": -1
-     }
-    },
-    {
-     "candidate": "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=square-rtl@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=square-rtl@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F4 -(pv*g + pmt*((1+r*t)*((g-1)/r))) | g=square-rtl@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F6 -(pmt*(1+r*t)*((g-1)/r) + pv*g) | g=square-rtl@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F7 -(pv*g + pmt*(1+r*t)*(g-1)/r), (g-1)/r first then *(1+r*t)*pmt | g=square-rtl@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=square-ltr@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=square-ltr@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F4 -(pv*g + pmt*((1+r*t)*((g-1)/r))) | g=square-ltr@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F6 -(pmt*(1+r*t)*((g-1)/r) + pv*g) | g=square-ltr@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F7 -(pv*g + pmt*(1+r*t)*(g-1)/r), (g-1)/r first then *(1+r*t)*pmt | g=square-ltr@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=repeat@53 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 19,
-      "FV-003": -1
-     }
-    },
-    {
-     "candidate": "F3 -(pv*g + (pmt*(1+r*t)/r)*(g-1)) | g=repeat@53 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 19,
-      "FV-002": 1
-     }
-    },
-    {
-     "candidate": "F1 -(pv*g + pmt*(1+r*t)*((g-1)/r)) | g=repeat@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F2 -(pv*g + pmt*(1+r*t)*(g-1)/r) | g=repeat@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F4 -(pv*g + pmt*((1+r*t)*((g-1)/r))) | g=repeat@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F6 -(pmt*(1+r*t)*((g-1)/r) + pv*g) | g=repeat@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
-     }
-    },
-    {
-     "candidate": "F7 -(pv*g + pmt*(1+r*t)*(g-1)/r), (g-1)/r first then *(1+r*t)*pmt | g=repeat@64 | rest@53",
-     "matches": 1,
-     "ulpsOff": {
-      "FV-001": 138,
-      "FV-003": -70
+      "FV-001": 39,
+      "FV-003": 3,
+      "FV-005": 39,
+      "FV-007": 59,
+      "FV-009": -72,
+      "FV-010": -117
      }
     }
    ]
@@ -423,28 +656,408 @@
   "PV": {
    "cases": [
     "PV-001",
-    "PV-003"
+    "PV-003",
+    "PV-004",
+    "PV-005",
+    "PV-006",
+    "PV-007"
    ],
-   "candidates": 1008,
+   "candidates": 1022,
    "matchCounts": {
-    "2/2": 6,
-    "0/2": 1002
+    "6/6": 1,
+    "5/6": 4,
+    "4/6": 5,
+    "3/6": 2,
+    "1/6": 25,
+    "0/6": 985
    },
    "reproduceAll": [
-    "V1 -(fv + pmt*(1+r*t)*((g-1)/r))/g | g=square-rtl@53 | rest@53",
-    "V2 -(fv + pmt*(1+r*t)*(g-1)/r)/g | g=square-rtl@53 | rest@53",
-    "V4 -(fv + (pmt*(1+r*t)/r)*(g-1))/g | g=square-rtl@53 | rest@53",
-    "V5 -(fv + pmt*((1+r*t)*((g-1)/r)))/g | g=square-rtl@53 | rest@53",
-    "V6 -(pmt*(1+r*t)*((g-1)/r) + fv)/g | g=square-rtl@53 | rest@53",
-    "V7 -(fv + pmt*(1+r*t)*((g-1)/r))*(1/g) | g=square-rtl@53 | rest@53"
+    "V5 -(fv + pmt*((1+r*t)*((g-1)/r)))/g | g=pv-fv@53 | rest@53"
    ],
    "bestOthers": [
+    {
+     "candidate": "V1 -(fv + pmt*(1+r*t)*((g-1)/r))/g | g=pv-fv@53 | rest@53",
+     "matches": 5,
+     "ulpsOff": {
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V2 -(fv + pmt*(1+r*t)*(g-1)/r)/g | g=pv-fv@53 | rest@53",
+     "matches": 5,
+     "ulpsOff": {
+      "PV-006": -1
+     }
+    },
+    {
+     "candidate": "V6 -(pmt*(1+r*t)*((g-1)/r) + fv)/g | g=pv-fv@53 | rest@53",
+     "matches": 5,
+     "ulpsOff": {
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V5 -(fv + pmt*((1+r*t)*((g-1)/r)))/g | g=square-rtl@53 | rest@53",
+     "matches": 5,
+     "ulpsOff": {
+      "PV-005": "none"
+     }
+    },
+    {
+     "candidate": "V4 -(fv + (pmt*(1+r*t)/r)*(g-1))/g | g=pv-fv@53 | rest@53",
+     "matches": 4,
+     "ulpsOff": {
+      "PV-006": -1,
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V7 -(fv + pmt*(1+r*t)*((g-1)/r))*(1/g) | g=pv-fv@53 | rest@53",
+     "matches": 4,
+     "ulpsOff": {
+      "PV-006": 1,
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V1 -(fv + pmt*(1+r*t)*((g-1)/r))/g | g=square-rtl@53 | rest@53",
+     "matches": 4,
+     "ulpsOff": {
+      "PV-005": "none",
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V2 -(fv + pmt*(1+r*t)*(g-1)/r)/g | g=square-rtl@53 | rest@53",
+     "matches": 4,
+     "ulpsOff": {
+      "PV-005": "none",
+      "PV-006": -1
+     }
+    },
+    {
+     "candidate": "V6 -(pmt*(1+r*t)*((g-1)/r) + fv)/g | g=square-rtl@53 | rest@53",
+     "matches": 4,
+     "ulpsOff": {
+      "PV-005": "none",
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V4 -(fv + (pmt*(1+r*t)/r)*(g-1))/g | g=square-rtl@53 | rest@53",
+     "matches": 3,
+     "ulpsOff": {
+      "PV-005": "none",
+      "PV-006": -1,
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V7 -(fv + pmt*(1+r*t)*((g-1)/r))*(1/g) | g=square-rtl@53 | rest@53",
+     "matches": 3,
+     "ulpsOff": {
+      "PV-005": "none",
+      "PV-006": 1,
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V1 -(fv + pmt*(1+r*t)*((g-1)/r))/g | g=pv-fv@53 | rest@64",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -1,
+      "PV-003": -1,
+      "PV-004": -1,
+      "PV-006": -1,
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V2 -(fv + pmt*(1+r*t)*(g-1)/r)/g | g=pv-fv@53 | rest@64",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -1,
+      "PV-003": -1,
+      "PV-004": -1,
+      "PV-006": -1,
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V3 -(fv/g + pmt*(1+r*t)*((1-1/g)/r)) | g=pv-fv@53 | rest@64",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -1,
+      "PV-003": -1,
+      "PV-004": -1,
+      "PV-006": -1,
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V4 -(fv + (pmt*(1+r*t)/r)*(g-1))/g | g=pv-fv@53 | rest@64",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -1,
+      "PV-003": -1,
+      "PV-004": -1,
+      "PV-006": -1,
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V5 -(fv + pmt*((1+r*t)*((g-1)/r)))/g | g=pv-fv@53 | rest@64",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -1,
+      "PV-003": -1,
+      "PV-004": -1,
+      "PV-006": -1,
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V6 -(pmt*(1+r*t)*((g-1)/r) + fv)/g | g=pv-fv@53 | rest@64",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -1,
+      "PV-003": -1,
+      "PV-004": -1,
+      "PV-006": -1,
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V7 -(fv + pmt*(1+r*t)*((g-1)/r))*(1/g) | g=pv-fv@53 | rest@64",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -1,
+      "PV-003": -1,
+      "PV-004": -1,
+      "PV-006": -1,
+      "PV-007": -1
+     }
+    },
+    {
+     "candidate": "V4 -(fv + (pmt*(1+r*t)/r)*(g-1))/g | g=pow@53 | rest@53",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -7,
+      "PV-003": 18,
+      "PV-004": 18,
+      "PV-006": -34,
+      "PV-007": -65
+     }
+    },
+    {
+     "candidate": "V1 -(fv + pmt*(1+r*t)*((g-1)/r))/g | g=square-ltr@53 | rest@53",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -4,
+      "PV-003": 9,
+      "PV-004": 9,
+      "PV-005": "none",
+      "PV-007": 31
+     }
+    },
+    {
+     "candidate": "V5 -(fv + pmt*((1+r*t)*((g-1)/r)))/g | g=square-ltr@53 | rest@53",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -4,
+      "PV-003": 14,
+      "PV-004": 14,
+      "PV-005": "none",
+      "PV-007": 31
+     }
+    },
+    {
+     "candidate": "V6 -(pmt*(1+r*t)*((g-1)/r) + fv)/g | g=square-ltr@53 | rest@53",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -4,
+      "PV-003": 9,
+      "PV-004": 9,
+      "PV-005": "none",
+      "PV-007": 31
+     }
+    },
+    {
+     "candidate": "V1 -(fv + pmt*(1+r*t)*((g-1)/r))/g | g=exp-log@53 | rest@53",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -7,
+      "PV-003": 27,
+      "PV-004": 27,
+      "PV-006": -34,
+      "PV-007": -65
+     }
+    },
+    {
+     "candidate": "V2 -(fv + pmt*(1+r*t)*(g-1)/r)/g | g=exp-log@53 | rest@53",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -7,
+      "PV-003": 27,
+      "PV-004": 27,
+      "PV-006": -34,
+      "PV-007": -66
+     }
+    },
+    {
+     "candidate": "V4 -(fv + (pmt*(1+r*t)/r)*(g-1))/g | g=exp-log@53 | rest@53",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -7,
+      "PV-003": 27,
+      "PV-004": 27,
+      "PV-006": -34,
+      "PV-007": -65
+     }
+    },
+    {
+     "candidate": "V5 -(fv + pmt*((1+r*t)*((g-1)/r)))/g | g=exp-log@53 | rest@53",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -7,
+      "PV-003": 32,
+      "PV-004": 32,
+      "PV-006": -34,
+      "PV-007": -66
+     }
+    },
+    {
+     "candidate": "V6 -(pmt*(1+r*t)*((g-1)/r) + fv)/g | g=exp-log@53 | rest@53",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -7,
+      "PV-003": 27,
+      "PV-004": 27,
+      "PV-006": -34,
+      "PV-007": -65
+     }
+    },
+    {
+     "candidate": "V7 -(fv + pmt*(1+r*t)*((g-1)/r))*(1/g) | g=exp-log@53 | rest@53",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -7,
+      "PV-003": 27,
+      "PV-004": 27,
+      "PV-006": -34,
+      "PV-007": -65
+     }
+    },
+    {
+     "candidate": "V1 -(fv + pmt*(1+r*t)*((g-1)/r))/g | g=exp-log@53 | rest@64",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -8,
+      "PV-003": 26,
+      "PV-004": 26,
+      "PV-006": -34,
+      "PV-007": -65
+     }
+    },
+    {
+     "candidate": "V2 -(fv + pmt*(1+r*t)*(g-1)/r)/g | g=exp-log@53 | rest@64",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -8,
+      "PV-003": 26,
+      "PV-004": 26,
+      "PV-006": -34,
+      "PV-007": -65
+     }
+    },
+    {
+     "candidate": "V3 -(fv/g + pmt*(1+r*t)*((1-1/g)/r)) | g=exp-log@53 | rest@64",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -8,
+      "PV-003": 26,
+      "PV-004": 26,
+      "PV-006": -34,
+      "PV-007": -65
+     }
+    },
+    {
+     "candidate": "V4 -(fv + (pmt*(1+r*t)/r)*(g-1))/g | g=exp-log@53 | rest@64",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -8,
+      "PV-003": 26,
+      "PV-004": 26,
+      "PV-006": -34,
+      "PV-007": -65
+     }
+    },
+    {
+     "candidate": "V5 -(fv + pmt*((1+r*t)*((g-1)/r)))/g | g=exp-log@53 | rest@64",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -8,
+      "PV-003": 26,
+      "PV-004": 26,
+      "PV-006": -34,
+      "PV-007": -65
+     }
+    },
+    {
+     "candidate": "V6 -(pmt*(1+r*t)*((g-1)/r) + fv)/g | g=exp-log@53 | rest@64",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -8,
+      "PV-003": 26,
+      "PV-004": 26,
+      "PV-006": -34,
+      "PV-007": -65
+     }
+    },
+    {
+     "candidate": "V7 -(fv + pmt*(1+r*t)*((g-1)/r))*(1/g) | g=exp-log@53 | rest@64",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -8,
+      "PV-003": 26,
+      "PV-004": 26,
+      "PV-006": -34,
+      "PV-007": -65
+     }
+    },
+    {
+     "candidate": "V4 -(fv + (pmt*(1+r*t)/r)*(g-1))/g | g=crt-pow@53 | rest@53",
+     "matches": 1,
+     "ulpsOff": {
+      "PV-001": -7,
+      "PV-003": 18,
+      "PV-004": 18,
+      "PV-006": -34,
+      "PV-007": -65
+     }
+    },
+    {
+     "candidate": "V3 -(fv/g + pmt*(1+r*t)*((1-1/g)/r)) | g=pv-fv@53 | rest@53",
+     "matches": 0,
+     "ulpsOff": {
+      "PV-001": -1,
+      "PV-003": -1,
+      "PV-004": -1,
+      "PV-005": -1,
+      "PV-006": -3,
+      "PV-007": -5
+     }
+    },
     {
      "candidate": "V1 -(fv + pmt*(1+r*t)*((g-1)/r))/g | g=pow@53 | rest@53",
      "matches": 0,
      "ulpsOff": {
       "PV-001": -7,
-      "PV-003": 18
+      "PV-003": 18,
+      "PV-004": 18,
+      "PV-005": -2,
+      "PV-006": -34,
+      "PV-007": -65
      }
     },
     {
@@ -452,7 +1065,11 @@
      "matches": 0,
      "ulpsOff": {
       "PV-001": -7,
-      "PV-003": 18
+      "PV-003": 18,
+      "PV-004": 18,
+      "PV-005": -2,
+      "PV-006": -34,
+      "PV-007": -66
      }
     },
     {
@@ -460,303 +1077,11 @@
      "matches": 0,
      "ulpsOff": {
       "PV-001": -8,
-      "PV-003": 23
-     }
-    },
-    {
-     "candidate": "V4 -(fv + (pmt*(1+r*t)/r)*(g-1))/g | g=pow@53 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -7,
-      "PV-003": 18
-     }
-    },
-    {
-     "candidate": "V5 -(fv + pmt*((1+r*t)*((g-1)/r)))/g | g=pow@53 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -7,
-      "PV-003": 18
-     }
-    },
-    {
-     "candidate": "V6 -(pmt*(1+r*t)*((g-1)/r) + fv)/g | g=pow@53 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -7,
-      "PV-003": 18
-     }
-    },
-    {
-     "candidate": "V7 -(fv + pmt*(1+r*t)*((g-1)/r))*(1/g) | g=pow@53 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -7,
-      "PV-003": 17
-     }
-    },
-    {
-     "candidate": "V1 -(fv + pmt*(1+r*t)*((g-1)/r))/g | g=pow@53 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -7,
-      "PV-003": 17
-     }
-    },
-    {
-     "candidate": "V2 -(fv + pmt*(1+r*t)*(g-1)/r)/g | g=pow@53 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -7,
-      "PV-003": 17
-     }
-    },
-    {
-     "candidate": "V3 -(fv/g + pmt*(1+r*t)*((1-1/g)/r)) | g=pow@53 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -7,
-      "PV-003": 17
-     }
-    },
-    {
-     "candidate": "V4 -(fv + (pmt*(1+r*t)/r)*(g-1))/g | g=pow@53 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -7,
-      "PV-003": 17
-     }
-    },
-    {
-     "candidate": "V5 -(fv + pmt*((1+r*t)*((g-1)/r)))/g | g=pow@53 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -7,
-      "PV-003": 17
-     }
-    },
-    {
-     "candidate": "V6 -(pmt*(1+r*t)*((g-1)/r) + fv)/g | g=pow@53 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -7,
-      "PV-003": 17
-     }
-    },
-    {
-     "candidate": "V7 -(fv + pmt*(1+r*t)*((g-1)/r))*(1/g) | g=pow@53 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -7,
-      "PV-003": 17
-     }
-    },
-    {
-     "candidate": "V1 -(fv + pmt*(1+r*t)*((g-1)/r))/g | g=pow@64 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -9
-     }
-    },
-    {
-     "candidate": "V2 -(fv + pmt*(1+r*t)*(g-1)/r)/g | g=pow@64 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -14
-     }
-    },
-    {
-     "candidate": "V3 -(fv/g + pmt*(1+r*t)*((1-1/g)/r)) | g=pow@64 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -9
-     }
-    },
-    {
-     "candidate": "V4 -(fv + (pmt*(1+r*t)/r)*(g-1))/g | g=pow@64 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -9
-     }
-    },
-    {
-     "candidate": "V5 -(fv + pmt*((1+r*t)*((g-1)/r)))/g | g=pow@64 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -9
-     }
-    },
-    {
-     "candidate": "V6 -(pmt*(1+r*t)*((g-1)/r) + fv)/g | g=pow@64 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -9
-     }
-    },
-    {
-     "candidate": "V7 -(fv + pmt*(1+r*t)*((g-1)/r))*(1/g) | g=pow@64 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -9
-     }
-    },
-    {
-     "candidate": "V1 -(fv + pmt*(1+r*t)*((g-1)/r))/g | g=pow@64 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -6
-     }
-    },
-    {
-     "candidate": "V2 -(fv + pmt*(1+r*t)*(g-1)/r)/g | g=pow@64 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -6
-     }
-    },
-    {
-     "candidate": "V3 -(fv/g + pmt*(1+r*t)*((1-1/g)/r)) | g=pow@64 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -6
-     }
-    },
-    {
-     "candidate": "V4 -(fv + (pmt*(1+r*t)/r)*(g-1))/g | g=pow@64 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -6
-     }
-    },
-    {
-     "candidate": "V5 -(fv + pmt*((1+r*t)*((g-1)/r)))/g | g=pow@64 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -6
-     }
-    },
-    {
-     "candidate": "V6 -(pmt*(1+r*t)*((g-1)/r) + fv)/g | g=pow@64 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -6
-     }
-    },
-    {
-     "candidate": "V7 -(fv + pmt*(1+r*t)*((g-1)/r))*(1/g) | g=pow@64 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -6
-     }
-    },
-    {
-     "candidate": "V3 -(fv/g + pmt*(1+r*t)*((1-1/g)/r)) | g=square-rtl@53 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -1,
-      "PV-003": -1
-     }
-    },
-    {
-     "candidate": "V1 -(fv + pmt*(1+r*t)*((g-1)/r))/g | g=square-rtl@53 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -1,
-      "PV-003": -1
-     }
-    },
-    {
-     "candidate": "V2 -(fv + pmt*(1+r*t)*(g-1)/r)/g | g=square-rtl@53 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -1,
-      "PV-003": -1
-     }
-    },
-    {
-     "candidate": "V3 -(fv/g + pmt*(1+r*t)*((1-1/g)/r)) | g=square-rtl@53 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -1,
-      "PV-003": -1
-     }
-    },
-    {
-     "candidate": "V4 -(fv + (pmt*(1+r*t)/r)*(g-1))/g | g=square-rtl@53 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -1,
-      "PV-003": -1
-     }
-    },
-    {
-     "candidate": "V5 -(fv + pmt*((1+r*t)*((g-1)/r)))/g | g=square-rtl@53 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -1,
-      "PV-003": -1
-     }
-    },
-    {
-     "candidate": "V6 -(pmt*(1+r*t)*((g-1)/r) + fv)/g | g=square-rtl@53 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -1,
-      "PV-003": -1
-     }
-    },
-    {
-     "candidate": "V7 -(fv + pmt*(1+r*t)*((g-1)/r))*(1/g) | g=square-rtl@53 | rest@64",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": -1,
-      "PV-003": -1
-     }
-    },
-    {
-     "candidate": "V1 -(fv + pmt*(1+r*t)*((g-1)/r))/g | g=square-rtl@64 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -9
-     }
-    },
-    {
-     "candidate": "V2 -(fv + pmt*(1+r*t)*(g-1)/r)/g | g=square-rtl@64 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -14
-     }
-    },
-    {
-     "candidate": "V3 -(fv/g + pmt*(1+r*t)*((1-1/g)/r)) | g=square-rtl@64 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -9
-     }
-    },
-    {
-     "candidate": "V4 -(fv + (pmt*(1+r*t)/r)*(g-1))/g | g=square-rtl@64 | rest@53",
-     "matches": 0,
-     "ulpsOff": {
-      "PV-001": 27,
-      "PV-003": -9
+      "PV-003": 23,
+      "PV-004": 23,
+      "PV-005": -3,
+      "PV-006": -35,
+      "PV-007": -58
      }
     }
    ]
@@ -766,474 +1091,486 @@
     "PMT-001",
     "PMT-002",
     "PMT-003",
-    "PMT-008"
+    "PMT-008",
+    "PMT-009",
+    "PMT-010",
+    "PMT-011",
+    "PMT-012",
+    "PMT-013",
+    "PMT-014",
+    "PMT-015",
+    "PMT-016",
+    "PMT-017",
+    "PMT-018"
    ],
-   "candidates": 11088,
+   "candidates": 11242,
    "matchCounts": {
-    "4/4": 2504,
-    "3/4": 3389,
-    "2/4": 1699,
-    "1/4": 1580,
-    "0/4": 1916
+    "10/14": 4,
+    "9/14": 18,
+    "8/14": 294,
+    "7/14": 2524,
+    "6/14": 1265,
+    "5/14": 1527,
+    "4/14": 2039,
+    "3/14": 987,
+    "2/14": 392,
+    "1/14": 654,
+    "0/14": 1538
    },
-   "reproduceAll": {
-    "count": 2504,
-    "byEvaluation": {
-     "g=excess-ltr (a+b)+ab (a+a)+aa@53 | rest@53": 9,
-     "g=excess-ltr (a+b)+ab (a+a)+aa@53 | rest@53 | due=53": 11,
-     "g=excess-ltr (a+b)+ab (a+a)+aa@53 | rest@53 | due=64": 11,
-     "g=excess-ltr (a+b)+ab (a+a)+aa@53 | rest@53 | due=exact": 11,
-     "g=excess-ltr (a+b)+ab (a+a)+aa@64 | rest@53 | due=64": 11,
-     "g=excess-ltr (a+b)+ab (a+a)+aa@64 | rest@53 | due=exact": 11,
-     "g=excess-ltr (a+b)+ab (a+a)+aa@64 | rest@64 | due=64": 19,
-     "g=excess-ltr (a+b)+ab (a+a)+aa@64 | rest@64 | due=exact": 19,
-     "g=excess-ltr (a+b)+ab a(2+a)@64 | rest@53 | due=64": 11,
-     "g=excess-ltr (a+b)+ab a(2+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-ltr (a+b)+ab a(2+a)@64 | rest@64 | due=64": 19,
-     "g=excess-ltr (a+b)+ab a(2+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-ltr (a+b)+ab aa+(a+a)@53 | rest@53": 9,
-     "g=excess-ltr (a+b)+ab aa+(a+a)@53 | rest@53 | due=53": 11,
-     "g=excess-ltr (a+b)+ab aa+(a+a)@53 | rest@53 | due=64": 11,
-     "g=excess-ltr (a+b)+ab aa+(a+a)@53 | rest@53 | due=exact": 11,
-     "g=excess-ltr (a+b)+ab aa+(a+a)@64 | rest@53 | due=64": 11,
-     "g=excess-ltr (a+b)+ab aa+(a+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-ltr (a+b)+ab aa+(a+a)@64 | rest@64 | due=64": 19,
-     "g=excess-ltr (a+b)+ab aa+(a+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-ltr (ab+a)+b (a+a)+aa@53 | rest@53 | due=64": 11,
-     "g=excess-ltr (ab+a)+b (a+a)+aa@53 | rest@53 | due=exact": 11,
-     "g=excess-ltr (ab+a)+b (a+a)+aa@53 | rest@64 | due=64": 17,
-     "g=excess-ltr (ab+a)+b (a+a)+aa@53 | rest@64 | due=exact": 17,
-     "g=excess-ltr (ab+a)+b (a+a)+aa@64 | rest@53 | due=64": 11,
-     "g=excess-ltr (ab+a)+b (a+a)+aa@64 | rest@53 | due=exact": 11,
-     "g=excess-ltr (ab+a)+b (a+a)+aa@64 | rest@64 | due=64": 19,
-     "g=excess-ltr (ab+a)+b (a+a)+aa@64 | rest@64 | due=exact": 19,
-     "g=excess-ltr (ab+a)+b a(2+a)@64 | rest@53 | due=64": 11,
-     "g=excess-ltr (ab+a)+b a(2+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-ltr (ab+a)+b a(2+a)@64 | rest@64 | due=64": 19,
-     "g=excess-ltr (ab+a)+b a(2+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-ltr (ab+a)+b aa+(a+a)@53 | rest@53 | due=64": 11,
-     "g=excess-ltr (ab+a)+b aa+(a+a)@53 | rest@53 | due=exact": 11,
-     "g=excess-ltr (ab+a)+b aa+(a+a)@53 | rest@64 | due=64": 17,
-     "g=excess-ltr (ab+a)+b aa+(a+a)@53 | rest@64 | due=exact": 17,
-     "g=excess-ltr (ab+a)+b aa+(a+a)@64 | rest@53 | due=64": 11,
-     "g=excess-ltr (ab+a)+b aa+(a+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-ltr (ab+a)+b aa+(a+a)@64 | rest@64 | due=64": 19,
-     "g=excess-ltr (ab+a)+b aa+(a+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-ltr a+(b+ab) (a+a)+aa@53 | rest@53": 2,
-     "g=excess-ltr a+(b+ab) (a+a)+aa@53 | rest@53 | due=53": 8,
-     "g=excess-ltr a+(b+ab) (a+a)+aa@53 | rest@53 | due=64": 9,
-     "g=excess-ltr a+(b+ab) (a+a)+aa@53 | rest@53 | due=exact": 9,
-     "g=excess-ltr a+(b+ab) (a+a)+aa@53 | rest@64": 14,
-     "g=excess-ltr a+(b+ab) (a+a)+aa@53 | rest@64 | due=64": 14,
-     "g=excess-ltr a+(b+ab) (a+a)+aa@53 | rest@64 | due=exact": 14,
-     "g=excess-ltr a+(b+ab) (a+a)+aa@64 | rest@53 | due=64": 11,
-     "g=excess-ltr a+(b+ab) (a+a)+aa@64 | rest@53 | due=exact": 11,
-     "g=excess-ltr a+(b+ab) (a+a)+aa@64 | rest@64 | due=64": 19,
-     "g=excess-ltr a+(b+ab) (a+a)+aa@64 | rest@64 | due=exact": 19,
-     "g=excess-ltr a+(b+ab) a(2+a)@64 | rest@53 | due=64": 11,
-     "g=excess-ltr a+(b+ab) a(2+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-ltr a+(b+ab) a(2+a)@64 | rest@64 | due=64": 19,
-     "g=excess-ltr a+(b+ab) a(2+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-ltr a+(b+ab) aa+(a+a)@53 | rest@53": 2,
-     "g=excess-ltr a+(b+ab) aa+(a+a)@53 | rest@53 | due=53": 8,
-     "g=excess-ltr a+(b+ab) aa+(a+a)@53 | rest@53 | due=64": 9,
-     "g=excess-ltr a+(b+ab) aa+(a+a)@53 | rest@53 | due=exact": 9,
-     "g=excess-ltr a+(b+ab) aa+(a+a)@53 | rest@64": 14,
-     "g=excess-ltr a+(b+ab) aa+(a+a)@53 | rest@64 | due=64": 14,
-     "g=excess-ltr a+(b+ab) aa+(a+a)@53 | rest@64 | due=exact": 14,
-     "g=excess-ltr a+(b+ab) aa+(a+a)@64 | rest@53 | due=64": 11,
-     "g=excess-ltr a+(b+ab) aa+(a+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-ltr a+(b+ab) aa+(a+a)@64 | rest@64 | due=64": 19,
-     "g=excess-ltr a+(b+ab) aa+(a+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-ltr ab+(a+b) (a+a)+aa@53 | rest@53": 9,
-     "g=excess-ltr ab+(a+b) (a+a)+aa@53 | rest@53 | due=53": 11,
-     "g=excess-ltr ab+(a+b) (a+a)+aa@53 | rest@53 | due=64": 11,
-     "g=excess-ltr ab+(a+b) (a+a)+aa@53 | rest@53 | due=exact": 11,
-     "g=excess-ltr ab+(a+b) (a+a)+aa@64 | rest@53 | due=64": 11,
-     "g=excess-ltr ab+(a+b) (a+a)+aa@64 | rest@53 | due=exact": 11,
-     "g=excess-ltr ab+(a+b) (a+a)+aa@64 | rest@64 | due=64": 19,
-     "g=excess-ltr ab+(a+b) (a+a)+aa@64 | rest@64 | due=exact": 19,
-     "g=excess-ltr ab+(a+b) a(2+a)@64 | rest@53 | due=64": 11,
-     "g=excess-ltr ab+(a+b) a(2+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-ltr ab+(a+b) a(2+a)@64 | rest@64 | due=64": 19,
-     "g=excess-ltr ab+(a+b) a(2+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-ltr ab+(a+b) aa+(a+a)@53 | rest@53": 9,
-     "g=excess-ltr ab+(a+b) aa+(a+a)@53 | rest@53 | due=53": 11,
-     "g=excess-ltr ab+(a+b) aa+(a+a)@53 | rest@53 | due=64": 11,
-     "g=excess-ltr ab+(a+b) aa+(a+a)@53 | rest@53 | due=exact": 11,
-     "g=excess-ltr ab+(a+b) aa+(a+a)@64 | rest@53 | due=64": 11,
-     "g=excess-ltr ab+(a+b) aa+(a+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-ltr ab+(a+b) aa+(a+a)@64 | rest@64 | due=64": 19,
-     "g=excess-ltr ab+(a+b) aa+(a+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-repeat (a+b)+ab a(2+a)@64 | rest@53 | due=64": 11,
-     "g=excess-repeat (a+b)+ab a(2+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-repeat (a+b)+ab a(2+a)@64 | rest@64 | due=64": 19,
-     "g=excess-repeat (a+b)+ab a(2+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-repeat (ab+a)+b a(2+a)@64 | rest@53 | due=64": 11,
-     "g=excess-repeat (ab+a)+b a(2+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-repeat (ab+a)+b a(2+a)@64 | rest@64 | due=64": 19,
-     "g=excess-repeat (ab+a)+b a(2+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-repeat a+(b+ab) a(2+a)@53 | rest@53 | due=64": 11,
-     "g=excess-repeat a+(b+ab) a(2+a)@53 | rest@53 | due=exact": 11,
-     "g=excess-repeat a+(b+ab) a(2+a)@53 | rest@64 | due=64": 17,
-     "g=excess-repeat a+(b+ab) a(2+a)@53 | rest@64 | due=exact": 17,
-     "g=excess-repeat a+(b+ab) a(2+a)@64 | rest@53 | due=64": 11,
-     "g=excess-repeat a+(b+ab) a(2+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-repeat a+(b+ab) a(2+a)@64 | rest@64 | due=64": 19,
-     "g=excess-repeat a+(b+ab) a(2+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-repeat ab+(a+b) a(2+a)@64 | rest@53 | due=64": 11,
-     "g=excess-repeat ab+(a+b) a(2+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-repeat ab+(a+b) a(2+a)@64 | rest@64 | due=64": 19,
-     "g=excess-repeat ab+(a+b) a(2+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-rtl (a+b)+ab (a+a)+aa@64 | rest@53 | due=64": 11,
-     "g=excess-rtl (a+b)+ab (a+a)+aa@64 | rest@53 | due=exact": 11,
-     "g=excess-rtl (a+b)+ab (a+a)+aa@64 | rest@64 | due=64": 19,
-     "g=excess-rtl (a+b)+ab (a+a)+aa@64 | rest@64 | due=exact": 19,
-     "g=excess-rtl (a+b)+ab a(2+a)@64 | rest@53 | due=64": 11,
-     "g=excess-rtl (a+b)+ab a(2+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-rtl (a+b)+ab a(2+a)@64 | rest@64 | due=64": 19,
-     "g=excess-rtl (a+b)+ab a(2+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-rtl (a+b)+ab aa+(a+a)@64 | rest@53 | due=64": 11,
-     "g=excess-rtl (a+b)+ab aa+(a+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-rtl (a+b)+ab aa+(a+a)@64 | rest@64 | due=64": 19,
-     "g=excess-rtl (a+b)+ab aa+(a+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-rtl (ab+a)+b (a+a)+aa@64 | rest@53 | due=64": 11,
-     "g=excess-rtl (ab+a)+b (a+a)+aa@64 | rest@53 | due=exact": 11,
-     "g=excess-rtl (ab+a)+b (a+a)+aa@64 | rest@64 | due=64": 19,
-     "g=excess-rtl (ab+a)+b (a+a)+aa@64 | rest@64 | due=exact": 19,
-     "g=excess-rtl (ab+a)+b a(2+a)@64 | rest@53 | due=64": 11,
-     "g=excess-rtl (ab+a)+b a(2+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-rtl (ab+a)+b a(2+a)@64 | rest@64 | due=64": 19,
-     "g=excess-rtl (ab+a)+b a(2+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-rtl (ab+a)+b aa+(a+a)@64 | rest@53 | due=64": 11,
-     "g=excess-rtl (ab+a)+b aa+(a+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-rtl (ab+a)+b aa+(a+a)@64 | rest@64 | due=64": 19,
-     "g=excess-rtl (ab+a)+b aa+(a+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-rtl a+(b+ab) (a+a)+aa@64 | rest@53 | due=64": 11,
-     "g=excess-rtl a+(b+ab) (a+a)+aa@64 | rest@53 | due=exact": 11,
-     "g=excess-rtl a+(b+ab) (a+a)+aa@64 | rest@64 | due=64": 19,
-     "g=excess-rtl a+(b+ab) (a+a)+aa@64 | rest@64 | due=exact": 19,
-     "g=excess-rtl a+(b+ab) a(2+a)@64 | rest@53 | due=64": 11,
-     "g=excess-rtl a+(b+ab) a(2+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-rtl a+(b+ab) a(2+a)@64 | rest@64 | due=64": 19,
-     "g=excess-rtl a+(b+ab) a(2+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-rtl a+(b+ab) aa+(a+a)@64 | rest@53 | due=64": 11,
-     "g=excess-rtl a+(b+ab) aa+(a+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-rtl a+(b+ab) aa+(a+a)@64 | rest@64 | due=64": 19,
-     "g=excess-rtl a+(b+ab) aa+(a+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-rtl ab+(a+b) (a+a)+aa@64 | rest@53 | due=64": 11,
-     "g=excess-rtl ab+(a+b) (a+a)+aa@64 | rest@53 | due=exact": 11,
-     "g=excess-rtl ab+(a+b) (a+a)+aa@64 | rest@64 | due=64": 19,
-     "g=excess-rtl ab+(a+b) (a+a)+aa@64 | rest@64 | due=exact": 19,
-     "g=excess-rtl ab+(a+b) a(2+a)@64 | rest@53 | due=64": 11,
-     "g=excess-rtl ab+(a+b) a(2+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-rtl ab+(a+b) a(2+a)@64 | rest@64 | due=64": 19,
-     "g=excess-rtl ab+(a+b) a(2+a)@64 | rest@64 | due=exact": 19,
-     "g=excess-rtl ab+(a+b) aa+(a+a)@64 | rest@53 | due=64": 11,
-     "g=excess-rtl ab+(a+b) aa+(a+a)@64 | rest@53 | due=exact": 11,
-     "g=excess-rtl ab+(a+b) aa+(a+a)@64 | rest@64 | due=64": 19,
-     "g=excess-rtl ab+(a+b) aa+(a+a)@64 | rest@64 | due=exact": 19,
-     "g=exp-log1p@64 | rest@64 | due=64": 19,
-     "g=exp-log1p@64 | rest@64 | due=exact": 19,
-     "g=exp-log@64 | rest@64 | due=64": 19,
-     "g=exp-log@64 | rest@64 | due=exact": 19,
-     "g=expm1-log1p@53 | rest@53 | due=64": 11,
-     "g=expm1-log1p@53 | rest@53 | due=exact": 11,
-     "g=expm1-log1p@64 | rest@53 | due=64": 11,
-     "g=expm1-log1p@64 | rest@53 | due=exact": 11,
-     "g=expm1-log1p@64 | rest@64 | due=64": 19,
-     "g=expm1-log1p@64 | rest@64 | due=exact": 19,
-     "g=pow@64 | rest@64 | due=64": 19,
-     "g=pow@64 | rest@64 | due=exact": 19,
-     "g=repeat@64 | rest@64 | due=64": 19,
-     "g=repeat@64 | rest@64 | due=exact": 19,
-     "g=square-ltr@64 | rest@64 | due=64": 19,
-     "g=square-ltr@64 | rest@64 | due=exact": 19,
-     "g=square-rtl@64 | rest@64 | due=64": 19,
-     "g=square-rtl@64 | rest@64 | due=exact": 19,
-     "g=x87-f2xm1@64 | rest@64 | due=64": 19,
-     "g=x87-f2xm1@64 | rest@64 | due=exact": 19
-    }
-   },
+   "reproduceAll": [],
    "bestOthers": [
     {
-     "candidate": "M1 -(r*(pv*g+fv))/((1+r*t)*(g-1)) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M5 -(pv*g+fv)/(g-1)*r/(1+r*t) | g=expm1-log1p@53 | rest@53 | due=64",
+     "matches": 10,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-012": 2,
+      "PMT-013": -2,
+      "PMT-016": -2,
+      "PMT-017": -1
      }
     },
     {
-     "candidate": "M1 -(r*(pv*g+fv))/((1+r*t)*(g-1)) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M5 -(pv*g+fv)/(g-1)*r/(1+r*t) | g=expm1-log1p@53 | rest@53 | due=exact",
+     "matches": 10,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-012": 2,
+      "PMT-013": -2,
+      "PMT-016": -2,
+      "PMT-017": -1
      }
     },
     {
-     "candidate": "M2 -(pv*g+fv)/((1+r*t)*((g-1)/r)) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M16 -(pv*g/e + fv/e)*r/(1+r*t) | g=expm1-log1p@53 | rest@53 | due=64",
+     "matches": 10,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-012": 2,
+      "PMT-013": -2,
+      "PMT-016": -2,
+      "PMT-017": -1
      }
     },
     {
-     "candidate": "M2 -(pv*g+fv)/((1+r*t)*((g-1)/r)) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M16 -(pv*g/e + fv/e)*r/(1+r*t) | g=expm1-log1p@53 | rest@53 | due=exact",
+     "matches": 10,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-012": 2,
+      "PMT-013": -2,
+      "PMT-016": -2,
+      "PMT-017": -1
      }
     },
     {
-     "candidate": "M3 -(pv*g+fv)*r/((1+r*t)*(g-1)) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M18 -(pv*(r+r/e) + fv*(r/e))/(1+r*t) | g=expm1-log1p@53 | rest@53 | due=64",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-012": 1,
+      "PMT-013": -2,
+      "PMT-014": 1,
+      "PMT-015": -1,
+      "PMT-018": -1
      }
     },
     {
-     "candidate": "M3 -(pv*g+fv)*r/((1+r*t)*(g-1)) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M18 -(pv*(r+r/e) + fv*(r/e))/(1+r*t) | g=expm1-log1p@53 | rest@53 | due=exact",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-012": 1,
+      "PMT-013": -2,
+      "PMT-014": 1,
+      "PMT-015": -1,
+      "PMT-018": -1
      }
     },
     {
-     "candidate": "M4 -((pv*g+fv)/((g-1)/r))/(1+r*t) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=excess-rtl (a+b)+ab (a+a)+aa@53 | rest@53",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-003": 1,
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-013": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M4 -((pv*g+fv)/((g-1)/r))/(1+r*t) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=excess-rtl (a+b)+ab (a+a)+aa@53 | rest@53 | due=53",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-003": 1,
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-013": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M5 -(pv*g+fv)/(g-1)*r/(1+r*t) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=excess-rtl (a+b)+ab aa+(a+a)@53 | rest@53",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-003": 1,
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-013": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M5 -(pv*g+fv)/(g-1)*r/(1+r*t) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=excess-rtl (a+b)+ab aa+(a+a)@53 | rest@53 | due=53",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-003": 1,
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-013": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M6 -(pv+fv/g)*r/((1+r*t)*(1-1/g)) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=excess-rtl a+(b+ab) (a+a)+aa@53 | rest@53",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-003": 1,
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-013": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M6 -(pv+fv/g)*r/((1+r*t)*(1-1/g)) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=excess-rtl a+(b+ab) (a+a)+aa@53 | rest@53 | due=53",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-003": 1,
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-013": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M7 -(fv+pv*g)/((1+r*t)*((g-1)/r)) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=excess-rtl a+(b+ab) aa+(a+a)@53 | rest@53",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-003": 1,
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-013": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M7 -(fv+pv*g)/((1+r*t)*((g-1)/r)) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=excess-rtl a+(b+ab) aa+(a+a)@53 | rest@53 | due=53",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-003": 1,
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-013": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M8 -(pv*g+fv)/(pmt-factor (1+r*t)*(g-1)/r) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=excess-rtl ab+(a+b) (a+a)+aa@53 | rest@53",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-003": 1,
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-013": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M8 -(pv*g+fv)/(pmt-factor (1+r*t)*(g-1)/r) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=excess-rtl ab+(a+b) (a+a)+aa@53 | rest@53 | due=53",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-003": 1,
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-013": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M9 -(pv*r*g + fv*r)/((1+r*t)*(g-1)) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=excess-rtl ab+(a+b) aa+(a+a)@53 | rest@53",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-003": 1,
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-013": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M9 -(pv*r*g + fv*r)/((1+r*t)*(g-1)) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=excess-rtl ab+(a+b) aa+(a+a)@53 | rest@53 | due=53",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-003": 1,
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-013": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M10 -(pv*r/(1-1/g) + fv*r/(g-1))/(1+r*t) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M18 -(pv*(r+r/e) + fv*(r/e))/(1+r*t) | g=excess-ltr (ab+a)+b (a+a)+aa@53 | rest@53 | due=64",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-014": 2,
+      "PMT-015": -1,
+      "PMT-018": -1
      }
     },
     {
-     "candidate": "M10 -(pv*r/(1-1/g) + fv*r/(g-1))/(1+r*t) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M18 -(pv*(r+r/e) + fv*(r/e))/(1+r*t) | g=excess-ltr (ab+a)+b (a+a)+aa@53 | rest@53 | due=exact",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-014": 2,
+      "PMT-015": -1,
+      "PMT-018": -1
      }
     },
     {
-     "candidate": "M11 -(pv*g+fv)/(((1+r*t)*(g-1))/r) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M18 -(pv*(r+r/e) + fv*(r/e))/(1+r*t) | g=excess-ltr (ab+a)+b aa+(a+a)@53 | rest@53 | due=64",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-014": 2,
+      "PMT-015": -1,
+      "PMT-018": -1
      }
     },
     {
-     "candidate": "M11 -(pv*g+fv)/(((1+r*t)*(g-1))/r) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M18 -(pv*(r+r/e) + fv*(r/e))/(1+r*t) | g=excess-ltr (ab+a)+b aa+(a+a)@53 | rest@53 | due=exact",
+     "matches": 9,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": "none",
+      "PMT-012": "none",
+      "PMT-014": 2,
+      "PMT-015": -1,
+      "PMT-018": -1
      }
     },
     {
-     "candidate": "M12 -(pv*g+fv)/((g-1)*(1+r*t)/r) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M2 -(pv*g+fv)/((1+r*t)*((g-1)/r)) | g=expm1-log1p@53 | rest@53 | due=64",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 2,
+      "PMT-013": -3,
+      "PMT-016": -1,
+      "PMT-017": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M12 -(pv*g+fv)/((g-1)*(1+r*t)/r) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M2 -(pv*g+fv)/((1+r*t)*((g-1)/r)) | g=expm1-log1p@53 | rest@53 | due=exact",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 2,
+      "PMT-013": -3,
+      "PMT-016": -1,
+      "PMT-017": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M13 -(pv*g+fv)/((g-1)/r*(1+r*t)) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M4 -((pv*g+fv)/((g-1)/r))/(1+r*t) | g=expm1-log1p@53 | rest@53 | due=64",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 2,
+      "PMT-013": -3,
+      "PMT-016": -1,
+      "PMT-017": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M13 -(pv*g+fv)/((g-1)/r*(1+r*t)) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M4 -((pv*g+fv)/((g-1)/r))/(1+r*t) | g=expm1-log1p@53 | rest@53 | due=exact",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 2,
+      "PMT-013": -3,
+      "PMT-016": -1,
+      "PMT-017": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M14 -(pv*g+fv)*r/e, in advance /(e[n+1]-r) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M7 -(fv+pv*g)/((1+r*t)*((g-1)/r)) | g=expm1-log1p@53 | rest@53 | due=64",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 2,
+      "PMT-013": -3,
+      "PMT-016": -1,
+      "PMT-017": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M15 -((pv*g+fv)*r/e)/(1+r*t) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M7 -(fv+pv*g)/((1+r*t)*((g-1)/r)) | g=expm1-log1p@53 | rest@53 | due=exact",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 2,
+      "PMT-013": -3,
+      "PMT-016": -1,
+      "PMT-017": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M15 -((pv*g+fv)*r/e)/(1+r*t) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M8 -(pv*g+fv)/(pmt-factor (1+r*t)*(g-1)/r) | g=expm1-log1p@53 | rest@53 | due=64",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 2,
+      "PMT-013": -3,
+      "PMT-016": -1,
+      "PMT-017": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M16 -(pv*g/e + fv/e)*r/(1+r*t) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M8 -(pv*g+fv)/(pmt-factor (1+r*t)*(g-1)/r) | g=expm1-log1p@53 | rest@53 | due=exact",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 2,
+      "PMT-013": -3,
+      "PMT-016": -1,
+      "PMT-017": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M16 -(pv*g/e + fv/e)*r/(1+r*t) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M11 -(pv*g+fv)/(((1+r*t)*(g-1))/r) | g=expm1-log1p@53 | rest@53 | due=64",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 2,
+      "PMT-013": -3,
+      "PMT-016": -1,
+      "PMT-017": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M11 -(pv*g+fv)/(((1+r*t)*(g-1))/r) | g=expm1-log1p@53 | rest@53 | due=exact",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 2,
+      "PMT-013": -3,
+      "PMT-016": -1,
+      "PMT-017": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M12 -(pv*g+fv)/((g-1)*(1+r*t)/r) | g=expm1-log1p@53 | rest@53 | due=64",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 2,
+      "PMT-013": -3,
+      "PMT-016": -1,
+      "PMT-017": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M18 -(pv*(r+r/e) + fv*(r/e))/(1+r*t) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M12 -(pv*g+fv)/((g-1)*(1+r*t)/r) | g=expm1-log1p@53 | rest@53 | due=exact",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 2,
+      "PMT-013": -3,
+      "PMT-016": -1,
+      "PMT-017": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M18 -(pv*(r+r/e) + fv*(r/e))/(1+r*t) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M13 -(pv*g+fv)/((g-1)/r*(1+r*t)) | g=expm1-log1p@53 | rest@53 | due=64",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 2,
+      "PMT-013": -3,
+      "PMT-016": -1,
+      "PMT-017": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M19 -(pv*r + (pv+fv)*r/e)/(1+r*t) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M13 -(pv*g+fv)/((g-1)/r*(1+r*t)) | g=expm1-log1p@53 | rest@53 | due=exact",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 2,
+      "PMT-013": -3,
+      "PMT-016": -1,
+      "PMT-017": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M19 -(pv*r + (pv+fv)*r/e)/(1+r*t) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=expm1-log1p@53 | rest@53 | due=64",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 1,
+      "PMT-013": -1,
+      "PMT-015": -2,
+      "PMT-016": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M20 -(pv*r + (pv+fv)/(e/r))/(1+r*t) | g=pow@64 | rest@64",
-     "matches": 3,
+     "candidate": "M17 -(pv*(r*g/e) + fv*(r/e))/(1+r*t) | g=expm1-log1p@53 | rest@53 | due=exact",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-011": 1,
+      "PMT-012": 1,
+      "PMT-013": -1,
+      "PMT-015": -2,
+      "PMT-016": -1,
+      "PMT-018": 1
      }
     },
     {
-     "candidate": "M20 -(pv*r + (pv+fv)/(e/r))/(1+r*t) | g=pow@64 | rest@64 | due=53",
-     "matches": 3,
+     "candidate": "M18 -(pv*(r+r/e) + fv*(r/e))/(1+r*t) | g=expm1-log1p@53 | rest@53",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-008": -1,
+      "PMT-009": -1,
+      "PMT-010": -1,
+      "PMT-012": 1,
+      "PMT-013": -2,
+      "PMT-018": -1
      }
     },
     {
-     "candidate": "M1 -(r*(pv*g+fv))/((1+r*t)*(g-1)) | g=square-rtl@64 | rest@64",
-     "matches": 3,
+     "candidate": "M18 -(pv*(r+r/e) + fv*(r/e))/(1+r*t) | g=expm1-log1p@53 | rest@53 | due=53",
+     "matches": 8,
      "ulpsOff": {
-      "PMT-008": -1
+      "PMT-008": -1,
+      "PMT-009": -1,
+      "PMT-010": -1,
+      "PMT-012": 1,
+      "PMT-013": -2,
+      "PMT-018": -1
      }
     }
    ]
@@ -1242,388 +1579,504 @@
    "cases": [
     "NPV-001",
     "NPV-002",
-    "NPV-003"
+    "NPV-003",
+    "NPV-005",
+    "NPV-006",
+    "NPV-007",
+    "NPV-008"
    ],
-   "candidates": 297,
+   "candidates": 301,
    "matchCounts": {
-    "2/3": 8,
-    "1/3": 225,
-    "0/3": 64
+    "4/7": 9,
+    "3/7": 212,
+    "1/7": 16,
+    "0/7": 64
    },
    "reproduceAll": [],
    "bestOthers": [
     {
      "candidate": "N1 total += v/(1+r)^i | g=repeat | @53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-002": -32
+      "NPV-002": -32,
+      "NPV-005": -1,
+      "NPV-006": -1
      }
     },
     {
      "candidate": "N2 d *= 1+r; total += v/d | g=- | @53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-002": -32
+      "NPV-002": -32,
+      "NPV-005": -1,
+      "NPV-006": -1
+     }
+    },
+    {
+     "candidate": "N7 terms v/(1+r)^i summed from the last | g=pv-fv | @53",
+     "matches": 4,
+     "ulpsOff": {
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "N7 terms v/(1+r)^i summed from the last | g=pow | @53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "N7 terms v/(1+r)^i summed from the last | g=square-rtl | @53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "N7 terms v/(1+r)^i summed from the last | g=square-ltr | @53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "N7 terms v/(1+r)^i summed from the last | g=repeat | @53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": -2
+      "NPV-001": -2,
+      "NPV-007": -2,
+      "NPV-008": -2
      }
     },
     {
      "candidate": "N7 terms v/(1+r)^i summed from the last | g=exp-log | @53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "N7 terms v/(1+r)^i summed from the last | g=crt-pow | @53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
-     }
-    },
-    {
-     "candidate": "N1 total += v/(1+r)^i | g=pow | @53",
-     "matches": 1,
-     "ulpsOff": {
-      "NPV-001": 4,
-      "NPV-002": -32
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=pow | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
-     }
-    },
-    {
-     "candidate": "N1 total += v/(1+r)^i | g=square-rtl | @53",
-     "matches": 1,
-     "ulpsOff": {
-      "NPV-001": 4,
-      "NPV-002": -32
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=square-rtl | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
-     }
-    },
-    {
-     "candidate": "N1 total += v/(1+r)^i | g=square-ltr | @53",
-     "matches": 1,
-     "ulpsOff": {
-      "NPV-001": 4,
-      "NPV-002": -32
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=square-ltr | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=repeat | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
-     }
-    },
-    {
-     "candidate": "N1 total += v/(1+r)^i | g=exp-log | @53",
-     "matches": 1,
-     "ulpsOff": {
-      "NPV-001": 4,
-      "NPV-002": -32
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=exp-log | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=exp-log1p | @53",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 16,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 16,
+      "NPV-008": 16
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=exp-log1p | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=x87-f2xm1 | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
-     }
-    },
-    {
-     "candidate": "N1 total += v/(1+r)^i | g=crt-pow | @53",
-     "matches": 1,
-     "ulpsOff": {
-      "NPV-001": 4,
-      "NPV-002": -32
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=expm1-log1p | @53",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 16,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 16,
+      "NPV-008": 16
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=expm1-log1p | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl (a+b)+ab a(2+a) | @53",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 16,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 16,
+      "NPV-008": 16
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl (a+b)+ab a(2+a) | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl (a+b)+ab (a+a)+aa | @53",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 12,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 12,
+      "NPV-008": 12
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl (a+b)+ab (a+a)+aa | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl (a+b)+ab aa+(a+a) | @53",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 12,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 12,
+      "NPV-008": 12
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl (a+b)+ab aa+(a+a) | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl a+(b+ab) a(2+a) | @53",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 16,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 16,
+      "NPV-008": 16
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl a+(b+ab) a(2+a) | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl a+(b+ab) (a+a)+aa | @53",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 12,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 12,
+      "NPV-008": 12
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl a+(b+ab) (a+a)+aa | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl a+(b+ab) aa+(a+a) | @53",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 12,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 12,
+      "NPV-008": 12
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl a+(b+ab) aa+(a+a) | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl ab+(a+b) a(2+a) | @53",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 16,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 16,
+      "NPV-008": 16
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl ab+(a+b) a(2+a) | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl ab+(a+b) (a+a)+aa | @53",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 12,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 12,
+      "NPV-008": 12
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl ab+(a+b) (a+a)+aa | @64",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 9,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
      "candidate": "N1 total += v/(1+r)^i | g=excess-rtl ab+(a+b) aa+(a+a) | @53",
-     "matches": 1,
+     "matches": 3,
      "ulpsOff": {
       "NPV-001": 12,
-      "NPV-003": 1
+      "NPV-003": 1,
+      "NPV-007": 12,
+      "NPV-008": 12
+     }
+    },
+    {
+     "candidate": "N1 total += v/(1+r)^i | g=excess-rtl ab+(a+b) aa+(a+a) | @64",
+     "matches": 3,
+     "ulpsOff": {
+      "NPV-001": 9,
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
+     }
+    },
+    {
+     "candidate": "N1 total += v/(1+r)^i | g=excess-rtl (ab+a)+b a(2+a) | @53",
+     "matches": 3,
+     "ulpsOff": {
+      "NPV-001": 16,
+      "NPV-003": 1,
+      "NPV-007": 16,
+      "NPV-008": 16
+     }
+    },
+    {
+     "candidate": "N1 total += v/(1+r)^i | g=excess-rtl (ab+a)+b a(2+a) | @64",
+     "matches": 3,
+     "ulpsOff": {
+      "NPV-001": 9,
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
+     }
+    },
+    {
+     "candidate": "N1 total += v/(1+r)^i | g=excess-rtl (ab+a)+b (a+a)+aa | @53",
+     "matches": 3,
+     "ulpsOff": {
+      "NPV-001": 12,
+      "NPV-003": 1,
+      "NPV-007": 12,
+      "NPV-008": 12
      }
     }
    ]
   },
   "XNPV": {
    "cases": [
-    "XNPV-001"
+    "XNPV-001",
+    "XNPV-004"
    ],
    "candidates": 12,
    "matchCounts": {
-    "1/1": 6,
-    "0/1": 6
+    "2/2": 2,
+    "1/2": 4,
+    "0/2": 6
    },
    "reproduceAll": [
-    "X total += v/(1+r)^((d-d0)/365) | g=pow | @53",
-    "X total += v/(1+r)^((d-d0)*(1/365)) | g=pow | @53",
     "X total += v/(1+r)^((d-d0)/365) | g=exp-log | @53",
-    "X total += v/(1+r)^((d-d0)*(1/365)) | g=exp-log | @53",
-    "X total += v/(1+r)^((d-d0)/365) | g=crt-pow | @53",
-    "X total += v/(1+r)^((d-d0)*(1/365)) | g=crt-pow | @53"
+    "X total += v/(1+r)^((d-d0)*(1/365)) | g=exp-log | @53"
    ],
    "bestOthers": [
+    {
+     "candidate": "X total += v/(1+r)^((d-d0)/365) | g=pow | @53",
+     "matches": 1,
+     "ulpsOff": {
+      "XNPV-004": -8
+     }
+    },
+    {
+     "candidate": "X total += v/(1+r)^((d-d0)*(1/365)) | g=pow | @53",
+     "matches": 1,
+     "ulpsOff": {
+      "XNPV-004": -8
+     }
+    },
+    {
+     "candidate": "X total += v/(1+r)^((d-d0)/365) | g=crt-pow | @53",
+     "matches": 1,
+     "ulpsOff": {
+      "XNPV-004": -8
+     }
+    },
+    {
+     "candidate": "X total += v/(1+r)^((d-d0)*(1/365)) | g=crt-pow | @53",
+     "matches": 1,
+     "ulpsOff": {
+      "XNPV-004": -8
+     }
+    },
     {
      "candidate": "X total += v/(1+r)^((d-d0)/365) | g=pow | @64",
      "matches": 0,
      "ulpsOff": {
-      "XNPV-001": 4
+      "XNPV-001": 4,
+      "XNPV-004": 35
      }
     },
     {
      "candidate": "X total += v/(1+r)^((d-d0)*(1/365)) | g=pow | @64",
      "matches": 0,
      "ulpsOff": {
-      "XNPV-001": 4
+      "XNPV-001": 4,
+      "XNPV-004": 35
      }
     },
     {
      "candidate": "X total += v/(1+r)^((d-d0)/365) | g=exp-log | @64",
      "matches": 0,
      "ulpsOff": {
-      "XNPV-001": 4
+      "XNPV-001": 4,
+      "XNPV-004": 35
      }
     },
     {
      "candidate": "X total += v/(1+r)^((d-d0)*(1/365)) | g=exp-log | @64",
      "matches": 0,
      "ulpsOff": {
-      "XNPV-001": 4
+      "XNPV-001": 4,
+      "XNPV-004": 35
      }
     },
     {
      "candidate": "X total += v/(1+r)^((d-d0)/365) | g=x87-f2xm1 | @64",
      "matches": 0,
      "ulpsOff": {
-      "XNPV-001": 4
+      "XNPV-001": 4,
+      "XNPV-004": 35
      }
     },
     {
      "candidate": "X total += v/(1+r)^((d-d0)*(1/365)) | g=x87-f2xm1 | @64",
      "matches": 0,
      "ulpsOff": {
-      "XNPV-001": 4
+      "XNPV-001": 4,
+      "XNPV-004": 35
      }
     }
    ]
@@ -1632,302 +2085,387 @@
    "cases": [
     "NPV-001",
     "NPV-002",
-    "NPV-003"
+    "NPV-003",
+    "NPV-005",
+    "NPV-006",
+    "NPV-007",
+    "NPV-008"
    ],
    "candidates": 456,
    "matchCounts": {
-    "2/3": 32,
-    "1/3": 346,
-    "0/3": 78
+    "4/7": 32,
+    "3/7": 188,
+    "1/7": 158,
+    "0/7": 78
    },
    "reproduceAll": [],
    "bestOthers": [
     {
      "candidate": "running product, v/d | terms@53 | forward@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-002": -32
+      "NPV-002": -32,
+      "NPV-005": -1,
+      "NPV-006": -1
      }
     },
     {
      "candidate": "running product, v/d | terms@53 | from the last@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": -2
+      "NPV-001": -2,
+      "NPV-007": -2,
+      "NPV-008": -2
      }
     },
     {
      "candidate": "running product, v/d | terms@53 | pairwise@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": -2
+      "NPV-001": -2,
+      "NPV-007": -2,
+      "NPV-008": -2
      }
     },
     {
      "candidate": "running product, v*(1/d) | terms@53 | forward@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-002": -32
+      "NPV-002": -32,
+      "NPV-005": -1,
+      "NPV-006": -1
      }
     },
     {
      "candidate": "running product, v*(1/d) | terms@53 | from the last@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": -2
+      "NPV-001": -2,
+      "NPV-007": -2,
+      "NPV-008": -2
      }
     },
     {
      "candidate": "running product, v*(1/d) | terms@53 | pairwise@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": -2
+      "NPV-001": -2,
+      "NPV-007": -2,
+      "NPV-008": -2
      }
     },
     {
      "candidate": "v/ pow | terms@53 | from the last@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v/ pow | terms@53 | pairwise@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v/ square-rtl | terms@53 | from the last@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v/ square-rtl | terms@53 | pairwise@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v/ square-ltr | terms@53 | from the last@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v/ square-ltr | terms@53 | pairwise@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v/ repeat | terms@53 | forward@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-002": -32
+      "NPV-002": -32,
+      "NPV-005": -1,
+      "NPV-006": -1
      }
     },
     {
      "candidate": "v/ repeat | terms@53 | from the last@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": -2
+      "NPV-001": -2,
+      "NPV-007": -2,
+      "NPV-008": -2
      }
     },
     {
      "candidate": "v/ repeat | terms@53 | pairwise@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": -2
+      "NPV-001": -2,
+      "NPV-007": -2,
+      "NPV-008": -2
      }
     },
     {
      "candidate": "v/ exp-log | terms@53 | from the last@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v/ exp-log | terms@53 | pairwise@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v/ crt-pow | terms@53 | from the last@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v/ crt-pow | terms@53 | pairwise@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v*1/ pow | terms@53 | from the last@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v*1/ pow | terms@53 | pairwise@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v*1/ square-rtl | terms@53 | from the last@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v*1/ square-rtl | terms@53 | pairwise@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v*1/ square-ltr | terms@53 | from the last@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v*1/ square-ltr | terms@53 | pairwise@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v*1/ repeat | terms@53 | forward@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-002": -32
+      "NPV-002": -32,
+      "NPV-005": -1,
+      "NPV-006": -1
      }
     },
     {
      "candidate": "v*1/ repeat | terms@53 | from the last@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": -2
+      "NPV-001": -2,
+      "NPV-007": -2,
+      "NPV-008": -2
      }
     },
     {
      "candidate": "v*1/ repeat | terms@53 | pairwise@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": -2
+      "NPV-001": -2,
+      "NPV-007": -2,
+      "NPV-008": -2
      }
     },
     {
      "candidate": "v*1/ exp-log | terms@53 | from the last@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v*1/ exp-log | terms@53 | pairwise@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v*1/ crt-pow | terms@53 | from the last@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
      "candidate": "v*1/ crt-pow | terms@53 | pairwise@53",
-     "matches": 2,
+     "matches": 4,
      "ulpsOff": {
-      "NPV-001": 6
+      "NPV-001": 6,
+      "NPV-007": 6,
+      "NPV-008": 6
      }
     },
     {
-     "candidate": "running product, v/d | terms@53 | Kahan@53",
-     "matches": 1,
+     "candidate": "running product, v/d | terms@64 | pairwise@53",
+     "matches": 3,
      "ulpsOff": {
-      "NPV-001": -2,
-      "NPV-002": -32
+      "NPV-001": 14,
+      "NPV-003": 1,
+      "NPV-007": 14,
+      "NPV-008": 14
      }
     },
     {
-     "candidate": "running product, v/d | terms@53 | positive and negative apart@53",
-     "matches": 1,
+     "candidate": "running product, v/d | terms@64 | Kahan@53",
+     "matches": 3,
      "ulpsOff": {
-      "NPV-001": -2,
-      "NPV-002": -32
+      "NPV-001": 12,
+      "NPV-003": 1,
+      "NPV-007": 12,
+      "NPV-008": 12
      }
     },
     {
-     "candidate": "running product, v/d | terms@53 | by magnitude@53",
-     "matches": 1,
+     "candidate": "running product, v/d | terms@64 | forward@64",
+     "matches": 3,
      "ulpsOff": {
-      "NPV-001": -2,
-      "NPV-002": -32
+      "NPV-001": 9,
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
-     "candidate": "running product, v/d | terms@53 | forward@64",
-     "matches": 1,
+     "candidate": "running product, v/d | terms@64 | from the last@64",
+     "matches": 3,
      "ulpsOff": {
-      "NPV-001": -2,
-      "NPV-002": -32
+      "NPV-001": 9,
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
-     "candidate": "running product, v/d | terms@53 | from the last@64",
-     "matches": 1,
+     "candidate": "running product, v/d | terms@64 | pairwise@64",
+     "matches": 3,
      "ulpsOff": {
-      "NPV-001": -2,
-      "NPV-002": -32
+      "NPV-001": 9,
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
-     "candidate": "running product, v/d | terms@53 | pairwise@64",
-     "matches": 1,
+     "candidate": "running product, v/d | terms@64 | Kahan@64",
+     "matches": 3,
      "ulpsOff": {
-      "NPV-001": -2,
-      "NPV-002": -32
+      "NPV-001": 9,
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
-     "candidate": "running product, v/d | terms@53 | Kahan@64",
-     "matches": 1,
+     "candidate": "running product, v/d | terms@64 | positive and negative apart@64",
+     "matches": 3,
      "ulpsOff": {
-      "NPV-001": -2,
-      "NPV-002": -32
+      "NPV-001": 9,
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     },
     {
-     "candidate": "running product, v/d | terms@53 | positive and negative apart@64",
-     "matches": 1,
+     "candidate": "running product, v/d | terms@64 | by magnitude@64",
+     "matches": 3,
      "ulpsOff": {
-      "NPV-001": -2,
-      "NPV-002": -32
+      "NPV-001": 9,
+      "NPV-003": 1,
+      "NPV-007": 9,
+      "NPV-008": 9
      }
     }
    ]

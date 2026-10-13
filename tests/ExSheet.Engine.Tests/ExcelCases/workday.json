@@ -44,7 +44,7 @@
     },
     {
       "id": "WORKDAY-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: before 1 March 1900, as NETWORKDAYS-005 counts: ten workdays after serial 30, a Monday",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=WORKDAY(30,10)"},
@@ -53,7 +53,7 @@
     },
     {
       "id": "WORKDAY-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: four workdays after serial 30 is serial 34, a Friday by WEEKDAY (on the real calendar a Saturday, which would give 36)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=WORKDAY(30,4)"},
@@ -62,7 +62,7 @@
     },
     {
       "id": "WORKDAY-008",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: serial 60, the day that never existed, is a Wednesday and counts as a workday",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=WORKDAY(55,5)"},
@@ -71,12 +71,30 @@
     },
     {
       "id": "WORKDAY-009",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a result before serial 0 is #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=WORKDAY(2,-1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "WORKDAY-010",
+      "source": "observed",
+      "description": "A start between -1 and 0 is cut down to its day, -1, below 0, and #NUM!; it is not truncated to serial 0, a Saturday",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=WORKDAY(-0.5,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "WORKDAY-011",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a boolean typed as a date, which EDATE answers with #VALUE! (EDATE-009); read as 1, serial 1 is a Sunday and a workday on is Monday, serial 2",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=WORKDAY(TRUE,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

@@ -19,6 +19,9 @@ mistakes for an answer.
 argument coercions, how it treats blanks and text inside ranges, how it propagates Error Values,
 and its rounding. The tests for a function are written from Excel's observed behaviour. A known
 deviation keeps the function out.
+*(2026-10-12, decided with the user: one exception, `PMT`, kept though its result may differ from
+Excel's in its last digits, a Known limitation of `0.1.0`. The note of that date, "An exception for
+`PMT` alone", says why and how far it goes.)*
 
 The first set: `SUM`, `AVERAGE`, `MIN`, `MAX`, `COUNT`, `COUNTA`, `IF`, `ROUND`, `IFERROR`,
 `ISERROR`, `XLOOKUP`. The last three are there because Linked Tables are read by key
@@ -116,6 +119,39 @@ places.
   *(2026-10-12: `XMATCH`'s binary search refuses as `XLOOKUP`'s does. Over `G1:G5` unsorted, Excel's
   `=XMATCH("Banana",G1:G5,0,2)` is 2 (XMATCH-008), recorded as Excel's answer beside the refusal, as XLOOKUP-116 to
   122 are.)*
+  *(2026-10-12, decided with the user: **a refusal is never caught, anywhere.** The refusal is the
+  Formula's, and every Formula's that reads its cell. A refused value's Error Value is `#VALUE!` where
+  ExSheet cannot answer as Excel, because the readings an evaluation could take part or no run has settled
+  the answer. Nothing in the Formula turns it into an answer: `IFERROR`, `ISERROR`, `ERROR.TYPE`, `IFNA`,
+  `COUNT`, `COUNTA` and the aggregates that pass over errors included. And it is carried as `#CIRC!` is: a
+  Formula that reads a refused cell — directly, through a range, a `LET` name, `INDIRECT`, `OFFSET`, a
+  Spill Range, or a Linked Table's column a Consumer pushed it into — is refused in turn, whatever it does
+  with it and whether or not the branch that names it is taken. Before, a refusal was caught: with the
+  first area pass's corrections, which refused `MOD(1,0.1)`, `=IFERROR(MOD(1,0.1),0)` was 0 where Excel's
+  `MOD(1,0.1)` is 0.09999999999999995 (MOD-020); and with B1 `=MROUND(6.05,0.1)`, refused where Excel
+  answers 6 (MROUND-001), `=IFERROR(B1,0)` in another cell was 0. A Formula that meets a cycle is still
+  `#CIRC!`, and one that meets data on its way still waits. Excel's own `#VALUE!`, such as `=1+"a"`'s, is
+  an Error Value any Formula catches. A cell's refused Value is `#VALUE!` to a Consumer, shown and copied
+  as one, and says it is a refusal (`Value.IsRefused`); it is no constant an Entry can hold. A copy of one
+  range carries the refused cell's Formula; a copy of several ranges, or with the headers, that holds one
+  is refused when pasted back into the Sheet, rather than turn the refusal into an Error Value a Formula
+  can catch. Where Excel's answer to such a Formula is known, its corpus case records the refusal as a
+  difference by this decision (INDIRECT-056); IFERROR-018 to 020, ISERROR-011, ERRORTYPE-022, IFNA-008,
+  COUNT-009, COUNTA-009, AGGREGATE-069, REF-015, LET-113, INDIRECT-100 and SEQUENCE-009 ask Excel the
+  rest.)*
+  *(2026-10-13, decided with the user: such a Formula is a **Refused Formula** (`CONTEXT.md`), and a
+  Consumer tells it by `Value.IsRefused`. A call of a function Excel has that ExSheet does not declare — the
+  377 names of the catalogue's rows that are not Supported and of its list of Excel's other functions
+  (`ExcelFunctionNames`, held to the catalogue by `FunctionCatalogueTests`) — and a declared Linked Table's
+  bare name typed (TABLE-024) are Refused Formulas too, which show `#NAME?`: no Formula catches one, and a
+  cell that reads one is refused and shows `#VALUE!`. A name Excel does not have stays Excel's own `#NAME?`,
+  an Error Value a Formula catches.)*
+  *(2026-10-13: how a copy carries a refused cell. ExSheet's clipboard HTML marks it
+  (`data-ex-mark="exsheet-refused:C1"`, through ExGrid's `ClipboardData.MarkAttribute` and
+  `GridPasteIntent.MarkFor`, ADR-0050 item 9). This Sheet's own copy of one range pastes its Entries, the
+  Formula refused again where it lands; any other paste that carries the mark — of several ranges, with
+  the headers, or into another Sheet on the page — is refused whole, by name. Another program reads the
+  cell as the text it shows, `#VALUE!` (or `#NAME?`).)*
 - *(Replaced 2026-10-03 by [ADR-0125](./0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md), decided with the user: a Formula whose result is an array now spills, and the refusal below became the answer it was kept for. The text stands as it was decided.)* **Spilled arrays are not supported.** A Formula whose result is more than one cell gives
   `#VALUE!`. Excel 365 would spill it. Implicit intersection, Excel 2019's behaviour, would return
   one value instead, and was rejected: it would silently change what a Formula means on the day
@@ -413,9 +449,11 @@ Following "admitted with some argument values refused", three are refused until 
 `MOD` whose quotient is 2^27 or more (`#NUM!`, the answer older versions of Excel were known to
 give) *(answered by the seventeenth Windows run: see the note of 2026-10-12 under "The catalogue's last
 Decide rows")*; `EOMONTH` and `EDATE` from or to a day before 1 March 1900, where the day that never
-existed lies *(answered by the seventeenth Windows run, but for a start of serial 0 or 60: see the
-note of 2026-10-12 at the end)*; and a boolean typed into `EOMONTH` or `EDATE` *(Excel's answer too, the same
-note)*. The functions that answer about any Value —
+existed lies *(answered by the seventeenth Windows run and the area passes, but for `EDATE` from serial 0 to
+January 1900, March 1900 or January 10000: see the notes of 2026-10-12 at the end)*; and a boolean typed into
+`EOMONTH` or `EDATE` *(Excel's answer too as `EOMONTH`'s months and as `EDATE`'s start, the arguments the
+seventeenth run typed one into; as `EOMONTH`'s start and as `EDATE`'s months it is refused until Excel is asked:
+see the notes of 2026-10-12 at the end)*. The functions that answer about any Value —
 `IFNA`, `ISBLANK`, `ISNUMBER` — give `#GETTING_DATA` and `#CIRC!` back, as `IFERROR` and `ISERROR`
 do, and `INDEX` with a row or column of 0 over more than one cell is the spill refusal above.
 
@@ -448,7 +486,23 @@ result of more than one Value spill. With it, `INDEX` with a row or a column of 
 return array of several columns, and `ROW` and `COLUMN` over several rows or columns give Excel's
 answer, and their corpus cases changed from a difference by decision to it. `UNIQUE` refuses a blank
 in its array, and `SORT` and `SORTBY` a blank or an Error Value among their keys, with `#VALUE!`
-until Excel is asked how it orders them.
+until Excel is asked how it orders them. *(2026-10-12, after the two area passes: the blank is
+answered among `SORT`'s and `SORTBY`'s keys and in `UNIQUE`'s array, and read inside the Formula,
+where Excel's answers or the agreement of every reading settle it, or by generalisation from them,
+which no run has read (ADR-0125's note of that day names them); where a function's readings of it
+part and no generalisation covers it, the Formula is `#VALUE!`. Over 7 and then `#N/A`, Excel's
+`=SORT(A1:A2)` shows 7 (SORT-015): an Error Value key is neither `SORT`'s result nor sorted before a
+number. The `#N/A` followed the 7 already, so the answer fits a key sorted after the numbers and one
+that keeps its place alike. `SORT` answers a key only where every such reading gives the one order —
+its Error Values all one, and beside them nothing, or, sorted ascending, numbers alone, none after
+an Error Value — and the Formula is `#VALUE!` with a number after it, beside text, a boolean, a
+blank or another Error Value, and in a descending sort (SORT-026, 028 to 032 ask). `SORTBY` refuses
+every Error Value key: a `by_array`'s could as well be the result, as `FILTER`'s `include`'s is
+(SORTBY-010 asks). Each refusal is the Formula's, as a Formula that meets `#CIRC!` is `#CIRC!`, so
+`IFERROR` and `COUNTA` around it give no answer.)* *(2026-10-13: a `sort_index` that is not a whole
+number is refused. `=SORT(G1:H5,1.5)` was truncated to sort by the first column; rounded it would sort
+by the second, and no run has read which Excel does, or whether it takes a fraction there at all.
+SORT-042 asks.)*
 
 *(2026-10-03)* Admitted as the catalogue's ticket 07: `LOG`, `SIN`, `COS`, `TAN`, `COT`, `CSC`,
 `SEC`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `ACOT`, `SINH`, `COSH`, `TANH`, `COTH`, `CSCH`, `SECH`,
@@ -584,14 +638,30 @@ The rows of the function catalogue that still waited on a decision were put to t
     their `#VALUE!` until they are.
   - **`AGGREGATE`'s array form takes a number given directly** as an array of that one Value
     (AGGREGATE-039: `AGGREGATE(14,6,5,1)` is 5). Text and a boolean given directly have not been asked,
-    and stay `#VALUE!` (AGGREGATE-061).
+    and stay `#VALUE!` (AGGREGATE-061). *(2026-10-12, the area passes: text given directly is such an
+    array too, and holds no number, since it is not coerced: `AGGREGATE(14,6,"5",1)` is `#NUM!`, neither
+    5 nor `#VALUE!` (AGGREGATE-061), and so are a boolean and text that spells no number (AGGREGATE-064,
+    065). An Error Value given directly is the result, as an Error Value argument is, and option 6 does
+    not pass over it: `AGGREGATE(14,6,1/0,1)` is `#DIV/0!` (AGGREGATE-067). `LARGE` and `SMALL`
+    themselves coerce a Value given directly: `LARGE("5",1)` is 5 and `SMALL(TRUE,1)` 1 (LARGE-014,
+    SMALL-010). The engine follows each.)*
   - **`LARGE`'s k that is not whole is rounded up**: `LARGE(A1:B5,1.5)` and `AGGREGATE(14,6,A1:A11,1.5)`
     are each the 2nd largest (LARGE-007, AGGREGATE-038), which rules out truncation; ODF 1.3's `LARGE`
     (6.18.40), LibreOffice and Gnumeric round it up, and rounding to nearest cannot be told from it at .5
     (LARGE-008 and AGGREGATE-059 ask 1.2). `SMALL`'s k that is not whole, where LibreOffice and ODF round
     down and Gnumeric up, and a k between 0 and 1, where they disagree too, stay `#VALUE!` until Excel is
     asked (SMALL-004, 005, AGGREGATE-060, LARGE-011). k is read at 15 significant digits first, as both
-    implementations do, so `1+2^-52` is 1 (LARGE-012, SMALL-006).
+    implementations do, so `1+2^-52` is 1 (LARGE-012, SMALL-006). *(2026-10-12, the area passes: Excel
+    truncates `SMALL`'s k, as LibreOffice and ODF do: `SMALL(A1:A9,1.5)` and `SMALL(A1:A9,1.2)` are each
+    the smallest (SMALL-004, 005), `SMALL(A1:A9,3.9)` the 3rd (SMALL-009), and `AGGREGATE(15,6,A1:A11,1.2)`
+    is 30 (AGGREGATE-060). `LARGE`'s 1.2 is the 2nd largest (LARGE-008, AGGREGATE-059), so `LARGE` rounds
+    up, not to nearest. A k below 1 or above the count of the numbers is `#NUM!`, whole or not, before it
+    is rounded: `LARGE(A1:B5,0.5)` and `LARGE(A1:B5,0.99)` are `#NUM!`, not rounded up to 1 (LARGE-011,
+    013), as `SMALL(A1:A9,0.5)` is (SMALL-007), and `SMALL(A1:A9,9.5)` over nine numbers is `#NUM!`, not
+    truncated to the 9th smallest (SMALL-008). The two are one rule — the k-th largest with k rounded up
+    is the (n+1-k)-th smallest with that index truncated, and k lies within 1 to n exactly where n+1-k
+    does. The engine follows it, and no k is `#VALUE!` any more. SMALL-011 and AGGREGATE-068 ask a k above
+    the count again.)*
 
   The `MOD` refusal of "admitted with some argument values refused" above is replaced: Excel 365 answers
   `MOD(2^27,1)` with 0 (MOD-008). Microsoft documents no limit, and names
@@ -599,7 +669,30 @@ The rows of the function catalogue that still waited on a decision were put to t
   case read (MOD-009's 0.09999999999999998 among them). A Microsoft 365 user reported on Microsoft's Q&A
   (2021) that `MOD(1125899999999,1)` is 0 and `MOD(1125900000000,1)` is `#NUM!`, a limit Excel 2010 brought
   in; the engine answers a quotient below 1,125,900,000,000 and is `#NUM!` from it, and MOD-010 to MOD-017
-  ask Excel on both sides of it.
+  ask Excel on both sides of it. *(2026-10-12, the area passes: the limit holds on both sides (MOD-010 to
+  016), but the doubles are not Excel's on every case. Excel's remainder is exact:
+  `MOD(123456789012,0.7)` is 0.5000078322611261 (MOD-017), where the identity in doubles gives
+  0.5000152587890625, and `MOD(1,0.1)` is 0.09999999999999995 (MOD-020), where the double quotient, 10,
+  gives 0. A remainder a hair from 0 is itself, with no cancellation: `MOD(1.1,0.1)` is
+  2.7755575615628914E-17 (MOD-030). Where the divisor is added to a remainder of the other sign, the sum
+  is not rounded once: `MOD(-0.087626,6630)` is 6629.9123739999995 (MOD-029), the sum held at 64 bits,
+  rounded to nearest or truncated, and then stored as a double, where rounded once it is 6629.912374;
+  and a sum stored as the divisor itself is 0: `MOD(-1E-20,1)` is 0 (MOD-032). The first pass's answers
+  left seven classes of evaluation, and the second pass's ruled out all seven. Of 75 evaluations tried
+  against the 32 cases Excel answered (`spikes/exsheet-financial-evaluation/mod-search.cs`), 34 give
+  every one. At the hardware's widths, a double's 53 bits and an x87 register's 64, three: the divisor
+  added in an x87 register's 64 bits, or truncated at 64 bits, and stored as a double, a sum that is the
+  divisor taken as 0 in the double or, for the x87's, in the register. The other 31 are the same with
+  the sum held at a width no hardware holds, 54 to 63 bits rounded or 54 to 65 truncated. The three at
+  64 bits part where the sum is the divisor as a double but not at 64 bits (`MOD(-1E-17,1)` is 0 or 1)
+  and where truncating at 64 bits stores another double than rounding there (`MOD(-0.084474,2270)` is
+  2269.915526 or 2269.9155259999998). So, as "admitted with some argument values refused" and ADR-0202
+  require, the engine answers as the three where they agree and is `#VALUE!` where they part, 13 of
+  1,915,648 random inputs of up to five digits, until a Windows run asks MOD-033 to MOD-036. It does not
+  model the other widths: that only the hardware's formats are natural intermediates is a judgment, which
+  no observed answer settles, and on it the engine answers 65,972 of those inputs (3.4%) where one of the
+  31 gives another double, about 2% at 54 bits; MOD-039 and MOD-040 ask two.)* *(2026-10-13: the
+  judgment is accepted, and the engine models the widths of 53 and 64 bits alone.)*
 - **`ERROR.TYPE` gives `#GETTING_DATA` and `#CIRC!` back**, as `IFNA` and `ISBLANK` do (above), and
   never a number for them.
   - Microsoft's table numbers `#GETTING_DATA` 8. Answering 8 would let a Formula show a number
@@ -639,12 +732,17 @@ follow Excel's answer** (`verification/2026-10-11-windows-17/`, ADR-0202).
 - **`EOMONTH` and `EDATE` before 1 March 1900** count months on the real calendar, where February 1900 has 28
   days, and a day before 1 March is its own serial, 1 to 59. `EOMONTH(31,1)` is 59, 28 February, and not 60;
   `EDATE(DATE(1900,3,15),-1)` is 46 (EOMONTH-008, EDATE-008). A start of serial 0 or 60 is no day of that
-  calendar, and stays `#VALUE!` until Excel is asked. A boolean typed into either is `#VALUE!`, and that is
-  Excel's answer too (EOMONTH-009, EDATE-009).
+  calendar, and stays `#VALUE!` until Excel is asked *(answered by the area passes, but for `EDATE` from serial
+  0 to January 1900, March 1900 or January 10000: see the note of 2026-10-12, the area passes)*. A boolean typed
+  as `EOMONTH`'s months or as `EDATE`'s start is `#VALUE!`, and that is Excel's answer too (EOMONTH-009,
+  EDATE-009) *(the bullet said "typed into either" until the area passes; the run typed it into these two
+  arguments alone, and as `EOMONTH`'s start and `EDATE`'s months the engine's `#VALUE!` is a refusal until Excel
+  is asked: see the note of 2026-10-12, the area passes)*.
 - **`NETWORKDAYS` and `WORKDAY`** count every serial from 0. Each takes the day of the week `WEEKDAY` gives it:
   serial 0 a Saturday, 1 a Sunday, 60 a Wednesday. `NETWORKDAYS(30,100)` is 51 (NETWORKDAYS-005). `WORKDAY`
   reads its dates as `NETWORKDAYS` does, and a result before serial 0 is `#NUM!`. The cases that tell
-  `WEEKDAY`'s day from the real calendar's are `uncertain` until a run asks them.
+  `WEEKDAY`'s day from the real calendar's are `uncertain` until a run asks them *(the area pass asked them,
+  and Excel's day is `WEEKDAY`'s: NETWORKDAYS-006 to 008, WORKDAY-006 to 008)*.
 - **`SUBSTITUTE` with `instance_num`** counts the occurrences at every character, overlapping ones included:
   `SUBSTITUTE("aaaa","aa","b",2)` is `aba` (SUBSTITUTE-005). The engine counted them without overlapping, which
   was a guess, and wrong. Without `instance_num`, every occurrence is replaced left to right, none overlapping.
@@ -670,15 +768,109 @@ observed double, the agreeing cases included, among some 13,000 candidates:
   rate of 10^-7 they give nine across 3,390 units, from the 13th significant digit (PMT-017). PMT-013
   to 018 ask Excel.
 - **A `type` that is a whole number other than 0 is payment at the start**, as Excel read 2
-  (PMT-008). A fractional one stays `#VALUE!` until Excel is asked.
+  (PMT-008). A fractional one stays `#VALUE!` until Excel is asked. *(Answered by the area passes of
+  2026-10-12: `type` is a truth value. Excel gave the payment at the start for 0.5, −1 and 0.1 (PMT-009,
+  PMT-010, PMT-019), so a fraction is not truncated or rounded, and any `type` other than 0 is payment at
+  the start, in PMT, PV and FV.)*
 - Following "admitted with some argument values refused", at a rate other than 0 an `nper` that is
   not a whole number from 0 to 2^53 is `#VALUE!`: squaring raises only to a whole number, and how
   Excel raises 1+rate to any other has not been observed. At a rate of 0 no power is raised, and any
-  `nper` is answered.
+  `nper` is answered. *(Answered by the area passes of 2026-10-12 for PV and FV. Excel's doubles are
+  those of raising 1+rate to a negative `nper` as 1 over the power to its absolute value (FV-007,
+  FV-022), to 0.5 by the square root (FV-016), and to any other fraction as e^(nper ln(1+rate)) with
+  the exponential correctly rounded (FV-006, PV-005; XNPV-013 tells it from glibc's) and the logarithm
+  correctly rounded too, which no observed double tells from glibc's (FV-023 and PV-016 ask). Excel
+  gave a negative 1+rate to a fraction whose reciprocal is odd its odd root (FV-017) and to another
+  fraction `#NUM!` (PV-011), and 1+rate of 0 to the power 0 `#NUM!` (FV-018) and to a negative power
+  `#DIV/0!` (FV-020, FV-021, PV-012). PV and FV now answer every `nper` so, but PV at a rate of −1 with
+  an `nper` above 0, which divides by a growth of 0 and is refused until Excel is asked (PV-013). PMT
+  answers any `nper` at a rate above −1 where it does not refuse, under the exception for PMT below,
+  whose note says what it gives and where it refuses (PMT-011, PMT-012); below −1 a fraction whose
+  reciprocal is not odd is `#NUM!`, and the rest at −1 and below is refused until Excel is asked. Past
+  2^53, where every double is a whole number, all three still refuse.)*
 
 The cases the search could not settle — which of two orders of the payment's factors, and which of
 the evaluations that also give PMT-001 to 008 — are `uncertain` in the corpus, with the engine's
 double, for the next Windows run.
+
+*(2026-10-12, the two area passes, `verification/2026-10-12-windows-area/` and `-area-2/`.)* **What
+those cases answered.** The order of the payment's factors: Excel's doubles are the payment times
+the product of 1+rate·type and ((g−1)/rate) (FV-009, PV-007, where the engine's order was one unit in
+the last place below), and with a present value as well the sum as written, not a fused multiply-add
+(FV-014, FV-015). PV and FV raise 1+rate by one power, the note's squaring at a whole number and the
+bullet above otherwise: `spikes/exsheet-financial-evaluation/` searched 480 evaluations of FV and 480
+of PV, and this power is the one that gives all 17 and 9 of their observed doubles and their Error
+Values with the exponential XNPV-013 tells apart. XNPV divides each value by that power of its days
+over 365 and sums from the first value: of 2,592 candidates, 4 give its nine observed doubles, two
+evaluations, this one and the same with Excel's last-addition adjustment, which parts from it only
+where the last addition nearly cancels and is refused there until asked. None of the four gives
+XNPV's `#NUM!` at a negative rate: the engine checks the rate before it evaluates and is `#NUM!`
+below 0, as Excel was at −0.5, −1, −1.5 and −2, its own answer at other negative rates until
+XNPV-020 is read, and refuses a rate of 0 until asked. The engine now computes e^x and ln x correctly
+rounded on every platform; the platform's `Math.Exp` is a unit in the last place from Excel's
+discount at XNPV-013, and no observed double tells the logarithms apart. **PMT's evaluation is not
+settled**: of 39,602 evaluations searched, none gives all 29 observed payments at a rate other than
+0 and the best give 16; 19 of the 30 observed payments were 1 to 11 units in the last place from the
+engine's, and 23 are since the payment at the start is rounded once (the note of 2026-10-13 below), which
+PMT keeps by the exception that follows.
+
+*(2026-10-12, decided with the user)* **An exception for `PMT` alone: it is kept though its result
+may differ from Excel's in its last digits, a Known limitation of `0.1.0`.** Two area passes asked Excel
+29 payments at a rate other than 0, and some 58,000 evaluations were searched; none gives them all. The
+decision was taken as the engine giving the exact payment over Excel's doubles, rounded once, and
+Excel's payment differing from the engine's at 19 of the 30 observed, by 1 to 11 units in the last
+place (PMT-026, a relative error of about 1e-15), in digits taken to be ones no format displays, and to
+be Excel's own rounding. `PMT` is kept with that difference.
+Its corpus cases record each as a difference by this decision, with Excel's double beside the
+engine's. `NPV` is not part of it, and stays undeclared (ADR-0202's note of this date). `0.1.0` lists
+it under Known limitations (ADR-0202). *(2026-10-12, later, found by the financial area and put to
+the user: at the start of each period the engine's payment is the payment at the end's double divided
+by 1+rate and rounded again, not the exact payment rounded once; it is Excel's double at PMT-008, 009,
+010 and 019, where the exact payment at the start rounded once is a unit away, and a unit from the
+exact payment rounded once at PMT-014, 015, 025 and 029. At PMT-013 and PMT-026, at the end, Excel's
+double and the exact payment rounded once differ in the 15th significant digit, which General shows,
+and at PMT-025 the engine's double differs there from both, so that "no format displays" does not
+hold there.)*
+
+*(2026-10-13, decided with the user: **the exception, restated as observed.** Excel's double and the
+exact payment rounded once differ by 1 to 11 units in the last place, and at PMT-013 and PMT-026 that
+shows in General's 15th significant digit; `PMT` is kept there too. The payment at the start is the
+exact payment at the start rounded once, held between bounds as the payment at the end is, and the
+second rounding that gave Excel's double at PMT-008, 009, 010 and 019 is withdrawn: those four now
+differ from Excel's by a unit in the last place, and PMT-014, 015, 025 and 029 lie a unit nearer it.
+Excel's double differs from the engine's at 23 of the 30 observed payments, by 1 to 11 units in the
+last place, at two of them, PMT-013 and PMT-026, in the 15th significant digit; at PMT-025 the two agree
+to 15 digits. Where a reading magnifies its own roundings more than 2^6 times, `PMT` stays refused.)*
+
+*(2026-10-12, how the engine applies the exception: the financial area's choices, not the user's;
+three of them were put to the user, and decided on 2026-10-13.)* Where `PMT` answers, the payment at
+the end of each period is
+held between two bounds, interval arithmetic over exact dyadic numbers with (1+rate)^nper − 1 raised
+from the rate itself, and its double, the exact payment rounded once however small the rate, is given
+only where both bounds round to it (PMT-011, PMT-012, each one unit in the last place from Excel's);
+the payment at the start is the exact payment at the start, held between bounds in the same way and
+rounded once *(2026-10-13, decided with the user; it was that double divided by 1+rate exactly and
+rounded a second time, which is not everywhere the exact payment at the start rounded once)*.
+`spikes/exsheet-financial-evaluation/pmt_exact.py` checked 20,000 inputs against Python's decimal at
+1200 digits. PMT's readings are taken as the evaluations within 64 units in the last place of Excel's
+at every observed payment, and where they part in kind, a number against an Error Value or one Error
+Value against another, or beyond the last digits, `PMT` is refused with `#VALUE!` until Excel is
+asked (PMT-034 to PMT-053; `Search.cs --refusals` and `--pmt-readings` run them with a double's
+range):
+
+- at a rate of −1 with an `nper` other than 0, and below −1 with a whole `nper` or a fraction whose
+  reciprocal is odd; any other fraction there is `#NUM!`, which every reading gives;
+- where a quantity a reading computes passes a double's range or falls below its normal numbers, or
+  the growth lies below 2^−52, which a reading that takes it as 1 + (g − 1) holds as 0;
+- with no periods at the start, where LibreOffice's reading divides by a rounding's remainder;
+- where a reading magnifies its own roundings more than 2^6 times, so that the readings give 0,
+  numbers of the other sign or of a few significant digits, or an Error Value: where pv·g and fv
+  nearly cancel, where a growth far below 1 is taken as 1 + (g − 1), where a rounding of the exponent
+  moves the payment, and at the start where LibreOffice's divisor comes out as 0 or far from
+  (1+rate)·((1+rate)^nper − 1), as at a tiny `nper`, or where the payment at the end less its rate's
+  share cancels.
+
+Where it answers, every reading run lies within 93 units in the last place of its payment.
 
 *(2026-10-12, the seventeenth Windows run)* **`AND`, `OR` and `XOR` pass over typed text that spells
 neither TRUE nor FALSE** (AND-011), as they pass over text inside a range; with nothing that counts, the
@@ -686,3 +878,35 @@ result is still `#VALUE!`. The corpus had refused it with `#VALUE!` on the engin
 XOR-006 and AND-014 ask Excel the rule's other cases. That typed text spelling TRUE or FALSE still
 counts is the engine's answer, which no observation settles (AND-010 is TRUE either way); AND-015 and
 OR-010 ask it.
+
+*(2026-10-12, the area passes)* **`EOMONTH` and `EDATE` from serial 0 or 60, and from a start between -1 and 0,
+follow Excel's answers** (`verification/2026-10-12-windows-area/` and `-area-2/`, ADR-0202). `EOMONTH(0,1)` is 59,
+`EDATE(60,1)` is 89 and `EDATE(0,1)` is 31 (EOMONTH-010, EDATE-010, EDATE-016), and `EOMONTH(-0.5,0)` is `#NUM!`
+(EOMONTH-016).
+
+- **The start is read as `YEAR`, `MONTH` and `DAY` read it**: cut down to its day, with serial 0 0 January 1900 and
+  serial 60 29 February 1900 (YEAR-003, MONTH-002 and 004, DAY-002 and 004). The months are counted from its year
+  and month on the real calendar, as the seventeenth run's note says, and `EDATE` keeps its day, or the month's last
+  day where the month is shorter (EOMONTH-012 to 015, EDATE-013 to 015).
+- **A date between -1 and 0 is cut down to -1, and is `#NUM!`**, under `YEAR`, `MONTH`, `DAY`, `WEEKDAY`, `DAYS`,
+  `NETWORKDAYS`, `WORKDAY`, `EOMONTH` and `EDATE` alike (YEAR-008, MONTH-005, DAY-005, WEEKDAY-008, DAYS-005,
+  NETWORKDAYS-009, WORKDAY-010, EOMONTH-016 and 017, EDATE-017). Under them, Excel does not truncate it to
+  serial 0. `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` give `#NUM!` for a serial of -1 or below and do
+  not cut it down; Excel was observed to at -1 under three of them (DATEDIF-045, YEARFRAC-056, MINUTE-002), and
+  below -1, and under `HOUR` and `SECOND` at all, it is the engine's answer, by generalisation. Between -1 and 0
+  their readings part: cut down to -1 it is `#NUM!`, and read as a date or a time of day it is an answer
+  (`DATEDIF(-0.5,1,"D")` 1, truncated to serial 0; `HOUR(-0.5)` 12, as 12:00), so they refuse it with `#VALUE!` until Excel is asked
+  *(2026-10-13; DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003 ask)*.
+- **`EDATE` from serial 0 keeps its day 0, which is the day before the 1st of the month reached** (EDATE-016). Six
+  of the 112 readings `spikes/exsheet-date-readings/` writes out give every observed answer of the two functions, and
+  they part at three months: the day before 1 January 1900 is serial 0 by `DATE`'s arithmetic and 31 December 1899,
+  `#NUM!`, on the real calendar; the day before 1 March 1900 is 60, the day that never existed, or 28 February, 59;
+  and January 10000 is past the last year, while the month before ends on 31 December 9999. **`EDATE` from serial 0
+  to January 1900, March 1900 or January 10000 stays `#VALUE!`** until Excel is asked (EDATE-018 to 020); EDATE-021
+  and 022 ask two answers on which the six agree.
+- **A boolean typed into `EOMONTH` or `EDATE` was observed in one argument of each**: `#VALUE!` as `EOMONTH`'s
+  months and as `EDATE`'s start (EOMONTH-009, EDATE-009, the seventeenth run). Excel's reading of a boolean typed as
+  a start date differs between functions, 1 under `DATEDIF` (DATEDIF-046) and `#VALUE!` under `YEARFRAC`
+  (YEARFRAC-054), so neither observation answers the other argument: a boolean typed as `EOMONTH`'s start or as
+  `EDATE`'s months stays `#VALUE!` until Excel is asked (EOMONTH-018, EDATE-023). `NETWORKDAYS` and `WORKDAY` still
+  refuse a boolean typed as a date with `#VALUE!`; NETWORKDAYS-010 and WORKDAY-011 ask it.

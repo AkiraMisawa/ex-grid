@@ -121,8 +121,10 @@ semantics". This settles it in the shape ADR-0007 gave editing: **the grid repor
 the Consumer decides what it means.**
 
 - **The core paints the handle** at the bottom-right corner of the Selection's last range, in the
-  selection overlay, when the Consumer declares that fill is enabled. **The core owns the drag.** It
-  extends along one axis, like Excel, and paints the target outline. *(Observed 2026-09-29: a
+  selection overlay, when the Consumer declares that fill is enabled: for whole columns at the first
+  row's top-right corner, and for whole rows at the first column's bottom-left, beside the Heading;
+  for every cell, none ("The handle on a whole axis", 2026-10-12, below). **The core owns the
+  drag.** It extends along one axis, like Excel, and paints the target outline. *(Observed 2026-09-29: a
   diagonal drag from A1 towards C3 fills one axis only, in Excel — Microsoft 365 on Windows — and in
   Google Sheets alike. Filling down and across takes two drags, as it does here. A two-axis fill was
   asked for and dropped: it is not Excel's, and a series filled both ways would depend on which axis
@@ -135,8 +137,9 @@ the Consumer decides what it means.**
   Excel's result; **a pattern it has not implemented is refused, not filled with copies.** Excel
   would have continued a series there, and a column of copies is a plausible, wrong series. The
   first rules are: copy, with relative References shifted; a linear series from two or more selected
-  numbers; a series of dates by day. `Item 1` → `Item 2` and the rest of Excel's patterns come
-  later, and each is refused until it arrives.
+  numbers; a series of dates by day; and, in a fill from whole columns or whole rows, a series by one
+  from a single number in a line ("The handle on a whole axis", below). `Item 1` → `Item 2` and the
+  rest of Excel's patterns come later, and each is refused until it arrives.
 - A plain ExGrid Consumer can take Fill Intents too, and resolve them into its Overlay.
 
 *(Added 2026-09-28, when `main`'s fill keys were merged — [ADR-0035](./0035-paste-and-fill-respect-the-editable-declaration.md)'s
@@ -261,6 +264,12 @@ HTML flavours to write, or a refusal carrying the Consumer's own sentence.
   content is the strongest evidence a page has. A false match would need another program to have
   put exactly that block there, and even then it pastes the Entries that showed exactly those
   Values.
+- *(2026-10-13, decided with the user: a cell of the family's own clipboard HTML may carry a mark, `ClipboardData.MarkAttribute`
+  (`data-ex-mark`), which the grid hands back beside the pasted field (`GridPasteIntent.MarkFor`) and
+  gives no meaning; another program ignores it. ExSheet marks a refused cell,
+  `data-ex-mark="exsheet-refused:C1"`, so that a paste of it as a Value is refused by name, wherever on
+  the page it lands, rather than turn a Refused Formula into an Error Value a Formula can catch
+  (ADR-0047).)*
 
 **10. A paste says where each field came from.** The paste notification marks each field as an
 invariant number (Excel's `x:num` attribute, or ExGrid's own unformatted HTML) or as shown text.
@@ -466,3 +475,65 @@ opt-in declaration:
 [ADR-0160](./0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md): the grid holds no Consumer row beyond the Window it was given.
 - **Item 15's cache of appearances drops every entry whose row instance a new Window does not hold.**
 - **What it keeps for the rows it does hold is their appearance values.**
+
+## The handle on a whole axis *(2026-10-12)*
+
+*(2026-10-12, decided with the user: the fill handle on a whole axis follows Excel, as the seventeenth
+Windows run's h3 pictured it; a range spanning every row puts its handle at its first row's top-right
+corner, and one spanning every column at its first column's bottom-left. Ctrl+A, several whole
+columns or rows, and which way the drag fills were to be asked next, with today's behaviour kept until
+then.)*
+The core had put the handle at the bottom-right of every range, so a whole column's stood a million
+rows down and a whole row's sixteen thousand columns across, and ExSheet showed none that could be
+grabbed. The run pictured column C and row 3 (`verification/2026-10-11-windows-17/`, Part H, h3).
+The readings of 2026-10-12 asked the rest (`verification/2026-10-12-windows-readings/`, R5).
+
+- **Whole columns put the handle at the first row's top-right corner, and whole rows at the first
+  column's bottom-left.** Every row and every column are the grid's extent
+  (`SelectionRange.SpansEveryRow`, `SpansEveryColumn`). Several whole columns put it at the last
+  column's top-right and several whole rows at the last row's bottom-left, as Excel did for columns
+  B:D and rows 2:4, each selected from its first Heading (observed, R5 (2)). Where Excel puts it
+  when the Extent is the first column or row was not read; ExGrid keeps the last.
+- **Every cell (Ctrl+A) has none.** Excel showed none in view (observed, R5 (1)); whether it draws
+  one at XFD1048576 was not read. Nothing is left to fill to, so the core paints none anywhere, at a
+  small grid's bottom-right too (by generalisation).
+- **It lies just inside the cells, beside the Heading.** It is centred on the edge that runs along
+  the range, the column's right edge or the row's bottom edge, and lies inside the range across the
+  other: its top is the first row's top, and its left the first column's left. Excel's whole column's
+  straddles its Heading's bottom edge, and a whole row's the Row Heading's right edge (observed, R5
+  (2)). The header and the Row Headings stand above the
+  selection layer (ADR-0008, 2026-10-01), so a handle straddling their edge would be half covered;
+  ExGrid's lies half its side lower, uncovered.
+- **It stays in view.** With a whole column's first row scrolled above the readable area, the
+  handle stands at the top-right of the part in view, beside the header, as Excel's stayed, clipped
+  under its Heading (observed, R5 (5)). With a whole row's first column under the Row Headings or the
+  Pinned Columns, it stands at the left of the part in view (by generalisation). ExGrid scrolls by
+  the pixel, so the handle stands at the readable area's edge, placed at each render from the scroll
+  the grid last read. A press is judged where the scroll it was taken at put the handle, so
+  `PressTakenAt` carries the vertical scroll offset beside the horizontal one (ED-31; reading a
+  scroll offset is ADR-0021's second entry).
+- **The drag fills along the axis the range does not span.** A whole column's handle fills across,
+  a whole row's up or down, and the Selection is then the source and the target, whole columns or
+  rows; dragged along the axis the range spans, nothing is reached and nothing is raised (observed,
+  R5 (3) and (4): C:E after the drag right, nothing after the drag down or sideways). The grab box
+  is the handle's, twice its side about its centre, and a press on a Row Heading stays the
+  Heading's, though a whole row's handle stands against it.
+- **ExSheet fills a whole axis as Excel did.** Every line is filled: text copied, a Formula filled
+  as one, and **a single number in a line goes on by one per cell** (observed, R5 (3) and (4): C1's
+  `1` gave D1 `2` and E1 `3`, A3's `1` gave A4 `2` and A5 `3`), where one cell's handle copies its
+  number (observed, R5's control: C5's `1` dragged down gave 1, 1). The series is held at 15
+  significant digits as the trend is, and counts back by one filled left or up (by generalisation).
+  A single number in any other source of several cells is still copied: Excel was not read there.
+  From several whole columns or rows, a line that holds a number beside a blank is refused, as any
+  such pattern is (`FillPatternNotSupported`), until the next Windows run reads it.
+- **ExSheet writes a whole axis's format on the target axis.** A fill from whole columns writes each
+  target column's format as the one its source column records, then only the lines that hold a
+  cell; whole rows likewise. The handle reaches it, and Ctrl+D over whole rows; Ctrl+R over whole
+  columns is refused before ExSheet by the core's paste cap (`CopyCellCap`, a million cells), as
+  any paste that large is. Each cell shows, and records as its own four sides (ADR-0071), what
+  writing it would give it, since a cell's own part is its row's, else its column's; the format is
+  recorded once on the column, as a whole column's is (ADR-0047). Excel's record of a fill from
+  formatted whole columns was not read. Written cell by cell, column C bold filled into D:E was some
+  two million records: `Check` 2,472 ms, `Do` 14,058 ms, 931 MB on the heap and a Sheet Document of
+  79.6 million characters, Debug build on Linux; on the columns, 37 ms, 17 ms, 1 MB and 424
+  characters.

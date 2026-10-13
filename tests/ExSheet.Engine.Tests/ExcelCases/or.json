@@ -76,7 +76,7 @@
     },
     {
       "id": "OR-009",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: typed text that spells neither TRUE nor FALSE is passed over, as AND passes it over (AND-011)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=OR(\"abc\",FALSE)"},
@@ -85,7 +85,7 @@
     },
     {
       "id": "OR-010",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: typed text that spells TRUE, in lower case, counts, so the result is TRUE; FALSE if Excel passes over all typed text (AND-011, AND-015)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=OR(\"true\",FALSE)"},

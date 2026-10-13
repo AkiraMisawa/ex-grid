@@ -232,7 +232,7 @@ public class FormatCellsDraftTests
         Assert.Null(Open(Prepare, "A2", "A2:B2").EdgeLine(BorderEdge.Top));
     }
 
-    [Fact] // ADR-0071 / SH-45, case 14-13: an edge shown from the neighbour and left alone is not touched, so OK sets nothing and A2 still records no top
+    [Fact] // ADR-0071 / SH-45, case 14-13: an edge shown from the neighbour and left alone is not touched, so OK sets nothing and A2 still records no top; the bottom takes the line the tab opened on, the thick one shown (run 17, h10)
     public void A_shown_edge_left_alone_sets_nothing_case_14_13()
     {
         var sheet = new Sheet(EnUs);
@@ -241,23 +241,130 @@ public class FormatCellsDraftTests
 
         draft.ToggleEdge(BorderEdge.Bottom);
 
-        Assert.Equal(new BorderChange { Bottom = Thin }, draft.Change.Borders);
+        Assert.Equal(new BorderChange { Bottom = Thick }, draft.Change.Borders);
     }
 
-    [Fact] // ADR-0071 / SH-45, case 14-13 (a reading: no run pressed it): taking the shown top away clears that edge on both sides, as clearing an edge does
+    [Fact] // ADR-0071 / SH-45, case 14-13 (observed in Excel, the seventeenth Windows run, h10): over A2, the Top button alone takes the shown top away, and OK clears that edge on both sides, as clearing an edge does
     public void Taking_a_shown_edge_away_clears_it_on_both_sides_case_14_13()
     {
         var sheet = new Sheet(EnUs);
         ThickBottomOnA1(sheet);
         var draft = FormatCellsDraft.Open(sheet, CellAddress.Parse("A2"), [CellRange.Parse("A2")]);
 
-        draft.SetLineStyle(BorderLineStyle.Thick);
+        // What the run pressed: the Top button (Alt+T), then OK. The tab opened on the thick line.
         draft.ToggleEdge(BorderEdge.Top);
         Assert.Equal(new BorderChange { Top = BorderLine.None }, draft.Change.Borders);
         sheet.SetCellFormat([CellRange.Parse("A2")], draft.Change);
 
         Assert.Equal(CellBorders.None, sheet.GetBorders(CellAddress.Parse("A1")));
         Assert.Equal(CellBorders.None, sheet.GetBorders(CellAddress.Parse("A2")));
+    }
+
+    // ---- The line the Border tab opens on (the seventeenth Windows run, h10) ----
+
+    private static readonly CellColour Black = CellColour.FromRgb(0x000000);
+
+    private static readonly CellColour Red = CellColour.FromRgb(0xFF0000);
+
+    private static (BorderLineStyle, CellColour) PenOf(FormatCellsDraft draft) => (draft.LineStyle, draft.LineColour);
+
+    [Fact] // ADR-0071 / SH-45, run 17 h10 (observed in Excel): over A2 under A1's thick bottom, the one line A2 shows, the Border tab opens on Thick and Automatic, as the line is, not on Thin
+    public void Over_a2_under_a1s_thick_bottom_the_tab_opens_on_thick_run_17_h10()
+    {
+        var draft = Open(ThickBottomOnA1, "A2", "A2");
+
+        Assert.Equal((BorderLineStyle.Thick, CellColour.Automatic), PenOf(draft));
+        Assert.True(draft.Change.IsEmpty);
+    }
+
+    [Theory] // ADR-0071 / SH-45, case 14-13 (observed in Excel): A1's bottom thick black opens the tab on Thick and black, over A2, which shows it, and over A1, which records it
+    [InlineData("A2")]
+    [InlineData("A1")]
+    public void The_line_opens_in_its_own_colour_case_14_13(string focus)
+    {
+        var draft = Open(sheet => Format(sheet, "A1", new CellFormatChange
+        {
+            Borders = new BorderChange { Bottom = new BorderLine(BorderLineStyle.Thick, Black) },
+        }), focus, focus);
+
+        Assert.Equal((BorderLineStyle.Thick, Black), PenOf(draft));
+    }
+
+    [Fact] // ADR-0071 / SH-45, run 17 h10's second case (observed in Excel): A2's top set thin after A1's thick bottom leaves one thin line on the edge, and the tab over A2 opens on Thin and Automatic
+    public void A_thin_top_shown_opens_the_tab_on_thin_run_17_h10()
+    {
+        var draft = Open(sheet =>
+        {
+            ThickBottomOnA1(sheet);
+            Format(sheet, "A2", new CellFormatChange { Borders = new BorderChange { Top = Thin } });
+        }, "A2", "A2");
+
+        Assert.Equal((BorderLineStyle.Thin, CellColour.Automatic), PenOf(draft));
+    }
+
+    [Theory] // ADR-0071 / SH-45, the readings of 2026-10-12 (R8 (1) to (3)), observed in Excel: Thin and Automatic over B2 with a thin top and a thick right of its own, over A2:B3 with a different line on four of its cells' sides, and over D5 with no line, as the eleventh run's case 22 saw Thin over A1
+    [InlineData(1, "B2", "B2")]
+    [InlineData(2, "A2", "A2:B3")]
+    [InlineData(3, "D5", "D5")]
+    public void Thin_and_automatic_over_the_three_selections_r8(int @case, string focus, string range)
+    {
+        var draft = Open(sheet =>
+        {
+            switch (@case)
+            {
+                case 1:
+                    Format(sheet, "B2", new CellFormatChange { Borders = new BorderChange { Top = Thin, Right = Thick } });
+                    break;
+                case 2:
+                    Format(sheet, "A2", new CellFormatChange { Borders = new BorderChange { Top = Thin } });
+                    Format(sheet, "B2", new CellFormatChange { Borders = new BorderChange { Right = new BorderLine(BorderLineStyle.Medium) } });
+                    Format(sheet, "A3", new CellFormatChange { Borders = new BorderChange { Bottom = Thick } });
+                    Format(sheet, "B3", new CellFormatChange { Borders = new BorderChange { Left = new BorderLine(BorderLineStyle.Dashed) } });
+                    break;
+            }
+        }, focus, range);
+
+        Assert.Equal((BorderLineStyle.Thin, CellColour.Automatic), PenOf(draft));
+    }
+
+    [Theory] // ADR-0071 / SH-45 (a reading, asked next Windows run): B2 with a thick top and a medium right, two edges showing lines and none thin, opens on Thin, as ExSheet opens wherever more than one edge shows a line; so do several one-cell ranges, though each shows one line
+    [InlineData("B2", "B2")]
+    [InlineData("A2", "A2,C2")]
+    public void Several_lines_shown_open_the_tab_on_thin_a_reading(string focus, string ranges)
+    {
+        var draft = Open(sheet =>
+        {
+            Format(sheet, "B2", new CellFormatChange { Borders = new BorderChange { Top = Thick, Right = new BorderLine(BorderLineStyle.Medium) } });
+            Format(sheet, "A1", new CellFormatChange { Borders = new BorderChange { Bottom = Thick } });
+            Format(sheet, "C1", new CellFormatChange { Borders = new BorderChange { Bottom = Thick } });
+        }, focus, ranges.Split(','));
+
+        Assert.Equal((BorderLineStyle.Thin, CellColour.Automatic), PenOf(draft));
+    }
+
+    [Theory] // ADR-0071 / SH-45 (a reading, asked next Windows run): one line shown where Excel was not seen to open on it, on a left or a right edge, in a style other than Thick or Thin, or in a colour other than Automatic or black, opens the tab on that line, as the top and bottom lines Excel was seen to open on did (run 17 h10, case 14-13)
+    [InlineData("B2's left thick", "B2")]
+    [InlineData("B2's right thick", "B2")]
+    [InlineData("C2's left thick, shown as B2's right", "B2")]
+    [InlineData("A1's bottom medium dashed", "A2")]
+    [InlineData("A1's bottom thick red", "A2")]
+    public void One_line_excel_was_not_seen_to_open_on_opens_the_tab_on_it_a_reading(string line, string cell)
+    {
+        var mediumDashed = new BorderLine(BorderLineStyle.MediumDashed);
+        var thickRed = new BorderLine(BorderLineStyle.Thick, Red);
+        var (at, borders, expected) = line switch
+        {
+            "B2's left thick" => ("B2", new BorderChange { Left = Thick }, Thick),
+            "B2's right thick" => ("B2", new BorderChange { Right = Thick }, Thick),
+            "C2's left thick, shown as B2's right" => ("C2", new BorderChange { Left = Thick }, Thick),
+            "A1's bottom medium dashed" => ("A1", new BorderChange { Bottom = mediumDashed }, mediumDashed),
+            "A1's bottom thick red" => ("A1", new BorderChange { Bottom = thickRed }, thickRed),
+            _ => throw new ArgumentOutOfRangeException(nameof(line), line, "Not a case."),
+        };
+        var draft = Open(sheet => Format(sheet, at, new CellFormatChange { Borders = borders }), cell, cell);
+
+        Assert.Equal((expected.Style, expected.Colour), PenOf(draft));
+        Assert.True(draft.Change.IsEmpty);
     }
 
     // ---- A code typed under Custom (the fourteenth Windows run, case 11) ----

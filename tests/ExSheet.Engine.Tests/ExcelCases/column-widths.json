@@ -305,7 +305,7 @@
     },
     {
       "id": "CW-030",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a column inserted beside one a typed number widened (to 10.18, CW-028) holds its width as the user's, so a longer number typed into it does not widen it: Excel wrote the inserted column customWidth without bestFit (verification/2026-10-11-windows-17, b10, CW-023), the flag ECMA-376 gives a column a typed number widens",
       "cells": {"B1": "1234567890"},
       "action": [{"do": "insertColumns", "column": "C"}, {"do": "enter", "cells": {"C1": "12345678901"}}],
@@ -315,7 +315,7 @@
     },
     {
       "id": "CW-031",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the column a typed number widened keeps its kind when a column is inserted to its right, so a longer number typed into it widens it again: Excel kept its bestFit (verification/2026-10-11-windows-17, b10, CW-023)",
       "cells": {"B1": "1234567890"},
       "action": [{"do": "insertColumns", "column": "C"}, {"do": "enter", "cells": {"B2": "12345678901"}}],
@@ -325,7 +325,7 @@
     },
     {
       "id": "CW-032",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a width widened by entry moved left by a deletion keeps its kind, so a longer number typed into it widens it again: Excel kept its bestFit (verification/2026-10-11-windows-17, b10, CW-025)",
       "cells": {"C1": "1234567890"},
       "action": [{"do": "deleteColumns", "column": "B"}, {"do": "enter", "cells": {"B2": "12345678901"}}],

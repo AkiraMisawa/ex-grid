@@ -10,7 +10,12 @@
             user types to replace the value, or presses <kbd>F2</kbd> (or double-clicks) to edit it with a caret.
             <kbd>Backspace</kbd> empties the cell and starts typing in it, as in Excel; nothing is written until the
             edit commits. <kbd>Enter</kbd> and <kbd>Tab</kbd> commit and move on, cycling inside the selection, so a
-            block can be filled by typing; <kbd>Escape</kbd> cancels.
+            block can be filled by typing; <kbd>Escape</kbd> cancels. While typing over a value, the arrow keys,
+            <kbd>Home</kbd> and <kbd>End</kbd> commit and move, and <kbd>Shift</kbd> with an arrow or with
+            <kbd>Home</kbd>, and <kbd>Ctrl</kbd> with an arrow, commit and then extend the selection or go to the
+            edge from the edited cell, as they do with no edit open — as Excel's Enter mode was seen to do with
+            <kbd>Shift</kbd> and an arrow, <kbd>Shift</kbd>+<kbd>Home</kbd> and <kbd>Ctrl</kbd>+<kbd>→</kbd>.
+            After <kbd>F2</kbd> in the cell they move the caret, or select text, instead.
         </p>
         <p>
             A commit arrives as a <code>GridEditIntent&lt;TRow&gt;</code>: the row instance, the column's name and
@@ -73,8 +78,13 @@
             </li>
             <li>
                 <strong>The fill handle</strong>, with <code>ShowFillHandle</code>, is the square at the corner of the
-                selection. Drag it and the grid raises <code>OnFill</code> with the source range and the target
-                beside it; what a fill means — a copy, a series — is yours.
+                selection: its bottom-right, or the top-right of whole columns and the bottom-left of whole rows, one
+                or several, beside the header or the Row Headings, as Excel puts it (observed beside Excel: one
+                column and one row in the Windows run of 2026-10-11, several in the readings of 2026-10-12, R5). It
+                stays at the edge of the part in view when that first row or column is scrolled away, as Excel's
+                did for a column (R5; for a row by generalisation), and a selection of every cell has none, as
+                Excel showed none (R5). Drag it and the grid raises <code>OnFill</code> with the source range and
+                the target beside it; what a fill means — a copy, a series — is yours.
             </li>
             <li>
                 <strong><kbd>Delete</kbd></strong> raises <code>OnClear</code>: these cells should hold no value.

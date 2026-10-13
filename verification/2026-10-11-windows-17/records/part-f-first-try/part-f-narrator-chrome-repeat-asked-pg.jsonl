@@ -1,0 +1,12 @@
+{"t": "20:22:46", "cmd": {"op": "goto", "url": "http://localhost:5299/sheet", "ready": "() => { const g = document.querySelector('.ex-grid:has(> .ex-formula-bar)'); if (!g) return false;\n  const c = [...g.querySelectorAll('[id$=\"-r11c1\"]')].map(e => e.textContent).join(''); return c.includes('318.25') && !!g.querySelector('input.ex-key-field'); }"}, "answer": {"ok": "goto", "title": "run17-chrome-66422", "url": "http://localhost:5299/sheet"}}
+{"t": "20:22:49", "cmd": {"op": "calibrate"}, "answer": {"ok": "calibrate", "dpr": 1.5, "tries": [{"px": 671, "py": 371, "client": {"x": 383, "y": 132}}, {"px": 696, "py": 353, "client": {"x": 386, "y": 131}}, {"px": 717, "py": 336, "client": {"x": 498, "y": 77}}, {"px": 570, "py": 401, "client": {"x": 328, "y": 148}}, {"px": 678, "py": 359, "client": {"x": 972, "y": 269}}, {"px": -180, "py": 135, "client": {"x": 32, "y": 23}}]}}
+{"t": "20:22:49", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": "run17-chrome-66422"}}
+{"t": "20:22:49", "cmd": {"op": "input", "cmd": "english run17-chrome-66422"}, "answer": {"ok": "ok english was=0x04110411 now=0x08090809"}}
+{"t": "20:22:49", "cmd": {"op": "input", "cmd": "imeoff"}, "answer": {"ok": "ok imeoff"}}
+{"t": "20:22:49", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": {"activeElement": "body", "ariaActiveDescendant": null, "activeDescendantCell": null, "activeDescendantExists": null, "focus": null, "hasFocus": true, "editing": false, "fieldRole": null, "fieldLabel": null}}}
+{"t": "20:22:49", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": "run17-chrome-66422"}}
+{"t": "20:22:49", "cmd": {"op": "input", "cmd": "foreground"}, "answer": {"ok": "ok foreground title=\"run17-chrome-66422 - Google Chrome\" process=chrome"}}
+{"t": "20:22:49", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": "sheet-revalue"}}
+{"t": "20:22:51", "cmd": {"op": "eval", "arg": null}, "answer": {"ok": "eval", "value": {"activeElement": "button#sheet-revalue", "ariaActiveDescendant": null, "activeDescendantCell": null, "activeDescendantExists": null, "focus": null, "hasFocus": true, "editing": false, "fieldRole": null, "fieldLabel": null}}}
+{"t": "20:22:51", "cmd": {"op": "events"}, "answer": {"ok": "events", "value": [{"t": 3617, "type": "focusin", "target": "button#sheet-revalue"}]}}
+{"t": "20:22:51", "cmd": {"op": "input", "cmd": "foreground"}, "answer": {"ok": "ok foreground title=\"run17-chrome-66422 - Google Chrome\" process=chrome"}}

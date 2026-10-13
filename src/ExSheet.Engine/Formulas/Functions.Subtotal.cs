@@ -24,8 +24,8 @@ internal static partial class FunctionLibrary
     /// STDEV.P, SUM, VAR.S, VAR.P — over its references, each function as it reads a range; 101 to
     /// 111 give the same while no row can be hidden. A function number that is not whole is truncated
     /// toward zero, as Excel's is (SUBTOTAL-027: 9.5 is 9). A nested cell (<see cref="IsNested"/>)
-    /// is passed over. Refused with <c>#VALUE!</c>: another function number, and an argument that
-    /// is no reference when it is computed (a Formula that gives one something that can never be a
+    /// is passed over. <c>#VALUE!</c>, as Excel's was for 12 and 0 (SUBTOTAL-025, 026): another function
+    /// number; and an argument that is no reference when it is computed (a Formula that gives one something that can never be a
     /// Reference is refused on entry, <see cref="FunctionDefinition.ReferenceOnly"/>).
     /// </summary>
     private static Operand Subtotal(FunctionCall call)
@@ -49,9 +49,12 @@ internal static partial class FunctionLibrary
     /// does (AGGREGATE-025, 042 to 051); options 2, 3, 6 and 7 pass over Error Values; options 1, 3,
     /// 5 and 7, which pass over hidden rows, give what 0, 2, 4 and 6 give, since no row can be hidden.
     /// A function number or option that is not whole is truncated toward zero, as SUBTOTAL's is. The
-    /// array form takes a number given directly as an array of that one Value (AGGREGATE-039).
-    /// Refused with <c>#VALUE!</c>: the function numbers of functions the engine does not support
-    /// (13, MODE.SNGL; 16 to 19, PERCENTILE and QUARTILE), a number or option outside Excel's, LARGE
+    /// array form takes a Value given directly as an array of that one Value: a number is its one
+    /// number (AGGREGATE-039), and text or a boolean leaves no number, so <c>#NUM!</c> (AGGREGATE-061).
+    /// Its k is read as LARGE's and SMALL's (<see cref="KthOf"/>).
+    /// Refused (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's): the function numbers of
+    /// functions the engine does not support (13, MODE.SNGL; 16 to 19, PERCENTILE and QUARTILE), where Excel
+    /// answers (AGGREGATE-027 to 031). <c>#VALUE!</c>, as Excel's: a number or option outside Excel's, LARGE
     /// or SMALL without its k (as Microsoft documents) or with an argument after it, and an argument
     /// of the reference form that is no reference when it is computed.
     /// </summary>
@@ -61,8 +64,8 @@ internal static partial class FunctionLibrary
         var option = 0;
         if (call.Has(1) && !TryTruncated(call, 1, out option, out failure)) return failure;
         if (function is < 1 or > 19 || option is < 0 or > 7) return Operand.Of(ErrorValue.Value);
-        // MODE.SNGL, PERCENTILE.INC, QUARTILE.INC, PERCENTILE.EXC and QUARTILE.EXC are not declared.
-        if (function is 13 or > 15) return Operand.Of(ErrorValue.Value);
+        // MODE.SNGL, PERCENTILE.INC, QUARTILE.INC, PERCENTILE.EXC and QUARTILE.EXC are not declared: refused.
+        if (function is 13 or > 15) return call.Evaluator.Refuse();
         var skipNested = option <= 3;
         var passOverErrors = option is 2 or 3 or 6 or 7;
         var values = new List<Value>();
@@ -106,10 +109,10 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// The Values of one argument that SUBTOTAL or AGGREGATE reduces, added in order to
     /// <paramref name="values"/>: a reference's cells that are not blank, a Linked Table's column, or,
-    /// where <paramref name="arrays"/> allows it, a computed array or a number given directly, which is
-    /// an array of that one Value. A nested cell (<see cref="IsNested"/>) is passed over when
-    /// <paramref name="skipNested"/>, and its Value counted otherwise; an Error Value is passed over
-    /// when <paramref name="passOverErrors"/>. <see langword="false"/> with <paramref name="failure"/>
+    /// where <paramref name="arrays"/> allows it, a computed array or a number, text or boolean given
+    /// directly, which is an array of that one Value (<see cref="Reduce"/> counts only its numbers). A
+    /// nested cell (<see cref="IsNested"/>) is passed over when <paramref name="skipNested"/>, and its
+    /// Value counted otherwise; an Error Value is passed over when <paramref name="passOverErrors"/>. <see langword="false"/> with <paramref name="failure"/>
     /// when the argument is refused, or is an Error Value itself.
     /// </summary>
     private static bool TryCollect(FunctionCall call, Operand operand, bool arrays, bool skipNested, bool passOverErrors, List<Value> values, out Operand failure)
@@ -131,9 +134,11 @@ internal static partial class FunctionLibrary
             case OperandKind.Array when arrays:
                 foreach (var value in operand.Array!.NonBlank()) Add(value);
                 return true;
-            // A number given directly (AGGREGATE-039); text or a boolean is not asked yet, and stays refused.
-            case OperandKind.Scalar when arrays && operand.Scalar is { Kind: ValueKind.Number } number:
-                Add(number);
+            // A Value given directly is an array of that one Value: a number is taken (AGGREGATE-039), and
+            // text or a boolean is no number, not coerced, so LARGE and SMALL pass over it (AGGREGATE-061:
+            // AGGREGATE(14,6,"5",1) is #NUM!, not 5 and not #VALUE!).
+            case OperandKind.Scalar when arrays && operand.Scalar is { Kind: ValueKind.Number or ValueKind.Text or ValueKind.Boolean } given:
+                Add(given);
                 return true;
             default:
                 failure = operand.IsError ? operand : Operand.Of(ErrorValue.Value);

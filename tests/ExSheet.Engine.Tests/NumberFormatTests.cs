@@ -111,9 +111,9 @@ public class NumberFormatTests
     [InlineData("\"open")]
     [InlineData("##0.0E+0")]
     [InlineData("0@")]
-    [InlineData("@;0")]       // @ ends a format; no run has seen it elsewhere
+    [InlineData("@;0")]       // @ ends a format. Excel refuses @;0 and 0;@;0 too (the seventeenth Windows run, h12): COM's "Unable to set the NumberFormat property", and Format Cells keeps the dialog open and says nothing; ExSheet refuses by name (SH-45)
     [InlineData("0;@;0")]
-    [InlineData("0;0;@;0")]
+    [InlineData("0;0;@;0")]   // not asked of Excel
     public void An_unsupported_code_is_refused(string code)
     {
         Assert.False(NumberFormat.TryParse(code, out _, out var reason));

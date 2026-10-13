@@ -37,6 +37,15 @@
       "cells": {"ZZ1000": "=HOUR(0.999999999)"},
       "check": "ZZ1000",
       "expect": {"value2": 0}
+    },
+    {
+      "id": "HOUR-005",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked (2026-10-13): a serial between -1 and 0 under HOUR, where the readings part. The nine functions the second area pass of 2026-10-12 asked gave #NUM! at -0.5 (YEAR-008 and its kin), Excel was observed to answer #NUM! at -1 under DATEDIF, YEARFRAC and MINUTE (DATEDIF-045, YEARFRAC-056, MINUTE-002), and between -1 and 0 no run has read it, nor under HOUR at all: read as a time of day, -0.5 is 12:00, and HOUR is 12",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=HOUR(-0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }
