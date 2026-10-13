@@ -37,7 +37,7 @@ internal static partial class FunctionLibrary
             if (operand.IsError) return operand;
             if (CriteriaRange.From(operand, call.Evaluator) is not { } range) return Operand.Of(ErrorValue.Value);
             var criterionOperand = call.Operand(i + 1);
-            if (Evaluator.IsMulti(criterionOperand)) return Operand.Of(ErrorValue.Value);
+            if (Evaluator.IsMulti(criterionOperand)) return Unlifted(call);
             var criterion = Criterion.Parse(call.Evaluator.ScalarOf(criterionOperand), call.Evaluator.Culture);
             if (criterion is null) return Operand.Of(ErrorValue.Value);
             if (conditions.Count > 0 && !range.SameShape(conditions[0].Range)) return Operand.Of(ErrorValue.Value);

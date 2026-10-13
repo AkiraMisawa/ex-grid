@@ -144,6 +144,15 @@
       "cells": {"ZZ1000": "=IFERROR(1/0,)&\"\""},
       "check": "ZZ1000",
       "expect": {"value2": ""}
+    },
+    {
+      "id": "IFERROR-017",
+      "source": "uncertain",
+      "description": "IFERROR does not turn into a fallback the refusal of a function given a range where it wants one Value, nested inside it, as it does not given the range itself (IFERROR-009)",
+      "cells": {"A1": "a", "A3": "b", "ZZ1000": "=IFERROR(LEN(A1:A3),0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0125: functions are not lifted over arrays yet; LEN given a range is #VALUE!, where Excel 365 applies it to each Value and spills, and the refusal is the Formula's, which IFERROR does not catch"
     }
   ]
 }

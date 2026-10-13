@@ -100,7 +100,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | Function | Status | Priority | Notes |
 |---|---|---|---|
 | `IF` | Supported | — | |
-| `IFERROR` | Supported | — | |
+| `IFERROR` | Supported | — | Does not catch the refusal of a function given an array where it wants one Value, which is the Formula's, nested inside it or not (ADR-0125, IFERROR-009, 017) |
 | `ISERROR` | Supported | — | |
 | `AND` | Supported | — | |
 | `OR` | Supported | — | |
@@ -259,12 +259,12 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `FILTER` | Supported | — | Spills (ADR-0125); nothing kept is `#CALC!` without `if_empty` |
-| `SORT` | Supported | — | Spills (ADR-0125); a blank or Error Value among the keys is refused until Excel is asked; Excel's Anchor recorded (SORT-011), the refusal kept until a run reads the rest |
-| `SORTBY` | Supported | — | Spills (ADR-0125); keys refused as `SORT`'s; Excel's Anchor recorded (SORT-011), the refusal kept until a run reads the rest |
-| `UNIQUE` | Supported | — | Spills (ADR-0125); a blank in the array is refused until Excel is asked; Excel's Anchor recorded (UNIQUE-009), the refusal kept until a run reads the rest |
+| `FILTER` | Supported | — | Spills (ADR-0125); nothing kept is `#CALC!` without `if_empty`. A blank it keeps is read inside a Formula as `SORT`'s is, which no run has read for `FILTER` (FILTER-012 to 014 ask): `COUNTA` counts it, and a function whose readings of it part, such as `AVERAGE`, makes the Formula #VALUE! |
+| `SORT` | Supported | — | Spills (ADR-0125); a blank key sorts after numbers and text in either order and after a boolean ascending, blank keys keeping their order in a descending sort, as Excel's did, and spills as 0 (SORT-011 to 014, 016 to 020, 023 to 025); after a boolean in a descending sort, and blank keys kept in their order ascending, are the engine's by generalisation (SORT-040, 041 ask), and beside an Error Value key the Formula is #VALUE! (SORT-031 asks). An Error Value key that already follows every number, as Excel's did (SORT-015), is answered, since sorting it after the numbers and keeping its place give the one order; with a number after it, beside text, a boolean, a blank or another Error Value, or in a descending sort, the Formula is #VALUE! until Excel is asked (SORT-026, 028 to 032). Of a blank it keeps, read inside a Formula, Excel's `COUNTA` counted it and `INDEX` took it out as a blank (SORT-021, 022); `SUM` answers where every reading gives the one sum, and a function whose readings part makes the Formula #VALUE! (SORT-033 to 039) |
+| `SORTBY` | Supported | — | Spills (ADR-0125); a blank key sorts last, key by key, as Excel's did after a number in an ascending key (SORTBY-007 to 009), and otherwise as `SORT`'s by generalisation (SORTBY-014 asks a descending key), and a blank it keeps is read as `SORT`'s is, which no run has read for `SORTBY` (SORTBY-011 to 013 ask). An Error Value key makes the Formula #VALUE! until Excel is asked whether it sorts as `SORT`'s or is the result (SORTBY-010) |
+| `UNIQUE` | Supported | — | Spills (ADR-0125); a blank is one of a kind only with another blank, never with 0 or empty text, and spills as 0 (UNIQUE-009 to 016). Read inside a Formula, Excel's `COUNTA` counted it and `=` found it equal to empty text (UNIQUE-017, 018); otherwise it is read as `SORT`'s is (UNIQUE-020 to 024 ask) |
 | `SEQUENCE` | Supported | — | Spills (ADR-0125) |
-| `TRANSPOSE` | Supported | — | Spills (ADR-0125) |
+| `TRANSPOSE` | Supported | — | Spills (ADR-0125); a blank spills as 0 (TRANSPOSE-004). A blank it keeps is read inside a Formula as `SORT`'s is, which no run has read for `TRANSPOSE` (TRANSPOSE-005 to 007 ask) |
 | `LET` | Supported | — | Names bound inside one Formula, as Excel's keyboard accepts them; a function's name, declared or not, and an R1C1 shape that is no A1 Reference are names, a value may be left empty, and `TRUE`, `FALSE` and a name that reads as an A1 Reference are refused on entry (ADR-0181, the seventeenth run). Ticket 14 |
 
 ### Random

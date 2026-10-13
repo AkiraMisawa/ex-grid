@@ -17,11 +17,20 @@ internal static partial class FunctionLibrary
     /// several rows and several columns, <c>column_num</c> cannot be left out: <c>INDEX(G1:H5,2)</c>
     /// is <c>#REF!</c>, as Excel's is (INDEX-012, the seventeenth Windows run), and so is
     /// <c>INDEX(A1#,2)</c> over such a Spill Range, which is a Reference as <c>G1:H5</c> is. Over an
-    /// array it is the whole row, as Microsoft documents.
+    /// array it is the whole row, as Microsoft documents. A kept blank (<see cref="Operand.KeptBlank"/>)
+    /// stays marked in what <c>INDEX</c> picks of it, so its reader decides how to read it: Excel's
+    /// <c>INDEX</c> took <c>SORT</c>'s out blank to <c>ISBLANK</c> (SORT-022) and <c>UNIQUE</c>'s out
+    /// equal to empty text (UNIQUE-018); whether <c>UNIQUE</c>'s is blank UNIQUE-020 asks (ADR-0125).
     /// </remarks>
     private static Operand Index(FunctionCall call)
     {
-        var source = call.Operand(0);
+        var source = call.KeepingBlanks(0);
+        var picked = Pick(call, source);
+        return source.KeptBlank ? picked.WithKeptBlank() : picked;
+    }
+
+    private static Operand Pick(FunctionCall call, Operand source)
+    {
         if (source.IsError) return source;
         var (rows, columns) = source.Kind switch
         {
@@ -93,7 +102,7 @@ internal static partial class FunctionLibrary
     private static Operand XMatch(FunctionCall call)
     {
         var lookupOperand = call.Operand(0);
-        if (IsArray(lookupOperand)) return Operand.Of(ErrorValue.Value);
+        if (IsArray(lookupOperand)) return Unlifted(call);
         if (call.Evaluator.ScalarOf(lookupOperand) is { IsError: true } lookupError) return Operand.Of(lookupError);
         var lookupArray = ArrayOrValue(call.Operand(1));
         if (!lookupArray.IsRange) return lookupArray.IsError ? lookupArray : Operand.Of(ErrorValue.Value);

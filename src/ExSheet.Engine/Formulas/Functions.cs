@@ -272,42 +272,76 @@ internal static partial class FunctionLibrary
     /// </summary>
     private static ErrorValue? CollectNumbers(FunctionCall call, List<double> numbers, int from = 0)
     {
-        var evaluator = call.Evaluator;
         for (var i = from; i < call.Count; i++)
         {
-            var operand = call.Operand(i);
-            switch (operand.Kind)
-            {
-                case OperandKind.Area or OperandKind.Column or OperandKind.Array:
-                    foreach (var value in evaluator.RangeValues(operand))
-                    {
-                        if (value.Kind == ValueKind.Number) numbers.Add(value.Number);
-                        else if (value.IsError) return value.Error;
-                    }
-                    break;
-                case OperandKind.Missing:
-                    numbers.Add(0);
-                    break;
-                default:
-                    if (operand.Scalar is not { } scalar)
-                    {
-                        numbers.Add(0);
-                        break;
-                    }
-                    var number = evaluator.ToNumber(scalar, out var error);
-                    if (error is { } e) return e;
-                    numbers.Add(number);
-                    break;
-            }
+            if (AddNumbers(call.Evaluator, call.Operand(i), numbers, keptBlankAsZero: false) is { } error) return error;
         }
         return null;
     }
 
+    /// <summary>
+    /// The numbers one argument gives (<see cref="CollectNumbers"/>), or its first Error Value. A kept
+    /// blank (<see cref="Operand.KeptBlank"/>) is passed over as a blank cell is, or, with
+    /// <paramref name="keptBlankAsZero"/>, read as 0 where it stands (ADR-0125).
+    /// </summary>
+    private static ErrorValue? AddNumbers(Evaluator evaluator, Operand operand, List<double> numbers, bool keptBlankAsZero)
+    {
+        switch (operand.Kind)
+        {
+            case OperandKind.Array when operand.KeptBlank && keptBlankAsZero:
+                foreach (var item in operand.Array!.All())
+                {
+                    if (item is not { } value) numbers.Add(0);
+                    else if (value.Kind == ValueKind.Number) numbers.Add(value.Number);
+                    else if (value.IsError) return value.Error;
+                }
+                break;
+            case OperandKind.Area or OperandKind.Column or OperandKind.Array:
+                foreach (var value in evaluator.RangeValues(operand))
+                {
+                    if (value.Kind == ValueKind.Number) numbers.Add(value.Number);
+                    else if (value.IsError) return value.Error;
+                }
+                break;
+            case OperandKind.Missing:
+                numbers.Add(0);
+                break;
+            default:
+                if (operand.Scalar is not { } scalar)
+                {
+                    if (!operand.KeptBlank || keptBlankAsZero) numbers.Add(0);
+                    break;
+                }
+                var number = evaluator.ToNumber(scalar, out var error);
+                if (error is { } e) return e;
+                numbers.Add(number);
+                break;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// SUM of the numbers taken (<see cref="CollectNumbers"/>). A kept blank (<see cref="Operand.KeptBlank"/>)
+    /// adds nothing whether SUM passes over it, as over a blank cell, or reads it as the 0 an operator
+    /// reads it as (ADR-0125); but where it would be the last number, the two readings make a different
+    /// last addition, which decides whether a sum that nearly cancels is 0 (<see cref="SumOf"/>). So SUM
+    /// answers where the two readings give the one sum, an answer by agreement that no run has read
+    /// (SORT-033 asks), and refuses the Formula where they give two (SORT-037 asks).
+    /// </summary>
     private static Operand Sum(FunctionCall call)
     {
-        var numbers = new List<double>();
-        if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
-        return SumOf(numbers);
+        var passedOver = new List<double>();
+        var asZero = new List<double>();
+        var kept = false;
+        for (var i = 0; i < call.Count; i++)
+        {
+            var operand = call.KeepingBlanks(i);
+            kept |= operand.KeptBlank;
+            if (AddNumbers(call.Evaluator, operand, passedOver, keptBlankAsZero: false) is { } error) return Operand.Of(error);
+            AddNumbers(call.Evaluator, operand, asZero, keptBlankAsZero: true);
+        }
+        var sum = SumOf(passedOver);
+        return kept && !sum.Scalar!.Value.Equals(SumOf(asZero).Scalar!.Value) ? call.Evaluator.Refuse() : sum;
     }
 
     /// <summary>
@@ -388,16 +422,26 @@ internal static partial class FunctionLibrary
         return Operand.Of(Value.FromNumber(count));
     }
 
-    /// <summary>Counts every value that is not blank: Error Values and empty text included.</summary>
+    /// <summary>
+    /// Counts every value that is not blank: Error Values and empty text included. A kept blank in its
+    /// array (<see cref="Operand.KeptBlank"/>) is counted, as Excel counted <c>SORT</c>'s and
+    /// <c>UNIQUE</c>'s (SORT-021, UNIQUE-017; ADR-0125), and <c>SORTBY</c>'s, <c>FILTER</c>'s and
+    /// <c>TRANSPOSE</c>'s are counted as those are, which SORTBY-011, FILTER-012 and TRANSPOSE-005 ask;
+    /// given as one Value, whether it is counted no run has read, so the Formula is refused.
+    /// </summary>
     private static Operand CountA(FunctionCall call)
     {
         var evaluator = call.Evaluator;
         var count = 0;
         for (var i = 0; i < call.Count; i++)
         {
-            var operand = call.Operand(i);
+            var operand = call.KeepingBlanks(i);
+            if (operand.KeptBlank && operand.Kind != OperandKind.Array) return evaluator.Refuse();
             switch (operand.Kind)
             {
+                case OperandKind.Array when operand.KeptBlank:
+                    count += operand.Array!.Rows * operand.Array.Columns;
+                    break;
                 case OperandKind.Area or OperandKind.Column or OperandKind.Array:
                     count += evaluator.RangeValues(operand).Count();
                     break;
@@ -415,19 +459,31 @@ internal static partial class FunctionLibrary
     // ---- IF, IFERROR, ISERROR ---------------------------------------------------------------
 
     /// <summary>
-    /// A multi-cell range where one Value is wanted. Excel would spill an array; ExSheet has none,
-    /// so it is <c>#VALUE!</c>, and IFERROR and ISERROR do not treat that refusal as a catchable
-    /// error — they refuse too, rather than turn "cannot" into a fallback value.
+    /// Whether an argument where one Value is wanted holds several: a range of several cells, a Linked
+    /// Table's column of several or an array. Excel 365 applies the function to each Value and spills
+    /// the results; the engine does not yet (ADR-0125, "Not yet: functions lifted over arrays"), so the
+    /// function refuses the Formula (<see cref="Unlifted"/>).
     /// </summary>
     private static bool IsArray(Operand operand) =>
         (operand.Kind == OperandKind.Area && !operand.Area.IsSingleCell)
         || (operand.Kind == OperandKind.Column && operand.Column!.Count != 1)
         || operand.Kind == OperandKind.Array;
 
+    /// <summary>
+    /// The refusal of an array where a function wants one Value (<see cref="IsArray"/>): <c>#VALUE!</c>,
+    /// and the Formula's (<see cref="Evaluator.Refuse"/>), as a Formula that meets <c>#CIRC!</c> is
+    /// <c>#CIRC!</c> (ADR-0047). ADR-0125 keeps it "an Error Value, never another answer", and IFERROR-009
+    /// records that <c>IFERROR</c> does not turn it into a fallback. An Error Value the call returned
+    /// would be read by whatever is around it: <c>=IFERROR(LEN(A1:A3),0)</c> would be 0,
+    /// <c>=ISERROR(ROUND(A1:A3,0))</c> TRUE and <c>=COUNTA(ROUND(A1:A3,0))</c> 1, answers about a
+    /// <c>#VALUE!</c> the engine made, where Excel 365 applies the function to each Value (ADR-0125).
+    /// </summary>
+    private static Operand Unlifted(FunctionCall call) => call.Evaluator.Refuse();
+
     private static Operand If(FunctionCall call)
     {
         var test = call.Operand(0);
-        if (IsArray(test)) return Operand.Of(ErrorValue.Value);
+        if (IsArray(test)) return Unlifted(call);
         var condition = call.Evaluator.ScalarOf(test);
         var truth = false;
         if (condition is { } value && !TryTruth(value, out truth)) return Operand.Of(value.IsError ? value.Error : ErrorValue.Value);
@@ -473,13 +529,13 @@ internal static partial class FunctionLibrary
     private static Operand IfError(FunctionCall call)
     {
         var operand = call.Operand(0);
-        if (IsArray(operand)) return Operand.Of(ErrorValue.Value);
+        if (IsArray(operand)) return Unlifted(call);
         var value = call.Evaluator.ScalarOf(operand);
         if (value is { IsError: true } e && e.Error is not (ErrorValue.GettingData or ErrorValue.Circ))
         {
             if (!call.Has(1)) return Operand.Blank;
             var fallback = call.Operand(1);
-            if (IsArray(fallback)) return Operand.Of(ErrorValue.Value);
+            if (IsArray(fallback)) return Unlifted(call);
             return call.Evaluator.ScalarOf(fallback) is { } caught ? Operand.Of(caught) : Operand.Blank;
         }
         return value is { } v ? Operand.Of(v) : Operand.Blank;
@@ -487,8 +543,8 @@ internal static partial class FunctionLibrary
 
     private static Operand IsError(FunctionCall call)
     {
-        var operand = call.Operand(0);
-        if (IsArray(operand)) return Operand.Of(ErrorValue.Value);
+        var operand = call.OneValue(0);
+        if (IsArray(operand)) return Unlifted(call);
         var value = call.Evaluator.ScalarOf(operand);
         if (value is { IsError: true } e && e.Error is ErrorValue.GettingData or ErrorValue.Circ) return Operand.Of(e);
         return Operand.Of(Value.FromBoolean(value is { IsError: true }));
@@ -501,7 +557,7 @@ internal static partial class FunctionLibrary
         var evaluator = call.Evaluator;
         var first = call.Operand(0);
         var second = call.Operand(1);
-        if (IsArray(first) || IsArray(second)) return Operand.Of(ErrorValue.Value);
+        if (IsArray(first) || IsArray(second)) return Unlifted(call);
         var number = evaluator.ToNumber(evaluator.ScalarOf(first), out var error);
         if (error is { } e1) return Operand.Of(e1);
         var digits = evaluator.ToNumber(evaluator.ScalarOf(second), out error);
@@ -568,11 +624,14 @@ internal static partial class FunctionLibrary
     {
         // The lookup value's own refusal and Error Value come first, before the arrays are looked at.
         var lookupOperand = call.Operand(0);
-        if (IsArray(lookupOperand)) return Operand.Of(ErrorValue.Value);
+        if (IsArray(lookupOperand)) return Unlifted(call);
         if (call.Evaluator.ScalarOf(lookupOperand) is { IsError: true } lookupError) return Operand.Of(lookupError);
 
         var lookupArray = ArrayOrValue(call.Operand(1));
-        var returnArray = ArrayOrValue(call.Operand(2));
+        // A return array that holds a kept blank (ADR-0125) is answered where the blank is not what is
+        // returned: how XLOOKUP gives one back no run has read.
+        var returnArray = ArrayOrValue(call.KeepingBlanks(2));
+        if (returnArray.KeptBlank && returnArray.Kind != OperandKind.Array) return call.Evaluator.Refuse();
         if (!lookupArray.IsRange) return lookupArray.IsError ? lookupArray : Operand.Of(ErrorValue.Value);
         if (!returnArray.IsRange) return returnArray.IsError ? returnArray : Operand.Of(ErrorValue.Value);
         // A range of one row or one column; a Linked Table's column runs down.
@@ -589,7 +648,11 @@ internal static partial class FunctionLibrary
         if (Search(call, vector, modesAt: 4) is not { } outcome) return Operand.Of(ErrorValue.Value);
         if (outcome.Failure is { } failure) return failure;
         if (outcome.Found is not { } index) return call.Has(3) ? call.Operand(3) : Operand.Of(ErrorValue.NA);
-        if (across == 1) return Vector.Of(returnArray)!.Value.ItemAt(index);
+        if (across == 1)
+        {
+            var item = Vector.Of(returnArray)!.Value.ItemAt(index);
+            return returnArray.KeptBlank && item is { Kind: OperandKind.Scalar, Scalar: null } ? call.Evaluator.Refuse() : item;
+        }
         if (returnArray.Kind == OperandKind.Area)
         {
             var area = returnArray.Area;
@@ -598,7 +661,8 @@ internal static partial class FunctionLibrary
                 : new Area(area.Row1, area.Column1 + index, area.Row2, area.Column1 + index));
         }
         var array = returnArray.Array!;
-        return Operand.Of(vector.Vertical ? Slice(array, index, index, 0, array.Columns - 1) : Slice(array, 0, array.Rows - 1, index, index));
+        var slice = vector.Vertical ? Slice(array, index, index, 0, array.Columns - 1) : Slice(array, 0, array.Rows - 1, index, index);
+        return returnArray.KeptBlank && slice.All().Any(v => v is null) ? call.Evaluator.Refuse() : Operand.Of(slice);
     }
 
     /// <summary>
@@ -622,23 +686,21 @@ internal static partial class FunctionLibrary
     {
         var evaluator = call.Evaluator;
         var lookupOperand = call.Operand(0);
-        if (IsArray(lookupOperand)) return null;
+        if (IsArray(lookupOperand)) return new SearchOutcome(null, Unlifted(call));
         var lookup = evaluator.ScalarOf(lookupOperand);
         if (lookup is { IsError: true } lookupError) return new SearchOutcome(null, Operand.Of(lookupError));
 
         var matchMode = 0;
         if (call.Has(modesAt))
         {
-            var mode = evaluator.ToNumber(evaluator.ScalarOf(call.Operand(modesAt)), out var modeError);
-            if (modeError is { } me) return new SearchOutcome(null, Operand.Of(me));
+            if (!TryNumber(call, modesAt, out var mode, out var modeFailure)) return new SearchOutcome(null, modeFailure);
             matchMode = (int)Math.Truncate(mode);
             if (matchMode is not (0 or -1 or 1 or 2 or 3)) return null;
         }
         var searchMode = 1;
         if (call.Has(modesAt + 1))
         {
-            var mode = evaluator.ToNumber(evaluator.ScalarOf(call.Operand(modesAt + 1)), out var modeError);
-            if (modeError is { } me) return new SearchOutcome(null, Operand.Of(me));
+            if (!TryNumber(call, modesAt + 1, out var mode, out var modeFailure)) return new SearchOutcome(null, modeFailure);
             searchMode = (int)Math.Truncate(mode);
             if (searchMode is not (1 or -1 or 2 or -2)) return null;
         }

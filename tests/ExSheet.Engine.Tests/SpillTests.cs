@@ -474,4 +474,37 @@ public class SpillTests
         Assert.Null(sheet.Value("C3"));
         Assert.Equal(3, sheet.Number("E2"));
     }
+
+    [Theory] // ADR-0125 ("Not yet: functions lifted over arrays"), ADR-0047, IFERROR-009 and 017: an array where a function not yet applied to each Value wants one is the Formula's refusal, so nothing around it turns it into an answer
+    [InlineData("=IFERROR(A1:A3,0)")]
+    [InlineData("=IFERROR(LEN(A1:A3),0)")]
+    [InlineData("=IFERROR(ROUND(A1:A3,0),0)")]
+    [InlineData("=ISERROR(ROUND(A1:A3,0))")]
+    [InlineData("=ISNUMBER(LEN(A1:A3))")]
+    [InlineData("=COUNTA(ROUND(A1:A3,0))")]
+    [InlineData("=COUNT(IF(A1:A3>1,1))")]
+    [InlineData("=ERROR.TYPE(IF(A1:A3>1,1,0))")]
+    [InlineData("=IFERROR(COUNTIF(A1:A3,A1:A2),0)")]
+    [InlineData("=IFERROR(XLOOKUP(A1:A2,A1:A3,A1:A3),0)")]
+    [InlineData("=IFERROR(XMATCH(1,A1:A3,A1:A2),0)")]
+    [InlineData("=IFERROR(ISBLANK(A1:A3),0)")]
+    [InlineData("=IFERROR(IFNA(A1:A3,0),0)")]
+    public void ADR0125_an_unlifted_functions_refusal_is_the_formulas(string formula)
+    {
+        var sheet = WithColumn(1, 2, 3);
+
+        Assert.Equal(ErrorValue.Value, sheet.Evaluate(formula).Error);
+    }
+
+    [Theory] // ADR-0125, ADR-0047: a call never evaluated reads no array, so it refuses nothing
+    [InlineData("=IF(FALSE,LEN(A1:A3),1)", 1d)]
+    [InlineData("=IFERROR(1,LEN(A1:A3))", 1d)]
+    [InlineData("=IFERROR(1/0,7)", 7d)]
+    [InlineData("=SUM(LEN(A1))", 1d)]
+    public void ADR0125_an_array_never_given_to_an_unlifted_function_refuses_nothing(string formula, double expected)
+    {
+        var sheet = WithColumn(1, 2, 3);
+
+        Assert.Equal(expected, sheet.Evaluate(formula).Number);
+    }
 }
