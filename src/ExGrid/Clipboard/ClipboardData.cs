@@ -22,6 +22,16 @@ public static class ClipboardData
     /// </summary>
     public const string InvariantMarker = "data-ex-grid=\"invariant\"";
 
+    /// <summary>
+    /// The attribute a cell of a table marked <see cref="InvariantMarker"/> may carry to tell its
+    /// own Consumer more than the field's text says: <c>&lt;td data-ex-mark="…"&gt;</c>. A paste
+    /// hands its value over beside the field (<see cref="GridPasteIntent.MarkFor"/>) and gives it no
+    /// meaning of its own; another program ignores an attribute it does not know and reads the
+    /// field. ExSheet marks a cell whose Formula it refused, so that a paste into a Sheet carries
+    /// the refusal where another program reads <c>#VALUE!</c>.
+    /// </summary>
+    public const string MarkAttribute = "data-ex-mark";
+
     /// <summary>Both flavours of one approved copy: <c>Text</c> is the TSV of the
     /// displayed values, <c>Html</c> a table of the raw ones (ADR-0005).</summary>
     /// <param name="plan">The approved copy (ADR-0005/0011).</param>

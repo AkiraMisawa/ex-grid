@@ -2339,3 +2339,5 @@ virtual ExGrid.Rows.RowMarkStep.PrintMembers(System.Text.StringBuilder! builder)
 ~static ExGrid.Cells.GridPointedPress<TRow>.operator ==(ExGrid.Cells.GridPointedPress<TRow>? left, ExGrid.Cells.GridPointedPress<TRow>? right) -> bool
 ~static ExGrid.Cells.GridPointedStep<TRow>.operator !=(ExGrid.Cells.GridPointedStep<TRow>? left, ExGrid.Cells.GridPointedStep<TRow>? right) -> bool
 ~static ExGrid.Cells.GridPointedStep<TRow>.operator ==(ExGrid.Cells.GridPointedStep<TRow>? left, ExGrid.Cells.GridPointedStep<TRow>? right) -> bool
+const ExGrid.Clipboard.ClipboardData.MarkAttribute = "data-ex-mark" -> string!
+ExGrid.Clipboard.GridPasteIntent.MarkFor(ExGrid.Selection.CellPosition target) -> string?
