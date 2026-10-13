@@ -196,8 +196,12 @@ key gate does not reach, and were not built:
 - `ExSheet.MudBlazor`'s Format Cells, a MudDialog (ADR-0071), closed by Escape, OK or Cancel; under the built-in
   Chrome Format Cells is the grid's popover and holds.
 
-Read off the code, not run: on a circuit a key typed while one closes reaches the closing frame's control, or
-nothing once the frame is gone and before the button has the keyboard. Holding it needs its default prevented the
+Observed once for ExPivot's dialog (an untracked probe, Server host at an 80 ms round trip, 2026-10-13, both
+Chromes): Show Details' dialog closed by Escape with ↓ typed at once, the ↓ landed in the closing dialog and the
+report's Focus stayed on r1c1; with ↓ typed after the dialog had gone it moved to r2c1. The rest is read off the
+code: on a circuit a key typed while such a frame closes reaches its control, or nothing once the frame is gone and
+before the button has the keyboard; no run read ExPivot's menus and panels or MudBlazor's Format Cells dialog.
+Holding it needs its default prevented the
 moment it is typed — Tab, an arrow on a radio, Space on a checkbox act at once — and a Blazor handler's
 `preventDefault` is the render's, a round trip late; ADR-0021 keeps script out of these frames. Options: (a) leave
 them, and let ADR-0044's note say the hold covers the grid's popovers and the Sheet Toolbar's lists, with these a
