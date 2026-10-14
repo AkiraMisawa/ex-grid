@@ -63,6 +63,20 @@ async function entriesOf(page, title) {
     return names.map((n) => n.slice('Options for '.length));
 }
 
+// The same, inside one of several pivots on a page (/pivot?second=1, PV-10).
+const nthPivot = (page, n) => page.locator('.ex-pivot').nth(n);
+const reportIn = (one) => one.locator('.ex-pivot-sheet > .ex-grid');
+const paneIn = (one) => one.getByRole('region', { name: 'PivotTable Fields' });
+const fieldsIn = (one) => paneIn(one).getByRole('list', { name: 'PivotTable Fields' });
+const fieldIn = (one, caption) => fieldsIn(one).getByRole('listitem').filter({ has: one.page().getByRole('checkbox', { name: caption, exact: true }) });
+const areaIn = (one, title) => paneIn(one).getByRole('list', { name: title, exact: true });
+const entryIn = (one, caption) => paneIn(one).getByRole('button', { name: `Options for ${caption}`, exact: true });
+async function entriesIn(one, title) {
+    const names = await areaIn(one, title).getByRole('button').evaluateAll((buttons) =>
+        buttons.map((b) => b.getAttribute('aria-label')).filter((n) => n?.startsWith('Options for ')));
+    return names.map((n) => n.slice('Options for '.length));
+}
+
 /** How many rows the report has: the grid says so on its root, whatever it paints. */
 const reportRows = async (page) => Number(await report(page).getAttribute('aria-rowcount'));
 
@@ -189,6 +203,95 @@ for (const chrome of ['builtin', 'mud']) {
             await circuitQuiet();
             expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
             await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
+        });
+
+        test(`PV-10 / ADR-0061: Σ Values dropped on the report stays where it is, and so does every other field (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            // A second Value Field brings Σ Values into Columns, after Product.
+            await field(page, 'Notional').getByRole('checkbox').check();
+            await expect.poll(() => entriesOf(page, 'Columns')).toEqual(['Product', 'Σ Values']);
+            const values = await entriesOf(page, 'Values');
+            expect(values).toHaveLength(2);
+            await expect(page.locator('#pivot-status')).toContainText('1 changes made in the pane');
+
+            await entry(page, 'Σ Values').dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
+            await circuitQuiet();
+            expect(await entriesOf(page, 'Columns')).toEqual(['Product', 'Σ Values']);
+            expect(await entriesOf(page, 'Values')).toEqual(values);
+            expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+            await expect(page.locator('#pivot-status')).toContainText('1 changes made in the pane');
+        });
+
+        test.describe('with room for the whole page', () => {
+            // Tall enough that the page's own links, both pivots' reports and both panes stand in
+            // the window at once: a scroll between the press and the drop would cancel the drag.
+            test.use({ viewport: { width: 1400, height: 2200 } });
+
+            test(`PV-10 / ADR-0061: a drag from outside the pivot, dropped on the report, an Area or the list of fields, changes nothing — after a cancelled drag too (${chrome})`, async ({ page }) => {
+                await open(page, chrome);
+                // A drag of the pivot's own, cancelled over the report: it leaves nothing behind
+                // for a later drop to take.
+                const from = await entry(page, 'Desk').boundingBox();
+                const to = await report(page).boundingBox();
+                await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+                await page.mouse.down();
+                await page.mouse.move(to.x + 80, to.y + 60, { steps: 10 });
+                await expect(pivot(page).locator('.ex-pivot-report-drop-remove')).toHaveText('Remove Field');
+                await page.keyboard.press('Escape');
+                await page.mouse.up();
+
+                // A link of the page's, dragged with the browser's own drag and drop: every target
+                // takes the drop (each prevents dragover's default), and none of them changes anything.
+                const link = page.getByRole('link', { name: 'All pages', exact: true });
+                await link.dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
+                await link.dragTo(areaList(page, 'Rows').locator('xpath=..'), { targetPosition: { x: 12, y: 8 } });
+                await link.dragTo(entry(page, 'Region'));
+                await link.dragTo(fieldsList(page));
+                await circuitQuiet();
+                expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+                expect(await entriesOf(page, 'Columns')).toEqual(['Product']);
+                expect(await entriesOf(page, 'Filters')).toEqual(['Currency']);
+                await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
+            });
+
+            test(`PV-10 / ADR-0061: a field or an entry dragged from another pivot changes neither pivot (${chrome})`, async ({ page }) => {
+                await page.goto(`/pivot?chrome=${chrome}&second=1`);
+                const [first, second] = [nthPivot(page, 0), nthPivot(page, 1)];
+                for (const one of [first, second]) {
+                    await expect(reportIn(one).locator('.ex-viewport .ex-row').first()).toBeVisible({ timeout: 30_000 });
+                    await expect(entryIn(one, 'Region')).toBeVisible();
+                }
+                await expect.poll(() => first.evaluate((p) => getComputedStyle(p).display)).toBe('flex');
+                const unchanged = async () => {
+                    for (const one of [first, second]) {
+                        expect(await entriesIn(one, 'Rows')).toEqual(['Region', 'Desk']);
+                        expect(await entriesIn(one, 'Columns')).toEqual(['Product']);
+                        await expect(fieldIn(one, 'Month').getByRole('checkbox')).not.toBeChecked();
+                    }
+                    await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
+                    await expect(page.locator('#pivot-second-status')).toHaveText('0 changes made in the second pane');
+                };
+
+                // The first pivot's entry onto the second's report, which would remove it from its own.
+                await entryIn(first, 'Desk').dragTo(reportIn(second), { targetPosition: { x: 80, y: 60 } });
+                // The first's field onto the second's Columns, which would place it there.
+                await fieldIn(first, 'Month').dragTo(areaIn(second, 'Columns').locator('xpath=..'), { targetPosition: { x: 12, y: 8 } });
+                await circuitQuiet();
+                await unchanged();
+                // The second's entry onto the first's report, onto an entry of the first's, and onto
+                // the first's list of fields.
+                await entryIn(second, 'Desk').dragTo(reportIn(first), { targetPosition: { x: 80, y: 60 } });
+                await entryIn(second, 'Desk').dragTo(entryIn(first, 'Region'));
+                await entryIn(second, 'Region').dragTo(fieldsIn(first));
+                await circuitQuiet();
+                await unchanged();
+
+                // Each pivot still takes a drag of its own: the second's Desk dropped on its own report.
+                await entryIn(second, 'Desk').dragTo(reportIn(second), { targetPosition: { x: 80, y: 60 } });
+                await expect.poll(() => entriesIn(second, 'Rows')).toEqual(['Region']);
+                await expect(page.locator('#pivot-second-status')).toHaveText('1 changes made in the second pane');
+                expect(await entriesIn(first, 'Rows')).toEqual(['Region', 'Desk']);
+            });
         });
 
         test(`ADR-0059: the − button collapses an Item, and the Focus stays on it (${chrome})`, async ({ page }) => {

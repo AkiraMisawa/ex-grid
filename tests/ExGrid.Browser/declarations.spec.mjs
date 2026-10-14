@@ -2298,8 +2298,10 @@ test('DC-38/ADR-0048: Excel\'s too-narrow column pasted onto one cell is refused
     await expect(notice).toContainText('source column was too narrow to show the value');
     await expect(notice).toContainText('F8');
     // The Sheet refused the spill (GridPasteIntent.Refuse), so the grid selects no block: the
-    // Selection stays on F7, as Excel leaves it, and the notice stands.
-    await page.waitForTimeout(500);
+    // Selection stays on F7, as Excel leaves it, and the notice stands — read once everything the
+    // host will say has landed (ADR-0056). The refusal is told before the Sheet's handler
+    // completes, so on WebAssembly a block selected anyway lands with the notice.
+    await circuitQuiet();
     await expect(notice).toContainText('too narrow');
     await expectFocusAt(grid, 'F7');
     await expectSelectionIsCell(grid, 'F7');
