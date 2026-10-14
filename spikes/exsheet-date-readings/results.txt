@@ -1,236 +1,240 @@
-EDATE and EOMONTH: 32 observed cases
+EDATE and EOMONTH: 37 observed cases
 
-28/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-016, EDATE-017, EOMONTH-016, EOMONTH-017
-22/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
-27/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-016, EDATE-017, EOMONTH-015, EOMONTH-016, EOMONTH-017
-21/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
-29/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on the real calendar
+28/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022, EOMONTH-016, EOMONTH-017
+22/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
+27/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022, EOMONTH-015, EOMONTH-016, EOMONTH-017
+21/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
+34/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on the real calendar
         misses EDATE-017, EOMONTH-016, EOMONTH-017
-23/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on Excel's calendar
+28/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on Excel's calendar
         misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
-28/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+33/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
         misses EDATE-017, EOMONTH-015, EOMONTH-016, EOMONTH-017
-22/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+27/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
         misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
-29/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on the real calendar
+31/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-017, EDATE-018, EDATE-019, EDATE-020, EOMONTH-016, EOMONTH-017
+26/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-017, EDATE-019, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
+31/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-017, EDATE-018, EDATE-020, EOMONTH-015, EOMONTH-016, EOMONTH-017
+26/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-017, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
+29/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-016, EOMONTH-017
+23/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
+28/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-015, EOMONTH-016, EOMONTH-017
+22/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
+30/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-016, EOMONTH-017
+24/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
+29/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-015, EOMONTH-016, EOMONTH-017
+23/37  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
+30/37  start truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-017, EDATE-018, EDATE-019, EDATE-020, EOMONTH-010, EOMONTH-014, EOMONTH-017
+26/37  start truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-017, EDATE-019, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014, EOMONTH-017
+30/37  start truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-017, EDATE-018, EDATE-020, EOMONTH-010, EOMONTH-014, EOMONTH-016, EOMONTH-017
+26/37  start truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-017, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014, EOMONTH-016, EOMONTH-017
+31/37  start truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-017, EDATE-018, EDATE-019, EDATE-020, EOMONTH-016, EOMONTH-017
+26/37  start truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-017, EDATE-019, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
+31/37  start truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-017, EDATE-018, EDATE-020, EOMONTH-015, EOMONTH-016, EOMONTH-017
+26/37  start truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-017, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
+31/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-016, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022
+25/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
+30/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-016, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022, EOMONTH-015
+24/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
+37/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on the real calendar
+31/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
+36/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EOMONTH-015
+30/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
+34/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-018, EDATE-019, EDATE-020
+29/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-019, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
+34/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-018, EDATE-020, EOMONTH-015
+29/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
+32/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022
+26/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
+31/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-015
+25/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
+32/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022
+26/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
+31/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-015
+25/37  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
+32/37  start cut down to its day (floor); serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-018, EDATE-019, EDATE-020, EOMONTH-010, EOMONTH-014
+28/37  start cut down to its day (floor); serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-019, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014
+33/37  start cut down to its day (floor); serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-018, EDATE-020, EOMONTH-010, EOMONTH-014
+29/37  start cut down to its day (floor); serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014
+34/37  start cut down to its day (floor); serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-018, EDATE-019, EDATE-020
+29/37  start cut down to its day (floor); serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-019, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
+34/37  start cut down to its day (floor); serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-018, EDATE-020, EOMONTH-015
+29/37  start cut down to its day (floor); serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
+31/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-016, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022
+25/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
+30/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-016, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022, EOMONTH-015
+24/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
+37/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on the real calendar
+31/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
+36/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EOMONTH-015
+30/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
+34/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-018, EDATE-019, EDATE-020
+29/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-019, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
+34/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-018, EDATE-020, EOMONTH-015
+29/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
+32/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022
+26/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
+31/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-015
+25/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
+32/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022
+26/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
+31/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-015
+25/37  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
+32/37  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-018, EDATE-019, EDATE-020, EOMONTH-010, EOMONTH-014
+28/37  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-019, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014
+33/37  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-018, EDATE-020, EOMONTH-010, EOMONTH-014
+29/37  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014
+34/37  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-018, EDATE-019, EDATE-020
+29/37  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-019, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
+34/37  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-018, EDATE-020, EOMONTH-015
+29/37  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
+28/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022, EOMONTH-016, EOMONTH-017
+22/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
+27/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022, EOMONTH-015, EOMONTH-016, EOMONTH-017
+21/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-020, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
+34/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on the real calendar
         misses EDATE-017, EOMONTH-016, EOMONTH-017
-23/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on Excel's calendar
+28/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on Excel's calendar
         misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
-28/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+33/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
         misses EDATE-017, EOMONTH-015, EOMONTH-016, EOMONTH-017
-22/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+27/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
         misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
-28/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-016, EDATE-017, EOMONTH-016, EOMONTH-017
-22/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
-27/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-016, EDATE-017, EOMONTH-015, EOMONTH-016, EOMONTH-017
-21/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
-29/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-016, EOMONTH-016, EOMONTH-017
-23/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
-28/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-016, EOMONTH-015, EOMONTH-016, EOMONTH-017
-22/32  start truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
-28/32  start truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-017, EOMONTH-010, EOMONTH-014, EOMONTH-017
-23/32  start truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014, EOMONTH-017
-27/32  start truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-017, EOMONTH-010, EOMONTH-014, EOMONTH-016, EOMONTH-017
-22/32  start truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014, EOMONTH-016, EOMONTH-017
-29/32  start truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-017, EOMONTH-016, EOMONTH-017
-23/32  start truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
-28/32  start truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-017, EOMONTH-015, EOMONTH-016, EOMONTH-017
-22/32  start truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
-31/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-016
-25/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
-30/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-016, EOMONTH-015
-24/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
-32/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on the real calendar
-26/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
-31/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EOMONTH-015
-25/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
-32/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on the real calendar
-26/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
-31/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EOMONTH-015
-25/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
-31/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-016
-25/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
-30/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-016, EOMONTH-015
-24/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
-31/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-016
-25/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
-30/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-016, EOMONTH-015
-24/32  start cut down to its day (floor); serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
-30/32  start cut down to its day (floor); serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
-        misses EOMONTH-010, EOMONTH-014
-25/32  start cut down to its day (floor); serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014
-30/32  start cut down to its day (floor); serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EOMONTH-010, EOMONTH-014
-25/32  start cut down to its day (floor); serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014
-32/32  start cut down to its day (floor); serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
-26/32  start cut down to its day (floor); serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
-31/32  start cut down to its day (floor); serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EOMONTH-015
-25/32  start cut down to its day (floor); serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
-31/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-016
-25/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
-30/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-016, EOMONTH-015
-24/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
-32/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on the real calendar
-26/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
-31/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EOMONTH-015
-25/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
-32/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on the real calendar
-26/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
-31/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EOMONTH-015
-25/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
-31/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-016
-25/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
-30/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-016, EOMONTH-015
-24/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
-31/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-016
-25/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
-30/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-016, EOMONTH-015
-24/32  start below 0 is #NUM!, then truncated; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
-30/32  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
-        misses EOMONTH-010, EOMONTH-014
-25/32  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014
-30/32  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EOMONTH-010, EOMONTH-014
-25/32  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014
-32/32  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
-26/32  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012
-31/32  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EOMONTH-015
-25/32  start below 0 is #NUM!, then truncated; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015
-28/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-016, EDATE-017, EOMONTH-016, EOMONTH-017
-22/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
-27/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-016, EDATE-017, EOMONTH-015, EOMONTH-016, EOMONTH-017
-21/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: refused; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
-29/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-017, EOMONTH-016, EOMONTH-017
-23/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
-28/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-017, EOMONTH-015, EOMONTH-016, EOMONTH-017
-22/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the day before the 1st, by DATE's arithmetic (29 February 1900 counted); 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
-29/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-017, EOMONTH-016, EOMONTH-017
-23/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
-28/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-017, EOMONTH-015, EOMONTH-016, EOMONTH-017
-22/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
-28/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-016, EDATE-017, EOMONTH-016, EOMONTH-017
-22/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
-27/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-016, EDATE-017, EOMONTH-015, EOMONTH-016, EOMONTH-017
-21/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
-28/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-016, EDATE-017, EOMONTH-016, EOMONTH-017
-22/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
-27/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-016, EDATE-017, EOMONTH-015, EOMONTH-016, EOMONTH-017
-21/32  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
-27/32  start refused between -1 and 0; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-017, EOMONTH-010, EOMONTH-014, EOMONTH-016, EOMONTH-017
-22/32  start refused between -1 and 0; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014, EOMONTH-016, EOMONTH-017
-27/32  start refused between -1 and 0; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-017, EOMONTH-010, EOMONTH-014, EOMONTH-016, EOMONTH-017
-22/32  start refused between -1 and 0; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014, EOMONTH-016, EOMONTH-017
-29/32  start refused between -1 and 0; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
-        misses EDATE-017, EOMONTH-016, EOMONTH-017
-23/32  start refused between -1 and 0; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
-28/32  start refused between -1 and 0; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
-        misses EDATE-017, EOMONTH-015, EOMONTH-016, EOMONTH-017
-22/32  start refused between -1 and 0; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
-        misses EDATE-011, EDATE-013, EDATE-017, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
+31/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-017, EDATE-018, EDATE-019, EDATE-020, EOMONTH-016, EOMONTH-017
+26/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-017, EDATE-019, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
+31/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-017, EDATE-018, EDATE-020, EOMONTH-015, EOMONTH-016, EOMONTH-017
+26/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: the month before's last day on the real calendar; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-017, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
+29/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-016, EOMONTH-017
+23/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
+28/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-015, EOMONTH-016, EOMONTH-017
+22/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: day 1; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
+29/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-016, EOMONTH-017
+23/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
+28/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-015, EOMONTH-016, EOMONTH-017
+22/37  start refused between -1 and 0; serial 0 is 0 January 1900 under both; EDATE's day 0: no such day, #NUM!; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-016, EDATE-017, EDATE-018, EDATE-019, EDATE-021, EDATE-022, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
+29/37  start refused between -1 and 0; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-017, EDATE-018, EDATE-019, EDATE-020, EOMONTH-010, EOMONTH-014, EOMONTH-016, EOMONTH-017
+25/37  start refused between -1 and 0; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-017, EDATE-019, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014, EOMONTH-016, EOMONTH-017
+30/37  start refused between -1 and 0; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-017, EDATE-018, EDATE-020, EOMONTH-010, EOMONTH-014, EOMONTH-016, EOMONTH-017
+26/37  start refused between -1 and 0; serial 0 is 31 December 1899 under both; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-017, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-014, EOMONTH-016, EOMONTH-017
+31/37  start refused between -1 and 0; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on the real calendar
+        misses EDATE-017, EDATE-018, EDATE-019, EDATE-020, EOMONTH-016, EOMONTH-017
+26/37  start refused between -1 and 0; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: #NUM!; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-017, EDATE-019, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-016, EOMONTH-017
+31/37  start refused between -1 and 0; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on the real calendar
+        misses EDATE-017, EDATE-018, EDATE-020, EOMONTH-015, EOMONTH-016, EOMONTH-017
+26/37  start refused between -1 and 0; serial 0 is 31 December 1899 under EDATE, 0 January 1900 under EOMONTH; day 0 does not arise; 31 December 1899: 31 December 1899 is serial 0; months on Excel's calendar
+        misses EDATE-011, EDATE-013, EDATE-017, EDATE-020, EOMONTH-008, EOMONTH-010, EOMONTH-011, EOMONTH-012, EOMONTH-015, EOMONTH-016, EOMONTH-017
 
-6 readings reproduce every observed case. Their answers:
+2 readings reproduce every observed case. Their answers:
   =EDATE(0,-1): #NUM!
-  =EDATE(0,0): #NUM! | 0   <- they part
+  =EDATE(0,0): 0
   =EDATE(0,1): 31
-  =EDATE(0,2): 59 | 60   <- they part
+  =EDATE(0,2): 60
   =EDATE(0,3): 91
   =EDATE(0,12): 366
   =EDATE(0,97199): 2958434
-  =EDATE(0,97200): #NUM! | 2958465   <- they part
+  =EDATE(0,97200): #NUM!
   =EDATE(0,97201): #NUM!
-  =EDATE(0.5,2): 59 | 60   <- they part
-  =EDATE(0.9,0): #NUM! | 0   <- they part
+  =EDATE(0.5,2): 60
+  =EDATE(0.9,0): 0
   =EDATE(31,-1): #NUM!
   =EOMONTH(0,0): 31
   =EOMONTH(-0.5,0): #NUM!

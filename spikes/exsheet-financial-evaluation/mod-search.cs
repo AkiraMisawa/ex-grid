@@ -94,6 +94,15 @@
 // Refusing wherever the divisor is added and the sum is not exact, the only inputs where any width can
 // part from another, would refuse 192,038 of the 1,915,648 (10.0%), and MOD-029 and MOD-032 of the
 // observed cases.
+//
+// Windows run 18a (2026-10-14, Excel 16.0.20430.20146, results-2026-10-14-run18a-com-en-US.json) answered
+// MOD-033 to MOD-040 (40 cases, 107 reads, 35 of them numbers), and 1 of the 75 candidates reproduces every
+// one: B9. MOD(-1E-17,1) is 0, which rules out B10; MOD(-0.084474,2270) is 2269.915526 and
+// MOD(-0.008511,81200) 81199.99148900001, which rule out B12; and of the candidates at widths no hardware
+// holds, MOD-039 rules out every one rounded at 54 to 63 bits, MOD-040 every one truncated at 54 to 63, and
+// MOD-034 to 036 the rest (B9@65, B10@65, B12@65, B12@66). The judgment that only the hardware's widths are
+// natural is borne out where the two cases asked it. The engine adds the divisor as B9 adds it and refuses no
+// MOD below the quotient's limit; --discriminate finds it equal to B9 over every input searched.
 
 using System.Globalization;
 using System.Numerics;
@@ -116,6 +125,10 @@ var inputs = new Dictionary<string, (double N, double D)>
     ["MOD-025"] = (0.7, 0.01), ["MOD-026"] = (100000000000, 0.1), ["MOD-027"] = (123456789012, 0.2),
     ["MOD-028"] = (-693380, -93.7), ["MOD-029"] = (-0.087626, 6630), ["MOD-030"] = (1.1, 0.1),
     ["MOD-031"] = (-0.9, 0.1), ["MOD-032"] = (-1E-20, 1),
+    // Asked after the second area pass; Windows run 18a answered them (2026-10-14).
+    ["MOD-033"] = (-1E-17, 1), ["MOD-034"] = (-0.084474, 2270), ["MOD-035"] = (-0.008511, 81200),
+    ["MOD-036"] = (0.071472, -276), ["MOD-037"] = (-1E-16, 1), ["MOD-038"] = (1E-20, 1),
+    ["MOD-039"] = (-0.024901, 2350), ["MOD-040"] = (-0.006664, 5250),
 };
 
 // Every value Excel gave, from every results file; the same case read twice must read the same.
@@ -557,29 +570,22 @@ string? Parts(double n, double d)
     return $"=MOD({R(n)},{R(d)})  {distinct} answers: {string.Join(" | ", groups)} (A gives {candidates[0].Mod(n, d)})";
 }
 
-// The engine's MOD, as src/ExSheet.Engine/Formulas/Functions.Math.cs writes it (after the second area
-// pass): the exact remainder where it has the divisor's sign; where it has the number's, the divisor
-// added as B9, B10 and B12 add it, and #VALUE! where they part.
+// The engine's MOD, as src/ExSheet.Engine/Formulas/Functions.Math.cs writes it (after Windows run 18a): the
+// exact remainder where it has the divisor's sign; where it has the number's, the divisor added as B9 adds it.
+// After the second area pass it added it as B9, B10 and B12 did, and refused with #VALUE! where they parted
+// (EngineTurned's three); run 18a's answers to MOD-033 to 036 are B9's.
 static string EngineMod(double number, double divisor)
 {
     if (divisor == 0) return "#DIV/0!";
     if (Math.Abs(number / divisor) >= Limit) return "#NUM!";
     var remainder = number % divisor;
     if (remainder == 0 || (remainder < 0) == (divisor < 0)) return R(remainder == 0 ? 0 : remainder);
-    var (afterStore, inRegister, truncated) = EngineTurned(remainder, divisor);
-    return afterStore == inRegister && afterStore == truncated ? R(afterStore == 0 ? 0 : afterStore) : "#VALUE!";
+    var (afterStore, _, _) = EngineTurned(remainder, divisor);
+    return R(afterStore == 0 ? 0 : afterStore);
 }
 
-// Why the engine refuses: which of the three readings part; null where it answers.
-static string? EngineWhy(double number, double divisor)
-{
-    var remainder = number % divisor;
-    if (remainder == 0 || (remainder < 0) == (divisor < 0)) return null;
-    var (afterStore, inRegister, truncated) = EngineTurned(remainder, divisor);
-    if (afterStore != inRegister) return "the divisor itself, as a double but not in the register";
-    if (afterStore != truncated) return "truncated at 64 bits, another double";
-    return null;
-}
+// Why the engine refuses: since run 18a it refuses no MOD whose quotient is below the limit.
+static string? EngineWhy(double number, double divisor) => null;
 
 // remainder + divisor as the three readings take it, with a positive divisor and then the sign put back.
 static (double AfterStore, double InRegister, double Truncated) EngineTurned(double remainder, double divisor)

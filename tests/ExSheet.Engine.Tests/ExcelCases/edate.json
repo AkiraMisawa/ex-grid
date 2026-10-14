@@ -154,35 +154,35 @@
     },
     {
       "id": "EDATE-018",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: from serial 0, two months on is day 0 of March 1900, the day before 1 March, which is the day that never existed, 60, by DATE's arithmetic and 28 February, 59, on the real calendar; the readings that give every observed answer part here (spikes/exsheet-date-readings/)",
+      "source": "observed",
+      "description": "From serial 0, two months on is day 0 of March 1900, the day before 1 March by DATE's arithmetic, which is the day that never existed, 60, and not 28 February, 59, on the real calendar; of the readings that gave every answer observed before (spikes/exsheet-date-readings/), DATE's arithmetic alone gives EDATE-018 to 020 (Windows run 18a)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(0,2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 60}
     },
     {
       "id": "EDATE-019",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: from serial 0, no months on is day 0 of January 1900, which is serial 0 by DATE's arithmetic and 31 December 1899, before any serial and #NUM! as EOMONTH-015 is, on the real calendar",
+      "source": "observed",
+      "description": "From serial 0, no months on is day 0 of January 1900, serial 0 itself by DATE's arithmetic, and not 31 December 1899, before any serial, #NUM!, as EOMONTH-015 is on the real calendar (Windows run 18a)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(0,0)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 0}
     },
     {
       "id": "EDATE-020",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: from serial 0 to January 10000, which is past the last year and #NUM! by DATE's arithmetic, while the month before's last day is 31 December 9999, 2958465",
+      "source": "observed",
+      "description": "From serial 0 to January 10000, which is past the last year by DATE's arithmetic, #NUM!, and not the month before's last day, 31 December 9999, 2958465 (Windows run 18a)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(0,97200)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#NUM!"}
     },
     {
       "id": "EDATE-021",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: from serial 0, three months on is day 0 of April 1900, 31 March, 91, under every reading that gives the observed answers",
+      "description": "From serial 0, three months on is day 0 of April 1900, 31 March, 91 (Windows run 18a)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(0,3)"},
       "check": "ZZ1000",
@@ -191,7 +191,7 @@
     {
       "id": "EDATE-022",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a start between 0 and 1 is cut down to serial 0, and twelve months on is day 0 of January 1901, 31 December 1900, 366",
+      "description": "A start between 0 and 1 is cut down to serial 0, and twelve months on is day 0 of January 1901, 31 December 1900, 366 (Windows run 18a)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(0.5,12)"},
       "check": "ZZ1000",
@@ -199,8 +199,8 @@
     },
     {
       "id": "EDATE-023",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a boolean typed as the months, which no run has typed into EDATE (EDATE-009 typed one as the start); EOMONTH gives #VALUE! for a boolean as its months (EOMONTH-009), and read as 1, a month on from 15 March 2023 is 15 April, 45031",
+      "source": "observed",
+      "description": "A boolean typed as the months is #VALUE!, an Error Value a Formula catches, as one typed as the start is (EDATE-009) and as EOMONTH's months are (EOMONTH-009); it is not read as 1 (Windows run 18a)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(45000,TRUE)"},
       "check": "ZZ1000",

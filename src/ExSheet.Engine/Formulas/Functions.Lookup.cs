@@ -225,12 +225,13 @@ internal static partial class FunctionLibrary
     /// reference's text, <c>Positions[PV]</c>, read as the typed one is, in either style (INDIRECT-025,
     /// 039 to 041, 061); and a Spill Range, <c>A1#</c> or <c>R1C1#</c>, read as the typed <c>A1#</c> is
     /// (INDIRECT-026, 042, 060). Forms no run has asked are read by the rule those answers settle, and
-    /// put to the next run (INDIRECT-067 to 072, 075 to 081, 093). Text that names no place is
+    /// put to the next run (INDIRECT-101 to 105). Text that names no place is
     /// <c>#REF!</c>, as Excel's was observed to be: empty text, a number, a space before the Reference, a
     /// leading <c>=</c>, an intersection, a column past <c>XFD</c>, A1 text read as R1C1 and R1C1 text
     /// read as A1, another Sheet's name in A1 style, a table never declared, a column the table does not
-    /// have, and R1C1 parts of two kinds joined by <c>:</c> (INDIRECT-003, 007, 008, 016 to 022, 035, 040,
-    /// 041, 058, 062; ADR-0046, ADR-0049). <c>#REF!</c> too, by the rule those settle, which no case asks:
+    /// have, and R1C1 parts of two kinds joined by <c>:</c> but for a cell then a whole column and a whole
+    /// row then a cell (INDIRECT-003, 007, 008, 016 to 022, 035, 040, 041, 058, 062, 077; ADR-0046,
+    /// ADR-0049). <c>#REF!</c> too, by the rule those settle, which no case asks:
     /// other A1 text that goes on past its Reference, the engine's rule generalised from the intersection
     /// (INDIRECT-021); a row past 1048576, as <c>XFE1</c>'s column is (2026-10-12, decided with the user:
     /// A1 text past the Sheet's edge stays <c>#REF!</c>); and other text that is not R1C1 notation read in
@@ -242,7 +243,8 @@ internal static partial class FunctionLibrary
     /// is refused with <c>#VALUE!</c> until Excel is asked; INDIRECT-074 asks it), and INDIRECT-095 asks a
     /// column; and an offset past the Sheet's edge (<c>R[-5]C[-1]</c> from C2, which Excel reads as a
     /// place, INDIRECT-052, though no run has told whether it wraps round to the far side or stops at the
-    /// edge; INDIRECT-082 to 084 ask it). In either style: a <c>#</c> after a range, a row or a column,
+    /// edge; INDIRECT-082 to 084 ask it); and a whole column then a cell (<c>C3:R2C2</c>, INDIRECT-104
+    /// asks it). In either style: a <c>#</c> after a range, a row or a column,
     /// whatever the parts joined (<c>A1:A2#</c>, <c>A:A#</c>, <c>R2C2:R3C2#</c>, <c>R3#</c>, <c>C2#</c>,
     /// <c>R2C2:R3#</c>; INDIRECT-090 to 092, 094, 096 and 097 ask it); a <c>#</c> inside a join, after
     /// its first part (<c>A1#:A2</c>, <c>R1C1#:R2C1</c>; INDIRECT-098 and 099 ask it); and the structured
@@ -363,16 +365,20 @@ internal static partial class FunctionLibrary
     /// column (<c>RC[-1]</c>, <c>R[2]C</c>); a row part alone a whole row (<c>R3</c>, <c>R[1]</c>), a
     /// column part alone a whole column (<c>C2</c>, <c>C[-1]</c>); two parts of the same kind joined by
     /// <c>:</c> the rectangle they span (<c>R2C2:R5C2</c>, <c>R2:R3</c>, <c>C1:C2</c>,
-    /// <c>RC[-1]:R[1]C[-1]</c>); parts of two kinds joined, which name no place, <c>#REF!</c>
-    /// (<c>R2C2:R3</c>, <c>R3:C2</c>); one cell followed by <c>#</c>, its Spill Range (<c>R1C1#</c>); and
-    /// A1 text, which is not R1C1 notation, <c>#REF!</c> (<c>B3</c>, INDIRECT-035). The rest is read by
-    /// the rule those settle, and asked of the next run: each axis a number, an offset or nothing in any
-    /// combination, with leading 0s anywhere (INDIRECT-067 to 072); parts of two kinds joined
-    /// <c>#REF!</c> in any order (INDIRECT-075 to 077); a <c>#</c> after any one cell, relative ones
-    /// included, its Spill Range, and <c>#REF!</c> where the cell does not spill, as <c>A1#</c> is
-    /// (INDIRECT-078, 079); and another Sheet's name <c>#REF!</c>, whatever follows it, by the rule
-    /// INDIRECT-008 observed in A1 style (INDIRECT-093 asks it). Any other text that is not R1C1 notation
-    /// is <c>#REF!</c>, read by the rule INDIRECT-035 settles, and no case asks it. A Linked Table's text
+    /// <c>RC[-1]:R[1]C[-1]</c>); a cell then a whole column, the cell's row across the columns they span
+    /// (<c>R2C2:C3</c>, B2:C2, INDIRECT-075), and a whole row then a cell, the rows they span down the
+    /// cell's column (<c>R3:R2C2</c>, B2:B3, INDIRECT-076); other parts of two kinds joined, which name
+    /// no place, <c>#REF!</c> (<c>R2C2:R3</c>, <c>R3:C2</c>, <c>C2:R3</c>); one cell followed by
+    /// <c>#</c>, its Spill Range (<c>R1C1#</c>), relative ones included, and <c>#REF!</c> where the cell
+    /// does not spill, as <c>A1#</c> is (INDIRECT-078, 079); each axis a number, an offset or nothing in
+    /// any combination, with leading 0s anywhere (INDIRECT-067 to 072); another Sheet's name <c>#REF!</c>,
+    /// whatever follows it, as in A1 style (INDIRECT-093); and A1 text, which is not R1C1 notation,
+    /// <c>#REF!</c> (<c>B3</c>, INDIRECT-035). The rest is read by the rule those settle, and asked of the
+    /// next run: the extent of a cell joined to a whole column or a whole row joined to a cell, whose
+    /// observed sums do not tell it from the whole rows (INDIRECT-101 to 103); and two joins, rows then
+    /// columns, <c>#REF!</c> as other text that is not R1C1 notation is (INDIRECT-105). Any other text
+    /// that is not R1C1 notation is <c>#REF!</c>, read by the rule INDIRECT-035 settles, and no case asks
+    /// it. A Linked Table's text
     /// is read as in A1 style (<see cref="IndirectTableText"/>). <c>#VALUE!</c> where the observed answers
     /// leave the readings apart: a row or column number 0 (INDIRECT-073); a row or column number past the
     /// Sheet's edge, which could name no place, as <c>XFE1</c> does in A1 style, or a place as an offset
@@ -381,8 +387,10 @@ internal static partial class FunctionLibrary
     /// place (INDIRECT-052 is 0, a blank cell, not <c>#REF!</c>), though no run has told whether it wraps
     /// round to the Sheet's far side or stops at the edge (INDIRECT-082 to 084 ask it); a <c>#</c> after
     /// a range, a row or a column, whatever the parts joined, as in A1 style (INDIRECT-090, 091, 094 and
-    /// 097 ask it); and a <c>#</c> inside a join, after its first part, whatever the parts, as in A1 style
-    /// (<c>R1C1#:R2C1</c>; INDIRECT-099 asks it).
+    /// 097 ask it); a <c>#</c> inside a join, after its first part, whatever the parts, as in A1 style
+    /// (<c>R1C1#:R2C1</c>; INDIRECT-099 asks it); and a whole column then a cell (<c>C3:R2C2</c>), whose
+    /// column part could take the cell's row, as a whole row then a cell takes its column, or name no
+    /// place, as a cell then a whole row does (INDIRECT-104 asks it).
     /// </summary>
     private static Operand IndirectRowColumn(FunctionCall call, string text)
     {
@@ -413,9 +421,17 @@ internal static partial class FunctionLibrary
         // cell before it as R1C1# is read; or the cells themselves, the # passed over. Refused until
         // Excel is asked, as in A1 style (INDIRECT-090, 091, 094, 097, 099).
         if (inside || spilled && (joined || !first.IsCell)) return call.Evaluator.Refuse();
-        // Parts of two kinds joined are no Reference: a cell and a whole row (INDIRECT-058), a whole row
-        // and a whole column (INDIRECT-062), and so a cell and a column, whichever comes first, whatever
-        // their parts would read.
+        // A cell then a whole column is the cell's row across the columns from the cell's to the column
+        // part's, R2C2:C3 B2:C2 (INDIRECT-075), and a whole row then a cell the rows from the row part's to
+        // the cell's down the cell's column, R3:R2C2 B2:B3 (INDIRECT-076), as Windows run 18a read Excel:
+        // the column part takes the cell's row, and the row part the cell's column. A whole column then a
+        // cell (C3:R2C2), which no run has asked, is refused: the column part could take the cell's row,
+        // as the row part takes its column, or name no place, as a cell then a whole row does (INDIRECT-058).
+        if (first.IsCell && second is { Row: null }) second = second with { Row = first.Row };
+        else if (second.IsCell && first is { Column: null }) first = first with { Column = second.Column };
+        else if (second.IsCell && first is { Row: null }) return call.Evaluator.Refuse();
+        // Parts of two kinds joined are otherwise no Reference: a cell and a whole row (INDIRECT-058), and a
+        // whole row and a whole column, whichever comes first (INDIRECT-062, 077), whatever their parts would read.
         if (!first.IsShapedAs(second)) return Operand.Of(ErrorValue.Ref);
         // An offset counts from the Formula's own cell; a Formula evaluated in no cell has none, as ROW() has none.
         CellAddress own = default;
