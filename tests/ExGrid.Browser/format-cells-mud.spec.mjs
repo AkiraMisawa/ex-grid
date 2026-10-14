@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, circuitQuiet } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
@@ -317,6 +317,12 @@ test.describe('on /sheet?chrome=mud', () => {
 
         await formatCells(page).locator('.mud-ex-sheet-more-colours input').click();
         await expect(page.locator('.mud-popover-open .mud-picker-color-picker')).toBeVisible();
+        // MudBlazor's picker ends its opening by giving the keyboard to its own field, More
+        // Colours', which is read-only. On the Server host that call lands a round trip or more
+        // after the popover shows (on WebAssembly before it shows), and what is typed into the hex
+        // field before it goes to More Colours and is lost, as it was in one of three runs on CI's
+        // Edge (2026-10-13). Typed once the host has said all it will (ADR-0056).
+        await circuitQuiet();
         // MudBlazor's own hex field, in its picker's popover: a change is read on Enter.
         const hex = page.locator('.mud-popover-open .mud-picker-color-inputfield input');
         await hex.fill('#FF0000');
