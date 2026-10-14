@@ -181,6 +181,14 @@ localhost forwarding, and `reuseExistingServer` takes the running host.
 The observational numbers land in `..\..\verification\<day>-windows` relative to the
 copy. Move them into the repository's `verification/`.
 
+**Keep the desktop's own pointer off the browser windows while the suite runs.** On a headed
+desktop it is a second mouse. When it moves over a browser window, the page gets a pointer move
+with no button held. One that lands between a test's press and its drag ends the press there, so
+the drag never starts and its drop never lands. Sending one such move between the press and the
+move of `pivot.spec.mjs`'s first drag fails that test every time on both hosts (2026-10-14), in the
+way a Windows desktop failed it once in 120 runs on 2026-10-12: its drop never landed, and nothing
+in the page was found to move. CI's xvfb has no such pointer.
+
 **Changing the display scale needs a sign-out on some machines, and a sign-out stops
 WSL.** Record what has run before you sign out. After you sign in again, Chrome's first
 launch can be the one that applies a waiting update. It exits with code 0, and the first
@@ -463,11 +471,16 @@ nobody had asked for. What that means when writing a test:
   elsewhere reports it as gone.
 - `presentation.spec.mjs` — the presentation contract, measured: inline Geometry
   Tokens beat the supported override routes (UX-2), painted geometry equals declared
-  (UX-3/ST-3), Visual Tokens recolour from an ancestor (UX-5), nothing under the
-  Viewport animates (UX-6), forced colors keep every state tellable (UX-7), a Stale or
+  (UX-3/ST-3), and on `/density` equals each preset's Grid Metrics after every density
+  change — rows, header band, spacer, Selection and Focus (UX-3/ST-3) — with no
+  `ResizeObserver` loop through density changes and window resizes, heard as `error` events
+  on `window`, which Chrome does not send to the console (CON-4), Visual Tokens recolour from
+  an ancestor (UX-5), nothing under the Viewport animates (UX-6), forced colors keep every
+  Cell State and Row Kind tellable without their grounds, each required on `/cells` (UX-7), a Stale or
   Error state outranks a theme's tone colour on `/tones` (ADR-0006/0029), the Modified mark a
   triangle in the corner alone, in its token's colour, a pinned one still sticky (UX-20), the dark
-  scheme stays readable (UX-8), the LTR island inside an RTL page (DIR-2/3), the
+  scheme stays readable (UX-8), the LTR island inside an RTL page (DIR-2), an Arabic value
+  reading right to left inside its unmoved cell (DIR-3), the
   editor's box is the cell's (ED-9), the runaway auto-scroll stops (SL-14/15), the
   Blazor error UI never shows (CON-5), and every class painted under a root — watched from
   `/features`, `/cells`, `/tones`, `/stripes`, `/marks`, `/appearance` and `/sheet` while their
@@ -786,7 +799,9 @@ nobody had asked for. What that means when writing a test:
   ExPivot's own markup and `ExPivot.MudBlazor`'s (`/pivot?chrome=mud`), found by role and name,
   which both give the same. A field dragged from the list of fields onto an Area with the
   browser's own drag and drop, an entry dropped before another, back onto the list or onto the
-  report (PV-10); report removal following Defer Layout Update, an unused field and a details grid
+  report (PV-10), each removal counted once the report shows it, before the next drop (a drop made
+  while a question is out cancels it, and the layout it was for is never raised, ADR-0066); report
+  removal following Defer Layout Update, an unused field and a details grid
   changing nothing, and Escape cancelling the drag and its removal indication;
   the `−` button collapsing an Item with the Focus kept (PV-13); a double click on a value
   opening a tab at the report's foot, titled by the cell and holding the trades behind it, with

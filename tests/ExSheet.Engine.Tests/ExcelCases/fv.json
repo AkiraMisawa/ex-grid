@@ -202,7 +202,7 @@
     },
     {
       "id": "FV-023",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: e^(nper ln(1+rate)) with the exponential and the logarithm correctly rounded, the engine's, gives 1154.2771752172287; glibc's exp and log, which .NET takes on Linux, give 1154.2771752172332. XNPV-013 found Excel's exponential correctly rounded where glibc's is not; no observed double tells the logarithms apart",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.06/12,11.25,-100)"},
@@ -211,7 +211,7 @@
     },
     {
       "id": "FV-024",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: half a period before is 1 over the square root of 1+rate, a negative number of periods being 1 over the power to its absolute value (FV-022) and half a period the square root (FV-016); 1 over e^(0.5 ln(1+rate)) gives -38.29015278650261",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=FV(0.42,-0.5,-100)"},

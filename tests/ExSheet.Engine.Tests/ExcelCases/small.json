@@ -84,7 +84,7 @@
     },
     {
       "id": "SMALL-011",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a k above the count is #NUM! however little above it, as 9.5 is (SMALL-008): 9.2 over nine numbers, which rounded to nearest would be 9 and truncated is 9",
       "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "ZZ1000": "=SMALL(A1:A9,9.2)"},
       "check": "ZZ1000",

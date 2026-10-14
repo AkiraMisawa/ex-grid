@@ -181,7 +181,7 @@
     },
     {
       "id": "EDATE-021",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: from serial 0, three months on is day 0 of April 1900, 31 March, 91, under every reading that gives the observed answers",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(0,3)"},
@@ -190,7 +190,7 @@
     },
     {
       "id": "EDATE-022",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: a start between 0 and 1 is cut down to serial 0, and twelve months on is day 0 of January 1901, 31 December 1900, 366",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EDATE(0.5,12)"},

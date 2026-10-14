@@ -3029,6 +3029,32 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // content that made the scrollbar appear; and nothing here writes to the DOM, so the
     // "ResizeObserver loop completed with undelivered notifications" warning has no way
     // to arise.
+    //
+    // Nor may C# write to it inside the callback, and on WebAssembly it would: there
+    // invokeMethodAsync runs the .NET method at once, on this thread, and a render it asks
+    // for is applied to the DOM before the call returns. Told from inside the callback, the
+    // render that answered the first report — the gutter's strip appearing — moved the
+    // scroller's content box again within the same observation, and the browser reported
+    // the loop on window (CON-4: /density at attach, 2026-10-13; the Server host, whose call
+    // crosses the circuit, never did). So each observer tells C# from a task of its own,
+    // queued once however many notifications come before it runs and carrying the latest
+    // values: what is told does not depend on when it runs, only that it is outside the
+    // observation. ADR-0013 accepts the frame this costs.
+    const toldAfterTheObservation = (tell) => {
+        let queued = false;
+        return () => {
+            if (queued) {
+                return;
+            }
+            queued = true;
+            setTimeout(() => {
+                queued = false;
+                if (core) {
+                    tell();
+                }
+            }, 0);
+        };
+    };
     let gutterWidth = 0;
     let gutterHeight = 0;
     let contentWidth = -1;
@@ -3061,7 +3087,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         gutterHeight = height;
         contentWidth = content.inlineSize;
         contentHeight = content.blockSize;
-        core.invokeMethodAsync('OnViewportReportAsync', width, height, contentWidth, contentHeight)
+        tellViewport();
+    });
+    const tellViewport = toldAfterTheObservation(() => {
+        core.invokeMethodAsync('OnViewportReportAsync', gutterWidth, gutterHeight, contentWidth, contentHeight)
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to take the scrollbar gutter', error);
@@ -3091,6 +3120,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         ceiling = size.blockSize;
+        tellCeiling();
+    });
+    const tellCeiling = toldAfterTheObservation(() => {
         core.invokeMethodAsync('OnLayoutCeilingAsync', ceiling)
             .catch((error) => {
                 if (core) {

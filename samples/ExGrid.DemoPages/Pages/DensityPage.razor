@@ -1,0 +1,59 @@
+@page "/density"
+
+<DemoNav />
+
+<h1>Density</h1>
+
+<p>
+    One grid whose density preset changes while it is on screen (ADR-0028). Each preset resolves to
+    Grid Metrics — the row height, the header tier's height, the cell padding and the font size — and
+    the grid paints exactly those numbers and does its row arithmetic with the same ones (ADR-0027,
+    P6). Select a range, then switch: the rows, the header band and the Selection's outline follow
+    together.
+</p>
+
+<p class="demo-status">
+    @foreach (var density in Presets)
+    {
+        <button id="density-@density.ToString().ToLowerInvariant()" @onclick="() => _density = density">@density</button>
+    }
+    <span id="density-status">Density: @_density</span>
+</p>
+
+<ExGrid TRow="DensityRow"
+        Window="Rows"
+        TotalCount="Rows.Length"
+        Columns="Columns"
+        HeaderGroups="Groups"
+        Density="_density"
+        ViewportHeight="320"
+        ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    /// <summary>One row of this page.</summary>
+    public sealed class DensityRow
+    {
+        public string Book = "";
+        public string Trader = "";
+        public decimal Notional;
+    }
+
+    private static readonly GridDensity[] Presets =
+        [GridDensity.Compact, GridDensity.Standard, GridDensity.Comfortable, GridDensity.Excel];
+
+    private GridDensity _density = GridDensity.Compact;
+
+    private static readonly DensityRow[] Rows = Enumerable.Range(0, 200)
+        .Select(i => new DensityRow { Book = $"Book {i % 7}", Trader = $"Trader {i:000}", Notional = 1_000m * (i + 1) })
+        .ToArray();
+
+    private static readonly GridColumn<DensityRow>[] Columns =
+    [
+        new("Book", ColumnType.Text, r => r.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(140))),
+        new("Trader", ColumnType.Text, r => r.Trader, width: new ColumnWidthSpec(ColumnWidth.Fixed(140))),
+        new("Notional", ColumnType.Number, r => r.Notional, width: new ColumnWidthSpec(ColumnWidth.Fixed(160))),
+    ];
+
+    // One tier above the leaves: the band is two header tiers tall at every preset.
+    private static readonly HeaderGroup[] Groups = [new HeaderGroup("Who", ["Book", "Trader"])];
+}
