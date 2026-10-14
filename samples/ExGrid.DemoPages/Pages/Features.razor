@@ -4,6 +4,7 @@
 @using ExGrid.Clipboard
 @using ExGrid.Finding
 @using ExGrid.Keys
+@using ExGrid.Summarizing
 @* global::, for the reason MudApp.razor gives (AGENTS.md, the name collisions). *@
 @using global::MudBlazor
 
@@ -25,6 +26,10 @@
 <p class="demo-status">
     <span id="edit-status">Edited: @_editStatus</span>
     <span id="paste-status">Pasted: @_pasteStatus</span>
+    @* What the last paste's source block held, field by field, with where each field came from
+       (ADR-0005, ADR-0050 item 10): Excel's x:num is the raw value, read under the invariant
+       culture, where the text flavour is the display, already rounded (CP-14). *@
+    <span id="paste-fields">Fields: @_pasteFields</span>
     <span id="clear-status">Cleared: @_clearStatus</span>
     <span id="history-status">History: @_historyStatus</span>
     <span id="copy-status">Copy refused: @_copyStatus</span>
@@ -85,9 +90,17 @@
         OnColumnHidden="OnHidden"
         OnPinnedCountChanged="OnPinned"
         ContextCommands="ContextCommands"
+        CopyAnswer="@(CopyThrowsOn ? CopyThatThrows : null)"
         CellState="_rules.State"
         CellMessageOf="_rules.Message"
         Chrome="_chrome" />
+
+@* The Header Groups as this page declared them, written out after every render: a drag never
+   changes them (ADR-0032, HG-15). Only under ?groups=1, so the page's default layout is unchanged. *@
+@if (ShowGroups)
+{
+    <p class="demo-status"><span id="groups-status">Groups: @string.Join("; ", _groups.Select(g => $"{g.Label} [{string.Join(",", g.Columns)}] tier {g.Tier} span {g.TierSpan}"))</span></p>
+}
 
 <h2>A second, independent instance</h2>
 <p>Two grids on one page hold independent DOM, tokens and handles (ADR-0018).</p>
@@ -99,6 +112,36 @@
         ViewportHeight="140"
         ViewportWidth="480"
         Chrome="_chrome" />
+
+@if (HeldSummaryOn)
+{
+    <h2>A Selection Summary the page answers when asked to</h2>
+    <p>
+        A grid the page pushes rows to answers its Selection Summary through <code>OnSummarize</code>
+        (ADR-0130). This one holds each answer until the button is pressed, so the pending mark
+        stands meanwhile, and declines a selection of more than @HeldSummaryMostCells cells with a
+        reason, which the line shows in place of the figures.
+    </p>
+    <p class="demo-status">
+        <button id="summary-answer" @onclick="AnswerHeldSummary">Answer the summary</button>
+        <span id="summary-asked">Asked: @_heldAsked; cancelled: @_heldCancelled; answered: @_heldAnswered</span>
+        @if (HeldIgnoresCancellation)
+        {
+            <button id="summary-answer-late" @onclick="AnswerReplacedHeldSummary">Answer the replaced question</button>
+            <span id="summary-late">Answered late: @_heldLateAnswered</span>
+        }
+    </p>
+    <div id="held-summary">
+        <ExGrid TRow="DemoTrade"
+                Window="_heldRows"
+                Columns="_heldColumns"
+                RowHeight="20"
+                ViewportHeight="140"
+                ViewportWidth="480"
+                OnSummarize="_heldSummarize"
+                Chrome="_chrome" />
+    </div>
+}
 
 @code {
     /// <summary>Which Chrome the grids run with (<see cref="DemoChrome"/>).</summary>
@@ -139,8 +182,125 @@
 
     private bool RowKeyOn => UpstreamOn && RowKeyParameter == "1";
 
+    /// <summary>
+    /// <c>?copythrows=1</c> gives the first grid a <c>CopyAnswer</c> that throws, as a Consumer's
+    /// delegate with a defect would: a genuine .NET failure on either copy route, which the grid
+    /// must report rather than make a silent no-op (ADR-0005, CON-8).
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "copythrows")]
+    public string? CopyThrows { get; set; }
+
+    private bool CopyThrowsOn => CopyThrows == "1";
+
+    private static GridCopyAnswer CopyThatThrows(GridCopyRequest request)
+        => throw new InvalidOperationException("The demo's CopyAnswer fails on purpose (?copythrows=1).");
+
     private static readonly string[] UpstreamKeys = ["F9"];
     private static readonly string[] UpstreamAndResortKeys = ["F9", "F8"];
+
+    /// <summary>
+    /// <c>?groups=1</c> writes the Header Groups the page declared under the main grid after every
+    /// render, so the browser layer can read that a drag never changes them (ADR-0032, HG-15).
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "groups")]
+    public string? GroupsParameter { get; set; }
+
+    private bool ShowGroups => GroupsParameter == "1";
+
+    /// <summary>
+    /// <c>?summary=held</c> adds a third grid whose Selection Summary the page answers itself
+    /// (ADR-0130, SM-11): each question waits for the page's button, and one over more than
+    /// <see cref="HeldSummaryMostCells"/> cells is declined at once, with a reason. The browser layer
+    /// reads the pending mark and the reason under each Chrome.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "summary")]
+    public string? SummaryName { get; set; }
+
+    private bool HeldSummaryOn => SummaryName == "held";
+
+    /// <summary>
+    /// <c>?late=1</c> beside <c>?summary=held</c>: the page ignores the token, as a careless Consumer
+    /// may, and keeps the question a new selection replaced, so that it can be answered after the
+    /// grid has cancelled it. The grid shows nothing of that answer (ADR-0130, SM-2 through SM-11).
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "late")]
+    public string? LateParameter { get; set; }
+
+    private bool HeldIgnoresCancellation => HeldSummaryOn && LateParameter == "1";
+
+    private TaskCompletionSource<GridSummaryResult>? _heldReplacedAnswer;
+    private GridSummaryRequest? _heldReplacedRequest;
+    private int _heldLateAnswered;
+
+    private const int HeldSummaryMostCells = 4;
+
+    private DemoTrade[] _heldRows = [];
+    private IReadOnlyList<GridColumn<DemoTrade>> _heldColumns = default!;
+    // Held in a field: a delegate made per render would reach the grid as a change (ADR-0003).
+    private Func<GridSummaryRequest, CancellationToken, Task<GridSummaryResult>>? _heldSummarize;
+    private TaskCompletionSource<GridSummaryResult>? _heldAnswer;
+    private GridSummaryRequest? _heldRequest;
+    private int _heldAsked;
+    private int _heldCancelled;
+    private int _heldAnswered;
+
+    private Task<GridSummaryResult> SummarizeHeldAsync(GridSummaryRequest request, CancellationToken cancellation)
+    {
+        _heldAsked++;
+        _ = ShowHeldCountsAsync();
+        if (GridSummary.Cells(request, _heldRows.Length).Count() > HeldSummaryMostCells)
+            return Task.FromResult(GridSummaryResult.Declined($"Not summed: this page sums {HeldSummaryMostCells} cells at most."));
+        var answer = new TaskCompletionSource<GridSummaryResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        cancellation.Register(() =>
+        {
+            if (HeldIgnoresCancellation ? !answer.Task.IsCompleted : answer.TrySetCanceled(cancellation))
+            {
+                _heldCancelled++;
+                _ = ShowHeldCountsAsync();
+            }
+        });
+        if (HeldIgnoresCancellation && _heldAnswer is { Task.IsCompleted: false })
+        {
+            _heldReplacedAnswer = _heldAnswer;
+            _heldReplacedRequest = _heldRequest;
+        }
+        _heldAnswer = answer;
+        _heldRequest = request;
+        return answer.Task;
+    }
+
+    /// <summary>Answers the question waiting, the latest asked: a cancelled one can no longer be.</summary>
+    private void AnswerHeldSummary()
+    {
+        if (_heldAnswer is not { } answer || _heldRequest is not { } request)
+            return;
+        _heldAnswer = null;
+        _heldRequest = null;
+        if (answer.TrySetResult(GridSummary.Of(_heldRows, request, HeldValueOf)))
+            _heldAnswered++;
+    }
+
+    /// <summary>Answers the question a new selection replaced, with its own figures, after the grid
+    /// cancelled it (<c>?late=1</c>).</summary>
+    private void AnswerReplacedHeldSummary()
+    {
+        if (_heldReplacedAnswer is not { } answer || _heldReplacedRequest is not { } request)
+            return;
+        _heldReplacedAnswer = null;
+        _heldReplacedRequest = null;
+        if (answer.TrySetResult(GridSummary.Of(_heldRows, request, HeldValueOf)))
+            _heldLateAnswered++;
+    }
+
+    private Func<DemoTrade, object?>? HeldValueOf(string column)
+        => _heldColumns.FirstOrDefault(c => c.Name == column)?.Value;
+
+    // The counts are shown after the grid's own render, which is where it asks and cancels.
+    private async Task ShowHeldCountsAsync()
+    {
+        await Task.Yield();
+        await InvokeAsync(StateHasChanged);
+    }
 
     [Inject] private Microsoft.Extensions.Options.IOptions<PopoverOptions> MudPopovers { get; set; } = default!;
 
@@ -187,6 +347,13 @@
 
         _source = RowKeyOn ? GridSource.From(rows, static t => t.Id) : GridSource.From(rows);
         _second = GridSource.From(rows.Take(20).ToArray());
+        _heldRows = rows.Take(20).ToArray();
+        _heldColumns =
+        [
+            new GridColumn<DemoTrade>("Book", ColumnType.Text, t => t.Book),
+            new GridColumn<DemoTrade>("Notional", ColumnType.Number, t => t.Notional),
+        ];
+        _heldSummarize = SummarizeHeldAsync;
         _rules
             .Column("Notional", (_, text) => !decimal.TryParse(text, out var value)
                 ? EditVerdict.Reject($"'{text}' is not a number")
@@ -255,6 +422,7 @@
     private string _findStatus = "—";
     private string _historyStatus = "—";
     private string _pasteStatus = "—";
+    private string _pasteFields = "—";
     private string _copyStatus = "—";
     private string _pasteRefusedStatus = "—";
     private string _editDiscardedStatus = "—";
@@ -381,6 +549,8 @@
     private void OnPaste(GridPasteIntent intent)
     {
         _pasteStatus = $"{intent.CellCount} cells from {intent.Plan.Source.Rows}x{intent.Plan.Source.Columns}";
+        _pasteFields = string.Join(" | ", intent.Values.SelectMany((row, r) =>
+            row.Select((value, c) => $"{value}:{intent.Origins[r][c]}")));
         // Positions are the current order's, so every (row, column, value) is resolved
         // against the Window FIRST — applying as we go could reorder mid-loop under a
         // sort on the edited column (ADR-0011/0014).

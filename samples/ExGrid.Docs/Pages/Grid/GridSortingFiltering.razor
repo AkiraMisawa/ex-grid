@@ -29,6 +29,8 @@
                 <code>Source</code> is handed over, while a step is out, its answer moves nothing: the panel says
                 to find again, and <code>OnFindRefused</code> says <code>OrderChanged</code> or
                 <code>SourceChanged</code>.
+                Characters and completed IME compositions typed as the panel opens reach its text field in
+                order, including over Blazor Server.
             </li>
         </ul>
         <DocsExample Title="Sort, filter and find" Builtin="typeof(SortFilterFind)" Mud="typeof(SortFilterFindMud)"

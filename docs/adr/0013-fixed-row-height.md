@@ -151,6 +151,12 @@ about what expands.
   Viewport, so a narrower visible box does not resize the content that made the bar appear —
   there is no loop for the observation to chase, and nothing writes to the DOM inside the
   callback, so the browser's own "ResizeObserver loop" warning has no way to arise either.
+  *(Corrected 2026-10-13: on WebAssembly C# did write inside it. `invokeMethodAsync` runs the
+  .NET method at once on the page's thread and applies the render it asks for before returning,
+  so the report's render — the gutter's strip appearing — moved the observed box within the
+  observation, and Chrome raised the loop on `window` (CON-4, `/density` at attach). The report
+  is now told from a task of its own after the observation, for the gutter and for the Layout
+  Ceiling, carrying the latest values, which the frame accepted below already covers.)*
   What is accepted is the other end: **the frame between a bar appearing and the report landing
   is painted from the old visible size**, one slice too generous on a grid that has just gained a
   scrollbar. The alternative is a layout read of our own before every paint, which is the round

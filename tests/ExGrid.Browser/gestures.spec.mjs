@@ -10,8 +10,8 @@ function grid(page) {
     return page.locator('.ex-grid').first();
 }
 
-async function open(page) {
-    await page.goto('/features');
+async function open(page, path = '/features') {
+    await page.goto(path);
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
 }
 
@@ -19,7 +19,7 @@ async function headerBox(page) {
     return grid(page).locator('.ex-header').boundingBox();
 }
 
-test('a leaf drag reorders within its group and clamps at its edge (HG-14/HG-15)', async ({ page }) => {
+test('a leaf drag reorders within its group and clamps at its edge (HG-14)', async ({ page }) => {
     await open(page);
     const box = await headerBox(page);
     const leafY = box.y + 42; // the leaf tier of a 28px × 2 band
@@ -51,6 +51,60 @@ test('grabbing a group rectangle moves the whole group (HG-14)', async ({ page }
 
     await expect(page.locator('#order-status')).toContainText(
         'Order: Notional,Narrow,TradeDate,Confirmed,Book,Trader');
+});
+
+/** Each Header Group rectangle's label and box, beside the boxes of the leaf headers it stands
+ * over, read off the painted header: what the grid drew as each group's membership. */
+function drawnGroups(page) {
+    return grid(page).evaluate((g) => {
+        const leaves = [...g.querySelectorAll('.ex-header-cell')].map((el) => {
+            const r = el.getBoundingClientRect();
+            return { name: el.textContent.trim(), left: r.left, right: r.right };
+        });
+        return Object.fromEntries([...g.querySelectorAll('.ex-header-group')].map((el) => {
+            const r = el.getBoundingClientRect();
+            return [el.textContent.trim(), leaves.filter((leaf) => leaf.left >= r.left - 0.5 && leaf.right <= r.right + 0.5)
+                .sort((a, b) => a.left - b.left).map((leaf) => leaf.name)];
+        }));
+    });
+}
+
+test('HG-15 / ADR-0032: HeaderGroups survives a reorder within a group and a whole-group move unchanged', async ({ page }) => {
+    await open(page, '/features?groups=1');
+    const groups = page.locator('#groups-status');
+    const declared = 'Groups: Who [Book,Trader] tier 1 span 1; What [Notional,Narrow,TradeDate,Confirmed] tier 1 span 1';
+    await expect(groups).toHaveText(declared);
+    expect(await drawnGroups(page)).toEqual({
+        Who: ['Book', 'Trader'],
+        What: ['Notional', 'Narrow', 'TradeDate', 'Confirmed'],
+    });
+    const box = await headerBox(page);
+
+    // A leaf reorder within Who: Book dragged past Trader.
+    await page.mouse.move(box.x + 55, box.y + 42);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 600, box.y + 42, { steps: 8 });
+    await page.mouse.up();
+    await expect(page.locator('#order-status')).toHaveText('Order: Trader,Book,Notional,Narrow,TradeDate,Confirmed');
+    // The page re-rendered for the new order, and what it declared is what it declared before,
+    // to the character; the rectangles still stand over the same members, in their new order.
+    await expect(groups).toHaveText(declared);
+    await expect.poll(() => drawnGroups(page)).toEqual({
+        Who: ['Trader', 'Book'],
+        What: ['Notional', 'Narrow', 'TradeDate', 'Confirmed'],
+    });
+
+    // A whole group: Who's rectangle dragged past What.
+    await page.mouse.move(box.x + 100, box.y + 14);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 700, box.y + 14, { steps: 8 });
+    await page.mouse.up();
+    await expect(page.locator('#order-status')).toHaveText('Order: Notional,Narrow,TradeDate,Confirmed,Trader,Book');
+    await expect(groups).toHaveText(declared);
+    await expect.poll(() => drawnGroups(page)).toEqual({
+        Who: ['Trader', 'Book'],
+        What: ['Notional', 'Narrow', 'TradeDate', 'Confirmed'],
+    });
 });
 
 test('a resize drag with a real mouse applies on release (ADR-0016)', async ({ page }) => {
