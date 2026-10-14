@@ -1151,19 +1151,26 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // with every key behind one it cannot take (a Tab), as a hand-off's are; told nothing, they are the
     // grid's. A chord (a key that carries Alt while it is down) makes it no Alt alone: its release is
     // not handed on, nor its held press. A press on the grid and DOM focus leaving it forget it.
+    // An Alt held is handed on where the keyboard is at its turn, not where it was typed: one typed in a
+    // popover closing, or anywhere the keys are held, is noted as alone, and is the Consumer's only if
+    // it lands on the root, in an edit or on its frame — typed slowly, it went there (decided with the
+    // user, 2026-10-13: Escape three times in a list a KeyTip opened, then Alt, H, H, all typed at once,
+    // have the outcome they have typed slowly). Landing in a popover's control, or a text field, it and
+    // its release are no one's, as an Alt typed there is not the Consumer's.
     let altPending = null;
     // The control of a frame of the Consumer's own the core asked to hand the keyboard to while the
     // keyboard is on its way there (handOff 'frame'; handKeyboardTo): given it in turn, by the hold,
     // rather than at once, where a key typed straight on it could overtake the keys still held for it
     // — Alt, H, O typed at once, the O on the band before the held H (ADR-0100's KeyTips, 2026-10-12).
     let frameInTurn = null;
-    // Whether `k` is a declared Alt going down alone, on the root or in an edit.
-    const altAlone = (k) => k.key === 'Alt' && k.repeat !== true && canonicalOf(k) === 'Alt+Alt' && declared.has('Alt+Alt')
-        && (k.onRoot || k.inEditor);
+    // Whether `k` is a declared Alt going down alone, on the root or in an edit — or anywhere, while it is
+    // held (`held`), where its turn decides (altPending).
+    const altAlone = (k, held) => k.key === 'Alt' && k.repeat !== true && canonicalOf(k) === 'Alt+Alt' && declared.has('Alt+Alt')
+        && (held === true || k.onRoot || k.inEditor);
     // A keydown noted against the Alt that may be down: a declared Alt alone starts one, held or not, and
     // a key that carries Alt makes the one down a chord's.
-    const noteAlt = (k, entry) => {
-        if (altAlone(k)) {
+    const noteAlt = (k, entry, held) => {
+        if (altAlone(k, held)) {
             altPending = { alone: true, entry };
             if (entry) {
                 entry.altAlone = true;
@@ -1175,6 +1182,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
         }
     };
+    // Whether a held release is handed on: its press's, where its press is held with it — a chord made of
+    // it, or its landing where no Alt alone is heard, are the press's (altPending) — else its own.
+    const releasesAlone = (k) => (k.of ? k.of.altAlone === true : k.altAlone === true);
     // The answer to an Alt's release, once the release has been dispatched: the task after this one,
     // which every listener of the keyup has run before. Asked from the listener itself, the question
     // would overtake the release, which Blazor's listener sends later in the same dispatch.
@@ -1188,7 +1198,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const parent = root?.parentElement;
         const keys = held.splice(0, held.length);
         for (const k of keys) {
-            if (!parent || typeof k.key !== 'string' || k.key.length === 0 || (k.altUp === true && k.altAlone !== true)) {
+            if (!parent || typeof k.key !== 'string' || k.key.length === 0 || (k.altUp === true && !releasesAlone(k))) {
                 continue;
             }
             parent.dispatchEvent(new KeyboardEvent(k.altUp === true ? 'keyup' : 'keydown', {
@@ -1204,6 +1214,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         for (const t of keys) {
             if (t.altUp === true) {
                 t.altAlone = pressed?.altAlone === true;
+                t.of = pressed ?? undefined;
                 pressed = null;
             } else if (altAlone(t)) {
                 t.altAlone = true;
@@ -1216,16 +1227,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     // A held release handed on in its turn: as the keyup it was, where the keyboard is now — the
     // control or frame it was handed on to, or the root — so the Consumer's handler on an element
-    // around it hears it, and then the answer to it.
+    // around it hears it, and then the answer to it. A frame of the Consumer's own the keys are being
+    // handed to answers them itself, in the order they reach it, holding those that come while it hands
+    // the keyboard on: the keys after the release go on to it in the same task, as the keys before it
+    // did, rather than after a question to the core. Waited for, they reached it behind the keyboard's
+    // way back from it, and were gated against the root ahead of the keys it held (Escape three times in
+    // a list a KeyTip opened, then Alt, H, H, typed at once: H, H opened an edit in the cell).
     const replayAltRelease = async () => {
-        const target = focusedControl() ?? (deliveringOutside ? outsideControl() : null) ?? keyFieldOf() ?? root;
+        const control = focusedControl();
+        const frame = control === null && deliveringOutside ? outsideControl() : null;
+        const target = control ?? frame ?? keyFieldOf() ?? root;
         replaying = true;
         try {
             target.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', bubbles: true, cancelable: true }));
         } finally {
             replaying = false;
         }
-        await core.invokeMethodAsync('Ping').catch(() => false);
+        if (frame === null) {
+            await core.invokeMethodAsync('Ping').catch(() => false);
+        }
     };
     // The hand-off the drain is delivering: 'frame' once DOM focus has left the root for the
     // frame, and whether the keyboard never arrived, so the held keys are dropped.
@@ -1784,7 +1804,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // to a frame of its own (handOff), which they then wait for and go to, or nothing. A chord's
             // release is not handed on: its press was not either.
             if (k.altUp) {
-                if (k.altAlone) {
+                if (releasesAlone(k)) {
                     await replayAltRelease();
                     await editorSettled();
                 }
@@ -1854,9 +1874,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // that follows carries it. Replaying it would be a key no field can reproduce, and
             // that stops the replay there, dropping every key typed after it.
             // A declared Alt that went down alone is handed on in its turn, so that its release, handed on
-            // after it, finds it (altPending); a text field cannot reproduce it, and it is skipped there.
+            // after it, finds it (altPending): to the root or the edit, or to a frame of the Consumer's own.
+            // Landing on a control inside this root — a popover's — or in a text field, which cannot
+            // reproduce it, it is no Alt alone, and its release goes with it.
             const target = focusedControl() ?? (deliveringOutside ? outsideControl() : null);
-            if (modifierKeys.has(k.key) && !(k.key === 'Alt' && k.altAlone === true && !(target && isTextField(target)))) {
+            if (k.key === 'Alt' && k.altAlone === true && target && (isTextField(target) || root.contains(target))) {
+                k.altAlone = false;
+            }
+            if (modifierKeys.has(k.key) && !(k.key === 'Alt' && k.altAlone === true)) {
                 continue;
             }
             // Find's key held behind a popover is the grid's there too (ADR-0055), and is not
@@ -2006,8 +2031,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const holdOver = answering && awaitingMove !== null && held.length === 0 && moved() && handedOver();
         if (!replaying && (!holdOver && (answering || sentinel || (editing !== 'none' && k.onRoot && !editorFocused())))) {
             event.stopPropagation();
-            // Noted as held: its release is held behind it, and both are handed on in their turn.
-            noteAlt(k, isClipboardKey(k) ? null : k);
+            // Noted as held: its release is held behind it, and both are handed on in their turn, where the
+            // keyboard is then (altPending).
+            noteAlt(k, isClipboardKey(k) ? null : k, true);
             // A clipboard key is not held as a key: a copy or a paste dispatched from script does
             // nothing, so held it was lost — the clipboard kept what it held before, and a paste
             // never landed (CP-6 on the Server host, 2026-10-02). Its default runs, and the copy,
@@ -2350,7 +2376,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (answering) {
             event.stopPropagation();
             event.preventDefault();
-            held.push({ altUp: true, altAlone: alone, key: 'Alt' });
+            // With its press, where that is held too: its turn decides whether it was alone (releasesAlone).
+            held.push({ altUp: true, altAlone: alone, of: pending?.entry ?? undefined, key: 'Alt' });
             return;
         }
         if (!alone) {

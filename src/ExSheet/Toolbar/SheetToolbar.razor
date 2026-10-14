@@ -328,10 +328,43 @@
     }
 
     // Keys held for a list that did not take the keyboard: the band's own, in order.
-    private async Task AnswerOnBandAsync(IReadOnlyList<KeyboardEventArgs> keys)
+    private Task AnswerOnBandAsync(IReadOnlyList<KeyboardEventArgs> keys) => AnswerInOrderAsync(keys);
+
+    /// <summary>
+    /// Keys held for the band, answered as typed there, in order. A key that sends the keyboard on — back
+    /// to the Sheet, or into a list — holds the keys behind it from its first step, before it waits, as
+    /// the band holds a key typed on it then: the rest join that hold at once, ahead of any key typed on
+    /// the band while it waits, rather than after its wait, by when the grid may have asked for the keys
+    /// held and been answered without them (on WebAssembly it asks within that first step, and
+    /// <see cref="HandKeysOn"/> takes the rest with it). Answered one after another, Escape three times in
+    /// a list a KeyTip opened, then Alt, H, H, typed at once, lost every key after the third Escape on the
+    /// Server host (decided with the user, 2026-10-13: such keys have the outcome they have typed slowly).
+    /// </summary>
+    private async Task AnswerInOrderAsync(IReadOnlyList<KeyboardEventArgs> keys)
     {
-        foreach (var key in keys) await OnKeyAsync(key);
+        var rest = new Queue<KeyboardEventArgs>(keys);
+        _answeringInOrder = rest;
+        try
+        {
+            while (rest.TryDequeue(out var key))
+            {
+                var answered = OnKeyAsync(key);
+                if (_typedOnTheWay is { } hold)
+                {
+                    hold.AddRange(rest);
+                    rest.Clear();
+                }
+                await answered;
+            }
+        }
+        finally
+        {
+            if (ReferenceEquals(_answeringInOrder, rest)) _answeringInOrder = null;
+        }
     }
+
+    // The keys of the band's own held keys not yet answered (AnswerInOrderAsync).
+    private Queue<KeyboardEventArgs>? _answeringInOrder;
 
     // ---- A list closing (ADR-0100's note of 2026-10-12, decided with the user) ----
 
@@ -457,7 +490,14 @@
     // keys are its own again.
     private IReadOnlyList<KeyboardEventArgs> HandKeysOn()
     {
-        var keys = _typedOnTheWay ?? [];
+        IReadOnlyList<KeyboardEventArgs> keys = _typedOnTheWay ?? [];
+        // Asked for within the first step of a held key that sent the keyboard on, before the keys held
+        // behind it could join its hold: they go with it, in order (AnswerInOrderAsync).
+        if (_answeringInOrder is { Count: > 0 } rest)
+        {
+            keys = [.. keys, .. rest];
+            rest.Clear();
+        }
         _typedOnTheWay = null;
         _handingBack = false;
         _closingList = null;
@@ -524,10 +564,7 @@
             _heldForBand = false;
             _closingList = null;
             StateHasChanged();
-            if (forBand)
-            {
-                foreach (var key in held) await OnKeyAsync(key);
-            }
+            if (forBand) await AnswerInOrderAsync(held);
         }
         // Tab arrives on the item the keyboard was on last, else on the first that can be pressed.
         if (Context.Active is { CanPress: true } || KeyTipsShown) return;
@@ -573,8 +610,15 @@
 
     private async Task OnKeyAsync(KeyboardEventArgs e)
     {
-        // A release held among the keys is the Sheet's, not the band's.
-        if (e.Type == "keyup") return;
+        // A release held among the keys is the Sheet's, not the band's: answered on the band, it goes on
+        // with the keys if the keyboard is in flight again — an Alt's release typed in a Chrome's list as
+        // it closed, behind the Escape that ends the KeyTips — so it reaches the Sheet after its press, and
+        // is dropped otherwise (decided with the user, 2026-10-13).
+        if (e.Type == "keyup")
+        {
+            _typedOnTheWay?.Add(e);
+            return;
+        }
         Context.Sheet.ForgetAltPress();
         // While the keyboard is in flight — back to the Sheet, on its way here, or out of a Chrome's list
         // closing — the keys are held, in order, for where it lands. Only then: a hold stands only while a

@@ -690,10 +690,12 @@
     /// the widest of them, recorded as a width an entry widened (SH-26). A column the user sized
     /// never widens (case 18). Bold, italic and a Font colour widen nothing, as Ctrl+B and Ctrl+I do
     /// not, and as Excel's <c>Range.Font</c> set through COM did not for bold where it did for
-    /// underline (the readings of 2026-10-12 (R6), case (5)). Neither do a Fill, Borders or an
-    /// alignment. Format Cells' OK widens for any part of the Font instead, as Excel's Font tab did
-    /// for bold, italic, underline and a colour (h7; R6, case (1)), and <see cref="DoAsync"/> does
-    /// an edit exactly as it is written, and widens nothing.
+    /// underline (the readings of 2026-10-12 (R6), case (5)), nor for <c>Font.Color</c> (the readings
+    /// of 2026-10-14, run 18a, widening cases 2 and 6). Neither do a Fill, Borders or an alignment.
+    /// Format Cells' OK widens for any part of the Font instead, as Excel's Font tab did for bold,
+    /// italic, underline and a colour (h7; R6, case (1)), <see cref="SetCellFormatFromFocusAsync"/>
+    /// widens for a Font colour too, as Excel's Home tab Font Color button did (run 18a, case 5), and
+    /// <see cref="DoAsync"/> does an edit exactly as it is written, and widens nothing.
     /// </remarks>
     public Task<bool> SetCellFormatAsync(CellFormatChange change)
     {
@@ -715,12 +717,16 @@
     /// Sets on the Selection a change made from the Focus cell's Cell Format as it shows when the
     /// command runs, as a toggle key reads it (ADR-0071, ADR-0100): Bold on over a Focus cell that is
     /// not bold and off over one that is, read from the Selection as the grid holds it then, not as
-    /// it was last heard. It widens the columns whose numbers no longer fit as the formatting keys
-    /// do, as <see cref="SetCellFormatAsync"/> does (ADR-0071; decided 2026-10-12): for a Number
+    /// it was last heard. It widens the columns whose numbers no longer fit as Excel's Home tab
+    /// buttons do (ADR-0071, ADR-0100): as the formatting keys do (decided 2026-10-12) — for a Number
     /// Format, underline or strikethrough, as Ctrl+U and Ctrl+5 do, and never for bold or italic
-    /// alone, as Ctrl+B and Ctrl+I do not. The Sheet Toolbar's toggles set through it, and widen as
-    /// the key each names. Otherwise it acts, refuses and answers as <see cref="SetCellFormatAsync"/>.
-    /// Answers false when nothing is selected.
+    /// alone, as Ctrl+B and Ctrl+I do not — and for a Font colour too, as Excel's Font Color button
+    /// did, where <c>Font.Color</c> set through COM did not (the readings of 2026-10-14, run 18a,
+    /// widening case 5; decided with the user, 2026-10-14). So it widens for a Font colour where
+    /// <see cref="SetCellFormatAsync"/> does not. The Sheet Toolbar's toggles and colours set through
+    /// it: each toggle widens as the key it names, and the Font Colour as Excel's button. Otherwise it acts,
+    /// refuses and answers as <see cref="SetCellFormatAsync"/>. Answers false when nothing is
+    /// selected.
     /// </summary>
     /// <param name="change">The change, made from the Focus cell's Cell Format.</param>
     /// <exception cref="ArgumentException">The change it makes sets no part of a Cell Format.</exception>
@@ -737,7 +743,7 @@
             var made = change(CellFormatAt(new CellAddress(focus.Row, focus.Column)));
             ArgumentNullException.ThrowIfNull(made, nameof(change));
             if (made.IsEmpty) throw new ArgumentException("The change sets no part of a Cell Format.", nameof(change));
-            return await FormatSelectionAsync(made, widen: SheetWidening.WidensAsAKeyDoes(made));
+            return await FormatSelectionAsync(made, widen: SheetWidening.WidensAsAHomeTabButtonDoes(made));
         });
     }
 
@@ -1682,8 +1688,9 @@
     /// to each range; nothing is capped (principle 5). A part the change does not name is left as
     /// it is. Where <paramref name="widen"/> says the command that sets the change widens, it
     /// widens the columns whose numbers no longer fit, in the same step (ADR-0071, case 17): as a
-    /// key does (<see cref="SheetWidening.WidensAsAKeyDoes"/>), or as Format Cells' OK does
-    /// (<see cref="SheetWidening.WidensAsFormatCellsOkDoes"/>).
+    /// key does (<see cref="SheetWidening.WidensAsAKeyDoes"/>), as Format Cells' OK does
+    /// (<see cref="SheetWidening.WidensAsFormatCellsOkDoes"/>), or as Excel's Home tab buttons do
+    /// (<see cref="SheetWidening.WidensAsAHomeTabButtonDoes"/>).
     /// </summary>
     private async Task<bool> FormatSelectionAsync(CellFormatChange change, bool widen)
     {

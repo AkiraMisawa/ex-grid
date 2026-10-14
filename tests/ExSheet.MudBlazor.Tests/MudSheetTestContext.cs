@@ -72,6 +72,24 @@ public abstract class MudSheetTestContext : BunitContext
     /// 2026-10-13).</summary>
     protected int KeyboardReturns => ReclaimCount + TakeBackCount;
 
+    /// <summary>
+    /// From now, the browser's side of each hand-back from a frame (takeKeyboardBack) asks for the keys
+    /// typed on the way within the call itself, before the call has returned, as the key gate does on
+    /// WebAssembly, where the call and its question run in one task, and as it may on a circuit, where the
+    /// question reaches the Sheet before the call's completion does. The keys asked for are added to
+    /// <paramref name="into"/>.
+    /// </summary>
+    private protected void AskForKeysWithinTakeBacks(IRenderedComponent<ExGrid<SheetRow>> grid, List<KeyboardEventArgs> into)
+    {
+        var asked = new HashSet<int>();
+        _handle.SetupVoid("takeKeyboardBack", invocation =>
+        {
+            var ticket = (int)invocation.Arguments[1]!;
+            if (asked.Add(ticket)) into.AddRange(grid.Instance.KeysTypedOnTheWay(ticket));
+            return true;
+        }).SetVoidResult();
+    }
+
     private int _takeBacksAnswered;
 
     /// <summary>

@@ -4,8 +4,9 @@ using Microsoft.AspNetCore.Components;
 namespace ExSheet;
 
 // ExSheet's Toolbar Items (ADR-0100). Each acts through the Sheet's public commands only —
-// SetCellFormatAsync, CellFormatAt through the toolbar's Focus format, OpenFormatCellsAsync — and
-// carries Excel's Home tab KeyTip where Excel has one (a reading until a Windows run reads them all).
+// SetCellFormatAsync, SetCellFormatFromFocusAsync, CellFormatAt through the toolbar's Focus format,
+// OpenFormatCellsAsync — and carries Excel's Home tab KeyTip where Excel has one (a reading until a
+// Windows run reads them all).
 
 /// <summary>
 /// A toggle that sets one Font emphasis, on or off as the Focus cell gives it, as the key does
@@ -104,7 +105,8 @@ public sealed class StrikethroughItem : FontToggleItem
 /// <summary>
 /// A split control over a colour, as Excel's Font Color and Fill Color are (ADR-0100): the face sets
 /// the colour last chosen, and the arrow opens the palette — the colour that takes it away, then the
-/// Office theme's colours and the ten standard ones, as Format Cells offers them.
+/// Office theme's colours and the ten standard ones, as Format Cells offers them. Both set through
+/// <c>SetCellFormatFromFocusAsync</c>, which widens as Excel's Home tab buttons do (ADR-0071).
 /// </summary>
 public abstract class ColourItem : ToolbarItemBase
 {
@@ -124,7 +126,7 @@ public abstract class ColourItem : ToolbarItemBase
     private protected abstract CellColour? FocusColour { get; }
 
     /// <inheritdoc />
-    protected override Task PressAsync() => Context.Sheet.SetCellFormatAsync(Setting(_last));
+    protected override Task PressAsync() => Set(_last);
 
     private protected ToolbarItemFace Split(string name, ToolbarIcon icon) =>
         new(ToolbarItemKind.Split, name, icon) { Colour = _last, Choices = Choices() };
@@ -148,17 +150,24 @@ public abstract class ColourItem : ToolbarItemBase
     {
         // The face sets what was chosen last, as Excel's does; taking the colour away is not kept.
         if (!colour.IsAutomatic) _last = colour;
-        return Context.Sheet.SetCellFormatAsync(Setting(colour));
+        return Set(colour);
     });
+
+    // The face and the list set alike, through the command whose widening is the Home tab buttons'.
+    private Task<bool> Set(CellColour colour)
+    {
+        var setting = Setting(colour);
+        return Context.Sheet.SetCellFormatFromFocusAsync(_ => setting);
+    }
 }
 
 /// <summary>
-/// The Font colour (ADR-0100): Excel's Font Color, red on its face until another is chosen. It sets
-/// the colour through <c>SetCellFormatAsync</c>, which widens as the formatting keys do (ADR-0071;
-/// decided 2026-10-12), so over numbers showing #### neither its face nor a colour from its list
-/// widens a column. That Excel's Font Color button widens nothing is a reading: the readings of
-/// 2026-10-12 (R6) observed the Home tab's Bold and Italic buttons not widen, and its Underline
-/// button widen (case (3)), and did not press Font Color.
+/// The Font colour (ADR-0100): Excel's Font Color, red on its face until another is chosen. Over
+/// numbers showing ####, its face and a colour from its list widen a column the user has not sized,
+/// as Excel's Home tab Font Color button did, by its face and from its list (the readings of
+/// 2026-10-14, run 18a, widening case 5; decided with the user, 2026-10-14). It sets the colour
+/// through <c>SetCellFormatFromFocusAsync</c>, which widens for a Font colour; <c>SetCellFormatAsync</c>
+/// does not, as Excel's <c>Font.Color</c> set through COM did not (cases 2 and 6).
 /// </summary>
 public sealed class FontColourItem : ColourItem
 {
@@ -178,7 +187,10 @@ public sealed class FontColourItem : ColourItem
     protected override string? DefaultKeyTip => "FC";
 }
 
-/// <summary>The Fill (ADR-0100): Excel's Fill Color, yellow on its face until another is chosen.</summary>
+/// <summary>
+/// The Fill (ADR-0100): Excel's Fill Color, yellow on its face until another is chosen. It widens no
+/// column, as Excel's Fill Color button did not over #### (the fourteenth Windows run, case 7).
+/// </summary>
 public sealed class FillItem : ColourItem
 {
     /// <summary>The Fill, yellow on the face as Excel's starts.</summary>

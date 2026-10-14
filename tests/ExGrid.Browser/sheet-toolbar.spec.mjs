@@ -219,47 +219,47 @@ for (const chrome of ['builtin', 'mud']) {
             }
         });
 
-        // Decided with the user on 2026-10-12 (ADR-0071): SetCellFormatAsync widens as the formatting
-        // keys do, and the Font Colour face and its list set through it, so a colour widens nothing.
-        // The readings of 2026-10-12 (R6) pressed the Home tab's Bold, Italic and Underline over ####,
-        // not Font Color, so that Excel's Font Color widens nothing is a reading. The Fill Colour face
-        // widens nothing, as the fourteenth Windows run's Fill Colour button did not (case 7).
-        test(`ADR-0100/ADR-0071: over #### the Font Colour face and a colour from its list widen no column (decided 2026-10-12), nor does the Fill Colour face (the fourteenth run's case 7); Underline then widens the one at the standard width and leaves a sized one (${chrome})`, async ({ page }) => {
+        // Decided with the user on 2026-10-14 (ADR-0071, ADR-0100): the Font Colour widens a column over
+        // #### as Excel's Home tab Font Color button did, by its face and from its list (the readings of
+        // 2026-10-14, run 18a, widening case 5), never one sized by its grip, each in its press's one undo
+        // step; SetCellFormatAsync keeps widening as Font.Color through COM, which does not widen. The Fill
+        // Colour face widens nothing, as the fourteenth Windows run's Fill Colour button did not (case 7).
+        test(`ADR-0100/ADR-0071 (decided with the user, 2026-10-14): over #### the Font Colour, by its face and from its list, widens the column at the standard width and leaves a sized one, each taken back by one Ctrl+Z; the Fill Colour face widens no column (${chrome})`, async ({ page }) => {
             const grid = sheet(page);
             const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
             const width = async (name) => (await boxOf(columnHeader(grid, name))).width;
 
-            await toolbarItem(page, 'Font Colour').click();
-            await expect.poll(() => inkOf(cell(grid, 'E1'))).toEqual([255, 0, 0]);
+            await toolbarItem(page, 'Fill Colour').click();
+            await expect(cell(grid, 'E1')).toHaveCSS('background-color', 'rgb(255, 255, 0)');
             // That nothing widened is read once every round trip has landed (ADR-0056).
             await circuitQuiet();
             await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
             expect(await width('E')).toBeCloseTo(standard, 0);
 
-            await toolbarArrow(page, 'Font Colour').click();
-            await page.locator('[role="menuitemradio"][aria-label="Blue"]').first().click();
-            await expect.poll(() => inkOf(cell(grid, 'E1'))).toEqual([0x00, 0x70, 0xc0]);
-            await circuitQuiet();
-            await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
-            expect(await width('E')).toBeCloseTo(standard, 0);
+            // Its face, red as Excel's starts; then a colour from its list, Blue as run 18a chose.
+            const faceAndList = [
+                [async () => toolbarItem(page, 'Font Colour').click(), [255, 0, 0]],
+                [async () => {
+                    await toolbarArrow(page, 'Font Colour').click();
+                    await page.locator('[role="menuitemradio"][aria-label="Blue"]').first().click();
+                }, [0x00, 0x70, 0xc0]],
+            ];
+            for (const [press, ink] of faceAndList) {
+                await press();
+                await expect.poll(() => inkOf(cell(grid, 'E1'))).toEqual(ink);
+                await expect(cell(grid, 'E1')).toHaveText('123,456,789.12');
+                await expect.poll(() => width('E')).toBeGreaterThan(standard + 10);
+                await circuitQuiet();
+                await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
+                expect(await width('F')).toBeCloseTo(sized, 0);
 
-            await expectKeyboardOn(grid);
-            await toolbarItem(page, 'Fill Colour').click();
-            await expect(cell(grid, 'E1')).toHaveCSS('background-color', 'rgb(255, 255, 0)');
-            await circuitQuiet();
-            await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
-            expect(await width('E')).toBeCloseTo(standard, 0);
-            await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
-            expect(await width('F')).toBeCloseTo(sized, 0);
-
-            // The same number widens for a toggle that widens, so the colours' leaving it is theirs.
-            await toolbarItem(page, 'Underline').click();
-            await expect(page.locator('#sheet-focus-font')).toHaveText('underline');
-            await expect(cell(grid, 'E1')).toHaveText('123,456,789.12');
-            await expect.poll(() => width('E')).toBeGreaterThan(standard + 10);
-            await circuitQuiet();
-            await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
-            expect(await width('F')).toBeCloseTo(sized, 0);
+                // The width is a step of the press's own: one Ctrl+Z takes back the colour and the width.
+                await expectKeyboardOn(grid);
+                await page.keyboard.press('ControlOrMeta+Z');
+                await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+                await expect.poll(() => width('E')).toBeCloseTo(standard, 0);
+                await expect(cell(grid, 'E1')).toHaveCSS('background-color', 'rgb(255, 255, 0)');
+            }
         });
 
         test(`ADR-0100: the page's own action runs over the Selection (${chrome})`, async ({ page }) => {
@@ -751,7 +751,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('h');
             await page.keyboard.press('1');
             await expect(editor(grid)).toHaveCount(1);
-            await expect(editor(grid).locator('input, textarea').first()).toHaveValue('h1');
+            await expect(editor(grid)).toHaveValue('h1');
             await page.keyboard.press('Escape');
             await expect(editor(grid)).toHaveCount(0);
 
@@ -760,7 +760,7 @@ for (const chrome of ['builtin', 'mud']) {
             await keyTips(page, 'Alt', 'h', '1');
 
             await expect(editor(grid)).toHaveCount(1);
-            await expect(editor(grid).locator('input, textarea').first()).toHaveValue('h1');
+            await expect(editor(grid)).toHaveValue('h1');
             await circuitQuiet();
             await expect(tips(page)).toHaveCount(0);
             await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
@@ -791,6 +791,28 @@ for (const chrome of ['builtin', 'mud']) {
                 const keys = await landed();
                 expect(keys.find((k) => k.key === 'ArrowDown')?.where).not.toBe('list');
             }
+        });
+
+        test(`ADR-0100 (decided with the user, 2026-10-13): Alt, H, N, then End, Enter typed at once open Format Cells from More Number Formats…, as typed slowly (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'C2');
+            const formatCells = formatCellsOf(page, grid, chrome);
+            const before = await page.locator('#sheet-focus-number-format').textContent();
+            await setRoundTrip(80);
+
+            // End and Enter are the list's however soon they come: End reaches its last choice and Enter
+            // makes it, where the list answers them, not the browser's press of a button.
+            await keyTips(page, 'h', 'n', 'End', 'Enter');
+
+            await expect(formatCells).toBeVisible();
+            await circuitQuiet();
+            await expect(openLists(page)).toHaveCount(0);
+            await expect(tips(page)).toHaveCount(0);
+            await expect.poll(() => formatCells.evaluate((f) => f.contains(document.activeElement))).toBe(true);
+            await page.keyboard.press('Escape');
+            await expect(formatCells).toHaveCount(0);
+            await expectKeyboardOn(grid);
+            await expect(page.locator('#sheet-focus-number-format')).toHaveText(before ?? '');
         });
 
         test(`ADR-0100/ADR-0050: Enter typed at once after a KeyTip's command reaches the Sheet, not the toolbar (${chrome})`, async ({ page }) => {

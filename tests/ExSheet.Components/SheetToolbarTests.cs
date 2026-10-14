@@ -305,6 +305,29 @@ public class SheetToolbarTests : SheetTestContext
         Assert.Equal(CellFill.Solid(CellColour.FromRgb(0x0070C0)), FormatAt(cut, "C2").Fill);
     }
 
+    [Theory] // ADR-0100 (decided with the user, 2026-10-13: the keys typed before a list holds the keyboard are its own): the built-in list answers Enter and Space at their keydown, choosing where the keys have reached, as the grid's hold hands them on — dispatched from script, a key activates no button, and Alt, H, H, ↓, →, Enter typed at once on the Server host filled nothing
+    [InlineData("Enter")]
+    [InlineData(" ")]
+    public async Task Enter_and_space_choose_where_the_keys_have_reached(string key)
+    {
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        await Item(cut, "Fill Colour").QuerySelector(".ex-sheet-toolbar-arrow")!.ClickAsync(new MouseEventArgs());
+
+        // From No Fill: ↓ to the palette's first swatch, → to its second, then the key, and no click.
+        foreach (var typed in new[] { "ArrowDown", "ArrowRight", key })
+        {
+            await cut.Find(".ex-popover .ex-sheet-choices").KeyDownAsync(new KeyboardEventArgs { Key = typed, Type = "keydown" });
+        }
+
+        Assert.Equal(CellFill.Solid(FormatCellsOffer.ThemeColours[0][1].Colour), FormatAt(cut, "B2").Fill);
+        Assert.Empty(cut.FindAll(".ex-popover .ex-sheet-choices"));
+        // One step: the list made one choice.
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.Equal(CellFill.None, FormatAt(cut, "B2").Fill);
+        Assert.False(cut.Instance.CanUndo);
+    }
+
     [Fact] // ADR-0100: the Number Format lists Excel's categories, Accounting and Fraction disabled with the reason
     public async Task The_number_format_lists_excels_categories()
     {

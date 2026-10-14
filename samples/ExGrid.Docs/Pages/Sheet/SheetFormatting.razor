@@ -30,10 +30,12 @@
             a different figure. Widen the column and the number appears. A number typed into a column you have not
             sized widens it, as Excel's does, and so does setting a Number Format, as Excel's formatting keys do.
             So do Ctrl+5 and Ctrl+U, which set no Number Format, and <code>SetCellFormatAsync</code> when it sets
-            underline or strikethrough. Ctrl+B and Ctrl+I widen nothing, nor do bold, italic or a Font colour set from
-            code, a Fill, an alignment or Borders. Format Cells' OK widens when it sets any part of the Font. An italic
-            number widens its column only to the width the same number takes upright, where Excel's Font tab widened
-            it further. A column you sized is never widened. A
+            underline or strikethrough. Ctrl+B and Ctrl+I widen nothing, nor do a Fill, an alignment, Borders, or
+            bold, italic or a Font colour set with <code>SetCellFormatAsync</code>, as Excel's <code>Font.Color</code>
+            set from code does not. Format Cells' OK widens when it sets any part of the Font, and the Sheet Toolbar's
+            Font Colour widens as Excel's Home tab Font Color button does. An italic number widens its column only to
+            the width the same number takes upright, where Excel's Font tab widened it further. A column you sized is
+            never widened. A
             column inserted beside a widened one takes its width as one you set, so a longer number typed into it is
             fitted to the column rather than widening it. A number that fits is painted whole, bold too: it
             may use one screen pixel of its cell's right padding, so a column whose edges round narrower on screen
@@ -142,8 +144,11 @@
             Focus cell — Bold shows pressed over a bold cell — acts on the Selection as one undo step, and is greyed
             out while a cell is edited. A press leaves the keyboard on the Sheet. Over a number that shows
             <code>####</code>, Underline and Strikethrough widen a column you have not sized, as Ctrl+U and Ctrl+5
-            do. Bold and Italic widen nothing, as Ctrl+B and Ctrl+I do not, and neither does the Font Colour, whose
-            face and list set the colour through <code>SetCellFormatAsync</code>.
+            do, and so does the Font Colour, by its face or a colour from its list, as Excel's Home tab Font Color
+            button does. Bold, Italic and the Fill Colour widen nothing, as Ctrl+B, Ctrl+I and Excel's Fill Color
+            button do not. The toggles and the colours set through <code>SetCellFormatFromFocusAsync</code>, which
+            widens as Excel's Home tab buttons do; <code>SetCellFormatAsync</code> widens no column for a colour, as
+            Excel's <code>Font.Color</code> set from code does not.
         </p>
         <p>
             What it holds, and in which order, is yours to declare in <code>ToolbarContent</code>.
@@ -165,7 +170,8 @@
                 <b>KeyTips.</b> Release Alt on its own, or press F10, and each row shows its letter: ExSheet's row is H,
                 as Excel's Home tab is, and its items carry Excel's letters, so Alt, H, 1 sets bold and Alt, H, O, E
                 opens Format Cells, as Excel's Format menu reaches it (read on Windows). A list a KeyTip opens takes
-                the keyboard under either Chrome: the arrows move among its choices and Enter makes one. Escape goes
+                the keyboard under either Chrome: the arrows move among its choices and Enter or Space makes the one
+                they have reached. Escape goes
                 back one level, as Excel's did when read on Windows: from a list to its row's letters, then to the
                 rows', then to the Sheet. The keys can be typed at once, over Blazor Server too: the letters straight
                 after Alt or F10 wait for the KeyTips, and the keys typed while a list opens or closes, or while the

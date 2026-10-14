@@ -138,6 +138,42 @@ public class MudToolbarTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.Equal(CellFill.Solid(CellColour.FromRgb(0x00B050)), FormatAt(page, "B2").Fill));
     }
 
+    [Fact] // ADR-0100, ADR-0071 (2026-10-14, decided with the user): under MudBlazor too, the Font Colour widens a column whose number shows ####, by its face and from its list, as Excel's Home tab Font Color button did (the readings of 2026-10-14, run 18a, widening case 5), each in its press's one undo step; the Fill Colour widens nothing
+    public async Task The_font_colour_widens_by_its_face_and_from_its_list_18a()
+    {
+        var page = RenderPage(DocumentOf(
+            sheet => sheet.SetCellFormat([CellRange.Parse("B2")], new CellFormatChange { NumberFormat = NumberFormat.Parse("0.00") }),
+            ("B2", "123456789.12")), showToolbar: true);
+        var grid = page.FindComponent<ExGrid<SheetRow>>();
+        double WidthOf(int column) => grid.Instance.Columns[column].Width.Width.FixedPx;
+        var standard = WidthOf(1);
+        await GoToAsync(page, "B2");
+
+        await Wrapper(page, "Fill Colour").QuerySelector("button.mud-ex-sheet-toolbar-face")!.ClickAsync(new MouseEventArgs());
+        page.WaitForAssertion(() => Assert.Equal(CellFill.Solid(CellColour.FromRgb(0xFFFF00)), FormatAt(page, "B2").Fill));
+        Assert.Equal(standard, WidthOf(1));
+        Assert.Empty(Sheet(page).ToDocument().ColumnWidths);
+
+        // Its face: red, as Excel's starts.
+        await Wrapper(page, "Font Colour").QuerySelector("button.mud-ex-sheet-toolbar-face")!.ClickAsync(new MouseEventArgs());
+        page.WaitForAssertion(() => Assert.Equal(CellColour.FromRgb(0xFF0000), FormatAt(page, "B2").Font.Colour));
+        Assert.True(WidthOf(1) > standard);
+        var widened = Assert.Single(Sheet(page).ToDocument().ColumnWidths);
+        Assert.Equal((1, SheetColumnWidthKind.WidenedByEntry), (widened.First, widened.Kind));
+        Assert.True(await page.InvokeAsync(Sheet(page).UndoAsync));
+        Assert.Equal(standard, WidthOf(1));
+        Assert.Empty(Sheet(page).ToDocument().ColumnWidths);
+
+        // From its list: Blue, as run 18a chose.
+        await Wrapper(page, "Font Colour").QuerySelector("button.mud-ex-sheet-toolbar-arrow")!.ClickAsync(new MouseEventArgs());
+        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("button.mud-ex-sheet-swatch")));
+        await page.FindAll("button.mud-ex-sheet-swatch").Single(b => b.GetAttribute("aria-label") == "Blue").ClickAsync(new MouseEventArgs());
+        page.WaitForAssertion(() => Assert.Equal(CellColour.FromRgb(0x0070C0), FormatAt(page, "B2").Font.Colour));
+        Assert.True(WidthOf(1) > standard);
+        widened = Assert.Single(Sheet(page).ToDocument().ColumnWidths);
+        Assert.Equal((1, SheetColumnWidthKind.WidenedByEntry), (widened.First, widened.Kind));
+    }
+
     [Fact] // ADR-0100, ADR-0039, SH-52 (the seventeenth Windows run, D-mud-lists): Alt, H, F, C opens the Font Colour list with the keyboard in it, on the choice the Focus cell has
     public async Task A_list_opened_from_the_keys_takes_the_keyboard()
     {
@@ -187,6 +223,45 @@ public class MudToolbarTests : MudSheetTestContext
         // And the next list is the only one.
         await KeyTipsAsync(page, "h", "b");
         page.WaitForAssertion(() => Assert.Single(Lists(page)));
+    }
+
+    [Fact] // ADR-0100, ADR-0050 item 16 (decided with the user, 2026-10-13: an Alt pressed alone, and the letters after it, typed at once while keys are held have the outcome they have typed slowly): Escape three times in a list a KeyTip opened, then Alt, H, H, typed as it closes — the first Escape goes back to its row's KeyTips, the band answers the second and third once it has the keyboard, the third giving it back to the Sheet — and the keys behind the third go with it, the Alt's release among them, though the grid asks for them before that Escape's own step has returned
+    public async Task Keys_typed_as_a_keytip_list_closes_go_on_in_order_past_the_escape_that_ends_the_keytips()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
+        await GoToAsync(page, "B2");
+        await KeyTipsAsync(page, "h", "f", "c");
+        page.WaitForAssertion(() => Assert.Equal("Automatic", LastFocused(page)));
+        await page.Find(".ex-sheet-toolbar").FocusOutAsync(new FocusEventArgs());
+        var taken = TakeBackCount;
+        // The browser has not yet put the keyboard on the item's element: it stands a round trip.
+        var focus = JSInterop.SetupVoid(Focus, _ => true);
+
+        await TypeInListAsync(page, "Escape");
+        await TypeInListAsync(page, "Escape");
+        await TypeInListAsync(page, "Escape");
+        await TypeInListAsync(page, "Alt");
+        await page.Find(".mud-ex-sheet-toolbar-choices").KeyUpAsync(new KeyboardEventArgs { Key = "Alt", Type = "keyup" });
+        await TypeInListAsync(page, "h");
+        await TypeInListAsync(page, "h");
+
+        focus.SetVoidResult();
+        page.WaitForAssertion(() => Assert.Empty(Lists(page)));
+        page.WaitForAssertion(() => Assert.Contains("FC", KeyTips(page)));
+        Assert.Equal(taken, TakeBackCount);
+
+        // The browser puts the keyboard on the band; the key gate asks for the keys typed on the way as
+        // soon as the third Escape has given the keyboard back, before that key's own step has returned.
+        var keys = new List<KeyboardEventArgs>();
+        AskForKeysWithinTakeBacks(page.FindComponent<ExGrid<SheetRow>>(), keys);
+        await page.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
+        page.WaitForAssertion(() => Assert.Equal(taken + 1, TakeBackCount));
+        Assert.Empty(KeyTips(page));
+        Assert.Empty(AnswerTakeBacks(page.FindComponent<ExGrid<SheetRow>>()));
+
+        Assert.Equal([("Alt", false), ("Alt", true), ("h", false), ("h", false)], keys.Select(k => (k.Key, k.Type == "keyup")));
+        Assert.Equal(CellFill.None, FormatAt(page, "B2").Fill);
+        Assert.Empty(Lists(page));
     }
 
     [Fact] // ADR-0100, ADR-0039: Escape in a list the pointer opened closes it, and the keyboard goes back to the Sheet, as before
