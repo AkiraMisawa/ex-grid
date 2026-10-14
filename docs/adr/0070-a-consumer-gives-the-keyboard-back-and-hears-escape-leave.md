@@ -248,6 +248,19 @@ Focus staying where it was (observed 2026-10-13, the Server host at 80 ms, both 
   goes. Layer 3: Escape in the dialog's grid then ↓, and Escape on its Close then ↓, ↓, typed at once,
   under both Chromes, on both hosts.
 
+### Implementation correction: hand the held keys out before returning focus *(2026-10-14)*
+
+The first implementation deferred passing the held keys out until the leaving Escape's interop
+answer completed. A later key could already bubble to the frame, and the report could take focus
+and collect the frame's queue before the older keys reached it. Focus leaving also cleared the
+pass-out state, so those keys could be handled by the closing grid instead. CI reproduced the lost
+Down arrow in Show Details under the MudBlazor Chrome after the return-from-frame collection was
+fixed separately. `PassKeysOutAsync` now passes the held keys out when its request reaches the gate:
+the Consumer has already answered their destination. Later keys follow them, and a subsequent
+hand-back's collection follows all of them. A browser regression keeps the Escape's answer pending
+while it passes the keys out, types another key, and moves focus; both keys reach the frame in order.
+This implements the ordering decided above; it changes no destination or focus rule.
+
 ## Considered options
 
 - **The Consumer focuses the grid through JavaScript of its own** — rejected. It would need the

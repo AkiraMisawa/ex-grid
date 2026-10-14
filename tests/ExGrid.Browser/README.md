@@ -451,6 +451,8 @@ nobody had asked for. What that means when writing a test:
   A controlled Consumer leaves its key-collection answer pending: the hand-back cannot complete
   until that answer, whether focus was returned or another control kept it. This pins the ordering
   without a latency guess; a caller may then remove its frame and clear its queue.
+  Passing keys out of a closing grid hands the held keys to its frame before later keys or a focus
+  departure can overtake them, even while the leaving Escape's own answer remains pending.
 - `page-follow.spec.mjs` — the page following a move (ADR-0204, KB-45) on `/cells` in a window
   shorter than its grid, on a grid that edits and a display-only one: the arrows bringing the Focus
   in at the window's bottom edge, a cell already in the window moving nothing, a range extended past

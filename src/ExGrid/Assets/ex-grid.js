@@ -3672,9 +3672,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 return;
             }
             keysOut = true;
-            if (!answering) {
-                passHeldOut();
-            }
+            // The Consumer has answered where these keys go, even while the Escape's interop
+            // answer is pending. Hand them out now, before a later key bubbles out or the
+            // receiving grid takes focus and asks the frame for its queue. Waiting for drain
+            // lets either overtake them; focus leaving also ends keysOut before drain runs.
+            passHeldOut();
         },
         // A popover's contents reported a popup of their own opening or closing
         // (ADR-0039): while one is open, a descendant's Escape is left to it.

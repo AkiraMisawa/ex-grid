@@ -896,7 +896,12 @@ public class ShippedStylesheetTests
         // The Escape the Consumer may answer by taking the keyboard out: the keys after it wait for its answer.
         Assert.Matches(new Regex(@"\} else if \(verdict === 'core' && leaves && k\.onRoot && k\.key === 'Escape' && plain\(k\) && !k\.shiftKey\s*&& k\.repeat !== true && editing === 'none'\) \{.*?startHold\(answer\);", RegexOptions.Singleline), keyDown);
         // Told to pass them out, the held keys go to the root's parent, as the keydowns they were, in order.
-        Assert.Matches(new Regex(@"passKeysOut: \(\) => \{.*?keysOut = true;.*?if \(!answering\) \{\s*passHeldOut\(\);", RegexOptions.Singleline), script);
+        var request = Regex.Match(script, @"passKeysOut: \(\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(request);
+        // The destination is already answered: a pending Escape must not delay older keys behind
+        // a later key bubbling out or the report collecting the frame's queue (ADR-0070).
+        Assert.Matches(new Regex(@"keysOut = true;\s*(//[^\n]*\s*)*passHeldOut\(\);"), request);
+        Assert.DoesNotContain("if (!answering)", request, StringComparison.Ordinal);
         Assert.Contains("const parent = root?.parentElement;", passOut, StringComparison.Ordinal);
         Assert.Contains("const keys = held.splice(0, held.length);", passOut, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"parent\.dispatchEvent\(new KeyboardEvent\("), passOut);
