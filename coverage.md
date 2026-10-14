@@ -12,14 +12,14 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/14/2026 - 00:10:58 |
+| Generated on: | 10/14/2026 - 08:54:20 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 839 |
 | Files: | 461 |
-| **Line coverage:** | 95.3% (56699 of 59482) |
-| Covered lines: | 56699 |
-| Uncovered lines: | 2783 |
+| **Line coverage:** | 95.3% (56698 of 59482) |
+| Covered lines: | 56698 |
+| Uncovered lines: | 2784 |
 | Coverable lines: | 59482 |
 | Total lines: | 100636 |
 | **Branch coverage:** | 88.3% (32921 of 37241) |
@@ -161,7 +161,7 @@
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
 |ExGrid.Components.ExGrid<TRow>|95.6%|90.4%|
-|ExGrid.Components.ExGrid<TRow>|91.1%|86%|
+|ExGrid.Components.ExGrid<TRow>|91%|86%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
