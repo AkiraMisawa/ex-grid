@@ -25,7 +25,7 @@ internal enum OperandKind
 /// </summary>
 internal readonly struct Operand
 {
-    private Operand(OperandKind kind, Value? scalar, Area area, IReadOnlyList<Value?>? column = null, ValueArray? array = null, bool isSpillRange = false)
+    private Operand(OperandKind kind, Value? scalar, Area area, IReadOnlyList<Value?>? column = null, ValueArray? array = null, bool isSpillRange = false, bool keptBlank = false)
     {
         Kind = kind;
         Scalar = scalar;
@@ -33,6 +33,7 @@ internal readonly struct Operand
         Column = column;
         Array = array;
         IsSpillRange = isSpillRange;
+        KeptBlank = keptBlank;
     }
 
     public OperandKind Kind { get; }
@@ -54,6 +55,30 @@ internal readonly struct Operand
     /// differs between a Reference and an array reads it as a Reference (<c>INDEX</c>).
     /// </summary>
     public bool IsSpillRange { get; }
+
+    /// <summary>
+    /// Whether this holds a kept blank: a blank that <c>UNIQUE</c>, <c>SORT</c>, <c>SORTBY</c>,
+    /// <c>FILTER</c> or <c>TRANSPOSE</c> kept from its array (ADR-0125), as one of its Values or as the one
+    /// Value <c>INDEX</c> picked from it. The area passes saw Excel's <c>COUNTA</c> count it in
+    /// <c>SORT</c>'s and <c>UNIQUE</c>'s array (SORT-021, UNIQUE-017), its <c>ISBLANK</c> find the one
+    /// <c>INDEX</c> took out of <c>SORT</c>'s blank (SORT-022), and its <c>=</c> find the one taken out of
+    /// <c>UNIQUE</c>'s equal to empty text (UNIQUE-018), which the engine takes for the empty value a blank
+    /// cell holds. The other three are taken to keep the same blank, which no run has read. A function
+    /// reads such an operand only where the passes read it so (observed), where it gives the same answer
+    /// for every reading of it (by agreement: <c>SUMPRODUCT</c>, <c>CONCAT</c>, <c>SUM</c> where both
+    /// readings give the one sum, a lookup that never reads it), or where what the passes read is carried
+    /// to it (by generalisation, which no run has read: <c>COUNTA</c> over <c>SORTBY</c>'s, <c>FILTER</c>'s
+    /// and <c>TRANSPOSE</c>'s array, as over <c>SORT</c>'s; <c>INDEX</c> taking it out of those three, and
+    /// out of <c>UNIQUE</c>'s, still blank, as out of <c>SORT</c>'s; <c>ISBLANK</c> beyond <c>SORT</c>'s,
+    /// and <c>LEN</c>, <c>ISTEXT</c>, <c>MATCH</c>'s lookup value and every other one Value read through
+    /// <see cref="FunctionCall.OneValue"/>, reading it as a blank cell's; every operator reading each Value
+    /// so, which <c>=</c> finding <c>UNIQUE</c>'s equal to empty text fits). Such a function takes it
+    /// through <see cref="FunctionCall.KeepingBlanks"/> or <see cref="FunctionCall.OneValue"/>, and an
+    /// operator reads it as it reads a blank; anywhere else the Formula is refused
+    /// (<see cref="FunctionCall.Operand"/>), <c>XLOOKUP</c>'s and <c>XMATCH</c>'s lookup value and
+    /// <c>ROUND</c>'s arguments among them.
+    /// </summary>
+    public bool KeptBlank { get; }
 
     /// <summary>Whether this is a Reference of cells: a rectangle, or a Spill Range read through <c>A1#</c>.</summary>
     public bool IsReference => Kind == OperandKind.Area || IsSpillRange;
@@ -86,4 +111,18 @@ internal readonly struct Operand
     public static Operand AsArray(Value? value) => new(OperandKind.Array, null, default, null, ValueArray.Single(value));
 
     public bool IsError => Kind == OperandKind.Scalar && Scalar is { IsError: true };
+
+    /// <summary>Whether this is a blank, or an array that holds one.</summary>
+    public bool HoldsBlank => Kind switch
+    {
+        OperandKind.Scalar => Scalar is null,
+        OperandKind.Array => Array!.All().Any(v => v is null),
+        _ => false,
+    };
+
+    /// <summary>
+    /// This operand marked as holding a kept blank (<see cref="KeptBlank"/>), when it holds a blank at
+    /// all; as it is otherwise.
+    /// </summary>
+    public Operand WithKeptBlank() => HoldsBlank ? new(Kind, Scalar, Area, Column, Array, IsSpillRange, keptBlank: true) : this;
 }

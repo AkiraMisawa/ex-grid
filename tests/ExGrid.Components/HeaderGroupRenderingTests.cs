@@ -1,6 +1,7 @@
 using Bunit;
 using ExGrid.Columns;
 using ExGrid.Components.Tests.Support;
+using ExGrid.Selection;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
 
@@ -88,6 +89,62 @@ public class HeaderGroupRenderingTests : GridTestContext
         Assert.Contains("height: 64px", leaves[4].GetAttribute("style"));
     }
 
+    private static GridColumn<TestRow>[] InOrder(params int[] order)
+    {
+        var wide = TestRows.Wide(6);
+        return [.. order.Select(i => wide[i])];
+    }
+
+    [Fact] // HG-1, ADR-0032: membership is a set — the painted order comes from Columns, never the declaration
+    public void HG1_members_declared_scrambled_paint_in_the_columns_order()
+    {
+        // Declared C03, C01, C02; the flat order puts them at positions 3-5 as C02, C03, C01.
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.TotalCount, 20)
+            .Add(g => g.Columns, InOrder(0, 4, 5, 2, 3, 1))
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.HeaderHeight, HeaderPx)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 650)
+            .Add(g => g.HeaderGroups, (HeaderGroup[])[
+                new HeaderGroup("Set", [TestRows.ColumnName(3), TestRows.ColumnName(1), TestRows.ColumnName(2)])]));
+
+        var style = cut.Find(".ex-header-group").GetAttribute("style");
+        Assert.Contains("left: 300px", style);
+        Assert.Contains("width: 300px", style);
+        // The leaves under it, left to right, are in Columns order.
+        var leaves = cut.FindAll(".ex-header-cell").Select(c => c.TextContent.Trim()).ToArray();
+        Assert.Equal(TestRows.ColumnName(2), leaves[3]);
+        Assert.Equal(TestRows.ColumnName(3), leaves[4]);
+        Assert.Equal(TestRows.ColumnName(1), leaves[5]);
+        // Covered leaves are one tier tall, uncovered ones are band tall.
+        Assert.Contains("height: 32px", cut.FindAll(".ex-header-cell")[3].GetAttribute("style"));
+        Assert.Contains("height: 64px", cut.FindAll(".ex-header-cell")[2].GetAttribute("style"));
+    }
+
+    [Fact] // HG-5, ADR-0032: a reorder that separates a group's members is refused, naming adjacency
+    public void HG5_a_reorder_that_separates_the_members_is_refused()
+    {
+        HeaderGroup[] groups = [new HeaderGroup("CVA", [TestRows.ColumnName(1), TestRows.ColumnName(2), TestRows.ColumnName(3)])];
+        void Push(ComponentParameterCollectionBuilder<ExGrid<TestRow>> ps, GridColumn<TestRow>[] columns) => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.TotalCount, 20)
+            .Add(g => g.Columns, columns)
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.HeaderHeight, HeaderPx)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 650)
+            .Add(g => g.HeaderGroups, groups);
+        var cut = Render<ExGrid<TestRow>>(ps => Push(ps, InOrder(0, 1, 2, 3, 4, 5)));
+        Assert.Single(cut.FindAll(".ex-header-group"));
+
+        // The Consumer moves C04 between C02 and C03: the members are no longer adjacent.
+        var refusal = Assert.Throws<InvalidOperationException>(() => cut.Render(ps => Push(ps, InOrder(0, 1, 2, 4, 3, 5))));
+        Assert.Contains("CVA", refusal.Message);
+        Assert.Contains("not adjacent", refusal.Message);
+    }
+
     [Fact] // ADR-0032 / HG-9: a viewport that cannot hold the band plus one row is refused, naming the band
     public void A_viewport_under_the_band_is_refused_naming_the_band()
     {
@@ -120,6 +177,45 @@ public class HeaderGroupRenderingTests : GridTestContext
         Assert.Contains("width: 300px", cut.Find(".ex-header-group").GetAttribute("style"));
     }
 
+    [Fact] // HG-10, ADR-0032/0004: scrolled so the group's first members leave the DOM while later ones are painted
+    public async Task HG10_a_rectangle_stands_when_its_first_members_are_virtualised_away()
+    {
+        // 40 columns of 100px; a group over C10-C19, content 1000-2000px.
+        HeaderGroup[] Groups() => [new HeaderGroup("Mid", [.. Enumerable.Range(10, 10).Select(TestRows.ColumnName)])];
+        var columns = TestRows.Wide(40);
+        void Push(ComponentParameterCollectionBuilder<ExGrid<TestRow>> ps) => ps
+            .Add(g => g.Window, TestRows.Many(50))
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, columns)
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.HeaderGroups, Groups());
+        var cut = Render<ExGrid<TestRow>>(Push);
+
+        var unscrolled = cut.Find(".ex-header-group").GetAttribute("style")!;
+        Assert.Contains("left: 1000px", unscrolled);
+        Assert.Contains("width: 1000px", unscrolled);
+
+        // Ordinary moves to 1500px: C15 onwards is painted, C10-C12 are out of the DOM.
+        var scroller = cut.Find(".ex-scroller");
+        foreach (var left in new[] { 300d, 600d, 900d, 1200d, 1500d })
+            await ScrollToAsync(scroller, 0, left);
+        var painted = cut.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell")
+            .Select(c => TestRows.ColumnOf(c.TextContent)).ToArray();
+        Assert.Contains("C16", painted);
+        Assert.DoesNotContain("C10", painted);
+        Assert.DoesNotContain("C12", painted);
+
+        // The rectangle is composed again while scrolled there — the Consumer pushes its
+        // declaration anew — and it must still stand on the first member, painted or not.
+        cut.Render(Push);
+        var scrolled = cut.Find(".ex-header-group").GetAttribute("style")!;
+        Assert.Contains("left: 1000px", scrolled);
+        Assert.Contains("width: 1000px", scrolled);
+        Assert.Equal(unscrolled, scrolled);
+    }
+
     [Fact] // ADR-0032 / HG-12: a group label never hashes and never feeds Auto width
     public void A_long_label_gets_the_text_treatment_and_grows_nothing()
     {
@@ -145,6 +241,40 @@ public class HeaderGroupRenderingTests : GridTestContext
         }
         var cells = cut.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell");
         Assert.Equal(WidthOf(cells[0]), WidthOf(cells[1]));
+    }
+
+    [Fact] // HG-12, ADR-0032/0016: a long label over narrow Auto columns grows neither, against the same grid without it, and ellipsises
+    public void HG12_a_long_group_label_feeds_no_auto_width_and_gets_the_ellipsis()
+    {
+        // Two Auto columns of different content, so each earns a width of its own.
+        GridColumn<TestRow>[] columns =
+        [
+            new("A", ColumnType.Number, r => r.Amount),
+            new("Book", ColumnType.Text, r => r.Book),
+        ];
+        const string label = "A label far longer than the two member columns could ever carry between them";
+        IRenderedComponent<ExGrid<TestRow>> RenderWith(HeaderGroup[] groups) => Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Window())
+            .Add(g => g.Columns, columns)
+            .Add(g => g.HeaderGroups, groups));
+        static double WidthPx(AngleSharp.Dom.IElement element) => double.Parse(
+            System.Text.RegularExpressions.Regex.Match(element.GetAttribute("style")!, @"(?:^|;)\s*width: ([0-9.]+)px").Groups[1].Value,
+            System.Globalization.CultureInfo.InvariantCulture);
+        static double[] WidthsOf(IRenderedComponent<ExGrid<TestRow>> cut)
+            => [.. cut.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell").Select(WidthPx)];
+
+        var bare = RenderWith([]);
+        var grouped = RenderWith([new HeaderGroup(label, ["A", "Book"])]);
+
+        // The member columns keep exactly the widths their own contents earned.
+        Assert.Equal(WidthsOf(bare), WidthsOf(grouped));
+        var rectangle = grouped.Find(".ex-header-group");
+        Assert.Equal(WidthsOf(bare).Sum(), WidthPx(rectangle));
+        // The label is the Text treatment: painted verbatim, never ####, clipped by an ellipsis.
+        Assert.Equal(label, rectangle.TextContent);
+        Assert.Equal("ellipsis", ShippedStylesheetTests.Winning(rectangle, "text-overflow"));
+        Assert.Equal("hidden", ShippedStylesheetTests.Winning(rectangle, "overflow"));
+        Assert.Equal("nowrap", ShippedStylesheetTests.Winning(rectangle, "white-space"));
     }
 
     [Fact] // ADR-0032 / A11Y-13: a group cell carries aria-colspan equal to its member count
@@ -185,6 +315,145 @@ public class HeaderGroupRenderingTests : GridTestContext
         Assert.Equal([new SortSpec(TestRows.ColumnName(0), SortDirection.Ascending)], raised);
     }
 
+    [Fact] // ADR-0032 / ADR-0050 / ADR-0012: a group's rectangle selects nothing — not plainly under HeaderClickSelects, not with Shift, not with Ctrl; the leaf tier does
+    public async Task A_group_press_selects_nothing_under_any_modifier_and_the_leaf_tier_does()
+    {
+        GridSelection? selection = null;
+        IReadOnlyList<SortSpec>? raised = null;
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(50))
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, TestRows.Wide(6))
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.HeaderHeight, HeaderPx)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.HeaderGroups, Groups())
+            .Add(g => g.HeaderClickSelects, true)
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s)
+            .Add(g => g.OnSortChanged, (IReadOnlyList<SortSpec> s) => raised = s));
+        string Selected() => selection is null ? "none" : $"{selection.Focus} [{string.Join(", ", selection.Ranges)}]";
+        async Task PressHeader(double y, bool shift = false, bool ctrl = false)
+        {
+            await cut.Find(".ex-header").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 150, OffsetY = y, ShiftKey = shift, CtrlKey = ctrl });
+            await cut.Find(".ex-header").ClickAsync(new MouseEventArgs { Button = 0, OffsetX = 150, OffsetY = y, ShiftKey = shift, CtrlKey = ctrl });
+        }
+
+        // One cell of column 3 selected, so a whole-column gesture on column 1 would change it.
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 330, OffsetY = 30 });
+        var before = Selected();
+        Assert.NotEqual("none", before);
+
+        // y=40 is inside CVA's rectangle over column 1 (tier 1 of a 3-tier band).
+        foreach (var (shift, ctrl) in new[] { (false, false), (true, false), (false, true) })
+        {
+            await PressHeader(40, shift, ctrl);
+            Assert.Equal(before, Selected());
+        }
+        Assert.Null(raised);
+
+        // The leaf tier of the same column: each gesture selects, so the presses above were heard.
+        // Ctrl adds the column beside the cell; then the plain press takes the column alone.
+        await PressHeader(3 * HeaderPx - 10, ctrl: true);
+        var added = Selected();
+        Assert.NotEqual(before, added);
+        await PressHeader(3 * HeaderPx - 10);
+        Assert.NotEqual(added, Selected());
+        Assert.Null(raised);
+    }
+
+    // ---- HG-16: nothing below the band knows tiers exist ---------------------------------------
+    // The same gestures on the same grid, once with no Header Groups and once with two tiers of
+    // them: presses on the header at every tier, the keys that climb towards it, and both copies.
+    // What the grid answers — the Selection, the Focus as the root names it, and the clipboard's
+    // text — is one transcript, and the tiered one must be the untiered one word for word.
+
+    private async Task<List<string>> BelowTheBandTranscript(IReadOnlyList<HeaderGroup> groups)
+    {
+        GridSelection? selection = null;
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.TotalCount, 20)
+            .Add(g => g.Columns, TestRows.Wide(6))
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.HeaderHeight, HeaderPx)
+            .Add(g => g.ViewportHeight, 300)
+            .Add(g => g.ViewportWidth, 650)
+            .Add(g => g.HeaderGroups, groups)
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        var band = groups.Count == 0 ? HeaderPx : 3 * HeaderPx;
+        var transcript = new List<string>();
+        void Note(string step) => transcript.Add(
+            $"{step}: {(selection is null ? "none" : $"{selection.Focus}..{selection.Extent} [{string.Join(", ", selection.Ranges)}]")}"
+            + $" focus={cut.Find(".ex-grid").GetAttribute("aria-activedescendant")?.Split('-')[^1]}");
+        Task Press(string key, bool ctrl = false, bool shift = false)
+            => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, ctrl, shift, false, false, false));
+
+        // Row 2 of column 1.
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 150, OffsetY = 50 });
+        Note("cell");
+
+        // A press and a click at every height of the band over column 1: its leaf tier, and
+        // where the tiered grid draws CVA and Adjustments above it.
+        var heights = new[] { band - 10, Math.Max(5, band - HeaderPx - 10), 10 };
+        for (var tier = 0; tier < heights.Length; tier++)
+        {
+            var y = heights[tier];
+            await cut.Find(".ex-header").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 150, OffsetY = y });
+            await cut.Find(".ex-header").ClickAsync(new MouseEventArgs { Button = 0, OffsetX = 150, OffsetY = y });
+            Note($"header press {tier}");
+        }
+
+        // The keys that climb: past the first row, Focus has nowhere further to go.
+        foreach (var (key, ctrl, shift) in new[]
+            { ("ArrowUp", false, false), ("ArrowUp", false, false), ("ArrowUp", false, false),
+              ("PageUp", false, false), ("ArrowUp", true, false), ("Home", true, false),
+              ("ArrowUp", false, true), ("ArrowUp", true, true), ("PageUp", false, true) })
+        {
+            await Press(key, ctrl, shift);
+            Note($"{(ctrl ? "Ctrl+" : "")}{(shift ? "Shift+" : "")}{key}");
+        }
+
+        // Everything, copied plain and with headers.
+        await Press("a", ctrl: true);
+        Note("Ctrl+A");
+        var plain = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayloadAsync());
+        var headed = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayloadAsync(withHeaders: true));
+        transcript.Add($"copy: {plain?.Text}");
+        transcript.Add($"copy html: {plain?.Html}");
+        transcript.Add($"copy with headers: {headed?.Text}");
+        transcript.Add($"copy with headers html: {headed?.Html}");
+        return transcript;
+    }
+
+    [Fact] // ADR-0032 / ADR-0012 / ADR-0005 / HG-16: headers stay unselectable, Focus never enters the header, no tier is copied — unchanged from the untiered case
+    public async Task HG16_nothing_below_the_band_knows_tiers_exist()
+    {
+        var untiered = await BelowTheBandTranscript([]);
+        var tiered = await BelowTheBandTranscript(Groups());
+
+        Assert.Equal(untiered, tiered);
+
+        // And what the untiered case says is what HG-16 means. A press on the header selected
+        // nothing and moved no Focus: every press left the cell's answer standing.
+        var cell = untiered[0]["cell: ".Length..];
+        Assert.All(untiered.Where(line => line.StartsWith("header press", StringComparison.Ordinal)),
+            line => Assert.EndsWith(cell, line));
+        // Every key's Focus is a cell the root names, never a header: the climb stops on row 0.
+        Assert.All(untiered.Where(line => !line.StartsWith("copy", StringComparison.Ordinal)),
+            line => Assert.Matches(@" focus=r\d+c\d+$", line));
+        Assert.EndsWith("focus=r0c1", untiered[6]);   // the third ArrowUp, from row 2
+        Assert.EndsWith("focus=r0c1", untiered[7]);   // PageUp, already there
+        // The plain copy is cell values only, from row 0; the one with headers adds one row of
+        // leaf headers and no tier's label.
+        var plain = untiered.Single(line => line.StartsWith("copy: ", StringComparison.Ordinal));
+        Assert.StartsWith("copy: Row 000000/00\t", plain);
+        var headed = untiered.Single(line => line.StartsWith("copy with headers: ", StringComparison.Ordinal));
+        Assert.StartsWith("copy with headers: C00\tC01\tC02\tC03\tC04\tC05\r\nRow 000000/00\t", headed);
+        Assert.DoesNotContain(tiered, line => line.Contains("CVA", StringComparison.Ordinal)
+            || line.Contains("Adjustments", StringComparison.Ordinal));
+    }
+
     [Fact] // ADR-0032 / HG-17: cost is per rectangle — element count scales with groups, rows unchanged
     public void Cost_is_per_rectangle_never_per_column()
     {
@@ -199,16 +468,69 @@ public class HeaderGroupRenderingTests : GridTestContext
             some.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell").Length);
     }
 
+    [Fact] // HG-17, ADR-0032/0008: 3 groups over 40 columns — elements scale with groups, row renders unchanged
+    public async Task HG17_three_groups_over_forty_columns_cost_per_rectangle_and_no_row_renders()
+    {
+        static HeaderGroup[] Spans(params (int First, int Count)[] spans) =>
+            [.. spans.Select((s, n) => new HeaderGroup($"G{n}", [.. Enumerable.Range(s.First, s.Count).Select(TestRows.ColumnName)]))];
+        var wide = Spans((0, 10), (10, 15), (25, 15));   // every one of the 40 columns covered
+        var narrow = Spans((0, 2), (2, 2), (4, 2));      // 6 of the 40 covered
+        var columns = TestRows.Wide(40);
+        var window = TestRows.Many(200);
+        void Push(ComponentParameterCollectionBuilder<ExGrid<TestRow>> ps, HeaderGroup[] groups) => ps
+            .Add(g => g.Window, window)
+            .Add(g => g.TotalCount, 200)
+            .Add(g => g.Columns, columns)
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.HeaderHeight, HeaderPx)
+            // The band takes one tier from the Viewport; the ungrouped grid is given it back,
+            // so both paint the same rows and the comparison is about the band alone.
+            .Add(g => g.ViewportHeight, groups.Length == 0 ? 300 - HeaderPx : 300)
+            .Add(g => g.ViewportWidth, 650)
+            .Add(g => g.HeaderGroups, groups);
+
+        var none = Render<ExGrid<TestRow>>(ps => Push(ps, []));
+        var three = Render<ExGrid<TestRow>>(ps => Push(ps, wide));
+        var threeNarrow = Render<ExGrid<TestRow>>(ps => Push(ps, narrow));
+
+        // One element per rectangle, however many columns it spans: a group over fifteen
+        // columns costs what a group over two costs. Beside them the band holds a row per tier and
+        // the leaf row, which ARIA counts (ADR-0033): per tier, never per column.
+        Assert.Equal(3, three.FindAll(".ex-header-group").Count);
+        static int Elements(IRenderedComponent<ExGrid<TestRow>> cut) => cut.FindAll("*").Count;
+        Assert.Equal(none.FindAll(".ex-row").Count, three.FindAll(".ex-row").Count);
+        Assert.Equal(Elements(three), Elements(threeNarrow));
+        Assert.Equal(2, AriaRows.HeaderRowsOf(three.Find(".ex-grid")));
+        Assert.Equal(3 + three.FindAll(".ex-header-groups-pinned").Count + 2, Elements(three) - Elements(none));
+
+        // The rows know nothing of the band: the same scrolls cost the same row renders.
+        static async Task<int> RowRendersOver(GridTestContext context, IRenderedComponent<ExGrid<TestRow>> cut)
+        {
+            foreach (var top in new[] { 20d, 40d, 60d, 400d })
+                await context.ScrollToAsync(cut.Find(".ex-scroller"), top);
+            return cut.FindComponents<ExGridRow<TestRow>>().Sum(r => r.RenderCount);
+        }
+        Assert.Equal(await RowRendersOver(this, none), await RowRendersOver(this, three));
+
+        // And a relabelled declaration of the same shape renders the band, not one row.
+        var rows = three.FindComponents<ExGridRow<TestRow>>();
+        var before = rows.Select(r => r.RenderCount).ToArray();
+        three.Render(ps => Push(ps, [.. wide.Select(g => new HeaderGroup(g.Label + "'", g.Columns))]));
+        Assert.Equal("G0'", three.FindAll(".ex-header-group")[0].TextContent);
+        Assert.Equal(before, rows.Select(r => r.RenderCount).ToArray());
+        Assert.Equal(rows.Count, three.FindComponents<ExGridRow<TestRow>>().Count); // the same instances, none replaced
+    }
+
     /// <summary>
-    /// A declaration that counts resolutions from outside the component. It counts
-    /// **indexer reads, not `Count` reads**: `HeaderGroupLayout.Resolve` reads the length
-    /// several times over (its own guard, the result's size, the loop condition) and the
-    /// component reads it once more to decide whether to resolve at all, so a length
-    /// counter measures reads and not resolutions. It takes each group exactly once, so
-    /// with a single group declared this counter *is* the resolution count.
+    /// A declaration that counts how often the grid reads it, from outside the component. It
+    /// counts **indexer reads, not `Count` reads**, and it takes each group exactly once, so with a
+    /// single group declared this counter is the number of times the grid took the declaration in.
     ///
-    /// <para>Nothing else in the component reads the parameter: the painting reads the
-    /// resolved layout, which is the whole of HG-11.</para>
+    /// <para>The grid takes a declaration in once, as the copy it draws from (ADR-0003, the note of
+    /// 2026-10-13), and resolves membership from that copy; the resolutions themselves are counted
+    /// where they happen, by <c>HeaderGroupResolutions</c>. Both are asserted: the Consumer's list is
+    /// read once per push, and membership is resolved once per push and never on the render path —
+    /// the whole of HG-11.</para>
     /// </summary>
     private sealed class CountingGroups(IReadOnlyList<HeaderGroup> inner) : IReadOnlyList<HeaderGroup>
     {
@@ -246,6 +568,7 @@ public class HeaderGroupRenderingTests : GridTestContext
         // of them the declaration was resolved exactly once, on the push that brought it.
         Assert.True(cut.RenderCount > renders, "the scrolls rendered nothing, so this proves nothing");
         Assert.Equal(1, groups.Resolutions);
+        Assert.Equal(1, cut.Instance.HeaderGroupResolutions);
         Assert.NotEmpty(cut.FindAll(".ex-header-group"));
     }
 
@@ -256,6 +579,7 @@ public class HeaderGroupRenderingTests : GridTestContext
             [new HeaderGroup("CVA", [TestRows.ColumnName(1), TestRows.ColumnName(2)])]);
         var cut = RenderGrid(groups: groups);
         Assert.Equal(1, groups.Resolutions);
+        Assert.Equal(1, cut.Instance.HeaderGroupResolutions);
 
         var pushed = new CountingGroups(
             [new HeaderGroup("CVA", [TestRows.ColumnName(2), TestRows.ColumnName(3)])]);
@@ -265,6 +589,7 @@ public class HeaderGroupRenderingTests : GridTestContext
         // re-read, and the new one is resolved rather than assumed unchanged.
         Assert.Equal(1, groups.Resolutions);
         Assert.Equal(1, pushed.Resolutions);
+        Assert.Equal(2, cut.Instance.HeaderGroupResolutions);
         Assert.Contains("left: 200px", cut.FindAll(".ex-header-group")[0].GetAttribute("style"));
     }
 

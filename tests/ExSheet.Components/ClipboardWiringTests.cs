@@ -356,7 +356,7 @@ public class ClipboardWiringTests : SheetTestContext
         Grid(cut).Instance.BuildCopyPayload();
 
         var own = cut.Instance.OwnCopy!;
-        Assert.Equal(CellRange.Parse("A1:B1"), own.Block.Source);
+        Assert.Equal(CellRange.Parse("A1:B1"), own.Block!.Source);
         Assert.Equal("=A1*2", own.Block.EntryAt(0, 1)!.Formula);
         Assert.Equal(["2", "4"], Assert.Single(own.Fields));
     }
@@ -386,7 +386,7 @@ public class ClipboardWiringTests : SheetTestContext
 
         Assert.Equal("none", Grid(cut).Instance.BuildCopyPayload().Kind);
 
-        Assert.Equal(CellRange.Parse("A1"), cut.Instance.OwnCopy!.Block.Source);
+        Assert.Equal(CellRange.Parse("A1"), cut.Instance.OwnCopy!.Block!.Source);
     }
 
     [Fact] // ADR-0005, ADR-0016: a number no format can show goes out as its Value, never as ####
@@ -416,6 +416,101 @@ public class ClipboardWiringTests : SheetTestContext
         Assert.Equal("1\t3\r\n", payload.Text);
         Assert.Equal("<table data-ex-grid=\"invariant\"><tr><td>1</td><td>3</td></tr></table>", payload.Html);
         Assert.Null(cut.Instance.OwnCopy);
+    }
+
+    [Fact] // ADR-0047 (2026-10-12), ADR-0048: a refused cell goes out as #VALUE!, and a copy of one range carries its Formula, refused again where it is pasted
+    public async Task A_refused_cell_is_copied_as_value_error_and_pasted_as_its_formula()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "=MROUND(6.05,0.1)"), ("A2", "=IFERROR($A$1,0)"))));
+
+        await GoToAsync(cut, "A1:A2");
+        var payload = Grid(cut).Instance.BuildCopyPayload();
+        Assert.Equal("#VALUE!\r\n#VALUE!\r\n", payload.Text);
+        await GoToAsync(cut, "C1");
+        await PasteAsync(cut, payload.Text!, payload.Html);
+
+        Assert.Equal("#VALUE!", CellText(cut, "C1"));
+        Assert.Equal("#VALUE!", CellText(cut, "C2"));
+        await GoToAsync(cut, "C1");
+        Assert.Equal("=MROUND(6.05,0.1)", FormulaBar(cut));
+    }
+
+    [Fact] // ADR-0047 (2026-10-12), ADR-0048: a copy of several ranges holding a refused cell goes out as #VALUE!, and pasted back into the Sheet is refused by name, nothing written
+    public async Task A_copy_of_values_holding_a_refused_cell_is_not_pasted_back_as_values()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "1"), ("C1", "=MROUND(6.05,0.1)"))));
+        await GoToAsync(cut, "A1");
+        await CtrlClickAsync(cut, "C1");
+
+        var payload = Grid(cut).Instance.BuildCopyPayload();
+        Assert.Equal("1\t#VALUE!\r\n", payload.Text);
+        Assert.Equal("<table data-ex-grid=\"invariant\"><tr><td>1</td><td data-ex-mark=\"exsheet-refused:C1\">#VALUE!</td></tr></table>", payload.Html);
+        Assert.Null(cut.Instance.OwnCopy);
+
+        await GoToAsync(cut, "E5");
+        await PasteAsync(cut, payload.Text!, payload.Html);
+
+        cut.WaitForAssertion(() => Assert.Contains("the copy holds C1, whose Formula ExSheet refused because", Notice(cut)));
+        Assert.Equal("", CellText(cut, "E5"));
+        Assert.Equal("", CellText(cut, "F5"));
+    }
+
+    [Fact] // ADR-0047 (2026-10-12), ADR-0050 item 9: a copy of one range marks its refused cell in the HTML flavour, which another program reads as #VALUE!
+    public async Task A_copy_of_one_range_marks_its_refused_cell()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "1"), ("B1", "=MROUND(6.05,0.1)"))));
+        await GoToAsync(cut, "A1:B1");
+
+        var payload = Grid(cut).Instance.BuildCopyPayload();
+
+        Assert.Equal("1\t#VALUE!\r\n", payload.Text);
+        Assert.Equal("<table data-ex-grid=\"invariant\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\"><tr><td x:num=\"1\">1</td><td data-ex-mark=\"exsheet-refused:B1\">#VALUE!</td></tr></table>", payload.Html);
+    }
+
+    [Fact] // ADR-0047 (2026-10-12), ADR-0050 item 9: a copy holding a refused cell, pasted into another Sheet on the page, is refused by name, nothing written
+    public async Task A_refused_cell_pasted_into_another_sheet_is_refused_by_name()
+    {
+        var from = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "1"), ("A2", "=MROUND(6.05,0.1)"))));
+        var into = RenderSheet();
+        await GoToAsync(from, "A1:A2");
+        var payload = Grid(from).Instance.BuildCopyPayload();
+
+        await GoToAsync(into, "C3");
+        await PasteAsync(into, payload.Text!, payload.Html);
+
+        into.WaitForAssertion(() => Assert.Contains("the copy holds A2, whose Formula ExSheet refused because", Notice(into)));
+        Assert.Equal("", CellText(into, "C3"));
+        Assert.Equal("", CellText(into, "C4"));
+    }
+
+    [Fact] // ADR-0047, ADR-0048: the text flavour alone, as another program pastes it, types #VALUE! as Excel's Error Value
+    public async Task The_text_flavour_alone_types_value_error()
+    {
+        var from = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "=MROUND(6.05,0.1)"))));
+        var into = RenderSheet();
+        await GoToAsync(from, "A1");
+        var payload = Grid(from).Instance.BuildCopyPayload();
+
+        await GoToAsync(into, "C3");
+        await PasteAsync(into, payload.Text!);
+
+        Assert.Equal("#VALUE!", CellText(into, "C3"));
+    }
+
+    [Fact] // ADR-0047: Excel's own #VALUE! among copied Values is pasted back as the Error Value it is
+    public async Task A_copy_of_values_holding_excels_own_value_error_is_pasted_back()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "1"), ("C1", "=1+\"a\""))));
+        await GoToAsync(cut, "A1");
+        await CtrlClickAsync(cut, "C1");
+
+        var payload = Grid(cut).Instance.BuildCopyPayload();
+        Assert.Null(cut.Instance.OwnCopy);
+        await GoToAsync(cut, "E5");
+        await PasteAsync(cut, payload.Text!, payload.Html);
+
+        Assert.Equal("1", CellText(cut, "E5"));
+        Assert.Equal("#VALUE!", CellText(cut, "F5"));
     }
 
     private static async Task CopyAndPasteAsync(IRenderedComponent<ExSheet> cut, string from, string to)

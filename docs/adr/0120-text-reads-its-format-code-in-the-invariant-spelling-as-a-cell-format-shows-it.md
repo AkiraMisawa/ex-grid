@@ -50,14 +50,15 @@ another answer:
 - **`General` is General fitted to 11 characters**, as a cell's General is fitted to its column:
   `TEXT(1/3,"General")` is `0.333333333` (TEXTFN-017). So `TEXT(0.00001,"General")` is `0.00001`, as a cell
   shows it, and not General in full, `1E-05`.
-  - The run asked a positive number only. Two readings it did not settle stay `#VALUE!` until Excel is asked.
+  - The run asked a positive number only. Two readings it did not settle stay `#VALUE!` until Excel is asked
+    *(both answered by the area pass: see the note of 2026-10-12, the area passes, below)*.
   - A negative number whose General differs as its minus sign takes one of the 11 characters or not
     (`-1/3`: `-0.33333333` or `-0.333333333`; TEXTFN-025).
   - A number under a lone `@`, which shows numbers in General, whose fitted General is not its General in full
     (`1/3`; TEXTFN-028).
 - **An empty `format_text` shows a number as empty text** (TEXTFN-018). Text and booleans are coerced as for any
   code without a text section: text stays as it is, and a boolean stays `TRUE` or `FALSE` (TEXTFN-023 and 024,
-  `uncertain`).
+  observed by the area pass).
 - **Fractions and conditions stay refused.** Excel answers `TEXT(4.34,"# ?/?")` with `4 1/3` and
   `TEXT(5,"[<=9]0;0.0")` with `5` (TEXTFN-019, 020). ADR-0202 lets a function refuse the arguments where it
   disagrees, and the reason is this ADR's "One renderer serves both".
@@ -65,6 +66,18 @@ another answer:
     Cells, a document's codes, painting), not a correction to `TEXT`.
   - One fraction does not pin Excel's approximation: which denominators it searches, and how it breaks a tie.
   - Both cases record Excel's answer beside the refusal.
+
+*(2026-10-12, the area passes)* **Both readings the seventeenth run left open are answered, and follow Excel's
+answer** (`verification/2026-10-12-windows-area/` and `-area-2/`, ADR-0202). `TEXT(-1/3,"General")` is
+`-0.333333333` (TEXTFN-025) and `TEXT(1/3,"@")` is `0.333333333` (TEXTFN-028).
+
+- **`General` is General at its own limit, 11 characters, as a wide column shows a positive number (GW-004), and
+  the minus sign is not one of them**: a negative number takes one character more than its magnitude, of eleven
+  digits and of twelve alike (TEXTFN-029, 030).
+- **A code of a text section alone, such as `@`, shows a number as `TEXT`'s General does**, fitted to those 11
+  characters, and not as General in full: a negative number, twelve digits, a small number and a section with a
+  literal, which is left out (TEXTFN-031 to 034).
+- Every case of `text.json` is `observed`.
 
 ## What differs from Excel, by decision
 

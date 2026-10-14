@@ -133,8 +133,8 @@ public class PointModeTests : GridTestContext
         Assert.Empty(intents);
         // Row 2 of the painted slice, column A: paint only, over the Selection's own layer.
         Assert.Equal("left: 0px; top: 40px; width: 100px; height: 20px", PointStyle(cut));
-        // The gate claims Overwrite's keys and the Shift+arrows while an outline stands
-        // (ADR-0051's second round).
+        // The gate claims the arrows, Home and End, the Shift+arrows and Shift+Home while an
+        // outline stands (ADR-0051's second round; Shift+Home observed in Excel, R1 (viii)).
         Assert.Equal("point", EditingModesTold()[^1]);
     }
 

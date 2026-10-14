@@ -183,55 +183,49 @@ test('LV-34/FN-3a/ADR-0182/0183: a server report scrolls within the Window it re
 
 // ADR-0182/0183 (LV-34, FN-3a): the question asked early stays in flight while the scroll goes on within
 // its Window, however far past the Window held; and it is asked without the loading indication until rows
-// on screen wait for it. On WebAssembly the browser sends each question, so the test holds its answer
-// behind a gate it opens itself — never a timer (principle 6) — and the question is in flight for as
-// long as the test says. The page's tally counts the questions; the route reads the Window each names.
-// On the Server host ExPivot asks the demo API from the server, where no browser route can hold the
-// answer: the test above runs there behind the latency proxy.
+// on screen wait for it. The test holds the answer at the demo API's Window gate and opens it itself —
+// never a timer (principle 6) — so the question is in flight for as long as the test says. The gate is
+// where both hosts' questions arrive: on WebAssembly the browser sends them, on the Server host the
+// server does, where no browser route reaches (SRV-2). The page's tally counts the questions; the gate
+// reads the Window each names. On the Server host a reading that must see what the circuit has to say
+// first waits for it to go quiet; a question held at the gate is between the host and the API, not on
+// the circuit, so the circuit goes quiet around it.
 test('LV-34/FN-3a/ADR-0182/0183: a question asked early stays in flight while the scroll stays in its Window, and the report dims only once rows on screen wait for it', async ({ page }) => {
-    test.skip(SERVER, 'on the Server host the report source asks the demo API from the server, where the browser cannot hold the answer');
+    // open() resets the API, which opens the gate and forgets the Windows asked before.
     await open(page, 'builtin');
-    const windowsAsked = [];
-    let hold = false;
-    let release;
-    const gate = new Promise((resolve) => { release = resolve; });
-    const windowPath = /\/api\/pivot\/reports\/[0-9a-f]{32}\/window$/;
-    const answerWhenOpen = async (route) => {
-        const request = route.request();
-        if (request.method() === 'POST') {
-            windowsAsked.push(JSON.parse(request.postData() ?? '{}').window);
-            if (hold) {
-                await gate;
-            }
-        }
-        // A question superseded meanwhile has been aborted by the page: nothing is left to continue.
-        await route.continue().catch(() => { });
-    };
-    await page.route(windowPath, answerWhenOpen);
+    const gate = (hold) => api('/api/pivot/window-gate', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ hold }),
+    });
+    const windowsAsked = async () => (await api('/api/pivot/window-gate')).windows;
+    const lastWindow = async () => (await windowsAsked()).at(-1);
     try {
         const grid = report(page, 'server');
         const placeholders = rows(page, 'server').and(page.locator('.ex-placeholder'));
         await section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }).check();
         await expect.poll(() => dataRowCount(grid)).toBeGreaterThan(1000);
+        await circuitQuiet();
 
         // Row 500 at the top: rows 440 on are asked for and held.
         await scrollRowToTop(grid, 500);
         await expect(placeholders).toHaveCount(0);
+        await circuitQuiet();
         const onScreen = await rows(page, 'server').count();
-        await expect.poll(() => windowsAsked.at(-1)).toEqual({ start: 440, count: onScreen + 120 });
+        await expect.poll(lastWindow).toEqual({ start: 440, count: onScreen + 120 });
         const base = await asked(page, 'Window');
         for (let row = 505; row <= 550; row += 5) {
             await scrollRowToTop(grid, row);
         }
+        await circuitQuiet();
         expect(await asked(page, 'Window')).toBe(base);
 
         // Row 555: the tenth row below the rows on screen is not held. The next Window is asked for, and
         // its answer held at the gate. Every row on screen is still held, and the report is not dimmed.
-        const sentBefore = windowsAsked.length;
-        hold = true;
+        const sentBefore = (await windowsAsked()).length;
+        await gate(true);
         await scrollRowToTop(grid, 555);
         await expect.poll(() => asked(page, 'Window')).toBe(base + 1);
-        await expect.poll(() => windowsAsked.at(-1)).toEqual({ start: 495, count: onScreen + 120 });
+        await expect.poll(lastWindow).toEqual({ start: 495, count: onScreen + 120 });
+        await circuitQuiet();
         await expect(placeholders).toHaveCount(0);
         await expect(grid).not.toHaveClass(/\bex-loading\b/);
 
@@ -240,33 +234,35 @@ test('LV-34/FN-3a/ADR-0182/0183: a question asked early stays in flight while th
         // Placeholders, and the report is dimmed.
         for (let row = 560; row <= 600; row += 5) {
             await scrollRowToTop(grid, row);
+            await circuitQuiet();
             expect(await asked(page, 'Window'), `asked at row ${row}`).toBe(base + 1);
         }
         await expect(placeholders).not.toHaveCount(0);
         await expect(grid).toHaveClass(/\bex-loading\b/);
-        expect(windowsAsked).toHaveLength(sentBefore + 1);
+        expect(await windowsAsked()).toHaveLength(sentBefore + 1);
 
         // The answer lands: the rows are painted, the dimming goes, and at row 600 the Window answered
         // holds the rows on screen and ten either side, so nothing more is asked.
-        hold = false;
-        release();
+        await gate(false);
         await expect(placeholders).toHaveCount(0);
         await expect(grid).not.toHaveClass(/\bex-loading\b/);
+        await circuitQuiet();
         expect(await asked(page, 'Window')).toBe(base + 1);
 
         // The new Window reaches sixty rows past the rows asked for at 555: at 605 the tenth row below the
         // rows on screen is its last, and nothing is asked; at 606 it leaves it, and one question more is.
         await scrollRowToTop(grid, 605);
+        await circuitQuiet();
         expect(await asked(page, 'Window')).toBe(base + 1);
         await scrollRowToTop(grid, 606);
         await expect.poll(() => asked(page, 'Window')).toBe(base + 2);
-        await expect.poll(() => windowsAsked.at(-1)).toEqual({ start: 546, count: onScreen + 120 });
+        await expect.poll(lastWindow).toEqual({ start: 546, count: onScreen + 120 });
         await expect(placeholders).toHaveCount(0);
     } finally {
-        hold = false;
-        release();
-        await page.unroute(windowPath, answerWhenOpen);
+        await gate(false);
     }
+    // Whatever the host still had to say has been said before the console's verdict is read.
+    await circuitQuiet();
 });
 
 test('LV-28/ADR-0152: remote whole-column Copy and Summary include rows outside the Window', async ({ page, context }) => {

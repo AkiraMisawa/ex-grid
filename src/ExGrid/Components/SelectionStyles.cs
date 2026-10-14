@@ -205,6 +205,15 @@ internal static class SelectionStyles
     /// </summary>
     internal readonly record struct OutlineCover(int FirstOpenRow, double ScrollLeftPx);
 
+    /// <summary>
+    /// Where the readable area begins, for a fill handle held at its edge (ADR-0050, item 5):
+    /// <paramref name="TopPx"/> is its top in the selection layers' coordinates, measured from the
+    /// painted slice's top, so the part of the first painted row under the header; and
+    /// <paramref name="LeftPx"/> its left in the scrollable layer's, the content's, which is the
+    /// horizontal scroll offset plus the Row Headings and the pinned block that cover the edge.
+    /// </summary>
+    internal readonly record struct ReadableEdge(double TopPx, double LeftPx);
+
     // The sides of the Selection's outline that stay inside the range, as the stylesheet reads
     // them (ex-grid.css): written once, and none when every side lies outside, as Excel's does.
     private const string InsideTop = "; --ex-outline-in-t: 1";
@@ -253,30 +262,81 @@ internal static class SelectionStyles
         => Part(range, columns, rowHeightPx, painted, pinnedLayer: true);
 
     /// <summary>
-    /// The fill handle (ADR-0050, item 5): a square of <paramref name="sizePx"/> centred on
-    /// the range's bottom-right corner, in the layer that corner belongs to — the pinned one
-    /// when the range's last column is pinned, the scrollable one otherwise. Null for the
-    /// other layer, so the handle is one element and never two — and null while its corner
-    /// is not among the painted rows (ADR-0053), where it could not be seen or grabbed.
+    /// The fill handle (ADR-0050, item 5): a square of <paramref name="sizePx"/> at the
+    /// <paramref name="corner"/> of the range <see cref="FillRules.HandleCorner"/> chose, in the
+    /// layer that corner's cell belongs to — the pinned one when its column is pinned, the
+    /// scrollable one otherwise. Null for the other layer, so the handle is one element and never
+    /// two — and null while that cell is not among the painted rows (ADR-0053), where it could not
+    /// be seen or grabbed; but a whole column's first row scrolled above them leaves its handle
+    /// held at the readable area's top, as Excel's stayed in view with row 1 scrolled away (observed,
+    /// the readings of 2026-10-12 (R5)). Where it lies about the corner is
+    /// <see cref="HandleCentrePx"/>'s.
     /// </summary>
     public static string? Handle(
-        SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted,
-        double sizePx, bool pinnedLayer)
+        SelectionRange range, FillHandleCorner corner, ColumnGeometry columns, double rowHeightPx, RowRange painted,
+        double sizePx, bool pinnedLayer, ReadableEdge readable)
     {
-        if (Side(CellRange(new CellPosition(range.BottomRow, range.RightColumn)), columns, pinnedLayer) is null)
+        var cell = HandleCell(range, corner);
+        if (Side(CellRange(cell), columns, pinnedLayer) is null)
             return null;
-        if (range.BottomRow < painted.Start - 1 || range.BottomRow > painted.Start + painted.Count)
+        var heldAtTheTop = corner == FillHandleCorner.TopRight;
+        if ((!heldAtTheTop && cell.Row < painted.Start - 1) || cell.Row > painted.Start + painted.Count)
             return null;
-        var (leftPx, topPx) = HandleCornerPx(range, columns, rowHeightPx, painted.Start);
+        var (leftPx, topPx) = HandleCentrePx(range, corner, columns, rowHeightPx, painted.Start, sizePx, readable);
         return FormattableString.Invariant(
             $"left: {leftPx - (sizePx / 2)}px; top: {topPx - (sizePx / 2)}px; width: {sizePx}px; height: {sizePx}px");
     }
 
-    /// <summary>The range's bottom-right corner, in the coordinates its layer paints in:
-    /// the painted slice's top, and the content's (or the pinned layer's) left.</summary>
-    public static (double LeftPx, double TopPx) HandleCornerPx(
-        SelectionRange range, ColumnGeometry columns, double rowHeightPx, int firstPaintedRow)
-        => (columns.OffsetPxOf(range.RightColumn + 1), (range.BottomRow + 1 - firstPaintedRow) * rowHeightPx);
+    /// <summary>The cell whose corner the handle stands at: the range's last row and last column,
+    /// its first row and last column for whole columns, its last row and first column for whole
+    /// rows. Its column decides the layer, and its row whether the handle is painted.</summary>
+    public static CellPosition HandleCell(SelectionRange range, FillHandleCorner corner) => corner switch
+    {
+        FillHandleCorner.TopRight => new CellPosition(range.TopRow, range.RightColumn),
+        FillHandleCorner.BottomLeft => new CellPosition(range.BottomRow, range.LeftColumn),
+        _ => new CellPosition(range.BottomRow, range.RightColumn),
+    };
+
+    /// <summary>
+    /// The handle's centre, in the coordinates its layer paints in: the painted slice's top, and
+    /// the content's (or the pinned layer's) left. At the bottom-right it is centred on the range's
+    /// corner, which is the outline's outer corner (ADR-0008). At the top-right of whole columns
+    /// and the bottom-left of whole rows it is centred on the edge that runs along the range, and
+    /// lies wholly inside the range across the other, so its top is the first row's top and its
+    /// left the first column's left: that edge is the one the column's Heading or the row's Heading
+    /// stands against, and the header and the Row Headings stand above the selection layer
+    /// (ADR-0008), so a handle centred on the corner would have half of it beneath them, or past the
+    /// grid's edge without one. Excel's straddles the Heading's edge there, a whole column's its
+    /// Heading's bottom edge and a whole row's the Row Heading's right edge (observed, the readings
+    /// of 2026-10-12 (R5 (2))); ExGrid's lies just inside, uncovered.
+    ///
+    /// <para>Held at the readable area's edge (<paramref name="readable"/>): a whole column's top
+    /// never lies above the readable area's top, so with its first row scrolled away the handle
+    /// stands at the top-right of the part in view, beside the header, where Excel's stood (observed,
+    /// R5 (5)); a whole row's left in the scrollable layer never lies left of the Row Headings' and
+    /// the pinned block's edge, so with its first column scrolled under them it stands at the left of
+    /// the part in view (by generalisation from the column).</para>
+    /// </summary>
+    public static (double LeftPx, double TopPx) HandleCentrePx(
+        SelectionRange range, FillHandleCorner corner, ColumnGeometry columns, double rowHeightPx, int firstPaintedRow,
+        double sizePx, ReadableEdge readable)
+    {
+        var half = sizePx / 2;
+        return corner switch
+        {
+            FillHandleCorner.TopRight => (
+                columns.OffsetPxOf(range.RightColumn + 1),
+                Math.Max((range.TopRow - firstPaintedRow) * rowHeightPx, readable.TopPx) + half),
+            FillHandleCorner.BottomLeft => (
+                (range.LeftColumn < columns.PinnedCount
+                    ? columns.OffsetPxOf(range.LeftColumn)
+                    : Math.Max(columns.OffsetPxOf(range.LeftColumn), readable.LeftPx)) + half,
+                (range.BottomRow + 1 - firstPaintedRow) * rowHeightPx),
+            _ => (
+                columns.OffsetPxOf(range.RightColumn + 1),
+                (range.BottomRow + 1 - firstPaintedRow) * rowHeightPx),
+        };
+    }
 
     /// <summary>The Focus as a rectangle, so one cell and a block are the same
     /// arithmetic.</summary>

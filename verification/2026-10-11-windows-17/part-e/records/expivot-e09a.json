@@ -1,0 +1,123 @@
+{
+ "base": "http://localhost:5299",
+ "started": "2026-10-12T08:49:33.501Z",
+ "items": [
+  {
+   "id": "e09a",
+   "item": 9,
+   "what": "Compact form, subtotals at the top",
+   "steps": [
+    "Region dragged onto Rows (it landed on drag 2)",
+    "Desk dragged onto Rows",
+    "Amount dragged onto Values: Sum of Amount",
+    "Layout: Show in Compact Form offered disabled (aria-checked true): the report is in that form already"
+   ],
+   "suggestion": {
+    "file": "From its first 3 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  West",
+      "notClear": ""
+     },
+     {
+      "column": "Desk",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "D1  D2  D3",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "1  2  4",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e09a.csv: 3 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [],
+    "rows": [
+     "Region",
+     "Desk"
+    ],
+    "values": [
+     "Sum of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "6",
+    "colCount": "2",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Sum of Amount"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "−East",
+       "3"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "D1",
+       "1"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "D2",
+       "2"
+      ]
+     },
+     {
+      "row": 4,
+      "cells": [
+       "−West",
+       "4"
+      ]
+     },
+     {
+      "row": 5,
+      "cells": [
+       "D3",
+       "4"
+      ]
+     },
+     {
+      "row": 6,
+      "cells": [
+       "Grand Total",
+       "7"
+      ]
+     }
+    ]
+   },
+   "shot": "e09a-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  }
+ ],
+ "browser": "154.0.8037.98",
+ "finished": "2026-10-12T08:49:39.888Z"
+}

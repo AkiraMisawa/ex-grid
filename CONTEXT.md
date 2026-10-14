@@ -528,6 +528,7 @@ and the single-cell Enter still available. Contrast an **Edit Verdict**'s Reject
 value ([ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md),
 [ADR-0014](./docs/adr/0014-paste-shape-rules-and-selection-count.md),
 [ADR-0035](./docs/adr/0035-paste-and-fill-respect-the-editable-declaration.md)).
+Not a **Refused Formula**, which is a Formula ExSheet does not answer and never an operation.
 _Avoid_: rejection, validation failure, error (that is a Cell State), denial
 
 **Overwrite Notice**:
@@ -778,9 +779,19 @@ names it)
 **Error Value**:
 A Value that is an error — `#DIV/0!`, `#NAME?`, `#REF!`, `#VALUE!`, `#N/A` and the rest of
 Excel's set, plus `#CIRC!` for a Formula that depends on itself, where Excel would show 0 —
-produced by a Formula and carried into every Formula that uses it. It is data, like a number. **Not the Cell State Error**, which is the Consumer's verdict on a value, painted and
+produced by a Formula and carried into every Formula that uses it. It is data, like a number. The `#VALUE!` or
+`#NAME?` of a **Refused Formula** looks like one and is not Excel's: no Formula catches it. **Not the Cell State Error**, which is the Consumer's verdict on a value, painted and
 never computed ([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
 _Avoid_: error (that is a Cell State), exception
+
+**Refused Formula**:
+A Formula ExSheet does not answer because it cannot answer it as Excel would. Its cell shows `#VALUE!`, or
+`#NAME?` where it calls a function Excel has that ExSheet does not declare, or names a declared Linked Table
+bare, and every Formula that reads it is refused too; no Formula catches it, in its own cell or in any cell that reads it. A
+Consumer tells it from Excel's own Error Value by `Value.IsRefused`
+([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)). **Not a
+Refusal**, which is the grid's "no" to an operation and never computes a Value. *(2026-10-13, decided with the user.)*
+_Avoid_: refusal (for the Formula; that is the grid's), refused value
 
 **Linked Table**:
 A named table of rows the Consumer supplies to ExSheet, which Formulas read with Excel's
@@ -1123,8 +1134,13 @@ _Avoid_: demo, hero
 What a published version says it holds, one file per version under `docs/releases/`: its highlights,
 its breaking and behaviour changes, and what each product gained. The same text is the GitHub
 release and the Docs Site's Release notes page. A prerelease's notes say what the Definition of Done
-still owes; a stable version's name its sign-off and every SHOULD accepted failing
-([ADR-0190](./docs/adr/0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md)).
+still owes; a stable version's also say what it does not do (its Known limitations), name its sign-off,
+every SHOULD accepted failing and what was left out of its scope, and say what it supports. A Release
+Candidate's carry the same blocks, to rehearse them, but say that its sign-off is being made, and open
+with a note of their own
+([ADR-0190](./docs/adr/0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md),
+[ADR-0202](./docs/adr/0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md),
+[ADR-0205](./docs/adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)).
 _Avoid_: changelog; "release" for a prerelease (a release is a version without a suffix)
 
 **Change Note**:
@@ -1133,6 +1149,15 @@ branch that makes the change, naming its product and whether it adds, fixes, cha
 breaks. The cut before a tag gathers them into the version's Release Notes
 ([ADR-0190](./docs/adr/0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md)).
 _Avoid_: changeset, fragment
+
+**Release Candidate**:
+A prerelease, `-rc.N`, tagged to rehearse the version without a suffix that follows it: it publishes
+through the same workflow and runs that version's checks but the two that read a sign-off, and its
+Release Notes carry the blocks that version's will. The Definition of Done is signed off against a
+Release Candidate, and the version that follows is its commit with only the sign-off's records and its
+notes added
+([ADR-0205](./docs/adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)).
+_Avoid_: beta (a beta runs none of the stable path's checks); "release" alone for it
 
 **Roadmap**:
 The Docs Site's page of what is decided next, what is left for later and what the family will not do,

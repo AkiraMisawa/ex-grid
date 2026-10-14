@@ -189,7 +189,7 @@ public class PagerTests : GridTestContext
         Assert.Contains("4 / 4", cut.Find(".ex-pager").TextContent);
     }
 
-    [Fact] // ADR-0012/0015/0052: Ctrl+A names a region — the Focus stays where it stands
+    [Fact] // SL-16, ADR-0012/0015/0052: Ctrl+A names a region — the Focus stays where it stands
     public async Task Ctrl_a_keeps_the_focus_where_it_stands()
     {
         GridSelection? selection = null;

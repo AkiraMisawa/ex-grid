@@ -14,6 +14,14 @@ tickets, while the run was under way. A session that started from `8436e45e` mer
 commit: it changes no product code, only this document, the corpus and `oracle.ps1`'s `cellFormat`
 action, so `8436e45e` stays the verified commit of Parts C to H. The changes are listed at the end.)*
 
+*(Revised on 2026-10-12, decided with the user: **every run tags the commit it verified, `verified/` followed by
+the name of its record's directory under `verification/`, and the tag is pushed**, so that the release workflow can
+always fetch the commit a record names. "The verified commit's tag", below, says how. It applies to this run, whose
+tag, `verified/2026-10-11-windows-17`, the orchestrator pushes once the release mechanics' pull request has merged;
+to every area or readings pass that follows this procedure's Part A, which this session then tags; and to every
+later run, whose procedure, when one is written, carries the same section. It changes no product code and no
+Part.)*
+
 For the Claude Code session on the Windows desktop of the earlier runs. Read
 [`verify-on-windows-16.md`](verify-on-windows-16.md) and its report
 (`verification/2026-10-02-windows-16/report.md`) first. Its method and tools apply unchanged:
@@ -325,10 +333,57 @@ cannot be run here is `not run`, with the reason, never a pass.
   ED-30's verdict rows and DC-47's case.
 - Part H added.
 
+## The verified commit's tag
+
+*(Added 2026-10-12, decided with the user;
+[ADR-0208](../../adr/0208-a-question-to-excel-is-asked-when-its-feature-is-built-and-a-check-by-hand-is-repeated-only-when-its-code-changes.md)'s
+release check.)* A record names the commit it verified, and the release workflow compares the code a row covers
+between that commit and the one it releases. A squash merge, or a branch deleted after its merge, can take that
+commit out of every branch, and then nothing can be compared: the workflow refuses the release as unchecked. A tag
+keeps the commit.
+
+*(2026-10-12, decided with the user: **a verified commit's tag is `verified/` followed by the name of the record's
+directory under `verification/`, and nothing else**, one tag for each record directory. Neither the platform nor
+the run's purpose is part of the rule, and the release check refuses a record whose tag is not exactly that.)*
+
+- **Tag the verified commit once it is fetched, before the first Part**, and push the tag at once, so that a
+  run stopped half way still leaves it:
+
+  ```sh
+  git tag -a verified/<directory> <verified commit> -m "The commit verification/<directory>/ verified"
+  git push origin verified/<directory>
+  ```
+
+  - `<directory>` is the name of the run's directory under `verification/`, whole:
+    `verification/2026-10-11-windows-17/report.md` is tagged `verified/2026-10-11-windows-17`, on
+    `8436e45e73083944e413e92340f73dbba0b521c4`, and `verification/2026-10-01-windows-browser-11/keys.md`, the
+    eleventh run's Part B, `verified/2026-10-01-windows-browser-11`.
+  - An area or readings pass is tagged for its own directory in the same way: `verified/2026-10-12-windows-area`,
+    `verified/2026-10-12-windows-area-2`, `verified/2026-10-12-windows-readings`. So is a run on macOS:
+    `verification/2026-11-02-macos-kb3/` is tagged `verified/2026-11-02-macos-kb3`.
+  - The tag is pushed by the session that made the run. Push only the tag; the branch is pushed after each Part
+    as before.
+  - *(2026-10-12, decided with the user: **the tags of the runs made before this rule are pushed by the
+    orchestrator once the release mechanics' pull request has merged**: `verified/2026-10-01-windows-15`,
+    `verified/2026-10-02-windows-16`, `verified/2026-10-01-windows-browser-11` and this run's,
+    `verified/2026-10-11-windows-17`. This session does not push those four. It then tags the area and readings
+    passes of 2026-10-12 by the same rule, each at the commit its report names.)*
+- **The tag is never moved.** It names the commit the run verified and nothing else. If the run has to verify
+  another commit, the Parts made at that commit are recorded in a directory of their own, as
+  `verification/2026-10-11-windows-17b/`, which is tagged `verified/2026-10-11-windows-17b`, and the report says
+  which Parts ran at which.
+- **The report names the tag** beside the verified commit: "**Verified commit: `8436e45e`**, tagged
+  `verified/2026-10-11-windows-17`".
+- **A row checked by hand that this run records** is indexed in `verification/by-hand.json`, in the same commit
+  as its record, as the Definition of Done's Step 4 asks: the row's record is replaced by the commit in full, the
+  tag, the record's file and the verdict Part G gives against the row as written. That is filing the record, not
+  deciding anything: a verdict that is not a pass stays as it reads.
+
 ## Finishing
 
 1. Commit everything to `claude/exsheet-windows-verify-17` and push, after each Part as above, and
-   once more at the end.
+   once more at the end. Push each record directory's tag too, if it was not pushed at the start, but for
+   this run's own, which the orchestrator pushes ("The verified commit's tag").
 2. The report's last section lists every difference: each disagreeing corpus case, and each reading
    that did not match. Name each one's ticket, ADR paragraph or Definition of Done row.
 3. It proposes nothing on the user's behalf.

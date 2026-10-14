@@ -7,6 +7,7 @@ const ExSheet.SheetCommandIds.DeleteRows = "exsheet.delete-rows" -> string!
 const ExSheet.SheetCommandIds.FormatCells = "exsheet.format-cells" -> string!
 const ExSheet.SheetCommandIds.InsertColumns = "exsheet.insert-columns" -> string!
 const ExSheet.SheetCommandIds.InsertRows = "exsheet.insert-rows" -> string!
+const ExSheet.SheetCommandIds.SummaryRefused = "exsheet.summary-refused" -> string!
 ExSheet.AlignCenterItem
 ExSheet.AlignCenterItem.AlignCenterItem() -> void
 ExSheet.AlignLeftItem

@@ -464,20 +464,494 @@ test('a refusal is announced in the root\'s live region in the built-in words, a
     await expect(region).toHaveText(words);
 });
 
-test('a menu copy writes without a prompt, and with headers (CP-19/CP-17, ADR-0005/0036)', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+// What a copy did, read from beside the grid (ADR-0005's routes): every `copy` event the document
+// heard after the grid's own listener — what it carried and whether the grid took it — and every
+// call to the asynchronous Clipboard API, with how its promise settled. A write the browser would
+// only make after asking leaves its promise pending, or rejects it: either is a prompt, and neither
+// settles as written. Through alterPage, since it wraps a native and listens on document (ADR-0056).
+async function watchCopyRoutes(page) {
+    await alterPage(page, () => {
+        const seen = { events: [], writes: [] };
+        window.__copyRoutes = seen;
+        const write = navigator.clipboard.write;
+        const writeText = navigator.clipboard.writeText;
+        const watched = (name, original) => function (...args) {
+            const call = { name, state: 'pending' };
+            seen.writes.push(call);
+            const promise = original.apply(this, args);
+            promise.then(() => { call.state = 'written'; }, (error) => { call.state = `rejected: ${error?.name ?? error}`; });
+            return promise;
+        };
+        navigator.clipboard.write = watched('write', write);
+        navigator.clipboard.writeText = watched('writeText', writeText);
+        const onCopy = (event) => seen.events.push({
+            taken: event.defaultPrevented,
+            plain: event.clipboardData?.getData('text/plain') ?? '',
+        });
+        document.addEventListener('copy', onCopy);
+        return () => {
+            navigator.clipboard.write = write;
+            navigator.clipboard.writeText = writeText;
+            document.removeEventListener('copy', onCopy);
+            delete window.__copyRoutes;
+        };
+    });
+}
+const copyRoutes = (page) => page.evaluate(() => JSON.parse(JSON.stringify(window.__copyRoutes)));
+
+// The state the browser holds for a clipboard permission, as the page would ask it.
+const permission = (page, name) => page.evaluate(async (n) => (await navigator.permissions.query({ name: n })).state, name);
+
+// Takes back the clipboard permissions the file's beforeEach granted, after leaving a sentinel, so
+// the copy that follows is made as a user's page makes it: with nothing the test granted, under the
+// browser's own defaults (CP-6, CP-19). Chromium's default holds a sanitised write granted to the
+// focused tab, which is the property under test, and a read at "prompt": a read made now would wait
+// on a prompt, so "prompt" here says the test's grants are gone. Granted, `clipboard-read` would
+// have let a write through on its own.
+async function grantsTakenBack(page, context) {
+    await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+    await context.clearPermissions();
+    expect(await permission(page, 'clipboard-read'), 'the test\'s grants are taken back before the copy').toBe('prompt');
+}
+
+// Reads the clipboard once the copy has been made, granting the read only then.
+async function clipboardAfterwards(page, context) {
+    await context.grantPermissions(['clipboard-read']);
+    return (await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, '\n').trimEnd();
+}
+
+const cellText = async (page, row, column) => (await grid(page).locator(`[id$='r${row}c${column}']`).textContent()).trim();
+
+test('CP-6 / ADR-0005: a Ctrl+C inside the Window writes with no permission granted and no prompt, by the copy event on WebAssembly', async ({ page, context }) => {
+    const expected = `${await cellText(page, 0, 1)}\n${await cellText(page, 1, 1)}`;
+    await grantsTakenBack(page, context);
+    await watchCopyRoutes(page);
     await clickCell(page, 0, 1);
     await page.keyboard.press('Shift+ArrowDown');
+    await page.keyboard.press('ControlOrMeta+C');
+
+    if (SERVER) {
+        // No synchronous channel on a circuit: every copy takes the asynchronous route, and what
+        // CP-6 protects there is the missing prompt (ADR-0005, SRV-2). The grid takes the event and
+        // starts its write in it; the write settles as written, unasked.
+        await expect.poll(async () => (await copyRoutes(page)).writes, { timeout: 5000 })
+            .toEqual([{ name: 'write', state: 'written' }]);
+        expect((await copyRoutes(page)).events.map((e) => e.taken)).toEqual([true]);
+    } else {
+        // The copy event route: the grid set both flavours on the event itself, and the
+        // asynchronous Clipboard API was never called.
+        const { events, writes } = await copyRoutes(page);
+        expect(events, 'the grid took the copy event and set its data on it').toEqual([{ taken: true, plain: expect.any(String) }]);
+        expect(events[0].plain.replace(/\r\n/g, '\n').trimEnd()).toBe(expected);
+        expect(writes, 'navigator.clipboard was not called: the copy took the event route').toEqual([]);
+    }
+    await circuitQuiet();
+    await expect(page.locator('#copy-status')).toHaveText('Copy refused: —');
+    expect(await clipboardAfterwards(page, context), 'the copy landed on the clipboard').toBe(expected);
+});
+
+test('CP-19 / ADR-0005/0036: a menu copy writes with no permission granted and no prompt, by the asynchronous route, with headers (CP-17)', async ({ page, context }) => {
+    await grantsTakenBack(page, context);
+    await watchCopyRoutes(page);
+    await clickCell(page, 0, 1);
 
     await grid(page).locator("[id$='r0c1']").click({ button: 'right', force: true });
     await grid(page).locator('[role=menu] button[role=menuitem]')
         .filter({ hasText: 'Copy with headers' }).click();
 
-    // A menu item's click fires no copy event, so this went through the asynchronous
-    // clipboard API. Chromium grants clipboard-write to the active tab, so no prompt is
-    // expected — if one ever appears this test hangs, which is the finding, not a pass.
-    await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 })
-        .toMatch(/^Trader\r?\n/);
+    // A menu item's click fires no copy event, so a one-cell selection takes the asynchronous
+    // Clipboard API too (ADR-0005, "A menu copy has no copy event"). Chromium grants a write to the
+    // focused tab, so it settles as written; a prompt would leave it pending or reject it, and
+    // this fails then, which is the finding ADR-0005 asks layer 3 to record.
+    await expect.poll(async () => (await copyRoutes(page)).writes, { timeout: 5000 })
+        .toEqual([{ name: 'write', state: 'written' }]);
+    expect((await copyRoutes(page)).events, 'no copy event was fired or needed').toEqual([]);
+    await expect(page.locator('#copy-status')).toHaveText('Copy refused: —');
+    expect(await clipboardAfterwards(page, context)).toBe(`Trader\n${await cellText(page, 0, 1)}`);
+});
+
+// CP-10 (ADR-0005): the page's text, selected with the mouse, is never what Ctrl+C on the grid
+// copies. The browser aims a copy at the element holding the document's selection, and at the
+// focused element only while there is none, so a selection left standing outside the grid would
+// take the command from it. Dragged across the paragraph above the second instance, then a grid
+// takes the keyboard: by a press on a cell of the grid that edits (its Keyboard Field, ADR-0080),
+// and on the display-only second instance by a press, and by Tab, which leaves the page's
+// selection standing as Ctrl+C arrives.
+async function selectTextWithMouse(page, paragraph) {
+    const box = await paragraph.boundingBox();
+    await page.mouse.move(box.x + 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width - 2, box.y + box.height / 2, { steps: 8 });
+    await page.mouse.up();
+    const selected = await page.evaluate(() => document.getSelection().toString());
+    expect(selected.length, 'the mouse selected the paragraph\'s text').toBeGreaterThan(10);
+    return selected;
+}
+
+for (const way of ['a press on the grid that edits', 'a press on the display-only grid', 'Tab back to the display-only grid']) {
+    test(`CP-10 / ADR-0005: text selected with the mouse, then ${way}: Ctrl+C copies the grid's cell, not the text`, async ({ page }) => {
+        const second = way !== 'a press on the grid that edits';
+        const target = second ? page.locator('.ex-grid').nth(1) : grid(page);
+        const cell = target.locator("[id$='r0c1']");
+        const expected = (await cell.textContent()).trim();
+        await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+
+        if (way.startsWith('Tab')) {
+            // The Focus first, then the text: Tab brings the keyboard back to the grid with its
+            // Focus where it was, and Ctrl+C is the first key the grid hears.
+            await cell.click({ force: true });
+            await expectKeyboardOn(target);
+            const selected = await selectTextWithMouse(page, page.locator('h2 + p'));
+            await page.keyboard.press('Tab');
+            await expectKeyboardOn(target);
+            // The page's selection still stands as Ctrl+C arrives: it is the grid's to drop.
+            expect(await page.evaluate(() => document.getSelection().toString())).toBe(selected);
+        } else {
+            await selectTextWithMouse(page, page.locator('h2 + p'));
+            await cell.click({ force: true });
+            await expectKeyboardOn(target);
+        }
+        await page.keyboard.press('ControlOrMeta+C');
+
+        // On the Server host the copy lands a round trip later (ADR-0005).
+        await expect.poll(async () => (await page.evaluate(() => navigator.clipboard.readText())).trimEnd(), { timeout: 5000 })
+            .toBe(expected);
+    });
+}
+
+// CP-14 (ADR-0005, ADR-0050 item 10): a paste reads text/html before text/plain, and from Excel's
+// markup a number's x:num, the raw value at full precision, where the shown text and the plain
+// flavour hold the display, already rounded. The fields arrive typed: an x:num field as the raw
+// number under the invariant culture, a cell's shown text as text in the source's culture. The
+// payload is Excel's shape as its HTML export writes it; the paste event's data is the browser's
+// own, from the clipboard, through the real Ctrl+V.
+test('CP-14 / ADR-0005: an Excel-shaped paste arrives typed and at full precision, from x:num and not the shown text', async ({ page }) => {
+    const html = [
+        '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"',
+        ' xmlns="http://www.w3.org/TR/REC-html40"><head><meta name=ProgId content=Excel.Sheet>',
+        '<meta name=Generator content="Microsoft Excel 15"></head><body>',
+        '<table border=0 cellpadding=0 cellspacing=0><!--StartFragment-->',
+        '<tr height=19><td height=19>Ishida</td>',
+        '<td class=xl66 align=right x:num="1234567.891234">1,234,567.89</td></tr>',
+        '<tr height=19><td height=19>Mori</td>',
+        '<td class=xl66 align=right x:num="0.1234567890123">0.12</td></tr>',
+        '<!--EndFragment--></table></body></html>',
+    ].join('');
+    await page.evaluate((markup) => navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([markup], { type: 'text/html' }),
+        'text/plain': new Blob(['Ishida\t1,234,567.89\r\nMori\t0.12\r\n'], { type: 'text/plain' }),
+    })]), html);
+    await clickCell(page, 0, 1); // Trader; Notional to its right
+    await page.keyboard.press('Shift+ArrowDown');
+    await page.keyboard.press('Shift+ArrowRight');
+
+    await page.keyboard.press('ControlOrMeta+V');
+
+    await expect(page.locator('#paste-status')).toContainText('4 cells from 2x2');
+    await expect(page.locator('#paste-fields')).toHaveText(
+        'Fields: Ishida:ShownText | 1234567.891234:Invariant | Mori:ShownText | 0.1234567890123:Invariant');
+});
+
+// CP-14's second half (ADR-0005): desktop Excel's own copy carries no x:num. Its HTML holds each
+// cell's shown text, as text/plain does (verification/2026-09-27-windows-excel-2/
+// clipboard-probe-chrome.json, the shape declarations.spec.mjs pastes on /sheet). Then the shown
+// text is what arrives, marked as shown text to be read in the source's culture, and precision is
+// what was shown: here the demo's Consumer reads every field as a number, 1,234.50 among them.
+const excelShownTextColumn = (cells) => [
+    '<html xmlns:v="urn:schemas-microsoft-com:vml"\r\nxmlns:o="urn:schemas-microsoft-com:office:office"\r\n',
+    'xmlns:x="urn:schemas-microsoft-com:office:excel"\r\nxmlns="http://www.w3.org/TR/REC-html40">\r\n\r\n<head>\r\n',
+    '<meta http-equiv=Content-Type content="text/html; charset=utf-8">\r\n<meta name=ProgId content=Excel.Sheet>\r\n',
+    '<meta name=Generator content="Microsoft Excel 15">\r\n<style>\r\n<!--table\r\n\t{mso-displayed-decimal-separator:"\\.";\r\n',
+    '\tmso-displayed-thousand-separator:"\\,";}\r\ntd\r\n\t{mso-number-format:General;\r\n\twhite-space:nowrap;}\r\n',
+    '.xl66\r\n\t{mso-number-format:Standard;}\r\n-->\r\n</style>\r\n</head>\r\n\r\n<body link="#467886" vlink="#96607D">\r\n\r\n',
+    "<table border=0 cellpadding=0 cellspacing=0 width=87 style='border-collapse:\r\n collapse'>\r\n<!--StartFragment-->\r\n",
+    " <col width=87 style='mso-width-source:userset'>\r\n",
+    ...cells.map((text) => ` <tr height=19 style='height:14.5pt'>\r\n  <td height=19 class=xl66 align=right style='height:14.5pt'>${text}</td>\r\n </tr>\r\n`),
+    '<!--EndFragment-->\r\n</table>\r\n\r\n</body>\r\n\r\n</html>\r\n',
+].join('');
+
+test('CP-14 / ADR-0005: desktop Excel\'s paste, shown text with no x:num, arrives as the shown text and is read as numbers', async ({ page }) => {
+    const shown = ['6.00', '1,234.50', '0.12'];
+    await page.evaluate(({ markup, text }) => navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([markup], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+    })]), { markup: excelShownTextColumn(shown), text: shown.map((t) => `${t}\r\n`).join('') });
+    await clickCell(page, 0, 2); // Notional
+    await page.keyboard.press('Shift+ArrowDown');
+    await page.keyboard.press('Shift+ArrowDown');
+
+    await page.keyboard.press('ControlOrMeta+V');
+
+    await expect(page.locator('#paste-fields')).toHaveText('Fields: 6.00:ShownText | 1,234.50:ShownText | 0.12:ShownText');
+    // Each shown text read as a number by the Consumer, as typed: all three written, and painted
+    // back as the numbers they are, at the precision they were shown.
+    await expect(page.locator('#paste-status')).toContainText('3 cells from 3x1, 3 applied');
+    await expect(grid(page).locator("[id$='r0c2']")).toHaveText('6.00');
+    await expect(grid(page).locator("[id$='r1c2']")).toHaveText('1234.50');
+    await expect(grid(page).locator("[id$='r2c2']")).toHaveText('0.12');
+});
+
+// CON-8 (ADR-0005): a copy that fails in .NET is never silent. A Consumer's CopyAnswer that throws
+// (/features?copythrows=1) fails the build of the payload. On WebAssembly a Ctrl+C asks for it
+// synchronously, through the channel the probe at attach found, and the failure is said on the
+// console and not run again down the asynchronous route, as a missing channel would be: nothing is
+// written. A menu copy takes the asynchronous route on every host, and on the Server host so does
+// every copy; its failure is said too. The clipboard keeps what it held either way.
+test.describe(() => {
+    test.use({ expectedErrors: [/\[ex-grid\] the grid failed to build a copy/] });
+
+    test('CON-8 / ADR-0005: a copy whose payload fails to build says so on the console on either route, and writes nothing', async ({ page }) => {
+        await page.goto('/features?copythrows=1');
+        await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+        await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+        await watchCopyRoutes(page);
+        const said = () => page.waitForEvent('console', {
+            predicate: (m) => m.type() === 'error' && m.text().includes('[ex-grid] the grid failed to build a copy'),
+            timeout: 5000,
+        });
+
+        await clickCell(page, 0, 1);
+        let failure = said();
+        await page.keyboard.press('ControlOrMeta+C');
+        await failure;
+        await circuitQuiet();
+        if (!SERVER) {
+            expect((await copyRoutes(page)).writes, 'the failure was not run again down the asynchronous route').toEqual([]);
+        }
+        expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('SENTINEL');
+
+        failure = said();
+        await grid(page).locator("[id$='r0c1']").click({ button: 'right', force: true });
+        await grid(page).locator('[role=menu] button[role=menuitem]').filter({ hasText: /^Copy$/ }).click();
+        await failure;
+        await circuitQuiet();
+        expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('SENTINEL');
+    });
+});
+
+/** Waits until the first grid's selected range covers the cells from [row, column] to [row, column], whole. */
+async function expectRangeCovers(page, [fromRow, fromColumn], [toRow, toColumn]) {
+    const from = await grid(page).locator(`[id$='r${fromRow}c${fromColumn}']`).boundingBox();
+    const to = await grid(page).locator(`[id$='r${toRow}c${toColumn}']`).boundingBox();
+    const want = { x: from.x, y: from.y, right: to.x + to.width, bottom: to.y + to.height };
+    await expect.poll(async () => {
+        const box = await grid(page).locator('.ex-selection .ex-range').boundingBox();
+        if (!box) {
+            return 'not painted';
+        }
+        const near = (p, q) => Math.abs(p - q) <= 1.5;
+        return near(box.x, want.x) && near(box.y, want.y) && near(box.x + box.width, want.right) && near(box.y + box.height, want.bottom)
+            ? 'covers'
+            : JSON.stringify({ box, want });
+    }).toBe('covers');
+}
+
+// Overwrite is Excel's Enter mode (ADR-0010): the Shift+arrows and Shift+Home commit the entry and
+// then extend the Selection, as they do with no edit open, where they once selected the editor's
+// text (the seventeenth Windows run, Part C, case 7). Caret keeps them the editor's.
+test('in Overwrite Shift+Home and Shift+↓ commit and extend the Selection; in Caret Shift+Home selects the text (ED-2, ADR-0010)', async ({ page }) => {
+    const editor = grid(page).locator('input.ex-editor');
+    await clickCell(page, 2, 1); // Trader, editable
+    await page.keyboard.type('AB');
+    await expect(editor).toHaveValue('AB');
+
+    await page.keyboard.press('Shift+Home');
+
+    await expect(editor).toHaveCount(0);
+    await expect(page.locator('#edit-status')).toContainText('Trader=AB');
+    await expectRangeCovers(page, [2, 0], [2, 1]);
+    expect(await activeDescendant(grid(page))).toMatch(/r2c1$/);
+
+    // Shift+↓ the same way: typed onto the Focus, which the extension left where it was, and the
+    // range the Selection holds grows a row, as Shift+↓ grows it with no edit open (ADR-0012).
+    await page.keyboard.type('CD');
+    await expect(editor).toHaveValue('CD');
+    await page.keyboard.press('Shift+ArrowDown');
+    await expect(editor).toHaveCount(0);
+    await expect(page.locator('#edit-status')).toContainText('Trader=CD');
+    await expectRangeCovers(page, [2, 0], [3, 1]);
+    expect(await activeDescendant(grid(page))).toMatch(/r2c1$/);
+
+    // In Caret (F2) the same key is the editor's: it selects the text, and nothing commits.
+    await page.keyboard.press('F2');
+    await expect(editor).toBeVisible();
+    await page.keyboard.press('End');
+    await page.keyboard.press('Shift+Home');
+    await expect.poll(() => editor.evaluate((input) => [input.selectionStart, input.selectionEnd]))
+        .toEqual([0, (await editor.inputValue()).length]);
+    await expect(editor).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+});
+
+// The Primary Modifier's arrows the same way (ADR-0010, ED-2): Excel's Enter mode committed on Ctrl+→
+// and moved, and on Ctrl+Shift+→ committed and extended (the readings of 2026-10-12, R1 (vii)); the
+// other directions follow by generalisation. In Caret Ctrl+← is the editor's.
+test('in Overwrite Ctrl+← commits and moves to the row\'s first column, Ctrl+Shift+← commits and extends to it; in Caret Ctrl+← moves the caret (ED-2, ADR-0010)', async ({ page }) => {
+    const editor = grid(page).locator('input.ex-editor');
+    await clickCell(page, 2, 1); // Trader, editable
+    await page.keyboard.type('EF');
+    await expect(editor).toHaveValue('EF');
+
+    await page.keyboard.press('Control+ArrowLeft');
+
+    await expect(editor).toHaveCount(0);
+    await expect(page.locator('#edit-status')).toContainText('Trader=EF');
+    await expect.poll(() => activeDescendant(grid(page))).toMatch(/r2c0$/);
+
+    await clickCell(page, 2, 1);
+    await page.keyboard.type('GH');
+    await expect(editor).toHaveValue('GH');
+    await page.keyboard.press('Control+Shift+ArrowLeft');
+    await expect(editor).toHaveCount(0);
+    await expect(page.locator('#edit-status')).toContainText('Trader=GH');
+    await expectRangeCovers(page, [2, 0], [2, 1]);
+    expect(await activeDescendant(grid(page))).toMatch(/r2c1$/);
+
+    // In Caret (F2) the same key is the editor's: the caret moves, and nothing commits.
+    await page.keyboard.press('F2');
+    await expect(editor).toBeVisible();
+    // Typed behind F2, End and Ctrl+← may reach the edit before or after F2's answer: held, they are
+    // replayed as the field would have handled them, so the caret lands at 0 either way (ADR-0010).
+    await page.keyboard.press('End');
+    await page.keyboard.press('Control+ArrowLeft');
+    await expect.poll(() => editor.evaluate((input) => input.selectionStart)).toBe(0);
+    await expect(editor).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+});
+
+// A word move, and Shift's extension, in Caret on a value of two words. Where the field's own word
+// moves land, on the platform the browser runs on: back, at the start of a word; forward, at its end,
+// or on Windows at the start of the next word. The modifier is Ctrl, and Option on an Apple platform,
+// where ⌘'s arrows go to the text's ends instead.
+async function wordKeys(page) {
+    const platform = await page.evaluate(() => navigator.userAgentData?.platform ?? navigator.platform ?? '');
+    return {
+        word: /mac|iphone|ipad|ipod/i.test(platform) ? 'Alt' : 'Control',
+        // 'alpha beta': from the start, forward a word.
+        forward: /^win/i.test(platform) ? 6 : 5,
+    };
+}
+
+/** Commits 'alpha beta' into Trader on row 2 and leaves the Focus on that cell, no edit open. */
+async function alphaBetaInTrader(page) {
+    const editor = grid(page).locator('input.ex-editor');
+    await clickCell(page, 2, 1); // Trader, editable
+    await page.keyboard.type('alpha beta');
+    await expect(editor).toHaveValue('alpha beta');
+    await page.keyboard.press('Enter');
+    await expect(editor).toHaveCount(0);
+    await expect(page.locator('#edit-status')).toContainText('Trader=alpha beta');
+    await clickCell(page, 2, 1);
+    await expectActiveDescendant(grid(page), /r2c1$/);
+    return editor;
+}
+
+const selectionOf = (editor) => editor.evaluate((input) => [input.selectionStart, input.selectionEnd]);
+const extensionOf = (editor) => editor.evaluate((input) => [input.selectionStart, input.selectionEnd, input.selectionDirection]);
+
+// The field's own word moves, typed behind no key the grid is answering: the edit stands open and
+// holds the keyboard before the first of them, so the browser carries them out itself. What the held
+// keys of the next test are measured against.
+test('in Caret Ctrl+← and Ctrl+→ move the caret by a word, with Shift extend the selection, and Ctrl+Backspace and Ctrl+Delete delete a word, in the field itself (ED-2, ADR-0010)', async ({ page }) => {
+    const { word, forward } = await wordKeys(page);
+    const editor = await alphaBetaInTrader(page);
+    await page.keyboard.press('F2');
+    await expect(editor).toBeFocused();
+    await circuitQuiet();
+
+    await page.keyboard.press('End');
+    await page.keyboard.press(`${word}+ArrowLeft`);
+    await expect.poll(() => selectionOf(editor)).toEqual([6, 6]);
+    await page.keyboard.press('Shift+End');
+    await expect.poll(() => extensionOf(editor)).toEqual([6, 10, 'forward']);
+
+    await page.keyboard.press('Home');
+    await page.keyboard.press(`${word}+ArrowRight`);
+    await expect.poll(() => selectionOf(editor)).toEqual([forward, forward]);
+    await page.keyboard.press(`${word}+Shift+ArrowRight`);
+    await expect.poll(() => extensionOf(editor)).toEqual([forward, 10, 'forward']);
+
+    await page.keyboard.press('End');
+    await page.keyboard.press(`${word}+Backspace`);
+    await expect(editor).toHaveValue('alpha ');
+    await expect.poll(() => selectionOf(editor)).toEqual([6, 6]);
+
+    // Escape gives the text back; the edit reopened holds the keyboard before the next key.
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    await page.keyboard.press('F2');
+    await expect(editor).toBeFocused();
+    await expect(editor).toHaveValue('alpha beta');
+    await circuitQuiet();
+    await page.keyboard.press('Home');
+    await page.keyboard.press(`${word}+Delete`);
+    await expect(editor).toHaveValue('alpha beta'.slice(forward));
+    await expect.poll(() => selectionOf(editor)).toEqual([0, 0]);
+
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    await expect(grid(page).locator("[id$='r2c1']")).toHaveText('alpha beta');
+});
+
+// The same keys held for certain: typed straight after F2 (or Escape and F2) over a 150 ms round trip,
+// every one waits for the edit to open, and is then replayed into it. A held key the field would have
+// handled itself is handled as it would have (ADR-0010): Ctrl+← and Shift+End were once dropped and
+// collapsed there, so where the caret landed turned on whether the keys arrived before F2's answer —
+// Ctrl+← stood at 2 in 'GH' on Edge, WebAssembly, where the test above it waits for 0 (ED-2).
+test('with a 150 ms round trip, End, Ctrl+←, Shift+End typed straight after F2 move and extend as the field would; so do Ctrl+→, Ctrl+Shift+→, Ctrl+Backspace and Ctrl+Delete (ED-2, ADR-0010)', async ({ page }) => {
+    test.skip(!SERVER, 'WebAssembly answers F2 before most keys: nothing is held for certain');
+    const { word, forward } = await wordKeys(page);
+    const editor = await alphaBetaInTrader(page);
+    await setRoundTrip(150);
+
+    await page.keyboard.press('F2');
+    await page.keyboard.press('End');
+    await page.keyboard.press(`${word}+ArrowLeft`);
+    await page.keyboard.press('Shift+End');
+    await expect.poll(() => extensionOf(editor)).toEqual([6, 10, 'forward']);
+    await expect(editor).toHaveValue('alpha beta');
+
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('F2');
+    await page.keyboard.press('Home');
+    await page.keyboard.press(`${word}+ArrowRight`);
+    await page.keyboard.press(`${word}+Shift+ArrowRight`);
+    await expect.poll(() => extensionOf(editor)).toEqual([forward, 10, 'forward']);
+
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('F2');
+    await page.keyboard.press(`${word}+Backspace`);
+    await expect(editor).toHaveValue('alpha ');
+    await expect.poll(() => selectionOf(editor)).toEqual([6, 6]);
+
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('F2');
+    await page.keyboard.press('Home');
+    await page.keyboard.press(`${word}+Delete`);
+    await expect(editor).toHaveValue('alpha beta'.slice(forward));
+    await expect.poll(() => selectionOf(editor)).toEqual([0, 0]);
+
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    await expect(grid(page).locator("[id$='r2c1']")).toHaveText('alpha beta');
+});
+
+test('a Reject holds the commit Shift+↓ asks for in Overwrite, and the Selection stays (ED-2, ED-15, ADR-0034)', async ({ page }) => {
+    const editor = grid(page).locator('input.ex-editor');
+    await clickCell(page, 0, 2); // Notional, which carries the verdict
+    await page.keyboard.type('abc');
+
+    await page.keyboard.press('Shift+ArrowDown');
+
+    await expect(editor).toHaveValue('abc');
+    await expect(editor).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('#edit-status')).not.toContainText('Notional=abc');
+    await expect(grid(page).locator('.ex-selection .ex-range')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    expect(await activeDescendant(grid(page))).toMatch(/r0c2$/);
 });
 
 test('a Reject holds the editor with real keys, and Escape is the way out (ED-15, ADR-0034)', async ({ page }) => {

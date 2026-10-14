@@ -39,11 +39,11 @@ public static class ClipboardParse
         return null;
     }
 
-    private static List<List<(string Value, PasteFieldOrigin Origin)>> Shown(List<List<string>> rows)
+    private static List<List<(string Value, PasteFieldOrigin Origin, string? Mark)>> Shown(List<List<string>> rows)
     {
-        var fields = new List<List<(string, PasteFieldOrigin)>>(rows.Count);
+        var fields = new List<List<(string, PasteFieldOrigin, string?)>>(rows.Count);
         foreach (var row in rows)
-            fields.Add(row.ConvertAll(value => (value, PasteFieldOrigin.ShownText)));
+            fields.Add(row.ConvertAll(value => (value, PasteFieldOrigin.ShownText, (string?)null)));
         return fields;
     }
 
@@ -127,9 +127,11 @@ public static class ClipboardParse
     /// A deliberately small scan for the one shape that matters — the table Excel and
     /// this grid put on the clipboard — not an HTML parser. A cell's value is its
     /// <c>x:num</c> attribute when Excel supplied one (the raw number, full precision),
-    /// otherwise its text content with tags stripped and entities decoded.
+    /// otherwise its text content with tags stripped and entities decoded. In ExGrid's own table
+    /// (<see cref="ClipboardData.InvariantMarker"/>) a cell's <see cref="ClipboardData.MarkAttribute"/>
+    /// is read beside its value.
     /// </summary>
-    private static List<List<(string Value, PasteFieldOrigin Origin)>>? ParseHtmlTable(string html)
+    private static List<List<(string Value, PasteFieldOrigin Origin, string? Mark)>>? ParseHtmlTable(string html)
     {
         var tableStart = html.IndexOf("<table", StringComparison.OrdinalIgnoreCase);
         if (tableStart < 0)
@@ -143,7 +145,7 @@ public static class ClipboardParse
         var ownInvariant = tableOpenEnd > 0 && tableOpenEnd < tableEnd &&
             html.AsSpan(tableStart, tableOpenEnd - tableStart).Contains(ClipboardData.InvariantMarker, StringComparison.OrdinalIgnoreCase);
 
-        var rows = new List<List<(string, PasteFieldOrigin)>>();
+        var rows = new List<List<(string, PasteFieldOrigin, string?)>>();
         var position = tableStart;
         while (true)
         {
@@ -154,7 +156,7 @@ public static class ClipboardParse
             if (rowEnd < 0 || rowEnd > tableEnd)
                 rowEnd = tableEnd;
 
-            var cells = new List<(string, PasteFieldOrigin)>();
+            var cells = new List<(string, PasteFieldOrigin, string?)>();
             var cellPosition = rowStart;
             while (true)
             {
@@ -172,9 +174,10 @@ public static class ClipboardParse
 
                 var attributes = html[cellStart..openEnd];
                 var content = html[(openEnd + 1)..closeStart];
+                var mark = ownInvariant ? QuotedAttribute(attributes, ClipboardData.MarkAttribute) : null;
                 cells.Add(NumberAttribute(attributes) is { } number
-                    ? (number, PasteFieldOrigin.Invariant)
-                    : (DecodeText(content), ownInvariant ? PasteFieldOrigin.Invariant : PasteFieldOrigin.ShownText));
+                    ? (number, PasteFieldOrigin.Invariant, mark)
+                    : (DecodeText(content), ownInvariant ? PasteFieldOrigin.Invariant : PasteFieldOrigin.ShownText, mark));
                 cellPosition = closeStart + 1;
             }
             if (cells.Count > 0)
@@ -206,12 +209,16 @@ public static class ClipboardParse
     /// <summary>Excel's <c>x:num="…"</c> — the raw number behind the displayed text.
     /// The bare form (<c>x:num</c> with no value) says only "this is a number", so the
     /// text content stands.</summary>
-    private static string? NumberAttribute(string attributes)
+    private static string? NumberAttribute(string attributes) => QuotedAttribute(attributes, "x:num");
+
+    /// <summary>The value of <c>name="…"</c> among a tag's attributes, as written, or null.</summary>
+    private static string? QuotedAttribute(string attributes, string name)
     {
-        var i = attributes.IndexOf("x:num=\"", StringComparison.OrdinalIgnoreCase);
+        var needle = name + "=\"";
+        var i = attributes.IndexOf(needle, StringComparison.OrdinalIgnoreCase);
         if (i < 0)
             return null;
-        var start = i + "x:num=\"".Length;
+        var start = i + needle.Length;
         var end = attributes.IndexOf('"', start);
         return end < 0 ? null : attributes[start..end];
     }
@@ -269,13 +276,18 @@ public static class ClipboardParse
         return text.ToString().Trim(' ', '\t', '\n', '\r').Replace('\u00A0', ' ');
     }
 
-    private static ClipboardBlock Rectangular(List<List<(string Value, PasteFieldOrigin Origin)>> rows, bool fromTable)
+    private static ClipboardBlock Rectangular(List<List<(string Value, PasteFieldOrigin Origin, string? Mark)>> rows, bool fromTable)
     {
         var width = 0;
+        var marked = false;
         foreach (var row in rows)
+        {
             width = Math.Max(width, row.Count);
+            marked |= row.Exists(field => field.Mark is not null);
+        }
         var values = new IReadOnlyList<string>[rows.Count];
         var origins = new IReadOnlyList<PasteFieldOrigin>[rows.Count];
+        var marks = marked ? new IReadOnlyList<string?>[rows.Count] : null;
         for (var r = 0; r < rows.Count; r++)
         {
             var row = rows[r];
@@ -283,12 +295,15 @@ public static class ClipboardParse
             // same under any culture.
             var rowValues = new string[width];
             var rowOrigins = new PasteFieldOrigin[width];
+            var rowMarks = new string?[width];
             for (var c = 0; c < width; c++)
-                (rowValues[c], rowOrigins[c]) = c < row.Count ? row[c] : ("", PasteFieldOrigin.ShownText);
+                (rowValues[c], rowOrigins[c], rowMarks[c]) = c < row.Count ? row[c] : ("", PasteFieldOrigin.ShownText, null);
             values[r] = rowValues;
             origins[r] = rowOrigins;
+            if (marks is not null)
+                marks[r] = rowMarks;
         }
-        return new ClipboardBlock(values, origins, fromTable);
+        return new ClipboardBlock(values, origins, fromTable, marks);
     }
 }
 
@@ -315,11 +330,12 @@ internal sealed class ClipboardBlock
 {
     internal ClipboardBlock(
         IReadOnlyList<IReadOnlyList<string>> values, IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> origins,
-        bool isFromTable)
+        bool isFromTable, IReadOnlyList<IReadOnlyList<string?>>? marks = null)
     {
         Values = values;
         Origins = origins;
         IsFromTable = isFromTable;
+        Marks = marks;
     }
 
     /// <summary>
@@ -336,4 +352,8 @@ internal sealed class ClipboardBlock
 
     /// <summary>Where each field of <see cref="Values"/> came from, at the same position.</summary>
     public IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> Origins { get; }
+
+    /// <summary>Each field's <see cref="ClipboardData.MarkAttribute"/>, at the same position, or null
+    /// when no field carries one.</summary>
+    public IReadOnlyList<IReadOnlyList<string?>>? Marks { get; }
 }

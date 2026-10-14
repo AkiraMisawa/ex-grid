@@ -183,14 +183,17 @@
             {
                 @* The resize guide (ADR-0016): one absolutely positioned element
                    moving over the top — the selection Overlay's mechanism, for the
-                   selection Overlay's reason. *@
-                <div class="ex-resize-guide" style="left: @Px(_resizeGuideLeftPx)" aria-hidden="true"></div>
+                   selection Overlay's reason. Its left edge is put on the Device Pixel
+                   as a column edge is (ADR-0090), and the stylesheet draws its width in
+                   whole Device Pixels (UX-1). *@
+                <div class="ex-resize-guide" style="left: @Px(ColumnGeometry.OnDevicePixel(_resizeGuideLeftPx, _devicePixelRatio))" aria-hidden="true"></div>
             }
             @if (_reordering && _dropBoundary >= 0)
             {
                 @* Where the dragged unit will land (ADR-0011): it stops at the pinned
-                   boundary and at a group's edge rather than promising a refused drop. *@
-                <div class="ex-drop-indicator" style="left: @Px(_dropIndicatorLeftPx)" aria-hidden="true"></div>
+                   boundary and at a group's edge rather than promising a refused drop.
+                   On a Device Pixel, as the guide is (ADR-0090; UX-1). *@
+                <div class="ex-drop-indicator" style="left: @Px(ColumnGeometry.OnDevicePixel(_dropIndicatorLeftPx, _devicePixelRatio))" aria-hidden="true"></div>
             }
             @* Every cell under here is `pointer-events: none`, so this element is the
                target of every mouse event in the rows and the offsets on the event are
@@ -242,6 +245,7 @@
                 {
                     var pointDashes = PointDashesRange(visible);
                     var outlineCover = OutlineCoverAt(visible);
+                    var readableEdge = ReadableEdgeAt(visible);
                     @if (!_selection.Selection.IsEmpty || HoverRowRange is not null || _columnOutlines.Length > 0 || pointDashes is not null)
                     {
                         @* What selection costs to paint depends on how many rectangles there
@@ -295,8 +299,9 @@
                             {
                                 @* Each range's box, a single range outlined; the Focus's own element
                                    follows, so the stylesheet can tell it stands inside a single
-                                   range (ADR-0008, 2026-09-29). Its tint is in the shade layer
-                                   beneath (ADR-0206). *@
+                                   range (ADR-0008, 2026-09-29), and it is marked among several,
+                                   where it takes a thin border of its own (2026-10-12). Its tint is
+                                   in the shade layer beneath (ADR-0206). *@
                                 @for (var r = 0; r < _selection.Selection.Ranges.Count; r++)
                                 {
                                     @if (SelectionStyles.Box(_selection.Selection.Ranges[r], _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } pinnedRangeBox)
@@ -306,7 +311,7 @@
                                 }
                                 @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } pinnedFocus)
                                 {
-                                    <div class="ex-focus" style="@pinnedFocus"></div>
+                                    <div class="@FocusClass" style="@pinnedFocus"></div>
                                 }
                                 @* The Copied Range (ADR-0170): dashes round each rectangle the clipboard
                                    holds as the grid copied it, after the Focus, so they lie over the
@@ -326,7 +331,7 @@
                                 {
                                     <div class="ex-fill-target" style="@pinnedFillOutline"></div>
                                 }
-                                @if (FillHandleRange is { } pinnedHandleRange && SelectionStyles.Handle(pinnedHandleRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: true) is { } pinnedHandle)
+                                @if (FillHandleRange is { } pinnedHandleRange && SelectionStyles.Handle(pinnedHandleRange, FillHandleCornerOf(pinnedHandleRange), _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: true, readableEdge) is { } pinnedHandle)
                                 {
                                     <div class="ex-fill-handle" style="@pinnedHandle"></div>
                                 }
@@ -396,7 +401,7 @@
                                 }
                                 @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } focus)
                                 {
-                                    <div class="ex-focus" style="@focus"></div>
+                                    <div class="@FocusClass" style="@focus"></div>
                                 }
                                 @foreach (var copiedRange in CopiedRectangles)
                                 {
@@ -409,7 +414,7 @@
                                 {
                                     <div class="ex-fill-target" style="@fillOutline"></div>
                                 }
-                                @if (FillHandleRange is { } handleRange && SelectionStyles.Handle(handleRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: false) is { } handle)
+                                @if (FillHandleRange is { } handleRange && SelectionStyles.Handle(handleRange, FillHandleCornerOf(handleRange), _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: false, readableEdge) is { } handle)
                                 {
                                     <div class="ex-fill-handle" style="@handle"></div>
                                 }
@@ -1107,8 +1112,12 @@
     /// <summary>
     /// The visible Columns, in display order; the leading <see cref="PinnedColumnCount"/>
     /// of them are pinned. Which columns show and in what order is View State the Consumer
-    /// holds (ADR-0001/0010). The list instance is the change signal: hand over a new list
-    /// when anything about the columns changes, never an edited one (ADR-0003).
+    /// holds (ADR-0001/0010). A new list, or the same list with other columns in it, is a
+    /// change; the same list holding the same column instances is none (ADR-0003, its note of
+    /// 2026-10-13). The grid draws from a read-only copy it takes when it is handed the list, and
+    /// reading this property answers that copy: a change made in place shows when the list is
+    /// handed again, never before. What the grid holds per column follows the column by its
+    /// <see cref="GridColumn{TRow}.Name"/>.
     /// </summary>
     [Parameter, EditorRequired] public IReadOnlyList<GridColumn<TRow>> Columns { get; set; } = [];
 
@@ -1117,7 +1126,9 @@
     /// row, declared by member names (ADR-0032). Null or empty means the band is the
     /// one header row it always was. Refused by name at resolution: an unknown member,
     /// members not adjacent in the current order, overlapping rectangles, a rectangle
-    /// straddling the pinned boundary.
+    /// straddling the pinned boundary. As with <see cref="Columns"/>, the grid draws from a
+    /// read-only copy taken when the list is handed, which this property answers; a change made
+    /// in place shows when the list is handed again (ADR-0003, the note of 2026-10-13).
     /// </summary>
     [Parameter] public IReadOnlyList<HeaderGroup>? HeaderGroups { get; set; }
 
@@ -1317,7 +1328,10 @@
     /// The Sort in force, outermost first — what the header indicator and
     /// <c>aria-sort</c> are painted from, and what the next header click cycles from
     /// (ADR-0012/0023). The grid never sorts: the Consumer applies this and pushes the
-    /// reordered Window in, bumping <see cref="RowSequenceVersion"/> (ADR-0001/0011).
+    /// reordered Window in, bumping <see cref="RowSequenceVersion"/> (ADR-0001/0011). As with
+    /// <see cref="Columns"/>, the grid draws from a read-only copy taken when the list is handed,
+    /// which this property answers; a change made in place shows when the list is handed again
+    /// (ADR-0003, the note of 2026-10-13).
     /// </summary>
     [Parameter] public IReadOnlyList<SortSpec>? Sorts { get; set; }
 
@@ -1532,7 +1546,13 @@
     /// <summary>
     /// A Consumer declaration (ADR-0050, item 5): fill is enabled. The fill handle is painted
     /// at the bottom-right corner of the Selection's last range, in the selection overlay —
-    /// none for a disjoint Selection, and none while an edit is open. Dragging it extends
+    /// for one or several whole columns at the first row's top-right of the last of them, and
+    /// for whole rows at the last one's bottom-left, beside their Headings, as Excel puts it
+    /// (the seventeenth Windows run, h3; several of them, the readings of 2026-10-12, R5), and
+    /// held at the readable area's edge while that row or column is scrolled away, as Excel's
+    /// stayed in view for a column (R5; for a row by generalisation); none for every cell,
+    /// where Excel showed none in view (R5), none for a disjoint Selection, and none while an
+    /// edit is open. Dragging it extends
     /// along one axis, the one the pointer went further along, with the target outlined; on
     /// release the grid raises one <see cref="OnFill"/> intent and writes nothing. A target
     /// covering a column that is not Editable is refused whole first, through
@@ -2558,6 +2578,14 @@
     /// render composes nothing for them.</summary>
     private string RangeClass => _selection.Selection.Ranges.Count == 1 ? "ex-range ex-range-single" : "ex-range";
 
+    /// <summary>The Focus's classes (ADR-0008, 2026-10-12): among several ranges, where no range
+    /// carries an outline, the Focus is marked, and the stylesheet draws it a thin border of one
+    /// Device Pixel inside its cell, in a token of its own (<c>--ex-focus-among-ranges-outline</c>),
+    /// where Excel's active cell there was observed (the readings of 2026-10-12, R4). Decided by
+    /// the Selection, not the layer, because a layer may hold the Focus and no range's box.
+    /// Interned, as <see cref="RangeClass"/> is.</summary>
+    private string FocusClass => _selection.Selection.Ranges.Count > 1 ? "ex-focus ex-focus-among-ranges" : "ex-focus";
+
     /// <summary>
     /// Whether the pinned shade layer holds anything over the painted rows (ADR-0206): the hover
     /// band's or the Focus band's pinned part, or any range's pinned tint. The layer is emitted only
@@ -2605,9 +2633,30 @@
         => new(_selection.Selection.Focus.Row, 0, 1, Math.Max(1, Columns.Count));
 
     /// <summary>The range the fill handle stands on, when it is painted (ADR-0050, item 5):
-    /// declared, with no edit open, and a Selection of one range.</summary>
+    /// declared, with no edit open, and a Selection of one range that is not every cell.</summary>
     private SelectionRange? FillHandleRange
-        => ShowFillHandle && _editMode == EditMode.None ? FillRules.HandleRange(_selection.Selection) : null;
+        => ShowFillHandle && _editMode == EditMode.None && FillRules.HandleRange(_selection.Selection) is { } range
+            && FillRules.HandleCorner(range, Extent) is not null ? range : null;
+
+    /// <summary>The corner of <paramref name="range"/>, a <see cref="FillHandleRange"/>, the fill
+    /// handle stands at (ADR-0050, item 5): the top-right of whole columns, the bottom-left of whole
+    /// rows, the bottom-right of the rest. Painted and grabbed from the same answer.</summary>
+    private FillHandleCorner FillHandleCornerOf(SelectionRange range)
+        => FillRules.HandleCorner(range, Extent) ?? FillHandleCorner.BottomRight;
+
+    /// <summary>Where the readable area begins as the slice is painted, for a fill handle held at
+    /// its edge (ADR-0050, item 5): its top below the first painted row's top, and its left in the
+    /// content.</summary>
+    private SelectionStyles.ReadableEdge ReadableEdgeAt(RowRange visible)
+        => ReadableEdgeOf(_scrollTopPx, _scrollLeftPx, visible.Start, _geometry.RowHeightPx, _columnStyles.Geometry);
+
+    /// <summary>Where the readable area begins at a scroll offset, measured from
+    /// <paramref name="firstRow"/>'s top and in the content's coordinates.</summary>
+    private SelectionStyles.ReadableEdge ReadableEdgeOf(
+        double scrollTopPx, double scrollLeftPx, int firstRow, double rowHeightPx, ColumnGeometry columns)
+        => new(
+            Math.Max(0, _geometry.ContentOffsetAt(scrollTopPx) - ((firstRow - _pageStartRow) * rowHeightPx)),
+            Math.Clamp(scrollLeftPx, 0, columns.MaxScrollLeftPx) + columns.PinnedWidthPx);
 
     /// <summary>The outline a running fill drag paints: the source and what it has reached,
     /// as one rectangle — one axis, so the union is a rectangle.</summary>
@@ -2694,12 +2743,255 @@
                 "hold it for you (pull) — an empty result is Window=\"[]\" (ADR-0001).");
         }
 
+        // A Consumer that renders hands the grid every parameter again, and Blazor cannot tell a
+        // reference type it was handed before from a new one, so it asks the grid to render. A
+        // Consumer that only restyled its own wrapping element — a Visual Token set on an
+        // ancestor — would cost a render of the root for a change only the browser paints
+        // (ADR-0027 P3, UX-5). Handed nothing new, the grid has nothing to render.
+        if (HandsNothingNew(parameters) && !OwesAfterRenderWork())
+            return Task.CompletedTask;
+
         _bound = true;
         return base.SetParametersAsync(parameters);
     }
 
+    private readonly Dictionary<string, object?> _heldParameters = new(StringComparer.Ordinal);
+
+    // The rows the grid last painted from a pushed Window, by reference, with where they stood
+    // and the Window's count then: a row replaced in place in the same Window array is a new
+    // instance where it is painted, so a Consumer render that hands that array again repaints
+    // it (ADR-0003's identity, element by element where the reader can see it). Only painted
+    // rows are compared, so the cost follows the painted rows and not the Window (ADR-0141), and
+    // only rows of the Window last given are held (ADR-0160). Off screen, the grid reads the
+    // Window afresh as it scrolls. Columns, HeaderGroups and Sorts are compared element by
+    // element (TakeInList); every other list by instance alone, as ADR-0003 has it.
+    private TRow[] _paintedRows = [];
+    private int _paintedFrom;
+    private int _paintedWindowCount = -1;
+
+    /// <summary>Whether every parameter in <paramref name="parameters"/> is the one the grid
+    /// already holds: the same instance for a reference type — a delegate re-created by the
+    /// Consumer's render, a RenderFragment above all, is new, since what it answers may have
+    /// changed — and an equal value for a value type; and, for the Window, the same rows where
+    /// the grid painted them, and the same count. A push of no parameters at all is a request to
+    /// render, never a Consumer's render, which hands every parameter it writes, and it renders
+    /// as before.</summary>
+    private bool HandsNothingNew(ParameterView parameters)
+    {
+        var same = _bound && parameters.GetEnumerator().MoveNext();
+        foreach (var parameter in parameters)
+        {
+            // Columns, HeaderGroups and Sorts are judged by the copy the grid took of them
+            // (2026-10-13, decided with the user); every other parameter by what it was handed.
+            if (TakeInList(parameter.Name, parameter.Value) is { } unchanged)
+            {
+                same &= unchanged;
+                continue;
+            }
+            if (same && !(_heldParameters.TryGetValue(parameter.Name, out var held) && SameParameter(held, parameter.Value)))
+                same = false;
+            _heldParameters[parameter.Name] = parameter.Value;
+        }
+        // Last, so a scalar that moved spares the walk of the painted rows.
+        if (same && parameters.TryGetValue<IReadOnlyList<TRow>>(nameof(Window), out var window) && window is not null)
+            same = PaintedRowsStand(window);
+        return same;
+    }
+
+    /// <summary>Whether the grid has state that only its next render's <c>OnAfterRenderAsync</c>
+    /// tells: the editing mode and the Point state to the key gate and the Consumer, the keys it
+    /// claims, a focus or a sentence owed. A path that changed one of these and left the telling
+    /// to whatever renders next may have relied on the Consumer's render; skipping that render
+    /// would leave the gate holding keys against a mode it was never told (ED-22 on the Server
+    /// host, found by the layer-3 run of 2026-10-13). So nothing is skipped while anything is
+    /// owed.</summary>
+    private bool OwesAfterRenderWork()
+        => _jsEditingDirty
+            || (_editMode != EditMode.None) != _consumerHeardEditOpen
+            || (OnPointStateChanged.HasDelegate && CurrentPointState() != _pointStateTold)
+            || (_scrollHandle is not null && (KeyClaims() != _jsClaims || !ReferenceEquals(_declared, _jsDeclared)))
+            || _announcePending is not null
+            || _scrollerFocusOwed
+            || _editorNeedsFocus
+            || _focusRequest is not null;
+
+    /// <summary>How many times this grid has read its own copies of the Header Groups declaration,
+    /// a group by index or the whole by enumeration: with one group declared, how many times it
+    /// resolved the membership (ADR-0032, HG-11), wherever and however it did so. The grid resolves from its copy and never
+    /// reads the Consumer's list for it, so this is where a resolution can be seen.</summary>
+    internal int HeaderGroupResolutions
+        => _retiredGroupReads + (_takenLists.TryGetValue(nameof(HeaderGroups), out var groups) && groups.Copy is TakenCopy<HeaderGroup> copy ? copy.Reads : 0);
+
+    private int _retiredGroupReads;
+
+    // Columns, HeaderGroups and Sorts are drawn from the copy the grid takes when it is handed
+    // one (decided with the user on 2026-10-13, after AG Grid's re-applied columnDefs). A
+    // Consumer's change to its own list shows when the list is handed again, and never through a
+    // render of the grid's own in between — a scroll, a key — which reads the copy. Handed again,
+    // the list is compared with the copy element by element, by reference: the same elements, or
+    // the copy itself handed back, are no change, and nothing is taken or rebuilt; anything else
+    // is a new list, of which a new copy is taken, so everything keyed on the list's identity
+    // (ADR-0003) rebuilds through the one path a new list takes. The comparison reads the handed
+    // list once, by its enumerator, and allocates nothing beyond it; a copy is made once per
+    // handing that differs, read through the list's indexer.
+    private sealed class TakenList(object? handed, object? copy)
+    {
+        public object? Handed { get; set; } = handed;
+        public object? Copy { get; set; } = copy;
+    }
+
+    private readonly Dictionary<string, TakenList> _takenLists = new(StringComparer.Ordinal);
+
+    /// <summary>Takes in a handed Columns, HeaderGroups or Sorts list: null for any other
+    /// parameter; otherwise whether it is unchanged against the copy the grid holds — the copy
+    /// itself, or a list holding the copy's elements in order. A changed or new list is copied.</summary>
+    private bool? TakeInList(string name, object? handed)
+    {
+        if (name is not (nameof(Columns) or nameof(HeaderGroups) or nameof(Sorts)))
+            return null;
+        _takenLists.TryGetValue(name, out var taken);
+        if (handed is null)
+        {
+            var wasNull = taken is not null && taken.Copy is null;
+            if (taken?.Copy is TakenCopy<HeaderGroup> nulled)
+                _retiredGroupReads += nulled.Reads;
+            _takenLists[name] = new TakenList(null, null);
+            return wasNull;
+        }
+        if (taken is not null && (ReferenceEquals(handed, taken.Copy)
+            || (ReferenceEquals(handed, taken.Handed) && SameElements(taken.Copy!, handed))))
+        {
+            return true;
+        }
+        if (taken?.Copy is TakenCopy<HeaderGroup> retired)
+            _retiredGroupReads += retired.Reads;
+        _takenLists[name] = new TakenList(handed, CopyOf(name, handed));
+        return false;
+    }
+
+    /// <summary>Whether <paramref name="handed"/> holds exactly the copy's elements, in order: the
+    /// handed list read once by its enumerator, never its indexer, and the copy's elements read
+    /// without being counted.</summary>
+    private static bool SameElements(object copy, object handed)
+    {
+        if (handed is not System.Collections.IEnumerable sequence)
+            return false;
+        System.Collections.IList items = copy switch
+        {
+            TakenCopy<GridColumn<TRow>> columns => columns.Items,
+            TakenCopy<HeaderGroup> groups => groups.Items,
+            TakenCopy<SortSpec> sorts => sorts.Items,
+            _ => Array.Empty<object>(),
+        };
+        var at = 0;
+        foreach (var element in sequence)
+        {
+            if (at == items.Count || !ReferenceEquals(items[at], element))
+                return false;
+            at++;
+        }
+        return at == items.Count;
+    }
+
+    /// <summary>The grid's own copy of a handed list, read once through its indexer.</summary>
+    private static object CopyOf(string name, object handed) => name switch
+    {
+        nameof(Columns) => new TakenCopy<GridColumn<TRow>>((IReadOnlyList<GridColumn<TRow>>)handed),
+        nameof(HeaderGroups) => new TakenCopy<HeaderGroup>((IReadOnlyList<HeaderGroup>)handed),
+        _ => new TakenCopy<SortSpec>((IReadOnlyList<SortSpec>)handed),
+    };
+
+    /// <summary>A read-only copy of a handed list, which counts every read made of it — each
+    /// element read by index, and each enumeration (<see cref="HeaderGroupResolutions"/>) —
+    /// apart from the grid's own comparison, which reads <see cref="Items"/>.</summary>
+    private sealed class TakenCopy<T> : IReadOnlyList<T>
+    {
+        private readonly T[] _items;
+
+        public TakenCopy(IReadOnlyList<T> handed)
+        {
+            _items = new T[handed.Count];
+            for (var i = 0; i < _items.Length; i++)
+                _items[i] = handed[i];
+        }
+
+        public int Reads { get; private set; }
+
+        public T this[int index]
+        {
+            get
+            {
+                Reads++;
+                return _items[index];
+            }
+        }
+
+        public int Count => _items.Length;
+
+        /// <summary>The elements, read without being counted: the grid's own comparison with a
+        /// list handed again.</summary>
+        public T[] Items => _items;
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            Reads++;
+            return ((IEnumerable<T>)_items).GetEnumerator();
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    /// <summary>Puts the copies the grid took in place of the lists handed, first thing in
+    /// <see cref="OnParametersSet"/>, so that nothing of the grid ever reads a Consumer's own
+    /// list.</summary>
+    private void UseTakenLists()
+    {
+        if (_takenLists.TryGetValue(nameof(Columns), out var columns) && columns.Copy is IReadOnlyList<GridColumn<TRow>> takenColumns)
+            Columns = takenColumns;
+        if (_takenLists.TryGetValue(nameof(HeaderGroups), out var groups))
+            HeaderGroups = groups.Copy as IReadOnlyList<HeaderGroup>;
+        if (_takenLists.TryGetValue(nameof(Sorts), out var sorts))
+            Sorts = sorts.Copy as IReadOnlyList<SortSpec>;
+    }
+
+    private static bool SameParameter(object? held, object? handed)
+        => ReferenceEquals(held, handed)
+            || (handed is not null && handed.GetType().IsValueType && handed.Equals(held));
+
+    /// <summary>Notes the rows a render paints from a pushed Window (see <see cref="_paintedRows"/>).</summary>
+    private void NotePaintedRows()
+    {
+        if (Source is not null || _visible is not { } visible)
+        {
+            _paintedRows = [];
+            _paintedWindowCount = -1;
+            return;
+        }
+        var from = Math.Clamp(visible.Start - _windowStart, 0, _window.Count);
+        var to = Math.Clamp(visible.Start + visible.Count - _windowStart, from, _window.Count);
+        if (_paintedRows.Length != to - from)
+            _paintedRows = new TRow[to - from];
+        for (var i = from; i < to; i++)
+            _paintedRows[i - from] = _window[i];
+        _paintedFrom = from;
+        _paintedWindowCount = _window.Count;
+    }
+
+    private bool PaintedRowsStand(IReadOnlyList<TRow> window)
+    {
+        if (window.Count != _paintedWindowCount)
+            return false;
+        for (var i = 0; i < _paintedRows.Length; i++)
+        {
+            if (!ReferenceEquals(window[_paintedFrom + i], _paintedRows[i]))
+                return false;
+        }
+        return true;
+    }
+
     protected override void OnParametersSet()
     {
+        UseTakenLists();
         ValidatePointDeclaration();
         ValidateChangeHighlight();
         ResolveDeclaredKeys();
@@ -2984,12 +3276,31 @@
         if (columnsChanged || metricsChanged)
         {
             // A changed column declaration means a fresh tracker re-measured from what
-            // is painted next (ADR-0016); the metrics feed the estimates, so they reset
+            // is painted next (ADR-0016) — but for a column instance carried over by Name
+            // under the same metrics, below; the metrics feed the estimates, so they reset
             // with it. The header label is content the column paints too — unobserved,
             // every short Auto column would stand with a chopped header.
+            // What the grid holds per column is carried to the new list by the column's Name, as
+            // AG Grid carries its column state by colId (decided with the user on 2026-10-13):
+            // never by position, which a move changes, nor by instance alone. What is derived
+            // from the definition — the Auto width measured from its content — is carried only
+            // for the same instance under unchanged metrics (ADR-0003's note of 2026-10-11: two
+            // equal columns may paint differently).
+            var previous = _observedColumnElements;
+            var previousAutoWidths = _autoWidths;
+            var previousAt = new Dictionary<string, int>(previous.Length, StringComparer.Ordinal);
+            for (var i = 0; i < previous.Length; i++)
+                previousAt.TryAdd(previous[i].Name, i);
+            CarryColumnStateByName(previous);
             _autoWidths = new AutoWidth[Columns.Count];
             for (var i = 0; i < Columns.Count; i++)
             {
+                if (!metricsChanged && _metrics == _observedGridMetrics && previousAt.TryGetValue(Columns[i].Name, out var was)
+                    && ReferenceEquals(previous[was], Columns[i]) && was < previousAutoWidths.Length)
+                {
+                    _autoWidths[i] = previousAutoWidths[was];
+                    continue;
+                }
                 var spec = Columns[i].Width;
                 var auto = new AutoWidth(spec);
                 if (spec.Width.IsAuto)
@@ -3028,7 +3339,9 @@
                 _autoWidths[i] = auto;
             }
             _observedColumns = Columns;
+            _observedColumnElements = [.. Columns];
             _observedMetrics = _metrics.CellMetrics;
+            _observedGridMetrics = _metrics;
             _measured = false;
         }
 
@@ -3156,6 +3469,50 @@
         ReconcileCopiedRange(columnsMoved: _columnsMoved || _sourceReplaced);
     }
 
+    // The columns as they stood when last taken in, element by element, so that what the grid
+    // holds per column can be found by Name in a list the Consumer changed in place.
+    private GridColumn<TRow>[] _observedColumnElements = [];
+    private GridMetrics? _observedGridMetrics;
+
+    /// <summary>The column state the grid itself holds, moved to where each column now stands by
+    /// its Name: the column whose popover is open, and the column a resize grip is dragging. A
+    /// column no longer in the list takes its state with it — the popover closes, the drag
+    /// ends. A header reorder drag ends whatever changed, since it lifted columns by position. The Selection, the Copied Range and an open edit are not carried: a change of the
+    /// visible columns drops them (ADR-0011).</summary>
+    private void CarryColumnStateByName(GridColumn<TRow>[] previous)
+    {
+        int Now(int was)
+        {
+            if (was < 0 || was >= previous.Length)
+                return -1;
+            var name = previous[was].Name;
+            for (var i = 0; i < Columns.Count; i++)
+            {
+                if (Columns[i].Name == name)
+                    return i;
+            }
+            return -1;
+        }
+        if (_menuColumn >= 0)
+        {
+            var now = Now(_menuColumn);
+            if (now < 0)
+                CloseMenus();
+            else
+                _menuColumn = now;
+        }
+        // A header reorder drag holds a unit of columns by position and is ended, not carried: the
+        // unit it lifted may no longer be one, and a drop against the new order would report a move
+        // of other columns (principle 6: a gesture carries what it was taken against).
+        if (_reordering || _dragUnitFirst >= 0)
+        {
+            DetachRootGesture();
+            return;
+        }
+        if (_resizeColumn >= 0)
+            _resizeColumn = Now(_resizeColumn);
+    }
+
     private bool ColumnsAreAsBefore()
     {
         if (_columnNames.Length == Columns.Count)
@@ -3264,11 +3621,12 @@
             // knows, and clamped as the new spacer will clamp it: the write is made only
             // over that (AnchorScrollTopAsync).
             _anchorFromScrollTopPx = Math.Clamp(_expectedScrollTopPx, 0, _geometry.MaxScrollTopPx);
-            _scrollTopPx = _geometry.ScrollTopAt(anchorContentPx);
+            _scrollTopPx = Math.Clamp(_geometry.ScrollTopAt(anchorContentPx), 0, _geometry.MaxScrollTopPx);
             _anchorScrollTopPx = _scrollTopPx;
         }
         var local = _geometry.SliceAt(_scrollTopPx);
         _visible = local is { } slice ? new RowRange(_pageStartRow + slice.Start, slice.Count) : null;
+        NotePaintedRows();
         ObserveAutoWidths();
         ResolveColumnGeometry();
         NotePaintLayout();
@@ -4017,23 +4375,29 @@
 
     /// <summary>
     /// Whether the press lands on the fill handle (ADR-0050, item 5) — arithmetic, as every
-    /// other press in the body is (ADR-0008): the same corner the handle was painted at,
-    /// with a grab box twice its side. A corner that has scrolled under the Pinned Columns
-    /// cannot be grabbed, as it cannot be seen.
+    /// other press in the body is (ADR-0008): the same place the handle was painted at, at the
+    /// same corner, with a grab box twice its side about its centre, held at the readable area's
+    /// edge as the scroll the press was taken at puts it (ED-31). A handle that has scrolled
+    /// under the Pinned Columns or the Row Headings cannot be grabbed, as it cannot be seen; and a
+    /// press on a Row Heading is the Heading's, though a whole row's handle stands beside it.
     /// </summary>
     private bool IsOnFillHandle(MouseEventArgs e)
     {
         if (FillHandleRange is not { } range || _visible is not { } visible || FirstRowOf(e, visible) is not { } first)
             return false;
         var geometry = ColumnsOf(e);
-        var (cornerX, cornerY) = SelectionStyles.HandleCornerPx(range, geometry, RowHeightOf(e), first);
-        var scrollLeft = Math.Clamp(ScrollLeftOf(e), 0, geometry.MaxScrollLeftPx);
-        if (range.RightColumn < geometry.PinnedCount)
-            cornerX += scrollLeft;
-        else if (cornerX - scrollLeft < geometry.PinnedWidthPx)
+        if (geometry.IsInLead(e.OffsetX, ScrollLeftOf(e)))
             return false;
+        var corner = FillHandleCornerOf(range);
         var size = _metrics.FillHandleSizePx;
-        return Math.Abs(e.OffsetX - cornerX) <= size && Math.Abs(e.OffsetY - cornerY) <= size;
+        var readable = ReadableEdgeOf(ScrollTopOf(e), ScrollLeftOf(e), first, RowHeightOf(e), geometry);
+        var (centreX, centreY) = SelectionStyles.HandleCentrePx(range, corner, geometry, RowHeightOf(e), first, size, readable);
+        var scrollLeft = Math.Clamp(ScrollLeftOf(e), 0, geometry.MaxScrollLeftPx);
+        if (SelectionStyles.HandleCell(range, corner).Column < geometry.PinnedCount)
+            centreX += scrollLeft;
+        else if (centreX - scrollLeft < geometry.PinnedWidthPx)
+            return false;
+        return Math.Abs(e.OffsetX - centreX) <= size && Math.Abs(e.OffsetY - centreY) <= size;
     }
 
     /// <summary>The fill drag's pointer moved onto <paramref name="cell"/>. Whether what is
@@ -6295,7 +6659,7 @@
         }
         var version = _sequenceVersion;
         var binding = _binding;
-        var intent = new GridPasteIntent(decision.Plan, block, version, parsed.Origins);
+        var intent = new GridPasteIntent(decision.Plan, block, version, parsed.Origins, marks: parsed.Marks);
         if (OnPaste.HasDelegate)
         {
             // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound
@@ -6763,6 +7127,20 @@
         if (await DropKeyAimedWithADroppedSelectionAsync(paint, opensAnEdit: false))
             return;
 
+        MoveByKey(action, key);
+    }
+
+    /// <summary>
+    /// A key that moves or selects, answered over the Selection as it stands with no edit open
+    /// (ADR-0012): the Focus moved or the range extended, the Focus or the Extent kept in view,
+    /// and the page turned to follow it. Also what Overwrite's Shift+arrows, Shift+Home and
+    /// Primary Modifier's arrows do once their commit has landed, as Excel's Enter mode does with
+    /// them (ADR-0010, ED-2).
+    /// </summary>
+    /// <param name="action">What the key means, from <see cref="GridKeys.Resolve(string, bool, bool, bool, bool, bool)"/>.</param>
+    /// <param name="key">The key's <c>key</c> field: only an arrow asks the Consumer's edge answer.</param>
+    private void MoveByKey(GridKeyAction action, string key)
+    {
         var extent = Extent;
         if (extent.RowCount <= 0 || extent.ColumnCount <= 0)
             return;
@@ -7070,6 +7448,18 @@
     /// Ctrl+F (ADR-0055): the find panel, taking the keyboard as every popover does
     /// (ADR-0039) — or, where nothing can search, a refusal and nothing opened, because the
     /// browser's own find would look complete and see only the painted rows.
+    ///
+    /// <para>Typed in a popover — a column's menu or its filter, the Context Menu, the panel's own
+    /// controls — Ctrl+F closes that popover as the core, and so asks for the root's focus ahead of
+    /// the render that swaps it for the panel, as <see cref="ClosePopoverAndReturnFocus"/> does
+    /// (ADR-0039). That render removes the element holding DOM focus, and the field takes it a round
+    /// trip later on a circuit. In between, DOM focus was on <c>body</c>, where the capture-phase
+    /// listener hears nothing, and every key typed there was lost: <c>Osei</c>, typed straight after
+    /// Alt+↓ and Ctrl+F, came out <c>O</c>, <c>Os</c> or <c>Ose</c> as the round trip fell (FD-1, the
+    /// Server host). On the root those keys are held behind the Ctrl+F, in order, and handed to the
+    /// field once it holds the keyboard (ADR-0010), however long the round trip; the gate holds
+    /// from the Ctrl+F's own keydown, so none of them is taken as the grid's. Nothing is asked after
+    /// the render: the field's own focus has the last word.</para>
     /// </summary>
     private async Task OpenFindAsync()
     {
@@ -7079,6 +7469,8 @@
                 await OnFindRefused.InvokeAsync(FindRefusalReason.Unavailable);
             return;
         }
+        if (AnyPopoverOpen)
+            _ = ReclaimFocusAsync();
         CloseMenus();
         _findOpen = true;
         _findOutcome = FindOutcome.None;
@@ -7690,10 +8082,12 @@
     /// read outside editing: Command folds into Control only where it is Command
     /// (ADR-0012), so Cmd+Enter fills on a Mac and Win+Enter is nobody's here. A form not
     /// named below is not the editor's and does nothing. <b>The cases mirror
-    /// <c>editingKeys</c> / <c>overwriteKeys</c> in <c>ex-grid.js</c></b> — the two must
-    /// move together. F4, which the gate adds to them only where the Consumer declared
-    /// <see cref="CycleReference"/>, is answered before this, from the selection its message
-    /// carries (ADR-0051, 2026-09-29).</param>
+    /// <c>editingKeys</c> / <c>overwriteKeys</c> / <c>pointKeys</c> in <c>ex-grid.js</c></b> — the
+    /// two must move together: Overwrite claims the arrows, Home and End, the Shift+arrows and
+    /// Shift+Home, and the Primary Modifier's arrows with Shift or without (ADR-0010, ED-2); Point
+    /// the arrows, Home and End, the Shift+arrows and Shift+Home. F4, which the gate adds to them
+    /// only where the Consumer declared <see cref="CycleReference"/>, is answered before this, from
+    /// the selection its message carries (ADR-0051, 2026-09-29).</param>
     private async Task OnEditingKeyAsync(string canonical)
     {
         // An open completion list has the first word on its own keys (ADR-0051).
@@ -7704,7 +8098,10 @@
         // press has just moved into the Formula Bar (ADR-0051, 2026-09-30). They move no Focus
         // (ADR-0010).
         if (_editMode == EditMode.Caret
-            && canonical is "ArrowUp" or "ArrowDown" or "ArrowLeft" or "ArrowRight" or "Home" or "End")
+            && canonical is "ArrowUp" or "ArrowDown" or "ArrowLeft" or "ArrowRight" or "Home" or "End"
+                or "Shift+ArrowUp" or "Shift+ArrowDown" or "Shift+ArrowLeft" or "Shift+ArrowRight" or "Shift+Home"
+                or "Control+ArrowUp" or "Control+ArrowDown" or "Control+ArrowLeft" or "Control+ArrowRight"
+                or "Control+Shift+ArrowUp" or "Control+Shift+ArrowDown" or "Control+Shift+ArrowLeft" or "Control+Shift+ArrowRight")
         {
             _suppressRender = false;
             return;
@@ -7776,7 +8173,66 @@
             case "End":
                 await CommitAndMoveAsync(next => next.MoveToEdge(GridDirection.Right, Extent));
                 return;
+            case "Shift+ArrowUp" or "Shift+ArrowDown" or "Shift+ArrowLeft" or "Shift+ArrowRight" or "Shift+Home"
+                when _editMode == EditMode.Overwrite:
+                // Excel's Enter mode commits the entry and extends the Selection with them (ADR-0010,
+                // ED-2): where no Reference can go, they are commit gestures, and then do what the
+                // same key does with no edit open (observed: the seventeenth Windows run, Part C, case
+                // 7, Shift+Home; the readings of 2026-10-12, R1 (vii), Shift+→, Shift+↓ and Shift+←;
+                // Shift+↑ by generalisation). Where one can go, Point took them first.
+                await CommitAndKeyAsync(canonical);
+                return;
+            case "Control+ArrowUp" or "Control+ArrowDown" or "Control+ArrowLeft" or "Control+ArrowRight"
+                or "Control+Shift+ArrowUp" or "Control+Shift+ArrowDown" or "Control+Shift+ArrowLeft" or "Control+Shift+ArrowRight"
+                when _editMode == EditMode.Overwrite:
+                // The Primary Modifier's arrows too commit, and then move or extend to the edge as
+                // with no edit open (observed, R1 (vii): Ctrl+→ committed and moved to XFD10, and
+                // Ctrl+Shift+→ committed and selected D10:XFD10; the other directions by
+                // generalisation). Where a Reference can go at the caret, Excel was not asked: they
+                // are claimed and do nothing, as End does there (ADR-0058, Q53), rather than commit
+                // a Formula that ends too early.
+                if (PointAt is { } referenceCanGo && ReferenceText is not null && _editCaret >= 0
+                    && _editCaret <= _editText.Length && referenceCanGo(_editText, _editCaret))
+                {
+                    StateHasChanged();
+                    return;
+                }
+                await CommitAndKeyAsync(canonical);
+                return;
         }
+    }
+
+    /// <summary>
+    /// Overwrite's Shift+arrows and Shift+Home, and its Primary Modifier's arrows with Shift or
+    /// without, where no Reference can go (ADR-0010, ED-2): the edit commits, and the key then
+    /// moves or extends the Selection exactly as it does with no edit open (ADR-0012) — an arrow
+    /// with the Primary Modifier to the edge the Consumer answers (ADR-0050, item 2) — the Focus or
+    /// the Extent kept in view. A Reject or a refusal holds the commit, and the key keeps no
+    /// meaning of its own (ADR-0034), as for the arrows. A commit whose own handler moved the order
+    /// has dropped the Selection the key was aimed with (ADR-0011, ADR-0142): it moves and extends
+    /// nothing, and places no Selection from the first cell on screen, as Enter and the arrows move
+    /// nothing then (<see cref="CommitAndMoveAsync"/>).
+    /// </summary>
+    /// <param name="canonical">The key in <see cref="GridKeys.Canonical"/>'s form: <c>Control+</c>,
+    /// then <c>Shift+</c>, then the key.</param>
+    private async Task CommitAndKeyAsync(string canonical)
+    {
+        if (!await CommitEditAsync() || _selection.Selection.IsEmpty)
+        {
+            StateHasChanged();
+            return;
+        }
+        var key = canonical;
+        var ctrl = key.StartsWith("Control+", StringComparison.Ordinal);
+        if (ctrl)
+            key = key["Control+".Length..];
+        var shift = key.StartsWith("Shift+", StringComparison.Ordinal);
+        if (shift)
+            key = key["Shift+".Length..];
+        MoveByKey(GridKeys.Resolve(key, ctrl, shift, alt: false, meta: false, metaIsPrimary: false), key);
+        // The edit has ended even where the key moves nothing — Shift+Home in the first column —
+        // and the render that takes the editor down is owed either way.
+        StateHasChanged();
     }
 
     /// <summary>A commit leaves the grid as an intent and nothing else (ADR-0007): the
@@ -9047,9 +9503,10 @@
     }
 
     /// <summary>
-    /// The extent in one sentence, naming the corners (ADR-0033). The wording is
-    /// provisional — ADR-0033 leaves header-versus-index to a real screen reader in
-    /// layer 3 — but the shape is not: one sentence, the extent, at any moment.
+    /// The extent in one sentence, naming the corners by index (ADR-0033). No screen
+    /// reader settles the wording: the accessibility tree is what is checked (ADR-0033,
+    /// 2026-10-13), and the wording changes on a user's report. The shape is fixed:
+    /// one sentence, the extent, at any moment.
     /// </summary>
     private string DescribeSelection(GridSelection selection)
     {
@@ -9570,7 +10027,7 @@
             _rootStyleRatio = _devicePixelRatio;
             _rootStyle = string.Create(
                 CultureInfo.InvariantCulture,
-                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px{StretchRootStyle(stretch.Item1, stretch.Item2)}{FormulaBarRootStyle()}{DevicePixelRootStyle()}");
+                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px; --ex-resize-grip-width: {_metrics.ResizeGripWidthPx}px; --ex-column-guide-width: {_metrics.ColumnGuideWidthPx}px{StretchRootStyle(stretch.Item1, stretch.Item2)}{FormulaBarRootStyle()}{DevicePixelRootStyle()}");
         }
         return _rootStyle;
     }

@@ -70,11 +70,15 @@ record").
   - The Date and Time lists still hold the invariant codes, and a choice from them is the built-in.
 - **Readings that follow from the rule, not observed.**
   - Under en-GB a typed `d-mmm-yy` is now a code of its own and shows `5-Jan-26`. A typed
-    `m/d/yyyy` shows `1/5/2026`, and a typed `h:mm` shows `9:05`.
+    `m/d/yyyy` shows `1/5/2026`, and a typed `h:mm` shows `9:05`. *(Observed 2026-10-12: a typed
+    `d-mmm-yy` and a typed `m/d/yyyy` are codes of their own, by the seventeenth Windows run's h9,
+    on other values; `d-mmm-yy`'s `5-Jan-26` and `h:mm`'s `9:05`, by the readings of 2026-10-12 (R7).
+    `m/d/yyyy`'s `1/5/2026` follows from its code; no run showed it. Comment below.)*
   - A code of its own opened under a culture that spells the built-in the same way (en-US) shows
     the plain code. If the user touches the Number tab and presses OK, it becomes the built-in. The
     two show alike there.
   - `mmmmm` under ja-JP shows `1`, the first character of `1月`. No run asked about it.
+    *(Observed 2026-10-12, the seventeenth Windows run, h9.)*
   - zh-CN and ko-KR keep ICU's names. Only ja-JP was observed.
 - **The glyph corpus changed** (ADR-0016, tickets 82, 83 and 91). The built-in formats now paint
   `01-1`, `30-1`, `1-26` … under ja-JP, which `GlyphCorpusTests` caught.
@@ -112,4 +116,20 @@ record").
     all pass: ExSheet.Engine.Tests 2365, ExSheet.Components 613, ExGrid.Tests 1089,
     ExGrid.MudBlazor.Tests 198, ExSheet.MudBlazor.Tests 49.
   - **No layer 3.** No spec read `mmm` under ja-JP.
+
+*(2026-10-12, the seventeenth Windows run, h9; branch `claude/run17gh-readings`.)* Format Cells' Custom, the code
+typed, on 12 October 2026 at 13:30 (46307.5625) and on 13:30 alone (0.5625). Of the readings above:
+- **Observed: under en-GB, a typed `d-mmm-yy` and a typed `m/d/yyyy` are codes of their own.** They showed
+  `12-Oct-26` and `0-Jan-00`, and `10/12/2026` and `1/0/1900`. Built-in 15, which Excel spells `dd-mmm-yy` under
+  en-GB (the twelfth run's case 19), would show `00-Jan-00` on 13:30 alone by that code. Built-in 14 shows the day
+  first under en-GB (`26/09/2026`, the second Windows run), where the typed `m/d/yyyy` put the month first.
+- **Observed: under ja-JP, `mmmmm` showed `1` on both**, the first character of `10月` and of `1月`.
+- **Not observed by h9: a typed `h:mm` as a code of its own.** It showed `13:30` on both, as built-in 20 (`hh:mm`)
+  would. The readings of 2026-10-12 (R7, `verification/2026-10-12-windows-readings/report.md` on
+  `claude/exsheet-windows-readings-2026-10-12`) observed it: `9:05` on 0.37847222, not built-in 20's `09:05` (the
+  twelfth run's case 19). R7 also saw a typed `d-mmm-yy` show `5-Jan-26` on 46027, the reading's own case.
+- **Not asked:** a code of its own reopened under en-US, and the month names under zh-CN and ko-KR.
+- `CultureTests.A_code_typed_into_custom_shows_as_excel_showed_it_run_17_h9` pins h9's eight cells, and
+  `A_code_typed_into_custom_is_no_built_in_under_en_gb_r7` R7's two. They passed as the engine stood, so
+  `NumberFormat` is unchanged.
 

@@ -38,7 +38,8 @@ two turn on a distinction worth keeping: the grid never **measures** (a synchron
 performs, on the path to a paint), it is **told** when something the browser already knows has
 changed or settled. The sixth is a `ResizeObserver` reporting the Layout Ceiling, the tallest
 element the browser lays out at the current scale and zoom (ADR-0053). The seventh is the Keyboard
-Field's composition and focus on the root, so an IME can start on a selected cell (ADR-0080). The
+Field's composition, focus and `keyup` on the root, so an IME can start on a selected cell and the
+editor takes the keyboard only once the IME's key has been told whole (ADR-0080). The
 eighth is a `matchMedia` listener that reports the Device Pixel when the resolution changes, so lines
 and column edges lie on Device Pixels at every scale and zoom (ADR-0090). The ninth reports the
 browser's time zone once at attach, when a Consumer asks, so `TODAY()` is the user's day and not
@@ -97,9 +98,12 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
   `nix develop .#browser -c bash -c 'cd tools/assets && npm ci && npm run minify'` and commit what
   it writes. A minified file older than its source fails `ShippedAssetTests`
 - **Only `src/` packs, and only a tag writes a version.** The projects say `0.0.0-dev`; pushing
-  a `v*` tag runs `release.yml`, which publishes a prerelease and refuses a version without a
-  suffix until the Definition of Done is signed off (ADR-0042). Every public member of a shipped
-  project needs an XML doc comment — a missing one fails the build
+  a `v*` tag runs `release.yml`, which publishes a prerelease, and refuses a version without a
+  suffix unless its Release Notes name a sign-off, made against a release candidate, that the
+  workflow can check (ADR-0042, ADR-0205). It refuses that version, and a release candidate
+  (`-rc.N`), while a question to Excel is open or a row checked by hand does not hold on its record
+  (ADR-0208). Every public member of a shipped project needs an XML doc comment — a missing one
+  fails the build
 - **Every public member of a shipped project is declared in its `PublicAPI.Unshipped.txt`**
   (ADR-0201): one added and not declared fails the build (RS0016), and so does one declared and gone
   (RS0017), a Razor component's `@code` members included. Let the analyzer write the line, never type

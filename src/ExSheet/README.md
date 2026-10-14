@@ -6,8 +6,9 @@ extent of 1,048,576 rows by 16,384 columns — computes its **Values** with
 [`ExGrid`](https://www.nuget.org/packages/ExGrid) as that grid's Consumer: ExSheet holds and
 computes, ExGrid paints, selects, navigates and reports.
 
-> **This is a prerelease (`0.x`).** ExSheet ships with ExGrid, at the same version; upgrade them
-> together. The API may change between prereleases.
+> **ExSheet ships with ExGrid, at the same version;** upgrade them together. While the version is
+> `0.x`, the API may change from one version to the next; each version's
+> [Release Notes](https://akiramisawa.github.io/ex-grid/release-notes) say what changed.
 
 ## Requirements
 
@@ -355,10 +356,19 @@ Column widths are part of the Sheet Document, in characters as Excel counts them
 column, and a number typed into a column that it widens, are steps on the undo stack like any
 other, and raise `DocumentChanged`; an opened document brings its widths with it. A Number Format
 set on the Selection — a formatting key, Format Cells' OK, `SetCellFormatAsync` — widens a column
-whose numbers it no longer fits in the same way, in its own undo step. A width an entry or a Number
-Format widened the column to stays automatic, and a longer number widens the column again; a width
-the user set — a drag or a size to fit — is custom, and nothing widens that column. A column inserted
-to the right of either takes its width as one the user set, as Excel's does.
+whose numbers it no longer fits in the same way, in its own undo step, and so do Ctrl+5 and Ctrl+U,
+which set no Number Format, as Excel's do; Ctrl+B and Ctrl+I do not. `SetCellFormatAsync`, the Sheet
+Toolbar's toggles and `SetCellFormatFromFocusAsync` they set through widen as the keys do: for a
+Number Format, underline or strikethrough, and not for bold, italic or a Font colour, so the
+toolbar's Font Colour widens nothing. Format Cells' OK widens for any part of the Font it sets. Excel's
+Font tab was seen to widen for bold, italic, a single underline and a colour; that strikethrough set
+there, or the Normal font box, widens too is a reading. A Fill, Borders or an alignment widens
+nothing. An italic number widens its column to the width the same number takes upright, where
+Excel's Font tab widened it further (the readings of 2026-10-12 (R6), case (1)). A width an entry, a
+Number Format or a Font change widened the column to
+stays automatic, and a longer number widens the column again; a width the user set — a drag or a
+size to fit — is custom, and nothing widens that column. A column inserted to the right of either
+takes its width as one the user set, as Excel's does.
 
 ## The Sheet Toolbar
 
@@ -404,7 +414,7 @@ that collide at one level are refused when the toolbar renders. ExSheet's items 
 - **An item of your own** derives from `ToolbarItemBase`. It reads the Sheet through the cascaded
   `SheetToolbarContext` and acts through the Sheet's public commands.
   `SetCellFormatFromFocusAsync` is the command for a change made from the Focus cell's Cell
-  Format, as a toggle needs.
+  Format, as a toggle needs, and it widens a column as the formatting keys do.
 
 ## More
 

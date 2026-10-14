@@ -248,6 +248,12 @@ function verdict({ messages, pageErrors }, hostLog, { expectedHostLog, expectedW
     expect.soft(warnings.filter(isExGrids).filter((m) => !named(m.text)).map((m) => m.text),
         'zero warnings from ExGrid\'s own code (CON-3)').toEqual([]);
     expect.soft(unhandled, 'no unhandled exception reaches the host log (CON-6)').toEqual([]);
+    // CON-8: ExGrid logs nothing on a healthy path. Its only console writes are its failure
+    // paths, which are errors and fail CON-1 above, and the warnings it names by decision, which
+    // CON-3 holds to expectedWarnings. A log, an info, a debug or a trace line from its own code
+    // is neither, at any level the console has.
+    expect.soft(messages.filter((m) => !['error', 'warning'].includes(m.type)).filter(isExGrids)
+        .map((m) => `${m.type}: ${m.text}`), 'nothing logged by ExGrid on a healthy path (CON-8)').toEqual([]);
 }
 
 // What a test changed through alterPage, per page, undone as the test ends (ADR-0056).
@@ -311,25 +317,49 @@ const CONTEXT_METHODS_THAT_OUTLIVE_A_NAVIGATION = ['addCookies', 'addInitScript'
     'setDefaultNavigationTimeout', 'setDefaultTimeout', 'setExtraHTTPHeaders', 'setGeolocation',
     'setHTTPCredentials', 'setOffline'];
 
+// Returns once every stylesheet the document links has loaded: each <link rel="stylesheet"> has its
+// sheet, which the browser sets when the file has arrived and been parsed, and not before. A link
+// joins document.styleSheets only then. On WebAssembly the packages' stylesheets are root components
+// the app renders into the head after it boots (ADR-0123), so a page that is ready can still be
+// waiting for them: read then, ExGrid's and ExSheet's were in the markup but not in the stylesheets,
+// and the reading after the file's first test, where they had arrived, named them as left behind
+// (pivot.spec.mjs on WebAssembly, after #82; every time with the files held back 400 ms). What the
+// page says is read — the sheet each link holds — never a wait or a retry (ADR-0056). A file that
+// never loads is a hang, said by name; its console error fails the test besides (CON-1).
+async function stylesheetsLoaded(page) {
+    try {
+        await page.waitForFunction(() => [...document.querySelectorAll('link[rel~="stylesheet"]')]
+            .every((link) => link.sheet !== null), null, { timeout: 60_000 });
+    } catch (error) {
+        const waiting = await page.evaluate(() => [...document.querySelectorAll('link[rel~="stylesheet"]')]
+            .filter((link) => link.sheet === null).map((link) => link.href)).catch(() => []);
+        throw new Error(`a stylesheet the document links never loaded: ${waiting.join(', ')}`, { cause: error });
+    }
+}
+
 // What the document outside a test's page is, as the index shows it: its markup, the rules in its
 // stylesheets, and the globals on window. Comments aside — they are Blazor's markers, which differ
 // between a prerendered render and an interactive one — and an empty style or class aside, which
-// is what removing the last property or class leaves.
-const documentAtIndex = (page) => page.evaluate(() => ({
-    markup: document.documentElement.outerHTML
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/ (?:style|class)=""/g, ''),
-    sheets: [...document.styleSheets].map((sheet) => {
-        let rules;
-        try {
-            rules = sheet.cssRules.length;
-        } catch {
-            rules = 'unreadable';
-        }
-        return `${sheet.href ?? 'a <style>'}: ${rules} rules`;
-    }).concat(`${document.adoptedStyleSheets.length} adopted`),
-    globals: Object.getOwnPropertyNames(window),
-}));
+// is what removing the last property or class leaves. Read once the stylesheets it links have
+// loaded, so that both readings — at boot and after each test — see the same set.
+async function documentAtIndex(page) {
+    await stylesheetsLoaded(page);
+    return page.evaluate(() => ({
+        markup: document.documentElement.outerHTML
+            .replace(/<!--[\s\S]*?-->/g, '')
+            .replace(/ (?:style|class)=""/g, ''),
+        sheets: [...document.styleSheets].map((sheet) => {
+            let rules;
+            try {
+                rules = sheet.cssRules.length;
+            } catch {
+                rules = 'unreadable';
+            }
+            return `${sheet.href ?? 'a <style>'}: ${rules} rules`;
+        }).concat(`${document.adoptedStyleSheets.length} adopted`),
+        globals: Object.getOwnPropertyNames(window),
+    }));
+}
 
 const nativesOf = (page) => page.evaluateHandle((paths) => {
     const read = (path) => path.split('.').reduce((owner, key) => owner?.[key], window);

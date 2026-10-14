@@ -22,9 +22,9 @@ internal static partial class FunctionLibrary
             "YM" => Operand.Of(Value.FromNumber(months % 12)),
             // Every observed YD interval precedes its first completed anniversary. The run
             // does not say which year's leap day survives removing one or more years, so
-            // those intervals are refused until that choice has been observed.
-            "YD" => years == 0 ? Operand.Of(Value.FromNumber(end - start)) : Operand.Of(ErrorValue.Value),
-            "MD" => Operand.Of(ErrorValue.Value), // The catalogue's existing, explicit refusal.
+            // those intervals are refused until that choice has been observed: the Formula's.
+            "YD" => years == 0 ? Operand.Of(Value.FromNumber(end - start)) : call.Evaluator.Refuse(),
+            "MD" => call.Evaluator.Refuse(), // The catalogue's existing, explicit refusal: the Formula's.
             _ => Operand.Of(ErrorValue.Num),
         };
     }
@@ -96,7 +96,13 @@ internal static partial class FunctionLibrary
         return days / (double)(last.Year - first.Year + 1);
     }
 
-    /// <summary>Dates accept numeric text and date text under the Sheet's culture, and discard the time.</summary>
+    /// <summary>
+    /// Dates accept numeric text and date text under the Sheet's culture, and discard the time. A serial
+    /// below 0 is <c>#NUM!</c>, but one between -1 and 0, which is refused (<see cref="Evaluator.Refuse"/>)
+    /// until Excel is asked (DATEDIF-048, YEARFRAC-058; 2026-10-13): cut down to 0 it is a date, and below 0
+    /// <c>#NUM!</c>, and no run has read which Excel takes. -1 and below stay <c>#NUM!</c>, as Excel's was
+    /// at -1.
+    /// </summary>
     private static bool TryDifferenceDate(FunctionCall call, int index, bool allowBoolean, out int serial, out Operand failure)
     {
         serial = 0;
@@ -107,6 +113,11 @@ internal static partial class FunctionLibrary
             return false;
         }
         if (!TryNumber(call, index, out var number, out failure)) return false;
+        if (number < 0 && number > -1)
+        {
+            failure = call.Evaluator.Refuse();
+            return false;
+        }
         if (number < 0 || Math.Truncate(number) > DateSerial.Maximum)
         {
             failure = Operand.Of(ErrorValue.Num);

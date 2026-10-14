@@ -1,0 +1,79 @@
+{
+    "ran":  "2026-10-12T10:39:13",
+    "excel":  "16.0 (build 20430); EXCEL.EXE 16.0.20430.20146",
+    "windowsRegionalFormat":  "de-DE",
+    "formulasEnteredThrough":  "Range.Formula2",
+    "constantsEnteredThrough":  "Range.FormulaLocal",
+    "summary":  {
+                    "agree":  2,
+                    "disagree":  0,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "TEXTFN-009",
+                      "area":  "text",
+                      "source":  "observed",
+                      "description":  "Under de-DE the invariant code shows the culture\u0027s separators; German Excel reads the same code in its own spelling",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "excelExpect",
+                      "expected":  {
+                                       "value2":  "1234,5000",
+                                       "kind":  "text"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "1.234,50",
+                                           "kind":  "text"
+                                       },
+                      "excel":  {
+                                    "value2":  "1234,5000",
+                                    "kind":  "text",
+                                    "text":  "1234,5000",
+                                    "formula":  "=TEXT(1234.5,\"#,##0.00\")",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0120, \u0027What differs from Excel, by decision\u0027: TEXT reads its code in the invariant spelling under every culture, where Excel reads the system locale\u0027s (to German Excel \u0027,\u0027 is the decimal separator and \u0027.\u0027 groups thousands)"
+                  },
+                  {
+                      "id":  "TEXTFN-010",
+                      "area":  "text",
+                      "source":  "observed",
+                      "description":  "German Excel\u0027s own year code is not read",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "excelExpect",
+                      "expected":  {
+                                       "value2":  "2026"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "2026",
+                                    "kind":  "text",
+                                    "text":  "2026",
+                                    "formula":  "=TEXT(DATE(2026,9,26),\"JJJJ\")",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0120: TEXT reads its code in the invariant spelling under every culture, where Excel reads the system locale\u0027s"
+                  }
+              ]
+}
