@@ -31,14 +31,29 @@
             Name</em>, which is kept as given.
         </p>
         <p>
-            The words are those of Excel's English (US) edition: <code>Max of Revenue</code>, <code>Min of
-            Revenue</code>, <em>Summarize value field by</em>. <code>PivotWords.Japanese</code> gives the Japanese
-            edition's, where Count and Count Numbers are both <code>データの個数 / Revenue</code>. The English (UK)
-            edition's <code>Max. of</code>, <code>Min. of</code> and <em>Summarise</em> are not bundled, a known
-            limitation of 0.1.0: <code>Label</code> gives them by id, as any word (<code>caption-max</code>,
-            <code>aggregation-max</code>, <code>summarize-by</code>).
+            The English words follow your reader's UI culture, as Excel's follow its display language. Under
+            <code>en-GB</code> they are Excel's English (UK) edition's: <code>Max. of Revenue</code>,
+            <code>Min. of Revenue</code>, <strong>Max.</strong> and <strong>Min.</strong> in Value Field Settings'
+            list, <em>Summarise value field by</em> over it. Under any other culture they are its English (US)
+            edition's: <code>Max of Revenue</code>, <code>Min of Revenue</code>, <em>Summarize value field by</em>.
+            Of the words ExPivot paints, those are the only ones the two editions were seen to write differently.
+            Excel was read in those two editions only, so the other English cultures, <code>en-AU</code>,
+            <code>en-IE</code> or <code>en-IN</code>, keep the US words until a reading says otherwise. The report's
+            <code>Culture</code>, which writes its numbers, changes no word, and no culture changes the language:
+            the words are English until <code>Label</code> says otherwise.
+        </p>
+        <p>
+            <code>Label</code> wins over either edition. <code>PivotWords.EnglishUnitedKingdom</code> gives the UK
+            words whatever the culture, <code>PivotWords.EnglishFor</code> keeps the US words under
+            <code>en-GB</code>, and <code>PivotWords.Japanese</code> gives the Japanese edition's, where Count and
+            Count Numbers are both <code>データの個数 / Revenue</code>. Any word is replaced by its id
+            (<code>caption-max</code>, <code>aggregation-max</code>, <code>summarize-by</code>).
         </p>
         <DocsExample Builtin="typeof(Aggregations)" Mud="typeof(AggregationsMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
+        <DocsExample Builtin="typeof(UnitedKingdomWords)" Mud="typeof(UnitedKingdomWordsMud)" Files="@(["Examples/Pivot/Sales.cs"])">
+            The English (UK) words for every reader, through <code>Label</code>: open a Value Field's menu for
+            Value Field Settings… and its list.
+        </DocsExample>
     </DocsSection>
 
     <DocsSection Title="Show Values As">

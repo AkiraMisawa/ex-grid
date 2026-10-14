@@ -54,8 +54,10 @@ cell.
     and Aggregation "Sum of Amount2". Count Numbers is captioned as Count is, so a Count and a Count
     Numbers of one field are "Count of Value" and "Count of Value2", and Count Numbers chosen in
     Value Field Settings is "Count of Amount", "データの個数 / Amount" in Japanese. Max and Min are
-    "Max of Amount" and "Min of Amount" in the English (US) edition, whose words ExPivot's are; the
-    English (UK) edition writes "Max. of" and "Min. of". A caption equal to a field's caption or
+    "Max of Amount" and "Min of Amount" in the English (US) edition, and "Max. of Amount" and
+    "Min. of Amount" in the English (UK) edition, which also lists "Max." and "Min." and heads the
+    list "Summarise value field by"; ExPivot writes the UK edition's under an en-GB UI culture and the
+    US edition's otherwise (ADR-0060's note of 2026-10-14). A caption equal to a field's caption or
     another Value Field's is refused with "PivotTable field name already exists." — compared
     ignoring case. *(Observed: the captions by the seventeenth Windows run, items 4 and 14, through
     COM; Count Numbers', Max's and Min's by the readings of 2026-10-12, R3 (a) and (d), and the

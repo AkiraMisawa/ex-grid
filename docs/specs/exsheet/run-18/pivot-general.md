@@ -28,3 +28,17 @@ cells and captions read through COM and from a picture.
 8. **The rest of ExPivot's General that no run read** (left at 15 significant digits until a run reads them,
    ADR-0060's note of 2026-10-12): Show Details' sheet over records whose field has no number format (√2 as a record's
    value), and the sample in Value Field Settings' Number Format with General chosen.
+9. **Which English display languages take the English (UK) words.** Read in Office's English (United Kingdom) edition,
+   Excel writes `Max. of`, `Min. of`, `Max.`, `Min.` and `Summarise value field by`; in its English (United States)
+   edition, `Max of`, `Min of`, `Max`, `Min` and `Summarize value field by` (the readings of 2026-10-12, R3 (a) and
+   (d); `verification/2026-10-12-windows-pivot-en-us`). Which other English display languages does Office offer
+   (File > Options > Language, Install a display language, as the English (US) record read it), and, for each, set as
+   Office's display language: are a Max and a Min Value Field captioned through COM `Max. of …` or `Max of …`, and
+   does Value Field Settings list `Max.` or `Max` under `Summarise` or `Summarize value field by`? (ExPivot gives the
+   UK words under an en-GB UI culture only, and the US words under en-AU, en-IE, en-IN and every other English
+   culture, by generalisation; ADR-0060's note of 2026-10-14. An English culture Office offers no edition for has no
+   Excel answer, and keeps the US words.)
+10. **The English (UK) edition's Aggregation list after Count Numbers.** R3 (d) read Value Field Settings' list as far
+    as `Count Numbers`; StdDev, StdDevp, Var and Varp below it were not read in the English (UK) edition. Are they
+    `StdDev`, `StdDevp`, `Var` and `Varp`, as the English (US) edition lists them? (ExPivot lists them so, by
+    generalisation from the UK edition's captions, `StdDev of Note` and the rest, R3 (a).)

@@ -11,7 +11,8 @@ namespace ExPivot.Engine.Tests;
 /// COM in the seventeenth Windows run (<c>verification/2026-10-11-windows-17</c>, item 4) and in the
 /// readings of 2026-10-12 (R3 (a)), and in Value Field Settings in the English (UK) and Japanese
 /// editions (R3 (d)) and the English (US) one (<c>verification/2026-10-12-windows-pivot-en-us</c>,
-/// (a) and (d)). ExPivot's English is that English (US) edition's (ADR-0060's note of 2026-10-12).
+/// (a) and (d)). ExPivot's English is that English (US) edition's, and the English (UK) edition's
+/// words are bundled where they differ (ADR-0060's notes of 2026-10-12 and 2026-10-14).
 /// </summary>
 public class PivotWordsTests
 {
@@ -110,6 +111,52 @@ public class PivotWordsTests
             ["Sum", "Count", "Average", "Max", "Min", "Product", "Count Numbers", "StdDev", "StdDevp", "Var", "Varp"],
             Enum.GetValues<PivotAggregation>().Select(a => PivotWords.EnglishFor(PivotWords.AggregationName(a))));
         Assert.Equal("Summarize value field by", PivotWords.EnglishFor("summarize-by"));
+    }
+
+    [Fact] // ADR-0060's note of 2026-10-14, observed (R3 (a) and (d)): the English (UK) edition's words are bundled where they differ — Max. of, Min. of, Max., Min., Summarise value field by — and every other id keeps the English
+    public void ADR0060_The_English_UK_editions_words_are_bundled()
+    {
+        var uk = new PivotOptions { Culture = CultureInfo.GetCultureInfo("en-GB"), Label = PivotWords.EnglishUnitedKingdom };
+
+        Assert.Equal(["Max. of Value", "Min. of Value", "Sum of Value", "Count of Value", "StdDev of Value"],
+            Captions(uk, new("Value", PivotAggregation.Max), new("Value", PivotAggregation.Min), new("Value", PivotAggregation.Sum),
+                Count, new("Value", PivotAggregation.StdDev)));
+        // Value Field Settings' list, in that edition's order (R3 (d)'s pictures), and the heading over it.
+        Assert.Equal(
+            ["Sum", "Count", "Average", "Max.", "Min.", "Product", "Count Numbers", "StdDev", "StdDevp", "Var", "Varp"],
+            Enum.GetValues<PivotAggregation>().Select(a => PivotWords.Resolve(PivotWords.AggregationName(a), PivotWords.EnglishUnitedKingdom)));
+        Assert.Equal("Summarise value field by", PivotWords.Resolve("summarize-by", PivotWords.EnglishUnitedKingdom));
+        // Only the five words differ: every other id is left to the English, the instruction lines'
+        // colons and Count Numbers' caption among them (the English (US) record, (a), (b) and (d)).
+        Assert.Equal(["aggregation-max", "aggregation-min", "caption-max", "caption-min", "summarize-by"],
+            PivotWords.Ids.Where(id => PivotWords.EnglishUnitedKingdomFor(id) is not null).Order(StringComparer.Ordinal));
+        Assert.All(PivotWords.Ids.Where(id => PivotWords.EnglishUnitedKingdomFor(id) is not null), id =>
+            Assert.Equal(Holes(PivotWords.EnglishFor(id)!), Holes(PivotWords.EnglishUnitedKingdomFor(id)!)));
+        Assert.Null(PivotWords.EnglishUnitedKingdom("choose-fields"));
+        Assert.Null(PivotWords.EnglishUnitedKingdom(PivotWords.CaptionOf(PivotAggregation.CountNumbers)));
+        Assert.Null(PivotWords.EnglishUnitedKingdomFor("no-such-id"));
+
+        static string[] Holes(string word)
+            => System.Text.RegularExpressions.Regex.Matches(word, @"\{\d\}").Select(m => m.Value).Order(StringComparer.Ordinal).ToArray();
+    }
+
+    [Fact] // ADR-0060's note of 2026-10-14, ADR-0152: the engine reads no culture for its words — under an en-GB UI culture and report culture, without the Label, it keeps the English (US) words; ExPivot chooses the edition and hands it over as the Label, so a server computes what the browser asked for
+    public void ADR0060_The_engine_takes_the_English_UK_words_only_through_the_Label()
+    {
+        var previous = CultureInfo.CurrentUICulture;
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en-GB");
+        try
+        {
+            var culture = new PivotOptions { Culture = CultureInfo.GetCultureInfo("en-GB") };
+
+            Assert.Equal(["Max of Value", "Min of Value"],
+                Captions(culture, new("Value", PivotAggregation.Max), new("Value", PivotAggregation.Min)));
+            Assert.Equal("Max", PivotWords.Resolve(PivotWords.AggregationName(PivotAggregation.Max), null));
+        }
+        finally
+        {
+            CultureInfo.CurrentUICulture = previous;
+        }
     }
 
     [Fact] // ADR-0061, observed from pictures (R3 (b) in English (UK) and Japanese; the English (US) record, (b)): the Field List's two instruction lines end with a colon; ExPivot writes ':' U+003A, a code point no record read

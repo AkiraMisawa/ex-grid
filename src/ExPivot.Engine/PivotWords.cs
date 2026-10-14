@@ -8,6 +8,12 @@ namespace ExPivot.Engine;
 /// replaces any of them through a function from id to text, returning null to keep the English. A
 /// word with <c>{0}</c> (and <c>{1}</c>) is a template: the id says what goes in it.
 ///
+/// <para>The English (United Kingdom) edition's words are bundled where they differ:
+/// <see cref="EnglishUnitedKingdom"/> gives <c>Max. of {0}</c>, <c>Max.</c> and
+/// <c>Summarise value field by</c>. ExPivot paints them on its own under an <c>en-GB</c> UI culture,
+/// as Excel's English follows its display language; the language stays English, and the
+/// Consumer's <c>Label</c> still wins (ADR-0060's note of 2026-10-14).</para>
+///
 /// <para>The words of Excel's Japanese edition are bundled: <see cref="Japanese"/> is such a
 /// function, chosen in one line (<c>Label="PivotWords.Japanese"</c>). They never follow the
 /// culture on their own, because a screen whose language changed unasked is the surprise the
@@ -95,6 +101,26 @@ public static class PivotWords
         return JapaneseWords.TryGetValue(id, out var word) ? word : null;
     }
 
+    /// <summary>
+    /// The words of Excel's English (United Kingdom) edition where they differ from the English
+    /// (United States) edition's, which are this class's English (ADR-0060's note of 2026-10-14):
+    /// <c>Max.</c> and <c>Min.</c> in Value Field Settings' list, <c>Max. of {0}</c> and
+    /// <c>Min. of {0}</c> as a Value Field's caption, and <c>Summarise value field by</c> over the
+    /// list. A function from id to word that answers null for every other id, which keeps the
+    /// English. ExPivot chooses it on its own under an <c>en-GB</c> UI culture; hand it to
+    /// ExPivot's <c>Label</c>, or to <see cref="PivotOptions.Label"/> on a server, to choose it
+    /// under any culture.
+    /// </summary>
+    public static Func<string, string?> EnglishUnitedKingdom { get; } = EnglishUnitedKingdomFor;
+
+    /// <summary>The English (United Kingdom) edition's word for an id, or null where that edition
+    /// writes what the English (United States) edition writes.</summary>
+    public static string? EnglishUnitedKingdomFor(string id)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+        return EnglishUnitedKingdomWords.TryGetValue(id, out var word) ? word : null;
+    }
+
     /// <summary>The word for <paramref name="id"/>: the Consumer's through
     /// <paramref name="label"/>, the English where it says nothing, and the id itself where
     /// neither knows it — an id painted is a missing word seen, never a blank.</summary>
@@ -122,12 +148,10 @@ public static class PivotWords
         _ => throw new ArgumentOutOfRangeException(nameof(aggregation), aggregation, "Unknown PivotAggregation."),
     };
 
-    // The English is Excel's English (United States) edition's (ADR-0060's note of 2026-10-12):
-    // "Max of", "Min of" and "Summarize", which that edition shows
+    // The English is Excel's English (United States) edition's (ADR-0060's notes of 2026-10-12 and
+    // 2026-10-14): "Max of", "Min of" and "Summarize", which that edition shows
     // (verification/2026-10-12-windows-pivot-en-us, (a) and (d)). The English (United Kingdom)
-    // edition's "Max. of", "Min. of" and "Summarise" (the readings of 2026-10-12, R3 (a) and (d))
-    // are a Known limitation of 0.1.0 (ADR-0202); a Consumer that wants them gives them through
-    // Label.
+    // edition's, where they differ, are EnglishUnitedKingdomWords below.
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
     {
         [RowLabels] = "Row Labels",
@@ -312,6 +336,23 @@ public static class PivotWords
         ["stale-source-refused"] = "the source refused to answer: {0}",
         ["stale-out-of-memory"] = "memory ran out while the newest data was laid out.",
         ["retry"] = "Retry",
+    };
+
+    // The words of Excel's English (United Kingdom) edition where they differ from the English above
+    // (ADR-0060's note of 2026-10-14), as that edition showed them in the readings of 2026-10-12:
+    // "Max. of Note" and "Min. of Note" through COM (R3 (a)), "Max." and "Min." in Value Field
+    // Settings' list and "Summarise value field by" over it (R3 (d), shots/r3d-en-2-dialog.png).
+    // Every other word of ExPivot's read there was the English (United States) edition's
+    // (verification/2026-10-12-windows-pivot-en-us, (a), (b) and (d)). The list's StdDev, StdDevp,
+    // Var and Varp, below what R3 (d)'s pictures show, are taken as the same by generalisation from
+    // that edition's captions, "StdDev of Note" and the rest (R3 (a)).
+    private static readonly Dictionary<string, string> EnglishUnitedKingdomWords = new(StringComparer.Ordinal)
+    {
+        ["aggregation-max"] = "Max.",
+        ["aggregation-min"] = "Min.",
+        ["caption-max"] = "Max. of {0}",
+        ["caption-min"] = "Min. of {0}",
+        ["summarize-by"] = "Summarise value field by",
     };
 
     // The words of Excel's Japanese edition (ADR-0060), for every id above, for the ExGrid

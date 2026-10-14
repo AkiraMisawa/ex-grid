@@ -1179,6 +1179,8 @@ static ExPivot.Engine.PivotValueField.operator ==(ExPivot.Engine.PivotValueField
 static ExPivot.Engine.PivotWords.AggregationName(ExPivot.Engine.PivotAggregation aggregation) -> string!
 static ExPivot.Engine.PivotWords.CaptionOf(ExPivot.Engine.PivotAggregation aggregation) -> string!
 static ExPivot.Engine.PivotWords.EnglishFor(string! id) -> string?
+static ExPivot.Engine.PivotWords.EnglishUnitedKingdom.get -> System.Func<string!, string?>!
+static ExPivot.Engine.PivotWords.EnglishUnitedKingdomFor(string! id) -> string?
 static ExPivot.Engine.PivotWords.Fill(string! template, params string![]! arguments) -> string!
 static ExPivot.Engine.PivotWords.Ids.get -> System.Collections.Generic.IReadOnlyCollection<string!>!
 static ExPivot.Engine.PivotWords.Japanese.get -> System.Func<string!, string?>!
