@@ -188,6 +188,13 @@ headers and `BuildCopyPayload` had no notion of them. Most of what it needs deri
 - **It goes into both formats** — a `<th>` row in `text/html` as well as the first TSV line.
   Excel prefers the HTML flavour, and a header row that reached the text editor but not the
   spreadsheet would miss the case the feature exists for.
+  - *(2026-10-13, decided with the user: a header can carry a raw form of its own, as a cell does.)*
+    The TSV line takes the header as shown; the `<th>` takes its raw form where it has one, and its
+    text where it has none, as before. A pivot's number column Item heads its column in General
+    (`1.23457E+11`) and is copied in full (`123456789012.345`), as its cells are
+    ([ADR-0060](./0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)'s note of
+    2026-10-12). `ClipboardData.Assemble` takes the raw form through `headerRawAt`, and ExPivot
+    supplies it from the Item; ExGrid's own columns have none, and copy as before.
 
 Two things were decisions.
 

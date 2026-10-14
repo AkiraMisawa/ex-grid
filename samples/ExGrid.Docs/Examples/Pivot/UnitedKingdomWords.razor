@@ -1,0 +1,21 @@
+@using ExPivot.Components
+@using ExPivot.Engine
+
+<ExPivot Source="_source" @bind-Layout="_layout" Label="PivotWords.EnglishUnitedKingdom" ViewportHeight="380" />
+
+@code {
+    private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);
+
+    // Excel's English (UK) words whatever the reader's UI culture; under en-GB ExPivot chooses them
+    // on its own. Max. of Revenue and Min. of Revenue: open either's Value Field Settings… for
+    // "Summarise value field by" and Max. and Min. in its list.
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Category")],
+        Values =
+        [
+            new PivotValueField("Revenue", PivotAggregation.Max) { NumberFormat = "#,##0.00" },
+            new PivotValueField("Revenue", PivotAggregation.Min) { NumberFormat = "#,##0.00" },
+        ],
+    };
+}

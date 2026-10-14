@@ -44,6 +44,17 @@ public class JapaneseWordsTests
         Assert.Equal("値", PivotWords.Japanese(PivotWords.Values));
     }
 
+    [Fact] // ADR-0060 (decided with the user, 2026-10-13; the readings of 2026-10-12, R3 (d)): Value Field Settings lists Count as 個数, as the Japanese edition does, and the caption stays データの個数 / {0}
+    public void ADR0060_The_Japanese_list_names_Count_個数_and_the_caption_stays()
+    {
+        Assert.Equal("個数", PivotWords.Japanese(PivotWords.AggregationName(PivotAggregation.Count)));
+        Assert.Equal("データの個数 / {0}", PivotWords.Japanese(PivotWords.CaptionOf(PivotAggregation.Count)));
+        Assert.Equal("数値の個数", PivotWords.Japanese(PivotWords.AggregationName(PivotAggregation.CountNumbers)));
+        // The list R3 (d) read, as far as it read: 合計, 個数, 平均, 最大, 最小, 積, 数値の個数, …
+        Assert.Equal(["合計", "個数", "平均", "最大", "最小", "積", "数値の個数"],
+            Enum.GetValues<PivotAggregation>().Take(7).Select(a => PivotWords.Japanese(PivotWords.AggregationName(a))));
+    }
+
     [Fact] // ADR-0060: the ExGrid commands in the report's Context Menu have Japanese words too, which ExGrid ships only in English
     public void The_grids_context_menu_commands_have_japanese_words()
     {

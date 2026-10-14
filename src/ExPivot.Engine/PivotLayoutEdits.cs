@@ -310,8 +310,18 @@ public static class PivotLayoutEdits
     /// when its own caption is empty, or is another Value Field's caption or a Pivot Field's,
     /// or when its number format cannot be used.
     /// </summary>
+    /// <param name="layout">The layout the Value Field stands in.</param>
+    /// <param name="index">The Value Field's place in Values.</param>
+    /// <param name="value">Its new settings.</param>
+    /// <param name="fields">The declared Pivot Fields, by name.</param>
+    /// <param name="options">The report's options, whose words caption the other Value Fields: a
+    /// caption is compared with the captions the report shows, so under
+    /// <see cref="PivotWords.Japanese"/> <c>合計 / Amount</c> beside a Sum of Amount is taken and
+    /// <c>Sum of Amount</c> is not. <see cref="PivotOptions.Default"/>, the English words, when
+    /// left out.</param>
     public static PivotEditResult SetValueField(
-        PivotLayout layout, int index, PivotValueField value, IReadOnlyDictionary<string, PivotFieldInfo> fields)
+        PivotLayout layout, int index, PivotValueField value, IReadOnlyDictionary<string, PivotFieldInfo> fields,
+        PivotOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(layout);
         ArgumentNullException.ThrowIfNull(value);
@@ -322,7 +332,7 @@ public static class PivotLayoutEdits
             if (caption.Trim().Length == 0)
                 return new PivotEditResult(layout, PivotRefusal.CaptionEmpty);
             var others = layout.Values.Where((_, i) => i != index).ToArray();
-            var otherCaptions = ValueCaptions.Resolve(others, fields);
+            var otherCaptions = ValueCaptions.Resolve(others, fields, options);
             if (otherCaptions.Contains(caption, StringComparer.OrdinalIgnoreCase)
                 || fields.Values.Any(f => string.Equals(f.Caption, caption, StringComparison.OrdinalIgnoreCase)))
                 return new PivotEditResult(layout, PivotRefusal.CaptionTaken);
