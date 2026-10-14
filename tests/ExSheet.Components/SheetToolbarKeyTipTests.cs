@@ -362,7 +362,7 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         Assert.Empty(cut.FindAll(".ex-popover .ex-sheet-swatch-choice"));
         Assert.Contains("FC", ShownKeyTips(cut));
         Assert.Contains("H", ShownKeyTips(cut));
-        Assert.Equal(["frame"], HandOffs.Skip(handOffs));
+        Assert.Equal(["frame", "none"], HandOffs.Skip(handOffs));
         Assert.Equal(handedTo + 1, HandedToCount);
         Assert.Equal(taken, TakeBackCount);
         Assert.Equal(CellFill.None, FormatAt(cut, "B2").Fill);
@@ -393,7 +393,7 @@ public class SheetToolbarKeyTipTests : SheetTestContext
 
         Assert.Empty(cut.FindAll(".ex-popover"));
         Assert.Empty(ShownKeyTips(cut));
-        Assert.Empty(HandOffs.Skip(handOffs));
+        Assert.Equal(["none"], HandOffs.Skip(handOffs));
 
         // A choice in a list a KeyTip opened: the cell is filled, no KeyTips stand, and the list is
         // forgotten — Escape on the band later gives the keyboard back, as the band's own Escape does.

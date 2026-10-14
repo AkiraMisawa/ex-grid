@@ -5700,10 +5700,12 @@
     private void ClosePopoverAndReturnFocus()
     {
         var wasOpen = AnyPopoverOpen;
-        // A Consumer's popover closed before its contents took the keyboard: the key gate stops
-        // waiting for them, and the keys it held for them are the grid's (ADR-0050 item 16; ADR-0100's
-        // CloseRequest, 2026-10-12). Told before the hand-back, which the held keys then follow.
-        if (_consumerPopover is not null && !_consumerContentsHeld)
+        // A closing Consumer's popover is no longer where the keyboard is going (ADR-0050 item 16;
+        // ADR-0044). Its contents may have reported focus while the gate still holds behind a choice:
+        // the gate cannot observe both that focus and the choice's menu gone at once. Withdraw any
+        // pending hand-off to the popover before the hand-back, so the held keys follow it. A hand-off
+        // to a Consumer's frame is left standing by the gate.
+        if (_consumerPopover is not null)
             _ = HandOffAsync("none");
         if (wasOpen)
             _ = ReclaimFocusAsync();

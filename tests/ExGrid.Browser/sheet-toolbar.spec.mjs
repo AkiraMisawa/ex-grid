@@ -262,6 +262,29 @@ for (const chrome of ['builtin', 'mud']) {
             }
         });
 
+        test(`ADR-0100/ADR-0044: Ctrl+Z typed straight after a Font Colour choice undoes its colour and width while the list closes (${chrome})`, async ({ page }, testInfo) => {
+            const grid = sheet(page);
+            const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
+            const before = await inkOf(cell(grid, 'E1'));
+            const keysLanded = await watchWhereKeysLand(page);
+            await setRoundTrip(150);
+            await toolbarArrow(page, 'Font Colour').click();
+
+            // The undo belongs after the choice even while its list still holds the keyboard.
+            // No reading between the click and the key waits for the colour, width or focus.
+            await page.locator('[role="menuitemradio"][aria-label="Blue"]').first().click();
+            await page.keyboard.press('ControlOrMeta+Z');
+
+            await circuitQuiet();
+            await testInfo.attach('keys-after-font-colour', { body: JSON.stringify(await keysLanded()), contentType: 'application/json' });
+            await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+            await expect.poll(() => inkOf(cell(grid, 'E1'))).toEqual(before);
+            expect((await boxOf(columnHeader(grid, 'E'))).width).toBeCloseTo(standard, 0);
+            expect((await boxOf(columnHeader(grid, 'F'))).width).toBeCloseTo(sized, 0);
+            await expectKeyboardOn(grid);
+            await expect(openLists(page)).toHaveCount(0);
+        });
+
         test(`ADR-0100: the page's own action runs over the Selection (${chrome})`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'B3');

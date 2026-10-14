@@ -857,7 +857,10 @@ public class ShippedStylesheetTests
         Assert.Single(Regex.Matches(script, @"addEventListener\('keyup'"));
         Assert.Contains("root.addEventListener('keyup', onRootKeyUp, true);", script, StringComparison.Ordinal);
         // While keys are held, the release is kept from the Consumer's handler and held in its place.
-        Assert.Matches(new Regex(@"if \(answering\) \{\s*event\.stopPropagation\(\);\s*event\.preventDefault\(\);\s*held\.push\(\{ altUp: true, altAlone: alone, key: 'Alt' \}\);\s*return;\s*\}"), keyUp);
+        // Comments do not change the sequence. The held release names its held press, so the press's
+        // landing decides whether the pair is an Alt alone (ADR-0050 item 16, 2026-10-14).
+        var keyUpStatements = Regex.Replace(keyUp, @"//[^\r\n]*", "");
+        Assert.Matches(new Regex(@"if \(answering\) \{\s*event\.stopPropagation\(\);\s*event\.preventDefault\(\);\s*held\.push\(\{ altUp: true, altAlone: alone, of: pending\?\.entry \?\? undefined, key: 'Alt' \}\);\s*return;\s*\}"), keyUpStatements);
         // Otherwise it reaches the Consumer now, and the keys after it wait for the answer to it; a chord's
         // release, or one whose press was not heard, never reaches the Consumer: the gate tells which.
         Assert.Matches(new Regex(@"if \(!alone\) \{\s*event\.stopPropagation\(\);\s*return;\s*\}\s*startHold\(altReleaseAnswered\(\)\);"), keyUp);
@@ -865,11 +868,12 @@ public class ShippedStylesheetTests
         Assert.Contains("if (!core || replaying || event.key !== 'Alt' || !declared.has('Alt+Alt')) {", keyUp, StringComparison.Ordinal);
         // Its turn: handed on as the keyup it was, then its answer asked; its press is not skipped as a
         // modifier's, so the Consumer hears the press before the release.
-        Assert.Matches(new Regex(@"if \(k\.altUp\) \{\s*if \(k\.altAlone\) \{\s*await replayAltRelease\(\);\s*await editorSettled\(\);"), drain);
+        Assert.Matches(new Regex(@"if \(k\.altUp\) \{\s*if \(releasesAlone\(k\)\) \{\s*await replayAltRelease\(\);\s*await editorSettled\(\);"), drain);
+        Assert.Contains("const releasesAlone = (k) => (k.of ? k.of.altAlone === true : k.altAlone === true);", script, StringComparison.Ordinal);
         Assert.Contains("if (modifierKeys.has(k.key) && !(k.key === 'Alt' && k.altAlone === true", drain, StringComparison.Ordinal);
         Assert.True(drain.IndexOf("if (k.altUp)", StringComparison.Ordinal) < drain.IndexOf("if (modifierKeys.has(k.key)", StringComparison.Ordinal));
         // A held Alt is noted as it is held, so its release finds it, and a chord unmarks it.
-        Assert.Contains("noteAlt(k, isClipboardKey(k) ? null : k);", keyDown, StringComparison.Ordinal);
+        Assert.Contains("noteAlt(k, isClipboardKey(k) ? null : k, true);", keyDown, StringComparison.Ordinal);
         // The release is no longer inferred from the key after it, and no Alt overtakes the keys held before it.
         Assert.DoesNotContain("afterAltAlone", script, StringComparison.Ordinal);
         Assert.DoesNotContain("altGoesFirst", script, StringComparison.Ordinal);

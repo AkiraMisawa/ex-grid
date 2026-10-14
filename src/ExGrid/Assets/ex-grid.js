@@ -3641,10 +3641,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // the root until the keyboard arrives. No focus is moved and no layout is read: what
         // holds DOM focus is read, as the hold always has.
         handOff: (to) => {
-            // The core closed a Consumer's popover before its contents took the keyboard: it is no
-            // longer on its way there, and the keys held for it are the grid's, as they would have
-            // been, rather than waiting for a focus that will not come and then dropped (ADR-0100's
-            // CloseRequest, 2026-10-12).
+            // The core closed a Consumer's popover: the keyboard is no longer on its way there,
+            // even if its contents had focus while a choice's close still held the keys. Withdraw
+            // that destination before the hand-back, rather than wait for focus on contents now gone
+            // and drop the held keys. A frame the Consumer handed the keyboard to stays its destination
+            // (ADR-0044; ADR-0050 item 16; ADR-0100's CloseRequest).
             if (to === 'none') {
                 if (handOff === 'popover') {
                     handOff = null;

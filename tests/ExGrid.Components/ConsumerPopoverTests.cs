@@ -404,9 +404,9 @@ public class ConsumerPopoverTests : GridTestContext
 
         Assert.Empty(cut.FindAll(".ex-popover-consumer"));
         Assert.Equal(1, escaped);
-        Assert.Equal(["popover", "frame"], Js.HandedOff.Invocations.Select(i => (string)i.Arguments[0]!));
-        // Told before the hand-back: the keys held behind the Escape wait for the frame, not the root.
-        Assert.Equal(2, handOffsAtReclaim);
+        Assert.Equal(["popover", "frame", "none"], Js.HandedOff.Invocations.Select(i => (string)i.Arguments[0]!));
+        // Told before the hand-back; "none" withdraws only the popover destination, leaving the frame.
+        Assert.Equal(3, handOffsAtReclaim);
     }
 
     [Fact] // ADR-0050 item 16's note of 2026-10-12: a popover closed any other way than by Escape tells the Consumer nothing
@@ -600,8 +600,8 @@ public class ConsumerPopoverTests : GridTestContext
         Assert.Equal(1, asked);
     }
 
-    [Fact] // ADR-0050 item 16, ADR-0100's CloseRequest (2026-10-12): a popover closed before its contents took the keyboard tells the key gate it is no longer going there; one they took does not
-    public async Task Closed_before_its_contents_took_the_keyboard_the_gate_stops_waiting_for_them()
+    [Fact] // ADR-0050 item 16 / ADR-0044: closing withdraws the popover destination even after its contents report focus; the key gate may still hold behind a choice
+    public async Task Closing_a_consumer_popover_withdraws_its_destination_before_and_after_contents_report_focus()
     {
         var cut = RenderGrid();
         await Report(cut, 300);
@@ -613,7 +613,7 @@ public class ConsumerPopoverTests : GridTestContext
         await OpenAsync(cut, new Probe());
         await cut.Find(".ex-popover-consumer > .ex-popover-body").FocusInAsync(new FocusEventArgs());
         await cut.Instance.ClosePopoverAsync();
-        Assert.Equal(["popover", "none", "popover"], Js.HandedOff.Invocations.Select(i => (string)i.Arguments[0]!));
+        Assert.Equal(["popover", "none", "popover", "none"], Js.HandedOff.Invocations.Select(i => (string)i.Arguments[0]!));
     }
 
     [Fact] // ADR-0050 item 16 / DC-60 / ADR-0018: two grids' popovers are independent

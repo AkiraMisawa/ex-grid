@@ -343,6 +343,26 @@ public class MudToolbarTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.Equal(["takeKeyboardBack", "handOff:frame"], KeyboardWays.Skip(ways)));
     }
 
+    [Fact] // ADR-0039 / ADR-0050 item 16: the next frame cannot take focus before the toolbar has handed back its keyboard and held keys
+    public async Task More_number_formats_draws_its_frame_only_after_the_toolbar_hands_back_the_keyboard()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
+        await GoToAsync(page, "B2");
+        await KeyTipsAsync(page, "h", "n");
+        await TypeInListAsync(page, "End");
+        var returned = HoldKeyboardHandBack();
+        var taken = TakeBackCount;
+
+        await TypeInListAsync(page, "Enter");
+
+        page.WaitForAssertion(() => Assert.True(TakeBackCount > taken));
+        Assert.Empty(page.FindAll(".mud-ex-sheet-format-cells-leaving"));
+        Assert.False(IsOpen(page));
+
+        returned();
+        page.WaitForAssertion(() => Assert.True(IsOpen(page)));
+    }
+
     [Fact] // ADR-0100, SH-50: a choice pressed with the pointer closes the list and gives the keyboard back to the Sheet
     public async Task A_pressed_choice_closes_the_list_and_gives_the_keyboard_back()
     {

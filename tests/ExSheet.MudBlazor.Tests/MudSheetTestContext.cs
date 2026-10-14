@@ -61,6 +61,13 @@ public abstract class MudSheetTestContext : BunitContext
     /// keys typed there on the way (ADR-0050 item 16's note of 2026-10-12).</summary>
     protected int TakeBackCount => _handle.Invocations["takeKeyboardBack"].Count;
 
+    /// <summary>Holds the browser's answer to a hand-back until the returned action completes it.</summary>
+    protected Action HoldKeyboardHandBack()
+    {
+        var pending = _handle.SetupVoid("takeKeyboardBack", _ => true);
+        return () => pending.SetVoidResult();
+    }
+
     /// <summary>The grid's asks of its key gate about where the keyboard goes — a hand-off, or a hand-back
     /// from a frame — in the order made: <c>handOff:frame</c>, <c>takeKeyboardBack</c>.</summary>
     protected IReadOnlyList<string> KeyboardWays =>
