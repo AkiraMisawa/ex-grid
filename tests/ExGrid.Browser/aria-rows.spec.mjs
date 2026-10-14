@@ -6,9 +6,11 @@ import { sheet, openSheet, at } from './sheet-helpers.mjs';
 // of Header Groups is a row of its own before it. The data rows are counted after them, and
 // aria-rowcount holds both. Near the top NVDA counted the rows painted before a row: it said "row 11"
 // for D10, where aria-rowindex said 10. aria-rowindex now writes that number, near the top and far
-// down alike; what a reader says far down is still a Windows run's to hear.
+// down alike.
 //
-// What a reader says is a Windows run's. What is read here is Chromium's accessibility tree, over
+// The accessibility tree is what verifies it (ADR-0033, "Verified against the accessibility tree,
+// not a screen reader", 2026-10-13): no screen reader is run, and what one says of a row far down is
+// learned from users' reports. What is read here is Chromium's accessibility tree, over
 // the DevTools protocol: which rows it holds, in its order, and which column headers or cells each
 // holds. A tier's row and the leaf row under Header Groups are `display: contents` in the markup, so
 // that the band lays out exactly as one element did (ADR-0032); the tree must still hold them as rows

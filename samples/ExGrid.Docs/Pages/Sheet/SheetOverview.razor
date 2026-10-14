@@ -62,6 +62,7 @@
         <ul>
             <li><code>PinnedColumnCount</code> freezes leading columns.</li>
             <li><code>ShowRowHeadings</code>, <code>ShowColumnHeadings</code> and <code>ShowFormulaBar</code> hide the Headings or the Formula Bar; the cells are still addressed A1.</li>
+            <li>For a screen reader the Column Headings are the table's row 1, so the grid numbers a Sheet row as its number plus one, near the top and far down: A1 is in row 2. With <code>ShowColumnHeadings</code> off, the two numbers agree.</li>
             <li>
                 A copy carries the Values as shown in <code>text/plain</code> and unformatted in
                 <code>text/html</code>. A paste may spill from one cell, as in Excel, and each pasted field is

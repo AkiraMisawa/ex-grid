@@ -36,6 +36,19 @@
 
     <DocsSection Title="The keyboard">
         <p>Click into the grid, or tab to it: the grid is one tab stop, and its keys are Excel's.</p>
+        <p>
+            With Narrator, turn scan mode off before you use the grid's keys: the Narrator key and Space
+            (Insert+Space). In scan mode the arrow keys move Narrator's own reading cursor through the page and
+            do not reach the grid, and Narrator turns scan mode on again on each new page. That is what Narrator
+            was seen to do; the grid itself is checked against the browser's accessibility tree, not against a
+            screen reader.
+        </p>
+        <p>
+            A screen reader is given the grid as a table. The header row is its row 1 and the first row of data its
+            row 2, and the grid writes each row's number the same way near the top and a million rows down. Each
+            tier of Header Groups is a row of its own above the header row, and the rows of data are counted after
+            them; with <code>HideHeader</code>, the first row of data is row 1.
+        </p>
         @* The rows the Keyboard reference lists for this section, so the two are one list (ADR-0110). *@
         <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
             <thead><tr><th style="width: 34%">Keys</th><th>What they do</th></tr></thead>

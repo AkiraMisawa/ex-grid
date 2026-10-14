@@ -119,8 +119,9 @@
             @* Every row is counted where ARIA counts it (ADR-0033, 2026-10-12): the header's rows
                first, from 1, and the data rows after them, so aria-rowindex gives a row the number
                a reader counted from the rows painted before it near the top (NVDA, the seventeenth
-               Windows run), and the same number far down, where the DOM holds a Window. What a
-               reader says far down is a run's to hear. Untiered, the header is the one row it always was.
+               Windows run), and the same number far down, where the DOM holds a Window. What is
+               checked is the accessibility tree (ADR-0033, 2026-10-13); what a reader says of it
+               is learned from users' reports. Untiered, the header is the one row it always was.
                Tiered, it holds a row per tier of Header Groups, top first, and the leaf row below
                them; each is display: contents, so the band lays out, paints and stacks exactly as
                one element of cells and rectangles did (ADR-0032), and only the tree says rows. *@
