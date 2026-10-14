@@ -1,0 +1,33 @@
+KeyTips typed at once through a closing list hold on the Server host, the built-in list answers Enter at its keydown, and the toolbar's Font Colour widens as Excel's button (ADR-0100, ADR-0050, ADR-0071; decided with the user, 2026-10-14)
+
+Three layer-3 cases of the branch's own failed on Linux Chromium, each for a reason found in a
+timeline of the keys as they landed:
+
+- Alt, Alt, H, 1 typed at once: a defect of the test. `editor(grid)` is the editor's input itself, so
+  `.locator('input, textarea')` beneath it found nothing, even typed slowly. It reads the input now.
+- Escape three times in a list a KeyTip opened, then Alt, H, H, typed at once (Server host): two
+  product defects. Under the built-in Chrome the key gate judged an Alt held behind the closing popover
+  by where it was typed, a popover, so its press was taken for a chord's and its release dropped, and a
+  release handed to the toolbar among the held keys waited for a question to the core, so the keys
+  after it reached the root behind the toolbar's hand-back: H, H opened an edit. An Alt held is now
+  judged where it lands in its turn, and a release handed to a frame goes on with the keys after it.
+  Under ExSheet.MudBlazor the band answered the keys it held for itself one after another: the keys
+  after the Escape that gave the keyboard back came after the grid had asked for them and were lost,
+  and an Alt's release among them was dropped. A key that sends the keyboard on now holds the keys
+  behind it from its first step, and a held release goes with them.
+- Alt, H, H, then ↓, →, Enter typed at once (built-in Chrome, Server host): the built-in list made a
+  choice by the browser's activation of the focused button, which a key the grid hands on from its
+  hold, dispatched from script, does not trigger. The list answers Enter and Space at their keydown,
+  choosing where the keys have reached, and makes one choice. The same fixes End, Enter typed straight
+  after Alt, H, N, which gave different results run to run; a layer-3 case types them at once now.
+
+Decided with the user on 2026-10-14: the Sheet Toolbar's Font Colour widens a column as Excel's Home tab
+Font Colour button does, by its face and from its list (the readings of 2026-10-14, run 18a, widening
+case 5), while SetCellFormatAsync keeps widening as COM's Font.Color does, which does not widen. The
+toolbar's colours set through SetCellFormatFromFocusAsync, whose rule is now Excel's Home tab buttons':
+the keys', and a Font colour too. Layer 2 and layer 3 cases named ADR-0071/ADR-0100, the Docs Site's
+widening paragraphs, and a Change Note. The report filter's limit with no report shown is drafted as a
+Known limitation of 0.1.0 (decided with the user, 2026-10-14).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_0128brJpkSJwPFbxWT1ESkDB

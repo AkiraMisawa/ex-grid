@@ -1,0 +1,18 @@
+// Untracked: this container has neither Google Chrome nor Edge, so the run uses Playwright's bundled
+// Chromium as one 'chrome' project. CI's committed config runs the real browsers.
+import config from './playwright.config.mjs';
+
+export default {
+    ...config,
+    projects: [
+        {
+            name: 'chrome',
+            use: {
+                launchOptions: {
+                    executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+                    ignoreDefaultArgs: ['--hide-scrollbars'],
+                },
+            },
+        },
+    ],
+};
