@@ -1,0 +1,9 @@
+<ExGrid TRow="NumericHeaderCopy.Sample" Source="_copy.Source" Columns="_copy.Columns" CopyAnswer="_answer"
+        ViewportHeight="180" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    private readonly NumericHeaderCopy _copy = new();
+    private Func<ExGrid.Clipboard.GridCopyRequest, ExGrid.Clipboard.GridCopyAnswer> _answer = default!;
+
+    protected override void OnInitialized() => _answer = _copy.Answer;
+}

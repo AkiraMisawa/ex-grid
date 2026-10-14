@@ -249,6 +249,13 @@ internal sealed class ReportBuilder
 
     private string Label(AxisNode node, FieldMeta meta) => _labels.Of(node.Item!, meta);
 
+    // An Item's own label cell: its text, and for a number Item the number its copy carries.
+    private PivotRowLabel ItemLabel(AxisNode node, int level, int indent = 0, PivotToggle? toggle = null)
+        => new(Label(node, _rowMeta[level]), indent, toggle)
+        {
+            Number = global::ExPivot.Engine.ItemLabels.NumberOf(node.Item!, _rowMeta[level]),
+        };
+
     private List<PivotLabelColumn> LabelColumns()
     {
         var columns = new List<PivotLabelColumn>(_labelColumnCount);
@@ -426,8 +433,11 @@ internal sealed class ReportBuilder
         else
         {
             // Its own leaf header; for a collapsed Item it stretches up to its parent's
-            // rectangle (ADR-0032).
-            columns.Add(Column(PivotColumnRole.Item, node, -1, label));
+            // rectangle (ADR-0032). A number Item's header carries its number for a copy.
+            columns.Add(new(ColumnName(PivotColumnRole.Item, node, -1), label, PivotColumnRole.Item, -1, node)
+            {
+                HeaderNumber = global::ExPivot.Engine.ItemLabels.NumberOf(node.Item, _columnMeta[level]),
+            });
         }
         return -1;
     }
@@ -633,13 +643,12 @@ internal sealed class ReportBuilder
     {
         var labels = NewLabels();
         var level = node.Level;
-        var label = Label(node, _rowMeta[level]);
         if (_layout.Form == PivotReportForm.Compact)
         {
-            labels[0] = new PivotRowLabel(label, level, ToggleOf(node));
+            labels[0] = ItemLabel(node, level, level, ToggleOf(node));
             return labels;
         }
-        labels[level] = new PivotRowLabel(label, 0, ToggleOf(node));
+        labels[level] = ItemLabel(node, level, 0, ToggleOf(node));
         RepeatOuter(labels, node, level - 1);
         return labels;
     }
@@ -683,7 +692,7 @@ internal sealed class ReportBuilder
         for (var level = 0; level <= upToLevel; level++)
         {
             var ancestor = AncestorAt(node, level);
-            labels[level] = new PivotRowLabel(Label(ancestor, _rowMeta[level]));
+            labels[level] = ItemLabel(ancestor, level);
         }
     }
 
@@ -742,12 +751,12 @@ internal sealed class ReportBuilder
             var ancestor = AncestorAt(node, level);
             if (ReferenceEquals(_pending[level], ancestor))
             {
-                labels[level] = new PivotRowLabel(Label(ancestor, _rowMeta[level]), 0, ToggleOf(ancestor));
+                labels[level] = ItemLabel(ancestor, level, 0, ToggleOf(ancestor));
                 _pending[level] = null;
             }
             else if (_layout.RepeatItemLabels)
             {
-                labels[level] = new PivotRowLabel(Label(ancestor, _rowMeta[level]));
+                labels[level] = ItemLabel(ancestor, level);
             }
         }
         return labels;

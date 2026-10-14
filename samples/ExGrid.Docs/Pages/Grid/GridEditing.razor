@@ -18,6 +18,11 @@
             After <kbd>F2</kbd> in the cell they move the caret, or select text, instead.
         </p>
         <p>
+            On Blazor Server, an IME composition completed while a popover opens follows the keyboard into
+            that popover. Its text is inserted at the caret of a text field, as in Find. A control that cannot
+            accept composed text drops it and the keys held behind it; no Cell Editor opens behind the popover.
+        </p>
+        <p>
             A commit arrives as a <code>GridEditIntent&lt;TRow&gt;</code>: the row instance, the column's name and
             the text. Apply it by replacing the row with a <strong>new instance</strong> — with
             <code>GridSource.From</code>, <code>ReplaceRow(row, replacement)</code>. A row repaints when its

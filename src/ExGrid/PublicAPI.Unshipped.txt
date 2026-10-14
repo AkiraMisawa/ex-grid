@@ -2133,7 +2133,7 @@ static ExGrid.Chrome.SelectionSummaryContext.operator ==(ExGrid.Chrome.Selection
 static ExGrid.Chrome.SummaryFigureText.operator !=(ExGrid.Chrome.SummaryFigureText? left, ExGrid.Chrome.SummaryFigureText? right) -> bool
 static ExGrid.Chrome.SummaryFigureText.operator ==(ExGrid.Chrome.SummaryFigureText? left, ExGrid.Chrome.SummaryFigureText? right) -> bool
 static ExGrid.Chrome.SummaryLabelIds.For(ExGrid.Summarizing.SummaryFigures figure) -> string!
-static ExGrid.Clipboard.ClipboardData.Assemble(ExGrid.Clipboard.CopyPlan! plan, System.Func<int, int, string!>! displayAt, System.Func<int, int, string!>! rawAt, System.Func<int, string!>? headerAt = null) -> (string! Text, string! Html)
+static ExGrid.Clipboard.ClipboardData.Assemble(ExGrid.Clipboard.CopyPlan! plan, System.Func<int, int, string!>! displayAt, System.Func<int, int, string!>! rawAt, System.Func<int, string!>? headerAt = null, System.Func<int, string?>? headerRawAt = null) -> (string! Text, string! Html)
 static ExGrid.Clipboard.ClipboardParse.Parse(string? html, string? text) -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<string!>!>?
 static ExGrid.Clipboard.ClipboardPayload.Async.get -> ExGrid.Clipboard.ClipboardPayload!
 static ExGrid.Clipboard.ClipboardPayload.Data(string! text, string! html) -> ExGrid.Clipboard.ClipboardPayload!

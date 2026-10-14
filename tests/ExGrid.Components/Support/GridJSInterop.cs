@@ -1,4 +1,5 @@
 using Bunit;
+using Microsoft.JSInterop.Infrastructure;
 
 namespace ExGrid.Components.Tests.Support;
 
@@ -76,9 +77,10 @@ internal sealed class GridJSInterop
 
     /// <summary>The browser has not answered <c>metaIsPrimary</c> yet, which the attach asks before
     /// the grid listens: until the test answers it, the listener is attached and the root is still
-    /// no tab stop (ADR-0033, A11Y-20). Set before the grid is rendered.</summary>
-    internal JSRuntimeInvocationHandler<bool> UnansweredMetaIsPrimary()
-        => _handle!.Setup<bool>("metaIsPrimary", _ => true);
+    /// no tab stop (ADR-0033, A11Y-20). Set before the grid is rendered. Held until the test
+    /// answers it, however long that takes (<see cref="HeldJSAnswer{TResult}"/>).</summary>
+    internal HeldJSAnswer<bool> UnansweredMetaIsPrimary()
+        => HeldJSAnswer<bool>.Setup(_handle!, "metaIsPrimary");
 
     /// <summary>The browser answers that Meta is this platform's primary modifier — an Apple
     /// platform, where Cmd+click adds a range (ADR-0012). Asked once at attach, so this is set
@@ -262,9 +264,10 @@ internal sealed class GridJSInterop
 
     /// <summary>From here on, ST-2's question waits for the test to answer it, as a browser's answer
     /// waits a round trip on a circuit: <c>SetResult(true)</c> is "untouched", <c>false</c> "typed".
-    /// Its argument is the text the edit opened with.</summary>
-    internal JSRuntimeInvocationHandler<bool> UnansweredUntouched()
-        => _handle!.Setup<bool>("askUntouched", _ => true);
+    /// Its argument is the text the edit opened with. Held until the test answers it, however long
+    /// that takes (<see cref="HeldJSAnswer{TResult}"/>).</summary>
+    internal HeldJSAnswer<bool> UnansweredUntouched()
+        => HeldJSAnswer<bool>.Setup(_handle!, "askUntouched");
 
     /// <summary>Every time the core told the key gate where the keyboard is going (ADR-0039 and
     /// ADR-0050 item 16, 2026-10-01): <c>popover</c> or <c>frame</c>; and <c>none</c>, when a Consumer's
@@ -381,24 +384,27 @@ internal sealed class GridJSInterop
     /// <summary>A <c>getScrollOffset</c> the browser has not answered yet, answered when
     /// the test says — how a read crossing a write on a Server circuit's wire is staged
     /// (ADR-0012). Every read the grid makes from here on lands on it, until a later call
-    /// stands up another.</summary>
-    internal JSRuntimeInvocationHandler<ScrollOffset> UnansweredScrollRead()
-        => _handle!.Setup<ScrollOffset>("getScrollOffset");
+    /// stands up another. Held until the test answers it, however long that takes
+    /// (<see cref="HeldJSAnswer{TResult}"/>).</summary>
+    internal HeldJSAnswer<ScrollOffset> UnansweredScrollRead()
+        => HeldJSAnswer<ScrollOffset>.Setup(_handle!, "getScrollOffset");
 
     /// <summary>How many times the grid has asked the browser for its scroll offset.</summary>
     internal int ScrollReads => _handle!.Invocations["getScrollOffset"].Count;
 
     /// <summary>A <c>setCaret</c> the browser has not carried out yet, finished when the test
     /// says — how a caret report crossing the core's placement on the wire is staged
-    /// (ADR-0051). Every placement from here on lands on it.</summary>
-    internal JSRuntimeInvocationHandler UnansweredCaretPlacement()
-        => _handle!.SetupVoid("setCaret", _ => true);
+    /// (ADR-0051). Every placement from here on lands on it. Held until the test finishes it,
+    /// however long that takes (<see cref="HeldJSAnswer{TResult}"/>).</summary>
+    internal HeldJSAnswer<IJSVoidResult> UnansweredCaretPlacement()
+        => HeldJSAnswer<IJSVoidResult>.Setup(_handle!, "setCaret");
 
     /// <summary>A <c>setEditing</c> the browser has not carried out yet, finished when the test
     /// says — how the key gate hearing a mode change a round trip later on a circuit is staged
-    /// (ADR-0010). Every mode told from here on lands on it.</summary>
-    internal JSRuntimeInvocationHandler UnansweredGateMode()
-        => _handle!.SetupVoid("setEditing", _ => true);
+    /// (ADR-0010). Every mode told from here on lands on it. Held until the test finishes it,
+    /// however long that takes (<see cref="HeldJSAnswer{TResult}"/>).</summary>
+    internal HeldJSAnswer<IJSVoidResult> UnansweredGateMode()
+        => HeldJSAnswer<IJSVoidResult>.Setup(_handle!, "setEditing");
 
     /// <summary>What the next <c>getScrollOffset</c> answers — the browser scroll
     /// position the grid is about to read, on both axes at once.</summary>

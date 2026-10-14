@@ -45,6 +45,30 @@ public class ClipboardDataTests
         Assert.StartsWith("<table data-ex-grid=\"invariant\"><tr><th>H2</th><th>H3</th></tr><tr><td>r1.2</td>", html);
     }
 
+    [Fact] // ADR-0005's note of 2026-10-13: a header with a raw form copies as shown in the TSV and in its raw form in the HTML, as a cell does; a header without one is its text in both
+    public void A_header_with_a_raw_form_carries_it_in_the_html_only()
+    {
+        var plan = ClipboardRules.PlanCopy(
+            GridSelection.Empty.Click(new(1, 2), Grid).ExtendTo(new(2, 3), Grid), withHeaders: true).Plan;
+
+        var (text, html) = ClipboardData.Assemble(plan, Display, Raw, _ => "1.23457E+11",
+            column => column == 2 ? "123456789012.345" : null);
+
+        Assert.Equal("1.23457E+11\t1.23457E+11\r\nd1.2\td1.3\r\nd2.2\td2.3\r\n", text);
+        Assert.StartsWith("<table data-ex-grid=\"invariant\"><tr><th>123456789012.345</th><th>1.23457E+11</th></tr><tr><td>r1.2</td>", html);
+    }
+
+    [Fact] // ADR-0005's note of 2026-10-13: a header raw form that answers null everywhere copies exactly as no raw form does
+    public void A_header_raw_form_of_null_copies_as_before()
+    {
+        var plan = ClipboardRules.PlanCopy(
+            GridSelection.Empty.Click(new(1, 2), Grid).ExtendTo(new(2, 3), Grid), withHeaders: true).Plan;
+
+        Assert.Equal(ClipboardData.Assemble(plan, Display, Raw, Header), ClipboardData.Assemble(plan, Display, Raw, Header, _ => null));
+        // Without a header row, a raw form is never asked for.
+        Assert.Equal(ClipboardData.Assemble(plan, Display, Raw), ClipboardData.Assemble(plan, Display, Raw, null, _ => throw new InvalidOperationException()));
+    }
+
     [Fact] // ADR-0005 / CP-17: vertical segments share a column span, so one row names them all
     public void A_vertically_disjoint_selection_gets_one_header_row()
     {

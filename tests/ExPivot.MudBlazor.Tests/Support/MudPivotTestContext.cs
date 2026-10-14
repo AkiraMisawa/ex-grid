@@ -35,6 +35,11 @@ public abstract class MudPivotTestContext : BunitContext
     private bool _rendererInfoSet;
     private IRenderedComponent<MudPopoverProvider>? _provider;
 
+    /// <summary>The popover provider <see cref="RenderPivot"/> renders, where an open MudSelect's
+    /// list is painted.</summary>
+    internal IRenderedComponent<MudPopoverProvider> Popovers
+        => _provider ?? throw new InvalidOperationException("Render a pivot first: it renders the popover provider.");
+
     protected MudPivotTestContext()
     {
         Services.AddMudServices();

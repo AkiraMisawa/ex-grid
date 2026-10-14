@@ -1843,7 +1843,30 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // keys after it wait for the editor; with one open — a second composition the IME
             // finished there before the first one's editor had the keyboard — it is typed into
             // the edit at its caret, as a held character is.
+            //
+            // Unless a control of the grid's, or a frame of the Consumer's own, has taken the
+            // keyboard meanwhile: the composition was finished while a popover opened — Format
+            // Cells' Ctrl+1, a column's Alt+↓, Ctrl+F's panel, a command run in a menu's place —
+            // or while a frame did, and the keys typed then are never the grid's (ADR-0039, note
+            // of 2026-10-01). Asked of the core, the text opened a Cell Editor behind the popover,
+            // and the editor took the keyboard from it. It is handed to what holds the keyboard,
+            // as a held character is: typed at the caret of a text field (typeInto); on any other
+            // control it is text no keydown carries, a key script cannot reproduce, and it is
+            // dropped with every key held behind it (ADR-0010). A cancelled composition typed
+            // nothing, and hands nothing on.
             if (k.text !== undefined) {
+                const holder = focusedControl() ?? (deliveringOutside ? outsideControl() : null);
+                if (holder) {
+                    if (k.text.length === 0) {
+                        continue;
+                    }
+                    if (!isTextField(holder)) {
+                        dropHeld();
+                        break;
+                    }
+                    typeInto(holder, k);
+                    continue;
+                }
                 if (editing === 'none') {
                     const opened = await core.invokeMethodAsync('OnKeyFieldTextAsync', k.text, k.paint).catch((error) => {
                         if (core) {
@@ -3326,6 +3349,32 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // content that made the scrollbar appear; and nothing here writes to the DOM, so the
     // "ResizeObserver loop completed with undelivered notifications" warning has no way
     // to arise.
+    //
+    // Nor may C# write to it inside the callback, and on WebAssembly it would: there
+    // invokeMethodAsync runs the .NET method at once, on this thread, and a render it asks
+    // for is applied to the DOM before the call returns. Told from inside the callback, the
+    // render that answered the first report — the gutter's strip appearing — moved the
+    // scroller's content box again within the same observation, and the browser reported
+    // the loop on window (CON-4: /density at attach, 2026-10-13; the Server host, whose call
+    // crosses the circuit, never did). So each observer tells C# from a task of its own,
+    // queued once however many notifications come before it runs and carrying the latest
+    // values: what is told does not depend on when it runs, only that it is outside the
+    // observation. ADR-0013 accepts the frame this costs.
+    const toldAfterTheObservation = (tell) => {
+        let queued = false;
+        return () => {
+            if (queued) {
+                return;
+            }
+            queued = true;
+            setTimeout(() => {
+                queued = false;
+                if (core) {
+                    tell();
+                }
+            }, 0);
+        };
+    };
     let gutterWidth = 0;
     let gutterHeight = 0;
     let contentWidth = -1;
@@ -3358,7 +3407,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         gutterHeight = height;
         contentWidth = content.inlineSize;
         contentHeight = content.blockSize;
-        core.invokeMethodAsync('OnViewportReportAsync', width, height, contentWidth, contentHeight)
+        tellViewport();
+    });
+    const tellViewport = toldAfterTheObservation(() => {
+        core.invokeMethodAsync('OnViewportReportAsync', gutterWidth, gutterHeight, contentWidth, contentHeight)
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to take the scrollbar gutter', error);
@@ -3388,6 +3440,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         ceiling = size.blockSize;
+        tellCeiling();
+    });
+    const tellCeiling = toldAfterTheObservation(() => {
         core.invokeMethodAsync('OnLayoutCeilingAsync', ceiling)
             .catch((error) => {
                 if (core) {

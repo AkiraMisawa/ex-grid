@@ -555,7 +555,7 @@ public partial class ExPivot
 
     private string? CommandLabelFor(string id)
     {
-        if (Label?.Invoke(id) is { } own)
+        if ((Label?.Invoke(id) ?? _edition?.Invoke(id)) is { } own)
             return own;
         return PivotCommandIds.CaptionOfRemove(id) is { } caption
             ? PivotWords.Fill(Word(PivotCommandIds.RemoveNamedField), caption)

@@ -111,6 +111,11 @@
             from "Format Cells…" in the Context Menu, and from <code>OpenFormatCellsAsync()</code>.
         </p>
         <p>
+            Over Blazor Server, an IME composition can finish while Format Cells is opening. Its tabs cannot
+            accept composed text, so the text and the keys held behind it are dropped under either Chrome.
+            No Cell Editor opens behind the dialog; once it has the keyboard, its tabs answer keys as usual.
+        </p>
+        <p>
             Over one cell that shows a line on exactly one of its edges, the Border tab's Style and Colour open on
             that line, so pressing that edge's button takes the line away. Anywhere else they open on Thin and
             Automatic. Excel's Border tab was seen to open on the line shown over a thick top line, black or
