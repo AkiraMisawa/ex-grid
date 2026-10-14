@@ -1610,7 +1610,30 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // keys after it wait for the editor; with one open — a second composition the IME
             // finished there before the first one's editor had the keyboard — it is typed into
             // the edit at its caret, as a held character is.
+            //
+            // Unless a control of the grid's, or a frame of the Consumer's own, has taken the
+            // keyboard meanwhile: the composition was finished while a popover opened — Format
+            // Cells' Ctrl+1, a column's Alt+↓, Ctrl+F's panel, a command run in a menu's place —
+            // or while a frame did, and the keys typed then are never the grid's (ADR-0039, note
+            // of 2026-10-01). Asked of the core, the text opened a Cell Editor behind the popover,
+            // and the editor took the keyboard from it. It is handed to what holds the keyboard,
+            // as a held character is: typed at the caret of a text field (typeInto); on any other
+            // control it is text no keydown carries, a key script cannot reproduce, and it is
+            // dropped with every key held behind it (ADR-0010). A cancelled composition typed
+            // nothing, and hands nothing on.
             if (k.text !== undefined) {
+                const holder = focusedControl() ?? (deliveringOutside ? outsideControl() : null);
+                if (holder) {
+                    if (k.text.length === 0) {
+                        continue;
+                    }
+                    if (!isTextField(holder)) {
+                        dropHeld();
+                        break;
+                    }
+                    typeInto(holder, k);
+                    continue;
+                }
                 if (editing === 'none') {
                     const opened = await core.invokeMethodAsync('OnKeyFieldTextAsync', k.text, k.paint).catch((error) => {
                         if (core) {

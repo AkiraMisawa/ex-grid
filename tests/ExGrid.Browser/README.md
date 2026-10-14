@@ -987,7 +987,13 @@ nobody had asked for. What that means when writing a test:
   never comes and the end, the request waiting until the keyboard leaves the field and the editor
   then taking it holding the text (left from script: Playwright emulates focus, so a window switch
   tells the page nothing); copy and paste from the field; a field per
-  Sheet (ADR-0018); read-only over a cell that does not edit. The field as the one tab stop, Tab in
+  Sheet (ADR-0018); read-only over a cell that does not edit. On the Server host behind 150 ms,
+  under both Chromes, a composition finished in the field while a popover opens is never the grid's
+  (ADR-0039, ADR-0010): typed after Ctrl+F, it lands in the find field with the digit typed behind
+  it; typed after Ctrl+1, or once Format Cells… run from the Context Menu has closed it, it is
+  dropped with the End behind it, Format Cells' Number tab still chosen and focused; and no edit
+  opens behind either. Each reads that the composition ended in the field, where the hold took it.
+  The field as the one tab stop, Tab in
   from before and Shift+Tab in from after, then out (A11Y-4), and a display-only grid's root
   likewise; on `/features` under both Chromes, no column's ▾ reached by Tab or Shift+Tab, on the
   grid that edits or the one that does not, and a press on one still opening its popover; the release of Tab ending when DOM focus leaves, on a grid with a field and one without

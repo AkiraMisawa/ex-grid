@@ -82,6 +82,13 @@ display-only grid has none, and keeps the keyboard on its root, as before.
     heard by `keyup` on the root, which ADR-0021's seventh entry gains.)*
   - A second composition the IME finishes in the field before the first one's editor has the keyboard
     (a circuit, a fast typist) is typed into the edit at its caret, in order.
+  - A composition the IME finishes in the field while a popover or a frame of the Consumer's own takes
+    the keyboard is that one's, as the keys typed with it are (ADR-0039, note of 2026-10-01): typed into
+    its text field at the caret, as a held character is, or, on any other control, dropped with every
+    key held behind it, as a key script cannot reproduce (ADR-0010). *(2026-10-13, no new decision: found
+    while building #108. The hold asked the core to open the Cell Editor holding the text whatever held
+    the keyboard by then, and the editor opened behind Find or Format Cells and took the keyboard from
+    it.)*
   - A primary press anywhere in the root during a composition ends it first: the field gives up the
     keyboard, and the IME ends the composition there. Its text is held ahead of the press and goes to
     the cell it was composed on. The press then commits it there, as Excel's click-away does, and
