@@ -378,7 +378,7 @@ public class AccessibilityTests : GridTestContext
             Root: Js.RootReferenceId));
         // Asked through the hand-back's condition, never by the root's own focus (ADR-0018).
         Assert.Equal([false], reclaimed.Asked);
-        Assert.Equal(["0"], reclaimed.TabIndex);
+        Assert.Equal("0", Assert.Single(reclaimed.TabIndex));
         Assert.Equal(reclaimed.Root, reclaimed.Focused[^1]);
 
         // Owed once: the renders after it ask nothing more.
