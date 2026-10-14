@@ -12,18 +12,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/13/2026 - 22:12:16 |
+| Generated on: | 10/14/2026 - 00:10:58 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 839 |
 | Files: | 461 |
-| **Line coverage:** | 95.3% (56695 of 59482) |
-| Covered lines: | 56695 |
-| Uncovered lines: | 2787 |
+| **Line coverage:** | 95.3% (56699 of 59482) |
+| Covered lines: | 56699 |
+| Uncovered lines: | 2783 |
 | Coverable lines: | 59482 |
 | Total lines: | 100636 |
-| **Branch coverage:** | 88.3% (32918 of 37241) |
-| Covered branches: | 32918 |
+| **Branch coverage:** | 88.3% (32921 of 37241) |
+| Covered branches: | 32921 |
 | Total branches: | 37241 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -34,7 +34,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**95.4%**|**88.6%**|
+|**ExGrid**|**95.4%**|**88.7%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -160,8 +160,8 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|91%|85.9%|
-|ExGrid.Components.ExGrid<TRow>|95.5%|90.3%|
+|ExGrid.Components.ExGrid<TRow>|95.6%|90.4%|
+|ExGrid.Components.ExGrid<TRow>|91.1%|86%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
@@ -711,7 +711,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**92.4%**|**85.8%**|
+|**ExSheet**|**92.4%**|**85.7%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -722,10 +722,10 @@
 |ExSheet.ColourItem|95.2%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|91.4%|86%|
+|ExSheet.Components.ExSheet|91.4%|85.8%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91.4%|86%|
+|ExSheet.Components.ExSheet<T>|91.4%|85.8%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.4%|
 |ExSheet.DefaultToolbarRow|100%|50%|
