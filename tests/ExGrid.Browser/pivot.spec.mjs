@@ -139,12 +139,18 @@ for (const chrome of ['builtin', 'mud']) {
 
         test(`ADR-0061: entries dropped on the report are removed from Rows and Columns (${chrome})`, async ({ page }) => {
             await open(page, chrome);
+            let changes = 0;
             for (const [caption, area, remaining] of [['Desk', 'Rows', ['Region']], ['Product', 'Columns', []]]) {
                 await entry(page, caption).dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
                 await expect.poll(() => entriesOf(page, area)).toEqual(remaining);
                 await expect(field(page, caption).getByRole('checkbox')).not.toBeChecked();
+                // The page counts LayoutChanged, which is raised for the layout the report shows
+                // (ADR-0061). The pane shows a removal at once, but the report only once its
+                // question is answered, and a drop made while that question is out cancels it, so
+                // the first removal would never be shown nor counted (ADR-0066). Each removal is
+                // counted before the next drop.
+                await expect(page.locator('#pivot-status')).toContainText(`${++changes} changes made in the pane`);
             }
-            await expect(page.locator('#pivot-status')).toContainText('2 changes made in the pane');
         });
 
         test(`ADR-0061: a report removal waits for Defer Layout Update (${chrome})`, async ({ page }) => {
