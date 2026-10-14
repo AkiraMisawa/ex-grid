@@ -391,10 +391,14 @@ public class PressesWhileACommitIsHeardTests : GridTestContext
         await ClickAsync(cut, 50, 10);
         await KeyAsync(cut, "5");
 
-        await Task.WhenAll(PressRow(cut, 50)).WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+        var pressed = PressRow(cut, 50);
 
+        // A placement waiting for the commit that waits for it would leave the dispatcher idle with
+        // the work undone: read when it is idle, never against a clock (WhenIdleAsync).
+        await WhenIdleAsync();
         Assert.Equal("5", Assert.Single(edits).Value);
         Assert.Equal([true], placed);
         Assert.False(EditorOpen(cut));
+        await Task.WhenAll(pressed);
     }
 }

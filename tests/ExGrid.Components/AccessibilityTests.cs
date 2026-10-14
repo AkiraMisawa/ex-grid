@@ -367,16 +367,22 @@ public class AccessibilityTests : GridTestContext
         // The root could not take it yet: its own focus would do nothing, so nothing is asked...
         Assert.Empty(Js.FocusReclaimed.Invocations);
 
-        // ...until the attach has finished and its render has made the root a tab stop.
+        // ...until the attach has finished and its render has made the root a tab stop. The answer
+        // posts the rest of the attach to the dispatcher, and the reading is taken once the
+        // dispatcher is idle: once, whenever the process gets round to it, never against a clock.
         await cut.InvokeAsync(() => listening.SetResult(false));
-        cut.WaitForAssertion(() => Assert.Single(Js.FocusReclaimed.Invocations));
-        Assert.Equal(["0"], tabIndexAtReclaim);
-        Assert.Equal(Js.RootReferenceId, Js.Focused[^1]);
+        var reclaimed = await ReadWhenIdleAsync(() => (
+            Asked: Js.FocusReclaimed.Invocations.Select(i => (bool)i.Arguments[0]!).ToArray(),
+            TabIndex: tabIndexAtReclaim.ToArray(),
+            Focused: Js.Focused.ToArray(),
+            Root: Js.RootReferenceId));
         // Asked through the hand-back's condition, never by the root's own focus (ADR-0018).
-        Assert.False((bool)Js.FocusReclaimed.Invocations.First().Arguments[0]!);
+        Assert.Equal([false], reclaimed.Asked);
+        Assert.Equal("0", Assert.Single(reclaimed.TabIndex));
+        Assert.Equal(reclaimed.Root, reclaimed.Focused[^1]);
 
         // Owed once: the renders after it ask nothing more.
         cut.Render();
-        Assert.Single(Js.FocusReclaimed.Invocations);
+        Assert.Single(await ReadWhenIdleAsync(() => Js.FocusReclaimed.Invocations.ToArray()));
     }
 }

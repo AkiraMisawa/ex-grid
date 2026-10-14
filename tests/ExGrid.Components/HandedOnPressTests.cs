@@ -146,8 +146,11 @@ public class HandedOnPressTests : GridTestContext
         // Handed over, and not answered until the Consumer has: the keys typed after it still wait.
         Assert.False(answered.IsCompleted);
         await cut.InvokeAsync(() => _consumerAnswers.SetResult());
-        await answered.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
-        await pressing.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+        // Answered once the dispatcher has run what the Consumer's answer let go: read when it is idle,
+        // never against a clock (WhenIdleAsync). The press's own dispatch ends with it.
+        await WhenIdleAsync();
+        Assert.True(answered.IsCompletedSuccessfully);
+        await pressing;
     }
 
     [Fact] // ADR-0058 ("On a circuit") / DC-54: a press in turn at once is handed over at once
@@ -192,10 +195,11 @@ public class HandedOnPressTests : GridTestContext
         var pressing = PressAsync(cut, 50, 30);
         Assert.Empty(_presses);
         await InTurnAsync(cut, 1);
-        await pressing.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+        await WhenIdleAsync();
 
         Assert.Equal([new GridPointedPress<TestRow>(GridPointedPressKind.Cell, rows[1], "Book")], _presses);
         Assert.True(answered.IsCompletedSuccessfully);
+        await pressing;
     }
 
     [Fact] // ADR-0058 / DC-54: a press never heard is answered when the next is told of, rather than hold keys
@@ -225,7 +229,7 @@ public class HandedOnPressTests : GridTestContext
         Assert.Empty(_presses);
 
         await InTurnAsync(cut, 1);
-        await pressing.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+        await WhenIdleAsync();
 
         Assert.Equal(
         [
@@ -233,6 +237,7 @@ public class HandedOnPressTests : GridTestContext
             new GridPointedPress<TestRow>(GridPointedPressKind.SeveralCells, Dragged: true),
         ], _presses);
         Assert.True(answered.IsCompletedSuccessfully);
+        await pressing;
     }
 
     [Fact] // ADR-0058 / DC-54 / ADR-0018: a grid disposed lets go of a press waiting for its turn, and hands it over no more
@@ -246,9 +251,13 @@ public class HandedOnPressTests : GridTestContext
 
         await DisposeComponentsAsync();
 
-        await answered.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
-        await told.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
-        await pressing.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+        // Let go once the dispatcher has run what the disposal released: read when it is idle, never
+        // against a clock (WhenIdleAsync) — a press still held then is held for good. Five seconds of
+        // waiting for it ran out beside a whole suite at 32 threads (2026-10-13).
+        await WhenIdleAsync();
+        Assert.True(answered.IsCompletedSuccessfully);
+        Assert.True(told.IsCompletedSuccessfully);
         Assert.Empty(_presses);
+        await pressing;
     }
 }

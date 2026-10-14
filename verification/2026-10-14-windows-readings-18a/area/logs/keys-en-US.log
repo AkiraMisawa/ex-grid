@@ -1,0 +1,7 @@
+a new PowerShell reads en-US
+pass keys-en-US started 22:23:56
+22:24:00 LET-113      recorded    2.5 s
+
+agree 0, disagree 0, blocked 0, recorded 1 -> C:\Users\amisa\AppData\Local\exgrid-layer3\readings-18a\oracle\ExcelOracle\results-2026-10-14-run18a-keys-en-US.json
+-Update: 0 agreeing cases now say source "observed"; disagreeing ones are untouched.
+pass keys-en-US ended 22:24:02

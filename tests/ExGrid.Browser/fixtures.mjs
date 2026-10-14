@@ -248,6 +248,12 @@ function verdict({ messages, pageErrors }, hostLog, { expectedHostLog, expectedW
     expect.soft(warnings.filter(isExGrids).filter((m) => !named(m.text)).map((m) => m.text),
         'zero warnings from ExGrid\'s own code (CON-3)').toEqual([]);
     expect.soft(unhandled, 'no unhandled exception reaches the host log (CON-6)').toEqual([]);
+    // CON-8: ExGrid logs nothing on a healthy path. Its only console writes are its failure
+    // paths, which are errors and fail CON-1 above, and the warnings it names by decision, which
+    // CON-3 holds to expectedWarnings. A log, an info, a debug or a trace line from its own code
+    // is neither, at any level the console has.
+    expect.soft(messages.filter((m) => !['error', 'warning'].includes(m.type)).filter(isExGrids)
+        .map((m) => `${m.type}: ${m.text}`), 'nothing logged by ExGrid on a healthy path (CON-8)').toEqual([]);
 }
 
 // What a test changed through alterPage, per page, undone as the test ends (ADR-0056).
