@@ -1,6 +1,6 @@
 Product: ExGrid
-Kind: Added
+Kind: Breaking
 Docs: exgrid/clipboard#copy
-ADR: 0005
+ADR: 0005, 0201
 
-`ClipboardData.Assemble` takes a header's raw form, `headerRawAt`, for the HTML flavour of a copy with headers, as `rawAt` is a cell's: a header that shows a number rounded can carry the number in full where Excel reads it, and its shown text stays in the text flavour. A header with no raw form copies as before, and ExGrid's own grids copy exactly as they did.
+`ClipboardData.Assemble` takes a header's raw form, `headerRawAt`, for the HTML flavour of a copy with headers, so Excel reads a rounded numeric header in full while plain text keeps its shown form; a header with no raw form and ExGrid's own grids copy as before. The optional fifth parameter replaces the four-parameter signature: rebuild calling assemblies, and replace a four-argument method-group conversion with a lambda or a five-argument delegate; direct calls can omit the new argument.
