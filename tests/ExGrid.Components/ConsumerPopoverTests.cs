@@ -577,23 +577,29 @@ public class ConsumerPopoverTests : GridTestContext
         var frame = new ElementReference("frame-of-the-consumers");
         var asked = 0;
         IReadOnlyList<KeyboardEventArgs> typed = [new() { Key = "Enter" }, new() { Key = "x", ShiftKey = true }];
+        var answer = Js.UnansweredKeyboardHandBack();
 
-        await cut.Instance.ReturnKeyboardAsync(frame, () =>
+        var returning = cut.Instance.ReturnKeyboardAsync(frame, () =>
         {
             asked++;
             return typed;
         });
 
-        var call = Assert.Single(Js.TakenBack.Invocations);
+        var call = Assert.Single(answer.Invocations);
         Assert.Equal(frame.Id, ((ElementReference)call.Arguments[0]!).Id);
         var ticket = (int)call.Arguments[1]!;
         Assert.Equal(0, asked);
+        Assert.False(returning.IsCompleted);
         // The key gate has the keyboard, and asks for what the frame heard on the way.
         IReadOnlyList<KeyboardEventArgs> handed = [];
         await cut.InvokeAsync(() => { handed = cut.Instance.KeysTypedOnTheWay(ticket); });
         Assert.Equal(["Enter", "x"], handed.Select(k => k.Key));
         Assert.True(handed[1].ShiftKey);
         Assert.Equal(1, asked);
+        // The browser completes the hand-back only after collecting the keys, so the Consumer
+        // can now remove its frame and queue. The shipped module's ordering is pinned in layer 3.
+        answer.SetVoidResult();
+        await returning;
         // Asked once: a second question for the same hand-back finds nothing.
         await cut.InvokeAsync(() => { handed = cut.Instance.KeysTypedOnTheWay(ticket); });
         Assert.Empty(handed);

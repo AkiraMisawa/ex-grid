@@ -3843,7 +3843,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // as the root's (ADR-0010). Declined — the user has put the keyboard elsewhere (ADR-0018) — the
         // frame is still asked, so it stops holding, and its keys are dropped with the hand-back. It is
         // reclaimFocus's decision, widened to the frame: no other focus is moved here.
-        takeKeyboardBack: (element, ticket) => {
+        takeKeyboardBack: async (element, ticket) => {
             if (!core) {
                 return;
             }
@@ -3855,6 +3855,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 return [];
             });
             if (!granted) {
+                await typed;
                 return;
             }
             held.push({ typedOnTheWay: typed, paint: paintNow() });
@@ -3863,6 +3864,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             } else {
                 startHold();
             }
+            // The Consumer may remove its frame and clear its key queue once this call completes.
+            // Asking for the queue starts another interop call: returning before its answer lets
+            // that removal overtake collection on a circuit. Complete only after the keys are ours,
+            // whether the hand-back was granted or declined. The drain already holds their place.
+            await typed;
         },
         // The keyboard this grid holds, handed on to a control of the Consumer's own outside it —
         // the first control of a frame or a tab the Consumer opened from the grid, a dialog's Close

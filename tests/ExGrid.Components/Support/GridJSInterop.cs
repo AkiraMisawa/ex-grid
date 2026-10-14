@@ -82,6 +82,10 @@ internal sealed class GridJSInterop
     internal HeldJSAnswer<bool> UnansweredMetaIsPrimary()
         => HeldJSAnswer<bool>.Setup(_handle!, "metaIsPrimary");
 
+    /// <summary>The browser has not yet collected the keys returned from a Consumer frame.</summary>
+    internal HeldJSAnswer<IJSVoidResult> UnansweredKeyboardHandBack()
+        => HeldJSAnswer<IJSVoidResult>.Setup(_handle!, "takeKeyboardBack");
+
     /// <summary>The browser answers that Meta is this platform's primary modifier — an Apple
     /// platform, where Cmd+click adds a range (ADR-0012). Asked once at attach, so this is set
     /// before the grid is rendered; the keys are told per key instead.</summary>

@@ -447,6 +447,10 @@ nobody had asked for. What that means when writing a test:
   grid's box and scrolls (UX-11, ADR-0040), and a grid that goes while the keys after
   Alt+↓ are still waiting for its popover leaves nothing running to throw from a later
   frame (ADR-0010, CON-2).
+- `keyboard-return.spec.mjs` — the shipped key gate's return from a Consumer frame (ADR-0050/0070).
+  A controlled Consumer leaves its key-collection answer pending: the hand-back cannot complete
+  until that answer, whether focus was returned or another control kept it. This pins the ordering
+  without a latency guess; a caller may then remove its frame and clear its queue.
 - `page-follow.spec.mjs` — the page following a move (ADR-0204, KB-45) on `/cells` in a window
   shorter than its grid, on a grid that edits and a display-only one: the arrows bringing the Focus
   in at the window's bottom edge, a cell already in the window moving nothing, a range extended past

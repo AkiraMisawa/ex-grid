@@ -505,6 +505,11 @@ the built-in Chrome.
     for them, behind every key the frame heard, and holds them ahead of any typed on the root since.
     Declined, it still asks, and drops them. A keyboard already inside the root — in a popover a command
     of the frame opened — is the grid's, and stays where it is.
+    *(Implementation correction, 2026-10-14.)* The returned task completes after that collection,
+    including a declined hand-back. It previously completed while the question was still in flight;
+    a Consumer clearing its queue on completion could discard a key before the gate collected it
+    (CI: Escape then Down in ExPivot's details grid, Server/Edge). Completion now acknowledges the
+    keys' collection, so removing the frame cannot overtake it. No timeout or retry is involved.
   - **A Consumer's popover closed before its contents took the keyboard** withdraws the gate's wait for
     them: the keys typed meanwhile are the grid's, rather than held for the hold's fallback and dropped.
     *(Implementation correction, 2026-10-14, following ADR-0044's closing rule.)* Closing withdraws any

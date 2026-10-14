@@ -175,7 +175,8 @@ public partial class ExGrid<TRow>
     /// does.</param>
     /// <param name="typedOnTheWay">Called once, on the renderer's context: returns the keys typed on the
     /// frame since the Consumer asked, in order, and stops holding them.</param>
-    /// <returns>A task that completes once the request has been made.</returns>
+    /// <returns>A task that completes once the browser has answered the hand-back and the held keys
+    /// have been collected. The Consumer can then remove the frame and clear its queue.</returns>
     public Task ReturnKeyboardAsync(ElementReference from, Func<IReadOnlyList<KeyboardEventArgs>> typedOnTheWay)
     {
         ArgumentNullException.ThrowIfNull(typedOnTheWay);
