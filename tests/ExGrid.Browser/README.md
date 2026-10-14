@@ -731,9 +731,7 @@ nobody had asked for. What that means when writing a test:
   Escape, a press on the backdrop and a refused Custom code each setting nothing; Escape in an open
   dropdown (Horizontal) closing only its list, and the next one cancelling; a Custom code
   typed at full speed arriving whole, Enter as OK; Tab and Shift+Tab kept inside; More Colours as
-  MudBlazor's colour picker, typed into once the host has said all it will (the picker gives the
-  keyboard to its own read-only field a round trip after it shows, on the Server host), read back
-  through Format Cells; and, however it closes, the next
+  MudBlazor's colour picker, read back through Format Cells; and, however it closes, the next
   arrow moving the Focus — from the page's button too, which MudBlazor would otherwise hand the
   keyboard back to. Over numbers showing `####`, OK widens as under the built-in Chrome: not for a
   Fill, and for Bold the column at the standard width, never the one sized by its grip, in OK's one
