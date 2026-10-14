@@ -17,15 +17,20 @@ namespace ExSheet.Engine.Formulas;
 /// </summary>
 /// <remarks>
 /// Refused (null), the financial area's rules (2026-10-12): where the readings of PMT, the evaluations of the
-/// identity Excel's observed payments leave, can part in kind or beyond the last digits.
+/// identity Excel's observed payments left, could part in kind or beyond the last digits. Run 18a leaves no
+/// reading (no evaluation searched gives PMT-048, 049, 051 or 052), and the rules stand as the engine's, but
+/// where Excel's own answers lifted one (<see cref="MayPassAbove"/>, <see cref="MayFallBelow"/>).
 /// <list type="bullet">
 /// <item>Through a double's range: where some quantity one of them computes in doubles would pass a double's
 /// range, or fall below its normal numbers, where some give an Error Value or a number of few digits and
 /// others the payment. <see cref="Quantities"/> lists those quantities, each a product of powers of the
 /// rate, pv, fv, pv+fv, g, g-1, 1+rate and 1+rate*type, and each must lie between 2^-1021 and 2^1022, a
 /// factor of 2 inside the normal numbers and of 4 below the largest, so that a reading's own rounding, or a
-/// sum of two of them, cannot carry it out; and the growth must be 2^-52 or more
-/// (<see cref="LeastGrowth"/>).</item>
+/// sum of two of them, cannot carry it out; but those Excel was seen to carry past the range while it gave the
+/// exact payment rounded once (run 18a, PMT-038 to PMT-041 and PMT-044). The growth below the normal numbers
+/// is refused (PMT-042, where Excel gave <c>#NUM!</c>, which the exact payment does not give); a growth below
+/// 2^-52 is not (PMT-045, where Excel gave the exact payment: no reading that takes the growth as 1 + (g-1)
+/// and divides by it is Excel's).</item>
 /// <item>Where a reading magnifies its own roundings more than 2^6 times (<see cref="Conditioned"/>): where
 /// the terms it adds nearly cancel, as pv g and fv at =PMT(0.1,2,1000,-1210), where readings give 0, numbers
 /// of the other sign, or a few significant digits; where a rounding of the exponent moves the payment far;
@@ -42,12 +47,6 @@ internal static class ExactPayment
     private static readonly Dyadic Least = Dyadic.One.Scale(-1021);
     private static readonly Dyadic Most = Dyadic.One.Scale(1022);
     private static readonly Dyadic Half = Dyadic.One.Scale(-1);
-
-    /// <summary>
-    /// The least growth answered: a reading that takes g as 1 + (g-1), g-1 a double, holds a growth below 2^-54
-    /// as 0, and its forms that divide by g give an Error Value where the others give the payment.
-    /// </summary>
-    private static readonly Dyadic LeastGrowth = Dyadic.One.Scale(-52);
 
     /// <summary>
     /// The exact payment at the end, or at the start, rounded once, or null
@@ -67,7 +66,7 @@ internal static class ExactPayment
         for (var bits = FirstBits; bits <= MostBits; bits *= 2)
         {
             var (growth, lessOne) = Growth(r, onePlusRate, periods, bits);
-            if (bits == FirstBits && (!QuantitiesFit(r, pv, fv, sum, growth, lessOne, onePlusRate, atStart) || Dyadic.Compare(growth.Low, LeastGrowth) < 0)) return null;
+            if (bits == FirstBits && !QuantitiesFit(r, pv, fv, sum, growth, lessOne, onePlusRate, atStart)) return null;
             // pv g + fv, and pv (g-1) + (pv+fv), which is narrower where g is near 1: each holds it.
             var owed = Enclosure.Both(
                 Enclosure.Add(Enclosure.Multiply(Enclosure.Exactly(pv), growth, bits), Enclosure.Exactly(fv), bits),
@@ -149,11 +148,33 @@ internal static class ExactPayment
     /// <summary>At the start, also the ways from the payment at the end to it: the payment at the end times the rate, and over 1+rate.</summary>
     private static readonly string[] AtStartQuantities = ["pv r r g / e", "fv r r / e", "pv r r g / b e", "fv r r / b e"];
 
+    /// <summary>
+    /// The quantities Excel was seen to carry above a double's range while it gave the exact payment rounded once
+    /// (run 18a: at =PMT(1,1100,1000), =PMT(1,1020,1000), =PMT(0.5,1740,1000) and =PMT(1E10,30,1), PMT-038 to
+    /// PMT-041, each of these lies above 2^1022 at one of them): those that grow with the growth and hold no fv.
+    /// They no longer refuse above the range; elsewhere than at those four, by generalisation.
+    /// </summary>
+    private static readonly HashSet<string> MayPassAbove = ["g", "e", "e / r", "c e", "c e / r", "b g", "b e", "r g", "pv g", "pv r g"];
+
+    /// <summary>
+    /// The quantities Excel was seen to carry below a double's normal numbers while it gave the exact payment
+    /// rounded once (run 18a): those the growth shrinks with no fv among them, at =PMT(1,1100,1000) (PMT-038), and
+    /// pv's and pv+fv's products with the rate, at =PMT(-1.64435447903749E-307,283.5,1E-05,0) (PMT-044). They no
+    /// longer refuse below the range; elsewhere than at those two, by generalisation. pv r g lay below it at
+    /// =PMT(-0.99,160,1000,500) too (PMT-042), where Excel gave <c>#NUM!</c>; the growth's own bound refuses that.
+    /// </summary>
+    private static readonly HashSet<string> MayFallBelow = ["/ g", "r / e", "s / e", "s r / e", "pv r", "pv r g", "s r"];
+
     private static readonly string[] Factors = ["r", "pv", "fv", "s", "g", "e", "b", "c"];
 
-    private static readonly int[][] AtEndPowers = [.. Quantities.Select(PowersOf)];
+    private static readonly Bound[] AtEndBounds = [.. Quantities.Select(BoundOf)];
 
-    private static readonly int[][] AtStartPowers = [.. Quantities.Concat(AtStartQuantities).Select(PowersOf)];
+    private static readonly Bound[] AtStartBounds = [.. Quantities.Concat(AtStartQuantities).Select(BoundOf)];
+
+    /// <summary>A quantity as the power of each factor, and which sides of the range it must lie within.</summary>
+    private readonly record struct Bound(int[] Powers, bool Above, bool Below);
+
+    private static Bound BoundOf(string quantity) => new(PowersOf(quantity), !MayPassAbove.Contains(quantity), !MayFallBelow.Contains(quantity));
 
     /// <summary>A quantity as the power of each factor, in the order of <see cref="Factors"/>.</summary>
     private static int[] PowersOf(string quantity)
@@ -196,8 +217,11 @@ internal static class ExactPayment
     /// every reading the spike runs lies within 93 units in the last place of the engine's payment over
     /// <c>pmt_exact.py</c>'s 20,000 inputs (measured again with the payment at the start rounded once,
     /// 2026-10-13), and within 48 over the grids of <c>Search.cs --refusals</c> (<c>--pmt-readings</c>
-    /// requires 128, twice the bound). The bound is kept (2026-10-13, decided with the user); PMT-047 to
-    /// PMT-053 ask where it refuses.
+    /// requires 128, twice the bound). The bound is kept (2026-10-13, decided with the user). Run 18a read
+    /// Excel's answer where it refuses: the exact payment rounded once at =PMT(0.1,1E-17,1000,-1000) (PMT-050),
+    /// one or two units in the last place from it at PMT-047, 051 and 053, and another evaluation's at PMT-048
+    /// (its 10th significant digit), PMT-049 (the other sign) and PMT-052 (0); the corpus keeps each beside the
+    /// refusal, and whether the bound is narrowed is the user's to decide.
     /// </summary>
     private static bool Conditioned(Dyadic r, Dyadic onePlusRate, double periods, Dyadic pv, Dyadic fv, Dyadic sum, Enclosure growth, Enclosure lessOne, Enclosure owed, bool atStart, int bits)
     {
@@ -238,7 +262,7 @@ internal static class ExactPayment
             Exact(r), Exact(pv), Exact(fv), Exact(sum), growth.Magnitudes(), lessOne.Magnitudes(), Exact(onePlusRate),
             atStart ? Exact(onePlusRate) : one,
         ];
-        foreach (var powers in atStart ? AtStartPowers : AtEndPowers)
+        foreach (var (powers, above, below) in atStart ? AtStartBounds : AtEndBounds)
         {
             Dyadic numeratorLeast = Dyadic.One, numeratorMost = Dyadic.One, denominatorLeast = Dyadic.One, denominatorMost = Dyadic.One;
             var zero = false;
@@ -267,8 +291,8 @@ internal static class ExactPayment
             }
             if (zero) continue;
             // The quantity lies within [numeratorLeast / denominatorMost, numeratorMost / denominatorLeast].
-            if (Dyadic.Compare(numeratorLeast, Least * denominatorMost) < 0) return false;
-            if (Dyadic.Compare(numeratorMost, Most * denominatorLeast) > 0) return false;
+            if (below && Dyadic.Compare(numeratorLeast, Least * denominatorMost) < 0) return false;
+            if (above && Dyadic.Compare(numeratorMost, Most * denominatorLeast) > 0) return false;
         }
         return true;
     }
