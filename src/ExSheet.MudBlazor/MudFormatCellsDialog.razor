@@ -7,6 +7,8 @@
 @using Microsoft.AspNetCore.Components.Web
 @using global::MudBlazor
 @using global::MudBlazor.Utilities
+@using global::MudBlazor.Services
+@implements IAsyncDisposable
 @using global::ExSheet
 @using global::ExSheet.Engine
 @using HorizontalAlignment = global::ExSheet.Engine.HorizontalAlignment
@@ -44,7 +46,7 @@
         <MudText Typo="Typo.h6">@Title</MudText>
     </TitleContent>
     <DialogContent>
-        <form class="mud-ex-sheet-format-cells-form" @onsubmit="Ok" @onsubmit:preventDefault @onfocusin="OnFocusIn" @onkeydown="OnKeyInDialogAsync">
+        <form class="@(_keysReady ? "mud-ex-sheet-format-cells-form mud-ex-sheet-format-cells-keys-ready" : "mud-ex-sheet-format-cells-form")" @onsubmit="Ok" @onsubmit:preventDefault @onfocusin="OnFocusIn">
             @* The form's default button: the first submit button, which implicit submission clicks. *@
             <button type="submit" class="mud-ex-sheet-format-cells-default" hidden tabindex="-1" aria-hidden="true"></button>
             @Tabs
@@ -55,7 +57,7 @@
         </form>
     </DialogContent>
     <DialogActions>
-        <div class="mud-ex-sheet-format-cells-actions" @onkeydown="OnKeyInDialogAsync">
+        <div class="mud-ex-sheet-format-cells-actions">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Ok" Class="mud-ex-sheet-format-cells-ok">OK</MudButton>
             <MudButton Variant="Variant.Text" OnClick="Cancel" Class="mud-ex-sheet-format-cells-cancel">Cancel</MudButton>
         </div>
@@ -108,6 +110,15 @@
 
     private MudFormatCellsTabs? _tabs;
     private Func<Task>? _tabsHoldTheKeyboard;
+    [Inject] private IKeyInterceptorService KeyInterceptor { get; set; } = default!;
+    private string? _keyRoot;
+    private Task _connecting = Task.CompletedTask;
+    private bool _keysReady;
+    private bool _disposed;
+    private Func<KeyboardEventArgs, Task>? _dialogKey;
+    private Action<MudMoreColours, bool>? _popupChanged;
+    private readonly HashSet<MudMoreColours> _openColourPopups = [];
+    private readonly EventCallback<MudColor?>[] _colourPicked = new EventCallback<MudColor?>[Enum.GetValues<ColourTarget>().Length];
 
     private FormatCellsDraft Draft => Context.Draft;
 
@@ -115,12 +126,43 @@
     protected override void OnInitialized()
     {
         Drawn?.Invoke();
+        _dialogKey = key => InvokeAsync(() => OnKeyInDialogAsync(key));
+        _popupChanged = (picker, open) =>
+        {
+            if (open) _openColourPopups.Add(picker);
+            else _openColourPopups.Remove(picker);
+        };
+        foreach (var target in Enum.GetValues<ColourTarget>())
+            _colourPicked[(int)target] = EventCallback.Factory.Create<MudColor?>(this, colour => Picked(target, colour));
         _showTab = EventCallback.Factory.Create<int>(this, ShowTab);
         _tabsHoldTheKeyboard = () => KeysArrive?.Invoke(HandHeldKeyAsync) ?? Task.CompletedTask;
         for (var i = 0; i < FormatCellsOffer.Tabs.Count; i++)
         {
             if (FormatCellsOffer.Tabs[i] == Context.Tab) _tab = i;
         }
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || Dialog is null) return;
+        // MudBlazor's container has its own registration. The inner dialog root is a
+        // separate element, whose id MudDialogContainer derives from the instance id.
+        _keyRoot = $"_{Dialog.Id:N}";
+        _connecting = KeyInterceptor.SubscribeAsync(_keyRoot,
+            new KeyInterceptorOptions(new KeyOptions("/./", subscribeDown: true)), _dialogKey);
+        await _connecting;
+        if (_disposed) return;
+        _keysReady = true;
+        StateHasChanged();
+    }
+
+    /// <summary>Releases this dialog's keyboard subscription, including an installation in flight.</summary>
+    public async ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        await _connecting;
+        if (_keyRoot is { } root) await KeyInterceptor.UnsubscribeAsync(root);
     }
 
     private void ShowTab(int index)
@@ -150,7 +192,7 @@
         builder.OpenComponent<MudFormatCellsTabs>(0);
         builder.AddComponentParameter(1, nameof(MudFormatCellsTabs.ActivePanelIndex), _tab);
         builder.AddComponentParameter(2, nameof(MudFormatCellsTabs.ActivePanelIndexChanged), _showTab);
-        builder.AddComponentParameter(3, nameof(MudFormatCellsTabs.FocusOnOpen), true);
+        builder.AddComponentParameter(3, nameof(MudFormatCellsTabs.FocusOnOpen), _keysReady);
         builder.AddComponentParameter(4, nameof(MudFormatCellsTabs.Elevation), 0);
         builder.AddComponentParameter(5, nameof(MudFormatCellsTabs.KeepPanelsAlive), false);
         builder.AddComponentParameter(6, nameof(MudFormatCellsTabs.ChildContent), TabPanels);
@@ -205,7 +247,7 @@
         return closing(ok);
     }
 
-    // A key in the dialog, heard on the form and around its buttons. Once its close has begun, it is the
+    // A key in the dialog, including its title and empty space, heard on the dialog root. Once its close has begun, it is the
     // Sheet's, held by the frame; before, Escape cancels, as MudBlazor's own Escape did (decided with the
     // user, 2026-10-13: through the frame, so the keys typed behind it are not lost).
     private Task OnKeyInDialogAsync(KeyboardEventArgs e)
@@ -215,6 +257,7 @@
             KeyWhileClosing?.Invoke(e);
             return Task.CompletedTask;
         }
+        if (_openColourPopups.Count != 0) return Task.CompletedTask;
         return e is { Key: "Escape", Repeat: false, CtrlKey: false, AltKey: false, ShiftKey: false, MetaKey: false } ? Cancel() : Task.CompletedTask;
     }
 
@@ -566,10 +609,24 @@
                     @Swatch(name, target, swatch, chosen)
                 }
             </div>
-            <MudColorPicker Label="More Colours" Value="PickerValue(chosen)" ValueChanged="colour => Picked(target, colour)"
-                            ShowAlpha="false" ColorPickerMode="ColorPickerMode.HEX" Variant="Variant.Outlined" Margin="Margin.Dense"
-                            Class="mud-ex-sheet-more-colours" />
+            @MoreColours(target, chosen)
         </div>
+    };
+
+    private RenderFragment MoreColours(ColourTarget target, CellColour? chosen) => builder =>
+    {
+        builder.OpenComponent<MudMoreColours>(0);
+        builder.AddComponentParameter(1, nameof(MudMoreColours.Context), Context);
+        builder.AddComponentParameter(2, nameof(MudMoreColours.Label), "More Colours");
+        builder.AddComponentParameter(3, nameof(MudMoreColours.Value), PickerValue(chosen));
+        builder.AddComponentParameter(4, nameof(MudMoreColours.ValueChanged), _colourPicked[(int)target]);
+        builder.AddComponentParameter(5, nameof(MudMoreColours.ShowAlpha), false);
+        builder.AddComponentParameter(6, nameof(MudMoreColours.ColorPickerMode), ColorPickerMode.HEX);
+        builder.AddComponentParameter(7, nameof(MudMoreColours.Variant), Variant.Outlined);
+        builder.AddComponentParameter(8, nameof(MudMoreColours.Margin), Margin.Dense);
+        builder.AddComponentParameter(9, nameof(MudMoreColours.Class), "mud-ex-sheet-more-colours");
+        builder.AddComponentParameter(10, nameof(MudMoreColours.PopupChanged), _popupChanged);
+        builder.CloseComponent();
     };
 
     private RenderFragment Swatch(string name, ColourTarget target, PaletteSwatch swatch, CellColour? chosen) => __builder =>

@@ -28,7 +28,9 @@
 // (ADR-0012), and ending a key the IME took whose keyup the keyboard left before it was told
 // (ADR-0080, 2026-10-12). The eighth entry (ADR-0090): a media query
 // telling the Device Pixel. And the ninth (ADR-0122): the browser's time zone, read once at
-// attach and only when the Consumer asked for it, so TODAY() is the user's day. Anything
+// attach and only when the Consumer asked for it, so TODAY() is the user's day. The tenth
+// (ADR-0210): temporary blur and change listeners on the text field changed by held typing,
+// supplying its missing commit when it is left and retiring on a normal commit. Anything
 // else — text measurement, overlay geometry, popovers — stays in C#; adding to this file needs an
 // ADR.
 //
@@ -1710,17 +1712,48 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             && active.closest('.ex-editor') === null ? active : null;
     };
 
+    // Script-written text does not become a native edit. Keep the missing commit only for
+    // the field the hold actually changed (ADR-0210). One record per instance also bounds
+    // the lifetime of a detached field, for which the browser need not send blur.
+    let heldTextEdit = null;
+    const forgetHeldText = () => {
+        if (!heldTextEdit) return;
+        const { field } = heldTextEdit;
+        heldTextEdit = null;
+        field.removeEventListener('blur', commitHeldText);
+        field.removeEventListener('change', forgetHeldText);
+    };
+    const commitHeldText = () => {
+        if (!heldTextEdit) return;
+        const { field, before } = heldTextEdit;
+        forgetHeldText();
+        if (field.isConnected && before !== field.value) {
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    };
+    const rememberHeldText = (field, before) => {
+        if (heldTextEdit?.field === field) return;
+        forgetHeldText();
+        heldTextEdit = { field, before };
+        field.addEventListener('blur', commitHeldText);
+        field.addEventListener('change', forgetHeldText);
+    };
+
     const handToPopover = (target, k) => {
         if (isTextField(target) && !k.ctrlKey && !k.metaKey && !k.altKey) {
-            if (k.key === 'Enter' && target.form) {
-                // The keydown first, so the field's own handlers hear what the key was — Shift
-                // held turns the find panel's Enter into "previous" (ADR-0055) — then the
-                // submission, which a dispatched keydown does not perform.
+            if (k.key === 'Enter') {
+                // A native Enter commits a text field's change before submitting its form.
+                // A dispatched keydown does neither: a change-bound field such as More Colours'
+                // HEX would show the held text while its Consumer still held the old value.
+                // Keep the key first for handlers such as Find's Shift+Enter (ADR-0055).
                 replayInto(target, k);
-                target.form.requestSubmit();
+                if (heldTextEdit?.field === target) commitHeldText();
+                target.form?.requestSubmit();
                 return;
             }
+            const before = target.value;
             if (typeInto(target, k)) {
+                if (before !== target.value) rememberHeldText(target, before);
                 return;
             }
         }
@@ -1932,6 +1965,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 }
                 const move = handsOver(target, k) ?? escapeCloses(target, k);
                 handToPopover(target, k);
+                if (!root.contains(target) && k.key === 'Escape' && plain(k) && !k.shiftKey && k.repeat !== true) {
+                    // A Consumer frame may hand the keyboard on from Escape, before its handler's
+                    // first await. Acknowledge that handler's entry before interpreting the next
+                    // held key as a text field's: otherwise Down is dropped there, or a letter is
+                    // typed into the field that is closing. This is the ordered circuit question
+                    // already used for Alt's release (ADR-0050), not a delay or a timing estimate.
+                    await core?.invokeMethodAsync('Ping').catch(() => false);
+                    await editorSettled();
+                }
                 if (move) {
                     awaitingMove = move;
                     await editorSettled();
@@ -3902,7 +3944,21 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 && (!active || active === document.body || active === document.documentElement
                     || (root.contains(active) && !own))) {
                 staleField = null;
-                element.focus();
+                // A Chrome can name the box of a design-system control whose input it cannot
+                // reference in .NET (More Colours, ADR-0039). A box starts at its first enabled
+                // text field, before other controls such as a colour slider. Selecting its
+                // value makes the first held character replace the opening value. This is
+                // still the same conditional hand-off: an early choice outside the root wins.
+                const direct = element.matches('input, textarea, select, button, a[href], [tabindex]');
+                const firstText = direct ? null : [...element.querySelectorAll('input, textarea')].find(isTextField);
+                const target = direct ? element : firstText
+                    ?? element.querySelector('button:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])');
+                if (target instanceof HTMLElement) {
+                    target.focus();
+                    if (target === firstText && isTextField(target)) {
+                        target.select();
+                    }
+                }
             }
         },
         // The core's request that the open edit's surface take the keyboard: on opening, on F2,
@@ -3981,6 +4037,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // sees, and its .NET reference is never collected. The observer holds the
             // scroller and the .NET reference the same way, and a notification arriving
             // after disposal would call into a component that no longer exists.
+            forgetHeldText();
             observer.disconnect();
             ceilingObserver.disconnect();
             resolutionQuery?.removeEventListener('change', armResolution);

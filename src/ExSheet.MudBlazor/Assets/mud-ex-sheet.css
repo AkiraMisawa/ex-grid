@@ -143,3 +143,10 @@ button.mud-ex-sheet-swatch { padding: 0; }
 /* A list's MudMenu draws no button: it stands, empty, at its item's foot, where the list opens. */
 .mud-ex-sheet-toolbar-list { width: 0; height: 0; }
 .mud-ex-sheet-toolbar-separator { margin: 6px 2px; }
+
+/* ADR-0039: the frame holds opening keys until the dialog root can hear Escape.
+   Do not inherit visibility: MudTabs transitions all properties on its tab wrapper,
+   leaving it hidden when the ready render asks the selected tab for focus. */
+.mud-ex-sheet-format-cells:not(:has(.mud-ex-sheet-format-cells-keys-ready)) {
+    display: none;
+}

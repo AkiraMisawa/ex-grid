@@ -160,6 +160,12 @@
             of yours with a grid inside, closing on the Escape that raises the grid's <code>OnLeave</code>, calls
             <code>PassKeysOutAsync</code> there: the keys typed after the Escape go out to your dialog, for it to hand
             on with the keyboard, as ExPivot's Show Details dialog does.
+            A drawn control takes the held keyboard through <code>HandKeyboardToAsync</code>. A design-system
+            control that exposes only its contents' container may pass that container: its first enabled text
+            field takes the keyboard with its value selected, so held typing replaces the initial value.
+            For a change-bound text field, held Enter or leaving the field commits the held text once.
+            A control the user already chose keeps the keyboard. More Colours in ExSheet's MudBlazor Format Cells
+            uses this to start in HEX.
         </p>
     </DocsSection>
 

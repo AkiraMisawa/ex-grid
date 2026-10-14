@@ -129,16 +129,24 @@
             <li><b>Under the built-in Chrome</b> it is a popover inside the Sheet's box, which scrolls when the box is small.</li>
             <li>
                 <b>Under <code>MudSheetChrome</code></b> (<code>ExSheet.MudBlazor</code>) it is a page-level, modal
-                <code>MudDialog</code>, with MudBlazor's colour picker for More Colours. It needs a
+                <code>MudDialog</code>, with a More Colours button opening MudBlazor's colour picker. More Colours starts in HEX,
+                with the current value selected: type a colour with the opening click, and those characters arrive
+                there in order, even over Blazor Server. Enter or leaving the field commits the colour.
+                Choosing HEX yourself before the opening finishes keeps
+                the keyboard there; Escape closes the colour picker before the dialog. It needs a
                 <code>&lt;MudDialogProvider /&gt;</code> in your layout, and is refused by name when it first opens
                 without one. The keys typed as it closes from Escape, OK or Cancel are the Sheet's, in order, over
-                Blazor Server too: ↓ typed straight after Escape moves the Focus, and OK sets what was touched as it is
+                Blazor Server too: ↓ typed straight after Escape moves the Focus, including when the dialog's title or empty space holds the keyboard. OK sets what was touched as it is
                 pressed.
             </li>
         </ul>
         <p>
             What the dialog offers and what OK sets do not change with the Chrome: the same choices set the same Cell
             Format under either. Switch the Example above to MudBlazor and press "Format Cells…" to compare.
+            A Chrome that draws a popup inside its own frame uses <code>FormatCellsContext.HoldKeysForPopup</code>
+            before its opening handler awaits, supplying the opener and its key queue; after the hold completes,
+            <code>TakeKeyboard</code> hands those keys to the drawn contents. The same callbacks can carry the
+            keyboard back to the opener when the inner popup closes, without ending Format Cells.
         </p>
     </DocsSection>
 

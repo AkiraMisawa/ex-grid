@@ -111,7 +111,8 @@ public class ShippedStylesheetTests
         // (ADR-0010's note of 2026-10-02) — the same events, no new use. And the clipboard entry a
         // last time (ADR-0170): clipboardchange on navigator.clipboard, which tells the grid that the
         // clipboard changed by a write other than its own copy, so the Copied Range can go.
-        string[] allowed = ["change", "clipboardchange", "compositionend", "compositionend", "compositionstart", "copy", "copy", "cut", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
+        // ADR-0210: a temporary blur and change listener only on a field changed by held typing.
+        string[] allowed = ["blur", "change", "change", "clipboardchange", "compositionend", "compositionend", "compositionstart", "copy", "copy", "cut", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
@@ -450,7 +451,10 @@ public class ShippedStylesheetTests
         // Only an element still on the page, focused as its own FocusAsync would focus it, scrolled
         // into view; the field a press left standing is given up with the keyboard.
         Assert.Contains("element instanceof HTMLElement && element.isConnected", body, StringComparison.Ordinal);
-        Assert.Matches(new Regex(@"staleField = null;\s*element\.focus\(\);"), body);
+        Assert.Matches(new Regex(@"staleField = null;[\s\S]*target\.focus\(\);"), body);
+        Assert.Contains("element.querySelectorAll('input, textarea')].find(isTextField)", body, StringComparison.Ordinal);
+        Assert.Contains("target === firstText && isTextField(target)", body, StringComparison.Ordinal);
+        Assert.Contains("target.select()", body, StringComparison.Ordinal);
         Assert.Single(Regex.Matches(body, @"\.(focus|blur)\("));
         // While the keyboard is on its way to a frame of the Consumer's own and a hold stands, the
         // control takes it in turn, from the hold, with the keys held for it (ADR-0050 item 16's

@@ -68,6 +68,22 @@ public abstract class MudSheetTestContext : BunitContext
         return () => pending.SetVoidResult();
     }
 
+    /// <summary>Holds a hand-back and records request starts, including calls still unfinished.</summary>
+    protected Action HoldKeyboardHandBack(List<string> starts)
+    {
+        var pending = _handle.SetupVoid("takeKeyboardBack", _ =>
+        {
+            starts.Add("takeKeyboardBack");
+            return true;
+        });
+        _handle.SetupVoid("handOff", invocation =>
+        {
+            starts.Add("handOff:" + (string)invocation.Arguments[0]!);
+            return true;
+        }).SetVoidResult();
+        return () => pending.SetVoidResult();
+    }
+
     /// <summary>The grid's asks of its key gate about where the keyboard goes — a hand-off, or a hand-back
     /// from a frame — in the order made: <c>handOff:frame</c>, <c>takeKeyboardBack</c>.</summary>
     protected IReadOnlyList<string> KeyboardWays =>

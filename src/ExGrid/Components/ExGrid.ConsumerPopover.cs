@@ -245,7 +245,10 @@ public partial class ExGrid<TRow>
     /// the control takes the keyboard by its own <c>FocusAsync</c>, as it would without the grid. A
     /// request the page cannot carry out, with the control or the circuit gone, is dropped.</para>
     /// </summary>
-    /// <param name="control">The element to hand the keyboard to.</param>
+    /// <param name="control">The element to hand the keyboard to. Once the grid is attached, a
+    /// non-focusable container names its first enabled text field, with that field's value selected
+    /// before held keys arrive; without a text field, its first enabled control. A control already
+    /// chosen by the user keeps the keyboard (ADR-0039).</param>
     /// <returns>A task that completes once the request has been made.</returns>
     public Task HandKeyboardToAsync(ElementReference control)
         => InvokeAsync(async () =>

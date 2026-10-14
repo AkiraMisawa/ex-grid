@@ -19,8 +19,9 @@ Every entry names the reason it cannot be done from Blazor.
 | **The Keyboard Field's composition and focus, on the grid root** | Added 2026-10-02 ([ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md)). An IME starts only in an element that is editable, and no Blazor API gives the root, a `div`, an input context. So on a grid that edits a text field of the grid's own holds the keyboard. Its composition's end has to take its place among the held keys and presses, which exist only in the browser (the first entry's hold), so `compositionstart` and `compositionend` on the root are heard there, always on. The root's own `focus` is passed on to the field at once: Blazor's `@onfocus` and `FocusAsync` land a round trip later on a circuit, and a key typed in between was read as a descendant's (ADR-0033's scroller, 2026-09-26). The root's `focusout` empties the field as it is left, and ends the release of Tab when DOM focus leaves the grid (ADR-0012). No layout is read. *(`keyup` added 2026-10-12 ([ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md)), decided with the user: the root's `keyup` says that a key the IME took in the field has been told whole. The editor's request for the keyboard waits for it, so that it is granted in order with the IME's events, where the task after a composition's end missed a start the browser told a moment later. A key the IME took is told from its keydown, which the first entry already leaves to the IME, to the next keyup heard on the root, or until the keyboard leaves the root, which the root's `focusout` tells: Alt+Tab mid-composition sends its keyup to the other window. Nothing is measured, and no timer is set.)* *(Widened 2026-10-13, decided with the user: the same `keyup` listener hears the Alt key's release where the Consumer declares the Alt key alone (ADR-0050 item 14, ADR-0100's KeyTips). While the first entry's hold holds keys, the release is kept from the Consumer and held in its place, and handed on, in its turn, as the keyup it was; a chord's release is kept from the Consumer. No listener is added, and the count MEM-4 reads is unchanged. Nothing is measured.)* |
 | **A `matchMedia` listener reporting the Device Pixel** | Added 2026-10-02 ([ADR-0090](./0090-the-grid-is-told-its-device-pixel-and-puts-column-edges-on-it.md)). A line drawn in Device Pixels, and a column edge put on one, need the size of a Device Pixel at every resolution, and the stylesheet's `resolution` steps know it only at the steps. The listener watches `(resolution: <current>dppx)`, reports `devicePixelRatio` at attach and when that query stops matching (a zoom, or a window moved to a display of another scale), and arms itself on the new value. It is told, never read on the path to a paint, and fires never per render. Blazor has no media query listener and no `devicePixelRatio`. |
 | **The browser's time zone, reported once at attach** | Added 2026-10-03 ([ADR-0122](./0122-the-browser-tells-the-grid-its-time-zone.md)). `TODAY()` is the day on the user's device (ADR-0121), and on Blazor Server .NET runs on the server, where `TimeZoneInfo.Local` is the server's zone. The module reads `Intl.DateTimeFormat().resolvedOptions().timeZone` once at attach, only when the Consumer has asked through `OnBrowserTimeZone`, and the grid passes the IANA name on. No layout is read, and nothing runs per render. Browsers raise no event when the zone changes, so it is not reported again. Blazor has no way to read it. |
+| **Committing a text field changed by held typing when it is left** | Added 2026-10-14, decided with the user ([ADR-0210](./0210-held-text-commits-when-its-field-is-left.md)). A script-written value does not become a native edit. The core temporarily hears blur on the field it actually changed and supplies its missing change notification; a change listener on that same field removes the supplement when a normal commit comes first. At most one field per instance, removed on commit, replacement or disposal. No document listener, layout read, timer or observer. Blazor cannot mark the script-written value as a native edit or reach a design system's private input. |
 
-That is the entire list. **Nine entries.**
+That is the entire list. **Ten entries.**
 
 *(2026-10-11, decided with the user, [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)'s
 note on ST-2: when an untyped editor's row leaves the Window, the editor's listener answers one question,
@@ -275,7 +276,9 @@ Two grounds, and only two.
   2026-09-24 by [ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md):
   this means script a Wrapper or a Chrome **adds** — its own `.js`, its own interop calls. The
   scripts a design system's own components run for themselves, loaded by the Consumer's choice of
-  that design system, are the design system's, not entries on this list.)*
+  that design system, are the design system's, not entries on this list.)* *(Limited exception,
+  2026-10-15, decided with the user: ADR-0039 permits configuring the existing KeyInterceptorService
+  on the Format Cells dialog root; the dated note below records its scope.)*
 - **If the browser target ever widens, this list grows.** Popovers would need positioning code,
   and the clipboard path would need reworking (ADR-0017). That cost belongs in the decision to
   widen, not in this ADR.
@@ -618,3 +621,10 @@ section of that date.)* Four readings changed. No listener was added, and nothin
   also names its row, read from its own cell's id at the mousedown, so that the core can answer a press
   whose click Blazor will not deliver (ADR-0043's note as rewritten that day). No listener was added and
   nothing is measured: it is an attribute the render wrote.
+
+
+*(2026-10-15, decided with the user.)* ADR-0039 permits the Wrapper to configure MudBlazor's
+existing KeyInterceptorService on the Format Cells dialog root only, so Escape and following
+keys obey the frame's ordered hand-back even when the title or empty space holds focus.
+This limited exception adds no Wrapper script and no core listener; the design system's
+service owns attachment and removal. Other Wrapper-owned interop remains prohibited.

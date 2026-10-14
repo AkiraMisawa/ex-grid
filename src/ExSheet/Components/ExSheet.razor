@@ -914,6 +914,21 @@
             () => OkFormatCellsAsync(context!), () => CancelFormatCells(context!), _returnKeyboardFromFormatCells)
         {
             ReturnKeyboardFrom = _returnKeyboardFromFormatCellsFrame,
+            HoldKeysForPopup = async (from, typedOnTheWay) =>
+            {
+                if (!ReferenceEquals(_formatCells, context))
+                {
+                    _ = typedOnTheWay();
+                    return;
+                }
+                // Request order matters: collect the frame's keys before declaring their new
+                // destination, as for ExPivot's report-filter search (ADR-0050 item 16).
+                var returned = grid.ReturnKeyboardAsync(from, typedOnTheWay);
+                var handed = grid.HandKeyboardToFrameAsync();
+                await Task.WhenAll(returned, handed);
+            },
+            TakeKeyboard = control => ReferenceEquals(_formatCells, context)
+                ? grid.HandKeyboardToAsync(control) : Task.CompletedTask,
         };
         _leavingFormatCellsFrame = null;
         ClearNotice();
