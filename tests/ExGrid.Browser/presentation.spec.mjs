@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, twoFrames } from './fixtures.mjs';
 import { painted, sameColour } from './pixels.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
 import { sheet, openSheet, pressCell as pressSheetCell, editor as sheetEditor } from './sheet-helpers.mjs';
@@ -62,6 +62,126 @@ test('the painted heights equal the declared metrics exactly (UX-3, ST-3)', asyn
     expect(measured.cellPadding).toBe('8px');
 });
 
+// A density change on /density (ADR-0028): each preset's resolved Grid Metrics, from
+// GridMetrics.Resolve's table — the row and header tier heights, the cell padding and the
+// font size. The page's one Header Group makes the band two tiers tall.
+const PRESETS = {
+    standard: { row: 32, header: 32, padding: 8, font: 14 },
+    comfortable: { row: 40, header: 40, padding: 12, font: 14 },
+    excel: { row: 20, header: 20, padding: 4, font: 12 },
+    compact: { row: 28, header: 28, padding: 8, font: 14 },
+};
+
+/** What the grid on /density painted: every row's box, the header band and its cells, the
+ * spacer the row arithmetic sizes, the Selection's outline and the Focus, each beside the
+ * cells it stands over. */
+function paintedGeometry(page) {
+    return grid(page).evaluate((g) => {
+        const box = (el) => {
+            const r = el.getBoundingClientRect();
+            return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+        };
+        const shown = (selector) => [...g.querySelectorAll(selector)].map(box).find((r) => r.width > 0) ?? null;
+        const cell = g.querySelector('.ex-cell');
+        return {
+            token: g.style.getPropertyValue('--ex-row-height'),
+            rows: [...g.querySelectorAll('.ex-row')]
+                .map((row) => ({ index: Number(row.getAttribute('aria-rowindex')), ...box(row) }))
+                .sort((a, b) => a.index - b.index),
+            header: box(g.querySelector('.ex-header')),
+            leaves: [...g.querySelectorAll('.ex-header-cell')].map(box),
+            group: box(g.querySelector('.ex-header-group')),
+            padding: getComputedStyle(cell).paddingLeft,
+            font: getComputedStyle(cell).fontSize,
+            spacer: box(g.querySelector('.ex-spacer')),
+            range: shown('.ex-range'),
+            focus: shown('.ex-focus'),
+            from: box(g.querySelector("[id$='r1c0']")),
+            to: box(g.querySelector("[id$='r3c1']")),
+        };
+    });
+}
+
+test('UX-3 / ST-3 / ADR-0027 P6, ADR-0028: after each density change the rows, header band and Selection are painted at the resolved Grid Metrics, at every preset', async ({ page }) => {
+    await page.goto('/density');
+    await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+    // A range over rows 1-3 of Book and Trader, the Focus at its top left.
+    await grid(page).locator("[id$='r1c0']").click({ force: true });
+    await expectActiveDescendant(grid(page), /r1c0$/);
+    await grid(page).locator("[id$='r3c1']").click({ force: true, modifiers: ['Shift'] });
+    await expect(page.locator('#density-status')).toHaveText('Density: Compact');
+
+    for (const [name, m] of Object.entries(PRESETS)) {
+        await page.locator(`#density-${name}`).click();
+        await expect.poll(async () => (await paintedGeometry(page)).rows[0]?.height, `${name}: the rows repaint`)
+            .toBe(m.row);
+        await circuitQuiet();
+        const p = await paintedGeometry(page);
+        const at = (what) => `${name}: ${what}`;
+
+        // The arithmetic's Row Height: the spacer it sizes is the band plus 200 rows of it.
+        expect(p.token, at('the inline Geometry Token')).toBe(`${m.row}px`);
+        expect(p.spacer.height, at('the spacer the row arithmetic sizes')).toBe(2 * m.header + 200 * m.row);
+        // The painted Row Height: every painted row is that tall and stands one row below the last.
+        expect(p.rows.length, at('rows are painted')).toBeGreaterThan(3);
+        for (const [i, row] of p.rows.entries()) {
+            expect(row.height, at(`row ${row.index} height`)).toBe(m.row);
+            if (i > 0) expect(row.top - p.rows[i - 1].top, at(`row ${row.index} pitch`)).toBe(m.row);
+        }
+        // The band: two tiers, the group one tier tall, the covered leaves one tier, the uncovered
+        // leaf (Notional) the band.
+        expect(p.header.height, at('the band')).toBe(2 * m.header);
+        expect(p.group.height, at('the group tier')).toBe(m.header);
+        expect(p.leaves.map((leaf) => leaf.height), at('the leaves')).toEqual([m.header, m.header, 2 * m.header]);
+        expect(p.rows[0].top, at('the first row starts under the band')).toBe(p.header.bottom);
+        expect(p.padding, at('cell padding')).toBe(`${m.padding}px`);
+        expect(p.font, at('font size')).toBe(`${m.font}px`);
+        // The Selection's outline covers rows 1-3 of Book and Trader exactly, and the Focus its
+        // top left cell: the overlay's arithmetic and the rows' paint are one number.
+        expect(p.range, at('the Selection is painted')).not.toBeNull();
+        expect({ left: p.range.left, top: p.range.top, right: p.range.right, bottom: p.range.bottom }, at('the Selection'))
+            .toEqual({ left: p.from.left, top: p.from.top, right: p.to.right, bottom: p.to.bottom });
+        expect(p.range.height, at('the Selection is three rows')).toBe(3 * m.row);
+        expect({ left: p.focus.left, top: p.focus.top, width: p.focus.width, height: p.focus.height }, at('the Focus'))
+            .toEqual({ left: p.from.left, top: p.from.top, width: p.from.width, height: m.row });
+    }
+});
+
+// A document of its own, so the listener is on window before the grid attaches: the loop at attach
+// counts as much as one after a density change, and the harness's console capture never sees it
+// (Chrome raises it on window only). On WebAssembly the first gutter report, told from inside the
+// observer's callback, rendered the gutter's strip there and looped on /density (2026-10-13). The
+// resizes stay in this test's own context.
+test.describe(() => {
+    test.use({ freshDocument: true });
+    test('CON-4 / ADR-0013: no ResizeObserver loop error from attach through density changes and window resizes', async ({ page }) => {
+        await page.addInitScript(() => {
+            window.__exgridErrorEvents = [];
+            window.addEventListener('error', (e) => window.__exgridErrorEvents.push(String(e.message)));
+        });
+        await page.goto('/density');
+        await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+
+        const viewport = page.viewportSize();
+        const sizes = [{ width: 900, height: 600 }, { width: 520, height: 420 }, viewport];
+        for (const [step, name] of Object.keys(PRESETS).entries()) {
+            await page.locator(`#density-${name}`).click();
+            await expect.poll(() => grid(page).locator('.ex-row').first().evaluate((row) => row.getBoundingClientRect().height))
+                .toBe(PRESETS[name].row);
+            // A resize of the window between density changes: the Stretch grid's width follows it.
+            if (step < sizes.length) {
+                await page.setViewportSize(sizes[step]);
+                await expect.poll(() => grid(page).evaluate((g, width) => Math.round(g.getBoundingClientRect().right) <= width, sizes[step].width))
+                    .toBe(true);
+            }
+            await twoFrames(page);
+        }
+        await circuitQuiet();
+        await twoFrames(page);
+        expect(await page.evaluate(() => window.__exgridErrorEvents)).toEqual([]);
+    });
+});
+
 test('a Visual Token set on an ancestor recolours the paint (UX-5, the paint half)', async ({ page }) => {
     await open(page);
     const before = await grid(page).locator('.ex-header')
@@ -94,30 +214,45 @@ test('nothing inside the Viewport transitions or animates (UX-6)', async ({ page
     expect(offenders).toEqual([]);
 });
 
-test('forced colors keep every Cell State and Row Kind tellable (UX-7, on /cells)', async ({ page }) => {
+test('UX-7 / ADR-0027, ADR-0029: under forced colors every Cell State and Row Kind stays tellable without its background, on /cells', async ({ page }) => {
     await page.emulateMedia({ forcedColors: 'active' });
     await page.goto('/cells');
-    await expect(page.locator('.ex-grid').first().locator('.ex-row').first()).toBeVisible();
+    await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+    await expect(grid(page).locator('.ex-row-total')).toBeVisible();
 
-    const states = await page.evaluate(() => {
-        const normal = document.querySelector('.ex-cell:not([class*=ex-state])');
+    // What forced colors leave: the text's colour, weight, style and decoration, and the
+    // outline. A background image is discarded, so it is not read — a state or a kind whose
+    // only mark is its ground comes out the same as a plain cell here and fails.
+    const looks = await grid(page).evaluate((g) => {
         const describe = (el) => {
             if (!el) return null;
             const s = getComputedStyle(el);
-            return [s.color, s.fontStyle, s.outlineStyle, s.textDecorationLine].join('|');
+            return [s.color, s.fontWeight, s.fontStyle, s.outlineStyle, s.outlineColor, s.textDecorationLine].join('|');
         };
+        const plain = ':not([class*=ex-state])';
+        const detail = '.ex-row:not(.ex-row-group):not(.ex-row-total)';
         return {
-            normal: describe(normal),
-            stale: describe(document.querySelector('.ex-state-stale')),
-            missing: describe(document.querySelector('.ex-state-missing')),
-            error: describe(document.querySelector('.ex-state-error')),
-            modified: describe(document.querySelector('.ex-state-modified')),
+            // The Cell States, on detail rows.
+            normal: describe(g.querySelector(`${detail} .ex-cell${plain}`)),
+            stale: describe(g.querySelector(`${detail} .ex-state-stale`)),
+            missing: describe(g.querySelector(`${detail} .ex-state-missing`)),
+            error: describe(g.querySelector(`${detail} .ex-state-error`)),
+            modified: describe(g.querySelector(`${detail} .ex-state-modified`)),
+            // The Row Kinds, each read on its Book cell, as the plain one above is.
+            group: describe(g.querySelector(`.ex-row-group .ex-cell${plain}`)),
+            total: describe(g.querySelector(`.ex-row-total .ex-cell${plain}`)),
+            groupGround: g.querySelector('.ex-row-group .ex-cell') && getComputedStyle(g.querySelector('.ex-row-group .ex-cell')).backgroundImage,
         };
     });
-    // Every present state is distinguishable from Normal, and from each other.
-    const present = Object.entries(states).filter(([, v]) => v !== null);
-    const values = present.map(([, v]) => v);
-    expect(new Set(values).size, JSON.stringify(states)).toBe(values.length);
+    const { groupGround, ...kinds } = looks;
+    // The forced-colors emulation took: the group row's tint, a background image, is gone.
+    expect(groupGround, 'the browser discards the group tint under forced colors').toBe('none');
+    // Every state and kind is on the page — none is passed for being absent — and no two look alike.
+    for (const [name, look] of Object.entries(kinds)) {
+        expect(look, `${name} is on /cells`).not.toBeNull();
+    }
+    const values = Object.values(kinds);
+    expect(new Set(values).size, JSON.stringify(kinds, null, 1)).toBe(values.length);
 });
 
 // Tone and Cell State on /tones (ticket 84): the page's theme sets the tone tokens on an element
@@ -279,7 +414,7 @@ test('under a dark scheme the untouched grid stays readable (UX-8)', async ({ pa
     expect(contrast.ratio, JSON.stringify(contrast)).toBeGreaterThanOrEqual(4.5);
 });
 
-test('inside an RTL ancestor the grid stays an LTR island (DIR-2/DIR-3)', async ({ page }) => {
+test('inside an RTL ancestor the grid stays an LTR island (DIR-2)', async ({ page }) => {
     await open(page);
     // The grid's parent is #app on WebAssembly and body on the Server host, neither of which
     // leaving the page clears: alterPage puts the direction back as the test ends (ADR-0056).
@@ -311,10 +446,65 @@ test('inside an RTL ancestor the grid stays an LTR island (DIR-2/DIR-3)', async 
         [...document.querySelectorAll('.ex-grid .ex-header-cell')].slice(0, 2)
             .map((el) => el.getBoundingClientRect().left));
     expect(headers[0]).toBeLessThan(headers[1]);
+});
 
-    // And the Arabic value renders inside its cell (DIR-3): present, not displaced.
-    const arabic = grid(page).locator('.ex-cell', { hasText: 'عمر' }).first();
-    await expect(arabic).toBeVisible();
+/** The Arabic Trader on /features — عمر, three letters — read where it is painted: its cell's
+ * box, the Trader header's, and each letter's box in logical order, from the text itself. */
+function arabicLayout(page) {
+    return grid(page).evaluate((g) => {
+        const cell = [...g.querySelectorAll('.ex-cell')].find((el) => el.textContent.trim() === 'عمر');
+        const header = [...g.querySelectorAll('.ex-header-cell')].find((el) => el.textContent.trim() === 'Trader');
+        const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+        let text;
+        while ((text = walker.nextNode()) && !text.data.includes('ع'));
+        const start = text.data.indexOf('ع');
+        const letters = [0, 1, 2].map((i) => {
+            const range = document.createRange();
+            range.setStart(text, start + i);
+            range.setEnd(text, start + i + 1);
+            const r = range.getBoundingClientRect();
+            return { left: r.left, right: r.right };
+        });
+        const box = (el) => { const r = el.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, width: r.width }; };
+        return { id: cell.id, cell: box(cell), header: box(header), letters, direction: getComputedStyle(cell).direction };
+    });
+}
+
+test('DIR-3 / ADR-0031: an Arabic value reads right to left inside its cell, and the cell does not move, under an RTL page', async ({ page }) => {
+    await open(page);
+    const before = await arabicLayout(page);
+
+    await alterPage(page, () => {
+        const parent = document.querySelector('.ex-grid').parentElement;
+        const was = parent.getAttribute('dir');
+        parent.setAttribute('dir', 'rtl');
+        return () => (was === null ? parent.removeAttribute('dir') : parent.setAttribute('dir', was));
+    });
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.querySelector('.ex-grid').parentElement).direction))
+        .toBe('rtl');
+    const after = await arabicLayout(page);
+
+    for (const [when, layout] of [['in an LTR page', before], ['in an RTL page', after]]) {
+        // The cell is an LTR cell: the grid is an island (ADR-0031).
+        expect(layout.direction, when).toBe('ltr');
+        // The value reads right to left: its first letter, ع, stands rightmost, its last, ر,
+        // leftmost — the bidi algorithm inside an LTR context, as Excel shows it.
+        const [first, second, third] = layout.letters;
+        expect(first.left, `${when}: ع stands right of م`).toBeGreaterThanOrEqual(second.right - 0.5);
+        expect(second.left, `${when}: م stands right of ر`).toBeGreaterThanOrEqual(third.right - 0.5);
+        // Every letter is inside its cell.
+        for (const letter of layout.letters) {
+            expect(letter.left, when).toBeGreaterThanOrEqual(layout.cell.left);
+            expect(letter.right, when).toBeLessThanOrEqual(layout.cell.right);
+        }
+        // The cell stands under its own column's header.
+        expect(layout.cell.left, `${when}: the cell is under Trader`).toBe(layout.header.left);
+        expect(layout.cell.width, when).toBe(layout.header.width);
+    }
+    // And the RTL page moved neither the cell nor its letters.
+    expect(after.id).toBe(before.id);
+    expect(after.cell).toEqual(before.cell);
+    expect(after.letters).toEqual(before.letters);
 });
 
 test('a Header Group label is centred, and nothing aligns it vertically (HG-13, ADR-0032)', async ({ page }) => {

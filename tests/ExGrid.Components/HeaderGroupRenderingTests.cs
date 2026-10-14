@@ -1,6 +1,7 @@
 using Bunit;
 using ExGrid.Columns;
 using ExGrid.Components.Tests.Support;
+using ExGrid.Selection;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
 
@@ -307,6 +308,145 @@ public class HeaderGroupRenderingTests : GridTestContext
         raised = null;
         await cut.Find(".ex-header").ClickAsync(new MouseEventArgs { Button = 0, OffsetX = 50, OffsetY = 10 });
         Assert.Equal([new SortSpec(TestRows.ColumnName(0), SortDirection.Ascending)], raised);
+    }
+
+    [Fact] // ADR-0032 / ADR-0050 / ADR-0012: a group's rectangle selects nothing — not plainly under HeaderClickSelects, not with Shift, not with Ctrl; the leaf tier does
+    public async Task A_group_press_selects_nothing_under_any_modifier_and_the_leaf_tier_does()
+    {
+        GridSelection? selection = null;
+        IReadOnlyList<SortSpec>? raised = null;
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(50))
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, TestRows.Wide(6))
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.HeaderHeight, HeaderPx)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.HeaderGroups, Groups())
+            .Add(g => g.HeaderClickSelects, true)
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s)
+            .Add(g => g.OnSortChanged, (IReadOnlyList<SortSpec> s) => raised = s));
+        string Selected() => selection is null ? "none" : $"{selection.Focus} [{string.Join(", ", selection.Ranges)}]";
+        async Task PressHeader(double y, bool shift = false, bool ctrl = false)
+        {
+            await cut.Find(".ex-header").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 150, OffsetY = y, ShiftKey = shift, CtrlKey = ctrl });
+            await cut.Find(".ex-header").ClickAsync(new MouseEventArgs { Button = 0, OffsetX = 150, OffsetY = y, ShiftKey = shift, CtrlKey = ctrl });
+        }
+
+        // One cell of column 3 selected, so a whole-column gesture on column 1 would change it.
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 330, OffsetY = 30 });
+        var before = Selected();
+        Assert.NotEqual("none", before);
+
+        // y=40 is inside CVA's rectangle over column 1 (tier 1 of a 3-tier band).
+        foreach (var (shift, ctrl) in new[] { (false, false), (true, false), (false, true) })
+        {
+            await PressHeader(40, shift, ctrl);
+            Assert.Equal(before, Selected());
+        }
+        Assert.Null(raised);
+
+        // The leaf tier of the same column: each gesture selects, so the presses above were heard.
+        // Ctrl adds the column beside the cell; then the plain press takes the column alone.
+        await PressHeader(3 * HeaderPx - 10, ctrl: true);
+        var added = Selected();
+        Assert.NotEqual(before, added);
+        await PressHeader(3 * HeaderPx - 10);
+        Assert.NotEqual(added, Selected());
+        Assert.Null(raised);
+    }
+
+    // ---- HG-16: nothing below the band knows tiers exist ---------------------------------------
+    // The same gestures on the same grid, once with no Header Groups and once with two tiers of
+    // them: presses on the header at every tier, the keys that climb towards it, and both copies.
+    // What the grid answers — the Selection, the Focus as the root names it, and the clipboard's
+    // text — is one transcript, and the tiered one must be the untiered one word for word.
+
+    private async Task<List<string>> BelowTheBandTranscript(IReadOnlyList<HeaderGroup> groups)
+    {
+        GridSelection? selection = null;
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.TotalCount, 20)
+            .Add(g => g.Columns, TestRows.Wide(6))
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.HeaderHeight, HeaderPx)
+            .Add(g => g.ViewportHeight, 300)
+            .Add(g => g.ViewportWidth, 650)
+            .Add(g => g.HeaderGroups, groups)
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        var band = groups.Count == 0 ? HeaderPx : 3 * HeaderPx;
+        var transcript = new List<string>();
+        void Note(string step) => transcript.Add(
+            $"{step}: {(selection is null ? "none" : $"{selection.Focus}..{selection.Extent} [{string.Join(", ", selection.Ranges)}]")}"
+            + $" focus={cut.Find(".ex-grid").GetAttribute("aria-activedescendant")?.Split('-')[^1]}");
+        Task Press(string key, bool ctrl = false, bool shift = false)
+            => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, ctrl, shift, false, false, false));
+
+        // Row 2 of column 1.
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 150, OffsetY = 50 });
+        Note("cell");
+
+        // A press and a click at every height of the band over column 1: its leaf tier, and
+        // where the tiered grid draws CVA and Adjustments above it.
+        var heights = new[] { band - 10, Math.Max(5, band - HeaderPx - 10), 10 };
+        for (var tier = 0; tier < heights.Length; tier++)
+        {
+            var y = heights[tier];
+            await cut.Find(".ex-header").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 150, OffsetY = y });
+            await cut.Find(".ex-header").ClickAsync(new MouseEventArgs { Button = 0, OffsetX = 150, OffsetY = y });
+            Note($"header press {tier}");
+        }
+
+        // The keys that climb: past the first row, Focus has nowhere further to go.
+        foreach (var (key, ctrl, shift) in new[]
+            { ("ArrowUp", false, false), ("ArrowUp", false, false), ("ArrowUp", false, false),
+              ("PageUp", false, false), ("ArrowUp", true, false), ("Home", true, false),
+              ("ArrowUp", false, true), ("ArrowUp", true, true), ("PageUp", false, true) })
+        {
+            await Press(key, ctrl, shift);
+            Note($"{(ctrl ? "Ctrl+" : "")}{(shift ? "Shift+" : "")}{key}");
+        }
+
+        // Everything, copied plain and with headers.
+        await Press("a", ctrl: true);
+        Note("Ctrl+A");
+        var plain = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayloadAsync());
+        var headed = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayloadAsync(withHeaders: true));
+        transcript.Add($"copy: {plain?.Text}");
+        transcript.Add($"copy html: {plain?.Html}");
+        transcript.Add($"copy with headers: {headed?.Text}");
+        transcript.Add($"copy with headers html: {headed?.Html}");
+        return transcript;
+    }
+
+    [Fact] // ADR-0032 / ADR-0012 / ADR-0005 / HG-16: headers stay unselectable, Focus never enters the header, no tier is copied — unchanged from the untiered case
+    public async Task HG16_nothing_below_the_band_knows_tiers_exist()
+    {
+        var untiered = await BelowTheBandTranscript([]);
+        var tiered = await BelowTheBandTranscript(Groups());
+
+        Assert.Equal(untiered, tiered);
+
+        // And what the untiered case says is what HG-16 means. A press on the header selected
+        // nothing and moved no Focus: every press left the cell's answer standing.
+        var cell = untiered[0]["cell: ".Length..];
+        Assert.All(untiered.Where(line => line.StartsWith("header press", StringComparison.Ordinal)),
+            line => Assert.EndsWith(cell, line));
+        // Every key's Focus is a cell the root names, never a header: the climb stops on row 0.
+        Assert.All(untiered.Where(line => !line.StartsWith("copy", StringComparison.Ordinal)),
+            line => Assert.Matches(@" focus=r\d+c\d+$", line));
+        Assert.EndsWith("focus=r0c1", untiered[6]);   // the third ArrowUp, from row 2
+        Assert.EndsWith("focus=r0c1", untiered[7]);   // PageUp, already there
+        // The plain copy is cell values only, from row 0; the one with headers adds one row of
+        // leaf headers and no tier's label.
+        var plain = untiered.Single(line => line.StartsWith("copy: ", StringComparison.Ordinal));
+        Assert.StartsWith("copy: Row 000000/00\t", plain);
+        var headed = untiered.Single(line => line.StartsWith("copy with headers: ", StringComparison.Ordinal));
+        Assert.StartsWith("copy with headers: C00\tC01\tC02\tC03\tC04\tC05\r\nRow 000000/00\t", headed);
+        Assert.DoesNotContain(tiered, line => line.Contains("CVA", StringComparison.Ordinal)
+            || line.Contains("Adjustments", StringComparison.Ordinal));
     }
 
     [Fact] // ADR-0032 / HG-17: cost is per rectangle — element count scales with groups, rows unchanged

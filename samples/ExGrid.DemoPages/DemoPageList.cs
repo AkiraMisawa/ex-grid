@@ -48,6 +48,8 @@ public static class DemoPageList
             "Column width gestures and a box that narrows until pinning is suspended (ADR-0016, ADR-0045)."),
         new("stretch", "Stretch", "Layout",
             "A Viewport that takes its parent's height, and the warning when the parent has none (ADR-0028)."),
+        new("density", "Density", "Layout",
+            "A density preset changed while the grid is on screen: rows, header band and Selection follow the resolved Grid Metrics together (ADR-0027, ADR-0028)."),
         new("lifecycle", "Lifecycle", "Layout",
             "Mount and dispose a grid repeatedly; nothing it attached stays behind (ADR-0018, ADR-0021)."),
         new("mud", "MudBlazor Wrapper", "MudBlazor",
