@@ -781,10 +781,6 @@ export const dataRowCount = (grid) => grid.evaluate((root) => {
     return Number(root.getAttribute('aria-rowcount')) - headerRows;
 });
 
-// The painted row at `row`, 0-based among the data rows, of a grid with `headerRows` header rows
-// (headerRowsOf): its aria-rowindex counts the header's rows first (ADR-0033).
-export const rowAt = (grid, row, headerRows) => grid.locator(`.ex-row[aria-rowindex="${row + 1 + headerRows}"]`);
-
 // Scrolls a grid (its `.ex-grid` root) so that `row`, 0-based among the rows its scrollbar spans,
 // is the top row of the readable area — through ADR-0053's mapping, never as row × row height.
 // Above the Layout Ceiling the spacer is compressed and a scroll offset s shows the content offset
