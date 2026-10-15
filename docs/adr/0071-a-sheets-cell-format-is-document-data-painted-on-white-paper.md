@@ -869,6 +869,17 @@ own. Under the built-in Chrome:
     the gridline, the Paper's white on a cell with no Fill, which is the white the readings of
     2026-10-12 observed there (R4; over a Fill, unobserved). Under `ExSheet.MudBlazor` it is the
     palette's primary, as the Focus outline is.
+  - *The Headings' line.* The Heading Mark
+    ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md), 2026-10-13) is the outline's colour on a
+    Sheet, `#217346` under the built-in Chrome, as the readings of 2026-10-12 measured Excel's line (R4),
+    and the palette's primary under `ExSheet.MudBlazor`. The Headings frame the Paper and follow the
+    scheme; the line stands on them as drawn.
+    *(2026-10-14, decided with the user, ADR-0008 D1: the shade, letters and corner are built too.)*
+    In the light scheme the marked Headings' ground is `#E1E1E1`, or `#D3F0E0` when the whole row or
+    column is selected; the letters and the all-selected corner's triangle take the mark's colour.
+    These are Visual Tokens, so a Theme or Wrapper can supply its own colours. The dark frame keeps
+    scheme-dependent shades rather than taking the Paper's light island; Excel's dark Heading
+    shades remain on the next readings' list.
 - **The shade is `#C7C7C7`, and the lines inside it stay as drawn.** Excel's black lines stay
   `#000000` over its shade.
   - The shade multiplies with what is beneath it, rather than lying over it. On white Paper it is

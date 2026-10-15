@@ -101,7 +101,11 @@ public class PaperStylesheetTests
         // else the Focus outline's colour, which ExSheet.MudBlazor gives the primary; else Excel's
         // #217346, as the readings of 2026-10-12 (R4) measured the active cell's border among
         // several areas, and as the Focus outline's own fallback on the Paper is.
-        var among = Assert.Single(rules, rule => rule.Selectors.Contains(".ex-sheet .ex-focus.ex-focus-among-ranges::after"));
+        var among = Assert.Single(rules, rule => rule.Selectors.Contains(".ex-sheet .ex-focus.ex-focus-among-ranges::after")
+            && rule.Body.Contains("--ex-focus-among-ranges-outline", StringComparison.Ordinal));
+        var forced = Assert.Single(rules, rule => rule.Selectors.Contains(".ex-sheet .ex-focus.ex-focus-among-ranges::after")
+            && rule.Body.Contains("border-color: Highlight;", StringComparison.Ordinal));
+        Assert.Contains("box-shadow: none;", forced.Body, StringComparison.Ordinal);
         Assert.Contains("border-color: var(--ex-focus-among-ranges-outline, var(--ex-focus-outline, #217346));", among.Body, StringComparison.Ordinal);
         Assert.Contains(rules, rule => rule.Selectors.Contains(".ex-sheet .ex-focus::after")
             && rule.Body.Contains("border-color: var(--ex-focus-outline, #217346);", StringComparison.Ordinal));

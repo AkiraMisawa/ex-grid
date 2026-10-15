@@ -106,7 +106,7 @@ kept with their names and defaults; the vocabulary this ADR fixes is:
 | Rules | `--ex-row-rule-color`, `--ex-column-rule-color`, `--ex-rule-width` — painted as gradients/inset shadows, **never borders** ([ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)) |
 | Hover | `--ex-row-hover-background` *(unimplementable as stated — see the correction below)* |
 | Pinned | `--ex-pinned-background` *(exists)* |
-| Selection | `--ex-selection-fill` *(exists)*, `--ex-focus-row-fill` *(the Focus band, [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*, `--ex-selection-outline` *(the border Excel draws around the range's perimeter, reserved here and taken up by [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) on 2026-09-29; it defaults to `--ex-focus-outline`)*, `--ex-focus-outline` *(exists)*, `--ex-focus-among-ranges-outline` *(the thin border of the Focus among several ranges, added by [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) on 2026-10-12; (2026-10-12, decided with the user: it defaults to `--ex-focus-outline`))*, `--ex-grid-focus-outline` *(exists)* |
+| Selection | `--ex-selection-fill` *(exists)*, `--ex-focus-row-fill` *(the Focus band, [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*, `--ex-selection-outline` *(the border Excel draws around the range's perimeter, reserved here and taken up by [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) on 2026-09-29; it defaults to `--ex-focus-outline`)*, `--ex-focus-outline` *(exists)*, `--ex-focus-among-ranges-outline` *(the thin border of the Focus among several ranges, added by [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) on 2026-10-12; (2026-10-12, decided with the user: it defaults to `--ex-focus-outline`))*, `--ex-heading-mark-background` *(the ordinary marked Heading shade, ADR-0008 D1)*, `--ex-heading-mark-whole-background` *(the whole-axis shade, ADR-0008 D1)*, `--ex-heading-mark` *(the Heading Mark's line, letters and selected corner, added by [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) on 2026-10-13; (2026-10-13, decided with the user: it defaults to `--ex-focus-outline`))*, `--ex-grid-focus-outline` *(exists)* |
 | Cell State | the six `--ex-state-*` *(exist)* — each a colour; `--ex-state-modified-mark` is the corner mark's *(a whole `box-shadow` until 2026-10-07; see the fourth correction below)* |
 | Tone | `--ex-tone-positive-color`, `--ex-tone-negative-color` — default `inherit`, so a declared tone paints nothing until a theme says what colour it is ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) |
 | Row Kind | the four `--ex-row-group/total-*` *(exist)* |
@@ -446,3 +446,45 @@ per cell, so P5 is untouched.
   Its width is one Device Pixel, `--ex-dp`, and is not a token.
 - **Forced colours** do not draw the border, and restate the Focus by its outline, as everywhere
   there.
+
+## Added by ADR-0008's note of 2026-10-13
+
+- **Internal classes**, which may change without notice: `ex-heading-mark`, one box of the Heading
+  Mark over a run of marked Headings, joined by `ex-heading-mark-column` on a column's Headings, whose
+  line is on its bottom edge, or `ex-heading-mark-row` on the Row Headings, whose line is on its right
+  edge; and its layers, `ex-heading-marks-pinned` in the header band over the Pinned Columns' headers
+  and `ex-heading-marks-rows` in the Viewport over the Row Headings. The core decides them from the
+  Selection. UX-4's walk names them.
+- **Visual Token**: `--ex-heading-mark`, the colour of the Heading Mark's line *(2026-10-13, decided
+  with the user: where nothing names it, it is the Focus outline's colour, `--ex-focus-outline`, so a
+  Theme or a Wrapper that sets only the Focus outline colours both, and no Wrapper maps it)*. On a
+  Sheet that is `#217346`, the Focus outline's colour on the Paper, which the readings of 2026-10-12
+  measured as Excel's line (R4). Its width is two Device Pixels, `--ex-dp`, and is not a token.
+- **Forced colours** keep the line and restate it in `Highlight`, as a range's outline is.
+
+### The rest of the Heading Mark *(2026-10-14, D1, decided with the user in ADR-0008)*
+
+The marked Headings also have a shade and coloured letters, and the corner's triangle takes the
+mark's colour while every cell is selected. The line, letters and selected triangle read
+`--ex-heading-mark`. Two Visual Tokens carry the shade: `--ex-heading-mark-background` for part of
+an axis, and `--ex-heading-mark-whole-background` for a whole axis. Their bare-grid defaults mix
+system ink or the mark into the Heading's ground; the Sheet's light defaults are `#E1E1E1` and
+`#D3F0E0`, and MudBlazor maps the shades onto its palette. The frame still follows its colour scheme
+(ADR-0071), and a Consumer's token wins. These are colours, never geometry or C# parameters.
+
+The internal classes `ex-heading-marked` and `ex-heading-whole` identify the two appearances on
+header cells and on each painted Row Heading's hidden `ex-heading-state` marker. The marker is
+owned by the root, immediately after the painted row, and exists whether or not that row is
+selected. CSS sibling conditions paint the original Row Heading's shade and ink, retaining its
+inherited and directly styled typography. The row receives no Selection parameter. The corner takes
+`ex-headings-corner-marked` only for complete coverage of the grid. The line overlay is
+pointer-transparent; the original Heading elements retain their gestures. State markers and the
+corner remain `aria-hidden`, so the accessibility tree hears no duplicate. Forced colours discard
+the shades and keep the line and the marked ink in `Highlight`.
+
+Implementation note (2026-10-15): the ordinary shade mixes system text at 12% into the
+Heading ground; the whole-axis shade mixes the mark colour at 20%. The MudBlazor Wrapper maps
+these tokens to its text-primary/surface and primary/surface at the same proportions, taking
+the text colour's RGB channels without its alpha so the label ground is opaque. These are
+theme defaults, not Excel measurements; a Consumer's tokens win. The Sheet's light defaults are
+the D1 readings above, while its dark frame uses the same system-colour mixes.

@@ -318,7 +318,8 @@ test('Ctrl+A over 10⁶ × 100 is one rectangle, counted as 10⁸, and the next 
 
     // Ctrl+A over 10^8 cells adds the overlay rectangles and nothing else: with A and B pinned and
     // the Focus in A, a tint and a box in each layer the range reaches, and the pinned shade layer
-    // that holds its pinned tint (ADR-0206, DOM-2 as restated on 2026-10-11).
+    // that holds its pinned tint (ADR-0206), plus the Heading Mark in the scrollable header
+    // band it now reaches (ADR-0008 D1/D2). The pinned header already had its mark.
     const grid = page.locator('.ex-grid');
     await expect(grid.locator('.ex-shade-pinned > .ex-range-tint')).toHaveCount(1);
     await expect(grid.locator('.ex-selection-pinned > .ex-range')).toHaveCount(1);
@@ -326,7 +327,9 @@ test('Ctrl+A over 10⁶ × 100 is one rectangle, counted as 10⁸, and the next 
     await expect(grid.locator('.ex-selection > .ex-range')).toHaveCount(1);
     await circuitQuiet();
     const after = await elementCount(page);
-    expect(after - before).toBe(5);
+    await expect(grid.locator(".ex-header > .ex-heading-mark")).toHaveCount(1);
+    await expect(grid.locator(".ex-heading-marks-pinned > .ex-heading-mark")).toHaveCount(1);
+    expect(after - before).toBe(6);
 
     // Not frozen: the next key is taken and collapses the selection to one cell.
     await page.keyboard.press('ArrowDown');

@@ -9,7 +9,7 @@ namespace ExGrid.Components;
 /// colour are the stylesheet's, so nothing here reads either (ADR-0027/0028).
 ///
 /// <para>Two places, each the overlay's reason for being one: the mark is drawn over the Headings,
-/// never as a class on them, so no row learns the Selection and every row still skips its render
+/// with row shades and repeated labels in the same overlay, so no row learns the Selection and every row still skips its render
 /// when the Selection moves (ADR-0003). A column's mark stands in the header band, at the band's
 /// last tier, where the leaves stand beneath any Header Group (ADR-0032); a Pinned Column's part
 /// rides a sticky layer of its own at the band's left, as a pinned Header Group does, and the rest

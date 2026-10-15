@@ -1841,12 +1841,17 @@ public class ShippedStylesheetTests
         // The token is that border's alone.
         Assert.Single(Regex.Matches(css, "--ex-focus-among-ranges-outline"));
 
-        // Under forced colors the Focus's box is not drawn, and the Focus is restated by its outline,
-        // as everywhere there, beside ranges that are each outlined.
-        var none = Assert.Single(forced, rule => rule.Selectors.Contains(".ex-focus::after"));
-        Assert.Matches(new Regex(@"content:\s*none;"), none.Body);
-        Assert.DoesNotContain(forced, rule => rule.Selectors.Any(selector => selector.Contains("ex-focus-among-ranges", StringComparison.Ordinal)));
-        Assert.Contains(forced, rule => rule.Selectors.Contains(".ex-focus") && Regex.IsMatch(rule.Body, @"outline-style:\s*solid;"));
+        // D2: the restored border stays inside except at Heading-covered sides. Multi-range
+        // rectangles still have their outlines, while the Focus has its own visible border.
+        var restored = Assert.Single(forced, rule => rule.Selectors.Contains(".ex-focus.ex-focus-among-ranges::after"));
+        var restore = Declarations(restored.Body).ToDictionary(d => d.Property, d => d.Value);
+        Assert.Equal("\"\"", restore["content"]);
+        Assert.Equal("var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))) solid Highlight", restore["border"]);
+        Assert.Contains("--ex-outline-heading-t", restore["top"], StringComparison.Ordinal);
+        Assert.Contains("--ex-outline-heading-l", restore["left"], StringComparison.Ordinal);
+        Assert.Equal("0", restore["right"]);
+        Assert.Equal("0", restore["bottom"]);
+        Assert.Contains(forced, rule => rule.Selectors.Contains(".ex-range") && Regex.IsMatch(rule.Body, @"outline-style:\s*solid;"));
     }
 
     [Fact] // ADR-0008 (2026-10-13) / ADR-0029 / ADR-0090: the Heading Mark is a line of two Device Pixels on the Headings' edge toward the cells, in a token of its own that is the Focus outline's colour unless set; forced colors keep it, in Highlight
@@ -1855,7 +1860,7 @@ public class ShippedStylesheetTests
         var (css, _) = CoreStylesheet();
         var (outside, forced) = ForcedColorsSplit();
         IReadOnlyDictionary<string, string> Declared(string selector)
-            => Declarations(Assert.Single(outside, rule => rule.Selectors.SequenceEqual([selector])).Body)
+            => Declarations(Assert.Single(outside, rule => rule.Selectors.Contains(selector)).Body)
                 .ToDictionary(d => d.Property, d => d.Value);
 
         // The box is the Headings' own, placed inline by the core; the line is its border on one edge,
@@ -1870,7 +1875,12 @@ public class ShippedStylesheetTests
         // user), so a Theme or a Wrapper that colours the Focus colours the mark too; CanvasText where
         // nothing names either, as the Focus outline's own default.
         Assert.Equal("var(--ex-heading-mark, var(--ex-focus-outline, CanvasText))", mark["border-color"]);
-        Assert.Single(Regex.Matches(css, "--ex-heading-mark"));
+        // D1 reuses the ink for letters and the selected corner, with separate shade tokens.
+        Assert.Equal("var(--ex-heading-mark, var(--ex-focus-outline, CanvasText))", Declared(".ex-header-cell.ex-heading-marked")["color"]);
+        Assert.Equal("var(--ex-heading-mark, var(--ex-focus-outline, CanvasText))", Declared(".ex-row:where(:has(+ .ex-heading-state.ex-heading-marked)) > .ex-row-heading")["color"]);
+        Assert.Contains("--ex-heading-mark-background", Declared(".ex-row:where(:has(+ .ex-heading-state.ex-heading-marked)) > .ex-row-heading")["background-color"], StringComparison.Ordinal);
+        Assert.Contains("--ex-heading-mark-whole-background", Declared(".ex-row:where(:has(+ .ex-heading-state.ex-heading-whole)) > .ex-row-heading")["background-color"], StringComparison.Ordinal);
+        Assert.Equal("var(--ex-heading-mark, var(--ex-focus-outline, CanvasText))", Declared(".ex-headings-corner-marked::after")["background-color"]);
         // Two Device Pixels on the edge toward the cells: a column's Heading's bottom, a row's right.
         Assert.Equal(new Dictionary<string, string> { ["border-bottom-width"] = "calc(2 * var(--ex-dp, 1px))" }, Declared(".ex-heading-mark-column"));
         Assert.Equal(new Dictionary<string, string> { ["border-right-width"] = "calc(2 * var(--ex-dp, 1px))" }, Declared(".ex-heading-mark-row"));
@@ -1885,6 +1895,7 @@ public class ShippedStylesheetTests
             CultureInfo.InvariantCulture);
         Assert.InRange(ZIndex(".ex-heading-marks-pinned"), ZIndex(".ex-header .ex-pinned") + 1, ZIndex(".ex-headings-corner") - 1);
         Assert.True(ZIndex(".ex-heading-marks-rows") > ZIndex(".ex-row-heading"));
+        Assert.Equal("none", Declared(".ex-heading-state")["display"]);
         Assert.InRange(ZIndex(".ex-heading-mark"), 1, ZIndex(".ex-header .ex-pinned") - 1);
         var layers = Declarations(Assert.Single(outside, rule => rule.Selectors.SequenceEqual([".ex-heading-marks-pinned", ".ex-heading-marks-rows"])).Body)
             .ToDictionary(d => d.Property, d => d.Value);

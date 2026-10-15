@@ -54,7 +54,7 @@ public class PivotRenderingTests : PivotTestContext
 
         // The labels are pinned: their header's mark rides the band's pinned layer, the value's passes
         // beneath it. No Row Headings, so no row is marked.
-        cut.WaitForAssertion(() => Assert.Single(grid.FindAll(".ex-header > .ex-heading-marks-pinned > .ex-heading-mark-column")));
+        Assert.Single(grid.FindAll(".ex-header > .ex-heading-marks-pinned > .ex-heading-mark-column"));
         Assert.Single(grid.FindAll(".ex-header > .ex-heading-mark-column"));
         Assert.Empty(grid.FindAll(".ex-heading-mark-row"));
         Assert.Equal(renders, grid.FindComponents<ExGridRow<PivotDisplayRow>>().Select(row => row.RenderCount).ToList());

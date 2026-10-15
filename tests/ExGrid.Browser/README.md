@@ -708,6 +708,10 @@ nobody had asked for. What that means when writing a test:
   a number uses one Device Pixel of its cell's right padding (VZ-19, ADR-0090). Without it, where
   `system-ui` is DejaVu Sans, as on Linux, the column painted a pixel narrower than declared cut it
   to `1…` (ticket 18, 2026-10-10).
+- `selection-look.spec.mjs` — UX-17/18/19: header rules, equal Focus/range edges beside
+  Headings and pinned blocks, single and multiple ranges, the fill handle and forced colours.
+  Heading-covered sides use the Heading Mark (D2); scroll readings await the circuit and frames,
+  never a fixed delay.
 - `heading-mark.spec.mjs` — the Heading Mark (UX-21, ADR-0008 of 2026-10-13), read in Device
   Pixels: on `/sheet`, under the built-in Chrome and `ExSheet.MudBlazor`'s, R4's shape of a range and
   a cell apart from it marks the Headings of their columns and rows with a line of two Device Pixels
@@ -720,7 +724,11 @@ nobody had asked for. What that means when writing a test:
   scrollable column's mark passing beneath the pinned headers as the column does; the line kept under
   forced colors, in `Highlight`. On `/pivot`, under both Chromes, ExPivot's report header marked over
   the selected value's column and not over the pinned labels'. What the core decides — which Headings,
-  which boxes, that no row renders for them — is layer 2's (`HeadingMarkTests`).
+  which boxes, that no row renders for them — is layer 2's (`HeadingMarkTests`). D1 also reads
+  ordinary/whole-axis shades, letters and the all-selected corner, Consumer tokens, both dark
+  frames, and Group/Total Row Heading weights. D2 reads every bare-grid outline side at the header,
+  in normal and forced colours at 100% and a real 150%, so the mark cannot double a covered side
+  or become thinner than the other sides.
 - `format-cells.spec.mjs` — Format Cells under the built-in Chrome (ADR-0071, SH-45, DC-60;
   tickets 52 and 56) on `/sheet` and `/sheets`: a popover inside the Sheet's box, opened from the
   Context Menu and Ctrl+1 (case 22) with the keyboard on its tab; the arrows switching the tabs; OK as

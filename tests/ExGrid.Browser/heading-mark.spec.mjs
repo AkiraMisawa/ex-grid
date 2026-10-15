@@ -64,7 +64,7 @@ async function parkPointer(page, grid) {
 }
 
 /** A Row Heading of the Sheet by its row number. */
-const rowHeading = (grid, number) => grid.locator(`.ex-row[aria-rowindex="${number}"] > .ex-row-heading`);
+const rowHeading = (grid, number) => grid.locator(`.ex-row:has([id$="-r${number - 1}c0"]) > .ex-row-heading`);
 
 /** The mark's colour as the cascade resolved it, in sRGB bytes. */
 async function markColour(page, grid) {
@@ -131,11 +131,8 @@ for (const [chrome, mode] of CHROMES) {
         await circuitQuiet();
         await onDevicePixels(page, columnHeader(grid, 'C'));
 
-        // A single range's outline lies inside it where the header would cover its outer pixels
-        // (ADR-0008, 2026-10-01; UX-18): its top side is the two Device Pixels just below the Heading,
-        // beside the mark's two on the Heading's edge (built as both decisions read; Excel's outline
-        // and its Heading's line were one line there, R5 (2)).
-        expect(await marked(page, columnHeader(grid, 'C'), outline)).toEqual({ ...ON_THE_BOTTOM, bottom: [-2, -1, 0, 1] });
+        // D2: the Heading Mark replaces the covered top; no second line lies inside the cells.
+        expect(await marked(page, columnHeader(grid, 'C'), outline)).toEqual(ON_THE_BOTTOM);
         expect(await marked(page, columnHeader(grid, 'B'), outline)).toEqual(NOWHERE);
         for (const number of [1, 2, 7, 12]) {
             const edges = await marked(page, rowHeading(grid, number), outline);
@@ -150,8 +147,121 @@ for (const [chrome, mode] of CHROMES) {
         await twoFrames(page);
         for (const letters of ['A', 'B', 'D']) {
             const edges = await marked(page, columnHeader(grid, letters), outline);
-            expect(edges, `${letters}: ${JSON.stringify(edges)}`).toEqual({ ...ON_THE_BOTTOM, bottom: [-2, -1, 0, 1] });
+            expect(edges, `${letters}: ${JSON.stringify(edges)}`).toEqual(ON_THE_BOTTOM);
         }
+    });
+}
+
+// D1 (2026-10-14): read the painted shade as well as the resolved text colour. The original
+// Row Heading retains its typography, receives the press, and keeps the ARIA tree unchanged.
+async function headingPaint(page, locator) {
+    const box = await locator.boundingBox();
+    const region = await painted(page, { x: box.x, y: box.y, width: box.width, height: box.height });
+    return region.at(box.x + 4, box.y + 4);
+}
+
+for (const [chrome, mode] of CHROMES) {
+    test(`UX-21 D1 (${chrome} Chrome): ordinary and whole-axis Headings have distinct shades and marked letters; the corner marks all cells (ADR-0008)`, async ({ page }) => {
+        await openSheet(page, mode);
+        const grid = sheet(page);
+        await clickCell(grid, 'C3');
+        await expectFocusAt(grid, 'C3');
+        await parkPointer(page, grid);
+        await circuitQuiet();
+        const markerCount = await grid.locator('.ex-heading-state').count();
+        expect(markerCount).toBe(await grid.locator('.ex-row-heading').count());
+        const c = columnHeader(grid, 'C');
+        const label = rowHeading(grid, 3);
+        await expect(label).toHaveCount(1);
+        const originalHeading = await label.elementHandle();
+        const ink = await markColour(page, grid);
+        const ordinary = mode === 'builtin' ? [225, 225, 225] : await resolvedColour(page,
+            await c.evaluate(el => getComputedStyle(el).backgroundColor));
+        if (mode === 'builtin') expect(ink).toEqual([33, 115, 70]);
+        for (const heading of [c, label]) {
+            expect(paints(await headingPaint(page, heading), ordinary)).toBe(true);
+            expect(await resolvedColour(page, await heading.evaluate(el => getComputedStyle(el).color))).toEqual(ink);
+        }
+        await expect(grid.locator('.ex-headings-corner-marked')).toHaveCount(0);
+        await expect(grid.locator('.ex-header-cell.ex-heading-whole')).toHaveCount(0);
+        await expect(grid.locator('.ex-heading-marks-rows')).toHaveAttribute('aria-hidden', 'true');
+
+        await pressAt(c);
+        await expect(c).toHaveClass(/ex-heading-whole/);
+        await parkPointer(page, grid);
+        await circuitQuiet();
+        const whole = mode === 'builtin' ? [211, 240, 224] : await resolvedColour(page,
+            await c.evaluate(el => getComputedStyle(el).backgroundColor));
+        expect(whole).not.toEqual(ordinary);
+        expect(paints(await headingPaint(page, c), whole)).toBe(true);
+        expect(paints(await headingPaint(page, label), ordinary)).toBe(true);
+        await expect(grid.locator('.ex-heading-state.ex-heading-whole')).toHaveCount(0);
+        await expect(grid.locator('.ex-headings-corner-marked')).toHaveCount(0);
+
+        await pressAt(rowHeading(grid, 3));
+        await expect(label.locator('xpath=../following-sibling::*[1]')).toHaveClass(/ex-heading-whole/);
+        await parkPointer(page, grid);
+        await circuitQuiet();
+        expect(paints(await headingPaint(page, label), whole)).toBe(true);
+        expect(paints(await headingPaint(page, c), ordinary)).toBe(true);
+        await expect(grid.locator('.ex-header-cell.ex-heading-whole')).toHaveCount(0);
+
+        await pressAt(grid.locator('.ex-headings-corner'));
+        expect(await grid.locator('.ex-heading-state').count()).toBe(markerCount);
+        const corner = grid.locator('.ex-headings-corner-marked');
+        await expect(corner).toHaveCount(1);
+        await parkPointer(page, grid);
+        await circuitQuiet();
+        expect(await resolvedColour(page, await corner.evaluate(el => getComputedStyle(el, '::after').backgroundColor))).toEqual(ink);
+        const box = await corner.boundingBox();
+        const triangle = await painted(page, box);
+        expect(paints(triangle.at(box.x + box.width * 0.65, box.y + box.height * 0.65), ink)).toBe(true);
+        expect(paints(await headingPaint(page, c), whole)).toBe(true);
+        expect(paints(await headingPaint(page, label), whole)).toBe(true);
+
+        expect(await label.evaluate((element, original) => element === original, originalHeading)).toBe(true);
+        await originalHeading.dispose();
+
+        // Consumer tokens win over both the Sheet defaults and the Wrapper's palette.
+        await alterPage(page, () => {
+            const root = document.querySelector('.ex-sheet .ex-grid');
+            const before = root.getAttribute('style');
+            root.style.setProperty('--ex-heading-mark', 'rgb(180, 0, 20)');
+            root.style.setProperty('--ex-heading-mark-whole-background', 'rgb(220, 235, 250)');
+            return () => before === null ? root.removeAttribute('style') : root.setAttribute('style', before);
+        });
+        await twoFrames(page);
+        expect(paints(await headingPaint(page, c), [220, 235, 250])).toBe(true);
+        expect(paints(await headingPaint(page, label), [220, 235, 250])).toBe(true);
+        expect(await resolvedColour(page, await label.evaluate(el => getComputedStyle(el).color))).toEqual([180, 0, 20]);
+    });
+}
+
+for (const [chrome, mode] of CHROMES) {
+    test(`UX-21 D1 (${chrome} Chrome): marked Row Headings follow the dark frame, outside the Paper's light island (ADR-0008/0071)`, async ({ page }) => {
+        const shades = {};
+        for (const scheme of ['light', 'dark']) {
+            await page.goto(`/sheet?case=paper&scheme=${scheme}&chrome=${mode}`);
+            const grid = sheet(page);
+            await expect(cell(grid, 'A1')).toHaveText('red');
+            await expect(page.locator('#sheet-positions .ex-row').first()).toBeVisible();
+            await clickCell(grid, 'C3');
+            await expectFocusAt(grid, 'C3');
+            await parkPointer(page, grid);
+            await circuitQuiet();
+            const header = columnHeader(grid, 'C');
+            const label = rowHeading(grid, 3);
+            const shadeCss = await header.evaluate(el => getComputedStyle(el).backgroundColor);
+            const shade = await resolvedColour(page, shadeCss);
+            shades[scheme] = shade;
+            expect(await resolvedColour(page, await label.evaluate(el => getComputedStyle(el).backgroundColor))).toEqual(shade);
+            expect(paints(await headingPaint(page, header), shade), `${scheme} header: ${shadeCss}`).toBe(true);
+            expect(paints(await headingPaint(page, label), shade), `${scheme} row: ${shadeCss}`).toBe(true);
+            // The cell's recorded Fill remains its document colour in both schemes.
+            expect(paints(await headingPaint(page, cell(grid, 'C3')), [255, 255, 0])).toBe(true);
+        }
+        expect(shades.dark).not.toEqual(shades.light);
+        expect(Math.max(...shades.dark)).toBeLessThan(150);
     });
 }
 
@@ -276,9 +386,9 @@ test('UX-21: under forced colors the line is kept, two Device Pixels on the edge
     await page.emulateMedia({ forcedColors: 'active' });
     // The range is restated by its outline, in Highlight (ADR-0008), and the mark's line in the same.
     const read = () => grid.evaluate((root) => ({
-        range: getComputedStyle(root.querySelector('.ex-selection > .ex-range')).outlineStyle,
+        range: getComputedStyle(root.querySelector('.ex-selection > .ex-range'), '::after').borderTopStyle,
         same: getComputedStyle(root.querySelector('.ex-heading-mark')).borderBottomColor
-            === getComputedStyle(root.querySelector('.ex-selection > .ex-range')).outlineColor,
+            === getComputedStyle(root.querySelector('.ex-selection > .ex-range'), '::after').borderTopColor,
     }));
     await expect.poll(read).toEqual({ range: 'solid', same: true });
     // Chrome's forced Highlight may be translucent (rgba(5, 0, 73, 0.8) under its emulation), so the
@@ -328,3 +438,90 @@ for (const [chrome, mode] of CHROMES) {
         expect(await marked(page, header(0), outline)).toEqual(NOWHERE);
     });
 }
+
+for (const forced of [false, true]) {
+    test(`UX-21 D2 at the display's scale: a bare grid's four outline sides are two Device Pixels at the header (${forced ? 'forced colours' : 'normal colours'}, ADR-0008/0090)`, async ({ page }) => {
+        await page.goto('/wide');
+        const grid = page.locator('.ex-grid').first();
+        const at = (row, column) => grid.locator(`[id$='-r${row}c${column}']`);
+        await expect(at(0, 3)).toBeVisible();
+        await at(0, 3).click({ force: true });
+        if (forced) await page.emulateMedia({ forcedColors: 'active' });
+        await parkPointer(page, grid);
+        await circuitQuiet();
+        await twoFrames(page);
+        await onDevicePixels(page, at(0, 3));
+        const { line, ground } = await grid.evaluate(root => ({
+            line: getComputedStyle(root.querySelector('.ex-heading-mark')).borderBottomColor,
+            ground: getComputedStyle(root.querySelector('.ex-header')).backgroundColor,
+        }));
+        const channels = css => /rgba?\(([^)]*)\)/.exec(css)[1].split(',').map(Number);
+        const [r, g, b, alpha = 1] = channels(line);
+        const colour = blend([r, g, b], Math.round(alpha * 255) / 255, channels(ground).slice(0, 3));
+        for (const range of [false, true]) {
+            if (range) {
+                // Keep the restored forced-colours Focus away from the top-left samples.
+                // Its own border is tested separately; these pixels read the range's border.
+                await at(2, 4).click({ force: true });
+                await at(0, 3).click({ force: true, modifiers: ['Shift'] });
+                await parkPointer(page, grid);
+                await circuitQuiet();
+            }
+            const first = await at(0, 3).boundingBox();
+            const last = range ? await at(2, 4).boundingBox() : first;
+            const box = { x: first.x, y: first.y, width: last.x + last.width - first.x, height: last.y + last.height - first.y };
+            const edges = await edgePixels(page, box, colour);
+            for (const side of ['left', 'right', 'top', 'bottom']) {
+                expect(edges[side], `${range ? 'range' : 'cell'} ${side}: ${JSON.stringify(edges)}`).toHaveLength(2);
+            }
+        }
+    });
+}
+
+test('UX-21 D1: marked Row Headings keep Group and Total weights, including Consumer tokens and stable-class rules (ADR-0008/0024/0029)', async ({ page }) => {
+    await page.goto('/appearance');
+    const grid = page.locator('#appearance-headings .ex-grid');
+    await expect(grid.locator('.ex-row').first()).toBeVisible();
+    await grid.scrollIntoViewIfNeeded();
+    for (const direct of [false, true]) {
+        if (direct) await alterPage(page, () => {
+            const style = document.createElement('style');
+            style.textContent = '#appearance-headings .ex-row-group { font-weight: 900; } #appearance-headings .ex-row-total > .ex-row-heading { font-weight: 600; font-style: italic; }';
+            document.head.append(style);
+            return () => style.remove();
+        });
+        for (const [row, weight] of [[3, direct ? '900' : '700'], [5, direct ? '600' : '800']]) {
+            const heading = grid.locator(`.ex-row:has([id$='-r${row}c0']) > .ex-row-heading`);
+            const marker = heading.locator('xpath=../following-sibling::*[1]');
+            await expect(heading).toHaveCSS('font-weight', weight);
+            const box = await heading.boundingBox();
+            await pressAt(grid.locator(`[id$='-r${row}c1']`));
+            await expect(marker).toHaveClass(/ex-heading-marked/);
+            await expect(heading).toHaveCSS('font-weight', weight);
+            if (direct && row === 5) await expect(heading).toHaveCSS('font-style', 'italic');
+            expect(await heading.boundingBox()).toEqual(box);
+            await pressAt(heading);
+            await expect(marker).toHaveClass(/ex-heading-whole/);
+            await expect(heading).toHaveCSS('font-weight', weight);
+        }
+    }
+});
+
+test('UX-21 D1: a whole Row Heading shade mixes its own ground, independent of the column header ground (ADR-0008/0029)', async ({ page }) => {
+    await page.goto('/appearance');
+    const grid = page.locator('#appearance-headings .ex-grid');
+    await expect(grid.locator('.ex-row').first()).toBeVisible();
+    await alterPage(page, () => {
+        const style = document.createElement('style');
+        style.textContent = '#appearance-headings { --ex-heading-background: rgb(25, 45, 65); --ex-header-background: rgb(200, 200, 200); --ex-heading-mark: rgb(20, 160, 80); }';
+        document.head.append(style);
+        return () => style.remove();
+    });
+    const heading = rowHeading(grid, 4);
+    await pressAt(heading);
+    await parkPointer(page, grid);
+    await circuitQuiet();
+    await expect(heading.locator('xpath=../following-sibling::*[1]')).toHaveClass(/ex-heading-whole/);
+    const expected = blend([20, 160, 80], 0.2, [25, 45, 65]);
+    expect(paints(await headingPaint(page, heading), expected)).toBe(true);
+});

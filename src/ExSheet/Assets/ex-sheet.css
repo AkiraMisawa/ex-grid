@@ -51,7 +51,7 @@
 }
 /* A row not yet painted shows its bar in the Ink, as it would on a light page. */
 :where(.ex-sheet) .ex-placeholder { --ex-placeholder-background: var(--ex-sheet-ink, #000); }
-:where(.ex-sheet) .ex-viewport > :not(.ex-row) {
+:where(.ex-sheet) .ex-viewport > :not(.ex-row):where(:not(.ex-heading-marks-rows)) {
     color-scheme: light;
     --ex-editor-background: var(--ex-sheet-paper, #fff);
     --ex-editor-color: var(--ex-sheet-ink, #000);
@@ -142,8 +142,21 @@
    on them as drawn. Two classes, so it outranks the core's rule in any order; under forced colors the
    core's restatement is made again here for the same reason. */
 .ex-sheet .ex-heading-mark { border-color: var(--ex-heading-mark, var(--ex-focus-outline, #217346)); }
+/* D1's light-frame colours; the dark frame follows the system scheme, and a Theme or
+   Wrapper token wins in either. Original Row Headings retain the frame's colour scheme. */
+.ex-sheet .ex-header-cell.ex-heading-marked, .ex-sheet .ex-row:where(:has(+ .ex-heading-state.ex-heading-marked)) > .ex-row-heading {
+    background-color: var(--ex-heading-mark-background, light-dark(#e1e1e1, color-mix(in srgb, CanvasText 12%, Canvas)));
+    color: var(--ex-heading-mark, var(--ex-focus-outline, #217346));
+}
+.ex-sheet .ex-header-cell.ex-heading-whole, .ex-sheet .ex-row:where(:has(+ .ex-heading-state.ex-heading-whole)) > .ex-row-heading {
+    background-color: var(--ex-heading-mark-whole-background, light-dark(#d3f0e0, color-mix(in srgb, var(--ex-heading-mark, var(--ex-focus-outline, #217346)) 20%, Canvas)));
+}
+.ex-sheet .ex-headings-corner-marked::after { background-color: var(--ex-heading-mark, var(--ex-focus-outline, #217346)); }
 @media (forced-colors: active) {
+    .ex-sheet .ex-focus::after, .ex-sheet .ex-focus.ex-focus-among-ranges::after, .ex-sheet .ex-range-single::after { border-color: Highlight; box-shadow: none; }
     .ex-sheet .ex-heading-mark { border-color: Highlight; }
+    .ex-sheet .ex-header-cell.ex-heading-marked, .ex-sheet .ex-header-cell.ex-heading-whole, .ex-sheet .ex-row:where(:has(+ .ex-heading-state.ex-heading-marked)) > .ex-row-heading, .ex-sheet .ex-row:where(:has(+ .ex-heading-state.ex-heading-whole)) > .ex-row-heading { background-color: Canvas; color: Highlight; }
+    .ex-sheet .ex-headings-corner-marked::after { background-color: Highlight; }
 }
 
 /* The Row Headings' edge is Excel's #ABABAB over white (Part C): the core's grey at the alpha that

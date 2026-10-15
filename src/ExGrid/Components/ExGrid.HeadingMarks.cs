@@ -17,6 +17,13 @@ public partial class ExGrid<TRow>
     private static readonly object HeadingMarksLayerKey = new();
 
     private GridSelection? _markedSelection;
+    private GridExtent _markedExtent;
+    private ColumnRange[] _wholeColumns = [];
+    private RowRange[] _wholeRows = [];
+    private bool _everyCellMarked;
+    private RowRange? _headingStatesWindow;
+    private HeadingStateKey[] _headingStates = [];
+    private sealed record HeadingStateKey(int Row);
     private ColumnRange[] _markedColumns = [];
     private RowRange[] _markedRows = [];
 
@@ -49,11 +56,84 @@ public partial class ExGrid<TRow>
     private void MarkHeadings()
     {
         var selection = _selection.Selection;
-        if (ReferenceEquals(selection, _markedSelection))
+        if (ReferenceEquals(selection, _markedSelection) && _markedExtent == Extent)
             return;
         _markedSelection = selection;
+        _markedExtent = Extent;
         _markedColumns = HeadingMarks.Columns(selection);
         _markedRows = HeadingMarks.Rows(selection);
+        _wholeColumns = HeadingMarks.WholeColumns(selection, _markedExtent);
+        _wholeRows = HeadingMarks.WholeRows(selection, _markedExtent);
+        _everyCellMarked = _wholeColumns is [{ Start: 0 } whole] && whole.Count == _markedExtent.ColumnCount;
+    }
+
+    private string HeadingsCornerClass
+    {
+        get
+        {
+            MarkHeadings();
+            return _everyCellMarked ? "ex-headings-corner ex-headings-corner-marked" : "ex-headings-corner";
+        }
+    }
+
+    private int ColumnHeadingMark(int column)
+    {
+        MarkHeadings();
+        return Contains(_wholeColumns, column) ? 2 : Contains(_markedColumns, column) ? 1 : 0;
+    }
+
+    // Binary searches over the union's disjoint runs: no per-heading collection or total-row scan.
+    private static bool Contains(ColumnRange[] runs, int column)
+    {
+        var low = 0;
+        var high = runs.Length - 1;
+        while (low <= high)
+        {
+            var middle = low + ((high - low) / 2);
+            var run = runs[middle];
+            if (column < run.Start) high = middle - 1;
+            else if ((long)column >= (long)run.Start + run.Count) low = middle + 1;
+            else return true;
+        }
+        return false;
+    }
+
+    private static bool Contains(RowRange[] runs, int row)
+    {
+        var low = 0;
+        var high = runs.Length - 1;
+        while (low <= high)
+        {
+            var middle = low + ((high - low) / 2);
+            var run = runs[middle];
+            if (row < run.Start) high = middle - 1;
+            else if ((long)row >= (long)run.Start + run.Count) low = middle + 1;
+            else return true;
+        }
+        return false;
+    }
+
+    private string RowHeadingStateClass(int row)
+    {
+        MarkHeadings();
+        return Contains(_wholeRows, row) ? "ex-heading-state ex-heading-marked ex-heading-whole"
+            : Contains(_markedRows, row) ? "ex-heading-state ex-heading-marked" : "ex-heading-state";
+    }
+
+    // One hidden state marker follows every painted Row Heading, including unmarked ones, so
+    // selection size never changes their DOM count. CSS paints the original Heading, retaining
+    // its typography even when its row skips rendering. Retain keys only for this Window;
+    // their distinct type cannot collide with rows or other overlays.
+    private HeadingStateKey[] HeadingStates(RowRange painted)
+    {
+        if (_headingStatesWindow != painted)
+        {
+            _headingStatesWindow = painted;
+            _headingStates = new HeadingStateKey[painted.Count];
+            for (var offset = 0; offset < painted.Count; offset++)
+                _headingStates[offset] = new HeadingStateKey(painted.Start + offset);
+        }
+        return _headingStates;
     }
 
     /// <summary>The marked columns' styles in one layer of the header band, one slot per run, null

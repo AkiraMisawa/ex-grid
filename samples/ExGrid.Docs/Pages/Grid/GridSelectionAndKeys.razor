@@ -25,7 +25,7 @@
             Headings corner, its triangle takes the mark's colour when every cell is selected.
         </p>
         <p>
-            The mark changes without repainting data rows. Its line, letters and selected corner triangle use
+            The mark changes without rendering the data row components again. Its line, letters and selected corner triangle use
             <code>--ex-heading-mark</code>, the Focus outline's colour unless you set it. The shades use
             <code>--ex-heading-mark-background</code> and <code>--ex-heading-mark-whole-background</code>
             (<a href="exgrid/appearance#visual-tokens">Visual Tokens</a>). Where the header or a Row Heading covers
@@ -33,6 +33,8 @@
             beside it. Against a pinned block, or a grid edge without a Heading, the outline stays inside.
             Select a range in the example below, then Ctrl+click elsewhere: the columns between the two ranges
             stay unmarked.
+            The ordinary Focus and single-range outline defaults to two device pixels on every side,
+            including at display scales above 100%.
         </p>
         <p>
             Positions are in the current order. When the order of the rows changes — a sort, a filter, a row

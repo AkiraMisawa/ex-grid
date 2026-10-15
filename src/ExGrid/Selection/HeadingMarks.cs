@@ -4,7 +4,7 @@ namespace ExGrid.Selection;
 /// Which Headings the Heading Mark marks (ADR-0008, 2026-10-13): every column and every row that
 /// holds part of the Selection, for every Selection, as Excel marks its Headings. Answered as runs,
 /// each a stretch of consecutive marked columns or rows, so the overlay draws one rectangle per run
-/// and never one per Heading: what the mark costs depends on how many runs there are, never on how
+/// for its lines: what the union calculation costs depends on how many ranges there are, never on how
 /// many columns or rows they cover (ADR-0008's economy). A run is the union of the ranges' spans
 /// on that axis, with spans that overlap or touch joined, so a line runs on unbroken across
 /// neighbouring marked Headings, as Excel's ran on under A and B for A1:B2 (observed: the readings

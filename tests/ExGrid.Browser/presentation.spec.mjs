@@ -635,6 +635,7 @@ const INTERNAL_CLASSES = [
     // The Heading Mark (ADR-0008 of 2026-10-13, entered in ADR-0029): each box, the edge its line is
     // on, the header band's pinned layer and the Row Headings' layer.
     'ex-heading-mark', 'ex-heading-mark-column', 'ex-heading-mark-row', 'ex-heading-marks-pinned', 'ex-heading-marks-rows',
+    'ex-heading-marked', 'ex-heading-whole', 'ex-heading-state', 'ex-headings-corner-marked',
 ];
 
 /** The same section's prefixes: every popover part not named above, and every part of Find. */
@@ -828,6 +829,11 @@ test('every class under the root is one ADR-0029 names, stable or internal (UX-4
     await page.keyboard.press('Escape');
     await expect(sheetEditor(sheetGrid)).toHaveCount(0);
 
+    // D1: the whole-axis shade and all-selected corner are distinct internal states.
+    await sheetGrid.locator('.ex-headings-corner').click({ force: true });
+    await expect(sheetGrid.locator('.ex-headings-corner-marked')).toHaveCount(1);
+    await expect(sheetGrid.locator('.ex-heading-state.ex-heading-whole').first()).toBeAttached();
+
     const worn = new Map(await page.evaluate(() => [...window.__exClassesWorn]));
     // The walk reached what it set out to: a list that stopped exercising a state would pass
     // while checking nothing. What it does not put on — Placeholder rows, the pager, the Size Tip,
@@ -838,7 +844,8 @@ test('every class under the root is one ADR-0029 names, stable or internal (UX-4
         'ex-mark', 'ex-mark-all', 'ex-resize-guide', 'ex-drop-indicator', 'ex-row-heading', 'ex-headings-corner',
         'ex-formula-bar', 'ex-name-box', 'ex-fill-handle', 'ex-popover', ...(clipboardWatched ? ['ex-copied-range'] : []),
         'ex-completion', 'ex-reference-outline',
-        'ex-heading-mark', 'ex-heading-mark-column', 'ex-heading-mark-row', 'ex-heading-marks-pinned', 'ex-heading-marks-rows'];
+        'ex-heading-mark', 'ex-heading-mark-column', 'ex-heading-mark-row', 'ex-heading-marks-pinned', 'ex-heading-marks-rows',
+        'ex-heading-marked', 'ex-heading-whole', 'ex-heading-state', 'ex-headings-corner-marked'];
     expect(reached.filter((name) => !worn.has(name)), 'states the walk set out to reach and did not').toEqual([]);
 
     // Each kind of name the section lists was met, so none of them is a pattern that matches nothing.

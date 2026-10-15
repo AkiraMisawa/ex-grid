@@ -43,12 +43,22 @@ public class WrapperStylesheetTests
     public void No_wrapper_maps_the_focus_among_ranges(string package, string file)
         => Assert.DoesNotContain("ex-focus-among-ranges", Stylesheet(package, file), StringComparison.Ordinal);
 
-    [Theory] // ADR-0008 (2026-10-13) / ADR-0030: the Heading Mark follows the Focus outline each Wrapper maps, with no mapping and no rule of the Wrapper's own
+    [Theory] // ADR-0008 (2026-10-13) / ADR-0030: the Heading Mark ink follows the Focus outline; shades are palette tokens, never internal selectors
     [InlineData("ExGrid.MudBlazor", "mud-ex-grid.css")]
     [InlineData("ExSheet.MudBlazor", "mud-ex-sheet.css")]
     [InlineData("ExPivot.MudBlazor", "mud-ex-pivot.css")]
-    public void No_wrapper_maps_the_heading_mark(string package, string file)
-        => Assert.DoesNotContain("heading-mark", Stylesheet(package, file), StringComparison.Ordinal);
+    public void No_wrapper_maps_the_heading_mark_ink_or_its_internal_classes(string package, string file)
+    {
+        var css = Stylesheet(package, file);
+        Assert.DoesNotMatch(@"--ex-heading-mark\s*:", css);
+        Assert.DoesNotContain(".ex-heading-", css, StringComparison.Ordinal);
+    }
+
+    [Theory] // ADR-0008 D1 / ADR-0030: the core Wrapper's shades follow its palette on all three products.
+    [InlineData("--ex-heading-mark-background", "rgb(from var(--mud-palette-text-primary) r g b / 1)", "12%")]
+    [InlineData("--ex-heading-mark-whole-background", "var(--mud-palette-primary)", "20%")]
+    public void ADR0008_heading_shades_map_to_opaque_palette_mixes(string token, string ink, string portion)
+        => Assert.Contains($"{token}: color-mix(in srgb, {ink} {portion}, var(--mud-palette-surface));", WrapperStylesheet(), StringComparison.Ordinal);
 
     [Theory] // ADR-0052 (2026-09-29) / ADR-0029 / DC-44: the Wrapper paints the Size Tip from its tokens, as MudBlazor paints a tooltip
     [InlineData("--ex-size-tip-background", "var(--mud-palette-gray-darker)")]
