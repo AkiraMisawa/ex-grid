@@ -40,7 +40,7 @@
     },
     {
       "id": "TRANSPOSE-005",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: COUNTA counts a blank TRANSPOSE keeps, as Excel counted SORT's and UNIQUE's (SORT-021, UNIQUE-017); 1 if it passes over it as over a blank cell",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=COUNTA(TRANSPOSE(Q1:Q2))"},
@@ -49,7 +49,7 @@
     },
     {
       "id": "TRANSPOSE-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the blank TRANSPOSE keeps, taken out by INDEX, is blank to ISBLANK, as Excel read SORT's (SORT-022); FALSE if TRANSPOSE turned it into the 0 it spills as",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=ISBLANK(INDEX(TRANSPOSE(Q1:Q2),1,2))"},

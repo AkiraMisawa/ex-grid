@@ -103,7 +103,7 @@
     },
     {
       "id": "FILTER-012",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: COUNTA counts a blank FILTER keeps, as Excel counted SORT's and UNIQUE's (SORT-021, UNIQUE-017); 1 if it passes over it as over a blank cell",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=COUNTA(FILTER(Q1:Q2,H1:H2>0))"},
@@ -112,7 +112,7 @@
     },
     {
       "id": "FILTER-013",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: the blank FILTER keeps, taken out by INDEX, is blank to ISBLANK, as Excel read SORT's (SORT-022); FALSE if FILTER turned it into the 0 it spills as",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=ISBLANK(INDEX(FILTER(Q1:Q2,H1:H2>0),2))"},

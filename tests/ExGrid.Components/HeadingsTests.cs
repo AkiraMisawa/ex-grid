@@ -116,7 +116,7 @@ public class HeadingsTests : GridTestContext
         Assert.Equal(rows.Count, headings.Count);
         for (var i = 0; i < rows.Count; i++)
         {
-            var index = int.Parse(rows[i].GetAttribute("aria-rowindex")!, CultureInfo.InvariantCulture);
+            var index = AriaRows.PositionOf(rows[i]) + 1;
             // First in the row's flow, so every column after it starts where the band ends.
             Assert.Same(headings[i], rows[i].FirstElementChild);
             Assert.Equal(index.ToString(CultureInfo.InvariantCulture), headings[i].TextContent);

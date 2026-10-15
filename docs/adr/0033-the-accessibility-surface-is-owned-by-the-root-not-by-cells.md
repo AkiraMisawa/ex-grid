@@ -19,8 +19,8 @@ one line that *was* a decision is visible as the exception.
 | Emitted | Derived from |
 |---|---|
 | `role="grid"` on the root, `row` / `gridcell` / `columnheader` beneath | the ARIA grid pattern, unmodified |
-| `aria-rowcount` / `aria-colcount` = **the total**, not what is in the DOM | virtualisation. The DOM holds a Window ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)); `TotalCount` is already a parameter |
-| `aria-rowindex` / `aria-colindex` = **the absolute index**, on every painted row and cell | the same lie, on both axes. Column virtualisation slices horizontally too, so a cell's position among its siblings is wrong in exactly the way a row's is |
+| `aria-rowcount` / `aria-colcount` = **the total**, not what is in the DOM; the row count holds the header's rows as well as the data rows *(2026-10-12, below)* | virtualisation. The DOM holds a Window ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)); `TotalCount` is already a parameter |
+| `aria-rowindex` / `aria-colindex` = **the absolute index**, on every painted row and cell, header rows and Header Group cells included; a row's index counts the header's rows before it *(2026-10-12, below)* | the same lie, on both axes. Column virtualisation slices horizontally too, so a cell's position among its siblings is wrong in exactly the way a row's is |
 | one tab stop; `tabindex="0"` on the root and `aria-activedescendant` naming the Focus cell | the capture-phase listener is already on the instance root ([ADR-0018](./0018-multiple-instances-must-be-independent.md), [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)), so DOM focus already lives there and nowhere else. `aria-activedescendant` is the only way to say "the Focus is over there" without moving it. [ADR-0020](./0020-action-and-template-columns.md) already committed to the one-tab-stop pattern |
 | `aria-sort` on the sorted header | `SortSpec` is already there ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)) |
 | the real value as the accessible name of a `####` cell | [ADR-0016](./0016-column-width-and-overflow.md) already promises it. Overflow is already decided per cell before paint, so the attribute is written only on cells that hash |
@@ -48,9 +48,10 @@ So the root does the talking:
 
 ```
 root   role="grid"  aria-multiselectable="true"
-       aria-rowcount="1000000"  aria-colcount="40"
+       aria-rowcount="1000001"  aria-colcount="40"
        aria-activedescendant="ex-7-r412-c3"
-row    aria-rowindex="413"
+header aria-rowindex="1"
+row    aria-rowindex="414"
 cell   aria-colindex="4"  id="ex-7-r412-c3"
        — and no aria-selected, here or anywhere
 live   "4 rows by 3 columns selected, B2 to D5"
@@ -128,7 +129,8 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   and it kept both: over the core's own actions the keyboard stays on the root and
   `aria-activedescendant` moves to the chosen action's **button** — the attribute may name any
   descendant, and Chromium's accessibility tree resolves it to that button (checked over CDP;
-  what a screen reader then says is still owed a real one, like the wording below). Only a
+  what a screen reader then says is still owed a real one, like the wording below — *no longer
+  owed: the tree is the check, 2026-10-13, "Verified against the accessibility tree" below*). Only a
   Template's control takes DOM focus, which it already did when clicked; leaving it by Escape
   puts both back.)*
 - **On a grid that edits, the tab stop and `aria-activedescendant` are the Keyboard Field's**
@@ -144,6 +146,14 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   *(The sixteenth Windows run, 2026-10-02, tried Narrator: Tab into `/sheet` read "Enter Table, 1048576
   by 16384, edit", and ↓ sent DOM focus to `body`, though the run's own way of recording the speech
   may have caused that. Not settled; the real screen reader stays owed, as the user chose. ADR-0080.)*
+  *(2026-10-12, decided with the user after the seventeenth Windows run: Narrator's scan mode taking
+  the arrows is not a keyboard defect, since with scan mode off every arrow reached the grid, and
+  NVDA's silence on that run's first pass is recorded only. ADR-0080 has what each reader said: with
+  Narrator's scan mode off, DOM focus stayed on the Keyboard Field; in scan mode it did not.)*
+  *(2026-10-13, decided with the user: no screen reader is owed; see "Verified against the
+  accessibility tree" below. Where DOM focus goes after ↓ was read by the seventeenth Windows run's
+  Part F under NVDA, under Narrator with scan mode off, and with neither: on the Keyboard Field after every ↓, so ↓ to
+  `body` was the sixteenth run's recording, not a keyboard defect.)*
 - **The scroller is not a tab stop either** *(found while implementing, 2026-09-26)*. Chrome makes
   a scroll container with no tabbable content a tab stop of its own once it overflows, so every
   overflowing display-only grid had a second stop inside it — `/wide` at any size, and `/cells`
@@ -197,6 +207,8 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   when it takes focus. The live region keeps its two writers.
 - **Whether the announcement should name the corner cells by column header or by index** is a
   wording question, settled against a real screen reader in layer 3 rather than in prose here.
+  *(2026-10-13: no screen reader settles it, "Verified against the accessibility tree" below. The
+  sentence stays as built, the corners by index, until a user's report asks for a change.)*
 
 ## Added after the fifth Windows run: a collapse to one cell empties the range sentence *(2026-09-29, decided with the user)*
 
@@ -212,3 +224,72 @@ no longer selected is the plausible wrong answer this design refuses.
 **The decision:** when the Selection becomes one cell or none, the region is emptied if it holds a
 range sentence. Emptying a `role="status"` region is not read aloud. A relayed Reject or a copy
 refusal stays where it is. A Focus move that changes no Selection still writes nothing (A11Y-10).
+
+## Added after the seventeenth Windows run: the header's rows are counted *(2026-10-12)*
+
+The indices above counted the data rows alone: the first data row was `aria-rowindex="1"`, and the
+header row carried no index. The seventeenth Windows run read NVDA on `/sheet`
+(`verification/2026-10-11-windows-17/report.md`, Part F): near the top D10's row was `row 11` and
+A1's `row 2`, while the attribute said 10 and 1, so NVDA counted the rows before a row, the header
+row among them. Far down, where the DOM holds a Window, the only number the page gives a reader is
+`aria-rowindex`. The same row could have been given two numbers, one at the top and one a scroll
+away.
+
+*(2026-10-12, decided with the user: **ARIA's row indices count the header's rows first.**)*
+
+- The header row is `aria-rowindex="1"`. A data row's `aria-rowindex` is its position plus the
+  header's rows plus one; `aria-rowcount` is the data rows' total plus the header's rows. A hidden
+  header ([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md)) has no rows, and the first data row
+  is 1 again.
+- Cell ids are unchanged: `ex-7-r412-c3` still names the row at position 412, now
+  `aria-rowindex="414"`.
+- ExSheet and ExPivot inherit it. Under ExSheet's Column Headings, A1 is row 2, so the grid gives a
+  Sheet row its number plus one, at the top and far down alike: the number NVDA and Narrator counted
+  near the top.
+- *(Found while building, 2026-10-12.)* Under Header Groups
+  ([ADR-0032](./0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md)) each tier is a row
+  of its own, top first, before the header row, and the header is a `rowgroup` holding them. Each of
+  those rows is `display: contents`, so the band lays out, paints and stacks as the one element did. A
+  rectangle carries `aria-colindex` (its first member's), `aria-colspan`, and `aria-rowspan` where it
+  spans more than one tier.
+- *(Left open while building, 2026-10-12.)* Saying the Sheet's own row number — `aria-rowindextext`,
+  or a Row Heading as a `rowheader` cell — is not done. It stays open, to be taken up on a user's
+  report: since 2026-10-13 no run reads what a screen reader does with either ("Verified against
+  the accessibility tree" below), so no Windows run is asked.
+
+Chromium's accessibility tree holds each header row as a row owning its column headers,
+`display: contents` included, and the data rows' indices consecutive after them, at the top and
+after a scroll far down (layer 3, over the DevTools protocol: `aria-rows.spec.mjs`). That is the
+check, as the section below has it. The seventeenth run heard readers near the top only; what one
+says of a row far down is learned from users' reports.
+
+## Verified against the accessibility tree, not a screen reader *(2026-10-13, decided with the user)*
+
+**The accessibility surface is verified against the browser's accessibility tree. No screen reader
+is run to verify a release.**
+- **The checklist** is the W3C ARIA Authoring Practices grid pattern: the roles, names and states,
+  and the keys its tables list.
+- **Layer 2** asserts the roles and `aria-*` attributes the core renders, before and after an
+  interaction (A11Y-1 to A11Y-20).
+- **Layer 3** reads Chromium's tree over the DevTools protocol's `Accessibility` domain (A11Y-21).
+  It also reads where DOM focus is after a key: `key-field.spec.mjs`'s ADR-0080 and KB-12 tests.
+
+**The model.** This is how MudBlazor verifies its components. Its contributor guide says a screen
+reader is not required: it diagnoses against the tree and the APG pattern, with axe-core optional.
+The user weighed it against the grid's heavier pattern — a single tab stop, an active descendant,
+counts and indexes across a virtualised Window, a live region — and chose it on 2026-10-13. Those
+are all properties of the tree, and the tree is what a screen reader reads.
+
+**What it gives up, said plainly:** what a particular screen reader makes of a correct tree. It is
+learned from users' reports and taken up then.
+- The sixteenth Windows run's Narrator transcript ("Scan" for ↓) was such a case. The seventeenth
+  run's Part F found DOM focus on the Keyboard Field after every ↓ without a reader, under NVDA,
+  and under Narrator with scan mode off. In Narrator's scan mode the arrows belonged to the reader,
+  as the record above distinguishes.
+
+**What it closes.** The places above that kept a real screen reader owed are closed: the action
+button's spoken name, the Keyboard Field's active descendant, and the corner cells' wording. The
+Definition of Done's §21.11 row on the Cell Editor's own ARIA semantics leaves the checks by hand.
+- The richer announced contract — the mode announcements — stays out of `0.1.0`'s scope, as decided
+  on 2026-10-11.
+- A later version that takes it up specifies it as a tree and checks it in layer 3.

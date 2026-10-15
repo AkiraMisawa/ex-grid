@@ -33,7 +33,8 @@ block on `main` before it uses the first number.
 | 0180–0189 | `claude/backlog-cleanup` | ExSheet's last Decide functions: the random functions (ADR-0180) and `LET` (ADR-0181), decided with the user 2026-10-10; a remote report's read-ahead (ADR-0182) and the Range Request Margin (ADR-0183), decided 2026-10-11 |
 | 0190–0199 | `claude/docs-site-releases-roadmap` | The Docs Site restructured after mudblazor.com and ag-grid.com: Release Notes, the Roadmap, and how the site is published (decided with the user 2026-10-11) |
 | 0200–0209 | `claude/first-stable-release` | What the first stable version needs: its scope, the public C# surface, the Blazor Server declaration, and ADR-0042 rewritten at sign-off (decided with the user from 2026-10-11) |
-| 0210– | free | reserve a block of ten |
+| 0210–0219 | `codex/handoff-toolbar` | More Colours opening keyboard and committing held text (decided with the user, 2026-10-14) |
+| 0220– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 

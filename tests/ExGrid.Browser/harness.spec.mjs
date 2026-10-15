@@ -222,6 +222,28 @@ test('after a failure, the next test boots (ADR-0056)', async ({ page }) => {
     expect(await documentOf(page)).not.toBe(document);
 });
 
+// CON-8 (ADR-0005): ExGrid logs nothing on a healthy path, so a log or an info line from its own
+// code fails the test, as an error does (CON-1): a line that names itself, as the module's own
+// writes do with [ex-grid], and a .NET log line under an ExGrid category. Written from the test,
+// because the product writes none; the harness's verdict is what is under test. A page's own line
+// that names no ExGrid code is not the grid's, and passes.
+test('CON-8 / ADR-0005: a console.log written by ExGrid fails the test', async ({ page }) => {
+    test.fail(true, 'logs on purpose as ExGrid, which CON-8 fails');
+    await openFeatures(page);
+    await page.evaluate(() => console.log('[ex-grid] harness.spec: a log line on purpose'));
+});
+
+test('CON-8 / ADR-0005: a console.info under an ExGrid category fails the test', async ({ page }) => {
+    test.fail(true, 'logs on purpose under an ExGrid category, which CON-8 fails');
+    await openFeatures(page);
+    await page.evaluate(() => console.info('info: ExGrid.Components.ExGrid[0] harness.spec: an info line on purpose'));
+});
+
+test('CON-8 / ADR-0005: a console.log that names no ExGrid code is not the grid\'s, and passes', async ({ page }) => {
+    await openFeatures(page);
+    await page.evaluate(() => console.log('harness.spec: the page\'s own line'));
+});
+
 test.describe(() => {
     test.use({ freshDocument: true });
     test('a test that asks for a document of its own loads its page for real (ADR-0056)', async ({ page }) => {

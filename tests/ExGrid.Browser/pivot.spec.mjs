@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, setRoundTrip } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
 
@@ -63,8 +63,22 @@ async function entriesOf(page, title) {
     return names.map((n) => n.slice('Options for '.length));
 }
 
+// The same, inside one of several pivots on a page (/pivot?second=1, PV-10).
+const nthPivot = (page, n) => page.locator('.ex-pivot').nth(n);
+const reportIn = (one) => one.locator('.ex-pivot-sheet > .ex-grid');
+const paneIn = (one) => one.getByRole('region', { name: 'PivotTable Fields' });
+const fieldsIn = (one) => paneIn(one).getByRole('list', { name: 'PivotTable Fields' });
+const fieldIn = (one, caption) => fieldsIn(one).getByRole('listitem').filter({ has: one.page().getByRole('checkbox', { name: caption, exact: true }) });
+const areaIn = (one, title) => paneIn(one).getByRole('list', { name: title, exact: true });
+const entryIn = (one, caption) => paneIn(one).getByRole('button', { name: `Options for ${caption}`, exact: true });
+async function entriesIn(one, title) {
+    const names = await areaIn(one, title).getByRole('button').evaluateAll((buttons) =>
+        buttons.map((b) => b.getAttribute('aria-label')).filter((n) => n?.startsWith('Options for ')));
+    return names.map((n) => n.slice('Options for '.length));
+}
+
 /** How many rows the report has: the grid says so on its root, whatever it paints. */
-const reportRows = async (page) => Number(await report(page).getAttribute('aria-rowcount'));
+const reportRows = (page) => dataRowCount(report(page));
 
 /** Whether two boxes overlap. */
 const overlaps = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
@@ -139,12 +153,18 @@ for (const chrome of ['builtin', 'mud']) {
 
         test(`ADR-0061: entries dropped on the report are removed from Rows and Columns (${chrome})`, async ({ page }) => {
             await open(page, chrome);
+            let changes = 0;
             for (const [caption, area, remaining] of [['Desk', 'Rows', ['Region']], ['Product', 'Columns', []]]) {
                 await entry(page, caption).dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
                 await expect.poll(() => entriesOf(page, area)).toEqual(remaining);
                 await expect(field(page, caption).getByRole('checkbox')).not.toBeChecked();
+                // The page counts LayoutChanged, which is raised for the layout the report shows
+                // (ADR-0061). The pane shows a removal at once, but the report only once its
+                // question is answered, and a drop made while that question is out cancels it, so
+                // the first removal would never be shown nor counted (ADR-0066). Each removal is
+                // counted before the next drop.
+                await expect(page.locator('#pivot-status')).toContainText(`${++changes} changes made in the pane`);
             }
-            await expect(page.locator('#pivot-status')).toContainText('2 changes made in the pane');
         });
 
         test(`ADR-0061: a report removal waits for Defer Layout Update (${chrome})`, async ({ page }) => {
@@ -189,6 +209,95 @@ for (const chrome of ['builtin', 'mud']) {
             await circuitQuiet();
             expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
             await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
+        });
+
+        test(`PV-10 / ADR-0061: Σ Values dropped on the report stays where it is, and so does every other field (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            // A second Value Field brings Σ Values into Columns, after Product.
+            await field(page, 'Notional').getByRole('checkbox').check();
+            await expect.poll(() => entriesOf(page, 'Columns')).toEqual(['Product', 'Σ Values']);
+            const values = await entriesOf(page, 'Values');
+            expect(values).toHaveLength(2);
+            await expect(page.locator('#pivot-status')).toContainText('1 changes made in the pane');
+
+            await entry(page, 'Σ Values').dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
+            await circuitQuiet();
+            expect(await entriesOf(page, 'Columns')).toEqual(['Product', 'Σ Values']);
+            expect(await entriesOf(page, 'Values')).toEqual(values);
+            expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+            await expect(page.locator('#pivot-status')).toContainText('1 changes made in the pane');
+        });
+
+        test.describe('with room for the whole page', () => {
+            // Tall enough that the page's own links, both pivots' reports and both panes stand in
+            // the window at once: a scroll between the press and the drop would cancel the drag.
+            test.use({ viewport: { width: 1400, height: 2200 } });
+
+            test(`PV-10 / ADR-0061: a drag from outside the pivot, dropped on the report, an Area or the list of fields, changes nothing — after a cancelled drag too (${chrome})`, async ({ page }) => {
+                await open(page, chrome);
+                // A drag of the pivot's own, cancelled over the report: it leaves nothing behind
+                // for a later drop to take.
+                const from = await entry(page, 'Desk').boundingBox();
+                const to = await report(page).boundingBox();
+                await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+                await page.mouse.down();
+                await page.mouse.move(to.x + 80, to.y + 60, { steps: 10 });
+                await expect(pivot(page).locator('.ex-pivot-report-drop-remove')).toHaveText('Remove Field');
+                await page.keyboard.press('Escape');
+                await page.mouse.up();
+
+                // A link of the page's, dragged with the browser's own drag and drop: every target
+                // takes the drop (each prevents dragover's default), and none of them changes anything.
+                const link = page.getByRole('link', { name: 'All pages', exact: true });
+                await link.dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
+                await link.dragTo(areaList(page, 'Rows').locator('xpath=..'), { targetPosition: { x: 12, y: 8 } });
+                await link.dragTo(entry(page, 'Region'));
+                await link.dragTo(fieldsList(page));
+                await circuitQuiet();
+                expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+                expect(await entriesOf(page, 'Columns')).toEqual(['Product']);
+                expect(await entriesOf(page, 'Filters')).toEqual(['Currency']);
+                await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
+            });
+
+            test(`PV-10 / ADR-0061: a field or an entry dragged from another pivot changes neither pivot (${chrome})`, async ({ page }) => {
+                await page.goto(`/pivot?chrome=${chrome}&second=1`);
+                const [first, second] = [nthPivot(page, 0), nthPivot(page, 1)];
+                for (const one of [first, second]) {
+                    await expect(reportIn(one).locator('.ex-viewport .ex-row').first()).toBeVisible({ timeout: 30_000 });
+                    await expect(entryIn(one, 'Region')).toBeVisible();
+                }
+                await expect.poll(() => first.evaluate((p) => getComputedStyle(p).display)).toBe('flex');
+                const unchanged = async () => {
+                    for (const one of [first, second]) {
+                        expect(await entriesIn(one, 'Rows')).toEqual(['Region', 'Desk']);
+                        expect(await entriesIn(one, 'Columns')).toEqual(['Product']);
+                        await expect(fieldIn(one, 'Month').getByRole('checkbox')).not.toBeChecked();
+                    }
+                    await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
+                    await expect(page.locator('#pivot-second-status')).toHaveText('0 changes made in the second pane');
+                };
+
+                // The first pivot's entry onto the second's report, which would remove it from its own.
+                await entryIn(first, 'Desk').dragTo(reportIn(second), { targetPosition: { x: 80, y: 60 } });
+                // The first's field onto the second's Columns, which would place it there.
+                await fieldIn(first, 'Month').dragTo(areaIn(second, 'Columns').locator('xpath=..'), { targetPosition: { x: 12, y: 8 } });
+                await circuitQuiet();
+                await unchanged();
+                // The second's entry onto the first's report, onto an entry of the first's, and onto
+                // the first's list of fields.
+                await entryIn(second, 'Desk').dragTo(reportIn(first), { targetPosition: { x: 80, y: 60 } });
+                await entryIn(second, 'Desk').dragTo(entryIn(first, 'Region'));
+                await entryIn(second, 'Region').dragTo(fieldsIn(first));
+                await circuitQuiet();
+                await unchanged();
+
+                // Each pivot still takes a drag of its own: the second's Desk dropped on its own report.
+                await entryIn(second, 'Desk').dragTo(reportIn(second), { targetPosition: { x: 80, y: 60 } });
+                await expect.poll(() => entriesIn(second, 'Rows')).toEqual(['Region']);
+                await expect(page.locator('#pivot-second-status')).toHaveText('1 changes made in the second pane');
+                expect(await entriesIn(first, 'Rows')).toEqual(['Region', 'Desk']);
+            });
         });
 
         test(`ADR-0059: the − button collapses an Item, and the Focus stays on it (${chrome})`, async ({ page }) => {
@@ -318,6 +427,47 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toBeFocused();
             await page.keyboard.press('ArrowDown');
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+        });
+
+        test(`ADR-0070 (decided with the user, 2026-10-13): Escape in the dialog's grid, then ↓ typed at once, closes the dialog and moves the report's Focus, as typed slowly (${chrome})`, async ({ page }) => {
+            await open(page, chrome, '&details=dialog');
+            await firstValue(page).dblclick({ force: true });
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
+            const dialog = page.getByRole('dialog', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
+            const records = dialog.locator('.ex-grid');
+            await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
+            await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
+            await expect(records).toBeFocused();
+            await expect(records).toHaveAttribute('aria-activedescendant', /-r0c0$/);
+            await setRoundTrip(80);
+
+            // On a circuit the dialog stands a round trip and more after the Escape: the ↓ typed meanwhile
+            // is the report's, passed out of the records' grid, held and handed on with the keyboard.
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('ArrowDown');
+
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+            await expect(dialog).toHaveCount(0);
+            await expect(report(page)).toBeFocused();
+            await circuitQuiet();
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+        });
+
+        test(`ADR-0070 (decided with the user, 2026-10-13): Escape on the dialog's Close, then ↓, ↓ typed at once, closes it and moves the report's Focus two rows (${chrome})`, async ({ page }) => {
+            await open(page, chrome, '&details=dialog');
+            await firstValue(page).dblclick({ force: true });
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
+            const dialog = page.getByRole('dialog', { name: /^Details: / });
+            await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
+            await setRoundTrip(80);
+
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('ArrowDown');
+            await page.keyboard.press('ArrowDown');
+
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
+            await expect(dialog).toHaveCount(0);
+            await expect(report(page)).toBeFocused();
         });
 
         test(`ADR-0070/0012: Escape held in the dialog's grid closes the dialog once, and its repeats leave the report the keyboard (${chrome})`, async ({ page }) => {
@@ -512,6 +662,82 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(menu).toHaveCount(0);
             await expect(entry(page, 'Region')).toBeFocused();
             await expect(entry(page, 'Region')).toHaveAttribute('aria-expanded', 'false');
+        });
+
+        test(`ADR-0061 (decided with the user, 2026-10-13): Escape in a field's menu, then Enter typed at once, runs no command and opens the menu again from its entry, as typed slowly (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await entry(page, 'Region').click();
+            const menu = page.getByRole('menu', { name: 'Options for Region' });
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await setRoundTrip(80);
+
+            // On a circuit the menu stands a round trip after the Escape, Move Down holding the keyboard:
+            // the Enter typed meanwhile is the entry's, which the keyboard goes back to, not Move Down's.
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('Enter');
+
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await expect(entry(page, 'Region')).toHaveAttribute('aria-expanded', 'true');
+            await circuitQuiet();
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+            await expect(menu).toHaveCount(1);
+            await page.keyboard.press('Escape');
+            await expect(menu).toHaveCount(0);
+            await expect(entry(page, 'Region')).toBeFocused();
+        });
+
+        test(`ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, Enter on a field's entry and Enter typed at once press the menu's first command, as typed slowly (${chrome})`, async ({ page }) => {
+            test.skip(!SERVER, 'WebAssembly opens the menu in the task of the press: no key is typed while it opens');
+            await open(page, chrome);
+            await entry(page, 'Region').click();
+            const menu = page.getByRole('menu', { name: 'Options for Region' });
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await page.keyboard.press('Escape');
+            await expect(menu).toHaveCount(0);
+            await expect(entry(page, 'Region')).toBeFocused();
+            await setRoundTrip(150);
+
+            // The menu takes the keyboard a round trip after the first Enter: the second, typed on the
+            // entry meanwhile, is held for the menu and presses its first command, Move Down, rather
+            // than pressing the entry again and closing the menu.
+            await page.keyboard.press('Enter');
+            await page.keyboard.press('Enter');
+
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Desk', 'Region']);
+            await expect(menu).toHaveCount(0);
+            // The keyboard goes back to the pane's entries, as after Move Down pressed by hand.
+            const focusedEntry = () => page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '');
+            await expect.poll(focusedEntry).toMatch(/^Options for /);
+            await circuitQuiet();
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Desk', 'Region']);
+            await expect(menu).toHaveCount(0);
+            await expect.poll(focusedEntry).toMatch(/^Options for /);
+        });
+
+        test(`ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, letters typed straight after Enter on a report filter are typed into its Filter…'s search, as typed slowly (${chrome})`, async ({ page }) => {
+            test.skip(!SERVER, 'WebAssembly opens the panel in the task of the press: no key is typed while it opens');
+            await open(page, chrome);
+            const button = toolbarButton(page, 'Filter Currency');
+            await button.focus();
+            await expect(button).toBeFocused();
+            await setRoundTrip(150);
+
+            // The panel's search takes the keyboard a round trip after Enter: the letters typed on the
+            // button meanwhile are carried through the report's grid and typed into the search.
+            await page.keyboard.press('Enter');
+            await page.keyboard.type('US');
+
+            const panel = page.getByRole('dialog', { name: 'Filter Currency' });
+            const search = panel.locator('input').first();
+            await expect(search).toHaveValue('US');
+            await expect(search).toBeFocused();
+            await expect(panel.getByRole('checkbox', { name: 'USD', exact: true })).toBeVisible();
+            await expect(panel.getByRole('checkbox', { name: 'EUR', exact: true })).toHaveCount(0);
+            await circuitQuiet();
+            await expect(search).toHaveValue('US');
+            await page.keyboard.press('Escape');
+            await expect(panel).toHaveCount(0);
+            await expect(button).toBeFocused();
         });
 
         test(`ADR-0061 (PV-11): pressing the report dismisses a field menu and keeps the cell and keyboard (${chrome})`, async ({ page }) => {

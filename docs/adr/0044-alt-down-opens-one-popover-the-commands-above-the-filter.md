@@ -113,7 +113,23 @@ are recorded in [ADR-0009](./0009-filter-panel-contract.md).
   Enter submits the field's form. The core no longer guards anything itself. *(Widened after the
   second review, decided with the user.)* A key that closes the popover — a command run, Enter
   in the filter's field — holds the keys behind it too, until the popover is gone
-  ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)). E held on a checkbox outside
+  ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)). *(2026-10-12, decided with the
+  user: keys typed while the keyboard is in flight back from a closing popover are held and handed on
+  in order to where the keyboard lands, ExGrid-wide, closed by Escape or by a choice.)* So do Escape in
+  any of the grid's popovers, unless a popup of its contents' own answers it (ADR-0039), Enter on a
+  `menuitemradio` — one choice among others, which ARIA's menu pattern closes the menu on — and a
+  press on one, as a press on a `menuitem` already did: the keys wait until the popover has gone and
+  go where the keyboard lands, on the root or where the core or the Consumer handed it on. On the
+  Server host at an 80 ms round trip, ↓ typed straight after Escape in a menu moved in the closing
+  menu and was lost, and a second Enter after a choice chose again. *(As built, a reading of that
+  decision and of ADR-0010's rule for a key that closes a popover.)* So do a panel's OK, Apply and
+  Cancel, which each Chrome marks `ex-popover-closes` (ADR-0010's note of 2026-10-12): pressed, or by
+  Enter or Space, and Enter in a field of a form whose OK is one. ↓ typed straight after Enter on a
+  filter panel's OK was lost on the closing button. *(2026-10-13, decided with the user: the hold is
+  family-wide — ExSheet's and ExPivot's own dialogs, menus and panels outside the root too.)* Outside the
+  root the frame holds the keys itself and hands them on with the keyboard: ADR-0071's note of 2026-10-13
+  for `ExSheet.MudBlazor`'s Format Cells, ADR-0061's and ADR-0070's for ExPivot's menus, panels and Show
+  Details' dialog. E held on a checkbox outside
   the value list ("Add current selection to filter") holds nothing: only the Chrome's element
   marked `ex-value-list` answers letters.
 - **E is not typed where it sends the keyboard.** On WebAssembly the core moves DOM focus inside

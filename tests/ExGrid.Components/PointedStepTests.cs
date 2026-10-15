@@ -72,9 +72,10 @@ public class PointedStepTests : GridTestContext
     private static List<string> PaintedHeaders(IRenderedComponent<ExGrid<TestRow>> cut)
         => [.. cut.FindAll(".ex-header-cell").Select(header => header.TextContent.Trim())];
 
-    /// <summary>The rows painted, by their position in the whole result.</summary>
+    /// <summary>The rows painted, by their position in the whole result: their <c>aria-rowindex</c>
+    /// less the header's row, which ARIA counts first (ADR-0033).</summary>
     private static List<int> PaintedRows(IRenderedComponent<ExGrid<TestRow>> cut)
-        => [.. cut.FindAll(".ex-row").Select(r => int.Parse(r.GetAttribute("aria-rowindex")!, System.Globalization.CultureInfo.InvariantCulture) - 1)];
+        => [.. cut.FindAll(".ex-row").Select(AriaRows.PositionOf)];
 
     [Fact] // ADR-0058 / DC-55: up and down step one row in the grid's current order, in the same column, and move nothing
     public async Task Up_and_down_step_one_row_in_the_current_order()

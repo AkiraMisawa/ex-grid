@@ -325,6 +325,11 @@ public sealed record PivotRowLabel(string? Text, int Indent = 0, PivotToggle? To
 {
     /// <summary>An empty label cell.</summary>
     public static PivotRowLabel None { get; } = new((string?)null);
+
+    // The number a number Item's label shows, in full: its copy carries it, as a value cell's copy
+    // carries its full-precision number (PV-7, ADR-0005), so a label shown in General never
+    // reaches the clipboard rounded (1.23457E+11 is 123456789012.345). Null for any other label.
+    internal double? Number { get; init; }
 }
 
 /// <summary>The expand / collapse button of an outer Item (ADR-0059): which field's Item it
@@ -368,6 +373,11 @@ internal sealed class PivotReportColumn
     public int ValueField { get; }
 
     internal AxisNode Node { get; }
+
+    // The number a number column Item's leaf header shows, in full: a copy with headers carries it
+    // in the HTML flavour, as a cell's copy carries its number (ADR-0005's note of 2026-10-13).
+    // Null for any other header.
+    internal double? HeaderNumber { get; init; }
 }
 
 /// <summary>A rectangle above the value columns' headers (ADR-0032/0060).</summary>

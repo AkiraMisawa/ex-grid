@@ -24,10 +24,36 @@
         <p>
             Values may hold several Value Fields, the same field more than once. They stand side by side
             under <strong>Σ Values</strong>, innermost in Columns; set <code>PivotLayout.ValuesAxis</code> to
-            <code>PivotAxis.Rows</code>, or drag Σ Values to Rows, to stack them instead. <code>Caption</code>
-            gives a Value Field a name of its own, Excel's <em>Custom Name</em>.
+            <code>PivotAxis.Rows</code>, or drag Σ Values to Rows, to stack them instead. Each is captioned as
+            Excel captions it: <code>Sum of Revenue</code>, and <code>Count of Revenue</code> for Count and Count
+            Numbers alike; a caption a second one would repeat takes the next free number, <code>Count of
+            Revenue2</code>. <code>Caption</code> gives a Value Field a name of its own, Excel's <em>Custom
+            Name</em>, which is kept as given.
+        </p>
+        <p>
+            The English words follow your reader's UI culture, as Excel's follow its display language. Under
+            <code>en-GB</code> they are Excel's English (UK) edition's: <code>Max. of Revenue</code>,
+            <code>Min. of Revenue</code>, <strong>Max.</strong> and <strong>Min.</strong> in Value Field Settings'
+            list, <em>Summarise value field by</em> over it. Under any other culture they are its English (US)
+            edition's: <code>Max of Revenue</code>, <code>Min of Revenue</code>, <em>Summarize value field by</em>.
+            Of the words ExPivot paints, those are the only ones the two editions were seen to write differently.
+            Excel was read in those two editions only, so the other English cultures, <code>en-AU</code>,
+            <code>en-IE</code> or <code>en-IN</code>, keep the US words until a reading says otherwise. The report's
+            <code>Culture</code>, which writes its numbers, changes no word, and no culture changes the language:
+            the words are English until <code>Label</code> says otherwise.
+        </p>
+        <p>
+            <code>Label</code> wins over either edition. <code>PivotWords.EnglishUnitedKingdom</code> gives the UK
+            words whatever the culture, <code>PivotWords.EnglishFor</code> keeps the US words under
+            <code>en-GB</code>, and <code>PivotWords.Japanese</code> gives the Japanese edition's, where Count and
+            Count Numbers are both <code>データの個数 / Revenue</code>. Any word is replaced by its id
+            (<code>caption-max</code>, <code>aggregation-max</code>, <code>summarize-by</code>).
         </p>
         <DocsExample Builtin="typeof(Aggregations)" Mud="typeof(AggregationsMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
+        <DocsExample Builtin="typeof(UnitedKingdomWords)" Mud="typeof(UnitedKingdomWordsMud)" Files="@(["Examples/Pivot/Sales.cs"])">
+            The English (UK) words for every reader, through <code>Label</code>: open a Value Field's menu for
+            Value Field Settings… and its list.
+        </DocsExample>
     </DocsSection>
 
     <DocsSection Title="Show Values As">
@@ -44,9 +70,12 @@
     <DocsSection Title="Number formats and ####">
         <p>
             <code>NumberFormat</code> is a .NET format string, applied under the report's <code>Culture</code>:
-            <code>#,##0</code>, <code>#,##0.00</code>, <code>0.0%</code>. Without one a value is shown as
-            General, at most 15 significant digits. A field's <code>format</code> in its declaration labels its
-            Items when it stands in Rows or Columns.
+            <code>#,##0</code>, <code>#,##0.00</code>, <code>0.0%</code>. Without one a value is shown in
+            General as Excel's PivotTable shows it: at most eleven characters besides a minus sign, whatever the
+            column's width, so √2 reads <code>1.414213562</code> and a sum with twelve or more integer digits
+            <code>1.23457E+11</code>. Its minus sign is <code>-</code> in every culture. A field's
+            <code>format</code> in its declaration labels its Items when it stands in Rows or Columns; without one,
+            a number Item is labelled in the same General, as Excel labels it.
         </p>
         <p>
             A value too wide for its column is painted <code>####</code>, as in Excel, never cut short to a
@@ -54,7 +83,9 @@
             fits is painted whole, a subtotal's bold too: it may use one screen pixel of its cell's right padding,
             so a column whose edges round narrower on screen never cuts it. The
             text a cell paints is not what a copy carries: copying puts the full-precision value on the
-            clipboard, so Excel receives the number, not its rounding.
+            clipboard, so Excel receives the number, not its rounding. So does a number Item's label, and a
+            number column Item's header in a copy with headers: <code>1.23457E+11</code> on screen and in the
+            plain text, <code>123456789012.345</code> in the HTML that Excel reads.
         </p>
     </DocsSection>
 
@@ -73,7 +104,7 @@
         <p>
             Double-click a value, or choose <em>Show Details</em> from the Context Menu (right-click, or
             <kbd>Shift</kbd>+<kbd>F10</kbd>), to see the records
-            behind it, Excel's drill-down. They open in a tab at the report's foot, beside the <em>PivotTable</em> tab that leads back, or in a dialog with <code>DetailsView="PivotDetailsView.Dialog"</code>, which Escape closes, leaving the report the keyboard. The records are read
+            behind it, Excel's drill-down. They open in a tab at the report's foot, beside the <em>PivotTable</em> tab that leads back, or in a dialog with <code>DetailsView="PivotDetailsView.Dialog"</code>, which Escape closes, leaving the report the keyboard, with the keys typed as it closes: ↓ typed straight after Escape moves the report's Focus, over Blazor Server too. This holds in the records' grid and on Close, with the keys kept in the order you typed them. The records are read
             under the report's Source Version: if the data has moved on meanwhile, ExPivot says so rather than
             show records that do not add up to the cell.
         </p>

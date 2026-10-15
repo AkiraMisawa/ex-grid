@@ -47,21 +47,37 @@
     the dialog is drawn, and its tabs take the keyboard, round trips after the gesture, and an End
     typed as the dialog appeared was lost (layer 3, CI). They reach the tab shown once the tabs hold
     the keyboard. Their defaults are the element's, prevented: an End there would scroll the page.
+    It is never aria-hidden: it holds focus, and Chromium refuses to hide a focused element, saying
+    so in the console while its accessibility tree is on (the seventeenth Windows run, Part D).
+
+    Closing from the keys — Escape, OK, Cancel — is the keyboard in flight back to the Sheet, and the
+    keys typed meanwhile are the Sheet's, in order (decided with the user, 2026-10-13). On a circuit
+    the dialog stands a round trip after the key that closes it, and once MudBlazor removes it DOM
+    focus is on nothing, where a key reaches no handler at all: ↓ typed straight after Escape was
+    lost. So the close goes the other way round. OK sets what was touched at once, as it is pressed, so
+    that nothing typed after it changes what it sets, and Cancel ends Format Cells; ExSheet keeps this
+    frame on the page until the keyboard has left it (FormatCellsContext.ReturnKeyboardFrom). The
+    element comes back, takes the keyboard out of the dialog, and only then does the dialog close.
+    The keys typed in the dialog from the closing key on (the dialog passes them here) and on the
+    element are held, and the core takes the keyboard back from the element with them, handing them
+    to the grid ahead of any typed after (ADR-0050 item 16's note of 2026-10-12). Closed any other way
+    — the ×, the backdrop — it goes as it always has.
 *@
 @if (_leaving)
 {
-    <span class="mud-ex-sheet-format-cells-leaving" style="position: fixed; top: 0; left: 0" tabindex="-1" aria-hidden="true"
+    <span class="mud-ex-sheet-format-cells-leaving" style="position: fixed; top: 0; left: 0" tabindex="-1"
           @onkeydown="_keyOnTheWay" @onkeydown:preventDefault @ref="_leavingFrom"></span>
 }
 
 @code {
-    // The dialog is modal, closes on Escape and on a press on its backdrop, and has its × — each a
-    // Cancel. MudFormatCellsDialog takes the keyboard to the tab shown itself, and tells MudBlazor's
+    // The dialog is modal, closes on Escape (its own, through this frame) and on a press on its
+    // backdrop, and has its × — each a Cancel. MudFormatCellsDialog takes the keyboard to the tab shown itself, and tells MudBlazor's
     // focus trap to take no first focus of its own, which would land before the tabs are drawn:
     // MudBlazor 9 reads that from the dialog, not from these options. It is as wide on every tab.
     private static readonly DialogOptions Options = new()
     {
-        CloseOnEscapeKey = true,
+        // Escape is the dialog's own, through this frame (MudFormatCellsDialog.Closing).
+        CloseOnEscapeKey = false,
         BackdropClick = true,
         CloseButton = true,
         MaxWidth = MaxWidth.Small,
@@ -81,6 +97,15 @@
     private bool _disposed;
     private IDialogReference? _dialog;
     private readonly TaskCompletionSource _drawn = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    // Closing from the keys: the keys typed from the closing key on, in the dialog and on the element,
+    // held for the Sheet until the core asks for them; whether OK closed it; and whether the element is
+    // to take the keyboard, and the dialog then close, after the render that draws it.
+    private List<KeyboardEventArgs>? _closingKeys;
+    private bool _closingOk;
+    private bool _leaveThenClose;
+    private readonly Func<bool, Task> _closing;
+    private readonly Action<KeyboardEventArgs> _keyWhileClosing;
+    private readonly Func<IReadOnlyList<KeyboardEventArgs>> _takeClosingKeys;
     // Completed by the render that follows the dialog's closing, once the browser has drawn it.
     private TaskCompletionSource? _drawnAfterClosing;
 
@@ -90,8 +115,62 @@
     /// <summary>Where the keys typed on the element go, held in a field (AGENTS.md, the Blazor traps).</summary>
     public MudFormatCellsFrame()
     {
-        _keyOnTheWay = _keys.TypedAsync;
+        _keyOnTheWay = OnElementKeyAsync;
         _keysArrive = _keys.ArrivedAsync;
+        _closing = CloseFromKeysAsync;
+        _keyWhileClosing = key => _closingKeys?.Add(key);
+        _takeClosingKeys = TakeClosingKeys;
+    }
+
+    // A key on the element: on the way into the dialog, or out of it.
+    private Task OnElementKeyAsync(KeyboardEventArgs key)
+    {
+        if (_closingKeys is { } closing)
+        {
+            closing.Add(key);
+            return Task.CompletedTask;
+        }
+        return _keys.TypedAsync(key);
+    }
+
+    // Escape, OK or Cancel in the dialog: OK sets what was touched now, or Cancel ends Format Cells, and
+    // the element takes the keyboard out of the dialog before it closes (decided with the user,
+    // 2026-10-13). Without the core's hand-back from a frame, the dialog closes as it always has.
+    private async Task CloseFromKeysAsync(bool ok)
+    {
+        if (_closingKeys is not null || _disposed) return;
+        if (Context.ReturnKeyboardFrom is null)
+        {
+            _dialog?.Close(ok ? DialogResult.Ok(true) : DialogResult.Cancel());
+            return;
+        }
+        _closingKeys = [];
+        _closingOk = ok;
+        if (ok)
+        {
+            if (!await Context.Ok())
+            {
+                // A refusal the dialog did not see: Format Cells stays, and so does the dialog.
+                _closingKeys = null;
+                return;
+            }
+        }
+        else
+        {
+            Context.Cancel();
+        }
+        _leaving = true;
+        _leaveThenClose = true;
+        _changed = true;
+        StateHasChanged();
+    }
+
+    // The core has taken the keyboard back from the element: the keys held on the way are the grid's.
+    private IReadOnlyList<KeyboardEventArgs> TakeClosingKeys()
+    {
+        var keys = _closingKeys ?? [];
+        _closingKeys = [];
+        return keys;
     }
 
     /// <inheritdoc />
@@ -107,6 +186,12 @@
     {
         if (!firstRender)
         {
+            if (_leaveThenClose)
+            {
+                _leaveThenClose = false;
+                await LeaveThenCloseAsync();
+                return;
+            }
             _drawnAfterClosing?.TrySetResult();
             return;
         }
@@ -125,6 +210,8 @@
             { d => d.KeyboardTaken, (Action)KeyboardTaken },
             { d => d.Drawn, (Action)(() => _drawn.TrySetResult()) },
             { d => d.KeysArrive, _keysArrive },
+            { d => d.Closing, _closing },
+            { d => d.KeyWhileClosing, _keyWhileClosing },
         };
         var dialog = await Dialogs.ShowAsync<MudFormatCellsDialog>(MudFormatCellsDialog.Title, parameters, Options);
         if (_disposed)
@@ -142,10 +229,29 @@
         if (!_drawn.Task.IsCompleted && !dialog.Result.IsCompleted)
         {
             Context.Cancel();
+            // The keyboard was never taken: given back, so ExSheet lets this frame go.
+            await Context.ReturnKeyboard();
             throw new InvalidOperationException(
                 "Format Cells under MudSheetChrome is a MudDialog, and no MudDialogProvider drew it. Add <MudDialogProvider /> to the layout, beside <MudPopoverProvider />.");
         }
         await EndedAsync(dialog);
+    }
+
+    // The element is drawn again: it takes the keyboard out of the dialog, the dialog closes, and the core
+    // takes the keyboard back from the element with the keys held on the way. ExSheet then lets this
+    // frame go.
+    private async Task LeaveThenCloseAsync()
+    {
+        try
+        {
+            await _leavingFrom.FocusAsync(preventScroll: true);
+        }
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            // The circuit went, or the element did.
+        }
+        _dialog?.Close(_closingOk ? DialogResult.Ok(true) : DialogResult.Cancel());
+        await Context.ReturnKeyboardFrom!(_leavingFrom, _takeClosingKeys);
     }
 
     // The dialog has the keyboard: the element it would hand it back to goes.
@@ -165,6 +271,9 @@
     private async Task EndedAsync(IDialogReference dialog)
     {
         var result = await dialog.Result;
+        // Closed from the keys: OK or Cancel was set as it was pressed, and the keyboard goes back from
+        // the element (CloseFromKeysAsync).
+        if (_closingKeys is not null) return;
         await Task.Yield();
         if (!_disposed)
         {

@@ -901,3 +901,169 @@ test.describe('the Server host only', () => {
         await expect(cell(grid, 'D10')).toHaveText(before ?? '');
     });
 });
+
+/**
+ * Notes, from here on, each composition's end: whether it ended in this page's Keyboard Field, and its
+ * text. alterPage takes the listener and the record out as the test ends (ADR-0056). Read with
+ * compositionEnds.
+ */
+async function noteCompositionEnds(page) {
+    await alterPage(page, () => {
+        window.__compositionEnds = [];
+        const listener = (event) => {
+            window.__compositionEnds.push({
+                inKeyField: event.target instanceof Element && event.target.matches('input.ex-key-field'),
+                text: event.data,
+            });
+        };
+        document.addEventListener('compositionend', listener, true);
+        return () => {
+            document.removeEventListener('compositionend', listener, true);
+            delete window.__compositionEnds;
+        };
+    });
+}
+
+const compositionEnds = (page) => page.evaluate(() => window.__compositionEnds);
+
+/** Format Cells: the grid's popover under the built-in Chrome, a MudDialog under ExSheet.MudBlazor's. */
+const formatCellsOf = (page, grid, chrome) => (chrome === 'mud'
+    ? page.locator('.mud-dialog.mud-ex-sheet-format-cells')
+    : grid.locator('.ex-popover-consumer'));
+
+// ADR-0039's notes of 2026-10-01 and 2026-10-13, with ADR-0010 and ADR-0080. While a popover opens —
+// Ctrl+F's panel, Ctrl+1's Format Cells, Format Cells… run from the Context Menu — the keyboard is on
+// the Keyboard Field for a round trip or more on a circuit, and an IME composes there. The keys typed
+// while a popover opens are never the grid's: the composition's text is held with the keys typed after
+// it, and handed to what then holds the keyboard, as a held character is — typed at the caret of the
+// find field; dropped, with the key behind it, on Format Cells' tab, or on the frame of ExSheet.MudBlazor's
+// dialog, a control no keydown carries text to. Before, the hold asked the core to open an edit holding
+// the text, behind the popover, and the edit took the keyboard from it. The 150 ms round trip is what
+// puts the composition in the Keyboard Field, and each test reads that it ended there; on WebAssembly
+// the popover takes the keyboard in the task that draws it, and the composition is its own from the
+// start.
+for (const chrome of ['builtin', 'mud']) {
+    test.describe(`/sheet under the ${chrome} Chrome, a composition finished while a popover opens, on the Server host`, () => {
+        test.skip(!SERVER, 'a round trip exists only on a circuit');
+
+        test.beforeEach(async ({ page }) => {
+            await openSheet(page, chrome);
+        });
+
+        test.afterEach(async () => {
+            await setRoundTrip(0);
+        });
+
+        test('ADR-0039 / ADR-0010 / ED-30: a composition finished while Ctrl+F opens Find is typed into the find field, the key after it behind it, and opens no edit (150 ms)', async ({ page }) => {
+            const grid = sheet(page);
+            await pressAt(grid, 'D10');
+            const before = await cell(grid, 'D10').textContent();
+            await noteCompositionEnds(page);
+            await setRoundTrip(150);
+            const client = await page.context().newCDPSession(page);
+            try {
+                await page.keyboard.press('Control+f');
+                await compose(client, 'か', 'かな');
+                await client.send('Input.insertText', { text: 'かな' });
+                await page.keyboard.type('1');
+            } finally {
+                await client.detach();
+            }
+
+            const field = grid.locator('.ex-popover-find input').first();
+            await expect(field).toBeFocused();
+            await expect(field).toHaveValue('かな1');
+            // It ended in the Keyboard Field, where the hold took it: the case this is about.
+            expect(await compositionEnds(page)).toEqual([{ inKeyField: true, text: 'かな' }]);
+            await circuitQuiet();
+            await expect(field).toHaveValue('かな1');
+            await expect(field).toBeFocused();
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText(before ?? '');
+
+            await page.keyboard.press('Escape');
+            await expect(grid.locator('.ex-popover-find')).toHaveCount(0);
+            await expect(keyField(grid)).toBeFocused();
+            expect(await fieldState(grid)).toEqual({ value: '', drawn: false, focused: true });
+            await expectFieldFocusAt(grid, 'D10');
+        });
+
+        test('ADR-0039 / ADR-0010 / ED-30: a composition finished while Ctrl+1 opens Format Cells is dropped with the key after it, and opens no edit (150 ms)', async ({ page }) => {
+            const grid = sheet(page);
+            const formatCells = formatCellsOf(page, grid, chrome);
+            const number = formatCells.getByRole('tab', { name: 'Number', exact: true });
+            await pressAt(grid, 'D10');
+            const before = await cell(grid, 'D10').textContent();
+            await noteCompositionEnds(page);
+            await setRoundTrip(150);
+            const client = await page.context().newCDPSession(page);
+            try {
+                await page.keyboard.press('Control+1');
+                await compose(client, 'か', 'かな');
+                await client.send('Input.insertText', { text: 'かな' });
+                await page.keyboard.press('End');
+            } finally {
+                await client.detach();
+            }
+
+            await expect(number).toBeFocused();
+            expect(await compositionEnds(page)).toEqual([{ inKeyField: true, text: 'かな' }]);
+            await circuitQuiet();
+            // Neither the text nor the End behind it reached Format Cells: End would have chosen Fill.
+            await expect(number).toBeFocused();
+            await expect(number).toHaveAttribute('aria-selected', 'true');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText(before ?? '');
+
+            // From here the keyboard is Format Cells', and End chooses its last tab as ever.
+            await page.keyboard.press('End');
+            await expect(formatCells.getByRole('tab', { name: 'Fill', exact: true })).toHaveAttribute('aria-selected', 'true');
+            await page.keyboard.press('Escape');
+            await expect(formatCells).toHaveCount(0);
+            await expect(keyField(grid)).toBeFocused();
+            expect(await fieldState(grid)).toEqual({ value: '', drawn: false, focused: true });
+            await expect(cell(grid, 'D10')).toHaveText(before ?? '');
+        });
+
+        test('ADR-0039 / ADR-0010 / ED-30: a composition finished once Format Cells…, run from the Context Menu, has closed it is dropped with the key after it, and opens no edit (150 ms)', async ({ page }) => {
+            const grid = sheet(page);
+            const formatCells = formatCellsOf(page, grid, chrome);
+            const number = formatCells.getByRole('tab', { name: 'Number', exact: true });
+            const item = page.getByRole('menuitem', { name: 'Format Cells…' });
+            await pressAt(grid, 'D10');
+            const before = await cell(grid, 'D10').textContent();
+            await clickCell(grid, 'D10', { button: 'right' });
+            await expect(item).toBeVisible();
+            await noteCompositionEnds(page);
+            await setRoundTrip(150);
+
+            await item.click();
+            // The render that removes the menu has landed, looked for frame by frame: the root took the
+            // keyboard ahead of it — in Format Cells' place under the built-in Chrome (ADR-0039,
+            // 2026-10-13), as a command's menu hands it back under the other — and Format Cells takes
+            // it a round trip later.
+            await page.waitForFunction(() => document.querySelector('.ex-grid .ex-popover[role=menu]') === null, null, { polling: 'raf' });
+            const client = await page.context().newCDPSession(page);
+            try {
+                await compose(client, 'か', 'かな');
+                await client.send('Input.insertText', { text: 'かな' });
+                await page.keyboard.press('End');
+            } finally {
+                await client.detach();
+            }
+
+            await expect(number).toBeFocused();
+            expect(await compositionEnds(page)).toEqual([{ inKeyField: true, text: 'かな' }]);
+            await circuitQuiet();
+            await expect(number).toBeFocused();
+            await expect(number).toHaveAttribute('aria-selected', 'true');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText(before ?? '');
+
+            await page.keyboard.press('Escape');
+            await expect(formatCells).toHaveCount(0);
+            await expect(keyField(grid)).toBeFocused();
+            expect(await fieldState(grid)).toEqual({ value: '', drawn: false, focused: true });
+        });
+    });
+}

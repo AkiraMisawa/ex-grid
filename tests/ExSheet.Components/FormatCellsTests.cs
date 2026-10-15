@@ -102,6 +102,18 @@ public class FormatCellsTests : SheetTestContext
         Assert.Contains("max-height:", frame.GetAttribute("style"));
     }
 
+    [Fact] // ADR-0010 / ADR-0044 (2026-10-12): OK and Cancel close Format Cells, and carry the mark by which the grid's key listener holds the keys typed while it goes; OK is the form's submit button, so Enter in a field holds too
+    public async Task Ok_and_cancel_are_marked_as_closing_format_cells()
+    {
+        var cut = RenderSheet();
+
+        await OpenAsync(cut, "B2");
+
+        var marked = Frame(cut).QuerySelectorAll(".ex-popover-closes");
+        Assert.Equal(["OK", "Cancel"], marked.Select(b => b.TextContent.Trim()).ToArray());
+        Assert.Equal("submit", marked[0].GetAttribute("type"));
+    }
+
     [Fact] // ADR-0071 / ADR-0050 item 14 / SH-45, case 22: Ctrl+1 opens it, and sets nothing itself
     public async Task Ctrl_1_opens_it()
     {
@@ -767,16 +779,43 @@ public class FormatCellsTests : SheetTestContext
         // The draft is ExSheet's: the Chrome sets through it, and OK sets what was touched.
         chrome.Context!.Draft.SetFontStyle(FontStyle.Italic);
         Assert.True(await cut.InvokeAsync(chrome.Context.Ok));
-        Assert.Empty(cut.FindAll(".own-frame"));
         Assert.True(FormatAt(cut, "B2").Font.Italic);
+        // The frame stays until it has given the keyboard back (decided with the user, 2026-10-13): the
+        // element the keyboard leaves from is in it.
+        Assert.Single(cut.FindAll(".own-frame"));
+        await cut.InvokeAsync(chrome.Context.ReturnKeyboard);
+        Assert.Empty(cut.FindAll(".own-frame"));
 
-        // Cancel ends it too, and the core's focus function asks for the keyboard back.
+        // Cancel ends it too, and the core's focus function asks for the keyboard back, after which it goes.
         Assert.True(await cut.Instance.OpenFormatCellsAsync());
         await cut.InvokeAsync(chrome.Context!.Cancel);
-        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".own-frame")));
         var reclaims = ReclaimCount;
-        await chrome.Context.ReturnKeyboard();
+        await cut.InvokeAsync(chrome.Context.ReturnKeyboard);
         Assert.Equal(reclaims + 1, ReclaimCount);
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".own-frame")));
+    }
+
+    [Fact] // ADR-0071, ADR-0050 item 16's note of 2026-10-12 (decided with the user, 2026-10-13: keys typed while the keyboard comes back from a frame are held and handed on in order): a Chrome's frame gives the keyboard back from its own element with the keys typed in it on the way, which the grid asks for, and the frame OK ended goes once it has
+    public async Task A_frame_gives_the_keyboard_back_from_its_element_with_the_keys_typed_on_the_way()
+    {
+        var chrome = new OwnFrameChrome();
+        var cut = RenderSheet(ps => ps.Add(s => s.Chrome, chrome).Add(s => s.Document, DocumentOf(cells: ("B2", "12"))));
+        await GoToAsync(cut, "B2");
+        Assert.True(await cut.Instance.OpenFormatCellsAsync());
+        var context = chrome.Context!;
+        Assert.NotNull(context.ReturnKeyboardFrom);
+        context.Draft.SetFontStyle(FontStyle.Bold);
+        Assert.True(await cut.InvokeAsync(context.Ok));
+        Assert.Single(cut.FindAll(".own-frame"));
+        var taken = TakeBackCount;
+        var typed = new List<KeyboardEventArgs> { new() { Key = "ArrowDown" }, new() { Key = "ArrowDown" } };
+
+        await cut.InvokeAsync(() => context.ReturnKeyboardFrom!(default, () => typed));
+
+        Assert.Equal(taken + 1, TakeBackCount);
+        Assert.Equal(["ArrowDown", "ArrowDown"], AnswerTakeBacks(cut).Select(k => k.Key));
+        Assert.Empty(cut.FindAll(".own-frame"));
+        Assert.True(FormatAt(cut, "B2").Font.Bold);
     }
 
     // ---- Keys typed while Format Cells opens (ticket 93; ADR-0050 item 16 and ADR-0039, notes of 2026-10-01) ----
@@ -791,12 +830,14 @@ public class FormatCellsTests : SheetTestContext
         Assert.True(await cut.Instance.OpenFormatCellsAsync());
         Assert.Equal(["frame"], HandOffs);
         await cut.InvokeAsync(chrome.Context!.Cancel);
+        await cut.InvokeAsync(chrome.Context!.ReturnKeyboard);
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".own-frame")));
 
         await PressAsync(cut, "1", ctrl: true);
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".own-frame")));
         Assert.Equal(["frame", "frame"], HandOffs);
         await cut.InvokeAsync(chrome.Context!.Cancel);
+        await cut.InvokeAsync(chrome.Context!.ReturnKeyboard);
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".own-frame")));
 
         await SecondaryClickAsync(cut, "B2");

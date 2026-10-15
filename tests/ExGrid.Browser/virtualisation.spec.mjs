@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, revealRepainted } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, revealRepainted, dataRowCount } from './fixtures.mjs';
 
 // The structural invariants that produce the timing (Definition of Done §1), at the
 // Definition of Done's own scenario (§12): /wide, 1,000,000 rows × 100 columns, 28px
@@ -31,7 +31,7 @@ async function expectRowPainted(page, row) {
 async function openWide(page, rows) {
     await page.goto(rows === undefined ? '/wide' : `/wide?rows=${rows}`);
     const grid = page.locator('.ex-grid');
-    await expect(grid).toHaveAttribute('aria-rowcount', String(rows ?? ROWS));
+    await expect.poll(() => dataRowCount(grid)).toBe(rows ?? ROWS);
     await expectRowPainted(page, 0);
     return grid;
 }
@@ -269,7 +269,7 @@ test('a scroll to the end made as the grid becomes ready is not undone by the La
         }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-busy'] });
     });
     await page.goto('/wide');
-    await expect(page.locator('.ex-grid')).toHaveAttribute('aria-rowcount', String(ROWS));
+    await expect.poll(() => dataRowCount(page.locator('.ex-grid'))).toBe(ROWS);
     const firstRow = async () => Number(await page.locator('.ex-grid .ex-viewport').getAttribute('data-ex-first-row'));
 
     await expect.poll(firstRow, { timeout: 15_000 }).toBeGreaterThan(ROWS / 2);
@@ -383,7 +383,7 @@ async function countGridInterop(page) {
     // waiting request through it, and returned after; before, it was returned as written.
     const named = scriptSource.lastIndexOf('\n    const handle = {');
     const handle = named >= 0 ? named : scriptSource.lastIndexOf('\n    return {');
-    for (const m of scriptSource.slice(handle).matchAll(/^ {8}(\w+): \([^)]*\) =>\s*/gm)) {
+    for (const m of scriptSource.slice(handle).matchAll(/^ {8}(\w+): (?:async )?\([^)]*\) =>\s*/gm)) {
         sites.push({ name: `.NET→JS ${m[1]}`, index: handle + m.index + m[0].length });
     }
     for (const m of scriptSource.matchAll(/core\.invokeMethod(?:Async)?\(\s*'(\w+)'/g)) {
@@ -599,12 +599,16 @@ test('the cells in the DOM are the painted rows × (pinned + scrollable columns 
  */
 function flingAndLook(root, { first, last, stops = [], looks = 0 }) {
     const scroller = root.querySelector(':scope > .ex-scroller');
+    // A row's aria-rowindex counts the header's rows first (ADR-0033): one row, or the tiers and
+    // the leaf row in a rowgroup.
+    const header = scroller.querySelector(':scope > .ex-spacer > .ex-header');
+    const headerRows = !header ? 0 : header.getAttribute('role') === 'row' ? 1 : header.querySelectorAll(':scope > [role=row]').length;
     const seen = { looks: 0, midFling: 0, wrong: [], done: false };
     const look = () => {
         const edge = scroller.getBoundingClientRect().left + scroller.clientLeft;
         let flung = false;
         for (const row of root.querySelectorAll('.ex-viewport .ex-row')) {
-            const index = Number(row.getAttribute('aria-rowindex')) - 1;
+            const index = Number(row.getAttribute('aria-rowindex')) - 1 - headerRows;
             const placeholder = row.classList.contains('ex-placeholder');
             flung = flung || placeholder;
             if (index < first || index > last || seen.wrong.length >= 20) {

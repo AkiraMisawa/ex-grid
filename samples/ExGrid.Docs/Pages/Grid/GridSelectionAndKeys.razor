@@ -46,6 +46,19 @@
 
     <DocsSection Title="The keyboard">
         <p>Click into the grid, or tab to it: the grid is one tab stop, and its keys are Excel's.</p>
+        <p>
+            With Narrator, turn scan mode off before you use the grid's keys: the Narrator key and Space
+            (Insert+Space). In scan mode the arrow keys move Narrator's own reading cursor through the page and
+            do not reach the grid, and Narrator turns scan mode on again on each new page. That is what Narrator
+            was seen to do; the grid itself is checked against the browser's accessibility tree, not against a
+            screen reader.
+        </p>
+        <p>
+            A screen reader is given the grid as a table. The header row is its row 1 and the first row of data its
+            row 2, and the grid writes each row's number the same way near the top and a million rows down. Each
+            tier of Header Groups is a row of its own above the header row, and the rows of data are counted after
+            them; with <code>HideHeader</code>, the first row of data is row 1.
+        </p>
         @* The rows the Keyboard reference lists for this section, so the two are one list (ADR-0110). *@
         <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
             <thead><tr><th style="width: 34%">Keys</th><th>What they do</th></tr></thead>
@@ -61,6 +74,12 @@
             Enter after each. The fifth Enter returns to the first cell instead of carrying on into a sixth row you
             did not mean to touch. Excel's "edge of the data block" for Ctrl+arrow is not used: query results have
             no blank rows, and finding a block's edge would need every row.
+        </p>
+        <p>
+            <strong>Keys typed at once arrive in order.</strong> Over Blazor Server a popover opens or closes a round
+            trip after the key or the press that asked, and the keys typed meanwhile wait and then go where the
+            keyboard lands: ↓, ↓ typed straight after Escape in a column's menu, or after Enter on a filter panel's OK,
+            move the Focus two rows, rather than moving in a menu that is going or being lost on a button.
         </p>
         <p>
             Every key of the three products, each with the page that explains it, is in the

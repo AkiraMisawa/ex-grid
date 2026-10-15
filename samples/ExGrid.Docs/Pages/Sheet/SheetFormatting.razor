@@ -30,10 +30,12 @@
             a different figure. Widen the column and the number appears. A number typed into a column you have not
             sized widens it, as Excel's does, and so does setting a Number Format, as Excel's formatting keys do.
             So do Ctrl+5 and Ctrl+U, which set no Number Format, and <code>SetCellFormatAsync</code> when it sets
-            underline or strikethrough. Ctrl+B and Ctrl+I widen nothing, nor do bold, italic or a Font colour set from
-            code, a Fill, an alignment or Borders. Format Cells' OK widens when it sets any part of the Font. An italic
-            number widens its column only to the width the same number takes upright, where Excel's Font tab widened
-            it further. A column you sized is never widened. A
+            underline or strikethrough. Ctrl+B and Ctrl+I widen nothing, nor do a Fill, an alignment, Borders, or
+            bold, italic or a Font colour set with <code>SetCellFormatAsync</code>, as Excel's <code>Font.Color</code>
+            set from code does not. Format Cells' OK widens when it sets any part of the Font, and the Sheet Toolbar's
+            Font Colour widens as Excel's Home tab Font Color button does. An italic number widens its column only to
+            the width the same number takes upright, where Excel's Font tab widened it further. A column you sized is
+            never widened. A
             column inserted beside a widened one takes its width as one you set, so a longer number typed into it is
             fitted to the column rather than widening it. A number that fits is painted whole, bold too: it
             may use one screen pixel of its cell's right padding, so a column whose edges round narrower on screen
@@ -117,6 +119,11 @@
             from "Format Cells…" in the Context Menu, and from <code>OpenFormatCellsAsync()</code>.
         </p>
         <p>
+            Over Blazor Server, an IME composition can finish while Format Cells is opening. Its tabs cannot
+            accept composed text, so the text and the keys held behind it are dropped under either Chrome.
+            No Cell Editor opens behind the dialog; once it has the keyboard, its tabs answer keys as usual.
+        </p>
+        <p>
             Over one cell that shows a line on exactly one of its edges, the Border tab's Style and Colour open on
             that line, so pressing that edge's button takes the line away. Anywhere else they open on Thin and
             Automatic. Excel's Border tab was seen to open on the line shown over a thick top line, black or
@@ -130,14 +137,24 @@
             <li><b>Under the built-in Chrome</b> it is a popover inside the Sheet's box, which scrolls when the box is small.</li>
             <li>
                 <b>Under <code>MudSheetChrome</code></b> (<code>ExSheet.MudBlazor</code>) it is a page-level, modal
-                <code>MudDialog</code>, with MudBlazor's colour picker for More Colours. It needs a
+                <code>MudDialog</code>, with a More Colours button opening MudBlazor's colour picker. More Colours starts in HEX,
+                with the current value selected: type a colour with the opening click, and those characters arrive
+                there in order, even over Blazor Server. Enter or leaving the field commits the colour.
+                Choosing HEX yourself before the opening finishes keeps
+                the keyboard there; Escape closes the colour picker before the dialog. It needs a
                 <code>&lt;MudDialogProvider /&gt;</code> in your layout, and is refused by name when it first opens
-                without one.
+                without one. The keys typed as it closes from Escape, OK or Cancel are the Sheet's, in order, over
+                Blazor Server too: ↓ typed straight after Escape moves the Focus, including when the dialog's title or empty space holds the keyboard. OK sets what was touched as it is
+                pressed.
             </li>
         </ul>
         <p>
             What the dialog offers and what OK sets do not change with the Chrome: the same choices set the same Cell
             Format under either. Switch the Example above to MudBlazor and press "Format Cells…" to compare.
+            A Chrome that draws a popup inside its own frame uses <code>FormatCellsContext.HoldKeysForPopup</code>
+            before its opening handler awaits, supplying the opener and its key queue; after the hold completes,
+            <code>TakeKeyboard</code> hands those keys to the drawn contents. The same callbacks can carry the
+            keyboard back to the opener when the inner popup closes, without ending Format Cells.
         </p>
     </DocsSection>
 
@@ -148,8 +165,13 @@
             Focus cell — Bold shows pressed over a bold cell — acts on the Selection as one undo step, and is greyed
             out while a cell is edited. A press leaves the keyboard on the Sheet. Over a number that shows
             <code>####</code>, Underline and Strikethrough widen a column you have not sized, as Ctrl+U and Ctrl+5
-            do. Bold and Italic widen nothing, as Ctrl+B and Ctrl+I do not, and neither does the Font Colour, whose
-            face and list set the colour through <code>SetCellFormatAsync</code>.
+            do, and so does the Font Colour, by its face or a colour from its list, as Excel's Home tab Font Color
+            button does. Bold, Italic and the Fill Colour widen nothing, as Ctrl+B, Ctrl+I and Excel's Fill Color
+            button do not. The toggles and the colours set through <code>SetCellFormatFromFocusAsync</code>, which
+            widens as Excel's Home tab buttons do; <code>SetCellFormatAsync</code> widens no column for a colour, as
+            Excel's <code>Font.Color</code> set from code does not.
+            Ctrl+Z typed straight after a colour choice undoes its colour and any widening together,
+            even while the list closes over Blazor Server.
         </p>
         <p>
             What it holds, and in which order, is yours to declare in <code>ToolbarContent</code>.
@@ -169,17 +191,35 @@
             </li>
             <li>
                 <b>KeyTips.</b> Release Alt on its own, or press F10, and each row shows its letter: ExSheet's row is H,
-                as Excel's Home tab is, and its items carry Excel's letters, so Alt, H, 1 sets bold. Your rows and
-                buttons have a KeyTip where you set <code>KeyTip</code>; two letters that collide at one level are
-                refused when the toolbar renders.
+                as Excel's Home tab is, and its items carry Excel's letters, so Alt, H, 1 sets bold and Alt, H, O, E
+                opens Format Cells, as Excel's Format menu reaches it (read on Windows). A list a KeyTip opens takes
+                the keyboard under either Chrome: the arrows move among its choices and Enter or Space makes the one
+                they have reached. Escape goes
+                back one level, as Excel's did when read on Windows: from a list to its row's letters, then to the
+                rows', then to the Sheet. The keys can be typed at once, over Blazor Server too: the letters straight
+                after Alt or F10 wait for the KeyTips, and the keys typed while a list opens or closes, or while the
+                keyboard goes back to the Sheet, wait for the keyboard and go where it lands, so Alt, H, 1 typed straight
+                off sets bold, and Alt, H, H, ↓, →, Enter fills the cell from the palette, as typed one at a time. The
+                Number Format list's More Number Formats… opens Format Cells; Escape typed immediately after
+                choosing it closes Format Cells under either Chrome. Your rows and buttons have a KeyTip where
+                you set <code>KeyTip</code>; two letters that collide at one level
+                are refused when the toolbar renders.
             </li>
             <li>
                 <b>The look is the Chrome's.</b> The built-in Chrome draws plain buttons with inline-SVG pictures;
-                <code>MudSheetChrome</code> draws MudBlazor's controls.
+                <code>MudSheetChrome</code> draws MudBlazor's controls; under either the toolbar is one Tab stop. A Chrome
+                of your own draws each item from its <code>ToolbarItemContext</code>: a list of its own opens when
+                <code>OpenRequest</code> changes, and once it holds the keyboard it calls <code>ChoicesOpened(true)</code>
+                and answers the keys that returns, typed on the toolbar while the list was on its way; it closes when
+                <code>CloseRequest</code> changes; as it begins to close from a key or a choice it calls
+                <code>ChoicesClosing</code> with that key and passes on every key typed in it, and once it has gone it
+                calls <code>ChoicesClosed</code>, and the toolbar takes the keyboard on from there.
             </li>
         </ul>
         <DocsExample Builtin="typeof(Toolbar)" Mud="typeof(ToolbarMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])" CodeOpen="true">
-            Select a few cells and press "Mark reviewed", or press Alt and then R, M.
+            Select a few cells and press "Mark reviewed", or press Alt and then R, M. Try Alt, H, O, E to
+            open Format Cells, or choose a Font Colour and press Ctrl+Z straight away to undo it. The
+            same keys work with either Chrome.
         </DocsExample>
     </DocsSection>
 

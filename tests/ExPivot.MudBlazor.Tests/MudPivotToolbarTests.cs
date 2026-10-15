@@ -144,7 +144,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         var cut = RenderPivot(RegionAmount with { Filters = [P("Online")] });
 
         Assert.Empty(cut.FindAll(".ex-pivot-toolbar"));
-        var toolbar = cut.Find(".ex-pivot-report > .mud-ex-pivot-toolbar");
+        var toolbar = cut.Find(".ex-pivot-report > .ex-pivot-toolbar-keys > .mud-ex-pivot-toolbar");
         Assert.NotNull(toolbar.QuerySelector(".mud-ex-pivot-toolbar-start .mud-ex-pivot-filters .mud-ex-pivot-filter-button"));
         Assert.Equal(["Layout", "Field List"], ToolbarButtons(cut));
         var layout = cut.Find(".mud-ex-pivot-layout-button");
@@ -204,7 +204,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
 
         var alert = cut.FindComponents<MudAlert>().Single(a => a.Instance.Class == "mud-ex-pivot-refusal-notice");
         Assert.Equal(Severity.Error, alert.Instance.Severity);
-        var notice = cut.Find(".ex-pivot-report > .mud-alert.mud-ex-pivot-refusal-notice");
+        var notice = cut.Find(".ex-pivot-report > .ex-pivot-toolbar-keys > .mud-alert.mud-ex-pivot-refusal-notice");
         Assert.Equal("alert", notice.GetAttribute("role"));
         Assert.Equal("The source does not answer Product.", notice.QuerySelector(".mud-alert-message")!.TextContent.Trim());
         Assert.Empty(cut.FindAll(".ex-pivot-refusal-notice"));

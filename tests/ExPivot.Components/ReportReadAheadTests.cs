@@ -107,7 +107,7 @@ public sealed class ReportReadAheadTests : PivotTestContext
     private async Task ScrollToRowOrPlaceholderAsync(IRenderedComponent<PivotComponent> cut, int row)
     {
         await ScrollReportAsync(cut, row * RowHeightPx);
-        cut.WaitForAssertion(() => Assert.Equal((row + 1).ToString(System.Globalization.CultureInfo.InvariantCulture),
+        cut.WaitForAssertion(() => Assert.Equal((row + 1 + HeaderRowsOf(cut)).ToString(System.Globalization.CultureInfo.InvariantCulture),
             Grid(cut).FindAll(".ex-viewport .ex-row")[0].GetAttribute("aria-rowindex")));
     }
 

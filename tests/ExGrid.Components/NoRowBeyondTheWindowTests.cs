@@ -96,8 +96,7 @@ public class NoRowBeyondTheWindowTests : GridTestContext
     /// <summary>The positions the newest render painted, read from the rows' own
     /// <c>aria-rowindex</c>: numbers, so the test holds no row by reading them.</summary>
     private static HashSet<int> PaintedPositions(IRenderedComponent<ExGrid<TestRow>> cut)
-        => [.. cut.FindAll(".ex-viewport [role=row]").Select(static row => int.Parse(row.GetAttribute("aria-rowindex")!,
-            System.Globalization.CultureInfo.InvariantCulture) - 1)];
+        => [.. cut.FindAll(".ex-viewport [role=row]").Select(static row => AriaRows.PositionOf(row))];
 
     /// <summary>Hands the grid twelve new Windows, each in its own method, scrolling and selecting
     /// between them, then the Window in hand. Answers weak references to each earlier Window's rows,

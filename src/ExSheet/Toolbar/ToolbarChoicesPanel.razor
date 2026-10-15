@@ -17,15 +17,25 @@
    choices, and no Consumer places it. It is public only because Razor makes every component public,
    is hidden from a Consumer's editor, and may change in any version. *@
 @attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@implements IDisposable
 
 @*
     A Toolbar Item's choices under the built-in Chrome (ADR-0100): a menu in the grid's popover frame,
     as Format Cells stands there (ADR-0050 item 16). The frame is the grid's — where it stands, its
     bound, Escape, a press elsewhere — and gives the keyboard back when it closes (ADR-0039). Colours
     are a grid of swatches, ten across as Excel's palette is; everything else is a list. The arrow
-    keys move among the choices that can be made, Home and End go to the ends, and Enter or a press
-    makes one. A choice that cannot be made says why beside it. DOM focus moves by Blazor's
+    keys move among the choices that can be made, Home and End go to the ends, and Enter, Space or a
+    press makes one. A choice that cannot be made says why beside it. DOM focus moves by Blazor's
     FocusAsync when the frame's counts ask; no script is added.
+
+    Enter and Space make the choice the keys have reached, answered here at their keydown, as the
+    arrows are, and not by the browser's activation of the button DOM focus is on: a key the grid held
+    while the list opened, and hands on in its turn (ADR-0010), is dispatched from script, and a
+    dispatched key activates nothing — Alt, H, H, then ↓, →, Enter typed at once on the Server host left
+    the cell unfilled (decided with the user, 2026-10-13: the keys typed before the list holds the
+    keyboard are its own). On a circuit DOM focus also follows the keys a round trip behind, and an
+    Enter typed straight after ↓ activated the button it left. The button's own click, which the browser
+    sends after Enter and at Space's release, finds the choice made: a list makes one.
 *@
 <div class="ex-sheet-choices" role="menu" aria-label="@Title" @onkeydown="OnKeyAsync">
     @for (var i = 0; i < Choices.Count; i++)
@@ -37,7 +47,7 @@
             <button type="button" role="menuitemradio" class="ex-sheet-swatch-choice" title="@choice.Label"
                     aria-label="@choice.Label" aria-checked="@(choice.Selected ? "true" : "false")"
                     tabindex="@(at == _focused ? 0 : -1)" @ref="_buttons[at]"
-                    @onclick="() => ChooseAsync(at)" @onfocus="() => _focused = at">
+                    @onclick="() => ChooseAsync(at)" @onfocus="() => Focused(at)">
                 <span class="ex-sheet-swatch" style="@SwatchStyle(colour)"></span>
             </button>
         }
@@ -46,7 +56,7 @@
             <button type="button" role="menuitemradio" class="ex-sheet-choice" aria-checked="@(choice.Selected ? "true" : "false")"
                     aria-disabled="@(choice.DisabledReason is null ? null : "true")" title="@choice.DisabledReason"
                     tabindex="@(at == _focused ? 0 : -1)" @ref="_buttons[at]"
-                    @onclick="() => ChooseAsync(at)" @onfocus="() => _focused = at">
+                    @onclick="() => ChooseAsync(at)" @onfocus="() => Focused(at)">
                 <span class="ex-sheet-choice-label">@choice.Label</span>
                 @if (choice.DisabledReason is { } reason)
                 {
@@ -66,6 +76,18 @@
 
     /// <summary>The grid's popover frame.</summary>
     [Parameter, EditorRequired] public GridPopoverContext Popover { get; set; } = default!;
+
+    /// <summary>Told when the list has gone, however it closed: the Sheet Toolbar stops treating it as one
+    /// a KeyTip opened (ADR-0100's note of 2026-10-12).</summary>
+    [Parameter] public Action? Gone { get; set; }
+
+    /// <summary>Whether the frame still shows this list, once a choice that opens a popover in its place
+    /// has been made: what it opened stands there now, and closing the frame would close that. Null, the
+    /// list is taken to stand.</summary>
+    [Parameter] public Func<bool>? Standing { get; set; }
+
+    /// <inheritdoc />
+    public void Dispose() => Gone?.Invoke();
 
     // Ten swatches to a row, as Excel's palette lays them out.
     private const int SwatchesAcross = 10;
@@ -109,9 +131,24 @@
         }
     }
 
+    // The choices this list has asked to take DOM focus, whose focus has not yet been heard. On a circuit
+    // a request lands a round trip after the key that moved, and the key after it has moved the place
+    // on already: the landing is not a move (ADR-0039's note of 2026-09-25; the Sheet Toolbar's ↓, →
+    // typed at once, 2026-10-12).
+    private readonly List<int> _askedFocus = [];
+
+    // A choice took DOM focus: one this list asked for, landing, moves nothing; any other — Tab
+    // wrapping, a press — is where the keys start from.
+    private void Focused(int at)
+    {
+        if (_askedFocus.Remove(at)) return;
+        _focused = at;
+    }
+
     private async Task FocusAsync(int at, bool preventScroll)
     {
         if (at < 0 || at >= _buttons.Length || _buttons[at].Context is null) return;
+        _askedFocus.Add(at);
         try
         {
             await _buttons[at].FocusAsync(preventScroll);
@@ -132,8 +169,13 @@
         return Math.Clamp(from, 0, Math.Max(0, Choices.Count - 1));
     }
 
-    private void OnKeyAsync(KeyboardEventArgs e)
+    private async Task OnKeyAsync(KeyboardEventArgs e)
     {
+        if (e.Key is "Enter" or " " && !e.CtrlKey && !e.AltKey && !e.MetaKey && !e.ShiftKey)
+        {
+            if (_focused >= 0 && _focused < Choices.Count) await ChooseAsync(_focused);
+            return;
+        }
         var across = Choices.Count > 0 && Choices[_focused].Colour is not null ? SwatchesAcross : 1;
         var moved = e.Key switch
         {
@@ -150,10 +192,25 @@
         _focusMoved = true;
     }
 
+    // A choice has been made: the button's click that follows Enter or Space makes none.
+    private bool _chosen;
+
     private async Task ChooseAsync(int at)
     {
         var choice = Choices[at];
-        if (choice.DisabledReason is not null) return;
+        if (_chosen || choice.DisabledReason is not null) return;
+        _chosen = true;
+        if (choice.OpensPopover)
+        {
+            // More Number Formats… opens Format Cells in the list's place: the core tells its key gate the
+            // keyboard is going to the popover before it asks for the root, as it does for a menu's command
+            // (ADR-0039's note of 2026-10-13). Closed first, the frame asked for the root a message ahead of
+            // that hand-off, and on a circuit a key landing between the two was the grid's. The list is
+            // closed afterwards only where nothing took its place: nothing selected, or a Chrome's own frame.
+            await choice.Choose();
+            if (Standing?.Invoke() ?? true) Popover.Close();
+            return;
+        }
         // The frame closes first and gives the keyboard back; the choice is then made on the Sheet.
         Popover.Close();
         await choice.Choose();

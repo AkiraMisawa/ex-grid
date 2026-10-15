@@ -225,6 +225,7 @@ public sealed class FetchingPivotReportSource : PivotReportSource
             var block = result.Blocks[i];
             if (block.Rows.Count != (long)range.Bottom - range.Top + 1
                 || block.Headers.Count != (long)range.Right - range.Left + 1
+                || block.HeaderRaws is { } raws && raws.Count != block.Headers.Count
                 || block.Rows.Any(row => row.Count != block.Headers.Count))
                 return new(query.Version, [], Invalid("Copy returned a partial selected rectangle."));
         }

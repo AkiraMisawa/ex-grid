@@ -38,7 +38,7 @@
     var paneLayout = PaneLayout;
     var reportShown = _selectedSheet is null && _dialog is null;
 }
-<div class="ex-pivot" style="@RootStyle"
+<div class="ex-pivot" style="@RootStyle" @ref="_pivotElement"
      @onmousedown="() => DismissFieldMenu(fieldMenu)" @onmousedown:stopPropagation
      @onfocusin="() => DismissFieldMenu(fieldMenu)" @onfocusin:stopPropagation>
     @* ExPivot's stylesheet notice (ADR-0123, ERR-11), shown only by another version's stylesheet, and
@@ -52,8 +52,10 @@
        the dialog is modal (ADR-0059). While the report is a Stale Report it carries
        ex-pivot-report-stale, by which ExPivot's stylesheet paints its value cells in a muted colour
        (ADR-0067, 2026-10-09): a class here, so no row of the grid renders for it. *@
-    <div class="@(IsStale ? "ex-pivot-report ex-pivot-report-stale" : "ex-pivot-report")" inert="@(_dialog is not null)">
-        @Toolbar()
+    <div class="@(IsStale ? "ex-pivot-report ex-pivot-report-stale" : "ex-pivot-report")" inert="@DialogHoldsTheKeyboard">
+        @* The keys typed on the Pivot Toolbar's buttons are heard here, so those typed while a menu or a
+           panel opens from one are held for it (decided with the user, 2026-10-13). It draws no box. *@
+        <div class="ex-pivot-toolbar-keys" style="display: contents" @onkeydown="_onToolbarKey">@Toolbar()</div>
         @* The Stale Report's notice, under the Pivot Toolbar (ADR-0061/0067): a polite live region
            that is always present, so a notice that appears in it is announced, without interrupting
            the reader as the Pivot Toolbar's refusal of their own change does. Empty, it takes
@@ -93,22 +95,26 @@
     </div>
     @if (_fieldListShown)
     {
-        <div class="ex-pivot-field-list" role="region" aria-label="@Word("field-list")" inert="@(_dialog is not null)">
+        <div class="ex-pivot-field-list" role="region" aria-label="@Word("field-list")" inert="@DialogHoldsTheKeyboard" @onkeydown="_onFieldListKey">
             <div class="ex-pivot-field-list-scroll">@FieldList()</div>
         </div>
     }
-    @if (_open is { OnToolbar: true })
+    @if (Shown is { OnToolbar: true })
     {
         <div class="ex-pivot-backdrop" @onclick="CloseOpen" aria-hidden="true"></div>
     }
     @if (_dialog is { } dialog)
     {
         <div class="ex-pivot-dialog-backdrop" @onclick="CloseDialog" aria-hidden="true"></div>
-        <PivotDialogFrame Label="@dialog.Details.Title" OnEscape="_closeDialog">@DialogContent(dialog)</PivotDialogFrame>
+        <PivotDialogFrame Label="@dialog.Details.Title" OnEscape="_closeDialog" OnKey="_onDialogKey" @ref="_dialogFrame">@DialogContent(dialog)</PivotDialogFrame>
     }
     @* The report's grid takes the keyboard back once the dialog, or the last details tab, has gone
-       (ADR-0070): asked after the render that removes it, when the report can take focus again. *@
+       (ADR-0070): asked after the render that removes it, when the report can take focus again. The
+       dialog's own close is the other way round: the render takes the report's inert away and leaves
+       the dialog standing, the report's grid takes the keyboard back from it with the keys typed in it
+       since the close began, and then it goes (decided with the user, 2026-10-13). *@
     @KeyboardReturn()
+    @DialogKeyboardReturn()
 </div>
 
 @code {
@@ -117,6 +123,10 @@
     private PivotLayout? _layoutParameter;
     private CultureInfo _culture = CultureInfo.InvariantCulture;
     private Func<string, string?>? _label;
+    // The English edition's words the UI culture chose when the parameters were last set, or null
+    // for PivotWords' own English (ADR-0060's note of 2026-10-14); and the edition _options holds.
+    private Func<string, string?>? _edition;
+    private Func<string, string?>? _optionsEdition;
     private PivotOptions _options = PivotOptions.Default;
     private PivotCaps _caps = PivotCaps.Default;
     // The Order Key policies the report on screen was asked under, as their pairs: a Consumer that
@@ -231,13 +241,17 @@
     [Parameter] public EventCallback<PivotLayout> LayoutChanged { get; set; }
 
     /// <summary>The culture labels and values are written in and text Items ordered by; the
-    /// current culture when left out. It changes no word: <see cref="Label"/> does.</summary>
+    /// current culture when left out. It changes no word: <see cref="Label"/> does, and the UI
+    /// culture chooses between Excel's two English editions.</summary>
     [Parameter] public CultureInfo? Culture { get; set; }
 
     /// <summary>The Consumer's word for an id of <see cref="PivotWords"/>, <see cref="PivotCommandIds"/>
     /// or the report grid's Context Menu, or null to keep the English. <see cref="PivotWords.Japanese"/>
     /// gives Excel's Japanese edition's words in one line (ADR-0060). Hold it in a field: it is read
-    /// on every render.</summary>
+    /// on every render. The English is Excel's English (United Kingdom) edition's under an
+    /// <c>en-GB</c> UI culture (<c>Max. of Amount</c>, <c>Summarise value field by</c>) and its
+    /// English (United States) edition's under any other (<c>Max of Amount</c>); a word given here
+    /// wins over either (ADR-0060's note of 2026-10-14).</summary>
     [Parameter] public Func<string, string?>? Label { get; set; }
 
     /// <summary>What draws the Field List, the Pivot Toolbar, the menus, the panels and Show
@@ -332,13 +346,38 @@
     /// on screen beside the notice, still answers.</summary>
     public bool IsStale => _stale is not null;
 
-    // The Consumer's word, the engine's English, then the English of the words the engine does not
-    // hold yet; an id none of them knows is painted as itself — a missing word seen, never a blank.
-    private string Word(string id) => Label?.Invoke(id) ?? PivotWords.EnglishFor(id) ?? id;
+    // The Consumer's word, the English edition's the UI culture chose, the engine's English, then the
+    // English of the words the engine does not hold yet; an id none of them knows is painted as
+    // itself — a missing word seen, never a blank.
+    private string Word(string id) => Label?.Invoke(id) ?? _edition?.Invoke(id) ?? PivotWords.EnglishFor(id) ?? id;
+
+    /// <summary>
+    /// The words of the English edition <paramref name="ui"/> chooses (ADR-0060's note of
+    /// 2026-10-14): Excel's English (United Kingdom) edition's under <c>en-GB</c>, as Excel's English
+    /// follows its display language, and none under any other culture, which keeps
+    /// <see cref="PivotWords"/>' English, the English (United States) edition's. Only <c>en-GB</c>
+    /// was observed. <c>en-AU</c>, <c>en-IE</c>, <c>en-IN</c> and every other English culture keep
+    /// the United States' words by generalisation, until a Windows run reads which of them Excel
+    /// gives the United Kingdom's (docs/specs/exsheet/run-18/pivot-general.md). The language is
+    /// never chosen: a Japanese UI culture keeps the English, and only <see cref="Label"/> gives
+    /// the Japanese words.
+    /// </summary>
+    internal static Func<string, string?>? EnglishEditionOf(CultureInfo ui)
+        => string.Equals(ui.Name, "en-GB", StringComparison.OrdinalIgnoreCase) ? PivotWords.EnglishUnitedKingdom : null;
+
+    // The words the engine is given: the Consumer's, then the English edition's. A report a server
+    // computes is handed them as values in its explicit settings, so it never reads the server's
+    // culture (ADR-0152).
+    private static Func<string, string?>? WordsOf(Func<string, string?>? label, Func<string, string?>? edition)
+        => edition is null ? label : label is null ? edition : id => label(id) ?? edition(id);
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
+        // The UI culture is read here, once, before anything awaits: the words a render paints
+        // follow the parameters it was given, whatever culture a later continuation runs under.
+        var edition = EnglishEditionOf(CultureInfo.CurrentUICulture);
+        _edition = edition;
         AdoptSummaryFigures();
         if (FieldListWidth is not (> 0 and < 10_000) || !double.IsFinite(FieldListWidth))
             throw new ArgumentOutOfRangeException(nameof(FieldListWidth), FieldListWidth, "A width in pixels, above zero.");
@@ -421,12 +460,13 @@
             force = true;
         }
         var culture = Culture ?? CultureInfo.CurrentCulture;
-        var wordsMoved = !Equals(culture, _culture) || !ReferenceEquals(Label, _label);
+        var wordsMoved = !Equals(culture, _culture) || !ReferenceEquals(Label, _label) || !ReferenceEquals(edition, _optionsEdition);
         if (wordsMoved)
         {
             _culture = culture;
             _label = Label;
-            _options = new PivotOptions { Culture = culture, Label = Label };
+            _optionsEdition = edition;
+            _options = new PivotOptions { Culture = culture, Label = WordsOf(Label, edition) };
         }
         if (ShowFieldList != _showFieldListParameter || !_initialised)
         {
