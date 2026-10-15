@@ -31,7 +31,7 @@ public class ReferenceOutlineWiringTests : SheetTestContext
         // The Focus's box, without the sides of its outline that stay inside it, which a
         // Reference Outline, being no selection, never has (ADR-0008, 2026-10-01).
         var a1 = System.Text.RegularExpressions.Regex.Replace(
-            cut.Find(".ex-selection .ex-focus").GetAttribute("style")!, @";\s*--ex-outline-in-[tl]:[^;]*", "");
+            cut.Find(".ex-selection .ex-focus").GetAttribute("style")!, @";\s*--ex-outline-(?:in|heading)-[tl]:[^;]*", "");
 
         await StartTypingAsync(cut, "E5", "=A1+B2:C3");
 

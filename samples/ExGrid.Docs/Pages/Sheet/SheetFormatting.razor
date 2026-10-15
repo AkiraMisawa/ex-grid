@@ -78,9 +78,31 @@
             cell was observed with that border. Under ExSheet.MudBlazor it is the palette's primary, as the outline is.
             <code>--ex-focus-among-ranges-outline</code> colours it.
         </p>
+        <p>
+            The <b>Heading Mark</b> shows where the Selection is: each column letter and row number whose column
+            or row holds part of it is shaded and coloured, with a line two device pixels thick on its edge toward
+            the cells. With the built-in Chrome in the light scheme, the shade is <code>#E1E1E1</code>, or
+            <code>#D3F0E0</code> when the whole column or row is selected; the letters and line are
+            <code>#217346</code>. The corner's triangle takes that green when every cell is selected. Whole means
+            covered by the ranges together, including overlapping ranges. Headings between ranges stay unmarked.
+        </p>
+        <p>
+            <code>--ex-heading-mark</code> colours the line, letters and selected triangle;
+            <code>--ex-heading-mark-background</code> and <code>--ex-heading-mark-whole-background</code> set the
+            two shades. Your Theme's tokens win. ExSheet.MudBlazor uses its palette, with the primary for the line
+            and letters. The Headings follow the frame's colour scheme, including their shades in dark mode;
+            they do not take the cells' white Paper. Where a Heading covers a side of the Focus or a single range,
+            its mark supplies the two device pixels without a second outline beside it. Against the pinned block,
+            the outline stays inside the cell.
+            The ordinary Focus and single-range outline defaults to two device pixels on every side,
+            including at display scales above 100%.
+        </p>
         <DocsExample Builtin="typeof(BordersUnderSelection)" Mud="typeof(BordersUnderSelectionMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])">
             Column A is pinned. Select across it, from A3 to D8: the thin lines over the totals and the double line
             under the operating profit stay black under the shade, on both sides of the pinned column's edge.
+            Click A1, then Shift+click B2 to see the Heading Mark meet the range. Click a column letter or row
+            number to see the whole-axis shade, then the top-left corner to colour its triangle and select every
+            cell. Switch between Built-in and MudBlazor, and between light and dark mode.
         </DocsExample>
     </DocsSection>
 

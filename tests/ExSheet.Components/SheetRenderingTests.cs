@@ -142,8 +142,11 @@ public class SheetRenderingTests : SheetTestContext
     public async Task The_dom_is_bounded_at_the_top_and_at_the_far_corner()
     {
         var cut = RenderSheet();
+        // Compare the same one-cell Selection at both ends, including its Heading labels.
+        await GoToAsync(cut, "A1");
         var atTop = cut.FindAll("*").Count;
         var cellsAtTop = cut.FindAll("[role=gridcell]").Count;
+        var gapsAtTop = cut.FindAll(".ex-gap").Count;
 
         await GoToAsync(cut, "XFD1048576");
         await ScrollToAsync(cut, (Sheet.RowCount - 1) * 28d, (Sheet.ColumnCount - 1) * SheetColumns.DefaultWidthPx);
@@ -154,7 +157,15 @@ public class SheetRenderingTests : SheetTestContext
         var cellsAtCorner = cut.FindAll("[role=gridcell]").Count;
         Assert.True(cellsAtTop < 1_000, $"{cellsAtTop} cells at the top");
         Assert.True(cellsAtCorner <= cellsAtTop, $"{cellsAtCorner} cells at the corner, {cellsAtTop} at the top");
-        Assert.True(atCorner <= atTop + 20, $"{atCorner} elements at the corner, {atTop} at the top");
+        // Horizontal virtualisation adds one leading gap per painted row and one in the header.
+        // Pin that cost explicitly; every other element has the same bound as at A1.
+        var gapsAtCorner = cut.FindAll(".ex-gap").Count;
+        var rowsAtCorner = cut.FindAll(".ex-row");
+        Assert.Equal(rowsAtCorner.Count + 1, gapsAtCorner);
+        Assert.Single(cut.FindAll(".ex-header > .ex-gap"));
+        Assert.All(rowsAtCorner, row => Assert.Single(row.QuerySelectorAll(".ex-gap")));
+        Assert.True(atCorner - gapsAtCorner <= atTop - gapsAtTop,
+            $"{atCorner} elements ({gapsAtCorner} gaps) at the corner, {atTop} ({gapsAtTop} gaps) at the top");
     }
 
     [Fact] // ADR-0046: ExGrid's sort and filter are not wired — a header click selects, nothing sorts, the column menu cannot sort

@@ -825,6 +825,15 @@ without them still addresses its cells `A1`. The Row Headings are a band beside 
 column ([ADR-0050](./docs/adr/0050-what-exsheet-asks-of-exgrids-core.md)).
 _Avoid_: header (that is ExGrid's column header, whose click sorts), labels, row numbers
 
+**Heading Mark**:
+The indication that a Heading's column or row holds part of the **Selection**: its shade and
+letters, with a line on the edge toward the cells — along the bottom of a column's Heading, down
+the right edge of a row's. A whole column or row has a different shade, and selecting every cell
+colours the corner's triangle. Every Selection has one, a single cell's included. ExGrid draws it
+wherever a header or Row Headings stand, so a plain grid's column header and a Pivot Report's carry
+it as a Sheet's Headings do ([ADR-0008](./docs/adr/0008-selection-is-painted-by-an-overlay.md)).
+_Avoid_: header highlight, active heading, selected heading (the Selection is cells, never a Heading)
+
 **Size Tip**:
 The label at the Headings that says how many rows and columns a drag across them covers
 (`1048576R x 3C`), shown at the Heading the Extent is on while the drag covers more than one. The

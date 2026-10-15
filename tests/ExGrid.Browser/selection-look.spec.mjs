@@ -289,7 +289,8 @@ for (const [chrome, query] of CHROMES) {
             // The scrollable part moves with the content; the render that follows a scroll is a
             // round trip away on the Server host, and changes nothing here that is read.
             await expect.poll(() => grid.locator('.ex-scroller').evaluate((s) => s.scrollLeft)).toBe(scrollLeft);
-            await page.waitForTimeout(200);
+            await circuitQuiet();
+            await twoFrames(page);
             const a3 = await cell(grid, 'A3').boundingBox();
             const a4 = await cell(grid, 'A4').boundingBox();
             const c4 = await cell(grid, 'C4').boundingBox();
@@ -438,13 +439,13 @@ test('UX-19: under forced colors every range is outlined and the Focus inside a 
     expect(normal.focus.style).toBe('none');
     expect(normal.focus.box).toBe('none');
 
-    // …which forced colors discard, so there it is outlined again, and the range still is: both
-    // inside their boxes, with no box of their own.
+    // …which forced colors discard, so there both borders are visible. D2 uses their own
+    // boxes to replace only Heading-covered sides while retaining inside borders elsewhere.
     await page.emulateMedia({ forcedColors: 'active' });
-    await expect.poll(async () => (await outlines()).focus.style).toBe('solid');
+    await expect.poll(async () => (await outlines()).focus.box).toBe('solid 2px');
     const forced = await outlines();
-    expect(forced.range, JSON.stringify(forced)).toEqual({ style: 'solid', width: forced.range.width, offset: `-${forced.range.width}`, box: 'none' });
-    expect(forced.focus, JSON.stringify(forced)).toEqual({ style: 'solid', width: forced.focus.width, offset: `-${forced.focus.width}`, box: 'none' });
+    expect(forced.range, JSON.stringify(forced)).toEqual({ style: 'none', width: forced.range.width, offset: `-${forced.range.width}`, box: 'solid 2px' });
+    expect(forced.focus, JSON.stringify(forced)).toEqual({ style: 'none', width: forced.focus.width, offset: `-${forced.focus.width}`, box: 'solid 2px' });
 });
 
 // ---- DC-12: the fill handle on a whole axis, beside its Heading (ADR-0050; 2026-10-12, decided with
@@ -586,11 +587,11 @@ test('UX-19: under forced colors the Focus among several ranges takes its outlin
     expect(parseFloat(normal.focus.box.slice('solid '.length)), JSON.stringify(normal)).toBeLessThanOrEqual(1);
     expect(normal.ranges.map((range) => [range.style, range.box]), JSON.stringify(normal)).toEqual([['none', 'none'], ['none', 'none']]);
 
-    // Forced colors draw no box: the Focus is outlined inside its cell, as everywhere there, and
-    // each range is outlined too.
+    // Forced colors restore a visible two-Device-Pixel Focus border; each range is outlined too.
+    // Here no Heading covers it, so the restored border remains inside its cell.
     await page.emulateMedia({ forcedColors: 'active' });
-    await expect.poll(async () => (await outlines()).focus.style).toBe('solid');
+    await expect.poll(async () => (await outlines()).focus.box).toBe('solid 2px');
     const forced = await outlines();
-    expect(forced.focus, JSON.stringify(forced)).toEqual({ style: 'solid', offset: `-${forced.width}`, box: 'none' });
+    expect(forced.focus, JSON.stringify(forced)).toEqual({ style: 'none', offset: `-${forced.width}`, box: 'solid 2px' });
     expect(forced.ranges.map((range) => [range.style, range.box]), JSON.stringify(forced)).toEqual([['solid', 'none'], ['solid', 'none']]);
 });

@@ -17,6 +17,26 @@
             <li>Clicking a <strong>header</strong> sorts. <strong>Shift+click</strong> on a header selects whole columns, and <strong>Ctrl+Space</strong> does from the keyboard.</li>
         </ul>
         <p>
+            The <strong>Heading Mark</strong> shows where the selection is: each column's header and each Row
+            Heading, where present, is shaded and its letters coloured when its column or row holds part of the
+            selection. A line two device pixels thick runs along its edge toward the cells, unbroken across
+            neighbouring marked Headings. A whole column or row takes a distinct shade, even when several ranges
+            together cover it; overlapping ranges do not make up for an unselected cell. Where the grid has a
+            Headings corner, its triangle takes the mark's colour when every cell is selected.
+        </p>
+        <p>
+            The mark changes without rendering the data row components again. Its line, letters and selected corner triangle use
+            <code>--ex-heading-mark</code>, the Focus outline's colour unless you set it. The shades use
+            <code>--ex-heading-mark-background</code> and <code>--ex-heading-mark-whole-background</code>
+            (<a href="exgrid/appearance#visual-tokens">Visual Tokens</a>). Where the header or a Row Heading covers
+            a side of the Focus or a single range, the mark supplies its two device pixels without a second outline
+            beside it. Against a pinned block, or a grid edge without a Heading, the outline stays inside.
+            Select a range in the example below, then Ctrl+click elsewhere: the columns between the two ranges
+            stay unmarked.
+            The ordinary Focus and single-range outline defaults to two device pixels on every side,
+            including at display scales above 100%.
+        </p>
+        <p>
             Positions are in the current order. When the order of the rows changes — a sort, a filter, a row
             inserted — the same positions would name other rows, so the grid <strong>drops the selection</strong>
             rather than leave it on rows you did not choose.
@@ -30,7 +50,9 @@
         <DocsExample Title="Reading the selection" Builtin="typeof(SelectionStatus)" Mud="typeof(SelectionStatusMud)"
                      Files="@(["Examples/Data/Trade.cs"])">
             <code>SelectionChanged</code> hands over a <code>GridSelection</code>: its ranges, the Focus, and the cell
-            count. Try Ctrl+click, then Ctrl+Shift+↓.
+            count. Select one cell, then Shift+click another to compare the marked headers. Press Ctrl+Space to
+            select the whole column and see its different shade, then Ctrl+A to select every cell. Try Ctrl+click,
+            then Ctrl+Shift+↓, and compare both Chromes.
         </DocsExample>
     </DocsSection>
 

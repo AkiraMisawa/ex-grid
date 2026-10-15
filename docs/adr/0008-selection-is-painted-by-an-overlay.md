@@ -229,10 +229,14 @@ whole, since the Focus is Excel's active cell everywhere
     1 to 2 px from Excel's picture.
   - So the outline lies as Excel's does, on the gridline and one pixel out, on every side.
   - Only where something above the selection layer would cover that outer pixel does a side stay
-    inside, as above, so that its width stays equal (UX-18). That is beside the Headings, beside a
-    Pinned Column, and under the header.
-  - A range reaching column A, the pinned boundary or row 1 therefore has that side one pixel
-    further in than its others. Part C of the eleventh run compares that with Excel's picture.
+    inside, as above, so that its width stays equal (UX-18). This originally included the Headings,
+    a Pinned Column and the header.
+  - *(2026-10-14, decided with the user, D2: the Heading Mark stands for a covered side.)* Where
+    the header or Row Headings cover the side of a Focus or single range, the side stays outside,
+    beneath that band: the Heading Mark supplies its two Device Pixels, rather than two lines
+    standing beside each other. A side against the pinned block, or the grid's edge with no Heading
+    there, still stays inside: no Heading Mark stands there to replace it. This replaces that part
+    of the 2026-10-01 rule; R5 (2) pictured one line of two Device Pixels at the Headings.
 - **The Focus cell is not tinted, and a selection of one cell is not tinted at all.** The
   Consequences above say "this is also what Excel looks like" of the translucent fill. That holds
   for the range and not for the active cell: Excel leaves the active cell untinted inside a tinted
@@ -287,11 +291,83 @@ whole, since the Focus is Excel's active cell everywhere
     inside it, and show the active cell's gridline as `#AFAFAF` on every side. The Paper draws
     neither. Whether that line is the gridline under the shade or a line drawn over it is
     unobserved: no run has looked with the gridlines hidden, and the next one does.
-  - *Decided, not yet built* *(2026-10-13, decided with the user)*: Excel's Heading mark is added
-    for every selection, not only several ranges — the selected rows' and columns' Headings marked,
-    with a line of 2 Device Pixels on their edge toward the cells, as R4 pictured them. It is drawn
-    as an overlay in the Heading bands, so no row learns the Selection; its classes, its tokens and
-    the products that draw it are written here when it is built.
+  - *The Heading Mark* *(2026-10-13, decided with the user)*: Excel's Heading mark is added for
+    every selection, not only several ranges — the selected rows' and columns' Headings marked, with a
+    line of 2 Device Pixels on their edge toward the cells, as R4 pictured them. It is drawn as an
+    overlay in the Heading bands, so no row learns the Selection. Built: the bullet that follows.
+- **The Heading Mark** *(built 2026-10-13, as decided above; the products it reaches and its colour's
+  default decided with the user the same day)*. For every Selection, each Heading whose column or row
+  holds part of it carries a line of two Device Pixels on its edge toward the cells: along the bottom
+  of a column's Heading, down the right edge of a row's. That is where the readings of 2026-10-12
+  measured Excel's: two device pixels of `#217346` at Excel's 100% and 150% zoom on a 150% display, over
+  the Heading's own `#ABABAB` edge and the device pixel beside it (R4), and the same over whole columns
+  and whole rows (R5 (1) and (2)).
+  - *Which Headings.* The union of the ranges' columns, and of their rows, as runs: neighbouring marked
+    Headings carry one line, unbroken, as Excel's ran on under A and B for A1:B2, and a Heading between
+    two ranges carries none, as C and row 3 carried none between A1:B2 and D4:E6 (R4 (2)). The Focus
+    marks nothing of its own: it is always inside a range
+    ([ADR-0052](./0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)), and Excel
+    marked A1's Headings as it marked B2's (R4 (2)). One cell and one ordinary range are marked by
+    generalisation: R4 read several areas, and R5 whole columns and rows.
+  - *Where it is drawn.* Wherever a header or Row Headings stand, because the core draws it: a Sheet's
+    Headings, a plain grid's header and its Row Headings, and a Pivot Report's header *(the products,
+    2026-10-13, decided with the user)*. One box per run, the Headings' own, placed by the core inline
+    ([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)): over the header band's
+    last tier, where the leaves stand beneath any Header Group
+    ([ADR-0032](./0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md)), and over the Row
+    Headings in a sticky layer of the Viewport, cut to the painted rows as every rectangle here is
+    ([ADR-0053](./0053-the-scroll-height-is-compressed-above-the-browsers-layout-ceiling.md)). The line is the box's border on its
+    edge toward the cells, so it lies on Device Pixels wherever the band's edge does
+    ([ADR-0090](./0090-the-grid-is-told-its-device-pixel-and-puts-column-edges-on-it.md)), and nothing in
+    C# reads its width. A column's box passes beneath the pinned header cells and the Headings' corner
+    as the column does; a Pinned Column's part rides a sticky layer of its own at the band's left edge,
+    as a pinned Header Group does ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)). No row is
+    told: rows still skip their render when the Selection moves
+    ([ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md)), and the line costs a box per run in each
+    band. D1 below adds only a fixed marker per Row Heading in the painted Window.
+  - *Its classes and its token.* The internal classes `ex-heading-mark`, joined by
+    `ex-heading-mark-column` or `ex-heading-mark-row` for the edge its line is on, and the layers
+    `ex-heading-marks-pinned` and `ex-heading-marks-rows`
+    ([ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)). Its colour
+    is the Visual Token `--ex-heading-mark` *(2026-10-13, decided with the user: where nothing names it,
+    it is the Focus outline's colour, `--ex-focus-outline`, so a Theme or a Wrapper that sets only the
+    Focus outline gets both)*: `CanvasText` on a bare grid, `#217346` on a Sheet, and the palette's
+    primary under every MudBlazor Wrapper, none of which maps it. Its width is two Device Pixels,
+    `--ex-dp`, and is not a token.
+  - *Under forced colors* the line is kept, a border, restated in `Highlight` as a range's outline is.
+  - *The shade, letters and corner* *(2026-10-14, decided with the user, D1: build all three).* R4
+    and R5 read each marked Heading shaded, `#E1E1E1` where its column or row holds part of the
+    Selection and `#D3F0E0` where the Selection holds the whole of it (from `#F0F0F0`), with its letters
+    in `#217346` (from `#444444`), and the corner's triangle in `#217346` while every cell is selected
+    (R5 (1)). These are the Sheet's light-scheme defaults. A Theme's tokens win, the bare grid keeps
+    system-colour defaults (ADR-0029), and a MudBlazor Wrapper uses its palette (ADR-0030). Headings
+    still follow the colour scheme, as ADR-0071 requires; Excel's dark Heading shades remain a reading.
+    The whole-axis shade means every cell is covered by the Selection's union, including coverage by
+    several overlapping ranges, never the sum of their sizes.
+  - *How the letters are painted* *(implementation, 2026-10-15).* Header cells already belong to
+    the root, so their shade and ink use interned classes. Beside each Row Heading's painted row,
+    the root keeps one hidden `aria-hidden` state marker, whether that row is selected or not.
+    A CSS sibling condition paints only the original Heading's shade and ink from that marker.
+    No row receives a Selection parameter or renders for a Selection change; no cell's text is
+    recoloured. The markers are bounded by the painted Window and their count is independent of
+    selection size (DOM-2). The line stays one overlay rectangle per marked run.
+    Repeating Heading text in an overlay was tried and replaced: it lost Consumer styling of the
+    original stable row/Heading classes, and conditionally emitted labels grew with selected rows.
+    Painting the original Heading retains all its typography, including Group/Total weight tokens
+    and direct stable-class rules, without reevaluating Row Kind when its row skips rendering.
+    All products' ordinary Focus and single-range borders
+    default to two Device Pixels, so their other sides match the replacing mark at every scale;
+    the former bare-grid default was two CSS pixels. Under forced colours, a visible border is
+    restored on every Focus, including one among ranges, inside its cell except for a Heading-covered
+    side; single-range borders follow the same rule. Multiple ranges keep their inside outlines.
+    This applies D2 without losing the Focus when forced colours remove the tint.
+  - *Where it meets an outline* *(2026-10-14, decided with the user, D2)*: the mark replaces a side
+    covered by a header or Row Headings, as the revised 2026-10-01 bullet above states. The earlier
+    implementation drew both lines and is replaced; the thin Focus border among several ranges is
+    inside its cell and is unchanged by this decision.
+  - *Not observed:* one cell and one ordinary range; a display at 100%; where a row's line meets a
+    column's under the corner (ExGrid's stop at the corner, which stands above them); frozen panes. On
+    the eighteenth Windows run's list (`docs/specs/exsheet/run-18/heading-mark.md`).
 - **The range outline has the token ADR-0029 reserved for it.** `--ex-selection-outline` was
   reserved there as "the border Excel draws around the range's perimeter", and this is that border.
   Its default is `--ex-focus-outline`, so a Theme or Wrapper that sets only the Focus outline's

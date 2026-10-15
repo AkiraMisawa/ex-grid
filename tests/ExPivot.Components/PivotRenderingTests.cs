@@ -1,6 +1,7 @@
 using Bunit;
 using ExGrid.Components;
 using ExGrid.Rows;
+using ExGrid.Selection;
 using ExPivot.Components.Tests.Support;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components.Web;
@@ -38,6 +39,25 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Equal(5, grid.TotalCount);
         Assert.Equal(["Row Labels", "Sum of Amount"], HeaderTexts(cut));
         Assert.Equal(["East | 180", "North | 10", "West | 90", "(blank) | 5", "Grand Total | 285"], RowTexts(cut));
+    }
+
+    [Fact] // ADR-0008 (2026-10-13) / ADR-0059: the report's header carries the Heading Mark ExGrid draws, over the pinned label column's header and over the values' — and no row learns the Selection
+    public async Task The_report_header_carries_the_heading_mark()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
+        var grid = Grid(cut);
+        Assert.Empty(grid.FindAll(".ex-heading-mark"));
+        var renders = grid.FindComponents<ExGridRow<PivotDisplayRow>>().Select(row => row.RenderCount).ToList();
+
+        await cut.InvokeAsync(() => grid.Instance.PlaceSelectionAsync(
+            new SelectionRange(0, 0, 2, 2), new CellPosition(0, 0), grid.Instance.RowSequenceVersion));
+
+        // The labels are pinned: their header's mark rides the band's pinned layer, the value's passes
+        // beneath it. No Row Headings, so no row is marked.
+        Assert.Single(grid.FindAll(".ex-header > .ex-heading-marks-pinned > .ex-heading-mark-column"));
+        Assert.Single(grid.FindAll(".ex-header > .ex-heading-mark-column"));
+        Assert.Empty(grid.FindAll(".ex-heading-mark-row"));
+        Assert.Equal(renders, grid.FindComponents<ExGridRow<PivotDisplayRow>>().Select(row => row.RenderCount).ToList());
     }
 
     [Fact] // ADR-0059/0024: group rows paint as Group, totals as Total, items as Detail

@@ -36,6 +36,10 @@
        table-stripe colour, as MudBlazor's own tables paint it. */
     --ex-row-stripe-background: var(--mud-palette-table-striped);
     --ex-focus-outline: var(--mud-palette-primary);
+    /* Heading Mark shades are opaque, so the Paper beneath cannot alter the frame's shade.
+       The text palette may carry alpha; take its channels before mixing into the surface. */
+    --ex-heading-mark-background: color-mix(in srgb, rgb(from var(--mud-palette-text-primary) r g b / 1) 12%, var(--mud-palette-surface));
+    --ex-heading-mark-whole-background: color-mix(in srgb, var(--mud-palette-primary) 20%, var(--mud-palette-surface));
     --ex-grid-focus-outline: 2px solid var(--mud-palette-primary);
     --ex-editor-background: var(--mud-palette-surface);
     --ex-editor-color: var(--mud-palette-text-primary);

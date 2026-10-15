@@ -163,10 +163,12 @@ export default defineConfig({
         // And the Focus among several ranges (UX-19, ADR-0008 of 2026-10-12): ExGrid's own on /wide,
         // on the Paper beside R4's three selections, and under ExGrid.MudBlazor on /mud. A border of
         // one Device Pixel inside its cell, which only a real display scale lays out, and a
-        // screenshot reads, as an OS does.
+        // screenshot reads, as an OS does. And the Heading Mark (UX-21, ADR-0008 of 2026-10-13):
+        // a line of two Device Pixels on a Heading's edge, ExGrid's own on /wide and on the Sheet's
+        // Headings under both Chromes.
         {
             name: 'chrome-150',
-            grep: /BIG-1\b|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3|MK-6|item 3:|item 5:|active cell, cases 7 and 8|far reveal|DC-59|VZ-19|UX-19\/SH-39|UX-19\/SH-54|UX-19\/UX-9|UX-19 at the display's scale/,
+            grep: /BIG-1\b|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3|MK-6|item 3:|item 5:|active cell, cases 7 and 8|far reveal|DC-59|VZ-19|UX-19\/SH-39|UX-19\/SH-54|UX-19\/UX-9|UX-19 at the display's scale|UX-21 at the display's scale|UX-21 D2 at the display's scale|UX-21 \([^)]*\): on the Sheet/,
             use: {
                 channel: 'chrome',
                 viewport: null,
