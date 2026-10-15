@@ -476,7 +476,8 @@ public class MudFormatCellsTests : MudSheetTestContext
 
         await page.Find(".mud-ex-sheet-format-cells-cancel").ClickAsync(new MouseEventArgs());
         page.WaitForAssertion(() => Assert.Single(page.FindAll(".mud-ex-sheet-format-cells-leaving")));
-        await page.Find(".mud-ex-sheet-format-cells-actions").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowDown" });
+        var interceptor = Services.GetRequiredService<IKeyInterceptorService>();
+        await page.InvokeAsync(() => DispatchDialogKeyAsync(interceptor, Dialog(page).Id!, "ArrowDown"));
         foreach (var invocation in focus.Invocations) focus.SetVoidResult();
 
         page.WaitForAssertion(() => Assert.False(IsOpen(page)));

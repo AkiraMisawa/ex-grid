@@ -805,7 +805,7 @@ public class FormatWideningTests : SheetTestContext
         var fontColour = cut.FindAll(".ex-sheet-toolbar [aria-label]").Single(e => e.GetAttribute("aria-label") == "Font Colour"
             && e.ClassList.Contains("ex-sheet-toolbar-split"));
         await fontColour.QuerySelector(".ex-sheet-toolbar-arrow")!.ClickAsync(new MouseEventArgs());
-        await cut.FindAll(".ex-popover .ex-sheet-swatch-choice").First(b => b.GetAttribute("aria-label") == colour).ClickAsync(new MouseEventArgs());
+        await cut.FindAll(".ex-popover .ex-sheet-swatch-choice").First(b => b.GetAttribute("aria-label") == colour).ClickAsync(new MouseEventArgs { Detail = 1 });
     }
 
     [Fact] // ADR-0100, ADR-0071 (2026-10-14, decided with the user): over #### the Font Colour widens a column at the standard width, as Excel's Home tab Font Color button did by its face (red) and from its list (Blue) (the readings of 2026-10-14, run 18a, widening case 5), each in its press's one undo step; the Fill Colour face widens nothing, as the fourteenth run's Fill Colour button did not (case 7)

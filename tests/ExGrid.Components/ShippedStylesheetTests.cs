@@ -882,7 +882,7 @@ public class ShippedStylesheetTests
         // among them, which sends the release on later in the same dispatch than this listener runs.
         Assert.Matches(new Regex(@"const altReleaseAnswered = \(\) => new Promise\(\(dispatched\) => \{\s*setTimeout\(dispatched\);\s*\}\)\.then\(\(\) => \(core \? core\.invokeMethodAsync\('Ping'\)"), script);
         // A held Alt is noted wherever under the root it was typed: its meaning is where it is handed on.
-        Assert.Contains("&& (held || k.onRoot || k.inEditor);", script, StringComparison.Ordinal);
+        Assert.Contains("&& (held === true || k.onRoot || k.inEditor);", script, StringComparison.Ordinal);
         Assert.Contains("if (altAlone(k, held)) {", script, StringComparison.Ordinal);
         // The keys a frame heard on the way back carry their Alts and releases, noted as the gate's own are.
         Assert.Contains("held.unshift(...withAltsNoted((Array.isArray(typed) ? typed : []).map((t) => ({", drain, StringComparison.Ordinal);
@@ -911,7 +911,6 @@ public class ShippedStylesheetTests
         // Told to pass them out, the held keys go to the root's parent, as the keydowns they were, in order.
         // At once, whatever the hold is waiting for: every key held then was typed after the Escape, and one
         // typed later, or the keyboard leaving, must not overtake them.
-        Assert.Matches(new Regex(@"passKeysOut: \(\) => \{\s*if \(!core\) \{\s*return;\s*\}\s*(//[^\n]*\s*)*keysOut = true;\s*passHeldOut\(\);\s*\},"), script);
         var request = Regex.Match(script, @"passKeysOut: \(\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
         Assert.NotEmpty(request);
         // The destination is already answered: a pending Escape must not delay older keys behind

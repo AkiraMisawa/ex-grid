@@ -147,6 +147,13 @@ is bold.
   - *(2026-10-12.)* Letters that narrow a level are a level of their own, as Excel's Format menu is
     behind O (three Escapes after Alt, H, O left Excel Ready, observed, R2 (a)): Escape shows that
     level's every letter again. That Excel's F of FC is such a level is by generalisation.
+  - *(2026-10-12, observed: the Windows readings of that day, R2 (b).)* After Alt, H, F, C one Escape
+    showed the Home tab's KeyTips with the keyboard not back in the cell, a second the tabs', a third
+    none. A list a KeyTip opened is therefore a level: Escape in it, or on the toolbar before it has the
+    keyboard, closes it and shows its row's KeyTips with the keyboard on the toolbar.
+  - *(2026-10-12.)* Letters that narrow a level are a level of their own, as Excel's Format menu is
+    behind O (three Escapes after Alt, H, O left Excel Ready, observed, R2 (a)): Escape shows that
+    level's every letter again. That Excel's F of FC is such a level is by generalisation.
 
 ## Readings until a Windows run
 
@@ -189,6 +196,13 @@ None of these changes the decision. Each records how a part of it is held, or a 
       Colour, and the Fill Colour beside it, set through `SetCellFormatFromFocusAsync`, whose rule is now
       Excel's Home tab buttons': the keys', and a Font colour too. The Fill widens nothing either way.
       ADR-0071's section of that date holds it.
+    - *(Replaced 2026-10-14, decided with the user: the Sheet Toolbar's Font Colour widens a column as
+      Excel's Home tab Font Colour button does — by its face and from its list — while
+      `SetCellFormatAsync` keeps widening as COM's `Font.Color` does, which does not widen.)* The
+      readings of 2026-10-14 saw Excel's button widen (run 18a, widening case 5). *(As built.)* The Font
+      Colour, and the Fill Colour beside it, set through `SetCellFormatFromFocusAsync`, whose rule is now
+      Excel's Home tab buttons': the keys', and a Font colour too. The Fill widens nothing either way.
+      ADR-0071's section of that date holds it.
 - **Comma Style is in the default row, disabled, with the reason.** Excel's Comma Style sets the
   built-in Comma style, whose code pads with `*` as Accounting does, and ExSheet does not read
   that code. Showing it disabled is what Format Cells does for Accounting. Setting another code
@@ -205,6 +219,19 @@ None of these changes the decision. Each records how a part of it is held, or a 
     browser has applied that render.
   - This is the way `ExSheet.MudBlazor`'s Format Cells leaves its dialog (ADR-0071). No script is
     added.
+  - *(2026-10-12, the seventeenth Windows run, Part D.)* The element is not `aria-hidden`. It was, and on
+    the Server host, where it holds focus for a round trip, Chromium logged "Blocked aria-hidden on an
+    element because its descendant retained focus" whenever its accessibility tree was on: under a
+    screen reader, or the DevTools protocol. Format Cells' element under MudBlazor's Chrome did the same.
+    A focused element cannot be hidden from assistive technology, as the Keyboard Field cannot
+    (ADR-0080), so each is empty, unnamed and not hidden. Layer 3 reads the tree once over the DevTools
+    protocol, which keeps it up to date from then on (`Accessibility.enable` alone does not), holds the
+    round trip at 80 ms on the Server host, and holds the console to no such warning.
+  - *(Replaced the same day.)* The element held the keyboard about a round trip and a half on a circuit,
+    and a key typed then reached the toolbar: Enter pressed the last item again. The core now takes the
+    keyboard back from the band itself (ADR-0050 item 16's note of 2026-10-12), and the toolbar has no
+    element of its own for it. `ExSheet.MudBlazor`'s list still leaves through one, inside the band;
+    Format Cells' dialog still leaves through its own.
   - *(2026-10-12, the seventeenth Windows run, Part D.)* The element is not `aria-hidden`. It was, and on
     the Server host, where it holds focus for a round trip, Chromium logged "Blocked aria-hidden on an
     element because its descendant retained focus" whenever its accessibility tree was on: under a
@@ -260,6 +287,13 @@ None of these changes the decision. Each records how a part of it is held, or a 
     release.
   - Alt released before the ↓ of Alt+↓ therefore shows the KeyTips. Escape takes them away. This
     is left as it is, rather than adding a listener to the grid.
+  - *(2026-10-13, decided with the user: the grid's script hears Alt's `keyup` on the root and holds it
+    in order with the keys, sharing ED-30's root `keyup` listener.)* The Sheet's listener stays, and hears
+    the release through the grid: held in order with the keys while the grid holds any, and never a
+    chord's, which the grid's key gate tells by the keys it hears between the press and the release. So
+    another key's release no longer makes the Alt a chord's in the Sheet, and Alt released before the ↓
+    of Alt+↓ no longer shows the KeyTips. This reverses "rather than adding a listener to the grid" above:
+    the grid's own `keyup` listener, ED-30's, is widened (ADR-0021's seventh entry), and none is added.
   - *(2026-10-13, decided with the user: the grid's script hears Alt's `keyup` on the root and holds it
     in order with the keys, sharing ED-30's root `keyup` listener.)* The Sheet's listener stays, and hears
     the release through the grid: held in order with the keys while the grid holds any, and never a

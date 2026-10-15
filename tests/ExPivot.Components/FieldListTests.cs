@@ -358,6 +358,8 @@ public class FieldListTests : PivotTestContext
         await cut.Find(".ex-pivot").FocusInAsync(new FocusEventArgs());
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
         Assert.Same(before, cut.Instance.CurrentLayout);
+    }
+
     // The entry's button, found and pressed in the renderer's turn.
     private static Task OnEntryAsync(IRenderedComponent<PivotComponent> cut, string area, string caption, Func<AngleSharp.Dom.IElement, Task> act)
         => cut.InvokeAsync(() => act(AreaElement(cut, area).QuerySelectorAll(".ex-pivot-entry-button")
@@ -497,6 +499,7 @@ public class FieldListTests : PivotTestContext
         await cut.Find(".ex-pivot-toolbar .ex-pivot-popup").FocusInAsync(new FocusEventArgs());
         // Escape closed it: it stands until the keyboard has left it for the button.
         await cut.Find(".ex-pivot-toolbar .ex-pivot-popup").FocusOutAsync(new FocusEventArgs());
+        await cut.Find(".ex-pivot").FocusInAsync(new FocusEventArgs());
         Assert.Empty(cut.FindAll(".ex-pivot-toolbar .ex-pivot-popup"));
     }
 

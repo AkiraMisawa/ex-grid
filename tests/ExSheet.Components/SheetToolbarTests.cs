@@ -365,7 +365,7 @@ public class SheetToolbarTests : SheetTestContext
         OnReclaim(() => standing.Add((cut.FindAll(".ex-popover .ex-sheet-choices").Count, cut.FindAll(".ex-format-cells").Count > 0,
             string.Join(",", HandOffs.Skip(handOffs)))));
 
-        await cut.FindAll(".ex-popover .ex-sheet-choice").Single(c => c.TextContent.StartsWith("More Number Formats")).ClickAsync(new MouseEventArgs());
+        await cut.FindAll(".ex-popover .ex-sheet-choice").Single(c => c.TextContent.StartsWith("More Number Formats")).ClickAsync(new MouseEventArgs { Detail = 1 });
 
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".ex-format-cells")));
         Assert.Equal([(1, false, "popover")], standing);
@@ -381,7 +381,7 @@ public class SheetToolbarTests : SheetTestContext
         await PressItemAsync(cut, "Number Format");
         Assert.NotEmpty(cut.FindAll(".ex-popover .ex-sheet-choices"));
 
-        await cut.FindAll(".ex-popover .ex-sheet-choice").Single(c => c.TextContent.StartsWith("More Number Formats")).ClickAsync(new MouseEventArgs());
+        await cut.FindAll(".ex-popover .ex-sheet-choice").Single(c => c.TextContent.StartsWith("More Number Formats")).ClickAsync(new MouseEventArgs { Detail = 1 });
 
         Assert.Empty(cut.FindAll(".ex-popover .ex-sheet-choices"));
         Assert.Empty(cut.FindAll(".ex-format-cells"));

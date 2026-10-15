@@ -371,6 +371,9 @@ Excel's formatting keys: Ctrl+B, Ctrl+I, Ctrl+U and Ctrl+2 to Ctrl+5; Ctrl+Shift
     *(Reversed 2026-10-13, decided with the user: the grid's script hears Alt's `keyup` on the root and
     holds it in order with the keys, sharing ED-30's root `keyup` listener, ADR-0021's seventh entry; no
     listener is added. Item 16's note of 2026-10-12 says how.)*
+    *(Reversed 2026-10-13, decided with the user: the grid's script hears Alt's `keyup` on the root and
+    holds it in order with the keys, sharing ED-30's root `keyup` listener, ADR-0021's seventh entry; no
+    listener is added. Item 16's note of 2026-10-12 says how.)*
 
 **15. A per-cell appearance.** A Consumer can supply a cell's Font (a colour, bold, italic,
 underline and strikethrough), its Fill, and its four Border sides.
@@ -490,6 +493,13 @@ the built-in Chrome.
     task.
   - **A hand-off told while the hold drains keeps the hold until the keyboard arrives,** so the keys typed
     meanwhile go where the keyboard is going, and none is gated against the root.
+    *(2026-10-13, built for ADR-0061's note of that day; adopted with the user on 2026-10-14.)* So do the
+    keys a frame hands back with the keyboard (`ReturnKeyboardAsync(from, typedOnTheWay)`): told while
+    they are asked for, the hand-off holds them until the keyboard arrives, and they go there in order.
+    This carries keys typed on one frame of the Consumer's own through the root to another: ExPivot's
+    report filter whose Filter… is opening, and `ExSheet.MudBlazor`'s toolbar list closing as Format Cells
+    opens. The hand-off is told after the keyboard is asked back: told while a control outside the root
+    still holds it, a hand-off to a frame is taken as reached there, as before.
     *(2026-10-13, built for ADR-0061's note of that day; adopted with the user on 2026-10-14.)* So do the
     keys a frame hands back with the keyboard (`ReturnKeyboardAsync(from, typedOnTheWay)`): told while
     they are asked for, the hand-off holds them until the keyboard arrives, and they go there in order.
