@@ -11,7 +11,7 @@ namespace ExGrid.Components.Tests;
 /// <summary>
 /// The accessibility surface (ADR-0033): the root owns it, the counts and indices are
 /// the absolute ones, and no element anywhere carries aria-selected. What needs a real
-/// browser — one tab stop, the live region against a screen reader — is layer 3's.
+/// browser — one tab stop and the accessibility tree — is layer 3's.
 /// </summary>
 public class AccessibilityTests : GridTestContext
 {
@@ -99,6 +99,43 @@ public class AccessibilityTests : GridTestContext
         Assert.All(cut.FindAll(".ex-header-cell"), h => Assert.Equal("columnheader", h.GetAttribute("role")));
         Assert.All(cut.FindAll(".ex-row"), r => Assert.Equal("row", r.GetAttribute("role")));
         Assert.All(cut.FindAll(".ex-cell"), c => Assert.Equal("gridcell", c.GetAttribute("role")));
+    }
+
+    [Theory] // ADR-0033 / ADR-0015: header rows add to the full result's count and absolute indices, beyond Int32.
+    [InlineData(0, true, false)]
+    [InlineData(1, true, false)]
+    [InlineData(2, true, false)]
+    [InlineData(2, false, false)]
+    [InlineData(2, false, true)]
+    public async Task Header_rows_do_not_overflow_the_largest_paged_result(int headerRows, bool loaded, bool headings)
+    {
+        // Page the result as ADR-0015 requires: only one data row occupies scroll height.
+        // Its absolute index still belongs to the whole result, including a Placeholder.
+        const int last = int.MaxValue - 1;
+        var cut = Render<ExGrid<TestRow>>(ps =>
+        {
+            ps.Add(g => g.Window, TestRows.Many(loaded ? 1 : 0))
+              .Add(g => g.WindowStart, last)
+              .Add(g => g.TotalCount, int.MaxValue)
+              .Add(g => g.Columns, TestRows.Wide(3))
+              .Add(g => g.PageSize, 1)
+              .Add(g => g.HideHeader, headerRows == 0)
+              .Add(g => g.ViewportHeight, 200);
+            if (headerRows == 2)
+                ps.Add(g => g.HeaderGroups, (Columns.HeaderGroup[])[
+                    new("Group", [TestRows.ColumnName(1), TestRows.ColumnName(2)])]);
+            if (headings) ps.Add(g => g.RowHeadings, row => (row + 1).ToString(System.Globalization.CultureInfo.InvariantCulture));
+        });
+        Assert.True(await cut.InvokeAsync(() => cut.Instance.PlaceSelectionAsync(
+            new SelectionRange(last, 0, 1, 1), new CellPosition(last, 0), 0)));
+
+        var expected = ((long)int.MaxValue + headerRows).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var row = Assert.Single(cut.FindAll(".ex-viewport .ex-row"));
+        Assert.Multiple(
+            () => Assert.Equal(expected, cut.Find(".ex-grid").GetAttribute("aria-rowcount")),
+            () => Assert.Equal(expected, row.GetAttribute("aria-rowindex")),
+            () => Assert.Equal(!loaded, row.ClassList.Contains("ex-placeholder")),
+            () => Assert.Equal(headings, row.QuerySelector(".ex-row-heading") is not null));
     }
 
     private const int Million = 1_000_000;

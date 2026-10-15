@@ -70,7 +70,7 @@
      id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Busy ? "true" : null)"
      data-ex-reveal="@_revealToken" data-ex-follow="@_followToken" data-ex-follow-focus="@FollowFocusId()"
      data-ex-pointed-from="@PointedFrom"
-     aria-rowcount="@((_total ?? _window.Count) + HeaderRowCount)" aria-colcount="@Columns.Count"
+     aria-rowcount="@((long)(_total ?? _window.Count) + HeaderRowCount)" aria-colcount="@Columns.Count"
      aria-activedescendant="@(keyFieldShown ? null : activeDescendant)"
      @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
     @* The stylesheet's notice (ADR-0123, ERR-11): it carries the stamp of the stylesheet this build
@@ -555,11 +555,11 @@
                             {
                                 @* A Row Heading is a position's label, so a row that has not
                                    arrived still has one (ADR-0050). *@
-                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(HeaderRowCount + row + 1)" aria-busy="true" @key="PlaceholderKey(row)"><div class="ex-row-heading" style="@_rowHeadingStyle" aria-hidden="true">@RowHeadingAt(row)</div></div>
+                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@((long)HeaderRowCount + row + 1)" aria-busy="true" @key="PlaceholderKey(row)"><div class="ex-row-heading" style="@_rowHeadingStyle" aria-hidden="true">@RowHeadingAt(row)</div></div>
                             }
                             else
                             {
-                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(HeaderRowCount + row + 1)" aria-busy="true" @key="PlaceholderKey(row)"></div>
+                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@((long)HeaderRowCount + row + 1)" aria-busy="true" @key="PlaceholderKey(row)"></div>
                             }
                         }
                     }

@@ -44,7 +44,7 @@
    though they had (ADR-0004). *@
 @{ _paintingHighlightEnd = null; }
 <div class="@RowClasses.For(RowKind?.Invoke(Row) ?? default, Placeholder, Stripe)"
-     role="row" aria-rowindex="@(HeaderRowCount + RowIndex + 1)" aria-busy="@(Placeholder ? "true" : null)">
+     role="row" aria-rowindex="@((long)HeaderRowCount + RowIndex + 1)" aria-busy="@(Placeholder ? "true" : null)">
     @if (HeadingStyle is not null)
     {
         @* The Row Heading (ADR-0050): first in the flow and held at the left edge, so every
