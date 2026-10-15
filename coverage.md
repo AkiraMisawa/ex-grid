@@ -2,7 +2,7 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 95.6% | 88.4% |
+| ExGrid | 95.7% | 88.6% |
 | ExSheet | 95.9% | 88.8% |
 | ExPivot | 94.4% | 85.3% |
 | Data | 94.5% | 90.3% |
@@ -12,29 +12,29 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/15/2026 - 01:02:05 |
+| Generated on: | 10/15/2026 - 09:33:10 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
-| Classes: | 842 |
-| Files: | 463 |
-| **Line coverage:** | 95.2% (58195 of 61079) |
-| Covered lines: | 58195 |
-| Uncovered lines: | 2884 |
-| Coverable lines: | 61079 |
-| Total lines: | 103309 |
-| **Branch coverage:** | 88% (33816 of 38403) |
-| Covered branches: | 33816 |
-| Total branches: | 38403 |
+| Classes: | 847 |
+| Files: | 466 |
+| **Line coverage:** | 95.2% (58494 of 61379) |
+| Covered lines: | 58494 |
+| Uncovered lines: | 2885 |
+| Coverable lines: | 61379 |
+| Total lines: | 103788 |
+| **Branch coverage:** | 88.1% (34003 of 38591) |
+| Covered branches: | 34003 |
+| Total branches: | 38591 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExGrid - 95.3%</summary>
+<details><summary>ExGrid - 95.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**95.3%**|**88.6%**|
+|**ExGrid**|**95.4%**|**88.8%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -147,6 +147,7 @@
 |ExGrid.Components.ExGrid.ExtentReveal<TRow>|100%||
 |ExGrid.Components.ExGrid.HandedOnPress<TRow>|100%||
 |ExGrid.Components.ExGrid.HeaderPress<TRow>|100%||
+|ExGrid.Components.ExGrid.HeadingStateKey<TRow>|100%||
 |ExGrid.Components.ExGrid.MarkPress<TRow>|100%|50%|
 |ExGrid.Components.ExGrid.OwnWrite<TRow>|100%||
 |ExGrid.Components.ExGrid.PaintBasis<TRow>|100%|100%|
@@ -160,18 +161,19 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
+|ExGrid.Components.ExGrid<TRow>|95.5%|90.5%|
 |ExGrid.Components.ExGrid<TRow>|90.8%|85.9%|
-|ExGrid.Components.ExGrid<TRow>|95.4%|90.3%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridStylesheet|100%||
+|ExGrid.Components.HeadingMarkStyles|95%|90%|
 |ExGrid.Components.PackageStylesheet|100%|100%|
 |ExGrid.Components.ReferenceHighlights|100%|97.7%|
 |ExGrid.Components.RowAppearance|100%|75%|
 |ExGrid.Components.RowClasses|96.5%|92.8%|
 |ExGrid.Components.ScrollOffset|100%||
-|ExGrid.Components.SelectionStyles|100%|95.9%|
+|ExGrid.Components.SelectionStyles|100%|96.6%|
 |ExGrid.Components.SelectionStyles.OutlineCover|100%||
 |ExGrid.Components.SelectionStyles.ReadableEdge|100%||
 |ExGrid.Components.Share|100%|100%|
@@ -250,7 +252,10 @@
 |ExGrid.Selection.FillRules|100%|100%|
 |ExGrid.Selection.GridExtent|100%||
 |ExGrid.Selection.GridFillIntent|100%||
-|ExGrid.Selection.GridSelection|91.6%|83.1%|
+|ExGrid.Selection.GridSelection|91.8%|83.7%|
+|ExGrid.Selection.HeadingMarks|98%|95.5%|
+|ExGrid.Selection.HeadingMarks.CoverageEvent|100%||
+|ExGrid.Selection.HeadingMarks.CoverageMinimum|100%|100%|
 |ExGrid.Selection.HeldSelection|100%|100%|
 |ExGrid.Selection.SelectionRange|100%|100%|
 |ExGrid.SortCycle|100%|100%|
@@ -273,11 +278,11 @@
 |ExGrid.ViewStateDocument|100%||
 
 </details>
-<details><summary>ExGrid.Data - 94.6%</summary>
+<details><summary>ExGrid.Data - 94.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.6%**|
+|**ExGrid.Data**|**94.7%**|**90.6%**|
 |ExGrid.Data.AggregateAccumulator|86%|87.8%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -366,7 +371,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
