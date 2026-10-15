@@ -9,16 +9,56 @@ namespace ExGrid.MudBlazor.Tests;
 /// </summary>
 public class WrapperStylesheetTests
 {
-    private static string WrapperStylesheet()
+    private static string WrapperStylesheet() => Stylesheet("ExGrid.MudBlazor", "mud-ex-grid.css");
+
+    private static string Stylesheet(string package, string file)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "ExGrid.slnx")))
             directory = directory.Parent;
         Assert.True(directory is not null, $"no ExGrid.slnx above {AppContext.BaseDirectory}");
-        var path = Path.Combine(directory!.FullName, "src", "ExGrid.MudBlazor", "Assets", "mud-ex-grid.css");
+        var path = Path.Combine(directory!.FullName, "src", package, "Assets", file);
         Assert.True(File.Exists(path), $"the Wrapper's stylesheet is not at {path}");
         return File.ReadAllText(path);
     }
+
+    [Fact] // ADR-0008 (2026-10-12) / ADR-0030 / UX-19: the Wrapper colours the Focus, and the Focus among several ranges follows it, with no mapping of the Wrapper's own
+    public void The_focus_among_ranges_follows_the_focus_outline_the_wrapper_maps()
+    {
+        var css = Regex.Replace(WrapperStylesheet(), @"/\*.*?\*/", "", RegexOptions.Singleline);
+        var root = Regex.Match(css, @"\.mud-ex-grid\s*\{([^}]*)\}");
+
+        Assert.True(root.Success, "no .mud-ex-grid rule in the Wrapper's stylesheet");
+        // The Focus outline is the palette's primary (ADR-0030)...
+        Assert.Matches(new Regex(@"(^|[;\s])--ex-focus-outline:\s*var\(--mud-palette-primary\);"), root.Groups[1].Value);
+        // ...and the border's own token is left unnamed, so the core's rule takes the Focus outline's
+        // colour (2026-10-12, decided with the user: under the MudBlazor Wrappers it follows their
+        // primary with no mapping of its own).
+        Assert.DoesNotContain("ex-focus-among-ranges", css, StringComparison.Ordinal);
+    }
+
+    [Theory] // ADR-0008 (2026-10-12) / ADR-0030 / UX-19: the sibling Wrappers map nothing of the Focus among several ranges either
+    [InlineData("ExSheet.MudBlazor", "mud-ex-sheet.css")]
+    [InlineData("ExPivot.MudBlazor", "mud-ex-pivot.css")]
+    public void No_wrapper_maps_the_focus_among_ranges(string package, string file)
+        => Assert.DoesNotContain("ex-focus-among-ranges", Stylesheet(package, file), StringComparison.Ordinal);
+
+    [Theory] // ADR-0008 (2026-10-13) / ADR-0030: the Heading Mark ink follows the Focus outline; shades are palette tokens, never internal selectors
+    [InlineData("ExGrid.MudBlazor", "mud-ex-grid.css")]
+    [InlineData("ExSheet.MudBlazor", "mud-ex-sheet.css")]
+    [InlineData("ExPivot.MudBlazor", "mud-ex-pivot.css")]
+    public void No_wrapper_maps_the_heading_mark_ink_or_its_internal_classes(string package, string file)
+    {
+        var css = Stylesheet(package, file);
+        Assert.DoesNotMatch(@"--ex-heading-mark\s*:", css);
+        Assert.DoesNotContain(".ex-heading-", css, StringComparison.Ordinal);
+    }
+
+    [Theory] // ADR-0008 D1 / ADR-0030: the core Wrapper's shades follow its palette on all three products.
+    [InlineData("--ex-heading-mark-background", "rgb(from var(--mud-palette-text-primary) r g b / 1)", "12%")]
+    [InlineData("--ex-heading-mark-whole-background", "var(--mud-palette-primary)", "20%")]
+    public void ADR0008_heading_shades_map_to_opaque_palette_mixes(string token, string ink, string portion)
+        => Assert.Contains($"{token}: color-mix(in srgb, {ink} {portion}, var(--mud-palette-surface));", WrapperStylesheet(), StringComparison.Ordinal);
 
     [Theory] // ADR-0052 (2026-09-29) / ADR-0029 / DC-44: the Wrapper paints the Size Tip from its tokens, as MudBlazor paints a tooltip
     [InlineData("--ex-size-tip-background", "var(--mud-palette-gray-darker)")]

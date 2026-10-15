@@ -97,6 +97,17 @@ arrive.
   such column) instead, because a Linked Table can be declared after the Sheet Document is opened.
   Refusing on entry would make a saved document impossible to reopen before its tables arrive.
 
+- **A table's bare name read through `INDIRECT` is refused** *(2026-10-12, decided with the user:
+  `#VALUE!`, in either style)*. Excel reads `INDIRECT("Positions")` as the table's data, every column
+  and every row without the header (INDIRECT-053 to 057, observed by the second area pass of that day),
+  and a Formula could then read the table by position, `INDEX(INDIRECT("Positions"),1,1)`, which rule 2
+  does not offer. It is `#VALUE!` in either style, Excel's answers are recorded beside the refusal as a
+  difference by decision, and it is a Known limitation of `0.1.0`
+  ([ADR-0202](./0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md)).
+  Typed, the bare name is a Refused Formula that shows `#NAME?` (TABLE-024) *(2026-10-13, decided with the
+  user: no Formula catches it, and a cell that reads it is refused)*; `Table[Column]`, typed or as
+  `INDIRECT`'s text, reads the column.
+
 ## Outlined by whoever shows the table *(2026-09-29, decided with the user)*
 
 While a Formula that reads a Linked Table is edited, **ExSheet tells its Consumer which of the

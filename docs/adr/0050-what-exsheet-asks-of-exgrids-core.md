@@ -121,8 +121,10 @@ semantics". This settles it in the shape ADR-0007 gave editing: **the grid repor
 the Consumer decides what it means.**
 
 - **The core paints the handle** at the bottom-right corner of the Selection's last range, in the
-  selection overlay, when the Consumer declares that fill is enabled. **The core owns the drag.** It
-  extends along one axis, like Excel, and paints the target outline. *(Observed 2026-09-29: a
+  selection overlay, when the Consumer declares that fill is enabled: for whole columns at the first
+  row's top-right corner, and for whole rows at the first column's bottom-left, beside the Heading;
+  for every cell, none ("The handle on a whole axis", 2026-10-12, below). **The core owns the
+  drag.** It extends along one axis, like Excel, and paints the target outline. *(Observed 2026-09-29: a
   diagonal drag from A1 towards C3 fills one axis only, in Excel — Microsoft 365 on Windows — and in
   Google Sheets alike. Filling down and across takes two drags, as it does here. A two-axis fill was
   asked for and dropped: it is not Excel's, and a series filled both ways would depend on which axis
@@ -135,8 +137,9 @@ the Consumer decides what it means.**
   Excel's result; **a pattern it has not implemented is refused, not filled with copies.** Excel
   would have continued a series there, and a column of copies is a plausible, wrong series. The
   first rules are: copy, with relative References shifted; a linear series from two or more selected
-  numbers; a series of dates by day. `Item 1` → `Item 2` and the rest of Excel's patterns come
-  later, and each is refused until it arrives.
+  numbers; a series of dates by day; and, in a fill from whole columns or whole rows, a series by one
+  from a single number in a line ("The handle on a whole axis", below). `Item 1` → `Item 2` and the
+  rest of Excel's patterns come later, and each is refused until it arrives.
 - A plain ExGrid Consumer can take Fill Intents too, and resolve them into its Overlay.
 
 *(Added 2026-09-28, when `main`'s fill keys were merged — [ADR-0035](./0035-paste-and-fill-respect-the-editable-declaration.md)'s
@@ -261,6 +264,12 @@ HTML flavours to write, or a refusal carrying the Consumer's own sentence.
   content is the strongest evidence a page has. A false match would need another program to have
   put exactly that block there, and even then it pastes the Entries that showed exactly those
   Values.
+- *(2026-10-13, decided with the user: a cell of the family's own clipboard HTML may carry a mark, `ClipboardData.MarkAttribute`
+  (`data-ex-mark`), which the grid hands back beside the pasted field (`GridPasteIntent.MarkFor`) and
+  gives no meaning; another program ignores it. ExSheet marks a refused cell,
+  `data-ex-mark="exsheet-refused:C1"`, so that a paste of it as a Value is refused by name, wherever on
+  the page it lands, rather than turn a Refused Formula into an Error Value a Formula can catch
+  (ADR-0047).)*
 
 **10. A paste says where each field came from.** The paste notification marks each field as an
 invariant number (Excel's `x:num` attribute, or ExGrid's own unformatted HTML) or as shown text.
@@ -359,6 +368,9 @@ Excel's formatting keys: Ctrl+B, Ctrl+I, Ctrl+U and Ctrl+2 to Ctrl+5; Ctrl+Shift
     reading until a Windows run.
   - The release is the Consumer's to hear, from a `keyup` that reaches it from the grid's root.
     No listener is added to the grid.
+    *(Reversed 2026-10-13, decided with the user: the grid's script hears Alt's `keyup` on the root and
+    holds it in order with the keys, sharing ED-30's root `keyup` listener, ADR-0021's seventh entry; no
+    listener is added. Item 16's note of 2026-10-12 says how.)*
 
 **15. A per-cell appearance.** A Consumer can supply a cell's Font (a colour, bold, italic,
 underline and strikethrough), its Fill, and its four Border sides.
@@ -444,6 +456,79 @@ the built-in Chrome.
     and never the grid's.)*
   - A dynamic call was chosen over a fixed flag on the command, because the same command opens the
     core's popover under one Chrome and a frame of its own under another.
+- *(2026-10-12; ExSheet's Sheet Toolbar, ADR-0100.)* **The hold covers the keyboard's way to and from a
+  frame of the Consumer's own, a popover of the Consumer's closing, and the release of the Alt key.**
+  - *(2026-10-12, decided with the user, decision (C): the letters typed after the release of the Alt key
+    alone wait for the KeyTips.)* **After the release of a declared Alt that went down alone, the keys wait
+    for the Consumer.** The release is the Consumer's to answer (ExSheet's `keyup`, ADR-0100). *(Until
+    2026-10-13 the gate heard no keyup, and knew the release by the key after it: one that does not carry
+    Alt, or Alt pressed again.)* The gate hears it on the root (ADR-0021's seventh entry, widened 2026-10-13),
+    and every key after it is held until an empty question to the core (`Ping`), asked once the release has
+    been dispatched, travels behind it and is answered. The gate waits for nothing else, so the Consumer's
+    handler tells it before its first `await`: `HandKeyboardToFrameAsync`, then `HandKeyboardToAsync` for
+    the frame's control. Handed off, the keys go to the frame, or are dropped with every key behind one it
+    cannot take, a Tab; told nothing, they are the grid's. A press on the grid and DOM focus leaving it
+    forget an Alt that is down.
+  - *(2026-10-13, decided with the user: the grid's script hears Alt's `keyup` on the root and holds it in
+    order with the keys.)* **While keys are held, the release is held in its place**, kept from the
+    Consumer's handler, and handed on in its turn, as the keyup it was, where the keyboard is then — the
+    root, or the frame or control the keys went to — after its press, which the hold hands to the core in
+    its turn rather than skip as a modifier's; the question is asked after it. Whether the Alt went down
+    alone is the gate's to tell, since it hears every key between the press and the release in order: a
+    chord's release (a key carrying Alt came between), or one whose press it did not hear, never reaches
+    the Consumer, and the Consumer reads no other key's release, one typed while keys are held reaching it
+    out of turn. A frame's band holds an Alt's release typed on it while the keyboard is in flight, with the
+    keys. *(Until then an Alt pressed alone again while keys were held was forwarded at once or held as a
+    modifier, and its press and its release could reach the Consumer in either order.)*
+    *(As built, 2026-10-14.)* An Alt held is judged where it lands in its turn, not where it was typed: one
+    typed in a popover closing among the held keys — three Escapes in a list a KeyTip opened, then Alt,
+    H, H — reaches the Consumer alone when its turn hands it to the root, an edit or the frame the keys go
+    to, and is no one's on a popover's control or in a text field, as an Alt typed there is, nor is its
+    release held with it. Judged where it was typed, it was a chord's, and H, H opened an edit in the cell.
+    A release handed to a frame among the keys going there is not followed by the question: the frame
+    answers its keys in the order they reach it, and the keys after the release go on to it in the same
+    task.
+  - **A hand-off told while the hold drains keeps the hold until the keyboard arrives,** so the keys typed
+    meanwhile go where the keyboard is going, and none is gated against the root.
+    *(2026-10-13, built for ADR-0061's note of that day; adopted with the user on 2026-10-14.)* So do the
+    keys a frame hands back with the keyboard (`ReturnKeyboardAsync(from, typedOnTheWay)`): told while
+    they are asked for, the hand-off holds them until the keyboard arrives, and they go there in order.
+    This carries keys typed on one frame of the Consumer's own through the root to another: ExPivot's
+    report filter whose Filter… is opening, and `ExSheet.MudBlazor`'s toolbar list closing as Format Cells
+    opens. The hand-off is told after the keyboard is asked back: told while a control outside the root
+    still holds it, a hand-off to a frame is taken as reached there, as before.
+  - **A frame gives the keyboard back with the keys typed on it on the way:**
+    `ReturnKeyboardAsync(ElementReference from, Func<IReadOnlyList<KeyboardEventArgs>> typedOnTheWay)`.
+    It is granted where the core's focus function is, and also while DOM focus is still on the frame, so
+    the frame need not first give the keyboard up to nothing, where a key reaches no grid. The Consumer
+    holds the keys typed on the frame from the moment it asks; the gate, once it has the keyboard, asks
+    for them, behind every key the frame heard, and holds them ahead of any typed on the root since.
+    Declined, it still asks, and drops them. A keyboard already inside the root — in a popover a command
+    of the frame opened — is the grid's, and stays where it is.
+    *(Implementation correction, 2026-10-14.)* The returned task completes after that collection,
+    including a declined hand-back. It previously completed while the question was still in flight;
+    a Consumer clearing its queue on completion could discard a key before the gate collected it
+    (CI: Escape then Down in ExPivot's details grid, Server/Edge). Completion now acknowledges the
+    keys' collection, so removing the frame cannot overtake it. No timeout or retry is involved.
+  - **A Consumer's popover closed before its contents took the keyboard** withdraws the gate's wait for
+    them: the keys typed meanwhile are the grid's, rather than held for the hold's fallback and dropped.
+    *(Implementation correction, 2026-10-14, following ADR-0044's closing rule.)* Closing withdraws any
+    pending destination at that popover even after its contents reported focus. A choice pressed while
+    the opening hold still stood made the gate await the menu's removal; by then the contents no longer
+    held focus, so the opening destination could never be reached and Ctrl+Z after a Font Colour choice
+    was dropped. A destination at a Consumer's frame remains standing, so keys follow it when the close
+    hands the keyboard there.
+  - *(2026-10-12, decided with the user: keys typed while the keyboard is in flight back from a closing
+    popover are held and handed on in order to where the keyboard lands.)* **A Consumer's popover closed
+    by Escape tells the Consumer that asked** (`OpenPopoverAsync(content, label, closedByEscape)`), before
+    the grid takes the keyboard back. The keys typed after the Escape are held until the popover is gone
+    and the keyboard has landed (ADR-0044's note of 2026-10-12), and a hand-off the Consumer tells before
+    its first `await` is where they land. It is not told of any other close.
+  - **A control handed the keyboard while it is on its way to a frame takes it in turn.**
+    `HandKeyboardToAsync` called while a frame hand-off is pending and the gate holds keys gives the
+    control the keyboard when the hold reaches it, and hands it the held keys in the same task: a key
+    typed straight on the control can no longer overtake one still held (Alt, H, O typed at once, the O
+    on the band before the held H). ExSheet's KeyTips give the band the keyboard this way.
 
 ## A Formula Bar text that is not the cell's own *(2026-10-03, with ADR-0125)*
 
@@ -466,3 +551,65 @@ opt-in declaration:
 [ADR-0160](./0160-the-grid-holds-no-consumer-row-beyond-the-window-it-was-given.md): the grid holds no Consumer row beyond the Window it was given.
 - **Item 15's cache of appearances drops every entry whose row instance a new Window does not hold.**
 - **What it keeps for the rows it does hold is their appearance values.**
+
+## The handle on a whole axis *(2026-10-12)*
+
+*(2026-10-12, decided with the user: the fill handle on a whole axis follows Excel, as the seventeenth
+Windows run's h3 pictured it; a range spanning every row puts its handle at its first row's top-right
+corner, and one spanning every column at its first column's bottom-left. Ctrl+A, several whole
+columns or rows, and which way the drag fills were to be asked next, with today's behaviour kept until
+then.)*
+The core had put the handle at the bottom-right of every range, so a whole column's stood a million
+rows down and a whole row's sixteen thousand columns across, and ExSheet showed none that could be
+grabbed. The run pictured column C and row 3 (`verification/2026-10-11-windows-17/`, Part H, h3).
+The readings of 2026-10-12 asked the rest (`verification/2026-10-12-windows-readings/`, R5).
+
+- **Whole columns put the handle at the first row's top-right corner, and whole rows at the first
+  column's bottom-left.** Every row and every column are the grid's extent
+  (`SelectionRange.SpansEveryRow`, `SpansEveryColumn`). Several whole columns put it at the last
+  column's top-right and several whole rows at the last row's bottom-left, as Excel did for columns
+  B:D and rows 2:4, each selected from its first Heading (observed, R5 (2)). Where Excel puts it
+  when the Extent is the first column or row was not read; ExGrid keeps the last.
+- **Every cell (Ctrl+A) has none.** Excel showed none in view (observed, R5 (1)); whether it draws
+  one at XFD1048576 was not read. Nothing is left to fill to, so the core paints none anywhere, at a
+  small grid's bottom-right too (by generalisation).
+- **It lies just inside the cells, beside the Heading.** It is centred on the edge that runs along
+  the range, the column's right edge or the row's bottom edge, and lies inside the range across the
+  other: its top is the first row's top, and its left the first column's left. Excel's whole column's
+  straddles its Heading's bottom edge, and a whole row's the Row Heading's right edge (observed, R5
+  (2)). The header and the Row Headings stand above the
+  selection layer (ADR-0008, 2026-10-01), so a handle straddling their edge would be half covered;
+  ExGrid's lies half its side lower, uncovered.
+- **It stays in view.** With a whole column's first row scrolled above the readable area, the
+  handle stands at the top-right of the part in view, beside the header, as Excel's stayed, clipped
+  under its Heading (observed, R5 (5)). With a whole row's first column under the Row Headings or the
+  Pinned Columns, it stands at the left of the part in view (by generalisation). ExGrid scrolls by
+  the pixel, so the handle stands at the readable area's edge, placed at each render from the scroll
+  the grid last read. A press is judged where the scroll it was taken at put the handle, so
+  `PressTakenAt` carries the vertical scroll offset beside the horizontal one (ED-31; reading a
+  scroll offset is ADR-0021's second entry).
+- **The drag fills along the axis the range does not span.** A whole column's handle fills across,
+  a whole row's up or down, and the Selection is then the source and the target, whole columns or
+  rows; dragged along the axis the range spans, nothing is reached and nothing is raised (observed,
+  R5 (3) and (4): C:E after the drag right, nothing after the drag down or sideways). The grab box
+  is the handle's, twice its side about its centre, and a press on a Row Heading stays the
+  Heading's, though a whole row's handle stands against it.
+- **ExSheet fills a whole axis as Excel did.** Every line is filled: text copied, a Formula filled
+  as one, and **a single number in a line goes on by one per cell** (observed, R5 (3) and (4): C1's
+  `1` gave D1 `2` and E1 `3`, A3's `1` gave A4 `2` and A5 `3`), where one cell's handle copies its
+  number (observed, R5's control: C5's `1` dragged down gave 1, 1). The series is held at 15
+  significant digits as the trend is, and counts back by one filled left or up (by generalisation).
+  A single number in any other source of several cells is still copied: Excel was not read there.
+  From several whole columns or rows, a line that holds a number beside a blank is refused, as any
+  such pattern is (`FillPatternNotSupported`), until the next Windows run reads it.
+- **ExSheet writes a whole axis's format on the target axis.** A fill from whole columns writes each
+  target column's format as the one its source column records, then only the lines that hold a
+  cell; whole rows likewise. The handle reaches it, and Ctrl+D over whole rows; Ctrl+R over whole
+  columns is refused before ExSheet by the core's paste cap (`CopyCellCap`, a million cells), as
+  any paste that large is. Each cell shows, and records as its own four sides (ADR-0071), what
+  writing it would give it, since a cell's own part is its row's, else its column's; the format is
+  recorded once on the column, as a whole column's is (ADR-0047). Excel's record of a fill from
+  formatted whole columns was not read. Written cell by cell, column C bold filled into D:E was some
+  two million records: `Check` 2,472 ms, `Do` 14,058 ms, 931 MB on the heap and a Sheet Document of
+  79.6 million characters, Debug build on Linux; on the columns, 37 ms, 17 ms, 1 MB and 424
+  characters.

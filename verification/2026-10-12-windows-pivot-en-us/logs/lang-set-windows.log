@@ -1,0 +1,154 @@
+22:20:00.483 Excel 35732, display language before: 1033
+22:20:04.318 dialog: Excel Options | NUIDialog
+22:20:05.217 selected the Language page
+22:20:06.442 item: Display Language 2.     Match Microsoft Windows [English (United Kingdom)]
+22:20:06.446 selected the windows item
+22:20:06.969 button: Set as Preferred, enabled True
+22:20:06.974 invoked Set as Preferred
+22:20:08.189 --- after Set as Preferred
+22:20:08.209   Excel Options | ControlType.Group | enabled True
+22:20:08.209   Categories | ControlType.List | enabled True
+22:20:08.210   General | ControlType.ListItem | enabled True
+22:20:08.210   Formulas | ControlType.ListItem | enabled True
+22:20:08.211   Data | ControlType.ListItem | enabled True
+22:20:08.211   Proofing | ControlType.ListItem | enabled True
+22:20:08.212   Copilot | ControlType.ListItem | enabled True
+22:20:08.212   Save | ControlType.ListItem | enabled True
+22:20:08.213   Language | ControlType.ListItem | enabled True
+22:20:08.213   Accessibility | ControlType.ListItem | enabled True
+22:20:08.214   Advanced | ControlType.ListItem | enabled True
+22:20:08.214   Customize Ribbon | ControlType.ListItem | enabled True
+22:20:08.214   Quick Access Toolbar | ControlType.ListItem | enabled True
+22:20:08.215   Add-ins | ControlType.ListItem | enabled True
+22:20:08.215   Trust Center | ControlType.ListItem | enabled True
+22:20:08.216   Language | ControlType.Pane | enabled True
+22:20:08.216   Set the Office Language Preferences | ControlType.Text | enabled True
+22:20:08.217   Office display language | ControlType.Text | enabled True
+22:20:08.217   Office display language | ControlType.Group | enabled True
+22:20:08.217   Buttons, menus, and other controls will show in the first available language on this list. | ControlType.Text | enabled True
+22:20:08.218   Display Language | ControlType.DataGrid | enabled True
+22:20:08.218   Display Language 1.     Match Microsoft Windows [English (United Kingdom)] <preferred> | ControlType.ListItem | enabled True
+22:20:08.219   Display Language 2.     English (United States) | ControlType.ListItem | enabled True
+22:20:08.220   Display Language 3.     English (United Kingdom) | ControlType.ListItem | enabled True
+22:20:08.220   Display Language 4.     Japanese [日本語] | ControlType.ListItem | enabled True
+22:20:08.222   Column left | ControlType.Button | enabled True
+22:20:08.222   Page left | ControlType.Button | enabled True
+22:20:08.223   Position | ControlType.Thumb | enabled True
+22:20:08.223   Page right | ControlType.Button | enabled True
+22:20:08.224   Column right | ControlType.Button | enabled True
+22:20:08.224   Add a Language... | ControlType.Button | enabled True
+22:20:08.224   Move Up | ControlType.Button | enabled False
+22:20:08.225   Move Down | ControlType.Button | enabled True
+22:20:08.225   Set as Preferred | ControlType.Button | enabled False
+22:20:08.226   Office authoring languages and proofing | ControlType.Text | enabled True
+22:20:08.226   Office authoring languages and proofing | ControlType.Group | enabled True
+22:20:08.227   Manage languages used for creating and editing documents, including proofing tools such as spelling and grammar check. | ControlType.Text | enabled True
+22:20:08.227   Editing Language | ControlType.DataGrid | enabled True
+22:20:08.227   Editing Language English (United Kingdom) <preferred>, Proofing installed | ControlType.ListItem | enabled True
+22:20:08.227   English (United Kingdom) <preferred> | ControlType.Text | enabled True
+22:20:08.228   Proofing installed | ControlType.Text | enabled True
+22:20:08.228   Editing Language English (United States), Proofing installed, Save to account | ControlType.ListItem | enabled True
+22:20:08.229   English (United States) | ControlType.Text | enabled True
+22:20:08.229   Proofing installed | ControlType.Text | enabled True
+22:20:08.229   Save to account | ControlType.Hyperlink | enabled True
+22:20:08.229   Editing Language Japanese, Proofing installed, Save to account | ControlType.ListItem | enabled True
+22:20:08.230   Japanese | ControlType.Text | enabled True
+22:20:08.230   Proofing installed | ControlType.Text | enabled True
+22:20:08.231   Save to account | ControlType.Hyperlink | enabled True
+22:20:08.231   Column left | ControlType.Button | enabled True
+22:20:08.232   Page left | ControlType.Button | enabled True
+22:20:08.232   Position | ControlType.Thumb | enabled True
+22:20:08.232   Page right | ControlType.Button | enabled True
+22:20:08.233   Column right | ControlType.Button | enabled True
+22:20:08.233   Add a Language... | ControlType.Button | enabled True
+22:20:08.233   Remove | ControlType.Button | enabled False
+22:20:08.234   Set as Preferred | ControlType.Button | enabled False
+22:20:08.234   Store my authoring languages in the cloud for my account. | ControlType.CheckBox | enabled True
+22:20:08.235   Install additional keyboards from Windows Settings | ControlType.Hyperlink | enabled True
+22:20:08.235   Line up | ControlType.Button | enabled True
+22:20:08.235   Page up | ControlType.Button | enabled True
+22:20:08.236   Position | ControlType.Thumb | enabled True
+22:20:08.236   Page down | ControlType.Button | enabled True
+22:20:08.236   Line down | ControlType.Button | enabled True
+22:20:08.237   OK | ControlType.Button | enabled True
+22:20:08.237   Cancel | ControlType.Button | enabled True
+22:20:08.237   Size box | ControlType.Thumb | enabled True
+22:20:08.265 invoked OK
+22:20:09.780 after OK, window: Book1 - Excel
+22:20:09.780 after OK, a window: Excel Options
+22:20:09.782 --- it
+22:20:09.804   Microsoft Office Language Preferences Change | ControlType.Window | enabled True
+22:20:09.805   Microsoft Office Language Preferences Change | ControlType.Window | enabled True
+22:20:09.805   Microsoft Office Language Preferences Change | ControlType.Text | enabled True
+22:20:09.806   Warning Icon | ControlType.Image | enabled True
+22:20:09.806   Please restart Office so that your language changes can take effect. | ControlType.Text | enabled True
+22:20:09.806   OK | ControlType.Button | enabled True
+22:20:09.807   Excel Options | ControlType.Group | enabled True
+22:20:09.807   Categories | ControlType.List | enabled True
+22:20:09.808   General | ControlType.ListItem | enabled True
+22:20:09.808   Formulas | ControlType.ListItem | enabled True
+22:20:09.808   Data | ControlType.ListItem | enabled True
+22:20:09.809   Proofing | ControlType.ListItem | enabled True
+22:20:09.809   Copilot | ControlType.ListItem | enabled True
+22:20:09.809   Save | ControlType.ListItem | enabled True
+22:20:09.809   Language | ControlType.ListItem | enabled True
+22:20:09.810   Accessibility | ControlType.ListItem | enabled True
+22:20:09.810   Advanced | ControlType.ListItem | enabled True
+22:20:09.810   Customize Ribbon | ControlType.ListItem | enabled True
+22:20:09.811   Quick Access Toolbar | ControlType.ListItem | enabled True
+22:20:09.811   Add-ins | ControlType.ListItem | enabled True
+22:20:09.812   Trust Center | ControlType.ListItem | enabled True
+22:20:09.812   Language | ControlType.Pane | enabled True
+22:20:09.812   Set the Office Language Preferences | ControlType.Text | enabled True
+22:20:09.813   Office display language | ControlType.Text | enabled True
+22:20:09.813   Office display language | ControlType.Group | enabled True
+22:20:09.813   Buttons, menus, and other controls will show in the first available language on this list. | ControlType.Text | enabled True
+22:20:09.814   Display Language | ControlType.DataGrid | enabled True
+22:20:09.814   Display Language 1.     Match Microsoft Windows [English (United Kingdom)] <preferred> | ControlType.ListItem | enabled True
+22:20:09.815   Display Language 2.     English (United States) | ControlType.ListItem | enabled True
+22:20:09.816   Display Language 3.     English (United Kingdom) | ControlType.ListItem | enabled True
+22:20:09.816   Display Language 4.     Japanese [日本語] | ControlType.ListItem | enabled True
+22:20:09.817   Column left | ControlType.Button | enabled True
+22:20:09.817   Page left | ControlType.Button | enabled True
+22:20:09.818   Position | ControlType.Thumb | enabled True
+22:20:09.818   Page right | ControlType.Button | enabled True
+22:20:09.818   Column right | ControlType.Button | enabled True
+22:20:09.819   Add a Language... | ControlType.Button | enabled True
+22:20:09.819   Move Up | ControlType.Button | enabled False
+22:20:09.819   Move Down | ControlType.Button | enabled True
+22:20:09.820   Set as Preferred | ControlType.Button | enabled False
+22:20:09.820   Office authoring languages and proofing | ControlType.Text | enabled True
+22:20:09.820   Office authoring languages and proofing | ControlType.Group | enabled True
+22:20:09.821   Manage languages used for creating and editing documents, including proofing tools such as spelling and grammar check. | ControlType.Text | enabled True
+22:20:09.821   Editing Language | ControlType.DataGrid | enabled True
+22:20:09.822   Editing Language English (United Kingdom) <preferred>, Proofing installed | ControlType.ListItem | enabled True
+22:20:09.822   English (United Kingdom) <preferred> | ControlType.Text | enabled True
+22:20:09.823   Proofing installed | ControlType.Text | enabled True
+22:20:09.823   Editing Language English (United States), Proofing installed, Save to account | ControlType.ListItem | enabled True
+22:20:09.824   English (United States) | ControlType.Text | enabled True
+22:20:09.824   Proofing installed | ControlType.Text | enabled True
+22:20:09.825   Save to account | ControlType.Hyperlink | enabled True
+22:20:09.825   Editing Language Japanese, Proofing installed, Save to account | ControlType.ListItem | enabled True
+22:20:09.841   Japanese | ControlType.Text | enabled True
+22:20:09.841   Proofing installed | ControlType.Text | enabled True
+22:20:09.842   Save to account | ControlType.Hyperlink | enabled True
+22:20:09.842   Column left | ControlType.Button | enabled True
+22:20:09.843   Page left | ControlType.Button | enabled True
+22:20:09.843   Position | ControlType.Thumb | enabled True
+22:20:09.843   Page right | ControlType.Button | enabled True
+22:20:09.844   Column right | ControlType.Button | enabled True
+22:20:09.844   Add a Language... | ControlType.Button | enabled True
+22:20:09.845   Remove | ControlType.Button | enabled False
+22:20:09.845   Set as Preferred | ControlType.Button | enabled False
+22:20:09.845   Store my authoring languages in the cloud for my account. | ControlType.CheckBox | enabled True
+22:20:09.846   Install additional keyboards from Windows Settings | ControlType.Hyperlink | enabled True
+22:20:09.846   Line up | ControlType.Button | enabled True
+22:20:09.846   Page up | ControlType.Button | enabled True
+22:20:09.846   Position | ControlType.Thumb | enabled True
+22:20:09.847   Page down | ControlType.Button | enabled True
+22:20:09.847   Line down | ControlType.Button | enabled True
+22:20:09.848   OK | ControlType.Button | enabled True
+22:20:09.848   Cancel | ControlType.Button | enabled True
+22:20:09.848   Size box | ControlType.Thumb | enabled True
+22:20:09.872 invoked OK on Excel Options
+22:20:13.411 UILanguageTag=en-us FollowSystemUI= UISnapshotLanguages=en-gb;en-us;ja-jp

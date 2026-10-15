@@ -85,7 +85,17 @@ public sealed record ToolbarChoice(
     Func<Task> Choose,
     string? DisabledReason = null,
     CellColour? Colour = null,
-    bool Selected = false);
+    bool Selected = false)
+{
+    /// <summary>
+    /// Whether the choice opens a popover of the Sheet's in the list's place: More Number Formats… opens
+    /// Format Cells. In the grid's popover frame the choice is then made before the list closes, so the
+    /// core opens it in the list's place and hands the keyboard on before it asks for the root, as for a
+    /// menu's command (ADR-0039's note of 2026-10-13): closed first, the list asked for the root a message
+    /// ahead of the hand-off, and a key landing between the two was the grid's.
+    /// </summary>
+    internal bool OpensPopover { get; init; }
+}
 
 /// <summary>
 /// What a Toolbar Item declares to the Chrome that draws it (ADR-0100, ADR-0010): what it is, what

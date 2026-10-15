@@ -248,6 +248,12 @@ function verdict({ messages, pageErrors }, hostLog, { expectedHostLog, expectedW
     expect.soft(warnings.filter(isExGrids).filter((m) => !named(m.text)).map((m) => m.text),
         'zero warnings from ExGrid\'s own code (CON-3)').toEqual([]);
     expect.soft(unhandled, 'no unhandled exception reaches the host log (CON-6)').toEqual([]);
+    // CON-8: ExGrid logs nothing on a healthy path. Its only console writes are its failure
+    // paths, which are errors and fail CON-1 above, and the warnings it names by decision, which
+    // CON-3 holds to expectedWarnings. A log, an info, a debug or a trace line from its own code
+    // is neither, at any level the console has.
+    expect.soft(messages.filter((m) => !['error', 'warning'].includes(m.type)).filter(isExGrids)
+        .map((m) => `${m.type}: ${m.text}`), 'nothing logged by ExGrid on a healthy path (CON-8)').toEqual([]);
 }
 
 // What a test changed through alterPage, per page, undone as the test ends (ADR-0056).
@@ -758,10 +764,31 @@ export async function layoutCeilingTold(grid) {
     }), { message: 'the grid was never told its Layout Ceiling (ADR-0053)', timeout: 10_000 }).toBe(true);
 }
 
+// The rows a grid's ARIA count holds before its first data row (ADR-0033, decided with the user
+// 2026-10-12): its header, when that is one row; a row per tier of Header Groups and the leaf row,
+// when the header is a rowgroup; none while the header is hidden. A data row's aria-rowindex is its
+// 0-based position plus this plus one, and aria-rowcount the data rows' total plus this. Read from
+// the grid's own header, never one of a grid nested in its cells.
+export const headerRowsOf = (grid) => grid.evaluate((root) => {
+    const header = root.querySelector(':scope > .ex-scroller > .ex-spacer > .ex-header');
+    return !header ? 0 : header.getAttribute('role') === 'row' ? 1 : header.querySelectorAll(':scope > [role=row]').length;
+});
+
+// How many data rows a grid says it has: its aria-rowcount less its header rows (ADR-0033).
+export const dataRowCount = (grid) => grid.evaluate((root) => {
+    const header = root.querySelector(':scope > .ex-scroller > .ex-spacer > .ex-header');
+    const headerRows = !header ? 0 : header.getAttribute('role') === 'row' ? 1 : header.querySelectorAll(':scope > [role=row]').length;
+    return Number(root.getAttribute('aria-rowcount')) - headerRows;
+});
+
+// The painted row at `row`, 0-based among the data rows, of a grid with `headerRows` header rows
+// (headerRowsOf): its aria-rowindex counts the header's rows first (ADR-0033).
+export const rowAt = (grid, row, headerRows) => grid.locator(`.ex-row[aria-rowindex="${row + 1 + headerRows}"]`);
+
 // Scrolls a grid (its `.ex-grid` root) so that `row`, 0-based among the rows its scrollbar spans,
 // is the top row of the readable area — through ADR-0053's mapping, never as row × row height.
 // Above the Layout Ceiling the spacer is compressed and a scroll offset s shows the content offset
-// c(s) = s × k, k = (H − V) / (S − V − 2): H the true height (aria-rowcount × row height), S the
+// c(s) = s × k, k = (H − V) / (S − V − 2): H the true height (the data rows × row height), S the
 // rows' part of the spacer, V the readable height, the last two less the header band. At 150% a
 // Sheet's scrollTop of 99 × 28 showed row 130, not row 100 (verification/2026-09-28-windows-3).
 // S and the row height are read from the style attributes the grid writes, never through the
@@ -784,7 +811,8 @@ export async function layoutCeilingTold(grid) {
 // where they were (CI, 2026-10-01; locally behind an 80 ms round trip, 22 of 26 line tests).
 export async function scrollRowToTop(grid, row) {
     await layoutCeilingTold(grid);
-    const scrolled = await grid.evaluate((root, row) => {
+    const headerRows = await headerRowsOf(grid);
+    const scrolled = await grid.evaluate((root, { row, headerRows }) => {
         const px = (style, name) => {
             const m = new RegExp(`(?:^|[;\\s])${name}:\\s*([\\d.]+)px`).exec(style ?? '');
             if (!m) throw new Error(`no ${name} in the style attribute "${style}"`);
@@ -795,7 +823,7 @@ export async function scrollRowToTop(grid, row) {
         const header = spacer.querySelector(':scope > .ex-header');
         const band = header ? header.getBoundingClientRect().height : 0;
         const rowHeight = px(root.getAttribute('style'), '--ex-row-height');
-        const contentHeight = Number(root.getAttribute('aria-rowcount')) * rowHeight;
+        const contentHeight = (Number(root.getAttribute('aria-rowcount')) - headerRows) * rowHeight;
         const scrollHeight = px(spacer.getAttribute('style'), 'height') - band;
         const readable = scroller.clientHeight - band;
         const k = contentHeight > scrollHeight ? (contentHeight - readable) / (scrollHeight - readable - 2) : 1;
@@ -805,21 +833,21 @@ export async function scrollRowToTop(grid, row) {
             scroller.scrollTop = Math.ceil(scroller.scrollTop) + 1;
         }
         return { scrollTop: scroller.scrollTop, k };
-    }, row);
+    }, { row, headerRows });
     // Where the row stands is no witness: scrolled to row 0 at 150% it moves 0.42 px, and the slice
     // is rounded to a device pixel, a third of a pixel either way. The grid's own word is: the
     // offset it wrote on the Viewport before rounding (ExGrid.razor, ViewportStyle), which with the
     // row's place inside the Viewport is ADR-0053's r × h − c(s) + s for the offset it painted.
-    await expect.poll(() => grid.evaluate((root, { row, k }) => {
+    await expect.poll(() => grid.evaluate((root, { row, k, headerRows }) => {
         const scroller = root.querySelector(':scope > .ex-scroller');
         const viewport = scroller.querySelector(':scope > .ex-spacer > .ex-viewport');
-        const painted = viewport?.querySelector(`.ex-row[aria-rowindex="${row + 1}"]`);
+        const painted = viewport?.querySelector(`.ex-row[aria-rowindex="${row + 1 + headerRows}"]`);
         const written = /translateY\(round\(nearest,\s*(-?[\d.]+(?:[eE][-+]?\d+)?)px/.exec(viewport?.getAttribute('style') ?? '');
         if (!painted || !written) return false;
         const rowHeight = Number(/(?:^|[;\s])--ex-row-height:\s*([\d.]+)px/.exec(root.getAttribute('style'))[1]);
         const inside = painted.getBoundingClientRect().top - viewport.getBoundingClientRect().top;
         const s = scroller.scrollTop;
         return Math.abs(Number(written[1]) + inside - (row * rowHeight - s * k + s)) < 0.1;
-    }, { row, k: scrolled.k }), { message: `the grid never painted row ${row} for the offset the browser holds (ADR-0053)`, timeout: 10_000 }).toBe(true);
+    }, { row, k: scrolled.k, headerRows }), { message: `the grid never painted row ${row} for the offset the browser holds (ADR-0053)`, timeout: 10_000 }).toBe(true);
     return scrolled;
 }

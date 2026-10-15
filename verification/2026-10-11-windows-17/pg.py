@@ -48,6 +48,11 @@ class Page:
             time.sleep(0.2)
         raise TimeoutError('pg-server did not start')
 
+    @staticmethod
+    def attach(channel, name=None, log=None):
+        """The pg-server already running under that name (started by start() in an earlier process)."""
+        return Page(os.path.join(WIN, name or f'pg-{channel}'), log)
+
     def _lines(self):
         with open(os.path.join(self.d, 'out.txt'), encoding='utf-8', errors='replace') as f:
             return [l for l in f.read().replace('\r', '').splitlines() if l.startswith('{')]

@@ -1,7 +1,10 @@
 using Bunit;
+using ExGrid.Components;
 using ExSheet.Engine;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
+using Microsoft.Extensions.DependencyInjection;
+using IKeyInterceptorService = global::MudBlazor.IKeyInterceptorService;
 using MudColor = global::MudBlazor.Utilities.MudColor;
 using MudColorPicker = global::MudBlazor.MudColorPicker;
 using MudSelectOfAlignment = global::MudBlazor.MudSelect<ExSheet.Engine.HorizontalAlignment>;
@@ -20,6 +23,53 @@ namespace ExSheet.MudBlazor.Tests;
 public class MudFormatCellsTests : MudSheetTestContext
 {
     private static readonly CellColour Red = CellColour.FromRgb(0xFF0000);
+
+    [Fact] // ADR-0039: the frame holds the keyboard until the root subscription is installed.
+    public async Task ADR0039_dialog_keys_are_ready_before_tabs_take_the_keyboard()
+    {
+        var connection = JSInterop.SetupVoid("mudKeyInterceptor.connect",
+            call => call.Arguments[1] is string id && id.StartsWith('_'));
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        var root = Dialog(page).Id!;
+        Assert.Single(connection.Invocations);
+        Assert.Empty(page.FindAll(".mud-ex-sheet-format-cells-keys-ready"));
+        Assert.False(page.FindComponent<MudFormatCellsTabs>().Instance.FocusOnOpen);
+
+        connection.SetVoidResult();
+        page.WaitForAssertion(() => Assert.Single(page.FindAll(".mud-ex-sheet-format-cells-keys-ready")));
+        Assert.True(page.FindComponent<MudFormatCellsTabs>().Instance.FocusOnOpen);
+        await CancelAsync(page);
+        page.WaitForAssertion(() => Assert.Contains(JSInterop.Invocations["mudKeyInterceptor.disconnect"],
+            call => Equals(call.Arguments[0], root)));
+    }
+
+    [Fact] // ADR-0039: an opening disposed during registration never exposes controls or retains its observer.
+    public async Task ADR0039_disposal_during_key_registration_releases_the_subscription()
+    {
+        var connection = JSInterop.SetupVoid("mudKeyInterceptor.connect",
+            call => call.Arguments[1] is string id && id.StartsWith('_'));
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        var root = Dialog(page).Id!;
+        var dialog = page.FindComponent<MudFormatCellsDialog>();
+        Task? disposing = null;
+        await page.InvokeAsync(() => { disposing = dialog.Instance.DisposeAsync().AsTask(); });
+        Assert.False(disposing!.IsCompleted);
+
+        connection.SetVoidResult();
+        await disposing;
+        Assert.Empty(page.FindAll(".mud-ex-sheet-format-cells-keys-ready"));
+        Assert.False(page.FindComponent<MudFormatCellsTabs>().Instance.FocusOnOpen);
+        Assert.Single(JSInterop.Invocations["mudKeyInterceptor.disconnect"],
+            call => Equals(call.Arguments[0], root));
+    }
+
+    // Exercise the actual service's JS entry point. Its implementation type is internal;
+    // reflection stands in for JS invoking this public [JSInvokable] method in the browser.
+    private static Task DispatchDialogKeyAsync(IKeyInterceptorService service, string root, string key) =>
+        (Task)service.GetType().GetMethod("OnKeyDown")!.Invoke(service,
+            [root, new KeyboardEventArgs { Key = key }])!;
 
     // ---- The frame ----
 
@@ -110,6 +160,98 @@ public class MudFormatCellsTests : MudSheetTestContext
     }
 
     // ---- The tabs ----
+
+    [Fact] // ADR-0039 / ADR-0071: an opening popup collects its frame's keys before asking HEX to take them
+    public async Task More_colours_holds_opening_keys_and_tells_their_destination_before_taking_the_keyboard()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Fill");
+        var picker = page.FindComponent<MudMoreColours>();
+        var grid = page.FindComponent<ExGrid.Components.ExGrid<SheetRow>>();
+        var starts = new List<string>();
+        var returned = HoldKeyboardHandBack(starts);
+        var opening = page.InvokeAsync(() => picker.Instance.OpenAsync());
+        try
+        {
+            page.WaitForAssertion(() => Assert.Equal(["takeKeyboardBack", "handOff:frame"], starts));
+            await page.Find(".mud-ex-sheet-colour-entry").KeyDownAsync(new KeyboardEventArgs { Key = "#" });
+            await page.Find(".mud-ex-sheet-colour-entry").KeyDownAsync(new KeyboardEventArgs { Key = "F" });
+            Assert.Equal(["#", "F"], AnswerTakeBacks(grid).Select(key => key.Key));
+            Assert.True(IsOpen(page));
+        }
+        finally
+        {
+            returned();
+            await opening;
+        }
+        Assert.True(IsOpen(page));
+    }
+
+    [Fact] // ADR-0039 / ADR-0071: a closed picker's Escape belongs to its enclosing frame
+    public async Task More_colours_does_not_start_a_hand_back_when_the_picker_is_already_closed()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Fill");
+        var collections = 0;
+        var context = page.FindComponent<MudMoreColours>().Instance.Context with
+        {
+            HoldKeysForPopup = (_, _) => { collections++; return Task.CompletedTask; },
+            TakeKeyboard = _ => Task.CompletedTask,
+        };
+        var picker = Render<MudMoreColours>(p => p.Add(x => x.Context, context));
+        // The inherited key interceptor can ask to close on Escape/Tab even while closed.
+        await picker.InvokeAsync(() => picker.Instance.CloseAsync(false));
+        Assert.Equal(0, collections);
+        await picker.InvokeAsync(() => picker.Instance.OpenAsync());
+        await picker.InvokeAsync(() => picker.Instance.CloseAsync(false));
+        Assert.Equal(2, collections);
+        await picker.InvokeAsync(() => picker.Instance.CloseAsync(false));
+        Assert.Equal(2, collections);
+    }
+
+    [Fact] // ADR-0039: a reply for an earlier opening cannot collect a later opening's keys
+    public async Task More_colours_keeps_each_openings_keys_with_its_own_collection_reply()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Fill");
+        var requests = new List<(Func<IReadOnlyList<KeyboardEventArgs>> Take, TaskCompletionSource Answer)>();
+        var closing = false;
+        var context = page.FindComponent<MudMoreColours>().Instance.Context with
+        {
+            HoldKeysForPopup = (_, take) =>
+            {
+                if (closing) { take(); return Task.CompletedTask; }
+                var answer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                requests.Add((take, answer));
+                return answer.Task;
+            },
+            TakeKeyboard = _ => Task.CompletedTask,
+        };
+        var picker = Render<MudMoreColours>(p => p.Add(x => x.Context, context));
+        var first = picker.InvokeAsync(() => picker.Instance.OpenAsync());
+        Task second = Task.CompletedTask;
+        try
+        {
+            picker.WaitForAssertion(() => Assert.Single(requests));
+            await picker.Find(".mud-ex-sheet-colour-entry").KeyDownAsync(new KeyboardEventArgs { Key = "A" });
+            closing = true;
+            await picker.InvokeAsync(() => picker.Instance.CloseAsync(false));
+            closing = false;
+            second = picker.InvokeAsync(() => picker.Instance.OpenAsync());
+            picker.WaitForAssertion(() => Assert.Equal(2, requests.Count));
+            await picker.Find(".mud-ex-sheet-colour-entry").KeyDownAsync(new KeyboardEventArgs { Key = "B" });
+            Assert.Equal(["A"], requests[0].Take().Select(key => key.Key));
+            Assert.Equal(["B"], requests[1].Take().Select(key => key.Key));
+        }
+        finally
+        {
+            foreach (var request in requests) request.Answer.TrySetResult();
+            await Task.WhenAll(first, second);
+        }
+    }
 
     [Fact] // ADR-0071 / SH-45, case 22: the tabs are Number, Alignment, Font, Border and Fill, and the first opening is on Number
     public async Task The_tabs_are_excels_order_and_the_first_opening_is_on_number()
@@ -303,12 +445,14 @@ public class MudFormatCellsTests : MudSheetTestContext
         // circuit for a round trip after the Escape.
         var focus = JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true);
 
-        await page.Find("form.mud-ex-sheet-format-cells-form").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+        var interceptor = Services.GetRequiredService<IKeyInterceptorService>();
+        var root = Dialog(page).Id!;
+        _ = page.InvokeAsync(() => DispatchDialogKeyAsync(interceptor, root, "Escape"));
         page.WaitForAssertion(() => Assert.Single(page.FindAll(".mud-ex-sheet-format-cells-leaving")));
         Assert.True(IsOpen(page));
         // Typed in the dialog after the Escape, before it has gone: not the dialog's.
-        await page.Find("form.mud-ex-sheet-format-cells-form").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowDown" });
-        await page.Find(".mud-ex-sheet-format-cells-actions").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
+        await page.InvokeAsync(() => DispatchDialogKeyAsync(interceptor, root, "ArrowDown"));
+        await page.InvokeAsync(() => DispatchDialogKeyAsync(interceptor, root, "ArrowRight"));
         Assert.Equal(taken, TakeBackCount);
         foreach (var invocation in focus.Invocations) focus.SetVoidResult();
 
@@ -497,6 +641,41 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.True(font.Bold && font.Italic && font.Underline && font.Strikethrough);
     }
 
+    [Fact] // ADR-0071, decided 2026-10-12 / SH-45: under this Chrome too, OK with Bold widens a column at the default width whose number shows ####, as Excel's Font tab did (the seventeenth Windows run, h7), in OK's one undo step; OK with a Fill widens nothing
+    public async Task Ok_with_a_font_change_widens_and_with_a_fill_does_not_h7()
+    {
+        var page = RenderPage(DocumentOf(
+            sheet => sheet.SetCellFormat([CellRange.Parse("B2:C2")], new CellFormatChange { NumberFormat = NumberFormat.Parse("0.00") }),
+            ("B2", "123456789.12"), ("C2", "123456789.12")));
+        var grid = page.FindComponent<ExGrid<SheetRow>>();
+        double WidthOf(int column) => grid.Instance.Columns[column].Width.Width.FixedPx;
+        var standard = WidthOf(1);
+
+        await OpenAsync(page, "C2");
+        await ShowTabAsync(page, "Fill");
+        await SwatchAsync(page, "Yellow");
+        await OkAsync(page);
+        Assert.False(IsOpen(page));
+        Assert.Equal(standard, WidthOf(2));
+        Assert.Empty(Sheet(page).ToDocument().ColumnWidths);
+
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Font");
+        await ChooseAsync(page, "Bold");
+        await OkAsync(page);
+
+        Assert.False(IsOpen(page));
+        Assert.True(FormatAt(page, "B2").Font.Bold);
+        Assert.True(WidthOf(1) > standard);
+        Assert.Equal(standard, WidthOf(2));
+        var widened = Assert.Single(Sheet(page).ToDocument().ColumnWidths);
+        Assert.Equal((1, SheetColumnWidthKind.WidenedByEntry), (widened.First, widened.Kind));
+        Assert.True(await page.InvokeAsync(Sheet(page).UndoAsync));
+        Assert.False(FormatAt(page, "B2").Font.Bold);
+        Assert.Equal(standard, WidthOf(1));
+        Assert.Empty(Sheet(page).ToDocument().ColumnWidths);
+    }
+
     [Fact] // ADR-0071 (2026-10-02) / SH-55: the Font tab's Normal font box sets every part of the Font to its default
     public async Task Normal_font_sets_the_default_font()
     {
@@ -598,7 +777,7 @@ public class MudFormatCellsTests : MudSheetTestContext
     private static IReadOnlySet<CellFormat> RecordedAt(IRenderedComponent<Bunit.Rendering.ContainerFragment> page, string range) =>
         global::ExSheet.Engine.Sheet.Open(Sheet(page).ToDocument()).GetCellFormats(CellRange.Parse(range));
 
-    [Fact] // ADR-0071 / SH-45, case 14-13: under this Chrome too, A2 under A1's thick bottom opens with a thick top, its button pressed
+    [Fact] // ADR-0071 / SH-45, case 14-13: under this Chrome too, A2 under A1's thick bottom opens with a thick top, its button pressed; and with Thick chosen in Style, the one line A2 shows (the seventeenth Windows run, h10)
     public async Task A2_under_a1s_thick_bottom_opens_with_a_thick_top_case_14_13()
     {
         var page = RenderPage(ThickBottomOnA1());
@@ -609,6 +788,8 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal("true", page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Top]").GetAttribute("aria-pressed"));
         Assert.Equal("3", page.Find(".mud-ex-sheet-format-cells-preview line[data-edge=Top]").GetAttribute("stroke-width"));
         Assert.Equal("false", page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Bottom]").GetAttribute("aria-pressed"));
+        Assert.True(Radio(page, "Thick").HasAttribute("checked"));
+        Assert.False(Radio(page, "Thin").HasAttribute("checked"));
     }
 
     [Fact] // ADR-0071 / SH-45, case 14-13: OK with the shown top left alone sets nothing: A2 still records no top, and no undo step is added
@@ -626,14 +807,14 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal(Thick, FormatAt(page, "A1").Borders.Bottom);
     }
 
-    [Fact] // ADR-0071 / SH-45, case 14-13 (a reading: no run pressed it): taking the shown top away clears A1's bottom too, so no line is drawn there
+    [Fact] // ADR-0071 / SH-45, case 14-13 (observed in Excel, the seventeenth Windows run, h10): the Top button alone takes the shown top away, and OK clears A1's bottom too, so no line is drawn there
     public async Task Taking_the_shown_top_away_clears_a1s_bottom_case_14_13()
     {
         var page = RenderPage(ThickBottomOnA1());
         await OpenAsync(page, "A2");
         await ShowTabAsync(page, "Border");
 
-        await ChooseAsync(page, "Thick");
+        // What the run pressed: the Top button, then OK. The tab opened on the thick line.
         await page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Top]").ClickAsync(new MouseEventArgs());
         Assert.Equal("false", page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Top]").GetAttribute("aria-pressed"));
         await OkAsync(page);

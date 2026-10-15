@@ -90,6 +90,16 @@ public abstract class SheetTestContext : BunitContext
         return keys;
     }
 
+    /// <summary>Runs <paramref name="heard"/> at each request for the keyboard back on the root, as the
+    /// grid makes it, so a test can read what stood on screen at that moment (ADR-0039). A handler that
+    /// matches nothing, registered after the one that answers: bUnit asks it first.</summary>
+    internal void OnReclaim(Action heard)
+        => _handle.SetupVoid(invocation =>
+        {
+            if (invocation.Identifier == "reclaimFocus") heard();
+            return false;
+        });
+
     /// <summary>How many times Escape with nothing to dismiss has told the gate to release Tab
     /// (ADR-0012, rewritten 2026-10-01). The handle has no blur: a call to one fails the strict
     /// stub.</summary>
@@ -156,17 +166,18 @@ public abstract class SheetTestContext : BunitContext
     /// <summary>
     /// A key as the capture listener forwards it while an edit is open: with the editor's text
     /// and caret as the browser has them (ADR-0051), from the Formula Bar when
-    /// <paramref name="fromBar"/>, and with a selection to <paramref name="selectionEnd"/> when
-    /// one is given.
+    /// <paramref name="fromBar"/>, with a selection to <paramref name="selectionEnd"/> when
+    /// one is given, and saying whether the user moved the caret in that text when
+    /// <paramref name="moved"/> — a caret key or a press, as the listener notes them.
     /// </summary>
     internal static Task PressInEditorAsync(
         IRenderedComponent<SheetComponent> cut, string key, string text, int caret, bool shift = false, bool fromBar = false,
-        int selectionEnd = -1)
+        int selectionEnd = -1, bool moved = false, bool ctrl = false)
     {
         var grid = Grid(cut);
         return grid.InvokeAsync(() => grid.Instance.OnKeyAsync(
-            key, false, shift, false, false, false, fromDescendant: fromBar, editorText: text, editorCaret: caret,
-            editorSelectionEnd: selectionEnd < 0 ? caret : selectionEnd));
+            key, ctrl, shift, false, false, false, fromDescendant: fromBar, editorText: text, editorCaret: caret,
+            editorSelectionEnd: selectionEnd < 0 ? caret : selectionEnd, editorCaretMoved: moved));
     }
 
     /// <summary>What the Cell Editor holds, as painted.</summary>
@@ -224,8 +235,29 @@ public abstract class SheetTestContext : BunitContext
     internal static IElement Cell(IRenderedComponent<SheetComponent> cut, string address)
     {
         var at = CellAddress.Parse(address);
-        var row = cut.FindAll(".ex-row").Single(r => r.GetAttribute("aria-rowindex") == (at.Row + 1).ToString(System.Globalization.CultureInfo.InvariantCulture));
+        var row = cut.FindAll(".ex-row").Single(r => SheetRowOf(r) == at.Row + 1);
         return row.QuerySelectorAll("[role=gridcell]").Single(c => c.GetAttribute("aria-colindex") == (at.Column + 1).ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>
+    /// The Sheet's own number for a painted row, 1 for row 1: its <c>aria-rowindex</c> less the
+    /// header's rows, which ARIA counts first — the Column Headings' row, or none while they are
+    /// hidden (ADR-0033, decided with the user 2026-10-12).
+    /// </summary>
+    internal static int SheetRowOf(IElement row)
+        => int.Parse(row.GetAttribute("aria-rowindex")!, System.Globalization.CultureInfo.InvariantCulture)
+            - HeaderRowsOf(row.Closest(".ex-grid")!);
+
+    /// <summary>How many rows the header of <paramref name="grid"/> counts in ARIA: its own header,
+    /// one row, or one per tier and the leaf row, or none while it is hidden.</summary>
+    internal static int HeaderRowsOf(IElement grid)
+    {
+        static IElement? Child(IElement? parent, string className)
+            => parent?.Children.FirstOrDefault(child => child.ClassList.Contains(className));
+        var header = Child(Child(Child(grid, "ex-scroller"), "ex-spacer"), "ex-header");
+        return header is null ? 0
+            : header.GetAttribute("role") == "row" ? 1
+            : header.QuerySelectorAll("[role=row]").Length;
     }
 
     /// <summary>Moves the browser's scroll position and raises the scroll event the grid listens for:

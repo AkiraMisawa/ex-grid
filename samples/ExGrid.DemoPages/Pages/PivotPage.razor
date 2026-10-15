@@ -15,7 +15,9 @@
    browser tests run the page under both, because swapping the Chrome must change no behaviour
    (ADR-0061). ?details=dialog opens Show Details in a dialog, and ?details=page hands the records to
    this page, which lists them under the pivot; absent, they open in a tab at the report's foot
-   (ADR-0059). ?words=ja speaks Excel's Japanese edition's words (ADR-0060). *@
+   (ADR-0059). ?words=ja speaks Excel's Japanese edition's words (ADR-0060). ?second=1 adds a second
+   pivot over the same trades under the first, so a field dragged from one can be dropped on the
+   other, which takes nothing from it (ADR-0061). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Dark="_dark">
     <Head>
         <ExPivotStylesheet />
@@ -77,6 +79,26 @@
 else
 {
     @Pivot
+}
+
+@if (SecondOn)
+{
+    <h2>A second pivot</h2>
+    <p>
+        The same trades, pivoted again with a layout of its own. The two are independent: a field
+        dragged from one pivot and dropped on the other changes neither (ADR-0061).
+    </p>
+    <p class="demo-status"><span id="pivot-second-status">@_secondChanges.ToString(Culture) changes made in the second pane</span></p>
+    <div id="pivot-second">
+        @if (DemoChrome.IsMud(ChromeName))
+        {
+            <MudExGridPaper Elevation="1" Class="demo-stretch-paper">@SecondPivot</MudExGridPaper>
+        }
+        else
+        {
+            @SecondPivot
+        }
+    </div>
 }
 
 @if (DetailsOnPage)
@@ -146,6 +168,11 @@ else
     [SupplyParameterFromQuery(Name = "words")]
     public string? WordsName { get; set; }
 
+    [SupplyParameterFromQuery(Name = "second")]
+    public string? SecondName { get; set; }
+
+    private bool SecondOn => SecondName == "1";
+
     [SupplyParameterFromQuery(Name = "trades")]
     public int? TradesAsked { get; set; }
 
@@ -182,6 +209,16 @@ else
     // Excel's Japanese edition's words, chosen in one line; null keeps the English (ADR-0060).
     private Func<string, string?>? Words => _japanese ? PivotWords.Japanese : null;
     #endregion
+
+    // ?second=1: a second pivot over the same source, with a layout of its own.
+    private PivotLayout _secondLayout = DemoPivotData.FirstLayout();
+    private int _secondChanges;
+
+    private RenderFragment SecondPivot => @<ExPivot Source="_source" @bind-Layout="_secondLayout" @bind-Layout:after="SecondChanged"
+                                                     PivotChrome="_pivotChrome" Chrome="_gridChrome"
+                                                     Culture="Culture" ViewportHeight="200" />;
+
+    private void SecondChanged() => _secondChanges++;
 
     protected override void OnParametersSet()
     {

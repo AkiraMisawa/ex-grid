@@ -4,10 +4,16 @@ using Microsoft.AspNetCore.Components;
 namespace ExSheet;
 
 // ExSheet's Toolbar Items (ADR-0100). Each acts through the Sheet's public commands only —
-// SetCellFormatAsync, CellFormatAt through the toolbar's Focus format, OpenFormatCellsAsync — and
-// carries Excel's Home tab KeyTip where Excel has one (a reading until a Windows run reads them all).
+// SetCellFormatAsync, SetCellFormatFromFocusAsync, CellFormatAt through the toolbar's Focus format,
+// OpenFormatCellsAsync — and carries Excel's Home tab KeyTip where Excel has one (a reading until a
+// Windows run reads them all).
 
-/// <summary>A toggle that sets one Font emphasis, on or off as the Focus cell gives it, as the key does (ADR-0071).</summary>
+/// <summary>
+/// A toggle that sets one Font emphasis, on or off as the Focus cell gives it, as the key does
+/// (ADR-0071), through <c>SetCellFormatFromFocusAsync</c>. Over numbers showing ####, it widens a
+/// column the user has not sized as its key does (decided 2026-10-12): Underline and Strikethrough
+/// widen, Bold and Italic do not.
+/// </summary>
 public abstract class FontToggleItem : ToolbarItemBase
 {
     private readonly Func<CellFormat, CellFormatChange> _toggle;
@@ -24,7 +30,7 @@ public abstract class FontToggleItem : ToolbarItemBase
         new(ToolbarItemKind.Toggle, name, icon) { Shortcut = shortcut, Pressed = Has(Context.FocusFormat.Font) };
 }
 
-/// <summary>Bold (ADR-0100): Ctrl+B's toggle.</summary>
+/// <summary>Bold (ADR-0100): Ctrl+B's toggle. It widens no column, as Ctrl+B does not.</summary>
 public sealed class BoldItem : FontToggleItem
 {
     /// <summary>Bold, on or off as the Focus cell gives it.</summary>
@@ -40,7 +46,7 @@ public sealed class BoldItem : FontToggleItem
     protected override string? DefaultKeyTip => "1";
 }
 
-/// <summary>Italic (ADR-0100): Ctrl+I's toggle.</summary>
+/// <summary>Italic (ADR-0100): Ctrl+I's toggle. It widens no column, as Ctrl+I does not.</summary>
 public sealed class ItalicItem : FontToggleItem
 {
     /// <summary>Italic, on or off as the Focus cell gives it.</summary>
@@ -56,7 +62,10 @@ public sealed class ItalicItem : FontToggleItem
     protected override string? DefaultKeyTip => "2";
 }
 
-/// <summary>A single underline (ADR-0100): Ctrl+U's toggle.</summary>
+/// <summary>
+/// A single underline (ADR-0100): Ctrl+U's toggle. It widens a column whose numbers it no longer
+/// fits, as Ctrl+U does (ADR-0071; the seventeenth Windows run's h7).
+/// </summary>
 public sealed class UnderlineItem : FontToggleItem
 {
     /// <summary>A single underline, on or off as the Focus cell gives it.</summary>
@@ -73,9 +82,10 @@ public sealed class UnderlineItem : FontToggleItem
 }
 
 /// <summary>
-/// Strikethrough (ADR-0100): Ctrl+5's toggle. It sets the Font as Format Cells' Font tab does, which
-/// widens no column. Excel's Home tab has no KeyTip for it; ExSheet's own is 4, a letter Excel's Home
-/// tab does not use (a reading until a Windows run reads them all).
+/// Strikethrough (ADR-0100): Ctrl+5's toggle. It widens a column whose numbers it no longer fits, as
+/// Ctrl+5 does (ADR-0071; the fourteenth Windows run's case 7). Excel's Home tab has no KeyTip for
+/// it; ExSheet's own is 4, a letter Excel's Home tab does not use (a reading until a Windows run reads
+/// them all).
 /// </summary>
 public sealed class StrikethroughItem : FontToggleItem
 {
@@ -95,7 +105,8 @@ public sealed class StrikethroughItem : FontToggleItem
 /// <summary>
 /// A split control over a colour, as Excel's Font Color and Fill Color are (ADR-0100): the face sets
 /// the colour last chosen, and the arrow opens the palette — the colour that takes it away, then the
-/// Office theme's colours and the ten standard ones, as Format Cells offers them.
+/// Office theme's colours and the ten standard ones, as Format Cells offers them. Both set through
+/// <c>SetCellFormatFromFocusAsync</c>, which widens as Excel's Home tab buttons do (ADR-0071).
 /// </summary>
 public abstract class ColourItem : ToolbarItemBase
 {
@@ -115,7 +126,7 @@ public abstract class ColourItem : ToolbarItemBase
     private protected abstract CellColour? FocusColour { get; }
 
     /// <inheritdoc />
-    protected override Task PressAsync() => Context.Sheet.SetCellFormatAsync(Setting(_last));
+    protected override Task PressAsync() => Set(_last);
 
     private protected ToolbarItemFace Split(string name, ToolbarIcon icon) =>
         new(ToolbarItemKind.Split, name, icon) { Colour = _last, Choices = Choices() };
@@ -139,11 +150,25 @@ public abstract class ColourItem : ToolbarItemBase
     {
         // The face sets what was chosen last, as Excel's does; taking the colour away is not kept.
         if (!colour.IsAutomatic) _last = colour;
-        return Context.Sheet.SetCellFormatAsync(Setting(colour));
+        return Set(colour);
     });
+
+    // The face and the list set alike, through the command whose widening is the Home tab buttons'.
+    private Task<bool> Set(CellColour colour)
+    {
+        var setting = Setting(colour);
+        return Context.Sheet.SetCellFormatFromFocusAsync(_ => setting);
+    }
 }
 
-/// <summary>The Font colour (ADR-0100): Excel's Font Color, red on its face until another is chosen.</summary>
+/// <summary>
+/// The Font colour (ADR-0100): Excel's Font Color, red on its face until another is chosen. Over
+/// numbers showing ####, its face and a colour from its list widen a column the user has not sized,
+/// as Excel's Home tab Font Color button did, by its face and from its list (the readings of
+/// 2026-10-14, run 18a, widening case 5; decided with the user, 2026-10-14). It sets the colour
+/// through <c>SetCellFormatFromFocusAsync</c>, which widens for a Font colour; <c>SetCellFormatAsync</c>
+/// does not, as Excel's <c>Font.Color</c> set through COM did not (cases 2 and 6).
+/// </summary>
 public sealed class FontColourItem : ColourItem
 {
     /// <summary>The Font colour, red on the face as Excel's starts.</summary>
@@ -162,7 +187,10 @@ public sealed class FontColourItem : ColourItem
     protected override string? DefaultKeyTip => "FC";
 }
 
-/// <summary>The Fill (ADR-0100): Excel's Fill Color, yellow on its face until another is chosen.</summary>
+/// <summary>
+/// The Fill (ADR-0100): Excel's Fill Color, yellow on its face until another is chosen. It widens no
+/// column, as Excel's Fill Color button did not over #### (the fourteenth Windows run, case 7).
+/// </summary>
 public sealed class FillItem : ColourItem
 {
     /// <summary>The Fill, yellow on the face as Excel's starts.</summary>
@@ -322,7 +350,7 @@ public sealed class NumberFormatItem : ToolbarItemBase
             if (offer.Category is NumberFormatCategory.Special) continue; // not on Excel's ribbon list
             if (offer.Category is NumberFormatCategory.Custom)
             {
-                choices.Add(new("More Number Formats…", () => Context.RunAsync(() => Context.Sheet.OpenFormatCellsAsync())));
+                choices.Add(new("More Number Formats…", () => Context.RunAsync(() => Context.Sheet.OpenFormatCellsAsync())) { OpensPopover = true });
                 continue;
             }
             var label = FormatCellsOffer.NameOf(offer.Category);

@@ -9,8 +9,10 @@ namespace ExGrid.MudBlazor.Tests;
 /// principle 1; ADR-0030: the widths are the Wrapper's metrics-bearing obligation): under Roboto's
 /// widths, as this Wrapper cascades them, no text ExSheet's built-in formats paint is wider than its
 /// estimate. The painted widths are <c>tests/GlyphWidths</c>' measurement of Roboto in this
-/// package's family stack, at 14px and at 12px — the core scales the widths to Excel's 12px —
-/// at weights 400, 500 and 600 under the regular widths and 700 under the bold ones.
+/// package's family stack, on macOS and on Windows (in Chrome and in Edge), each with the fallback
+/// faces that platform paints the glyphs Roboto lacks in, at 14px and at 12px — the core scales the
+/// widths to Excel's 12px — at weights 400, 500 and 600 under the regular widths and 700 under the
+/// bold ones.
 /// </summary>
 public class RobotoGlyphWidthCorpusTests
 {
@@ -64,6 +66,14 @@ public class RobotoGlyphWidthCorpusTests
         Assert.True(under.Length == 0,
             $"{under.Length} glyphs are charged under their width in Roboto at {size}px, weight {weight}: "
             + string.Join("; ", under.Select(g => $"'{g.Glyph}' (U+{char.ConvertToUtf32(g.Glyph, 0):X4}, {g.Painter}) is {g.Painted:0.###} and is charged {g.Charged:0.###}")));
+    }
+
+    [Fact] // ADR-0016, FN-12e, ADR-0030: Roboto's widths hold on every platform measured, so a platform's record never drops out unseen
+    public void Roboto_is_held_to_macOS_and_Windows_in_both_browsers()
+    {
+        Assert.Superset(
+            new HashSet<string> { "roboto.macos.json", "roboto.windows.chrome.json", "roboto.windows.msedge.json" },
+            GlyphWidthRecord.FilesOf("roboto").ToHashSet());
     }
 
     [Theory, MemberData(nameof(Files))] // ADR-0016: a record holds this corpus's widths, or it holds none

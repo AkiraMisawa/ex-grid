@@ -68,9 +68,10 @@ internal static partial class FunctionLibrary
             : failure;
 
     /// <summary>
-    /// CONCAT joins its arguments in order, and a range's cells row by row; blanks add nothing. An
-    /// Error Value anywhere is the result, the first one found. A result longer than a cell holds is
-    /// <c>#VALUE!</c>.
+    /// CONCAT joins its arguments in order, and a range's cells row by row; blanks add nothing, a kept
+    /// blank (<see cref="Operand.KeptBlank"/>) among them, which adds nothing whether passed over or read
+    /// as empty text: an answer by agreement, not one a run read (ADR-0125). An Error Value anywhere is
+    /// the result, the first one found. A result longer than a cell holds is <c>#VALUE!</c>.
     /// </summary>
     private static Operand Concat(FunctionCall call)
     {
@@ -78,7 +79,7 @@ internal static partial class FunctionLibrary
         var joined = new StringBuilder();
         for (var i = 0; i < call.Count; i++)
         {
-            var operand = call.Operand(i);
+            var operand = call.KeepingBlanks(i);
             switch (operand.Kind)
             {
                 case OperandKind.Area or OperandKind.Column or OperandKind.Array:
@@ -101,26 +102,24 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// The width, in characters, that <c>TEXT</c> fits its General to, as a cell's General is fitted
-    /// to its column: <c>TEXT(1/3,"General")</c> is <c>0.333333333</c>, as Excel was observed to
-    /// answer (ADR-0120; TEXTFN-017, the seventeenth Windows run).
-    /// </summary>
-    private const int TextGeneralWidth = 11;
-
-    /// <summary>
     /// TEXT (ADR-0120): the Value as a cell in the format shows it under the Sheet's culture, the
     /// code read in the invariant spelling and as written. A blank is 0, and text that reads as a
-    /// number is that number. A number in General is General fitted to 11 characters. An empty code
-    /// shows a number as empty text, as Excel was observed to (TEXTFN-018), and text and booleans as
-    /// any code without a text section shows them. A code the cell formats refuse and a number the
-    /// format cannot show are <c>#VALUE!</c>; the code's colour is dropped.
+    /// number is that number. A number in General, or under a code of a text section alone such as
+    /// <c>@</c>, is General at its own limit, 11 characters beside the minus sign
+    /// (<see cref="TextGeneral"/>). An empty code shows a number as empty text, as Excel was
+    /// observed to (TEXTFN-018), and text and booleans as any code without a text section shows
+    /// them. A number the format cannot show is <c>#VALUE!</c>, as Excel's <c>TEXT(-1,"yyyy")</c> was
+    /// (TEXTFN-015). A code the cell formats refuse is refused (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>,
+    /// the Formula's): Excel reads codes outside their subset, a fraction or a condition (TEXTFN-019, 020),
+    /// and the system locale's own spelling (TEXTFN-010), so whether Excel would answer is not known. The
+    /// code's colour is dropped.
     /// </summary>
     private static Operand FormatAsText(FunctionCall call)
     {
         if (!TryScalar(call, 0, out var value, out var failure)) return failure;
         if (!TryText(call, 1, out var code, out failure)) return failure;
         var format = NumberFormat.General;
-        if (code.Length > 0 && !NumberFormat.TryParseAsWritten(code, out format)) return Operand.Of(ErrorValue.Value);
+        if (code.Length > 0 && !NumberFormat.TryParseAsWritten(code, out format)) return call.Evaluator.Refuse();
 
         var culture = call.Evaluator.Culture;
         var shown = value switch
@@ -132,7 +131,7 @@ internal static partial class FunctionLibrary
         if (shown.Kind == ValueKind.Number && code.Length == 0) return Operand.Of(Value.FromText(""));
         if (shown.Kind == ValueKind.Number && format.ShowsNumbersAsGeneral)
         {
-            return TextGeneral(shown.Number, format.IsGeneral, culture) is { } general
+            return TextGeneral(shown.Number, culture) is { } general
                 ? Operand.Of(Value.FromText(general))
                 : Operand.Of(ErrorValue.Value);
         }
@@ -141,18 +140,18 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// A number as TEXT's General shows it: General fitted to 11 characters (TEXTFN-017).
-    /// <see langword="null"/>, refused until Excel is asked, where readings the run did not settle
-    /// disagree: a negative number whose General differs as its minus sign takes one of the 11
-    /// characters or not (<c>-1/3</c>, TEXTFN-025), and a number under a code of a text section
-    /// alone, <c>@</c>, whose fitted General is not its General in full (<c>1/3</c>, TEXTFN-028).
+    /// A number as TEXT's General shows it, under <c>General</c> and under a code of a text section
+    /// alone, such as <c>@</c>, alike: General at its own limit,
+    /// <see cref="NumberText.GeneralLimit"/> characters, as a wide column shows it, with a minus
+    /// sign beside them and not counted among them, so a negative number takes one character more.
+    /// <c>TEXT(1/3,"General")</c> is <c>0.333333333</c>, <c>TEXT(-1/3,"General")</c> is
+    /// <c>-0.333333333</c> and <c>TEXT(1/3,"@")</c> is <c>0.333333333</c>, as Excel was observed to
+    /// answer (ADR-0120; TEXTFN-017, the seventeenth Windows run; TEXTFN-025 and TEXTFN-028, the area
+    /// pass of 2026-10-12; TEXTFN-029 to 034, the second). <see langword="null"/> where General cannot
+    /// show the number at all.
     /// </summary>
-    private static string? TextGeneral(double number, bool generalCode, CultureInfo culture)
-    {
-        var fitted = NumberText.General(number, TextGeneralWidth, culture);
-        if (fitted is null || fitted != NumberText.General(number, TextGeneralWidth + 1, culture)) return null;
-        return generalCode || fitted == NumberText.General(number, culture) ? fitted : null;
-    }
+    private static string? TextGeneral(double number, CultureInfo culture) =>
+        NumberText.General(number, NumberText.GeneralLimit + (number < 0 ? 1 : 0), culture);
 
     // ---- TEXTJOIN, CONCATENATE, SUBSTITUTE, REPLACE, FIND ---------------------------------------
 

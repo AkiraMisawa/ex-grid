@@ -28,7 +28,9 @@
 // (ADR-0012), and ending a key the IME took whose keyup the keyboard left before it was told
 // (ADR-0080, 2026-10-12). The eighth entry (ADR-0090): a media query
 // telling the Device Pixel. And the ninth (ADR-0122): the browser's time zone, read once at
-// attach and only when the Consumer asked for it, so TODAY() is the user's day. Anything
+// attach and only when the Consumer asked for it, so TODAY() is the user's day. The tenth
+// (ADR-0210): temporary blur and change listeners on the text field changed by held typing,
+// supplying its missing commit when it is left and retiring on a normal commit. Anything
 // else — text measurement, overlay geometry, popovers — stays in C#; adding to this file needs an
 // ADR.
 //
@@ -343,16 +345,28 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const editingKeys = new Set(
         ['Escape', 'Enter', 'Shift+Enter', 'Control+Enter', 'Tab', 'Shift+Tab', 'F2',
             'Control+f', 'Control+F']);
-    const overwriteKeys = new Set([
-        ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End']);
-    // Pointing (ADR-0051's second round): Overwrite's keys and the four Shift+arrows, which
-    // extend the outline rather than select text in the input. And while a completion list
-    // is open, only its ↑/↓ beside the editing keys (Tab, Escape): ←, →, Home, End and the
-    // Shift+arrows are the editor's — unless the list is open over Point, where they do what
-    // Point does with them, as they do without it (ADR-0058: the tenth Windows run, and Part B
-    // of the ninth).
+    // Pointing (ADR-0051's second round): the arrows, Home and End, the four Shift+arrows and
+    // Shift+Home, which move or extend the outline rather than select text in the input (Shift+Home
+    // observed in Excel: the readings of 2026-10-12, R1 (viii)). And while a completion list is
+    // open, only its ↑/↓ beside the editing keys (Tab, Escape): ←, →, Home, End and the
+    // Shift+arrows are the editor's — unless the list is open over Point, where they do what Point
+    // does with them, as they do without it (ADR-0058: the tenth Windows run, and Part B of the
+    // ninth).
     const pointKeys = new Set([
-        ...overwriteKeys, 'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
+        ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',
+        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight', 'Shift+Home']);
+    // Overwrite, Excel's Enter mode (ADR-0010, ED-2): Point's keys, which commit and move or extend
+    // the Selection — or point, where a Reference can go — rather than move the caret or select
+    // text in the input, and the Primary Modifier's arrows with Shift or without, which commit and
+    // move or extend to the edge. Observed in Excel: Shift+Home, Shift+→, Shift+↓, Shift+←, Ctrl+→
+    // and Ctrl+Shift+→ (the seventeenth Windows run, Part C, case 7; R1 (vii)); the rest of the
+    // Primary Modifier's arrows and Shift+↑ by generalisation. End's commit and move is the grid's,
+    // not Excel's: in Enter mode Excel's End turns on an End Mode (ADR-0058), which the grid does
+    // not have. Shift+End stays the editor's (decided with the user, 2026-10-13): Excel's commits
+    // and turns on an End Mode (R1 (vii)), which the grid does not have (ADR-0058, Q53).
+    const overwriteKeys = new Set([
+        ...pointKeys, 'Control+ArrowUp', 'Control+ArrowDown', 'Control+ArrowLeft', 'Control+ArrowRight',
+        'Control+Shift+ArrowUp', 'Control+Shift+ArrowDown', 'Control+Shift+ArrowLeft', 'Control+Shift+ArrowRight']);
     // Pointing from outside (ADR-0058, "The keyboard"): while what Point wrote was written for a
     // press on another grid, and the Consumer that wrote it hears the arrows, Point's keys and the
     // Primary Modifier's arrows, with Shift or without, which the Consumer refuses rather than let
@@ -649,7 +663,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // measurement: no layout is read. The selection's end goes with it for F4, which cycles
     // every Reference a selection covers, and so does whether the user moved the caret in that
     // very text: until the core's placement lands, the browser's own caret there is not the
-    // user's, and the core tells the two apart as it does for a report (ADR-0051, 2026-09-29).
+    // user's, and the core tells the two apart as it does for a report (ADR-0051, 2026-09-29);
+    // and a caret the user moved leaves F4's rewrite selected, where one typing left stays a
+    // caret, as Excel's did (the readings of 2026-10-12, R1 (iv) and (v)).
     // Whether the key is a held key's repeat goes with it too: auto-repeat is visible only here,
     // and by the time a key reaches .NET a repeat looks like a press. The core raises a
     // Consumer's OnLeave once per press, however long Escape is held (ADR-0070). A field of the
@@ -688,12 +704,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // it says it is the user's, so the core takes it over the placement it has in flight
     // (ADR-0051's third round: a press in the text while pointing ends pointing; found on the
     // Server host, Windows, fourth run, DC-19/DC-34). Only while the field still holds that
-    // text: once it has changed, the move was made in text the core no longer holds.
+    // text: once it has changed, the move was made in text the core no longer holds, and it is
+    // forgotten there and then. A move belongs to the text it was made in, not to an equal text
+    // written later: F4 cycling a whole column back to =SUM(A:A), the text a ← was pressed in,
+    // took the browser's caret at the end for the user's, and the third F4 touched no Reference
+    // (the seventeenth Windows run, Part C, cases 8 and 9).
     let caretMoved = null;
     const noteCaretMove = (input) => {
         caretMoved = { input, text: input.value };
     };
-    const movedByUser = (input) => caretMoved !== null && caretMoved.input === input && caretMoved.text === input.value;
+    const movedByUser = (input) => {
+        if (caretMoved === null || caretMoved.input !== input) {
+            return false;
+        }
+        if (caretMoved.text !== input.value) {
+            caretMoved = null;
+            return false;
+        }
+        return true;
+    };
     const reportCaretOf = (input) => {
         const caret = input.selectionStart ?? input.value.length;
         if (input.value === reportedText && caret === reportedCaret) {
@@ -1099,6 +1128,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // keeps the keyboard where it can (the hand-back after a command, into the Keyboard Field on
     // a grid that edits), so the keys are heard here: one typed on nothing reaches no grid at all.
     let handOff = null;
+    // The control outside this root that held DOM focus when a hand-off to a frame was told: the frame
+    // the keyboard is coming from — ExPivot's button whose panel is opening, ExSheet's toolbar closing a
+    // list as Format Cells opens — not the one it is going to, which the hand-off has reached only once
+    // another control outside the root holds the keyboard. The keys come on through this root, handed
+    // back with those typed on the way (takeKeyboardBack), and go on to the frame in order (decided with
+    // the user, 2026-10-13: ADR-0061's keys typed while a menu or panel opens; ADR-0050 item 16).
+    let handOffFrom = null;
     // ExSheet's KeyTips (ADR-0100; ADR-0050 item 16's note of 2026-10-12): the Alt key gone down alone, on
     // the root or in an edit, while the Consumer declares it (Alt+Alt), and not yet released — and, while
     // keys are held, the held keydown it was. The release is the Consumer's to answer — a Blazor keyup on
@@ -1117,21 +1153,26 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // with every key behind one it cannot take (a Tab), as a hand-off's are; told nothing, they are the
     // grid's. A chord (a key that carries Alt while it is down) makes it no Alt alone: its release is
     // not handed on, nor its held press. A press on the grid and DOM focus leaving it forget it.
+    // An Alt held is handed on where the keyboard is at its turn, not where it was typed: one typed in a
+    // popover closing, or anywhere the keys are held, is noted as alone, and is the Consumer's only if
+    // it lands on the root, in an edit or on its frame — typed slowly, it went there (decided with the
+    // user, 2026-10-13: Escape three times in a list a KeyTip opened, then Alt, H, H, all typed at once,
+    // have the outcome they have typed slowly). Landing in a popover's control, or a text field, it and
+    // its release are no one's, as an Alt typed there is not the Consumer's.
     let altPending = null;
     // The control of a frame of the Consumer's own the core asked to hand the keyboard to while the
     // keyboard is on its way there (handOff 'frame'; handKeyboardTo): given it in turn, by the hold,
     // rather than at once, where a key typed straight on it could overtake the keys still held for it
     // — Alt, H, O typed at once, the O on the band before the held H (ADR-0100's KeyTips, 2026-10-12).
     let frameInTurn = null;
-    // Whether `k` is a declared Alt going down alone: on the root or in an edit, or anywhere under the root
-    // while keys are held (`held`), where what it means is decided where it is handed on — on the root, the
-    // Consumer's; in a frame it went to, the frame's.
-    const altAlone = (k, held = false) => k.key === 'Alt' && k.repeat !== true && canonicalOf(k) === 'Alt+Alt' && declared.has('Alt+Alt')
-        && (held || k.onRoot || k.inEditor);
+    // Whether `k` is a declared Alt going down alone, on the root or in an edit — or anywhere, while it is
+    // held (`held`), where its turn decides (altPending).
+    const altAlone = (k, held) => k.key === 'Alt' && k.repeat !== true && canonicalOf(k) === 'Alt+Alt' && declared.has('Alt+Alt')
+        && (held === true || k.onRoot || k.inEditor);
     // A keydown noted against the Alt that may be down: a declared Alt alone starts one, held or not, and
     // a key that carries Alt makes the one down a chord's.
-    const noteAlt = (k, entry) => {
-        if (altAlone(k, entry !== null)) {
+    const noteAlt = (k, entry, held) => {
+        if (altAlone(k, held)) {
             altPending = { alone: true, entry };
             if (entry) {
                 entry.altAlone = true;
@@ -1143,6 +1184,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
         }
     };
+    // Whether a held release is handed on: its press's, where its press is held with it — a chord made of
+    // it, or its landing where no Alt alone is heard, are the press's (altPending) — else its own.
+    const releasesAlone = (k) => (k.of ? k.of.altAlone === true : k.altAlone === true);
     // The answer to an Alt's release, once the release has been dispatched: the task after this one,
     // which every listener of the keyup has run before. Asked from the listener itself, the question
     // would overtake the release, which Blazor's listener sends later in the same dispatch.
@@ -1156,7 +1200,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const parent = root?.parentElement;
         const keys = held.splice(0, held.length);
         for (const k of keys) {
-            if (!parent || typeof k.key !== 'string' || k.key.length === 0 || (k.altUp === true && k.altAlone !== true)) {
+            if (!parent || typeof k.key !== 'string' || k.key.length === 0 || (k.altUp === true && !releasesAlone(k))) {
                 continue;
             }
             parent.dispatchEvent(new KeyboardEvent(k.altUp === true ? 'keyup' : 'keydown', {
@@ -1172,6 +1216,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         for (const t of keys) {
             if (t.altUp === true) {
                 t.altAlone = pressed?.altAlone === true;
+                t.of = pressed ?? undefined;
                 pressed = null;
             } else if (altAlone(t)) {
                 t.altAlone = true;
@@ -1184,16 +1229,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     // A held release handed on in its turn: as the keyup it was, where the keyboard is now — the
     // control or frame it was handed on to, or the root — so the Consumer's handler on an element
-    // around it hears it, and then the answer to it.
+    // around it hears it, and then the answer to it. A frame of the Consumer's own the keys are being
+    // handed to answers them itself, in the order they reach it, holding those that come while it hands
+    // the keyboard on: the keys after the release go on to it in the same task, as the keys before it
+    // did, rather than after a question to the core. Waited for, they reached it behind the keyboard's
+    // way back from it, and were gated against the root ahead of the keys it held (Escape three times in
+    // a list a KeyTip opened, then Alt, H, H, typed at once: H, H opened an edit in the cell).
     const replayAltRelease = async () => {
-        const target = focusedControl() ?? (deliveringOutside ? outsideControl() : null) ?? keyFieldOf() ?? root;
+        const control = focusedControl();
+        const frame = control === null && deliveringOutside ? outsideControl() : null;
+        const target = control ?? frame ?? keyFieldOf() ?? root;
         replaying = true;
         try {
             target.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', bubbles: true, cancelable: true }));
         } finally {
             replaying = false;
         }
-        await core.invokeMethodAsync('Ping').catch(() => false);
+        if (frame === null) {
+            await core.invokeMethodAsync('Ping').catch(() => false);
+        }
     };
     // The hand-off the drain is delivering: 'frame' once DOM focus has left the root for the
     // frame, and whether the keyboard never arrived, so the held keys are dropped.
@@ -1209,7 +1263,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // to, and the keys held here are not that grid's (ADR-0018).
     const inOtherGrid = () => outsideControl()?.closest('.ex-grid') != null;
     const handedOver = () => handOff === null
-        || (handOff === 'popover' ? popoverFocused() : outsideControl() !== null && !inOtherGrid());
+        || (handOff === 'popover' ? popoverFocused()
+            : outsideControl() !== null && outsideControl() !== handOffFrom && !inOtherGrid());
 
     // The keyboard handed on inside a popover, or out of it (ADR-0044): Tab, Shift+Tab or E on
     // a command moves it into the filter below, E on the value list to the search box, and a
@@ -1372,6 +1427,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     handOffMissed = !disposed && !handedOver();
                     deliveringOutside = handOff === 'frame' && !handOffMissed;
                     handOff = null;
+                    handOffFrom = null;
                 }
                 frameInTurn = null;
                 resolve();
@@ -1389,34 +1445,138 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         look();
     });
 
+    // How a field moves its caret further than a character, on the platform it runs on, for a held
+    // key replayed as the field would have moved it (ADR-0010). By a word with Ctrl on Windows and
+    // Linux, and with Option on an Apple platform, where ⌘'s arrows take it to the start or the end
+    // of the text instead — as a held Home or End does there (ticket 32) — and Ctrl's arrows are
+    // the system's. Alt's arrows are the browser's history on Windows and Linux, and move no caret.
+    // Ctrl's Home and End are the text's start and end on Windows and Linux, as Home and End are in
+    // a field of one line; and the Primary Modifier's A selects the whole text, on every platform.
+    const byWord = (k) => (metaIsPrimary ? k.altKey && !k.ctrlKey : k.ctrlKey && !k.altKey) && !k.metaKey;
+    const primaryOnly = (k) => (metaIsPrimary ? k.metaKey && !k.ctrlKey : k.ctrlKey && !k.metaKey) && !k.altKey;
+    const unmodified = (k) => !k.ctrlKey && !k.metaKey && !k.altKey;
+    // Forward, a word move ends at the end of the word on macOS, Linux and ChromeOS, and on Windows
+    // at the start of the next one, past the spaces after this one: the browser's own conventions.
+    const wordMovePassesSpaces = /^win/i.test(platform);
+    // The word-like stretches of a field's text, as [start, end) offsets: Intl.Segmenter's words,
+    // from the Unicode word breaks the browser moves by itself, with the spaces and punctuation
+    // between them left out. Where a browser has no segmenter, runs of letters, marks, digits and
+    // underscores.
+    let wordSegmenter;
+    const wordsOf = (text) => {
+        if (wordSegmenter === undefined) {
+            wordSegmenter = typeof Intl.Segmenter === 'function'
+                ? new Intl.Segmenter(undefined, { granularity: 'word' })
+                : null;
+        }
+        if (wordSegmenter === null) {
+            return [...text.matchAll(/[\p{L}\p{M}\p{N}_]+/gu)].map((run) => [run.index, run.index + run[0].length]);
+        }
+        const words = [];
+        for (const piece of wordSegmenter.segment(text)) {
+            if (piece.isWordLike) {
+                words.push([piece.index, piece.index + piece.segment.length]);
+            }
+        }
+        return words;
+    };
+    // Where a word move from `at` lands: back, at the start of the word the caret is in, or of the
+    // word before it; forward, at the end of the word the caret is in or of the next one — on
+    // Windows at the start of the next word — and at the text's end where there is none. The
+    // field's own text is all that is read (ADR-0021).
+    const wordEdge = (text, at, forward) => {
+        const words = wordsOf(text);
+        if (!forward) {
+            let edge = 0;
+            for (const [start] of words) {
+                if (start >= at) {
+                    break;
+                }
+                edge = start;
+            }
+            return edge;
+        }
+        for (const [start, end] of words) {
+            if (wordMovePassesSpaces ? start > at : end > at) {
+                return wordMovePassesSpaces ? start : end;
+            }
+        }
+        return text.length;
+    };
+
     // A held key a text field would have handled itself, handled as it would have: text is
-    // typed at the caret, a deletion deletes, a caret key moves the caret. Anything else
-    // was the browser's, and its moment has passed. Whether it was one of these is answered.
+    // typed at the caret, a deletion deletes, a caret key moves the caret — Shift extending the
+    // selection from its anchor, and a word or the text's edge at a time with the modifier the
+    // platform does that with (byWord, primaryOnly). Anything else was the browser's, and its moment
+    // has passed. Whether it was one of these is answered. Nothing is read but the field's value
+    // and selection (ADR-0021).
     const typeInto = (input, k) => {
         const start = input.selectionStart ?? input.value.length;
         const end = input.selectionEnd ?? start;
+        const inEditor = input.closest('.ex-editor') !== null;
         // A composition's text from the Keyboard Field (ADR-0080) is typed as a character is.
-        if (k.text !== undefined || k.key.length === 1) {
+        if (k.text !== undefined || (k.key.length === 1 && !k.ctrlKey && !k.metaKey)) {
             input.setRangeText(k.text ?? k.key, start, end, 'end');
-        } else if (k.key === 'Backspace') {
-            input.setRangeText('', start === end ? Math.max(0, start - 1) : start, end, 'end');
-        } else if (k.key === 'Delete') {
-            input.setRangeText('', start, start === end ? Math.min(input.value.length, end + 1) : end, 'end');
+        } else if (k.key === 'Backspace' || k.key === 'Delete') {
+            // A character, or with the word modifier a word, before the caret or after it; a
+            // selection is deleted whole, with or without it.
+            const word = byWord(k) && !k.shiftKey;
+            if (!word && !unmodified(k)) {
+                return false;
+            }
+            const forward = k.key === 'Delete';
+            let from = start;
+            let to = end;
+            if (start === end) {
+                const reach = word ? wordEdge(input.value, start, forward)
+                    : forward ? Math.min(input.value.length, start + 1) : Math.max(0, start - 1);
+                from = Math.min(start, reach);
+                to = Math.max(start, reach);
+            }
+            input.setRangeText('', from, to, 'end');
         } else if (k.key === 'Home' || k.key === 'End') {
             // As the field would have: to the start or the end, Shift extending the selection, and
             // scrolled to show it. Setting the selection from script moves no view, so a held End
             // replayed on a circuit left the caret at the end and the text shown from its start
             // (ticket 32, seen in CI on the Server host).
-            placeCaretAtEnd(input, k, input.closest('.ex-editor') !== null);
+            if (!unmodified(k) && (metaIsPrimary || !primaryOnly(k))) {
+                return false;
+            }
+            placeCaretAtEnd(input, k, inEditor);
             return true;
         } else if (k.key === 'ArrowLeft' || k.key === 'ArrowRight') {
-            const at = k.key === 'ArrowLeft' ? Math.max(0, start - 1)
-                : Math.min(input.value.length, end + 1);
-            if (input.closest('.ex-editor') !== null) {
+            const forward = k.key === 'ArrowRight';
+            if (metaIsPrimary && primaryOnly(k)) {
+                placeCaretAtEnd(input, { key: forward ? 'End' : 'Home', shiftKey: k.shiftKey }, inEditor);
+                return true;
+            }
+            const word = byWord(k);
+            if (!word && !unmodified(k)) {
+                return false;
+            }
+            // The end of the selection a caret key moves is its focus, the other its anchor: the
+            // start of a backward selection is its focus, the end of any other. A selection with
+            // the plain arrow collapses to its own edge on that side; anything else moves the focus.
+            const backward = input.selectionDirection === 'backward';
+            const anchor = backward ? end : start;
+            const focus = backward ? start : end;
+            const to = word ? wordEdge(input.value, focus, forward)
+                : start !== end && !k.shiftKey ? (forward ? end : start)
+                    : forward ? Math.min(input.value.length, focus + 1) : Math.max(0, focus - 1);
+            if (inEditor) {
                 noteCaretMove(input);
             }
-            input.setSelectionRange(at, at);
-            showCaret(input, at);
+            if (!k.shiftKey) {
+                input.setSelectionRange(to, to);
+            } else if (to < anchor) {
+                input.setSelectionRange(to, anchor, 'backward');
+            } else {
+                input.setSelectionRange(anchor, to, 'forward');
+            }
+            showCaret(input, to);
+            return true;
+        } else if ((k.key === 'a' || k.key === 'A') && !k.shiftKey && primaryOnly(k)) {
+            input.setSelectionRange(0, input.value.length, 'forward');
             return true;
         } else {
             return false;
@@ -1468,9 +1628,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         showCaret(input, edge);
     };
+    // A held key the edit's field is left, handled as the field would have handled it (typeInto):
+    // chords among them, so that a Ctrl+← held behind F2 moves the caret by a word as it does when
+    // it is not held, rather than be dropped while the End before it moved the caret — an outcome
+    // that turned on whether the keys arrived before F2's answer (ED-2, seen in CI on Edge,
+    // WebAssembly). A chord typeInto does not know is the browser's, and is dropped.
     const typeIntoEditor = (k) => {
         const input = editorInput();
-        if (input && !k.ctrlKey && !k.metaKey) {
+        if (input) {
             typeInto(input, k);
         }
     };
@@ -1547,17 +1712,48 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             && active.closest('.ex-editor') === null ? active : null;
     };
 
+    // Script-written text does not become a native edit. Keep the missing commit only for
+    // the field the hold actually changed (ADR-0210). One record per instance also bounds
+    // the lifetime of a detached field, for which the browser need not send blur.
+    let heldTextEdit = null;
+    const forgetHeldText = () => {
+        if (!heldTextEdit) return;
+        const { field } = heldTextEdit;
+        heldTextEdit = null;
+        field.removeEventListener('blur', commitHeldText);
+        field.removeEventListener('change', forgetHeldText);
+    };
+    const commitHeldText = () => {
+        if (!heldTextEdit) return;
+        const { field, before } = heldTextEdit;
+        forgetHeldText();
+        if (field.isConnected && before !== field.value) {
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    };
+    const rememberHeldText = (field, before) => {
+        if (heldTextEdit?.field === field) return;
+        forgetHeldText();
+        heldTextEdit = { field, before };
+        field.addEventListener('blur', commitHeldText);
+        field.addEventListener('change', forgetHeldText);
+    };
+
     const handToPopover = (target, k) => {
         if (isTextField(target) && !k.ctrlKey && !k.metaKey && !k.altKey) {
-            if (k.key === 'Enter' && target.form) {
-                // The keydown first, so the field's own handlers hear what the key was — Shift
-                // held turns the find panel's Enter into "previous" (ADR-0055) — then the
-                // submission, which a dispatched keydown does not perform.
+            if (k.key === 'Enter') {
+                // A native Enter commits a text field's change before submitting its form.
+                // A dispatched keydown does neither: a change-bound field such as More Colours'
+                // HEX would show the held text while its Consumer still held the old value.
+                // Keep the key first for handlers such as Find's Shift+Enter (ADR-0055).
                 replayInto(target, k);
-                target.form.requestSubmit();
+                if (heldTextEdit?.field === target) commitHeldText();
+                target.form?.requestSubmit();
                 return;
             }
+            const before = target.value;
             if (typeInto(target, k)) {
+                if (before !== target.value) rememberHeldText(target, before);
                 return;
             }
         }
@@ -1641,7 +1837,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // to a frame of its own (handOff), which they then wait for and go to, or nothing. A chord's
             // release is not handed on: its press was not either.
             if (k.altUp) {
-                if (k.altAlone) {
+                if (releasesAlone(k)) {
                     await replayAltRelease();
                     await editorSettled();
                 }
@@ -1665,6 +1861,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     inFindField: false,
                     paint: k.paint,
                 })).filter((t) => t.key.length > 0 && (t.altUp !== true || t.key === 'Alt'))));
+                // The keyboard taken back through this root to go on to a frame of the Consumer's own, told
+                // while the frame's keys were asked for — ExPivot's report filter whose Filter… is opening
+                // (decided with the user, 2026-10-13, ADR-0061): they wait for it to arrive and go there, in
+                // order, as every key held while a hand-off stands does, and none is gated against the root
+                // (ADR-0050 item 16's note of 2026-10-12).
+                if (handOff !== null) {
+                    await editorSettled();
+                }
                 continue;
             }
             // A composition that ended in the Keyboard Field (ADR-0080): with no edit open, the
@@ -1672,7 +1876,30 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // keys after it wait for the editor; with one open — a second composition the IME
             // finished there before the first one's editor had the keyboard — it is typed into
             // the edit at its caret, as a held character is.
+            //
+            // Unless a control of the grid's, or a frame of the Consumer's own, has taken the
+            // keyboard meanwhile: the composition was finished while a popover opened — Format
+            // Cells' Ctrl+1, a column's Alt+↓, Ctrl+F's panel, a command run in a menu's place —
+            // or while a frame did, and the keys typed then are never the grid's (ADR-0039, note
+            // of 2026-10-01). Asked of the core, the text opened a Cell Editor behind the popover,
+            // and the editor took the keyboard from it. It is handed to what holds the keyboard,
+            // as a held character is: typed at the caret of a text field (typeInto); on any other
+            // control it is text no keydown carries, a key script cannot reproduce, and it is
+            // dropped with every key held behind it (ADR-0010). A cancelled composition typed
+            // nothing, and hands nothing on.
             if (k.text !== undefined) {
+                const holder = focusedControl() ?? (deliveringOutside ? outsideControl() : null);
+                if (holder) {
+                    if (k.text.length === 0) {
+                        continue;
+                    }
+                    if (!isTextField(holder)) {
+                        dropHeld();
+                        break;
+                    }
+                    typeInto(holder, k);
+                    continue;
+                }
                 if (editing === 'none') {
                     const opened = await core.invokeMethodAsync('OnKeyFieldTextAsync', k.text, k.paint).catch((error) => {
                         if (core) {
@@ -1703,9 +1930,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // that follows carries it. Replaying it would be a key no field can reproduce, and
             // that stops the replay there, dropping every key typed after it.
             // A declared Alt that went down alone is handed on in its turn, so that its release, handed on
-            // after it, finds it (altPending); a text field cannot reproduce it, and it is skipped there.
+            // after it, finds it (altPending): to the root or the edit, or to a frame of the Consumer's own.
+            // Landing on a control inside this root — a popover's — or in a text field, which cannot
+            // reproduce it, it is no Alt alone, and its release goes with it.
             const target = focusedControl() ?? (deliveringOutside ? outsideControl() : null);
-            if (modifierKeys.has(k.key) && !(k.key === 'Alt' && k.altAlone === true && !(target && isTextField(target)))) {
+            if (k.key === 'Alt' && k.altAlone === true && target && (isTextField(target) || root.contains(target))) {
+                k.altAlone = false;
+            }
+            if (modifierKeys.has(k.key) && !(k.key === 'Alt' && k.altAlone === true)) {
                 continue;
             }
             // Find's key held behind a popover is the grid's there too (ADR-0055), and is not
@@ -1733,6 +1965,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 }
                 const move = handsOver(target, k) ?? escapeCloses(target, k);
                 handToPopover(target, k);
+                if (!root.contains(target) && k.key === 'Escape' && plain(k) && !k.shiftKey && k.repeat !== true) {
+                    // A Consumer frame may hand the keyboard on from Escape, before its handler's
+                    // first await. Acknowledge that handler's entry before interpreting the next
+                    // held key as a text field's: otherwise Down is dropped there, or a letter is
+                    // typed into the field that is closing. This is the ordered circuit question
+                    // already used for Alt's release (ADR-0050), not a delay or a timing estimate.
+                    await core?.invokeMethodAsync('Ping').catch(() => false);
+                    await editorSettled();
+                }
                 if (move) {
                     awaitingMove = move;
                     await editorSettled();
@@ -1855,8 +2096,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const holdOver = answering && awaitingMove !== null && held.length === 0 && moved() && handedOver();
         if (!replaying && (!holdOver && (answering || sentinel || (editing !== 'none' && k.onRoot && !editorFocused())))) {
             event.stopPropagation();
-            // Noted as held: its release is held behind it, and both are handed on in their turn.
-            noteAlt(k, isClipboardKey(k) ? null : k);
+            // Noted as held: its release is held behind it, and both are handed on in their turn, where the
+            // keyboard is then (altPending).
+            noteAlt(k, isClipboardKey(k) ? null : k, true);
             // A clipboard key is not held as a key: a copy or a paste dispatched from script does
             // nothing, so held it was lost — the clipboard kept what it held before, and a paste
             // never landed (CP-6 on the Server host, 2026-10-02). Its default runs, and the copy,
@@ -2199,7 +2441,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (answering) {
             event.stopPropagation();
             event.preventDefault();
-            held.push({ altUp: true, altAlone: alone, key: 'Alt' });
+            // With its press, where that is held too: its turn decides whether it was alone (releasesAlone).
+            held.push({ altUp: true, altAlone: alone, of: pending?.entry ?? undefined, key: 'Alt' });
             return;
         }
         if (!alone) {
@@ -2397,7 +2640,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         || (inOwnScroller(target) && target.closest('.ex-header') !== null);
     // What a press or release on this grid's own rows was taken against (ED-31; ADR-0021, note of
     // 2026-10-02): the offsets the browser gave it, the first row the Viewport painted, the
-    // horizontal scroll, and the row order and the columns and row height the painting render
+    // scroll on both axes, and the row order and the columns and row height the painting render
     // carried (data-ex-sequence, data-ex-layout). A replayed event is measured again, against the
     // rows painted at the replay, so a held press replayed after a key had moved the view landed on
     // the row the move brought there (`1` Enter PageDown `9` and a press on F6 at once, on the
@@ -2413,6 +2656,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         return {
             x: event.offsetX, y: event.offsetY, first: number('data-ex-first-row'),
             left: scroller ? scroller.scrollLeft : 0,
+            // Where a fill handle held at the readable area's top stands (ADR-0050, item 5).
+            top: scroller ? scroller.scrollTop : 0,
             sequence: number('data-ex-sequence'), layout: number('data-ex-layout'),
         };
     };
@@ -2420,7 +2665,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!core || !taken) {
             return;
         }
-        core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left,
+        core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left, taken.top,
             taken.sequence, taken.layout).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to hear where a press was taken', error);
@@ -3146,6 +3391,32 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // content that made the scrollbar appear; and nothing here writes to the DOM, so the
     // "ResizeObserver loop completed with undelivered notifications" warning has no way
     // to arise.
+    //
+    // Nor may C# write to it inside the callback, and on WebAssembly it would: there
+    // invokeMethodAsync runs the .NET method at once, on this thread, and a render it asks
+    // for is applied to the DOM before the call returns. Told from inside the callback, the
+    // render that answered the first report — the gutter's strip appearing — moved the
+    // scroller's content box again within the same observation, and the browser reported
+    // the loop on window (CON-4: /density at attach, 2026-10-13; the Server host, whose call
+    // crosses the circuit, never did). So each observer tells C# from a task of its own,
+    // queued once however many notifications come before it runs and carrying the latest
+    // values: what is told does not depend on when it runs, only that it is outside the
+    // observation. ADR-0013 accepts the frame this costs.
+    const toldAfterTheObservation = (tell) => {
+        let queued = false;
+        return () => {
+            if (queued) {
+                return;
+            }
+            queued = true;
+            setTimeout(() => {
+                queued = false;
+                if (core) {
+                    tell();
+                }
+            }, 0);
+        };
+    };
     let gutterWidth = 0;
     let gutterHeight = 0;
     let contentWidth = -1;
@@ -3178,7 +3449,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         gutterHeight = height;
         contentWidth = content.inlineSize;
         contentHeight = content.blockSize;
-        core.invokeMethodAsync('OnViewportReportAsync', width, height, contentWidth, contentHeight)
+        tellViewport();
+    });
+    const tellViewport = toldAfterTheObservation(() => {
+        core.invokeMethodAsync('OnViewportReportAsync', gutterWidth, gutterHeight, contentWidth, contentHeight)
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to take the scrollbar gutter', error);
@@ -3208,6 +3482,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         ceiling = size.blockSize;
+        tellCeiling();
+    });
+    const tellCeiling = toldAfterTheObservation(() => {
         core.invokeMethodAsync('OnLayoutCeilingAsync', ceiling)
             .catch((error) => {
                 if (core) {
@@ -3355,8 +3632,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // repeat.
         setCaret: (text, caret, end) => {
             const input = editorInput();
+            // Read first: a move made in text the field no longer holds is forgotten now, before the
+            // field can come back to that text (movedByUser).
+            const moved = input ? movedByUser(input) : false;
             if (input && input.value === text) {
-                if (movedByUser(input)) {
+                if (moved) {
                     reportedText = null;
                     reportCaretOf(input);
                     return;
@@ -3403,10 +3683,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // the root until the keyboard arrives. No focus is moved and no layout is read: what
         // holds DOM focus is read, as the hold always has.
         handOff: (to) => {
-            // The core closed a Consumer's popover before its contents took the keyboard: it is no
-            // longer on its way there, and the keys held for it are the grid's, as they would have
-            // been, rather than waiting for a focus that will not come and then dropped (ADR-0100's
-            // CloseRequest, 2026-10-12).
+            // The core closed a Consumer's popover: the keyboard is no longer on its way there,
+            // even if its contents had focus while a choice's close still held the keys. Withdraw
+            // that destination before the hand-back, rather than wait for focus on contents now gone
+            // and drop the held keys. A frame the Consumer handed the keyboard to stays its destination
+            // (ADR-0044; ADR-0050 item 16; ADR-0100's CloseRequest).
             if (to === 'none') {
                 if (handOff === 'popover') {
                     handOff = null;
@@ -3417,6 +3698,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 return;
             }
             handOff = to;
+            handOffFrom = to === 'frame' ? outsideControl() : null;
             handOffMissed = false;
             if (answering) {
                 holdStartedAt = performance.now();
@@ -3435,6 +3717,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // typed from now, which go out as they are typed. Kept until the Escape is answered, they could be
             // overtaken by a key typed meanwhile, or by the keyboard leaving first, which ends this (keysOut).
             keysOut = true;
+            // The Consumer has answered where these keys go, even while the Escape's interop
+            // answer is pending. Hand them out now, before a later key bubbles out or the
+            // receiving grid takes focus and asks the frame for its queue. Waiting for drain
+            // lets either overtake them; focus leaving also ends keysOut before drain runs.
             passHeldOut();
         },
         // A popover's contents reported a popup of their own opening or closing
@@ -3604,7 +3890,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // as the root's (ADR-0010). Declined — the user has put the keyboard elsewhere (ADR-0018) — the
         // frame is still asked, so it stops holding, and its keys are dropped with the hand-back. It is
         // reclaimFocus's decision, widened to the frame: no other focus is moved here.
-        takeKeyboardBack: (element, ticket) => {
+        takeKeyboardBack: async (element, ticket) => {
             if (!core) {
                 return;
             }
@@ -3616,6 +3902,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 return [];
             });
             if (!granted) {
+                await typed;
                 return;
             }
             held.push({ typedOnTheWay: typed, paint: paintNow() });
@@ -3624,6 +3911,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             } else {
                 startHold();
             }
+            // The Consumer may remove its frame and clear its key queue once this call completes.
+            // Asking for the queue starts another interop call: returning before its answer lets
+            // that removal overtake collection on a circuit. Complete only after the keys are ours,
+            // whether the hand-back was granted or declined. The drain already holds their place.
+            await typed;
         },
         // The keyboard this grid holds, handed on to a control of the Consumer's own outside it —
         // the first control of a frame or a tab the Consumer opened from the grid, a dialog's Close
@@ -3655,7 +3947,21 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 && (!active || active === document.body || active === document.documentElement
                     || (root.contains(active) && !own))) {
                 staleField = null;
-                element.focus();
+                // A Chrome can name the box of a design-system control whose input it cannot
+                // reference in .NET (More Colours, ADR-0039). A box starts at its first enabled
+                // text field, before other controls such as a colour slider. Selecting its
+                // value makes the first held character replace the opening value. This is
+                // still the same conditional hand-off: an early choice outside the root wins.
+                const direct = element.matches('input, textarea, select, button, a[href], [tabindex]');
+                const firstText = direct ? null : [...element.querySelectorAll('input, textarea')].find(isTextField);
+                const target = direct ? element : firstText
+                    ?? element.querySelector('button:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])');
+                if (target instanceof HTMLElement) {
+                    target.focus();
+                    if (target === firstText && isTextField(target)) {
+                        target.select();
+                    }
+                }
             }
         },
         // The core's request that the open edit's surface take the keyboard: on opening, on F2,
@@ -3734,6 +4040,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // sees, and its .NET reference is never collected. The observer holds the
             // scroller and the .NET reference the same way, and a notification arriving
             // after disposal would call into a component that no longer exists.
+            forgetHeldText();
             observer.disconnect();
             ceilingObserver.disconnect();
             resolutionQuery?.removeEventListener('change', armResolution);

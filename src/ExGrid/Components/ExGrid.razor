@@ -70,7 +70,7 @@
      id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Busy ? "true" : null)"
      data-ex-reveal="@_revealToken" data-ex-follow="@_followToken" data-ex-follow-focus="@FollowFocusId()"
      data-ex-pointed-from="@PointedFrom"
-     aria-rowcount="@(_total ?? _window.Count)" aria-colcount="@Columns.Count"
+     aria-rowcount="@((long)(_total ?? _window.Count) + HeaderRowCount)" aria-colcount="@Columns.Count"
      aria-activedescendant="@(keyFieldShown ? null : activeDescendant)"
      @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
     @* The stylesheet's notice (ADR-0123, ERR-11): it carries the stamp of the stylesheet this build
@@ -116,71 +116,99 @@
                default is suppressed so DOM focus stays where it is; so is a press on the rows. *@
             @if (!HideHeader)
             {
-            <div class="ex-header" role="row" style="@HeaderBandStyle()" @attributes="_headerDragHandler" @onclick="OnHeaderClickAsync" @onmousedown="HeaderPressHandler" @onmousedown:preventDefault="PointedAtNow">
+            @* Every row is counted where ARIA counts it (ADR-0033, 2026-10-12): the header's rows
+               first, from 1, and the data rows after them, so aria-rowindex gives a row the number
+               a reader counted from the rows painted before it near the top (NVDA, the seventeenth
+               Windows run), and the same number far down, where the DOM holds a Window. What is
+               checked is the accessibility tree (ADR-0033, 2026-10-13); what a reader says of it
+               is learned from users' reports. Untiered, the header is the one row it always was.
+               Tiered, it holds a row per tier of Header Groups, top first, and the leaf row below
+               them; each is display: contents, so the band lays out, paints and stacks exactly as
+               one element of cells and rectangles did (ADR-0032), and only the tree says rows. *@
+            var tiered = _headerLayout.TierCount > 0;
+            <div class="ex-header" role="@(tiered ? "rowgroup" : "row")" aria-rowindex="@(tiered ? null : CellIds.HeaderRowIndex(0))" style="@HeaderBandStyle()" @attributes="_headerDragHandler" @onclick="OnHeaderClickAsync" @onmousedown="HeaderPressHandler" @onmousedown:preventDefault="PointedAtNow">
+                @if (MarksColumns && MarksPinnedColumns)
+                {
+                    @* The Heading Mark over the Pinned Columns' headers (ADR-0008, 2026-10-13): their
+                       part of each run of marked columns, on a zero-size sticky layer held at the
+                       band's left edge, as the pinned header cells are. First in the band's flow, so
+                       its place in the flow is the band's left edge whatever stands after it, and it
+                       displaces nothing. Paint only: the band's delegated handlers read the press. *@
+                    var pinnedMarks = ColumnMarks(pinnedLayer: true);
+                    <div class="ex-heading-marks-pinned" aria-hidden="true">
+                        @for (var m = 0; m < pinnedMarks.Length; m++)
+                        {
+                            @if (pinnedMarks[m] is { } pinnedMark)
+                            {
+                                <div class="ex-heading-mark ex-heading-mark-column" style="@pinnedMark"></div>
+                            }
+                        }
+                    </div>
+                }
                 @if (_rowHeadingStyle is not null)
                 {
                     @* Where the two Headings meet (ADR-0050): held at the left edge as the
                        Row Headings are, and a click there selects all. Paint only — the
                        header's own delegated click reads the offsets. *@
-                    <div class="ex-headings-corner" style="@_rowHeadingStyle" aria-hidden="true"></div>
+                    <div class="@HeadingsCornerClass" style="@_rowHeadingStyle" aria-hidden="true"></div>
                 }
-                @if (_headerLayout.Groups.Count > 0 && GroupsHaveGeometry)
+                @if (tiered)
                 {
-                    @* The pinned rectangles ride a zero-size sticky anchor, exactly as
-                       the pinned selection layer does: a group is entirely pinned or
-                       entirely scrollable — a straddle was refused (ADR-0032). *@
-                    <div class="ex-header-groups-pinned">
-                        @for (var g = 0; g < _headerLayout.Groups.Count; g++)
-                        {
-                            var group = _headerLayout.Groups[g];
-                            @if (IsGroupHeld(group))
+                    @for (var headerRow = 0; headerRow < _headerLayout.TierCount; headerRow++)
+                    {
+                        var tier = _headerLayout.TierCount - headerRow;
+                        <div role="row" aria-rowindex="@CellIds.HeaderRowIndex(headerRow)" style="display: contents">
+                            @if (GroupsHaveGeometry && HoldsGroupAt(tier))
                             {
-                                <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colspan="@CellIds.Span(group.MemberCount)">@group.Label</div>
+                                @* The pinned rectangles ride a zero-size sticky anchor, exactly as
+                                   the pinned selection layer does: a group is entirely pinned or
+                                   entirely scrollable — a straddle was refused (ADR-0032). One
+                                   anchor per tier's row, each at the same place in the flow. *@
+                                <div class="ex-header-groups-pinned">
+                                    @for (var g = 0; g < _headerLayout.Groups.Count; g++)
+                                    {
+                                        var group = _headerLayout.Groups[g];
+                                        @if (group.TopTier == tier && IsGroupHeld(group))
+                                        {
+                                            <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(group.FirstColumn)" aria-colspan="@CellIds.Span(group.MemberCount)" aria-rowspan="@GroupRowSpan(group)">@group.Label</div>
+                                        }
+                                    }
+                                </div>
                             }
-                        }
+                            @* A rectangle stands correctly whether or not its leaves are in the
+                               DOM (ADR-0032): absolutely positioned from the geometry, so it never
+                               depends on the sliced flex flow beside it. *@
+                            @for (var g = 0; GroupsHaveGeometry && g < _headerLayout.Groups.Count; g++)
+                            {
+                                var group = _headerLayout.Groups[g];
+                                @if (group.TopTier == tier && !IsGroupHeld(group))
+                                {
+                                    <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(group.FirstColumn)" aria-colspan="@CellIds.Span(group.MemberCount)" aria-rowspan="@GroupRowSpan(group)">@group.Label</div>
+                                }
+                            }
+                        </div>
+                    }
+                    <div role="row" aria-rowindex="@CellIds.HeaderRowIndex(_headerLayout.TierCount)" style="display: contents">
+                        @{ LeafHeaderCells(__builder); }
                     </div>
                 }
-                @for (var i = 0; i < _columnStyles.Geometry.PinnedCount; i++)
+                else
                 {
-                    @* The buttons' handlers are held per column (MenuOpener, GripDown), never
-                       written as lambdas here: a lambda capturing the index allocated its
-                       closure at the top of every iteration, button or not, and handed the
-                       diff a new handler per render — re-registered and sent to the browser
-                       for every header button on every render of the root, which is every
-                       vertical scroll frame (PF-3). *@
-                    @* The ▾ is pressed, never reached by Tab (ADR-0080, decided with the user
-                       2026-10-02), as the action buttons are (ADR-0037): the Keyboard Field stands
-                       after the header in the markup, and a Tab into the grid went through every
-                       column's ▾ before the first cell. Alt+↓ opens the column's popover by key
-                       (ADR-0044). On every grid, and under every Chrome: the button is the core's. *@
-                    <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
-                        {@HeaderMark}@if (ShowMenuButtons)
-                        {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                        {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
+                    LeafHeaderCells(__builder);
                 }
-                @if (_scrollable is { } headerColumns)
+                @* The Heading Mark (ADR-0008, 2026-10-13): one rectangle per run of marked columns,
+                   over the band's last tier, on whose bottom edge the stylesheet draws the line. It
+                   passes beneath the pinned header cells and the Headings' corner as the columns do,
+                   and its pinned part rides the layer at the band's start. *@
+                @if (MarksColumns)
                 {
-                    @if (_columnStyles.HasGap(headerColumns.Start))
+                    var columnMarks = ColumnMarks(pinnedLayer: false);
+                    @for (var m = 0; m < columnMarks.Length; m++)
                     {
-                        <div class="ex-gap" style="@_columnStyles.Gap(headerColumns.Start)" aria-hidden="true"></div>
-                    }
-                    @for (var i = headerColumns.Start; i < headerColumns.Start + headerColumns.Count; i++)
-                    {
-                        <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
-                            {@HeaderMark}@if (ShowMenuButtons)
-                            {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                            {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
-                    }
-                }
-                @* A rectangle stands correctly whether or not its leaves are in the
-                   DOM (ADR-0032): absolutely positioned from the geometry, so it never
-                   depends on the sliced flex flow beside it. *@
-                @for (var g = 0; GroupsHaveGeometry && g < _headerLayout.Groups.Count; g++)
-                {
-                    var group = _headerLayout.Groups[g];
-                    @if (!IsGroupHeld(group))
-                    {
-                        <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colspan="@CellIds.Span(group.MemberCount)">@group.Label</div>
+                        @if (columnMarks[m] is { } columnMark)
+                        {
+                            <div class="ex-heading-mark ex-heading-mark-column" style="@columnMark" aria-hidden="true"></div>
+                        }
                     }
                 }
             </div>
@@ -251,6 +279,7 @@
                 {
                     var pointDashes = PointDashesRange(visible);
                     var outlineCover = OutlineCoverAt(visible);
+                    var readableEdge = ReadableEdgeAt(visible);
                     @if (!_selection.Selection.IsEmpty || HoverRowRange is not null || _columnOutlines.Length > 0 || pointDashes is not null)
                     {
                         @* What selection costs to paint depends on how many rectangles there
@@ -304,8 +333,9 @@
                             {
                                 @* Each range's box, a single range outlined; the Focus's own element
                                    follows, so the stylesheet can tell it stands inside a single
-                                   range (ADR-0008, 2026-09-29). Its tint is in the shade layer
-                                   beneath (ADR-0206). *@
+                                   range (ADR-0008, 2026-09-29), and it is marked among several,
+                                   where it takes a thin border of its own (2026-10-12). Its tint is
+                                   in the shade layer beneath (ADR-0206). *@
                                 @for (var r = 0; r < _selection.Selection.Ranges.Count; r++)
                                 {
                                     @if (SelectionStyles.Box(_selection.Selection.Ranges[r], _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } pinnedRangeBox)
@@ -315,7 +345,7 @@
                                 }
                                 @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } pinnedFocus)
                                 {
-                                    <div class="ex-focus" style="@pinnedFocus"></div>
+                                    <div class="@FocusClass" style="@pinnedFocus"></div>
                                 }
                                 @* The Copied Range (ADR-0170): dashes round each rectangle the clipboard
                                    holds as the grid copied it, after the Focus, so they lie over the
@@ -335,7 +365,7 @@
                                 {
                                     <div class="ex-fill-target" style="@pinnedFillOutline"></div>
                                 }
-                                @if (FillHandleRange is { } pinnedHandleRange && SelectionStyles.Handle(pinnedHandleRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: true) is { } pinnedHandle)
+                                @if (FillHandleRange is { } pinnedHandleRange && SelectionStyles.Handle(pinnedHandleRange, FillHandleCornerOf(pinnedHandleRange), _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: true, readableEdge) is { } pinnedHandle)
                                 {
                                     <div class="ex-fill-handle" style="@pinnedHandle"></div>
                                 }
@@ -405,7 +435,7 @@
                                 }
                                 @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } focus)
                                 {
-                                    <div class="ex-focus" style="@focus"></div>
+                                    <div class="@FocusClass" style="@focus"></div>
                                 }
                                 @foreach (var copiedRange in CopiedRectangles)
                                 {
@@ -418,7 +448,7 @@
                                 {
                                     <div class="ex-fill-target" style="@fillOutline"></div>
                                 }
-                                @if (FillHandleRange is { } handleRange && SelectionStyles.Handle(handleRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: false) is { } handle)
+                                @if (FillHandleRange is { } handleRange && SelectionStyles.Handle(handleRange, FillHandleCornerOf(handleRange), _columnStyles.Geometry, _metrics.RowHeightPx, visible, _metrics.FillHandleSizePx, pinnedLayer: false, readableEdge) is { } handle)
                                 {
                                     <div class="ex-fill-handle" style="@handle"></div>
                                 }
@@ -446,6 +476,23 @@
                                 <div class="@PointOutlineClass(pointRange)" style="@point"></div>
                             }
                         </div>
+                        @* The Heading Mark over the Row Headings (ADR-0008, 2026-10-13): one rectangle
+                           per run of marked rows, cut to the painted rows, on whose right edge the
+                           stylesheet draws the line. A zero-size sticky layer held at the Viewport's left
+                           edge, as the Row Headings are, and above them; no row is told. *@
+                        @if (MarksRows)
+                        {
+                            var markedRows = MarkedRows;
+                            <div class="ex-heading-marks-rows" aria-hidden="true" @key="HeadingMarksLayerKey">
+                                @for (var m = 0; m < markedRows.Length; m++)
+                                {
+                                    @if (HeadingMarkStyles.Row(markedRows[m], visible, _metrics.RowHeightPx, _rowHeadingWidthPx) is { } rowMark)
+                                    {
+                                        <div class="ex-heading-mark ex-heading-mark-row" style="@rowMark"></div>
+                                    }
+                                }
+                            </div>
+                        }
                     }
                     @* The Cell Editor (ADR-0010): one input floated over the focused
                        cell — never inside a row, which would break the memoisation.
@@ -525,6 +572,7 @@
                        the delegate and the channel each row reports its marks through are the
                        same instances render after render. *@
                     var highlightNow = HighlightNow();
+                    var headingStates = _rowHeadingStyle is not null ? HeadingStates(visible) : null;
                     BeginAppearances();
                     BeginPaintedKeys();
                     @for (var row = visible.Start; row < visible.Start + visible.Count; row++)
@@ -542,7 +590,7 @@
                                        CellState="CellState" CellType="CellType" CellAlign="CellAlign" PaintedText="PaintedText" RowKind="RowKind"
                                        CellChangedAt="CellChangedAt" ChangeHighlightDuration="ChangeHighlightDuration" ChangeHighlightNow="highlightNow"
                                        ChangeHighlightPainted="@(_highlightPainted ??= _highlightEnds.Painted)"
-                                       RowIndex="row" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
+                                       RowIndex="row" HeaderRowCount="HeaderRowCount" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
                                        Engagement="EngagementFor(row)"
                                        Marked="@MarkedAt(data)" OnMark="@(_onMark ??= RaiseRowMarkAsync)"
@@ -558,12 +606,19 @@
                             {
                                 @* A Row Heading is a position's label, so a row that has not
                                    arrived still has one (ADR-0050). *@
-                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="PlaceholderKey(row)"><div class="ex-row-heading" style="@_rowHeadingStyle" aria-hidden="true">@RowHeadingAt(row)</div></div>
+                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@((long)HeaderRowCount + row + 1)" aria-busy="true" @key="PlaceholderKey(row)"><div class="ex-row-heading" style="@_rowHeadingStyle" aria-hidden="true">@RowHeadingAt(row)</div></div>
                             }
                             else
                             {
-                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="PlaceholderKey(row)"></div>
+                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@((long)HeaderRowCount + row + 1)" aria-busy="true" @key="PlaceholderKey(row)"></div>
                             }
+                        }
+                        @if (headingStates is not null)
+                        {
+                            @* A permanent, hidden marker lets CSS paint the original Row Heading.
+                               Its row receives no Selection parameter and retains its own text,
+                               typography and Row Kind even when it skips rendering. *@
+                            <div class="@RowHeadingStateClass(row)" aria-hidden="true" @key="headingStates[row - visible.Start]"></div>
                         }
                     }
                     EndRowComponents();
@@ -1552,7 +1607,13 @@
     /// <summary>
     /// A Consumer declaration (ADR-0050, item 5): fill is enabled. The fill handle is painted
     /// at the bottom-right corner of the Selection's last range, in the selection overlay —
-    /// none for a disjoint Selection, and none while an edit is open. Dragging it extends
+    /// for one or several whole columns at the first row's top-right of the last of them, and
+    /// for whole rows at the last one's bottom-left, beside their Headings, as Excel puts it
+    /// (the seventeenth Windows run, h3; several of them, the readings of 2026-10-12, R5), and
+    /// held at the readable area's edge while that row or column is scrolled away, as Excel's
+    /// stayed in view for a column (R5; for a row by generalisation); none for every cell,
+    /// where Excel showed none in view (R5), none for a disjoint Selection, and none while an
+    /// edit is open. Dragging it extends
     /// along one axis, the one the pointer went further along, with the target outlined; on
     /// release the grid raises one <see cref="OnFill"/> intent and writes nothing. A target
     /// covering a column that is not Editable is refused whole first, through
@@ -2385,6 +2446,14 @@
     /// (ADR-0032). Identical to the header height while no group is declared.</summary>
     private double BandHeightPx => HideHeader ? 0 : (1 + _headerLayout.TierCount) * _metrics.HeaderHeightPx;
 
+    /// <summary>
+    /// How many rows ARIA counts in the header before the first data row (ADR-0033,
+    /// 2026-10-12): none while it is hidden, else the leaf row and one per tier of Header
+    /// Groups. <c>aria-rowcount</c> adds them to the data rows' total, and every data row's
+    /// <c>aria-rowindex</c> starts after them.
+    /// </summary>
+    private int HeaderRowCount => HideHeader ? 0 : 1 + _headerLayout.TierCount;
+
     // The Row Headings' resolved width (ADR-0050/0028), zero while none are declared, and
     // the one style string every heading and the corner are painted with — rebuilt only
     // when the width moves, so a row compares it without re-rendering.
@@ -2573,6 +2642,14 @@
     /// render composes nothing for them.</summary>
     private string RangeClass => _selection.Selection.Ranges.Count == 1 ? "ex-range ex-range-single" : "ex-range";
 
+    /// <summary>The Focus's classes (ADR-0008, 2026-10-12): among several ranges, where no range
+    /// carries an outline, the Focus is marked, and the stylesheet draws it a thin border of one
+    /// Device Pixel inside its cell, in a token of its own (<c>--ex-focus-among-ranges-outline</c>),
+    /// where Excel's active cell there was observed (the readings of 2026-10-12, R4). Decided by
+    /// the Selection, not the layer, because a layer may hold the Focus and no range's box.
+    /// Interned, as <see cref="RangeClass"/> is.</summary>
+    private string FocusClass => _selection.Selection.Ranges.Count > 1 ? "ex-focus ex-focus-among-ranges" : "ex-focus";
+
     /// <summary>
     /// Whether the pinned shade layer holds anything over the painted rows (ADR-0206): the hover
     /// band's or the Focus band's pinned part, or any range's pinned tint. The layer is emitted only
@@ -2610,8 +2687,10 @@
     private SelectionStyles.OutlineCover OutlineCoverAt(RowRange visible)
     {
         var first = visible.Start;
-        var open = _geometry.ViewportTopPxOf(first, _scrollTopPx) > 0.01 ? first : first + 1;
-        return new SelectionStyles.OutlineCover(open, _scrollLeftPx);
+        // Geometry is page-local, while the selected ranges and FirstOpenRow are absolute.
+        // The first row of a later page still touches the header (or the bare Viewport edge).
+        var open = _geometry.ViewportTopPxOf(first - _pageStartRow, _scrollTopPx) > 0.01 ? first : first + 1;
+        return new SelectionStyles.OutlineCover(open, _scrollLeftPx, HasHeader: !HideHeader);
     }
 
     /// <summary>The Focus row, every column wide — the Focus band's rectangle
@@ -2620,9 +2699,30 @@
         => new(_selection.Selection.Focus.Row, 0, 1, Math.Max(1, Columns.Count));
 
     /// <summary>The range the fill handle stands on, when it is painted (ADR-0050, item 5):
-    /// declared, with no edit open, and a Selection of one range.</summary>
+    /// declared, with no edit open, and a Selection of one range that is not every cell.</summary>
     private SelectionRange? FillHandleRange
-        => ShowFillHandle && _editMode == EditMode.None ? FillRules.HandleRange(_selection.Selection) : null;
+        => ShowFillHandle && _editMode == EditMode.None && FillRules.HandleRange(_selection.Selection) is { } range
+            && FillRules.HandleCorner(range, Extent) is not null ? range : null;
+
+    /// <summary>The corner of <paramref name="range"/>, a <see cref="FillHandleRange"/>, the fill
+    /// handle stands at (ADR-0050, item 5): the top-right of whole columns, the bottom-left of whole
+    /// rows, the bottom-right of the rest. Painted and grabbed from the same answer.</summary>
+    private FillHandleCorner FillHandleCornerOf(SelectionRange range)
+        => FillRules.HandleCorner(range, Extent) ?? FillHandleCorner.BottomRight;
+
+    /// <summary>Where the readable area begins as the slice is painted, for a fill handle held at
+    /// its edge (ADR-0050, item 5): its top below the first painted row's top, and its left in the
+    /// content.</summary>
+    private SelectionStyles.ReadableEdge ReadableEdgeAt(RowRange visible)
+        => ReadableEdgeOf(_scrollTopPx, _scrollLeftPx, visible.Start, _geometry.RowHeightPx, _columnStyles.Geometry);
+
+    /// <summary>Where the readable area begins at a scroll offset, measured from
+    /// <paramref name="firstRow"/>'s top and in the content's coordinates.</summary>
+    private SelectionStyles.ReadableEdge ReadableEdgeOf(
+        double scrollTopPx, double scrollLeftPx, int firstRow, double rowHeightPx, ColumnGeometry columns)
+        => new(
+            Math.Max(0, _geometry.ContentOffsetAt(scrollTopPx) - ((firstRow - _pageStartRow) * rowHeightPx)),
+            Math.Clamp(scrollLeftPx, 0, columns.MaxScrollLeftPx) + columns.PinnedWidthPx);
 
     /// <summary>The outline a running fill drag paints: the source and what it has reached,
     /// as one rectangle — one axis, so the union is a rectangle.</summary>
@@ -4343,23 +4443,29 @@
 
     /// <summary>
     /// Whether the press lands on the fill handle (ADR-0050, item 5) — arithmetic, as every
-    /// other press in the body is (ADR-0008): the same corner the handle was painted at,
-    /// with a grab box twice its side. A corner that has scrolled under the Pinned Columns
-    /// cannot be grabbed, as it cannot be seen.
+    /// other press in the body is (ADR-0008): the same place the handle was painted at, at the
+    /// same corner, with a grab box twice its side about its centre, held at the readable area's
+    /// edge as the scroll the press was taken at puts it (ED-31). A handle that has scrolled
+    /// under the Pinned Columns or the Row Headings cannot be grabbed, as it cannot be seen; and a
+    /// press on a Row Heading is the Heading's, though a whole row's handle stands beside it.
     /// </summary>
     private bool IsOnFillHandle(MouseEventArgs e)
     {
         if (FillHandleRange is not { } range || _visible is not { } visible || FirstRowOf(e, visible) is not { } first)
             return false;
         var geometry = ColumnsOf(e);
-        var (cornerX, cornerY) = SelectionStyles.HandleCornerPx(range, geometry, RowHeightOf(e), first);
-        var scrollLeft = Math.Clamp(ScrollLeftOf(e), 0, geometry.MaxScrollLeftPx);
-        if (range.RightColumn < geometry.PinnedCount)
-            cornerX += scrollLeft;
-        else if (cornerX - scrollLeft < geometry.PinnedWidthPx)
+        if (geometry.IsInLead(e.OffsetX, ScrollLeftOf(e)))
             return false;
+        var corner = FillHandleCornerOf(range);
         var size = _metrics.FillHandleSizePx;
-        return Math.Abs(e.OffsetX - cornerX) <= size && Math.Abs(e.OffsetY - cornerY) <= size;
+        var readable = ReadableEdgeOf(ScrollTopOf(e), ScrollLeftOf(e), first, RowHeightOf(e), geometry);
+        var (centreX, centreY) = SelectionStyles.HandleCentrePx(range, corner, geometry, RowHeightOf(e), first, size, readable);
+        var scrollLeft = Math.Clamp(ScrollLeftOf(e), 0, geometry.MaxScrollLeftPx);
+        if (SelectionStyles.HandleCell(range, corner).Column < geometry.PinnedCount)
+            centreX += scrollLeft;
+        else if (centreX - scrollLeft < geometry.PinnedWidthPx)
+            return false;
+        return Math.Abs(e.OffsetX - centreX) <= size && Math.Abs(e.OffsetY - centreY) <= size;
     }
 
     /// <summary>The fill drag's pointer moved onto <paramref name="cell"/>. Whether what is
@@ -5657,10 +5763,12 @@
     private void ClosePopoverAndReturnFocus()
     {
         var wasOpen = AnyPopoverOpen;
-        // A Consumer's popover closed before its contents took the keyboard: the key gate stops
-        // waiting for them, and the keys it held for them are the grid's (ADR-0050 item 16; ADR-0100's
-        // CloseRequest, 2026-10-12). Told before the hand-back, which the held keys then follow.
-        if (_consumerPopover is not null && !_consumerContentsHeld)
+        // A closing Consumer's popover is no longer where the keyboard is going (ADR-0050 item 16;
+        // ADR-0044). Its contents may have reported focus while the gate still holds behind a choice:
+        // the gate cannot observe both that focus and the choice's menu gone at once. Withdraw any
+        // pending hand-off to the popover before the hand-back, so the held keys follow it. A hand-off
+        // to a Consumer's frame is left standing by the gate.
+        if (_consumerPopover is not null)
             _ = HandOffAsync("none");
         if (wasOpen)
             _ = ReclaimFocusAsync();
@@ -6626,7 +6734,7 @@
         }
         var version = _sequenceVersion;
         var binding = _binding;
-        var intent = new GridPasteIntent(decision.Plan, block, version, parsed.Origins);
+        var intent = new GridPasteIntent(decision.Plan, block, version, parsed.Origins, marks: parsed.Marks);
         if (OnPaste.HasDelegate)
         {
             // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound
@@ -7104,6 +7212,20 @@
         if (await DropKeyAimedWithADroppedSelectionAsync(paint, opensAnEdit: false))
             return;
 
+        MoveByKey(action, key);
+    }
+
+    /// <summary>
+    /// A key that moves or selects, answered over the Selection as it stands with no edit open
+    /// (ADR-0012): the Focus moved or the range extended, the Focus or the Extent kept in view,
+    /// and the page turned to follow it. Also what Overwrite's Shift+arrows, Shift+Home and
+    /// Primary Modifier's arrows do once their commit has landed, as Excel's Enter mode does with
+    /// them (ADR-0010, ED-2).
+    /// </summary>
+    /// <param name="action">What the key means, from <see cref="GridKeys.Resolve(string, bool, bool, bool, bool, bool)"/>.</param>
+    /// <param name="key">The key's <c>key</c> field: only an arrow asks the Consumer's edge answer.</param>
+    private void MoveByKey(GridKeyAction action, string key)
+    {
         var extent = Extent;
         if (extent.RowCount <= 0 || extent.ColumnCount <= 0)
             return;
@@ -7411,6 +7533,18 @@
     /// Ctrl+F (ADR-0055): the find panel, taking the keyboard as every popover does
     /// (ADR-0039) — or, where nothing can search, a refusal and nothing opened, because the
     /// browser's own find would look complete and see only the painted rows.
+    ///
+    /// <para>Typed in a popover — a column's menu or its filter, the Context Menu, the panel's own
+    /// controls — Ctrl+F closes that popover as the core, and so asks for the root's focus ahead of
+    /// the render that swaps it for the panel, as <see cref="ClosePopoverAndReturnFocus"/> does
+    /// (ADR-0039). That render removes the element holding DOM focus, and the field takes it a round
+    /// trip later on a circuit. In between, DOM focus was on <c>body</c>, where the capture-phase
+    /// listener hears nothing, and every key typed there was lost: <c>Osei</c>, typed straight after
+    /// Alt+↓ and Ctrl+F, came out <c>O</c>, <c>Os</c> or <c>Ose</c> as the round trip fell (FD-1, the
+    /// Server host). On the root those keys are held behind the Ctrl+F, in order, and handed to the
+    /// field once it holds the keyboard (ADR-0010), however long the round trip; the gate holds
+    /// from the Ctrl+F's own keydown, so none of them is taken as the grid's. Nothing is asked after
+    /// the render: the field's own focus has the last word.</para>
     /// </summary>
     private async Task OpenFindAsync()
     {
@@ -7420,6 +7554,8 @@
                 await OnFindRefused.InvokeAsync(FindRefusalReason.Unavailable);
             return;
         }
+        if (AnyPopoverOpen)
+            _ = ReclaimFocusAsync();
         CloseMenus();
         _findOpen = true;
         _findOutcome = FindOutcome.None;
@@ -8031,10 +8167,12 @@
     /// read outside editing: Command folds into Control only where it is Command
     /// (ADR-0012), so Cmd+Enter fills on a Mac and Win+Enter is nobody's here. A form not
     /// named below is not the editor's and does nothing. <b>The cases mirror
-    /// <c>editingKeys</c> / <c>overwriteKeys</c> in <c>ex-grid.js</c></b> — the two must
-    /// move together. F4, which the gate adds to them only where the Consumer declared
-    /// <see cref="CycleReference"/>, is answered before this, from the selection its message
-    /// carries (ADR-0051, 2026-09-29).</param>
+    /// <c>editingKeys</c> / <c>overwriteKeys</c> / <c>pointKeys</c> in <c>ex-grid.js</c></b> — the
+    /// two must move together: Overwrite claims the arrows, Home and End, the Shift+arrows and
+    /// Shift+Home, and the Primary Modifier's arrows with Shift or without (ADR-0010, ED-2); Point
+    /// the arrows, Home and End, the Shift+arrows and Shift+Home. F4, which the gate adds to them
+    /// only where the Consumer declared <see cref="CycleReference"/>, is answered before this, from
+    /// the selection its message carries (ADR-0051, 2026-09-29).</param>
     private async Task OnEditingKeyAsync(string canonical)
     {
         // An open completion list has the first word on its own keys (ADR-0051).
@@ -8045,7 +8183,10 @@
         // press has just moved into the Formula Bar (ADR-0051, 2026-09-30). They move no Focus
         // (ADR-0010).
         if (_editMode == EditMode.Caret
-            && canonical is "ArrowUp" or "ArrowDown" or "ArrowLeft" or "ArrowRight" or "Home" or "End")
+            && canonical is "ArrowUp" or "ArrowDown" or "ArrowLeft" or "ArrowRight" or "Home" or "End"
+                or "Shift+ArrowUp" or "Shift+ArrowDown" or "Shift+ArrowLeft" or "Shift+ArrowRight" or "Shift+Home"
+                or "Control+ArrowUp" or "Control+ArrowDown" or "Control+ArrowLeft" or "Control+ArrowRight"
+                or "Control+Shift+ArrowUp" or "Control+Shift+ArrowDown" or "Control+Shift+ArrowLeft" or "Control+Shift+ArrowRight")
         {
             _suppressRender = false;
             return;
@@ -8117,7 +8258,66 @@
             case "End":
                 await CommitAndMoveAsync(next => next.MoveToEdge(GridDirection.Right, Extent));
                 return;
+            case "Shift+ArrowUp" or "Shift+ArrowDown" or "Shift+ArrowLeft" or "Shift+ArrowRight" or "Shift+Home"
+                when _editMode == EditMode.Overwrite:
+                // Excel's Enter mode commits the entry and extends the Selection with them (ADR-0010,
+                // ED-2): where no Reference can go, they are commit gestures, and then do what the
+                // same key does with no edit open (observed: the seventeenth Windows run, Part C, case
+                // 7, Shift+Home; the readings of 2026-10-12, R1 (vii), Shift+→, Shift+↓ and Shift+←;
+                // Shift+↑ by generalisation). Where one can go, Point took them first.
+                await CommitAndKeyAsync(canonical);
+                return;
+            case "Control+ArrowUp" or "Control+ArrowDown" or "Control+ArrowLeft" or "Control+ArrowRight"
+                or "Control+Shift+ArrowUp" or "Control+Shift+ArrowDown" or "Control+Shift+ArrowLeft" or "Control+Shift+ArrowRight"
+                when _editMode == EditMode.Overwrite:
+                // The Primary Modifier's arrows too commit, and then move or extend to the edge as
+                // with no edit open (observed, R1 (vii): Ctrl+→ committed and moved to XFD10, and
+                // Ctrl+Shift+→ committed and selected D10:XFD10; the other directions by
+                // generalisation). Where a Reference can go at the caret, Excel was not asked: they
+                // are claimed and do nothing, as End does there (ADR-0058, Q53), rather than commit
+                // a Formula that ends too early.
+                if (PointAt is { } referenceCanGo && ReferenceText is not null && _editCaret >= 0
+                    && _editCaret <= _editText.Length && referenceCanGo(_editText, _editCaret))
+                {
+                    StateHasChanged();
+                    return;
+                }
+                await CommitAndKeyAsync(canonical);
+                return;
         }
+    }
+
+    /// <summary>
+    /// Overwrite's Shift+arrows and Shift+Home, and its Primary Modifier's arrows with Shift or
+    /// without, where no Reference can go (ADR-0010, ED-2): the edit commits, and the key then
+    /// moves or extends the Selection exactly as it does with no edit open (ADR-0012) — an arrow
+    /// with the Primary Modifier to the edge the Consumer answers (ADR-0050, item 2) — the Focus or
+    /// the Extent kept in view. A Reject or a refusal holds the commit, and the key keeps no
+    /// meaning of its own (ADR-0034), as for the arrows. A commit whose own handler moved the order
+    /// has dropped the Selection the key was aimed with (ADR-0011, ADR-0142): it moves and extends
+    /// nothing, and places no Selection from the first cell on screen, as Enter and the arrows move
+    /// nothing then (<see cref="CommitAndMoveAsync"/>).
+    /// </summary>
+    /// <param name="canonical">The key in <see cref="GridKeys.Canonical"/>'s form: <c>Control+</c>,
+    /// then <c>Shift+</c>, then the key.</param>
+    private async Task CommitAndKeyAsync(string canonical)
+    {
+        if (!await CommitEditAsync() || _selection.Selection.IsEmpty)
+        {
+            StateHasChanged();
+            return;
+        }
+        var key = canonical;
+        var ctrl = key.StartsWith("Control+", StringComparison.Ordinal);
+        if (ctrl)
+            key = key["Control+".Length..];
+        var shift = key.StartsWith("Shift+", StringComparison.Ordinal);
+        if (shift)
+            key = key["Shift+".Length..];
+        MoveByKey(GridKeys.Resolve(key, ctrl, shift, alt: false, meta: false, metaIsPrimary: false), key);
+        // The edit has ended even where the key moves nothing — Shift+Home in the first column —
+        // and the render that takes the editor down is owed either way.
+        StateHasChanged();
     }
 
     /// <summary>A commit leaves the grid as an intent and nothing else (ADR-0007): the
@@ -9388,9 +9588,10 @@
     }
 
     /// <summary>
-    /// The extent in one sentence, naming the corners (ADR-0033). The wording is
-    /// provisional — ADR-0033 leaves header-versus-index to a real screen reader in
-    /// layer 3 — but the shape is not: one sentence, the extent, at any moment.
+    /// The extent in one sentence, naming the corners by index (ADR-0033). No screen
+    /// reader settles the wording: the accessibility tree is what is checked (ADR-0033,
+    /// 2026-10-13), and the wording changes on a user's report. The shape is fixed:
+    /// one sentence, the extent, at any moment.
     /// </summary>
     private string DescribeSelection(GridSelection selection)
     {
@@ -10133,16 +10334,29 @@
 
     // Interned per combination, the CellClasses economy: a header cell's class is
     // never composed in the render loop (ADR-0027 P5).
-    private static readonly string[] HeaderClasses =
-    [
-        "ex-header-cell", "ex-header-cell ex-pinned",
-        "ex-header-cell ex-align-left", "ex-header-cell ex-pinned ex-align-left",
-        "ex-header-cell ex-align-center", "ex-header-cell ex-pinned ex-align-center",
-        "ex-header-cell ex-align-right", "ex-header-cell ex-pinned ex-align-right",
-    ];
+    private static readonly string[] HeaderClasses = MakeHeaderClasses();
+
+    private static string[] MakeHeaderClasses()
+    {
+        string[] plain =
+        [
+            "ex-header-cell", "ex-header-cell ex-pinned",
+            "ex-header-cell ex-align-left", "ex-header-cell ex-pinned ex-align-left",
+            "ex-header-cell ex-align-center", "ex-header-cell ex-pinned ex-align-center",
+            "ex-header-cell ex-align-right", "ex-header-cell ex-pinned ex-align-right",
+        ];
+        var classes = new string[24];
+        for (var i = 0; i < plain.Length; i++)
+        {
+            classes[i] = plain[i];
+            classes[i + 8] = plain[i] + " ex-heading-marked";
+            classes[i + 16] = plain[i] + " ex-heading-marked ex-heading-whole";
+        }
+        return classes;
+    }
 
     private string HeaderClass(int column, bool pinned)
-        => HeaderClasses[((int)Columns[column].HeaderAlign * 2) + (pinned ? 1 : 0)];
+        => HeaderClasses[(ColumnHeadingMark(column) * 8) + ((int)Columns[column].HeaderAlign * 2) + (pinned ? 1 : 0)];
 
     /// <summary>
     /// One leaf header's style: the cached width and offset, and — while tiers exist —
@@ -10242,6 +10456,70 @@
     }
 
     private static string Px(double value) => FormattableString.Invariant($"{value}px");
+}
+
+@code {
+    /// <summary>
+    /// The leaf header cells: the Pinned Columns', then one gap for what is virtualised away
+    /// to the left, then the scrollable columns' on screen (ADR-0004). Written once, and
+    /// placed in the header itself when it is one row, or in the leaf row below the tiers
+    /// when Header Groups stand over it (ADR-0032/0033).
+    /// </summary>
+    private void LeafHeaderCells(RenderTreeBuilder __builder)
+    {
+        for (var i = 0; i < _columnStyles.Geometry.PinnedCount; i++)
+        {
+            @* The buttons' handlers are held per column (MenuOpener, GripDown), never
+               written as lambdas here: a lambda capturing the index allocated its
+               closure at the top of every iteration, button or not, and handed the
+               diff a new handler per render — re-registered and sent to the browser
+               for every header button on every render of the root, which is every
+               vertical scroll frame (PF-3). *@
+            @* The ▾ is pressed, never reached by Tab (ADR-0080, decided with the user
+               2026-10-02), as the action buttons are (ADR-0037): the Keyboard Field stands
+               after the header in the markup, and a Tab into the grid went through every
+               column's ▾ before the first cell. Alt+↓ opens the column's popover by key
+               (ADR-0044). On every grid, and under every Chrome: the button is the core's. *@
+            <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
+                {@HeaderMark}@if (ShowMenuButtons)
+                {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
+        }
+        if (_scrollable is { } headerColumns)
+        {
+            if (_columnStyles.HasGap(headerColumns.Start))
+            {
+                <div class="ex-gap" style="@_columnStyles.Gap(headerColumns.Start)" aria-hidden="true"></div>
+            }
+            for (var i = headerColumns.Start; i < headerColumns.Start + headerColumns.Count; i++)
+            {
+                <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
+                    {@HeaderMark}@if (ShowMenuButtons)
+                    {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                    {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
+            }
+        }
+    }
+
+    /// <summary>Whether a rectangle held at the left edge has its top in <paramref name="tier"/>,
+    /// so that tier's row carries the pinned rectangles' anchor (ADR-0032). Indexed, not
+    /// enumerated: the root renders on every scroll frame, and an enumerator over the list
+    /// would be an allocation per tier per frame (PF-3).</summary>
+    private bool HoldsGroupAt(int tier)
+    {
+        var groups = _headerLayout.Groups;
+        for (var g = 0; g < groups.Count; g++)
+        {
+            if (groups[g].TopTier == tier && IsGroupHeld(groups[g]))
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>A rectangle's <c>aria-rowspan</c>: its tiers, written only where it spans more
+    /// than one, since a cell spans one row unless it says otherwise (ADR-0033).</summary>
+    private static string? GroupRowSpan(ResolvedHeaderGroup group)
+        => group.TierSpan > 1 ? CellIds.Span(group.TierSpan) : null;
 }
 
 @code {

@@ -24,7 +24,8 @@
                 <code>ExSheet.Engine</code>, which gives the same result on a server as in the browser.
             </li>
             <li>
-                <b>It answers as Excel does, or says it cannot.</b> A function outside the supported set is
+                <b>It answers as Excel does, or says it cannot.</b> A function Excel has that ExSheet does not support
+                is <code>#NAME?</code>, which no Formula catches, a name Excel does not have is Excel's own
                 <code>#NAME?</code>, a circular reference is <code>#CIRC!</code>, and a number that does not fit its
                 column shows <code>####</code> — never an approximation.
             </li>
@@ -49,7 +50,10 @@
         <p>
             Beyond typing, the user gets what a spreadsheet user expects: the fill handle (Formulas with
             their References shifted, a series from two or more numbers, dates by day — any other pattern is
-            refused, with the reason), Ctrl+D and Ctrl+R, Delete to clear contents and keep formats, Ctrl+F to
+            refused, with the reason; for whole columns or rows it stands beside the Heading, and from one
+            whole column or row it fills every row or column, a single number going on by one, as Excel's did
+            beside it in the readings of 2026-10-12, R5; from several, a line with a number beside a blank is
+            refused), Ctrl+D and Ctrl+R, Delete to clear contents and keep formats, Ctrl+F to
             find text as it is shown, and a Context Menu that inserts and deletes the rows or columns the
             Selection spans — as Ctrl++ and Ctrl+- do from the keyboard, on a Selection of whole rows or whole
             columns. References keep naming the same cells, and a deleted target becomes
@@ -58,6 +62,7 @@
         <ul>
             <li><code>PinnedColumnCount</code> freezes leading columns.</li>
             <li><code>ShowRowHeadings</code>, <code>ShowColumnHeadings</code> and <code>ShowFormulaBar</code> hide the Headings or the Formula Bar; the cells are still addressed A1.</li>
+            <li>For a screen reader the Column Headings are the table's row 1, so the grid numbers a Sheet row as its number plus one, near the top and far down: A1 is in row 2. With <code>ShowColumnHeadings</code> off, the two numbers agree.</li>
             <li>
                 A copy carries the Values as shown in <code>text/plain</code> and unformatted in
                 <code>text/html</code>. A paste may spill from one cell, as in Excel, and each pasted field is
@@ -143,7 +148,10 @@
             Select cells and the line under the Sheet shows Excel's Average, Count and Sum; right-click it to
             choose among all six. The Sheet answers from its own cells: a Formula's value, never its text, and
             every cell an array spills into. A date is a number here, as in Excel. An error among the cells
-            leaves Count and Numerical Count, and no other figure, as in Excel. Average, Min, Max and Sum wear the
+            leaves Count and Numerical Count, and no other figure, as in Excel. A cell whose Formula ExSheet refused
+            leaves no figure at all, and the line says why, naming the cell;
+            <code>SheetCommandIds.SummaryRefused</code> words it in another language, asked of a substituted
+            Chrome and then of <code>CommandLabel</code>, its <code>{0}</code> the cell and <code>{1}</code> what it shows. Average, Min, Max and Sum wear the
             active cell's Number Format, whatever the other cells' formats. <code>ShowSelectionSummary="false"</code>
             turns the line off.
         </p>

@@ -171,6 +171,13 @@ public sealed class SheetToolbarContext
     /// </summary>
     internal bool KeyUpHeld { get; set; }
 
+    /// <summary>
+    /// A Chrome's own list is closing (<see cref="ToolbarItemContext.ChoicesClosing"/>) and the toolbar has
+    /// not yet given the keyboard back: the keyboard is on the toolbar, and comes back through the grid. Set
+    /// by the toolbar.
+    /// </summary>
+    internal bool ClosingList { get; set; }
+
     /// <summary>Whether the band held the release the Sheet hears now; asked once.</summary>
     internal bool TakeKeyUpHeld()
     {

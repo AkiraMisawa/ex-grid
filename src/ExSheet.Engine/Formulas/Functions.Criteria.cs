@@ -37,9 +37,10 @@ internal static partial class FunctionLibrary
             if (operand.IsError) return operand;
             if (CriteriaRange.From(operand, call.Evaluator) is not { } range) return Operand.Of(ErrorValue.Value);
             var criterionOperand = call.Operand(i + 1);
-            if (Evaluator.IsMulti(criterionOperand)) return Operand.Of(ErrorValue.Value);
+            if (Evaluator.IsMulti(criterionOperand)) return Unlifted(call);
             var criterion = Criterion.Parse(call.Evaluator.ScalarOf(criterionOperand), call.Evaluator.Culture);
-            if (criterion is null) return Operand.Of(ErrorValue.Value);
+            // A criterion outside the domain the runs settled is refused (ADR-0047): the Formula's.
+            if (criterion is null) return call.Evaluator.Refuse();
             if (conditions.Count > 0 && !range.SameShape(conditions[0].Range)) return Operand.Of(ErrorValue.Value);
             conditions.Add((range, criterion));
         }
@@ -53,11 +54,13 @@ internal static partial class FunctionLibrary
             if (results is null) return Operand.Of(ErrorValue.Value);
             if (!results.SameShape(first))
             {
+                // The ranges of SUMIFS and its partners differ in shape: #VALUE!, as Excel's (SUMIFS-035).
+                if (!single) return Operand.Of(ErrorValue.Value);
                 // SUMIF/AVERAGEIF read a footprint starting at the result's top-left cell.
-                // A computed Reference that escapes its named dependencies stays refused.
-                if (!single || operand.Kind != OperandKind.Area || call.Count <= 2
+                // A computed Reference that escapes its named dependencies stays refused: the Formula's.
+                if (operand.Kind != OperandKind.Area || call.Count <= 2
                     || LiteralReference(call.Argument(0)) is not { Spilled: false }
-                    || LiteralReference(call.Argument(2)) is not { Spilled: false }) return Operand.Of(ErrorValue.Value);
+                    || LiteralReference(call.Argument(2)) is not { Spilled: false }) return call.Evaluator.Refuse();
                 var a = operand.Area;
                 if ((long)a.Row1 + first.Rows > Sheet.RowCount || (long)a.Column1 + first.Columns > Sheet.ColumnCount)
                     return Operand.Of(ErrorValue.Ref);
@@ -83,7 +86,8 @@ internal static partial class FunctionLibrary
             foreach (var (range, criterion) in conditions)
             {
                 var match = criterion.Matches(range.Read(position));
-                if (match is null) return Operand.Of(ErrorValue.Value);
+                // A candidate outside the domain the runs settled refuses the Formula (ADR-0047).
+                if (match is null) return call.Evaluator.Refuse();
                 if (!match.Value) matches = false;
             }
             if (!matches) continue;

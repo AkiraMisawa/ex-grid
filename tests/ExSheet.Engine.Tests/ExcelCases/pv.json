@@ -14,7 +14,7 @@
     {
       "id": "PV-002",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a rate of 0",
+      "description": "A rate of 0",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0,10,-100)"},
       "check": "ZZ1000",
@@ -23,7 +23,7 @@
     {
       "id": "PV-003",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: with a future value, at the start of each period",
+      "description": "With a future value, at the start of each period",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05,10,-100,1000,1)"},
       "check": "ZZ1000",
@@ -31,8 +31,8 @@
     },
     {
       "id": "PV-004",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: a type of 2 is payment at the start of each period, as PMT-008 found it is for PMT",
+      "source": "observed",
+      "description": "A type of 2 is payment at the start of each period, as PMT-008 found it is for PMT",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05,10,-100,1000,2)"},
       "check": "ZZ1000",
@@ -40,17 +40,17 @@
     },
     {
       "id": "PV-005",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a number of periods that is not a whole number, which squaring cannot raise to",
+      "source": "observed",
+      "description": "A number of periods that is not a whole number: 1+rate is raised to it as e^(nper ln(1+rate)), which gives Excel's double; a correctly rounded power is two units in the last place away",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05,10.5,-100)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 801.7640221710038}
     },
     {
       "id": "PV-006",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: where dividing by the growth and multiplying by its reciprocal, and the order of the payment's factors, differ in the last place (spikes/exsheet-financial-evaluation/)",
+      "source": "observed",
+      "description": "Where dividing by the growth and multiplying by its reciprocal, and the order of the payment's factors, differ in the last place (spikes/exsheet-financial-evaluation/): Excel's double is the engine's",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05/12,37,2500,1000,0)"},
       "check": "ZZ1000",
@@ -58,12 +58,93 @@
     },
     {
       "id": "PV-007",
-      "source": "uncertain",
-      "description": "Engine's answer, Excel to be asked: at the start of each period, where the order of the payment's factors differs in the last place (spikes/exsheet-financial-evaluation/)",
+      "source": "observed",
+      "description": "At the start of each period: the payment multiplies (1+rate)*((g-1)/rate), Excel's grouping; multiplying the payment by 1+rate first is one unit in the last place below Excel's (spikes/exsheet-financial-evaluation/)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PV(0.05/12,12,-150,0,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": 1759.4840643974248}
+      "expect": {"value2": 1759.484064397425}
+    },
+    {
+      "id": "PV-008",
+      "source": "observed",
+      "description": "A type of 0.5 is payment at the start of each period, as PMT-009 found it is for PMT",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0.05,10,-100,1000,0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 196.8689140236461}
+    },
+    {
+      "id": "PV-009",
+      "source": "observed",
+      "description": "A negative number of periods: 1 over 1+rate raised by squaring, as FV-007's",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0.05,-10,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -1257.789253554883}
+    },
+    {
+      "id": "PV-010",
+      "source": "observed",
+      "description": "Half a period: the square root of 1+rate, as FV-016's; e^(0.5 ln(1+rate)) gives the same double here (PV-014 is where they part)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0.05,0.5,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 48.19985410293382}
+    },
+    {
+      "id": "PV-011",
+      "source": "observed",
+      "description": "Half a period at a rate below -1: a negative 1+rate has no square root, and PV is #NUM!; a fraction whose reciprocal is odd has an odd root (FV-017)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(-1.5,0.5,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "PV-012",
+      "source": "observed",
+      "description": "Ten periods before, at a rate of -1: 0 to a negative power is #DIV/0!, as FV-021's is",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(-1,-10,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "PV-013",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: at a rate of -1 the growth is 0 to the power 10, 0, and PV divides by it; which Error Value Excel gives there has not been observed (FV-018's #NUM! and FV-020's #DIV/0! come from the power, not from a division)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(-1,10,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PV-014",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: half a period is the square root of 1+rate, as FV-016's, PV raising 1+rate as FV does (PV-005 and PV-009 to PV-012 agree); e^(0.5 ln(1+rate)) gives 38.29015278650262",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0.42,0.5,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 38.290152786502574}
+    },
+    {
+      "id": "PV-015",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: 1 over the power to 2.5, as FV-022's; raising to -2.5 directly gives -250.9382807624435",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0.06/12,-2.5,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -250.93828076244577}
+    },
+    {
+      "id": "PV-016",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: e^(nper ln(1+rate)) with the exponential and the logarithm correctly rounded, the engine's, gives 1091.2943662943903; glibc's exp and log, which .NET takes on Linux, give 1091.2943662943944. XNPV-013 found Excel's exponential correctly rounded where glibc's is not; no observed double tells the logarithms apart",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0.06/12,11.25,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1091.2943662943903}
     }
   ]
 }

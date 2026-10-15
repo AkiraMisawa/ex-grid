@@ -191,6 +191,23 @@ public sealed record FormatCellsContext(
     /// so the element stands until the keyboard has left it. Null for a context ExSheet did not make.
     /// </summary>
     public Func<ElementReference, Func<IReadOnlyList<KeyboardEventArgs>>, Task>? ReturnKeyboardFrom { get; init; }
+
+    /// <summary>
+    /// Holds the keys typed while a popup of this frame opens (ADR-0039): asks the grid for the
+    /// keyboard from the first argument, collecting the keys supplied by the second, then tells
+    /// it those keys are going to the popup. Call before the opening handler's first await.
+    /// It can also carry a popup's closing keys back to a control of this frame without ending
+    /// Format Cells. Null for a context ExSheet did not make.
+    /// </summary>
+    public Func<ElementReference, Func<IReadOnlyList<KeyboardEventArgs>>, Task>? HoldKeysForPopup { get; init; }
+
+    /// <summary>
+    /// Gives a popup's drawn control the keyboard held for it, through the grid's conditional
+    /// hand-off (ADR-0039/0050). A container names its first enabled text field, whose value is
+    /// selected before the held keys arrive. A control the user has already chosen keeps the
+    /// keyboard. Null for a context ExSheet did not make.
+    /// </summary>
+    public Func<ElementReference, Task>? TakeKeyboard { get; init; }
 }
 
 /// <summary>

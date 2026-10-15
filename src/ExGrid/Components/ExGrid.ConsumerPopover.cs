@@ -25,8 +25,10 @@ public partial class ExGrid<TRow>
     // Whether the contents have held the keyboard since this opening. Until they have, a sentinel
     // that takes it was reached from outside the popover, not off its contents' first or last
     // control: on a circuit the contents take the keyboard a round trip after the popover is drawn,
-    // and the page has it meanwhile — on nothing, where a command run by a press closed the menu
-    // the popover replaced. Shift+Tab there lands on the trailing sentinel, from behind.
+    // and meanwhile it is where the opening found it — on a control of the page's, where the
+    // Consumer's own button opened the popover. Shift+Tab from a control after the grid lands on the
+    // trailing sentinel, from behind. Opened in a menu's place, the root has it meanwhile, and the
+    // key gate holds the keys for the contents, a Shift+Tab among them dropped (ADR-0039, 2026-10-13).
     private bool _consumerContentsHeld;
 
     private sealed record ConsumerPopover(RenderFragment<GridPopoverContext> Content, string Label, Func<Task>? ClosedByEscape = null);
@@ -41,6 +43,11 @@ public partial class ExGrid<TRow>
     /// one row close it as a Cancel (ADR-0010/0040). However it closes, the keyboard returns to the
     /// root — to its Keyboard Field on a grid that edits (ADR-0080). Calling it again opens new
     /// contents in place of the old.
+    ///
+    /// <para>The keys typed on the grid while it opens — from a command of the grid's menus, which
+    /// it replaces, as from the grid's own keys — are held, in order, and handed to the contents
+    /// once they hold the keyboard; a Tab or Shift+Tab among them is dropped with the keys behind it,
+    /// since only the browser can act on one (ADR-0039, ADR-0010).</para>
     /// </summary>
     /// <param name="content">The contents, rendered with the frame's context.</param>
     /// <param name="label">The popover's accessible name, in the Consumer's words: the frame is a
@@ -168,7 +175,8 @@ public partial class ExGrid<TRow>
     /// does.</param>
     /// <param name="typedOnTheWay">Called once, on the renderer's context: returns the keys typed on the
     /// frame since the Consumer asked, in order, and stops holding them.</param>
-    /// <returns>A task that completes once the request has been made.</returns>
+    /// <returns>A task that completes once the browser has answered the hand-back and the held keys
+    /// have been collected. The Consumer can then remove the frame and clear its queue.</returns>
     public Task ReturnKeyboardAsync(ElementReference from, Func<IReadOnlyList<KeyboardEventArgs>> typedOnTheWay)
     {
         ArgumentNullException.ThrowIfNull(typedOnTheWay);
@@ -237,7 +245,10 @@ public partial class ExGrid<TRow>
     /// the control takes the keyboard by its own <c>FocusAsync</c>, as it would without the grid. A
     /// request the page cannot carry out, with the control or the circuit gone, is dropped.</para>
     /// </summary>
-    /// <param name="control">The element to hand the keyboard to.</param>
+    /// <param name="control">The element to hand the keyboard to. Once the grid is attached, a
+    /// non-focusable container names its first enabled text field, with that field's value selected
+    /// before held keys arrive; without a text field, its first enabled control. A control already
+    /// chosen by the user keeps the keyboard (ADR-0039).</param>
     /// <returns>A task that completes once the request has been made.</returns>
     public Task HandKeyboardToAsync(ElementReference control)
         => InvokeAsync(async () =>
@@ -296,10 +307,29 @@ public partial class ExGrid<TRow>
         }
     }
 
+    /// <summary>
+    /// Opens the Consumer's contents in the frame, in place of any popover that stands.
+    ///
+    /// <para>In a popover's place — from a command of the Context Menu or a column's menu, ExSheet's
+    /// Format Cells… among them, or from a control inside another popover that is still standing —
+    /// the core closes that popover itself, and so asks for the root's focus ahead of the
+    /// render that swaps it for the contents, as <see cref="ClosePopoverAndReturnFocus"/> does
+    /// (ADR-0039, note of 2026-10-13). That render removes the element holding DOM focus, and the
+    /// contents take it a round trip later on a circuit. In between, DOM focus was on <c>body</c>,
+    /// where the capture-phase listener hears nothing, and whether a key typed there was lost turned
+    /// on the round trip. Asked after the key gate is told the keyboard is going to the popover, the
+    /// root takes those keys with the hold already standing: they are held, in order, and handed to
+    /// the contents once they hold the keyboard; a Tab or Shift+Tab among them is dropped with the
+    /// keys behind it (ADR-0010), so one typed in the gap no longer enters the contents at their
+    /// last control from behind. Nothing is asked after the render: the contents' own focus has the
+    /// last word. Opened over no popover, nothing is replaced, and the keyboard is left where the
+    /// opening found it.</para>
+    /// </summary>
     private bool OpenConsumerPopover(RenderFragment<GridPopoverContext> content, string label, Func<Task>? closedByEscape = null)
     {
         if (_disposed || _editMode != EditMode.None)
             return false;
+        var replaces = AnyPopoverOpen;
         CloseMenus();
         _consumerPopover = new ConsumerPopover(content, label, closedByEscape);
         BeginPopoverFocus();
@@ -311,6 +341,9 @@ public partial class ExGrid<TRow>
         // The keys typed until the contents hold the keyboard are theirs (ADR-0039, 2026-10-01):
         // told before the render that draws them, and before the answer to a key that opened them.
         _ = HandOffAsync("popover");
+        // Then the root, while the popover it replaces still holds DOM focus (2026-10-13).
+        if (replaces)
+            _ = ReclaimFocusAsync();
         _suppressRender = false;
         StateHasChanged();
         return true;

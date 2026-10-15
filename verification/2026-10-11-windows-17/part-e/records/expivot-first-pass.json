@@ -1,0 +1,3287 @@
+{
+ "base": "http://localhost:5299",
+ "started": "2026-10-12T08:38:22.864Z",
+ "items": [
+  {
+   "id": "e02",
+   "item": 2,
+   "what": "Text Items ignore case, and the first spelling in the records labels the Item",
+   "steps": [
+    "Region dragged onto Rows (it landed on drag 2)",
+    "Amount dragged onto Values: Sum of Amount"
+   ],
+   "suggestion": {
+    "file": "From its first 4 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  east  EAST  West",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "10  20  30  5",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e02.csv: 4 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [],
+    "rows": [
+     "Region"
+    ],
+    "values": [
+     "Sum of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "3",
+    "colCount": "2",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Sum of Amount"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "East",
+       "60"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "West",
+       "5"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "Grand Total",
+       "65"
+      ]
+     }
+    ]
+   },
+   "shot": "e02-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e03",
+   "item": 3,
+   "what": "A missing value is (blank), is an Item like any other, and is counted by Count",
+   "steps": [
+    "Region dragged onto Rows (it landed on drag 2)",
+    "Region dragged onto Values: Count of Region",
+    "Amount dragged onto Values: Sum of Amount",
+    {
+     "valueFieldSettings": "Sum of Amount",
+     "agg": "Count",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Count of Region",
+      "Count of Amount"
+     ]
+    },
+    "Amount dragged onto Values: Sum of Amount"
+   ],
+   "suggestion": {
+    "file": "From its first 4 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  West",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "10  20  5  1",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e03.csv: 4 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [
+     "Σ Values"
+    ],
+    "rows": [
+     "Region"
+    ],
+    "values": [
+     "Count of Region",
+     "Count of Amount",
+     "Sum of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "4",
+    "colCount": "4",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Count of Region"
+     },
+     {
+      "col": 3,
+      "text": "Count of Amount"
+     },
+     {
+      "col": 4,
+      "text": "Sum of Amount"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "East",
+       "1",
+       "1",
+       "10"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "West",
+       "1",
+       "1",
+       "5"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "(blank)",
+       "",
+       "2",
+       "21"
+      ]
+     },
+     {
+      "row": 4,
+      "cells": [
+       "Grand Total",
+       "2",
+       "4",
+       "36"
+      ]
+     }
+    ]
+   },
+   "shot": "e03-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e04",
+   "item": 4,
+   "what": "Count counts every non-empty value, text included; Count Numbers counts numbers only",
+   "steps": [
+    "Group dragged onto Rows (it landed on drag 2)",
+    "Value dragged onto Values: Count of Value",
+    "Value dragged onto Values: Count of Value2",
+    {
+     "valueFieldSettings": "Count of Value2",
+     "agg": "Count Numbers",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Count of Value",
+      "Count Numbers of Value"
+     ]
+    }
+   ],
+   "suggestion": {
+    "file": "From its first 5 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.\nEvery column holds text, so whether the first record is a header row cannot be told; it is taken as one.",
+    "columns": [
+     {
+      "column": "Group",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "A  B",
+      "notClear": ""
+     },
+     {
+      "column": "Value",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "10  x  20  30",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e04.csv: 5 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [
+     "Σ Values"
+    ],
+    "rows": [
+     "Group"
+    ],
+    "values": [
+     "Count of Value",
+     "Count Numbers of Value"
+    ]
+   },
+   "report": {
+    "rowCount": "3",
+    "colCount": "3",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Count of Value"
+     },
+     {
+      "col": 3,
+      "text": "Count Numbers of Value"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "A",
+       "2",
+       "0"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "B",
+       "2",
+       "0"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "Grand Total",
+       "4",
+       "0"
+      ]
+     }
+    ]
+   },
+   "shot": "e04-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e05a",
+   "item": 5,
+   "what": "Average, StdDev and Var over no numbers are #DIV/0!",
+   "steps": [
+    "Group dragged onto Rows (it landed on drag 2)",
+    "Amount dragged onto Values: Sum of Amount",
+    {
+     "valueFieldSettings": "Sum of Amount",
+     "agg": "Average",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Amount"
+     ]
+    },
+    "Amount dragged onto Values: Sum of Amount",
+    {
+     "valueFieldSettings": "Sum of Amount",
+     "agg": "StdDev",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Amount",
+      "StdDev of Amount"
+     ]
+    },
+    "Amount dragged onto Values: Sum of Amount",
+    {
+     "valueFieldSettings": "Sum of Amount",
+     "agg": "Var",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Amount",
+      "StdDev of Amount",
+      "Var of Amount"
+     ]
+    }
+   ],
+   "suggestion": {
+    "file": "From its first 4 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Group",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "A  C",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "1  3",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e05a.csv: 4 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [
+     "Σ Values"
+    ],
+    "rows": [
+     "Group"
+    ],
+    "values": [
+     "Average of Amount",
+     "StdDev of Amount",
+     "Var of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "3",
+    "colCount": "4",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Average of Amount"
+     },
+     {
+      "col": 3,
+      "text": "StdDev of Amount"
+     },
+     {
+      "col": 4,
+      "text": "Var of Amount"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "A",
+       "",
+       "",
+       ""
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "C",
+       "2",
+       "1.4142135623731",
+       "2"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "Grand Total",
+       "2",
+       "1.4142135623731",
+       "2"
+      ]
+     }
+    ]
+   },
+   "shot": "e05a-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e05b",
+   "item": 5,
+   "what": "StdDev and Var over one number are #DIV/0!; StdDevp and Varp over one number are 0",
+   "steps": [
+    "Group dragged onto Rows (it landed on drag 2)",
+    "Amount dragged onto Values: Sum of Amount",
+    {
+     "valueFieldSettings": "Sum of Amount",
+     "agg": "StdDev",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "StdDev of Amount"
+     ]
+    },
+    "Amount dragged onto Values: Sum of Amount",
+    {
+     "valueFieldSettings": "Sum of Amount",
+     "agg": "Var",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "StdDev of Amount",
+      "Var of Amount"
+     ]
+    },
+    "Amount dragged onto Values: Sum of Amount",
+    {
+     "valueFieldSettings": "Sum of Amount",
+     "agg": "StdDevp",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "StdDev of Amount",
+      "Var of Amount",
+      "StdDevp of Amount"
+     ]
+    },
+    "Amount dragged onto Values: Sum of Amount",
+    {
+     "valueFieldSettings": "Sum of Amount",
+     "agg": "Varp",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "StdDev of Amount",
+      "Var of Amount",
+      "StdDevp of Amount",
+      "Varp of Amount"
+     ]
+    }
+   ],
+   "suggestion": {
+    "file": "From its first 3 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Group",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "B  C",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "5  1  3",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e05b.csv: 3 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [
+     "Σ Values"
+    ],
+    "rows": [
+     "Group"
+    ],
+    "values": [
+     "StdDev of Amount",
+     "Var of Amount",
+     "StdDevp of Amount",
+     "Varp of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "3",
+    "colCount": "5",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "StdDev of Amount"
+     },
+     {
+      "col": 3,
+      "text": "Var of Amount"
+     },
+     {
+      "col": 4,
+      "text": "StdDevp of Amount"
+     },
+     {
+      "col": 5,
+      "text": "Varp of Amount"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "B",
+       "#DIV/0!",
+       "#DIV/0!",
+       "0",
+       "0"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "C",
+       "1.4142135623731",
+       "2",
+       "1",
+       "1"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "Grand Total",
+       "2",
+       "4",
+       "1.63299316185545",
+       "2.66666666666667"
+      ]
+     }
+    ]
+   },
+   "shot": "e05b-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e06a",
+   "item": 6,
+   "what": "Product where there are no values: ExPivot shows an empty cell",
+   "steps": [
+    "Group dragged onto Rows (it landed on drag 2)",
+    "Amount dragged onto Values: Sum of Amount",
+    {
+     "valueFieldSettings": "Sum of Amount",
+     "agg": "Product",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Product of Amount"
+     ]
+    }
+   ],
+   "suggestion": {
+    "file": "From its first 4 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Group",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "A  C",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "2  3",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e06a.csv: 4 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [],
+    "rows": [
+     "Group"
+    ],
+    "values": [
+     "Product of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "3",
+    "colCount": "2",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Product of Amount"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "A",
+       ""
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "C",
+       "6"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "Grand Total",
+       "6"
+      ]
+     }
+    ]
+   },
+   "shot": "e06a-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e06b",
+   "item": 6,
+   "what": "Product over values none of which is a number shows 0",
+   "steps": [
+    "Group dragged onto Rows (it landed on drag 2)",
+    "Note dragged onto Values: Count of Note",
+    {
+     "valueFieldSettings": "Count of Note",
+     "agg": "Product",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Product of Note"
+     ]
+    }
+   ],
+   "suggestion": {
+    "file": "From its first 3 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.\nEvery column holds text, so whether the first record is a header row cannot be told; it is taken as one.",
+    "columns": [
+     {
+      "column": "Group",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "B  C",
+      "notClear": ""
+     },
+     {
+      "column": "Note",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "x  y  z",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e06b.csv: 3 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [],
+    "rows": [
+     "Group"
+    ],
+    "values": [
+     "Product of Note"
+    ]
+   },
+   "report": {
+    "rowCount": "3",
+    "colCount": "2",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Product of Note"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "B",
+       "0"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "C",
+       "0"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "Grand Total",
+       "0"
+      ]
+     }
+    ]
+   },
+   "shot": "e06b-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e07",
+   "item": 7,
+   "what": "An empty cell stays empty, never 0",
+   "steps": [
+    "Region dragged onto Rows (it landed on drag 2)",
+    "Product dragged onto Columns",
+    "Amount dragged onto Values: Sum of Amount"
+   ],
+   "suggestion": {
+    "file": "From its first 2 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  West",
+      "notClear": ""
+     },
+     {
+      "column": "Product",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "Apple  Pear",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "10  5",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e07.csv: 2 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [
+     "Product"
+    ],
+    "rows": [
+     "Region"
+    ],
+    "values": [
+     "Sum of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "3",
+    "colCount": "4",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Apple"
+     },
+     {
+      "col": 3,
+      "text": "Pear"
+     },
+     {
+      "col": 4,
+      "text": "Grand Total"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "East",
+       "10",
+       "",
+       "10"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "West",
+       "",
+       "5",
+       "5"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "Grand Total",
+       "10",
+       "5",
+       "15"
+      ]
+     }
+    ]
+   },
+   "shot": "e07-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e08",
+   "item": 8,
+   "what": "A subtotal and a grand total are aggregated from the records: an Average's total is the average of every record, and a Count's grand total counts records",
+   "steps": [
+    "Region dragged onto Rows (it landed on drag 2)",
+    "Desk dragged onto Rows",
+    "Amount dragged onto Values: Sum of Amount",
+    {
+     "valueFieldSettings": "Sum of Amount",
+     "agg": "Average",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Amount"
+     ]
+    },
+    "Amount dragged onto Values: Sum of Amount",
+    {
+     "valueFieldSettings": "Sum of Amount",
+     "agg": "Count",
+     "show": null,
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: -1234.5678",
+     "now": [
+      "Average of Amount",
+      "Count of Amount"
+     ]
+    }
+   ],
+   "suggestion": {
+    "file": "From its first 5 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  West",
+      "notClear": ""
+     },
+     {
+      "column": "Desk",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "D1  D2  D3",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "1  2  3  10  100",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e08.csv: 5 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [
+     "Σ Values"
+    ],
+    "rows": [
+     "Region",
+     "Desk"
+    ],
+    "values": [
+     "Average of Amount",
+     "Count of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "6",
+    "colCount": "3",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Average of Amount"
+     },
+     {
+      "col": 3,
+      "text": "Count of Amount"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "−East",
+       "4",
+       "4"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "D1",
+       "2",
+       "3"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "D2",
+       "10",
+       "1"
+      ]
+     },
+     {
+      "row": 4,
+      "cells": [
+       "−West",
+       "100",
+       "1"
+      ]
+     },
+     {
+      "row": 5,
+      "cells": [
+       "D3",
+       "100",
+       "1"
+      ]
+     },
+     {
+      "row": 6,
+      "cells": [
+       "Grand Total",
+       "23.2",
+       "5"
+      ]
+     }
+    ]
+   },
+   "shot": "e08-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e15a",
+   "item": 15,
+   "what": "Show Values As % of Grand Total, in 0.00%",
+   "steps": [
+    "Region dragged onto Rows (it landed on drag 2)",
+    "Product dragged onto Columns",
+    "Amount dragged onto Values: Sum of Amount",
+    {
+     "valueFieldSettings": "Sum of Amount",
+     "agg": "Sum",
+     "show": "% of Grand Total",
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: 12.34%",
+     "now": [
+      "Sum of Amount"
+     ]
+    }
+   ],
+   "suggestion": {
+    "file": "From its first 4 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  West",
+      "notClear": ""
+     },
+     {
+      "column": "Product",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "Apple  Pear",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "10  30  20  40",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e15a.csv: 4 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [
+     "Product"
+    ],
+    "rows": [
+     "Region"
+    ],
+    "values": [
+     "Sum of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "3",
+    "colCount": "4",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Apple"
+     },
+     {
+      "col": 3,
+      "text": "Pear"
+     },
+     {
+      "col": 4,
+      "text": "Grand Total"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "East",
+       "10.00%",
+       "30.00%",
+       "40.00%"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "West",
+       "20.00%",
+       "40.00%",
+       "60.00%"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "Grand Total",
+       "30.00%",
+       "70.00%",
+       "100.00%"
+      ]
+     }
+    ]
+   },
+   "shot": "e15a-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e15b",
+   "item": 15,
+   "what": "Show Values As % of Column Total, a total's share of itself 100.00%",
+   "steps": [
+    "Region dragged onto Rows (it landed on drag 2)",
+    "Product dragged onto Columns",
+    "Amount dragged onto Values: Sum of Amount",
+    {
+     "valueFieldSettings": "Sum of Amount",
+     "agg": "Sum",
+     "show": "% of Column Total",
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: 12.34%",
+     "now": [
+      "Sum of Amount"
+     ]
+    }
+   ],
+   "suggestion": {
+    "file": "From its first 4 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  West",
+      "notClear": ""
+     },
+     {
+      "column": "Product",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "Apple  Pear",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "10  30  20  40",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e15b.csv: 4 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [
+     "Product"
+    ],
+    "rows": [
+     "Region"
+    ],
+    "values": [
+     "Sum of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "3",
+    "colCount": "4",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Apple"
+     },
+     {
+      "col": 3,
+      "text": "Pear"
+     },
+     {
+      "col": 4,
+      "text": "Grand Total"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "East",
+       "33.33%",
+       "42.86%",
+       "40.00%"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "West",
+       "66.67%",
+       "57.14%",
+       "60.00%"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "Grand Total",
+       "100.00%",
+       "100.00%",
+       "100.00%"
+      ]
+     }
+    ]
+   },
+   "shot": "e15b-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e15c",
+   "item": 15,
+   "what": "Show Values As % of Row Total",
+   "steps": [
+    "Region dragged onto Rows (it landed on drag 2)",
+    "Product dragged onto Columns",
+    "Amount dragged onto Values: Sum of Amount",
+    {
+     "valueFieldSettings": "Sum of Amount",
+     "agg": "Sum",
+     "show": "% of Row Total",
+     "offered": [
+      {
+       "label": "Sum",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Average",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Max",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Min",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Product",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Count Numbers",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDev",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "StdDevp",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Var",
+       "disabled": false,
+       "title": ""
+      },
+      {
+       "label": "Varp",
+       "disabled": false,
+       "title": ""
+      }
+     ],
+     "refusal": null,
+     "sample": "Sample: 12.34%",
+     "now": [
+      "Sum of Amount"
+     ]
+    }
+   ],
+   "suggestion": {
+    "file": "From its first 4 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  West",
+      "notClear": ""
+     },
+     {
+      "column": "Product",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "Apple  Pear",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "10  30  20  40",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e15c.csv: 4 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [
+     "Product"
+    ],
+    "rows": [
+     "Region"
+    ],
+    "values": [
+     "Sum of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "3",
+    "colCount": "4",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Apple"
+     },
+     {
+      "col": 3,
+      "text": "Pear"
+     },
+     {
+      "col": 4,
+      "text": "Grand Total"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "East",
+       "25.00%",
+       "75.00%",
+       "100.00%"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "West",
+       "33.33%",
+       "66.67%",
+       "100.00%"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "Grand Total",
+       "30.00%",
+       "70.00%",
+       "100.00%"
+      ]
+     }
+    ]
+   },
+   "shot": "e15c-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e16",
+   "item": 16,
+   "what": "General writes at most 15 significant digits, as a cell does",
+   "steps": [
+    "Group dragged onto Rows (it landed on drag 2)",
+    "Amount dragged onto Values: Sum of Amount"
+   ],
+   "suggestion": {
+    "file": "From its first 5 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Group",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "A  B  C  D",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Decimal",
+      "readAs": "decimal point '.'",
+      "examples": "0.1  0.2  123456789012.345678  1.23456789012345678  0.000012345678901234567",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e16.csv: 5 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [],
+    "rows": [
+     "Group"
+    ],
+    "values": [
+     "Sum of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "5",
+    "colCount": "2",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Sum of Amount"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "A",
+       "0.3"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "B",
+       "123456789012.346"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "C",
+       "1.23456789012346"
+      ]
+     },
+     {
+      "row": 4,
+      "cells": [
+       "D",
+       "1.23456789012346E-05"
+      ]
+     },
+     {
+      "row": 5,
+      "cells": [
+       "Grand Total",
+       "123456789013.88"
+      ]
+     }
+    ]
+   },
+   "shot": "e16-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e17",
+   "item": 17,
+   "what": "Hidden Items are left out of the totals",
+   "steps": [
+    "Region dragged onto Rows (it landed on drag 2)",
+    "Amount dragged onto Values: Sum of Amount",
+    "North hidden through Filter… on Region"
+   ],
+   "suggestion": {
+    "file": "From its first 3 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  West  North",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "10  20  30",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e17.csv: 3 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [],
+    "rows": [
+     "Region"
+    ],
+    "values": [
+     "Sum of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "3",
+    "colCount": "2",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Sum of Amount"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "East",
+       "10"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "West",
+       "20"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "Grand Total",
+       "30"
+      ]
+     }
+    ]
+   },
+   "shot": "e17-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e01",
+   "item": 1,
+   "what": "Item order: numbers, dates, text (ignoring case), FALSE and TRUE, errors; (blank) last. ExPivot keeps one type per field: the Item order is read per kind (text here)",
+   "steps": [
+    "Key dragged onto Rows (it landed on drag 2)",
+    "Amount dragged onto Values: Sum of Amount"
+   ],
+   "suggestion": {
+    "file": "From its first 6 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Key",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "banana  Apple  cherry  Banana",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "1  2  3  4  5",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e01.csv: 6 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [],
+    "rows": [
+     "Key"
+    ],
+    "values": [
+     "Sum of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "5",
+    "colCount": "2",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Sum of Amount"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "Apple",
+       "6"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "banana",
+       "7"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "cherry",
+       "3"
+      ]
+     },
+     {
+      "row": 4,
+      "cells": [
+       "(blank)",
+       "5"
+      ]
+     },
+     {
+      "row": 5,
+      "cells": [
+       "Grand Total",
+       "21"
+      ]
+     }
+    ]
+   },
+   "shot": "e01-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e09a",
+   "item": 9,
+   "what": "Compact form, subtotals at the top",
+   "steps": [
+    "Region dragged onto Rows (it landed on drag 2)",
+    "Desk dragged onto Rows",
+    "Amount dragged onto Values: Sum of Amount"
+   ],
+   "suggestion": {
+    "file": "From its first 3 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  West",
+      "notClear": ""
+     },
+     {
+      "column": "Desk",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "D1  D2  D3",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "1  2  4",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e09a.csv: 3 rows read in 0.0 s.",
+   "refusal": "",
+   "error": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('menuitemradio', { name: 'Show in Compact Form', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button disabled _bl_17=\"\" type=\"button\" aria-checked=\"true\" role=\"menuitemradio\" class=\"ex-pivot-menu-item ex-pivot-menu-choice\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not enabled\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, ",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e09b",
+   "item": 9,
+   "what": "Outline form",
+   "steps": [
+    "Region dragged onto Rows (it landed on drag 2)",
+    "Desk dragged onto Rows",
+    "Amount dragged onto Values: Sum of Amount",
+    "Layout: Show in Outline Form"
+   ],
+   "suggestion": {
+    "file": "From its first 3 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  West",
+      "notClear": ""
+     },
+     {
+      "column": "Desk",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "D1  D2  D3",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "1  2  4",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e09b.csv: 3 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [],
+    "rows": [
+     "Region",
+     "Desk"
+    ],
+    "values": [
+     "Sum of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "6",
+    "colCount": "3",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Region"
+     },
+     {
+      "col": 2,
+      "text": "Desk"
+     },
+     {
+      "col": 3,
+      "text": "Sum of Amount"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "−East",
+       "",
+       "3"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "",
+       "D1",
+       "1"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "",
+       "D2",
+       "2"
+      ]
+     },
+     {
+      "row": 4,
+      "cells": [
+       "−West",
+       "",
+       "4"
+      ]
+     },
+     {
+      "row": 5,
+      "cells": [
+       "",
+       "D3",
+       "4"
+      ]
+     },
+     {
+      "row": 6,
+      "cells": [
+       "Grand Total",
+       "",
+       "7"
+      ]
+     }
+    ]
+   },
+   "shot": "e09b-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e09c",
+   "item": 9,
+   "what": "Tabular form, the subtotal at the bottom, captioned East Total",
+   "steps": [
+    "Region dragged onto Rows (it landed on drag 2)",
+    "Desk dragged onto Rows",
+    "Amount dragged onto Values: Sum of Amount",
+    "Layout: Show in Tabular Form"
+   ],
+   "suggestion": {
+    "file": "From its first 3 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  West",
+      "notClear": ""
+     },
+     {
+      "column": "Desk",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "D1  D2  D3",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "1  2  4",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e09c.csv: 3 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [],
+    "rows": [
+     "Region",
+     "Desk"
+    ],
+    "values": [
+     "Sum of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "6",
+    "colCount": "3",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Region"
+     },
+     {
+      "col": 2,
+      "text": "Desk"
+     },
+     {
+      "col": 3,
+      "text": "Sum of Amount"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "−East",
+       "D1",
+       "1"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "",
+       "D2",
+       "2"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "East Total",
+       "",
+       "3"
+      ]
+     },
+     {
+      "row": 4,
+      "cells": [
+       "−West",
+       "D3",
+       "4"
+      ]
+     },
+     {
+      "row": 5,
+      "cells": [
+       "West Total",
+       "",
+       "4"
+      ]
+     },
+     {
+      "row": 6,
+      "cells": [
+       "Grand Total",
+       "",
+       "7"
+      ]
+     }
+    ]
+   },
+   "shot": "e09c-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e12",
+   "item": 12,
+   "what": "Column Items as header bands, a column field's total captioned 'FALSE Total', Grand Total on the right",
+   "steps": [
+    "Region dragged onto Rows (it landed on drag 2)",
+    "Flag dragged onto Columns",
+    "Side dragged onto Columns",
+    "Amount dragged onto Values: Sum of Amount"
+   ],
+   "suggestion": {
+    "file": "From its first 4 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  West",
+      "notClear": ""
+     },
+     {
+      "column": "Flag",
+      "kind": "Boolean",
+      "readAs": "TRUE or FALSE",
+      "examples": "TRUE  FALSE",
+      "notClear": ""
+     },
+     {
+      "column": "Side",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "Buy  Sell",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "1  2  4  8",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e12.csv: 4 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [
+     "Flag",
+     "Side"
+    ],
+    "rows": [
+     "Region"
+    ],
+    "values": [
+     "Sum of Amount"
+    ]
+   },
+   "report": {
+    "rowCount": "3",
+    "colCount": "8",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Buy"
+     },
+     {
+      "col": 3,
+      "text": "Sell"
+     },
+     {
+      "col": 4,
+      "text": "FALSE Total"
+     },
+     {
+      "col": 5,
+      "text": "Buy"
+     },
+     {
+      "col": 6,
+      "text": "Sell"
+     },
+     {
+      "col": 7,
+      "text": "TRUE Total"
+     },
+     {
+      "col": 8,
+      "text": "Grand Total"
+     },
+     {
+      "col": 0,
+      "text": "FALSE"
+     },
+     {
+      "col": 0,
+      "text": "TRUE"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "East",
+       "",
+       "2",
+       "2",
+       "1",
+       "",
+       "1",
+       "3"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "West",
+       "4",
+       "",
+       "4",
+       "",
+       "8",
+       "8",
+       "12"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "Grand Total",
+       "4",
+       "2",
+       "6",
+       "1",
+       "8",
+       "9",
+       "15"
+      ]
+     }
+    ]
+   },
+   "shot": "e12-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e13",
+   "item": 13,
+   "what": "Σ Values in Columns when the second Value Field is placed; headers 'Sum of Amount' under each column Item",
+   "steps": [
+    "Region dragged onto Rows (it landed on drag 2)",
+    "Product dragged onto Columns",
+    "Amount dragged onto Values: Sum of Amount",
+    "Qty dragged onto Values: Sum of Qty"
+   ],
+   "suggestion": {
+    "file": "From its first 2 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  West",
+      "notClear": ""
+     },
+     {
+      "column": "Product",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "Apple  Pear",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "10  5",
+      "notClear": ""
+     },
+     {
+      "column": "Qty",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "1  2",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e13.csv: 2 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [
+     "Product",
+     "Σ Values"
+    ],
+    "rows": [
+     "Region"
+    ],
+    "values": [
+     "Sum of Amount",
+     "Sum of Qty"
+    ]
+   },
+   "report": {
+    "rowCount": "3",
+    "colCount": "7",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Row Labels"
+     },
+     {
+      "col": 2,
+      "text": "Sum of Amount"
+     },
+     {
+      "col": 3,
+      "text": "Sum of Qty"
+     },
+     {
+      "col": 4,
+      "text": "Sum of Amount"
+     },
+     {
+      "col": 5,
+      "text": "Sum of Qty"
+     },
+     {
+      "col": 6,
+      "text": "Sum of Amount"
+     },
+     {
+      "col": 7,
+      "text": "Sum of Qty"
+     },
+     {
+      "col": 0,
+      "text": "Apple"
+     },
+     {
+      "col": 0,
+      "text": "Pear"
+     },
+     {
+      "col": 0,
+      "text": "Grand Total"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "East",
+       "10",
+       "1",
+       "",
+       "",
+       "10",
+       "1"
+      ]
+     },
+     {
+      "row": 2,
+      "cells": [
+       "West",
+       "",
+       "",
+       "5",
+       "2",
+       "5",
+       "2"
+      ]
+     },
+     {
+      "row": 3,
+      "cells": [
+       "Grand Total",
+       "10",
+       "1",
+       "5",
+       "2",
+       "15",
+       "3"
+      ]
+     }
+    ]
+   },
+   "shot": "e13-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  },
+  {
+   "id": "e14",
+   "item": 14,
+   "what": "Captions: Sum of Amount, Count of Region, a second Value Field of the same field and Aggregation Sum of Amount2",
+   "steps": [
+    "Amount dragged onto Values: Sum of Amount (it landed on drag 2)",
+    "Region dragged onto Values: Count of Region",
+    "Amount dragged onto Values: Sum of Amount2"
+   ],
+   "suggestion": {
+    "file": "From its first 2 rows:\n            a comma between fields,\n            a header row first,\n            UTF-8.",
+    "columns": [
+     {
+      "column": "Region",
+      "kind": "Text",
+      "readAs": "as written",
+      "examples": "East  West",
+      "notClear": ""
+     },
+     {
+      "column": "Amount",
+      "kind": "Integer",
+      "readAs": "whole numbers",
+      "examples": "10  5",
+      "notClear": ""
+     }
+    ]
+   },
+   "status": "e14.csv: 2 rows read in 0.0 s.",
+   "refusal": "",
+   "areas": {
+    "filters": [],
+    "columns": [
+     "Σ Values"
+    ],
+    "rows": [],
+    "values": [
+     "Sum of Amount",
+     "Count of Region",
+     "Sum of Amount2"
+    ]
+   },
+   "report": {
+    "rowCount": "1",
+    "colCount": "3",
+    "headers": [
+     {
+      "col": 1,
+      "text": "Sum of Amount"
+     },
+     {
+      "col": 2,
+      "text": "Count of Region"
+     },
+     {
+      "col": 3,
+      "text": "Sum of Amount2"
+     }
+    ],
+    "rows": [
+     {
+      "row": 1,
+      "cells": [
+       "15",
+       "2",
+       "15"
+      ]
+     }
+    ]
+   },
+   "shot": "e14-expivot.png",
+   "messages": [
+    {
+     "type": "info",
+     "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+    }
+   ]
+  }
+ ],
+ "browser": "154.0.8037.98",
+ "finished": "2026-10-12T08:49:03.963Z"
+}

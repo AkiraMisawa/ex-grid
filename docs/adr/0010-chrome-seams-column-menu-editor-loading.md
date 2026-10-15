@@ -158,6 +158,36 @@ Only the keys the core decides to pass reach the editor.
 | Arrows / Home / End | **the core in Overwrite** (commit and move); **the editor in Caret** (move the caret) |
 | Everything else | the editor |
 
+*(2026-10-12, after the seventeenth Windows run, Part C, case 7, and the readings of 2026-10-12, R1
+(vii).)* **In Overwrite the core also takes Shift+Home, the four Shift+arrows, and the Primary
+Modifier's arrows with Shift or without.** Typed into a cell, Excel's Enter mode committed the entry
+on Shift+Home and extended the Selection, which the Shift+→ after it narrowed to `B10:D10` (case 7);
+on Shift+→, Shift+↓ and Shift+← it committed and extended from D10 (`D10:E10`, `D10:D11`,
+`C10:D10`); on Ctrl+→ it committed and moved to XFD10, and on Ctrl+Shift+→ it committed and selected
+`D10:XFD10` (R1 (vii)). ExGrid left them to the editor, which selected its text or moved its caret.
+Shift+↑ and the Primary Modifier's other arrows follow by generalisation. Where the Consumer says a
+Reference can go, the Shift keys point
+([ADR-0051](./0051-formula-entry-completion-point-mode-and-the-formula-bar.md)): a Shift+arrow extends
+a pointing outline from the edited cell, as Point does with it, and Shift+Home points from the edited
+cell to the row's first column (observed with a Ctrl+C before it: in R1's reading after its first
+step, `=` in D10, a Ctrl+C that copied nothing, then Shift+Home pointed, and a Ctrl+C copied
+`A10:D10`); the Primary Modifier's arrows there are taken and do nothing, as `End` does
+([ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md), Q53), rather than
+commit a Formula that ends too early — a reading: Excel was not asked. Elsewhere they commit, and then
+move or extend the Selection exactly as the same key does with no edit open
+([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)), an arrow with the Primary Modifier to
+the edge the Consumer answers; a Reject holds the commit, as it does for the arrows
+([ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)), and a commit
+whose own handler moved the order has dropped the Selection the key was aimed with, so the key moves
+and extends nothing, as Enter and the arrows move nothing then
+([ADR-0142](./0142-a-write-lands-as-the-user-entered-it-and-a-change-under-the-editor-is-told.md)).
+Caret keeps them the editor's, and so does a list of names
+([ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md), Q51); a list open over
+Point leaves Shift+Home and the Primary Modifier's arrows to the editor, and its Shift+arrows point.
+**Shift+End stays the editor's**: Excel's committed, left the Selection on D10 and turned End Mode
+on (R1 (vii)), and the grid has no End Mode (ADR-0058, Q53). *(2026-10-13, decided with the user:
+Shift+End is left to the editor.)*
+
 Bubbling is too late — once the editor has handled the key and moved the caret, it cannot be taken
 back. **The capture phase is the point.**
 
@@ -253,10 +283,22 @@ and a key landing on the root in between would find no mode that claims it. A ke
 to open the Cell Editor (F2, a printable key, Space) and, while editing, every key it
 claims (each commits, cancels, moves or switches). On replay a held key goes through the
 gate again: a key the core claims in the new mode is forwarded (and may hold the rest
-again); a printable key while the editor stands is typed into it at its caret, as if it had
-been pressed there; anything else is the browser's, as it would have been. If the answer is
+again); a key the editor's field would have handled itself, while the editor stands, is
+handled as the field would have, as if it had been pressed there — a printable key typed at
+its caret, a deletion deleting, a caret key moving the caret or, with Shift, extending the
+selection from its anchor, by a word or to the text's end with the modifier the platform does
+that with — read from the field's value and selection alone (ADR-0021); anything else is the
+browser's, as it would have been. If the answer is
 that nothing opened — the Focus cell is not Editable, say — the held keys replay as ordinary
 keys, which is exactly what they would have done had the answer come first.
+
+*(2026-10-13: the replay is restated to what it does.)* The text named only a printable key,
+while a held deletion and a held Home, End, ← or → were already applied as the field applies
+them. A held chord was dropped. In CI on Edge (PR #101), End and Ctrl+← typed straight after
+F2 were held, the End applied and the Ctrl+← dropped, so where the caret landed turned on
+whether the keys arrived before F2's answer. A held key the field would have handled, a chord
+among them, is now handled as the field would have; any other chord is still dropped. The rule
+itself, that a held key does what it would have done unheld, is unchanged.
 
 Plain navigation is not held. An arrow outside editing changes no mode; holding behind it
 would pace a held-down arrow key to one row per round trip on Server, for no correctness
@@ -317,7 +359,13 @@ Sort ascending. The keys behind a closing key are held until the popover is gone
 the grid's. The core writes the letters that run an enabled command on the commands
 (`data-ex-letters`), and a Chrome marks its value list `ex-value-list`, so the listener mirrors
 nothing but Tab, Shift+Tab and E. The two seconds count from the start of the hold, however
-many moves it holds behind.
+many moves it holds behind. *(2026-10-12, as built: a reading of this rule and of the decision of
+that day, ADR-0044's note.)* A button that closes the popover — a panel's OK, Apply or Cancel —
+closes it by a key too, Enter or Space, and by a press: a Chrome marks such a button
+`ex-popover-closes`, as it marks its value list, and the contents of a Consumer's popover mark
+theirs. Enter in a field of a form whose OK is so marked submits it, and holds as Enter in the
+filter's field does. A panel that refuses what OK submits stands, and the hold behind it ends at
+its two seconds.
 A keydown dispatched from script types nothing, so a held key handed to a text field is typed
 at its caret, as a held key is in the Cell Editor, and a held Enter submits the field's form.
 A held key whose effect is the browser's own — Tab moving DOM focus, Space ticking a checkbox,

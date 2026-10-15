@@ -735,7 +735,11 @@ function Read-Answer($Sheet, [string]$Check, [bool]$UseFormula2, [bool]$KeepWidt
         $answer.value2 = if ($ErrorTexts.ContainsKey($code)) { $ErrorTexts[$code] } else { "#ERROR($v)" }
         $answer.kind = 'error'
     }
-    elseif ($v -is [double]) { $answer.value2 = $v; $answer.kind = 'number'; $answer.number = $v.ToString('R', $Invariant) }
+    # G17, not R: Windows PowerShell runs on .NET Framework, where "R" may give a string that does not
+    # round-trip (Microsoft documents it on 64-bit), and a corpus expect read from it could be a unit in
+    # the last place off. G17 always round-trips. value2 is written by ConvertTo-Json, so read Excel's
+    # double from "number".
+    elseif ($v -is [double]) { $answer.value2 = $v; $answer.kind = 'number'; $answer.number = $v.ToString('G17', $Invariant) }
     elseif ($v -is [bool]) { $answer.value2 = $v; $answer.kind = 'boolean' }
     else { $answer.value2 = [string]$v; $answer.kind = 'text' }
     $text = [string]$cell.Text

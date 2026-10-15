@@ -12,6 +12,7 @@
 // Commands ({"op": ...}):
 //   goto {url, ready?}            the page; ready: a JS expression polled until true (60 s)
 //   front                         the window to the front (by the title the page is given)
+//   raise                         the same, after Playwright's bringToFront (when another program holds the foreground)
 //   calibrate                     screen pixels for client points, from the page's own mousemove
 //   input {cmd}                   one command to input-server.ps1, as it is (type, burst, imeon, ...)
 //   press {sel, nth?, at?, dx?, dy?, button?}
@@ -21,6 +22,7 @@
 //   events                        what the probe's listeners logged since the last call
 //   shot {file, clip?, sel?}      the page's picture (Playwright), of a clip or an element's box
 //   cdpshot {file, clip?}         the compositor's picture in device pixels (CDP, fromSurface)
+//   pixels {clip, file?}          the compositor's picture of a small clip in device pixels, decoded: RGB rows
 //   rtt {control, ms}             the latency proxy's round trip
 //   version                       the browser's version
 //   console                       the console messages and page errors since the last call
@@ -128,6 +130,7 @@ for await (const line of rl) {
             say({ ok: 'goto', title, url: page.url() });
         }
         else if (c.op === 'front') { say({ ok: await input(`front ${title}`) }); }
+        else if (c.op === 'raise') { await page.bringToFront(); await sleep(400); say({ ok: await input(`front ${title}`) }); }
         else if (c.op === 'calibrate') { say({ ok: 'calibrate', ...(await calibrate()) }); }
         else if (c.op === 'input') { say({ ok: await input(c.cmd) }); }
         else if (c.op === 'press') {
@@ -143,6 +146,16 @@ for await (const line of rl) {
             await input(`${verb} ${x} ${y}`);
             say({ ok: 'press', screen: [x, y], client: [r.x, r.y], box: r.box });
         }
+        else if (c.op === 'where') {
+            // Added for Part H: the screen point of an element, as 'press' finds it, without pressing (for a drag).
+            const r = await page.evaluate(([sel, nth, dx, dy]) => {
+                const e = document.querySelectorAll(sel)[nth ?? 0]; if (!e) return null;
+                const b = e.getBoundingClientRect();
+                return { x: (b.left + b.right) / 2 + (dx ?? 0), y: (b.top + b.bottom) / 2 + (dy ?? 0), box: [b.left, b.top, b.width, b.height] };
+            }, [c.sel, c.nth, c.dx, c.dy]);
+            if (!r) throw new Error(`${c.sel} is not on the page`);
+            say({ ok: 'where', screen: at(r.x, r.y), client: [r.x, r.y], box: r.box });
+        }
         else if (c.op === 'eval') { say({ ok: 'eval', value: await page.evaluate(new Function('arg', `return (${c.fn})(arg);`), c.arg ?? null) }); }
         else if (c.op === 'events') { say({ ok: 'events', value: await page.evaluate(() => (window.__events ?? []).splice(0)) }); }
         else if (c.op === 'console') { say({ ok: 'console', value: messages.splice(0) }); }
@@ -157,6 +170,23 @@ for await (const line of rl) {
             const r = await s.send('Page.captureScreenshot', { format: 'png', fromSurface: true, ...(c.clip ? { clip: { ...c.clip, scale: 1 } } : {}) });
             fs.writeFileSync(c.file, Buffer.from(r.data, 'base64')); await s.detach();
             say({ ok: 'cdpshot', file: c.file });
+        }
+        else if (c.op === 'pixels') {
+            // The compositor's picture of a clip (CSS px) in device pixels (CDP, fromSurface), decoded in
+            // the page: every pixel's RGB, row by row. For small clips only.
+            const s = await context.newCDPSession(page);
+            const r = await s.send('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false, clip: { ...c.clip, scale: 1 } });
+            await s.detach();
+            if (c.file) fs.writeFileSync(c.file, Buffer.from(r.data, 'base64'));
+            const px = await page.evaluate(async (a) => {
+                const bytes = Uint8Array.from(atob(a), (ch) => ch.charCodeAt(0));
+                const bmp = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+                const cv = new OffscreenCanvas(bmp.width, bmp.height); const ctx = cv.getContext('2d'); ctx.drawImage(bmp, 0, 0);
+                const d = ctx.getImageData(0, 0, bmp.width, bmp.height).data; const rows = [];
+                for (let y = 0; y < bmp.height; y++) { const row = []; for (let x = 0; x < bmp.width; x++) { const i = (y * bmp.width + x) * 4; row.push([d[i], d[i + 1], d[i + 2]]); } rows.push(row); }
+                return { width: bmp.width, height: bmp.height, rows };
+            }, r.data);
+            say({ ok: 'pixels', ...px });
         }
         else if (c.op === 'rtt') { const r = await fetch(`${c.control}/?rtt=${c.ms}`, { method: 'POST' }); say({ ok: 'rtt', status: r.status, now: await (await fetch(c.control)).text() }); }
         else if (c.op === 'version') { say({ ok: 'version', value: browser.version() }); }

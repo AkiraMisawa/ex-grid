@@ -29,6 +29,10 @@ internal static class CellIds
     /// </summary>
     internal static string ColumnIndex(int column) => ColumnIndexes[column];
 
+    /// <summary>The 1-based <c>aria-rowindex</c> of a header row, 0-based from the top — the
+    /// same interned numbers: a header holds a few rows (ADR-0033, 2026-10-12).</summary>
+    internal static string HeaderRowIndex(int headerRow) => ColumnIndexes[headerRow];
+
     /// <summary>The <c>aria-colspan</c> of a header rectangle over <paramref name="columns"/>
     /// leaves — the same interned numbers, read one down.</summary>
     internal static string Span(int columns) => ColumnIndexes[columns - 1];

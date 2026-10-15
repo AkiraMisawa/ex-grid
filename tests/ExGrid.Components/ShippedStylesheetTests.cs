@@ -111,7 +111,8 @@ public class ShippedStylesheetTests
         // (ADR-0010's note of 2026-10-02) — the same events, no new use. And the clipboard entry a
         // last time (ADR-0170): clipboardchange on navigator.clipboard, which tells the grid that the
         // clipboard changed by a write other than its own copy, so the Copied Range can go.
-        string[] allowed = ["change", "clipboardchange", "compositionend", "compositionend", "compositionstart", "copy", "copy", "cut", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
+        // ADR-0210: a temporary blur and change listener only on a field changed by held typing.
+        string[] allowed = ["blur", "change", "change", "clipboardchange", "compositionend", "compositionend", "compositionstart", "copy", "copy", "cut", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
@@ -450,7 +451,10 @@ public class ShippedStylesheetTests
         // Only an element still on the page, focused as its own FocusAsync would focus it, scrolled
         // into view; the field a press left standing is given up with the keyboard.
         Assert.Contains("element instanceof HTMLElement && element.isConnected", body, StringComparison.Ordinal);
-        Assert.Matches(new Regex(@"staleField = null;\s*element\.focus\(\);"), body);
+        Assert.Matches(new Regex(@"staleField = null;[\s\S]*target\.focus\(\);"), body);
+        Assert.Contains("element.querySelectorAll('input, textarea')].find(isTextField)", body, StringComparison.Ordinal);
+        Assert.Contains("target === firstText && isTextField(target)", body, StringComparison.Ordinal);
+        Assert.Contains("target.select()", body, StringComparison.Ordinal);
         Assert.Single(Regex.Matches(body, @"\.(focus|blur)\("));
         // While the keyboard is on its way to a frame of the Consumer's own and a hold stands, the
         // control takes it in turn, from the hold, with the keys held for it (ADR-0050 item 16's
@@ -816,8 +820,9 @@ public class ShippedStylesheetTests
         Assert.True(replay.Success, "replayPress is not in the module");
 
         // What it was taken against: the browser's offsets, the attributes the painting render wrote
-        // on the Viewport, and the scroll offset (the second entry). No layout is read.
-        foreach (var read in new[] { "event.offsetX", "event.offsetY", "'data-ex-first-row'", "'data-ex-sequence'", "'data-ex-layout'", "scroller.scrollLeft" })
+        // on the Viewport, and the scroll offsets (the second entry), the vertical one placing a fill
+        // handle held at the readable area's top (ADR-0050, item 5). No layout is read.
+        foreach (var read in new[] { "event.offsetX", "event.offsetY", "'data-ex-first-row'", "'data-ex-sequence'", "'data-ex-layout'", "scroller.scrollLeft", "scroller.scrollTop" })
             Assert.Contains(read, taken.Value, StringComparison.Ordinal);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects|elementFromPoint"), taken.Value);
 
@@ -856,7 +861,10 @@ public class ShippedStylesheetTests
         Assert.Single(Regex.Matches(script, @"addEventListener\('keyup'"));
         Assert.Contains("root.addEventListener('keyup', onRootKeyUp, true);", script, StringComparison.Ordinal);
         // While keys are held, the release is kept from the Consumer's handler and held in its place.
-        Assert.Matches(new Regex(@"if \(answering\) \{\s*event\.stopPropagation\(\);\s*event\.preventDefault\(\);\s*held\.push\(\{ altUp: true, altAlone: alone, key: 'Alt' \}\);\s*return;\s*\}"), keyUp);
+        // Comments do not change the sequence. The held release names its held press, so the press's
+        // landing decides whether the pair is an Alt alone (ADR-0050 item 16, 2026-10-14).
+        var keyUpStatements = Regex.Replace(keyUp, @"//[^\r\n]*", "");
+        Assert.Matches(new Regex(@"if \(answering\) \{\s*event\.stopPropagation\(\);\s*event\.preventDefault\(\);\s*held\.push\(\{ altUp: true, altAlone: alone, of: pending\?\.entry \?\? undefined, key: 'Alt' \}\);\s*return;\s*\}"), keyUpStatements);
         // Otherwise it reaches the Consumer now, and the keys after it wait for the answer to it; a chord's
         // release, or one whose press was not heard, never reaches the Consumer: the gate tells which.
         Assert.Matches(new Regex(@"if \(!alone\) \{\s*event\.stopPropagation\(\);\s*return;\s*\}\s*startHold\(altReleaseAnswered\(\)\);"), keyUp);
@@ -864,17 +872,18 @@ public class ShippedStylesheetTests
         Assert.Contains("if (!core || replaying || event.key !== 'Alt' || !declared.has('Alt+Alt')) {", keyUp, StringComparison.Ordinal);
         // Its turn: handed on as the keyup it was, then its answer asked; its press is not skipped as a
         // modifier's, so the Consumer hears the press before the release.
-        Assert.Matches(new Regex(@"if \(k\.altUp\) \{\s*if \(k\.altAlone\) \{\s*await replayAltRelease\(\);\s*await editorSettled\(\);"), drain);
+        Assert.Matches(new Regex(@"if \(k\.altUp\) \{\s*if \(releasesAlone\(k\)\) \{\s*await replayAltRelease\(\);\s*await editorSettled\(\);"), drain);
+        Assert.Contains("const releasesAlone = (k) => (k.of ? k.of.altAlone === true : k.altAlone === true);", script, StringComparison.Ordinal);
         Assert.Contains("if (modifierKeys.has(k.key) && !(k.key === 'Alt' && k.altAlone === true", drain, StringComparison.Ordinal);
         Assert.True(drain.IndexOf("if (k.altUp)", StringComparison.Ordinal) < drain.IndexOf("if (modifierKeys.has(k.key)", StringComparison.Ordinal));
         // A held Alt is noted as it is held, so its release finds it, and a chord unmarks it.
-        Assert.Contains("noteAlt(k, isClipboardKey(k) ? null : k);", keyDown, StringComparison.Ordinal);
+        Assert.Contains("noteAlt(k, isClipboardKey(k) ? null : k, true);", keyDown, StringComparison.Ordinal);
         // Asked in the task after the release's dispatch: behind every listener of the keyup, Blazor's
         // among them, which sends the release on later in the same dispatch than this listener runs.
         Assert.Matches(new Regex(@"const altReleaseAnswered = \(\) => new Promise\(\(dispatched\) => \{\s*setTimeout\(dispatched\);\s*\}\)\.then\(\(\) => \(core \? core\.invokeMethodAsync\('Ping'\)"), script);
         // A held Alt is noted wherever under the root it was typed: its meaning is where it is handed on.
         Assert.Contains("&& (held || k.onRoot || k.inEditor);", script, StringComparison.Ordinal);
-        Assert.Contains("if (altAlone(k, entry !== null)) {", script, StringComparison.Ordinal);
+        Assert.Contains("if (altAlone(k, held)) {", script, StringComparison.Ordinal);
         // The keys a frame heard on the way back carry their Alts and releases, noted as the gate's own are.
         Assert.Contains("held.unshift(...withAltsNoted((Array.isArray(typed) ? typed : []).map((t) => ({", drain, StringComparison.Ordinal);
         Assert.Contains("altUp: t.type === 'keyup' ? true : undefined,", drain, StringComparison.Ordinal);
@@ -903,6 +912,12 @@ public class ShippedStylesheetTests
         // At once, whatever the hold is waiting for: every key held then was typed after the Escape, and one
         // typed later, or the keyboard leaving, must not overtake them.
         Assert.Matches(new Regex(@"passKeysOut: \(\) => \{\s*if \(!core\) \{\s*return;\s*\}\s*(//[^\n]*\s*)*keysOut = true;\s*passHeldOut\(\);\s*\},"), script);
+        var request = Regex.Match(script, @"passKeysOut: \(\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(request);
+        // The destination is already answered: a pending Escape must not delay older keys behind
+        // a later key bubbling out or the report collecting the frame's queue (ADR-0070).
+        Assert.Matches(new Regex(@"keysOut = true;\s*(//[^\n]*\s*)*passHeldOut\(\);"), request);
+        Assert.DoesNotContain("if (!answering)", request, StringComparison.Ordinal);
         Assert.Contains("const parent = root?.parentElement;", passOut, StringComparison.Ordinal);
         Assert.Contains("const keys = held.splice(0, held.length);", passOut, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"parent\.dispatchEvent\(new KeyboardEvent\("), passOut);
@@ -913,6 +928,19 @@ public class ShippedStylesheetTests
         // Ended by the keyboard leaving, a press, and nothing else of its own.
         Assert.Equal(2, Regex.Matches(script, @"(?<!let )keysOut = false;").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), passOut);
+    }
+
+    [Fact] // ADR-0061 (decided with the user, 2026-10-13) / ADR-0050 item 16: the keys a frame hands back while a hand-off stands wait for it, and go on there
+    public void Keys_a_frame_hands_back_while_a_hand_off_stands_wait_for_it()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var drain = Regex.Match(script, @"const drain = async \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        var typedOnTheWay = Regex.Match(drain, @"if \(k\.typedOnTheWay !== undefined\) \{.*?\n                continue;\n            \}", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(typedOnTheWay);
+
+        // In their place, ahead of every key typed on the root since; and, a hand-off standing — the keyboard
+        // going on from this root to a frame of the Consumer's own — held until it arrives, then handed there.
+        Assert.Matches(new Regex(@"held\.unshift\(.*?\)\)\)\);\s*(//[^\n]*\s*)*if \(handOff !== null\) \{\s*await editorSettled\(\);\s*\}\s*continue;", RegexOptions.Singleline), typedOnTheWay);
     }
 
     [Fact] // ADR-0080 / ADR-0021's seventh entry / ADR-0018: the Keyboard Field's listeners are on the root, on every grid, and go with the instance
@@ -1081,6 +1109,40 @@ public class ShippedStylesheetTests
         Assert.NotEmpty(look);
         Assert.DoesNotContain("settle(", look, StringComparison.Ordinal);
         Assert.Contains("resolve();", look, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0039 (note of 2026-10-01) / ADR-0010 / ADR-0080: a composition finished in the Keyboard Field while a popover or a Consumer's frame takes the keyboard is handed to it as a held character is — typed into its text field, dropped with every key behind it on any other control — and the core is asked to open an edit only when neither has the keyboard
+    public void ADR0039_a_compositions_text_held_while_a_popover_opens_is_the_popovers()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var drain = Regex.Match(script, @"const drain = async \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(drain);
+        var branch = Regex.Match(drain, @"\n            if \(k\.text !== undefined\) \{.*?\n            \}\n", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(branch);
+
+        // What holds the keyboard is asked first, as it is for every held key: a control of the
+        // grid's own (a popover's: Format Cells' tab, a column's commands, the find field), or the
+        // Consumer's frame the core handed the keyboard to. Asked of the core instead, the text
+        // opened a Cell Editor behind the popover.
+        Assert.Matches(new Regex(
+            @"^\s*if \(k\.text !== undefined\) \{\s*"
+            + @"const holder = focusedControl\(\) \?\? \(deliveringOutside \? outsideControl\(\) : null\);\s*"
+            + @"if \(holder\) \{\s*"
+            // A cancelled composition typed nothing: nothing to hand on, and nothing dropped.
+            + @"if \(k\.text\.length === 0\) \{\s*continue;\s*\}\s*"
+            // Text no keydown carries is a key script cannot reproduce on a control that is not a
+            // text field: dropped, with every key held behind it (ADR-0010).
+            + @"if \(!isTextField\(holder\)\) \{\s*dropHeld\(\);\s*break;\s*\}\s*"
+            // In a text field it is typed at the caret, as a held character is.
+            + @"typeInto\(holder, k\);\s*continue;\s*\}\s*"
+            // Only with the keyboard still the grid's is the core asked to open an edit holding it.
+            + @"if \(editing === 'none'\) \{\s*const opened = await core\.invokeMethodAsync\('OnKeyFieldTextAsync', k\.text, k\.paint\)"),
+            branch);
+        // The one place the core is asked to open an edit for a composition's text.
+        Assert.Single(Regex.Matches(script, @"'OnKeyFieldTextAsync'"));
+        // Where a held key goes is read from what holds DOM focus, as for every held key: nothing is
+        // measured, and no focus is moved from here (ADR-0021).
+        Assert.DoesNotMatch(new Regex(@"\.focus\(|getBoundingClientRect|getComputedStyle|offset(Width|Height|Top|Left)"), branch);
     }
 
     [Fact] // KB-12 / ADR-0080: the root's ring is drawn from the script's mark while its field holds a keyboard that did not come of a press on the grid, as from :focus-visible on a grid without one
@@ -1252,12 +1314,13 @@ public class ShippedStylesheetTests
         // the placement came: that caret stands, and is reported again as the user's.
         // The same call places the selection F4's rewrite answered (ADR-0051, 2026-09-29). It is
         // brought into view first (ticket 75; A_caret_placed_by_the_core_is_brought_into_view).
-        Assert.Matches(new Regex(@"setCaret: \(text, caret, end\) => \{\s*const input = editorInput\(\);\s*if \(input && input\.value === text\) \{\s*if \(movedByUser\(input\)\) \{\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*(?://[^\n]*\n\s*)*showCaret\(input, end\);\s*input\.setSelectionRange\(caret, end\);\s*reportedText = text;\s*reportedCaret = caret;",
+        Assert.Matches(new Regex(@"setCaret: \(text, caret, end\) => \{\s*const input = editorInput\(\);\s*(?://[^\n]*\n\s*)*const moved = input \? movedByUser\(input\) : false;\s*if \(input && input\.value === text\) \{\s*if \(moved\) \{\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*(?://[^\n]*\n\s*)*showCaret\(input, end\);\s*input\.setSelectionRange\(caret, end\);\s*reportedText = text;\s*reportedCaret = caret;",
             RegexOptions.Singleline), script.Text);
         // The user's move: a press in an editor surface's text, or a caret key left to it or
         // answered by the listener on an Apple platform (ticket 32) — only while the field still
-        // holds the text it was made in.
-        Assert.Matches(new Regex(@"const movedByUser = \(input\) => caretMoved !== null && caretMoved\.input === input && caretMoved\.text === input\.value;"), script.Text);
+        // holds the text it was made in, and forgotten once it does not, so that an equal text written
+        // later is not taken for it (ADR-0051; the seventeenth Windows run, Part C, cases 8 and 9).
+        Assert.Matches(new Regex(@"const movedByUser = \(input\) => \{\s*if \(caretMoved === null \|\| caretMoved\.input !== input\) \{\s*return false;\s*\}\s*if \(caretMoved\.text !== input\.value\) \{\s*caretMoved = null;\s*return false;\s*\}\s*return true;\s*\};"), script.Text);
         Assert.Equal(4, Regex.Matches(script.Text, @"noteCaretMove\((event\.target|input)\);").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects"), script.Text);
     }
@@ -1283,9 +1346,11 @@ public class ShippedStylesheetTests
         // field's offset.
         Assert.Matches(new Regex(@"showCaret\(input, end\);\s*input\.setSelectionRange\(caret, end\);"), script);
         Assert.Matches(new Regex(@"showCaret\(input, edge\);\s*\};"), script);
-        Assert.Matches(new Regex(@"input\.setSelectionRange\(at, at\);\s*showCaret\(input, at\);\s*return true;"), script);
+        // A held arrow replayed moves the caret, or with Shift the selection's moving end, and shows
+        // where it went (ADR-0010).
+        Assert.Matches(new Regex(@"if \(!k\.shiftKey\) \{\s*input\.setSelectionRange\(to, to\);\s*\} else if \(to < anchor\) \{\s*input\.setSelectionRange\(to, anchor, 'backward'\);\s*\} else \{\s*input\.setSelectionRange\(anchor, to, 'forward'\);\s*\}\s*showCaret\(input, to\);\s*return true;"), script);
         Assert.Matches(new Regex(@"showCaret\(input, input\.selectionEnd\);\s*(?://[^\n]*\n\s*)*input\.dispatchEvent\(new Event\('input', \{ bubbles: true \}\)\);\s*return true;\s*\};"), script);
-        Assert.Equal(4, Regex.Matches(script, @"showCaret\(input, (end|edge|at|input\.selectionEnd)\);").Count);
+        Assert.Equal(4, Regex.Matches(script, @"showCaret\(input, (end|edge|to|input\.selectionEnd)\);").Count);
         Assert.Equal(4, Regex.Matches(script, @"showCaret\(").Count);
         Assert.Equal(2, Regex.Matches(script, @"input\.scrollLeft = ").Count);
         // The coloured layer follows the offset through the field's own scroll event, as it does
@@ -1480,12 +1545,16 @@ public class ShippedStylesheetTests
         Assert.Contains("--ex-reference-text-pointed: transparent;", forced, StringComparison.Ordinal);
     }
 
-    [Fact] // ADR-0051 second round / DC-31, ADR-0058 / SH-36: pointing claims the Shift+arrows; an open list claims only ↑/↓ beside the editing keys, and ←, →, Home, End and the Shift+arrows too while it is open over Point
+    [Fact] // ADR-0051 second round / DC-31, ADR-0058 / SH-36: pointing claims the Shift+arrows and Shift+Home; an open list claims only ↑/↓ beside the editing keys, and ←, →, Home, End and the Shift+arrows too while it is open over Point
     public void The_gate_has_a_point_set_and_a_completion_set()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
-        Assert.Matches(new Regex(@"const pointKeys = new Set\(\[\s*\.\.\.overwriteKeys, 'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight'\]\);"),
+        // The arrows, Home and End, the four Shift+arrows and Shift+Home, which extends the outline to
+        // the row's first column (ADR-0010, ED-2; observed in Excel, the readings of 2026-10-12, R1
+        // (viii)).
+        Assert.Matches(new Regex(@"const pointKeys = new Set\(\[\s*\.\.\.editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',\s*"
+            + @"'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight', 'Shift\+Home'\]\);"),
             script.Text);
         Assert.Matches(new Regex(@"const completionKeys = new Set\(\[\.\.\.editingKeys, 'ArrowUp', 'ArrowDown'\]\);"), script.Text);
         // ADR-0058 (the tenth Windows run; Part B of the ninth, Q51) / SH-36: a list open over Point
@@ -1543,7 +1612,8 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"const placeCaretAtEnd = \(input, k, ownMove = true\) => \{\s*const toEnd = k\.key === 'End';\s*const edge = toEnd \? input\.value\.length : 0;\s*if \(ownMove\) \{\s*noteCaretMove\(input\);\s*\}"), script);
         // A held Home or End replayed on any platform goes the same way, scrolled to its end: setting
         // the selection alone moved no view (ticket 32, seen in CI on the Server host).
-        Assert.Matches(new Regex(@"\} else if \(k\.key === 'Home' \|\| k\.key === 'End'\) \{[^}]*placeCaretAtEnd\(input, k, input\.closest\('\.ex-editor'\) !== null\);\s*return true;", RegexOptions.Singleline), script);
+        Assert.Matches(new Regex(@"const inEditor = input\.closest\('\.ex-editor'\) !== null;"), script);
+        Assert.Matches(new Regex(@"\} else if \(k\.key === 'Home' \|\| k\.key === 'End'\) \{(?:[^{}]*\{[^{}]*\})?[^{}]*placeCaretAtEnd\(input, k, inEditor\);\s*return true;", RegexOptions.Singleline), script);
         Assert.Matches(new Regex(@"const anchor = input\.selectionDirection === 'backward' \? input\.selectionEnd : input\.selectionStart;"), script);
         Assert.Matches(new Regex(@"input\.setSelectionRange\(anchor \?\? edge, edge, 'forward'\);"), script);
         Assert.Matches(new Regex(@"input\.setSelectionRange\(edge, anchor \?\? edge, 'backward'\);"), script);
@@ -1551,6 +1621,33 @@ public class ShippedStylesheetTests
         // From the keydown, and for a key held behind a mode change.
         Assert.Matches(new Regex(@"if \(verdict === 'caret'\) \{[^}]*placeCaretAtEnd\(input, k\);", RegexOptions.Singleline), script);
         Assert.Matches(new Regex(@"\} else if \(verdict === 'caret'\) \{\s*const input = editorInput\(\);\s*if \(input\) \{\s*placeCaretAtEnd\(input, rebased\);"), script);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
+    }
+
+    [Fact] // ADR-0010 / ED-2 / ADR-0021: a held Ctrl+arrow, Shift+arrow, Ctrl+Backspace or Ctrl+Delete left to an edit is replayed as the field would handle it, from the field's value and selection alone
+    public void A_held_chord_left_to_an_edit_is_replayed_as_the_field_would_handle_it()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+
+        // The edit's field is handed every held key the gate left to it, chords among them: a
+        // Ctrl+← held behind F2 was dropped while the End before it moved the caret, so where the
+        // caret landed turned on whether the keys arrived before F2's answer (seen in CI on Edge,
+        // WebAssembly).
+        Assert.Matches(new Regex(@"const typeIntoEditor = \(k\) => \{\s*const input = editorInput\(\);\s*if \(input\) \{\s*typeInto\(input, k\);\s*\}\s*\};"), script);
+        // A chord types no character: Ctrl+A is not an `a`.
+        Assert.Matches(new Regex(@"if \(k\.text !== undefined \|\| \(k\.key\.length === 1 && !k\.ctrlKey && !k\.metaKey\)\) \{"), script);
+        // By a word with Ctrl, and with Option where ⌘ is the Primary Modifier; ⌘'s arrows to the
+        // text's ends there, as a held Home or End.
+        Assert.Matches(new Regex(@"const byWord = \(k\) => \(metaIsPrimary \? k\.altKey && !k\.ctrlKey : k\.ctrlKey && !k\.altKey\) && !k\.metaKey;"), script);
+        Assert.Matches(new Regex(@"if \(metaIsPrimary && primaryOnly\(k\)\) \{\s*placeCaretAtEnd\(input, \{ key: forward \? 'End' : 'Home', shiftKey: k\.shiftKey \}, inEditor\);"), script);
+        // A word's edges are the browser's Unicode word breaks over the field's own text; forward,
+        // the end of the word, or on Windows the start of the next.
+        Assert.Contains("new Intl.Segmenter(undefined, { granularity: 'word' })", script, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"const wordMovePassesSpaces = /\^win/i\.test\(platform\);"), script);
+        // The moving end of the selection is its focus; Shift keeps the anchor.
+        Assert.Matches(new Regex(@"const anchor = backward \? end : start;\s*const focus = backward \? start : end;"), script);
+        // A deletion by a word goes through the same edit, and the field hears it as typing.
+        Assert.Matches(new Regex(@"const reach = word \? wordEdge\(input\.value, start, forward\)"), script);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
     }
 
@@ -1728,6 +1825,102 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"display:\s*none;"), tint.Body);
         var box = Assert.Single(forced, rule => rule.Selectors.Contains(".ex-range"));
         Assert.Matches(new Regex(@"outline-style:\s*solid;"), box.Body);
+    }
+
+    [Fact] // ADR-0008 (2026-10-12) / UX-19 / ADR-0090: among several ranges the Focus's border is one Device Pixel inside its cell, in a token of its own that defaults to the Focus outline's colour
+    public void Among_several_ranges_the_focus_border_is_one_device_pixel_in_its_own_token()
+    {
+        var (css, _) = CoreStylesheet();
+        var (outside, forced) = ForcedColorsSplit();
+
+        var rule = Assert.Single(outside, rule => rule.Selectors.Contains(".ex-focus.ex-focus-among-ranges::after"));
+        var declared = Declarations(rule.Body).ToDictionary(d => d.Property, d => d.Value);
+        // One Device Pixel, in the token's colour (2026-10-12, decided with the user: where nothing
+        // names the token it is the Focus outline's colour), so a Theme or a Wrapper that colours the
+        // Focus colours this border too, with no mapping of its own; CanvasText where nothing names
+        // either, as the Focus outline's own default.
+        Assert.Equal("var(--ex-dp, 1px) solid var(--ex-focus-among-ranges-outline, var(--ex-focus-outline, CanvasText))", declared["border"]);
+        // Inside the cell: a Device Pixel in from its top and left edges and from the gridline it holds
+        // on its right and bottom, so every side is whole Device Pixels from an edge that lies on one.
+        Assert.Equal("var(--ex-dp, 1px)", declared["top"]);
+        Assert.Equal("var(--ex-dp, 1px)", declared["left"]);
+        Assert.Equal("calc(var(--ex-rule-dp, 1px) + var(--ex-dp, 1px))", declared["right"]);
+        Assert.Equal("calc(var(--ex-rule-dp, 1px) + var(--ex-dp, 1px))", declared["bottom"]);
+        // It changes the Focus's box of its own and nothing else: its content and its place in the
+        // cascade are the Focus outline's, which it outranks.
+        Assert.DoesNotContain("content", declared.Keys);
+        Assert.True(Specificity(".ex-focus.ex-focus-among-ranges::after").CompareTo(Specificity(".ex-focus::after")) > 0);
+        // The token is that border's alone.
+        Assert.Single(Regex.Matches(css, "--ex-focus-among-ranges-outline"));
+
+        // D2: the restored border stays inside except at Heading-covered sides. Multi-range
+        // rectangles still have their outlines, while the Focus has its own visible border.
+        var restored = Assert.Single(forced, rule => rule.Selectors.Contains(".ex-focus.ex-focus-among-ranges::after"));
+        var restore = Declarations(restored.Body).ToDictionary(d => d.Property, d => d.Value);
+        Assert.Equal("\"\"", restore["content"]);
+        Assert.Equal("var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))) solid Highlight", restore["border"]);
+        Assert.Contains("--ex-outline-heading-t", restore["top"], StringComparison.Ordinal);
+        Assert.Contains("--ex-outline-heading-l", restore["left"], StringComparison.Ordinal);
+        Assert.Equal("0", restore["right"]);
+        Assert.Equal("0", restore["bottom"]);
+        Assert.Contains(forced, rule => rule.Selectors.Contains(".ex-range") && Regex.IsMatch(rule.Body, @"outline-style:\s*solid;"));
+    }
+
+    [Fact] // ADR-0008 (2026-10-13) / ADR-0029 / ADR-0090: the Heading Mark is a line of two Device Pixels on the Headings' edge toward the cells, in a token of its own that is the Focus outline's colour unless set; forced colors keep it, in Highlight
+    public void The_heading_mark_is_two_device_pixels_on_the_edge_toward_the_cells_in_its_own_token()
+    {
+        var (css, _) = CoreStylesheet();
+        var (outside, forced) = ForcedColorsSplit();
+        IReadOnlyDictionary<string, string> Declared(string selector)
+            => Declarations(Assert.Single(outside, rule => rule.Selectors.Contains(selector)).Body)
+                .ToDictionary(d => d.Property, d => d.Value);
+
+        // The box is the Headings' own, placed inline by the core; the line is its border on one edge,
+        // so it adds nothing to the box and lies wholly inside it.
+        var mark = Declared(".ex-heading-mark");
+        Assert.Equal("absolute", mark["position"]);
+        Assert.Equal("border-box", mark["box-sizing"]);
+        Assert.Equal("none", mark["pointer-events"]);
+        Assert.Equal("solid", mark["border-style"]);
+        Assert.Equal("0", mark["border-width"]);
+        // Its token, and where nothing names it the Focus outline's colour (2026-10-13, decided with the
+        // user), so a Theme or a Wrapper that colours the Focus colours the mark too; CanvasText where
+        // nothing names either, as the Focus outline's own default.
+        Assert.Equal("var(--ex-heading-mark, var(--ex-focus-outline, CanvasText))", mark["border-color"]);
+        // D1 reuses the ink for letters and the selected corner, with separate shade tokens.
+        Assert.Equal("var(--ex-heading-mark, var(--ex-focus-outline, CanvasText))", Declared(".ex-header-cell.ex-heading-marked")["color"]);
+        Assert.Equal("var(--ex-heading-mark, var(--ex-focus-outline, CanvasText))", Declared(".ex-row:where(:has(+ .ex-heading-state.ex-heading-marked)) > .ex-row-heading")["color"]);
+        Assert.Contains("--ex-heading-mark-background", Declared(".ex-row:where(:has(+ .ex-heading-state.ex-heading-marked)) > .ex-row-heading")["background-color"], StringComparison.Ordinal);
+        Assert.Contains("--ex-heading-mark-whole-background", Declared(".ex-row:where(:has(+ .ex-heading-state.ex-heading-whole)) > .ex-row-heading")["background-color"], StringComparison.Ordinal);
+        Assert.Equal("var(--ex-heading-mark, var(--ex-focus-outline, CanvasText))", Declared(".ex-headings-corner-marked::after")["background-color"]);
+        // Two Device Pixels on the edge toward the cells: a column's Heading's bottom, a row's right.
+        Assert.Equal(new Dictionary<string, string> { ["border-bottom-width"] = "calc(2 * var(--ex-dp, 1px))" }, Declared(".ex-heading-mark-column"));
+        Assert.Equal(new Dictionary<string, string> { ["border-right-width"] = "calc(2 * var(--ex-dp, 1px))" }, Declared(".ex-heading-mark-row"));
+
+        // The layers: the band's pinned layer above the pinned header cells and beneath the Headings'
+        // corner; the Row Headings' layer above the Row Headings; a scrollable column's box above the
+        // header's cells and beneath the pinned ones, as the columns pass beneath them.
+        int ZIndex(string selector) => int.Parse(
+            Assert.Single(outside
+                .Where(rule => rule.Selectors.Contains(selector))
+                .SelectMany(rule => Declarations(rule.Body)), d => d.Property == "z-index").Value,
+            CultureInfo.InvariantCulture);
+        Assert.InRange(ZIndex(".ex-heading-marks-pinned"), ZIndex(".ex-header .ex-pinned") + 1, ZIndex(".ex-headings-corner") - 1);
+        Assert.True(ZIndex(".ex-heading-marks-rows") > ZIndex(".ex-row-heading"));
+        Assert.Equal("none", Declared(".ex-heading-state")["display"]);
+        Assert.InRange(ZIndex(".ex-heading-mark"), 1, ZIndex(".ex-header .ex-pinned") - 1);
+        var layers = Declarations(Assert.Single(outside, rule => rule.Selectors.SequenceEqual([".ex-heading-marks-pinned", ".ex-heading-marks-rows"])).Body)
+            .ToDictionary(d => d.Property, d => d.Value);
+        Assert.Equal(new Dictionary<string, string>
+        {
+            ["position"] = "sticky", ["left"] = "0", ["width"] = "0", ["height"] = "0", ["pointer-events"] = "none",
+        }, layers);
+
+        // Under forced colors the line is kept, a border in a system colour, the one a range's outline
+        // is restated in (ADR-0008).
+        var restated = Assert.Single(forced, rule => rule.Selectors.SequenceEqual([".ex-heading-mark"]));
+        Assert.Matches(new Regex(@"^\s*border-color:\s*Highlight;\s*$"), restated.Body);
+        Assert.Contains(forced, rule => rule.Selectors.Contains(".ex-range") && Regex.IsMatch(rule.Body, @"outline-color:\s*Highlight;"));
     }
 
     [Fact] // ADR-0068 / ADR-0027 P8 / UX-6 / DC-66: a mark comes and goes in one step — nothing in the core's stylesheet transitions or animates

@@ -53,3 +53,5 @@ static ExSheet.MudBlazor.MudSheetChrome.Default.get -> ExSheet.MudBlazor.MudShee
 ~override ExSheet.MudBlazor.MudFormatCellsDialog.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExSheet.MudBlazor.MudFormatCellsFrame.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExSheet.MudBlazor.MudToolbarItem.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+ExSheet.MudBlazor.MudFormatCellsDialog.DisposeAsync() -> System.Threading.Tasks.ValueTask
+override ExSheet.MudBlazor.MudFormatCellsDialog.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!

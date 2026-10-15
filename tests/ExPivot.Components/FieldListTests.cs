@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.RenderTree;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
+using PivotComponent = ExPivot.Components.ExPivot;
 
 namespace ExPivot.Components.Tests;
 
@@ -357,6 +358,146 @@ public class FieldListTests : PivotTestContext
         await cut.Find(".ex-pivot").FocusInAsync(new FocusEventArgs());
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
         Assert.Same(before, cut.Instance.CurrentLayout);
+    // The entry's button, found and pressed in the renderer's turn.
+    private static Task OnEntryAsync(IRenderedComponent<PivotComponent> cut, string area, string caption, Func<AngleSharp.Dom.IElement, Task> act)
+        => cut.InvokeAsync(() => act(AreaElement(cut, area).QuerySelectorAll(".ex-pivot-entry-button")
+            .Single(b => b.QuerySelector(".ex-pivot-entry-caption")!.TextContent.Trim() == caption)));
+
+    private static Task TypeOnEntryAsync(IRenderedComponent<PivotComponent> cut, string area, string caption, string key)
+        => OnEntryAsync(cut, area, caption, b => b.KeyDownAsync(new KeyboardEventArgs { Key = key, Type = "keydown" }));
+
+    [Fact] // ADR-0061 (decided with the user, 2026-10-13): Enter typed on an entry while its menu opens is the menu's — it presses the menu's first command, and the entry's press it also makes is none
+    public async Task Keys_typed_on_an_entry_while_its_menu_opens_are_the_menus()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")], Columns = [P("Online")] });
+        await OpenMenuAsync(cut, "Rows", "Region");
+
+        // On a circuit the menu takes the keyboard a round trip after the press. Enter typed on the entry
+        // meanwhile: held for the menu, and the browser's press of the entry it makes is not one.
+        await TypeOnEntryAsync(cut, "Rows", "Region", "Enter");
+        await OpenMenuAsync(cut, "Rows", "Region");
+        Assert.Single(cut.FindAll(".ex-pivot-popup"));
+        Assert.Equal(["Region", "Product"], AreaEntries(cut, "Rows"));
+
+        // The menu's first command takes the keyboard: the Enter is its own, and presses Move Down.
+        await cut.Find(".ex-pivot-popup").FocusInAsync(new FocusEventArgs());
+
+        Assert.Equal(["Product", "Region"], AreaEntries(cut, "Rows"));
+    }
+
+    [Fact] // ADR-0061 (decided with the user, 2026-10-13): Escape then Enter typed on an entry while its menu opens close the menu once it holds the keyboard, and the Enter, the entry's again, opens it anew
+    public async Task Escape_and_enter_typed_while_a_menu_opens_close_it_and_open_it_again()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")] });
+        await OpenMenuAsync(cut, "Rows", "Region");
+        await TypeOnEntryAsync(cut, "Rows", "Region", "Escape");
+        await TypeOnEntryAsync(cut, "Rows", "Region", "Enter");
+        await OpenMenuAsync(cut, "Rows", "Region");
+
+        // The menu holds the keyboard: Escape closes it, and the Enter is typed as it closes.
+        await cut.Find(".ex-pivot-popup").FocusInAsync(new FocusEventArgs());
+        Assert.Single(cut.FindAll(".ex-pivot-popup"));
+        // The keyboard leaves it for the entry: the menu goes, and the Enter presses the entry.
+        await cut.Find(".ex-pivot-popup").FocusOutAsync(new FocusEventArgs());
+
+        Assert.Single(cut.FindAll(".ex-pivot-popup"));
+        Assert.Equal(["Region", "Product"], AreaEntries(cut, "Rows"));
+        // Opened again, the menu holds the keyboard and nothing is left for it.
+        await cut.Find(".ex-pivot-popup").FocusInAsync(new FocusEventArgs());
+        Assert.Single(cut.FindAll(".ex-pivot-popup"));
+        Assert.Equal(["Region", "Product"], AreaEntries(cut, "Rows"));
+    }
+
+    [Fact] // ADR-0061 (decided with the user, 2026-10-13): Tab typed on an entry while its menu opens is the browser's, and is dropped with every key after it
+    public async Task A_tab_typed_while_a_menu_opens_drops_the_keys_after_it()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")] });
+        await OpenMenuAsync(cut, "Rows", "Region");
+        await TypeOnEntryAsync(cut, "Rows", "Region", "Tab");
+        await TypeOnEntryAsync(cut, "Rows", "Region", "Enter");
+        await OpenMenuAsync(cut, "Rows", "Region");
+
+        await cut.Find(".ex-pivot-popup").FocusInAsync(new FocusEventArgs());
+
+        Assert.Single(cut.FindAll(".ex-pivot-popup"));
+        Assert.Equal(["Region", "Product"], AreaEntries(cut, "Rows"));
+    }
+
+    [Fact] // ADR-0061 (decided with the user, 2026-10-13): Enter typed on Layout ▾ while its menu opens presses the menu's first enabled choice
+    public async Task Enter_typed_on_layout_while_its_menu_opens_is_the_menus()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] });
+        var before = cut.Instance.CurrentLayout;
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-layout-button").ClickAsync(new MouseEventArgs()));
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-layout-button").KeyDownAsync(new KeyboardEventArgs { Key = "Enter", Type = "keydown" }));
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-layout-button").ClickAsync(new MouseEventArgs()));
+        Assert.Single(cut.FindAll(".ex-pivot-toolbar .ex-pivot-popup"));
+        Assert.Same(before, cut.Instance.CurrentLayout);
+
+        await cut.Find(".ex-pivot-toolbar .ex-pivot-popup").FocusInAsync(new FocusEventArgs());
+
+        // Do Not Show Subtotals, the first choice that changes anything, was made.
+        Assert.NotSame(before, cut.Instance.CurrentLayout);
+        await cut.Find(".ex-pivot-toolbar .ex-pivot-popup").FocusOutAsync(new FocusEventArgs());
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-layout-button").ClickAsync(new MouseEventArgs()));
+        Assert.Equal("true", MenuItem(cut, "Do Not Show Subtotals").GetAttribute("aria-checked"));
+    }
+
+    [Fact] // ADR-0061 (decided with the user, 2026-10-13): keys typed on a report filter's button while its Filter… opens are carried through the report's grid, which hands them to the search as it gives it the keyboard
+    public async Task Keys_typed_on_a_report_filter_while_filter_opens_go_through_the_grid_to_its_search()
+    {
+        var handle = ReportGridHandle();
+        var cut = RenderPivot(new PivotLayout { Filters = [P("Online")], Rows = [P("Region")], Values = [Sum("Amount")] });
+
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs()));
+
+        // The grid takes the keyboard from the button, and then is told it is going on to a frame of
+        // ExPivot's: told first, the hand-off would be taken as reached on the button.
+        Assert.Equal(["takeKeyboardBack", "handOff"],
+            handle.Invocations.Where(i => i.Identifier is "takeKeyboardBack" or "handOff").Select(i => i.Identifier));
+        Assert.Contains(handle.Invocations, i => i.Identifier == "handOff" && (string?)i.Arguments[0] == "frame");
+        var takeBack = handle.Invocations.Single(i => i.Identifier == "takeKeyboardBack");
+        // Enter and E typed on the button before the grid has the keyboard: held, and Enter's press is none.
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-filter-button").KeyDownAsync(new KeyboardEventArgs { Key = "Enter", Type = "keydown" }));
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs()));
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-filter-button").KeyDownAsync(new KeyboardEventArgs { Key = "E", Type = "keydown" }));
+        Assert.Single(cut.FindAll(".ex-pivot-toolbar .ex-pivot-popup"));
+        // The grid has the keyboard, and asks for them; it holds them for the search.
+        var grid = cut.FindComponent<global::ExGrid.Components.ExGrid<PivotDisplayRow>>();
+        IReadOnlyList<KeyboardEventArgs> typed = [];
+        await cut.InvokeAsync(() => typed = grid.Instance.KeysTypedOnTheWay((int)takeBack.Arguments[1]!));
+        Assert.Equal(["Enter", "E"], typed.Select(k => k.Key));
+
+        // The search takes the keyboard from the grid, which types them into it in turn.
+        var search = ElementIdOf(cut.FindComponent<PivotItemFilterView>().Instance);
+        Assert.Contains(search, KeyboardHandOffs(handle));
+        await cut.Find(".ex-pivot-toolbar .ex-pivot-popup").FocusInAsync(new FocusEventArgs());
+        Assert.Single(cut.FindAll(".ex-pivot-toolbar .ex-pivot-popup"));
+    }
+
+    [Fact] // ADR-0061 (decided with the user, 2026-10-13): with no report grid to carry them, a field's key typed while Filter… opens is dropped with every key after it; Escape before it closes the panel
+    public async Task With_no_report_a_report_filters_panel_answers_escape_and_drops_what_only_its_field_can_type()
+    {
+        var cut = RenderPivot(new PivotLayout { Filters = [P("Online")] });
+        Assert.Empty(cut.FindComponents<global::ExGrid.Components.ExGrid<PivotDisplayRow>>());
+
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs()));
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-filter-button").KeyDownAsync(new KeyboardEventArgs { Key = "x", Type = "keydown" }));
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-filter-button").KeyDownAsync(new KeyboardEventArgs { Key = "Escape", Type = "keydown" }));
+        await cut.Find(".ex-pivot-toolbar .ex-pivot-popup").FocusInAsync(new FocusEventArgs());
+        Assert.Single(cut.FindAll(".ex-pivot-toolbar .ex-pivot-popup"));
+        Assert.Equal("", cut.FindComponent<PivotItemFilterView>().Instance.Context.Search);
+
+        // A press on the button takes the keyboard out of the panel first, and then closes it at once.
+        await cut.Find(".ex-pivot-toolbar .ex-pivot-popup").FocusOutAsync(new FocusEventArgs());
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs()));
+        Assert.Empty(cut.FindAll(".ex-pivot-toolbar .ex-pivot-popup"));
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs()));
+        await cut.InvokeAsync(() => cut.Find(".ex-pivot-filter-button").KeyDownAsync(new KeyboardEventArgs { Key = "Escape", Type = "keydown" }));
+        await cut.Find(".ex-pivot-toolbar .ex-pivot-popup").FocusInAsync(new FocusEventArgs());
+        // Escape closed it: it stands until the keyboard has left it for the button.
+        await cut.Find(".ex-pivot-toolbar .ex-pivot-popup").FocusOutAsync(new FocusEventArgs());
+        Assert.Empty(cut.FindAll(".ex-pivot-toolbar .ex-pivot-popup"));
     }
 
     [Fact] // ADR-0061 (decided with the user, 2026-10-13): a menu closed while the keyboard is not in it — its own button pressed again — goes at once, holding nothing

@@ -1135,8 +1135,11 @@ test('DC-28/ED-22: after keys held behind F2 on a 150 ms circuit, the next key l
 // ---------------------------------------------------------------------------------------------
 // F4 cycles the Reference at the caret (DC-45; ADR-0051, 2026-09-29). Where each edge case lands
 // is SH-28's, pinned in layer 1; what is asked here is that the real key reaches the grid only
-// while an edit is open, that both surfaces show the rewrite and the caret lands after it, and
-// that a burst on a circuit is decided press by press from the text each key carries.
+// while an edit is open, that both surfaces show the rewrite, that it is left selected where the
+// caret was moved with a key or over a selection and a caret stands after it where typing left
+// the caret (observed in Excel: the seventeenth Windows run, Part C; the readings of 2026-10-12,
+// R1 (iv) and (v)), that while pointing it cycles the whole pointed Reference (R1 (vi)), and that
+// a burst on a circuit is decided press by press from the text each key carries.
 
 const FORMS = ['=$B$2', '=B$2', '=$B2', '=B2'];
 const selectionOf = (locator) => locator.evaluate((input) => [input.selectionStart, input.selectionEnd]);
@@ -1193,18 +1196,20 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(bar(grid)).toHaveValue('=$B$2');
     });
 
-    test(`DC-45: =B2 and four F4 presses in the Formula Bar give the same four forms, and the bar keeps the keyboard (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-45: =B2 and four F4 presses in the Formula Bar give the same four forms, the caret after each, and the bar keeps the keyboard (${chrome} Chrome)`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F2');
         await clickBarEnd(grid);
         await typeSteadily(page, bar(grid), '=B2');
 
+        // Typed into the bar, the caret stands after the rewritten Reference, nothing selected
+        // (observed, R1 (iv): =B2, F4 gave =$B$2 with a caret at its end).
         for (const form of FORMS) {
             await page.keyboard.press('F4');
             await expect(bar(grid)).toHaveValue(form);
             await expect(editor(grid)).toHaveValue(form);
-            await expect.poll(() => caret(bar(grid))).toBe(form.length);
+            await expect.poll(() => selectionOf(bar(grid))).toEqual([form.length, form.length]);
         }
         await expect(bar(grid)).toBeFocused();
         await page.keyboard.press('Escape');
@@ -1239,7 +1244,9 @@ test('DC-45: F4 cycles the Reference the caret touches mid-text, and every Refer
 
     await page.keyboard.press('F4');
     await expect(bar(grid)).toHaveValue('=$A$1+B2');
-    await expect.poll(() => caret(bar(grid))).toBe(5);
+    // Moved there by ←, the rewritten Reference is left selected, as Excel left it (observed: the
+    // seventeenth Windows run, Part C, cases 2 to 4 with F2; R1 (v), in the bar).
+    await expect.poll(() => selectionOf(bar(grid))).toEqual([1, 5]);
 
     // The whole text selected: both References go to the next form of the first, and the
     // selection covers what was rewritten.
@@ -1280,11 +1287,94 @@ test('DC-45: while pointing, F4 cycles the pointed Reference and pointing goes o
     await expect(nameBox(grid)).toHaveValue('F3');
     await expect.poll(() => caret(editor(grid))).toBe(5);
 
-    // The outline moves on, and writes its Reference as pointing writes it (ADR-0051's reading;
-    // whether Excel keeps the $ form is asked in the seventh Windows run).
+    // The outline moves on, and writes its Reference as pointing writes it, in the relative form, as
+    // Excel does (observed in the seventeenth Windows run, Part C, case 15b: =A3).
     await page.keyboard.press('ArrowDown');
     await expect(editor(grid)).toHaveValue('=F4');
     await expectCovers(point, grid, 'F4', 'F4');
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+});
+
+// R1 (vi), (viii) and Part C's case 16, typed into D10 as Excel was: a pointed range cycles whole,
+// pointing goes on over it with the caret at its end, and a key typed next follows it; Shift+Home
+// extends the outline to the row's first column, still pointing.
+test('DC-45/SH-28: while pointing, F4 cycles both ends of the pointed range, and a key typed next follows it (ADR-0051; R1 (vi); the seventeenth Windows run, Part C, case 16)', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'D10');
+    await page.keyboard.type('=');
+    await page.keyboard.press('ArrowDown');
+    await expect(editor(grid)).toHaveValue('=D11');
+    await page.keyboard.press('Shift+ArrowDown');
+    await expect(editor(grid)).toHaveValue('=D11:D12');
+    const point = grid.locator('.ex-selection .ex-point');
+
+    await page.keyboard.press('F4');
+
+    await expect(editor(grid)).toHaveValue('=$D$11:$D$12');
+    await expect(bar(grid)).toHaveValue('=$D$11:$D$12');
+    await expectCovers(point, grid, 'D11', 'D12');
+    await expect(nameBox(grid)).toHaveValue('D11');
+    await expect.poll(() => selectionOf(editor(grid))).toEqual([12, 12]);
+
+    await page.keyboard.type('+');
+    await expect(editor(grid)).toHaveValue('=$D$11:$D$12+');
+    await expect(point).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+    await expectFocusAt(grid, 'D10');
+});
+
+test('ED-2/DC-19: while pointing, Shift+Home extends the outline to the row\'s first column and pointing goes on; typed =, Shift+Home points from the edited cell (ADR-0010, ADR-0051; R1 (viii) and its first reading)', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'D10');
+    await page.keyboard.type('=');
+    await page.keyboard.press('ArrowDown');
+    await expect(editor(grid)).toHaveValue('=D11');
+
+    await page.keyboard.press('Shift+Home');
+
+    await expect(editor(grid)).toHaveValue('=A11:D11');
+    await expect(nameBox(grid)).toHaveValue('D11');
+    await expect(grid.locator('.ex-selection .ex-point').first()).toBeVisible();
+    // Pointing goes on: ↓ moves the outline on from its fixed end.
+    await page.keyboard.press('ArrowDown');
+    await expect(editor(grid)).toHaveValue('=D12');
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+
+    await pressCell(grid, 'D10');
+    await page.keyboard.type('=');
+    await page.keyboard.press('Shift+Home');
+    await expect(editor(grid)).toHaveValue('=A10:D10');
+    await expect(nameBox(grid)).toHaveValue('D10');
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+    await expectFocusAt(grid, 'D10');
+});
+
+test('ED-29/DC-19: in the Formula Bar, after =, ↓ does not point: the text stays =, nothing is outlined, F4 and ↓ change nothing, and + types on (ADR-0051; R1 (i) to (iii))', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'D10');
+    await clickBarEnd(grid);
+    await typeSteadily(page, bar(grid), '=');
+    const point = grid.locator('.ex-selection .ex-point');
+
+    await page.keyboard.press('ArrowDown');
+    await expect(bar(grid)).toHaveValue('=');
+    await expect(point).toHaveCount(0);
+    await page.keyboard.press('F4');
+    await page.keyboard.press('ArrowDown');
+    await expect(bar(grid)).toHaveValue('=');
+    await expect(editor(grid)).toHaveValue('=');
+    await expect(point).toHaveCount(0);
+    await expect(nameBox(grid)).toHaveValue('D10');
+
+    await page.keyboard.type('+');
+    await expect(bar(grid)).toHaveValue('=+');
+    await expect(editor(grid)).toHaveValue('=+');
+    await expect(point).toHaveCount(0);
+    await expect(bar(grid)).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(editor(grid)).toHaveCount(0);
 });
@@ -1333,15 +1423,198 @@ test('DC-45: on a 150 ms circuit, a second F4 before the caret is placed cycles 
     await page.keyboard.press('F4');
     await page.keyboard.press('F4');
 
+    // The bar is in Caret: the placement in flight carries the selection over $A$1 as it carried a
+    // caret, and the second press cycles it again, which ends selected (ADR-0051).
     await expect(bar(grid)).toHaveValue('=A$1+B2');
-    await expect.poll(() => caret(bar(grid))).toBe(4);
+    await expect.poll(() => selectionOf(bar(grid))).toEqual([1, 4]);
     // Long past the last placement's round trip, nothing else has changed.
     await page.waitForTimeout(500);
     await expect(bar(grid)).toHaveValue('=A$1+B2');
-    expect(await caret(bar(grid))).toBe(4);
+    expect(await selectionOf(bar(grid))).toEqual([1, 4]);
     await setRoundTrip(0);
     await page.keyboard.press('Escape');
     await expect(editor(grid)).toHaveCount(0);
+});
+
+// The seventeenth Windows run put F4's edge cases to Excel (Part C). With the caret moved by ← —
+// after F2 in the cell, or in the Formula Bar — Excel selected the rewritten Reference, and so does
+// ExSheet; the two ends of a range cycle each on its own; a whole column cycles in two; typed into
+// a cell (Enter mode) the caret stands after the rewritten Reference, whose column letters are
+// written in upper case.
+
+/** Opens an edit on F2 holding `text` with the caret after the Reference before its last character, as F2 and ← leave it in the cell, or a press at the bar's end and ← in the bar. */
+async function caretBeforeTheLastCharacter(page, grid, surface, text) {
+    await pressCell(grid, 'F2');
+    if (surface === 'cell') {
+        await page.keyboard.type(text);
+        await expect(editor(grid)).toHaveValue(text);
+        // Caret, Excel's Edit mode: ← moves the caret.
+        await page.keyboard.press('F2');
+    } else {
+        await clickBarEnd(grid);
+        await typeSteadily(page, bar(grid), text);
+    }
+    const field = surface === 'cell' ? editor(grid) : bar(grid);
+    await page.keyboard.press('ArrowLeft');
+    await expect.poll(() => caret(field)).toBe(text.length - 1);
+    return field;
+}
+
+for (const surface of ['cell', 'bar']) {
+    test(`SH-28/DC-45: =SUM(A:A), the caret after the Reference, F4 three times gives $A:$A, A:A and $A:$A, each selected (ADR-0051; the seventeenth Windows run, Part C, cases 8 and 9; ${surface})`, async ({ page }) => {
+        const grid = sheet(page);
+        const field = await caretBeforeTheLastCharacter(page, grid, surface, '=SUM(A:A)');
+
+        for (const [text, selected] of [['=SUM($A:$A)', [5, 10]], ['=SUM(A:A)', [5, 8]], ['=SUM($A:$A)', [5, 10]]]) {
+            await page.keyboard.press('F4');
+            await expect(field).toHaveValue(text);
+            await expect(surface === 'cell' ? bar(grid) : editor(grid)).toHaveValue(text);
+            await expect.poll(() => selectionOf(field)).toEqual(selected);
+        }
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+
+    test(`SH-28/DC-45: =SUM(A1:B2), the caret after B2, F4 four times cycles B2 alone through its four forms, each selected (ADR-0051; the seventeenth Windows run, Part C, case 5; ${surface})`, async ({ page }) => {
+        const grid = sheet(page);
+        const field = await caretBeforeTheLastCharacter(page, grid, surface, '=SUM(A1:B2)');
+
+        for (const [text, selected] of [
+            ['=SUM(A1:$B$2)', [8, 12]], ['=SUM(A1:B$2)', [8, 11]], ['=SUM(A1:$B2)', [8, 11]], ['=SUM(A1:B2)', [8, 10]],
+        ]) {
+            await page.keyboard.press('F4');
+            await expect(field).toHaveValue(text);
+            await expect.poll(() => selectionOf(field)).toEqual(selected);
+        }
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+}
+
+test('SH-28/DC-45: typed into a cell, F4 leaves the caret after the rewritten Reference, in upper case, and the other end of a range as typed (ADR-0051; the seventeenth Windows run, Part C, cases 21 and 22)', async ({ page }) => {
+    const grid = sheet(page);
+    for (const [typed, cycled] of [['=b2', '=$B$2'], ['=B2:A1', '=B2:$A$1']]) {
+        await pressCell(grid, 'F2');
+        await page.keyboard.type(typed);
+        await expect(editor(grid)).toHaveValue(typed);
+
+        await page.keyboard.press('F4');
+
+        await expect(editor(grid)).toHaveValue(cycled);
+        await expect(bar(grid)).toHaveValue(cycled);
+        await expect.poll(() => selectionOf(editor(grid))).toEqual([cycled.length, cycled.length]);
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    }
+});
+
+// Overwrite is Excel's Enter mode (ADR-0010, ED-2): typed into a cell, Shift+Home and the
+// Shift+arrows commit the entry and extend the Selection, where ExSheet once selected the editor's
+// text (the seventeenth Windows run, Part C, case 7: B10:D10).
+test('ED-2: typed into a cell, Shift+Home commits the Formula and extends the Selection to the row\'s first column; Shift+→ then moves the Extent (ADR-0010; the seventeenth Windows run, Part C, case 7)', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'D10');
+    await page.keyboard.type('=A1+B2');
+    await expect(editor(grid)).toHaveValue('=A1+B2');
+
+    await page.keyboard.press('Shift+Home');
+
+    await expect(editor(grid)).toHaveCount(0);
+    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'A10', 'D10');
+    await expect(nameBox(grid)).toHaveValue('D10');
+    await expect(bar(grid)).toHaveValue('=A1+B2');
+
+    await page.keyboard.press('Shift+ArrowRight');
+    await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'B10', 'D10');
+    await expect(nameBox(grid)).toHaveValue('D10');
+});
+
+// R1 (vii): typed into D10 in a cleared sheet, each from a fresh entry, Excel's Enter mode committed
+// on Shift+→, Shift+↓ and Shift+← and extended the Selection from D10; on Ctrl+→ it committed and
+// moved to XFD10, and on Ctrl+Shift+→ it committed and selected D10:XFD10. Row 10 of /sheet holds
+// nothing past A10, as Excel's held nothing.
+test('ED-2: typed into a cell, Shift+→, Shift+↓ and Shift+← commit and extend the Selection from it (ADR-0010; R1 (vii))', async ({ page }) => {
+    const grid = sheet(page);
+    const range = grid.locator('.ex-selection .ex-range');
+    for (const [typed, key, from, to] of [
+        ['abc', 'Shift+ArrowRight', 'D10', 'E10'],
+        ['abc', 'Shift+ArrowDown', 'D10', 'D11'],
+        ['=A1+B2', 'Shift+ArrowLeft', 'C10', 'D10'],
+    ]) {
+        await pressCell(grid, 'D10');
+        await page.keyboard.type(typed);
+        await expect(editor(grid)).toHaveValue(typed);
+
+        await page.keyboard.press(key);
+
+        await expect(editor(grid)).toHaveCount(0);
+        await expectCovers(range, grid, from, to);
+        await expect(nameBox(grid)).toHaveValue('D10');
+        await expect(bar(grid)).toHaveValue(typed);
+    }
+});
+
+/** Waits until the painted Selection range holds the cell at `address`, whole. */
+async function expectRangeHolds(grid, address) {
+    await expect.poll(async () => {
+        const box = await grid.locator('.ex-selection .ex-range').boundingBox();
+        const held = await cell(grid, address).boundingBox();
+        if (!box || !held) {
+            return 'not painted';
+        }
+        return box.x <= held.x + 1 && box.y <= held.y + 1 && box.x + box.width >= held.x + held.width - 1
+            && box.y + box.height >= held.y + held.height - 1
+            ? 'holds'
+            : JSON.stringify({ box, held });
+    }).toBe('holds');
+}
+
+test('ED-2: typed into a cell, Ctrl+→ commits and moves to the Sheet\'s last column; Ctrl+Shift+→ commits and selects to it (ADR-0010, ADR-0012; R1 (vii))', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'D10');
+    await page.keyboard.type('abc');
+    await expect(editor(grid)).toHaveValue('abc');
+
+    await page.keyboard.press('Control+ArrowRight');
+
+    await expect(editor(grid)).toHaveCount(0);
+    await expect(nameBox(grid)).toHaveValue('XFD10');
+    await expectSelectionIsCell(grid, 'XFD10');
+    // What it committed is in D10, where Ctrl+← comes back to.
+    await page.keyboard.press('Control+ArrowLeft');
+    await expect(nameBox(grid)).toHaveValue('D10');
+    await expect(bar(grid)).toHaveValue('abc');
+
+    await page.keyboard.type('xyz');
+    await expect(editor(grid)).toHaveValue('xyz');
+    await page.keyboard.press('Control+Shift+ArrowRight');
+
+    await expect(editor(grid)).toHaveCount(0);
+    await expect(nameBox(grid)).toHaveValue('D10');
+    await expect(bar(grid)).toHaveValue('xyz');
+    // The Extent is kept in view, at the Sheet's last column, inside the range; the Focus, brought
+    // back into view, is inside it too.
+    await expectRangeHolds(grid, 'XFD10');
+    await page.keyboard.press('Control+Backspace');
+    await expectRangeHolds(grid, 'D10');
+    await expectRangeHolds(grid, 'E10');
+    await expect(nameBox(grid)).toHaveValue('D10');
+});
+
+test('ED-2/DC-19: typed = into a cell, Shift+↓ points a range from the edited cell instead of selecting text, and nothing commits (ADR-0010, ADR-0051)', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'F2');
+    await page.keyboard.type('=1+');
+    await expect(editor(grid)).toHaveValue('=1+');
+
+    await page.keyboard.press('Shift+ArrowDown');
+
+    await expect(editor(grid)).toHaveValue('=1+F2:F3');
+    await expectCovers(grid.locator('.ex-selection .ex-point'), grid, 'F2', 'F3');
+    await expect(nameBox(grid)).toHaveValue('F2');
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+    await expectFocusAt(grid, 'F2');
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -1665,6 +1938,170 @@ test('DC-13: a Formula filled right shifts its References; a refused pattern lea
     await expect(page.locator('.ex-sheet-notice')).not.toBeEmpty();
 });
 
+/** A Column Heading by its letters, and a Row Heading by its number, as headings.spec.mjs finds them. */
+const columnHeading = (grid, letters) => grid.locator('.ex-header-cell', { hasText: new RegExp(`^${letters}$`) });
+const rowHeading = (grid, number) => grid.locator('.ex-row .ex-row-heading', { hasText: new RegExp(`^${number}$`) });
+
+/**
+ * Waits for the handle of a whole axis to stand where `where` says (ADR-0050 item 5): given the box
+ * of the cell whose corner it is at and the handle's side, `{ x, y }`, the handle's centre.
+ */
+async function expectHandleAt(grid, cornerCell, where) {
+    const corner = await boxOf(cell(grid, cornerCell));
+    await expect.poll(async () => {
+        const box = await grid.locator('.ex-fill-handle').boundingBox();
+        if (box === null) {
+            return 'not painted';
+        }
+        const want = where(corner, box.width);
+        return JSON.stringify({
+            x: Math.round(box.x + box.width / 2 - want.x),
+            y: Math.round(box.y + box.height / 2 - want.y),
+        });
+    }).toBe(JSON.stringify({ x: 0, y: 0 }));
+}
+
+/**
+ * Drags the handle of a whole axis to the cell at `to`, once it stands where `where` says
+ * (expectHandleAt). As dragHandle, a few steps and the target outline waited for.
+ */
+async function dragAxisHandle(page, grid, cornerCell, where, to) {
+    await expectHandleAt(grid, cornerCell, where);
+    const handle = await boxOf(grid.locator('.ex-fill-handle'));
+    const target = await boxOf(cell(grid, to));
+    await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+    await page.mouse.down();
+    const toX = target.x + target.width / 2;
+    const toY = target.y + target.height / 2;
+    await page.mouse.move(toX, toY + 3, { steps: 8 });
+    // As fillDragHeard, but a whole row's target crosses the pinned boundary and is outlined in
+    // both layers, so one outline or two.
+    let nudge = 0;
+    await expect.poll(async () => {
+        await page.mouse.move(toX + (nudge++ % 2), toY + 3);
+        return grid.locator('.ex-fill-target').count();
+    }).toBeGreaterThan(0);
+    await page.mouse.up();
+    await circuitQuiet();
+}
+
+/**
+ * Presses the handle of a whole axis once it stands where `where` puts it (expectHandleAt), moves
+ * along the axis the range already spans to the cell at `to`, inside the range, and releases there: a
+ * drag that reaches nothing past a whole column or row. The handle standing where it was afterwards
+ * shows the Selection is still the whole axis, so the press was the handle's and not a drag across
+ * the cells, which would have left a range ending at `to`.
+ */
+async function dragAxisHandleAlong(page, grid, cornerCell, where, to) {
+    await expectHandleAt(grid, cornerCell, where);
+    const handle = await boxOf(grid.locator('.ex-fill-handle'));
+    const target = await boxOf(cell(grid, to));
+    await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 8 });
+    await page.mouse.up();
+    await circuitQuiet();
+    await expectHandleAt(grid, cornerCell, where);
+}
+
+test('DC-12/DC-13: a whole column\'s handle stands beside its Heading; dragged right it fills every row, a lone number as a series, and dragged down it changes nothing (the readings of 2026-10-12, R5 (3))', async ({ page }) => {
+    const grid = sheet(page);
+    // R5's column C, on column E, which is free on the page's Sheet; F lies clear of the Viewport's
+    // right edge band. R5 dragged two columns; one is enough here, and two are layer 2's.
+    await enter(page, grid, 'E1', '1');
+    await enter(page, grid, 'E3', 'a');
+    await enter(page, grid, 'E9', '=ROW()');
+    await columnHeading(grid, 'E').click({ force: true });
+    await expectFocusAt(grid, 'E1');
+    // At E1's top-right corner: centred on E's right edge, its top on E1's top, beside the Heading.
+    const topRight = (e1, side) => ({ x: e1.x + e1.width, y: e1.y + side / 2 });
+
+    // Down, inside the column: a whole column has no rows past it, and nothing changes.
+    await dragAxisHandleAlong(page, grid, 'E1', topRight, 'E8');
+    await expectFocusAt(grid, 'E1');
+    await expect(cell(grid, 'E8')).toHaveText('');
+    await expect(cell(grid, 'F1')).toHaveText('');
+
+    // Right: every row of F, the lone 1 going on as 2, the text copied, =ROW() filled as a Formula.
+    await dragAxisHandle(page, grid, 'E1', topRight, 'F3');
+    await expect(cell(grid, 'F1')).toHaveText('2');
+    await expect(cell(grid, 'F2')).toHaveText('');
+    await expect(cell(grid, 'F3')).toHaveText('a');
+    await expect(cell(grid, 'F9')).toHaveText('9');
+    // Along one axis only: nothing beside what E held.
+    await expect(cell(grid, 'G1')).toHaveText('');
+    // The Selection is E:F, whole columns, its handle at F1's top-right (R5 (3): C:E).
+    await expectHandleAt(grid, 'F1', topRight);
+    await pressCell(grid, 'F9');
+    await expect(bar(grid)).toHaveValue('=ROW()');
+
+    // One step on the undo stack, as a fill always is.
+    await page.keyboard.press('ControlOrMeta+Z');
+    await expect(cell(grid, 'F1')).toHaveText('');
+    await expect(cell(grid, 'F9')).toHaveText('');
+    await expect(cell(grid, 'E1')).toHaveText('1');
+});
+
+test('DC-12/DC-13: a whole row\'s handle stands at the row\'s left, beside its Heading; dragged down it fills every column, a lone number as a series, and dragged across it changes nothing (the readings of 2026-10-12, R5 (4))', async ({ page }) => {
+    const grid = sheet(page);
+    // R5's row 3, on row 6, which is free on the page's Sheet, between the table and the dates below
+    // it. Rows 7 and 8 hold those dates ("As of", "Due"): the fill writes over them, blanks too, as
+    // R5's wrote over every column of rows 4 and 5, and the undo gives them back.
+    await expect(cell(grid, 'A7')).toHaveText('As of');
+    await enter(page, grid, 'A6', '1');
+    await enter(page, grid, 'C6', 'a');
+    await enter(page, grid, 'E6', '=COLUMN()');
+    await pressAt(rowHeading(grid, 6));
+    await expectFocusAt(grid, 'A6');
+    // At A6's bottom-left corner: its left on A's left, beside the Heading, centred on the row's bottom.
+    const bottomLeft = (a6, side) => ({ x: a6.x + side / 2, y: a6.y + a6.height });
+
+    // Across, inside the row: nothing changes.
+    await dragAxisHandleAlong(page, grid, 'A6', bottomLeft, 'D6');
+    await expectFocusAt(grid, 'A6');
+    await expect(cell(grid, 'A7')).toHaveText('As of');
+    await expect(cell(grid, 'C7')).toHaveText('');
+
+    await dragAxisHandle(page, grid, 'A6', bottomLeft, 'D8');
+    await expect(cell(grid, 'A7')).toHaveText('2');
+    await expect(cell(grid, 'A8')).toHaveText('3');
+    await expect(cell(grid, 'C8')).toHaveText('a');
+    await expect(cell(grid, 'E8')).toHaveText('5');
+    // B6 is blank, and its blank is copied over B7's date.
+    await expect(cell(grid, 'B7')).toHaveText('');
+    // The Selection is rows 6:8, its handle at A8's bottom-left (R5 (4): 3:5).
+    await expectHandleAt(grid, 'A8', bottomLeft);
+    await pressCell(grid, 'E8');
+    await expect(bar(grid)).toHaveValue('=COLUMN()');
+
+    await page.keyboard.press('ControlOrMeta+Z');
+    await expect(cell(grid, 'A7')).toHaveText('As of');
+    await expect(cell(grid, 'A8')).toHaveText('Due');
+    await expect(cell(grid, 'B7')).not.toHaveText('');
+    await expect(cell(grid, 'E8')).toHaveText('');
+    await expect(cell(grid, 'E6')).toHaveText('5');
+});
+
+test('DC-12/DC-13: with row 1 scrolled away, a whole column\'s handle stays at the top of the part in view and fills from there (the readings of 2026-10-12, R5 (5))', async ({ page }) => {
+    const grid = sheet(page);
+    await enter(page, grid, 'E1', '1');
+    await enter(page, grid, 'E5', 'x');
+    await columnHeading(grid, 'E').click({ force: true });
+    await expectFocusAt(grid, 'E1');
+    // Three rows down, as R5's three presses on the scroll bar's arrow left it: row 4 at the top.
+    const rowHeight = (await boxOf(cell(grid, 'E2'))).height;
+    await grid.locator('.ex-scroller').first().evaluate((scroller, px) => { scroller.scrollTop = px; }, 3 * rowHeight);
+    await expect(grid.locator('.ex-viewport').first()).toHaveAttribute('data-ex-first-row', '3');
+
+    // At E4's top-right, the top of the part in view, and grabbed there.
+    await dragAxisHandle(page, grid, 'E4', (e4, side) => ({ x: e4.x + e4.width, y: e4.y + side / 2 }), 'F6');
+    await expect(cell(grid, 'F5')).toHaveText('x');
+    await grid.locator('.ex-scroller').first().evaluate((scroller) => { scroller.scrollTop = 0; });
+    await expect(cell(grid, 'F1')).toHaveText('2');
+    await page.keyboard.press('ControlOrMeta+Z');
+    await expect(cell(grid, 'F1')).toHaveText('');
+});
+
 // ---------------------------------------------------------------------------------------------
 // The clipboard (DC-8, DC-33, SH-14)
 
@@ -1861,8 +2298,10 @@ test('DC-38/ADR-0048: Excel\'s too-narrow column pasted onto one cell is refused
     await expect(notice).toContainText('source column was too narrow to show the value');
     await expect(notice).toContainText('F8');
     // The Sheet refused the spill (GridPasteIntent.Refuse), so the grid selects no block: the
-    // Selection stays on F7, as Excel leaves it, and the notice stands.
-    await page.waitForTimeout(500);
+    // Selection stays on F7, as Excel leaves it, and the notice stands — read once everything the
+    // host will say has landed (ADR-0056). The refusal is told before the Sheet's handler
+    // completes, so on WebAssembly a block selected anyway lands with the notice.
+    await circuitQuiet();
     await expect(notice).toContainText('too narrow');
     await expectFocusAt(grid, 'F7');
     await expectSelectionIsCell(grid, 'F7');

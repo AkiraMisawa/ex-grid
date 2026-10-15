@@ -7,6 +7,7 @@ const ExSheet.SheetCommandIds.DeleteRows = "exsheet.delete-rows" -> string!
 const ExSheet.SheetCommandIds.FormatCells = "exsheet.format-cells" -> string!
 const ExSheet.SheetCommandIds.InsertColumns = "exsheet.insert-columns" -> string!
 const ExSheet.SheetCommandIds.InsertRows = "exsheet.insert-rows" -> string!
+const ExSheet.SheetCommandIds.SummaryRefused = "exsheet.summary-refused" -> string!
 ExSheet.AlignCenterItem
 ExSheet.AlignCenterItem.AlignCenterItem() -> void
 ExSheet.AlignLeftItem
@@ -353,6 +354,8 @@ ExSheet.ToolbarChoicesPanel.Gone.get -> System.Action?
 ExSheet.ToolbarChoicesPanel.Gone.set -> void
 ExSheet.ToolbarChoicesPanel.Popover.get -> ExGrid.Chrome.GridPopoverContext!
 ExSheet.ToolbarChoicesPanel.Popover.set -> void
+ExSheet.ToolbarChoicesPanel.Standing.get -> System.Func<bool>?
+ExSheet.ToolbarChoicesPanel.Standing.set -> void
 ExSheet.ToolbarChoicesPanel.Title.get -> string!
 ExSheet.ToolbarChoicesPanel.Title.set -> void
 ExSheet.ToolbarChoicesPanel.ToolbarChoicesPanel() -> void
@@ -562,3 +565,7 @@ virtual ExSheet.ToolbarItemBase.ReturnsKeyboard.get -> bool
 ~override ExSheet.SheetToolbar.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExSheet.ToolbarChoicesPanel.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExSheet.ToolbarRow.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+ExSheet.FormatCellsContext.HoldKeysForPopup.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Func<System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>!, System.Threading.Tasks.Task!>?
+ExSheet.FormatCellsContext.HoldKeysForPopup.init -> void
+ExSheet.FormatCellsContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>?
+ExSheet.FormatCellsContext.TakeKeyboard.init -> void

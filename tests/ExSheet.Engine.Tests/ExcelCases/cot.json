@@ -49,7 +49,7 @@
     },
     {
       "id": "COT-006",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 1/TAN; the cotangent rounded once, 1/tan of the remainder, or COS over SIN as doubles give 0.6420926159343308",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COT(1)"},
@@ -58,7 +58,7 @@
     },
     {
       "id": "COT-007",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 1/TAN; the cotangent rounded once gives 0.8636911544506166",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COT(4)"},
@@ -67,7 +67,7 @@
     },
     {
       "id": "COT-008",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: 1/TAN; COS over SIN as doubles gives -2.2108454109991946",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=COT(9)"},

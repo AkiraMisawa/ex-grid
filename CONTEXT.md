@@ -528,6 +528,7 @@ and the single-cell Enter still available. Contrast an **Edit Verdict**'s Reject
 value ([ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md),
 [ADR-0014](./docs/adr/0014-paste-shape-rules-and-selection-count.md),
 [ADR-0035](./docs/adr/0035-paste-and-fill-respect-the-editable-declaration.md)).
+Not a **Refused Formula**, which is a Formula ExSheet does not answer and never an operation.
 _Avoid_: rejection, validation failure, error (that is a Cell State), denial
 
 **Overwrite Notice**:
@@ -778,9 +779,19 @@ names it)
 **Error Value**:
 A Value that is an error — `#DIV/0!`, `#NAME?`, `#REF!`, `#VALUE!`, `#N/A` and the rest of
 Excel's set, plus `#CIRC!` for a Formula that depends on itself, where Excel would show 0 —
-produced by a Formula and carried into every Formula that uses it. It is data, like a number. **Not the Cell State Error**, which is the Consumer's verdict on a value, painted and
+produced by a Formula and carried into every Formula that uses it. It is data, like a number. The `#VALUE!` or
+`#NAME?` of a **Refused Formula** looks like one and is not Excel's: no Formula catches it. **Not the Cell State Error**, which is the Consumer's verdict on a value, painted and
 never computed ([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
 _Avoid_: error (that is a Cell State), exception
+
+**Refused Formula**:
+A Formula ExSheet does not answer because it cannot answer it as Excel would. Its cell shows `#VALUE!`, or
+`#NAME?` where it calls a function Excel has that ExSheet does not declare, or names a declared Linked Table
+bare, and every Formula that reads it is refused too; no Formula catches it, in its own cell or in any cell that reads it. A
+Consumer tells it from Excel's own Error Value by `Value.IsRefused`
+([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)). **Not a
+Refusal**, which is the grid's "no" to an operation and never computes a Value. *(2026-10-13, decided with the user.)*
+_Avoid_: refusal (for the Formula; that is the grid's), refused value
 
 **Linked Table**:
 A named table of rows the Consumer supplies to ExSheet, which Formulas read with Excel's
@@ -813,6 +824,15 @@ one selects its whole column or row, as in Excel. The Consumer may hide either; 
 without them still addresses its cells `A1`. The Row Headings are a band beside the rows, never a
 column ([ADR-0050](./docs/adr/0050-what-exsheet-asks-of-exgrids-core.md)).
 _Avoid_: header (that is ExGrid's column header, whose click sorts), labels, row numbers
+
+**Heading Mark**:
+The indication that a Heading's column or row holds part of the **Selection**: its shade and
+letters, with a line on the edge toward the cells — along the bottom of a column's Heading, down
+the right edge of a row's. A whole column or row has a different shade, and selecting every cell
+colours the corner's triangle. Every Selection has one, a single cell's included. ExGrid draws it
+wherever a header or Row Headings stand, so a plain grid's column header and a Pivot Report's carry
+it as a Sheet's Headings do ([ADR-0008](./docs/adr/0008-selection-is-painted-by-an-overlay.md)).
+_Avoid_: header highlight, active heading, selected heading (the Selection is cells, never a Heading)
 
 **Size Tip**:
 The label at the Headings that says how many rows and columns a drag across them covers

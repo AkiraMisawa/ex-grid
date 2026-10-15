@@ -1,0 +1,222 @@
+{"t": "22:33:08", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=281924"}
+{"t": "22:33:08", "cmd": "zoom 100", "answer": "ok zoom 100 t=281974"}
+{"t": "22:33:08", "cmd": "ps $xl.ActiveWindow.DisplayGridlines = $true; $xl.ActiveWindow.DisplayGridlines", "answer": "ok ps True t=282142"}
+{"t": "22:33:09", "cmd": "fill D4 FFFF00", "answer": "ok fill D4 FFFF00 t=282604"}
+{"t": "22:33:09", "cmd": "select H20", "answer": "ok select H20 t=282638"}
+{"t": "22:33:09", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=282998"}
+{"t": "22:33:09", "cmd": "geo B2", "answer": "ok geo B2:137,381,233,411 t=283057"}
+{"t": "22:33:10", "cmd": "drag 89 367 185 396", "answer": "ok drag t=284056"}
+{"t": "22:33:10", "cmd": "geo D4", "answer": "ok geo D4:329,441,425,470 t=284094"}
+{"t": "22:33:10", "cmd": "geo E6", "answer": "ok geo E6:425,497,521,527 t=284152"}
+{"t": "22:33:11", "cmd": "ctrldrag 377 455 473 512", "answer": "ok ctrldrag t=285184"}
+{"t": "22:33:12", "cmd": "move 3700 1900", "answer": "ok move t=286145"}
+{"t": "22:33:13", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D4 selection=A1:B2,D4:E6 t=286693"}
+{"t": "22:33:13", "cmd": "geo D4", "answer": "ok geo D4:329,441,425,470 t=286752"}
+{"t": "22:33:13", "cmd": "shot focus-fill-z100-1-a1-b2-then-ctrl-d4-e6", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-fill-z100-1-a1-b2-then-ctrl-d4-e6.png windows: XLMAIN@-11,-11,3851,2099 t=286943"}
+{"t": "22:33:13", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=286974"}
+{"t": "22:33:13", "cmd": "geo F7", "answer": "ok geo F7:521,527,617,557 t=287032"}
+{"t": "22:33:13", "cmd": "crop focus-fill-z100-1-a1-b2-then-ctrl-d4-e6 1 323 626 244 focus-fill-z100-1-a1-b2-then-ctrl-d4-e6-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-fill-z100-1-a1-b2-then-ctrl-d4-e6-cells.png t=287098"}
+{"t": "22:33:13", "cmd": "crop focus-fill-z100-1-a1-b2-then-ctrl-d4-e6 317 429 120 53 focus-fill-z100-1-a1-b2-then-ctrl-d4-e6-active 8", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-fill-z100-1-a1-b2-then-ctrl-d4-e6-active.png t=287154"}
+{"t": "22:33:16", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=289763"}
+{"t": "22:33:16", "cmd": "zoom 150", "answer": "ok zoom 150 t=289877"}
+{"t": "22:33:16", "cmd": "ps $xl.ActiveWindow.DisplayGridlines = $true; $xl.ActiveWindow.DisplayGridlines", "answer": "ok ps True t=289943"}
+{"t": "22:33:17", "cmd": "fill D4 FFFF00", "answer": "ok fill D4 FFFF00 t=290384"}
+{"t": "22:33:17", "cmd": "select H20", "answer": "ok select H20 t=290441"}
+{"t": "22:33:17", "cmd": "geo A1", "answer": "ok geo A1:62,368,206,410 t=290802"}
+{"t": "22:33:17", "cmd": "geo B2", "answer": "ok geo B2:206,410,350,455 t=290861"}
+{"t": "22:33:17", "cmd": "drag 134 389 278 432", "answer": "ok drag t=291883"}
+{"t": "22:33:17", "cmd": "geo D4", "answer": "ok geo D4:494,501,638,543 t=291950"}
+{"t": "22:33:17", "cmd": "geo E6", "answer": "ok geo E6:638,585,782,632 t=292009"}
+{"t": "22:33:18", "cmd": "ctrldrag 566 522 710 608", "answer": "ok ctrldrag t=293043"}
+{"t": "22:33:19", "cmd": "move 3700 1900", "answer": "ok move t=294005"}
+{"t": "22:33:20", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D4 selection=A1:B2,D4:E6 t=294554"}
+{"t": "22:33:20", "cmd": "geo D4", "answer": "ok geo D4:494,501,638,543 t=294610"}
+{"t": "22:33:20", "cmd": "shot focus-fill-z150-1-a1-b2-then-ctrl-d4-e6", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-fill-z150-1-a1-b2-then-ctrl-d4-e6.png windows: XLMAIN@-11,-11,3851,2099 t=294805"}
+{"t": "22:33:20", "cmd": "geo A1", "answer": "ok geo A1:62,368,206,410 t=294832"}
+{"t": "22:33:20", "cmd": "geo F7", "answer": "ok geo F7:782,632,926,677 t=294889"}
+{"t": "22:33:20", "cmd": "crop focus-fill-z150-1-a1-b2-then-ctrl-d4-e6 22 338 914 349 focus-fill-z150-1-a1-b2-then-ctrl-d4-e6-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-fill-z150-1-a1-b2-then-ctrl-d4-e6-cells.png t=294962"}
+{"t": "22:33:20", "cmd": "crop focus-fill-z150-1-a1-b2-then-ctrl-d4-e6 482 489 168 66 focus-fill-z150-1-a1-b2-then-ctrl-d4-e6-active 8", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-fill-z150-1-a1-b2-then-ctrl-d4-e6-active.png t=295015"}
+{"t": "22:33:22", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=296307"}
+{"t": "22:33:22", "cmd": "zoom 100", "answer": "ok zoom 100 t=296411"}
+{"t": "22:33:22", "cmd": "ps $xl.ActiveWindow.DisplayGridlines = $true; $xl.ActiveWindow.DisplayGridlines", "answer": "ok ps True t=296448"}
+{"t": "22:33:22", "cmd": "select H20", "answer": "ok select H20 t=296881"}
+{"t": "22:33:23", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=297238"}
+{"t": "22:33:23", "cmd": "geo B2", "answer": "ok geo B2:137,381,233,411 t=297296"}
+{"t": "22:33:24", "cmd": "drag 89 367 185 396", "answer": "ok drag t=298289"}
+{"t": "22:33:24", "cmd": "geo D4", "answer": "ok geo D4:329,441,425,470 t=298333"}
+{"t": "22:33:24", "cmd": "geo E6", "answer": "ok geo E6:425,497,521,527 t=298395"}
+{"t": "22:33:25", "cmd": "ctrldrag 377 455 473 512", "answer": "ok ctrldrag t=299436"}
+{"t": "22:33:26", "cmd": "move 3700 1900", "answer": "ok move t=300380"}
+{"t": "22:33:26", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D4 selection=A1:B2,D4:E6 t=300936"}
+{"t": "22:33:27", "cmd": "geo D4", "answer": "ok geo D4:329,441,425,470 t=300994"}
+{"t": "22:33:27", "cmd": "shot focus-edit-z100-1-before-f2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z100-1-before-f2.png windows: XLMAIN@-11,-11,3851,2099 t=301178"}
+{"t": "22:33:27", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=301215"}
+{"t": "22:33:27", "cmd": "geo F7", "answer": "ok geo F7:521,527,617,557 t=301275"}
+{"t": "22:33:27", "cmd": "crop focus-edit-z100-1-before-f2 1 323 626 244 focus-edit-z100-1-before-f2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z100-1-before-f2-cells.png t=301343"}
+{"t": "22:33:27", "cmd": "crop focus-edit-z100-1-before-f2 317 429 120 53 focus-edit-z100-1-before-f2-active 8", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z100-1-before-f2-active.png t=301401"}
+{"t": "22:33:28", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=302696"}
+{"t": "22:33:30", "cmd": "move 3700 1900", "answer": "ok move t=304208"}
+{"t": "22:33:30", "cmd": "geo D4", "answer": "err Call was rejected by callee. (Exception from HRESULT: 0x80010001 (RPC_E_CALL_REJECTED)) t=304756"}
+{"t": "22:33:50", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=324451"}
+{"t": "22:33:50", "cmd": "zoom 100", "answer": "ok zoom 100 t=324487"}
+{"t": "22:33:50", "cmd": "ps $xl.ActiveWindow.DisplayGridlines = $true; $xl.ActiveWindow.DisplayGridlines", "answer": "ok ps True t=324562"}
+{"t": "22:33:50", "cmd": "select H20", "answer": "ok select H20 t=325005"}
+{"t": "22:33:51", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=325375"}
+{"t": "22:33:51", "cmd": "geo B2", "answer": "ok geo B2:137,381,233,411 t=325424"}
+{"t": "22:33:52", "cmd": "drag 89 367 185 396", "answer": "ok drag t=326448"}
+{"t": "22:33:52", "cmd": "geo D4", "answer": "ok geo D4:329,441,425,470 t=326514"}
+{"t": "22:33:52", "cmd": "geo E6", "answer": "ok geo E6:425,497,521,527 t=326572"}
+{"t": "22:33:53", "cmd": "ctrldrag 377 455 473 512", "answer": "ok ctrldrag t=327622"}
+{"t": "22:33:54", "cmd": "move 3700 1900", "answer": "ok move t=328583"}
+{"t": "22:33:55", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D4 selection=A1:B2,D4:E6 t=329132"}
+{"t": "22:33:55", "cmd": "geo D4", "answer": "ok geo D4:329,441,425,470 t=329189"}
+{"t": "22:33:55", "cmd": "shot focus-edit-z100-1-before-f2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z100-1-before-f2.png windows: XLMAIN@-11,-11,3851,2099 t=329375"}
+{"t": "22:33:55", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=329412"}
+{"t": "22:33:55", "cmd": "geo F7", "answer": "ok geo F7:521,527,617,557 t=329468"}
+{"t": "22:33:55", "cmd": "crop focus-edit-z100-1-before-f2 1 323 626 244 focus-edit-z100-1-before-f2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z100-1-before-f2-cells.png t=329534"}
+{"t": "22:33:55", "cmd": "crop focus-edit-z100-1-before-f2 317 429 120 53 focus-edit-z100-1-before-f2-active 8", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z100-1-before-f2-active.png t=329590"}
+{"t": "22:33:56", "cmd": "geo D4", "answer": "ok geo D4:329,441,425,470 t=330835"}
+{"t": "22:33:56", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=330894"}
+{"t": "22:33:56", "cmd": "geo F7", "answer": "ok geo F7:521,527,617,557 t=330955"}
+{"t": "22:33:57", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=331055"}
+{"t": "22:33:58", "cmd": "move 3700 1900", "answer": "ok move t=332581"}
+{"t": "22:33:59", "cmd": "shot focus-edit-z100-1-after-f2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z100-1-after-f2.png windows: XLMAIN@-11,-11,3851,2099 t=333255"}
+{"t": "22:33:59", "cmd": "crop focus-edit-z100-1-after-f2 1 323 626 244 focus-edit-z100-1-after-f2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z100-1-after-f2-cells.png t=333301"}
+{"t": "22:33:59", "cmd": "crop focus-edit-z100-1-after-f2 317 429 120 53 focus-edit-z100-1-after-f2-active 8", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z100-1-after-f2-active.png t=333359"}
+{"t": "22:34:00", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=334653"}
+{"t": "22:34:01", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=335089"}
+{"t": "22:34:01", "cmd": "zoom 150", "answer": "ok zoom 150 t=335145"}
+{"t": "22:34:01", "cmd": "ps $xl.ActiveWindow.DisplayGridlines = $true; $xl.ActiveWindow.DisplayGridlines", "answer": "ok ps True t=335199"}
+{"t": "22:34:01", "cmd": "select H20", "answer": "ok select H20 t=335642"}
+{"t": "22:34:02", "cmd": "geo A1", "answer": "ok geo A1:62,368,206,410 t=335995"}
+{"t": "22:34:02", "cmd": "geo B2", "answer": "ok geo B2:206,410,350,455 t=336054"}
+{"t": "22:34:03", "cmd": "drag 134 389 278 432", "answer": "ok drag t=337040"}
+{"t": "22:34:03", "cmd": "geo D4", "answer": "ok geo D4:494,501,638,543 t=337093"}
+{"t": "22:34:03", "cmd": "geo E6", "answer": "ok geo E6:638,585,782,632 t=337153"}
+{"t": "22:34:04", "cmd": "ctrldrag 566 522 710 608", "answer": "ok ctrldrag t=338201"}
+{"t": "22:34:05", "cmd": "move 3700 1900", "answer": "ok move t=339160"}
+{"t": "22:34:05", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D4 selection=A1:B2,D4:E6 t=339711"}
+{"t": "22:34:06", "cmd": "geo D4", "answer": "ok geo D4:494,501,638,543 t=339769"}
+{"t": "22:34:06", "cmd": "shot focus-edit-z150-1-before-f2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z150-1-before-f2.png windows: XLMAIN@-11,-11,3851,2099 t=339956"}
+{"t": "22:34:06", "cmd": "geo A1", "answer": "ok geo A1:62,368,206,410 t=339988"}
+{"t": "22:34:06", "cmd": "geo F7", "answer": "ok geo F7:782,632,926,677 t=340047"}
+{"t": "22:34:06", "cmd": "crop focus-edit-z150-1-before-f2 22 338 914 349 focus-edit-z150-1-before-f2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z150-1-before-f2-cells.png t=340120"}
+{"t": "22:34:06", "cmd": "crop focus-edit-z150-1-before-f2 482 489 168 66 focus-edit-z150-1-before-f2-active 8", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z150-1-before-f2-active.png t=340175"}
+{"t": "22:34:07", "cmd": "geo D4", "answer": "ok geo D4:494,501,638,543 t=341422"}
+{"t": "22:34:07", "cmd": "geo A1", "answer": "ok geo A1:62,368,206,410 t=341481"}
+{"t": "22:34:07", "cmd": "geo F7", "answer": "ok geo F7:782,632,926,677 t=341541"}
+{"t": "22:34:07", "cmd": "keys 40 {F2}", "answer": "ok keys 1 t=341637"}
+{"t": "22:34:09", "cmd": "move 3700 1900", "answer": "ok move t=343144"}
+{"t": "22:34:10", "cmd": "shot focus-edit-z150-1-after-f2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z150-1-after-f2.png windows: XLMAIN@-11,-11,3851,2099 t=343826"}
+{"t": "22:34:10", "cmd": "crop focus-edit-z150-1-after-f2 22 338 914 349 focus-edit-z150-1-after-f2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z150-1-after-f2-cells.png t=343879"}
+{"t": "22:34:10", "cmd": "crop focus-edit-z150-1-after-f2 482 489 168 66 focus-edit-z150-1-after-f2-active 8", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-edit-z150-1-after-f2-active.png t=343934"}
+{"t": "22:34:11", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=345208"}
+{"t": "22:34:12", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=345645"}
+{"t": "22:34:12", "cmd": "zoom 100", "answer": "ok zoom 100 t=345716"}
+{"t": "22:34:12", "cmd": "ps $xl.ActiveWindow.DisplayGridlines = $true; $xl.ActiveWindow.DisplayGridlines", "answer": "ok ps True t=345766"}
+{"t": "22:34:12", "cmd": "ps $xl.ActiveWindow.DisplayGridlines = $false; $xl.ActiveWindow.DisplayGridlines", "answer": "ok ps False t=346225"}
+{"t": "22:34:12", "cmd": "select H20", "answer": "ok select H20 t=346265"}
+{"t": "22:34:13", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=346624"}
+{"t": "22:34:13", "cmd": "geo B2", "answer": "ok geo B2:137,381,233,411 t=346683"}
+{"t": "22:34:14", "cmd": "drag 89 367 185 396", "answer": "ok drag t=347664"}
+{"t": "22:34:14", "cmd": "geo D4", "answer": "ok geo D4:329,441,425,470 t=347722"}
+{"t": "22:34:14", "cmd": "geo E6", "answer": "ok geo E6:425,497,521,527 t=347782"}
+{"t": "22:34:15", "cmd": "ctrldrag 377 455 473 512", "answer": "ok ctrldrag t=348826"}
+{"t": "22:34:16", "cmd": "move 3700 1900", "answer": "ok move t=349786"}
+{"t": "22:34:16", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D4 selection=A1:B2,D4:E6 t=350336"}
+{"t": "22:34:17", "cmd": "geo D4", "answer": "ok geo D4:329,441,425,470 t=350395"}
+{"t": "22:34:17", "cmd": "shot focus-nogrid-z100-1-a1-b2-then-ctrl-d4-e6", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z100-1-a1-b2-then-ctrl-d4-e6.png windows: XLMAIN@-11,-11,3851,2099 t=350578"}
+{"t": "22:34:17", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=350613"}
+{"t": "22:34:17", "cmd": "geo F7", "answer": "ok geo F7:521,527,617,557 t=350670"}
+{"t": "22:34:17", "cmd": "crop focus-nogrid-z100-1-a1-b2-then-ctrl-d4-e6 1 323 626 244 focus-nogrid-z100-1-a1-b2-then-ctrl-d4-e6-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z100-1-a1-b2-then-ctrl-d4-e6-cells.png t=350737"}
+{"t": "22:34:17", "cmd": "crop focus-nogrid-z100-1-a1-b2-then-ctrl-d4-e6 317 429 120 53 focus-nogrid-z100-1-a1-b2-then-ctrl-d4-e6-active 8", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z100-1-a1-b2-then-ctrl-d4-e6-active.png t=350793"}
+{"t": "22:34:18", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=352087"}
+{"t": "22:34:19", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D5 selection=A1:B2,D4:E6 t=352550"}
+{"t": "22:34:19", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=352644"}
+{"t": "22:34:19", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D6 selection=A1:B2,D4:E6 t=353075"}
+{"t": "22:34:19", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=353180"}
+{"t": "22:34:20", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!E4 selection=A1:B2,D4:E6 t=353634"}
+{"t": "22:34:20", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=353741"}
+{"t": "22:34:20", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!E5 selection=A1:B2,D4:E6 t=354201"}
+{"t": "22:34:20", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=354305"}
+{"t": "22:34:20", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!E6 selection=A1:B2,D4:E6 t=354770"}
+{"t": "22:34:20", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=354867"}
+{"t": "22:34:21", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:B2,D4:E6 t=355288"}
+{"t": "22:34:22", "cmd": "move 3700 1900", "answer": "ok move t=356253"}
+{"t": "22:34:22", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:B2,D4:E6 t=356809"}
+{"t": "22:34:22", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=356866"}
+{"t": "22:34:22", "cmd": "shot focus-nogrid-z100-2-enter-6-inside-a1-b2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z100-2-enter-6-inside-a1-b2.png windows: XLMAIN@-11,-11,3851,2099 t=357046"}
+{"t": "22:34:22", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=357086"}
+{"t": "22:34:22", "cmd": "geo F7", "answer": "ok geo F7:521,527,617,557 t=357145"}
+{"t": "22:34:23", "cmd": "crop focus-nogrid-z100-2-enter-6-inside-a1-b2 1 323 626 244 focus-nogrid-z100-2-enter-6-inside-a1-b2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z100-2-enter-6-inside-a1-b2-cells.png t=357210"}
+{"t": "22:34:23", "cmd": "crop focus-nogrid-z100-2-enter-6-inside-a1-b2 29 341 120 52 focus-nogrid-z100-2-enter-6-inside-a1-b2-active 8", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z100-2-enter-6-inside-a1-b2-active.png t=357265"}
+{"t": "22:34:24", "cmd": "select H20", "answer": "ok select H20 t=358512"}
+{"t": "22:34:24", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=358869"}
+{"t": "22:34:24", "cmd": "geo B2", "answer": "ok geo B2:137,381,233,411 t=358928"}
+{"t": "22:34:25", "cmd": "drag 89 367 185 396", "answer": "ok drag t=359962"}
+{"t": "22:34:25", "cmd": "geo D4", "answer": "ok geo D4:329,441,425,470 t=360019"}
+{"t": "22:34:26", "cmd": "ctrlclick 377 455", "answer": "ok ctrlclick t=360585"}
+{"t": "22:34:27", "cmd": "move 3700 1900", "answer": "ok move t=361567"}
+{"t": "22:34:28", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D4 selection=A1:B2,D4 t=362108"}
+{"t": "22:34:28", "cmd": "geo D4", "answer": "ok geo D4:329,441,425,470 t=362163"}
+{"t": "22:34:28", "cmd": "shot focus-nogrid-z100-3-a1-b2-then-ctrl-click-d4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z100-3-a1-b2-then-ctrl-click-d4.png windows: XLMAIN@-11,-11,3851,2099 t=362350"}
+{"t": "22:34:28", "cmd": "geo A1", "answer": "ok geo A1:41,353,137,381 t=362385"}
+{"t": "22:34:28", "cmd": "geo F7", "answer": "ok geo F7:521,527,617,557 t=362443"}
+{"t": "22:34:28", "cmd": "crop focus-nogrid-z100-3-a1-b2-then-ctrl-click-d4 1 323 626 244 focus-nogrid-z100-3-a1-b2-then-ctrl-click-d4-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z100-3-a1-b2-then-ctrl-click-d4-cells.png t=362507"}
+{"t": "22:34:28", "cmd": "crop focus-nogrid-z100-3-a1-b2-then-ctrl-click-d4 317 429 120 53 focus-nogrid-z100-3-a1-b2-then-ctrl-click-d4-active 8", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z100-3-a1-b2-then-ctrl-click-d4-active.png t=362564"}
+{"t": "22:34:29", "cmd": "ps $xl.ActiveWindow.DisplayGridlines = $true; $xl.ActiveWindow.DisplayGridlines", "answer": "ok ps True t=363835"}
+{"t": "22:34:30", "cmd": "clearsheet", "answer": "ok clearsheet Sheet1 t=364004"}
+{"t": "22:34:30", "cmd": "zoom 150", "answer": "ok zoom 150 t=364085"}
+{"t": "22:34:30", "cmd": "ps $xl.ActiveWindow.DisplayGridlines = $true; $xl.ActiveWindow.DisplayGridlines", "answer": "ok ps True t=364160"}
+{"t": "22:34:30", "cmd": "ps $xl.ActiveWindow.DisplayGridlines = $false; $xl.ActiveWindow.DisplayGridlines", "answer": "ok ps False t=364620"}
+{"t": "22:34:30", "cmd": "select H20", "answer": "ok select H20 t=364665"}
+{"t": "22:34:31", "cmd": "geo A1", "answer": "ok geo A1:62,368,206,410 t=365026"}
+{"t": "22:34:31", "cmd": "geo B2", "answer": "ok geo B2:206,410,350,455 t=365085"}
+{"t": "22:34:32", "cmd": "drag 134 389 278 432", "answer": "ok drag t=366072"}
+{"t": "22:34:32", "cmd": "geo D4", "answer": "ok geo D4:494,501,638,543 t=366124"}
+{"t": "22:34:32", "cmd": "geo E6", "answer": "ok geo E6:638,585,782,632 t=366183"}
+{"t": "22:34:33", "cmd": "ctrldrag 566 522 710 608", "answer": "ok ctrldrag t=367215"}
+{"t": "22:34:34", "cmd": "move 3700 1900", "answer": "ok move t=368192"}
+{"t": "22:34:34", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D4 selection=A1:B2,D4:E6 t=368753"}
+{"t": "22:34:34", "cmd": "geo D4", "answer": "ok geo D4:494,501,638,543 t=368799"}
+{"t": "22:34:35", "cmd": "shot focus-nogrid-z150-1-a1-b2-then-ctrl-d4-e6", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z150-1-a1-b2-then-ctrl-d4-e6.png windows: XLMAIN@-11,-11,3851,2099 t=368985"}
+{"t": "22:34:35", "cmd": "geo A1", "answer": "ok geo A1:62,368,206,410 t=369019"}
+{"t": "22:34:35", "cmd": "geo F7", "answer": "ok geo F7:782,632,926,677 t=369079"}
+{"t": "22:34:35", "cmd": "crop focus-nogrid-z150-1-a1-b2-then-ctrl-d4-e6 22 338 914 349 focus-nogrid-z150-1-a1-b2-then-ctrl-d4-e6-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z150-1-a1-b2-then-ctrl-d4-e6-cells.png t=369149"}
+{"t": "22:34:35", "cmd": "crop focus-nogrid-z150-1-a1-b2-then-ctrl-d4-e6 482 489 168 66 focus-nogrid-z150-1-a1-b2-then-ctrl-d4-e6-active 8", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z150-1-a1-b2-then-ctrl-d4-e6-active.png t=369205"}
+{"t": "22:34:36", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=370492"}
+{"t": "22:34:37", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D5 selection=A1:B2,D4:E6 t=370914"}
+{"t": "22:34:37", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=371011"}
+{"t": "22:34:37", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D6 selection=A1:B2,D4:E6 t=371431"}
+{"t": "22:34:37", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=371538"}
+{"t": "22:34:38", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!E4 selection=A1:B2,D4:E6 t=371988"}
+{"t": "22:34:38", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=372085"}
+{"t": "22:34:38", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!E5 selection=A1:B2,D4:E6 t=372507"}
+{"t": "22:34:38", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=372604"}
+{"t": "22:34:39", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!E6 selection=A1:B2,D4:E6 t=373013"}
+{"t": "22:34:39", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=373118"}
+{"t": "22:34:39", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:B2,D4:E6 t=373582"}
+{"t": "22:34:40", "cmd": "move 3700 1900", "answer": "ok move t=374535"}
+{"t": "22:34:41", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1:B2,D4:E6 t=375097"}
+{"t": "22:34:41", "cmd": "geo A1", "answer": "ok geo A1:62,368,206,410 t=375152"}
+{"t": "22:34:41", "cmd": "shot focus-nogrid-z150-2-enter-6-inside-a1-b2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z150-2-enter-6-inside-a1-b2.png windows: XLMAIN@-11,-11,3851,2099 t=375341"}
+{"t": "22:34:41", "cmd": "geo A1", "answer": "ok geo A1:62,368,206,410 t=375374"}
+{"t": "22:34:41", "cmd": "geo F7", "answer": "ok geo F7:782,632,926,677 t=375433"}
+{"t": "22:34:41", "cmd": "crop focus-nogrid-z150-2-enter-6-inside-a1-b2 22 338 914 349 focus-nogrid-z150-2-enter-6-inside-a1-b2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z150-2-enter-6-inside-a1-b2-cells.png t=375504"}
+{"t": "22:34:41", "cmd": "crop focus-nogrid-z150-2-enter-6-inside-a1-b2 50 356 168 66 focus-nogrid-z150-2-enter-6-inside-a1-b2-active 8", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z150-2-enter-6-inside-a1-b2-active.png t=375557"}
+{"t": "22:34:43", "cmd": "select H20", "answer": "ok select H20 t=376808"}
+{"t": "22:34:43", "cmd": "geo A1", "answer": "ok geo A1:62,368,206,410 t=377163"}
+{"t": "22:34:43", "cmd": "geo B2", "answer": "ok geo B2:206,410,350,455 t=377223"}
+{"t": "22:34:44", "cmd": "drag 134 389 278 432", "answer": "ok drag t=378211"}
+{"t": "22:34:44", "cmd": "geo D4", "answer": "ok geo D4:494,501,638,543 t=378262"}
+{"t": "22:34:45", "cmd": "ctrlclick 566 522", "answer": "ok ctrlclick t=378838"}
+{"t": "22:34:46", "cmd": "move 3700 1900", "answer": "ok move t=379801"}
+{"t": "22:34:46", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D4 selection=A1:B2,D4 t=380361"}
+{"t": "22:34:46", "cmd": "geo D4", "answer": "ok geo D4:494,501,638,543 t=380414"}
+{"t": "22:34:47", "cmd": "shot focus-nogrid-z150-3-a1-b2-then-ctrl-click-d4", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z150-3-a1-b2-then-ctrl-click-d4.png windows: XLMAIN@-11,-11,3851,2099 t=380606"}
+{"t": "22:34:47", "cmd": "geo A1", "answer": "ok geo A1:62,368,206,410 t=380635"}
+{"t": "22:34:47", "cmd": "geo F7", "answer": "ok geo F7:782,632,926,677 t=380691"}
+{"t": "22:34:47", "cmd": "crop focus-nogrid-z150-3-a1-b2-then-ctrl-click-d4 22 338 914 349 focus-nogrid-z150-3-a1-b2-then-ctrl-click-d4-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z150-3-a1-b2-then-ctrl-click-d4-cells.png t=380763"}
+{"t": "22:34:47", "cmd": "crop focus-nogrid-z150-3-a1-b2-then-ctrl-click-d4 482 489 168 66 focus-nogrid-z150-3-a1-b2-then-ctrl-click-d4-active 8", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-18a\\xs\\shots\\focus-nogrid-z150-3-a1-b2-then-ctrl-click-d4-active.png t=380815"}
+{"t": "22:34:48", "cmd": "ps $xl.ActiveWindow.DisplayGridlines = $true; $xl.ActiveWindow.DisplayGridlines", "answer": "ok ps True t=382081"}
+{"t": "22:34:48", "cmd": "zoom 100", "answer": "ok zoom 100 t=382153"}

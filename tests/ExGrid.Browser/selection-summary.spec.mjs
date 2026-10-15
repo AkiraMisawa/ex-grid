@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, alterPage } from './fixtures.mjs';
 import { openSheet, sheet, enter, clickCell, pressCell, cell } from './sheet-helpers.mjs';
 
 // The Selection Summary with real keys (ADR-0130): select cells and the status line shows Excel's
@@ -137,6 +137,175 @@ for (const chrome of ['builtin', 'mud']) {
             await clickCell(book, 'F5', { modifiers: ['Shift'] });
             await expect.poll(() => figureTexts(book))
                 .toEqual(['Average: 1.5', 'Count: 3', 'Numerical Count: 2', 'Min: 1', 'Max: 2', 'Sum: 3']);
+        });
+
+        test('a refused cell among the cells leaves no figure, and the line says why (ADR-0130, 2026-10-13)', async ({ page }) => {
+            await openSheet(page, chrome);
+            const book = sheet(page);
+            await enter(page, book, 'F1', '1');
+            // MROUND-001: a fractional multiple ExSheet refuses, as it cannot answer it as Excel does.
+            await enter(page, book, 'F2', '=MROUND(6.05,0.1)');
+            await expect(cell(book, 'F2')).toHaveText('#VALUE!');
+
+            await pressCell(book, 'F1');
+            await clickCell(book, 'F2', { modifiers: ['Shift'] });
+
+            await expect(book.locator('.ex-summary')).toHaveText(
+                "No figures: ExSheet refused the Formula in F2 with #VALUE! because it cannot answer it as Excel does, so a figure over it would not be Excel's.");
+            await expect.poll(() => figureTexts(book)).toEqual([]);
+
+            // F2 typed over with a number: the figures are back.
+            await enter(page, book, 'F2', '3');
+            await pressCell(book, 'F1');
+            await clickCell(book, 'F2', { modifiers: ['Shift'] });
+            await expect.poll(() => figureTexts(book)).toEqual(['Average: 2', 'Count: 2', 'Sum: 4']);
+        });
+    });
+}
+
+// A grid whose summary the page answers itself (/features?summary=held, ADR-0130): each question
+// waits for the page's Answer button, and a selection of more than four cells is declined at once
+// with a reason. The pending mark (SM-2) and the reason (SM-4) are the core's behaviour, so under
+// ExGrid.MudBlazor's Chrome they come out exactly as under the built-in one (SM-11): the same text
+// in the same core box, and no figure beside either.
+const DECLINED = 'Not summed: this page sums 4 cells at most.';
+
+for (const chrome of ['builtin', 'mud']) {
+    test.describe(`a summary the page answers, under the ${chrome} Chrome`, () => {
+        const held = (page) => page.locator('#held-summary .ex-grid');
+        const summary = (page) => held(page).locator('.ex-summary');
+        const notional = (page, row) => held(page).locator(`[id$='r${row}c1']`);
+        const sumOf = async (page, rows) => {
+            const texts = [];
+            for (let row = 0; row < rows; row++) {
+                texts.push(await notional(page, row).innerText());
+            }
+            return exactSum(texts);
+        };
+
+        // The page's Answer button, pressed without taking the keyboard from the grid: the keys
+        // after it go on extending the grid's selection.
+        const answer = (page) => page.locator('#summary-answer').dispatchEvent('click');
+
+        test.beforeEach(async ({ page }) => {
+            await page.goto(`/features?chrome=${chrome}&summary=held`);
+            await expect(held(page).locator('.ex-row').first()).toBeVisible();
+        });
+
+        test(`SM-11 / ADR-0130 (SM-2): a change of selection clears the figures at once for the pending mark, and the question it replaced is cancelled (${chrome})`, async ({ page }) => {
+            // Every render of the grid as the browser applies it: how many rows the selection
+            // covers, and what the summary says beside it.
+            await alterPage(page, () => {
+                const root = document.querySelector('#held-summary .ex-grid');
+                const seen = [];
+                const look = () => {
+                    const range = root.querySelector('.ex-selection .ex-range');
+                    const row = root.querySelector('.ex-viewport .ex-row');
+                    seen.push({
+                        rows: range && row ? Math.round(range.getBoundingClientRect().height / row.getBoundingClientRect().height) : 0,
+                        text: root.querySelector('.ex-summary')?.innerText ?? '',
+                    });
+                };
+                const observer = new MutationObserver(look);
+                observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true });
+                window.__heldSummarySeen = seen;
+                return () => { observer.disconnect(); delete window.__heldSummarySeen; };
+            });
+
+            await notional(page, 0).click({ force: true });
+            await page.keyboard.press('Shift+ArrowDown');
+            await expect(summary(page)).toHaveClass(/\bex-summary-pending\b/);
+            await expect(summary(page)).toHaveText('Calculating…');
+            expect(await figureTexts(held(page))).toEqual([]);
+            await expect(page.locator('#summary-asked')).toHaveText('Asked: 1; cancelled: 0; answered: 0');
+
+            await answer(page);
+            await expect.poll(() => figureTexts(held(page))).toContain(`Sum: ${await sumOf(page, 2)}`);
+            expect(await figureTexts(held(page))).toContain('Count: 2');
+            await expect(summary(page)).not.toHaveClass(/\bex-summary-pending\b/);
+
+            // A third row: the two rows' figures go in the render that shows the third, the mark
+            // in their place.
+            await page.keyboard.press('Shift+ArrowDown');
+            await expect(summary(page)).toHaveText('Calculating…');
+            expect(await figureTexts(held(page))).toEqual([]);
+            await expect(page.locator('#summary-asked')).toHaveText('Asked: 2; cancelled: 0; answered: 1');
+
+            // A fourth while the third's question is waiting: that question is cancelled, and the
+            // answer given is the fourth's.
+            await page.keyboard.press('Shift+ArrowDown');
+            await expect(page.locator('#summary-asked')).toHaveText('Asked: 3; cancelled: 1; answered: 1');
+            await expect(summary(page)).toHaveText('Calculating…');
+            await answer(page);
+            await expect.poll(() => figureTexts(held(page))).toContain(`Sum: ${await sumOf(page, 4)}`);
+            expect(await figureTexts(held(page))).toContain('Count: 4');
+
+            // At no render did figures stand beside a selection they were not taken over.
+            const seen = await page.evaluate(() => window.__heldSummarySeen);
+            expect(seen.some(({ text }) => /Count: \d+/.test(text)), 'a render with figures was observed').toBe(true);
+            for (const { rows, text } of seen) {
+                const count = /Count: (\d+)/.exec(text);
+                if (count) {
+                    expect(Number(count[1]), `figures for ${count[1]} cells beside ${rows} rows selected: "${text}"`).toBe(rows);
+                }
+            }
+        });
+
+        test(`SM-11 / ADR-0130 (SM-2): the answer to a question a new selection replaced, given after the grid cancelled it, is shown nowhere (${chrome})`, async ({ page }) => {
+            // The page ignores the token and keeps the replaced question, as a careless Consumer may.
+            await page.goto(`/features?chrome=${chrome}&summary=held&late=1`);
+            await expect(held(page).locator('.ex-row').first()).toBeVisible();
+            await alterPage(page, () => {
+                const root = document.querySelector('#held-summary .ex-grid');
+                const seen = [];
+                const observer = new MutationObserver(() => seen.push(root.querySelector('.ex-summary')?.innerText ?? ''));
+                observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true });
+                window.__heldLateSeen = seen;
+                return () => { observer.disconnect(); delete window.__heldLateSeen; };
+            });
+
+            // Two rows asked, then a third before the answer: the two rows' question is replaced.
+            await notional(page, 0).click({ force: true });
+            await page.keyboard.press('Shift+ArrowDown');
+            await expect(page.locator('#summary-asked')).toHaveText('Asked: 1; cancelled: 0; answered: 0');
+            await page.keyboard.press('Shift+ArrowDown');
+            await expect(page.locator('#summary-asked')).toHaveText('Asked: 2; cancelled: 1; answered: 0');
+
+            // Answered now, with the two rows' figures: the grid has already let that question go.
+            await page.locator('#summary-answer-late').dispatchEvent('click');
+            await expect(page.locator('#summary-late')).toHaveText('Answered late: 1');
+            // The answer to the question standing comes after it and is shown; by then the late one
+            // has had its turn, so what stood in between is read off every render.
+            await answer(page);
+            await expect.poll(() => figureTexts(held(page))).toContain(`Sum: ${await sumOf(page, 3)}`);
+            expect(await figureTexts(held(page))).toContain('Count: 3');
+
+            const seen = await page.evaluate(() => window.__heldLateSeen);
+            expect(seen.some((text) => /Count: 3/.test(text)), 'the standing answer was observed').toBe(true);
+            expect(seen.filter((text) => /Count: 2\b/.test(text)), 'the replaced question\'s figures, shown').toEqual([]);
+        });
+
+        test(`SM-11 / ADR-0130 (SM-4): a declined question shows its reason in place of the figures, and no figure with it (${chrome})`, async ({ page }) => {
+            await notional(page, 0).click({ force: true });
+            for (let i = 0; i < 4; i++) {
+                await page.keyboard.press('Shift+ArrowDown');
+            }
+            await expect(summary(page)).toHaveClass(/\bex-summary-declined\b/);
+            await expect(summary(page)).toHaveText(DECLINED);
+            expect(await figureTexts(held(page))).toEqual([]);
+
+            // Four cells again: the reason goes for the pending mark, and the answer replaces it.
+            await page.keyboard.press('Shift+ArrowUp');
+            await expect(summary(page)).toHaveText('Calculating…');
+            await expect(summary(page)).not.toHaveClass(/\bex-summary-declined\b/);
+            await answer(page);
+            await expect.poll(() => figureTexts(held(page))).toContain(`Sum: ${await sumOf(page, 4)}`);
+            expect(await summary(page).innerText()).not.toContain('Not summed');
+
+            // And five once more: declined at once, the four cells' figures gone with it.
+            await page.keyboard.press('Shift+ArrowDown');
+            await expect(summary(page)).toHaveText(DECLINED);
+            expect(await figureTexts(held(page))).toEqual([]);
         });
     });
 }

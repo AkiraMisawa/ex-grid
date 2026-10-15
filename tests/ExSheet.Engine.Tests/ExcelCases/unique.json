@@ -59,7 +59,7 @@
     {
       "id": "UNIQUE-007",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: text is compared without regard to case",
+      "description": "Text is compared without regard to case",
       "fixture": "lookupData",
       "cells": {"Z1": "a", "Z2": "A", "ZZ1000": "=ROWS(UNIQUE(Z1:Z2))"},
       "check": "ZZ1000",
@@ -68,7 +68,7 @@
     {
       "id": "UNIQUE-008",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a number and text that reads as it are different",
+      "description": "A number and text that reads as it are different",
       "fixture": "lookupData",
       "cells": {"Z1": "1", "Z2": "'1", "ZZ1000": "=ROWS(UNIQUE(Z1:Z2))"},
       "check": "ZZ1000",
@@ -77,32 +77,141 @@
     {
       "id": "UNIQUE-009",
       "source": "observed",
-      "description": "Engine's refusal: a blank in the array is #VALUE!. Excel's Anchor shows 7; what the blank's spilled cell shows, and whether a blank is one of a kind with 0, were not read",
+      "description": "A blank in the array: the Anchor shows the 7 that comes first",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=UNIQUE(Q1:Q2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank in UNIQUE's array is refused with #VALUE! until Excel is asked whether it is one of a kind with 0; the seventeenth Windows run read only the Anchor (7), and following it would guess the rest",
-      "excelExpect": {"value2": 7}
+      "expect": {"value2": 7}
     },
     {
       "id": "UNIQUE-010",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: what the blank's spilled cell shows below the 7 of UNIQUE-009 (0, or empty text)",
+      "source": "observed",
+      "description": "A blank's spilled cell, below the 7 of UNIQUE-009, shows 0",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=UNIQUE(Q1:Q2)"},
       "check": "ZZ1001",
-      "expect": {"value2": null},
-      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank in UNIQUE's array is refused with #VALUE! until Excel is asked whether it is one of a kind with 0; recorded, so that a run reads Excel's answer"
+      "expect": {"value2": 0}
     },
     {
       "id": "UNIQUE-011",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: whether a blank is one of a kind with 0 (1 if it is, 2 if not)",
+      "source": "observed",
+      "description": "A blank is not one of a kind with 0: two rows",
       "cells": {"A1": "0", "ZZ1000": "=ROWS(UNIQUE(A1:A2))"},
       "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "UNIQUE-012",
+      "source": "observed",
+      "description": "Two blanks are one of a kind, so two rows of three",
+      "cells": {"A3": "1", "ZZ1000": "=ROWS(UNIQUE(A1:A3))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "UNIQUE-013",
+      "source": "observed",
+      "description": "A blank is not one of a kind with empty text",
+      "cells": {"A2": "=\"\"", "ZZ1000": "=ROWS(UNIQUE(A1:A2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "UNIQUE-014",
+      "source": "observed",
+      "description": "exactly_once leaves out two blanks, so only the 1 is left",
+      "cells": {"A3": "1", "ZZ1000": "=UNIQUE(A1:A3,,TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "UNIQUE-015",
+      "source": "observed",
+      "description": "Rows compared whole, a row with a blank differs from the same row with 0",
+      "cells": {"A1": "a", "A2": "a", "B2": "0", "ZZ1000": "=ROWS(UNIQUE(A1:B2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "UNIQUE-016",
+      "source": "observed",
+      "description": "One blank cell spills as 0",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=UNIQUE(Q2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "UNIQUE-017",
+      "source": "observed",
+      "description": "COUNTA counts a blank kept in UNIQUE's array, read inside the Formula: 2 over 7 and a blank",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=COUNTA(UNIQUE(Q1:Q2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "UNIQUE-018",
+      "source": "observed",
+      "description": "A blank kept in UNIQUE's array, taken out by INDEX, equals empty text: it is not the 0 it spills as",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(UNIQUE(Q1:Q2),2)=\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "UNIQUE-019",
+      "source": "observed",
+      "description": "Refused: LEN given UNIQUE's array, which Excel applies to each Value and the engine does not yet; Excel reads the blank's length as 0",
+      "cells": {"A1": "a", "A3": "b", "ZZ1000": "=SUM(--(LEN(UNIQUE(A1:A3))>0))"},
+      "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank in UNIQUE's array is refused with #VALUE! until Excel is asked whether it is one of a kind with 0; recorded, so that a run reads Excel's answer"
+      "engineDiffersByDecision": "ADR-0125: a function is not yet applied to each Value of an array where it wants one, and the array refuses the Formula there",
+      "excelExpect": {"value2": 2}
+    },
+    {
+      "id": "UNIQUE-020",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: the blank kept in UNIQUE's array, taken out by INDEX, is blank to ISBLANK, as Excel read SORT's (SORT-022)",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=ISBLANK(INDEX(UNIQUE(Q1:Q2),2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "UNIQUE-021",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: AVERAGE over a blank kept in UNIQUE's array is #VALUE!; 7 if it passes over it, 3.5 if it reads it as 0",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=AVERAGE(UNIQUE(Q1:Q2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "UNIQUE-022",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: MIN over a blank kept in UNIQUE's array is #VALUE!; 7 if it passes over it, 0 if it reads it as 0",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=MIN(UNIQUE(Q1:Q2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "UNIQUE-023",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: COUNTA over UNIQUE of one blank cell, an array of that one blank, is #VALUE!; 1 if it counts it as in a longer array (UNIQUE-017), 0 if as a blank cell's",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=COUNTA(UNIQUE(Q2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "UNIQUE-024",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: & reads a blank kept in UNIQUE's array as empty text, as it reads a blank cell, so over a, a blank and b the second cell is empty text",
+      "cells": {"A1": "a", "A3": "b", "ZZ1000": "=UNIQUE(A1:A3)&\"\""},
+      "check": "ZZ1001",
+      "expect": {"value2": "", "kind": "text"}
     }
   ]
 }

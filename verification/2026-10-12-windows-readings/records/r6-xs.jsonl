@@ -1,0 +1,304 @@
+{"t": "16:38:37", "cmd": "stop", "answer": "ok stop 52984 ended by Stop-Process (its own) t=129327"}
+{"t": "16:38:39", "cmd": "start", "answer": "ok start pid=21688 book=Book1 sheet=Sheet1 openedByItself= before=52984 layout=0x08090809 version=16.0 t=131117"}
+{"t": "16:38:41", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=132809"}
+{"t": "16:38:41", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=132843"}
+{"t": "16:38:41", "cmd": "select A1", "answer": "ok select A1 t=132898"}
+{"t": "16:38:42", "cmd": "move 3700 1900", "answer": "ok move t=134064"}
+{"t": "16:38:43", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=134414"}
+{"t": "16:38:43", "cmd": "shot r6-font-italic-0-hashes", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-italic-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=134575"}
+{"t": "16:38:43", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=134671"}
+{"t": "16:38:43", "cmd": "crop r6-font-italic-0-hashes 1 323 338 128 r6-font-italic-0-hashes-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-italic-0-hashes-cells.png t=134696"}
+{"t": "16:38:43", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=134792"}
+{"t": "16:38:43", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=134809"}
+{"t": "16:38:43", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=134907"}
+{"t": "16:38:45", "cmd": "windows", "answer": "ok windows 149426032|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 127798380|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=136504"}
+{"t": "16:38:45", "cmd": "click 287 537", "answer": "ok click t=137019"}
+{"t": "16:38:46", "cmd": "click 464 659", "answer": "ok click t=138130"}
+{"t": "16:38:47", "cmd": "shot r6-font-italic-1-before-ok", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-italic-1-before-ok.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=138926"}
+{"t": "16:38:48", "cmd": "click 611 1201", "answer": "ok click t=139439"}
+{"t": "16:38:50", "cmd": "move 3700 1900", "answer": "ok move t=141564"}
+{"t": "16:38:50", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=141915"}
+{"t": "16:38:50", "cmd": "shot r6-font-italic-2-after-ok", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-italic-2-after-ok.png windows: XLMAIN@-11,-11,3851,2099 t=142081"}
+{"t": "16:38:50", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,185,381 C3:281,411,377,441 t=142134"}
+{"t": "16:38:51", "cmd": "crop r6-font-italic-2-after-ok 1 323 386 128 r6-font-italic-2-after-ok-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-italic-2-after-ok-cells.png t=142190"}
+{"t": "16:38:51", "cmd": "look A1", "answer": "ok look A1: bold False italic True underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 12.45 | text \"123456789.12\" t=142263"}
+{"t": "16:38:51", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 12.45 | useStandardWidth False t=142301"}
+{"t": "16:39:00", "cmd": "stop", "answer": "ok stop 21688 ended by Stop-Process (its own) t=152586"}
+{"t": "16:39:02", "cmd": "start", "answer": "ok start pid=44164 book=Book1 sheet=Sheet1 openedByItself= before=21688 layout=0x08090809 version=16.0 t=154353"}
+{"t": "16:39:04", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=155996"}
+{"t": "16:39:04", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=156022"}
+{"t": "16:39:04", "cmd": "select A1", "answer": "ok select A1 t=156077"}
+{"t": "16:39:05", "cmd": "move 3700 1900", "answer": "ok move t=157252"}
+{"t": "16:39:06", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=157605"}
+{"t": "16:39:06", "cmd": "shot r6-font-underline-0-hashes", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-underline-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=157788"}
+{"t": "16:39:06", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=157828"}
+{"t": "16:39:06", "cmd": "crop r6-font-underline-0-hashes 1 323 338 128 r6-font-underline-0-hashes-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-underline-0-hashes-cells.png t=157881"}
+{"t": "16:39:06", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=157956"}
+{"t": "16:39:06", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=157993"}
+{"t": "16:39:06", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=158101"}
+{"t": "16:39:08", "cmd": "windows", "answer": "ok windows 4853828|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 3871208|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=159735"}
+{"t": "16:39:08", "cmd": "click 287 537", "answer": "ok click t=160256"}
+{"t": "16:39:09", "cmd": "click 252 803", "answer": "ok click t=161346"}
+{"t": "16:39:11", "cmd": "click 102 852", "answer": "ok click t=162475"}
+{"t": "16:39:11", "cmd": "shot r6-font-underline-1-before-ok", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-underline-1-before-ok.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=163253"}
+{"t": "16:39:12", "cmd": "click 611 1201", "answer": "ok click t=163721"}
+{"t": "16:39:14", "cmd": "move 3700 1900", "answer": "ok move t=165877"}
+{"t": "16:39:14", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=166216"}
+{"t": "16:39:15", "cmd": "shot r6-font-underline-2-after-ok", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-underline-2-after-ok.png windows: XLMAIN@-11,-11,3851,2099 t=166384"}
+{"t": "16:39:15", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,176,381 C3:272,411,368,441 t=166436"}
+{"t": "16:39:15", "cmd": "crop r6-font-underline-2-after-ok 1 323 377 128 r6-font-underline-2-after-ok-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-underline-2-after-ok-cells.png t=166496"}
+{"t": "16:39:15", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline 2 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 11.73 | text \"123456789.12\" t=166559"}
+{"t": "16:39:15", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 11.73 | useStandardWidth False t=166601"}
+{"t": "16:39:24", "cmd": "stop", "answer": "ok stop 44164 ended by Stop-Process (its own) t=176903"}
+{"t": "16:39:26", "cmd": "start", "answer": "ok start pid=45044 book=Book1 sheet=Sheet1 openedByItself= before=44164 layout=0x08090809 version=16.0 t=178645"}
+{"t": "16:39:28", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=180279"}
+{"t": "16:39:28", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=180296"}
+{"t": "16:39:28", "cmd": "select A1", "answer": "ok select A1 t=180350"}
+{"t": "16:39:29", "cmd": "move 3700 1900", "answer": "ok move t=181501"}
+{"t": "16:39:30", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=181855"}
+{"t": "16:39:30", "cmd": "shot r6-font-colour-0-hashes", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-colour-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=182055"}
+{"t": "16:39:30", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=182125"}
+{"t": "16:39:30", "cmd": "crop r6-font-colour-0-hashes 1 323 338 128 r6-font-colour-0-hashes-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-colour-0-hashes-cells.png t=182180"}
+{"t": "16:39:30", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=182253"}
+{"t": "16:39:30", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=182289"}
+{"t": "16:39:30", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=182395"}
+{"t": "16:39:32", "cmd": "windows", "answer": "ok windows 26742154|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 3215736|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=184026"}
+{"t": "16:39:32", "cmd": "click 287 537", "answer": "ok click t=184540"}
+{"t": "16:39:33", "cmd": "click 532 803", "answer": "ok click t=185647"}
+{"t": "16:39:35", "cmd": "click 507 1231", "answer": "ok click t=186740"}
+{"t": "16:39:35", "cmd": "shot r6-font-colour-1-before-ok", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-colour-1-before-ok.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=187542"}
+{"t": "16:39:36", "cmd": "click 611 1201", "answer": "ok click t=188056"}
+{"t": "16:39:38", "cmd": "move 3700 1900", "answer": "ok move t=190187"}
+{"t": "16:39:38", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=190535"}
+{"t": "16:39:39", "cmd": "shot r6-font-colour-2-after-ok", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-colour-2-after-ok.png windows: XLMAIN@-11,-11,3851,2099 t=190705"}
+{"t": "16:39:39", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,176,381 C3:272,411,368,441 t=190760"}
+{"t": "16:39:39", "cmd": "crop r6-font-colour-2-after-ok 1 323 377 128 r6-font-colour-2-after-ok-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-font-colour-2-after-ok-cells.png t=190812"}
+{"t": "16:39:39", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 11.73 | text \"123456789.12\" t=190881"}
+{"t": "16:39:39", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 11.73 | useStandardWidth False t=190921"}
+{"t": "16:39:49", "cmd": "stop", "answer": "ok stop 45044 ended by Stop-Process (its own) t=201203"}
+{"t": "16:39:51", "cmd": "start", "answer": "ok start pid=52088 book=Book1 sheet=Sheet1 openedByItself= before=45044 layout=0x08090809 version=16.0 t=202976"}
+{"t": "16:39:53", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=204615"}
+{"t": "16:39:53", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=204680"}
+{"t": "16:39:53", "cmd": "select A1", "answer": "ok select A1 t=204735"}
+{"t": "16:39:53", "cmd": "move 3700 1900", "answer": "ok move t=205908"}
+{"t": "16:39:54", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=206251"}
+{"t": "16:39:54", "cmd": "shot r6-fill-tab-only-0-hashes", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-fill-tab-only-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=206419"}
+{"t": "16:39:54", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=206473"}
+{"t": "16:39:54", "cmd": "crop r6-fill-tab-only-0-hashes 1 323 338 128 r6-fill-tab-only-0-hashes-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-fill-tab-only-0-hashes-cells.png t=206527"}
+{"t": "16:39:54", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=206605"}
+{"t": "16:39:54", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=206638"}
+{"t": "16:39:54", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=206737"}
+{"t": "16:39:56", "cmd": "windows", "answer": "ok windows 63441996|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 10358932|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=208318"}
+{"t": "16:39:56", "cmd": "click 447 537", "answer": "ok click t=208832"}
+{"t": "16:39:57", "cmd": "shot r6-fill-tab-only-1-before-ok", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-fill-tab-only-1-before-ok.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=209626"}
+{"t": "16:39:58", "cmd": "click 611 1201", "answer": "ok click t=210099"}
+{"t": "16:40:00", "cmd": "move 3700 1900", "answer": "ok move t=212236"}
+{"t": "16:40:00", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=212573"}
+{"t": "16:40:00", "cmd": "shot r6-fill-tab-only-2-after-ok", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-fill-tab-only-2-after-ok.png windows: XLMAIN@-11,-11,3851,2099 t=212753"}
+{"t": "16:40:01", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=212796"}
+{"t": "16:40:01", "cmd": "crop r6-fill-tab-only-2-after-ok 1 323 338 128 r6-fill-tab-only-2-after-ok-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-fill-tab-only-2-after-ok-cells.png t=212850"}
+{"t": "16:40:01", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=212923"}
+{"t": "16:40:01", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=212960"}
+{"t": "16:40:11", "cmd": "stop", "answer": "ok stop 52088 ended by Stop-Process (its own) t=223239"}
+{"t": "16:40:13", "cmd": "start", "answer": "ok start pid=20376 book=Book1 sheet=Sheet1 openedByItself= before=52088 layout=0x08090809 version=16.0 t=225021"}
+{"t": "16:40:15", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=226613"}
+{"t": "16:40:15", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=226654"}
+{"t": "16:40:15", "cmd": "select A1", "answer": "ok select A1 t=226708"}
+{"t": "16:40:16", "cmd": "move 3700 1900", "answer": "ok move t=227876"}
+{"t": "16:40:16", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=228219"}
+{"t": "16:40:16", "cmd": "shot r6-fill-yellow-0-hashes", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-fill-yellow-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=228384"}
+{"t": "16:40:17", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=228436"}
+{"t": "16:40:17", "cmd": "crop r6-fill-yellow-0-hashes 1 323 338 128 r6-fill-yellow-0-hashes-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-fill-yellow-0-hashes-cells.png t=228494"}
+{"t": "16:40:17", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=228564"}
+{"t": "16:40:17", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=228603"}
+{"t": "16:40:17", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=228712"}
+{"t": "16:40:19", "cmd": "windows", "answer": "ok windows 23399568|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 21237812|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=230338"}
+{"t": "16:40:19", "cmd": "click 447 537", "answer": "ok click t=230848"}
+{"t": "16:40:20", "cmd": "click 183 814", "answer": "ok click t=231957"}
+{"t": "16:40:21", "cmd": "shot r6-fill-yellow-1-before-ok", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-fill-yellow-1-before-ok.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=232767"}
+{"t": "16:40:22", "cmd": "click 611 1201", "answer": "ok click t=233285"}
+{"t": "16:40:24", "cmd": "move 3700 1900", "answer": "ok move t=235408"}
+{"t": "16:40:24", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=235747"}
+{"t": "16:40:24", "cmd": "shot r6-fill-yellow-2-after-ok", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-fill-yellow-2-after-ok.png windows: XLMAIN@-11,-11,3851,2099 t=235916"}
+{"t": "16:40:24", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=235963"}
+{"t": "16:40:24", "cmd": "crop r6-fill-yellow-2-after-ok 1 323 338 128 r6-fill-yellow-2-after-ok-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-fill-yellow-2-after-ok-cells.png t=236023"}
+{"t": "16:40:24", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=236085"}
+{"t": "16:40:24", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=236132"}
+{"t": "16:40:34", "cmd": "stop", "answer": "ok stop 20376 ended by Stop-Process (its own) t=246403"}
+{"t": "16:40:36", "cmd": "start", "answer": "ok start pid=42792 book=Book1 sheet=Sheet1 openedByItself= before=20376 layout=0x08090809 version=16.0 t=248194"}
+{"t": "16:40:38", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=249857"}
+{"t": "16:40:38", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=249913"}
+{"t": "16:40:38", "cmd": "select A1", "answer": "ok select A1 t=249966"}
+{"t": "16:40:39", "cmd": "move 3700 1900", "answer": "ok move t=251126"}
+{"t": "16:40:39", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=251485"}
+{"t": "16:40:40", "cmd": "shot r6-alignment-tab-only-0-hashes", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-alignment-tab-only-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=251681"}
+{"t": "16:40:40", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=251711"}
+{"t": "16:40:40", "cmd": "crop r6-alignment-tab-only-0-hashes 1 323 338 128 r6-alignment-tab-only-0-hashes-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-alignment-tab-only-0-hashes-cells.png t=251766"}
+{"t": "16:40:40", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=251837"}
+{"t": "16:40:40", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=251874"}
+{"t": "16:40:40", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=251973"}
+{"t": "16:40:42", "cmd": "windows", "answer": "ok windows 26808706|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 184749988|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=253583"}
+{"t": "16:40:42", "cmd": "click 196 537", "answer": "ok click t=254099"}
+{"t": "16:40:43", "cmd": "shot r6-alignment-tab-only-1-before-ok", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-alignment-tab-only-1-before-ok.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=254889"}
+{"t": "16:40:43", "cmd": "click 611 1201", "answer": "ok click t=255366"}
+{"t": "16:40:46", "cmd": "move 3700 1900", "answer": "ok move t=257517"}
+{"t": "16:40:46", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=257871"}
+{"t": "16:40:46", "cmd": "shot r6-alignment-tab-only-2-after-ok", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-alignment-tab-only-2-after-ok.png windows: XLMAIN@-11,-11,3851,2099 t=258042"}
+{"t": "16:40:46", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=258091"}
+{"t": "16:40:46", "cmd": "crop r6-alignment-tab-only-2-after-ok 1 323 338 128 r6-alignment-tab-only-2-after-ok-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-alignment-tab-only-2-after-ok-cells.png t=258149"}
+{"t": "16:40:46", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=258220"}
+{"t": "16:40:46", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=258257"}
+{"t": "16:40:57", "cmd": "stop", "answer": "ok stop 42792 ended by Stop-Process (its own) t=268544"}
+{"t": "16:40:58", "cmd": "start", "answer": "ok start pid=8708 book=Book1 sheet=Sheet1 openedByItself= before=42792 layout=0x08090809 version=16.0 t=270302"}
+{"t": "16:41:00", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=271921"}
+{"t": "16:41:00", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=271941"}
+{"t": "16:41:00", "cmd": "select A1", "answer": "ok select A1 t=271994"}
+{"t": "16:41:01", "cmd": "move 3700 1900", "answer": "ok move t=273143"}
+{"t": "16:41:01", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=273499"}
+{"t": "16:41:01", "cmd": "shot r6-alignment-vertical-top-0-hashes", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-alignment-vertical-top-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=273676"}
+{"t": "16:41:01", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=273726"}
+{"t": "16:41:01", "cmd": "crop r6-alignment-vertical-top-0-hashes 1 323 338 128 r6-alignment-vertical-top-0-hashes-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-alignment-vertical-top-0-hashes-cells.png t=273773"}
+{"t": "16:41:02", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=273849"}
+{"t": "16:41:02", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=273882"}
+{"t": "16:41:02", "cmd": "keys 40 ^1", "answer": "ok keys 1 t=273990"}
+{"t": "16:41:03", "cmd": "windows", "answer": "ok windows 93916972|bosa_sdm_XL9|Format Cells|42,462,816,1242 ;; 42864538|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=275607"}
+{"t": "16:41:04", "cmd": "click 196 537", "answer": "ok click t=276126"}
+{"t": "16:41:05", "cmd": "click 192 707", "answer": "ok click t=277225"}
+{"t": "16:41:06", "cmd": "keys 120 {HOME}{ENTER}", "answer": "ok keys 2 t=278118"}
+{"t": "16:41:07", "cmd": "shot r6-alignment-vertical-top-1-before-ok", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-alignment-vertical-top-1-before-ok.png windows: XLMAIN@-11,-11,3851,2099 ; bosa_sdm_XL9@42,462,816,1242 t=278826"}
+{"t": "16:41:07", "cmd": "click 611 1201", "answer": "ok click t=279334"}
+{"t": "16:41:09", "cmd": "move 3700 1900", "answer": "ok move t=281470"}
+{"t": "16:41:10", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=281820"}
+{"t": "16:41:10", "cmd": "shot r6-alignment-vertical-top-2-after-ok", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-alignment-vertical-top-2-after-ok.png windows: XLMAIN@-11,-11,3851,2099 t=282011"}
+{"t": "16:41:10", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=282043"}
+{"t": "16:41:10", "cmd": "crop r6-alignment-vertical-top-2-after-ok 1 323 338 128 r6-alignment-vertical-top-2-after-ok-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-alignment-vertical-top-2-after-ok-cells.png t=282097"}
+{"t": "16:41:10", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=282166"}
+{"t": "16:41:10", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=282206"}
+{"t": "16:41:21", "cmd": "stop", "answer": "ok stop 8708 ended by Stop-Process (its own) t=292484"}
+{"t": "16:41:22", "cmd": "start", "answer": "ok start pid=48912 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=294275"}
+{"t": "16:41:24", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=295939"}
+{"t": "16:41:24", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=296003"}
+{"t": "16:41:24", "cmd": "select A1", "answer": "ok select A1 t=296058"}
+{"t": "16:41:25", "cmd": "move 3700 1900", "answer": "ok move t=297204"}
+{"t": "16:41:26", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=297566"}
+{"t": "16:41:26", "cmd": "shot r6-button-bold-0-hashes", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-button-bold-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=297733"}
+{"t": "16:41:26", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=297788"}
+{"t": "16:41:26", "cmd": "crop r6-button-bold-0-hashes 1 323 338 128 r6-button-bold-0-hashes-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-button-bold-0-hashes-cells.png t=297841"}
+{"t": "16:41:26", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=297914"}
+{"t": "16:41:26", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=297951"}
+{"t": "16:41:27", "cmd": "click 302 201", "answer": "ok click t=298476"}
+{"t": "16:41:28", "cmd": "move 3700 1900", "answer": "ok move t=299627"}
+{"t": "16:41:28", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=299971"}
+{"t": "16:41:28", "cmd": "shot r6-button-bold-1-bold-pressed", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-button-bold-1-bold-pressed.png windows: XLMAIN@-11,-11,3851,2099 t=300147"}
+{"t": "16:41:29", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=300193"}
+{"t": "16:41:29", "cmd": "crop r6-button-bold-1-bold-pressed 1 323 338 128 r6-button-bold-1-bold-pressed-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-button-bold-1-bold-pressed-cells.png t=300248"}
+{"t": "16:41:28", "cmd": "look A1", "answer": "ok look A1: bold True italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=300320"}
+{"t": "16:41:28", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=300353"}
+{"t": "16:41:39", "cmd": "stop", "answer": "ok stop 48912 ended by Stop-Process (its own) t=310632"}
+{"t": "16:41:40", "cmd": "start", "answer": "ok start pid=38260 book=Book1 sheet=Sheet1 openedByItself= before=48912 layout=0x08090809 version=16.0 t=312380"}
+{"t": "16:41:42", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=314005"}
+{"t": "16:41:42", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=314064"}
+{"t": "16:41:42", "cmd": "select A1", "answer": "ok select A1 t=314117"}
+{"t": "16:41:43", "cmd": "move 3700 1900", "answer": "ok move t=315267"}
+{"t": "16:41:44", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=315625"}
+{"t": "16:41:44", "cmd": "shot r6-button-italic-0-hashes", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-button-italic-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=315803"}
+{"t": "16:41:44", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=315847"}
+{"t": "16:41:44", "cmd": "crop r6-button-italic-0-hashes 1 323 338 128 r6-button-italic-0-hashes-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-button-italic-0-hashes-cells.png t=315905"}
+{"t": "16:41:44", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=315984"}
+{"t": "16:41:44", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=316015"}
+{"t": "16:41:45", "cmd": "click 341 201", "answer": "ok click t=316535"}
+{"t": "16:41:46", "cmd": "move 3700 1900", "answer": "ok move t=317689"}
+{"t": "16:41:46", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=318048"}
+{"t": "16:41:46", "cmd": "shot r6-button-italic-1-italic-pressed", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-button-italic-1-italic-pressed.png windows: XLMAIN@-11,-11,3851,2099 t=318233"}
+{"t": "16:41:46", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=318270"}
+{"t": "16:41:46", "cmd": "crop r6-button-italic-1-italic-pressed 1 323 338 128 r6-button-italic-1-italic-pressed-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-button-italic-1-italic-pressed-cells.png t=318323"}
+{"t": "16:41:46", "cmd": "look A1", "answer": "ok look A1: bold False italic True underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"#######\" t=318397"}
+{"t": "16:41:47", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=318433"}
+{"t": "16:41:57", "cmd": "stop", "answer": "ok stop 38260 ended by Stop-Process (its own) t=328707"}
+{"t": "16:41:59", "cmd": "start", "answer": "ok start pid=34172 book=Book1 sheet=Sheet1 openedByItself= before=38260 layout=0x08090809 version=16.0 t=330429"}
+{"t": "16:42:00", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=332076"}
+{"t": "16:42:00", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=332105"}
+{"t": "16:42:00", "cmd": "select A1", "answer": "ok select A1 t=332159"}
+{"t": "16:42:01", "cmd": "move 3700 1900", "answer": "ok move t=333313"}
+{"t": "16:42:01", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=333653"}
+{"t": "16:42:01", "cmd": "shot r6-button-underline-0-hashes", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-button-underline-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=333849"}
+{"t": "16:42:01", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=333873"}
+{"t": "16:42:02", "cmd": "crop r6-button-underline-0-hashes 1 323 338 128 r6-button-underline-0-hashes-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-button-underline-0-hashes-cells.png t=333925"}
+{"t": "16:42:02", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=333997"}
+{"t": "16:42:02", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=334035"}
+{"t": "16:42:02", "cmd": "click 380 201", "answer": "ok click t=334552"}
+{"t": "16:42:03", "cmd": "move 3700 1900", "answer": "ok move t=335719"}
+{"t": "16:42:04", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=336070"}
+{"t": "16:42:04", "cmd": "shot r6-button-underline-1-underline-pressed", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-button-underline-1-underline-pressed.png windows: XLMAIN@-11,-11,3851,2099 t=336252"}
+{"t": "16:42:04", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,176,381 C3:272,411,368,441 t=336287"}
+{"t": "16:42:04", "cmd": "crop r6-button-underline-1-underline-pressed 1 323 377 128 r6-button-underline-1-underline-pressed-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-button-underline-1-underline-pressed-cells.png t=336343"}
+{"t": "16:42:04", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline 2 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 11.73 | text \"123456789.12\" t=336413"}
+{"t": "16:42:04", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 11.73 | useStandardWidth False t=336454"}
+{"t": "16:42:15", "cmd": "stop", "answer": "ok stop 34172 ended by Stop-Process (its own) t=346733"}
+{"t": "16:42:17", "cmd": "start", "answer": "ok start pid=8420 book=Book1 sheet=Sheet1 openedByItself= before=34172 layout=0x08090809 version=16.0 t=348508"}
+{"t": "16:42:18", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=350245"}
+{"t": "16:42:18", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=350274"}
+{"t": "16:42:18", "cmd": "select A1", "answer": "ok select A1 t=350330"}
+{"t": "16:42:19", "cmd": "move 3700 1900", "answer": "ok move t=351548"}
+{"t": "16:42:20", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=351886"}
+{"t": "16:42:20", "cmd": "shot r6-ctrl-b-twice-0-hashes", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-ctrl-b-twice-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=352068"}
+{"t": "16:42:20", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=352122"}
+{"t": "16:42:20", "cmd": "crop r6-ctrl-b-twice-0-hashes 1 323 338 128 r6-ctrl-b-twice-0-hashes-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-ctrl-b-twice-0-hashes-cells.png t=352182"}
+{"t": "16:42:20", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=352260"}
+{"t": "16:42:20", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=352297"}
+{"t": "16:42:20", "cmd": "keys 40 ^b", "answer": "ok keys 1 t=352399"}
+{"t": "16:42:21", "cmd": "move 3700 1900", "answer": "ok move t=353563"}
+{"t": "16:42:22", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=353916"}
+{"t": "16:42:22", "cmd": "shot r6-ctrl-b-twice-1-ctrl-b", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-ctrl-b-twice-1-ctrl-b.png windows: XLMAIN@-11,-11,3851,2099 t=354097"}
+{"t": "16:42:22", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=354134"}
+{"t": "16:42:22", "cmd": "crop r6-ctrl-b-twice-1-ctrl-b 1 323 338 128 r6-ctrl-b-twice-1-ctrl-b-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-ctrl-b-twice-1-ctrl-b-cells.png t=354191"}
+{"t": "16:42:22", "cmd": "look A1", "answer": "ok look A1: bold True italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=354261"}
+{"t": "16:42:22", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=354302"}
+{"t": "16:42:22", "cmd": "keys 40 ^b", "answer": "ok keys 1 t=354410"}
+{"t": "16:42:23", "cmd": "move 3700 1900", "answer": "ok move t=355563"}
+{"t": "16:42:24", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=355913"}
+{"t": "16:42:24", "cmd": "shot r6-ctrl-b-twice-2-ctrl-b-again", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-ctrl-b-twice-2-ctrl-b-again.png windows: XLMAIN@-11,-11,3851,2099 t=356096"}
+{"t": "16:42:24", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=356134"}
+{"t": "16:42:24", "cmd": "crop r6-ctrl-b-twice-2-ctrl-b-again 1 323 338 128 r6-ctrl-b-twice-2-ctrl-b-again-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-ctrl-b-twice-2-ctrl-b-again-cells.png t=356191"}
+{"t": "16:42:24", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=356265"}
+{"t": "16:42:24", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=356300"}
+{"t": "16:42:34", "cmd": "stop", "answer": "ok stop 8420 ended by Stop-Process (its own) t=366597"}
+{"t": "16:42:36", "cmd": "start", "answer": "ok start pid=27188 book=Book1 sheet=Sheet1 openedByItself= before=8420 layout=0x08090809 version=16.0 t=368333"}
+{"t": "16:42:38", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=369942"}
+{"t": "16:42:38", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=369964"}
+{"t": "16:42:38", "cmd": "select A1", "answer": "ok select A1 t=370019"}
+{"t": "16:42:39", "cmd": "move 3700 1900", "answer": "ok move t=371173"}
+{"t": "16:42:39", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=371523"}
+{"t": "16:42:40", "cmd": "shot r6-com-bold-0-hashes", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-com-bold-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=371696"}
+{"t": "16:42:40", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=371752"}
+{"t": "16:42:40", "cmd": "crop r6-com-bold-0-hashes 1 323 338 128 r6-com-bold-0-hashes-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-com-bold-0-hashes-cells.png t=371803"}
+{"t": "16:42:40", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=371876"}
+{"t": "16:42:40", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=371914"}
+{"t": "16:42:40", "cmd": "font A1 Bold True", "answer": "ok font A1 Bold True t=371992"}
+{"t": "16:42:41", "cmd": "move 3700 1900", "answer": "ok move t=373141"}
+{"t": "16:42:41", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=373486"}
+{"t": "16:42:42", "cmd": "shot r6-com-bold-1-font-bold-True", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-com-bold-1-font-bold-True.png windows: XLMAIN@-11,-11,3851,2099 t=373684"}
+{"t": "16:42:42", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=373710"}
+{"t": "16:42:42", "cmd": "crop r6-com-bold-1-font-bold-True 1 323 338 128 r6-com-bold-1-font-bold-True-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-com-bold-1-font-bold-True-cells.png t=373767"}
+{"t": "16:42:42", "cmd": "look A1", "answer": "ok look A1: bold True italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=373836"}
+{"t": "16:42:42", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=373876"}
+{"t": "16:42:52", "cmd": "stop", "answer": "ok stop 27188 ended by Stop-Process (its own) t=384158"}
+{"t": "16:42:54", "cmd": "start", "answer": "ok start pid=44872 book=Book1 sheet=Sheet1 openedByItself= before=27188 layout=0x08090809 version=16.0 t=385929"}
+{"t": "16:42:56", "cmd": "setfmt A1 0.00", "answer": "ok setfmt A1 t=387603"}
+{"t": "16:42:56", "cmd": "setup A1 123456789.12", "answer": "ok setup A1 t=387666"}
+{"t": "16:42:56", "cmd": "select A1", "answer": "ok select A1 t=387724"}
+{"t": "16:42:57", "cmd": "move 3700 1900", "answer": "ok move t=388892"}
+{"t": "16:42:57", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=389259"}
+{"t": "16:42:58", "cmd": "shot r6-com-underline-0-hashes", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-com-underline-0-hashes.png windows: XLMAIN@-11,-11,3851,2099 t=389442"}
+{"t": "16:42:58", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,137,381 C3:233,411,329,441 t=389479"}
+{"t": "16:42:58", "cmd": "crop r6-com-underline-0-hashes 1 323 338 128 r6-com-underline-0-hashes-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-com-underline-0-hashes-cells.png t=389534"}
+{"t": "16:42:58", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline -4142 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 8.09 | text \"########\" t=389607"}
+{"t": "16:42:58", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 8.09 | useStandardWidth True t=389646"}
+{"t": "16:42:58", "cmd": "font A1 Underline 2", "answer": "ok font A1 Underline 2 t=389730"}
+{"t": "16:42:59", "cmd": "move 3700 1900", "answer": "ok move t=390876"}
+{"t": "16:42:59", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A1 selection=A1 t=391231"}
+{"t": "16:43:00", "cmd": "shot r6-com-underline-1-font-underline-2", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-com-underline-1-font-underline-2.png windows: XLMAIN@-11,-11,3851,2099 t=391405"}
+{"t": "16:43:00", "cmd": "geo A1 C3", "answer": "ok geo A1:41,353,176,381 C3:272,411,368,441 t=391452"}
+{"t": "16:43:00", "cmd": "crop r6-com-underline-1-font-underline-2 1 323 377 128 r6-com-underline-1-font-underline-2-cells 2", "answer": "ok crop C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\readings-2026-10-12\\xs\\shots\\r6-com-underline-1-font-underline-2-cells.png t=391510"}
+{"t": "16:43:00", "cmd": "look A1", "answer": "ok look A1: bold False italic False underline 2 strike False size 11 | top=-4142/2 bottom=-4142/2 left=-4142/2 right=-4142/2 | width 11.73 | text \"123456789.12\" t=391581"}
+{"t": "16:43:00", "cmd": "colwidth A1", "answer": "ok colwidth standardWidth 8.09 ;; A1: width 11.73 | useStandardWidth False t=391619"}

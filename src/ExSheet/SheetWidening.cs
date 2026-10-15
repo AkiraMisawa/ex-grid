@@ -7,8 +7,9 @@ namespace ExSheet;
 /// The columns a number widens, as Excel's do: a number or date typed into a column that does not
 /// hold it (ADR-0047, second round; SH-20), the numbers a Number Format is set on that it no
 /// longer fits — a formatting key, Format Cells' OK, <c>SetCellFormatAsync</c> (ADR-0071, case 17)
-/// — and the numbers Ctrl+5 sets or clears strikethrough on that do not fit (the fourteenth
-/// Windows run, case 7).
+/// — and the numbers a Font change is set on that do not fit, as the command that sets it widens
+/// (<see cref="WidensAsAKeyDoes"/>, <see cref="WidensAsFormatCellsOkDoes"/>,
+/// <see cref="WidensAsAHomeTabButtonDoes"/>).
 /// </summary>
 /// <remarks>
 /// A recorded width is one of three kinds (ADR-0046, 2026-09-28; SH-26). A column at the default
@@ -21,12 +22,69 @@ namespace ExSheet;
 internal static class SheetWidening
 {
     /// <summary>
+    /// Whether a change a formatting key sets widens the columns whose numbers no longer fit
+    /// (ADR-0071; ticket 58's rule): a column at the standard width, or one an entry or a key
+    /// widened, and never one the user sized, in the key's one undo step. A Number Format key
+    /// widens (case 17). So do Ctrl+5, setting strikethrough or taking it off, and Ctrl+U,
+    /// setting underline or taking it off, although they set no Number Format. Excel's Ctrl+5
+    /// widened column A for <c>1234567.50</c> (the fourteenth Windows run, case 7) and from 8.09 to
+    /// 11.73 for <c>123456789.12</c> in <c>0.00</c> (the seventeenth's h8), and Ctrl+U the same
+    /// column the same way (h7). Ctrl+B and the Fill did not, in any of three orders (case 7), nor
+    /// did Ctrl+I (h7). Three are readings: that Ctrl+4, which ExSheet's table holds as the same
+    /// key as Ctrl+U, widens as it does; that the Border keys, Ctrl+Shift+&amp; and Ctrl+Shift+_,
+    /// widen nothing, though no run has pressed them over ####; and that taking strikethrough or
+    /// underline off widens, since the runs pressed the keys only to set them.
+    /// <c>SetCellFormatAsync</c> widens by this rule too (decided 2026-10-12), as Excel's
+    /// <c>Range.Font</c> set through COM did not widen for bold and did for underline (the readings
+    /// of 2026-10-12 (R6), case (5)), and did not for <c>Font.Color</c> nor italic and did for
+    /// strikethrough (the readings of 2026-10-14, run 18a, widening cases 2 and 6).
+    /// </summary>
+    internal static bool WidensAsAKeyDoes(CellFormatChange change) =>
+        change.NumberFormat is not null || change.Underline is not null || change.Strikethrough is not null;
+
+    /// <summary>
+    /// Whether a change a Sheet Toolbar item sets widens the columns whose numbers no longer fit, as
+    /// Excel's Home tab buttons do (ADR-0071, ADR-0100): as a key does
+    /// (<see cref="WidensAsAKeyDoes"/>), and for a Font colour too. Excel's Bold and Italic buttons
+    /// did not widen and its Underline button did (the readings of 2026-10-12 (R6), case (3)), as the
+    /// keys; its Fill Color button did not (the fourteenth Windows run, case 7); and its Font Color
+    /// button widened, by its face and from its list, where <c>Font.Color</c> set through COM did not
+    /// (the readings of 2026-10-14, run 18a, widening case 5; decided with the user, 2026-10-14).
+    /// <c>SetCellFormatFromFocusAsync</c>, the command the toolbar's toggles and colours set through,
+    /// widens by this rule.
+    /// </summary>
+    internal static bool WidensAsAHomeTabButtonDoes(CellFormatChange change) =>
+        WidensAsAKeyDoes(change) || change.FontColour is not null;
+
+    /// <summary>
+    /// Whether a change Format Cells' OK sets widens the columns whose numbers no longer fit, in
+    /// the same way and in OK's one undo step (ADR-0071; decided 2026-10-12): one that sets a
+    /// Number Format (case 17; the fourteenth Windows run, case 8), and one that sets any part of
+    /// the Font, though Ctrl+B and Ctrl+I widen nothing. Over <c>123456789.12</c> in <c>0.00</c> at
+    /// the standard width, Excel's Font tab widened column A for Bold (the seventeenth run, h7), and
+    /// for Italic, a single underline or a colour each set alone (the readings of 2026-10-12 (R6),
+    /// case (1)). Strikethrough set there, and the Normal font box, are readings. A Fill, Borders or
+    /// an alignment widens nothing: the Fill tab and the Alignment tab's vertical alignment did not
+    /// over #### (R6, case (2)), and the Border tab did not over a General number shown rounded
+    /// (case 9). Borders over #### and the horizontal alignment are readings. Only OK widens by this
+    /// rule.
+    /// </summary>
+    internal static bool WidensAsFormatCellsOkDoes(CellFormatChange change) =>
+        change.NumberFormat is not null || change.FontColour is not null || change.Bold is not null
+        || change.Italic is not null || change.Underline is not null || change.Strikethrough is not null;
+
+    /// <summary>
     /// The columns the numbers in <paramref name="cells"/> widen, ascending, each with the width in
     /// characters it is widened to. The engine says how many characters each number needs under
     /// its Number Format as it is now (<see cref="Sheet.GetWidthOnEntry"/>), and so which text the
     /// cell shows; the width in pixels is what the grid's own estimate charges for that text, each
     /// glyph at its own width and bold where the cell's Font is, so the widened column holds it and
-    /// the grid does not hash it (ADR-0016). It is not floored at a digit a character: a date's
+    /// the grid does not hash it (ADR-0016). An italic number is charged at the regular widths, as
+    /// the grid judges italic text (ADR-0071, "Bold, and what fits"), so it widens its column to the
+    /// width the upright number takes. Excel's Font tab widened column A further for Italic alone,
+    /// to 12.45 against 11.73 for a single underline or a colour alone, over <c>123456789.12</c> in
+    /// <c>0.00</c> (the readings of 2026-10-12 (R6), case (1)): a difference that follows ADR-0071,
+    /// and a known limitation of <c>0.1.0</c>. It is not floored at a digit a character: a date's
     /// letters and separators are charged what they paint, as Excel widens to the text its font
     /// paints (ticket 91; the twelfth run's case 19). A column whose width in
     /// <paramref name="columns"/> already holds the widest of its numbers is left as it is. A

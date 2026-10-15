@@ -17,21 +17,41 @@ verification**: VZ-10's real clause is about platforms whose scrollbars take spa
 A machine without Edge fails the `msedge` project by name — the honest outcome
 (ADR-0017 requires both browsers; passing on one does not satisfy it).
 
-A third project, `chrome-150`, runs the tests the Layout Ceiling broke (ADR-0053, VZ-15):
-BIG-1, BIG-5, VZ-15, the Focus against the scrollbars, and the Sheet's SH-2, SH-18/DC-2/3/7;
-and every test that scrolls a compressed grid to a row (MK-6, `sheet-vs-excel` items 3 and 5,
-active-cell cases 7 and 8). Those go through `scrollRowToTop` in `fixtures.mjs`, which maps a
-row to a scroll offset through ADR-0053's `c(s) = s × k`: a `scrollTop` of rows × row height
-shows a later row once the height is compressed, which only a run at 150% can see. It returns
-once the grid has painted the slice for the offset the browser holds, as the offset the grid
-wrote on the Viewport says: compressed, the rows move when the grid is told of the scroll, a
-round trip later on the Server host, and a reading taken before that is of rows that are leaving.
-It also reads pixels that only a real 150% lays out: the Border lines (DC-59), the Selection's shade
-over them in a Pinned Column (DC-59, ADR-0206), and SH-41's sweep of
-the bold edge (VZ-19), where a number may use one Device Pixel of its cell's right padding
-(ADR-0090). `sheet-paper.spec.mjs` emulates its viewport everywhere else, and leaves the window to
-Chrome there, since an emulated viewport is painted at a scale of 1.
-It launches Chrome with `--force-device-scale-factor=1.5` and `viewport: null`, headed, so
+A third project, `chrome-150`, runs at a real 150% the tests its `grep` in `playwright.config.mjs`
+names. They are these, by file:
+
+- **What the Layout Ceiling broke (ADR-0053, VZ-15).** `virtualisation.spec.mjs`'s BIG-1, BIG-5
+  (twice) and VZ-15; `scrollbar.spec.mjs`'s three tests of the Focus never behind a scrollbar, and
+  VZ-14's, which skips itself off Windows; `sheet.spec.mjs`'s SH-2, SH-18/DC-7 and SH-18/DC-2/DC-3.
+- **Every test that scrolls a compressed grid to a row.** MK-6 (`marks.spec.mjs`);
+  `sheet-vs-excel.spec.mjs`'s items 3 and 5 and active-cell cases 7 and 8, and the fourth run's
+  active-cell item 3, which the grep's `item 3:` takes too; and the far reveal (`circuit.spec.mjs`).
+  Those go through `scrollRowToTop` in `fixtures.mjs`, which maps a row to a scroll offset through
+  ADR-0053's `c(s) = s × k`: a `scrollTop` of rows × row height shows a later row once the height
+  is compressed, which only a run at 150% can see. It returns once the grid has painted the slice
+  for the offset the browser holds, as the offset the grid wrote on the Viewport says: compressed,
+  the rows move when the grid is told of the scroll, a round trip later on the Server host, and a
+  reading taken before that is of rows that are leaving.
+- **Pixels that only a real 150% lays out.** Every test named DC-59: the Border lines on
+  `/appearance` (`appearance.spec.mjs`), with a Fill beneath and the Selection above; on the Sheet
+  (`sheet-borders.spec.mjs`, with SH-46's); and in `part-c.spec.mjs` the Selection's outline and
+  shade on the Paper under both Chromes (SH-54), its shade over the lines in a Pinned Column and
+  across the pinned boundary (ADR-0206), and across it in the dark scheme under both Chromes, a
+  Consumer's coloured shade over a pinned Fill and line, the lines outside a pinned tint kept on
+  their Device Pixels with the page a third of a pixel off, column A's shade while scrolling, no
+  tint over a pinned range under forced colors, and VZ-17's vertical gridline. SH-41's sweep of the
+  bold edge under both Chromes (VZ-19, `sheet-paper.spec.mjs`), where a number may use one Device
+  Pixel of its cell's right padding (ADR-0090). And the Focus among several ranges, a border of one
+  Device Pixel inside its cell (UX-19, ADR-0008 of 2026-10-12): ExGrid's own on `/wide`
+  (`selection-look.spec.mjs`), on the Paper under both Chromes and in the three selections of the
+  readings of 2026-10-12 (R4) (`sheet-paper.spec.mjs`), and under `ExGrid.MudBlazor` on `/mud`
+  (`mud.spec.mjs`). And the Heading Mark, a line of two Device Pixels on a Heading's edge toward
+  the cells (UX-21, ADR-0008 of 2026-10-13): ExGrid's own on `/wide`, and the Sheet's Headings under
+  both Chromes (`heading-mark.spec.mjs`).
+
+`selection-look.spec.mjs` and `sheet-paper.spec.mjs` emulate their viewport everywhere else, and
+leave the window to Chrome there, since an emulated viewport is painted at a scale of 1.
+`chrome-150` launches Chrome with `--force-device-scale-factor=1.5` and `viewport: null`, headed, so
 the display scale reaches layout the way the OS's does and Chrome clamps at 22,369,618 CSS
 px. Playwright's `deviceScaleFactor` would not do: it raises `devicePixelRatio` and leaves
 the clamp where it was. Its 1280×800 window is 1920×1200 device pixels, so the screen it
@@ -163,6 +183,14 @@ localhost forwarding, and `reuseExistingServer` takes the running host.
 The observational numbers land in `..\..\verification\<day>-windows` relative to the
 copy. Move them into the repository's `verification/`.
 
+**Keep the desktop's own pointer off the browser windows while the suite runs.** On a headed
+desktop it is a second mouse. When it moves over a browser window, the page gets a pointer move
+with no button held. One that lands between a test's press and its drag ends the press there, so
+the drag never starts and its drop never lands. Sending one such move between the press and the
+move of `pivot.spec.mjs`'s first drag fails that test every time on both hosts (2026-10-14), in the
+way a Windows desktop failed it once in 120 runs on 2026-10-12: its drop never landed, and nothing
+in the page was found to move. CI's xvfb has no such pointer.
+
 **Changing the display scale needs a sign-out on some machines, and a sign-out stops
 WSL.** Record what has run before you sign out. After you sign in again, Chrome's first
 launch can be the one that applies a waiting update. It exits with code 0, and the first
@@ -230,7 +258,11 @@ arrived between two pictures. So:
 - **Read where the boundary lies on a device pixel.** A device pixel an edge cuts through is a
   blend of both sides. `offDevicePixels(box, scale)` in `pixels.mjs` names the edges of a box
   that are not on the device pixel grid; a test reading at an edge checks it first and fails
-  there, saying so. A paint is read on the pixels a box covers whole (`wholePixelCentres`),
+  there, saying so. `acrossEdges` and `edgePixels`, which read across a box's edges, refuse such a
+  box themselves. A page lays its grid wherever its own content puts it, often a fraction of a
+  device pixel off (`/wide`'s rows start at 471.875 CSS px), so `onDevicePixels` moves the page
+  onto the grid first: it offsets the body by the fraction, through `alterPage`, which lays
+  nothing out again and is undone when the test ends. A paint is read on the pixels a box covers whole (`wholePixelCentres`),
   through a region grown out to the device grid (`onDeviceGrid`), so each pixel of the picture
   is one of the page's.
 - **The one allowance for rounding is `paints(pixel, exact)`, with `blend`.** A channel whose
@@ -417,6 +449,12 @@ nobody had asked for. What that means when writing a test:
   grid's box and scrolls (UX-11, ADR-0040), and a grid that goes while the keys after
   Alt+↓ are still waiting for its popover leaves nothing running to throw from a later
   frame (ADR-0010, CON-2).
+- `keyboard-return.spec.mjs` — the shipped key gate's return from a Consumer frame (ADR-0050/0070).
+  A controlled Consumer leaves its key-collection answer pending: the hand-back cannot complete
+  until that answer, whether focus was returned or another control kept it. This pins the ordering
+  without a latency guess; a caller may then remove its frame and clear its queue.
+  Passing keys out of a closing grid hands the held keys to its frame before later keys or a focus
+  departure can overtake them, even while the leaving Escape's own answer remains pending.
 - `page-follow.spec.mjs` — the page following a move (ADR-0204, KB-45) on `/cells` in a window
   shorter than its grid, on a grid that edits and a display-only one: the arrows bringing the Focus
   in at the window's bottom edge, a cell already in the window moving nothing, a range extended past
@@ -441,11 +479,16 @@ nobody had asked for. What that means when writing a test:
   elsewhere reports it as gone.
 - `presentation.spec.mjs` — the presentation contract, measured: inline Geometry
   Tokens beat the supported override routes (UX-2), painted geometry equals declared
-  (UX-3/ST-3), Visual Tokens recolour from an ancestor (UX-5), nothing under the
-  Viewport animates (UX-6), forced colors keep every state tellable (UX-7), a Stale or
+  (UX-3/ST-3), and on `/density` equals each preset's Grid Metrics after every density
+  change — rows, header band, spacer, Selection and Focus (UX-3/ST-3) — with no
+  `ResizeObserver` loop through density changes and window resizes, heard as `error` events
+  on `window`, which Chrome does not send to the console (CON-4), Visual Tokens recolour from
+  an ancestor (UX-5), nothing under the Viewport animates (UX-6), forced colors keep every
+  Cell State and Row Kind tellable without their grounds, each required on `/cells` (UX-7), a Stale or
   Error state outranks a theme's tone colour on `/tones` (ADR-0006/0029), the Modified mark a
   triangle in the corner alone, in its token's colour, a pinned one still sticky (UX-20), the dark
-  scheme stays readable (UX-8), the LTR island inside an RTL page (DIR-2/3), the
+  scheme stays readable (UX-8), the LTR island inside an RTL page (DIR-2), an Arabic value
+  reading right to left inside its unmoved cell (DIR-3), the
   editor's box is the cell's (ED-9), the runaway auto-scroll stops (SL-14/15), the
   Blazor error UI never shows (CON-5), and every class painted under a root — watched from
   `/features`, `/cells`, `/tones`, `/stripes`, `/marks`, `/appearance` and `/sheet` while their
@@ -527,7 +570,9 @@ nobody had asked for. What that means when writing a test:
 - `mud.spec.mjs` — the Wrapper contract with a real Wrapper, `ExGrid.MudBlazor` on
   `/mud` (ADR-0030): painted geometry equals declared under the Wrapper's stylesheet
   and Roboto (UX-3), nothing under the Viewport animates (UX-6), the Focus outline
-  keeps 3:1 against the surface in both palettes (UX-9), a theme switch re-renders no
+  keeps 3:1 against the surface in both palettes (UX-9), the Focus among several ranges
+  taking its thin border in the Focus outline's colour, the primary, with no mapping of the
+  Wrapper's own (UX-19, ADR-0008 of 2026-10-12), a theme switch re-renders no
   row (RR-1), the hover band follows the pointer in the hovered instance only (UX-13,
   ADR-0021's fifth entry), the Wrapper's editor fits the core's box and commits
   (ED-4), the loading bar shows only while loading, and the paper's corners never
@@ -604,7 +649,9 @@ nobody had asked for. What that means when writing a test:
   page's status line, and the edit committing as typed (SH-43). The page's line under the Sheet
   reads the Focus cell's Cell Format back. The page's
   *Format selection as #,##0.00* pressed straight after Shift+ArrowDown on a 150 ms circuit, before
-  the Sheet has heard the move, formats the extended range as one step (ticket 56).
+  the Sheet has heard the move, formats the extended range as one step (ticket 56). Over numbers
+  showing `####`, Ctrl+I widens no column and Ctrl+U widens the one at the standard width, never the
+  one sized by its grip, in the key's one step (the seventeenth Windows run's h7; ADR-0071).
 - `sheet-borders.spec.mjs` — ExSheet's Borders beside Excel's (ADR-0071, DC-59, SH-46; ticket 49)
   on `/sheet?case=…`, the eleventh, twelfth and fourteenth Windows runs' set-ups, read in device
   pixels: Excel's thirteen line styles on a bottom and on a right edge, scrolled down the Sheet, at
@@ -644,7 +691,12 @@ nobody had asked for. What that means when writing a test:
   Formula Bar dark in the dark scheme and light in the light one; the Selection, the Cell Editor,
   a Reference Outline and the pointed shade keeping their light-scheme look on the Paper, and the
   Formula Bar's References taking the dark scheme's; and `--ex-sheet-paper` and `--ex-sheet-ink`
-  set by a Consumer changing the Paper and the Ink. And what fits (SH-41; ADR-0071, "Bold, and what
+  set by a Consumer changing the Paper and the Ink. The Focus among several ranges on the Paper
+  (UX-19, ADR-0008 of 2026-10-12): one Device Pixel inside its cell in the Focus outline's colour,
+  `#217346` under the built-in Chrome and the primary under `ExSheet.MudBlazor`, beside the Headings,
+  a Pinned Column and the header and in the open, in both schemes; and the readings of 2026-10-12's
+  three selections (R4) on a blank Sheet, the border, the white line between it and the gridline, and
+  past the gridline the shade or the Paper, as R4 read them. And what fits (SH-41; ADR-0071, "Bold, and what
   fits") under both Chromes, on `/sheet?case=bold` and `?case=fit`, whose columns stand a hundredth
   of a pixel from where a number stops fitting in the Sheet's own Cell Metrics: a bold 12% `####`
   under its bold edge where the plain one shows; General fitting a bold number to the bold widths;
@@ -656,21 +708,49 @@ nobody had asked for. What that means when writing a test:
   a number uses one Device Pixel of its cell's right padding (VZ-19, ADR-0090). Without it, where
   `system-ui` is DejaVu Sans, as on Linux, the column painted a pixel narrower than declared cut it
   to `1…` (ticket 18, 2026-10-10).
+- `selection-look.spec.mjs` — UX-17/18/19: header rules, equal Focus/range edges beside
+  Headings and pinned blocks, single and multiple ranges, the fill handle and forced colours.
+  Heading-covered sides use the Heading Mark (D2); scroll readings await the circuit and frames,
+  never a fixed delay.
+- `heading-mark.spec.mjs` — the Heading Mark (UX-21, ADR-0008 of 2026-10-13), read in Device
+  Pixels: on `/sheet`, under the built-in Chrome and `ExSheet.MudBlazor`'s, R4's shape of a range and
+  a cell apart from it marks the Headings of their columns and rows with a line of two Device Pixels
+  on the edge toward the cells, in the Focus outline's colour (`#217346`, or the primary), along each
+  run's whole length and unbroken where two marked Headings meet, and the Headings between them not
+  at all; a whole column marks its Heading and every Row Heading in view, and the corner every
+  Heading, the pinned A's among them. On `/wide`, ExGrid's own header with no Theme, in `CanvasText`,
+  which a Theme's `--ex-focus-outline` recolours and `--ex-heading-mark` overrides; a Pinned Column's
+  part of the mark staying whole over its header while a scrollable column passes beneath it, and a
+  scrollable column's mark passing beneath the pinned headers as the column does; the line kept under
+  forced colors, in `Highlight`. On `/pivot`, under both Chromes, ExPivot's report header marked over
+  the selected value's column and not over the pinned labels'. What the core decides — which Headings,
+  which boxes, that no row renders for them — is layer 2's (`HeadingMarkTests`). D1 also reads
+  ordinary/whole-axis shades, letters and the all-selected corner, Consumer tokens, both dark
+  frames, and Group/Total Row Heading weights. D2 reads every bare-grid outline side at the header,
+  in normal and forced colours at 100% and a real 150%, so the mark cannot double a covered side
+  or become thinner than the other sides.
 - `format-cells.spec.mjs` — Format Cells under the built-in Chrome (ADR-0071, SH-45, DC-60;
   tickets 52 and 56) on `/sheet` and `/sheets`: a popover inside the Sheet's box, opened from the
   Context Menu and Ctrl+1 (case 22) with the keyboard on its tab; the arrows switching the tabs; OK as
   one undo step; Escape and a refused Custom code each setting nothing; a Custom code typed at full
-  speed arriving whole, Enter as OK; Tab and Shift+Tab wrapping inside; cells that differ showing an
+  speed arriving whole, Enter as OK; Tab and Shift+Tab wrapping inside once its tab holds the
+  keyboard, and on a 150 ms circuit on the Server host a Shift+Tab typed in the round trip before it
+  does, once the menu has gone, held on the Sheet's root and dropped with the arrow behind it
+  (ADR-0039, 2026-10-13); cells that differ showing an
   empty Font style and No Colour (case 24); a cell under a neighbour's thick bottom opening with its
   top pressed, as drawn (case 14-13); scrolling inside a small box and closing as a Cancel when
   the box shrinks below one row; and two Sheets each with their own. On a 150 ms circuit on the
   Server host, the page's *Format Cells…* pressed straight after Shift+ArrowDown, and the Context
   Menu's item chosen as soon as the menu opens on another cell, each open over the Selection the grid
-  holds and stand when the move's notification lands (ticket 56).
+  holds and stand when the move's notification lands (ticket 56). Over numbers showing `####`, OK
+  with a Fill widens no column, and OK with Bold widens the one at the standard width, never the one
+  sized by its grip, in OK's one step (ADR-0071, decided 2026-10-12; the seventeenth Windows run's
+  h7).
 - `format-cells-keys.spec.mjs` — keys typed while Format Cells opens (ticket 93; ADR-0050 item 16
-  and ADR-0039, notes of 2026-10-01), under both Chromes, at an 80 ms round trip on the Server host:
-  a digit typed straight after a press on "Format Cells…", a press and a round trip, Enter on the
-  item and Ctrl+1 is Format Cells' or dropped, never an edit behind it; End typed straight after
+  and ADR-0039, notes of 2026-10-01 and 2026-10-13), under both Chromes, at an 80 ms round trip on
+  the Server host: a digit typed straight after a press on "Format Cells…", a press and the menu's
+  removal, Enter on the item and Ctrl+1 reaches Format Cells once, read by a listener on the document
+  for the keys that land on it, never an edit behind it; End typed straight after
   Enter or Ctrl+1 reaches its tabs, in order behind the digit; and on `/sheets` the keys held for
   one Sheet are never the other's, which types as ever afterwards (ADR-0018).
 - `format-cells-mud.spec.mjs` — Format Cells under `ExSheet.MudBlazor`'s Chrome (ADR-0071, SH-45;
@@ -682,7 +762,23 @@ nobody had asked for. What that means when writing a test:
   typed at full speed arriving whole, Enter as OK; Tab and Shift+Tab kept inside; More Colours as
   MudBlazor's colour picker, read back through Format Cells; and, however it closes, the next
   arrow moving the Focus — from the page's button too, which MudBlazor would otherwise hand the
-  keyboard back to. Two Sheets each keep their own last tab and get the keyboard back.
+  keyboard back to. Over numbers showing `####`, OK widens as under the built-in Chrome: not for a
+  Fill, and for Bold the column at the standard width, never the one sized by its grip, in OK's one
+  step. Two Sheets each keep their own last tab and get the keyboard back.
+- `sheet-toolbar.spec.mjs` — the Sheet Toolbar (ADR-0100, SH-48 to SH-50; ticket 54) on `/sheet`
+  under both Chromes: above the Formula Bar and outside the grid's root, Bold shown pressed over a
+  bold Focus, a press that leaves the keyboard on the Sheet, every item greyed out while a cell is
+  edited, a colour chosen from the list kept on the face, the page's own action, the toolbar as one
+  tab stop, Excel's KeyTips (SH-52) and Ctrl+F1 (SH-51). Over numbers showing `####` (ADR-0071):
+  as decided on 2026-10-12, Bold and Italic widen no column, Underline and Strikethrough widen the
+  one at the standard width, never the one sized by its grip, each taken back by one Ctrl+Z, and the
+  Font Colour face and a colour from its list widen the column at the standard width as Excel's
+  Home tab button does (decided 2026-10-14), through `SetCellFormatFromFocusAsync`; each colour and
+  its width are one undo step. Ctrl+Z typed straight after a Font Colour choice, while its list
+  closes at a 150 ms round trip, takes both back too. `SetCellFormatAsync` keeps the rule of
+  `Font.Color` through COM and widens nothing for a colour. The Fill Colour face widens nothing,
+  as the fourteenth Windows run's Fill Colour button did not (case 7). That nothing widened is read
+  after `circuitQuiet()`.
 - `declarations.spec.mjs` — the declarations of ADR-0050/0051/0057 (§26) as ExSheet makes them on
   `/sheet`: completion under the built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`)
   — the list inside the grid's box, ↑/↓, Tab, Escape, ←/→ with the list open, `=SS` completed
@@ -735,7 +831,9 @@ nobody had asked for. What that means when writing a test:
   ExPivot's own markup and `ExPivot.MudBlazor`'s (`/pivot?chrome=mud`), found by role and name,
   which both give the same. A field dragged from the list of fields onto an Area with the
   browser's own drag and drop, an entry dropped before another, back onto the list or onto the
-  report (PV-10); report removal following Defer Layout Update, an unused field and a details grid
+  report (PV-10), each removal counted once the report shows it, before the next drop (a drop made
+  while a question is out cancels it, and the layout it was for is never raised, ADR-0066); report
+  removal following Defer Layout Update, an unused field and a details grid
   changing nothing, and Escape cancelling the drag and its removal indication;
   the `−` button collapsing an Item with the Focus kept (PV-13); a double click on a value
   opening a tab at the report's foot, titled by the cell and holding the trades behind it, with
@@ -788,9 +886,16 @@ nobody had asked for. What that means when writing a test:
   inputs disabled meanwhile, and Cancel stopping it with nothing read; an unknown semicolon
   file's suggested Schema shown with what is not clear about it (leading zeros kept as Text, a
   decimal comma), nothing read until it is confirmed, then read under it to exact totals by
-  desk, the account numbers keeping their zeros; the page's two samples, one under the declared
-  Schema and one under a suggested Schema, reading the same trades to the same total — a second
-  file read while a report stands; and the code shown under "The code" equal to its source.
+  desk, the account numbers keeping their zeros; the seventeenth Windows run's `e16.csv`, read
+  through the same unknown-file path, painting its values in General as Excel's PivotTable showed
+  them, at most eleven characters (`0.3`, `1.23457E+11`, `1.23456789`, `1.23457E-05`), each whole
+  in its column and never `####` (ADR-0060, PV-7); the readings of 2026-10-12's `e16b.csv`, its
+  number Items labelled in the same General as Excel labelled them (`1.23456789`, `1.23457E+11`;
+  R3 (c), ADR-0060), and with its Key in Column Labels a copy with headers of the value row
+  through the Context Menu carrying those headers as painted in the text flavour and in full in
+  the HTML (`<th>123456789012.345</th>`; ADR-0005); the page's two samples, one under the
+  declared Schema and one under a suggested Schema, reading the same trades to the same total — a
+  second file read while a report stands; and the code shown under "The code" equal to its source.
 - `pivot-db.spec.mjs` — `/pivot-db` (ADR-0065/0066/0069, ADR-0151/0152), against the demo API server
   from either host. A server report scrolls beyond its first Window with a bounded number of rendered
   rows (LV-24); a report scrolled to its last row and then shrunk by a layout, computed in the page
@@ -921,7 +1026,13 @@ nobody had asked for. What that means when writing a test:
   never comes and the end, the request waiting until the keyboard leaves the field and the editor
   then taking it holding the text (left from script: Playwright emulates focus, so a window switch
   tells the page nothing); copy and paste from the field; a field per
-  Sheet (ADR-0018); read-only over a cell that does not edit. The field as the one tab stop, Tab in
+  Sheet (ADR-0018); read-only over a cell that does not edit. On the Server host behind 150 ms,
+  under both Chromes, a composition finished in the field while a popover opens is never the grid's
+  (ADR-0039, ADR-0010): typed after Ctrl+F, it lands in the find field with the digit typed behind
+  it; typed after Ctrl+1, or once Format Cells… run from the Context Menu has closed it, it is
+  dropped with the End behind it, Format Cells' Number tab still chosen and focused; and no edit
+  opens behind either. Each reads that the composition ended in the field, where the hold took it.
+  The field as the one tab stop, Tab in
   from before and Shift+Tab in from after, then out (A11Y-4), and a display-only grid's root
   likewise; on `/features` under both Chromes, no column's ▾ reached by Tab or Shift+Tab, on the
   grid that edits or the one that does not, and a press on one still opening its popover; the release of Tab ending when DOM focus leaves, on a grid with a field and one without

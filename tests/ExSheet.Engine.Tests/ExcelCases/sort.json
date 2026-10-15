@@ -77,7 +77,7 @@
     {
       "id": "SORT-009",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: text sorts without regard to case",
+      "description": "Text sorts without regard to case",
       "fixture": "binaryData",
       "cells": {"ZZ1000": "=SORT(D1:D5,1,-1)"},
       "check": "ZZ1000",
@@ -86,7 +86,7 @@
     {
       "id": "SORT-010",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: numbers sort before text, and text before booleans",
+      "description": "Numbers sort before text, and text before booleans",
       "fixture": "lookupData",
       "cells": {"Z1": "b", "Z2": "1", "Z3": "TRUE", "ZZ1000": "=SORT(Z1:Z3)"},
       "check": "ZZ1001",
@@ -95,42 +95,269 @@
     {
       "id": "SORT-011",
       "source": "observed",
-      "description": "Engine's refusal: a blank key is #VALUE!. Excel's Anchor shows 7, so the blank does not sort first as 0; where it goes, what its spilled cell shows and how a descending sort places it were not read",
+      "description": "A blank key sorts after the 7, so the Anchor shows 7",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORT(Q1:Q2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; the seventeenth Windows run read only the Anchor (7), and following it would guess the rest",
-      "excelExpect": {"value2": 7}
+      "expect": {"value2": 7}
     },
     {
       "id": "SORT-012",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: what the blank key's spilled cell shows below the 7 of SORT-011 (0, or empty text)",
+      "source": "observed",
+      "description": "A blank key's spilled cell, below the 7 of SORT-011, shows 0",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORT(Q1:Q2)"},
       "check": "ZZ1001",
-      "expect": {"value2": null},
-      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; recorded, so that a run reads Excel's answer"
+      "expect": {"value2": 0}
     },
     {
       "id": "SORT-013",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a blank key in a descending sort (7 first if a blank sorts last whatever the order)",
+      "source": "observed",
+      "description": "In a descending sort a blank key is still last, so the 7 comes first",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=SORT(Q1:Q2,1,-1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; recorded, so that a run reads Excel's answer"
+      "expect": {"value2": 7}
     },
     {
       "id": "SORT-014",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a blank key among text (a first if a blank sorts last, not as empty text)",
+      "source": "observed",
+      "description": "A blank key among text sorts last, neither as empty text nor as 0, either of which would come first",
       "cells": {"A1": "b", "A3": "a", "ZZ1000": "=SORT(A1:A3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0202, ADR-0047: a blank among SORT's keys is refused with #VALUE! until Excel is asked where it sorts; recorded, so that a run reads Excel's answer"
+      "expect": {"value2": "a", "kind": "text"}
+    },
+    {
+      "id": "SORT-015",
+      "source": "observed",
+      "description": "Over 7 and then #N/A the Anchor shows 7: an Error Value key is neither the result nor sorted before a number. The #N/A followed the 7 already, so this fits an Error Value key that sorts after the numbers and one that keeps its place alike (SORT-026 asks which)",
+      "cells": {"A1": "7", "A2": "=NA()", "ZZ1000": "=SORT(A1:A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "SORT-016",
+      "source": "observed",
+      "description": "In a descending sort of text a blank key is still last, so b comes first",
+      "cells": {"A1": "b", "A3": "a", "ZZ1000": "=SORT(A1:A3,1,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b", "kind": "text"}
+    },
+    {
+      "id": "SORT-017",
+      "source": "observed",
+      "description": "In a descending sort of text the blank key's cell is the last and shows 0",
+      "cells": {"A1": "b", "A3": "a", "ZZ1000": "=SORT(A1:A3,1,-1)"},
+      "check": "ZZ1002",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "SORT-018",
+      "source": "observed",
+      "description": "A blank key sorts after a boolean too, so TRUE is second",
+      "cells": {"A1": "1", "A3": "TRUE", "ZZ1000": "=SORT(A1:A3)"},
+      "check": "ZZ1001",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "SORT-019",
+      "source": "observed",
+      "description": "After a number and a boolean the blank key is last and shows 0",
+      "cells": {"A1": "1", "A3": "TRUE", "ZZ1000": "=SORT(A1:A3)"},
+      "check": "ZZ1002",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "SORT-020",
+      "source": "observed",
+      "description": "by_col, a blank key in the row sorts its column last, which shows 0",
+      "cells": {"A1": "2", "C1": "1", "ZZ1000": "=SORT(A1:C1,1,1,TRUE)"},
+      "check": "AAB1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "SORT-021",
+      "source": "observed",
+      "description": "COUNTA counts a blank kept in SORT's array, read inside the Formula: 2 over 7 and a blank",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=COUNTA(SORT(Q1:Q2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "SORT-022",
+      "source": "observed",
+      "description": "A blank kept in SORT's array, taken out by INDEX, is still blank: neither the 0 it spills as nor empty text",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=ISBLANK(INDEX(SORT(Q1:Q2),2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "SORT-023",
+      "source": "observed",
+      "description": "In a descending sort two blank keys keep their order, so x is second, after the 1's z",
+      "cells": {"B1": "x", "B2": "y", "A3": "1", "B3": "z", "ZZ1000": "=SORT(A1:B3,1,-1)"},
+      "check": "AAA1001",
+      "expect": {"value2": "x", "kind": "text"}
+    },
+    {
+      "id": "SORT-024",
+      "source": "observed",
+      "description": "Over b, a blank and a, b is second, after the a of SORT-014",
+      "cells": {"A1": "b", "A3": "a", "ZZ1000": "=SORT(A1:A3)"},
+      "check": "ZZ1001",
+      "expect": {"value2": "b", "kind": "text"}
+    },
+    {
+      "id": "SORT-025",
+      "source": "observed",
+      "description": "Over b, a blank and a, the blank key is last and its cell shows 0",
+      "cells": {"A1": "b", "A3": "a", "ZZ1000": "=SORT(A1:A3)"},
+      "check": "ZZ1002",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "SORT-026",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value key with a number after it is #VALUE!; the Anchor would be 7 if an Error Value key sorts after the numbers, #N/A if it keeps its place, two readings SORT-015 does not tell apart",
+      "cells": {"A1": "=NA()", "A2": "7", "ZZ1000": "=SORT(A1:A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-027",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: the Error Value key's own cell, after the 7 of SORT-015, shows the Error Value, where an Error Value key that sorts after the numbers and one that keeps its place both put it",
+      "cells": {"A1": "7", "A2": "=NA()", "ZZ1000": "=SORT(A1:A2)"},
+      "check": "ZZ1001",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "SORT-028",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value key in a descending sort is #VALUE!; the Anchor would be 7 if it stays last or keeps its place, #N/A if it comes first",
+      "cells": {"A1": "7", "A2": "=NA()", "ZZ1000": "=SORT(A1:A2,1,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-029",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value key beside text is #VALUE!; the Anchor would be a if it sorts after text, #N/A if before",
+      "cells": {"A1": "a", "A2": "=NA()", "ZZ1000": "=SORT(A1:A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-030",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value key beside a boolean is #VALUE!; the Anchor would be TRUE if it sorts after booleans, #N/A if before",
+      "cells": {"A1": "TRUE", "A2": "=NA()", "ZZ1000": "=SORT(A1:A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-031",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an Error Value key beside a blank key is #VALUE!; the Anchor would be #N/A if it sorts before the blank, 0 if after",
+      "cells": {"A1": "=NA()", "ZZ1000": "=SORT(A1:A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-032",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: two different Error Value keys are #VALUE!; the second would be #N/A if they keep their order, #DIV/0! if ERROR.TYPE orders them",
+      "cells": {"A1": "7", "A2": "=NA()", "A3": "=1/0", "ZZ1000": "=INDEX(SORT(A1:A3),2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-033",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: SUM adds nothing for a blank kept in SORT's array, whether it passes over it or reads it as 0, where the sum does not nearly cancel",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SUM(SORT(Q1:Q2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "SORT-034",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: COUNT over a blank kept in SORT's array is #VALUE!; 1 if it is no number to COUNT, 2 if COUNT reads it as 0",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=COUNT(SORT(Q1:Q2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-035",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: COUNTA given the blank INDEX takes out of SORT's array, as one Value, is #VALUE!; 1 if it counts it as it counts it in the array (SORT-021), 0 if as a blank cell's",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=COUNTA(INDEX(SORT(Q1:Q2),2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-036",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a Formula whose result is the blank INDEX takes out of SORT's array shows 0, as one that reads a blank cell does",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(SORT(Q1:Q2),2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "SORT-037",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: SUM over -0.3, 0.1, 0.2 and a blank kept last in SORT's array is #VALUE!; 0 if SUM passes over the blank, so that its last addition, of 0.2, cancels, 2.78E-17 if it adds the blank as 0 last",
+      "cells": {"A1": "0.1", "A2": "0.2", "A3": "-0.3", "ZZ1000": "=SUM(SORT(A1:A4))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-038",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: SORT given the blank FILTER keeps as a key is #VALUE!; the Anchor would be 7 if it sorts last as a blank cell's key does (SORT-011), 0 if SORT reads it as 0",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SORT(FILTER(Q1:Q2,H1:H2>0))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-039",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: IF handing on SORT's array with its kept blank is #VALUE!; TRUE if IF hands the blank on as it is, which ISBLANK read blank (SORT-022), FALSE if as the 0 it spills as",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=ISBLANK(INDEX(IF(TRUE,SORT(Q1:Q2)),2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-040",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: in a descending sort a blank key sorts after a boolean too, as Excel's did after numbers and text (SORT-013, 016) and after a boolean ascending (SORT-018), so the last cell is the blank's and shows 0; not 0 if the blank sorted first",
+      "cells": {"A1": "1", "A3": "TRUE", "ZZ1000": "=SORT(A1:A3,1,-1)"},
+      "check": "ZZ1002",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "SORT-041",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: in an ascending sort two blank keys keep their order, as Excel kept equal keys (SORT-004) and two blank keys in a descending sort (SORT-023), so x is second, after the 1's z; y if they were reversed",
+      "cells": {"B1": "x", "B2": "y", "A3": "1", "B3": "z", "ZZ1000": "=SORT(A1:B3)"},
+      "check": "AAA1001",
+      "expect": {"value2": "x", "kind": "text"}
+    },
+    {
+      "id": "SORT-042",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a sort_index that is not a whole number; truncated to 1 it sorts by the first column and the Anchor is 1, rounded to 2 by the second and the Anchor is 3, and #VALUE! if Excel takes no fraction there",
+      "cells": {"G1": "2", "H1": "2", "G2": "1", "H2": "3", "G3": "3", "H3": "1", "ZZ1000": "=SORT(G1:H3,1.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

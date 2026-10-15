@@ -170,8 +170,8 @@ internal static class SelectionStyles
     /// <summary>
     /// A rectangle of the Copied Range as one layer paints it (ADR-0170), or null when the layer
     /// holds no part of it: painted whole and clipped to the layer's side, as a selected range is,
-    /// with the outline's sides as a selected range's, so the dashes lie on the Selection's outline
-    /// where the two share a range. No hole: the Focus is under the dashes, not in them.
+    /// with covered sides kept inside so the dashes stay visible even when the current
+    /// Selection marks different Headings. No hole: the Focus is under the dashes, not in them.
     /// </summary>
     public static string? Copied(
         SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted, bool pinnedLayer, OutlineCover cover)
@@ -179,7 +179,7 @@ internal static class SelectionStyles
         if (Whole(range, columns, rowHeightPx, painted, pinnedLayer, outsidePx: rowHeightPx) is not { } style
             || Side(range, columns, pinnedLayer) is not { } side)
             return null;
-        return style + OutlineSides(range.TopRow, side.First, columns, pinnedLayer, cover);
+        return style + OutlineSides(range.TopRow, side.First, columns, pinnedLayer, cover, headingMark: false);
     }
 
     /// <summary>
@@ -202,42 +202,53 @@ internal static class SelectionStyles
     /// readable area, so every row before it has its top under the header (or above the
     /// Viewport); <paramref name="ScrollLeftPx"/> is the horizontal scroll offset, which takes a
     /// scrollable column's left edge under the Row Headings or the pinned block.
+    /// <paramref name="HasHeader"/> says whether a Heading Mark can replace the covered top side.
     /// </summary>
-    internal readonly record struct OutlineCover(int FirstOpenRow, double ScrollLeftPx);
+    internal readonly record struct OutlineCover(int FirstOpenRow, double ScrollLeftPx, bool HasHeader);
+
+    /// <summary>
+    /// Where the readable area begins, for a fill handle held at its edge (ADR-0050, item 5):
+    /// <paramref name="TopPx"/> is its top in the selection layers' coordinates, measured from the
+    /// painted slice's top, so the part of the first painted row under the header; and
+    /// <paramref name="LeftPx"/> its left in the scrollable layer's, the content's, which is the
+    /// horizontal scroll offset plus the Row Headings and the pinned block that cover the edge.
+    /// </summary>
+    internal readonly record struct ReadableEdge(double TopPx, double LeftPx);
 
     // The sides of the Selection's outline that stay inside the range, as the stylesheet reads
     // them (ex-grid.css): written once, and none when every side lies outside, as Excel's does.
-    private const string InsideTop = "; --ex-outline-in-t: 1";
-    private const string InsideLeft = "; --ex-outline-in-l: 1";
-    private const string InsideTopAndLeft = "; --ex-outline-in-t: 1; --ex-outline-in-l: 1";
+    private static readonly string[] OutlineSideStyles = Enumerable.Range(0, 16).Select(flags =>
+        ((flags & 1) != 0 ? "; --ex-outline-in-t: 1" : "")
+        + ((flags & 2) != 0 ? "; --ex-outline-in-l: 1" : "")
+        + ((flags & 4) != 0 ? "; --ex-outline-heading-t: 1" : "")
+        + ((flags & 8) != 0 ? "; --ex-outline-heading-l: 1" : "")).ToArray();
 
     // A pixel's hundredth: a row's top edge or a column's left edge this close to what covers it
     // is flush with it.
     private const double FlushPx = 0.01;
 
     /// <summary>
-    /// The sides of the Selection's outline that stay inside the range (ADR-0008, 2026-10-01).
-    /// Excel draws it on the gridline and one pixel outside the range, so it covers a Border on
-    /// every outer edge, and so does the stylesheet, except on a side whose outer pixels
-    /// something above the selection layer would cover: a top edge at or above the readable
-    /// area's top, under the header; a left edge at or left of the Row Headings' edge, or of the
-    /// pinned block's for a scrollable column. There the side stays inside, as it was, so its
-    /// width stays the others' (UX-18). The bottom and right sides lie on the range's own last
-    /// pixels and one past, where nothing covers them.
+    /// The sides that need their outline inside (ADR-0008, D2, 2026-10-14). A Heading Mark
+    /// replaces the side hidden beneath a header or Row Headings. A pinned block's boundary
+    /// and an unheaded grid edge have no replacing mark, so their outline stays inside.
+    /// Copied Range dashes remain visible at all covered edges: they describe another range.
     /// </summary>
-    private static string OutlineSides(int topRow, int firstColumn, ColumnGeometry columns, bool pinnedLayer, OutlineCover cover)
+    private static string OutlineSides(int topRow, int firstColumn, ColumnGeometry columns, bool pinnedLayer, OutlineCover cover,
+        bool headingMark = true)
     {
+        // D2 (ADR-0008, 2026-10-14): keep a covered side outside beneath the Heading Mark.
+        // A pinned block has no mark down its edge, and a bare grid edge has no Heading;
+        // those still need the whole side inside. Copied Range dashes have no replacing mark.
         var top = topRow < cover.FirstOpenRow;
         var left = pinnedLayer
             ? columns.OffsetPxOf(firstColumn) <= columns.LeadWidthPx + FlushPx
             : columns.OffsetPxOf(firstColumn) - cover.ScrollLeftPx <= columns.PinnedWidthPx + FlushPx;
-        return (top, left) switch
-        {
-            (true, true) => InsideTopAndLeft,
-            (true, false) => InsideTop,
-            (false, true) => InsideLeft,
-            _ => "",
-        };
+        var headingTop = top && headingMark && cover.HasHeader;
+        var headingLeft = left && headingMark && columns.LeadWidthPx > 0 && (pinnedLayer || columns.PinnedCount == 0);
+        // The separate Heading flags let forced colors retain inside outlines elsewhere,
+        // while replacing exactly the covered sides, including the restored Focus outline.
+        return OutlineSideStyles[(top && !headingTop ? 1 : 0) | (left && !headingLeft ? 2 : 0)
+            | (headingTop ? 4 : 0) | (headingLeft ? 8 : 0)];
     }
 
     /// <summary>The part of a range that pans with the content, or null when the range
@@ -253,30 +264,81 @@ internal static class SelectionStyles
         => Part(range, columns, rowHeightPx, painted, pinnedLayer: true);
 
     /// <summary>
-    /// The fill handle (ADR-0050, item 5): a square of <paramref name="sizePx"/> centred on
-    /// the range's bottom-right corner, in the layer that corner belongs to — the pinned one
-    /// when the range's last column is pinned, the scrollable one otherwise. Null for the
-    /// other layer, so the handle is one element and never two — and null while its corner
-    /// is not among the painted rows (ADR-0053), where it could not be seen or grabbed.
+    /// The fill handle (ADR-0050, item 5): a square of <paramref name="sizePx"/> at the
+    /// <paramref name="corner"/> of the range <see cref="FillRules.HandleCorner"/> chose, in the
+    /// layer that corner's cell belongs to — the pinned one when its column is pinned, the
+    /// scrollable one otherwise. Null for the other layer, so the handle is one element and never
+    /// two — and null while that cell is not among the painted rows (ADR-0053), where it could not
+    /// be seen or grabbed; but a whole column's first row scrolled above them leaves its handle
+    /// held at the readable area's top, as Excel's stayed in view with row 1 scrolled away (observed,
+    /// the readings of 2026-10-12 (R5)). Where it lies about the corner is
+    /// <see cref="HandleCentrePx"/>'s.
     /// </summary>
     public static string? Handle(
-        SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted,
-        double sizePx, bool pinnedLayer)
+        SelectionRange range, FillHandleCorner corner, ColumnGeometry columns, double rowHeightPx, RowRange painted,
+        double sizePx, bool pinnedLayer, ReadableEdge readable)
     {
-        if (Side(CellRange(new CellPosition(range.BottomRow, range.RightColumn)), columns, pinnedLayer) is null)
+        var cell = HandleCell(range, corner);
+        if (Side(CellRange(cell), columns, pinnedLayer) is null)
             return null;
-        if (range.BottomRow < painted.Start - 1 || range.BottomRow > painted.Start + painted.Count)
+        var heldAtTheTop = corner == FillHandleCorner.TopRight;
+        if ((!heldAtTheTop && cell.Row < painted.Start - 1) || cell.Row > painted.Start + painted.Count)
             return null;
-        var (leftPx, topPx) = HandleCornerPx(range, columns, rowHeightPx, painted.Start);
+        var (leftPx, topPx) = HandleCentrePx(range, corner, columns, rowHeightPx, painted.Start, sizePx, readable);
         return FormattableString.Invariant(
             $"left: {leftPx - (sizePx / 2)}px; top: {topPx - (sizePx / 2)}px; width: {sizePx}px; height: {sizePx}px");
     }
 
-    /// <summary>The range's bottom-right corner, in the coordinates its layer paints in:
-    /// the painted slice's top, and the content's (or the pinned layer's) left.</summary>
-    public static (double LeftPx, double TopPx) HandleCornerPx(
-        SelectionRange range, ColumnGeometry columns, double rowHeightPx, int firstPaintedRow)
-        => (columns.OffsetPxOf(range.RightColumn + 1), (range.BottomRow + 1 - firstPaintedRow) * rowHeightPx);
+    /// <summary>The cell whose corner the handle stands at: the range's last row and last column,
+    /// its first row and last column for whole columns, its last row and first column for whole
+    /// rows. Its column decides the layer, and its row whether the handle is painted.</summary>
+    public static CellPosition HandleCell(SelectionRange range, FillHandleCorner corner) => corner switch
+    {
+        FillHandleCorner.TopRight => new CellPosition(range.TopRow, range.RightColumn),
+        FillHandleCorner.BottomLeft => new CellPosition(range.BottomRow, range.LeftColumn),
+        _ => new CellPosition(range.BottomRow, range.RightColumn),
+    };
+
+    /// <summary>
+    /// The handle's centre, in the coordinates its layer paints in: the painted slice's top, and
+    /// the content's (or the pinned layer's) left. At the bottom-right it is centred on the range's
+    /// corner, which is the outline's outer corner (ADR-0008). At the top-right of whole columns
+    /// and the bottom-left of whole rows it is centred on the edge that runs along the range, and
+    /// lies wholly inside the range across the other, so its top is the first row's top and its
+    /// left the first column's left: that edge is the one the column's Heading or the row's Heading
+    /// stands against, and the header and the Row Headings stand above the selection layer
+    /// (ADR-0008), so a handle centred on the corner would have half of it beneath them, or past the
+    /// grid's edge without one. Excel's straddles the Heading's edge there, a whole column's its
+    /// Heading's bottom edge and a whole row's the Row Heading's right edge (observed, the readings
+    /// of 2026-10-12 (R5 (2))); ExGrid's lies just inside, uncovered.
+    ///
+    /// <para>Held at the readable area's edge (<paramref name="readable"/>): a whole column's top
+    /// never lies above the readable area's top, so with its first row scrolled away the handle
+    /// stands at the top-right of the part in view, beside the header, where Excel's stood (observed,
+    /// R5 (5)); a whole row's left in the scrollable layer never lies left of the Row Headings' and
+    /// the pinned block's edge, so with its first column scrolled under them it stands at the left of
+    /// the part in view (by generalisation from the column).</para>
+    /// </summary>
+    public static (double LeftPx, double TopPx) HandleCentrePx(
+        SelectionRange range, FillHandleCorner corner, ColumnGeometry columns, double rowHeightPx, int firstPaintedRow,
+        double sizePx, ReadableEdge readable)
+    {
+        var half = sizePx / 2;
+        return corner switch
+        {
+            FillHandleCorner.TopRight => (
+                columns.OffsetPxOf(range.RightColumn + 1),
+                Math.Max((range.TopRow - firstPaintedRow) * rowHeightPx, readable.TopPx) + half),
+            FillHandleCorner.BottomLeft => (
+                (range.LeftColumn < columns.PinnedCount
+                    ? columns.OffsetPxOf(range.LeftColumn)
+                    : Math.Max(columns.OffsetPxOf(range.LeftColumn), readable.LeftPx)) + half,
+                (range.BottomRow + 1 - firstPaintedRow) * rowHeightPx),
+            _ => (
+                columns.OffsetPxOf(range.RightColumn + 1),
+                (range.BottomRow + 1 - firstPaintedRow) * rowHeightPx),
+        };
+    }
 
     /// <summary>The Focus as a rectangle, so one cell and a block are the same
     /// arithmetic.</summary>

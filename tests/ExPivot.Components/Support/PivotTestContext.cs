@@ -62,7 +62,7 @@ public abstract class PivotTestContext : BunitContext
         offset.SetResult(default);
         _scrollOffsets.Add(offset);
         handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handKeyboardTo", "takeFocus", "followFocus", "dispose", "takeKeyboardBack", "passKeysOut" })
+        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handKeyboardTo", "takeFocus", "followFocus", "dispose", "takeKeyboardBack", "passKeysOut", "handOff" })
             handle.SetupVoid(name, _ => true).SetVoidResult();
     }
 
@@ -181,6 +181,17 @@ public abstract class PivotTestContext : BunitContext
                 ps.Add(p => p.Layout, layout);
             parameters?.Invoke(ps);
         });
+    }
+
+    /// <summary>
+    /// How many rows the report's header counts in ARIA before its first row (ADR-0033, decided
+    /// with the user 2026-10-12): the leaf row, and a row per tier of the column fields' Header
+    /// Groups above it.
+    /// </summary>
+    internal static int HeaderRowsOf(IRenderedComponent<PivotComponent> cut)
+    {
+        var header = Grid(cut).Find(".ex-header");
+        return header.GetAttribute("role") == "row" ? 1 : header.QuerySelectorAll("[role=row]").Length;
     }
 
     /// <summary>Renders a page of the tests' own, connected and interactive.</summary>

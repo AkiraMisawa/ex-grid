@@ -7,7 +7,8 @@
     <DocsSection Title="Rectangles, a Focus and an Extent">
         <p>
             A selection is one or more rectangles of cells. The <strong>Focus</strong> is Excel's active cell: the
-            cell typing goes into, outlined inside the selection. The <strong>Extent</strong> is the corner that
+            cell typing goes into, outlined when it is selected alone, left unshaded inside a selected range, and
+            given a thin border of its own among several ranges. The <strong>Extent</strong> is the corner that
             moves while you extend a range.
         </p>
         <ul>
@@ -15,6 +16,26 @@
             <li><strong>Ctrl+click</strong> adds another rectangle. On a cell that is already selected, it takes that cell out.</li>
             <li>Clicking a <strong>header</strong> sorts. <strong>Shift+click</strong> on a header selects whole columns, and <strong>Ctrl+Space</strong> does from the keyboard.</li>
         </ul>
+        <p>
+            The <strong>Heading Mark</strong> shows where the selection is: each column's header and each Row
+            Heading, where present, is shaded and its letters coloured when its column or row holds part of the
+            selection. A line two device pixels thick runs along its edge toward the cells, unbroken across
+            neighbouring marked Headings. A whole column or row takes a distinct shade, even when several ranges
+            together cover it; overlapping ranges do not make up for an unselected cell. Where the grid has a
+            Headings corner, its triangle takes the mark's colour when every cell is selected.
+        </p>
+        <p>
+            The mark changes without rendering the data row components again. Its line, letters and selected corner triangle use
+            <code>--ex-heading-mark</code>, the Focus outline's colour unless you set it. The shades use
+            <code>--ex-heading-mark-background</code> and <code>--ex-heading-mark-whole-background</code>
+            (<a href="exgrid/appearance#visual-tokens">Visual Tokens</a>). Where the header or a Row Heading covers
+            a side of the Focus or a single range, the mark supplies its two device pixels without a second outline
+            beside it. Against a pinned block, or a grid edge without a Heading, the outline stays inside.
+            Select a range in the example below, then Ctrl+click elsewhere: the columns between the two ranges
+            stay unmarked.
+            The ordinary Focus and single-range outline defaults to two device pixels on every side,
+            including at display scales above 100%.
+        </p>
         <p>
             Positions are in the current order. When the order of the rows changes — a sort, a filter, a row
             inserted — the same positions would name other rows, so the grid <strong>drops the selection</strong>
@@ -29,12 +50,27 @@
         <DocsExample Title="Reading the selection" Builtin="typeof(SelectionStatus)" Mud="typeof(SelectionStatusMud)"
                      Files="@(["Examples/Data/Trade.cs"])">
             <code>SelectionChanged</code> hands over a <code>GridSelection</code>: its ranges, the Focus, and the cell
-            count. Try Ctrl+click, then Ctrl+Shift+↓.
+            count. Select one cell, then Shift+click another to compare the marked headers. Press Ctrl+Space to
+            select the whole column and see its different shade, then Ctrl+A to select every cell. Try Ctrl+click,
+            then Ctrl+Shift+↓, and compare both Chromes.
         </DocsExample>
     </DocsSection>
 
     <DocsSection Title="The keyboard">
         <p>Click into the grid, or tab to it: the grid is one tab stop, and its keys are Excel's.</p>
+        <p>
+            With Narrator, turn scan mode off before you use the grid's keys: the Narrator key and Space
+            (Insert+Space). In scan mode the arrow keys move Narrator's own reading cursor through the page and
+            do not reach the grid, and Narrator turns scan mode on again on each new page. That is what Narrator
+            was seen to do; the grid itself is checked against the browser's accessibility tree, not against a
+            screen reader.
+        </p>
+        <p>
+            A screen reader is given the grid as a table. The header row is its row 1 and the first row of data its
+            row 2, and the grid writes each row's number the same way near the top and a million rows down. Each
+            tier of Header Groups is a row of its own above the header row, and the rows of data are counted after
+            them; with <code>HideHeader</code>, the first row of data is row 1.
+        </p>
         @* The rows the Keyboard reference lists for this section, so the two are one list (ADR-0110). *@
         <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
             <thead><tr><th style="width: 34%">Keys</th><th>What they do</th></tr></thead>
@@ -50,6 +86,12 @@
             Enter after each. The fifth Enter returns to the first cell instead of carrying on into a sixth row you
             did not mean to touch. Excel's "edge of the data block" for Ctrl+arrow is not used: query results have
             no blank rows, and finding a block's edge would need every row.
+        </p>
+        <p>
+            <strong>Keys typed at once arrive in order.</strong> Over Blazor Server a popover opens or closes a round
+            trip after the key or the press that asked, and the keys typed meanwhile wait and then go where the
+            keyboard lands: ↓, ↓ typed straight after Escape in a column's menu, or after Enter on a filter panel's OK,
+            move the Focus two rows, rather than moving in a menu that is going or being lost on a button.
         </p>
         <p>
             Every key of the three products, each with the page that explains it, is in the

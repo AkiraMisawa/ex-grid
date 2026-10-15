@@ -23,9 +23,10 @@ public sealed class GridPasteIntent
     internal GridPasteIntent(
         PastePlan plan, IReadOnlyList<IReadOnlyList<string>> values, int rowSequenceVersion,
         IReadOnlyList<IReadOnlyList<PasteFieldOrigin>>? origins = null, SelectionRange? fillSource = null,
-        CellPosition? enteredAt = null)
+        CellPosition? enteredAt = null, IReadOnlyList<IReadOnlyList<string?>>? marks = null)
     {
         Plan = plan;
+        _marks = marks;
         Values = values;
         RowSequenceVersion = rowSequenceVersion;
         Origins = origins ?? AllShown(values);
@@ -112,6 +113,23 @@ public sealed class GridPasteIntent
     {
         var source = Plan.SourceCellFor(target);
         return Values[source.Row][source.Column];
+    }
+
+    private readonly IReadOnlyList<IReadOnlyList<string?>>? _marks;
+
+    /// <summary>
+    /// The mark the value that lands on one target cell carried, through the plan's tiling: the
+    /// <see cref="ClipboardData.MarkAttribute"/> of its cell in a table of the family's own HTML
+    /// (<see cref="ClipboardData.InvariantMarker"/>), as written; null for a field that carried none,
+    /// and for every field of another program's clipboard. The grid gives it no meaning; the Consumer
+    /// that wrote it reads it.
+    /// </summary>
+    public string? MarkFor(CellPosition target)
+    {
+        if (_marks is null)
+            return null;
+        var source = Plan.SourceCellFor(target);
+        return _marks[source.Row][source.Column];
     }
 
     /// <summary>Where the value that lands on one target cell came from, through the plan's

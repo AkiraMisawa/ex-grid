@@ -32,11 +32,38 @@
     {
       "id": "TRANSPOSE-004",
       "source": "observed",
-      "description": "Engine's answer, Excel to be asked: a blank spills as 0",
+      "description": "A blank spills as 0",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=TRANSPOSE(Q1:Q2)"},
       "check": "AAA1000",
       "expect": {"value2": 0}
+    },
+    {
+      "id": "TRANSPOSE-005",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: COUNTA counts a blank TRANSPOSE keeps, as Excel counted SORT's and UNIQUE's (SORT-021, UNIQUE-017); 1 if it passes over it as over a blank cell",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=COUNTA(TRANSPOSE(Q1:Q2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "TRANSPOSE-006",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: the blank TRANSPOSE keeps, taken out by INDEX, is blank to ISBLANK, as Excel read SORT's (SORT-022); FALSE if TRANSPOSE turned it into the 0 it spills as",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=ISBLANK(INDEX(TRANSPOSE(Q1:Q2),1,2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "TRANSPOSE-007",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: MIN over a blank TRANSPOSE keeps is #VALUE!; 7 if it passes over it, 0 if it reads it as 0",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=MIN(TRANSPOSE(Q1:Q2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
     }
   ]
 }

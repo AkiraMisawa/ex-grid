@@ -61,10 +61,57 @@ public abstract class MudSheetTestContext : BunitContext
     /// keys typed there on the way (ADR-0050 item 16's note of 2026-10-12).</summary>
     protected int TakeBackCount => _handle.Invocations["takeKeyboardBack"].Count;
 
+    /// <summary>Holds the browser's answer to a hand-back until the returned action completes it.</summary>
+    protected Action HoldKeyboardHandBack()
+    {
+        var pending = _handle.SetupVoid("takeKeyboardBack", _ => true);
+        return () => pending.SetVoidResult();
+    }
+
+    /// <summary>Holds a hand-back and records request starts, including calls still unfinished.</summary>
+    protected Action HoldKeyboardHandBack(List<string> starts)
+    {
+        var pending = _handle.SetupVoid("takeKeyboardBack", _ =>
+        {
+            starts.Add("takeKeyboardBack");
+            return true;
+        });
+        _handle.SetupVoid("handOff", invocation =>
+        {
+            starts.Add("handOff:" + (string)invocation.Arguments[0]!);
+            return true;
+        }).SetVoidResult();
+        return () => pending.SetVoidResult();
+    }
+
+    /// <summary>The grid's asks of its key gate about where the keyboard goes — a hand-off, or a hand-back
+    /// from a frame — in the order made: <c>handOff:frame</c>, <c>takeKeyboardBack</c>.</summary>
+    protected IReadOnlyList<string> KeyboardWays =>
+        [.. _handle.Invocations.Where(i => i.Identifier is "handOff" or "takeKeyboardBack")
+            .Select(i => i.Identifier == "handOff" ? "handOff:" + (string)i.Arguments[0]! : i.Identifier)];
+
     /// <summary>How many times the keyboard has been asked back for the Sheet, either way: the plain
     /// hand-back, or the hand-back from a frame with the keys typed on the way (decided with the user,
     /// 2026-10-13).</summary>
     protected int KeyboardReturns => ReclaimCount + TakeBackCount;
+
+    /// <summary>
+    /// From now, the browser's side of each hand-back from a frame (takeKeyboardBack) asks for the keys
+    /// typed on the way within the call itself, before the call has returned, as the key gate does on
+    /// WebAssembly, where the call and its question run in one task, and as it may on a circuit, where the
+    /// question reaches the Sheet before the call's completion does. The keys asked for are added to
+    /// <paramref name="into"/>.
+    /// </summary>
+    private protected void AskForKeysWithinTakeBacks(IRenderedComponent<ExGrid<SheetRow>> grid, List<KeyboardEventArgs> into)
+    {
+        var asked = new HashSet<int>();
+        _handle.SetupVoid("takeKeyboardBack", invocation =>
+        {
+            var ticket = (int)invocation.Arguments[1]!;
+            if (asked.Add(ticket)) into.AddRange(grid.Instance.KeysTypedOnTheWay(ticket));
+            return true;
+        }).SetVoidResult();
+    }
 
     private int _takeBacksAnswered;
 

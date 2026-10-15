@@ -15,6 +15,10 @@
                 <strong>Two formats go on the clipboard.</strong> The text each cell shows, its <code>format</code>
                 applied, as plain text; and the raw values as an HTML table, so Excel receives every digit of an
                 amount the grid displays rounded. A cell showing <code>####</code> copies its value, never the hashes.
+                <em>Copy with headers</em> puts each column's header in both. When you answer a copy yourself,
+                <code>ClipboardData.Assemble</code> makes the two formats from each cell's shown and raw text, and a
+                header that shows a number rounded can carry the number in full for the HTML through
+                <code>headerRawAt</code>, as ExPivot's number column Items do.
             </li>
             <li>
                 <strong>Rows off screen are copied too.</strong> A selection larger than the rows the grid has painted
@@ -49,6 +53,16 @@
         </ul>
     </DocsSection>
 
+    <DocsSection Title="A numeric header keeps its precision">
+        <DocsExample Title="Rounded header, complete number" Builtin="typeof(NumericHeaders)" Mud="typeof(NumericHeadersMud)"
+                     Files="@(["Examples/Grid/NumericHeaderCopy.cs"])">
+            Select the cells, open the Context Menu and choose <em>Copy with headers</em>. A text editor receives
+            the header <code>1.23457E+11</code> as shown; Excel receives <code>123456789012.345</code> from the HTML
+            table. This Consumer answers through <code>CopyAnswer</code>, using <code>headerRawAt</code> for the
+            numeric header and returning <code>null</code> for Sample, whose header is the same in both formats.
+        </DocsExample>
+    </DocsSection>
+
     <DocsSection Title="Why a copy refuses rather than truncates">
         <p>
             The everyday use of a blotter is to select rows, paste them into Excel and total them there. If a copy
@@ -81,7 +95,10 @@
             <code>TargetNotEditable</code>, since no reselection of the same shape would help. A single value pasted
             as plain text — not as a table — over a range lands in its top-left cell only. Numbers copied from Excel
             arrive at full precision, and <code>Origins</code> tells you whether a field is invariant-culture text
-            from Excel's own data or text as it was shown.
+            from Excel's own data or text as it was shown. In the family's own HTML a cell may carry
+            <code>ClipboardData.MarkAttribute</code>; <code>MarkFor</code> hands its value to the Consumer that
+            wrote it, and another program ignores it. ExSheet marks a refused cell so that a paste into a Sheet is
+            refused.
         </p>
         <DocsExample Title="Copy out, paste in" Builtin="typeof(ClipboardGrid)" Mud="typeof(ClipboardGridMud)"
                      Files="@(["Examples/Grid/Position.cs"])">

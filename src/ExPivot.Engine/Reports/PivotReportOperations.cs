@@ -42,7 +42,15 @@ public sealed record PivotReportCopyCell(string Text, string? Raw, bool IsNumber
 /// <summary>One copied rectangle, including the corresponding headers.</summary>
 /// <param name="Headers">Headers in the rectangle's column order.</param>
 /// <param name="Rows">All cells of its rows, without Window truncation.</param>
-public sealed record PivotReportCopyBlock(IReadOnlyList<string> Headers, IReadOnlyList<IReadOnlyList<PivotReportCopyCell>> Rows);
+public sealed record PivotReportCopyBlock(IReadOnlyList<string> Headers, IReadOnlyList<IReadOnlyList<PivotReportCopyCell>> Rows)
+{
+    /// <summary>Each header's raw, locale-free form, by position, for a copy's HTML flavour, as a
+    /// cell has <see cref="PivotReportCopyCell.Raw"/>: a number column Item's leaf header carries its
+    /// number in full (<c>123456789012.345</c> where it shows <c>1.23457E+11</c>), and any other
+    /// header null, which copies its text (ADR-0005's note of 2026-10-13). Null when no header of
+    /// the rectangle has one; otherwise as many as <see cref="Headers"/>.</summary>
+    public IReadOnlyList<string?>? HeaderRaws { get; init; }
+}
 
 /// <summary>The Copy result, or an explicit refusal.</summary>
 /// <param name="Version">The report answered.</param>

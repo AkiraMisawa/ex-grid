@@ -116,7 +116,7 @@ public class SheetAppearanceTests : SheetTestContext
 
         Assert.True(await cut.Instance.SetCellFormatAsync(new CellFormatChange { Fill = Yellow }));
 
-        var rows = cut.FindAll(".ex-row").Select(r => r.GetAttribute("aria-rowindex")!).ToList();
+        var rows = cut.FindAll(".ex-row").Select(SheetRowOf).ToList();
         Assert.True(rows.Count > 5);
         foreach (var row in rows)
         {
@@ -173,7 +173,9 @@ public class SheetAppearanceTests : SheetTestContext
 
         Assert.True(await cut.Instance.UndoAsync());
         Assert.All(Rows(cut), r => Assert.True(r.Value.Renders > filled[r.Key].Renders, $"row {r.Key} repaints again"));
-        Assert.Empty(cut.FindAll("[class*='ex-fill-']"));
+        // No cell keeps a Fill's class. The fill handle shares the prefix, and a whole column's now
+        // stands beside its Heading, among the painted rows (ADR-0050, 2026-10-12).
+        Assert.Empty(cut.FindAll("[class*='ex-fill-']:not(.ex-fill-handle):not(.ex-fill-target)"));
     }
 
     [Fact] // ADR-0071, SH-4, DC-58: a Fill on one cell repaints its row and the row above, whose gridline it covers, and no other

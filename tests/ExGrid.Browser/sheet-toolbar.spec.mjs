@@ -1,7 +1,8 @@
 import { test, expect, setRoundTrip, circuitQuiet, alterPage } from './fixtures.mjs';
-import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { watchHiddenFocus } from './hidden-focus.mjs';
+import { resolvedColour } from './pixels.mjs';
 
 // The Sheet Toolbar (ADR-0100, ticket 54; SH-48 to SH-50), on /sheet under both Chromes: above the
 // Formula Bar, inside the Sheet's box and outside the grid's root, the grid keeping the rows the page
@@ -94,6 +95,11 @@ async function watchWhereKeysLand(page) {
     return () => page.evaluate(() => window.__keysLanded);
 }
 
+/** The colour a cell's text is painted in, as sRGB. */
+async function inkOf(locator) {
+    return resolvedColour(locator.page(), await locator.evaluate((el) => getComputedStyle(el).color));
+}
+
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
         test.beforeEach(async ({ page }) => {
@@ -174,6 +180,109 @@ for (const chrome of ['builtin', 'mud']) {
             await expectFocusAt(grid, 'C3');
             await toolbarItem(page, 'Fill Colour').click();
             await expect(cell(grid, 'C3')).toHaveCSS('background-color', 'rgb(0, 176, 240)');
+        });
+
+        // Decided with the user on 2026-10-12 (ADR-0071): each toggle widens a column over #### as
+        // the key it names does — Underline as Ctrl+U (the seventeenth Windows run's h7),
+        // Strikethrough as Ctrl+5 (the fourteenth's case 7) — and Bold and Italic widen nothing, as
+        // Ctrl+B and Ctrl+I do not.
+        test(`ADR-0100/ADR-0071 (decided 2026-10-12): over #### Italic and Bold widen no column; Underline and Strikethrough widen one at the standard width, never one sized by its grip, each taken back by one Ctrl+Z (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
+            const width = async (name) => (await boxOf(columnHeader(grid, name))).width;
+            const focusFont = page.locator('#sheet-focus-font');
+
+            await toolbarItem(page, 'Italic').click();
+            await expect(focusFont).toHaveText('italic');
+            await toolbarItem(page, 'Bold').click();
+            await expect(focusFont).toHaveText('bold italic');
+            // That nothing widened is read once every round trip has landed (ADR-0056).
+            await circuitQuiet();
+            await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+            expect(await width('E')).toBeCloseTo(standard, 0);
+
+            for (const [item, shown] of [['Underline', 'bold italic underline'], ['Strikethrough', 'bold italic strikethrough']]) {
+                await toolbarItem(page, item).click();
+                await expect(focusFont).toHaveText(shown);
+                await expect(cell(grid, 'E1')).toHaveText('123,456,789.12');
+                await expect.poll(() => width('E')).toBeGreaterThan(standard + 10);
+                await circuitQuiet();
+                await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
+                expect(await width('F')).toBeCloseTo(sized, 0);
+
+                // The width is a step of the press's own: one Ctrl+Z takes back the emphasis and the width.
+                await expectKeyboardOn(grid);
+                await page.keyboard.press('ControlOrMeta+Z');
+                await expect(focusFont).toHaveText('bold italic');
+                await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+                await expect.poll(() => width('E')).toBeCloseTo(standard, 0);
+            }
+        });
+
+        // Decided with the user on 2026-10-14 (ADR-0071, ADR-0100): the Font Colour widens a column over
+        // #### as Excel's Home tab Font Color button did, by its face and from its list (the readings of
+        // 2026-10-14, run 18a, widening case 5), never one sized by its grip, each in its press's one undo
+        // step; SetCellFormatAsync keeps widening as Font.Color through COM, which does not widen. The Fill
+        // Colour face widens nothing, as the fourteenth Windows run's Fill Colour button did not (case 7).
+        test(`ADR-0100/ADR-0071 (decided with the user, 2026-10-14): over #### the Font Colour, by its face and from its list, widens the column at the standard width and leaves a sized one, each taken back by one Ctrl+Z; the Fill Colour face widens no column (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
+            const width = async (name) => (await boxOf(columnHeader(grid, name))).width;
+
+            await toolbarItem(page, 'Fill Colour').click();
+            await expect(cell(grid, 'E1')).toHaveCSS('background-color', 'rgb(255, 255, 0)');
+            // That nothing widened is read once every round trip has landed (ADR-0056).
+            await circuitQuiet();
+            await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+            expect(await width('E')).toBeCloseTo(standard, 0);
+
+            // Its face, red as Excel's starts; then a colour from its list, Blue as run 18a chose.
+            const faceAndList = [
+                [async () => toolbarItem(page, 'Font Colour').click(), [255, 0, 0]],
+                [async () => {
+                    await toolbarArrow(page, 'Font Colour').click();
+                    await page.locator('[role="menuitemradio"][aria-label="Blue"]').first().click();
+                }, [0x00, 0x70, 0xc0]],
+            ];
+            for (const [press, ink] of faceAndList) {
+                await press();
+                await expect.poll(() => inkOf(cell(grid, 'E1'))).toEqual(ink);
+                await expect(cell(grid, 'E1')).toHaveText('123,456,789.12');
+                await expect.poll(() => width('E')).toBeGreaterThan(standard + 10);
+                await circuitQuiet();
+                await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
+                expect(await width('F')).toBeCloseTo(sized, 0);
+
+                // The width is a step of the press's own: one Ctrl+Z takes back the colour and the width.
+                await expectKeyboardOn(grid);
+                await page.keyboard.press('ControlOrMeta+Z');
+                await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+                await expect.poll(() => width('E')).toBeCloseTo(standard, 0);
+                await expect(cell(grid, 'E1')).toHaveCSS('background-color', 'rgb(255, 255, 0)');
+            }
+        });
+
+        test(`ADR-0100/ADR-0044: Ctrl+Z typed straight after a Font Colour choice undoes its colour and width while the list closes (${chrome})`, async ({ page }, testInfo) => {
+            const grid = sheet(page);
+            const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
+            const before = await inkOf(cell(grid, 'E1'));
+            const keysLanded = await watchWhereKeysLand(page);
+            await setRoundTrip(150);
+            await toolbarArrow(page, 'Font Colour').click();
+
+            // The undo belongs after the choice even while its list still holds the keyboard.
+            // No reading between the click and the key waits for the colour, width or focus.
+            await page.locator('[role="menuitemradio"][aria-label="Blue"]').first().click();
+            await page.keyboard.press('ControlOrMeta+Z');
+
+            await circuitQuiet();
+            await testInfo.attach('keys-after-font-colour', { body: JSON.stringify(await keysLanded()), contentType: 'application/json' });
+            await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
+            await expect.poll(() => inkOf(cell(grid, 'E1'))).toEqual(before);
+            expect((await boxOf(columnHeader(grid, 'E'))).width).toBeCloseTo(standard, 0);
+            expect((await boxOf(columnHeader(grid, 'F'))).width).toBeCloseTo(sized, 0);
+            await expectKeyboardOn(grid);
+            await expect(openLists(page)).toHaveCount(0);
         });
 
         test(`ADR-0100: the page's own action runs over the Selection (${chrome})`, async ({ page }) => {
@@ -309,6 +418,46 @@ for (const chrome of ['builtin', 'mud']) {
         await page.keyboard.press('Escape');
         await expect(formatCells).toHaveCount(0);
         await expectKeyboardOn(grid);
+    });
+
+    test(`ADR-0039 (2026-10-13)/ADR-0100: More Number Formats… opens Format Cells with the keyboard in it, and Escape typed straight after the choice closes it, as typed slowly (${chrome})`, async ({ page }) => {
+        await openSheet(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'C2');
+        const formatCells = formatCellsOf(page, grid, chrome);
+        const before = await page.locator('#sheet-focus-number-format').textContent();
+        // The Number Format's list from its KeyTip, holding the keyboard on its last choice.
+        const onMoreNumberFormats = async () => {
+            await keyTips(page, 'h', 'n');
+            await expect(openLists(page).locator(':focus')).toHaveCount(1);
+            await page.keyboard.press('End');
+            await expect(openLists(page).locator(':focus')).toContainText('More Number Formats');
+        };
+
+        // Slowly: Enter opens Format Cells, which takes the keyboard; Escape closes it.
+        await onMoreNumberFormats();
+        await page.keyboard.press('Enter');
+        await expect(formatCells).toBeVisible();
+        await expect(openLists(page)).toHaveCount(0);
+        await expect.poll(() => formatCells.evaluate((f) => f.contains(document.activeElement))).toBe(true);
+        await page.keyboard.press('Escape');
+        await expect(formatCells).toHaveCount(0);
+        await expectKeyboardOn(grid);
+
+        // At once, at an 80 ms round trip on the Server host: the Escape typed while the list closes and
+        // Format Cells opens is Format Cells', and closes it, never the grid's.
+        await onMoreNumberFormats();
+        await setRoundTrip(80);
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('Escape');
+
+        await expect(openLists(page)).toHaveCount(0);
+        await circuitQuiet();
+        await expect(formatCells).toHaveCount(0);
+        await expectKeyboardOn(grid);
+        await setRoundTrip(0);
+        // Format Cells closed by Escape set nothing.
+        await expect(page.locator('#sheet-focus-number-format')).toHaveText(before ?? '');
     });
 
     test(`ADR-0100 (the seventeenth Windows run, Part D): the keyboard handed back from the toolbar leaves no console warning while the accessibility tree is on (${chrome})`, async ({ page }) => {
@@ -665,6 +814,28 @@ for (const chrome of ['builtin', 'mud']) {
                 const keys = await landed();
                 expect(keys.find((k) => k.key === 'ArrowDown')?.where).not.toBe('list');
             }
+        });
+
+        test(`ADR-0100 (decided with the user, 2026-10-13): Alt, H, N, then End, Enter typed at once open Format Cells from More Number Formats…, as typed slowly (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'C2');
+            const formatCells = formatCellsOf(page, grid, chrome);
+            const before = await page.locator('#sheet-focus-number-format').textContent();
+            await setRoundTrip(80);
+
+            // End and Enter are the list's however soon they come: End reaches its last choice and Enter
+            // makes it, where the list answers them, not the browser's press of a button.
+            await keyTips(page, 'h', 'n', 'End', 'Enter');
+
+            await expect(formatCells).toBeVisible();
+            await circuitQuiet();
+            await expect(openLists(page)).toHaveCount(0);
+            await expect(tips(page)).toHaveCount(0);
+            await expect.poll(() => formatCells.evaluate((f) => f.contains(document.activeElement))).toBe(true);
+            await page.keyboard.press('Escape');
+            await expect(formatCells).toHaveCount(0);
+            await expectKeyboardOn(grid);
+            await expect(page.locator('#sheet-focus-number-format')).toHaveText(before ?? '');
         });
 
         test(`ADR-0100/ADR-0050: Enter typed at once after a KeyTip's command reaches the Sheet, not the toolbar (${chrome})`, async ({ page }) => {

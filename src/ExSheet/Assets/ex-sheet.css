@@ -51,7 +51,7 @@
 }
 /* A row not yet painted shows its bar in the Ink, as it would on a light page. */
 :where(.ex-sheet) .ex-placeholder { --ex-placeholder-background: var(--ex-sheet-ink, #000); }
-:where(.ex-sheet) .ex-viewport > :not(.ex-row) {
+:where(.ex-sheet) .ex-viewport > :not(.ex-row):where(:not(.ex-heading-marks-rows)) {
     color-scheme: light;
     --ex-editor-background: var(--ex-sheet-paper, #fff);
     --ex-editor-color: var(--ex-sheet-ink, #000);
@@ -80,6 +80,18 @@
 }
 .ex-sheet .ex-editing .ex-focus::after,
 .ex-sheet .ex-editing .ex-range-single::after {
+    box-shadow: none;
+}
+/* The Focus among several ranges (ADR-0008, 2026-10-12): the core's thin border of one Device Pixel
+   inside the cell, in the outline's colour (2026-10-12, decided with the user: on the Paper it is
+   #217346, as the readings of 2026-10-12 measured Excel's active cell among several areas, R4). That
+   is where no Theme or Wrapper names --ex-focus-among-ranges-outline or --ex-focus-outline; under
+   ExSheet.MudBlazor it is the palette's primary. It draws no white line of its own: between it and
+   the gridline lies the cell's own ground, the Paper's white on a cell with no Fill, which R4
+   measured there; over a Fill no run has looked. Three classes, so it outranks the Focus outline's
+   rule above, and its white line, in any order. */
+.ex-sheet .ex-focus.ex-focus-among-ranges::after {
+    border-color: var(--ex-focus-among-ranges-outline, var(--ex-focus-outline, #217346));
     box-shadow: none;
 }
 /* The Copied Range's dashes (ADR-0170) are the outline's colour, as Excel's are: its green where no
@@ -120,6 +132,31 @@
     }
     /* The core's restatement, which the green above would otherwise outrank (ADR-0170). */
     .ex-sheet .ex-copied-range::after { outline-color: Highlight; }
+}
+
+/* The Heading Mark (ADR-0008, 2026-10-13): the core's line of two Device Pixels on the edge of each
+   marked Heading, in the outline's colour, which on a Sheet is Excel's green where no Theme or Wrapper
+   names --ex-heading-mark or --ex-focus-outline: the readings of 2026-10-12 measured Excel's line as
+   #217346, the active cell's border's colour (R4). Under ExSheet.MudBlazor it is the palette's
+   primary, as the outline is. The Headings frame the Paper and follow the scheme, and the line stands
+   on them as drawn. Two classes, so it outranks the core's rule in any order; under forced colors the
+   core's restatement is made again here for the same reason. */
+.ex-sheet .ex-heading-mark { border-color: var(--ex-heading-mark, var(--ex-focus-outline, #217346)); }
+/* D1's light-frame colours; the dark frame follows the system scheme, and a Theme or
+   Wrapper token wins in either. Original Row Headings retain the frame's colour scheme. */
+.ex-sheet .ex-header-cell.ex-heading-marked, .ex-sheet .ex-row:where(:has(+ .ex-heading-state.ex-heading-marked)) > .ex-row-heading {
+    background-color: var(--ex-heading-mark-background, light-dark(#e1e1e1, color-mix(in srgb, CanvasText 12%, Canvas)));
+    color: var(--ex-heading-mark, var(--ex-focus-outline, #217346));
+}
+.ex-sheet .ex-header-cell.ex-heading-whole, .ex-sheet .ex-row:where(:has(+ .ex-heading-state.ex-heading-whole)) > .ex-row-heading {
+    background-color: var(--ex-heading-mark-whole-background, light-dark(#d3f0e0, color-mix(in srgb, var(--ex-heading-mark, var(--ex-focus-outline, #217346)) 20%, Canvas)));
+}
+.ex-sheet .ex-headings-corner-marked::after { background-color: var(--ex-heading-mark, var(--ex-focus-outline, #217346)); }
+@media (forced-colors: active) {
+    .ex-sheet .ex-focus::after, .ex-sheet .ex-focus.ex-focus-among-ranges::after, .ex-sheet .ex-range-single::after { border-color: Highlight; box-shadow: none; }
+    .ex-sheet .ex-heading-mark { border-color: Highlight; }
+    .ex-sheet .ex-header-cell.ex-heading-marked, .ex-sheet .ex-header-cell.ex-heading-whole, .ex-sheet .ex-row:where(:has(+ .ex-heading-state.ex-heading-marked)) > .ex-row-heading, .ex-sheet .ex-row:where(:has(+ .ex-heading-state.ex-heading-whole)) > .ex-row-heading { background-color: Canvas; color: Highlight; }
+    .ex-sheet .ex-headings-corner-marked::after { background-color: Highlight; }
 }
 
 /* The Row Headings' edge is Excel's #ABABAB over white (Part C): the core's grey at the alpha that

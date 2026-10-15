@@ -22,6 +22,16 @@ public static class ClipboardData
     /// </summary>
     public const string InvariantMarker = "data-ex-grid=\"invariant\"";
 
+    /// <summary>
+    /// The attribute a cell of a table marked <see cref="InvariantMarker"/> may carry to tell its
+    /// own Consumer more than the field's text says: <c>&lt;td data-ex-mark="…"&gt;</c>. A paste
+    /// hands its value over beside the field (<see cref="GridPasteIntent.MarkFor"/>) and gives it no
+    /// meaning of its own; another program ignores an attribute it does not know and reads the
+    /// field. ExSheet marks a cell whose Formula it refused, so that a paste into a Sheet carries
+    /// the refusal where another program reads <c>#VALUE!</c>.
+    /// </summary>
+    public const string MarkAttribute = "data-ex-mark";
+
     /// <summary>Both flavours of one approved copy: <c>Text</c> is the TSV of the
     /// displayed values, <c>Html</c> a table of the raw ones (ADR-0005).</summary>
     /// <param name="plan">The approved copy (ADR-0005/0011).</param>
@@ -32,11 +42,18 @@ public static class ClipboardData
     /// (ADR-0005). It is the full declared text, never the truncated paint, by the rule
     /// that keeps <c>####</c> off the clipboard — and it goes into both flavours,
     /// because Excel reads the HTML one and that is the case headers exist for.</param>
+    /// <param name="headerRawAt">A header's raw form, unformatted and locale-free, for the HTML
+    /// flavour, as <paramref name="rawAt"/> is a cell's: null for a column whose header has none,
+    /// which writes <paramref name="headerAt"/>'s text into both flavours as before. A header that
+    /// shows a number rounded — a pivot's number column Item, <c>1.23457E+11</c> — carries the
+    /// number in full here, so Excel reads it whole (ADR-0005's note of 2026-10-13). Read only
+    /// when <paramref name="headerAt"/> is given.</param>
     public static (string Text, string Html) Assemble(
         CopyPlan plan,
         Func<int, int, string> displayAt,
         Func<int, int, string> rawAt,
-        Func<int, string>? headerAt = null)
+        Func<int, string>? headerAt = null,
+        Func<int, string?>? headerRawAt = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(displayAt);
@@ -46,7 +63,7 @@ public static class ClipboardData
         var html = new StringBuilder("<table ").Append(InvariantMarker).Append('>');
 
         if (headerAt is not null)
-            AppendHeaderRow(text, html, plan, headerAt);
+            AppendHeaderRow(text, html, plan, headerAt, headerRawAt);
 
         if (plan.Orientation == CopyOrientation.Vertical)
         {
@@ -89,7 +106,7 @@ public static class ClipboardData
     /// concatenate, so the names follow the order the cells are emitted in (ADR-0005).
     /// A disjoint selection has a well-defined header row either way.</summary>
     private static void AppendHeaderRow(
-        StringBuilder text, StringBuilder html, CopyPlan plan, Func<int, string> headerAt)
+        StringBuilder text, StringBuilder html, CopyPlan plan, Func<int, string> headerAt, Func<int, string?>? headerRawAt)
     {
         html.Append("<tr>");
         var cell = 0;
@@ -97,26 +114,27 @@ public static class ClipboardData
         {
             var span = plan.Segments[0];
             for (var column = span.LeftColumn; column <= span.RightColumn; column++)
-                AppendHeaderCell(text, html, headerAt(column), cell++);
+                AppendHeaderCell(text, html, headerAt(column), headerRawAt?.Invoke(column), cell++);
         }
         else
         {
             foreach (var segment in plan.Segments)
             {
                 for (var column = segment.LeftColumn; column <= segment.RightColumn; column++)
-                    AppendHeaderCell(text, html, headerAt(column), cell++);
+                    AppendHeaderCell(text, html, headerAt(column), headerRawAt?.Invoke(column), cell++);
             }
         }
         text.Append("\r\n");
         html.Append("</tr>");
     }
 
-    private static void AppendHeaderCell(StringBuilder text, StringBuilder html, string header, int index)
+    // The TSV takes the header as shown; the HTML its raw form where it has one, else the same text.
+    private static void AppendHeaderCell(StringBuilder text, StringBuilder html, string header, string? raw, int index)
     {
         if (index > 0)
             text.Append('\t');
         text.Append(QuoteForTsv(header));
-        html.Append("<th>").Append(EscapeHtml(header)).Append("</th>");
+        html.Append("<th>").Append(EscapeHtml(raw ?? header)).Append("</th>");
     }
 
     private static void AppendLine(
