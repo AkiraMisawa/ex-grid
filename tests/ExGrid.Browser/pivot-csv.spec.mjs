@@ -1,4 +1,4 @@
-import { test, expect, circuitQuiet } from './fixtures.mjs';
+import { test, expect, circuitQuiet, dataRowCount } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
 import { readClipboard } from './sheet-helpers.mjs';
 import fs from 'node:fs';
@@ -90,7 +90,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(rows(page).first()).toBeVisible({ timeout: 30_000 });
             // Every row of the report is painted, so the two are compared whole.
             const fromRecords = await paintedRows(page);
-            expect(fromRecords).toHaveLength(Number(await report(page).getAttribute('aria-rowcount')));
+            expect(fromRecords).toHaveLength(await dataRowCount(report(page)));
             expect(fromRecords.at(-1)[0]).toBe('Grand Total');
 
             await open(page, chrome);
@@ -102,7 +102,7 @@ for (const chrome of ['builtin', 'mud']) {
             await reportShown(page, chrome);
             // The same layout over the same trades, read from text: every label and every value,
             // money summed exactly, the same.
-            expect(await report(page).getAttribute('aria-rowcount')).toBe(String(fromRecords.length));
+            expect(await dataRowCount(report(page))).toBe(fromRecords.length);
             expect(await paintedRows(page)).toEqual(fromRecords);
             // The whole file was read: the bar is full.
             const progress = page.locator('#csv-progress');

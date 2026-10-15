@@ -36,7 +36,7 @@ public class RowStripeTests : GridTestContext
     /// <summary>The row's position in the whole result, from the attribute the root
     /// already states it in (ADR-0033) — zero-based.</summary>
     private static int PositionOf(AngleSharp.Dom.IElement row)
-        => int.Parse(row.GetAttribute("aria-rowindex")!) - 1;
+        => AriaRows.PositionOf(row);
 
     /// <summary>Every painted row — data row or Placeholder — wears the stripe exactly
     /// when its position in the result is odd.</summary>

@@ -911,7 +911,7 @@ public class ConsistencyTests : GridTestContext
             var firstRow = int.Parse(cut.Find(".ex-viewport").GetAttribute("data-ex-first-row")!);
             var from = page.Start + slice.Start;
             Assert.True(slice.Count == rows.Count && from == firstRow
-                && from + 1 == int.Parse(rows[0].GetAttribute("aria-rowindex")!),
+                && from == AriaRows.PositionOf(rows[0]),
                 $"painted {rows.Count} rows from {firstRow}, SliceAt says {slice.Count} from {from}: {where}");
         }
         else
@@ -960,7 +960,7 @@ public class ConsistencyTests : GridTestContext
         int? previous = null;
         foreach (var row in rows)
         {
-            var index = int.Parse(row.GetAttribute("aria-rowindex")!);
+            var index = AriaRows.PositionOf(row) + 1;
             Assert.InRange(index, 1, Math.Max(1, extentRows));
             if (previous is { } p)
                 Assert.Equal(p + 1, index);

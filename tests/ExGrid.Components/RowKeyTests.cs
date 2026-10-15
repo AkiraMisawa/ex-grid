@@ -723,7 +723,7 @@ public class RowKeyTests : GridTestContext
         var moved = Rows(cut).Single(row => row.Instance.Row.Id == 1000);
         SameComponent(first, moved.Instance);
         Assert.All(moved.FindAll("[role=gridcell]"), cell => Assert.Contains("r2c", cell.Id));
-        Assert.Equal("3", moved.Find("[role=row]").GetAttribute("aria-rowindex"));
+        Assert.Equal(2, AriaRows.PositionOf(moved.Find("[role=row]"), cut.Find(".ex-grid")));
     }
 
     [Fact] // ADR-0140 / ADR-0027 P7 / ED-6: the editor's uncommitted text and the Selection are the core's — a kept row changing under them takes neither

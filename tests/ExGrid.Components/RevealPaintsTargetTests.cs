@@ -42,11 +42,10 @@ public class RevealPaintsTargetTests : GridTestContext
         => cut.Find(".ex-viewport").MouseDownAsync(
             new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 10, OffsetY = 10 });
 
-    /// <summary>The rows the Viewport paints, by their aria-rowindex (1-based), Placeholders
-    /// included.</summary>
+    /// <summary>The rows the Viewport paints, by their aria-rowindex (counted after the header's
+    /// rows, ADR-0033), Placeholders included.</summary>
     private static int[] PaintedRows(IRenderedComponent<ExGrid<TestRow>> cut)
-        => [.. cut.FindAll(".ex-viewport [role=row]")
-            .Select(row => int.Parse(row.GetAttribute("aria-rowindex")!, CultureInfo.InvariantCulture) - 1)];
+        => [.. cut.FindAll(".ex-viewport [role=row]").Select(AriaRows.PositionOf)];
 
     /// <summary>The rows the geometry puts on screen at a scroll offset: the slice a render
     /// at that offset paints, the partly visible last row included.</summary>

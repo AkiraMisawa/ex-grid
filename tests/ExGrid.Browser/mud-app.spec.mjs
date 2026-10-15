@@ -495,8 +495,13 @@ test("WR-6: Striped paints the palette's table-stripe colour in both schemes, an
             rowImage: striped ? getComputedStyle(striped).backgroundImage : null,
         };
     });
-    const parity = () => positions(page).evaluate((root) => [...root.querySelectorAll('.ex-row')].map((row) =>
-        (Number(row.getAttribute('aria-rowindex')) - 1) % 2 === 1 === row.classList.contains('ex-row-stripe')));
+    // A row's position is its aria-rowindex less the header's rows, which ARIA counts first (ADR-0033).
+    const parity = () => positions(page).evaluate((root) => {
+        const header = root.querySelector(':scope > .ex-scroller > .ex-spacer > .ex-header');
+        const headerRows = !header ? 0 : header.getAttribute('role') === 'row' ? 1 : header.querySelectorAll(':scope > [role=row]').length;
+        return [...root.querySelectorAll('.ex-row')].map((row) =>
+            (Number(row.getAttribute('aria-rowindex')) - 1 - headerRows) % 2 === 1 === row.classList.contains('ex-row-stripe'));
+    });
 
     const light = await colours();
     expect(light.token).toBe(light.palette);

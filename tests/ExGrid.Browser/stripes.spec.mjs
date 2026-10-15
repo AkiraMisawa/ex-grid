@@ -19,8 +19,10 @@ function cell(page, row, column) {
     return page.locator(`.ex-grid [id$='r${row}c${column}']`);
 }
 
+// The page's header is one row, which ARIA counts first (ADR-0033): a data row's aria-rowindex is
+// its position plus two.
 function rowOf(page, row) {
-    return page.locator(`.ex-grid .ex-row[aria-rowindex='${row + 1}']`);
+    return page.locator(`.ex-grid .ex-row[aria-rowindex='${row + 2}']`);
 }
 
 /**

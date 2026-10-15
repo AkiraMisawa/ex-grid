@@ -235,8 +235,29 @@ public abstract class SheetTestContext : BunitContext
     internal static IElement Cell(IRenderedComponent<SheetComponent> cut, string address)
     {
         var at = CellAddress.Parse(address);
-        var row = cut.FindAll(".ex-row").Single(r => r.GetAttribute("aria-rowindex") == (at.Row + 1).ToString(System.Globalization.CultureInfo.InvariantCulture));
+        var row = cut.FindAll(".ex-row").Single(r => SheetRowOf(r) == at.Row + 1);
         return row.QuerySelectorAll("[role=gridcell]").Single(c => c.GetAttribute("aria-colindex") == (at.Column + 1).ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>
+    /// The Sheet's own number for a painted row, 1 for row 1: its <c>aria-rowindex</c> less the
+    /// header's rows, which ARIA counts first — the Column Headings' row, or none while they are
+    /// hidden (ADR-0033, decided with the user 2026-10-12).
+    /// </summary>
+    internal static int SheetRowOf(IElement row)
+        => int.Parse(row.GetAttribute("aria-rowindex")!, System.Globalization.CultureInfo.InvariantCulture)
+            - HeaderRowsOf(row.Closest(".ex-grid")!);
+
+    /// <summary>How many rows the header of <paramref name="grid"/> counts in ARIA: its own header,
+    /// one row, or one per tier and the leaf row, or none while it is hidden.</summary>
+    internal static int HeaderRowsOf(IElement grid)
+    {
+        static IElement? Child(IElement? parent, string className)
+            => parent?.Children.FirstOrDefault(child => child.ClassList.Contains(className));
+        var header = Child(Child(Child(grid, "ex-scroller"), "ex-spacer"), "ex-header");
+        return header is null ? 0
+            : header.GetAttribute("role") == "row" ? 1
+            : header.QuerySelectorAll("[role=row]").Length;
     }
 
     /// <summary>Moves the browser's scroll position and raises the scroll event the grid listens for:

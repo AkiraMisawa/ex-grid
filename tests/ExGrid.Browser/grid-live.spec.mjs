@@ -1,4 +1,4 @@
-import { test, expect, circuitQuiet, scrollRowToTop } from './fixtures.mjs';
+import { test, expect, circuitQuiet, scrollRowToTop, dataRowCount } from './fixtures.mjs';
 import { API_URL } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 
@@ -292,7 +292,7 @@ test('PV-20/ADR-0069: the Window is read from the server as the grid scrolls, an
     expect(status.live.on).toBe(true);
     await expect(grid(page)).toHaveAttribute('aria-rowcount', /^\d+$/);
     // Every trade the server holds is a row of the grid, though the page holds a Window of them.
-    expect(Number(await grid(page).getAttribute('aria-rowcount'))).toBe(status.trades);
+    expect(await dataRowCount(grid(page))).toBe(status.trades);
     await expect(page.locator('#grid-live-window')).toContainText(`of ${status.trades.toLocaleString('en-US')}`);
 
     // Far down, past what the first page read: the grid asks for the rows, and the page reads them.
@@ -352,7 +352,7 @@ test('LV-8/ADR-0141: a trade cancelled after the Window, with a Selection reachi
         await expect(grid(page).locator('.ex-range')).toHaveCount(0);
         // The rows on screen are the same trades: nothing in the Window moved.
         expect(await paintedTrades(page)).toEqual(painted);
-        expect(Number(await grid(page).getAttribute('aria-rowcount'))).toBe(total - 1);
+        expect(await dataRowCount(grid(page))).toBe(total - 1);
     } finally {
         // The trade comes back for whoever reads the data next.
         await post('/api/reset');

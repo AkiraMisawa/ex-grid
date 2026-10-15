@@ -1192,6 +1192,8 @@ ExGrid.Components.ExGridRow<TRow>.Dispose() -> void
 ExGrid.Components.ExGridRow<TRow>.Engagement.get -> ExGrid.Components.CellEngagement
 ExGrid.Components.ExGridRow<TRow>.Engagement.set -> void
 ExGrid.Components.ExGridRow<TRow>.ExGridRow() -> void
+ExGrid.Components.ExGridRow<TRow>.HeaderRowCount.get -> int
+ExGrid.Components.ExGridRow<TRow>.HeaderRowCount.set -> void
 ExGrid.Components.ExGridRow<TRow>.Heading.get -> string?
 ExGrid.Components.ExGridRow<TRow>.Heading.set -> void
 ExGrid.Components.ExGridRow<TRow>.HeadingStyle.get -> string?
