@@ -406,7 +406,7 @@ test('DC-59: under forced colors no tint is painted over a pinned range, and its
     const grid = await openCase(page, '11', '&pin=3');
     await selectB2toC3(page, grid);
     await page.emulateMedia({ forcedColors: 'active' });
-    await expect.poll(() => grid.locator('.ex-selection-pinned > .ex-range').first().evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid');
+    await expect.poll(() => grid.locator('.ex-selection-pinned > .ex-range').first().evaluate((el) => getComputedStyle(el, '::after').borderTopStyle)).toBe('solid');
     const read = await grid.evaluate((root) => ({
         tints: [...root.querySelectorAll('.ex-range-tint')].map((el) => getComputedStyle(el).display),
         blend: getComputedStyle(root.querySelector('.ex-shade-pinned')).mixBlendMode,
