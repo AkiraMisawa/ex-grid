@@ -343,6 +343,14 @@ public sealed record PivotItemFilterContext(
     /// refresh." when the source can no longer answer under the report's Source Version, rather
     /// than Items that are not the report's (ADR-0066). OK cannot be pressed meanwhile.</summary>
     public string? Unavailable { get; init; }
+
+    /// <summary>How the search takes DOM focus when <see cref="FocusRequest"/> asks: called with the
+    /// search's element in place of that element's own <c>FocusAsync</c>. Opened from the report
+    /// filter band, the keys typed on its button while the panel opens are the search's (decided with
+    /// the user, 2026-10-13, ADR-0061): ExPivot carries the keyboard through the report's grid, which
+    /// holds them and types them into the search as it hands it the keyboard, ahead of any typed there
+    /// after (ExGrid's <c>HandKeyboardToAsync</c>). Unset, the element's own focus.</summary>
+    public Func<ElementReference, Task> TakeKeyboard { get; init; } = static control => control.FocusAsync().AsTask();
 }
 
 /// <summary>Field Settings… of a row or column field (ADR-0061): its subtotals and its order,

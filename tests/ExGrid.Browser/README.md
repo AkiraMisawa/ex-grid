@@ -447,6 +447,12 @@ nobody had asked for. What that means when writing a test:
   grid's box and scrolls (UX-11, ADR-0040), and a grid that goes while the keys after
   Alt+↓ are still waiting for its popover leaves nothing running to throw from a later
   frame (ADR-0010, CON-2).
+- `keyboard-return.spec.mjs` — the shipped key gate's return from a Consumer frame (ADR-0050/0070).
+  A controlled Consumer leaves its key-collection answer pending: the hand-back cannot complete
+  until that answer, whether focus was returned or another control kept it. This pins the ordering
+  without a latency guess; a caller may then remove its frame and clear its queue.
+  Passing keys out of a closing grid hands the held keys to its frame before later keys or a focus
+  departure can overtake them, even while the leaving Escape's own answer remains pending.
 - `page-follow.spec.mjs` — the page following a move (ADR-0204, KB-45) on `/cells` in a window
   shorter than its grid, on a grid that edits and a display-only one: the arrows bringing the Focus
   in at the window's bottom edge, a cell already in the window moving nothing, a range extended past
@@ -743,9 +749,12 @@ nobody had asked for. What that means when writing a test:
   tab stop, Excel's KeyTips (SH-52) and Ctrl+F1 (SH-51). Over numbers showing `####` (ADR-0071):
   as decided on 2026-10-12, Bold and Italic widen no column, Underline and Strikethrough widen the
   one at the standard width, never the one sized by its grip, each taken back by one Ctrl+Z, and the
-  Font Colour face and a colour from its list widen nothing, since they set through
-  `SetCellFormatAsync`, which widens as the keys do. The Fill Colour face widens nothing either, as
-  the fourteenth Windows run's Fill Colour button did not (case 7). That nothing widened is read
+  Font Colour face and a colour from its list widen the column at the standard width as Excel's
+  Home tab button does (decided 2026-10-14), through `SetCellFormatFromFocusAsync`; each colour and
+  its width are one undo step. Ctrl+Z typed straight after a Font Colour choice, while its list
+  closes at a 150 ms round trip, takes both back too. `SetCellFormatAsync` keeps the rule of
+  `Font.Color` through COM and widens nothing for a colour. The Fill Colour face widens nothing,
+  as the fourteenth Windows run's Fill Colour button did not (case 7). That nothing widened is read
   after `circuitQuiet()`.
 - `declarations.spec.mjs` — the declarations of ADR-0050/0051/0057 (§26) as ExSheet makes them on
   `/sheet`: completion under the built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`)

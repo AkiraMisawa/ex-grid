@@ -298,6 +298,8 @@ ExPivot.Chrome.PivotItemFilterContext.SetAll.get -> System.Action<bool>!
 ExPivot.Chrome.PivotItemFilterContext.SetAll.init -> void
 ExPivot.Chrome.PivotItemFilterContext.SetTicked.get -> System.Action<ExPivot.Engine.PivotItemKey!, bool>!
 ExPivot.Chrome.PivotItemFilterContext.SetTicked.init -> void
+ExPivot.Chrome.PivotItemFilterContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotItemFilterContext.TakeKeyboard.init -> void
 ExPivot.Chrome.PivotItemFilterContext.Unavailable.get -> string?
 ExPivot.Chrome.PivotItemFilterContext.Unavailable.init -> void
 ExPivot.Chrome.PivotItemFilterContext.Word.get -> System.Func<string!, string!>!
@@ -525,6 +527,8 @@ ExPivot.Components.PivotDialogFrame.Label.get -> string!
 ExPivot.Components.PivotDialogFrame.Label.set -> void
 ExPivot.Components.PivotDialogFrame.OnEscape.get -> Microsoft.AspNetCore.Components.EventCallback
 ExPivot.Components.PivotDialogFrame.OnEscape.set -> void
+ExPivot.Components.PivotDialogFrame.OnKey.get -> Microsoft.AspNetCore.Components.EventCallback<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>
+ExPivot.Components.PivotDialogFrame.OnKey.set -> void
 ExPivot.Components.PivotDialogFrame.PivotDialogFrame() -> void
 ExPivot.Components.PivotFieldListView
 ExPivot.Components.PivotFieldListView.Context.get -> ExPivot.Chrome.PivotFieldListContext!
@@ -567,6 +571,12 @@ ExPivot.Components.PivotPopupFrame.Label.get -> string!
 ExPivot.Components.PivotPopupFrame.Label.set -> void
 ExPivot.Components.PivotPopupFrame.OnEscape.get -> Microsoft.AspNetCore.Components.EventCallback
 ExPivot.Components.PivotPopupFrame.OnEscape.set -> void
+ExPivot.Components.PivotPopupFrame.OnFocusIn.get -> Microsoft.AspNetCore.Components.EventCallback
+ExPivot.Components.PivotPopupFrame.OnFocusIn.set -> void
+ExPivot.Components.PivotPopupFrame.OnFocusOut.get -> Microsoft.AspNetCore.Components.EventCallback
+ExPivot.Components.PivotPopupFrame.OnFocusOut.set -> void
+ExPivot.Components.PivotPopupFrame.OnKey.get -> Microsoft.AspNetCore.Components.EventCallback<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>
+ExPivot.Components.PivotPopupFrame.OnKey.set -> void
 ExPivot.Components.PivotPopupFrame.Overlay.get -> bool
 ExPivot.Components.PivotPopupFrame.Overlay.set -> void
 ExPivot.Components.PivotPopupFrame.PivotPopupFrame() -> void

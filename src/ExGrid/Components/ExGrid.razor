@@ -777,9 +777,11 @@
                                     }
                                 }
                             }
+                            @* Each closes the popover: marked so, the keys typed while it goes wait for the
+                               keyboard to land (ex-popover-closes; ADR-0010, ADR-0044's note of 2026-10-12). *@
                             <div class="ex-popover-actions">
-                                <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)" disabled="@(!PanelCanApply(panelColumn))">OK</button>
-                                <button type="button" @ref="_panelLast" @onclick="CancelPanel">Cancel</button>
+                                <button type="button" class="ex-popover-closes" @onclick="() => ApplyPanelAsync(panelColumn)" disabled="@(!PanelCanApply(panelColumn))">OK</button>
+                                <button type="button" class="ex-popover-closes" @ref="_panelLast" @onclick="CancelPanel">Cancel</button>
                             </div>
                         </form>
                     }
@@ -2289,6 +2291,9 @@
     // What the key gate was last told (ADR-0010/0020/0055): which keys this grid takes,
     // whether any column edits, whether anything can find. Null until attach.
     private GridKeyClaims? _jsClaims;
+    // Whether the gate was told the Consumer hears the Escape that leaves the grid (OnLeave): the keys
+    // after such an Escape wait for its answer (PassKeysOutAsync; decided with the user, 2026-10-13).
+    private bool _jsLeaves;
 
     // Interactive over the core's own actions (ADR-0037): the cell Space entered and the
     // action chosen in it. The keyboard never leaves the root; this is what the arrows
@@ -3804,14 +3809,15 @@
         // changes the answer.
         // A Consumer's declared keys are re-told the same way (ADR-0050, item 14).
         var claims = KeyClaims();
-        if (_scrollHandle is not null && !_disposed && (claims != _jsClaims || !ReferenceEquals(_declared, _jsDeclared)))
+        if (_scrollHandle is not null && !_disposed && (claims != _jsClaims || !ReferenceEquals(_declared, _jsDeclared) || OnLeave.HasDelegate != _jsLeaves))
         {
             _jsClaims = claims;
             _jsDeclared = _declared;
+            _jsLeaves = OnLeave.HasDelegate;
             try
             {
                 await _scrollHandle.InvokeVoidAsync(
-                    "setClaims", TakenKeys(claims), claims.CanEdit, claims.CanFind, DeclaredForGate());
+                    "setClaims", TakenKeys(claims), claims.CanEdit, claims.CanFind, DeclaredForGate(), _jsLeaves);
             }
             catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
             {
@@ -3918,9 +3924,10 @@
             var claims = KeyClaims();
             _jsClaims = claims;
             _jsDeclared = _declared;
+            _jsLeaves = OnLeave.HasDelegate;
             var handle = await _module.InvokeAsync<IJSObjectReference>(
                 "attach", _root, _scroller, _self, TakenKeys(claims), claims.CanEdit,
-                PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate(), OnBrowserTimeZone.HasDelegate);
+                PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate(), OnBrowserTimeZone.HasDelegate, _jsLeaves);
             if (_disposed)
             {
                 // Disposal overtook the attach; nobody else holds this handle now. Its own
@@ -5693,6 +5700,13 @@
     private void ClosePopoverAndReturnFocus()
     {
         var wasOpen = AnyPopoverOpen;
+        // A closing Consumer's popover is no longer where the keyboard is going (ADR-0050 item 16;
+        // ADR-0044). Its contents may have reported focus while the gate still holds behind a choice:
+        // the gate cannot observe both that focus and the choice's menu gone at once. Withdraw any
+        // pending hand-off to the popover before the hand-back, so the held keys follow it. A hand-off
+        // to a Consumer's frame is left standing by the gate.
+        if (_consumerPopover is not null)
+            _ = HandOffAsync("none");
         if (wasOpen)
             _ = ReclaimFocusAsync();
         CloseMenus();
@@ -6856,6 +6870,11 @@
     /// async route from the start — so a later synchronous failure is a failure to be
     /// reported, never mistaken for a missing channel (ADR-0005/0017).
     ///
+    /// <para>Asked asynchronously too, as an empty question whose answer comes after everything the
+    /// browser sent before it has been taken up: the key gate's wait for a Consumer's answer to the
+    /// release of an Alt that went down alone (ADR-0100's KeyTips; ADR-0050 item 16's note of
+    /// 2026-10-12).</para>
+    ///
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
@@ -7053,11 +7072,16 @@
                     // for itself while the grid waits — a MudSelect puts DOM focus back
                     // on itself — and removing the popover then would leave focus on the
                     // page's body (KB-32, ADR-0039).
+                    // A Consumer that asked to hear Escape close its popover hears it first,
+                    // before the hand-back (ADR-0050 item 16's note of 2026-10-12).
+                    var escaped = fromDescendant ? ConsumerPopoverEscaping() : null;
                     if (fromDescendant)
                         ClosePopoverAndReturnFocus();
                     else
                         CloseMenus();
                     StateHasChanged();
+                    if (escaped is not null)
+                        await escaped;
                     return;
                 }
                 if (fromDescendant)

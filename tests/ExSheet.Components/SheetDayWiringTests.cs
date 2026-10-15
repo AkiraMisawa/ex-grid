@@ -49,7 +49,7 @@ public class SheetDayWiringTests : SheetTestContext
         RenderReaders();
 
         var attach = JSInterop.Invocations.Last(i => i.Identifier == "attach");
-        Assert.Equal(true, attach.Arguments[^1]);
+        Assert.Equal(true, attach.Arguments[8]);
     }
 
     [Fact] // ADR-0121 / ADR-0122: the browser's zone is the default, so a user in Tokyo sees Tokyo's day while London's is still the day before

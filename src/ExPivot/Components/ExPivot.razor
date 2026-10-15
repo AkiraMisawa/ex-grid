@@ -38,7 +38,7 @@
     var paneLayout = PaneLayout;
     var reportShown = _selectedSheet is null && _dialog is null;
 }
-<div class="ex-pivot" style="@RootStyle"
+<div class="ex-pivot" style="@RootStyle" @ref="_pivotElement"
      @onmousedown="() => DismissFieldMenu(fieldMenu)" @onmousedown:stopPropagation
      @onfocusin="() => DismissFieldMenu(fieldMenu)" @onfocusin:stopPropagation>
     @* ExPivot's stylesheet notice (ADR-0123, ERR-11), shown only by another version's stylesheet, and
@@ -52,8 +52,10 @@
        the dialog is modal (ADR-0059). While the report is a Stale Report it carries
        ex-pivot-report-stale, by which ExPivot's stylesheet paints its value cells in a muted colour
        (ADR-0067, 2026-10-09): a class here, so no row of the grid renders for it. *@
-    <div class="@(IsStale ? "ex-pivot-report ex-pivot-report-stale" : "ex-pivot-report")" inert="@(_dialog is not null)">
-        @Toolbar()
+    <div class="@(IsStale ? "ex-pivot-report ex-pivot-report-stale" : "ex-pivot-report")" inert="@DialogHoldsTheKeyboard">
+        @* The keys typed on the Pivot Toolbar's buttons are heard here, so those typed while a menu or a
+           panel opens from one are held for it (decided with the user, 2026-10-13). It draws no box. *@
+        <div class="ex-pivot-toolbar-keys" style="display: contents" @onkeydown="_onToolbarKey">@Toolbar()</div>
         @* The Stale Report's notice, under the Pivot Toolbar (ADR-0061/0067): a polite live region
            that is always present, so a notice that appears in it is announced, without interrupting
            the reader as the Pivot Toolbar's refusal of their own change does. Empty, it takes
@@ -93,22 +95,26 @@
     </div>
     @if (_fieldListShown)
     {
-        <div class="ex-pivot-field-list" role="region" aria-label="@Word("field-list")" inert="@(_dialog is not null)">
+        <div class="ex-pivot-field-list" role="region" aria-label="@Word("field-list")" inert="@DialogHoldsTheKeyboard" @onkeydown="_onFieldListKey">
             <div class="ex-pivot-field-list-scroll">@FieldList()</div>
         </div>
     }
-    @if (_open is { OnToolbar: true })
+    @if (Shown is { OnToolbar: true })
     {
         <div class="ex-pivot-backdrop" @onclick="CloseOpen" aria-hidden="true"></div>
     }
     @if (_dialog is { } dialog)
     {
         <div class="ex-pivot-dialog-backdrop" @onclick="CloseDialog" aria-hidden="true"></div>
-        <PivotDialogFrame Label="@dialog.Details.Title" OnEscape="_closeDialog">@DialogContent(dialog)</PivotDialogFrame>
+        <PivotDialogFrame Label="@dialog.Details.Title" OnEscape="_closeDialog" OnKey="_onDialogKey" @ref="_dialogFrame">@DialogContent(dialog)</PivotDialogFrame>
     }
     @* The report's grid takes the keyboard back once the dialog, or the last details tab, has gone
-       (ADR-0070): asked after the render that removes it, when the report can take focus again. *@
+       (ADR-0070): asked after the render that removes it, when the report can take focus again. The
+       dialog's own close is the other way round: the render takes the report's inert away and leaves
+       the dialog standing, the report's grid takes the keyboard back from it with the keys typed in it
+       since the close began, and then it goes (decided with the user, 2026-10-13). *@
     @KeyboardReturn()
+    @DialogKeyboardReturn()
 </div>
 
 @code {

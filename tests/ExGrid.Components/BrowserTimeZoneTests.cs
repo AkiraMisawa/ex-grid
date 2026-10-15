@@ -24,7 +24,8 @@ public class BrowserTimeZoneTests : GridTestContext
             if (listening) ps.Add(g => g.OnBrowserTimeZone, EventCallback.Factory.Create<string>(this, zone => _told.Add(zone)));
         });
 
-    private bool AskedForTheZone => (bool)JSInterop.Invocations.Last(i => i.Identifier == "attach").Arguments[^1]!;
+    // The tenth of attach's arguments, after the declared keys; whether OnLeave is heard follows it.
+    private bool AskedForTheZone => (bool)JSInterop.Invocations.Last(i => i.Identifier == "attach").Arguments[8]!;
 
     [Fact] // ADR-0122: a grid no one asks does not ask the browser
     public void A_grid_no_one_asks_does_not_ask_the_browser()

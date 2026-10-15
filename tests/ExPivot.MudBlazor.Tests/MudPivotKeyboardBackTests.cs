@@ -59,6 +59,16 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
                     && !pivot.Find(".ex-pivot-report").HasAttribute("inert")
                     && pivot.FindAll(".ex-pivot-sheet-covered").Count == 0);
             }
+            // The dialog's own close (decided with the user, 2026-10-13): from the dialog, still
+            // standing, with the report no longer inert, and the keys typed in the dialog since.
+            if (invocation.Identifier == "takeKeyboardBack")
+            {
+                var pivot = cut();
+                seen.Add(pivot.FindAll(".ex-pivot-dialog").Count == 1
+                    && invocation.Arguments[0] is Microsoft.AspNetCore.Components.ElementReference
+                    && !pivot.Find(".ex-pivot-report").HasAttribute("inert")
+                    && pivot.FindAll(".ex-pivot-sheet-covered").Count == 0);
+            }
             return false;
         });
         return seen;
@@ -85,7 +95,7 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
         Assert.Equal(returns + 1, KeyboardReturns(report));
     }
 
-    [Theory] // ADR-0070/0062 (PV-9, PV-39): however the dialog closes under MudBlazor — its grid's Escape, an Escape on its Close, Close, the backdrop — the report's grid takes the keyboard back, once, after the render that took the dialog away
+    [Theory] // ADR-0070/0062 (PV-9, PV-39): however the dialog closes under MudBlazor — its grid's Escape, an Escape on its Close, Close, the backdrop — the report's grid takes the keyboard back, once, from the dialog still standing, after the render that took the report's inert away, and the dialog then goes (decided with the user, 2026-10-13)
     [InlineData("grid")]
     [InlineData("escape")]
     [InlineData("close")]
@@ -115,7 +125,7 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
                 break;
         }
 
-        Assert.Empty(cut.FindAll(".ex-pivot-dialog"));
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-pivot-dialog")));
         Assert.Equal([true], seen);
     }
 
@@ -201,6 +211,29 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
 
         var tabs = cut.FindComponent<MudTabs>().Instance;
         Assert.Equal([tabs.Panels[1].PanelRef.Id], KeyboardHandOffs(report));
+        Assert.Equal(focusCalls, FocusCalls());
+    }
+
+    [Fact] // ADR-0061 (decided with the user, 2026-10-13): under MudBlazor, the keys typed on a report filter's button while its Filter… opens are carried through the report's grid, and the MudTextField's input takes the keyboard from it, not by its own focus
+    public async Task Keys_typed_while_a_report_filters_panel_opens_reach_its_mud_search_through_the_grid()
+    {
+        var report = ReportGridHandle();
+        var cut = RenderPivot(RegionProduct with { Filters = [P("Online")] });
+        var focusCalls = FocusCalls();
+
+        await cut.InvokeAsync(() => cut.Find(".mud-ex-pivot-filter-button").ClickAsync(new MouseEventArgs()));
+        await cut.InvokeAsync(() => cut.Find(".mud-ex-pivot-filter-button").KeyDownAsync(new KeyboardEventArgs { Key = "Enter", Type = "keydown" }));
+        await cut.InvokeAsync(() => cut.Find(".mud-ex-pivot-filter-button").ClickAsync(new MouseEventArgs()));
+
+        // The Enter's press of the button is none: the panel stands, and the grid holds the Enter for it.
+        Assert.Single(cut.FindAll(".ex-pivot-popup"));
+        Assert.Contains(report.Invocations, i => i.Identifier == "handOff" && (string?)i.Arguments[0] == "frame");
+        var takeBack = report.Invocations.Single(i => i.Identifier == "takeKeyboardBack");
+        IReadOnlyList<KeyboardEventArgs> typed = [];
+        await cut.InvokeAsync(() => typed = Grid(cut).Instance.KeysTypedOnTheWay((int)takeBack.Arguments[1]!));
+        Assert.Equal(["Enter"], typed.Select(k => k.Key));
+        var search = cut.FindComponent<MudTextField<string>>().Instance.InputReference!.ElementReference.Id;
+        Assert.Equal([search], KeyboardHandOffs(report));
         Assert.Equal(focusCalls, FocusCalls());
     }
 }

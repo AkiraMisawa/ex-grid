@@ -246,9 +246,10 @@ public abstract class MudPivotTestContext : BunitContext
     }
 
     /// <summary>How many times the report grid behind <paramref name="handle"/> has asked for the
-    /// keyboard back on its root, from nothing or from inside it (ADR-0021/0070).</summary>
+    /// keyboard back on its root, from nothing or from inside it (ADR-0021/0070), or from the dialog
+    /// with the keys typed in it as it closed (decided with the user, 2026-10-13).</summary>
     internal static int KeyboardReturns(BunitJSModuleInterop handle)
-        => handle.Invocations.Count(invocation => invocation.Identifier == "reclaimFocus");
+        => handle.Invocations.Count(invocation => invocation.Identifier is "reclaimFocus" or "takeKeyboardBack");
 
     /// <summary>The elements the report grid behind <paramref name="handle"/> has handed the
     /// keyboard on to, by id, in the order asked: a control of the Chrome's takes it from the

@@ -25,9 +25,13 @@
    over the report — the Layout menu at the button's right edge. Escape closes it — unless a popup
    of the content's own is open, which ExPivot hears through the context and leaves the key
    to (ADR-0039). A menu's frame takes focus on a press on padding or a disabled command, without
-   another Tab stop: Escape stays inside it (ADR-0061). *@
+   another Tab stop: Escape stays inside it (ADR-0061). It tells ExPivot every key heard inside it and
+   when DOM focus comes into it and leaves it: closed from inside, it stands until the keyboard has
+   left it, and the keys typed meanwhile are held for the button it opened from (decided with the
+   user, 2026-10-13). *@
 <div class="@FrameClass" role="@Role" aria-label="@Label" @onkeydown="OnKeyDownAsync"
-     tabindex="@(Role == "menu" ? "-1" : null)" @onmousedown:stopPropagation @onfocusin:stopPropagation>
+     tabindex="@(Role == "menu" ? "-1" : null)" @onmousedown:stopPropagation @onfocusin:stopPropagation
+     @onfocusin="OnFocusIn" @onfocusout="OnFocusOut">
     @ChildContent
 </div>
 
@@ -47,6 +51,15 @@
     /// <summary>Escape was pressed inside it.</summary>
     [Parameter] public EventCallback OnEscape { get; set; }
 
+    /// <summary>Every key heard inside it, in place of <see cref="OnEscape"/> (decided with the user, 2026-10-13).</summary>
+    [Parameter] public EventCallback<KeyboardEventArgs> OnKey { get; set; }
+
+    /// <summary>DOM focus came into it.</summary>
+    [Parameter] public EventCallback OnFocusIn { get; set; }
+
+    /// <summary>DOM focus left an element inside it.</summary>
+    [Parameter] public EventCallback OnFocusOut { get; set; }
+
     /// <summary>The Chrome's content.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
@@ -57,5 +70,6 @@
         _ => "ex-pivot-popup",
     };
 
-    private Task OnKeyDownAsync(KeyboardEventArgs e) => e.Key == "Escape" ? OnEscape.InvokeAsync() : Task.CompletedTask;
+    private Task OnKeyDownAsync(KeyboardEventArgs e) =>
+        OnKey.HasDelegate ? OnKey.InvokeAsync(e) : e.Key == "Escape" ? OnEscape.InvokeAsync() : Task.CompletedTask;
 }

@@ -3,6 +3,8 @@ const ExSheet.MudBlazor.MudFormatCellsDialog.Title = "Format Cells" -> string!
 ExSheet.MudBlazor.MudExSheetStylesheet
 ExSheet.MudBlazor.MudExSheetStylesheet.MudExSheetStylesheet() -> void
 ExSheet.MudBlazor.MudFormatCellsDialog
+ExSheet.MudBlazor.MudFormatCellsDialog.Closing.get -> System.Func<bool, System.Threading.Tasks.Task!>?
+ExSheet.MudBlazor.MudFormatCellsDialog.Closing.set -> void
 ExSheet.MudBlazor.MudFormatCellsDialog.Context.get -> ExSheet.FormatCellsContext!
 ExSheet.MudBlazor.MudFormatCellsDialog.Context.set -> void
 ExSheet.MudBlazor.MudFormatCellsDialog.Drawn.get -> System.Action?
@@ -11,6 +13,8 @@ ExSheet.MudBlazor.MudFormatCellsDialog.KeyboardTaken.get -> System.Action?
 ExSheet.MudBlazor.MudFormatCellsDialog.KeyboardTaken.set -> void
 ExSheet.MudBlazor.MudFormatCellsDialog.KeysArrive.get -> System.Func<System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!, System.Threading.Tasks.Task<bool>!>!, System.Threading.Tasks.Task!>?
 ExSheet.MudBlazor.MudFormatCellsDialog.KeysArrive.set -> void
+ExSheet.MudBlazor.MudFormatCellsDialog.KeyWhileClosing.get -> System.Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>?
+ExSheet.MudBlazor.MudFormatCellsDialog.KeyWhileClosing.set -> void
 ExSheet.MudBlazor.MudFormatCellsDialog.MudFormatCellsDialog() -> void
 ExSheet.MudBlazor.MudFormatCellsFrame
 ExSheet.MudBlazor.MudFormatCellsFrame.Context.get -> ExSheet.FormatCellsContext!
@@ -49,3 +53,5 @@ static ExSheet.MudBlazor.MudSheetChrome.Default.get -> ExSheet.MudBlazor.MudShee
 ~override ExSheet.MudBlazor.MudFormatCellsDialog.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExSheet.MudBlazor.MudFormatCellsFrame.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExSheet.MudBlazor.MudToolbarItem.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+ExSheet.MudBlazor.MudFormatCellsDialog.DisposeAsync() -> System.Threading.Tasks.ValueTask
+override ExSheet.MudBlazor.MudFormatCellsDialog.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!

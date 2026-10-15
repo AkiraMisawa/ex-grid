@@ -174,3 +174,8 @@ The run ExGrid's own by-hand rows need anyway (VZ-14, VZ-16, FN-12e, ED-30, SM-7
   2026-10-12 (R6)). ExSheet widens an italic number to the width the upright one takes, because
   ADR-0071 judges italic by the regular widths. It is a difference that follows ADR-0071, not a
   change.)*
+  *(2026-10-14, decided with the user: also ExPivot's report filter with no report grid shown — only
+  report filters placed, or a details tab over the report. The letters typed while its Filter… opens are
+  dropped, with every key after them, rather than typed into its search; Escape typed then still closes
+  it. With the report shown, the report's grid carries them to the search (ADR-0061's note of
+  2026-10-13).)*

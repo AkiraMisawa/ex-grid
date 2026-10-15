@@ -85,6 +85,33 @@ test.describe('on /sheet', () => {
         await expect(cell(grid, 'C2')).toHaveText('0.5');
     });
 
+    // OK closes Format Cells, a round trip later on a circuit, and the keys typed meanwhile are held and
+    // handed on where the keyboard lands, as behind a command run (ADR-0010's rule for a key that closes
+    // a popover; ADR-0044's note of 2026-10-12): OK carries ex-popover-closes.
+    test('SH-45/ADR-0044: keys typed while Enter on OK closes Format Cells are the Sheet\'s, in order: ↓, ↓ typed at once move the Focus (2026-10-12)', async ({ page }) => {
+        const grid = sheet(page);
+        await pressCell(grid, 'C2');
+        await page.locator('#sheet-format-cells').click();
+        await expect(formatCells(grid)).toBeVisible();
+        await choice(grid, 'Percentage').check();
+        const ok = formatCells(grid).getByRole('button', { name: 'OK' });
+        await ok.focus();
+        const circuit = await setRoundTrip(80);
+        try {
+            await page.keyboard.press('Enter');
+            await page.keyboard.press('ArrowDown');
+            await page.keyboard.press('ArrowDown');
+
+            await expect(formatCells(grid)).toHaveCount(0);
+            await circuitQuiet();
+            await expect(cell(grid, 'C2')).toHaveText('50.00%');
+            await expectKeyboardOn(grid);
+            await expectFocusAt(grid, 'C4');
+        } finally {
+            if (circuit) await setRoundTrip(0);
+        }
+    });
+
     test('SH-42/SH-45, case 22: Ctrl+1 opens Format Cells from the keyboard, on Number, and no tab of the browser is selected', async ({ page }) => {
         const grid = sheet(page);
         await pressCell(grid, 'C2');

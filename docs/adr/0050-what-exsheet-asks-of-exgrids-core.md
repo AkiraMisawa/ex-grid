@@ -368,6 +368,9 @@ Excel's formatting keys: Ctrl+B, Ctrl+I, Ctrl+U and Ctrl+2 to Ctrl+5; Ctrl+Shift
     reading until a Windows run.
   - The release is the Consumer's to hear, from a `keyup` that reaches it from the grid's root.
     No listener is added to the grid.
+    *(Reversed 2026-10-13, decided with the user: the grid's script hears Alt's `keyup` on the root and
+    holds it in order with the keys, sharing ED-30's root `keyup` listener, ADR-0021's seventh entry; no
+    listener is added. Item 16's note of 2026-10-12 says how.)*
 
 **15. A per-cell appearance.** A Consumer can supply a cell's Font (a colour, bold, italic,
 underline and strikethrough), its Fill, and its four Border sides.
@@ -453,6 +456,79 @@ the built-in Chrome.
     and never the grid's.)*
   - A dynamic call was chosen over a fixed flag on the command, because the same command opens the
     core's popover under one Chrome and a frame of its own under another.
+- *(2026-10-12; ExSheet's Sheet Toolbar, ADR-0100.)* **The hold covers the keyboard's way to and from a
+  frame of the Consumer's own, a popover of the Consumer's closing, and the release of the Alt key.**
+  - *(2026-10-12, decided with the user, decision (C): the letters typed after the release of the Alt key
+    alone wait for the KeyTips.)* **After the release of a declared Alt that went down alone, the keys wait
+    for the Consumer.** The release is the Consumer's to answer (ExSheet's `keyup`, ADR-0100). *(Until
+    2026-10-13 the gate heard no keyup, and knew the release by the key after it: one that does not carry
+    Alt, or Alt pressed again.)* The gate hears it on the root (ADR-0021's seventh entry, widened 2026-10-13),
+    and every key after it is held until an empty question to the core (`Ping`), asked once the release has
+    been dispatched, travels behind it and is answered. The gate waits for nothing else, so the Consumer's
+    handler tells it before its first `await`: `HandKeyboardToFrameAsync`, then `HandKeyboardToAsync` for
+    the frame's control. Handed off, the keys go to the frame, or are dropped with every key behind one it
+    cannot take, a Tab; told nothing, they are the grid's. A press on the grid and DOM focus leaving it
+    forget an Alt that is down.
+  - *(2026-10-13, decided with the user: the grid's script hears Alt's `keyup` on the root and holds it in
+    order with the keys.)* **While keys are held, the release is held in its place**, kept from the
+    Consumer's handler, and handed on in its turn, as the keyup it was, where the keyboard is then — the
+    root, or the frame or control the keys went to — after its press, which the hold hands to the core in
+    its turn rather than skip as a modifier's; the question is asked after it. Whether the Alt went down
+    alone is the gate's to tell, since it hears every key between the press and the release in order: a
+    chord's release (a key carrying Alt came between), or one whose press it did not hear, never reaches
+    the Consumer, and the Consumer reads no other key's release, one typed while keys are held reaching it
+    out of turn. A frame's band holds an Alt's release typed on it while the keyboard is in flight, with the
+    keys. *(Until then an Alt pressed alone again while keys were held was forwarded at once or held as a
+    modifier, and its press and its release could reach the Consumer in either order.)*
+    *(As built, 2026-10-14.)* An Alt held is judged where it lands in its turn, not where it was typed: one
+    typed in a popover closing among the held keys — three Escapes in a list a KeyTip opened, then Alt,
+    H, H — reaches the Consumer alone when its turn hands it to the root, an edit or the frame the keys go
+    to, and is no one's on a popover's control or in a text field, as an Alt typed there is, nor is its
+    release held with it. Judged where it was typed, it was a chord's, and H, H opened an edit in the cell.
+    A release handed to a frame among the keys going there is not followed by the question: the frame
+    answers its keys in the order they reach it, and the keys after the release go on to it in the same
+    task.
+  - **A hand-off told while the hold drains keeps the hold until the keyboard arrives,** so the keys typed
+    meanwhile go where the keyboard is going, and none is gated against the root.
+    *(2026-10-13, built for ADR-0061's note of that day; adopted with the user on 2026-10-14.)* So do the
+    keys a frame hands back with the keyboard (`ReturnKeyboardAsync(from, typedOnTheWay)`): told while
+    they are asked for, the hand-off holds them until the keyboard arrives, and they go there in order.
+    This carries keys typed on one frame of the Consumer's own through the root to another: ExPivot's
+    report filter whose Filter… is opening, and `ExSheet.MudBlazor`'s toolbar list closing as Format Cells
+    opens. The hand-off is told after the keyboard is asked back: told while a control outside the root
+    still holds it, a hand-off to a frame is taken as reached there, as before.
+  - **A frame gives the keyboard back with the keys typed on it on the way:**
+    `ReturnKeyboardAsync(ElementReference from, Func<IReadOnlyList<KeyboardEventArgs>> typedOnTheWay)`.
+    It is granted where the core's focus function is, and also while DOM focus is still on the frame, so
+    the frame need not first give the keyboard up to nothing, where a key reaches no grid. The Consumer
+    holds the keys typed on the frame from the moment it asks; the gate, once it has the keyboard, asks
+    for them, behind every key the frame heard, and holds them ahead of any typed on the root since.
+    Declined, it still asks, and drops them. A keyboard already inside the root — in a popover a command
+    of the frame opened — is the grid's, and stays where it is.
+    *(Implementation correction, 2026-10-14.)* The returned task completes after that collection,
+    including a declined hand-back. It previously completed while the question was still in flight;
+    a Consumer clearing its queue on completion could discard a key before the gate collected it
+    (CI: Escape then Down in ExPivot's details grid, Server/Edge). Completion now acknowledges the
+    keys' collection, so removing the frame cannot overtake it. No timeout or retry is involved.
+  - **A Consumer's popover closed before its contents took the keyboard** withdraws the gate's wait for
+    them: the keys typed meanwhile are the grid's, rather than held for the hold's fallback and dropped.
+    *(Implementation correction, 2026-10-14, following ADR-0044's closing rule.)* Closing withdraws any
+    pending destination at that popover even after its contents reported focus. A choice pressed while
+    the opening hold still stood made the gate await the menu's removal; by then the contents no longer
+    held focus, so the opening destination could never be reached and Ctrl+Z after a Font Colour choice
+    was dropped. A destination at a Consumer's frame remains standing, so keys follow it when the close
+    hands the keyboard there.
+  - *(2026-10-12, decided with the user: keys typed while the keyboard is in flight back from a closing
+    popover are held and handed on in order to where the keyboard lands.)* **A Consumer's popover closed
+    by Escape tells the Consumer that asked** (`OpenPopoverAsync(content, label, closedByEscape)`), before
+    the grid takes the keyboard back. The keys typed after the Escape are held until the popover is gone
+    and the keyboard has landed (ADR-0044's note of 2026-10-12), and a hand-off the Consumer tells before
+    its first `await` is where they land. It is not told of any other close.
+  - **A control handed the keyboard while it is on its way to a frame takes it in turn.**
+    `HandKeyboardToAsync` called while a frame hand-off is pending and the gate holds keys gives the
+    control the keyboard when the hold reaches it, and hands it the held keys in the same task: a key
+    typed straight on the control can no longer overtake one still held (Alt, H, O typed at once, the O
+    on the band before the held H). ExSheet's KeyTips give the band the keyboard this way.
 
 ## A Formula Bar text that is not the cell's own *(2026-10-03, with ADR-0125)*
 
