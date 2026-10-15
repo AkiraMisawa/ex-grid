@@ -17,14 +17,22 @@
             <li>Clicking a <strong>header</strong> sorts. <strong>Shift+click</strong> on a header selects whole columns, and <strong>Ctrl+Space</strong> does from the keyboard.</li>
         </ul>
         <p>
-            The header shows where the selection is, as Excel's column letters and row numbers do: every column
-            that holds part of it has a line two screen pixels thick along the bottom of its header, unbroken across
-            neighbouring columns. Where the grid has Row Headings, every row that holds part of it has the same line
-            down the right edge of its Row Heading. This is the <strong>Heading Mark</strong>. It is drawn over the
-            header and the Row Headings, so it costs the same for one cell as for a million rows, and no row is
-            painted again for it. Its colour is <code>--ex-heading-mark</code>, the Focus outline's colour unless you
-            set it (<a href="exgrid/appearance#visual-tokens">Visual Tokens</a>). Select a range in the example
-            below, then Ctrl+click elsewhere: the columns between the two ranges stay unmarked.
+            The <strong>Heading Mark</strong> shows where the selection is: each column's header and each Row
+            Heading, where present, is shaded and its letters coloured when its column or row holds part of the
+            selection. A line two device pixels thick runs along its edge toward the cells, unbroken across
+            neighbouring marked Headings. A whole column or row takes a distinct shade, even when several ranges
+            together cover it; overlapping ranges do not make up for an unselected cell. Where the grid has a
+            Headings corner, its triangle takes the mark's colour when every cell is selected.
+        </p>
+        <p>
+            The mark changes without repainting data rows. Its line, letters and selected corner triangle use
+            <code>--ex-heading-mark</code>, the Focus outline's colour unless you set it. The shades use
+            <code>--ex-heading-mark-background</code> and <code>--ex-heading-mark-whole-background</code>
+            (<a href="exgrid/appearance#visual-tokens">Visual Tokens</a>). Where the header or a Row Heading covers
+            a side of the Focus or a single range, the mark supplies its two device pixels without a second outline
+            beside it. Against a pinned block, or a grid edge without a Heading, the outline stays inside.
+            Select a range in the example below, then Ctrl+click elsewhere: the columns between the two ranges
+            stay unmarked.
         </p>
         <p>
             Positions are in the current order. When the order of the rows changes — a sort, a filter, a row
@@ -40,7 +48,9 @@
         <DocsExample Title="Reading the selection" Builtin="typeof(SelectionStatus)" Mud="typeof(SelectionStatusMud)"
                      Files="@(["Examples/Data/Trade.cs"])">
             <code>SelectionChanged</code> hands over a <code>GridSelection</code>: its ranges, the Focus, and the cell
-            count. Try Ctrl+click, then Ctrl+Shift+↓.
+            count. Select one cell, then Shift+click another to compare the marked headers. Press Ctrl+Space to
+            select the whole column and see its different shade, then Ctrl+A to select every cell. Try Ctrl+click,
+            then Ctrl+Shift+↓, and compare both Chromes.
         </DocsExample>
     </DocsSection>
 

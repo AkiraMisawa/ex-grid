@@ -3,4 +3,8 @@ Kind: Added
 Docs: exgrid/selection#rectangles--a-focus-and-an-extent
 ADR: 0008, 0029
 
-The header shows where the selection is, as Excel's column letters and row numbers do: every column that holds part of the selection has a line two device pixels thick along the bottom of its header, and where the grid has Row Headings, every such row has one down its Row Heading's right edge — for every selection, one cell included. It is drawn over the header, so no row is painted again for it. Its colour is the new Visual Token `--ex-heading-mark`, the Focus outline's colour (`--ex-focus-outline`) unless set, so a Theme that colours the Focus, and ExGrid.MudBlazor's primary, colour it too; under forced colours it is drawn in `Highlight`.
+The Heading Mark shows every selected column and row in the header and Row Headings, where present: a shade, coloured letters, and a line two device pixels thick on the edge toward the cells. A whole column or row takes a distinct shade, including when several ranges together cover it. The Headings corner's triangle takes the mark's colour when every cell is selected. Data rows do not repaint for these marks.
+
+`--ex-heading-mark` colours the line, letters and selected triangle, using the Focus outline's colour unless set. `--ex-heading-mark-background` and `--ex-heading-mark-whole-background` set the two shades. A Theme's tokens win; the bare grid uses system colours and ExGrid.MudBlazor uses its palette. The Headings follow the frame's colour scheme. Forced colours keep the line and marked letters in `Highlight` and drop the shades.
+
+Where a header or Row Heading covers a side of the Focus or a single range, the mark supplies its two device pixels without a second outline beside it. At a pinned block's edge, or a grid edge without a Heading, the outline stays inside the cell.

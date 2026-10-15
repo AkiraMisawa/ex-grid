@@ -82,13 +82,22 @@
             <code>ShowSelectionSummary="false"</code> turns the line off.
         </p>
         <p>
-            The report's header shows which columns the selection holds, as a sheet's column letters do in Excel: a
-            line two screen pixels thick along the bottom of each such column's header, the pinned label column's
-            included when the selection reaches it. It is ExGrid's
-            <a href="exgrid/selection#rectangles--a-focus-and-an-extent">Heading Mark</a>, in the Focus outline's
-            colour — the palette's primary under ExPivot.MudBlazor — and <code>--ex-heading-mark</code> colours it.
+            The report's header shows which columns the selection holds: each such header is shaded, its letters
+            coloured, and a line two device pixels thick drawn along its bottom edge. This includes the pinned
+            label column when the selection reaches it. A whole column takes a distinct shade, including when
+            several ranges together cover it. It is ExGrid's
+            <a href="exgrid/selection#rectangles--a-focus-and-an-extent">Heading Mark</a>:
+            <code>--ex-heading-mark</code> colours the line and letters in the Focus outline's colour unless set;
+            <code>--ex-heading-mark-background</code> and <code>--ex-heading-mark-whole-background</code> set the
+            two shades. Your Theme's tokens win, ExPivot.MudBlazor uses its palette, and the header follows the
+            frame's colour scheme. Where the header covers a side of the Focus or a single range, the mark supplies
+            the two device pixels without a second outline beside it. Against the pinned block, the outline stays
+            inside the cell.
         </p>
-        <DocsExample Builtin="typeof(ReportForms)" Mud="typeof(ReportFormsMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
+        <DocsExample Builtin="typeof(ReportForms)" Mud="typeof(ReportFormsMud)" Files="@(["Examples/Pivot/Sales.cs"])">
+            Select a cell, then Shift+click another to mark the columns between them. Click a report header to
+            select its whole column and compare the shade. Try Ctrl+A and switch between Built-in and MudBlazor.
+        </DocsExample>
     </DocsSection>
 
     <DocsSection Title="Expand and collapse, Hidden Items, sorting">

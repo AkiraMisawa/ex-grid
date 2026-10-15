@@ -44,7 +44,8 @@
                 <tr><td><code>--ex-row-rule-color</code>, <code>--ex-column-rule-color</code></td><td>Lines between rows and columns; transparent until set.</td></tr>
                 <tr><td><code>--ex-row-stripe-background</code></td><td>Row Stripes.</td></tr>
                 <tr><td><code>--ex-selection-fill</code>, <code>--ex-selection-outline</code>, <code>--ex-focus-outline</code>, <code>--ex-focus-among-ranges-outline</code></td><td>The selection and the Focus cell. The last is the Focus's thin border among several ranges, and is the Focus outline's colour unless you set it.</td></tr>
-                <tr><td><code>--ex-heading-mark</code></td><td>The Heading Mark: the line under the header of each column the selection holds, and beside the Row Heading of each row. The Focus outline's colour unless you set it.</td></tr>
+                <tr><td><code>--ex-heading-mark</code></td><td>The Heading Mark's line, marked letters and all-selected corner triangle. The Focus outline's colour unless you set it.</td></tr>
+                <tr><td><code>--ex-heading-mark-background</code>, <code>--ex-heading-mark-whole-background</code></td><td>The marked Heading's ground: the first for part of a column or row, the second when every cell in it is selected.</td></tr>
                 <tr><td><code>--ex-focus-row-fill</code>, <code>--ex-row-hover-background</code></td><td>The Focus row and hover bands.</td></tr>
                 <tr><td><code>--ex-tone-positive-color</code>, <code>--ex-tone-negative-color</code></td><td>Tones. Unset, a toned cell looks like any other.</td></tr>
                 <tr><td><code>--ex-state-stale-color</code>, <code>--ex-state-error-color</code>, <code>--ex-state-missing-background</code>, <code>--ex-state-modified-mark</code></td><td>Cell States. Each is a colour: the modified mark's is the corner triangle's.</td></tr>
@@ -67,12 +68,21 @@
             (built-in).
         </p>
         <p>
-            The header marks the columns the selection holds with a line two screen pixels thick along their bottom
-            edge, and the Row Headings, where there are some, mark its rows down their right edge
-            (<a href="exgrid/selection#rectangles--a-focus-and-an-extent">Selection</a>). That line is
-            <code>--ex-heading-mark</code>, and it too is the Focus outline's colour unless you set it, so the same
-            theme colours it; under ExGrid.MudBlazor it is the palette's primary. Under forced colours it stays, in the
-            system's highlight colour, as the selection's outline does.
+            The <a href="exgrid/selection#rectangles--a-focus-and-an-extent">Heading Mark</a> shades each header and
+            Row Heading whose column or row holds part of the selection, colours its letters, and draws a line two
+            device pixels thick on its edge toward the cells. A whole column or row takes a distinct shade. Where
+            the grid has a Headings corner, its triangle takes the mark's colour when every cell is selected.
+            <code>--ex-heading-mark</code> colours the line, letters and triangle, using the Focus outline's colour
+            unless you set it. The two background tokens above set the shades. A bare grid uses system colours;
+            ExGrid.MudBlazor uses its palette, with the primary for the line and letters. Your Theme's tokens win,
+            and the Headings follow the frame's colour scheme. Under forced colours the shades are dropped and
+            the line and marked letters use the system's highlight colour.
+        </p>
+        <p>
+            Where a header or Row Heading covers a side of the Focus or a single range, the Heading Mark supplies
+            that side's two device pixels; there is no second outline beside it. At a pinned block's edge, or a
+            grid edge without a Heading, the outline stays inside the cell. The thin Focus border among several
+            ranges is unchanged.
         </p>
         <p>
             The font family is the exception. The grid decides whether a number fits — or becomes <code>####</code> —
