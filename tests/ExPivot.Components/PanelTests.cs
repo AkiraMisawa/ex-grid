@@ -137,6 +137,21 @@ public class PanelTests : PivotTestContext
         Assert.Null(cut.Instance.CurrentLayout.Values[1].Caption);
     }
 
+    [Fact] // ADR-0060/0061 (decided with the user, 2026-10-13): the Field List compares a typed caption in the report's words — under the Japanese words, 合計 / Amount beside a Sum of Amount is refused
+    public async Task ADR0060_Value_field_settings_refuse_a_caption_the_report_shows_in_Japanese()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount"), new PivotValueField("Amount", PivotAggregation.Count)] },
+            ps => ps.Add(p => p.Label, PivotWords.Japanese));
+        await OpenMenuAsync(cut, "値", "データの個数 / Amount");
+        await RunMenuAsync(cut, "値フィールドの設定...");
+
+        await cut.Find(".ex-pivot-value-settings input[type=text]").InputAsync(new ChangeEventArgs { Value = "合計 / Amount" });
+        await ClickAsync(cut, ".ex-pivot-ok");
+
+        Assert.Equal("そのピボットテーブルのフィールド名は既に存在します。", cut.Find(".ex-pivot-refusal").TextContent);
+        Assert.Null(cut.Instance.CurrentLayout.Values[1].Caption);
+    }
+
     [Fact] // ADR-0061: an unusable number format shows in the sample and is refused
     public async Task Value_field_settings_refuse_a_runaway_format()
     {

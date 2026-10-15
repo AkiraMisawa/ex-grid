@@ -1,6 +1,7 @@
 using System.Globalization;
 using ExGrid.Chrome;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 
 namespace ExGrid.Components;
@@ -30,7 +31,7 @@ public partial class ExGrid<TRow>
     // key gate holds the keys for the contents, a Shift+Tab among them dropped (ADR-0039, 2026-10-13).
     private bool _consumerContentsHeld;
 
-    private sealed record ConsumerPopover(RenderFragment<GridPopoverContext> Content, string Label);
+    private sealed record ConsumerPopover(RenderFragment<GridPopoverContext> Content, string Label, Func<Task>? ClosedByEscape = null);
 
     /// <summary>
     /// Shows a Consumer's own contents in the grid's popover frame (ADR-0050, item 16). The frame
@@ -55,14 +56,63 @@ public partial class ExGrid<TRow>
     /// take the keyboard from with its text uncommitted, and once the grid is disposed.</returns>
     /// <exception cref="ArgumentException"><paramref name="label"/> is empty: a dialog that names
     /// nothing says nothing to assistive technology (ADR-0033).</exception>
-    public async Task<bool> OpenPopoverAsync(RenderFragment<GridPopoverContext> content, string label)
+    public Task<bool> OpenPopoverAsync(RenderFragment<GridPopoverContext> content, string label)
+        => OpenPopoverCoreAsync(content, label, null);
+
+    /// <summary>
+    /// Shows a Consumer's own contents in the grid's popover frame, as
+    /// <see cref="OpenPopoverAsync(RenderFragment{GridPopoverContext}, string)"/> does, and tells the
+    /// Consumer when Escape closes it (ADR-0050 item 16's note of 2026-10-12): a list that goes back a
+    /// level, as ExSheet's toolbar lists go back to the KeyTips that opened them (ADR-0100).
+    ///
+    /// <para><paramref name="closedByEscape"/> is called on the renderer's context as Escape closes the
+    /// popover, before the grid takes the keyboard back to its root. The keys typed after that Escape
+    /// are held until the popover is gone and the keyboard has landed, and a hand-off the Consumer tells
+    /// before its first await — <see cref="HandKeyboardToFrameAsync"/>, then
+    /// <see cref="HandKeyboardToAsync"/> — is where they land, in order. Told nothing, they are the
+    /// root's. It is not called when the popover closes any other way: a press elsewhere, the box
+    /// shrinking, the contents' own <see cref="GridPopoverContext.Close"/>, another popover opened in
+    /// its place, or <see cref="ClosePopoverAsync"/>.</para>
+    /// </summary>
+    /// <param name="content">The contents, rendered with the frame's context.</param>
+    /// <param name="label">The popover's accessible name, in the Consumer's words.</param>
+    /// <param name="closedByEscape">Called as Escape closes the popover.</param>
+    /// <returns>Whether it opened: false while an edit is open, and once the grid is disposed.</returns>
+    /// <exception cref="ArgumentException"><paramref name="label"/> is empty.</exception>
+    public Task<bool> OpenPopoverAsync(RenderFragment<GridPopoverContext> content, string label, Func<Task> closedByEscape)
+    {
+        ArgumentNullException.ThrowIfNull(closedByEscape);
+        return OpenPopoverCoreAsync(content, label, closedByEscape);
+    }
+
+    private async Task<bool> OpenPopoverCoreAsync(RenderFragment<GridPopoverContext> content, string label, Func<Task>? closedByEscape)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentException.ThrowIfNullOrWhiteSpace(label);
         // On the renderer's own context, as every request of the Consumer's is.
         var opened = false;
-        await InvokeAsync(() => opened = OpenConsumerPopover(content, label));
+        await InvokeAsync(() => opened = OpenConsumerPopover(content, label, closedByEscape));
         return opened;
+    }
+
+    /// <summary>
+    /// Escape closes the Consumer's popover (ADR-0050 item 16's note of 2026-10-12): the Consumer's
+    /// own word on it, if it asked for one, is started before the grid takes the keyboard back, so
+    /// that a hand-off it tells before its first await reaches the key gate first. Answers what
+    /// remains of it, for the core to await once the popover has closed.
+    /// </summary>
+    private Task? ConsumerPopoverEscaping()
+    {
+        if (_consumerPopover?.ClosedByEscape is not { } escaped)
+            return null;
+        try
+        {
+            return escaped();
+        }
+        catch (Exception ex)
+        {
+            return Task.FromException(ex);
+        }
     }
 
     /// <summary>
@@ -101,6 +151,79 @@ public partial class ExGrid<TRow>
     public Task ReturnKeyboardAsync() => InvokeAsync(() => ReclaimFocusAsync());
 
     /// <summary>
+    /// The core's focus function for a frame of the Consumer's own, outside the grid, that holds the
+    /// keyboard and gives it back — a toolbar, a list of its own (ADR-0050 item 16's note of
+    /// 2026-10-12, the mirror of <see cref="HandKeyboardToFrameAsync"/>) — with the keys typed on the
+    /// frame on the way. The keyboard goes back to the grid's root, to its Keyboard Field on a grid that
+    /// edits (ADR-0080), granted where <see cref="ReturnKeyboardAsync()"/> is granted and also while
+    /// DOM focus is still on <paramref name="from"/> or inside it: the frame need not first give the
+    /// keyboard up to nothing, where a key typed reaches no grid at all.
+    ///
+    /// <para>On Blazor Server the request lands a round trip after the call, and the keys typed on the
+    /// frame meanwhile reach the Consumer's handlers, not the grid. The Consumer holds them, in order,
+    /// from the moment it asks, and <paramref name="typedOnTheWay"/> hands them over: the grid asks for
+    /// them once the browser has taken the keyboard back, behind every key the frame heard before that
+    /// moment, so the list is whole. They are then the grid's, ahead of any key typed on the root since,
+    /// each meaning what it means there (ADR-0010). Declined — the user has put the keyboard elsewhere
+    /// meanwhile (ADR-0018) — the grid still asks, so the frame stops holding, and drops them. Before
+    /// the grid is attached to the page, and after it is gone, it asks at once and drops them.</para>
+    ///
+    /// <para>It moves neither the Focus nor the Selection, and scrolls nothing. It adds no JavaScript:
+    /// it is the grid's own hand-back, whose condition is widened to the frame (ADR-0021).</para>
+    /// </summary>
+    /// <param name="from">The frame's element that holds the keyboard, or that holds the element that
+    /// does.</param>
+    /// <param name="typedOnTheWay">Called once, on the renderer's context: returns the keys typed on the
+    /// frame since the Consumer asked, in order, and stops holding them.</param>
+    /// <returns>A task that completes once the browser has answered the hand-back and the held keys
+    /// have been collected. The Consumer can then remove the frame and clear its queue.</returns>
+    public Task ReturnKeyboardAsync(ElementReference from, Func<IReadOnlyList<KeyboardEventArgs>> typedOnTheWay)
+    {
+        ArgumentNullException.ThrowIfNull(typedOnTheWay);
+        return InvokeAsync(async () =>
+        {
+            if (_disposed || _scrollHandle is null)
+            {
+                typedOnTheWay();
+                return;
+            }
+            var ticket = ++_takeBacks;
+            _typedOnTheWay[ticket] = typedOnTheWay;
+            try
+            {
+                // A frame not yet drawn has no element to name: the root's own condition stands.
+                await _scrollHandle.InvokeVoidAsync("takeKeyboardBack", string.IsNullOrEmpty(from.Id) ? null : from, ticket);
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+                if (_typedOnTheWay.Remove(ticket, out var typed))
+                    typed();
+            }
+        });
+    }
+
+    // The frames giving the keyboard back (ReturnKeyboardAsync with a frame), by the ticket the key
+    // gate answers with, until it asks for the keys typed on them.
+    private readonly Dictionary<int, Func<IReadOnlyList<KeyboardEventArgs>>> _typedOnTheWay = [];
+    private int _takeBacks;
+
+    /// <summary>
+    /// The key gate has taken the keyboard back from a Consumer's frame, or been declined it
+    /// (<see cref="ReturnKeyboardAsync(ElementReference, Func{IReadOnlyList{KeyboardEventArgs}})"/>):
+    /// the keys typed on the frame on the way, which it holds and hands on as the root's.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
+    /// </summary>
+    /// <param name="ticket">The hand-back the gate answers.</param>
+    /// <returns>The keys, in order; none for a hand-back already answered.</returns>
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public IReadOnlyList<KeyboardEventArgs> KeysTypedOnTheWay(int ticket)
+        => _typedOnTheWay.Remove(ticket, out var typed) ? typed() : [];
+
+    /// <summary>
     /// Hands the keyboard this grid holds on to a control of the Consumer's own, outside the grid —
     /// the first control of a frame or a tab the Consumer has opened from it, a dialog's Close for
     /// one (ADR-0070's note of 2026-10-02) — or inside it, a Template cell's control answering
@@ -122,7 +245,10 @@ public partial class ExGrid<TRow>
     /// the control takes the keyboard by its own <c>FocusAsync</c>, as it would without the grid. A
     /// request the page cannot carry out, with the control or the circuit gone, is dropped.</para>
     /// </summary>
-    /// <param name="control">The element to hand the keyboard to.</param>
+    /// <param name="control">The element to hand the keyboard to. Once the grid is attached, a
+    /// non-focusable container names its first enabled text field, with that field's value selected
+    /// before held keys arrive; without a text field, its first enabled control. A control already
+    /// chosen by the user keeps the keyboard (ADR-0039).</param>
     /// <returns>A task that completes once the request has been made.</returns>
     public Task HandKeyboardToAsync(ElementReference control)
         => InvokeAsync(async () =>
@@ -155,7 +281,7 @@ public partial class ExGrid<TRow>
     /// a grid that edits — as it closes, so that the keys typed meanwhile land where they are held,
     /// not on nothing, where no grid hears them.</para>
     ///
-    /// <para>A popover the Consumer opens in the grid's own frame (<see cref="OpenPopoverAsync"/>)
+    /// <para>A popover the Consumer opens in the grid's own frame (<see cref="OpenPopoverAsync(RenderFragment{GridPopoverContext}, string)"/>)
     /// needs no call: the grid hands the keyboard to it itself.</para>
     /// </summary>
     public Task HandKeyboardToFrameAsync()
@@ -199,13 +325,13 @@ public partial class ExGrid<TRow>
     /// last word. Opened over no popover, nothing is replaced, and the keyboard is left where the
     /// opening found it.</para>
     /// </summary>
-    private bool OpenConsumerPopover(RenderFragment<GridPopoverContext> content, string label)
+    private bool OpenConsumerPopover(RenderFragment<GridPopoverContext> content, string label, Func<Task>? closedByEscape = null)
     {
         if (_disposed || _editMode != EditMode.None)
             return false;
         var replaces = AnyPopoverOpen;
         CloseMenus();
-        _consumerPopover = new ConsumerPopover(content, label);
+        _consumerPopover = new ConsumerPopover(content, label, closedByEscape);
         BeginPopoverFocus();
         // The contents are the Consumer's, and focus themselves on their count.
         _popoverFocusPending = PopoverFocus.None;

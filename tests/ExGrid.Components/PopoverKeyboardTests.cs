@@ -320,6 +320,18 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Equal(root, LastFocused());
     }
 
+    [Fact] // ADR-0010 / ADR-0044 (2026-10-12): OK and Cancel close the panel, and carry the mark by which the key listener holds the keys typed while it goes; nothing else in it does
+    public async Task The_panels_ok_and_cancel_are_marked_as_closing_it()
+    {
+        var cut = RenderGrid();
+        await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
+
+        var marked = cut.FindAll(".ex-popover[role=dialog] .ex-popover-closes");
+
+        Assert.Equal(["OK", "Cancel"], marked.Select(b => b.TextContent).ToArray());
+        Assert.All(marked, b => Assert.Equal("BUTTON", b.TagName));
+    }
+
     [Fact] // ADR-0039 / KB-32: the ▾ pressed again closes the menu and hands the keyboard back
     public async Task The_toggle_returns_the_keyboard_to_the_root()
     {

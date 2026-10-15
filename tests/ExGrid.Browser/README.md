@@ -181,6 +181,14 @@ localhost forwarding, and `reuseExistingServer` takes the running host.
 The observational numbers land in `..\..\verification\<day>-windows` relative to the
 copy. Move them into the repository's `verification/`.
 
+**Keep the desktop's own pointer off the browser windows while the suite runs.** On a headed
+desktop it is a second mouse. When it moves over a browser window, the page gets a pointer move
+with no button held. One that lands between a test's press and its drag ends the press there, so
+the drag never starts and its drop never lands. Sending one such move between the press and the
+move of `pivot.spec.mjs`'s first drag fails that test every time on both hosts (2026-10-14), in the
+way a Windows desktop failed it once in 120 runs on 2026-10-12: its drop never landed, and nothing
+in the page was found to move. CI's xvfb has no such pointer.
+
 **Changing the display scale needs a sign-out on some machines, and a sign-out stops
 WSL.** Record what has run before you sign out. After you sign in again, Chrome's first
 launch can be the one that applies a waiting update. It exits with code 0, and the first
@@ -439,6 +447,12 @@ nobody had asked for. What that means when writing a test:
   grid's box and scrolls (UX-11, ADR-0040), and a grid that goes while the keys after
   Alt+↓ are still waiting for its popover leaves nothing running to throw from a later
   frame (ADR-0010, CON-2).
+- `keyboard-return.spec.mjs` — the shipped key gate's return from a Consumer frame (ADR-0050/0070).
+  A controlled Consumer leaves its key-collection answer pending: the hand-back cannot complete
+  until that answer, whether focus was returned or another control kept it. This pins the ordering
+  without a latency guess; a caller may then remove its frame and clear its queue.
+  Passing keys out of a closing grid hands the held keys to its frame before later keys or a focus
+  departure can overtake them, even while the leaving Escape's own answer remains pending.
 - `page-follow.spec.mjs` — the page following a move (ADR-0204, KB-45) on `/cells` in a window
   shorter than its grid, on a grid that edits and a display-only one: the arrows bringing the Focus
   in at the window's bottom edge, a cell already in the window moving nothing, a range extended past
@@ -735,9 +749,12 @@ nobody had asked for. What that means when writing a test:
   tab stop, Excel's KeyTips (SH-52) and Ctrl+F1 (SH-51). Over numbers showing `####` (ADR-0071):
   as decided on 2026-10-12, Bold and Italic widen no column, Underline and Strikethrough widen the
   one at the standard width, never the one sized by its grip, each taken back by one Ctrl+Z, and the
-  Font Colour face and a colour from its list widen nothing, since they set through
-  `SetCellFormatAsync`, which widens as the keys do. The Fill Colour face widens nothing either, as
-  the fourteenth Windows run's Fill Colour button did not (case 7). That nothing widened is read
+  Font Colour face and a colour from its list widen the column at the standard width as Excel's
+  Home tab button does (decided 2026-10-14), through `SetCellFormatFromFocusAsync`; each colour and
+  its width are one undo step. Ctrl+Z typed straight after a Font Colour choice, while its list
+  closes at a 150 ms round trip, takes both back too. `SetCellFormatAsync` keeps the rule of
+  `Font.Color` through COM and widens nothing for a colour. The Fill Colour face widens nothing,
+  as the fourteenth Windows run's Fill Colour button did not (case 7). That nothing widened is read
   after `circuitQuiet()`.
 - `declarations.spec.mjs` — the declarations of ADR-0050/0051/0057 (§26) as ExSheet makes them on
   `/sheet`: completion under the built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`)
@@ -791,7 +808,9 @@ nobody had asked for. What that means when writing a test:
   ExPivot's own markup and `ExPivot.MudBlazor`'s (`/pivot?chrome=mud`), found by role and name,
   which both give the same. A field dragged from the list of fields onto an Area with the
   browser's own drag and drop, an entry dropped before another, back onto the list or onto the
-  report (PV-10); report removal following Defer Layout Update, an unused field and a details grid
+  report (PV-10), each removal counted once the report shows it, before the next drop (a drop made
+  while a question is out cancels it, and the layout it was for is never raised, ADR-0066); report
+  removal following Defer Layout Update, an unused field and a details grid
   changing nothing, and Escape cancelling the drag and its removal indication;
   the `−` button collapsing an Item with the Focus kept (PV-13); a double click on a value
   opening a tab at the report's foot, titled by the cell and holding the trades behind it, with
@@ -844,9 +863,16 @@ nobody had asked for. What that means when writing a test:
   inputs disabled meanwhile, and Cancel stopping it with nothing read; an unknown semicolon
   file's suggested Schema shown with what is not clear about it (leading zeros kept as Text, a
   decimal comma), nothing read until it is confirmed, then read under it to exact totals by
-  desk, the account numbers keeping their zeros; the page's two samples, one under the declared
-  Schema and one under a suggested Schema, reading the same trades to the same total — a second
-  file read while a report stands; and the code shown under "The code" equal to its source.
+  desk, the account numbers keeping their zeros; the seventeenth Windows run's `e16.csv`, read
+  through the same unknown-file path, painting its values in General as Excel's PivotTable showed
+  them, at most eleven characters (`0.3`, `1.23457E+11`, `1.23456789`, `1.23457E-05`), each whole
+  in its column and never `####` (ADR-0060, PV-7); the readings of 2026-10-12's `e16b.csv`, its
+  number Items labelled in the same General as Excel labelled them (`1.23456789`, `1.23457E+11`;
+  R3 (c), ADR-0060), and with its Key in Column Labels a copy with headers of the value row
+  through the Context Menu carrying those headers as painted in the text flavour and in full in
+  the HTML (`<th>123456789012.345</th>`; ADR-0005); the page's two samples, one under the
+  declared Schema and one under a suggested Schema, reading the same trades to the same total — a
+  second file read while a report stands; and the code shown under "The code" equal to its source.
 - `pivot-db.spec.mjs` — `/pivot-db` (ADR-0065/0066/0069, ADR-0151/0152), against the demo API server
   from either host. A server report scrolls beyond its first Window with a bounded number of rendered
   rows (LV-24); a report scrolled to its last row and then shrunk by a layout, computed in the page
@@ -977,7 +1003,13 @@ nobody had asked for. What that means when writing a test:
   never comes and the end, the request waiting until the keyboard leaves the field and the editor
   then taking it holding the text (left from script: Playwright emulates focus, so a window switch
   tells the page nothing); copy and paste from the field; a field per
-  Sheet (ADR-0018); read-only over a cell that does not edit. The field as the one tab stop, Tab in
+  Sheet (ADR-0018); read-only over a cell that does not edit. On the Server host behind 150 ms,
+  under both Chromes, a composition finished in the field while a popover opens is never the grid's
+  (ADR-0039, ADR-0010): typed after Ctrl+F, it lands in the find field with the digit typed behind
+  it; typed after Ctrl+1, or once Format Cells… run from the Context Menu has closed it, it is
+  dropped with the End behind it, Format Cells' Number tab still chosen and focused; and no edit
+  opens behind either. Each reads that the composition ended in the field, where the hold took it.
+  The field as the one tab stop, Tab in
   from before and Shift+Tab in from after, then out (A11Y-4), and a display-only grid's root
   likewise; on `/features` under both Chromes, no column's ▾ reached by Tab or Shift+Tab, on the
   grid that edits or the one that does not, and a press on one still opening its popover; the release of Tab ending when DOM focus leaves, on a grid with a field and one without

@@ -27,7 +27,7 @@ public class AggregationTests
 
     private static string? Text(PivotAggregation aggregation, params object?[] values) => Aggregate(aggregation, values)?.Text;
 
-    [Theory] // ADR-0060: the table, over numbers
+    [Theory] // ADR-0060: the table, over numbers, in General at most eleven characters as Excel shows it
     [InlineData(PivotAggregation.Sum, "20")]
     [InlineData(PivotAggregation.Count, "4")]
     [InlineData(PivotAggregation.Average, "5")]
@@ -35,14 +35,14 @@ public class AggregationTests
     [InlineData(PivotAggregation.Min, "2")]
     [InlineData(PivotAggregation.Product, "384")]
     [InlineData(PivotAggregation.CountNumbers, "4")]
-    [InlineData(PivotAggregation.Var, "6.66666666666667")]
+    [InlineData(PivotAggregation.Var, "6.666666667")]
     [InlineData(PivotAggregation.Varp, "5")]
-    [InlineData(PivotAggregation.StdDev, "2.58198889747161")]
-    [InlineData(PivotAggregation.StdDevp, "2.23606797749979")]
+    [InlineData(PivotAggregation.StdDev, "2.581988897")]
+    [InlineData(PivotAggregation.StdDevp, "2.236067977")]
     public void Each_aggregation_over_numbers(PivotAggregation aggregation, string expected)
         => Assert.Equal(expected, Text(aggregation, 2, 4, 6, 8));
 
-    [Theory] // ADR-0060 (a reading): values, but none a number
+    [Theory] // ADR-0060, "Some value, none numeric", observed over text (the readings of 2026-10-12, R3 (a), e05c); a Boolean among them by generalisation
     [InlineData(PivotAggregation.Sum, "0")]
     [InlineData(PivotAggregation.Count, "2")]
     [InlineData(PivotAggregation.Average, "#DIV/0!")]
@@ -57,14 +57,61 @@ public class AggregationTests
     public void Values_none_of_them_a_number(PivotAggregation aggregation, string expected)
         => Assert.Equal(expected, Text(aggregation, "a", true));
 
-    [Theory] // ADR-0060 (a reading): records whose every value is Blank are an empty cell
+    [Theory] // ADR-0060, "Records, but no number", observed: records whose every value is Blank are an empty cell, Count included (R3 (a), e05c's C, every Aggregation; run 17, item 5 (a), Average, StdDev and Var)
     [InlineData(PivotAggregation.Sum)]
     [InlineData(PivotAggregation.Count)]
     [InlineData(PivotAggregation.Average)]
+    [InlineData(PivotAggregation.Max)]
+    [InlineData(PivotAggregation.Min)]
+    [InlineData(PivotAggregation.Product)]
     [InlineData(PivotAggregation.CountNumbers)]
     [InlineData(PivotAggregation.StdDev)]
+    [InlineData(PivotAggregation.StdDevp)]
+    [InlineData(PivotAggregation.Var)]
+    [InlineData(PivotAggregation.Varp)]
     public void Only_blanks_are_an_empty_cell(PivotAggregation aggregation)
         => Assert.Null(Aggregate(aggregation, null, null));
+
+    private sealed record Noted(string Group, string? Note);
+
+    [Fact] // ADR-0060, observed: e05c, every Aggregation over a text-only field, cell for cell as Excel showed it (the readings of 2026-10-12, R3 (a); the same in the English (US) edition)
+    public void ADR0060_Every_Aggregation_over_a_text_only_field_is_as_Excel_showed_e05c()
+    {
+        // e05c.csv: Group,Note / A,x / A,y / B,z / C, / C, — Note read as Text, as ExPivot suggested.
+        Noted[] records = [new("A", "x"), new("A", "y"), new("B", "z"), new("C", null), new("C", null)];
+        PivotField<Noted>[] fields =
+        [
+            new("Group", PivotFieldType.Text, n => n.Group),
+            new("Note", PivotFieldType.Text, n => n.Note),
+        ];
+        PivotAggregation[] aggregations =
+        [
+            PivotAggregation.Average, PivotAggregation.StdDev, PivotAggregation.Var, PivotAggregation.StdDevp,
+            PivotAggregation.Varp, PivotAggregation.Sum, PivotAggregation.Max, PivotAggregation.Min,
+            PivotAggregation.Product, PivotAggregation.Count, PivotAggregation.CountNumbers,
+        ];
+
+        var report = PivotEngine.Compute(records, fields, new PivotLayout
+        {
+            Rows = [P("Group")],
+            Values = aggregations.Select(a => new PivotValueField("Note", a)).ToArray(),
+        }, EnUs);
+
+        // The headers Excel's English (US) edition gave (verification/2026-10-12-windows-pivot-en-us, (a)).
+        Assert.Equal(
+        [
+            "Row Labels", "Average of Note", "StdDev of Note", "Var of Note", "StdDevp of Note", "Varp of Note",
+            "Sum of Note", "Max of Note", "Min of Note", "Product of Note", "Count of Note", "Count of Note2",
+        ], Headers(report));
+        Assert.Equal(
+        [
+            "i A || #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0! | 0 | 0 | 0 | 0 | 2 | 0",
+            "i B || #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0! | 0 | 0 | 0 | 0 | 1 | 0",
+            // Every cell of C, whose Notes are blank, is empty, Count included.
+            "i C ||  |  |  |  |  |  |  |  |  |  |",
+            "t Grand Total || #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0! | 0 | 0 | 0 | 0 | 3 | 0",
+        ], Lines(report));
+    }
 
     [Fact] // ADR-0060: text, a Boolean and a date are counted, and are never a number
     public void Non_numbers_are_counted_and_not_summed()
@@ -102,7 +149,7 @@ public class AggregationTests
         var sum = Aggregate(PivotAggregation.Sum, 0.1, 0.2)!;
 
         Assert.Null(sum.Exact);
-        Assert.Equal("0.3", sum.Text); // at most 15 significant digits, as Excel shows it
+        Assert.Equal("0.3", sum.Text); // General, at most eleven characters, as Excel shows it
         Assert.Equal("0.30000000000000004", sum.ToString(null, CultureInfo.InvariantCulture));
         Assert.Null(Aggregate(PivotAggregation.Sum, 1m, 2.5)!.Exact);
     }
@@ -111,7 +158,7 @@ public class AggregationTests
     public void Integral_values_are_exact()
     {
         Assert.Equal(6m, Aggregate(PivotAggregation.Sum, 1, 2L, (short)3)!.Exact);
-        Assert.Equal("3.33333333333333", Text(PivotAggregation.Average, 3, 3, 4));
+        Assert.Equal("3.333333333", Text(PivotAggregation.Average, 3, 3, 4));
         Assert.Equal(3m, Aggregate(PivotAggregation.Max, 1, 3m, 2)!.Exact);
     }
 
@@ -215,6 +262,6 @@ public class AggregationTests
         var report = Report(layout);
 
         Assert.Equal(["Sum of Amount", "Average of Amount", "Max of Amount"], Headers(report));
-        Assert.Equal(["t  || 285 | 40.7142857142857 | 100"], Lines(report));
+        Assert.Equal(["t  || 285 | 40.71428571 | 100"], Lines(report));
     }
 }

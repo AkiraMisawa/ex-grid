@@ -82,6 +82,10 @@
     [Parameter, EditorRequired] public ToolbarItemBase Item { get; set; } = default!;
 
     private int _answeredOpen;
+    private int _answeredClose;
+    // Whether this item opened its choices in the Sheet's frame from the keyboard since the toolbar last
+    // asked for them to close.
+    private bool _opened;
 
     private string ItemClass =>
         "ex-sheet-toolbar-item" + (Context.Pressed ? " ex-sheet-toolbar-pressed" : "") + (Context.Active ? " ex-sheet-toolbar-active" : "");
@@ -127,16 +131,36 @@
         : null;
 
     /// <inheritdoc />
-    protected override void OnInitialized() => _answeredOpen = Context.OpenRequest;
+    protected override void OnInitialized()
+    {
+        _answeredOpen = Context.OpenRequest;
+        _answeredClose = Context.CloseRequest;
+    }
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // The toolbar took the keyboard back while the choices may have been on their way (ADR-0100's
+        // note of 2026-10-12): the frame's list closes, and the key gate stops waiting for it; an
+        // opening asked for before the close is not answered.
+        if (Context.CloseRequest != _answeredClose)
+        {
+            _answeredClose = Context.CloseRequest;
+            if (_opened)
+            {
+                _opened = false;
+                await Item.CloseChoicesAsync();
+            }
+        }
         // The toolbar's keys asked for the choices (Enter on a menu, Alt+Down on a split control).
         if (Context.OpenRequest != _answeredOpen)
         {
             _answeredOpen = Context.OpenRequest;
-            await Item.OpenChoicesAsync();
+            if (Context.OpenRequest != Context.CloseRequest)
+            {
+                _opened = true;
+                await Item.OpenChoicesFromKeyboardAsync();
+            }
         }
     }
 }

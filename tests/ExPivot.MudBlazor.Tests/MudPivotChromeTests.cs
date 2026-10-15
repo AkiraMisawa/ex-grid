@@ -319,14 +319,26 @@ public class MudPivotChromeTests : MudPivotTestContext
     [Theory, MemberData(nameof(Selects))] // WR-10 / ADR-0205, PV-11: each MudSelect of Field Settings… and Value Field Settings… names the element that takes its keyboard a combobox, by the field's own label. Below MudBlazor 9.4.0 nothing named it, and below 9.2.0 Field Settings' select could hand its keyboard to an input it then hid, so this holds the floor on every run
     public async Task Every_select_names_the_element_that_takes_its_keyboard(string area, string entry, string command, string field, string label)
     {
-        var cut = RenderPivot(RegionProduct);
-        await OpenMenuAsync(cut, area, entry);
-        await RunMenuAsync(cut, command);
-        var select = cut.Find($".{field}");
+        // The labels are the English (US) edition's, which an en-GB UI culture would replace with
+        // "Summarise value field by" (ADR-0060's note of 2026-10-14): the test sets the culture
+        // its words are, whatever the machine's display language.
+        var previous = System.Globalization.CultureInfo.CurrentUICulture;
+        System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+        try
+        {
+            var cut = RenderPivot(RegionProduct);
+            await OpenMenuAsync(cut, area, entry);
+            await RunMenuAsync(cut, command);
+            var select = cut.Find($".{field}");
 
-        var focusable = Assert.Single(TakingTheKeyboard(select));
-        Assert.True(focusable.GetAttribute("role") == "combobox", select.OuterHtml);
-        Assert.Equal(label, focusable.GetAttribute("aria-label"));
+            var focusable = Assert.Single(TakingTheKeyboard(select));
+            Assert.True(focusable.GetAttribute("role") == "combobox", select.OuterHtml);
+            Assert.Equal(label, focusable.GetAttribute("aria-label"));
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = previous;
+        }
     }
 
     /// <summary>The elements of a field that take the keyboard, as Tab and <c>FocusAsync</c> reach

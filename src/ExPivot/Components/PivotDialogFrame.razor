@@ -23,8 +23,10 @@
    that hears the key — the content's own controls, or the frame itself. An Escape pressed in the
    records' grid never reaches the frame: the grid's capture-phase listener keeps every one, peels
    the grid's own layers with them, and raises its OnLeave for the one it has nothing left to
-   dismiss, which closes the dialog too (ADR-0070). *@
-<div class="ex-pivot-dialog" role="dialog" aria-modal="true" aria-label="@Label" tabindex="-1" @onkeydown="OnKeyDownAsync">
+   dismiss, which closes the dialog too (ADR-0070). While it closes, every key heard inside it is
+   ExPivot's to hold for the report, the records' grid passing its own out to here (decided with the
+   user, 2026-10-13). *@
+<div class="ex-pivot-dialog" role="dialog" aria-modal="true" aria-label="@Label" tabindex="-1" @onkeydown="OnKeyDownAsync" @ref="_element">
     @ChildContent
 </div>
 
@@ -35,8 +37,20 @@
     /// <summary>Escape was pressed inside it.</summary>
     [Parameter] public EventCallback OnEscape { get; set; }
 
+    /// <summary>
+    /// Every key heard inside it, in place of <see cref="OnEscape"/>: ExPivot closes the dialog on Escape,
+    /// and holds the keys typed while it closes for the report (decided with the user, 2026-10-13).
+    /// </summary>
+    [Parameter] public EventCallback<KeyboardEventArgs> OnKey { get; set; }
+
+    private ElementReference _element;
+
+    /// <summary>The frame's element, which the report's grid takes the keyboard back from.</summary>
+    internal ElementReference Element => _element;
+
     /// <summary>The Chrome's content.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private Task OnKeyDownAsync(KeyboardEventArgs e) => e.Key == "Escape" ? OnEscape.InvokeAsync() : Task.CompletedTask;
+    private Task OnKeyDownAsync(KeyboardEventArgs e) =>
+        OnKey.HasDelegate ? OnKey.InvokeAsync(e) : e.Key == "Escape" ? OnEscape.InvokeAsync() : Task.CompletedTask;
 }

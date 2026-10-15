@@ -383,7 +383,7 @@ async function countGridInterop(page) {
     // waiting request through it, and returned after; before, it was returned as written.
     const named = scriptSource.lastIndexOf('\n    const handle = {');
     const handle = named >= 0 ? named : scriptSource.lastIndexOf('\n    return {');
-    for (const m of scriptSource.slice(handle).matchAll(/^ {8}(\w+): \([^)]*\) =>\s*/gm)) {
+    for (const m of scriptSource.slice(handle).matchAll(/^ {8}(\w+): (?:async )?\([^)]*\) =>\s*/gm)) {
         sites.push({ name: `.NET→JS ${m[1]}`, index: handle + m.index + m[0].length });
     }
     for (const m of scriptSource.matchAll(/core\.invokeMethod(?:Async)?\(\s*'(\w+)'/g)) {

@@ -8,7 +8,8 @@ namespace ExSheet;
 /// hold it (ADR-0047, second round; SH-20), the numbers a Number Format is set on that it no
 /// longer fits — a formatting key, Format Cells' OK, <c>SetCellFormatAsync</c> (ADR-0071, case 17)
 /// — and the numbers a Font change is set on that do not fit, as the command that sets it widens
-/// (<see cref="WidensAsAKeyDoes"/>, <see cref="WidensAsFormatCellsOkDoes"/>).
+/// (<see cref="WidensAsAKeyDoes"/>, <see cref="WidensAsFormatCellsOkDoes"/>,
+/// <see cref="WidensAsAHomeTabButtonDoes"/>).
 /// </summary>
 /// <remarks>
 /// A recorded width is one of three kinds (ADR-0046, 2026-09-28; SH-26). A column at the default
@@ -35,12 +36,25 @@ internal static class SheetWidening
     /// underline off widens, since the runs pressed the keys only to set them.
     /// <c>SetCellFormatAsync</c> widens by this rule too (decided 2026-10-12), as Excel's
     /// <c>Range.Font</c> set through COM did not widen for bold and did for underline (the readings
-    /// of 2026-10-12 (R6), case (5)). So does <c>SetCellFormatFromFocusAsync</c>, which the Sheet
-    /// Toolbar's toggles set through: Excel's Home tab's Bold and Italic buttons did not widen, and
-    /// its Underline button did (R6, case (3)).
+    /// of 2026-10-12 (R6), case (5)), and did not for <c>Font.Color</c> nor italic and did for
+    /// strikethrough (the readings of 2026-10-14, run 18a, widening cases 2 and 6).
     /// </summary>
     internal static bool WidensAsAKeyDoes(CellFormatChange change) =>
         change.NumberFormat is not null || change.Underline is not null || change.Strikethrough is not null;
+
+    /// <summary>
+    /// Whether a change a Sheet Toolbar item sets widens the columns whose numbers no longer fit, as
+    /// Excel's Home tab buttons do (ADR-0071, ADR-0100): as a key does
+    /// (<see cref="WidensAsAKeyDoes"/>), and for a Font colour too. Excel's Bold and Italic buttons
+    /// did not widen and its Underline button did (the readings of 2026-10-12 (R6), case (3)), as the
+    /// keys; its Fill Color button did not (the fourteenth Windows run, case 7); and its Font Color
+    /// button widened, by its face and from its list, where <c>Font.Color</c> set through COM did not
+    /// (the readings of 2026-10-14, run 18a, widening case 5; decided with the user, 2026-10-14).
+    /// <c>SetCellFormatFromFocusAsync</c>, the command the toolbar's toggles and colours set through,
+    /// widens by this rule.
+    /// </summary>
+    internal static bool WidensAsAHomeTabButtonDoes(CellFormatChange change) =>
+        WidensAsAKeyDoes(change) || change.FontColour is not null;
 
     /// <summary>
     /// Whether a change Format Cells' OK sets widens the columns whose numbers no longer fit, in

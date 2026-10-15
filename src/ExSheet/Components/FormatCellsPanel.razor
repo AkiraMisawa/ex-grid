@@ -31,6 +31,11 @@
     list of choices is a group of native radio buttons, so the arrow keys move inside it as the
     browser moves them, and a field typed into is bound, never written by hand (SRV-7). No script is
     added: DOM focus moves by Blazor's FocusAsync when the frame's counts ask (ADR-0039).
+
+    OK and Cancel close the frame, a round trip later on a circuit, and carry ex-popover-closes, by
+    which the grid's key listener holds the keys typed meanwhile, and after Enter in a field, which
+    submits the form, and hands them on where the keyboard lands (ADR-0010; ADR-0044's note of
+    2026-10-12).
 *@
 <form class="ex-format-cells" @onsubmit="OkAsync" @onsubmit:preventDefault>
     <div class="ex-format-cells-tabs" role="tablist" aria-label="Format Cells">
@@ -69,8 +74,8 @@
         <div class="ex-format-cells-refusal" role="alert">@refusal</div>
     }
     <div class="ex-popover-actions ex-format-cells-actions">
-        <button type="submit" class="ex-format-cells-ok">OK</button>
-        <button type="button" class="ex-format-cells-cancel" @onclick="Cancel" @ref="_cancel">Cancel</button>
+        <button type="submit" class="ex-format-cells-ok ex-popover-closes">OK</button>
+        <button type="button" class="ex-format-cells-cancel ex-popover-closes" @onclick="Cancel" @ref="_cancel">Cancel</button>
     </div>
 </form>
 

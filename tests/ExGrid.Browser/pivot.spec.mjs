@@ -153,12 +153,18 @@ for (const chrome of ['builtin', 'mud']) {
 
         test(`ADR-0061: entries dropped on the report are removed from Rows and Columns (${chrome})`, async ({ page }) => {
             await open(page, chrome);
+            let changes = 0;
             for (const [caption, area, remaining] of [['Desk', 'Rows', ['Region']], ['Product', 'Columns', []]]) {
                 await entry(page, caption).dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
                 await expect.poll(() => entriesOf(page, area)).toEqual(remaining);
                 await expect(field(page, caption).getByRole('checkbox')).not.toBeChecked();
+                // The page counts LayoutChanged, which is raised for the layout the report shows
+                // (ADR-0061). The pane shows a removal at once, but the report only once its
+                // question is answered, and a drop made while that question is out cancels it, so
+                // the first removal would never be shown nor counted (ADR-0066). Each removal is
+                // counted before the next drop.
+                await expect(page.locator('#pivot-status')).toContainText(`${++changes} changes made in the pane`);
             }
-            await expect(page.locator('#pivot-status')).toContainText('2 changes made in the pane');
         });
 
         test(`ADR-0061: a report removal waits for Defer Layout Update (${chrome})`, async ({ page }) => {
@@ -423,6 +429,47 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
         });
 
+        test(`ADR-0070 (decided with the user, 2026-10-13): Escape in the dialog's grid, then ↓ typed at once, closes the dialog and moves the report's Focus, as typed slowly (${chrome})`, async ({ page }) => {
+            await open(page, chrome, '&details=dialog');
+            await firstValue(page).dblclick({ force: true });
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
+            const dialog = page.getByRole('dialog', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
+            const records = dialog.locator('.ex-grid');
+            await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
+            await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
+            await expect(records).toBeFocused();
+            await expect(records).toHaveAttribute('aria-activedescendant', /-r0c0$/);
+            await setRoundTrip(80);
+
+            // On a circuit the dialog stands a round trip and more after the Escape: the ↓ typed meanwhile
+            // is the report's, passed out of the records' grid, held and handed on with the keyboard.
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('ArrowDown');
+
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+            await expect(dialog).toHaveCount(0);
+            await expect(report(page)).toBeFocused();
+            await circuitQuiet();
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+        });
+
+        test(`ADR-0070 (decided with the user, 2026-10-13): Escape on the dialog's Close, then ↓, ↓ typed at once, closes it and moves the report's Focus two rows (${chrome})`, async ({ page }) => {
+            await open(page, chrome, '&details=dialog');
+            await firstValue(page).dblclick({ force: true });
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
+            const dialog = page.getByRole('dialog', { name: /^Details: / });
+            await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
+            await setRoundTrip(80);
+
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('ArrowDown');
+            await page.keyboard.press('ArrowDown');
+
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
+            await expect(dialog).toHaveCount(0);
+            await expect(report(page)).toBeFocused();
+        });
+
         test(`ADR-0070/0012: Escape held in the dialog's grid closes the dialog once, and its repeats leave the report the keyboard (${chrome})`, async ({ page }) => {
             await open(page, chrome, '&details=dialog');
             await firstValue(page).dblclick({ force: true });
@@ -615,6 +662,82 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(menu).toHaveCount(0);
             await expect(entry(page, 'Region')).toBeFocused();
             await expect(entry(page, 'Region')).toHaveAttribute('aria-expanded', 'false');
+        });
+
+        test(`ADR-0061 (decided with the user, 2026-10-13): Escape in a field's menu, then Enter typed at once, runs no command and opens the menu again from its entry, as typed slowly (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await entry(page, 'Region').click();
+            const menu = page.getByRole('menu', { name: 'Options for Region' });
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await setRoundTrip(80);
+
+            // On a circuit the menu stands a round trip after the Escape, Move Down holding the keyboard:
+            // the Enter typed meanwhile is the entry's, which the keyboard goes back to, not Move Down's.
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('Enter');
+
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await expect(entry(page, 'Region')).toHaveAttribute('aria-expanded', 'true');
+            await circuitQuiet();
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+            await expect(menu).toHaveCount(1);
+            await page.keyboard.press('Escape');
+            await expect(menu).toHaveCount(0);
+            await expect(entry(page, 'Region')).toBeFocused();
+        });
+
+        test(`ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, Enter on a field's entry and Enter typed at once press the menu's first command, as typed slowly (${chrome})`, async ({ page }) => {
+            test.skip(!SERVER, 'WebAssembly opens the menu in the task of the press: no key is typed while it opens');
+            await open(page, chrome);
+            await entry(page, 'Region').click();
+            const menu = page.getByRole('menu', { name: 'Options for Region' });
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await page.keyboard.press('Escape');
+            await expect(menu).toHaveCount(0);
+            await expect(entry(page, 'Region')).toBeFocused();
+            await setRoundTrip(150);
+
+            // The menu takes the keyboard a round trip after the first Enter: the second, typed on the
+            // entry meanwhile, is held for the menu and presses its first command, Move Down, rather
+            // than pressing the entry again and closing the menu.
+            await page.keyboard.press('Enter');
+            await page.keyboard.press('Enter');
+
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Desk', 'Region']);
+            await expect(menu).toHaveCount(0);
+            // The keyboard goes back to the pane's entries, as after Move Down pressed by hand.
+            const focusedEntry = () => page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '');
+            await expect.poll(focusedEntry).toMatch(/^Options for /);
+            await circuitQuiet();
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Desk', 'Region']);
+            await expect(menu).toHaveCount(0);
+            await expect.poll(focusedEntry).toMatch(/^Options for /);
+        });
+
+        test(`ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, letters typed straight after Enter on a report filter are typed into its Filter…'s search, as typed slowly (${chrome})`, async ({ page }) => {
+            test.skip(!SERVER, 'WebAssembly opens the panel in the task of the press: no key is typed while it opens');
+            await open(page, chrome);
+            const button = toolbarButton(page, 'Filter Currency');
+            await button.focus();
+            await expect(button).toBeFocused();
+            await setRoundTrip(150);
+
+            // The panel's search takes the keyboard a round trip after Enter: the letters typed on the
+            // button meanwhile are carried through the report's grid and typed into the search.
+            await page.keyboard.press('Enter');
+            await page.keyboard.type('US');
+
+            const panel = page.getByRole('dialog', { name: 'Filter Currency' });
+            const search = panel.locator('input').first();
+            await expect(search).toHaveValue('US');
+            await expect(search).toBeFocused();
+            await expect(panel.getByRole('checkbox', { name: 'USD', exact: true })).toBeVisible();
+            await expect(panel.getByRole('checkbox', { name: 'EUR', exact: true })).toHaveCount(0);
+            await circuitQuiet();
+            await expect(search).toHaveValue('US');
+            await page.keyboard.press('Escape');
+            await expect(panel).toHaveCount(0);
+            await expect(button).toBeFocused();
         });
 
         test(`ADR-0061 (PV-11): pressing the report dismisses a field menu and keeps the cell and keyboard (${chrome})`, async ({ page }) => {
