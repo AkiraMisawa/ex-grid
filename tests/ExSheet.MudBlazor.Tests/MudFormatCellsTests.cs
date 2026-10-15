@@ -135,7 +135,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         await ChooseAsync(page, "Percentage");
         var reclaims = KeyboardReturns;
 
-        await page.Find(".mud-dialog .mud-button-close").ClickAsync(new MouseEventArgs());
+        await page.Find(".mud-dialog .mud-ex-sheet-format-cells-close").ClickAsync(new MouseEventArgs());
 
         page.WaitForAssertion(() => Assert.False(IsOpen(page)));
         Assert.Equal(before, Sheet(page).ToDocument().ToJson());
@@ -464,7 +464,29 @@ public class MudFormatCellsTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.Empty(page.FindAll(".mud-ex-sheet-format-cells-leaving")));
     }
 
-    [Fact] // ADR-0071 (decided with the user, 2026-10-13): OK sets what was touched as it is pressed, so a key typed in the dialog after it changes nothing it sets, and is the Sheet's
+    [Fact] // ADR-0071 (decided with the user, 2026-10-13: the keys typed as the keyboard goes back are held and handed on in order): Cancel closes through the frame too, setting nothing, and the keys typed in the dialog after it go to the Sheet with the keyboard
+    public async Task Keys_typed_after_cancel_go_to_the_sheet_with_the_keyboard()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Font");
+        await ChooseAsync(page, "Bold");
+        var taken = TakeBackCount;
+        var focus = JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true);
+
+        await page.Find(".mud-ex-sheet-format-cells-cancel").ClickAsync(new MouseEventArgs());
+        page.WaitForAssertion(() => Assert.Single(page.FindAll(".mud-ex-sheet-format-cells-leaving")));
+        var interceptor = Services.GetRequiredService<IKeyInterceptorService>();
+        await page.InvokeAsync(() => DispatchDialogKeyAsync(interceptor, Dialog(page).Id!, "ArrowDown"));
+        foreach (var invocation in focus.Invocations) focus.SetVoidResult();
+
+        page.WaitForAssertion(() => Assert.False(IsOpen(page)));
+        page.WaitForAssertion(() => Assert.Equal(taken + 1, TakeBackCount));
+        Assert.Equal(["ArrowDown"], AnswerTakeBacks(page.FindComponent<global::ExGrid.Components.ExGrid<global::ExSheet.SheetRow>>()).Select(k => k.Key));
+        Assert.False(FormatAt(page, "B2").Font.Bold);
+    }
+
+    [Fact] // ADR-0071 (the keys typed as the keyboard goes back held, decided with the user, 2026-10-13): OK sets what was touched as it is pressed, so a key typed in the dialog after it changes nothing it sets, and is the Sheet's
     public async Task Ok_sets_what_was_touched_as_it_is_pressed()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
@@ -472,11 +494,14 @@ public class MudFormatCellsTests : MudSheetTestContext
         await ShowTabAsync(page, "Font");
         await ChooseAsync(page, "Bold");
 
+        // The element's focus lands when the test says: the dialog stands meanwhile, as on a circuit.
+        var focus = JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true);
         await page.Find(".mud-ex-sheet-format-cells-ok").ClickAsync(new MouseEventArgs());
         Assert.True(FormatAt(page, "B2").Font.Bold);
+        Assert.True(IsOpen(page));
         // Italic chosen after OK: too late for what OK set.
-        if (page.FindAll(".mud-ex-sheet-format-cells label").Any(l => l.TextContent.Trim() == "Italic"))
-            await ChooseAsync(page, "Italic");
+        await ChooseAsync(page, "Bold Italic");
+        foreach (var invocation in focus.Invocations) focus.SetVoidResult();
 
         page.WaitForAssertion(() => Assert.False(IsOpen(page)));
         Assert.False(FormatAt(page, "B2").Font.Italic);

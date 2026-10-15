@@ -26,7 +26,8 @@ internal sealed class PivotDetailsGrid : ComponentBase
 
     // The Escape the grid has nothing left to dismiss closes the dialog: the keys typed after it are not
     // the closing dialog's grid's, but go out, in order, to the dialog's frame, which hands them to the
-    // report with the keyboard (ExGrid's PassKeysOutAsync; decided with the user, 2026-10-13). Told
+    // report with the keyboard (ExGrid's PassKeysOutAsync), so that the keys typed as the keyboard goes back
+    // are handed on in order (decided with the user, 2026-10-13). Told
     // before the dialog is asked to close, so the keys held behind the Escape go out first.
     private async Task LeaveAsync()
     {

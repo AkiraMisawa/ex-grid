@@ -453,7 +453,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
         });
 
-        test(`ADR-0070 (decided with the user, 2026-10-13): Escape on the dialog's Close, then ↓, ↓ typed at once, closes it and moves the report's Focus two rows (${chrome})`, async ({ page }) => {
+        test(`ADR-0070 (decided with the user, 2026-10-13): Escape on the dialog's Close, then ↓, → typed at once, closes it and moves the report's Focus down and right, in that order (${chrome})`, async ({ page }) => {
             await open(page, chrome, '&details=dialog');
             await firstValue(page).dblclick({ force: true });
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
@@ -463,9 +463,9 @@ for (const chrome of ['builtin', 'mud']) {
 
             await page.keyboard.press('Escape');
             await page.keyboard.press('ArrowDown');
-            await page.keyboard.press('ArrowDown');
+            await page.keyboard.press('ArrowRight');
 
-            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c2$/);
             await expect(dialog).toHaveCount(0);
             await expect(report(page)).toBeFocused();
         });

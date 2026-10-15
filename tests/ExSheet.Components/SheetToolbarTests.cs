@@ -296,7 +296,7 @@ public class SheetToolbarTests : SheetTestContext
 
         await Item(cut, "Fill Colour").QuerySelector(".ex-sheet-toolbar-arrow")!.ClickAsync(new MouseEventArgs());
         var blue = cut.FindAll(".ex-popover .ex-sheet-swatch-choice").First(b => b.GetAttribute("aria-label") == "Blue");
-        await blue.ClickAsync(new MouseEventArgs());
+        await blue.ClickAsync(new MouseEventArgs { Detail = 1 });
         Assert.Equal(CellFill.Solid(CellColour.FromRgb(0x0070C0)), FormatAt(cut, "B2").Fill);
         Assert.Empty(cut.FindAll(".ex-popover .ex-sheet-choices"));
 
@@ -343,7 +343,7 @@ public class SheetToolbarTests : SheetTestContext
         Assert.Equal("true", choices.Single(c => c.TextContent.StartsWith("Accounting")).GetAttribute("aria-disabled"));
         Assert.Equal("true", choices.Single(c => c.TextContent.StartsWith("Fraction")).GetAttribute("aria-disabled"));
 
-        await choices.Single(c => c.TextContent.StartsWith("Percentage")).ClickAsync(new MouseEventArgs());
+        await choices.Single(c => c.TextContent.StartsWith("Percentage")).ClickAsync(new MouseEventArgs { Detail = 1 });
         Assert.Equal("0.00%", FormatAt(cut, "B2").NumberFormat.Code);
         Assert.Contains("Percentage", Item(cut, "Number Format").TextContent);
     }
@@ -365,7 +365,7 @@ public class SheetToolbarTests : SheetTestContext
         OnReclaim(() => standing.Add((cut.FindAll(".ex-popover .ex-sheet-choices").Count, cut.FindAll(".ex-format-cells").Count > 0,
             string.Join(",", HandOffs.Skip(handOffs)))));
 
-        await cut.FindAll(".ex-popover .ex-sheet-choice").Single(c => c.TextContent.StartsWith("More Number Formats")).ClickAsync(new MouseEventArgs());
+        await cut.FindAll(".ex-popover .ex-sheet-choice").Single(c => c.TextContent.StartsWith("More Number Formats")).ClickAsync(new MouseEventArgs { Detail = 1 });
 
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".ex-format-cells")));
         Assert.Equal([(1, false, "popover")], standing);
@@ -381,7 +381,7 @@ public class SheetToolbarTests : SheetTestContext
         await PressItemAsync(cut, "Number Format");
         Assert.NotEmpty(cut.FindAll(".ex-popover .ex-sheet-choices"));
 
-        await cut.FindAll(".ex-popover .ex-sheet-choice").Single(c => c.TextContent.StartsWith("More Number Formats")).ClickAsync(new MouseEventArgs());
+        await cut.FindAll(".ex-popover .ex-sheet-choice").Single(c => c.TextContent.StartsWith("More Number Formats")).ClickAsync(new MouseEventArgs { Detail = 1 });
 
         Assert.Empty(cut.FindAll(".ex-popover .ex-sheet-choices"));
         Assert.Empty(cut.FindAll(".ex-format-cells"));

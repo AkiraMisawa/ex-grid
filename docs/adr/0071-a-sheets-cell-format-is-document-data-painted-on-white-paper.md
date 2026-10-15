@@ -238,6 +238,20 @@ every font. It errs towards `####`, never towards a cut number.
         Chrome's frame on the page after OK or Cancel until it has given the keyboard back. The ×, the
         backdrop and an Escape an open dropdown's list takes are as they were. Layer 3: Escape then ↓, ↓,
         and OK then ↓, typed at once on both hosts.
+      - *(2026-10-12.)* The element is not `aria-hidden`: it holds focus, and Chromium refuses to hide
+        a focused element and says so in the console (ADR-0100's note of 2026-10-12).
+      - *(2026-10-13, decided with the user: the keys typed as the keyboard goes back are held and handed
+        on in order, `ExSheet.MudBlazor`'s Format Cells among the frames.)* On a circuit the dialog stands a
+        round trip after Escape, OK or Cancel, and once MudBlazor removed it DOM focus was on nothing: ↓
+        typed straight after Escape was lost. Escape is now the dialog's own, not MudBlazor's
+        `CloseOnEscapeKey`, and those three close through the frame: OK sets what was touched as it is
+        pressed, so nothing typed after it changes what it sets; the frame's element takes the keyboard out
+        of the dialog before it closes; and the core takes the keyboard back from the element with the keys
+        typed in the dialog from the closing key on and on the element
+        (`FormatCellsContext.ReturnKeyboardFrom`, ADR-0050 item 16's note of 2026-10-12). ExSheet keeps a
+        Chrome's frame on the page after OK or Cancel until it has given the keyboard back. The ×, the
+        backdrop and an Escape an open dropdown's list takes are as they were. Layer 3: Escape then ↓, ↓,
+        and OK then ↓, typed at once on both hosts.
       - The hand-back waits until the browser has drawn the dialog's removal: the frame closes the
         dialog, re-renders, and calls the core's focus function from its `OnAfterRenderAsync`. On a
         circuit, an earlier call reached the browser before the removal and was declined, which
@@ -998,6 +1012,10 @@ en-GB):
   (`WidensAsFormatCellsOkDoes`), under every Chrome. Only OK widens by this rule.
 - **The toolbar's Font Colour widens nothing**, its face or a colour from its list, since both set
   through `SetCellFormatAsync`. That Excel's Font Color button widens nothing is a reading.
+  *(Replaced 2026-10-14, decided with the user: the Sheet Toolbar's Font Colour widens a column as Excel's
+  Home tab Font Colour button does — by its face and from its list — while `SetCellFormatAsync` keeps
+  widening as COM's `Font.Color` does, which does not widen. The reading was wrong: the readings of
+  2026-10-14 saw the button widen. See "What the readings of 2026-10-14 settled about widening".)*
   *(Replaced 2026-10-14, decided with the user: the Sheet Toolbar's Font Colour widens a column as Excel's
   Home tab Font Colour button does — by its face and from its list — while `SetCellFormatAsync` keeps
   widening as COM's `Font.Color` does, which does not widen. The reading was wrong: the readings of

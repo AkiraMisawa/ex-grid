@@ -233,6 +233,19 @@ typed while it opens, too.**
     typed straight after More Number Formats… was lost and Format Cells stayed open. The hand-off is now
     told once the toolbar has asked the grid for the keyboard back, and the keys handed back go on to
     Format Cells (ADR-0050 item 16's note of 2026-10-13).
+  - *(2026-10-13, as built, read off the toolbar's code after #108.)* One of the toolbar's choices opens
+    a popover: More Number Formats…, which opens Format Cells. Under the built-in Chrome its list closed
+    through the frame first, asking for the root, and Format Cells then opened over no popover, so the
+    hand-off to it reached the browser a message after that request; on a circuit a key landing between
+    the two was the grid's. Such a choice is now made before its list closes, so the core opens Format
+    Cells in the list's place and takes this path: the hand-off first, then the root, while the list
+    still holds DOM focus. The list is closed afterwards only where nothing took its place.
+  - *(2026-10-13, as built.)* Under `ExSheet.MudBlazor` Format Cells is a frame of the Chrome's, and its
+    hand-off was told while the toolbar's closing list still held the keyboard, outside the root, where
+    the gate took it as reached at once; the keys the toolbar then handed back were the grid's: Escape
+    typed straight after More Number Formats… was lost and Format Cells stayed open. The hand-off is now
+    told once the toolbar has asked the grid for the keyboard back, and the keys handed back go on to
+    Format Cells (ADR-0050 item 16's note of 2026-10-13).
     Implementation correction, 2026-10-14: the frame's first render must follow that hand-back too.
     Drawing it earlier let its focus overtake the hand-back, which then declined to take focus from
     the new frame and dropped the toolbar's held keys. The frame is now drawn after the browser has

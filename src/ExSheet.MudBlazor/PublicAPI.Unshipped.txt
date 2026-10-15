@@ -3,7 +3,7 @@ const ExSheet.MudBlazor.MudFormatCellsDialog.Title = "Format Cells" -> string!
 ExSheet.MudBlazor.MudExSheetStylesheet
 ExSheet.MudBlazor.MudExSheetStylesheet.MudExSheetStylesheet() -> void
 ExSheet.MudBlazor.MudFormatCellsDialog
-ExSheet.MudBlazor.MudFormatCellsDialog.Closing.get -> System.Func<bool, System.Threading.Tasks.Task!>?
+ExSheet.MudBlazor.MudFormatCellsDialog.Closing.get -> System.Func<bool, System.Threading.Tasks.Task<bool>!>?
 ExSheet.MudBlazor.MudFormatCellsDialog.Closing.set -> void
 ExSheet.MudBlazor.MudFormatCellsDialog.Context.get -> ExSheet.FormatCellsContext!
 ExSheet.MudBlazor.MudFormatCellsDialog.Context.set -> void

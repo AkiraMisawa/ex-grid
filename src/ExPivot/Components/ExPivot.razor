@@ -40,7 +40,7 @@
 }
 <div class="ex-pivot" style="@RootStyle" @ref="_pivotElement"
      @onmousedown="() => DismissFieldMenu(fieldMenu)" @onmousedown:stopPropagation
-     @onfocusin="() => DismissFieldMenu(fieldMenu)" @onfocusin:stopPropagation>
+     @onfocusin="() => OnFocusInAsync(fieldMenu)" @onfocusin:stopPropagation>
     @* ExPivot's stylesheet notice (ADR-0123, ERR-11), shown only by another version's stylesheet, and
        beside it one for each stylesheet the Pivot Chrome brings, with the same markup. *@
     <div data-ex-notice="stylesheet" data-ex-stylesheet="@NoticeStylesheet" data-ex-stamp="@NoticeStamp" style="display: none">@StylesheetNoticeWords</div>

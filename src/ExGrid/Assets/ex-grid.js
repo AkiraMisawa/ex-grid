@@ -84,7 +84,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     let declared = new Set(declaredKeys ?? []);
     // Whether the Consumer hears the Escape that leaves the grid (OnLeave, ADR-0070), and may take the
     // keyboard out of it on that Escape: the keys after a plain Escape on the root then wait for its
-    // answer (passKeysOut; decided with the user, 2026-10-13).
+    // answer (passKeysOut).
     let leaves = leaveDeclared === true;
     // The keyboard is leaving this grid for the Consumer's element around it (passKeysOut): the keys
     // held behind the Escape that led here, and those typed on the root until DOM focus leaves it, are
@@ -3707,12 +3707,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
         },
         // The keyboard is leaving this grid for the Consumer's element around it (keysOut; ExGrid's
-        // PassKeysOutAsync, decided with the user, 2026-10-13): told before the answer to the Escape
+        // PassKeysOutAsync): told before the answer to the Escape
         // that led here, so the keys held behind that Escape go out too, in order.
         passKeysOut: () => {
             if (!core) {
                 return;
             }
+            // Every key held now was typed after the Escape that led here: out they go, at once, ahead of any
+            // typed from now, which go out as they are typed. Kept until the Escape is answered, they could be
+            // overtaken by a key typed meanwhile, or by the keyboard leaving first, which ends this (keysOut).
             keysOut = true;
             // The Consumer has answered where these keys go, even while the Escape's interop
             // answer is pending. Hand them out now, before a later key bubbles out or the

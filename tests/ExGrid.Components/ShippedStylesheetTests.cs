@@ -878,6 +878,15 @@ public class ShippedStylesheetTests
         Assert.True(drain.IndexOf("if (k.altUp)", StringComparison.Ordinal) < drain.IndexOf("if (modifierKeys.has(k.key)", StringComparison.Ordinal));
         // A held Alt is noted as it is held, so its release finds it, and a chord unmarks it.
         Assert.Contains("noteAlt(k, isClipboardKey(k) ? null : k, true);", keyDown, StringComparison.Ordinal);
+        // Asked in the task after the release's dispatch: behind every listener of the keyup, Blazor's
+        // among them, which sends the release on later in the same dispatch than this listener runs.
+        Assert.Matches(new Regex(@"const altReleaseAnswered = \(\) => new Promise\(\(dispatched\) => \{\s*setTimeout\(dispatched\);\s*\}\)\.then\(\(\) => \(core \? core\.invokeMethodAsync\('Ping'\)"), script);
+        // A held Alt is noted wherever under the root it was typed: its meaning is where it is handed on.
+        Assert.Contains("&& (held === true || k.onRoot || k.inEditor);", script, StringComparison.Ordinal);
+        Assert.Contains("if (altAlone(k, held)) {", script, StringComparison.Ordinal);
+        // The keys a frame heard on the way back carry their Alts and releases, noted as the gate's own are.
+        Assert.Contains("held.unshift(...withAltsNoted((Array.isArray(typed) ? typed : []).map((t) => ({", drain, StringComparison.Ordinal);
+        Assert.Contains("altUp: t.type === 'keyup' ? true : undefined,", drain, StringComparison.Ordinal);
         // The release is no longer inferred from the key after it, and no Alt overtakes the keys held before it.
         Assert.DoesNotContain("afterAltAlone", script, StringComparison.Ordinal);
         Assert.DoesNotContain("altGoesFirst", script, StringComparison.Ordinal);
@@ -900,6 +909,8 @@ public class ShippedStylesheetTests
         // The Escape the Consumer may answer by taking the keyboard out: the keys after it wait for its answer.
         Assert.Matches(new Regex(@"\} else if \(verdict === 'core' && leaves && k\.onRoot && k\.key === 'Escape' && plain\(k\) && !k\.shiftKey\s*&& k\.repeat !== true && editing === 'none'\) \{.*?startHold\(answer\);", RegexOptions.Singleline), keyDown);
         // Told to pass them out, the held keys go to the root's parent, as the keydowns they were, in order.
+        // At once, whatever the hold is waiting for: every key held then was typed after the Escape, and one
+        // typed later, or the keyboard leaving, must not overtake them.
         var request = Regex.Match(script, @"passKeysOut: \(\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
         Assert.NotEmpty(request);
         // The destination is already answered: a pending Escape must not delay older keys behind

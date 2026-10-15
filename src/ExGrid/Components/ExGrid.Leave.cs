@@ -35,8 +35,9 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// The keyboard is leaving this grid for the Consumer's element around it — a dialog the grid stands
-    /// in, closing on the Escape that raised <see cref="OnLeave"/> (ADR-0070; decided with the user,
-    /// 2026-10-13). Called from the <see cref="OnLeave"/> handler, before its first await.
+    /// in, closing on the Escape that raised <see cref="OnLeave"/> (ADR-0070's note of 2026-10-13, where
+    /// the user decided that the keys typed as the keyboard goes back are held and handed on in order).
+    /// Called from the <see cref="OnLeave"/> handler, before its first await.
     ///
     /// <para>On Blazor Server the Consumer's dialog stands a round trip or more after that Escape, and the
     /// keyboard stays in this grid until the Consumer has put it elsewhere: a key typed meanwhile was
@@ -46,8 +47,9 @@ public partial class ExGrid<TRow>
     /// order, as the keydowns they were. A handler of the Consumer's there holds them and hands them on
     /// where the keyboard lands — to another grid, with
     /// <see cref="ReturnKeyboardAsync(ElementReference, Func{IReadOnlyList{KeyboardEventArgs}})"/> — so
-    /// the outcome is the one typed slowly, whatever the round trip. A press on the grid takes the
-    /// keyboard back into it, and the keys are its own again.</para>
+    /// the outcome is the one typed slowly. A press on the grid takes the keyboard back into it, and the
+    /// keys are its own again. Until one of these, every key typed on the root goes out, Tab among them:
+    /// a Consumer that calls this moves the keyboard out of the grid.</para>
     ///
     /// <para>It moves no focus and reads no layout: the key gate passes on what it hears (ADR-0021).
     /// Before the grid is attached to the page, and after it is gone, it does nothing.</para>

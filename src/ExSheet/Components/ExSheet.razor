@@ -68,8 +68,9 @@
 @* Format Cells in a frame of the Chrome's own (ADR-0071, ADR-0010's note of 2026-09-30): beside the
    grid and outside its root, from the opening until OK or Cancel. Under the built-in Chrome it
    stands in the grid's popover frame instead (ADR-0050 item 16), and nothing is rendered here. *@
-@* After OK or Cancel it stays until the keyboard has left it (FormatCellsContext.ReturnKeyboardFrom;
-   decided with the user, 2026-10-13): one place in the markup, so the frame is the same instance. *@
+@* After OK or Cancel it stays until the keyboard has left it (FormatCellsContext.ReturnKeyboardFrom),
+   so that the keys typed as the keyboard goes back reach the Sheet (decided with the user, 2026-10-13: they
+   are held and handed on in order): one place in the markup, so the frame is the same instance. *@
 @* A toolbar list hands its keyboard and held keys back before the next frame can take focus. *@
 @if (!_formatCellsHandOffAfterToolbar && (_formatCellsFrame ?? _leavingFormatCellsFrame) is { } formatCellsFrame)
 {
@@ -159,7 +160,7 @@
     private FormatCellsContext? _formatCells;
     private RenderFragment? _formatCellsFrame;
     // A Chrome's Format Cells frame that OK or Cancel ended, kept on the page until the keyboard has left
-    // it (decided with the user, 2026-10-13).
+    // it: the element the keyboard leaves from, with the keys typed meanwhile, is in it.
     private RenderFragment? _leavingFormatCellsFrame;
 
     private ExGrid<SheetRow>? _grid;
@@ -1871,6 +1872,8 @@
     // Answers whether the key was one of the toolbar's.
     private async Task<bool> OnToolbarKeyAsync(GridDeclaredKeyPress press)
     {
+        // Any other declared key between an Alt's press and its release: that Alt is not alone.
+        if (press.Key != AltAlone) _altAlone = false;
         switch (press.Key)
         {
             case ToolbarToggleKey:
@@ -1889,7 +1892,8 @@
 
     // The Alt key's release, heard while the toolbar is shown: it starts the KeyTips when the Alt went
     // down alone. Which it did is the grid's key gate's to tell, where every key between the press and
-    // the release is heard in order (decided with the user, 2026-10-13): it keeps a chord's release from
+    // the release is heard in order, since the gate hears the release on the root (decided with the user,
+    // 2026-10-13: it holds Alt's keyup in order with the keys): it keeps a chord's release from
     // here, and holds an Alt's release typed on its root while it holds keys, handing it here in its
     // turn, after the press it releases. Another key's release says nothing: one typed while keys are
     // held reaches here ahead of the held Alt's. The toolbar's band holds an Alt's release typed on it

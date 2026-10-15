@@ -369,7 +369,19 @@ public partial class ExPivot
     private Task OnPopupFocusOutAsync()
     {
         _popupFocusInside = false;
-        return _closingSurface is { } closing ? PopupLeftAsync(closing) : Task.CompletedTask;
+        return Task.CompletedTask;
+    }
+
+    // DOM focus came to a control of this ExPivot outside a menu or a panel, whose frame keeps its own
+    // focus to itself: a Field List menu goes (DismissFieldMenu), and a menu or panel closing has given the
+    // keyboard up — to its button, a round trip after the close, or wherever its button's request found to
+    // take it. Heard at the root, so a menu whose frame left the page with the keyboard inside, which no
+    // focusout tells, still ends when the keyboard lands.
+    private async Task OnFocusInAsync(OpenSurface? fieldMenu)
+    {
+        DismissFieldMenu(fieldMenu);
+        if (_closingSurface is { } closing)
+            await PopupLeftAsync(closing);
     }
 
     // The keyboard has left the closing menu or panel — for the button that opened it, which takes it a
@@ -419,8 +431,24 @@ public partial class ExPivot
 
     // A menu's commands, doing nothing once the menu has closed: a key typed in it after the close is
     // the opener's (CloseOpen).
+    // A command that changes the layout can take its menu's entry away, or put another field's there: the
+    // button the keyboard was going back to is not the one it came from, and the closing menu goes.
     private IReadOnlyList<PivotCommand> WhileOpen(OpenSurface open, IReadOnlyList<PivotCommand> commands)
-        => [.. commands.Select(command => command with { Invoke = () => ReferenceEquals(_open, open) ? command.Invoke() : Task.CompletedTask })];
+        => [.. commands.Select(command => command with
+        {
+            Invoke = async () =>
+            {
+                if (!ReferenceEquals(_open, open))
+                    return;
+                var layout = PaneLayout;
+                await command.Invoke();
+                if (ReferenceEquals(_closingSurface, open) && !ReferenceEquals(layout, PaneLayout))
+                {
+                    EndClosing();
+                    StateHasChanged();
+                }
+            },
+        })];
 
     // ---- A menu or a panel opening (decided with the user, 2026-10-13) ----------------------------
 
@@ -795,9 +823,12 @@ public partial class ExPivot
 
     private PivotAreaEntryView EntryView(PivotEntry entry, string caption, bool filtered)
     {
-        var open = Shown is { OnToolbar: false } surface && surface.Entry == entry;
+        // Open while it is open; drawn while it is open or closing (Shown). A closing menu's entry is not
+        // open, so the focus its button takes back reaches the root (OnFocusInAsync).
+        var open = _open is { OnToolbar: false } surface && surface.Entry == entry;
+        var shown = Shown is { OnToolbar: false } drawn && drawn.Entry == entry;
         return new PivotAreaEntryView(entry, caption, filtered, open, () => ToggleMenu(entry),
-            open ? PopupFragment(Shown!) : null, _entryFocus.GetValueOrDefault(entry));
+            shown ? PopupFragment(Shown!) : null, _entryFocus.GetValueOrDefault(entry));
     }
 
     private static string AreaWord(PivotArea area) => area switch
