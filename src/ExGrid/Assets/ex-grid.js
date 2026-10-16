@@ -1846,7 +1846,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 continue;
             }
             if (k.barPress) {
-                await answerBarPress();
+                await answerBarPress(k);
                 continue;
             }
             if (k.press) {
@@ -2612,10 +2612,48 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             && !target.readOnly && !target.disabled && document.activeElement !== target
             && target.closest('.ex-formula-bar-text') !== null && root.contains(target);
     };
-    const holdBehindBarPress = () => {
-        held.push({ barPress: true });
+    // The press into the bar keeps the text it was made on, and the caret it placed there, read at
+    // its release (barPressTaken), while the field still holds that text (ticket 202, decided with
+    // the user on 2026-10-16). On a circuit the renders of the inputs before it — Enter's move, a
+    // press on the cell — can land after it, and each that writes the bar's text puts the browser's
+    // caret at the end: F4 then cycled the last Reference, not the one pressed. At its turn, where
+    // the bar holds the text the press was made on, the caret goes back where it was pressed, and
+    // is the user's move (noteCaretMove), as a press made once those renders had landed would have
+    // left it. Where the text is another, the press placed no caret in it, and nothing is restored.
+    // Reads the field's value and selection; no layout is read.
+    let barPressTaken = null;
+    const holdBehindBarPress = (field) => {
+        const entry = { barPress: true, field, text: field.value, selection: null };
+        barPressTaken = entry;
+        held.push(entry);
         if (!answering) {
             startHold();
+        }
+    };
+    // The release of a press into the bar held among the keys: the caret its press placed, if the
+    // field still holds the text it was pressed on (holdBehindBarPress).
+    const noteBarPressCaret = () => {
+        const entry = barPressTaken;
+        barPressTaken = null;
+        if (entry !== null && document.activeElement === entry.field && entry.field.value === entry.text) {
+            entry.selection = [entry.field.selectionStart, entry.field.selectionEnd, entry.field.selectionDirection];
+        }
+    };
+    // At the press's turn (answerBarPress): the caret it placed, back where it was, in the text it
+    // was pressed on.
+    const restoreBarPressCaret = (k) => {
+        const field = k.field;
+        if (!k.selection || !field || document.activeElement !== field || field.value !== k.text) {
+            return;
+        }
+        const [start, end, direction] = k.selection;
+        if (field.selectionStart !== start || field.selectionEnd !== end) {
+            field.setSelectionRange(start, end, direction ?? 'none');
+        }
+        noteCaretMove(field);
+        if (reportCaret && editing !== 'none' && core) {
+            reportedText = null;
+            reportCaretOf(field);
         }
     };
     // Asked once the press's focus has gone to the core: focusing the bar is the press's default
@@ -2628,7 +2666,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // trip). The bar still holds DOM focus, and the keys after it are the bar's — so, at its
     // turn, the core is told whether the bar is still where the keyboard is, and answers the
     // press again from there if no edit stands.
-    const answerBarPress = async () => {
+    const answerBarPress = async (k) => {
         await new Promise((resolve) => setTimeout(resolve));
         const active = document.activeElement;
         const inBar = active instanceof Element && root.contains(active)
@@ -2639,6 +2677,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
         });
         await editorSettled();
+        restoreBarPressCaret(k);
     };
 
     // A press on the rows keeps its place among held keys (ADR-0021/0010, ED-22). While keys
@@ -2971,8 +3010,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (event.button === 0 && !replaying && isTextField(event.target) && event.target.closest('.ex-editor') !== null) {
             noteCaretMove(event.target);
         }
+        // Any other press leaves the bar press before it with the caret it had (noteBarPressCaret).
+        if (!replaying) {
+            barPressTaken = null;
+        }
         if (holdsBarPress(event)) {
-            holdBehindBarPress();
+            holdBehindBarPress(event.target);
             return;
         }
         // An edit is left standing here when DOM focus goes elsewhere — to another grid, a
@@ -3106,6 +3149,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // (holdBehindPress).
         if (!replaying) {
             askAboutPress();
+            noteBarPressCaret();
         }
         // The click this release makes on an action is told the render it was pressed on, and the
         // address the press read in it (actionPress).

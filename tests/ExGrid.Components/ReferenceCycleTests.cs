@@ -292,6 +292,26 @@ public partial class ReferenceCycleTests : GridTestContext
         Assert.Equal("caret", EditingTold()[^1].Mode);
     }
 
+    [Fact] // ADR-0051, ticket 202: an edit a press into the bar opens on the text the bar shows places no caret over the press's, and the press's caret, told as the user's, is the one F4 cycles from
+    public async Task A_press_into_the_bar_on_the_text_it_shows_keeps_its_caret_for_F4()
+    {
+        // The listener puts the pressed caret back, as the user's, once the press's turn has come in
+        // the text it was pressed on (ticket 202): the core then answers F4 from it, as from any
+        // caret the user moved.
+        var cut = RenderGrid(cycle: (text, start, _) => text == "Row 000000" && start == 3 ? new EditorRewrite("ROW 000000", 0, 3) : null,
+            point: true);
+        await ClickAsync(cut, 50, 10);
+        var placed = SelectionsPlaced().Count;
+
+        await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+        Assert.Equal(placed, SelectionsPlaced().Count);
+        await cut.InvokeAsync(() => cut.Instance.OnEditorCaretAsync("Row 000000", 3, moved: true));
+        await PressAsync(cut, "F4", "Row 000000", 3, moved: true, fromBar: true);
+
+        Assert.Equal("ROW 000000", BarText(cut));
+        Assert.Equal(("ROW 000000", 0, 3), SelectionsPlaced()[^1]);
+    }
+
     [Fact] // ADR-0051 / DC-45: in the Formula Bar, a caret moved by ← selects the rewritten end of the range (observed, R1 (v): =SUM(A1:B2), ←, F4 gave =SUM(A1:$B$2) with $B$2 selected)
     public async Task DC45_F4_in_the_formula_bar_after_a_caret_move_selects()
     {
