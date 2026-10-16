@@ -325,7 +325,9 @@
                 arrow, or a drag, writes a range, and Shift+Home a range to the row's first column. Ctrl and an arrow
                 points at the edge of the data, as it moves there with no edit open — <code>=</code> then Ctrl+↓ on an
                 empty column writes <code>=D1048576</code> — and Ctrl+Shift and an arrow writes the range from the cell
-                being edited to that edge. Typed into the
+                being edited to that edge. The Reference being written stands on a grey ground in the surface the
+                edit is in — straight after <code>=</code> too, as Excel draws <code>=D11</code> — and it is a look,
+                not a selection: a key typed next follows it. Typed into the
                 Formula Bar, the arrow keys move the caret instead, as they do in Excel's bar, until <kbd>F2</kbd>
                 points. F4 cycles the Reference at the caret through <code>$A$1</code>, <code>A$1</code>,
                 <code>$A1</code> and <code>A1</code>; in a range typed out only the end at the caret cycles, and its
