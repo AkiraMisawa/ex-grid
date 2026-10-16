@@ -48,10 +48,10 @@ public class SettledMarkTests : GridTestContext
         => new() { Button = 0, Buttons = buttons, OffsetX = x, OffsetY = y, Detail = detail };
 
     private Task<string?> AnsweredAsync(IRenderedComponent<ExGrid<TestRow>> cut)
-        => ReadWhenIdleAsync(() => cut.Find(".ex-grid > .ex-settled-stamp").GetAttribute("data-ex-answered"));
+        => ReadWhenIdleAsync(() => cut.Find(".ex-grid > [data-ex-answered]").GetAttribute("data-ex-answered"));
 
     private Task<bool> OwingAsync(IRenderedComponent<ExGrid<TestRow>> cut)
-        => ReadWhenIdleAsync(() => cut.Find(".ex-grid > .ex-settled-stamp").HasAttribute("data-ex-owing"));
+        => ReadWhenIdleAsync(() => cut.Find(".ex-grid > [data-ex-answered]").HasAttribute("data-ex-owing"));
 
     [Fact] // ADR-0220: the root names no input before any is answered, and each key once it has been
     public async Task ADR0220_the_root_names_the_last_key_answered()

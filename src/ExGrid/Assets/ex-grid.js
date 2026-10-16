@@ -103,7 +103,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // every input the gate has taken has been handled and its effect is in the DOM, so that a test, or
     // any automation driving the grid at machine speed, reads only then. Written here, from what the
     // gate already knows, and from two attributes the core's own render writes on the root's first
-    // child (SettledStamp, `.ex-settled-stamp`) — never measured from the page:
+    // child (SettledStamp, found by its data-ex-answered) — never measured from the page:
     // - no key, press, paste or composition held, no hold standing, no press waiting on its answer,
     //   no hand-off of the keyboard under way, and no wait for the editor's or a popover's focus;
     // - every input sent to the core answered, and that answer's render in the DOM: each key, press on
@@ -121,7 +121,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // at in a microtask after anything that may change it, so a state passed through within one task
     // is never shown. An observer of the two attributes the render writes is the one thing added,
     // as the reveal's and the follow's are.
-    const stamp = root.querySelector(':scope > .ex-settled-stamp');
+    const stamp = root.querySelector(':scope > [data-ex-answered]');
     let inputsSent = Number(stamp?.getAttribute('data-ex-answered')) || 0;
     let clipboardWrites = 0;
     let settledShown = null;

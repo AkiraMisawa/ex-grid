@@ -11,7 +11,8 @@ namespace ExGrid.Components;
 /// own, so that saying an input was answered renders this element and nothing else: rendered by the
 /// root, each input cost two renders of the whole grid, which the measurement of 2026-10-16 saw on
 /// WebAssembly (a burst of 40 keys, 63 ms without the mark and 151 ms with it). It takes no
-/// parameter, so the root's renders never render it.
+/// parameter, so the root's renders never render it. It wears no class: the script finds it by its
+/// attribute, and every class under the root is one ADR-0029 names (UX-4).
 /// </summary>
 internal sealed class SettledStamp : ComponentBase
 {
@@ -33,7 +34,6 @@ internal sealed class SettledStamp : ComponentBase
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         builder.OpenElement(0, "span");
-        builder.AddAttribute(1, "class", "ex-settled-stamp");
         builder.AddAttribute(2, "hidden", true);
         builder.AddAttribute(3, "data-ex-answered", _answered.ToString(CultureInfo.InvariantCulture));
         if (_owing)
