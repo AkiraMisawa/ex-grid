@@ -533,8 +533,8 @@ public class IndirectTests
     [InlineData("ZZ1000", "=COLUMNS(INDIRECT(\"R3:R2C2\",FALSE))", 1)]
     [InlineData("ZZ1000", "=ROWS(INDIRECT(\"R3:R2C2\",FALSE))", 2)]
     [InlineData("ZZ1000", "=SUM(INDIRECT(\"Sheet1!R3C2:C2\",FALSE))", 45)]
-    [InlineData("C2", "=SUM(INDIRECT(\"RC[-1]:C[1]\",FALSE))", 1.333)]
-    [InlineData("C2", "=SUM(INDIRECT(\"R[3]:RC[-1]\",FALSE))", 117.333)]
+    [InlineData("E2", "=SUM(INDIRECT(\"RC[-3]:C[-2]\",FALSE))", 1.333)]
+    [InlineData("C2", "=SUM(INDIRECT(\"R[3]:RC[-1]\",FALSE))", 118.333)]
     [InlineData("C3", "=SUM(INDIRECT(\"R:R[-1]C[-1]\",FALSE))", 46.333)]
     [InlineData("C2", "=SUM(INDIRECT(\"r[1]c[-1]:c4\",FALSE))", 45)]
     public void ADR0124_indirect_reads_a_cell_joined_to_a_column_and_a_row_joined_to_a_cell(string cell, string formula, double expected)
