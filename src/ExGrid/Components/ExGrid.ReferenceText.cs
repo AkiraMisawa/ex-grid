@@ -61,15 +61,15 @@ public partial class ExGrid<TRow>
     /// Reference being written is shown selected"; ADR-0057, "What cases 24–32 settled"): the
     /// Reference Point is writing, or the text a press outside the grid wrote (ADR-0058,
     /// <c>XLOOKUP("R-4471", Positions[Id], Positions[PV])</c>) — exactly what a further press would
-    /// replace — while pointing, unless it starts right after the text's first character. Excel
-    /// shows <c>=D11</c>, pointed straight after the <c>=</c>, without the look however often it
-    /// was pointed, and <c>=SUM(D11</c>, <c>=1+D11</c> and <c>=D11+D12</c> with it; the core
-    /// reads no Formula, and says so of the first character whatever it is. Null while nothing
-    /// is. A look only: the field's text is never selected, so a key typed next follows the
-    /// Reference, and ends pointing, as it always did.
+    /// replace — while pointing, wherever it stands: straight after the <c>=</c> too (2026-10-16,
+    /// decided with the user, after run 18a saw Excel show <c>=D11</c> and <c>=D12</c>, pointed
+    /// straight after the <c>=</c>, on the grey ground in the cell, as it shows <c>=SUM(D11</c>,
+    /// <c>=1+D11</c> and <c>=D11+D12</c>). Null while nothing is. A look only: the field's text is
+    /// never selected, so a key typed next follows the Reference, and ends pointing, as it always
+    /// did.
     /// </summary>
     private (int Start, int Length)? PointedSpan
-        => PointingContinues && _pointStart != 1 ? (_pointStart, _pointLength) : null;
+        => PointingContinues ? (_pointStart, _pointLength) : null;
 
     /// <summary>What the highlights of the core's own Cell Editor layer cover (<see cref="ReferenceHighlights.ColoursOf"/>).</summary>
     private string EditReferenceColours

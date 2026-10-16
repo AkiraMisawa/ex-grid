@@ -224,15 +224,15 @@ public partial class ReferenceTextTests : GridTestContext
         Assert.Equal(drawn, Drawn(cut.Find(".ex-viewport > .ex-reference-text")));
     }
 
-    [Fact] // ADR-0058 / ADR-0057 (cases 19, 20x) / SH-34: text written from outside straight after the text's first character is not shown selected
-    public async Task Text_written_from_outside_straight_after_the_first_character_is_not_shown_selected()
+    [Fact] // ADR-0058 / ADR-0057 / SH-34: text written from outside straight after the text's first character is shown selected too, as a whole (2026-10-16, decided with the user, after run 18a answer 6)
+    public async Task ADR0057_text_written_from_outside_straight_after_the_first_character_is_shown_selected()
     {
         var cut = RenderGrid();
 
         await WriteFromOutsideAsync(cut, "=", "SUM(A5, B6)");
 
         Assert.Equal(
-            "=SUM(<span class=\"ex-reference-1\">A5</span>, <span class=\"ex-reference-2\">B6</span>)",
+            "=<span class=\"ex-reference-pointed\">SUM(<span class=\"ex-reference-1\">A5</span>, <span class=\"ex-reference-2\">B6</span>)</span>",
             Drawn(cut.Find(".ex-viewport > .ex-reference-text")));
     }
 
@@ -249,19 +249,19 @@ public partial class ReferenceTextTests : GridTestContext
         Assert.Equal("=<span class=\"ex-reference-1\">1+A5</span>", Drawn(cut.Find(".ex-viewport > .ex-reference-text")));
     }
 
-    [Fact] // ADR-0051 / ADR-0057 (cases 19, 20x): a Reference straight after the text's first character is not shown selected, however often it is pointed
-    public async Task A_reference_pointed_straight_after_the_first_character_is_not_shown_selected()
+    [Fact] // ADR-0051 / ADR-0057: a Reference straight after the text's first character is shown selected, however often it is pointed (2026-10-16, decided with the user, after run 18a answer 6: =, ↓ and =, ↓, ↓ on the grey ground in Excel's cell)
+    public async Task ADR0057_a_reference_pointed_straight_after_the_first_character_is_shown_selected()
     {
         var cut = RenderGrid();
         await TypeFormulaAsync(cut, "=");
 
         await PressAsync(cut, "ArrowDown", text: "=", caret: 1);
-        Assert.Equal("=<span class=\"ex-reference-1\">A2</span>", Drawn(cut.Find(".ex-viewport > .ex-reference-text")));
+        Assert.Equal("=<span class=\"ex-reference-1 ex-reference-pointed\">A2</span>", Drawn(cut.Find(".ex-viewport > .ex-reference-text")));
         await PressAsync(cut, "ArrowDown", text: "=A2", caret: 3);
 
         var layer = cut.Find(".ex-viewport > .ex-reference-text");
         Assert.Equal("=A3", layer.GetAttribute("data-ex-text"));
-        Assert.Equal("=<span class=\"ex-reference-1\">A3</span>", Drawn(layer));
+        Assert.Equal("=<span class=\"ex-reference-1 ex-reference-pointed\">A3</span>", Drawn(layer));
         Assert.Single(cut.FindAll(".ex-point"));
     }
 

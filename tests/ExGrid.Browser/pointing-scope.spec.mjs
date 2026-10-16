@@ -539,7 +539,7 @@ test.describe('/sheet', () => {
         await expect(table.locator('.ex-reference-outline')).toHaveCount(0);
     });
 
-    test('ADR-0058/SH-34: a lookup written straight after = is not on the grey; Enter takes the dashes and the outlines away', async ({ page }) => {
+    test('ADR-0058/SH-34: a lookup written straight after = lies on the grey as a whole; Enter takes the dashes and the outlines away', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -553,10 +553,11 @@ test.describe('/sheet', () => {
         const dashes = table.locator('.ex-point-dashes');
         await expectCovers(dashes, table, 'C3', 'C3');
         await expect(table.locator('.ex-reference-outline')).toHaveCount(2);
-        // Coloured, and not shown selected: it follows the = directly (ADR-0057, cases 19 and 20x).
-        await expect.poll(async () => (await stretchesOf(editor(grid))).map((span) => span.text))
+        // Coloured, and shown selected as a whole, straight after the = too (ADR-0057, ADR-0058;
+        // 2026-10-16, decided with the user, after run 18a's answer 6).
+        await expect.poll(() => pointedTexts(editor(grid))).toEqual([LOOKUP_4471.slice(1)]);
+        expect((await stretchesOf(editor(grid))).filter((span) => !span.pointed).map((span) => span.text))
             .toEqual(['Positions[Id]', 'Positions[PV]']);
-        expect(await pointedTexts(editor(grid))).toEqual([]);
 
         await page.keyboard.press('Enter');
 

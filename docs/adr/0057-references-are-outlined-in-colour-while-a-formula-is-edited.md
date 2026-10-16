@@ -247,6 +247,10 @@ file.
   colour (`#0401a2` for the first, `#630101` for the second). The grey shows for `=SUM(D11`,
   `=1+D11` and `=D11+D12`, and not for `=D11` however often it was pointed. It shows only in the
   surface the edit is in. *(Built, decided with the user: ADR-0051's Point gains this look.)*
+  *(2026-10-16, decided with the user: the grey shows for `=D11` too.)* Run 18a (observed 2026-10-13,
+  answer 6) saw `=D11` and `=D12`, pointed straight after the `=`, on the grey in the cell and not in
+  the bar. "Not for `=D11` however often it was pointed" is withdrawn as Excel's timing, as the tenth
+  run's `=1+D11` was. The rest of the bullet stands: the grey shows only in the surface the edit is in.
 - **The grey is not a selection that typing replaces** (case 32). A `5` typed after pointing at D12
   gives `=D11+D125`, and Point ends, as ADR-0051 has it: the digit follows the Reference. Excel's
   Formula Bar reports the grey span as its selection through UI Automation, but a keystroke does not
@@ -331,7 +335,7 @@ another grid on the page, and decides three things this ADR had left to it:
   by the row's key, are drawn only while that row is painted, and go when Point ends. A pressed column
   header dashes the whole column's body.
 - **The written `XLOOKUP(...)` lies on the grey ground as a whole**, unless it follows the `=`
-  directly. The two column references inside it wear their colours' darker shades. The grey covers
+  directly *(2026-10-16, decided with the user: straight after the `=` too, as a pointed Reference is)*. The two column references inside it wear their colours' darker shades. The grey covers
   what a further press would replace.
 
 ## What Part B of the eighth Windows run settled *(2026-09-30)*

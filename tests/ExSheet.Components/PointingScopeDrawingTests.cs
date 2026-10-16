@@ -234,8 +234,8 @@ public partial class PointingScopeTests
         Assert.Equal("=SUM(1,<span class=\"ex-reference-1\">Positions[PV]</span>)", CellEditorLayer(page.Left));
     }
 
-    [Fact] // ADR-0058 / ADR-0057 (cases 19, 20x) / SH-34: a lookup written straight after the = is not shown selected
-    public async Task A_lookup_written_straight_after_the_equals_sign_is_not_shown_selected()
+    [Fact] // ADR-0058 / ADR-0057 / SH-34: a lookup written straight after the = lies on the grey ground as a whole too (2026-10-16, decided with the user, after run 18a answer 6)
+    public async Task ADR0058_a_lookup_written_straight_after_the_equals_sign_is_shown_selected()
     {
         var page = await RenderAsync();
         await StartTypingAsync(page.Left, "D2", "=");
@@ -243,7 +243,7 @@ public partial class PointingScopeTests
         await PressCellAsync(page.Positions, ValueX, Row(1));
 
         Assert.Equal(
-            "=XLOOKUP(\"R-2\", <span class=\"ex-reference-1\">Positions[Id]</span>, <span class=\"ex-reference-2\">Positions[PV]</span>)",
+            "=<span class=\"ex-reference-pointed\">XLOOKUP(\"R-2\", <span class=\"ex-reference-1\">Positions[Id]</span>, <span class=\"ex-reference-2\">Positions[PV]</span>)</span>",
             CellEditorLayer(page.Left));
         // It is dashed all the same.
         page.Positions.WaitForAssertion(() => Assert.Equal([ValueCellDashes(1)], DashesOf(page.Positions)));

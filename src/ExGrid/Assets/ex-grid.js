@@ -347,33 +347,33 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             'Control+f', 'Control+F']);
     // Pointing (ADR-0051's second round): the arrows, Home and End, the four Shift+arrows and
     // Shift+Home, which move or extend the outline rather than select text in the input (Shift+Home
-    // observed in Excel: the readings of 2026-10-12, R1 (viii)). And while a completion list is
+    // observed in Excel: the readings of 2026-10-12, R1 (viii)), and the Primary Modifier's arrows
+    // with Shift or without, which move or extend it to the data edge rather than move the caret by
+    // a word (observed in Excel, run 18a: =, Ctrl+↓ and =, Ctrl+Shift+↓). And while a completion list is
     // open, only its ↑/↓ beside the editing keys (Tab, Escape): ←, →, Home, End and the
     // Shift+arrows are the editor's — unless the list is open over Point, where they do what Point
     // does with them, as they do without it (ADR-0058: the tenth Windows run, and Part B of the
     // ninth).
     const pointKeys = new Set([
         ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',
-        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight', 'Shift+Home']);
+        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight', 'Shift+Home',
+        'Control+ArrowUp', 'Control+ArrowDown', 'Control+ArrowLeft', 'Control+ArrowRight',
+        'Control+Shift+ArrowUp', 'Control+Shift+ArrowDown', 'Control+Shift+ArrowLeft', 'Control+Shift+ArrowRight']);
     // Overwrite, Excel's Enter mode (ADR-0010, ED-2): Point's keys, which commit and move or extend
     // the Selection — or point, where a Reference can go — rather than move the caret or select
-    // text in the input, and the Primary Modifier's arrows with Shift or without, which commit and
-    // move or extend to the edge. Observed in Excel: Shift+Home, Shift+→, Shift+↓, Shift+←, Ctrl+→
-    // and Ctrl+Shift+→ (the seventeenth Windows run, Part C, case 7; R1 (vii)); the rest of the
-    // Primary Modifier's arrows and Shift+↑ by generalisation. End's commit and move is the grid's,
+    // text in the input; the Primary Modifier's arrows, with Shift or without, commit and move or
+    // extend to the edge. Observed in Excel: Shift+Home, Shift+→, Shift+↓, Shift+←, Ctrl+→ and
+    // Ctrl+Shift+→ (the seventeenth Windows run, Part C, case 7; R1 (vii)), and Shift+↑, Ctrl+←,
+    // Ctrl+↑, Ctrl+↓, Ctrl+Shift+←, Ctrl+Shift+↑ and Ctrl+Shift+↓ (run 18a). End's commit and move is the grid's,
     // not Excel's: in Enter mode Excel's End turns on an End Mode (ADR-0058), which the grid does
     // not have. Shift+End stays the editor's (decided with the user, 2026-10-13): Excel's commits
     // and turns on an End Mode (R1 (vii)), which the grid does not have (ADR-0058, Q53).
-    const overwriteKeys = new Set([
-        ...pointKeys, 'Control+ArrowUp', 'Control+ArrowDown', 'Control+ArrowLeft', 'Control+ArrowRight',
-        'Control+Shift+ArrowUp', 'Control+Shift+ArrowDown', 'Control+Shift+ArrowLeft', 'Control+Shift+ArrowRight']);
+    const overwriteKeys = new Set(pointKeys);
     // Pointing from outside (ADR-0058, "The keyboard"): while what Point wrote was written for a
-    // press on another grid, and the Consumer that wrote it hears the arrows, Point's keys and the
-    // Primary Modifier's arrows, with Shift or without, which the Consumer refuses rather than let
-    // them move the caret.
-    const pointedKeys = new Set([
-        ...pointKeys, 'Control+ArrowUp', 'Control+ArrowDown', 'Control+ArrowLeft', 'Control+ArrowRight',
-        'Control+Shift+ArrowUp', 'Control+Shift+ArrowDown', 'Control+Shift+ArrowLeft', 'Control+Shift+ArrowRight']);
+    // press on another grid, and the Consumer that wrote it hears the arrows, Point's keys, the
+    // Primary Modifier's arrows among them, which the Consumer refuses rather than let them move
+    // the caret.
+    const pointedKeys = new Set(pointKeys);
     const completionKeys = new Set([...editingKeys, 'ArrowUp', 'ArrowDown']);
     const completionOverPointKeys = new Set([
         ...completionKeys, 'ArrowLeft', 'ArrowRight', 'Home', 'End',

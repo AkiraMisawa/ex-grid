@@ -1,4 +1,4 @@
-import { test, expect, alterPage, setRoundTrip } from './fixtures.mjs';
+import { test, expect, alterPage, setRoundTrip, circuitQuiet } from './fixtures.mjs';
 import { pixelsApart, stillPictures } from './pixels.mjs';
 import { sheet, cell, pressCell, editor, bar, clickBarEnd, boxOf, typeSteadily, stretchesOf } from './sheet-helpers.mjs';
 
@@ -399,22 +399,28 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(editor(grid)).toHaveCount(0);
     });
 
-    test(`ADR-0051/0057: = ↓ ↓ writes =F5 with no grey, however often it is pointed (${chrome} Chrome)`, async ({ page }) => {
+    // Run 18a, answer 6, typed from D10 as the run typed it: =, ↓ and =, ↓, ↓ lay the pointed
+    // Reference on the grey in the cell and not in the bar (2026-10-16, decided with the user:
+    // straight after the = too).
+    test(`ADR-0057/0051: = ↓ writes =D11 on the grey in the Cell Editor, and = ↓ ↓ =D12, the Formula Bar plain (run 18a, answer 6; ${chrome} Chrome)`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
-        await pressCell(grid, 'F3');
+        await pressCell(grid, 'D10');
         await page.keyboard.type('=');
-        await expect(editor(grid)).toHaveValue('=');
-
-        await page.keyboard.press('ArrowDown');
         await page.keyboard.press('ArrowDown');
 
-        await expectColoured(editor(grid), '=F5');
+        await expectColoured(editor(grid), '=D11');
+        await expectPointedLook(editor(grid), 'D11');
+        await expectPlain(bar(grid), '=D11');
+        await circuitQuiet();
+        expect(await selectionOf(editor(grid))).toEqual([4, 4]);
+
+        await page.keyboard.press('ArrowDown');
+
+        await expectColoured(editor(grid), '=D12');
+        await expectPointedLook(editor(grid), 'D12');
+        await expectPlain(bar(grid), '=D12');
         await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(1);
-        const spans = await stretchesOf(editor(grid));
-        expect(spans.map((span) => [span.text, span.pointed])).toEqual([['F5', false]]);
-        expect(spans[0].ground).not.toBe(POINTED_GROUND);
-        expect(spans[0].ink).toBe(spans[0].colour);
         await page.keyboard.press('Escape');
         await expect(editor(grid)).toHaveCount(0);
     });

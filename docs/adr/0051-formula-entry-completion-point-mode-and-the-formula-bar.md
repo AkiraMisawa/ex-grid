@@ -135,7 +135,16 @@ DOM focus. This is the same allowlisted listener doing the same job
   `=`, ↓, Shift+Home in D10 gave `=A11:D11`, still in Point (observed). From a range already pointed
   (`=D11:D12`), it extends from the range's fixed end (`=A11:D12`), as Shift+Home extends a
   Selection: a reading. The second round of the seventeenth run's corrections had left it to the
-  editor, which selected text.
+  editor, which selected text. *(Observed 2026-10-13, run 18a, answers 3 and 8.)* Both readings are
+  now observed: `=`, ↓, Shift+↓, Shift+Home in D10 gave `=A11:D12`, still in Point; `=` then
+  Shift+Home with no key between gave `=A10:D10` in Point, `A10:D10` dashed on the sheet. Nothing was
+  built.
+  - **The Primary Modifier's arrows point too** *(observed 2026-10-13, run 18a, answer 5)*. In D10,
+    `=` then Ctrl+↓ pointed, in Point, at `=D1048576` on an empty column, and `=` then Ctrl+Shift+↓
+    gave `=D10:D1048576`, anchored at the edited cell. Where a Reference can go, or while an outline
+    stands, they move or extend the outline to the edge the Consumer's `DataEdge` answers (ADR-0050,
+    item 2), as they move a Selection there; the key listener claims them in Point as it does in
+    Overwrite. The other directions, and an outline already standing, follow by generalisation.
 - **While the completion list is open, only ↑, ↓, Tab and Escape are claimed.** ← and → move the
   caret, as they do in Excel.
 - **The editor's caret is reported and set, never inferred.** An input event carries no caret, and
@@ -264,6 +273,18 @@ Where a reading was wrong, the bullet says what Excel does and keeps what was re
   placement still in flight carries the selection as it carries a caret (the rule settled while
   building, above), so the next F4 cycles the same Reference. *(Whether a selection in Edit mode
   starts at a Sheet qualifier was not asked: case 10 was typed.)*
+  *(Observed 2026-10-13, run 18a, `verification/2026-10-14-windows-readings-18a/report.md`,
+  "f4-enter-mode.md", answers 1, 2 and 4.)* **The selection follows where the caret stands, not whether
+  it was moved.** `=A1+B2` typed into the bar, F2, F4 gave `=A1+$B$2` with a caret at the end; ←, → (the
+  caret moved, back at the end), F4, a caret; ←×3 and `0` typed (`=A10+B2`, the caret at 4), F4, `$A$10`
+  selected; a press after `A1` in a committed `=A1+B2`, F4, `$A$1` selected. Every reading so far — Part
+  C, R1 (iv) and (v), and these — fits one rule, which ExSheet now follows: the rewritten span is selected
+  where the key carried a selection or the caret stood before the text's end, and a caret is left at its
+  end where the caret stood at the text's end, however it got there. The F4 key message's "moved" flag
+  now serves only the placement still in flight (above). **A Sheet qualifier is outside the selection**:
+  `=Sheet2!A1+1`, F2, ←←, F4 gave `=Sheet2!$A$1+1` with `$A$1` selected (8–12), and `=Sheet2!A1` with the
+  caret at its end a caret. The Consumer answers the span from the first Reference's cell part, and the
+  sentence above that includes the qualifier is withdrawn.
 - **After F4 while pointing, the rewritten Reference is the one Point is writing**: the caret stands
   at its end, so a key typed next follows it (observed, case 16: `=`, ↓, F4, `+` gave `=$A$2+`).
   Excel reported it as the bar's selection (R1 (vi): UI Automation gave `$D$11:$D$12`); ExSheet
@@ -285,7 +306,13 @@ points) is unchanged.
 Excel by the eighth Windows run)*. While pointing, the Reference Point is writing lies on a grey
 ground, unless it follows the Formula's leading `=` directly. It is a look on ADR-0057's coloured
 layer, not a selection of the field's text. A key typed next follows the Reference, as it always did
-(`=D11+D12`, then `5`, gives `=D11+D125`).
+(`=D11+D12`, then `5`, gives `=D11+D125`). *(2026-10-16, decided with the user: the grey shows
+straight after the `=` too.)* Run 18a (observed 2026-10-13, answer 6) saw Excel lay `=D11` (`=`, ↓)
+and `=D12` (`=`, ↓, ↓) on the grey ground in the cell (`f4-q6a-2-cells.png`, `f4-q6b-3-cells.png`),
+with no grey in the bar; UI Automation gave the bar's selection as `D11` and `D12`. The eighth run's
+case 31, which saw no grey for `=D11`, is taken as Excel's paint timing, as the tenth run's `=1+D11`
+was (ADR-0057). The Reference Point is writing now wears the look wherever it stands; it is still a
+look, never a selection of the field's text, drawn only in the surface the edit is in.
 
 
 ## Point reaches other grids through a Pointing Scope *(2026-09-30, decided with the user)*
