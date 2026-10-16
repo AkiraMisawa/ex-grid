@@ -58,5 +58,15 @@ They agree on every `EDATE` from serial 0 but three, each a month whose day 0 fa
 | `=EDATE(0,2)` | 60, or 59 | the day before 1 March 1900 is the day that never existed by `DATE`'s arithmetic, and 28 February on the real calendar |
 | `=EDATE(0,97200)` | `#NUM!`, or 2958465 | January 10000 is past the last year, and 31 December 9999 is the last day |
 
-The engine refuses those three with `#VALUE!` (and the same from a start between 0 and 1), and answers
-the rest: `EDATE(0,1)` is 31, `EDATE(0,3)` is 91 and `EDATE(0,12)` is 366. EDATE-018 to 021 ask them.
+The engine refused those three with `#VALUE!` (and the same from a start between 0 and 1), and answered
+the rest: `EDATE(0,1)` is 31, `EDATE(0,3)` is 91 and `EDATE(0,12)` is 366. EDATE-018 to 021 asked them.
+
+## What Windows run 18a settled (2026-10-14)
+
+Run 18a (`verification/2026-10-14-windows-readings-18a/`) asked EDATE-018 to 022. Excel answered
+`EDATE(0,2)` 60, `EDATE(0,0)` 0 and `EDATE(0,97200)` `#NUM!`, and agreed on `EDATE(0,3)`, 91, and
+`EDATE(0.5,12)`, 366. With them, 37 cases are observed, and **2 readings** of 112 reproduce every one:
+EDATE's day 0 is the day before the 1st by `DATE`'s arithmetic, with the start cut down to its day or
+`#NUM!` below 0 and then truncated, which give the same answer for every start. They agree on every formula
+the script probes, so the engine answers each by that one rule and refuses none of them (`MonthsAway` in
+`Functions.Dates.cs`).

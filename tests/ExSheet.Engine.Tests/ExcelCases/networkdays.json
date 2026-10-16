@@ -81,8 +81,8 @@
     },
     {
       "id": "NETWORKDAYS-010",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a boolean typed as a date, which EDATE answers with #VALUE! (EDATE-009); read as 1, serial 1 is a Sunday and serials 1 to 6 hold five workdays, 5",
+      "source": "observed",
+      "description": "A boolean typed as a date is #VALUE!, an Error Value a Formula catches, as EDATE's and EOMONTH's are (EDATE-009, EOMONTH-018); it is not read as 1, which would give 5 (Windows run 18a)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=NETWORKDAYS(TRUE,6)"},
       "check": "ZZ1000",

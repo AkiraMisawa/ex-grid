@@ -33,29 +33,23 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// MOD: <c>number - divisor*INT(number/divisor)</c>, as Microsoft defines it, so the result takes
-    /// the divisor's sign, computed as every evaluation at the hardware's widths (a double's 53 bits, an
-    /// x87 register's 64) that gives each answer Excel was seen to give computes it, and refused where
-    /// they part (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's; ADR-0047, ADR-0202). The remainder is exact: Excel's
-    /// <c>MOD(123456789012,0.7)</c> is 0.5000078322611261 (MOD-017), where the identity in doubles is
-    /// 0.5000152587890625, and its <c>MOD(1,0.1)</c> 0.09999999999999995 (MOD-020), where the double
-    /// quotient, 10, gives 0. Where the remainder has the number's sign, the divisor is added and the sum
-    /// held wider than a double before it is stored as one: <c>MOD(-0.087626,6630)</c> is
-    /// 6629.9123739999995 (MOD-029), the sum held at 64 bits, rounded to nearest or truncated, and then
-    /// stored as a double, where rounded once it is 6629.912374; and a sum stored as the divisor itself is
-    /// 0: <c>MOD(-1E-20,1)</c> is 0 (MOD-032), not 1. A remainder a hair from 0 is itself:
-    /// <c>MOD(1.1,0.1)</c> is 2.7755575615628914E-17 (MOD-030). At 64 bits three evaluations give all 32
-    /// observed answers (<c>spikes/exsheet-financial-evaluation/mod-search.cs</c>): the sum rounded to
-    /// nearest, taken as 0 where the double stored is the divisor (<c>B9</c>), or where the register holds
-    /// it (<c>B10</c>); and the sum truncated, taken as 0 where the double is the divisor (<c>B12</c>). They
-    /// part where the sum is the divisor as a double but not at 64 bits, as at <c>MOD(-1E-17,1)</c>, and
-    /// where truncating at 64 bits stores another double than rounding there, as at
-    /// <c>MOD(-0.084474,2270)</c>; <see cref="TurnedRemainder"/> refuses those, and MOD-033 to MOD-036 ask
-    /// them. The same three with the sum held at 54 to 63 bits rounded, or at 54 to 65 truncated, give all
-    /// 32 as well. No hardware holds those widths, and the engine does not model them: it answers on the
-    /// judgment that only the hardware's widths are natural, which no observed answer settles, and so
-    /// answers where they would give another double: 3.4% of the inputs of up to five digits the search
-    /// tried, about 2% at 54 bits, rounded or truncated, and about half as many at each further bit.
-    /// MOD-039 and MOD-040 ask two. A divisor of 0 is <c>#DIV/0!</c>, and a quotient of
+    /// the divisor's sign, computed as the one evaluation at the hardware's widths (a double's 53 bits, an
+    /// x87 register's 64) that gives every answer Excel was seen to give (ADR-0047, ADR-0202). The
+    /// remainder is exact: Excel's <c>MOD(123456789012,0.7)</c> is 0.5000078322611261 (MOD-017), where the
+    /// identity in doubles is 0.5000152587890625, and its <c>MOD(1,0.1)</c> 0.09999999999999995 (MOD-020),
+    /// where the double quotient, 10, gives 0. Where the remainder has the number's sign, the divisor is
+    /// added in an x87 register, 64 bits rounded to nearest, and the sum stored as a double, rounded to
+    /// nearest again: <c>MOD(-0.087626,6630)</c> is 6629.9123739999995 (MOD-029), where rounded once it is
+    /// 6629.912374, <c>MOD(-0.008511,81200)</c> 81199.99148900001 (MOD-035), and
+    /// <c>MOD(-0.084474,2270)</c> 2269.915526 (MOD-034), where truncated at 64 bits it would be
+    /// 2269.9155259999998. A double stored that is the divisor itself is 0: <c>MOD(-1E-20,1)</c> is 0
+    /// (MOD-032), and so is <c>MOD(-1E-17,1)</c> (MOD-033), whose sum the register holds below 1. A
+    /// remainder a hair from 0 is itself: <c>MOD(1.1,0.1)</c> is 2.7755575615628914E-17 (MOD-030). Of
+    /// the three evaluations at 64 bits that gave the 32 answers before run 18a
+    /// (<c>spikes/exsheet-financial-evaluation/mod-search.cs</c>), the register's sum taken as 0 where the
+    /// double stored is the divisor (<c>B9</c>) alone gives MOD-033 to 036 (Windows run 18a); the same
+    /// evaluations at widths no hardware holds, which the engine does not model, give another double
+    /// than Excel at MOD-039 or MOD-040. A divisor of 0 is <c>#DIV/0!</c>, and a quotient of
     /// <see cref="ModQuotientLimit"/> or more <c>#NUM!</c>.
     /// </summary>
     private static Operand Mod(FunctionCall call)
@@ -67,46 +61,33 @@ internal static partial class FunctionLibrary
         // % on doubles is exact, and carries the number's sign.
         var remainder = number % divisor;
         if (remainder == 0 || (remainder < 0) == (divisor < 0)) return Operand.Of(Evaluator.Number(remainder));
-        return TurnedRemainder(remainder, divisor) is { } turned
-            ? Operand.Of(Evaluator.Number(turned))
-            : call.Evaluator.Refuse();
+        return Operand.Of(Evaluator.Number(TurnedRemainder(remainder, divisor)));
     }
 
     /// <summary>
     /// <paramref name="remainder"/> + <paramref name="divisor"/>, where the remainder, exact, has the
-    /// sign opposite the divisor's, as each of the three evaluations of <see cref="Mod"/> adds it: held at
-    /// 64 bits, rounded to nearest or truncated, then stored as a double, rounded to nearest; and a sum
-    /// that is the divisor itself taken as 0, in the double stored or, for the second, in the register.
-    /// Null where they give different doubles. The exact sum is the sum rounded once and its error
-    /// (Fast2Sum, since |remainder| &lt; |divisor|); the register's last place is 2^-11 of the double's
-    /// between the sum and its neighbour on the error's side, so a 64-bit sum is the sum plus a whole
-    /// number of those steps, and a sum 1024 steps away is a tie, which the double stored breaks to the
-    /// even neighbour. Each comparison is exact.
+    /// sign opposite the divisor's, as Excel adds it: held at 64 bits, rounded to nearest as an x87
+    /// register adds, then stored as a double, rounded to nearest; and 0 where the double stored is the
+    /// divisor itself. The exact sum is the sum rounded once and its error (Fast2Sum, since |remainder|
+    /// &lt; |divisor|); the register's last place is 2^-11 of the double's between the sum and its
+    /// neighbour on the error's side, so the 64-bit sum is the sum plus a whole number of those steps,
+    /// and a sum 1024 steps away is a tie, which the double stored breaks to the even neighbour. Each
+    /// comparison is exact.
     /// </summary>
-    private static double? TurnedRemainder(double remainder, double divisor)
+    private static double TurnedRemainder(double remainder, double divisor)
     {
-        // Each evaluation gives MOD(-n,-d) as -MOD(n,d): work with a positive divisor.
+        // MOD(-n,-d) is -MOD(n,d): work with a positive divisor.
         var sign = divisor < 0 ? -1.0 : 1.0;
         var d = sign * divisor;
         var r = sign * remainder;
         var sum = r + d;
         var error = r - (sum - d);
         var gap = error < 0 ? sum - Math.BitDecrement(sum) : Math.BitIncrement(sum) - sum;
-        var steps = error / gap * 2048;
-        var nearest = Math.Round(steps, MidpointRounding.ToEven);
-        var rounded = StoredAsDouble(sum, nearest);
-        var truncated = StoredAsDouble(sum, Math.Floor(steps));
-        var zeroInDouble = rounded == d ? 0 : rounded;
-        var zeroInRegister = sum == d && nearest == 0 ? 0 : rounded;
-        var zeroTruncated = truncated == d ? 0 : truncated;
-        if (zeroInDouble != zeroInRegister || zeroInDouble != zeroTruncated) return null;
-        return sign * zeroInDouble;
+        var steps = Math.Round(error / gap * 2048, MidpointRounding.ToEven);
+        var stored = Math.Abs(steps) < 1024 || (BitConverter.DoubleToInt64Bits(sum) & 1) == 0 ? sum
+            : steps > 0 ? Math.BitIncrement(sum) : Math.BitDecrement(sum);
+        return sign * (stored == d ? 0 : stored);
     }
-
-    /// <summary>The double a 64-bit sum <paramref name="steps"/> of its last place from <paramref name="sum"/> is stored as.</summary>
-    private static double StoredAsDouble(double sum, double steps) =>
-        Math.Abs(steps) < 1024 || (BitConverter.DoubleToInt64Bits(sum) & 1) == 0 ? sum
-        : steps > 0 ? Math.BitIncrement(sum) : Math.BitDecrement(sum);
 
     // ---- PRODUCT, MEDIAN, LARGE, SMALL --------------------------------------------------------
 

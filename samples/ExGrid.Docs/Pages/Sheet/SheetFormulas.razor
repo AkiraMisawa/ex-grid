@@ -165,14 +165,11 @@
                 <code>number - divisor*INT(number/divisor)</code> in doubles would give 0. Where the divisor is
                 added to a remainder of the other sign, the sum is held at 64 bits before it is stored, which gives
                 Excel's <code>=MOD(-0.087626,6630)</code>, 6629.9123739999995, and a sum stored as the divisor is 0,
-                as Excel's <code>=MOD(-1E-20,1)</code> is. Where the ways of computing it at 64 bits that give every
-                answer Excel was seen to give part, it is <code>#VALUE!</code> until Excel has been asked: a sum that
-                is the divisor only once stored, as in <code>=MOD(-1E-17,1)</code>, and a sum a hair from the
-                midpoint between two doubles, as in <code>=MOD(-0.084474,2270)</code>, about one input of up to five
-                digits in 150,000. Holding the sum at some other widths wider than a double's, which no hardware
-                holds, would give those answers too, and another last digit for about 3 inputs of up to five digits
-                in 100, as in <code>=MOD(-0.024901,2350)</code>; there it answers as 64 bits do, and Excel has yet
-                to be asked. It is <code>#NUM!</code> from a quotient of 1,125,900,000,000, as Excel 365's.
+                as Excel's <code>=MOD(-1E-20,1)</code> is. The sum is held as an x87 register holds it, rounded to
+                nearest, and is 0 wherever the double stored is the divisor, which gives every answer Excel was seen
+                to give: <code>=MOD(-1E-17,1)</code> is 0, <code>=MOD(-0.084474,2270)</code> 2269.915526 and
+                <code>=MOD(-0.024901,2350)</code> 2349.975099. It is <code>#NUM!</code> from a quotient of
+                1,125,900,000,000, as Excel 365's.
             </li>
             <li>
                 <b><code>INDIRECT</code></b> reads A1-style text naming a cell or a range of the same Sheet. Like
@@ -184,9 +181,13 @@
                 <code>R3</code>, <code>C[-1]</code> or <code>R2:R3</code>; or a Spill Range, <code>R1C1#</code>.
                 Other combinations of these forms are read by the same rule until Excel has been asked them. It
                 reads a Linked Table's column as text, <code>Positions[PV]</code>, which waits while the table
-                does, and a Spill Range, <code>A1#</code>. R1C1 text that joins a cell to a whole row, or a row to
-                a column, <code>R2C2:R3</code> or <code>R3:C2</code>, names no place and is <code>#REF!</code>, as in
-                Excel; so is text naming another Sheet or a table that does not exist, as Excel's A1 text is. Some
+                does, and a Spill Range, <code>A1#</code>. R1C1 text that joins a cell to a whole column is the
+                cell's row across the columns they span, <code>R2C2:C3</code> is B2:C2, and a whole row joined to a
+                cell the rows they span down its column, <code>R3:R2C2</code> is B2:B3, as Excel's sums read; that
+                the extent stops there, and not at the whole rows, Excel has yet to be asked, and a whole column
+                joined to a cell, <code>C3:R2C2</code>, is <code>#VALUE!</code> until it has. R1C1 text that joins a
+                cell to a whole row, or a row to a column, <code>R2C2:R3</code> or <code>R3:C2</code>, names no place
+                and is <code>#REF!</code>, as in Excel; so is text naming another Sheet or a table that does not exist, as Excel's A1 text is. Some
                 text is <code>#VALUE!</code> until Excel has told what it names: in R1C1 style, an offset past the
                 Sheet's edge, <code>R[-5]C[-1]</code> from row 2, which Excel reads as a place without saying yet
                 which, and a row or column number 0, <code>R0C2</code>, or one past the Sheet's edge,
@@ -281,10 +282,13 @@
                 it, rounds it or takes no fraction at all.
             </li>
             <li>
-                <b>A serial between -1 and 0</b> under <code>DATEDIF</code>, <code>YEARFRAC</code>, <code>HOUR</code>,
-                <code>MINUTE</code> and <code>SECOND</code> is <code>#VALUE!</code> until Excel has been asked: cut
-                down to -1 it would be <code>#NUM!</code>, and read as a time of day <code>HOUR(-0.5)</code> would be
-                12. At -1 and below they are <code>#NUM!</code>, as Excel was seen to answer at -1.
+                <b>A serial below 0</b> under <code>DATEDIF</code>, <code>YEARFRAC</code>, <code>HOUR</code>,
+                <code>MINUTE</code> and <code>SECOND</code> is <code>#NUM!</code>, -0.5 included, as Excel answers: it
+                is not cut down to serial 0, so <code>HOUR(-0.5)</code> is not 12. <code>EDATE</code> from serial 0
+                counts day 0 as <code>DATE</code> does, as Excel's does: <code>=EDATE(0,2)</code> is 60, the day that
+                never existed. A boolean typed as a date of <code>EDATE</code>, <code>EOMONTH</code>,
+                <code>NETWORKDAYS</code> or <code>WORKDAY</code>, or as the months, is <code>#VALUE!</code>, which
+                <code>IFERROR</code> catches.
             </li>
             <li>
                 <b>A refused Formula that would spill.</b> Where its text settles the shape of its array, as

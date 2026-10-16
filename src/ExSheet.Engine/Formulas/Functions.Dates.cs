@@ -91,37 +91,24 @@ internal static partial class FunctionLibrary
     /// <c>EDATE(60,1)</c> is 29 March, 89, as Excel was observed to answer (ADR-0047; EOMONTH-008 and
     /// EDATE-008, the seventeenth Windows run; EOMONTH-010 and EDATE-010, the area pass of
     /// 2026-10-12). EDATE from serial 0 keeps its day 0, which is the day before the 1st of the month
-    /// it reaches: <c>EDATE(0,1)</c> is 31 January 1900, 31 (EDATE-016, the second area pass). A start
-    /// below 0, -0.5 included, or a result before 1900, is <c>#NUM!</c>, as Excel was observed to
-    /// answer under both (EOMONTH-004, 015 to 017; EDATE-007, 012, 017). So is a result after 9999,
-    /// observed under EOMONTH (EOMONTH-005) and EDATE's by generalisation. A boolean typed as EOMONTH's
-    /// months or as EDATE's start is <c>#VALUE!</c>, as Excel was observed to answer (EOMONTH-009,
-    /// EDATE-009, the seventeenth Windows run).
+    /// it reaches, by DATE's arithmetic: <c>EDATE(0,1)</c> is 31 January 1900, 31 (EDATE-016, the second
+    /// area pass); <c>EDATE(0,0)</c> is serial 0 itself and <c>EDATE(0,2)</c> the day that never existed,
+    /// 60, and January 10000 is past the last year, <c>#NUM!</c> (EDATE-019, 018 and 020, run 18a). Of
+    /// the readings that gave every answer observed before (<c>spikes/exsheet-date-readings/</c>), that
+    /// one alone gives these three. A start below 0, -0.5 included, or a result before 1900, is
+    /// <c>#NUM!</c>, as Excel was observed to answer under both (EOMONTH-004, 015 to 017; EDATE-007,
+    /// 012, 017). So is a result after 9999, observed under EOMONTH (EOMONTH-005) and under EDATE from
+    /// serial 0 (EDATE-020), and EDATE's from any other start by generalisation. A boolean typed into
+    /// either argument of either function is <c>#VALUE!</c>, an Error Value a Formula catches, as Excel
+    /// was observed to answer in each (EOMONTH-009 and EDATE-009, the seventeenth Windows run;
+    /// EOMONTH-018 and EDATE-023, run 18a).
     /// </summary>
-    /// <remarks>
-    /// Refused (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's) until Excel is asked:
-    /// <list type="bullet">
-    /// <item>EDATE from serial 0 to January 1900, to March 1900 and to January 10000 (EDATE-018 to
-    /// 020). The readings that give every observed answer part there
-    /// (<c>spikes/exsheet-date-readings/</c>): the day before 1 January 1900 is serial 0 by DATE's
-    /// arithmetic, and 31 December 1899, <c>#NUM!</c>, on the real calendar; the day before 1 March
-    /// 1900 is the day that never existed, 60, or 28 February, 59; and January 10000 is past the last
-    /// year, where the month before's last day is 31 December 9999.</item>
-    /// <item>A boolean typed as EOMONTH's start or as EDATE's months (EOMONTH-018, EDATE-023), which
-    /// no run has typed one into. Excel's reading of a boolean typed as a start date differs between
-    /// functions: DATEDIF reads it as 1 (DATEDIF-046) and YEARFRAC gives <c>#VALUE!</c>
-    /// (YEARFRAC-054), so the boolean each function was observed to refuse in one argument says
-    /// nothing of the other. Read as 1, <c>EOMONTH(TRUE,1)</c> would be 28 February 1900, 59, and
-    /// <c>EDATE(45000,TRUE)</c> 15 April 2023, 45031.</item>
-    /// </list>
-    /// </remarks>
     private static Operand MonthsAway(FunctionCall call, bool endOfMonth)
     {
         for (var i = 0; i < 2; i++)
         {
             if (!TryScalar(call, i, out var value, out var failure)) return failure;
-            // EOMONTH's months and EDATE's start were observed; the other argument of each is refused.
-            if (value is { Kind: ValueKind.Boolean }) return (i == 1) == endOfMonth ? Operand.Of(ErrorValue.Value) : call.Evaluator.Refuse();
+            if (value is { Kind: ValueKind.Boolean }) return Operand.Of(ErrorValue.Value);
         }
         if (!TryNumber(call, 0, out var start, out var error)) return error;
         if (!TryNumber(call, 1, out var months, out error)) return error;
@@ -132,12 +119,9 @@ internal static partial class FunctionLibrary
         var (year, month, day) = DateSerial.ToDate((int)start);
         var total = year * 12.0 + (month - 1) + months;
         var toYear = Math.Floor(total / 12);
-        if (toYear < 1900 || toYear > 10000) return Operand.Of(ErrorValue.Num);
+        if (toYear < 1900 || toYear > 9999) return Operand.Of(ErrorValue.Num);
         var toMonth = (int)(total - toYear * 12) + 1;
-        var fromDayZero = !endOfMonth && day == 0;
-        if (fromDayZero && ((int)toYear, toMonth) is (1900, 1) or (1900, 3) or (10000, 1)) return call.Evaluator.Refuse();
-        if (toYear > 9999) return Operand.Of(ErrorValue.Num);
-        if (fromDayZero) return Operand.Of(Value.FromNumber(DateSerial.FromDate((int)toYear, toMonth, 1)!.Value - 1));
+        if (!endOfMonth && day == 0) return Operand.Of(Value.FromNumber(DateSerial.FromDate((int)toYear, toMonth, 1)!.Value - 1));
         var length = DateTime.DaysInMonth((int)toYear, toMonth);
         var serial = DateSerial.FromDate((int)toYear, toMonth, endOfMonth ? length : Math.Min(day, length))!.Value;
         return Operand.Of(Value.FromNumber(serial));
@@ -186,9 +170,10 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// A date argument of NETWORKDAYS and WORKDAY, cut down to its day: a boolean typed is refused
-    /// (<see cref="Evaluator.Refuse"/>: <c>#VALUE!</c>, the Formula's) until Excel is asked (NETWORKDAYS-010, WORKDAY-011); below 0 or past 31
-    /// December 9999 is <c>#NUM!</c>, -0.5 included (NETWORKDAYS-009, WORKDAY-010).
+    /// A date argument of NETWORKDAYS and WORKDAY, cut down to its day: a boolean typed is <c>#VALUE!</c>,
+    /// an Error Value a Formula catches, as Excel was observed to answer for the start (NETWORKDAYS-010,
+    /// WORKDAY-011, run 18a), and NETWORKDAYS's end, read as its start is, by generalisation; below 0 or
+    /// past 31 December 9999 is <c>#NUM!</c>, -0.5 included (NETWORKDAYS-009, WORKDAY-010).
     /// Every serial from 0 is a day, the ones before 1 March 1900 included, and takes the day of
     /// the week WEEKDAY gives it (<see cref="DateSerial.DayOfWeek"/>): serial 0 a Saturday, 1 a
     /// Sunday, 60 a Wednesday. <c>NETWORKDAYS(30,100)</c> is 51, as Excel was observed to answer
@@ -200,7 +185,7 @@ internal static partial class FunctionLibrary
         if (!TryScalar(call, index, out var value, out failure)) return false;
         if (value is { Kind: ValueKind.Boolean })
         {
-            failure = call.Evaluator.Refuse();
+            failure = Operand.Of(ErrorValue.Value);
             return false;
         }
         if (!TryNumber(call, index, out var number, out failure)) return false;
@@ -332,15 +317,14 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// HOUR, MINUTE and SECOND: the serial's time of day, rounded to the nearest second, as Excel shows
-    /// a time; a serial below 0 or past 31 December 9999 is <c>#NUM!</c>, but one between -1 and 0, which
-    /// is refused (<see cref="Evaluator.Refuse"/>) until Excel is asked (HOUR-005, MINUTE-003, SECOND-003;
-    /// 2026-10-13): read as a time of day, <c>HOUR(-0.5)</c> is 12, and below 0 <c>#NUM!</c>, and no run
-    /// has read which Excel takes. -1 and below stay <c>#NUM!</c>, as Excel's was at -1.
+    /// a time; a serial below 0 or past 31 December 9999 is <c>#NUM!</c>. Excel was observed to answer
+    /// <c>#NUM!</c> at -0.5 under all three (HOUR-005, MINUTE-003, SECOND-003, run 18a), not the time of
+    /// day 12:00, and at -1 under MINUTE (MINUTE-002); elsewhere below 0 it is the engine's answer, by
+    /// generalisation.
     /// </summary>
     private static Operand TimePart(FunctionCall call, Func<long, long> part)
     {
         if (!TryNumber(call, 0, out var serial, out var failure)) return failure;
-        if (serial < 0 && serial > -1) return call.Evaluator.Refuse();
         if (serial < 0 || serial >= DateSerial.Maximum + 1) return Operand.Of(ErrorValue.Num);
         var seconds = (long)Math.Round((serial - Math.Floor(serial)) * SecondsPerDay, MidpointRounding.AwayFromZero) % SecondsPerDay;
         return Operand.Of(Value.FromNumber(part(seconds)));
