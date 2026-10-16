@@ -80,7 +80,7 @@
         "tests/GlyphWidths/measure.mjs"
       ],
       "record": null,
-      "note": "Never measured on Windows: tests/GlyphWidths holds *.macos.json records only, and its README leaves Windows' system-ui (Segoe UI) out of the tables until a record from Windows is added. The row keeps the measurement until that record, system-ui.windows.json, is committed and held by layer 1. The Wrapper's two files are the MudBlazor Chrome's Roboto metrics (MudExGridPresentation, RobotoGlyphTable), which decide a bold amount's width and #### under that Chrome."
+      "note": "The painting on Windows: a bold amount and #### read painted on /sizing and /sheet?case=3c in Chrome and Edge. (2026-10-16, decided with the user: narrowed to the painting, as the macOS row is. The Windows widths are committed one per browser, tests/GlyphWidths/system-ui.windows.chrome.json and system-ui.windows.msedge.json, beside Roboto's two, and held by layer 1; the row kept the measurement while they were not, under the name system-ui.windows.json, which was never the name committed.) The Wrapper's two files are the MudBlazor Chrome's Roboto metrics (MudExGridPresentation, RobotoGlyphTable), which decide a bold amount's width and #### under that Chrome."
     },
     {
       "row": "FN-12e",

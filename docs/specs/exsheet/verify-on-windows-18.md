@@ -54,7 +54,7 @@ Every question file of `docs/specs/exsheet/run-18/`, and what this run does with
 | `fill-handle-axis.md` | 1 to 7 read; 4, 5 and 7 built (#129, ADR-0050's notes of 2026-10-14) | Part E, e9 to e11 |
 | `focus-among-ranges.md` | 2 to 4 read, and built (#131); 1 not asked (no display at 100%) | Part D, d5 (if a display at 100% is at hand); Part E, e12 and e13 |
 | `format-cells-readings.md` | 1 to 10 read; built (#130); ko-KR's `mmm` left for after `0.1.0` | nothing: the Border tab's state on opening is a dialog's, which layer 2 reads exactly; ko-KR is not asked for `0.1.0` (the file's note of 2026-10-16) |
-| `glyphs.md` | not asked (by-hand rows wait for rc.1) | Part A, FN-12e |
+| `glyphs.md` | not asked (by-hand rows wait for rc.1) | Part A, FN-12e: item 1, the paintings. Item 2, the measurement, is no longer the row's (narrowed, decided with the user 2026-10-16) |
 | `heading-mark.md` | not asked | Part D, d2 to d5 |
 | `pivot-general.md` | not asked | Part D, d6 |
 | `toolbar.md` | not asked | 1: Part D, d1. 2: Part A, SH-52. 3: Part A, ED-30 |
@@ -144,27 +144,18 @@ As run 17's Part G read it (`part_g_vz16.py`), in Chrome and Edge, on WebAssembl
 
 ### FN-12e (Windows)
 
-*From `glyphs.md`.* The estimate's tables and `tests/GlyphWidths/measure.mjs` changed after run 17's commit, within
-the row's paths, so both halves are asked again.
+*From `glyphs.md`*, as the row reads since 2026-10-16. The user decided that day to narrow the Windows row to the
+painting, as the macOS row is: the Windows widths are committed (`tests/GlyphWidths/system-ui.windows.chrome.json`,
+`system-ui.windows.msedge.json` and Roboto's two) and held by layer 1, so `glyphs.md`'s item 2, the measurement,
+is not asked. The estimate's tables changed after run 17's commit, within the row's paths, so the painting is.
 
-1. **The paintings**, in Chrome and Edge, on WebAssembly and on the Server host, headed, as run 17's
-   `part-g/fn12e.cmd` ran them:
-   - `sizing.spec.mjs`'s "a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016)";
-   - `part-c.spec.mjs`'s "FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in,
-     and no more fit (ADR-0016)".
-2. **The measurement**, under the English display language: the four commands of `tests/GlyphWidths/README.md`,
-   "Measuring again" (`system-ui` and `roboto`, each with `--browser chrome` and `--browser msedge`), from a copy
-   of `tests/GlyphWidths` at the verified commit.
-   - Keep the records under this run's directory. Do not replace the committed ones.
-   - Compare each with the committed `*.windows.<browser>.json` of its face, glyph by glyph, and run layer 1's
-     `GlyphWidthCorpusTests` and `RobotoGlyphWidthCorpusTests` in a scratch copy with the new records in place.
-     Report every glyph charged under its width, as run 17 did.
-3. **Under a Japanese display**, `system-ui`'s two records again only if `tests/GlyphWidths/corpus.json` or
-   `measure.mjs` changed since `verification/2026-10-12-windows-glyphs-ja/`'s commit. Roboto under a Japanese
-   display is not asked for `0.1.0` (the ruling of 2026-10-13 that `glyphs.md` records). Other display languages
-   are a Known limitation of `0.1.0` (decided with the user, 2026-10-12), not asked.
-
-Record the display language: `system-ui` is Segoe UI only under an English one.
+- **The paintings**, in Chrome and Edge, on WebAssembly and on the Server host, headed, as run 17's
+  `part-g/fn12e.cmd` ran them:
+  - `sizing.spec.mjs`'s "a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016)";
+  - `part-c.spec.mjs`'s "FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in,
+    and no more fit (ADR-0016)".
+- Record the display language: `system-ui` is Segoe UI only under an English one. Other display languages are a
+  Known limitation of `0.1.0` (decided with the user, 2026-10-12), not asked.
 
 ### ED-30
 
@@ -174,9 +165,10 @@ behind 150 ms: 12 records per case. k7 runs behind 150 ms only, k11 on `/feature
 k14 on `/sheets` and `/sheets?chrome=mud`. Use run 17's probe and scripts (`part-g/ed30/`), with the same keys
 and readings, and compare every state with run 17's record of the same case, state and configuration.
 
-- **k8 with Predictive input off.** In runs 16 and 17, k8's press on D12 landed on the IME's own prediction list
-  and never reached the page. `verification/2026-10-12-windows-ed30-k8/` turned the Microsoft IME's Predictive
-  input off and read k8 as written in 12 of 12 configurations, at run 17's commit; it was not ED-30's record.
+- **k8 with Predictive input off**, as the Definition of Done's Step 4 row says (decided with the user, 2026-10-16).
+  In runs 16 and 17, k8's press on D12 landed on the IME's own prediction list and never reached the page.
+  `verification/2026-10-12-windows-ed30-k8/` turned the Microsoft IME's Predictive input off and read k8 as written
+  in 12 of 12 configurations, at run 17's commit; it was not ED-30's record, and its method is the row's.
   - With the user's consent, set the IME's General page, Predictive Input, to **Off** before k8, as that run did
     (its `scripts/uia-settings.ps1` and `uia-combo.ps1`), and export the IME's registry key before and after.
   - Run k8 and k8x with it off. Run every other case at the setting the user had, as run 17 did, and record it.
