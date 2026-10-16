@@ -12,7 +12,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/16/2026 - 14:17:11 |
+| Generated on: | 10/16/2026 - 14:54:10 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 849 |
@@ -22,8 +22,8 @@
 | Uncovered lines: | 2907 |
 | Coverable lines: | 61488 |
 | Total lines: | 104044 |
-| **Branch coverage:** | 88.1% (34064 of 38653) |
-| Covered branches: | 34064 |
+| **Branch coverage:** | 88.1% (34066 of 38653) |
+| Covered branches: | 34066 |
 | Total branches: | 38653 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -161,8 +161,8 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|90.8%|85.8%|
 |ExGrid.Components.ExGrid<TRow>|95.5%|90.5%|
+|ExGrid.Components.ExGrid<TRow>|90.8%|85.8%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
@@ -717,7 +717,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**93.2%**|**85.5%**|
+|**ExSheet**|**93.2%**|**85.6%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -728,10 +728,10 @@
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|91.1%|84.5%|
+|ExSheet.Components.ExSheet|91.1%|84.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91.1%|84.5%|
+|ExSheet.Components.ExSheet<T>|91.1%|84.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.4%|
 |ExSheet.DefaultToolbarRow|100%|50%|
