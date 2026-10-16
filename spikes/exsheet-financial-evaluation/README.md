@@ -331,5 +331,6 @@ before the decision of 2026-10-13, was the payment at the end's double over 1+ra
 - `pmt_exact.py`: PMT against Python's decimal at 1200 digits over a dense random set (the third and fourth
   rounds).
 - `mod-search.cs`, `mod-search.txt`: the same search for `MOD` (its header says what it found after
-  each area pass and after the review of the second, which added the widths no hardware holds), and its
-  last `--discriminate` run, every candidate with its match count.
+  each area pass, after the review of the second, which added the widths no hardware holds, and after
+  Windows run 18a, whose answers leave one candidate, B9), and its last `--discriminate` run, every
+  candidate with its match count.

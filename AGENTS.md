@@ -289,6 +289,12 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
   file; a listener, a timer or an observer it leaves is not seen, so that is on you. A test
   about loading itself asks for `freshDocument`.
 
+- **A layer-3 test drives at machine speed and reads only once the grid has settled** (ADR-0220,
+  2026-10-16). It never waits between inputs to make itself pass: that hides the race a user or a
+  script meets. A failure is either a product race, fixed in the product, or a reading taken too
+  early, fixed where the test reads. A red that passes on a re-run is a defect: while one is open,
+  only pull requests that fix such failures merge.
+
 - **A layer-3 test waits for what it reads, never for a fixed time** (ADR-0056, 2026-10-02).
   On the Server host, a reading that must see all the host will say awaits `circuitQuiet()`.
   Two pictures to compare are taken with `stillPictures`. A colour is judged with `paints`,

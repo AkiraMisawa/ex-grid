@@ -156,10 +156,45 @@ function Has-Prop($Object, [string]$Name) {
 
 function To-Double($Value) {
     # ConvertFrom-Json gives Int64, Double or (PowerShell 5.1) Decimal. A Decimal holds the corpus's
-    # digits exactly; going through its text keeps the conversion to double correctly rounded.
+    # digits exactly, and Convert-DecimalToDouble rounds them once to the nearest double, as the engine's
+    # tests read them. .NET Framework's Double.Parse, under Windows PowerShell, is not correctly rounded
+    # beside a midpoint between two doubles: it read MOD-039's 2349.975099, 0.00035 of a unit in the last
+    # place below one, as the double above, so Excel's equal double was reported as a disagreement (run 18a).
     if ($Value -is [double]) { return $Value }
-    if ($Value -is [decimal]) { return [double]::Parse($Value.ToString($Invariant), $Invariant) }
+    if ($Value -is [decimal]) { return Convert-DecimalToDouble $Value }
     return [double]$Value
+}
+
+function Convert-DecimalToDouble([decimal]$Value) {
+    # The decimal is digits / 10^scale exactly. Find the binary exponent e that puts digits / (10^scale 2^e)
+    # in [2^52, 2^53), take its whole part q and the remainder, and round q to nearest, ties to even. A
+    # decimal lies between 1E-28 and 8E+28, so the double is a normal one and never infinite.
+    $text = [Math]::Abs($Value).ToString($Invariant)
+    $point = $text.IndexOf('.')
+    $digits = if ($point -lt 0) { $text } else { $text.Remove($point, 1) }
+    $scale = if ($point -lt 0) { 0 } else { $text.Length - $point - 1 }
+    $numerator = [bigint]::Parse($digits, $Invariant)
+    if ($numerator.IsZero) { return 0.0 }
+    $denominator = [bigint]::Pow(10, $scale)
+    $low = [bigint]::Pow(2, 52)
+    $high = [bigint]::Pow(2, 53)
+    $exponent = [int][Math]::Floor([bigint]::Log($numerator, 2) - [bigint]::Log($denominator, 2)) - 52
+    while ($true) {
+        if ($exponent -ge 0) { $top = $numerator; $bottom = $denominator * [bigint]::Pow(2, $exponent) }
+        else { $top = $numerator * [bigint]::Pow(2, -$exponent); $bottom = $denominator }
+        $remainder = [bigint]::Zero
+        $whole = [bigint]::DivRem($top, $bottom, [ref]$remainder)
+        if ($whole -lt $low) { $exponent--; continue }
+        if ($whole -ge $high) { $exponent++; continue }
+        break
+    }
+    $half = ($remainder * 2).CompareTo($bottom)
+    if ($half -gt 0 -or ($half -eq 0 -and -not $whole.IsEven)) { $whole = $whole + 1 }
+    if ($whole -eq $high) { $whole = $low; $exponent++ }
+    $bits = ([long]($exponent + 1075) * [long]4503599627370496) + [long]($whole - $low)
+    $double = [BitConverter]::Int64BitsToDouble($bits)
+    if ($Value -lt 0) { return -$double }
+    return $double
 }
 
 function Set-Typed($Range, [string]$Typed, [bool]$UseFormula2) {

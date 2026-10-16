@@ -155,8 +155,8 @@
     },
     {
       "id": "EOMONTH-018",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a boolean typed as the start, which no run has typed into EOMONTH (EOMONTH-009 typed one as the months); Excel reads a boolean typed as a start date as 1 under DATEDIF (DATEDIF-046) and gives #VALUE! under YEARFRAC (YEARFRAC-054), and read as 1, the end of the month after 1 January 1900 is 28 February, 59",
+      "source": "observed",
+      "description": "A boolean typed as the start is #VALUE!, an Error Value a Formula catches, as one typed as the months is (EOMONTH-009) and as YEARFRAC's start is (YEARFRAC-054); it is not read as 1, as DATEDIF reads it (DATEDIF-046) (Windows run 18a)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=EOMONTH(TRUE,1)"},
       "check": "ZZ1000",

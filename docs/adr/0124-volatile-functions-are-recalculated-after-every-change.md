@@ -140,3 +140,13 @@ as a Formula's result spills the data (INDIRECT-053 to 057), which also gives th
 position. The six cases hold Excel's answers beside the refusal, a difference by decision, and the refusal is a Known
 limitation of `0.1.0` (ADR-0202). Typed, a table's bare name shows `#NAME?` and is refused, which no Formula
 catches (2026-10-13, decided with the user; TABLE-024).)*
+
+*(2026-10-14, after run 18a: **a cell joined to a whole column, and a whole row joined to a cell, name places.** In
+R1C1 style Excel's `SUM(INDIRECT("R2C2:C3",FALSE))` is 1.333 and `SUM(INDIRECT("R3:R2C2",FALSE))` 46.333
+(INDIRECT-075, 076), where parts of two kinds joined were read as no place; `C2:R3` is `#REF!` (INDIRECT-077), as
+`R3:C2` is. The engine reads the rectangle the parts give: the column part takes the cell's row, `R2C2:C3` is B2:C2,
+and the row part the cell's column, `R3:R2C2` is B2:B3. Over these cells the whole rows would give the same sums,
+so the extent is the engine's reading, put to the next run (INDIRECT-101 to 103). A whole column joined to a cell,
+`C3:R2C2`, stays `#VALUE!` until a run observes it: its column part could take the cell's row, as a row part takes a
+cell's column, or the text could name no place, as a cell joined to a whole row does (INDIRECT-058, 104). Two joins,
+`R2:R3C2:C3`, is text that is not R1C1 notation, `#REF!` (INDIRECT-105 asks it).)*

@@ -172,6 +172,8 @@ first, and `popovers.spec.mjs` pins it under both Chromes.
 
 ## How a test waits, and where it reads pixels *(2026-10-02, decided with the user)*
 
+*(2026-10-16: [ADR-0220](./0220-a-test-reads-once-the-grid-says-it-has-settled-and-a-red-is-never-settled-by-a-re-run.md) adds the rule for inputs, at machine speed with no wait between them, and a mark the grid sets once it has settled, which replaces `circuitQuiet()` where it applies once built.)*
+
 From 2026-09-29, no CI run of `claude/exsheet-cell-format` passed whole. Most of what failed
 were defects, and they should go on failing. Some failures were the suite's own: tests that
 fail now and then whatever the branch changed. These rules are for those. Each changes when or

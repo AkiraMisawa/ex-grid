@@ -11,10 +11,10 @@ namespace ExSheet.Engine.Tests;
 /// count is <c>#NUM!</c>; <c>MOD(2^27,1)</c> is 0 where Excel 2007 and earlier gave <c>#NUM!</c>;
 /// <c>MOD(123456789012,0.7)</c> is the exact remainder; and where the divisor is added to it,
 /// <c>MOD(-0.087626,6630)</c> is that sum held at 64 bits and then stored as a double, and
-/// <c>MOD(-1E-20,1)</c>, stored as the divisor itself, is 0. <c>MOD</c> answers where every evaluation
-/// at the hardware's widths, a double's 53 bits and an x87 register's 64, that gives Excel's answers
-/// agrees, and refuses where they part; evaluations at widths no hardware holds give them too, and the
-/// engine does not model them (<c>spikes/exsheet-financial-evaluation/mod-search.cs</c>). The cases
+/// <c>MOD(-1E-20,1)</c>, stored as the divisor itself, is 0. Windows run 18a's answers (MOD-033 to 036,
+/// 039, 040) leave one evaluation that gives every answer Excel gave: the divisor added in an x87
+/// register's 64 bits, rounded to nearest, the sum stored as a double and 0 where it is the divisor, and
+/// <c>MOD</c> refuses nothing (<c>spikes/exsheet-financial-evaluation/mod-search.cs</c>). The cases
 /// themselves are in <c>ExcelCases/large.json</c>, <c>small.json</c>, <c>aggregate.json</c> and
 /// <c>mod.json</c>; the rules across the forms are here.
 /// </summary>
@@ -198,24 +198,34 @@ public class KthAndModTests
         Assert.False(double.IsNegative(value.Number));
     }
 
-    [Theory] // ADR-0047, ADR-0202 (MOD-033 to 036): where the three evaluations at the hardware's widths that give every observed answer part, MOD is refused until Excel is asked: the sum the divisor as a double but not in a 64-bit register (1 or 0), and the sum truncated at 64 bits stored as another double than rounded there
+    [Theory] // ADR-0047 (2026-10-14, after run 18a: MOD-033): a sum the register holds below the divisor but stored as the divisor itself as a double is 0, as MOD-032's is
     [InlineData("=MOD(-1E-17,1)")]
     [InlineData("=MOD(1E-17,-1)")]
-    [InlineData("=MOD(-0.084474,2270)")]
-    [InlineData("=MOD(0.084474,-2270)")]
-    [InlineData("=MOD(-0.008511,81200)")]
-    [InlineData("=MOD(0.071472,-276)")]
-    public void ADR0047_mod_is_refused_where_the_evaluations_that_fit_part(string formula)
+    public void ADR0047_mod_is_0_where_the_double_stored_is_the_divisor_though_the_register_holds_less(string formula)
     {
-        Assert.Equal(ErrorValue.Value, NewSheet().Evaluate(formula).Error);
+        var value = NewSheet().Evaluate(formula);
+
+        Assert.Equal(0, value.Number);
+        Assert.False(double.IsNegative(value.Number));
+        Assert.False(value.IsRefused, formula);
     }
 
-    [Theory] // ADR-0047, ADR-0202 (MOD-039, 040, not yet asked): where only the evaluations at widths no hardware holds (54 to 63 bits rounded, 54 to 65 truncated) give another double, MOD answers as the three at 64 bits do, on the judgment that only the hardware's widths are natural, which no observed answer settles
+    [Theory] // ADR-0047 (2026-10-14, after run 18a: MOD-034 to 036): the divisor is added at 64 bits rounded to nearest, as an x87 register adds, not truncated, and the sum then stored as a double
+    [InlineData("=MOD(-0.084474,2270)", 2269.915526)]
+    [InlineData("=MOD(0.084474,-2270)", -2269.915526)]
+    [InlineData("=MOD(-0.008511,81200)", 81199.99148900001)]
+    [InlineData("=MOD(0.071472,-276)", -275.92852800000003)]
+    public void ADR0047_mod_adds_the_divisor_rounded_to_nearest_at_64_bits(string formula, double expected)
+    {
+        Assert.Equal(expected, NewSheet().Evaluate(formula).Number);
+    }
+
+    [Theory] // ADR-0047 (2026-10-14, after run 18a: MOD-039, 040): the sum held at 64 bits, not at the widths no hardware holds (54 to 63 bits rounded, 54 to 65 truncated), which give another double
     [InlineData("=MOD(-0.024901,2350)", 2349.975099)]
     [InlineData("=MOD(0.024901,-2350)", -2349.975099)]
     [InlineData("=MOD(-0.006664,5250)", 5249.993336)]
     [InlineData("=MOD(0.006664,-5250)", -5249.993336)]
-    public void ADR0047_mod_answers_as_64_bits_where_only_widths_no_hardware_holds_part(string formula, double expected)
+    public void ADR0047_mod_holds_the_sum_at_64_bits(string formula, double expected)
     {
         Assert.Equal(expected, NewSheet().Evaluate(formula).Number);
     }
