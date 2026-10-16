@@ -6,8 +6,9 @@ namespace ExSheet.Engine.Formulas;
 /// rate of 0. PV and FV are the one evaluation of those searched that gives every double, and every Error
 /// Value, Excel was observed to give for them, with the exponential XNPV-013 found (<see cref="TryRaise"/>;
 /// the seventeenth Windows run and the two area passes of 2026-10-12,
-/// <c>spikes/exsheet-financial-evaluation/</c>). XNPV is one of the two evaluations that give its nine
-/// observed doubles, with a check of the rate that no evaluation gives (<see cref="XNpv"/>). PMT is kept by
+/// <c>spikes/exsheet-financial-evaluation/</c>). XNPV is the one evaluation that gives its ten observed
+/// doubles, with a check of the rate that no evaluation gives, and its checks in the orders run 18a's
+/// answers leave (<see cref="XNpv"/>). PMT is kept by
 /// ADR-0047's exception for PMT alone (decided with the user, 2026-10-12): no evaluation searched gives every
 /// payment Excel gave. Where it answers, PMT gives the exact payment rounded once, at the end of each period
 /// and at the start (2026-10-13, decided with the user), and Excel's double differs from the engine's by 1 to
@@ -54,8 +55,8 @@ internal static partial class FunctionLibrary
     /// Value instead: the one power of the many searched that gives every double and every Error Value
     /// Excel was observed to give for PV and FV, and every double it gave for XNPV
     /// (<c>spikes/exsheet-financial-evaluation/</c>, <c>Search.cs</c>, g22). Where PV's own observations
-    /// leave other readings (PV-014, PV-015), and where a correctly rounded logarithm parts from glibc's
-    /// (FV-023, PV-016), it is the engine's reading, which those cases ask.
+    /// left other readings (PV-014, PV-015), and where a correctly rounded logarithm parts from glibc's
+    /// (FV-023, PV-016), Excel's doubles are this power's too (the area pass of run 18a).
     /// <list type="bullet">
     /// <item>A whole number from 0 by squaring (<see cref="Raise"/>): FV-001 to 003, 005, 009, 010, 014,
     /// 015 and 019, PV-001, 003, 004, 006 and 007, and XNPV-005 and 006 at whole years, where e^(x ln b)
@@ -68,8 +69,9 @@ internal static partial class FunctionLibrary
     /// <item>Any other number as e^(n ln b), the exponential and the logarithm each correctly rounded
     /// (<see cref="CorrectlyRounded"/>): FV-006, 012 and 013 and PV-005, and every discount of XNPV's
     /// observed doubles; at XNPV-013 the platform's <see cref="Math.Exp"/> is one unit in the last place
-    /// below the correctly rounded exponential, and Excel's double is the correctly rounded one's. No
-    /// observed double tells a correctly rounded logarithm from glibc's.</item>
+    /// below the correctly rounded exponential, and Excel's double is the correctly rounded one's. At FV-023
+    /// and PV-016, where glibc's logarithm and exponential give other doubles, Excel's are the correctly
+    /// rounded ones' (run 18a).</item>
     /// <item>A negative 1+rate to a fraction whose reciprocal is an odd whole number as its odd root,
     /// -e^(n ln(-b)) (FV-017, as the <c>^</c> operator's <c>=(-8)^(1/3)</c>, ARITH-043), and to any other
     /// fraction <c>#NUM!</c> (PV-011).</item>
@@ -116,7 +118,8 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// PMT: the payment that pays <c>pv</c> down to <c>fv</c> over <c>nper</c> periods; <c>nper</c> of 0
-    /// is <c>#NUM!</c> (PMT-005), but at the start (below). At a rate above -1 other than 0, <c>#VALUE!</c> where
+    /// is <c>#NUM!</c>, at the end of each period (PMT-005) and at the start (PMT-046), and a rate of -1 or below
+    /// is <c>#NUM!</c> (PMT-034 to PMT-037; the remarks). At a rate above -1 other than 0, <c>#VALUE!</c> where
     /// PMT refuses (below), and where it answers (<see cref="ExactPayment"/>): at the end of each period the exact
     /// payment over Excel's doubles rounded once, held between two bounds whose nearest double is the same, with
     /// 1+rate never rounded and (1+rate)^nper - 1 raised from the rate, so that its relative precision holds
@@ -132,58 +135,56 @@ internal static partial class FunctionLibrary
     /// <para>This is ADR-0047's exception for PMT alone (decided with the user, 2026-10-12): none of the
     /// evaluations searched (<c>spikes/exsheet-financial-evaluation/</c>, over 50,000) gives every payment
     /// Excel was observed to give. Excel's double differs from the engine's at PMT-008 to 016, 018 to 021 and
-    /// 023 to 032, by 1 to 11 units in the last place (PMT-026, a relative difference of about 1.3e-15). At
+    /// 023 to 032, by 1 to 11 units in the last place (PMT-026, a relative difference of about 1.3e-15), and is
+    /// the engine's at the other 13 of the 36 observed payments the engine gives. At
     /// PMT-013 and PMT-026, payments at the end, Excel's double and the exact payment rounded once, the
     /// engine's, differ in the 15th significant digit, which General shows (2026-10-13, decided with the user:
     /// the exception holds there too); elsewhere they agree to 15 digits. 0.1.0 lists PMT's last digits under
     /// Known limitations (ADR-0202).</para>
-    /// <para>The readings of PMT are the evaluations the observed payments leave: PMT-017, at 10^-7, rules out
-    /// every one that rounds 1+rate to a double (millions of units in the last place from Excel's payments),
-    /// and leaves those that carry (1+rate)^nper - 1 accurately, through ln(1+rate) (log1p and expm1 in
-    /// doubles, an x87's FYL2XP1 and F2XM1) or by a power carried exactly, in the forms of the identity that
-    /// come near, in doubles or in an x87's register, and LibreOffice's ScGetPMT, which reaches the payment at
-    /// the start through e^((nper+1) ln(1+rate)) - 1 - rate. The best of each family lies 8 to 21 units in the
-    /// last place from Excel's at its farthest observed payment, and the readings are taken as every candidate
-    /// within 64 (<c>Search.cs --pmt-spread</c>; the bound is the financial area's choice). Refused with
-    /// <c>#VALUE!</c> until Excel is asked, where they part in kind, or beyond the last digits (the financial
-    /// area's rules; <c>Search.cs --refusals</c> and <c>--pmt-readings</c> run them with a double's range):</para>
+    /// <para><b>A rate of -1 or below is <c>#NUM!</c></b>, whatever <c>nper</c> is (run 18a): Excel gave
+    /// <c>#NUM!</c> at -1 with periods after (PMT-034) and before (PMT-037), at -2 with 2 periods (PMT-035) and at
+    /// -9 with a third of a period (PMT-036). PMT does not raise 1+rate as PV and FV do: their power takes the
+    /// odd root at PMT-036 and gives 0 to a negative power <c>#DIV/0!</c> at PMT-037, and PMT-017, at 10^-7, is
+    /// no power of 1+rate rounded to a double. A power through ln(1+rate) has no logarithm of 1+rate at 0 or
+    /// below, and gives <c>#NUM!</c> at every such rate. That it is <c>#NUM!</c> at a whole <c>nper</c> other than
+    /// 2 below -1, and at a fraction at -1, is the engine's answer by generalisation; no run has asked it.</para>
+    /// <para>The readings of PMT were the evaluations the observed payments left: those within 64 units in the
+    /// last place of Excel's at every observed payment (<c>Search.cs --pmt-spread</c>; the bound is the financial
+    /// area's choice), through ln(1+rate) (log1p and expm1 in doubles, an x87's FYL2XP1 and F2XM1) or by a power
+    /// carried exactly, in the forms of the identity that come near, in doubles or in an x87's register, and
+    /// LibreOffice's ScGetPMT. Run 18a leaves none: no evaluation searched gives PMT-048, 049, 051 or 052, and
+    /// Excel's answers at PMT-048, 049 and 052 lie beyond the last digits of the exact payment (another 10th
+    /// significant digit, the other sign, and 0 for -9.3E-299). The refusals below were drawn where those
+    /// readings parted; they stand as the engine's rules, and where run 18a read Excel's answer inside one, the
+    /// corpus keeps it beside the refusal. Refused with <c>#VALUE!</c>:</para>
     /// <list type="bullet">
-    /// <item>a rate of -1 with an <c>nper</c> above 0, where the forms that multiply by a growth of 0 give -fv
-    /// and those that divide by it an Error Value (PMT-034), and with a negative one, where the readings give
-    /// <c>#NUM!</c> or a number, and the power PV and FV share 0 to a negative power's <c>#DIV/0!</c>
-    /// (PMT-037);</item>
-    /// <item>a rate below -1 with a whole <c>nper</c>, where a reading with the growth exact gives a number,
-    /// or divides by a growth of exactly 1 (PMT-035), and one through ln(1+rate) an Error Value; and with a
-    /// fraction whose reciprocal is an odd whole number, where the power PV and FV share takes the odd root
-    /// and gives a number, and every reading through ln(1+rate) an Error Value (PMT-036);</item>
-    /// <item>where a quantity some reading computes would pass a double's range or fall below its normal
-    /// numbers, so that some give an Error Value or a number of few digits and others the payment
-    /// (PMT-038 to PMT-044; <see cref="ExactPayment"/> lists the quantities), and where the growth lies
-    /// below 2^-52, which a reading that takes it as 1 + (g-1) holds as 0 and divides by (PMT-045);</item>
-    /// <item>no periods at the start, at a rate above -1 other than 0, where LibreOffice's reading divides by
-    /// e^(ln(1+rate)) - 1 - rate, 0 or a rounding's remainder, and the others by 0 (PMT-046);</item>
-    /// <item>where a reading magnifies its own roundings more than 2^6 times (<see cref="ExactPayment"/>), so
-    /// that the readings give 0, numbers of the other sign or of a few significant digits, or an Error Value:
-    /// where pv g and fv nearly cancel (=PMT(0.1,2,1000,-1210), PMT-049; =PMT(0.1,1E-17,1000,-1000),
-    /// PMT-050), where a growth far below 1 taken as 1 + (g-1) keeps few of its digits (PMT-051), where a
-    /// rounding of the exponent moves the payment (PMT-052), and at the start where LibreOffice's divisor
-    /// e^((nper+1) ln(1+rate)) - 1 - rate comes out as 0 or far from (1+rate)((1+rate)^nper - 1), at a tiny
-    /// <c>nper</c>, whose nper+1 rounds to 1 (PMT-047), or a small one at a rate near -1 (PMT-048), or where
-    /// the payment at the end less its rate's share, p - p r/(1+r), cancels, at a rate far above 1
-    /// (PMT-053);</item>
+    /// <item>where a quantity some reading computed passes a double's range or falls below its normal numbers,
+    /// but those Excel was seen to pass while giving the exact payment rounded once (run 18a: PMT-038 to
+    /// PMT-041 and PMT-044; <see cref="ExactPayment"/> lists them): as where the growth falls below the normal
+    /// numbers, and its reciprocal passes the range (PMT-042, where Excel gave <c>#NUM!</c>, which the exact
+    /// payment does not give), or the rate does (PMT-043, which Excel did not take through COM). A growth below
+    /// 2^-52 is answered (PMT-045, where Excel gave the exact payment): no evaluation that takes the growth as
+    /// 1 + (g-1) and divides by it is Excel's;</item>
+    /// <item>where a reading magnifies its own roundings more than 2^6 times (<see cref="ExactPayment"/>; the
+    /// bound kept by decision with the user, 2026-10-13), so that the readings give 0, numbers of the other sign
+    /// or of a few significant digits, or an Error Value: where pv g and fv nearly cancel (=PMT(0.1,2,1000,-1210),
+    /// PMT-049; =PMT(0.1,1E-17,1000,-1000), PMT-050), where a growth far below 1 taken as 1 + (g-1) keeps few of
+    /// its digits (PMT-051), where a rounding of the exponent moves the payment (PMT-052), and at the start where
+    /// LibreOffice's divisor e^((nper+1) ln(1+rate)) - 1 - rate comes out as 0 or far from
+    /// (1+rate)((1+rate)^nper - 1), at a tiny <c>nper</c>, whose nper+1 rounds to 1 (PMT-047), or a small one at a
+    /// rate near -1 (PMT-048), or where the payment at the end less its rate's share, p - p r/(1+r), cancels, at
+    /// a rate far above 1 (PMT-053). Run 18a read Excel's answer at each: the exact payment rounded once at
+    /// PMT-050, a unit or two in the last place from it at PMT-047, 051 and 053, and another evaluation's at
+    /// PMT-048, 049 and 052; the bound is kept and the eight stay refused (2026-10-16, decided with the user);</item>
     /// <item>where 1536 bits do not decide the double, as at a tie between two doubles that the enclosures
     /// cannot reach exactly.</item>
     /// </list>
-    /// <para>At a rate below -1 and an <c>nper</c> that is any other fraction, every reading gives
-    /// <c>#NUM!</c>: a negative 1+rate has no such power, as <see cref="PowerError"/> gives for PV and FV,
-    /// and no logarithm.</para>
     /// </remarks>
     private static Operand Pmt(FunctionCall call)
     {
         if (!TryAnnuity(call, out var rate, out var periods, out var present, out var future, out var atStart, out var failure)) return failure;
-        if (periods == 0) return atStart && rate > -1 && rate != 0 ? call.Evaluator.Refuse() : Operand.Of(ErrorValue.Num);
+        if (periods == 0 || rate <= -1) return Operand.Of(ErrorValue.Num);
         if (rate == 0) return Operand.Of(Evaluator.Number(-(present + future) / periods));
-        if (rate <= -1) return rate < -1 && PowerError(1 + rate, periods) == ErrorValue.Num ? Operand.Of(ErrorValue.Num) : call.Evaluator.Refuse();
         return ExactPayment.Of(rate, periods, present, future, atStart) is { } payment ? Operand.Of(Evaluator.Number(payment)) : call.Evaluator.Refuse();
     }
 
@@ -193,17 +194,19 @@ internal static partial class FunctionLibrary
     /// multiplying the payment by 1+rate*type first is one unit in the last place from Excel's PV-007, and
     /// no evaluation that fuses a product into a multiply-add gives every observed PV double
     /// (<c>Search.cs</c>, V10). 1+rate is raised as FV raises it (<see cref="TryRaise"/>): PV's observed
-    /// doubles and Error Values are all FV's power's (PV-005, 009 to 012), and where PV's own observations
-    /// leave other readings, at half a period and a negative fraction, PV-014 and PV-015 ask. At a rate of
-    /// -1 with an <c>nper</c> above 0 the growth is 0, and PV divides by it: which Error Value Excel gives
-    /// there has not been observed, and PV refuses it with <c>#VALUE!</c> (PV-013 asks).
+    /// doubles and Error Values are all FV's power's (PV-005, 009 to 012), and so are PV-014 and PV-015, at half
+    /// a period and a negative fraction, where PV's own observations had left other readings (the area pass of
+    /// run 18a). PV divides by the growth: at a rate of -1 with an <c>nper</c> above 0 the growth is 0, and PV is
+    /// <c>#DIV/0!</c>, as Excel gave at 10 periods (PV-013, run 18a); at another <c>nper</c> above 0 it is the
+    /// engine's answer by generalisation. A growth carried past a double's range is left as it was, the doubles'
+    /// division (<c>#NUM!</c>), which no run has asked.
     /// </summary>
     private static Operand Pv(FunctionCall call)
     {
         if (!TryAnnuity(call, out var rate, out var periods, out var payment, out var future, out var atStart, out var failure)) return failure;
         if (rate == 0) return Operand.Of(Evaluator.Number(-(future + (payment * periods))));
         if (!TryRaise(1 + rate, periods, out var growth, out var error)) return Operand.Of(error);
-        if (1 + rate == 0) return call.Evaluator.Refuse();
+        if (1 + rate == 0) return Operand.Of(ErrorValue.Div0);
         var due = 1 + (rate * (atStart ? 1 : 0));
         return Operand.Of(Evaluator.Number(-(future + (payment * (due * ((growth - 1) / rate)))) / growth));
     }
@@ -249,75 +252,156 @@ internal static partial class FunctionLibrary
     /// XNPV: each value discounted by the years from the first date, the days divided by 365, and the
     /// discounted values summed from the first. The values and the dates are ranges of the same count,
     /// numbers only: counts that differ are <c>#NUM!</c> (XNPV-003), a date before the first is <c>#NUM!</c>
-    /// (XNPV-002), an Error Value among them is that Error Value where no other check gives another answer
-    /// (the remarks), and anything else among them is refused with <c>#VALUE!</c>. Each value is divided by
-    /// 1+rate raised to its years as PV and FV raise it (<see cref="TryRaise"/>): by squaring at a whole
-    /// number of years, and as e^(years ln(1+rate)) with the exponential and the logarithm correctly rounded
-    /// otherwise. Of the 2,592 candidates searched
-    /// (<c>spikes/exsheet-financial-evaluation/</c>, <c>Search.cs</c>), 4 give all nine of Excel's observed
-    /// XNPV doubles, and they are two evaluations: this one, and the same sum with Excel's last-addition
-    /// adjustment. The nine are XNPV-005 and 006 at whole years (where e^(x ln b) and <see cref="Math.Pow"/>
-    /// give others), XNPV-011 at 101 days (where the days times 1/365 give another), XNPV-013, where the
-    /// platform's <see cref="Math.Exp"/> gives one discount a unit in the last place low, and XNPV-001, 004
-    /// and 014 to 016.
+    /// (XNPV-002), an Error Value among them is that Error Value, and anything else among them is refused with
+    /// <c>#VALUE!</c>; where more than one of those fails, the order of XNPV's checks decides (the remarks). Each
+    /// value is divided by 1+rate raised to its years as PV and FV raise it (<see cref="TryRaise"/>): by squaring
+    /// at a whole number of years, and as e^(years ln(1+rate)) with the exponential and the logarithm correctly
+    /// rounded otherwise. Of the 2,592 candidates searched (<c>spikes/exsheet-financial-evaluation/</c>,
+    /// <c>Search.cs</c>), 4 gave all nine of Excel's observed XNPV doubles, and they were two evaluations: this
+    /// one, and the same sum with Excel's last-addition adjustment (<see cref="Arithmetic.FinalAdd"/>). XNPV-018,
+    /// where the last addition nearly cancels, tells them apart: Excel gave 1.1368683772161603E-13, the plain sum,
+    /// where the adjustment gives 0 (run 18a). The nine are XNPV-005 and 006 at whole years (where e^(x ln b) and
+    /// <see cref="Math.Pow"/> give others), XNPV-011 at 101 days (where the days times 1/365 give another),
+    /// XNPV-013, where the platform's <see cref="Math.Exp"/> gives one discount a unit in the last place low, and
+    /// XNPV-001, 004 and 014 to 016.
     /// </summary>
     /// <remarks>
-    /// <para>A rate below 0 is <c>#NUM!</c>, a check of the rate made before XNPV evaluates: Excel gave
-    /// <c>#NUM!</c> at -0.5 (XNPV-012, XNPV-017), at -1 (XNPV-007, XNPV-008), at -1.5 (XNPV-009) and at -2
-    /// (XNPV-010), each with values and dates that are numbers in order, and none of the 4 candidates gives
-    /// those six, each giving numbers at some. At a negative rate Excel was not asked, between -0.5 and 0 in
-    /// particular, the <c>#NUM!</c> is the engine's answer, which XNPV-020 asks at -0.01. A rate of exactly 0
-    /// is refused with <c>#VALUE!</c>: whether Excel's check is "below 0" or "0 or below" has not been
-    /// observed (XNPV-019 asks).</para>
-    /// <para>The order of XNPV's checks has not been observed: of the rate (an Error Value, or below 0, or 0
-    /// under "0 or below"), of the counts (XNPV-003's <c>#NUM!</c>), of a date before the first (XNPV-002's),
-    /// and of each cell of the values and of the dates, nor the order in which a range's cells are read. So
-    /// XNPV reads every cell of both ranges, and takes the answer of every check that fails: each Error Value
-    /// of the rate and of the cells, <c>#VALUE!</c> for a cell that is not a number (the engine's refusal: what
-    /// Excel gives for one has not been observed either), and <c>#NUM!</c> for counts that differ, for a date
-    /// before the first among the dates that are numbers, the first being one, and for the rate. Where those
-    /// are one answer, it is XNPV's; where they are more than one, the answer would be the order's, and XNPV
-    /// refuses with <c>#VALUE!</c> (XNPV-021 to XNPV-030 ask): an Error Value at a rate below 0, or of 0, or
-    /// beside counts that differ or a date before the first wherever it lies, two different Error Values in
-    /// one range or the two, an Error Value beside a cell that is not a number, and a rate that is an Error
-    /// Value beside another failure.</para>
-    /// <para>Where the last addition nearly cancels, so that Excel's last-addition adjustment
-    /// (<see cref="Arithmetic.FinalAdd"/>) would give 0 and the plain sum does not, the two evaluations
-    /// part, and XNPV refuses with <c>#VALUE!</c> (XNPV-018 asks).</para>
+    /// <para>A rate of 0 or below is <c>#NUM!</c>, a check of the rate made before XNPV evaluates: Excel gave
+    /// <c>#NUM!</c> at 0 (XNPV-019, run 18a), at -0.01 (XNPV-020), at -0.5 (XNPV-012, XNPV-017), at -1 (XNPV-007,
+    /// XNPV-008), at -1.5 (XNPV-009) and at -2 (XNPV-010), each with values and dates that are numbers in order,
+    /// and none of the 4 candidates gives those, each giving numbers at some.</para>
+    /// <para>The order of XNPV's checks, as run 18a read it (XNPV-021 to XNPV-030): a rate that is an Error Value
+    /// is answered before an Error Value among the values (XNPV-027) and before counts that differ (XNPV-028); a
+    /// rate of 0 or below before an Error Value or text among the values (XNPV-021 to XNPV-023); counts that
+    /// differ before an Error Value among the values (XNPV-024); an Error Value among the dates before one among
+    /// the values at the same place (XNPV-026), and before a later date before the first (XNPV-029); an Error
+    /// Value among the values before a later date before the first (XNPV-025); and of two Error Values among the
+    /// values, the first (XNPV-030). Those answers leave more than one order (<see cref="XnpvOrders"/>): the dates
+    /// read before the values range by range, with the rate and the counts checked before them or after the
+    /// dates, or the two read pair by pair, a date before its value, with a date before the first checked after
+    /// every pair, after its date or after its value. XNPV gives the answer every one of those orders gives, and
+    /// refuses with <c>#VALUE!</c> where they part: as where a rate of 0 or below, counts that differ, or a rate
+    /// that is another Error Value, meet an Error Value among the dates, where an Error Value among the dates lies after one among the values, or
+    /// where a date before the first lies before, or at the place of, an Error Value among the values. A cell
+    /// that is not a number (text, a boolean or a blank) is refused where an order reaches it (what Excel gives
+    /// for one has not been observed): XNPV-022's text is answered, the rate's <c>#NUM!</c> coming first in every
+    /// order.</para>
     /// </remarks>
     private static Operand XNpv(FunctionCall call)
     {
-        var answers = new HashSet<ErrorValue>();
         var rateRead = TryNumber(call, 0, out var rate, out var failure);
-        if (!rateRead) answers.Add(failure.Scalar!.Value.Error);
-        // A cell that is not a number is refused: what Excel gives for one has not been observed.
-        var notNumber = false;
-        var values = NumbersOf(call, 1, answers, ref notNumber);
-        var dates = NumbersOf(call, 2, answers, ref notNumber);
-        if (notNumber) return call.Evaluator.Refuse();
-        if (CellCount(call.Operand(1)) != CellCount(call.Operand(2))) answers.Add(ErrorValue.Num);
-        // A date before the first, among the dates that are numbers, where the first is one.
-        if (dates.Count > 0 && dates[0] is { } first && dates.Any(d => d is { } date && Math.Floor(date) < Math.Floor(first))) answers.Add(ErrorValue.Num);
-        if (rateRead && rate < 0) answers.Add(ErrorValue.Num);
-        if (rateRead && rate == 0)
+        if (!rateRead && failure.Scalar is not { IsError: true, IsRefused: false }) return failure;
+        ErrorValue? rateError = rateRead ? null : failure.Scalar!.Value.Error;
+        var values = CellsOf(call, 1);
+        var dates = CellsOf(call, 2);
+        var countsDiffer = CellCount(call.Operand(1)) != CellCount(call.Operand(2));
+        var outcome = Checked(XnpvOrders[0], rateError, rate, countsDiffer, values, dates);
+        foreach (var order in XnpvOrders.Skip(1))
         {
-            // "0 or below" gives #NUM!; "below 0" passes the rate to the other checks, or to the sum.
-            if (answers.Count == 0) return call.Evaluator.Refuse();
-            answers.Add(ErrorValue.Num);
+            if (Checked(order, rateError, rate, countsDiffer, values, dates) != outcome) return call.Evaluator.Refuse();
         }
-        if (answers.Count > 0) return answers.Count == 1 ? Operand.Of(answers.Single()) : call.Evaluator.Refuse();
+        if (outcome.Refused) return call.Evaluator.Refuse();
+        if (outcome.Error is { } error) return Operand.Of(error);
         var onePlusRate = 1 + rate;
-        var origin = dates.Count > 0 ? Math.Floor(dates[0]!.Value) : 0;
+        var origin = Math.Floor(dates[0]!.Value.Number);
         var total = 0.0;
         for (var i = 0; i < values.Count; i++)
         {
-            if (!TryRaise(onePlusRate, (Math.Floor(dates[i]!.Value) - origin) / 365, out var discount, out var error)) return Operand.Of(error);
-            var term = values[i]!.Value / discount;
-            if (i == values.Count - 1 && Arithmetic.FinalAdd(total, term) != total + term) return call.Evaluator.Refuse();
-            total += term;
+            if (!TryRaise(onePlusRate, (Math.Floor(dates[i]!.Value.Number) - origin) / 365, out var discount, out var raised)) return Operand.Of(raised);
+            total += values[i]!.Value.Number / discount;
         }
         return Operand.Of(Evaluator.Number(total));
     }
+
+    /// <summary>One check of XNPV's, or a reading of its ranges (<see cref="XnpvOrders"/>).</summary>
+    private enum XnpvStep
+    {
+        /// <summary>The rate: its Error Value, or <c>#NUM!</c> at 0 or below.</summary>
+        Rate,
+
+        /// <summary><c>#NUM!</c> where the values and the dates are of different counts.</summary>
+        Counts,
+
+        /// <summary>Every date in order: the first Error Value, or a refusal at the first that is not a number.</summary>
+        Dates,
+
+        /// <summary>Every value in order, as <see cref="Dates"/>.</summary>
+        Values,
+
+        /// <summary><c>#NUM!</c> where a date lies before the first.</summary>
+        Order,
+
+        /// <summary>Each date and then its value, as <see cref="Dates"/> and <see cref="Values"/>.</summary>
+        Pairs,
+
+        /// <summary>As <see cref="Pairs"/>, with a date before the first checked as soon as it is read.</summary>
+        PairsOrderAfterDate,
+
+        /// <summary>As <see cref="Pairs"/>, with a date before the first checked after its value is read.</summary>
+        PairsOrderAfterValue,
+    }
+
+    /// <summary>
+    /// The orders of XNPV's checks that run 18a's answers leave (XNPV-021 to XNPV-030; <see cref="XNpv"/>'s
+    /// remarks). Each gives every answer Excel was observed to give; XNPV answers only where they all agree.
+    /// </summary>
+    private static readonly XnpvStep[][] XnpvOrders =
+    [
+        [XnpvStep.Rate, XnpvStep.Counts, XnpvStep.Dates, XnpvStep.Values, XnpvStep.Order],
+        [XnpvStep.Rate, XnpvStep.Dates, XnpvStep.Counts, XnpvStep.Values, XnpvStep.Order],
+        [XnpvStep.Dates, XnpvStep.Rate, XnpvStep.Counts, XnpvStep.Values, XnpvStep.Order],
+        [XnpvStep.Rate, XnpvStep.Counts, XnpvStep.Pairs, XnpvStep.Order],
+        [XnpvStep.Rate, XnpvStep.Counts, XnpvStep.PairsOrderAfterDate],
+        [XnpvStep.Rate, XnpvStep.Counts, XnpvStep.PairsOrderAfterValue],
+    ];
+
+    /// <summary>What one order of XNPV's checks answers: an Error Value, a refusal, or neither, the sum.</summary>
+    private readonly record struct XnpvOutcome(ErrorValue? Error, bool Refused)
+    {
+        public static XnpvOutcome Sum => default;
+    }
+
+    /// <summary>The answer of XNPV's checks made in <paramref name="order"/>: the first that fails, or the sum.</summary>
+    private static XnpvOutcome Checked(XnpvStep[] order, ErrorValue? rateError, double rate, bool countsDiffer, List<Value?> values, List<Value?> dates)
+    {
+        foreach (var step in order)
+        {
+            var outcome = step switch
+            {
+                XnpvStep.Rate => rateError is { } error ? new XnpvOutcome(error, false) : rate <= 0 ? new XnpvOutcome(ErrorValue.Num, false) : (XnpvOutcome?)null,
+                XnpvStep.Counts => countsDiffer ? new XnpvOutcome(ErrorValue.Num, false) : null,
+                XnpvStep.Dates => dates.Select(Failure).FirstOrDefault(f => f is not null),
+                XnpvStep.Values => values.Select(Failure).FirstOrDefault(f => f is not null),
+                XnpvStep.Order => Enumerable.Range(1, dates.Count - 1).Any(i => BeforeFirst(dates, i)) ? new XnpvOutcome(ErrorValue.Num, false) : null,
+                _ => Paired(step, values, dates),
+            };
+            if (outcome is { } answer) return answer;
+        }
+        return XnpvOutcome.Sum;
+    }
+
+    /// <summary>The dates and the values read pair by pair, a date before its value, in one of the <see cref="XnpvStep"/>'s pair orders.</summary>
+    private static XnpvOutcome? Paired(XnpvStep step, List<Value?> values, List<Value?> dates)
+    {
+        for (var i = 0; i < Math.Min(values.Count, dates.Count); i++)
+        {
+            if (Failure(dates[i]) is { } date) return date;
+            if (step == XnpvStep.PairsOrderAfterDate && BeforeFirst(dates, i)) return new XnpvOutcome(ErrorValue.Num, false);
+            if (Failure(values[i]) is { } value) return value;
+            if (step == XnpvStep.PairsOrderAfterValue && BeforeFirst(dates, i)) return new XnpvOutcome(ErrorValue.Num, false);
+        }
+        return null;
+    }
+
+    /// <summary>A cell's failure: its Error Value, a refusal where it is not a number, or null for a number.</summary>
+    private static XnpvOutcome? Failure(Value? cell) =>
+        cell is { IsError: true } error ? new XnpvOutcome(error.Error, false)
+        : cell is { Kind: ValueKind.Number } ? null
+        : new XnpvOutcome(null, true);
+
+    /// <summary>Whether date <paramref name="index"/>, read and a number, as the first is, lies before the first's day.</summary>
+    private static bool BeforeFirst(List<Value?> dates, int index) =>
+        Math.Floor(dates[index]!.Value.Number) < Math.Floor(dates[0]!.Value.Number);
 
     /// <summary>How many cells a range argument holds, whatever they hold.</summary>
     private static long CellCount(Operand operand) => operand.Kind switch
@@ -329,14 +413,11 @@ internal static partial class FunctionLibrary
     };
 
     /// <summary>
-    /// Every cell of a range, each a number or null: a cell that is an Error Value adds that Error Value to
-    /// <paramref name="answers"/>, and a blank or anything else that is not a number sets
-    /// <paramref name="notNumber"/>, which XNPV refuses. Every cell is read, so that the answer does not depend
-    /// on where the first that fails lies. A range of more than 1,000,000 cells is one null.
+    /// Every cell of a range, blank as null, read in order. A range of more than 1,000,000 cells is one null,
+    /// which XNPV refuses as a cell that is not a number.
     /// </summary>
-    private static List<double?> NumbersOf(FunctionCall call, int index, HashSet<ErrorValue> answers, ref bool notNumber)
+    private static List<Value?> CellsOf(FunctionCall call, int index)
     {
-        var numbers = new List<double?>();
         var operand = call.Operand(index);
         IEnumerable<Value?> cells = operand.Kind switch
         {
@@ -346,13 +427,7 @@ internal static partial class FunctionLibrary
             OperandKind.Area => Cells(operand.Area),
             _ => [null],
         };
-        foreach (var cell in cells)
-        {
-            if (cell is { IsError: true } error) answers.Add(error.Error);
-            else if (cell is not { Kind: ValueKind.Number }) notNumber = true;
-            numbers.Add(cell is { Kind: ValueKind.Number } number ? number.Number : null);
-        }
-        return numbers;
+        return [.. cells];
 
         IEnumerable<Value?> Cells(Area area)
         {
