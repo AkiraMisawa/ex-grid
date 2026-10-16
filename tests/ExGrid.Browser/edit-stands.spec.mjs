@@ -356,11 +356,13 @@ test.describe('/sheets', () => {
 
 // ED-27 (ADR-0018 section 6, 2026-09-29): an edit whose keyboard is elsewhere is told apart. While
 // DOM focus is outside a Sheet's root, its Cell Editor's outline is 1px wide, in the style and colour
-// --ex-editor-outline gives it, and at the token's full width again once the keyboard is back —
-// under the core's Chrome, and under ExGrid.MudBlazor's, whose token is 2px of the palette's
-// primary, on the Wrapper's paper. The stylesheet alone does it (`:focus-within` on the root).
+// --ex-editor-outline gives it — under the core's Chrome, and under ExGrid.MudBlazor's, whose token is
+// 2px of the palette's primary, on the Wrapper's paper. While the keyboard is in the Sheet the editor
+// draws no outline, as Excel draws no border on the cell it edits (2026-10-16, decided with the user,
+// after run 18a): the two states are no outline and 1px. The stylesheet alone does it (`:focus-within`
+// on the root). The core grid's own two states, the token's width and 1px, are read on /features below.
 for (const chrome of ['builtin', 'mud']) {
-    test(`ADR-0018/ED-27: an edit whose keyboard is elsewhere is outlined 1px wide, and at full width once it returns (${chrome} Chrome)`, async ({ page }) => {
+    test(`ADR-0018/ED-27: on a Sheet an edit whose keyboard is elsewhere is outlined 1px wide, and draws no outline once it returns (${chrome} Chrome)`, async ({ page }) => {
         await page.goto(chrome === 'builtin' ? '/sheets' : `/sheets?chrome=${chrome}`);
         const left = sheet(page, 0);
         const right = sheet(page, 1);
@@ -380,7 +382,8 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(editor(left)).toBeFocused();
         const full = await outline(left);
         expect(full.style).toBe('solid');
-        expect(full.width).toBe('2px');
+        // No outline while the keyboard is in the Sheet (2026-10-16): the width alone is taken away.
+        expect(full.width).toBe('0px');
         if (chrome !== 'builtin') {
             // The Wrapper's token, not the core's default: the palette's primary.
             const primary = await left.evaluate((root) => {
@@ -416,6 +419,30 @@ for (const chrome of ['builtin', 'mud']) {
         await expect.poll(() => outline(right)).toEqual({ ...full, width: '1px' });
     });
 }
+
+// ED-27 on the core grid (ADR-0018 section 6, 2026-09-29): /features's first grid, which edits. Its
+// Cell Editor is outlined at --ex-editor-outline's width, 2px, while the keyboard is in its root, and
+// 1px once the keyboard has gone to the page; the edit stands meanwhile (ED-26). A Sheet's editor draws
+// none while the keyboard is in it (2026-10-16, above); the core grid keeps its outline.
+test('ADR-0018/ED-27: on the core grid an edit whose keyboard is elsewhere is outlined 1px wide, and at the token\'s 2px while the keyboard is in it', async ({ page }) => {
+    await page.goto('/features');
+    const grid = page.locator('.ex-grid').first();
+    await expect(grid.locator('.ex-row').first()).toBeVisible();
+    // Cells take no pointer (ADR-0004): the press goes through to the Viewport, as a user's does.
+    await grid.locator("[id$='r0c1']").click({ force: true });
+    await page.keyboard.press('F2');
+    const field = grid.locator('input.ex-editor');
+    await expect(field).toBeFocused();
+    const outline = () => field.evaluate((input) => {
+        const style = getComputedStyle(input);
+        return { width: style.outlineWidth, style: style.outlineStyle };
+    });
+    await expect.poll(outline).toEqual({ width: '2px', style: 'solid' });
+    await page.locator('h1').click();
+    await expect(field).not.toBeFocused();
+    await expect.poll(outline).toEqual({ width: '1px', style: 'solid' });
+    await expect(field).toHaveCount(1);
+});
 
 // ED-28 (ADR-0021's note of 2026-09-30, ADR-0018 section 6): an edit that opens takes the keyboard
 // only while the keyboard is still this grid's. The Cell Editor is focused after the render that

@@ -88,8 +88,8 @@ public class PaperStylesheetTests
         Assert.Contains(".ex-sheet .ex-shade-pinned", forced.Groups["body"].Value, StringComparison.Ordinal);
     }
 
-    [Fact] // ADR-0008 (2026-10-12) / UX-19 / ADR-0071: on the Paper the Focus among several ranges is the core's thin border in the outline's colour, #217346 where no token names it, with no white line of its own
-    public void On_the_paper_the_focus_among_ranges_is_the_outlines_green_with_no_white_line()
+    [Fact] // ADR-0008 (2026-10-12; run 18a) / UX-19 / ADR-0071: on the Paper the Focus among several ranges is the core's thin border in the outline's colour, #217346 where no token names it, with a white line of one Device Pixel outside it on the top and the left only
+    public void On_the_paper_the_focus_among_ranges_is_the_outlines_green_with_a_white_line_on_the_top_and_left()
     {
         var css = Regex.Replace(Stylesheet("src", "ExSheet", "Assets", "ex-sheet.css"), @"/\*.*?\*/", "", RegexOptions.Singleline);
         var rules = Regex.Matches(css, @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}")
@@ -109,11 +109,39 @@ public class PaperStylesheetTests
         Assert.Contains("border-color: var(--ex-focus-among-ranges-outline, var(--ex-focus-outline, #217346));", among.Body, StringComparison.Ordinal);
         Assert.Contains(rules, rule => rule.Selectors.Contains(".ex-sheet .ex-focus::after")
             && rule.Body.Contains("border-color: var(--ex-focus-outline, #217346);", StringComparison.Ordinal));
-        Assert.Contains("box-shadow: none;", among.Body, StringComparison.Ordinal);
+        // The white line run 18a read on the top and the left of a filled D4 (focus-among-ranges.md 2):
+        // three unblurred shadows of the border's box, each a whole Device Pixel up, left, or both, in
+        // the Selection's ring; none of them reaches the right or the bottom, where the cell's ground
+        // (a Fill, if it has one) lies between the border and the gridline.
+        var dp = "var(--ex-dp, 1px)";
+        var ring = "var(--ex-sheet-selection-ring, #fff)";
+        var shadows = Regex.Match(among.Body, @"box-shadow:\s*(?<value>[^;]+);").Groups["value"].Value;
+        Assert.Equal(
+            [$"calc(-1 * {dp}) calc(-1 * {dp}) 0 0 {ring}", $"0 calc(-1 * {dp}) 0 0 {ring}", $"calc(-1 * {dp}) 0 0 0 {ring}"],
+            Regex.Split(shadows, @",\s*(?![^()]*\))").Select(shadow => Regex.Replace(shadow.Trim(), @"\s+", " ")).ToArray());
+        Assert.DoesNotContain("inset", shadows, StringComparison.Ordinal);
         Assert.Contains(rules, rule => rule.Selectors.Contains(".ex-sheet .ex-focus::after")
             && rule.Body.Contains("box-shadow: inset", StringComparison.Ordinal));
         // Its width and place are the core's, one Device Pixel inside the cell: the Paper sets neither.
         Assert.DoesNotMatch(new Regex(@"\b(border|border-width|top|left|right|bottom):"), among.Body);
+    }
+
+    [Fact] // ADR-0018 section 6 (2026-10-16) / ED-27 / ADR-0008 (run 18a): on a Sheet the Cell Editor draws no outline while the keyboard is in it, and the core's 1px while it is elsewhere
+    public void On_a_sheet_the_cell_editor_draws_no_outline_while_the_keyboard_is_in_it()
+    {
+        var sheet = Regex.Replace(Stylesheet("src", "ExSheet", "Assets", "ex-sheet.css"), @"/\*.*?\*/", "", RegexOptions.Singleline);
+        var core = Regex.Replace(Stylesheet("src", "ExGrid", "Assets", "ex-grid.css"), @"/\*.*?\*/", "", RegexOptions.Singleline);
+
+        // The width alone, so --ex-editor-outline's style and colour stay a Wrapper's; on the editor
+        // over the rows, not the Formula Bar's field. Three classes: fewer than the core's rule for an
+        // edit whose keyboard is elsewhere, which therefore still draws it 1px wide in any order.
+        var rule = Assert.Single(Regex.Matches(sheet, @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}"),
+            match => match.Groups["selectors"].Value.Trim() == ".ex-sheet .ex-viewport .ex-editor");
+        Assert.Equal("outline-width: 0;", rule.Groups["body"].Value.Trim());
+        Assert.Matches(new Regex(@"\.ex-grid:not\(:focus-within\) \.ex-viewport \.ex-editor \{\s*outline-width: 1px;\s*\}"), core);
+        // The core grid keeps its outline at the token's width.
+        Assert.Matches(new Regex(@"\.ex-editor \{[^}]*outline: var\(--ex-editor-outline, 2px solid Highlight\);"), core);
+        Assert.DoesNotMatch(new Regex(@"\.ex-sheet[^{}]*\.ex-editor[^{}]*\{[^}]*outline(-style|-color)?:"), sheet);
     }
 
     [Fact] // ADR-0008 (2026-10-13) / ADR-0071: on a Sheet the Heading Mark is the outline's colour, #217346 where no token names it, as R4 measured Excel's; its width and place are the core's, and forced colors restate it
