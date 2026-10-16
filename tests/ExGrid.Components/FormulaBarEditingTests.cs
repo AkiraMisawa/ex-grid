@@ -274,6 +274,97 @@ public class FormulaBarEditingTests : GridTestContext
         Assert.Equal([true], HandBacks().Skip(before));
     }
 
+    [Fact] // ADR-0051/0010, ticket 200: the Name Box's Enter is answered once the Consumer has placed the Selection
+    public async Task The_name_box_enter_is_answered_only_once_the_consumer_has_placed_the_selection()
+    {
+        // The listener holds the keys typed after the Enter and asks this before it hands them on:
+        // answered earlier, `abc` would open an edit on the cell the Focus is leaving.
+        GridSelection? selection = null;
+        var placing = new TaskCompletionSource();
+        IRenderedComponent<ExGrid<TestRow>>? cut = null;
+        cut = RenderGrid(onSelection: s => selection = s, extra: ps => ps.Add(g => g.OnNameBoxEntered, async (string _) =>
+        {
+            await placing.Task;
+            await cut!.Instance.PlaceSelectionAsync(new SelectionRange(40, 0, 1, 1), new CellPosition(40, 0), 0);
+        }));
+        await ClickAsync(cut, 50, 5);
+        await cut.Find(".ex-name-box").InputAsync(new ChangeEventArgs { Value = "R41C1" });
+
+        var submitted = cut.Find(".ex-name-box-form").SubmitAsync();
+        var answered = Task.CompletedTask;
+        await cut.InvokeAsync(() => { answered = cut.Instance.NameBoxAnsweredAsync(); });
+
+        Assert.False(answered.IsCompleted);
+        Assert.Equal(new CellPosition(0, 0), selection!.Focus);
+        await cut.InvokeAsync(placing.SetResult);
+        await submitted;
+        await answered;
+        Assert.Equal(new CellPosition(40, 0), selection!.Focus);
+    }
+
+    [Fact] // ADR-0051/0010, ticket 200: an Enter that submitted nothing finds the last answer, already given
+    public async Task The_name_box_answer_with_nothing_submitted_is_already_given()
+    {
+        var cut = RenderGrid(onNameBox: _ => { });
+
+        var answered = Task.CompletedTask;
+        await cut.InvokeAsync(() => { answered = cut.Instance.NameBoxAnsweredAsync(); });
+
+        Assert.True(answered.IsCompleted);
+    }
+
+    [Fact] // ADR-0010/0028, ticket 201: the Cell Editor names the cell its box stands over, for a press held on it
+    public async Task The_cell_editor_names_the_cell_it_stands_over()
+    {
+        var cut = RenderGrid();
+        await ClickAsync(cut, 50, 45);
+        await PressAsync(cut, "7");
+
+        Assert.Equal("2 0", cut.Find(".ex-viewport input.ex-editor").GetAttribute("data-ex-cell"));
+    }
+
+    [Fact] // ADR-0010, ticket 201: a press taken on the Cell Editor, whose turn comes after Enter committed, lands on the cell the editor stood over
+    public async Task A_press_taken_on_the_cell_editor_lands_on_its_cell_once_the_edit_has_ended()
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(onSelection: s => selection = s);
+        await ClickAsync(cut, 50, 45);
+        await PressAsync(cut, "7");
+        var viewport = cut.Find(".ex-viewport");
+        int Taken(string name) => int.Parse(viewport.GetAttribute(name)!, System.Globalization.CultureInfo.InvariantCulture);
+        var (first, sequence, layout) = (Taken("data-ex-first-row"), Taken("data-ex-sequence"), Taken("data-ex-layout"));
+        var cell = cut.Find(".ex-viewport input.ex-editor").GetAttribute("data-ex-cell")!.Split(' ').Select(int.Parse).ToArray();
+
+        // Enter commits and moves on; the press made on the editor before it was answered is replayed
+        // on the Viewport, told the offsets it had within the editor and the cell the editor stood over.
+        await PressAsync(cut, "Enter");
+        Assert.Equal(new CellPosition(3, 0), selection!.Focus);
+        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mousedown", 30, 8, first, 0, 0, sequence, layout,
+            editorRow: cell[0], editorColumn: cell[1]));
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 330, OffsetY = 190 });
+
+        Assert.Equal(new CellPosition(2, 0), selection!.Focus);
+    }
+
+    [Fact] // ADR-0010/0142, ticket 201: a press taken on the Cell Editor under an order since moved lands on no cell
+    public async Task A_press_taken_on_the_cell_editor_under_another_order_lands_on_no_cell()
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(onSelection: s => selection = s);
+        await ClickAsync(cut, 50, 45);
+        await PressAsync(cut, "7");
+        var viewport = cut.Find(".ex-viewport");
+        int Taken(string name) => int.Parse(viewport.GetAttribute(name)!, System.Globalization.CultureInfo.InvariantCulture);
+        var (first, sequence, layout) = (Taken("data-ex-first-row"), Taken("data-ex-sequence"), Taken("data-ex-layout"));
+
+        await PressAsync(cut, "Enter");
+        await cut.InvokeAsync(() => cut.Instance.PressTakenAt("mousedown", 30, 8, first, 0, 0, sequence + 1, layout,
+            editorRow: 2, editorColumn: 0));
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 30, OffsetY = 8 });
+
+        Assert.Equal(new CellPosition(3, 0), selection!.Focus);
+    }
+
     [Fact] // ADR-0051/0035: a Focus cell that does not edit leaves the bar read-only and opens nothing
     public async Task A_cell_that_does_not_edit_leaves_the_bar_read_only()
     {

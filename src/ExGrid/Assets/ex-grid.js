@@ -1786,6 +1786,28 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
     };
 
+    // The answer to the Name Box's Enter (ExGrid.NameBoxAnsweredAsync): asked from the task after
+    // the Enter's, whose default has by then submitted the form, so the core has heard the
+    // submission before the question, on a circuit as in WebAssembly. Ordered by the core, never
+    // by time; an Enter that submitted nothing finds the last answer, long complete.
+    const nameBoxAnswered = () => new Promise((submitted) => {
+        setTimeout(submitted);
+    }).then(() => (core ? core.invokeMethodAsync('NameBoxAnsweredAsync').catch((error) => {
+        if (core) {
+            console.error('[ex-grid] the grid failed to answer the Name Box', error);
+        }
+    }) : undefined));
+    // The keys after the Name Box's Enter wait for its answer, in their place behind it: a mark
+    // among the held keys, which the drain waits on in its turn (onKeyDown).
+    const holdBehindNameBoxEnter = () => {
+        held.push({ nameBoxEnter: nameBoxAnswered() });
+        if (answering) {
+            holdStartedAt = performance.now();
+        } else {
+            startHold();
+        }
+    };
+
     const drain = async () => {
         // Behind a press, its answer first (holdBehindPress); a press passed on behind it while
         // nothing was held replaces the question, and its answer comes after the first one's.
@@ -1816,6 +1838,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 break;
             }
             const k = held.shift();
+            // The Name Box's Enter (holdBehindNameBoxEnter): the keys after it go on once the core
+            // has answered it, where the keyboard then is.
+            if (k.nameBoxEnter !== undefined) {
+                await k.nameBoxEnter;
+                await editorSettled();
+                continue;
+            }
             if (k.barPress) {
                 await answerBarPress();
                 continue;
@@ -1965,6 +1994,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 }
                 const move = handsOver(target, k) ?? escapeCloses(target, k);
                 handToPopover(target, k);
+                // A held Enter handed to this grid's Name Box submitted its form: the keys behind it
+                // wait for its answer, as behind one typed there (holdBehindNameBoxEnter).
+                if (k.key === 'Enter' && ownNameBox(target) !== null) {
+                    await nameBoxAnswered();
+                    await editorSettled();
+                    continue;
+                }
                 if (!root.contains(target) && isTextField(target) && k.key === 'Escape' && plain(k) && !k.shiftKey
                     && k.repeat !== true) {
                     // A Consumer frame may hand the keyboard on from Escape, before its handler's
@@ -2158,6 +2194,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             } else {
                 startHold();
             }
+            return;
+        }
+        // Enter in this grid's Name Box hands the keyboard back to the root and has the Consumer
+        // place the Selection where the name says (ADR-0051): its form's implicit submission, which
+        // keeps its default here. On a circuit both land a round trip later, and the keys typed
+        // meanwhile went into the Name Box the hand-back then left, and were lost — `abc` typed
+        // straight after naming the Focus opened no edit (ticket 200). So the keys after it are
+        // held, in order, until the core has answered the submission (nameBoxAnswered), and are
+        // then handed on where the keyboard is: on the root, against the Focus the placement left.
+        if (!replaying && k.key === 'Enter' && ownNameBox(event.target) !== null) {
+            // Any key but a modifier's own ends a release of Tab, as the gate has it.
+            tabReleased = false;
+            holdBehindNameBoxEnter();
             return;
         }
         if (!replaying) {
@@ -2672,12 +2721,41 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             sequence: number('data-ex-sequence'), layout: number('data-ex-layout'),
         };
     };
+    // This grid's own Cell Editor — the built-in input, or the box a Chrome's control stands in — on
+    // its rows, not the Formula Bar's surface, nor a nested grid's editor, or null.
+    const ownCellEditor = (target) => {
+        const box = inOwnScroller(target) ? target.closest('.ex-editor') : null;
+        return box !== null && box.hasAttribute('data-ex-cell') ? box : null;
+    };
+    // A press or release on the Cell Editor while the keys before it are held (onPress), taken against
+    // the rows the editor stands over (ticket 201): the cell its box stands on, which the core wrote on
+    // it (data-ex-cell) — the box is the cell's own (ADR-0028) — the press's offsets within it, and the
+    // Viewport's first row, scroll, order and layout, as takenAt has them. If the edit has ended by its
+    // turn, the press is a press on that cell, as it would have been with the editor gone; the core
+    // places it there (ExGrid.PressTakenAt). Reads attributes and the scroll offset; nothing is measured.
+    const editorTakenAt = (event, box) => {
+        const viewport = scroller ? scroller.querySelector('.ex-viewport') : null;
+        const cell = /^(\d+) (\d+)$/.exec(box.getAttribute('data-ex-cell') ?? '');
+        if (!viewport || !cell) {
+            return null;
+        }
+        const number = (name) => {
+            const value = viewport.getAttribute(name);
+            return value === null ? -1 : Number(value);
+        };
+        return {
+            x: event.offsetX, y: event.offsetY, first: number('data-ex-first-row'),
+            left: scroller.scrollLeft, top: scroller.scrollTop,
+            sequence: number('data-ex-sequence'), layout: number('data-ex-layout'),
+            editorRow: Number(cell[1]), editorColumn: Number(cell[2]),
+        };
+    };
     const tellTaken = (kind, taken) => {
         if (!core || !taken) {
             return;
         }
         core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left, taken.top,
-            taken.sequence, taken.layout).catch((error) => {
+            taken.sequence, taken.layout, taken.editorRow ?? -1, taken.editorColumn ?? -1).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to hear where a press was taken', error);
             }
@@ -2935,6 +3013,30 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 }
             }
         }
+        // A press on this grid's Cell Editor is the editor's own: it places the caret. Made while keys
+        // are held, or a key is being answered, it keeps its place among them (ADR-0010), for the editor
+        // may be gone by its turn: Enter typed into an edit and a press on the same cell at once, and on
+        // a circuit the press met the editor the Enter was committing, and was lost (ticket 201). Its
+        // default stands, which only places a caret in the editor that holds the keyboard; at its turn
+        // it is the editor's still if the edit is, and otherwise a press on the cell the editor stood
+        // over (replayPress). One made on an editor that stands with no edit open — the render removing
+        // it not yet painted — is that press on the rows, held for its turn, and its default, which
+        // would put the keyboard in a field about to go, is suppressed.
+        const onEditor = core && !replaying && event.button === 0 ? ownCellEditor(event.target) : null;
+        if (onEditor !== null && (answering || held.length > 0 || editing === 'none')) {
+            if (editing === 'none') {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            held.push({
+                press: 'mousedown', target: onEditor, init: mouseInit(event), taken: editorTakenAt(event, onEditor),
+                onEditor: true,
+            });
+            if (!answering) {
+                startHold();
+            }
+            return;
+        }
         // Only a press on this grid's own rows is held or holds the keys after it: one on a
         // nested grid's rows is that grid's to answer, and this core never hears it. A press that
         // goes on to Blazor from here, or is replayed, is told to the grid that points, if this
@@ -3051,6 +3153,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         event.stopPropagation();
+        // A release on the Cell Editor goes as its press does (replayPress): taken against the cell the
+        // editor stands over.
+        const onEditor = ownCellEditor(event.target);
+        if (onEditor !== null) {
+            held.push({
+                press: 'mouseup', target: onEditor, init: mouseInit(event), taken: editorTakenAt(event, onEditor),
+                onEditor: true,
+            });
+            return;
+        }
         held.push({ press: 'mouseup', target: event.target, init: mouseInit(event), taken });
     };
     // A held press or release, handed to Blazor as the event it was, in its place: on the
@@ -3061,7 +3173,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // mode it leaves (ExGrid.PressAnsweredAsync). The listener asks straight after dispatching, so
     // the core has always heard the press first; the answer is the core's, never a guess.
     const replayPress = async (k) => {
-        const target = k.target.isConnected ? k.target : root.querySelector('.ex-viewport');
+        // A press held on the Cell Editor (onPress): the editor's own while its edit stands, whose
+        // default has placed the caret already; once the edit has ended, a press on the rows over the
+        // cell the editor stood on, which the core places from what it was taken against.
+        if (k.onEditor && k.target.isConnected && editing !== 'none') {
+            return;
+        }
+        if (k.onEditor && !k.taken) {
+            return;
+        }
+        const viewport = scroller ? scroller.querySelector('.ex-viewport') : null;
+        const target = k.onEditor ? viewport : (k.target.isConnected ? k.target : root.querySelector('.ex-viewport'));
         if (!target) {
             return;
         }

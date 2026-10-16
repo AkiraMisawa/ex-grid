@@ -994,6 +994,7 @@ ExGrid.Components.ExGrid<TRow>.KeysTypedOnTheWay(int ticket) -> System.Collectio
 ExGrid.Components.ExGrid<TRow>.MarkPressTakenAt(int paint, int pageStart = -1, int row = -1, int pageRows = -1) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.Marks.get -> ExGrid.Rows.IRowMarks<TRow!>?
 ExGrid.Components.ExGrid<TRow>.Marks.set -> void
+ExGrid.Components.ExGrid<TRow>.NameBoxAnsweredAsync() -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.NameBoxLabel.get -> System.Func<ExGrid.Selection.CellPosition, string?>?
 ExGrid.Components.ExGrid<TRow>.NameBoxLabel.set -> void
 ExGrid.Components.ExGrid<TRow>.NameBoxSizeLabel.get -> System.Func<ExGrid.Selection.SelectionRange, string?>?
@@ -1111,7 +1112,7 @@ ExGrid.Components.ExGrid<TRow>.Presentation.set -> void
 ExGrid.Components.ExGrid<TRow>.PressAnsweredAsync() -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.PressHandedOnAsync(int press, bool inTurn) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.PressInTurn(int press) -> void
-ExGrid.Components.ExGrid<TRow>.PressTakenAt(string! kind, double offsetX, double offsetY, int firstRow, double scrollLeftPx, double scrollTopPx, int rowSequence, int layout) -> void
+ExGrid.Components.ExGrid<TRow>.PressTakenAt(string! kind, double offsetX, double offsetY, int firstRow, double scrollLeftPx, double scrollTopPx, int rowSequence, int layout, int editorRow = -1, int editorColumn = -1) -> void
 ExGrid.Components.ExGrid<TRow>.RangeRequestMargin.get -> int
 ExGrid.Components.ExGrid<TRow>.RangeRequestMargin.set -> void
 ExGrid.Components.ExGrid<TRow>.ReadSelection() -> ExGrid.Selection.HeldSelection

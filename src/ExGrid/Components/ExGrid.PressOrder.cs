@@ -1,3 +1,4 @@
+using ExGrid.Selection;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 
@@ -71,6 +72,32 @@ public partial class ExGrid<TRow>
             : _pressAnswer.ContinueWith(static _ => { }, CancellationToken.None,
                 TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 
+    // The Name Box's Enter the core heard last, while the core is answering it (NameBoxAnsweredAsync).
+    private Task _nameBoxAnswer = Task.CompletedTask;
+
+    private Task OnNameBoxSubmitted() => _nameBoxAnswer = SubmitNameBoxAsync();
+
+    /// <summary>
+    /// Completes once the Name Box's Enter the core heard last has been answered in full
+    /// (ADR-0051, ADR-0010): the keyboard handed back to the root, and the Consumer's placement of
+    /// the Selection where the name says. Enter there is its form's implicit submission, and the
+    /// keys typed after it are held by the grid's listener until this completes, then handed on
+    /// against the Focus the placement leaves, as keys typed after a slow Enter would be. The
+    /// listener asks from the task after the Enter's, so its submission has always reached the
+    /// core first; an Enter that submitted nothing finds the last answer, long complete.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
+    /// </summary>
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public Task NameBoxAnsweredAsync()
+        => _disposed
+            ? Task.CompletedTask
+            : _nameBoxAnswer.ContinueWith(static _ => { }, CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+
     // What the script said the next press or release on the rows was taken against (ED-31;
     // ADR-0021, note of 2026-10-02), until that event is heard. It is told just before Blazor
     // dispatches the event, so the event the core hears next is the one it describes.
@@ -142,21 +169,49 @@ public partial class ExGrid<TRow>
     /// <param name="rowSequence">The Row Sequence Version the Viewport was painted under
     /// (<c>data-ex-sequence</c>).</param>
     /// <param name="layout">The layout the Viewport was painted under (<c>data-ex-layout</c>).</param>
+    /// <param name="editorRow">For a press taken on the Cell Editor while the keys before it were
+    /// held, the row of the cell the editor stood over (<c>data-ex-cell</c>), and the offsets are
+    /// the press's within the editor; negative for a press taken on the rows.</param>
+    /// <param name="editorColumn">The column of that cell; negative for a press taken on the rows.</param>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public void PressTakenAt(string kind, double offsetX, double offsetY, int firstRow,
-        double scrollLeftPx, double scrollTopPx, int rowSequence, int layout)
+        double scrollLeftPx, double scrollTopPx, int rowSequence, int layout, int editorRow = -1, int editorColumn = -1)
     {
         // It crosses the JS boundary: a NaN would travel silently into the offsets.
         _taken = !_disposed && double.IsFinite(offsetX) && double.IsFinite(offsetY) && double.IsFinite(scrollLeftPx)
             && double.IsFinite(scrollTopPx)
-            ? new TakenAt(kind, offsetX, offsetY, firstRow, scrollLeftPx, scrollTopPx, rowSequence, layout)
+            ? new TakenAt(kind, offsetX, offsetY, firstRow, scrollLeftPx, scrollTopPx, rowSequence, layout,
+                editorRow >= 0 && editorColumn >= 0 ? new CellPosition(editorRow, editorColumn) : null)
             : null;
     }
 
     private sealed record TakenAt(string Kind, double OffsetX, double OffsetY, int FirstRow,
-        double ScrollLeftPx, double ScrollTopPx, int RowSequence, int Layout);
+        double ScrollLeftPx, double ScrollTopPx, int RowSequence, int Layout, CellPosition? OnEditorOver);
+
+    /// <summary>
+    /// Where on the rows a press taken on the Cell Editor lay (ADR-0010, ADR-0220; ticket 201). The
+    /// editor's box is the cell's own (ADR-0028), so a press on it is over that cell, at the same
+    /// offsets within it: under the layout and the first row it was taken against, those are the
+    /// Viewport's offsets the press would have had with the editor gone, which is where it lands
+    /// when its turn comes after the edit has ended. Kept inside the cell, whatever a border or a
+    /// Chrome's control adds to them. Null for a cell that layout does not hold.
+    /// </summary>
+    private static (double X, double Y)? OffsetsOverEditor(TakenAt told, PaintLayout layout, CellPosition cell)
+    {
+        var columns = layout.Columns;
+        if (cell.Column >= columns.Count || layout.RowHeightPx <= 0)
+            return null;
+        var width = columns.WidthPxOf(cell.Column);
+        var withinX = Math.Clamp(told.OffsetX, 0, Math.Max(0, width - 1));
+        var withinY = Math.Clamp(told.OffsetY, 0, Math.Max(0, layout.RowHeightPx - 1));
+        // A Pinned Column's cell stands in the band held against the Viewport's left edge, and its
+        // editor rides that band: its offset is the scroll's plus its own (ColumnGeometry.ColumnAt).
+        var pinnedBy = cell.Column < columns.PinnedCount ? Math.Clamp(told.ScrollLeftPx, 0, columns.MaxScrollLeftPx) : 0;
+        return (pinnedBy + columns.OffsetPxOf(cell.Column) + withinX,
+            ((double)cell.Row - told.FirstRow) * layout.RowHeightPx + withinY);
+    }
 
     /// <summary>A press or release as it was taken (ED-31): the offsets it was given, and the first
     /// row, scroll and layout they were measured against. <see cref="Layout"/> is null
@@ -184,13 +239,22 @@ public partial class ExGrid<TRow>
         var held = layout is not null && ReferenceEquals(layout.ColumnNames, _paintLayouts[^1].ColumnNames)
             && layout.Binding == _binding && told.RowSequence == _sequenceVersion
             && told.FirstRow >= _pageStartRow && told.FirstRow < _pageStartRow + _geometry.TotalRowCount;
+        // A press taken on the Cell Editor lands over the cell the editor stood on (OffsetsOverEditor).
+        var offsets = (told.OffsetX, told.OffsetY);
+        if (told.OnEditorOver is { } over)
+        {
+            if (held && OffsetsOverEditor(told, layout!, over) is { } overEditor)
+                offsets = overEditor;
+            else
+                held = false;
+        }
         return new TakenMouseEventArgs
         {
             Type = e.Type, Detail = e.Detail, Button = e.Button, Buttons = e.Buttons,
             ScreenX = e.ScreenX, ScreenY = e.ScreenY, ClientX = e.ClientX, ClientY = e.ClientY,
             PageX = e.PageX, PageY = e.PageY, MovementX = e.MovementX, MovementY = e.MovementY,
             CtrlKey = e.CtrlKey, ShiftKey = e.ShiftKey, AltKey = e.AltKey, MetaKey = e.MetaKey,
-            OffsetX = told.OffsetX, OffsetY = told.OffsetY,
+            OffsetX = offsets.Item1, OffsetY = offsets.Item2,
             Layout = held ? layout : null,
             FirstRow = told.FirstRow,
             ScrollLeftPx = told.ScrollLeftPx,
