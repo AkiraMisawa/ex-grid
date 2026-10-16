@@ -121,12 +121,12 @@
     },
     {
       "id": "FILTER-014",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: AVERAGE over a blank FILTER keeps is #VALUE!; 7 if it passes over it, 3.5 if it reads it as 0",
+      "source": "observed",
+      "description": "AVERAGE passes over a blank FILTER keeps, as over a blank cell, 7, and does not read it as 0, which would give 3.5 (Windows run 18a)",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=AVERAGE(FILTER(Q1:Q2,H1:H2>0))"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 7}
     }
   ]
 }

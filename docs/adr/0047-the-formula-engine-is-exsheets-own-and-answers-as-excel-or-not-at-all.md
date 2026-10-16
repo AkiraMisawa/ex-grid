@@ -503,6 +503,16 @@ every Error Value key: a `by_array`'s could as well be the result, as `FILTER`'s
 number is refused. `=SORT(G1:H5,1.5)` was truncated to sort by the first column; rounded it would sort
 by the second, and no run has read which Excel does, or whether it takes a fraction there at all.
 SORT-042 asks.)*
+*(2026-10-14, after run 18a: **an Error Value key is ordered, and a fractional `sort_index` truncated.** Over
+`#N/A` and then 7 Excel's `SORT` shows 7 first (SORT-026), so an Error Value sorts after the numbers and does not
+keep its place; it sorts after text and after a boolean (SORT-029, 030), before a blank (SORT-031), and first in a
+descending sort (SORT-028), the order of the kinds reversed and the blank still last. `SORTBY` orders a
+`by_array`'s Error Value the same way, not as the result (SORTBY-010). Over 7, `#N/A` and `#DIV/0!`, the second is
+`#DIV/0!` (SORT-032): two different Error Values do not keep their order, and sort as `ERROR.TYPE` numbers them or
+as their texts sort, which that one answer does not tell apart. So two different Error Values are ordered ascending
+where the two readings agree, and refused with `#VALUE!` where they part, beside an Error Value `ERROR.TYPE` does
+not number, and in a descending sort, which no run has read. `=SORT(G1:H3,1.5)` sorts by the first column
+(SORT-042): a `sort_index` that is not a whole number is truncated, not rounded.)*
 
 *(2026-10-03)* Admitted as the catalogue's ticket 07: `LOG`, `SIN`, `COS`, `TAN`, `COT`, `CSC`,
 `SEC`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `ACOT`, `SINH`, `COSH`, `TANH`, `COTH`, `CSCH`, `SECH`,
@@ -878,6 +888,35 @@ range):
   share cancels.
 
 Where it answers, every reading run lies within 93 units in the last place of its payment.
+
+*(2026-10-14, after run 18a: **what Excel answered inside `PMT`'s, `PV`'s and `XNPV`'s refusals.**
+`verification/2026-10-14-windows-readings-18a/area/summary.md` has each double.
+
+- **`PMT` at a rate of -1 or below is `#NUM!`**: at -1 with periods after and before (PMT-034, 037), at -2 with 2
+  periods (PMT-035) and at -9 with a third of one (PMT-036). PV's and FV's power gives a number at PMT-036 and
+  `#DIV/0!` at PMT-037, so `PMT` does not raise 1+rate as they do; a power through ln(1+rate) has no logarithm there
+  and gives `#NUM!` at every such rate, and the engine gives it at every rate of -1 or below, elsewhere than the four
+  by generalisation. No periods at the start is `#NUM!` too (PMT-046), as at the end.
+- **The exact payment rounded once is Excel's where a quantity passed a double's range** at PMT-038 to 041 and 044,
+  and where the growth lay below 2^-52 at PMT-045. Those quantities, and that bound, no longer refuse; the rest of
+  the range rule stands as the engine's.
+- **Where Excel's answer needs another evaluation, `PMT` stays refused**, under the exception and the bound of 2^6
+  decided with the user, and the corpus keeps Excel's answer beside each refusal: `#NUM!` where the growth falls below
+  the normal numbers (PMT-042, where the exact payment rounded once is -495), and, inside the bound, an answer 1 or
+  2 units in the last place from the exact payment at PMT-047, 051 and 053, the exact payment at PMT-050, and
+  another evaluation's at PMT-048 (its 10th significant digit), PMT-049 (the other sign) and PMT-052 (0, for
+  -9.3E-299). No evaluation searched gives PMT-048, 049, 051 or 052. *(2026-10-16, decided with the user: the bound
+  is not narrowed and PMT-042's `#NUM!` is not given; all eight stay refused, Excel's answers beside them.)* PMT-043, which COM would not enter (0x800A03EC), stays `uncertain`
+  for the keys pass (`docs/specs/exsheet/run-18/area-oracle.md`).
+- **`PV` at a rate of -1 with periods is `#DIV/0!`** (PV-013): it divides by the growth, 0. PV-014 and 015, and
+  FV-023 and PV-016, agree with the power the note of 2026-10-12 chose and the correctly rounded logarithm.
+- **`XNPV` sums plainly and is `#NUM!` at a rate of 0.** Excel's XNPV-018 is 1.1368683772161603E-13, where the
+  last-addition adjustment gives 0, so of the two evaluations the plain sum is Excel's; XNPV-019 is `#NUM!`, so the
+  check is "0 or below". XNPV-021 to 030 settle part of the order of its checks: the rate before the counts and before
+  the values, the counts before the values, a date's Error Value before a value's at the same place, an Error Value
+  among either before a later date before the first, and the first of two Error Values among the values. The orders
+  that give all ten are kept, and `XNPV` answers where every one gives the same answer and refuses with `#VALUE!`
+  where they part; a cell that is not a number stays refused where an order reaches it.)*
 
 *(2026-10-12, the seventeenth Windows run)* **`AND`, `OR` and `XOR` pass over typed text that spells
 neither TRUE nor FALSE** (AND-011), as they pass over text inside a range; with nothing that counts, the

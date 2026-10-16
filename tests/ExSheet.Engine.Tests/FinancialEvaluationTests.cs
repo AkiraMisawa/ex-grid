@@ -17,8 +17,10 @@ namespace ExSheet.Engine.Tests;
 /// divides each value by that power of its years and sums from the first, and is #NUM! at a rate below 0,
 /// a check no evaluation gives. Where PMT answers, it is the payment at the end carried beyond a double and
 /// rounded once, with 1+rate raised exactly, and at the start the exact payment at the start rounded once
-/// (2026-10-13, decided with the user); 23 of the 30 payments Excel was asked are 1 to 11 units in the last
-/// place from the engine's. NPV is refused for 0.1.0
+/// (2026-10-13, decided with the user); 23 of the 36 payments Excel was asked that the engine gives are 1 to 11
+/// units in the last place from the engine's. Run 18a answered the cases the engine refused until Excel was
+/// asked: PMT is #NUM! at a rate of -1 or below and with no periods, PV #DIV/0! at a growth of 0, and XNPV
+/// #NUM! at a rate of 0, its checks in the orders Excel's answers leave. NPV is refused for 0.1.0
 /// (ADR-0202, note of 2026-10-12): no evaluation searched gives every double Excel gave for it.
 /// </summary>
 public class FinancialEvaluationTests
@@ -146,10 +148,11 @@ public class FinancialEvaluationTests
         Assert.Equal(Value.FromError(ErrorValue.Num), NewSheet().Evaluate("=(1+-1)^0"));
     }
 
-    [Fact] // ADR-0047: PV-013 asks: at a rate of -1 the growth is 0 and PV divides by it; which Error Value Excel gives there has not been observed
-    public void ADR0047_PV_at_a_rate_of_minus_1_with_periods_is_refused()
+    [Fact] // ADR-0047: PV-013, run 18a: at a rate of -1 the growth is 0 and PV divides by it, #DIV/0!; at half a period it is the engine's answer by generalisation
+    public void ADR0047_PV_at_a_rate_of_minus_1_with_periods_is_DIV0()
     {
-        Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate("=PV(-1,10,-100)"));
+        Assert.Equal(Value.FromError(ErrorValue.Div0), NewSheet().Evaluate("=PV(-1,10,-100)"));
+        Assert.Equal(Value.FromError(ErrorValue.Div0), NewSheet().Evaluate("=PV(-1,0.5,-100,1000,1)"));
         Assert.Equal(100, Number("=FV(-1,10,-100)")); // FV multiplies by the growth, 0, and answers
     }
 
@@ -263,64 +266,67 @@ public class FinancialEvaluationTests
     public void ADR0047_PMT_is_the_exact_payment_at_rates_where_one_plus_rate_holds_none_of_the_rate(string formula, double exact) =>
         Assert.Equal(exact, Number(formula));
 
-    [Theory] // ADR-0047: PMT-034 to 037 ask: at a rate of -1 the forms of the identity part between -fv and an Error Value, and with negative periods a power gives #DIV/0! and ln(0) #NUM!; below -1 a power gives a number, or a growth of exactly 1 every form divides by, and ln(1+rate) none
+    [Theory] // ADR-0047: PMT-034 to 037, run 18a: #NUM! at a rate of -1 with periods after and before, at -2 with 2 periods and at -9 with a third of one; at the rest of a rate of -1 or below, the engine's answer by generalisation
     [InlineData("=PMT(-1,10,1000,500)")]
     [InlineData("=PMT(-1,10.5,1000,500,1)")]
     [InlineData("=PMT(-1,-10,100)")]
     [InlineData("=PMT(-1,-0.5,100,0,1)")]
     [InlineData("=PMT(-2,2,1000)")]
+    [InlineData("=PMT(-2,3,1000)")]
     [InlineData("=PMT(-2,10,1000,0,1)")]
     [InlineData("=PMT(-9,1/3,-1)")]
     [InlineData("=PMT(-1.5,10,1000)")]
     [InlineData("=PMT(-9,360,1000,500)")]
-    public void ADR0047_PMT_refuses_at_a_rate_of_minus_1_or_below_where_its_readings_part(string formula) =>
-        Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate(formula));
+    public void ADR0047_PMT_at_a_rate_of_minus_1_or_below_is_NUM(string formula) =>
+        Assert.Equal(Value.FromError(ErrorValue.Num), NewSheet().Evaluate(formula));
 
-    [Theory] // ADR-0047: PMT-038 to 044 ask: where a quantity a reading of PMT computes in doubles passes a double's range or falls below its normal numbers, some readings give an Error Value or a number of few digits and others the payment
-    [InlineData("=PMT(1,1100,1000)")] // the growth past the range
-    [InlineData("=PMT(3,1000.5,1000)")]
-    [InlineData("=PMT(1,1020,1000)")] // pv times the growth past it, the growth within
-    [InlineData("=PMT(0.5,1740,1000)")]
-    [InlineData("=PMT(1E10,30,1)")] // the rate times pv times the growth
+    [Theory] // ADR-0047: PMT-038 to 041, 044 and 045, run 18a: where Excel carried a quantity past a double's range, or the growth below 2^-52, it gave the exact payment rounded once
+    [InlineData("=PMT(1,1100,1000)", -1000)] // the growth past the range
+    [InlineData("=PMT(1,1020,1000)", -1000)] // pv times the growth past it, the growth within
+    [InlineData("=PMT(0.5,1740,1000)", -500)]
+    [InlineData("=PMT(1E10,30,1)", -1E10)] // the rate times pv times the growth
+    [InlineData("=PMT(-1.64435447903749E-307,283.5,1E-05,0)", -3.5273368606701946E-08)] // pv times the rate below the normal numbers
+    [InlineData("=PMT(-0.5,360,1000,500)", -250)] // a growth of 0.5^360, below 2^-52
+    public void ADR0047_PMT_gives_the_exact_payment_where_Excel_carried_a_quantity_past_a_doubles_range(string formula, double excel) =>
+        Assert.Equal(excel, Number(formula));
+
+    [Theory] // ADR-0047: where a quantity a reading of PMT computes in doubles passes a double's range or falls below its normal numbers, and Excel was not seen to carry it, PMT refuses; at PMT-042 Excel gave #NUM!, which the exact payment does not give (run 18a)
+    [InlineData("=PMT(3,1000.5,1000)")] // a growth past 2^1100, which the engine does not compute
     [InlineData("=PMT(-0.99,160,1000,500)")] // the growth below the normal numbers, so that 1 over it passes the range
+    [InlineData("=PMT(-0.99,160,0,500)")]
+    [InlineData("=PMT(1,1100,0,1000)")] // fv over the growth below them
     [InlineData("=PMT(1E-320,0.5,1000)")] // a rate below the normal numbers
     [InlineData("=PMT(1E-315,10.5,1000)")]
     [InlineData("=PMT(5.1699029180828E-320,0.0907921350606893,-1000,20000)")]
-    [InlineData("=PMT(-1.64435447903749E-307,283.5,1E-05,0)")] // pv times the rate below them
     [InlineData("=PMT(0.05,12,1E-310)")] // pv below them
-    [InlineData("=PMT(0.05,12,9E307)")] // pv times the growth past the range
+    [InlineData("=PMT(0.05,12,9E307)")] // pv past the range
     public void ADR0047_PMT_refuses_where_a_reading_passes_a_doubles_range(string formula) =>
         Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate(formula));
 
-    [Theory] // ADR-0047: PMT-045 and PMT-046 ask: a reading that takes the growth as 1 + (g-1) holds one below 2^-54 as 0 and divides by it; LibreOffice's reading of no periods at the start divides by e^(ln(1+rate)) - 1 - rate, 0 or a rounding's remainder
-    [InlineData("=PMT(-0.5,360,1000,500)")]
-    [InlineData("=PMT(0.1,-400,1000)")]
+    [Theory] // ADR-0047: no periods is #NUM!, at the end (PMT-005) and at the start (PMT-046, run 18a), at any rate
+    [InlineData("=PMT(0.1,0,1000)")]
     [InlineData("=PMT(0.42,0,1000,0,1)")]
     [InlineData("=PMT(0.1,0,1000,0,1)")]
-    public void ADR0047_PMT_refuses_a_growth_below_2_to_the_minus_52_and_no_periods_at_the_start(string formula) =>
-        Assert.Equal(Value.FromError(ErrorValue.Value), NewSheet().Evaluate(formula));
-
-    [Theory] // ADR-0047: no periods at the end is #NUM! (PMT-005), and at the start where every reading gives an Error Value: a rate of 0, or of -1 or below
-    [InlineData("=PMT(0.1,0,1000)")]
     [InlineData("=PMT(0,0,1000,0,1)")]
     [InlineData("=PMT(-1,0,1000,0,1)")]
     [InlineData("=PMT(-2,0,1000,0,1)")]
-    public void ADR0047_PMT_with_no_periods_is_NUM_where_every_reading_gives_it(string formula) =>
+    public void ADR0047_PMT_with_no_periods_is_NUM(string formula) =>
         Assert.Equal(Value.FromError(ErrorValue.Num), NewSheet().Evaluate(formula));
 
     [Theory] // ADR-0047: within the range the readings agree in kind and PMT answers, at the range's edges too; Python's decimal at 1200 digits, rounded once
     [InlineData("=PMT(1,1000,1000)", -1000)]
     [InlineData("=PMT(1E-300,12,1000)", -83.33333333333333)]
-    [InlineData("=PMT(-0.5,52,1000,500,1)", -500.00000000000034)] // a growth of 2^-52, the least answered
+    [InlineData("=PMT(-0.5,52,1000,500,1)", -500.00000000000034)] // a growth of 2^-52
     public void ADR0047_PMT_answers_within_the_range(string formula, double exact) =>
         Assert.Equal(exact, Number(formula));
 
-    [Theory] // ADR-0047: PMT-047 to PMT-053 ask: where a reading magnifies its own roundings more than 2^6 times, the readings give 0, numbers of the other sign or of a few digits, or an Error Value, and PMT refuses (ExactPayment.Conditioned, the financial area's bound)
-    [InlineData("=PMT(0.1,2,1000,-1210)")] // pv g and fv cancel: readings give 0, 1.7E-14 and -5.8E-15
-    [InlineData("=PMT(0.1,1E-17,1000,-1000)")] // the same at a tiny nper: readings give 0, -100 and -104.8
+    [Theory] // ADR-0047: where a reading magnifies its own roundings more than 2^6 times, the readings give 0, numbers of the other sign or of a few digits, or an Error Value, and PMT refuses (ExactPayment.Conditioned, the bound kept by decision with the user, 2026-10-13). Run 18a read Excel's answer at PMT-047 to PMT-053: the exact payment or a unit or two from it at 047, 050, 051 and 053, another evaluation's at 048, 049 and 052
+    [InlineData("=PMT(0.1,2,1000,-1210)")] // pv g and fv cancel: readings give 0, 1.7E-14 and -5.8E-15, Excel 2.3E-14
+    [InlineData("=PMT(0.1,1E-17,1000,-1000)")] // the same at a tiny nper: readings give 0, -100 and -104.8, Excel -100
     [InlineData("=PMT(1,1,1000,-2000)")] // pv g + fv is exactly 0
     [InlineData("=PMT(-0.5,36.25,-150,0,0)")] // a growth of 1.2E-11 taken as 1 + (g-1)
     [InlineData("=PMT(-0.5,52,1000)")] // a growth of 2^-52 taken so
+    [InlineData("=PMT(0.1,-400,1000)")] // a growth of 2.5E-17 taken so
     [InlineData("=PMT(1,1000,0,1000)")] // the exponent, 693, rounded: hundreds of units apart
     [InlineData("=PMT(0.1,1E-17,1000,0,1)")] // at the start, LibreOffice's divisor is 0, #NUM!
     [InlineData("=PMT(0.1,-5E-17,1000,0,1)")]
@@ -401,14 +407,16 @@ public class FinancialEvaluationTests
         Assert.Equal(-10000 + (3000 / 1.07), sheet.Evaluate("=XNPV(0.07,A1:A2,B1:B2)").Number);
     }
 
-    [Theory] // ADR-0047: XNPV-007 to 010, 012 and 017, the second area pass: Excel gave #NUM! at every rate below 0 it was asked, -0.5 to -2, which no evaluation gives; at -0.01 it is the engine's answer, which XNPV-020 asks
+    [Theory] // ADR-0047: XNPV-007 to 010, 012, 017, 019 and 020: Excel gave #NUM! at every rate of 0 or below it was asked, 0 and -0.01 in run 18a, which no evaluation gives
     [InlineData("-1", "39448", "39508")]
     [InlineData("-1", "39448", "39448")]
     [InlineData("-1.5", "39448", "39813")]
     [InlineData("-2", "39448", "39508")]
     [InlineData("-0.5", "39448", "39508")]
     [InlineData("-0.01", "39448", "39508")]
-    public void ADR0047_XNPV_at_a_rate_below_0_is_NUM(string rate, string first, string second)
+    [InlineData("0", "39448", "39508")]
+    [InlineData("0", "39448", "39000")]
+    public void ADR0047_XNPV_at_a_rate_of_0_or_below_is_NUM(string rate, string first, string second)
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "-1000");
@@ -418,32 +426,20 @@ public class FinancialEvaluationTests
         Assert.Equal(Value.FromError(ErrorValue.Num), sheet.Evaluate($"=XNPV({rate},A1:A2,B1:B2)"));
     }
 
-    [Fact] // ADR-0047: XNPV-019 asks: at a rate of 0 "below 0" answers the sum and "0 or below" #NUM!, so XNPV refuses it, but where a date before the first or the counts give #NUM!, which both readings give
-    public void ADR0047_XNPV_at_a_rate_of_0_is_refused_only_where_the_readings_part()
-    {
-        var sheet = NewSheet();
-        sheet.Enter("A1", "-1000");
-        sheet.Enter("A2", "300");
-        sheet.Enter("A3", "500");
-        sheet.Enter("B1", "39448");
-        sheet.Enter("B2", "39508");
-        sheet.Enter("B3", "39000");
-        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(0,A1:A2,B1:B2)"));
-        Assert.Equal(Value.FromError(ErrorValue.Num), sheet.Evaluate("=XNPV(0,A1:A3,B1:B3)"));
-        Assert.Equal(Value.FromError(ErrorValue.Num), sheet.Evaluate("=XNPV(0,A1:A3,B1:B2)"));
-    }
-
-    [Theory] // ADR-0047: XNPV-021 to 026 ask: the order of XNPV's checks has not been observed, so where a failing cell of its ranges and another failing check give different answers, the answer would be the order's, and XNPV refuses
-    [InlineData("-0.5", "#N/A", "39448", "#VALUE!")] // the rate first gives #NUM!, the values first #N/A
-    [InlineData("-0.5", "text", "39448", "#VALUE!")]
-    [InlineData("0", "#N/A", "39448", "#VALUE!")] // a rate of 0, "0 or below" and the rate first, #NUM!
-    [InlineData("0.09", "#N/A", "40000", "#VALUE!")] // a date before the first, #NUM!
-    [InlineData("0.09", "#N/A", "#DIV/0!", "#VALUE!")] // the values first give #N/A, the dates first #DIV/0!
-    [InlineData("0.09", "#N/A", "#N/A", "#N/A")] // every check that fails gives #N/A
+    [Theory] // ADR-0047: XNPV-021 to 026, run 18a: the rate is checked before the values are read, an Error Value among the dates is answered before one among the values at its place, and one among the values before a later date before the first; where the orders those answers leave part, XNPV refuses
+    [InlineData("-0.5", "#N/A", "39448", "#NUM!")] // XNPV-021
+    [InlineData("-0.5", "text", "39448", "#NUM!")] // XNPV-022
+    [InlineData("0", "#N/A", "39448", "#NUM!")] // XNPV-023
+    [InlineData("0.09", "#N/A", "40000", "#N/A")] // XNPV-025: a date before the first after it
+    [InlineData("0.09", "#N/A", "#DIV/0!", "#DIV/0!")] // XNPV-026
+    [InlineData("0.09", "#N/A", "#N/A", "#N/A")]
     [InlineData("0.09", "#N/A", "39448", "#N/A")] // nothing else fails
-    [InlineData("-0.5", "#NUM!", "39448", "#NUM!")] // every check that fails gives #NUM!
+    [InlineData("-0.5", "#NUM!", "39448", "#NUM!")]
     [InlineData("-0.5", "-10000", "40000", "#NUM!")]
-    public void ADR0047_XNPV_refuses_where_the_order_of_its_checks_would_decide(string rate, string firstValue, string firstDate, string expected)
+    [InlineData("-0.5", "-10000", "#N/A", "#VALUE!")] // the rate checked first gives #NUM!, the dates read first #N/A
+    [InlineData("0", "-10000", "#N/A", "#VALUE!")]
+    [InlineData("0.09", "text", "39448", "#VALUE!")] // text among the values, what Excel gives for it not observed
+    public void ADR0047_XNPV_answers_in_the_order_of_its_checks_and_refuses_where_the_orders_part(string rate, string firstValue, string firstDate, string expected)
     {
         var sheet = NewSheet();
         sheet.Enter("A1", firstValue);
@@ -453,8 +449,8 @@ public class FinancialEvaluationTests
         Assert.Equal(expected, sheet.Evaluate($"=XNPV({rate},A1:A2,B1:B2)").ToString());
     }
 
-    [Fact] // ADR-0047: XNPV-027 to 030 ask: XNPV reads the rate and every cell of both ranges, so that neither a rate that is an Error Value, nor where a failing cell lies, nor which of two Error Values a range holds first, decides the answer
-    public void ADR0047_XNPV_reads_the_rate_and_every_cell_before_it_answers()
+    [Fact] // ADR-0047: XNPV-027 to 030, run 18a: a rate that is an Error Value is answered first, the dates in order, and the first of two Error Values among the values; where the orders those answers leave part, XNPV refuses
+    public void ADR0047_XNPV_answers_the_rate_first_and_each_range_from_its_first_cell()
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "#N/A");
@@ -463,24 +459,32 @@ public class FinancialEvaluationTests
         sheet.Enter("B1", "39448");
         sheet.Enter("B2", "39508");
         sheet.Enter("B3", "39000");
-        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(1/0,A1:A2,B1:B2)")); // the rate first #DIV/0!, the values first #N/A
+        Assert.Equal(Value.FromError(ErrorValue.Div0), sheet.Evaluate("=XNPV(1/0,A1:A2,B1:B2)")); // XNPV-027
         Assert.Equal(Value.FromError(ErrorValue.NA), sheet.Evaluate("=XNPV(0.09,A1:A2,B1:B2)"));
         sheet.Enter("A1", "-10000");
         Assert.Equal(Value.FromError(ErrorValue.Div0), sheet.Evaluate("=XNPV(1/0,A1:A2,B1:B2)"));
-        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(1/0,A1:A3,B1:B2)")); // the counts first #NUM!
+        Assert.Equal(Value.FromError(ErrorValue.Div0), sheet.Evaluate("=XNPV(1/0,A1:A3,B1:B2)")); // XNPV-028
         sheet.Enter("B2", "#N/A");
-        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(0.09,A1:A3,B1:B3)")); // B3 before the first, #NUM!, beside B2's #N/A
+        Assert.Equal(Value.FromError(ErrorValue.NA), sheet.Evaluate("=XNPV(0.09,A1:A3,B1:B3)")); // XNPV-029
+        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(1/0,A1:A3,B1:B3)")); // the rate first #DIV/0!, the dates first #N/A
         sheet.Enter("B2", "39508");
         Assert.Equal(Value.FromError(ErrorValue.Num), sheet.Evaluate("=XNPV(0.09,A1:A3,B1:B3)"));
         sheet.Enter("A1", "#N/A");
         sheet.Enter("A2", "#DIV/0!");
-        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(0.09,A1:A2,B1:B2)")); // the first of the range #N/A, the last #DIV/0!
+        Assert.Equal(Value.FromError(ErrorValue.NA), sheet.Evaluate("=XNPV(0.09,A1:A2,B1:B2)")); // XNPV-030
+        sheet.Enter("A2", "2750");
+        sheet.Enter("B2", "#DIV/0!");
+        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(0.09,A1:A2,B1:B2)")); // the dates first #DIV/0!, pair by pair #N/A
+        sheet.Enter("A1", "-10000");
         sheet.Enter("A2", "#N/A");
-        Assert.Equal(Value.FromError(ErrorValue.NA), sheet.Evaluate("=XNPV(0.09,A1:A2,B1:B2)"));
+        sheet.Enter("B2", "39000");
+        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(0.09,A1:A2,B1:B2)")); // a date before the first at the place of an Error Value among the values
+        sheet.Enter("A3", "#N/A");
+        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(0.09,A1:A3,B1:B3)"));
     }
 
-    [Fact] // ADR-0047: XNPV-024 asks: counts that differ give #NUM! (XNPV-003), and beside an Error Value among the values the order would decide
-    public void ADR0047_XNPV_refuses_an_Error_Value_beside_counts_that_differ()
+    [Fact] // ADR-0047: XNPV-024, run 18a: counts that differ (XNPV-003) are checked before the values are read; beside an Error Value among the dates the orders part
+    public void ADR0047_XNPV_checks_the_counts_before_the_values()
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "#N/A");
@@ -488,13 +492,15 @@ public class FinancialEvaluationTests
         sheet.Enter("A3", "4250");
         sheet.Enter("B1", "39448");
         sheet.Enter("B2", "39508");
-        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(0.09,A1:A3,B1:B2)"));
+        Assert.Equal(Value.FromError(ErrorValue.Num), sheet.Evaluate("=XNPV(0.09,A1:A3,B1:B2)"));
         sheet.Enter("A1", "-10000");
         Assert.Equal(Value.FromError(ErrorValue.Num), sheet.Evaluate("=XNPV(0.09,A1:A3,B1:B2)"));
+        sheet.Enter("B2", "#N/A");
+        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(0.09,A1:A3,B1:B2)"));
     }
 
-    [Fact] // ADR-0047: XNPV-018 asks: where the last addition nearly cancels, the sum and the sum with Excel's last-addition adjustment part, and both give every observed XNPV double
-    public void ADR0047_XNPV_is_refused_where_its_last_addition_nearly_cancels()
+    [Fact] // ADR-0047: XNPV-018, run 18a: where the last addition nearly cancels, Excel's double is the sum from the first value, not the sum with Excel's last-addition adjustment, 0
+    public void ADR0047_XNPV_is_the_plain_sum_where_its_last_addition_nearly_cancels()
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "1000");
@@ -502,7 +508,7 @@ public class FinancialEvaluationTests
         sheet.Enter("B1", "39448");
         sheet.Enter("B2", "39813");
         Assert.Equal(1.1368683772161603E-13, 1000 + (-1100 / 1.1));
-        Assert.Equal(Value.FromError(ErrorValue.Value), sheet.Evaluate("=XNPV(0.1,A1:A2,B1:B2)"));
+        Assert.Equal(Value.FromNumber(1.1368683772161603E-13), sheet.Evaluate("=XNPV(0.1,A1:A2,B1:B2)"));
         sheet.Enter("A2", "-1000");
         Assert.Equal(1000 + (-1000 / 1.1), sheet.Evaluate("=XNPV(0.1,A1:A2,B1:B2)").Number);
     }

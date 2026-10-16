@@ -154,35 +154,39 @@ internal static partial class FunctionLibrary
     /// SORT: <c>array</c>'s rows ordered by the column <c>sort_index</c> (from 1, the first when left
     /// out), ascending for <c>sort_order</c> 1 and descending for −1; its columns, by a row, when
     /// <c>by_col</c> is TRUE. Equal keys keep their order. Keys order as the comparison operators order
-    /// them: numbers, then text without regard to case, then booleans. A blank key sorts after numbers
-    /// and text in either order and after a boolean ascending, as Excel's did (SORT-011 to 014, 016 to
-    /// 020, 024, 025), and after a boolean descending, by generalisation (SORT-040 asks); blank keys
-    /// keep their order, as Excel's did in a descending sort (SORT-023), and ascending as equal keys
-    /// do, by generalisation (SORT-041 asks); beside an Error Value key the Formula is refused
-    /// (SORT-031 asks). A blank spills as 0, as Excel's did (SORT-012, 017, 019, 020, 025); a blank in
-    /// the result is a kept blank (<see cref="Made"/>). An Error Value key is answered only where it
-    /// already follows every number, as Excel's <c>#N/A</c> followed the 7 of SORT-015, and the Formula
-    /// is refused with <c>#VALUE!</c> elsewhere (<see cref="ErrorKeysSettled"/>). An index outside the
-    /// array, or an order other than 1 and −1, is <c>#VALUE!</c>: Excel's was for an index past the
-    /// array and an order of 0 (SORT-007, 008), and the rest is the engine's, by generalisation. An index
-    /// that is not a whole number is refused until Excel is asked (SORT-042): truncated,
-    /// <c>=SORT(G1:H5,1.5)</c> sorts by the first column, rounded by the second, and no run has read which
-    /// (2026-10-13; before, the engine truncated it).
+    /// them, numbers, then text without regard to case, then booleans, and then Error Values, a blank
+    /// last in either order (<see cref="TryOrderLines"/>): a blank key sorts after numbers and text in
+    /// either order and after a boolean and an Error Value ascending, as Excel's did (SORT-011 to 014, 016
+    /// to 020, 024, 025, 031), and after a boolean descending, by generalisation (SORT-040 asks); blank
+    /// keys keep their order, as Excel's did in a descending sort (SORT-023), and ascending as equal keys
+    /// do, by generalisation (SORT-041 asks). A blank spills as 0, as Excel's did (SORT-012, 017, 019,
+    /// 020, 025); a blank in the result is a kept blank (<see cref="Made"/>), and so is the one a blank
+    /// key from <c>FILTER</c> leaves, sorted last as a blank cell's is (SORT-038, run 18a). An Error Value
+    /// key sorts after the other kinds ascending and before them descending (SORT-015, 026, 028 to 030,
+    /// run 18a); two different ones are ordered only where the readings Excel's one answer leaves agree
+    /// (SORT-032; <see cref="ErrorKeysSettled"/>), and the Formula is refused with <c>#VALUE!</c>
+    /// elsewhere. An index outside the array, or an order other than 1 and −1, is <c>#VALUE!</c>: Excel's
+    /// was for an index past the array and an order of 0 (SORT-007, 008), and the rest is the engine's,
+    /// by generalisation. An index that is not a whole number is truncated: Excel's
+    /// <c>=SORT(G1:H3,1.5)</c> sorts by the first column (SORT-042, run 18a), where rounded it would sort by
+    /// the second.
     /// </summary>
     private static Operand Sort(FunctionCall call)
     {
-        if (!TryArray(call, 0, out var array, out var failure)) return failure;
+        // A kept blank in the array is a blank key, sorted last as a blank cell's: Excel's SORT read
+        // FILTER's so (SORT-038, run 18a), and the other four functions' by generalisation.
+        if (!TryArray(call, 0, out var array, out var failure, keepingBlanks: true)) return failure;
         var index = 1.0;
         if (call.Has(1) && !TryNumber(call, 1, out index, out failure)) return failure;
         if (!TryOrder(call, 2, out var descending, out failure)) return failure;
         if (!TryFlag(call, 3, out var byColumn, out failure)) return failure;
-        if (index != Math.Floor(index)) return call.Evaluator.Refuse();
+        index = Math.Truncate(index);
         var lines = byColumn ? array.Columns : array.Rows;
         var across = byColumn ? array.Rows : array.Columns;
         if (index < 1 || index > across) return Operand.Of(ErrorValue.Value);
         var at = (int)index - 1;
         var keys = Enumerable.Range(0, lines).Select(i => byColumn ? array[at, i] : array[i, at]).ToList();
-        if (!TryOrderLines([(keys, descending)], lines, errorKeysOrdered: true, out var order)) return call.Evaluator.Refuse();
+        if (!TryOrderLines([(keys, descending)], lines, out var order)) return call.Evaluator.Refuse();
         return Made(Reorder(array, order, byColumn));
     }
 
@@ -194,9 +198,9 @@ internal static partial class FunctionLibrary
     /// last: Excel's was after a number in an ascending key (SORTBY-007 to 009), and the rest, a
     /// descending key among it, is <c>SORT</c>'s order by generalisation (SORTBY-014 asks a descending
     /// one); a blank in the result is a kept blank, as <c>SORT</c>'s is
-    /// (<see cref="Made"/>). An Error Value among the keys refuses the Formula with
-    /// <c>#VALUE!</c>: SORT-015 read <c>SORT</c>'s, and a <c>by_array</c>'s could as well be the result,
-    /// as <c>FILTER</c>'s <c>include</c>'s is (SORTBY-010 asks).
+    /// (<see cref="Made"/>). An Error Value among the keys is ordered as <c>SORT</c> orders one, not the
+    /// result: Excel's <c>SORTBY</c> put a <c>by_array</c>'s <c>#N/A</c> after its 7 (SORTBY-010, run 18a),
+    /// and the rest is <c>SORT</c>'s order, by generalisation.
     /// </summary>
     private static Operand SortBy(FunctionCall call)
     {
@@ -217,7 +221,7 @@ internal static partial class FunctionLibrary
             keys.Add(([.. Enumerable.Range(0, length).Select(k => columns ? by[0, k] : by[k, 0])], descending));
         }
         var lines = byColumn == true ? array.Columns : array.Rows;
-        if (!TryOrderLines(keys, lines, errorKeysOrdered: false, out var order)) return call.Evaluator.Refuse();
+        if (!TryOrderLines(keys, lines, out var order)) return call.Evaluator.Refuse();
         return Made(Reorder(array, order, byColumn == true));
     }
 
@@ -247,20 +251,23 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// The order of <paramref name="lines"/> lines by their keys, stable. A blank key comes after
-    /// numbers, text and booleans whichever the order: Excel's <c>SORT</c> put it after numbers and text
-    /// in either order and after a boolean ascending (SORT-011 to 014, 016 to 019, 024, 025), neither
-    /// as 0 nor as empty text, which would come first (SORT-012, 014), and after a boolean descending is
-    /// the engine's by generalisation (SORT-040 asks). An Error Value key is ordered only where
-    /// <paramref name="errorKeysOrdered"/> allows it and every reading SORT-015 leaves gives the one order
-    /// (<see cref="ErrorKeysSettled"/>), which a blank beside it never does (SORT-031 asks);
-    /// <see langword="false"/> anywhere else a key is an Error Value.
+    /// numbers, text, booleans and Error Values whichever the order: Excel's <c>SORT</c> put it after
+    /// numbers and text in either order and after a boolean ascending (SORT-011 to 014, 016 to 019, 024,
+    /// 025), and after an Error Value ascending (SORT-031, run 18a), neither as 0 nor as empty text, which
+    /// would come first (SORT-012, 014); after a boolean or an Error Value descending is the engine's by
+    /// generalisation (SORT-040 asks the boolean). An Error Value key sorts after every other kind but the
+    /// blank ascending, and before them descending, as Excel's did after a number, text and a boolean and,
+    /// descending, before a number (SORT-026, 029, 030, 028; SORTBY-010 under <c>SORTBY</c>; run 18a):
+    /// descending reverses the order of the kinds, the blank aside. Two different Error Values are
+    /// ordered where the readings their one observation leaves agree (<see cref="ErrorKeysSettled"/>);
+    /// <see langword="false"/> where they part.
     /// </summary>
-    private static bool TryOrderLines(List<(List<Value?> Keys, bool Descending)> keys, int lines, bool errorKeysOrdered, out int[] order)
+    private static bool TryOrderLines(List<(List<Value?> Keys, bool Descending)> keys, int lines, out int[] order)
     {
         order = [.. Enumerable.Range(0, lines)];
         foreach (var (values, descending) in keys)
         {
-            if (values.Any(v => v is { IsError: true }) && !(errorKeysOrdered && ErrorKeysSettled(values, descending))) return false;
+            if (!ErrorKeysSettled(values, descending)) return false;
         }
         order = [.. order.Order(Comparer<int>.Create((a, b) =>
         {
@@ -271,10 +278,7 @@ internal static partial class FunctionLibrary
                     (null, null) => 0,
                     (null, _) => 1,
                     (_, null) => -1,
-                    ({ IsError: true }, { IsError: true }) => 0,
-                    ({ IsError: true }, _) => 1,
-                    (_, { IsError: true }) => -1,
-                    var (x, y) => descending ? -Evaluator.Compare(x, y) : Evaluator.Compare(x, y),
+                    ({ } x, { } y) => descending ? -CompareKeys(x, y) : CompareKeys(x, y),
                 };
                 if (compared != 0) return compared;
             }
@@ -284,22 +288,37 @@ internal static partial class FunctionLibrary
     }
 
     /// <summary>
-    /// Whether a key of Error Values is ordered as every reading SORT-015 leaves orders it. Over 7 and
-    /// then <c>#N/A</c>, Excel's ascending sort showed 7 first: the Error Value is not the result, and
-    /// does not sort before the numbers. It had followed the 7 already, so that answer fits an Error
-    /// Value that sorts after the numbers and one that keeps its place alike (SORT-026 asks the two
-    /// apart). Whether it sorts before or after text, booleans and blanks, whether a descending sort
-    /// puts it first or still last, and how two different Error Values order, no run has read either
-    /// (SORT-028 to 032 ask). So a key is answered where every one of those readings gives the same
-    /// order: its Error Values are all one, and beside them it holds nothing, or, sorted ascending,
-    /// numbers alone, none of them after an Error Value.
+    /// Two keys that are not blank, ascending: as the comparison operators order them, numbers, then
+    /// text, then booleans, and then Error Values (<see cref="TryOrderLines"/>), two Error Values in the
+    /// order of <c>ERROR.TYPE</c>'s numbers, which <see cref="ErrorKeysSettled"/> allows only where the
+    /// order of their texts agrees.
+    /// </summary>
+    private static int CompareKeys(Value x, Value y) => (x.IsError, y.IsError) switch
+    {
+        (true, true) => ((int)x.Error).CompareTo((int)y.Error),
+        (true, false) => 1,
+        (false, true) => -1,
+        _ => Evaluator.Compare(x, y),
+    };
+
+    /// <summary>
+    /// Whether a key's Error Values are ordered as every reading run 18a left orders them. Over 7,
+    /// <c>#N/A</c> and <c>#DIV/0!</c>, Excel's ascending sort put <c>#DIV/0!</c> second (SORT-032): two
+    /// different Error Values do not keep their order, and sort as <c>ERROR.TYPE</c> numbers them, 2 before
+    /// 7, or as their texts sort, which no observation tells apart. So different Error Values are ordered
+    /// ascending where the two readings give the one order, each of them one of the seven
+    /// <c>ERROR.TYPE</c> numbers; a key that holds two that the readings order differently, or one
+    /// <c>ERROR.TYPE</c> does not number, or two in a descending sort, which no run has read, refuses the
+    /// Formula with <c>#VALUE!</c>. One Error Value however often is ordered.
     /// </summary>
     private static bool ErrorKeysSettled(List<Value?> values, bool descending)
     {
-        if (values.Where(v => v is { IsError: true }).Select(v => v!.Value.Error).Distinct().Count() > 1) return false;
-        if (values.All(v => v is { IsError: true })) return true;
-        if (descending || !values.All(v => v is { IsError: true } or { Kind: ValueKind.Number })) return false;
-        return values.FindLastIndex(v => v is { Kind: ValueKind.Number }) < values.FindIndex(v => v is { IsError: true });
+        var errors = values.Where(v => v is { IsError: true }).Select(v => v!.Value.Error).Distinct().ToList();
+        if (errors.Count < 2) return true;
+        if (descending || errors.Any(e => e > ErrorValue.NA)) return false;
+        var byNumber = errors.Order().ToList();
+        var byText = errors.OrderBy(e => e.ToText(), StringComparer.OrdinalIgnoreCase).ToList();
+        return byNumber.SequenceEqual(byText);
     }
 
     private static ValueArray Reorder(ValueArray array, int[] order, bool byColumn)

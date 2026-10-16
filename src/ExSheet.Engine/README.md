@@ -203,7 +203,11 @@ spill. Operators work element by element over ranges, and a function that reduce
 their order: Excel's `SORT` was seen to sort it so after numbers and text in either order and after
 a boolean ascending, keeping two blank keys in their order in a descending sort, and its `SORTBY`
 after a number in an ascending key; the rest is the engine's, by generalisation, until Excel is
-asked. Beside an Error Value key the Formula is `#VALUE!`. In `UNIQUE` a blank is one of a kind only
+asked. An Error Value key sorts after numbers, text and booleans ascending and before them descending,
+and before a blank, in `SORT` and `SORTBY` alike, as Windows run 18a read Excel (SORT-026, 028 to 031,
+SORTBY-010); two different ones order as `ERROR.TYPE` numbers them where the order of their texts
+agrees, `#DIV/0!` before `#N/A` (SORT-032), and make the Formula `#VALUE!` elsewhere and in a
+descending sort. A `sort_index` that is not a whole number is truncated (SORT-042). In `UNIQUE` a blank is one of a kind only
 with another blank, never with 0. Read inside a Formula, the blank `UNIQUE`, `SORT`, `SORTBY`,
 `FILTER` and `TRANSPOSE` keep is read as the empty value a blank cell holds: `COUNTA` counts it in
 the array, `INDEX` takes it out as a blank, and an operator, or most functions that read one Value
@@ -212,11 +216,13 @@ value and `ROUND` among them, make the Formula `#VALUE!`. Excel was seen to give
 this in three cases: `ISBLANK` found the blank `INDEX` took out of `SORT`'s blank (SORT-022), `=`
 found the one it took out of `UNIQUE`'s equal to empty text (UNIQUE-018), and `COUNTA` counted it in
 both arrays (SORT-021, UNIQUE-017); the rest is the engine's, carried from those until Excel is
-asked. `SUMPRODUCT` and `CONCAT` add nothing for it, `SUM` neither except where that moves its last
-addition, and `VLOOKUP`, `HLOOKUP` and `XLOOKUP` take an array that holds it where they never read
+asked. The aggregates pass over it as over a blank cell, `SUM`, `AVERAGE`, `MIN` and `COUNT` as Excel
+was seen to (SORT-034, 037, FILTER-014, TRANSPOSE-007, UNIQUE-021, 022) and `MAX`, `PRODUCT`,
+`MEDIAN` and the spreads by generalisation; `COUNTA` counts it given as one Value too (SORT-035,
+UNIQUE-023); `IF` hands it on as it is (SORT-039); and `SORT` sorts it last as a blank key
+(SORT-038). `SUMPRODUCT` and `CONCAT` add nothing for it, and `VLOOKUP`, `HLOOKUP` and `XLOOKUP` take an array that holds it where they never read
 it, each because every reading gives the one answer. A function that would read it some other way no
-run has settled makes the Formula `#VALUE!`. `SORT` answers an Error Value key that already follows
-every number, the one shape Excel was asked (SORT-015).
+run has settled makes the Formula `#VALUE!`.
 
 Which functions come next, each with its status and priority, is catalogued in
 [`docs/specs/exsheet-functions/spec.md`](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/specs/exsheet-functions/spec.md).
@@ -265,18 +271,15 @@ could depend on a Value, nothing spills (ADR-0125, 2026-10-13). The refusals:
   empty code shows a number as empty text, as Excel's do. A code outside the cell formats' subset is
   `#VALUE!`, a fraction or a condition among them, though Excel answers both.
 - **Asked of Excel before they are answered**, each refused until the next Windows run says what
-  Excel gives: `PV` at a rate of -1 with an
-  `nper` above 0; `PMT` at a rate of -1 with periods, below -1 with a whole `nper` or a fraction whose
-  reciprocal is odd, where a quantity the evaluations Excel's payments leave compute passes a double's
-  range or falls below its normal numbers, at a growth below 2^-52, with no periods at the start, and
-  where one of them magnifies its own roundings more than 2^6 times; `PMT`, `PV` and `FV` with an
-  `nper` past 2^53 at a rate other than 0; and `XNPV` at a rate of 0, where its last addition nearly
-  cancels, and where an Error Value in its rate or ranges fails beside another check that gives
-  another answer (`#VALUE!`); `SORT` with an Error Value key that has a number after it, or beside
-  text, a boolean, a blank or another Error Value, or in a descending sort, and `SORTBY` with any
-  Error Value key (`#VALUE!`); `SORT` with a `sort_index` that is not a whole number (`#VALUE!`;
-  SORT-042); a blank `UNIQUE`, `SORT`, `SORTBY`, `FILTER` or `TRANSPOSE` keeps, read
-  by a function whose readings of it part, such as `AVERAGE`, `MIN` or `COUNT` (`#VALUE!`). Each of
+  Excel gives: `PMT` where a quantity the
+  evaluations Excel's payments left compute passes a double's range or falls below its normal numbers,
+  but those Excel was seen to carry while it gave the exact payment, and where one of them magnifies its
+  own roundings more than 2^6 times, Excel's answer kept beside each refusal run 18a read; `PMT`, `PV`
+  and `FV` with an `nper` past 2^53 at a rate other than 0; and `XNPV` where the orders of its checks
+  that run 18a's answers leave give different answers, and at a cell of its values or dates that is not
+  a number (`#VALUE!`); `SORT` and `SORTBY` with two different Error Value keys whose readings
+  part, or in a descending sort (`#VALUE!`); a blank `UNIQUE`, `SORT`, `SORTBY`, `FILTER` or `TRANSPOSE` keeps, read
+  by a function whose readings of it part, such as `MATCH`'s lookup array or `LEN` (`#VALUE!`). Each of
   these refusals is the Formula's, and every Formula's that reads its cell: no Formula catches it.
 - **Answered as Windows run 18a read Excel** (2026-10-14). `EDATE` from serial 0 counts day 0 by
   `DATE`'s arithmetic at every edge: `EDATE(0,0)` is 0, `EDATE(0,2)` the day that never existed, 60,
@@ -319,20 +322,24 @@ could depend on a Value, nothing spills (ADR-0125, 2026-10-13). The refusals:
   (`CorrectlyRounded`, the same on every platform; Excel's exponential is the correctly rounded one at
   XNPV-013, and no observed double tells logarithms apart); a negative 1+rate has an odd root where
   1/nper is odd and is `#NUM!` otherwise, and 1+rate of 0 is `#NUM!` to the power 0 and `#DIV/0!` to a
-  negative one. `XNPV` divides each value by that power of its days over 365 and sums from the first;
-  it checks the rate before it evaluates and is `#NUM!` below 0, Excel's answer at the rates asked
-  (-0.5 to -2) and the engine's at others, refuses any cell of its values or dates that is not a
-  number (text, a boolean or a blank), whatever else is among them, and refuses an Error Value in its
-  rate or ranges beside another check that would give another answer. `type` is a truth value: any number other than 0, 0.5
+  negative one; `PV` at a rate of -1 with periods divides by a growth of 0 and is `#DIV/0!` (PV-013,
+  run 18a). `XNPV` divides each value by that power of its days over 365 and sums them from the first,
+  the plain sum, as Excel's is where the last addition nearly cancels (XNPV-018, run 18a); it checks
+  the rate first and is `#NUM!` at 0 or below. Where more than one check fails, the answer is the one
+  every order of its checks that run 18a's answers leave gives (XNPV-021 to 030), and `#VALUE!` where
+  they part; a cell of its values or dates that is not a number (text, a boolean or a blank) is
+  refused where an order reaches it. `type` is a truth value: any number other than 0, 0.5
   included, is payment at the start. **`PMT` is kept under ADR-0047's exception for `PMT` alone**: where
   it answers, the payment at the end is the exact payment rounded once, held between two bounds that
   decide its double (`Enclosure`, interval arithmetic over exact dyadic numbers, (1+rate)^nper - 1
   raised from the rate itself), and the payment at the start the exact payment at the start rounded
   once, held between bounds as well (2026-10-13, decided with the user). Excel's payment differs from
   ExSheet's at 23 of the 30 observed, by 1 to 11 units in the last place, at PMT-013 and PMT-026 in the
-  15th significant digit, and no evaluation searched gives every one (a Known limitation of 0.1.0). Where the
-  evaluations Excel's payments leave part in kind, or beyond the last digits, `PMT` refuses
-  (`ExactPayment`, `Functions.Financial.cs`).
+  15th significant digit, and no evaluation searched gives every one (a Known limitation of 0.1.0). A
+  rate of -1 or below is `#NUM!`, and so are no periods at the start, as Excel gave (PMT-034 to 037, 046,
+  run 18a); payments whose quantities Excel carried past a double's range are the exact payment rounded
+  once, as Excel's were (PMT-038 to 041, 044, 045). Where the evaluations Excel's payments left part in
+  kind, or beyond the last digits, `PMT` refuses (`ExactPayment`, `Functions.Financial.cs`).
 - **`SIN`, `COS` and `TAN` reduce an angle by Excel's pi** (ADR-0047, 2026-10-12): pi rounded to the
   x87's 64 bits, so `SIN(PI())` is 1.22514845490862E-16, as Excel's is, and not the sine of the double
   `PI()` gives. Each is the double nearest the exact value; `COT`, `CSC` and `SEC` are 1 over them.
