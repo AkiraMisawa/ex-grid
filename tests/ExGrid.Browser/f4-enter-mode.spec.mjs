@@ -117,14 +117,21 @@ test('ADR-0051/SH-28: F4 leaves a caret where the caret stood at the text\'s end
     await expectSettled(bar(grid), '=$A$10+B2', [1, 6]);
     await cancel(page, grid, 'D10');
 
-    // 2 (c). A press into a committed Formula's text right after its first Reference, then F4: that
-    // Reference selected. /sheet's D2 holds =B2*C2, as the run's D10 held =A1+B2.
-    await pressCell(grid, 'D2');
-    await expect(bar(grid)).toHaveValue('=B2*C2');
+    // 2 (c). =A1+B2 committed into D10 and the cell pressed again at once, as the run did; then a
+    // press into the Formula's text right after its first Reference, and F4: that Reference selected.
+    await page.keyboard.type('=A1+B2');
+    await page.keyboard.press('Enter');
+    await pressCell(grid, 'D10');
+    await expect(bar(grid)).toHaveValue('=A1+B2');
+    // Where the press into the bar goes is read from the bar's text, so it is read once the grid
+    // has settled: the Focus on D10 and the bar's text are also what the page showed before the
+    // Enter's move was painted, and a render landing after the press rewrites the text under it.
+    await circuitQuiet();
+    await expectFocusAt(grid, 'D10');
     await pressBarAfter(grid, 3);
     await page.keyboard.press('F4');
-    await expectSettled(bar(grid), '=$B$2*C2', [1, 5]);
-    await cancel(page, grid, 'D2');
+    await expectSettled(bar(grid), '=$A$1+B2', [1, 5]);
+    await cancel(page, grid, 'D10');
 });
 
 test('ADR-0051/SH-28: with F2 first, F4 on a Reference with a Sheet qualifier selects from $A$1, and leaves a caret at the text\'s end (run 18a, answer 4)', async ({ page }) => {
@@ -251,7 +258,9 @@ test('ADR-0010/ED-2: typed into a cell, Shift+↑, Ctrl+← and Ctrl+↑ commit 
         await expect(editor(grid)).toHaveCount(0);
         await check();
         await circuitQuiet();
-        await pressCell(grid, 'D10');
+        // Back to D10 by the Name Box, as the run went back; after Shift+↑ and the extends, it names
+        // the Focus the Selection already has, and collapses the Selection onto it.
+        await goTo(grid, 'D10');
         await expect(bar(grid)).toHaveValue('abc');
     }
 });

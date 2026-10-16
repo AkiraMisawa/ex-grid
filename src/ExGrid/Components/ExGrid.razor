@@ -524,7 +524,7 @@
                                        cell under the live editor. *@
                                     @if (editorChrome is not null)
                                     {
-                                        <div class="@editorClass" style="@pinnedBox" @onmousedown:stopPropagation>@editorChrome</div>
+                                        <div class="@editorClass" style="@pinnedBox" data-ex-cell="@EditorCellAttribute(editorCell)" @onmousedown:stopPropagation>@editorChrome</div>
                                     }
                                     else
                                     {
@@ -535,7 +535,7 @@
                                         {
                                             <div class="@referenceTextClass" style="@pinnedBox" data-ex-text="@_editText" data-ex-colours="@EditReferenceColours" aria-hidden="true"><div class="ex-reference-text-line">@_editText</div></div>
                                         }
-                                        <input class="@editorClass" style="@pinnedBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @onmousedown:stopPropagation @ref="_editorElement" />
+                                        <input class="@editorClass" style="@pinnedBox" data-ex-cell="@EditorCellAttribute(editorCell)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @onmousedown:stopPropagation @ref="_editorElement" />
                                     }
                                 }
                             </div>
@@ -544,7 +544,7 @@
                         {
                             @if (editorChrome is not null)
                             {
-                                <div class="@editorClass" style="@editorBox" @key="EditorLayerKey" @onmousedown:stopPropagation>@editorChrome</div>
+                                <div class="@editorClass" style="@editorBox" data-ex-cell="@EditorCellAttribute(editorCell)" @key="EditorLayerKey" @onmousedown:stopPropagation>@editorChrome</div>
                             }
                             else
                             {
@@ -552,7 +552,7 @@
                                 {
                                     <div class="@referenceTextClass" style="@editorBox" data-ex-text="@_editText" data-ex-colours="@EditReferenceColours" aria-hidden="true" @key="ReferenceTextLayerKey"><div class="ex-reference-text-line">@_editText</div></div>
                                 }
-                                <input class="@editorClass" style="@editorBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
+                                <input class="@editorClass" style="@editorBox" data-ex-cell="@EditorCellAttribute(editorCell)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
                             }
                         }
                     }
@@ -648,7 +648,7 @@
         var barChrome = Chrome?.FormulaBarText(BuildFormulaBarTextContext());
         _formulaBarIsChrome = barChrome is not null;
         <div class="ex-formula-bar" style="@FormulaBarStyle()" role="presentation">
-            <form class="ex-name-box-form" @onsubmit="_onNameBoxSubmit ??= SubmitNameBoxAsync" @onsubmit:preventDefault>
+            <form class="ex-name-box-form" @onsubmit="_onNameBoxSubmit ??= OnNameBoxSubmitted" @onsubmit:preventDefault>
                 @if (nameBoxChrome is not null)
                 {
                     <div class="ex-name-box" style="@NameBoxStyle()">@nameBoxChrome</div>
@@ -7950,6 +7950,12 @@
         }
         return CellTextOf(cell);
     }
+
+    /// <summary>The cell the Cell Editor's box stands over, as its <c>data-ex-cell</c> says it: a press
+    /// on the editor taken while the keys before it were held lands there if the edit has ended by
+    /// its turn (ADR-0010; <see cref="PressTakenAt"/>). Read by the grid's listener, not measured.</summary>
+    private static string EditorCellAttribute(CellPosition cell)
+        => FormattableString.Invariant($"{cell.Row} {cell.Column}");
 
     /// <summary>The Name Box's text: the Consumer's label for the Focus, or nothing
     /// (ADR-0051). While a pointing outline stands over an open edit it names the outline's
