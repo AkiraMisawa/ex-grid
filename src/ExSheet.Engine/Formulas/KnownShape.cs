@@ -14,7 +14,7 @@ namespace ExSheet.Engine.Formulas;
 /// or an array from one Value (not <c>SEQUENCE</c>, nor <c>INDIRECT</c>, <c>OFFSET</c> and the others that
 /// can give a Reference). Not known, among the rest: <c>FILTER</c> and <c>UNIQUE</c>, whose extent depends on
 /// the Values; <c>SORT</c> and <c>SORTBY</c>, which may answer one Error Value for an argument they refuse
-/// (<c>=SORT(G1:H5,1.5)</c>); <c>LET</c>; and a function given an array where it wants one Value, which Excel
+/// (<c>=SORT(A1:A2,1,-1)</c> over two different Error Values); <c>LET</c>; and a function given an array where it wants one Value, which Excel
 /// applies to each Value and the engine does not yet (ADR-0125).
 /// </remarks>
 internal static class KnownShape
