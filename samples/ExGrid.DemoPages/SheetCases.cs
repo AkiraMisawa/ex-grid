@@ -27,6 +27,8 @@ namespace ExGrid.DemoPages;
 /// side by side on row 2, and a double line between Fills in each arrangement — E2's bottom over
 /// E3's Fill, B5's right between two, E5's right beside F5's Fill, and B8's bottom between
 /// two.</item>
+/// <item><c>18a-2</c> is the eighteenth run's (18a) <c>focus-among-ranges.md</c> question 2: D4 filled
+/// yellow on an otherwise blank Sheet, where R4's selections are then made with keys and presses.</item>
 /// <item><c>today</c> reads the Sheet Day (ADR-0121): A1 is <c>TODAY()</c> as <c>yyyy-mm-dd</c>, and
 /// A2 is <c>TODAY()</c> itself, and A3 is <c>NOW()</c>'s day as <c>yyyy-mm-dd</c> (ADR-0124); <c>/sheet</c>'s <c>?zone=</c> and <c>?today=</c> set the Sheet's
 /// <c>TimeZone</c> and <c>Today</c>.</item>
@@ -63,7 +65,7 @@ public static class SheetCases
     /// <summary>The names <see cref="Document"/> knows, in the order the run numbers them.</summary>
     public static IReadOnlyList<string> Names { get; } =
         ["1", "2", "3b", "3c", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "16", "17", "18", "paper", "lines", "12-1", "12-14",
-            "14-16", "14-17", "14-18", "fills", "today", "spill", "bold", "fit"];
+            "14-16", "14-17", "14-18", "fills", "18a-2", "today", "spill", "bold", "fit"];
 
     /// <summary>
     /// Case <paramref name="name"/>'s Sheet, in <paramref name="culture"/>; null when no case is
@@ -225,6 +227,9 @@ public static class SheetCases
                 Format(sheet, new CellFormatChange { Fill = Yellow }, "F5");
                 Format(sheet, new CellFormatChange { Fill = Yellow, Borders = new BorderChange { Bottom = DoubleBlack } }, "B8");
                 Format(sheet, new CellFormatChange { Fill = LightBlue }, "B9");
+                break;
+            case "18a-2":
+                Format(sheet, new CellFormatChange { Fill = Yellow }, "D4");
                 break;
             case "16":
                 Enter(sheet, "A1", "abc");
