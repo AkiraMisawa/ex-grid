@@ -503,6 +503,16 @@ every Error Value key: a `by_array`'s could as well be the result, as `FILTER`'s
 number is refused. `=SORT(G1:H5,1.5)` was truncated to sort by the first column; rounded it would sort
 by the second, and no run has read which Excel does, or whether it takes a fraction there at all.
 SORT-042 asks.)*
+*(2026-10-14, after run 18a: **an Error Value key is ordered, and a fractional `sort_index` truncated.** Over
+`#N/A` and then 7 Excel's `SORT` shows 7 first (SORT-026), so an Error Value sorts after the numbers and does not
+keep its place; it sorts after text and after a boolean (SORT-029, 030), before a blank (SORT-031), and first in a
+descending sort (SORT-028), the order of the kinds reversed and the blank still last. `SORTBY` orders a
+`by_array`'s Error Value the same way, not as the result (SORTBY-010). Over 7, `#N/A` and `#DIV/0!`, the second is
+`#DIV/0!` (SORT-032): two different Error Values do not keep their order, and sort as `ERROR.TYPE` numbers them or
+as their texts sort, which that one answer does not tell apart. So two different Error Values are ordered ascending
+where the two readings agree, and refused with `#VALUE!` where they part, beside an Error Value `ERROR.TYPE` does
+not number, and in a descending sort, which no run has read. `=SORT(G1:H3,1.5)` sorts by the first column
+(SORT-042): a `sort_index` that is not a whole number is truncated, not rounded.)*
 
 *(2026-10-03)* Admitted as the catalogue's ticket 07: `LOG`, `SIN`, `COS`, `TAN`, `COT`, `CSC`,
 `SEC`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `ACOT`, `SINH`, `COSH`, `TANH`, `COTH`, `CSCH`, `SECH`,

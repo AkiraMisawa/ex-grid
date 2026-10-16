@@ -42,7 +42,7 @@ public class RefusalTests
     public static TheoryData<string> Refusing =>
     [
         "LEN(A1:A2)",                       // a range where one Value is wanted (ADR-0125)
-        "AVERAGE(UNIQUE(D1:D3))",           // a kept blank read where no run settled how (ADR-0125)
+        "MATCH(2,SORT(D1:D3),0)",           // a kept blank read where no run settled how (ADR-0125)
         "MOD(-1E-17,1)",                    // MOD's evaluations part (MOD-033)
         "MROUND(6.05,0.1)",                 // a fractional multiple (MROUND-001)
         "CEILING.MATH(0.3,0.1)",            // a quotient integral at 15 digits only
@@ -270,7 +270,6 @@ public class RefusalTests
     [InlineData("=FILTER(G1:G3,B1:B3>0)")]
     [InlineData("=UNIQUE(B1:B3)")]
     [InlineData("=SORT(B1:B3)")]
-    [InlineData("=SORT(G1:H3,1.5)")]
     [InlineData("=INDIRECT(\"B1:B3\")*2")]
     [InlineData("=LEN(B1:B3)")]
     [InlineData("=SEQUENCE(B2)")]

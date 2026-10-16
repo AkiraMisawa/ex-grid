@@ -268,13 +268,17 @@ internal static partial class FunctionLibrary
     /// The numbers the aggregates take, per Microsoft's documentation: inside a range or
     /// Reference only numbers count, and blanks, text and booleans are ignored; typed directly as
     /// arguments, booleans and text that reads as a number count too, and other text is
-    /// <c>#VALUE!</c>. An Error Value anywhere is the result, the first one found left to right.
+    /// <c>#VALUE!</c>. An Error Value anywhere is the result, the first one found left to right. A kept
+    /// blank (<see cref="Operand.KeptBlank"/>) is passed over as a blank cell is: Excel's <c>AVERAGE</c>
+    /// and <c>MIN</c> passed over the one <c>FILTER</c>, <c>TRANSPOSE</c> and <c>UNIQUE</c> kept
+    /// (FILTER-014, TRANSPOSE-007, UNIQUE-021, 022, run 18a), and <c>MAX</c>, <c>PRODUCT</c>, <c>MEDIAN</c>
+    /// and the spreads that take their numbers here pass over it too, by generalisation.
     /// </summary>
     private static ErrorValue? CollectNumbers(FunctionCall call, List<double> numbers, int from = 0)
     {
         for (var i = from; i < call.Count; i++)
         {
-            if (AddNumbers(call.Evaluator, call.Operand(i), numbers, keptBlankAsZero: false) is { } error) return error;
+            if (AddNumbers(call.Evaluator, call.KeepingBlanks(i), numbers, keptBlankAsZero: false) is { } error) return error;
         }
         return null;
     }
@@ -322,26 +326,14 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// SUM of the numbers taken (<see cref="CollectNumbers"/>). A kept blank (<see cref="Operand.KeptBlank"/>)
-    /// adds nothing whether SUM passes over it, as over a blank cell, or reads it as the 0 an operator
-    /// reads it as (ADR-0125); but where it would be the last number, the two readings make a different
-    /// last addition, which decides whether a sum that nearly cancels is 0 (<see cref="SumOf"/>). So SUM
-    /// answers where the two readings give the one sum, an answer by agreement that no run has read
-    /// (SORT-033 asks), and refuses the Formula where they give two (SORT-037 asks).
+    /// is passed over, as over a blank cell: where it would be the last number, reading it as 0 would make
+    /// another last addition, and Excel's <c>=SUM(SORT(A1:A4))</c> over 0.1, 0.2, -0.3 and a blank is 0,
+    /// the last addition of 0.2 cancelling, not 2.78E-17 (SORT-037, run 18a).
     /// </summary>
     private static Operand Sum(FunctionCall call)
     {
-        var passedOver = new List<double>();
-        var asZero = new List<double>();
-        var kept = false;
-        for (var i = 0; i < call.Count; i++)
-        {
-            var operand = call.KeepingBlanks(i);
-            kept |= operand.KeptBlank;
-            if (AddNumbers(call.Evaluator, operand, passedOver, keptBlankAsZero: false) is { } error) return Operand.Of(error);
-            AddNumbers(call.Evaluator, operand, asZero, keptBlankAsZero: true);
-        }
-        var sum = SumOf(passedOver);
-        return kept && !sum.Scalar!.Value.Equals(SumOf(asZero).Scalar!.Value) ? call.Evaluator.Refuse() : sum;
+        var numbers = new List<double>();
+        return CollectNumbers(call, numbers) is { } error ? Operand.Of(error) : SumOf(numbers);
     }
 
     /// <summary>
@@ -395,7 +387,9 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// Inside a range, only numbers are counted. Typed directly, numbers, booleans and text that
-    /// reads as a number are counted; Error Values and other text are not, and are not errors.
+    /// reads as a number are counted; Error Values and other text are not, and are not errors. A kept
+    /// blank (<see cref="Operand.KeptBlank"/>) is no number, and is not counted, as Excel's <c>COUNT</c>
+    /// did not count <c>SORT</c>'s (SORT-034, run 18a).
     /// </summary>
     private static Operand Count(FunctionCall call)
     {
@@ -403,7 +397,7 @@ internal static partial class FunctionLibrary
         var count = 0;
         for (var i = 0; i < call.Count; i++)
         {
-            var operand = call.Operand(i);
+            var operand = call.KeepingBlanks(i);
             switch (operand.Kind)
             {
                 case OperandKind.Area or OperandKind.Column or OperandKind.Array:
@@ -427,7 +421,8 @@ internal static partial class FunctionLibrary
     /// array (<see cref="Operand.KeptBlank"/>) is counted, as Excel counted <c>SORT</c>'s and
     /// <c>UNIQUE</c>'s (SORT-021, UNIQUE-017; ADR-0125), and <c>SORTBY</c>'s, <c>FILTER</c>'s and
     /// <c>TRANSPOSE</c>'s are counted as those are, which SORTBY-011, FILTER-012 and TRANSPOSE-005 ask;
-    /// given as one Value, whether it is counted no run has read, so the Formula is refused.
+    /// and given as one Value it is counted too, as Excel counted the one <c>INDEX</c> took out of
+    /// <c>SORT</c>'s array and <c>UNIQUE</c>'s of one blank cell (SORT-035, UNIQUE-023, run 18a).
     /// </summary>
     private static Operand CountA(FunctionCall call)
     {
@@ -436,7 +431,11 @@ internal static partial class FunctionLibrary
         for (var i = 0; i < call.Count; i++)
         {
             var operand = call.KeepingBlanks(i);
-            if (operand.KeptBlank && operand.Kind != OperandKind.Array) return evaluator.Refuse();
+            if (operand.KeptBlank && operand.Kind != OperandKind.Array)
+            {
+                count++;
+                continue;
+            }
             switch (operand.Kind)
             {
                 case OperandKind.Array when operand.KeptBlank:
@@ -487,9 +486,11 @@ internal static partial class FunctionLibrary
         var condition = call.Evaluator.ScalarOf(test);
         var truth = false;
         if (condition is { } value && !TryTruth(value, out truth)) return Operand.Of(value.IsError ? value.Error : ErrorValue.Value);
-        if (truth) return call.Has(1) ? call.Operand(1) : Operand.Of(Value.FromNumber(0));
+        // The branch taken is handed on as it is, a kept blank still marked: Excel's ISBLANK read
+        // SORT's kept blank through IF as blank (SORT-039, run 18a).
+        if (truth) return call.Has(1) ? call.KeepingBlanks(1) : Operand.Of(Value.FromNumber(0));
         if (call.Count < 3) return Operand.Of(Value.FromBoolean(false));
-        return call.Has(2) ? call.Operand(2) : Operand.Of(Value.FromNumber(0));
+        return call.Has(2) ? call.KeepingBlanks(2) : Operand.Of(Value.FromNumber(0));
     }
 
     /// <summary>

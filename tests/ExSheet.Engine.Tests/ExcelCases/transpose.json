@@ -58,12 +58,12 @@
     },
     {
       "id": "TRANSPOSE-007",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: MIN over a blank TRANSPOSE keeps is #VALUE!; 7 if it passes over it, 0 if it reads it as 0",
+      "source": "observed",
+      "description": "MIN passes over a blank TRANSPOSE keeps, as over a blank cell, 7, and does not read it as 0 (Windows run 18a)",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=MIN(TRANSPOSE(Q1:Q2))"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 7}
     }
   ]
 }
