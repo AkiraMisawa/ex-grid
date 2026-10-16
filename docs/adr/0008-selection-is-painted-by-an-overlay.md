@@ -301,7 +301,7 @@ whole, since the Focus is Excel's active cell everywhere
     with the caret at its left (`focus-among-ranges.md` 3). On a Sheet the Cell Editor covers the cell,
     and with it the border and its white line. *(2026-10-16, decided with the user)* The editor itself
     draws no outline there while the keyboard is in the Sheet, and 1px while it is elsewhere
-    ([ADR-0018](./0018-multiple-instances-on-one-page.md) section 6, ED-27), so an edited cell on a
+    ([ADR-0018](./0018-multiple-instances-must-be-independent.md) section 6, ED-27), so an edited cell on a
     Sheet shows no border, as Excel's does.
   - *Observed and not followed* *(2026-10-13, decided with the user)*: R4's pictures frame each area
     among several ranges, a line of `#AFAFAF` on the gridline round it and a white Device Pixel
