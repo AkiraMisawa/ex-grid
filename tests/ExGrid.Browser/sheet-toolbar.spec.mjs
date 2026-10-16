@@ -651,6 +651,37 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
         });
 
+        // SH-52's sequence (F10, H, Escape, H, A, C centres the Focus cell), typed at machine speed. The keys
+        // after F10 are held by the key gate until the band holds the keyboard, and those typed once it does
+        // reach it straight; either way they are the KeyTips', in the order typed. The gate gives the band the
+        // keyboard and hands it the keys it held for it in the same task (ADR-0050 item 16: a control takes
+        // the keyboard in turn), so a key typed on the band never overtakes one still held. Until 2026-10-16 the
+        // gate asked the core an ordered question after a held Escape before handing on the keys behind it,
+        // and an A typed on the band meanwhile reached the KeyTips ahead of the held H: it ended them, and the
+        // H opened an edit in C2. With no round trip added the band takes the keyboard while these keys are
+        // being typed, which is where that happened (six runs in ten); at 80 ms every key is held.
+        for (const rtt of [0, 80]) {
+            test(`SH-52/ADR-0100/ADR-0050: F10, H, Escape, H, A, C typed at once centres the Focus cell, with no edit opened and the KeyTips gone (${chrome}, ${rtt} ms)`, async ({ page }) => {
+                const grid = sheet(page);
+                await pressCell(grid, 'C2');
+                const before = await cell(grid, 'C2').textContent();
+                await setRoundTrip(rtt);
+
+                for (const key of ['F10', 'h', 'Escape', 'h', 'a', 'c']) {
+                    await page.keyboard.press(key);
+                }
+
+                await expect(toolbarItem(page, 'Centre')).toHaveAttribute('aria-pressed', 'true');
+                await circuitQuiet();
+                await expect(tips(page)).toHaveCount(0);
+                await expect(editor(grid)).toHaveCount(0);
+                await expect(cell(grid, 'C2')).toHaveText(before);
+                await expectKeyboardOn(grid);
+                await page.keyboard.press('ArrowDown');
+                await expectFocusAt(grid, 'C3');
+            });
+        }
+
         test(`SH-52/ADR-0100 (R2 (b)): Alt, H, F, C, Escape, Escape, Escape typed at once leaves no list and no KeyTips, with the keyboard on the Sheet (${chrome})`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'B3');
