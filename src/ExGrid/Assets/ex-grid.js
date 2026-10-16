@@ -1965,12 +1965,23 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 }
                 const move = handsOver(target, k) ?? escapeCloses(target, k);
                 handToPopover(target, k);
-                if (!root.contains(target) && k.key === 'Escape' && plain(k) && !k.shiftKey && k.repeat !== true) {
+                if (!root.contains(target) && isTextField(target) && k.key === 'Escape' && plain(k) && !k.shiftKey
+                    && k.repeat !== true) {
                     // A Consumer frame may hand the keyboard on from Escape, before its handler's
                     // first await. Acknowledge that handler's entry before interpreting the next
                     // held key as a text field's: otherwise Down is dropped there, or a letter is
                     // typed into the field that is closing. This is the ordered circuit question
                     // already used for Alt's release (ADR-0050), not a delay or a timing estimate.
+                    // Only a text field: there this drain decides what the next key does (typeInto,
+                    // reproducible), and no handler of the frame's hears it. Any other control of a
+                    // frame hears the next key as the keydown it was, after the Escape, and answers
+                    // its keys in the order they reach it, as with an Alt's release (replayAltRelease):
+                    // the keys behind go on to it in this same task. Asked there, the question left the
+                    // frame holding the keyboard with keys still held for it, and a key typed straight
+                    // on it overtook them: F10, H, Escape, H, then A typed on ExSheet's toolbar band as
+                    // it took the keyboard, ended the KeyTips with the A, and the held H opened an edit
+                    // in the cell (ADR-0050 item 16: a control takes the keyboard in turn, and the keys
+                    // held for it are handed to it in the same task).
                     await core?.invokeMethodAsync('Ping').catch(() => false);
                     await editorSettled();
                 }

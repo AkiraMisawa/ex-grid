@@ -297,6 +297,15 @@ The frame can declare its next hand-off before its Escape handler's first await.
 that acknowledgement, the drain treated a Down behind two Escapes as HEX's unsupported
 caret move and dropped it before the closing handler could hand it on. No elapsed-time
 condition or retry decides where the key goes.
+*(Implementation correction, 2026-10-16.)* The acknowledgement is asked only when the
+Escape's target is a text field, where the drain decides what the next held key does and no
+handler of the frame's hears it. Any other control of a frame hears the next key as the
+keydown it was, after the Escape, and answers its keys in the order they reach it, as with an
+Alt's release handed to a frame (ADR-0050 item 16); the keys behind it go on in the same task.
+Asked there, the acknowledgement left the frame holding the keyboard with keys still held for
+it, and a key typed straight on the frame overtook them. F10, H, Escape, H, A ended ExSheet's
+KeyTips at the A, and the held H opened an edit in the cell (SH-52, about one run in forty on
+the Server host).
 
 [ADR-0210](./0210-held-text-commits-when-its-field-is-left.md) permits the narrowly scoped blur supplement for held text,
 so leaving HEX also commits it without requiring Enter or duplicating a normal change.
