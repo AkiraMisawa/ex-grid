@@ -119,9 +119,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // goes to the core as Blazor's own input events: the mark does not wait on it.
     // It changes once as a burst of input starts and once as it ends, on the root only. It is looked
     // at in a microtask after anything that may change it, so a state passed through within one task
-    // is never shown. An observer of the two attributes the render writes is the one thing added,
-    // as the reveal's and the follow's are.
-    const stamp = root.querySelector(':scope > [data-ex-answered]');
+    // is never shown. An observer of the two attributes the core writes is the one thing added, and it
+    // observes only while the mark is off, as the reveal's and the follow's observe only while they wait.
+    let stamp = root.querySelector(':scope > [data-ex-answered]');
     let inputsSent = Number(stamp?.getAttribute('data-ex-answered')) || 0;
     let clipboardWrites = 0;
     let settledShown = null;
@@ -145,6 +145,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (settled !== settledShown) {
             settledShown = settled;
             root.toggleAttribute('data-ex-settled', settled);
+            // Observed only while the mark is off, as the reveal's and the follow's observers are only
+            // while they wait.
+            if (settled) {
+                dropSettledObserver();
+            } else if (stamp && settledObserver === null) {
+                settledObserver = new MutationObserver(lookSettled);
+                settledObserver.observe(stamp, { attributes: true, attributeFilter: ['data-ex-answered', 'data-ex-owing'] });
+            }
         }
     }
     // The number the next input sent to the core carries (data-ex-answered).
@@ -153,9 +161,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         lookSettled();
         return inputsSent;
     }
-    const settledObserver = new MutationObserver(lookSettled);
-    if (stamp) {
-        settledObserver.observe(stamp, { attributes: true, attributeFilter: ['data-ex-answered', 'data-ex-owing'] });
+    let settledObserver = null;
+    function dropSettledObserver() {
+        settledObserver?.disconnect();
+        settledObserver = null;
     }
 
     // A reveal's scroll write, held until the render that paints its slice has reached the
@@ -4313,7 +4322,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // scroller and the .NET reference the same way, and a notification arriving
             // after disposal would call into a component that no longer exists.
             forgetHeldText();
-            settledObserver.disconnect();
+            dropSettledObserver();
             observer.disconnect();
             ceilingObserver.disconnect();
             resolutionQuery?.removeEventListener('change', armResolution);
@@ -4376,6 +4385,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             dropHeld();
             root = null;
             scroller = null;
+            // The stamp too: the handle outlives this dispose until .NET releases it, a round trip
+            // later on a circuit, and the stamp's parent is the whole grid (MEM-2).
+            stamp = null;
             core = null;
             // A question the core still waits on is answered, with nothing left to hold.
             for (const ask of questionsAfterHold.splice(0)) {
