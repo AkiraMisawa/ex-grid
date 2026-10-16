@@ -909,9 +909,9 @@ ExGrid.Components.ColumnStyles.HasGap(int firstScrollableColumn) -> bool
 ExGrid.Components.ColumnStyles.PinnedCell(int columnIndex) -> string!
 ExGrid.Components.ExGrid<TRow>
 ExGrid.Components.ExGrid<TRow>.ActionPressTakenAt(int paint, int row = -1, int column = -1, int action = -1) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.BarPressAnsweredAsync(bool barHoldsFocus) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.BarPressAnsweredAsync(bool barHoldsFocus, int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.BuildCopyPayload() -> ExGrid.Clipboard.ClipboardPayload!
-ExGrid.Components.ExGrid<TRow>.BuildCopyPayloadAsync(bool withHeaders = false) -> System.Threading.Tasks.Task<ExGrid.Clipboard.ClipboardPayload?>!
+ExGrid.Components.ExGrid<TRow>.BuildCopyPayloadAsync(bool withHeaders = false, int input = 0) -> System.Threading.Tasks.Task<ExGrid.Clipboard.ClipboardPayload?>!
 ExGrid.Components.ExGrid<TRow>.CanSummarize.get -> bool
 ExGrid.Components.ExGrid<TRow>.CellAlign.get -> System.Func<TRow!, ExGrid.GridColumn<TRow!>!, ExGrid.Columns.CellAlign>?
 ExGrid.Components.ExGrid<TRow>.CellAlign.set -> void
@@ -994,7 +994,7 @@ ExGrid.Components.ExGrid<TRow>.KeysTypedOnTheWay(int ticket) -> System.Collectio
 ExGrid.Components.ExGrid<TRow>.MarkPressTakenAt(int paint, int pageStart = -1, int row = -1, int pageRows = -1) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.Marks.get -> ExGrid.Rows.IRowMarks<TRow!>?
 ExGrid.Components.ExGrid<TRow>.Marks.set -> void
-ExGrid.Components.ExGrid<TRow>.NameBoxAnsweredAsync() -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.NameBoxAnsweredAsync(int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.NameBoxLabel.get -> System.Func<ExGrid.Selection.CellPosition, string?>?
 ExGrid.Components.ExGrid<TRow>.NameBoxLabel.set -> void
 ExGrid.Components.ExGrid<TRow>.NameBoxSizeLabel.get -> System.Func<ExGrid.Selection.SelectionRange, string?>?
@@ -1018,12 +1018,12 @@ ExGrid.Components.ExGrid<TRow>.OnColumnWidthChanged.get -> Microsoft.AspNetCore.
 ExGrid.Components.ExGrid<TRow>.OnColumnWidthChanged.set -> void
 ExGrid.Components.ExGrid<TRow>.OnCommitRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.GridCommitRefusal>
 ExGrid.Components.ExGrid<TRow>.OnCommitRefused.set -> void
-ExGrid.Components.ExGrid<TRow>.OnCopyLandedAsync(int landing) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnCopyLandedAsync(int landing, int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.OnCopyRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Clipboard.CopyRefusalReason>
 ExGrid.Components.ExGrid<TRow>.OnCopyRefused.set -> void
 ExGrid.Components.ExGrid<TRow>.OnCopyRowsNeeded.get -> System.Func<ExGrid.RowRange, System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<TRow!>!>!>?
 ExGrid.Components.ExGrid<TRow>.OnCopyRowsNeeded.set -> void
-ExGrid.Components.ExGrid<TRow>.OnCopyWriteRejectedAsync() -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnCopyWriteRejectedAsync(int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.OnDeclaredKey.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Keys.GridDeclaredKeyPress>
 ExGrid.Components.ExGrid<TRow>.OnDeclaredKey.set -> void
 ExGrid.Components.ExGrid<TRow>.OnDevicePixelAsync(double devicePixelRatio) -> System.Threading.Tasks.Task!
@@ -1044,9 +1044,9 @@ ExGrid.Components.ExGrid<TRow>.OnFind.get -> System.Func<ExGrid.Finding.GridFind
 ExGrid.Components.ExGrid<TRow>.OnFind.set -> void
 ExGrid.Components.ExGrid<TRow>.OnFindRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Finding.FindRefusalReason>
 ExGrid.Components.ExGrid<TRow>.OnFindRefused.set -> void
-ExGrid.Components.ExGrid<TRow>.OnKeyAsync(string! key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary, bool fromDescendant = false, string? editorText = null, int editorCaret = -1, int editorSelectionEnd = -1, bool editorCaretMoved = false, bool repeat = false, int paint = -1) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.OnKeyFieldCompositionStartAsync() -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.OnKeyFieldTextAsync(string! text, int paint = -1) -> System.Threading.Tasks.Task<bool>!
+ExGrid.Components.ExGrid<TRow>.OnKeyAsync(string! key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary, bool fromDescendant = false, string? editorText = null, int editorCaret = -1, int editorSelectionEnd = -1, bool editorCaretMoved = false, bool repeat = false, int paint = -1, int input = 0) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnKeyFieldCompositionStartAsync(int input = 0) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnKeyFieldTextAsync(string! text, int paint = -1, int input = 0) -> System.Threading.Tasks.Task<bool>!
 ExGrid.Components.ExGrid<TRow>.OnLayoutCeilingAsync(double ceilingPx) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.OnLeave.get -> Microsoft.AspNetCore.Components.EventCallback
 ExGrid.Components.ExGrid<TRow>.OnLeave.set -> void
@@ -1060,7 +1060,7 @@ ExGrid.Components.ExGrid<TRow>.OnPaste.get -> Microsoft.AspNetCore.Components.Ev
 ExGrid.Components.ExGrid<TRow>.OnPaste.set -> void
 ExGrid.Components.ExGrid<TRow>.OnPasteRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Clipboard.PasteRefusalReason>
 ExGrid.Components.ExGrid<TRow>.OnPasteRefused.set -> void
-ExGrid.Components.ExGrid<TRow>.OnPasteStreamsAsync(Microsoft.JSInterop.IJSStreamReference? text, Microsoft.JSInterop.IJSStreamReference? html, int paint = -1) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnPasteStreamsAsync(Microsoft.JSInterop.IJSStreamReference? text, Microsoft.JSInterop.IJSStreamReference? html, int paint = -1, int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.OnPinnedCountChanged.get -> Microsoft.AspNetCore.Components.EventCallback<int>
 ExGrid.Components.ExGrid<TRow>.OnPinnedCountChanged.set -> void
 ExGrid.Components.ExGrid<TRow>.OnPointArrowFromOutside.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.GridPointArrow!>
@@ -1109,10 +1109,10 @@ ExGrid.Components.ExGrid<TRow>.PointedAt.get -> ExGrid.Cells.GridPointedAt<TRow!
 ExGrid.Components.ExGrid<TRow>.PointedAt.set -> void
 ExGrid.Components.ExGrid<TRow>.Presentation.get -> ExGrid.GridPresentationDefaults?
 ExGrid.Components.ExGrid<TRow>.Presentation.set -> void
-ExGrid.Components.ExGrid<TRow>.PressAnsweredAsync() -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.PressAnsweredAsync(int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.PressHandedOnAsync(int press, bool inTurn) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.PressInTurn(int press) -> void
-ExGrid.Components.ExGrid<TRow>.PressTakenAt(string! kind, double offsetX, double offsetY, int firstRow, double scrollLeftPx, double scrollTopPx, int rowSequence, int layout, int editorRow = -1, int editorColumn = -1) -> void
+ExGrid.Components.ExGrid<TRow>.PressTakenAt(string! kind, double offsetX, double offsetY, int firstRow, double scrollLeftPx, double scrollTopPx, int rowSequence, int layout, int editorRow = -1, int editorColumn = -1, int input = 0, int doubleClickInput = 0) -> void
 ExGrid.Components.ExGrid<TRow>.RangeRequestMargin.get -> int
 ExGrid.Components.ExGrid<TRow>.RangeRequestMargin.set -> void
 ExGrid.Components.ExGrid<TRow>.ReadSelection() -> ExGrid.Selection.HeldSelection

@@ -1,8 +1,8 @@
 # A test reads once the grid says it has settled, and a red is never settled by a re-run
 
-Decided with the user, 2026-10-16. **Not yet built**: this records the contract and the rules. The
-signal's exact conditions, its attribute, and the CI jobs are settled when they are built, by the
-rules below.
+Decided with the user, 2026-10-16. The contract and the rules below were recorded first; **the
+Settled Mark of (1) is built** (2026-10-16, see "As built"), and the spec lint of (6) and the CI jobs
+of (4) and (5) follow in their own pull requests.
 
 ## Why
 
@@ -108,6 +108,61 @@ A check, run with layer 2 in CI, refuses a spec that:
 
 A line the lint cannot judge is allowed by a comment that names why. It does not judge what a test
 asserts.
+
+## As built: the Settled Mark (2026-10-16)
+
+The mark is `data-ex-settled` on the grid's root, the **Settled Mark** of `CONTEXT.md`. How it is
+derived, and what it covers, were decided with the user on 2026-10-16, after this ADR's rule for the
+JavaScript side turned out to need more than the keydown:
+
+- **The answer to an interop call does not prove its render is in the DOM.** Blazor Server holds a
+  render back while ten batches are unacknowledged (`CircuitOptions.MaxBufferedUnacknowledgedRenderBatches`)
+  and sends the call's answer at once, and a few renders are started without being awaited. And the
+  render that carries an input's effect is not the end of it either: what that render owes the script
+  (the editing mode, DOM focus for the editor, a reveal's offset) is told after it, from
+  `OnAfterRenderAsync`. So **each input the gate sends to the core carries a number**, and the core
+  writes on the root, in a render it asks for once those tells are done, the number of the last input
+  answered with every one before it answered too (`data-ex-answered`). A press on the rows carries its
+  number in the message that says what it was taken against (`PressTakenAt`), and is answered when
+  Blazor's event for it has been; a release that ends a double click carries the double click's too.
+- **The core writes `data-ex-owing`** while a render waits on a timer of its own: the error message
+  after the Focus stands still (300 ms), the description of a selection and the Placeholders filling
+  (150 ms each), and a sentence said again, put back by the render after the one that emptied it.
+- **The script writes the mark** when nothing is held, no hold or hand-off stands, no wait for the
+  editor's or a popover's focus is open, every input it has sent is answered on the root, nothing is
+  owing, a reveal's write, its repaint and the page's follow are over, and no copy is being written to
+  the clipboard. It takes the mark off in the listener that takes the input. One `MutationObserver` on
+  the two attributes tells it when they change; no listener is added (ADR-0021's note of 2026-10-16).
+- **What it covers: the inputs the key gate takes** — a key, a press on the rows, a paste, a
+  composition, a copy — and the renders those owe. Text typed into a field (the Cell Editor, the
+  Formula Bar, the Name Box) and a click Blazor hears on its own (a heading, a menu, a Chrome's or a
+  toolbar's button) are read as before, with an expectation and `circuitQuiet()`. Numbering every
+  Blazor event handler was weighed and left out as far wider than the races it would cover.
+- **Rejected**: a mark derived in JavaScript alone, from the interop answers (quietly wrong whenever a
+  render is held back); a round trip asked at the end of each burst (a round trip of its own, which
+  (1) refuses).
+- **Rows still skip their render**: the root renders the two attributes, and no row learns them
+  (`SettledMarkTests`, layer 2). `settled-mark.spec.mjs` reads the grid once after the mark, with no
+  retry, on both hosts.
+
+**Measured: always on** (2026-10-16, `spikes/render-bench`'s `/settled`, results in
+`spikes/render-bench/results/20261016-settled/`). The real ExGrid, 10,000 rows of eight columns, on the
+installed Chrome 155 on Windows 11 (Ryzen 9 9950X3D, a 120 Hz display), against the same page built from
+`main` without the mark, the two interleaved; 14 rounds each of 40 arrows in one task, one arrow per
+frame for 120 frames, and 120 frames of scrolling; the Server host at 0 and 60 ms round trips through
+the layer-3 latency proxy.
+
+- **The first build rendered the two attributes from the root**, and cost what (1) feared on WebAssembly:
+  40 arrows took a median of 151 ms against 63 ms, two more renders of the whole grid per key. The
+  Server host showed nothing (6.7 against 6.6 ms; 212.5 against 212.4 ms at 60 ms; the same bytes).
+- **So they moved to a component of their own**, the root's first child, which alone renders when an
+  input is answered. Measured again: WebAssembly 64.8 against 62.7 ms; the Server host 212.4 against
+  212.2 ms at 60 ms, about 7.9 KB a burst either way; frame lengths the same in every case (p95 8.6 to
+  9.1 ms, none over 20 ms). At 0 ms the burst is one frame or a few, and its median moved with that
+  spread (15.4 against 6.6 ms over 14 rounds); 60 further rounds each, interleaved, gave 6.8 against
+  6.9 ms, with the slow rounds on both builds.
+
+No difference, so the mark is always on, and there is no switch for it.
 
 ## Rejected
 

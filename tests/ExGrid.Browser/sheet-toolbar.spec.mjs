@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, circuitQuiet, alterPage } from './fixtures.mjs';
+import { test, expect, setRoundTrip, circuitQuiet, alterPage, settled } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { watchHiddenFocus } from './hidden-focus.mjs';
@@ -671,13 +671,17 @@ for (const chrome of ['builtin', 'mud']) {
                     await page.keyboard.press(key);
                 }
 
+                // The toolbar's answer is the Consumer's, seen by an expectation; the keyboard back on the
+                // Sheet is the hand-back's. From there every key the grid was handed is its own, and the
+                // grid is read once it says it has settled (ADR-0220): nothing held, nothing owed.
                 await expect(toolbarItem(page, 'Centre')).toHaveAttribute('aria-pressed', 'true');
-                await circuitQuiet();
-                await expect(tips(page)).toHaveCount(0);
-                await expect(editor(grid)).toHaveCount(0);
-                await expect(cell(grid, 'C2')).toHaveText(before);
                 await expectKeyboardOn(grid);
+                await settled(grid);
+                expect(await tips(page).count()).toBe(0);
+                expect(await editor(grid).count()).toBe(0);
+                expect(await cell(grid, 'C2').textContent()).toBe(before);
                 await page.keyboard.press('ArrowDown');
+                await settled(grid);
                 await expectFocusAt(grid, 'C3');
             });
         }

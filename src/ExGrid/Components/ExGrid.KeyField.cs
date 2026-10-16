@@ -73,14 +73,18 @@ public partial class ExGrid<TRow>
     /// </summary>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="input">The number the script gave this input, which the root names once it has
+    /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task OnKeyFieldCompositionStartAsync()
+    public Task OnKeyFieldCompositionStartAsync(int input = 0)
     {
-        if (_disposed || _editMode != EditMode.None || _selection.Selection.IsEmpty || FocusCellIsPainted())
-            return Task.CompletedTask;
-        RequestFocusReveal();
-        _suppressRender = false;
-        StateHasChanged();
+        if (!_disposed && _editMode == EditMode.None && !_selection.Selection.IsEmpty && !FocusCellIsPainted())
+        {
+            RequestFocusReveal();
+            _suppressRender = false;
+            StateHasChanged();
+        }
+        InputAnswered(input);
         return Task.CompletedTask;
     }
 
@@ -105,8 +109,13 @@ public partial class ExGrid<TRow>
     /// (<c>data-ex-paint</c>); left out, the newest.</param>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="input">The number the script gave this input, which the root names once it has
+    /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public async Task<bool> OnKeyFieldTextAsync(string text, int paint = PaintNotTold)
+    public Task<bool> OnKeyFieldTextAsync(string text, int paint = PaintNotTold, int input = 0)
+        => AnsweredAsync(TakeKeyFieldTextAsync(text, paint), input);
+
+    private async Task<bool> TakeKeyFieldTextAsync(string text, int paint)
     {
         if (_disposed)
             return false;

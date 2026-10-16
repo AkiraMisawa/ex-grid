@@ -80,21 +80,30 @@ public partial class ExGrid<TRow>
     /// <param name="landing">The number the copy's payload carried.</param>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="input">The number the script gave this input, which the root names once it has
+    /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task OnCopyLandedAsync(int landing)
+    public Task OnCopyLandedAsync(int landing, int input = 0)
+    {
+        OutlineLandedCopy(landing);
+        InputAnswered(input);
+        return Task.CompletedTask;
+    }
+
+    private void OutlineLandedCopy(int landing)
     {
         if (_disposed || _builtCopy is not { } built || built.Number != landing)
-            return Task.CompletedTask;
+            return;
         _builtCopy = null;
         if (built.Version != _sequenceVersion)
-            return Task.CompletedTask;
+            return;
         _copied = built;
         // Checked at once against the Window it lands in: the asynchronous route gathered its rows
         // while the Window went on changing.
         ReconcileCopiedRange(columnsMoved: false);
         _suppressRender = false;
         StateHasChanged();
-        return Task.CompletedTask;
+        return;
     }
 
     /// <summary>

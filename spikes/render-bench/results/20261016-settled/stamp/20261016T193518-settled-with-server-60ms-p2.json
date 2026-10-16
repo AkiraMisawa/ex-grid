@@ -1,0 +1,142 @@
+{
+  "hasMark": false,
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "rounds": [
+    {
+      "typingBurstMs": 212.8999999910593,
+      "burstBytes": 7654,
+      "typingFramesLagMs": 166.70000000298023,
+      "typingFrames": {
+        "n": 120,
+        "p50": 8.299999997019768,
+        "p95": 8.5,
+        "max": 10,
+        "over20": 0
+      },
+      "scrolling": {
+        "n": 120,
+        "p50": 8.299999997019768,
+        "p95": 8.5,
+        "max": 9,
+        "over20": 0
+      }
+    },
+    {
+      "typingBurstMs": 212.59999999403954,
+      "burstBytes": 7789,
+      "typingFramesLagMs": 91.59999999403954,
+      "typingFrames": {
+        "n": 120,
+        "p50": 8.299999997019768,
+        "p95": 8.799999997019768,
+        "max": 10.299999997019768,
+        "over20": 0
+      },
+      "scrolling": {
+        "n": 120,
+        "p50": 8.300000011920929,
+        "p95": 8.5,
+        "max": 8.900000005960464,
+        "over20": 0
+      }
+    },
+    {
+      "typingBurstMs": 212.5,
+      "burstBytes": 7764,
+      "typingFramesLagMs": 109.5,
+      "typingFrames": {
+        "n": 120,
+        "p50": 8.300000011920929,
+        "p95": 9.799999997019768,
+        "max": 10.200000002980232,
+        "over20": 0
+      },
+      "scrolling": {
+        "n": 120,
+        "p50": 8.299999997019768,
+        "p95": 8.5,
+        "max": 8.600000008940697,
+        "over20": 0
+      }
+    },
+    {
+      "typingBurstMs": 212.70000000298023,
+      "burstBytes": 7824,
+      "typingFramesLagMs": 91.70000000298023,
+      "typingFrames": {
+        "n": 120,
+        "p50": 8.300000011920929,
+        "p95": 8.799999997019768,
+        "max": 10.299999997019768,
+        "over20": 0
+      },
+      "scrolling": {
+        "n": 120,
+        "p50": 8.299999997019768,
+        "p95": 8.5,
+        "max": 8.5,
+        "over20": 0
+      }
+    },
+    {
+      "typingBurstMs": 212,
+      "burstBytes": 7815,
+      "typingFramesLagMs": 75,
+      "typingFrames": {
+        "n": 120,
+        "p50": 8.300000011920929,
+        "p95": 8.599999994039536,
+        "max": 9.600000008940697,
+        "over20": 0
+      },
+      "scrolling": {
+        "n": 120,
+        "p50": 8.300000011920929,
+        "p95": 8.5,
+        "max": 8.599999994039536,
+        "over20": 0
+      }
+    },
+    {
+      "typingBurstMs": 212.90000000596046,
+      "burstBytes": 7911,
+      "typingFramesLagMs": 100,
+      "typingFrames": {
+        "n": 120,
+        "p50": 8.299999997019768,
+        "p95": 8.5,
+        "max": 8.700000002980232,
+        "over20": 0
+      },
+      "scrolling": {
+        "n": 120,
+        "p50": 8.300000011920929,
+        "p95": 8.5,
+        "max": 8.600000008940697,
+        "over20": 0
+      }
+    },
+    {
+      "typingBurstMs": 170.29999999701977,
+      "burstBytes": 7997,
+      "typingFramesLagMs": 91.80000001192093,
+      "typingFrames": {
+        "n": 120,
+        "p50": 8.300000011920929,
+        "p95": 8.5,
+        "max": 9.700000002980232,
+        "over20": 0
+      },
+      "scrolling": {
+        "n": 120,
+        "p50": 8.299999997019768,
+        "p95": 8.5,
+        "max": 8.799999997019768,
+        "over20": 0
+      }
+    }
+  ],
+  "label": "with-server-60ms-p2",
+  "url": "http://localhost:5591/settled",
+  "at": "2026-10-16T19:35:18.049Z"
+}

@@ -351,6 +351,16 @@ composed text. It is the grid's one tab stop. A display-only grid has none
 ([ADR-0080](./docs/adr/0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md)).
 _Avoid_: hidden input, hidden textarea, proxy input
 
+**Settled Mark**:
+The attribute `data-ex-settled` on a grid's root, present while every input the grid's key gate has
+taken (a key, a press on the rows, a paste, a composition, a copy) has been handled and its effect
+is in the DOM: nothing held, no hand-off of the keyboard under way, no render owed, a reveal and its
+repaint over. It changes at most once as a burst of input starts and once as it ends. A test, or a
+Consumer's own automation, reads the grid only once it is there. It is not `aria-busy`, which a
+screen reader reads
+([ADR-0220](./docs/adr/0220-a-test-reads-once-the-grid-says-it-has-settled-and-a-red-is-never-settled-by-a-re-run.md)).
+_Avoid_: idle flag, busy attribute, ready state
+
 **Overwrite / Caret**:
 The two states of cell **editing** (four modes in total, with **Interactive** and **Point**). **Overwrite** is
 entered by typing straight onto a selected cell: the original value is replaced, and **the arrow

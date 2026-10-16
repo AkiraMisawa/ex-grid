@@ -19,9 +19,17 @@ public partial class ExGrid<TRow>
     // the core heard last, while the core is answering it.
     private Task _pressAnswer = Task.CompletedTask;
 
-    private Task OnMouseDown(MouseEventArgs e) => _pressAnswer = AnswerPressAsync(AsTaken(e, "mousedown"));
+    private Task OnMouseDown(MouseEventArgs e)
+    {
+        e = AsTaken(e, "mousedown", out var input);
+        return _pressAnswer = AnsweredAsync(AnswerPressAsync(e), input);
+    }
 
-    private Task OnMouseUp(MouseEventArgs e) => _pressAnswer = AnswerReleaseAsync(AsTaken(e, "mouseup"));
+    private Task OnMouseUp(MouseEventArgs e)
+    {
+        e = AsTaken(e, "mouseup", out var input);
+        return _pressAnswer = AnsweredAsync(AnswerReleaseAsync(e), input);
+    }
 
     private Task OnFormulaBarPressedAsync() => _pressAnswer = OnFormulaBarFocusAsync();
 
@@ -40,16 +48,18 @@ public partial class ExGrid<TRow>
     /// </summary>
     /// <param name="barHoldsFocus">Whether the Formula Bar's field, or a Chrome's control inside
     /// its box, holds DOM focus as the press's turn comes.</param>
+    /// <param name="input">The number the script gave the question, which the root names once it has
+    /// been answered (ADR-0220): the answer's render is then in the DOM. 0 for none.</param>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task BarPressAnsweredAsync(bool barHoldsFocus)
+    public Task BarPressAnsweredAsync(bool barHoldsFocus, int input = 0)
     {
         if (_disposed)
             return Task.CompletedTask;
         if (barHoldsFocus && _editMode == EditMode.None)
             _pressAnswer = FromChromeAsync(OnFormulaBarFocusAsync);
-        return PressAnsweredAsync();
+        return PressAnsweredAsync(input);
     }
 
     /// <summary>
@@ -65,12 +75,14 @@ public partial class ExGrid<TRow>
     /// </summary>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="input">The number the script gave the question, which the root names once it has
+    /// been answered (ADR-0220): the answer's render is then in the DOM. 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task PressAnsweredAsync()
+    public Task PressAnsweredAsync(int input = 0)
         => _disposed
             ? Task.CompletedTask
-            : _pressAnswer.ContinueWith(static _ => { }, CancellationToken.None,
-                TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            : AnsweredAsync(_pressAnswer.ContinueWith(static _ => { }, CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default), input);
 
     // The Name Box's Enter the core heard last, while the core is answering it (NameBoxAnsweredAsync).
     private Task _nameBoxAnswer = Task.CompletedTask;
@@ -91,17 +103,23 @@ public partial class ExGrid<TRow>
     /// </summary>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="input">The number the script gave the question, which the root names once it has
+    /// been answered (ADR-0220): the answer's render is then in the DOM. 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task NameBoxAnsweredAsync()
+    public Task NameBoxAnsweredAsync(int input = 0)
         => _disposed
             ? Task.CompletedTask
-            : _nameBoxAnswer.ContinueWith(static _ => { }, CancellationToken.None,
-                TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            : AnsweredAsync(_nameBoxAnswer.ContinueWith(static _ => { }, CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default), input);
 
     // What the script said the next press or release on the rows was taken against (ED-31;
     // ADR-0021, note of 2026-10-02), until that event is heard. It is told just before Blazor
     // dispatches the event, so the event the core hears next is the one it describes.
     private TakenAt? _taken;
+
+    // The number of the double click a release on the rows was told to bring, until the double click
+    // is heard (ADR-0220): it is answered when that has been answered.
+    private int _doubleClickInput;
 
     // The layouts the rows were painted under lately, the newest last: the column geometry, the
     // columns' names in order, the row height, and the binding — which Source the rows were painted
@@ -173,22 +191,47 @@ public partial class ExGrid<TRow>
     /// held, the row of the cell the editor stood over (<c>data-ex-cell</c>), and the offsets are
     /// the press's within the editor; negative for a press taken on the rows.</param>
     /// <param name="editorColumn">The column of that cell; negative for a press taken on the rows.</param>
+    /// <param name="input">The number the script gave the press or release, which the root names once
+    /// the event it describes has been answered (ADR-0220); 0 for none.</param>
+    /// <param name="doubleClickInput">For a release that ends a double click, the number the script
+    /// gave the double click the browser fires next, answered once it has been (ADR-0220); 0 for
+    /// none.</param>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public void PressTakenAt(string kind, double offsetX, double offsetY, int firstRow,
-        double scrollLeftPx, double scrollTopPx, int rowSequence, int layout, int editorRow = -1, int editorColumn = -1)
+        double scrollLeftPx, double scrollTopPx, int rowSequence, int layout, int editorRow = -1, int editorColumn = -1,
+        int input = 0, int doubleClickInput = 0)
     {
+        // Told of before the event it describes was heard, the event never came: its number, and a
+        // double click still awaited, are no longer owed (ADR-0220).
+        if (_taken is { } unheard)
+        {
+            InputAnswered(unheard.Input);
+            InputAnswered(unheard.DoubleClickInput);
+        }
+        if (_doubleClickInput > 0)
+        {
+            InputAnswered(_doubleClickInput);
+            _doubleClickInput = 0;
+        }
         // It crosses the JS boundary: a NaN would travel silently into the offsets.
         _taken = !_disposed && double.IsFinite(offsetX) && double.IsFinite(offsetY) && double.IsFinite(scrollLeftPx)
             && double.IsFinite(scrollTopPx)
             ? new TakenAt(kind, offsetX, offsetY, firstRow, scrollLeftPx, scrollTopPx, rowSequence, layout,
-                editorRow >= 0 && editorColumn >= 0 ? new CellPosition(editorRow, editorColumn) : null)
+                editorRow >= 0 && editorColumn >= 0 ? new CellPosition(editorRow, editorColumn) : null,
+                input, doubleClickInput)
             : null;
+        if (_taken is null)
+        {
+            InputAnswered(input);
+            InputAnswered(doubleClickInput);
+        }
     }
 
     private sealed record TakenAt(string Kind, double OffsetX, double OffsetY, int FirstRow,
-        double ScrollLeftPx, double ScrollTopPx, int RowSequence, int Layout, CellPosition? OnEditorOver);
+        double ScrollLeftPx, double ScrollTopPx, int RowSequence, int Layout, CellPosition? OnEditorOver,
+        int Input, int DoubleClickInput);
 
     /// <summary>
     /// Where on the rows a press taken on the Cell Editor lay (ADR-0010, ADR-0220; ticket 201). The
@@ -229,12 +272,21 @@ public partial class ExGrid<TRow>
 
     /// <summary>The event as it was taken, if the script told of it (ED-31); the event as it came
     /// otherwise. What was told is for this event alone: told of another kind, it is no one's.</summary>
-    private MouseEventArgs AsTaken(MouseEventArgs e, string kind)
+    private MouseEventArgs AsTaken(MouseEventArgs e, string kind, out int input)
     {
         var told = _taken;
         _taken = null;
-        if (told is null || told.Kind != kind)
+        input = 0;
+        if (told is null)
             return e;
+        if (told.Kind != kind)
+        {
+            InputAnswered(told.Input);
+            InputAnswered(told.DoubleClickInput);
+            return e;
+        }
+        input = told.Input;
+        _doubleClickInput = told.DoubleClickInput;
         var layout = _paintLayouts.FindLast(l => l.Id == told.Layout);
         var held = layout is not null && ReferenceEquals(layout.ColumnNames, _paintLayouts[^1].ColumnNames)
             && layout.Binding == _binding && told.RowSequence == _sequenceVersion

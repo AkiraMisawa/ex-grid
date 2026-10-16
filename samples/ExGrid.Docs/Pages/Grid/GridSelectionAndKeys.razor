@@ -124,6 +124,32 @@
         </p>
     </DocsSection>
 
+    <DocsSection Title="Driving the grid from a script">
+        <p>
+            Tools drive a grid at machine speed — a Playwright test, an RPA script, a user's own macro — and on
+            Blazor Server every key waits a round trip for its answer. A script that reads the grid straight after
+            typing reads it before the grid has finished. So the grid says when it has, with its Settled Mark: its root carries
+            <code>data-ex-settled</code> while every input it has taken has been handled and its effect is on the
+            page. The attribute goes the moment a key, a press on the rows, a paste, a composition or a copy is
+            taken, and comes back once nothing is held, nothing is owed, and a cell brought into view has been
+            painted there. It changes once as a burst of input starts and once as it ends, and nothing else moves
+            with it: the rows do not render for it.
+        </p>
+        <p>
+            <strong>Type at full speed, then wait for the mark, then read.</strong> With Playwright that is
+            <code>await expect(page.locator('.ex-grid')).toHaveAttribute('data-ex-settled', '')</code> between
+            the last input and the first reading. Never wait a fixed time between inputs to make a script pass: a
+            user typing quickly meets the very ordering the wait hides, and the grid already keeps every input in
+            its place.
+        </p>
+        <p>
+            The mark covers what the grid's own keyboard handling takes. Text typed into a field — the Cell Editor,
+            a Sheet's Formula Bar or Name Box — and a click on a heading, a menu or a button of the Chrome reach the
+            grid as ordinary Blazor events: read their effect with an expectation that waits for it. It is not
+            <code>aria-busy</code>, which a screen reader would read out.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="Status-bar figures">
         <p>
             Select two cells or more and the status line under the grid shows what Excel's status bar shows:
