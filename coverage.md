@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.7% | 88.6% |
-| ExSheet | 95.8% | 88.8% |
+| ExSheet | 95.8% | 88.7% |
 | ExPivot | 94.4% | 85.3% |
 | Data | 94.5% | 90.3% |
 
@@ -12,19 +12,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/16/2026 - 12:07:29 |
+| Generated on: | 10/16/2026 - 12:42:11 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 849 |
 | Files: | 466 |
-| **Line coverage:** | 95.2% (58564 of 61467) |
-| Covered lines: | 58564 |
-| Uncovered lines: | 2903 |
-| Coverable lines: | 61467 |
-| Total lines: | 103954 |
-| **Branch coverage:** | 88.1% (34052 of 38641) |
-| Covered branches: | 34052 |
-| Total branches: | 38641 |
+| **Line coverage:** | 95.2% (58558 of 61466) |
+| Covered lines: | 58558 |
+| Uncovered lines: | 2908 |
+| Coverable lines: | 61466 |
+| Total lines: | 103974 |
+| **Branch coverage:** | 88% (34023 of 38619) |
+| Covered branches: | 34023 |
+| Total branches: | 38619 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -161,8 +161,8 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|95.5%|90.5%|
 |ExGrid.Components.ExGrid<TRow>|90.8%|85.9%|
+|ExGrid.Components.ExGrid<TRow>|95.5%|90.5%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
@@ -717,7 +717,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**93.2%**|**85.5%**|
+|**ExSheet**|**93.2%**|**85.6%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -728,10 +728,10 @@
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|91.1%|84.5%|
+|ExSheet.Components.ExSheet|91.1%|84.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91.1%|84.5%|
+|ExSheet.Components.ExSheet<T>|91.1%|84.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.4%|
 |ExSheet.DefaultToolbarRow|100%|50%|
@@ -795,11 +795,11 @@
 |ExSheet.UnderlineItem|100%|100%|
 
 </details>
-<details><summary>ExSheet.Engine - 97.9%</summary>
+<details><summary>ExSheet.Engine - 97.8%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.9%**|**90.9%**|
+|**ExSheet.Engine**|**97.8%**|**90.8%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -845,7 +845,7 @@
 |ExSheet.Engine.Formulas.FormulaText|100%|97.5%|
 |ExSheet.Engine.Formulas.FunctionCall|100%|100%|
 |ExSheet.Engine.Formulas.FunctionDefinition|100%||
-|ExSheet.Engine.Formulas.FunctionLibrary|97.4%|88.6%|
+|ExSheet.Engine.Formulas.FunctionLibrary|97.3%|88.2%|
 |ExSheet.Engine.Formulas.FunctionLibrary.CriteriaRange|79.1%|43.7%|
 |ExSheet.Engine.Formulas.FunctionLibrary.Criterion|100%|86.3%|
 |ExSheet.Engine.Formulas.FunctionLibrary.DoubleDouble|100%||
