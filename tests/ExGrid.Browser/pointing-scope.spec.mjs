@@ -1013,7 +1013,10 @@ test.describe('/pointing?narrow', () => {
         expect(Math.abs(pv.x + pv.width - client.right), 'PV ends at the vertical gutter').toBeLessThanOrEqual(SLACK_PX);
         const pvHeader = await boxOf(header(positions, 'PV'));
         expect(Math.abs(pvHeader.x - pv.x), 'the dashes are down PV').toBeLessThanOrEqual(SLACK_PX);
-        expect((await scrollOf()).top, 'the rows stay where they were').toBe(top);
+        // A reveal moves the offset one pixel and back over the two frames after it, so that the
+        // rows it brings in are painted (ex-grid.js, repaintAfterReveal): the rows are read once that
+        // has settled, never between its frames (ADR-0056). Rows that stayed moved fail here.
+        await expect.poll(async () => (await scrollOf()).top, { message: 'the rows stay where they were' }).toBe(top);
 
         await page.keyboard.press('ArrowLeft');
 
@@ -1024,7 +1027,10 @@ test.describe('/pointing?narrow', () => {
         expect(Math.abs(id.x - idHeader.x), 'the dashes are down Id').toBeLessThanOrEqual(SLACK_PX);
         expect(id.x, 'Id starts inside the client area').toBeGreaterThanOrEqual(client.left - SLACK_PX);
         expect(id.x + id.width, 'Id ends inside the client area').toBeLessThanOrEqual(client.right + SLACK_PX);
-        expect((await scrollOf()).top, 'the rows stay where they were').toBe(top);
+        // A reveal moves the offset one pixel and back over the two frames after it, so that the
+        // rows it brings in are painted (ex-grid.js, repaintAfterReveal): the rows are read once that
+        // has settled, never between its frames (ADR-0056). Rows that stayed moved fail here.
+        await expect.poll(async () => (await scrollOf()).top, { message: 'the rows stay where they were' }).toBe(top);
         await expect(editor(grid)).toBeFocused();
         await expect(positions.locator('.ex-focus, .ex-range')).toHaveCount(0);
         await expect(page.locator('#pointing-refused')).toHaveText('');
