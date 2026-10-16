@@ -54,8 +54,8 @@ public class RefusalTests
         "DATEDIF(1,400,\"YD\")",            // DATEDIF's YD after a completed anniversary
         "WORKDAY(1,1,TRUE)",                // a boolean typed among the holidays
         "PMT(0.1,2,1000,-1210)",            // PMT's readings magnify their roundings (PMT-049)
-        "PV(-1,10,-100)",                   // PV at a rate of -1 (PV-013)
-        "XNPV(0,J1:J2,K1:K2)",              // XNPV at a rate of 0 (XNPV-019)
+        "PV(0.05,2^53+2,-100)",             // an nper past 2^53 at a rate other than 0
+        "XNPV(0.1,A1:A2,K1:K2)",            // text among XNPV's values
         "XLOOKUP(25,G1:G5,H1:H5,,0,2)",     // a binary search over unsorted data
         "MATCH(25,G1:G5,1)",                // an approximate search over unsorted data
         "INDIRECT(\"A1:A2#\")",             // a # after a range (INDIRECT-092)

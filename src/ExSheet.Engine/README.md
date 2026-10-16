@@ -265,14 +265,13 @@ could depend on a Value, nothing spills (ADR-0125, 2026-10-13). The refusals:
   empty code shows a number as empty text, as Excel's do. A code outside the cell formats' subset is
   `#VALUE!`, a fraction or a condition among them, though Excel answers both.
 - **Asked of Excel before they are answered**, each refused until the next Windows run says what
-  Excel gives: `PV` at a rate of -1 with an
-  `nper` above 0; `PMT` at a rate of -1 with periods, below -1 with a whole `nper` or a fraction whose
-  reciprocal is odd, where a quantity the evaluations Excel's payments leave compute passes a double's
-  range or falls below its normal numbers, at a growth below 2^-52, with no periods at the start, and
-  where one of them magnifies its own roundings more than 2^6 times; `PMT`, `PV` and `FV` with an
-  `nper` past 2^53 at a rate other than 0; and `XNPV` at a rate of 0, where its last addition nearly
-  cancels, and where an Error Value in its rate or ranges fails beside another check that gives
-  another answer (`#VALUE!`); `SORT` with an Error Value key that has a number after it, or beside
+  Excel gives: `PMT` where a quantity the
+  evaluations Excel's payments left compute passes a double's range or falls below its normal numbers,
+  but those Excel was seen to carry while it gave the exact payment, and where one of them magnifies its
+  own roundings more than 2^6 times, Excel's answer kept beside each refusal run 18a read; `PMT`, `PV`
+  and `FV` with an `nper` past 2^53 at a rate other than 0; and `XNPV` where the orders of its checks
+  that run 18a's answers leave give different answers, and at a cell of its values or dates that is not
+  a number (`#VALUE!`); `SORT` with an Error Value key that has a number after it, or beside
   text, a boolean, a blank or another Error Value, or in a descending sort, and `SORTBY` with any
   Error Value key (`#VALUE!`); `SORT` with a `sort_index` that is not a whole number (`#VALUE!`;
   SORT-042); a blank `UNIQUE`, `SORT`, `SORTBY`, `FILTER` or `TRANSPOSE` keeps, read
@@ -319,20 +318,24 @@ could depend on a Value, nothing spills (ADR-0125, 2026-10-13). The refusals:
   (`CorrectlyRounded`, the same on every platform; Excel's exponential is the correctly rounded one at
   XNPV-013, and no observed double tells logarithms apart); a negative 1+rate has an odd root where
   1/nper is odd and is `#NUM!` otherwise, and 1+rate of 0 is `#NUM!` to the power 0 and `#DIV/0!` to a
-  negative one. `XNPV` divides each value by that power of its days over 365 and sums from the first;
-  it checks the rate before it evaluates and is `#NUM!` below 0, Excel's answer at the rates asked
-  (-0.5 to -2) and the engine's at others, refuses any cell of its values or dates that is not a
-  number (text, a boolean or a blank), whatever else is among them, and refuses an Error Value in its
-  rate or ranges beside another check that would give another answer. `type` is a truth value: any number other than 0, 0.5
+  negative one; `PV` at a rate of -1 with periods divides by a growth of 0 and is `#DIV/0!` (PV-013,
+  run 18a). `XNPV` divides each value by that power of its days over 365 and sums them from the first,
+  the plain sum, as Excel's is where the last addition nearly cancels (XNPV-018, run 18a); it checks
+  the rate first and is `#NUM!` at 0 or below. Where more than one check fails, the answer is the one
+  every order of its checks that run 18a's answers leave gives (XNPV-021 to 030), and `#VALUE!` where
+  they part; a cell of its values or dates that is not a number (text, a boolean or a blank) is
+  refused where an order reaches it. `type` is a truth value: any number other than 0, 0.5
   included, is payment at the start. **`PMT` is kept under ADR-0047's exception for `PMT` alone**: where
   it answers, the payment at the end is the exact payment rounded once, held between two bounds that
   decide its double (`Enclosure`, interval arithmetic over exact dyadic numbers, (1+rate)^nper - 1
   raised from the rate itself), and the payment at the start the exact payment at the start rounded
   once, held between bounds as well (2026-10-13, decided with the user). Excel's payment differs from
   ExSheet's at 23 of the 30 observed, by 1 to 11 units in the last place, at PMT-013 and PMT-026 in the
-  15th significant digit, and no evaluation searched gives every one (a Known limitation of 0.1.0). Where the
-  evaluations Excel's payments leave part in kind, or beyond the last digits, `PMT` refuses
-  (`ExactPayment`, `Functions.Financial.cs`).
+  15th significant digit, and no evaluation searched gives every one (a Known limitation of 0.1.0). A
+  rate of -1 or below is `#NUM!`, and so are no periods at the start, as Excel gave (PMT-034 to 037, 046,
+  run 18a); payments whose quantities Excel carried past a double's range are the exact payment rounded
+  once, as Excel's were (PMT-038 to 041, 044, 045). Where the evaluations Excel's payments left part in
+  kind, or beyond the last digits, `PMT` refuses (`ExactPayment`, `Functions.Financial.cs`).
 - **`SIN`, `COS` and `TAN` reduce an angle by Excel's pi** (ADR-0047, 2026-10-12): pi rounded to the
   x87's 64 bits, so `SIN(PI())` is 1.22514845490862E-16, as Excel's is, and not the sine of the double
   `PI()` gives. Each is the double nearest the exact value; `COT`, `CSC` and `SEC` are 1 over them.

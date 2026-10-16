@@ -347,89 +347,91 @@
     },
     {
       "id": "PMT-034",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: at a rate of -1 the growth is 0, and the forms of the identity that multiply by it give the payment -fv, -500 here, where those that divide by it give an Error Value (Search.cs, M1 and M6); PMT's readings part in kind, and PMT refuses it as PV refuses PV-013",
+      "source": "observed",
+      "description": "A rate of -1 with periods and a future value: #NUM! (run 18a), where the forms of the identity that multiply by the growth, 0, give -fv, -500, and those that divide by it an Error Value; PMT is #NUM! at any rate of -1 or below",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(-1,10,1000,500)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#NUM!"}
     },
     {
       "id": "PMT-035",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: at a rate of -2, 1+rate is -1 and its square 1, so a power gives (1+rate)^nper-1 of 0, which every form of the identity divides by, and a reading through ln(1+rate) has no logarithm of -1; which Error Value Excel gives has not been observed (PMT-005's #NUM! at no periods may come from a check of nper rather than the division)",
+      "source": "observed",
+      "description": "A rate of -2 with 2 periods, where 1+rate raised is 1 and every form of the identity divides by 0: #NUM! (run 18a), as with no periods (PMT-005)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(-2,2,1000)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#NUM!"}
     },
     {
       "id": "PMT-036",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a third of a period at a rate below -1. An evaluation that raises 1+rate as PV and FV do takes the odd root of a negative 1+rate (FV-017 found FV raises it so), and with it the payment is -6; one through ln(1+rate), log1p and expm1 or an x87's FYL2XP1, has no logarithm of a negative number and gives an Error Value, as every reading Search.cs --pmt-show runs here does. Which Excel's PMT does has not been observed, and PMT refuses",
+      "source": "observed",
+      "description": "A third of a period at a rate below -1: #NUM! (run 18a), where the power PV and FV share takes the odd root (FV-017) and the payment is -6: PMT does not raise 1+rate as they do, and a power through ln(1+rate) has no logarithm of a negative 1+rate",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(-9,1/3,-1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#NUM!"}
     },
     {
       "id": "PMT-037",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: ten periods before at a rate of -1. The power PV and FV share gives 0 to a negative power, #DIV/0! (FV-021 and PV-012 found it so for FV and PV); a reading through ln(1+rate) takes ln 0, minus infinity, and its forms give #NUM!, or a number where they divide by the growth. PMT's readings part, and PMT refuses",
+      "source": "observed",
+      "description": "Ten periods before at a rate of -1: #NUM! (run 18a), where the power PV and FV share gives 0 to a negative power #DIV/0! (FV-021, PV-012), and the readings that take 0^10 as the discount give 1000",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(-1,-10,1000)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#NUM!"}
     },
     {
       "id": "PMT-038",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: 1+rate raised past a double's range, where the exact payment is a number, -1000 rounded once; a reading in doubles gives #NUM! where a form multiplies by the growth and the payment where it divides by it (M6), and one in an x87's wider exponent the payment",
+      "source": "observed",
+      "description": "1+rate raised past a double's range, 2^1100: the exact payment rounded once, -1000 (run 18a), where the readings that form the growth in doubles give #NUM!; the quantities that grow with the growth may pass the range (ExactPayment)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(1,1100,1000)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": -1000}
     },
     {
       "id": "PMT-039",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the growth, 2^1020, is a double, but pv times it passes a double's range: the forms of the identity that form pv*g in doubles give #NUM!, and those that divide fv by the growth instead (M6) give the exact payment, -1000 rounded once, as an x87's wider exponent does",
+      "source": "observed",
+      "description": "The growth, 2^1020, is a double, but pv times it passes a double's range: the exact payment rounded once, -1000 (run 18a), where the forms of the identity that form pv*g in doubles give #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(1,1020,1000)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": -1000}
     },
     {
       "id": "PMT-040",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: as PMT-039, with 1.5^1740, about 2^1018: the exact payment is -500 rounded once",
+      "source": "observed",
+      "description": "As PMT-039, with 1.5^1740, about 2^1018: the exact payment rounded once, -500 (run 18a)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.5,1740,1000)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": -500}
     },
     {
       "id": "PMT-041",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the growth, (1+1E10)^30, about 1E300, is a double, but the rate times pv times it passes a double's range: the forms that form r*(pv*g+fv) give #NUM!, and the others the exact payment, -1E10 rounded once",
+      "source": "observed",
+      "description": "The growth, (1+1E10)^30, about 1E300, is a double, but the rate times pv times it passes a double's range: the exact payment rounded once, -1E10 (run 18a), where the forms that form r*(pv*g+fv) give #NUM!",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(1E10,30,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": -10000000000}
     },
     {
       "id": "PMT-042",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the growth, 0.01^160, about 1E-320, falls below a double's normal numbers: the readings that divide by it pass the range and give #NUM!, and the others the payment, -495 rounded once, or a unit in the last place from it (Search.cs --pmt-show)",
+      "source": "observed",
+      "description": "The growth, 0.01^160, about 1E-320, falls below a double's normal numbers: Excel gives #NUM! (run 18a), as the readings that divide by the growth do, where the exact payment rounded once is -495; PMT refuses a growth below the normal numbers",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(-0.99,160,1000,500)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: the engine gives the exact payment rounded once, -495 here). Excel's #NUM! needs another evaluation, one that divides by a growth below a double's normal numbers, and PMT stays refused there (run 18a); kept refused on 2026-10-16, decided with the user",
+      "excelExpect": {"value2": "#NUM!"}
     },
     {
       "id": "PMT-043",
       "source": "uncertain",
-      "description": "Refused until Excel is asked: a rate below a double's normal numbers (whether Excel keeps such a number typed has not been observed either): the readings' products of the rate hold a few bits, and they give -2000, the exact payment rounded once, 0 or #NUM! (Search.cs --pmt-show)",
+      "description": "Refused until Excel is asked: a rate below a double's normal numbers (whether Excel keeps such a number typed has not been observed either): the readings' products of the rate hold a few bits, and they give -2000, the exact payment rounded once, 0 or #NUM! (Search.cs --pmt-show). Run 18a's pass could not enter the Formula through COM (0x800A03EC); the keys pass asks it (docs/specs/exsheet/run-18/area-oracle.md)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(1E-320,0.5,1000)"},
       "check": "ZZ1000",
@@ -437,93 +439,107 @@
     },
     {
       "id": "PMT-044",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the rate is a normal double, but pv times it, about 1.6E-312, falls below the normal numbers: the readings that form it hold a few bits, and give -3.527336860668532E-08 where the others give the exact payment rounded once, -3.5273368606701946E-08, which differ in the 12th significant digit (Search.cs --pmt-show)",
+      "source": "observed",
+      "description": "The rate is a normal double, but pv times it, about 1.6E-312, falls below the normal numbers: the exact payment rounded once, -3.5273368606701946E-08 (run 18a), where the readings that form pv*r in doubles give -3.527336860668532E-08",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(-1.64435447903749E-307,283.5,1E-05,0)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": -3.5273368606701946E-08}
     },
     {
       "id": "PMT-045",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: the growth, 0.5^360, is a normal double, but a reading that takes it as 1 + (g-1), g-1 a double, holds anything below 2^-54 as 0 and divides by it in some forms (M35 at 64 bits), giving #NUM! where the others give the exact payment, -250 rounded once (Search.cs --pmt-show); PMT refuses a growth below 2^-52",
+      "source": "observed",
+      "description": "The growth, 0.5^360, a normal double below 2^-52: the exact payment rounded once, -250 (run 18a), where a reading that takes the growth as 1 + (g-1) holds it as 0 and gives #NUM!; PMT answers a growth below 2^-52",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(-0.5,360,1000,500)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": -250}
     },
     {
       "id": "PMT-046",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: no periods at the start: LibreOffice's reading divides by e^(ln(1+rate)) - 1 - rate, which is 0 or the remainder of a rounding, and gives 7.566047373982433E+18 here, where the forms of the identity divide by 0 and give #NUM! (Search.cs --pmt-show) (PMT-005's #NUM! is at the end); PMT refuses no periods at the start at any rate above -1 other than 0",
+      "source": "observed",
+      "description": "No periods at the start: #NUM! (run 18a), as at the end (PMT-005), where LibreOffice's reading divides by e^(ln(1+rate)) - 1 - rate and gives 7.566047373982433E+18",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.42,0,1000,0,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#NUM!"}
     },
     {
       "id": "PMT-047",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked (ExactPayment.Conditioned, the bound of 2^6, kept by decision with the user, 2026-10-13): a tiny nper at the start: LibreOffice's reading divides by e^((nper+1) ln(1+rate)) - 1 - rate, and nper+1 rounds to 1, so that its divisor is 0 and it gives #NUM!, where the other readings give the payment, -9.5382351702337E+19 (1,651 of them), -9.538235170233698E+19 (489) or -9.538235170233701E+19 (104) (Search.cs --pmt-show)",
+      "source": "observed",
+      "description": "A tiny nper at the start: Excel gives -9.538235170233701E+19 (run 18a), a unit in the last place from the exact payment rounded once, -9.5382351702337E+19, where LibreOffice's reading divides by e^((nper+1) ln(1+rate)) - 1 - rate, 0 here, and gives #NUM!; PMT refuses by the bound of 2^6",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.1,1E-17,1000,0,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel's double is a unit in the last place from the exact payment rounded once, which the exception for PMT would give; the bound is kept, and the refusal with it (2026-10-16, decided with the user)",
+      "excelExpect": {"value2": -9.538235170233701E+19}
     },
     {
       "id": "PMT-048",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked (ExactPayment.Conditioned, the bound of 2^6, kept by decision with the user, 2026-10-13): a small nper at the start at a rate near -1: LibreOffice's divisor, e^((nper+1) ln(1+rate)) - 1 - rate, comes out as 0 and its reading gives #NUM!, where the others give the payment, -7.238234126569758E+19 or a few units in the last place from it (Search.cs --pmt-show)",
+      "source": "observed",
+      "description": "A small nper at the start at a rate near -1: Excel gives -7.238234126737118E+19 (run 18a), where the exact payment rounded once is -7.238234126569758E+19, and every evaluation searched but LibreOffice's, which gives #NUM!, lies a few units in the last place from it",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(-0.999999,1E-12,1000,0,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel's double differs from the exact payment rounded once in the 10th significant digit, 204,297 units in the last place away, and no evaluation searched gives it: it needs another evaluation than the exception's (run 18a)",
+      "excelExpect": {"value2": -7.238234126737118E+19}
     },
     {
       "id": "PMT-049",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked (ExactPayment.Conditioned, the bound of 2^6, kept by decision with the user, 2026-10-13): pv g and fv cancel, 1000 times 1.1^2 against 1210: of the 375 readings at the end, 139 give 0, 75 give 1.691768418476429E-14, 60 the exact payment rounded once, -5.8154539385127246E-15, and others -1.9761969838327786E-14, -1.4210854715202004E-14, -1.1368683772161604E-14 or about -9.5E-15 (Search.cs --pmt-show)",
+      "source": "observed",
+      "description": "pv g and fv cancel, 1000 times 1.1^2 against 1210: Excel gives 2.2737367544323207E-14 (run 18a), where the exact payment rounded once is -5.8154539385127246E-15, and the readings gave 0, 1.691768418476429E-14, the exact payment and others from -1.98E-14 to 1.69E-14",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.1,2,1000,-1210)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel's double has the other sign from the exact payment rounded once, and no evaluation searched gives it: it needs another evaluation than the exception's (run 18a)",
+      "excelExpect": {"value2": 2.2737367544323207E-14}
     },
     {
       "id": "PMT-050",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked (ExactPayment.Conditioned, the bound of 2^6, kept by decision with the user, 2026-10-13): pv g and fv cancel at a tiny nper, 1000 times 1.1^1E-17 against 1000: of the 375 readings at the end, 216 give 0, 63 give -104.83672617280074, 60 the exact payment rounded once, -100, and others -102.37961540312571, -104, -96 or -88 (Search.cs --pmt-show)",
+      "source": "observed",
+      "description": "pv g and fv cancel at a tiny nper, 1000 times 1.1^1E-17 against 1000: Excel gives -100 (run 18a), the exact payment rounded once, where 216 of the 375 readings at the end gave 0, and others -104.83672617280074 or -102.37961540312571",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(0.1,1E-17,1000,-1000)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel's double is the exact payment rounded once, which the exception for PMT would give; the bound is kept, and the refusal with it (2026-10-16, decided with the user)",
+      "excelExpect": {"value2": -100}
     },
     {
       "id": "PMT-051",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked (ExactPayment.Conditioned, the bound of 2^6, kept by decision with the user, 2026-10-13): a growth of 1.2E-11, which the readings that take it as 1 + (g-1) hold to some 5 significant digits: they give 9.177492099722465E-10, 9.177512083624606E-10 and others, where the rest give the exact payment rounded once, 9.17749001306952E-10, or near it (Search.cs --pmt-show)",
+      "source": "observed",
+      "description": "A growth of 1.2E-11, which the readings that take it as 1 + (g-1) hold to some 5 significant digits: Excel gives 9.177490013069518E-10 (run 18a), two units in the last place from the exact payment rounded once, 9.17749001306952E-10; no evaluation searched gives Excel's double",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(-0.5,36.25,-150,0,0)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel's double is two units in the last place from the exact payment rounded once, which the exception for PMT would give; the bound is kept, and the refusal with it (2026-10-16, decided with the user)",
+      "excelExpect": {"value2": 9.177490013069518E-10}
     },
     {
       "id": "PMT-052",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked (ExactPayment.Conditioned, the bound of 2^6, kept by decision with the user, 2026-10-13): the exponent, 1000 ln 2, is 693, and the readings that round it move the payment some 600 units in the last place: 142 give -9.332636185032829E-299, where 216 give the exact payment rounded once, -9.332636185032189E-299 (Search.cs --pmt-show)",
+      "source": "observed",
+      "description": "The exponent, 1000 ln 2, is 693: Excel gives 0 (run 18a), where the exact payment rounded once is -9.332636185032189E-299, and the readings gave it or -9.332636185032829E-299, 603 units in the last place away",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(1,1000,0,1000)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel gives 0 where the exact payment rounded once is -9.332636185032189E-299, and no evaluation searched gives 0: it needs another evaluation than the exception's (run 18a)",
+      "excelExpect": {"value2": 0}
     },
     {
       "id": "PMT-053",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked (ExactPayment.Conditioned, the bound of 2^6, kept by decision with the user, 2026-10-13): at the start at a rate of 1000, the readings that reach the payment at the start as the payment at the end less its rate's share, p - p r/(1+r), lose three digits in the subtraction: 366 give -999.0019960080972, 995 units in the last place from the exact payment rounded once, -999.0019960079841, which 1,825 give (Search.cs --pmt-show)",
+      "source": "observed",
+      "description": "At the start at a rate of 1000: Excel gives -999.0019960079842 (run 18a), a unit in the last place from the exact payment rounded once, -999.0019960079841, where the readings that reach the payment at the start as p - p r/(1+r) gave -999.0019960080972, 995 units away",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(1000,2,1000,0,1)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel's double is a unit in the last place from the exact payment rounded once, which the exception for PMT would give; the bound is kept, and the refusal with it (2026-10-16, decided with the user)",
+      "excelExpect": {"value2": -999.0019960079842}
     }
   ]
 }
