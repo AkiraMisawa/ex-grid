@@ -75,8 +75,12 @@
         <p>
             Among several ranges, made with Ctrl+click, no range carries the green outline and there is no fill handle,
             and the active cell takes a thin border of one screen pixel inside it, in the outline's green: Excel's active
-            cell was observed with that border. Under ExSheet.MudBlazor it is the palette's primary, as the outline is.
-            <code>--ex-focus-among-ranges-outline</code> colours it.
+            cell was observed with that border. Outside the border on its top and left a white line of one screen
+            pixel stands between it and the gridline, and on its right and bottom the cell's own ground does, so a
+            filled active cell shows its Fill there, as Excel's did. Under ExSheet.MudBlazor the border is the
+            palette's primary, as the outline is. <code>--ex-focus-among-ranges-outline</code> colours it, and
+            <code>--ex-sheet-selection-ring</code> the white line. While the active cell is edited, the Cell Editor
+            covers both, and draws its own outline, <code>--ex-editor-outline</code>, as it does on every Sheet.
         </p>
         <p>
             The <b>Heading Mark</b> shows where the Selection is: each column letter and row number whose column

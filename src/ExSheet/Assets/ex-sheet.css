@@ -86,13 +86,24 @@
    inside the cell, in the outline's colour (2026-10-12, decided with the user: on the Paper it is
    #217346, as the readings of 2026-10-12 measured Excel's active cell among several areas, R4). That
    is where no Theme or Wrapper names --ex-focus-among-ranges-outline or --ex-focus-outline; under
-   ExSheet.MudBlazor it is the palette's primary. It draws no white line of its own: between it and
-   the gridline lies the cell's own ground, the Paper's white on a cell with no Fill, which R4
-   measured there; over a Fill no run has looked. Three classes, so it outranks the Focus outline's
-   rule above, and its white line, in any order. */
+   ExSheet.MudBlazor it is the palette's primary. Outside it on the top and the left lies a white
+   line of one Device Pixel of its own, the Selection's ring (--ex-sheet-selection-ring): run 18a
+   read D4 filled yellow and found a white device pixel there between the border and the gridline,
+   and the Fill on the right and the bottom (observed: verification/2026-10-14-windows-readings-18a,
+   focus-among-ranges.md 2, at Excel's 100% and 150% zoom on a 150% display). So on the right and the
+   bottom the cell's own ground lies between the border and the gridline, the Paper's white with no
+   Fill, as R4 measured, and the Fill over one. The line is three shadows of the border's own box,
+   each a whole Device Pixel off it (ADR-0090): up and left, up, and left, so it runs from the cell's
+   top left corner to the border's far ends with no gap at the corner. It lies inside the cell, so the
+   Cell Editor covers it with the border while an edit is open. Three classes, so it outranks the
+   Focus outline's rule above, and its white line, in any order; it comes after the rule that drops
+   that line while an edit is open, which it does not undo, since this line is not the outline's. */
 .ex-sheet .ex-focus.ex-focus-among-ranges::after {
     border-color: var(--ex-focus-among-ranges-outline, var(--ex-focus-outline, #217346));
-    box-shadow: none;
+    box-shadow:
+        calc(-1 * var(--ex-dp, 1px)) calc(-1 * var(--ex-dp, 1px)) 0 0 var(--ex-sheet-selection-ring, #fff),
+        0 calc(-1 * var(--ex-dp, 1px)) 0 0 var(--ex-sheet-selection-ring, #fff),
+        calc(-1 * var(--ex-dp, 1px)) 0 0 0 var(--ex-sheet-selection-ring, #fff);
 }
 /* The Copied Range's dashes (ADR-0170) are the outline's colour, as Excel's are: its green where no
    Theme or Wrapper names one, or they would be the core's CanvasText round a green outline. */

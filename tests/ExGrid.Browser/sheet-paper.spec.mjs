@@ -1,6 +1,6 @@
 import { test, expect, alterPage, circuitQuiet, twoFrames } from './fixtures.mjs';
 import { sheet, cell, pressCell, clickCell, expectFocusAt, editor, bar, stretchesOf } from './sheet-helpers.mjs';
-import { painted, sameColour, resolvedColour, contrast, onDeviceGrid, pixelsApart, stillPictures, edgePixels, onDevicePixels, acrossEdges, paints } from './pixels.mjs';
+import { painted, sameColour, resolvedColour, contrast, onDeviceGrid, wholePixelCentres, pixelsApart, stillPictures, edgePixels, onDevicePixels, acrossEdges, paints } from './pixels.mjs';
 
 // ExSheet paints Font and Fill on white Paper (ticket 48; ADR-0071, "Paper and Ink"; SH-39, SH-40,
 // DC-58). The Paper is Excel's white and the Ink Excel's black under the light and the dark scheme
@@ -316,6 +316,95 @@ test('UX-19/SH-54 (built-in Chrome): R4\'s three selections on the Paper: the ac
     await expectFocusAt(grid, 'D4');
     await expect(grid.locator('.ex-focus.ex-focus-among-ranges')).toHaveCount(1);
     await readAt('D4', { right: false, bottom: false }, '(3)');
+});
+
+// Run 18a read R4's first selection again with D4 filled yellow (focus-among-ranges.md 2,
+// verification/2026-10-14-windows-readings-18a, at Excel's 100% and 150% zoom on a 150% display): the
+// border one device pixel of #217346 as before; between it and the gridline, on the left and the top a
+// white device pixel, a line of its own, and on the right and the bottom the Fill. Here the same, on
+// the Paper (ADR-0008, run 18a): the white line is drawn along the border's whole top and left, and
+// the Fill shows on the right and the bottom. The gridline's own pixel round the cell is not read, as
+// in R4's test above: run 18a read it as the Fill under the shade, #C7C700, which is the line the Paper
+// does not draw (ADR-0008, 2026-10-13, observed and not followed). While D4 is edited the Cell Editor
+// covers the cell, and the border and the white line inside it with it: no device pixel across its
+// edges paints the border's green, and inside them the editor shows the cell's Fill, as Excel's cell
+// showed no border once F2 was pressed (focus-among-ranges.md 3). The editor's own outline
+// (--ex-editor-outline, ED-27) is not read here.
+test('UX-19/SH-54 (built-in Chrome): run 18a\'s D4 filled yellow among several ranges: the border, a white line outside it on the top and the left, the Fill on the right and the bottom, and none of it round the Cell Editor (ADR-0008, run 18a; ADR-0071)', async ({ page }, testInfo) => {
+    await page.goto('/sheet?case=18a-2');
+    const grid = sheet(page);
+    await expect(grid.locator('.ex-row').first()).toBeVisible();
+    await expect(page.locator('#sheet-positions .ex-row').first()).toBeVisible();
+    const scale = await page.evaluate(() => devicePixelRatio);
+    expect(scale).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
+    const gridline = Math.max(1, Math.floor(scale + 1e-9));
+    const FILL = [255, 255, 0];
+    const SHADE = WHITE.map((v) => v * 0.78);
+
+    // R4's first selection: A1:B2, then D4:E6 with Ctrl, D4 the active cell and E4 and D5 in its area.
+    await clickCell(grid, 'A1');
+    await clickCell(grid, 'B2', { modifiers: ['Shift'] });
+    await clickCell(grid, 'D4', { modifiers: ['ControlOrMeta'] });
+    await clickCell(grid, 'E6', { modifiers: ['ControlOrMeta', 'Shift'] });
+    await expectFocusAt(grid, 'D4');
+    await expect(grid.locator('.ex-focus.ex-focus-among-ranges')).toHaveCount(1);
+    await page.mouse.move(0, 0);
+    await circuitQuiet();
+    await twoFrames(page);
+    const box = await onDevicePixels(page, cell(grid, 'D4'));
+    expect(await edgePixels(page, box, GREEN), 'the border at D4').toEqual({
+        scale, left: [1], top: [1], right: [gridline + 1], bottom: [gridline + 1],
+    });
+    const { at } = await acrossEdges(page, box);
+    const expectPaints = (side, index, want, what) => {
+        const pixel = at(side, index);
+        expect(paints(pixel, want), `${what}, ${side} of D4 at ${index}: ${JSON.stringify(pixel)}, want ${JSON.stringify(want)}`).toBe(true);
+    };
+    for (const side of ['left', 'top']) {
+        expectPaints(side, 0, WHITE, 'the white line between the border and the gridline');
+        expectPaints(side, 2, FILL, 'the Fill inside the border');
+    }
+    for (const side of ['right', 'bottom']) {
+        expectPaints(side, gridline, FILL, 'the Fill between the border and the gridline');
+        expectPaints(side, gridline + 2, FILL, 'the Fill inside the border');
+        expectPaints(side, -1, SHADE, 'E4 and D5, in the area, past the gridline');
+    }
+    // The white line along the border's whole top and left: the cell's first device row from its left
+    // edge to the border's right side, and its first device column from its top to the border's
+    // bottom, every pixel read whole.
+    const region = await painted(page, onDeviceGrid(box, scale, 1));
+    const reach = (from, length) => length - (gridline + 1) / scale - from;
+    const top = wholePixelCentres({ x: box.x, y: box.y, width: reach(0, box.width), height: 1 / scale }, scale);
+    const left = wholePixelCentres({ x: box.x, y: box.y, width: 1 / scale, height: reach(0, box.height) }, scale);
+    expect(top.ys).toHaveLength(1);
+    expect(left.xs).toHaveLength(1);
+    const notWhite = [
+        ...top.xs.map((x) => [x, top.ys[0]]),
+        ...left.ys.map((y) => [left.xs[0], y]),
+    ].filter(([x, y]) => !paints(region.at(x, y), WHITE)).map(([x, y]) => `${x},${y}: ${JSON.stringify(region.at(x, y))}`);
+    expect(notWhite, 'the white line on the top and the left, its whole length').toEqual([]);
+
+    // F2: the Cell Editor covers D4, and the border and the white line inside it with it.
+    await page.keyboard.press('F2');
+    await expect(editor(grid)).toBeFocused();
+    await expect(grid).toHaveClass(/ex-editing/);
+    await page.mouse.move(0, 0);
+    await circuitQuiet();
+    await twoFrames(page);
+    const edited = await onDevicePixels(page, cell(grid, 'D4'));
+    expect(edited, 'D4 where it was').toEqual(box);
+    expect(await edgePixels(page, edited, GREEN), 'no border round the edited D4').toEqual({
+        scale, left: [], top: [], right: [], bottom: [],
+    });
+    const inEdit = await acrossEdges(page, edited);
+    for (const side of ['left', 'top', 'right', 'bottom']) {
+        for (let index = gridline + 1; index <= 4; index++) {
+            const pixel = inEdit.at(side, index);
+            expect(paints(pixel, FILL), `the editor shows D4's Fill, ${side} at ${index}: ${JSON.stringify(pixel)}`).toBe(true);
+        }
+    }
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
 });
 
 test('SH-39: setting --ex-sheet-paper and --ex-sheet-ink changes the Paper and the Ink (ADR-0071, ADR-0027)', async ({ page }) => {
