@@ -888,8 +888,8 @@ Where it answers, every reading run lies within 93 units in the last place of it
   the normal numbers (PMT-042, where the exact payment rounded once is -495), and, inside the bound, an answer 1 or
   2 units in the last place from the exact payment at PMT-047, 051 and 053, the exact payment at PMT-050, and
   another evaluation's at PMT-048 (its 10th significant digit), PMT-049 (the other sign) and PMT-052 (0, for
-  -9.3E-299). No evaluation searched gives PMT-048, 049, 051 or 052. Whether the bound is narrowed, and whether
-  PMT-042's `#NUM!` is given, is put to the user. PMT-043, which COM would not enter (0x800A03EC), stays `uncertain`
+  -9.3E-299). No evaluation searched gives PMT-048, 049, 051 or 052. *(2026-10-16, decided with the user: the bound
+  is not narrowed and PMT-042's `#NUM!` is not given; all eight stay refused, Excel's answers beside them.)* PMT-043, which COM would not enter (0x800A03EC), stays `uncertain`
   for the keys pass (`docs/specs/exsheet/run-18/area-oracle.md`).
 - **`PV` at a rate of -1 with periods is `#DIV/0!`** (PV-013): it divides by the growth, 0. PV-014 and 015, and
   FV-023 and PV-016, agree with the power the note of 2026-10-12 chose and the correctly rounded logarithm.

@@ -425,7 +425,7 @@
       "cells": {"ZZ1000": "=PMT(-0.99,160,1000,500)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: the engine gives the exact payment rounded once, -495 here). Excel's #NUM! needs another evaluation, one that divides by a growth below a double's normal numbers, and PMT stays refused there (run 18a); put to the user",
+      "engineDiffersByDecision": "ADR-0047 (the exception for PMT alone, decided with the user on 2026-10-12: the engine gives the exact payment rounded once, -495 here). Excel's #NUM! needs another evaluation, one that divides by a growth below a double's normal numbers, and PMT stays refused there (run 18a); kept refused on 2026-10-16, decided with the user",
       "excelExpect": {"value2": "#NUM!"}
     },
     {
@@ -472,7 +472,7 @@
       "cells": {"ZZ1000": "=PMT(0.1,1E-17,1000,0,1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel's double is a unit in the last place from the exact payment rounded once, which the exception for PMT would give; whether the bound is narrowed is put to the user after run 18a",
+      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel's double is a unit in the last place from the exact payment rounded once, which the exception for PMT would give; the bound is kept, and the refusal with it (2026-10-16, decided with the user)",
       "excelExpect": {"value2": -9.538235170233701E+19}
     },
     {
@@ -505,7 +505,7 @@
       "cells": {"ZZ1000": "=PMT(0.1,1E-17,1000,-1000)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel's double is the exact payment rounded once, which the exception for PMT would give; whether the bound is narrowed is put to the user after run 18a",
+      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel's double is the exact payment rounded once, which the exception for PMT would give; the bound is kept, and the refusal with it (2026-10-16, decided with the user)",
       "excelExpect": {"value2": -100}
     },
     {
@@ -516,7 +516,7 @@
       "cells": {"ZZ1000": "=PMT(-0.5,36.25,-150,0,0)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel's double is two units in the last place from the exact payment rounded once, which the exception for PMT would give; whether the bound is narrowed is put to the user after run 18a",
+      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel's double is two units in the last place from the exact payment rounded once, which the exception for PMT would give; the bound is kept, and the refusal with it (2026-10-16, decided with the user)",
       "excelExpect": {"value2": 9.177490013069518E-10}
     },
     {
@@ -538,7 +538,7 @@
       "cells": {"ZZ1000": "=PMT(1000,2,1000,0,1)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel's double is a unit in the last place from the exact payment rounded once, which the exception for PMT would give; whether the bound is narrowed is put to the user after run 18a",
+      "engineDiffersByDecision": "ADR-0047 (the bound of 2^6, kept by decision with the user on 2026-10-13: PMT refuses where a reading magnifies its own roundings more than 2^6 times). Excel's double is a unit in the last place from the exact payment rounded once, which the exception for PMT would give; the bound is kept, and the refusal with it (2026-10-16, decided with the user)",
       "excelExpect": {"value2": -999.0019960079842}
     }
   ]

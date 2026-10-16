@@ -175,7 +175,7 @@ internal static partial class FunctionLibrary
     /// rate near -1 (PMT-048), or where the payment at the end less its rate's share, p - p r/(1+r), cancels, at
     /// a rate far above 1 (PMT-053). Run 18a read Excel's answer at each: the exact payment rounded once at
     /// PMT-050, a unit or two in the last place from it at PMT-047, 051 and 053, and another evaluation's at
-    /// PMT-048, 049 and 052; whether the bound is narrowed is the user's to decide;</item>
+    /// PMT-048, 049 and 052; the bound is kept and the eight stay refused (2026-10-16, decided with the user);</item>
     /// <item>where 1536 bits do not decide the double, as at a tie between two doubles that the enclosures
     /// cannot reach exactly.</item>
     /// </list>

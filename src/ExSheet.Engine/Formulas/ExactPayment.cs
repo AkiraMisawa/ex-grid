@@ -221,7 +221,7 @@ internal static class ExactPayment
     /// Excel's answer where it refuses: the exact payment rounded once at =PMT(0.1,1E-17,1000,-1000) (PMT-050),
     /// one or two units in the last place from it at PMT-047, 051 and 053, and another evaluation's at PMT-048
     /// (its 10th significant digit), PMT-049 (the other sign) and PMT-052 (0); the corpus keeps each beside the
-    /// refusal, and whether the bound is narrowed is the user's to decide.
+    /// refusal, and the bound is kept and the eight stay refused (2026-10-16, decided with the user).
     /// </summary>
     private static bool Conditioned(Dyadic r, Dyadic onePlusRate, double periods, Dyadic pv, Dyadic fv, Dyadic sum, Enclosure growth, Enclosure lessOne, Enclosure owed, bool atStart, int bits)
     {
