@@ -202,19 +202,40 @@ public class SortAndUniqueBlankTests
         Assert.Equal(["y", "x", "z"], new[] { "AAA1000", "AAA1001", "AAA1002" }.Select(a => sheet.Value(a)!.Value.Text));
     }
 
-    [Theory] // ADR-0047 (SORT-026, 028 to 032, SORTBY-010): an Error Value key stays refused with #VALUE! where the readings SORT-015 leaves part: a number after it, which sorting it after the numbers moves and keeping its place does not, another kind beside it, a descending sort, two Error Values, and SORTBY
-    [InlineData("=SORT(A1:A2)", "=NA()", "7", "")]
-    [InlineData("=SORT(A1:A3)", "7", "=NA()", "3")]
-    [InlineData("=SORT(A1:A3)", "=NA()", "7", "=NA()")]
-    [InlineData("=SORT(A1:A2,1,-1)", "7", "=NA()", "")]
-    [InlineData("=SORT(A1:A2)", "a", "=NA()", "")]
-    [InlineData("=SORT(A1:A2)", "TRUE", "=NA()", "")]
-    [InlineData("=SORT(A1:A2)", "=NA()", "", "")]
-    [InlineData("=SORT(A1:A2)", "=NA()", "=1/0", "")]
+    [Theory] // ADR-0047 (2026-10-14, after run 18a: SORT-026, 028 to 032, SORTBY-010): an Error Value key sorts after numbers, text and booleans ascending and before them descending, before a blank, and #DIV/0! before #N/A, in SORT and SORTBY alike
+    [InlineData("=SORT(A1:A2)", "=NA()", "7", "", new object[] { 7d, ErrorValue.NA })]
+    [InlineData("=SORT(A1:A3)", "7", "=NA()", "3", new object[] { 3d, 7d, ErrorValue.NA })]
+    [InlineData("=SORT(A1:A3)", "=NA()", "7", "=NA()", new object[] { 7d, ErrorValue.NA, ErrorValue.NA })]
+    [InlineData("=SORT(A1:A2,1,-1)", "7", "=NA()", "", new object[] { ErrorValue.NA, 7d })]
+    [InlineData("=SORT(A1:A2)", "a", "=NA()", "", new object[] { "a", ErrorValue.NA })]
+    [InlineData("=SORT(A1:A2)", "=NA()", "TRUE", "", new object[] { true, ErrorValue.NA })]
+    [InlineData("=SORT(A1:A2)", "=NA()", "", "", new object[] { ErrorValue.NA, 0d })]
+    [InlineData("=SORT(A1:A3)", "7", "=NA()", "=1/0", new object[] { 7d, ErrorValue.Div0, ErrorValue.NA })]
+    [InlineData("=SORTBY(B1:B2,A1:A2)", "=NA()", "7", "", new object[] { 2d, 1d })]
+    [InlineData("=SORTBY(B1:B2,A1:A2,-1)", "7", "=NA()", "", new object[] { 2d, 1d })]
+    [InlineData("=SORTBY(B1:B2,C1:C2,1,A1:A2,1)", "=NA()", "7", "", new object[] { 2d, 1d })]
+    public void ADR0047_an_error_key_sorts_after_the_other_kinds_and_before_a_blank(string formula, string a1, string a2, string a3, object[] expected)
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A1", a1);
+        if (a2 != "") sheet.Enter("A2", a2);
+        if (a3 != "") sheet.Enter("A3", a3);
+        sheet.Enter("B1", "1");
+        sheet.Enter("B2", "2");
+        sheet.Enter("C1", "x");
+        sheet.Enter("C2", "x");
+        sheet.Enter("ZZ1000", formula);
+
+        Assert.Equal(expected, Spilled(sheet, expected.Length));
+    }
+
+    [Theory] // ADR-0047 (2026-10-14, after run 18a: SORT-032 leaves two readings of two different Error Values, ERROR.TYPE's numbers and their texts): refused with #VALUE! where the two order them differently, in a descending sort, and beside an Error Value ERROR.TYPE does not number
+    [InlineData("=SORT(A1:A2)", "#REF!", "#NAME?", "")]
+    [InlineData("=SORT(A1:A2)", "#NULL!", "#DIV/0!", "")]
     [InlineData("=SORT(A1:A2,1,-1)", "=NA()", "=1/0", "")]
-    [InlineData("=SORTBY(B1:B2,A1:A2)", "7", "=NA()", "")]
-    [InlineData("=SORTBY(B1:B2,A1:A2,-1)", "=NA()", "=NA()", "")]
-    [InlineData("=SORTBY(B1:B2,C1:C2,1,A1:A2,1)", "7", "=NA()", "")]
+    [InlineData("=SORT(A1:A2)", "=NA()", "#SPILL!", "")]
+    [InlineData("=SORTBY(B1:B2,A1:A2)", "#VALUE!", "#NUM!", "")]
+    [InlineData("=SORTBY(B1:B2,A1:A2,-1)", "=NA()", "=1/0", "")]
     public void ADR0047_an_error_key_is_refused_where_the_readings_part(string formula, string a1, string a2, string a3)
     {
         var sheet = NewSheet();
@@ -238,8 +259,8 @@ public class SortAndUniqueBlankTests
     public void ADR0047_an_error_keys_refusal_cannot_be_caught(string formula)
     {
         var sheet = NewSheet();
-        sheet.Enter("A1", "=NA()");
-        sheet.Enter("A2", "7");
+        sheet.Enter("A1", "#REF!");
+        sheet.Enter("A2", "#NAME?");
         sheet.Enter("B1", "1");
         sheet.Enter("B2", "2");
 
@@ -433,14 +454,14 @@ public class SortAndUniqueBlankTests
         Assert.Equal(expected, Plain(sheet.Evaluate(formula)));
     }
 
-    [Theory] // ADR-0125, ADR-0047 (SORT-033, 037): SUM refuses where passing over a kept blank and adding it as 0 give different sums: the last addition decides whether a sum that nearly cancels is 0
-    [InlineData("=SUM(SORT(E1:E4))", null)]
-    [InlineData("=SUM(SORT(E1:E4,1,-1))", null)]
+    [Theory] // ADR-0125, ADR-0047 (2026-10-14, after run 18a: SORT-037): SUM passes over a kept blank as over a blank cell, so a sum that nearly cancels in its last number is 0, not the sum with the blank added last as 0
+    [InlineData("=SUM(SORT(E1:E4))", 0d)]
+    [InlineData("=SUM(SORT(E1:E4,1,-1))", 0d)]
     [InlineData("=SUM(SORT(E1:E4),0)", 2.7755575615628914E-17)]
     [InlineData("=SUM(SORTBY(E1:E4,F1:F4))", 0d)]
     [InlineData("=SUM(E1:E4)", 0d)]
     [InlineData("=SUM(SORT(E1:E3))", 0d)]
-    public void ADR0125_sum_refuses_where_a_kept_blank_moves_its_last_addition(string formula, double? expected)
+    public void ADR0125_sum_passes_over_a_kept_blank(string formula, double expected)
     {
         // E: 0.1, 0.2, -0.3, blank. F: the keys 2, 3, 1, 0, which put the blank first.
         var sheet = NewSheet();
@@ -454,35 +475,50 @@ public class SortAndUniqueBlankTests
 
         var value = sheet.Evaluate(formula);
 
-        if (expected is { } number) Assert.Equal(number, value.Number);
-        else Assert.Equal(ErrorValue.Value, value.Error);
+        Assert.Equal(expected, value.Number);
+        Assert.False(value.IsRefused, formula);
     }
 
-    [Theory] // ADR-0125, ADR-0202 (SORT-034, 035, UNIQUE-021 to 023): where a function's reading of a kept blank parts, the Formula is refused with #VALUE!
-    [InlineData("=AVERAGE(UNIQUE(D1:D3))")]
-    [InlineData("=MIN(SORT(D1:D3))")]
-    [InlineData("=MAX(SORTBY(D1:D3,D1:D3))")]
-    [InlineData("=COUNT(UNIQUE(D1:D3))")]
-    [InlineData("=PRODUCT(SORT(D1:D3))")]
+    [Theory] // ADR-0125 (2026-10-14, after run 18a: FILTER-014, SORT-034, 035, 039, TRANSPOSE-007, UNIQUE-021 to 023): the aggregates pass over a kept blank as over a blank cell, COUNT does not count it, COUNTA counts it given as one Value too, IF hands it on as it is, and SORT sorts it last as a blank key; MAX, PRODUCT and the rest that take their numbers as AVERAGE does, and SORT over the kept blank of UNIQUE, SORTBY and TRANSPOSE, by generalisation
+    [InlineData("=AVERAGE(UNIQUE(D1:D3))", 6d)]
+    [InlineData("=MIN(SORT(D1:D3))", 5d)]
+    [InlineData("=MAX(SORTBY(D1:D3,D1:D3))", 7d)]
+    [InlineData("=COUNT(UNIQUE(D1:D3))", 2d)]
+    [InlineData("=PRODUCT(SORT(D1:D3))", 35d)]
+    [InlineData("=COUNTA(INDEX(SORT(D1:D3),3))", 1d)]
+    [InlineData("=COUNTA(UNIQUE(D2))", 1d)]
+    [InlineData("=AVERAGE(INDEX(SORT(D1:D3),3),1)", 1d)]
+    [InlineData("=AVERAGE(FILTER(D1:D3,D1:D3<>1))", 6d)]
+    [InlineData("=MIN(TRANSPOSE(D1:D3))", 5d)]
+    [InlineData("=COUNT(FILTER(D1:D3,D1:D3<>1))", 2d)]
+    [InlineData("=ISBLANK(INDEX(IF(TRUE,SORT(D1:D3)),3))", true)]
+    [InlineData("=IFERROR(AVERAGE(UNIQUE(D1:D3)),0)", 6d)]
+    [InlineData("=ISERROR(MIN(SORT(D1:D3)))", false)]
+    [InlineData("=IFNA(COUNT(SORTBY(D1:D3,D1:D3)),\"x\")", 2d)]
+    [InlineData("=IF(ISERROR(COUNTA(INDEX(SORT(D1:D3),3))),1,2)", 2d)]
+    [InlineData("=INDEX(SORT(UNIQUE(D1:D3)),2)", 7d)]
+    [InlineData("=COUNTA(SORT(FILTER(D1:D3,D1:D3<>1)))", 3d)]
+    [InlineData("=INDEX(SORT(TRANSPOSE(D1:D3),1,1,TRUE),1,2)", 7d)]
+    [InlineData("=ISBLANK(INDEX(SORT(FILTER(D1:D3,D1:D3<>1)),3))", true)]
+    public void ADR0125_a_kept_blank_is_read_as_run_18a_read_excels(string formula, object expected)
+    {
+        var sheet = WithNumbersAndABlank();
+
+        var value = sheet.Evaluate(formula);
+        Assert.False(value.IsRefused, formula);
+        Assert.Equal(expected, Plain(value));
+    }
+
+    [Theory] // ADR-0125, ADR-0202: where a function's reading of a kept blank parts, the Formula is refused with #VALUE!
     [InlineData("=AND(SORT(D1:D3))")]
     [InlineData("=TEXTJOIN(\",\",FALSE,SORT(D1:D3))")]
-    [InlineData("=COUNTA(INDEX(SORT(D1:D3),3))")]
-    [InlineData("=COUNTA(UNIQUE(D2))")]
-    [InlineData("=AVERAGE(INDEX(SORT(D1:D3),3),1)")]
     [InlineData("=MATCH(7,SORT(D1:D3),0)")]
     [InlineData("=XLOOKUP(7,D1:D3,SORT(D1:D3))")]
-    [InlineData("=SORT(UNIQUE(D1:D3))")]
     [InlineData("=UNIQUE(SORT(D1:D3))")]
     [InlineData("=TRANSPOSE(UNIQUE(D1:D3))")]
     [InlineData("=FILTER(SORT(D1:D3),D1:D3>0)")]
-    [InlineData("=AVERAGE(FILTER(D1:D3,D1:D3<>1))")]
-    [InlineData("=MIN(TRANSPOSE(D1:D3))")]
-    [InlineData("=COUNT(FILTER(D1:D3,D1:D3<>1))")]
-    [InlineData("=COUNTA(SORT(FILTER(D1:D3,D1:D3<>1)))")]
-    [InlineData("=SORT(TRANSPOSE(D1:D3),1,1,TRUE)")]
     [InlineData("=MATCH(7,TRANSPOSE(D1:D3),0)")]
     [InlineData("=XLOOKUP(7,FILTER(D1:D3,D1:D3<>1),D1:D3)")]
-    [InlineData("=IF(TRUE,SORT(D1:D3))")]
     [InlineData("=CHOOSE(1,UNIQUE(D1:D3))")]
     [InlineData("=LEN(UNIQUE(D1:D3))")]
     [InlineData("=ISBLANK(SORT(D1:D3))")]
@@ -508,14 +544,8 @@ public class SortAndUniqueBlankTests
     }
 
     [Theory] // ADR-0125, ADR-0202: the refusal is the Formula's, so IFERROR cannot catch it, nor ISERROR or ISBLANK read it as an answer
-    [InlineData("=IFERROR(AVERAGE(UNIQUE(D1:D3)),0)")]
     [InlineData("=IFERROR(LEN(UNIQUE(D1:D3)),0)")]
-    [InlineData("=ISERROR(MIN(SORT(D1:D3)))")]
-    [InlineData("=IFNA(COUNT(SORTBY(D1:D3,D1:D3)),\"x\")")]
-    [InlineData("=IF(ISERROR(COUNTA(INDEX(SORT(D1:D3),3))),1,2)")]
     [InlineData("=IFERROR(INDEX(SORT(D1:D3),3),0)")]
-    [InlineData("=IFERROR(AVERAGE(FILTER(D1:D3,D1:D3<>1)),0)")]
-    [InlineData("=ISERROR(MIN(TRANSPOSE(D1:D3)))")]
     public void ADR0125_the_refusal_cannot_be_caught(string formula)
     {
         var sheet = WithNumbersAndABlank();
@@ -637,11 +667,11 @@ public class SortAndUniqueBlankTests
         var sheet = NewSheet();
         sheet.Enter("D1", "1");
         sheet.Enter("D3", "2");
-        sheet.Enter("A6", "=AVERAGE(UNIQUE(D1:D3))");
+        sheet.Enter("A6", "=MATCH(2,SORT(D1:D3),0)");
         sheet.Enter("A7", "=ROWS(UNIQUE(D1:D3))");
         sheet.Enter("A8", "=UNIQUE(D1:D3)");
         sheet.Enter("B1", "=ROWS(UNIQUE(D1:D3))+ISERROR(INDIRECT(\"A6\"))");
-        sheet.Enter("B2", "=AVERAGE(UNIQUE(D1:D3))+INDIRECT(\"A7\")");
+        sheet.Enter("B2", "=MATCH(2,SORT(D1:D3),0)+INDIRECT(\"A7\")");
         sheet.Enter("B3", "=INDIRECT(\"A7\")+ROWS(INDIRECT(\"A8#\"))");
 
         sheet.Enter("D1", "3");

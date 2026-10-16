@@ -99,11 +99,14 @@
                 -2) answers only over a lookup array sorted as the mode says; otherwise it is <code>#VALUE!</code>.
             </li>
             <li>
-                <b>An Error Value among <code>SORT</code>'s keys</b> is sorted where it already follows every number:
-                over 7 and then <code>#N/A</code>, Excel's Anchor shows 7, which fits an Error Value sorted after the
-                numbers and one that keeps its place alike. With a number after it, beside text, a boolean, a blank or
-                another Error Value, in a descending sort, and among <code>SORTBY</code>'s keys, the Formula is
-                <code>#VALUE!</code> until Excel has been asked where it goes.
+                <b>An Error Value among <code>SORT</code>'s or <code>SORTBY</code>'s keys</b> sorts after numbers,
+                text and booleans, and before a blank, and descending before numbers, text and booleans, as Excel
+                sorts it: <code>=SORT(A1:A2)</code> over <code>#N/A</code> and 7 shows 7 first. Two different Error
+                Values sort as Excel's <code>#DIV/0!</code> before <code>#N/A</code> where the order
+                <code>ERROR.TYPE</code> numbers them in and the order of their texts agree; where they do not, and
+                for two different ones in a descending sort, the Formula is <code>#VALUE!</code> until Excel has
+                been asked. A <code>sort_index</code> that is not a whole number is truncated, as Excel's is:
+                <code>=SORT(G1:H5,1.5)</code> sorts by the first column.
             </li>
             <li>
                 <b>A blank among <code>SORT</code>'s or <code>SORTBY</code>'s keys</b> sorts after numbers, text and
@@ -112,7 +115,7 @@
                 and after a boolean ascending, its <code>SORTBY</code> after a number ascending, and its
                 <code>UNIQUE</code> to count it one of a kind only with another blank, and both <code>SORT</code> and
                 <code>UNIQUE</code> spilled it as 0; the rest is ExSheet's own reading until Excel has been asked.
-                Beside an Error Value key the Formula is <code>#VALUE!</code>.
+                An Error Value key sorts before it.
             </li>
             <li>
                 <b>A blank <code>UNIQUE</code>, <code>SORT</code>, <code>SORTBY</code>, <code>FILTER</code> or
@@ -121,9 +124,12 @@
                 in <code>SORT</code>'s and <code>UNIQUE</code>'s array, to find it blank with <code>ISBLANK</code>
                 once <code>INDEX</code> took it out of <code>SORT</code>'s, and equal to <code>""</code> once taken
                 out of <code>UNIQUE</code>'s; the rest, the other three included, is ExSheet's own reading until
-                Excel has been asked. A function whose readings of it part, such as <code>AVERAGE</code>, <code>MIN</code> or
-                <code>COUNT</code>, makes the Formula <code>#VALUE!</code>, which <code>IFERROR</code> does not catch,
-                so <code>=AVERAGE(FILTER(A2:A9, B2:B9="North"))</code> over a blank is <code>#VALUE!</code>.
+                Excel has been asked. The aggregates pass over it as over a blank cell, as Excel's do:
+                <code>=AVERAGE(FILTER(A2:A9, B2:B9="North"))</code> over a blank averages the numbers alone, and
+                <code>COUNT</code> does not count it. <code>COUNTA</code> counts it even taken out on its own,
+                <code>IF</code> hands it on as it is, and <code>SORT</code> sorts it last as a blank key. A function
+                whose readings of it part, such as <code>LEN</code> or <code>MATCH</code> over the array, makes the
+                Formula <code>#VALUE!</code>, which <code>IFERROR</code> does not catch.
             </li>
             <li>
                 <b><code>#GETTING_DATA</code></b>, a Linked Table's data still on its way, is not an error to
@@ -275,11 +281,6 @@
                 <code>#VALUE!</code>,
                 though Excel answers it: a fraction such as <code># ?/?</code>, or a condition such as
                 <code>[&lt;=9]</code>.
-            </li>
-            <li>
-                <b><code>SORT</code>'s <code>sort_index</code></b> that is not a whole number,
-                <code>=SORT(G1:H5,1.5)</code>, is <code>#VALUE!</code> until Excel has been asked whether it truncates
-                it, rounds it or takes no fraction at all.
             </li>
             <li>
                 <b>A serial below 0</b> under <code>DATEDIF</code>, <code>YEARFRAC</code>, <code>HOUR</code>,

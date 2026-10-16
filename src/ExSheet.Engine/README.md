@@ -203,7 +203,11 @@ spill. Operators work element by element over ranges, and a function that reduce
 their order: Excel's `SORT` was seen to sort it so after numbers and text in either order and after
 a boolean ascending, keeping two blank keys in their order in a descending sort, and its `SORTBY`
 after a number in an ascending key; the rest is the engine's, by generalisation, until Excel is
-asked. Beside an Error Value key the Formula is `#VALUE!`. In `UNIQUE` a blank is one of a kind only
+asked. An Error Value key sorts after numbers, text and booleans ascending and before them descending,
+and before a blank, in `SORT` and `SORTBY` alike, as Windows run 18a read Excel (SORT-026, 028 to 031,
+SORTBY-010); two different ones order as `ERROR.TYPE` numbers them where the order of their texts
+agrees, `#DIV/0!` before `#N/A` (SORT-032), and make the Formula `#VALUE!` elsewhere and in a
+descending sort. A `sort_index` that is not a whole number is truncated (SORT-042). In `UNIQUE` a blank is one of a kind only
 with another blank, never with 0. Read inside a Formula, the blank `UNIQUE`, `SORT`, `SORTBY`,
 `FILTER` and `TRANSPOSE` keep is read as the empty value a blank cell holds: `COUNTA` counts it in
 the array, `INDEX` takes it out as a blank, and an operator, or most functions that read one Value
@@ -212,11 +216,13 @@ value and `ROUND` among them, make the Formula `#VALUE!`. Excel was seen to give
 this in three cases: `ISBLANK` found the blank `INDEX` took out of `SORT`'s blank (SORT-022), `=`
 found the one it took out of `UNIQUE`'s equal to empty text (UNIQUE-018), and `COUNTA` counted it in
 both arrays (SORT-021, UNIQUE-017); the rest is the engine's, carried from those until Excel is
-asked. `SUMPRODUCT` and `CONCAT` add nothing for it, `SUM` neither except where that moves its last
-addition, and `VLOOKUP`, `HLOOKUP` and `XLOOKUP` take an array that holds it where they never read
+asked. The aggregates pass over it as over a blank cell, `SUM`, `AVERAGE`, `MIN` and `COUNT` as Excel
+was seen to (SORT-034, 037, FILTER-014, TRANSPOSE-007, UNIQUE-021, 022) and `MAX`, `PRODUCT`,
+`MEDIAN` and the spreads by generalisation; `COUNTA` counts it given as one Value too (SORT-035,
+UNIQUE-023); `IF` hands it on as it is (SORT-039); and `SORT` sorts it last as a blank key
+(SORT-038). `SUMPRODUCT` and `CONCAT` add nothing for it, and `VLOOKUP`, `HLOOKUP` and `XLOOKUP` take an array that holds it where they never read
 it, each because every reading gives the one answer. A function that would read it some other way no
-run has settled makes the Formula `#VALUE!`. `SORT` answers an Error Value key that already follows
-every number, the one shape Excel was asked (SORT-015).
+run has settled makes the Formula `#VALUE!`.
 
 Which functions come next, each with its status and priority, is catalogued in
 [`docs/specs/exsheet-functions/spec.md`](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/specs/exsheet-functions/spec.md).
@@ -271,11 +277,9 @@ could depend on a Value, nothing spills (ADR-0125, 2026-10-13). The refusals:
   own roundings more than 2^6 times, Excel's answer kept beside each refusal run 18a read; `PMT`, `PV`
   and `FV` with an `nper` past 2^53 at a rate other than 0; and `XNPV` where the orders of its checks
   that run 18a's answers leave give different answers, and at a cell of its values or dates that is not
-  a number (`#VALUE!`); `SORT` with an Error Value key that has a number after it, or beside
-  text, a boolean, a blank or another Error Value, or in a descending sort, and `SORTBY` with any
-  Error Value key (`#VALUE!`); `SORT` with a `sort_index` that is not a whole number (`#VALUE!`;
-  SORT-042); a blank `UNIQUE`, `SORT`, `SORTBY`, `FILTER` or `TRANSPOSE` keeps, read
-  by a function whose readings of it part, such as `AVERAGE`, `MIN` or `COUNT` (`#VALUE!`). Each of
+  a number (`#VALUE!`); `SORT` and `SORTBY` with two different Error Value keys whose readings
+  part, or in a descending sort (`#VALUE!`); a blank `UNIQUE`, `SORT`, `SORTBY`, `FILTER` or `TRANSPOSE` keeps, read
+  by a function whose readings of it part, such as `MATCH`'s lookup array or `LEN` (`#VALUE!`). Each of
   these refusals is the Formula's, and every Formula's that reads its cell: no Formula catches it.
 - **Answered as Windows run 18a read Excel** (2026-10-14). `EDATE` from serial 0 counts day 0 by
   `DATE`'s arithmetic at every edge: `EDATE(0,0)` is 0, `EDATE(0,2)` the day that never existed, 60,
