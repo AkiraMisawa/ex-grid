@@ -1,6 +1,6 @@
 # 202: A press into the Formula Bar keeps its caret through a render that lands after it
 
-Status: needs-triage
+Status: ready-for-agent
 Roadmap: ExGrid — A press into the Formula Bar's text made straight after Enter and a press on a cell keeps the caret where it was pressed.
 
 **What to build:** found while pinning ticket 201, on the Server host. The cause is in ExGrid's core,
@@ -32,3 +32,7 @@ a test reads; this ticket is the product side.
 24.934, the bar's focus at 24.938 (before the Enter's render was painted), the held bar press
 answered at 24.994, and F4 carried `caret=6-6 moved=False`; in the passing runs the bar's focus came
 about 150 ms after the press, and F4 carried `caret=2-2 moved=True`.
+
+*(2026-10-16, decided with the user: option (a).)* Where the bar's text when the press takes its turn is
+the text the press was made on, the caret stays where it was pressed, so the outcome is the one a slow
+press gives (ADR-0220). Built on its own branch, after tickets 200 and 201.
