@@ -43,10 +43,10 @@ public partial class ExPivot
 
     private PivotToolbarContext ToolbarContext()
     {
-        var layoutOpen = _open is { Kind: Surface.LayoutMenu };
+        var layoutShown = Shown is { Kind: Surface.LayoutMenu };
         var layoutMenu = new PivotToolbarMenuView(
-            PivotCommandIds.LayoutMenu, Word(PivotCommandIds.LayoutMenu), layoutOpen, ToggleLayoutMenu,
-            layoutOpen ? PopupFragment(_open!) : null, _layoutMenuFocus);
+            PivotCommandIds.LayoutMenu, Word(PivotCommandIds.LayoutMenu), _open is { Kind: Surface.LayoutMenu }, ToggleLayoutMenu,
+            layoutShown ? PopupFragment(Shown!) : null, _layoutMenuFocus);
         // Refresh is offered only by a source that can be asked again (ADR-0066).
         var refresh = _source!.Features.CanRefresh
             ? new PivotCommand(PivotCommandIds.Refresh, Word(PivotCommandIds.Refresh), true, RefreshAsync)
@@ -58,12 +58,16 @@ public partial class ExPivot
 
     private void ToggleLayoutMenu()
     {
-        if (_open is { Kind: Surface.LayoutMenu })
+        if (_open is { Kind: Surface.LayoutMenu } open)
         {
+            if (TakeOpenerPress(open))
+                return;
             CloseOpen();
             return;
         }
-        Open(new OpenSurface { Kind = Surface.LayoutMenu, FocusRequest = ++_focusSequence });
+        var menu = new OpenSurface { Kind = Surface.LayoutMenu, FocusRequest = ++_focusSequence };
+        Open(menu);
+        BeginOpening(menu, OpenerRegion.Toolbar);
     }
 
     /// <summary>The Layout menu's commands (ADR-0061): Excel's Design tab choices, the current one
@@ -97,8 +101,9 @@ public partial class ExPivot
         {
             var field = placement.Field;
             var open = _open is { BandField: not null } surface && surface.BandField == field;
+            var shown = Shown is { BandField: not null } drawn && drawn.BandField == field;
             return new PivotReportFilterView(field, InfoOf(field).Caption, BandSummary(placement), placement.HiddenItems.Count > 0, open,
-                () => ToggleBand(field), open ? PopupFragment(_open!) : null, _bandFocus.GetValueOrDefault(field));
+                () => ToggleBand(field), shown ? PopupFragment(Shown!) : null, _bandFocus.GetValueOrDefault(field));
         }).ToArray();
         var context = new PivotReportFiltersContext(Word("report-filters"), filters, Word);
         if (PivotChrome?.ReportFilters(context) is { } custom)

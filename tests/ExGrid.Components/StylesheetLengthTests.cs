@@ -41,7 +41,6 @@ public class StylesheetLengthTests : GridTestContext
     {
         [("--ex-rule-width", "1px")] = Rule,
         [("--ex-rule-dp", "1px")] = Rule,
-        [("--ex-outline-width", "2px")] = Outline,
         [("--ex-editor-outline", "2px")] = Outline,
         [("--ex-grid-focus-outline", "1px")] = Outline,
         [("--ex-grid-focus-outline", "2px")] = Outline,

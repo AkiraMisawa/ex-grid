@@ -83,5 +83,15 @@
 
     /// <inheritdoc />
     protected override Task OnAfterRenderAsync(bool firstRender)
-        => MudPivotFocus.TakeAsync(Context.FocusRequest, ref _acted, _search is { } search ? () => search.FocusAsync() : null);
+        => MudPivotFocus.TakeAsync(Context.FocusRequest, ref _acted, SearchFocus());
+
+    // The search takes DOM focus as ExPivot says (Context.TakeKeyboard): through the report's grid when
+    // the keys typed on the band's button while the panel opened are the search's.
+    private Func<ValueTask>? SearchFocus()
+    {
+        if (_search?.InputReference is not { } input)
+            return _search is { } search ? () => search.FocusAsync() : null;
+        var element = input.ElementReference;
+        return () => new ValueTask(Context.TakeKeyboard(element));
+    }
 }

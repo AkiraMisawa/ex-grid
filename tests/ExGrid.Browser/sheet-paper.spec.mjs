@@ -195,7 +195,10 @@ for (const [chrome, query] of CHROMES) {
 // ExSheet.MudBlazor it is the palette's primary, which the Focus outline is there: this branch's
 // reading, as SH-54's outline is. Read where something
 // above the selection layer stands beside the cell — the Headings, a Pinned Column, the header — and
-// in the open: lying inside the cell, no side is covered. The page's own scale here, and a real 150%
+// in the open: lying inside the cell, no side is covered. Beside the Headings and under the header the
+// Heading Mark lies past the gridline, in the same colour (ADR-0008, 2026-10-13): two Device Pixels on
+// the Heading's edge, with the cell's own first Device Pixel between them and the border, as R4 read
+// Excel's at A1 (case (2) below). The page's own scale here, and a real 150%
 // under the chrome-150 project, as an OS sets it (Playwright's emulated scale is not read: its
 // pixels are the emulation's, device-pixel-225.spec.mjs's note).
 for (const [chrome, query] of CHROMES) {
@@ -227,13 +230,20 @@ for (const [chrome, query] of CHROMES) {
                 expect(border, `${scheme}, ${address}: the border is the Focus outline's colour`).toEqual(outline);
                 found[address] = await edgePixels(page, await onDevicePixels(page, cell(grid, address)), border);
             }
+            // The Heading Mark past the edge a Heading stands at: A8's Row Heading, E1's column Heading.
+            const marked = { A8: { left: [-2, -1] }, E1: { top: [-2, -1] } };
             for (const [address, edges] of Object.entries(found)) {
                 // A gridline is whole Device Pixels: one at 100% and 150% (ADR-0090).
                 const gridline = Math.max(1, Math.floor(edges.scale + 1e-9));
                 // The display's scale, as its project sets it: under chrome-150 the reading is at 150%.
                 expect(edges.scale).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
+                const mark = marked[address] ?? {};
                 expect(edges, `${scheme}, ${address}: ${JSON.stringify(edges)}`).toEqual({
-                    scale: edges.scale, left: [1], top: [1], right: [gridline + 1], bottom: [gridline + 1],
+                    scale: edges.scale,
+                    left: [...(mark.left ?? []), 1],
+                    top: [...(mark.top ?? []), 1],
+                    right: [gridline + 1],
+                    bottom: [gridline + 1],
                 });
             }
         }
@@ -249,8 +259,9 @@ for (const [chrome, query] of CHROMES) {
 // zoom, which chrome-150 lays out; at 100% they are read the same, by generalisation (no run read
 // Excel on a 100% display). The gridline's
 // own pixel round the cell is not read: R4 read it #AFAFAF, and the Paper paints its gridline there
-// (#E0E0E0), a difference no decision has taken up. Nor are the Headings beside A1, which R4 read as
-// Excel's 2 px of #217346 and the Paper does not draw.
+// (#E0E0E0), a difference no decision has taken up. The Headings beside A1, which R4 read as Excel's
+// two device pixels of #217346, are the Heading Mark (ADR-0008, 2026-10-13), read past A1's left and top
+// edges as R4 read them: the mark, then A1's own white Device Pixel, then the border.
 test('UX-19/SH-54 (built-in Chrome): R4\'s three selections on the Paper: the active cell\'s border, the white line outside it and what lies past its gridline (ADR-0008, 2026-10-12; ADR-0071)', async ({ page }, testInfo) => {
     await page.goto('/sheet?case=13');
     const grid = sheet(page);
@@ -260,13 +271,17 @@ test('UX-19/SH-54 (built-in Chrome): R4\'s three selections on the Paper: the ac
     expect(scale).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
     const gridline = Math.max(1, Math.floor(scale + 1e-9));
     const SHADE = WHITE.map((v) => v * 0.78);
-    const readAt = async (focus, beyond, what) => {
+    const readAt = async (focus, beyond, what, headings = []) => {
         await page.mouse.move(0, 0);
         await circuitQuiet();
         await twoFrames(page);
         const box = await onDevicePixels(page, cell(grid, focus));
         const edges = await edgePixels(page, box, GREEN);
-        expect(edges, `${what}: the border at ${focus}`).toEqual({ scale, left: [1], top: [1], right: [gridline + 1], bottom: [gridline + 1] });
+        // Past an edge a Heading stands at, the Heading Mark's two Device Pixels (R4 (2), at A1).
+        const past = (side) => (headings.includes(side) ? [-2, -1] : []);
+        expect(edges, `${what}: the border at ${focus}`).toEqual({
+            scale, left: [...past('left'), 1], top: [...past('top'), 1], right: [gridline + 1], bottom: [gridline + 1],
+        });
         const { at } = await acrossEdges(page, box);
         // The white line between the border and the gridline, on every side.
         for (const [side, index] of [['left', 0], ['top', 0], ['right', gridline], ['bottom', gridline]]) {
@@ -292,7 +307,7 @@ test('UX-19/SH-54 (built-in Chrome): R4\'s three selections on the Paper: the ac
     for (let i = 0; i < 6; i++) await page.keyboard.press('Enter');
     await expectFocusAt(grid, 'A1');
     await expect(grid.locator('.ex-focus.ex-focus-among-ranges')).toHaveCount(1);
-    await readAt('A1', { right: true, bottom: true }, '(2)');
+    await readAt('A1', { right: true, bottom: true }, '(2)', ['left', 'top']);
     // (3) A1:B2, then D4 alone with Ctrl: D4's area is D4, so E4 and D5 are white.
     await clickCell(grid, 'C9');
     await clickCell(grid, 'A1');

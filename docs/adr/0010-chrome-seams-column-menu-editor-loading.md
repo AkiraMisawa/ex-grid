@@ -359,7 +359,13 @@ Sort ascending. The keys behind a closing key are held until the popover is gone
 the grid's. The core writes the letters that run an enabled command on the commands
 (`data-ex-letters`), and a Chrome marks its value list `ex-value-list`, so the listener mirrors
 nothing but Tab, Shift+Tab and E. The two seconds count from the start of the hold, however
-many moves it holds behind.
+many moves it holds behind. *(2026-10-12, as built: a reading of this rule and of the decision of
+that day, ADR-0044's note.)* A button that closes the popover — a panel's OK, Apply or Cancel —
+closes it by a key too, Enter or Space, and by a press: a Chrome marks such a button
+`ex-popover-closes`, as it marks its value list, and the contents of a Consumer's popover mark
+theirs. Enter in a field of a form whose OK is so marked submits it, and holds as Enter in the
+filter's field does. A panel that refuses what OK submits stands, and the hold behind it ends at
+its two seconds.
 A keydown dispatched from script types nothing, so a held key handed to a text field is typed
 at its caret, as a held key is in the Cell Editor, and a held Enter submits the field's form.
 A held key whose effect is the browser's own — Tab moving DOM focus, Space ticking a checkbox,

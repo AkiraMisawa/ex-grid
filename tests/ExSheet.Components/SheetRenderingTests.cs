@@ -4,6 +4,7 @@ using ExSheet;
 using ExSheet.Components.Tests.Support;
 using ExSheet.Engine;
 using Xunit;
+using SheetComponent = ExSheet.Components.ExSheet;
 
 namespace ExSheet.Components.Tests;
 
@@ -20,10 +21,61 @@ public class SheetRenderingTests : SheetTestContext
 
         Assert.Single(cut.FindComponents<ExGrid<SheetRow>>());
         var root = cut.Find(".ex-grid");
-        Assert.Equal("1048576", root.GetAttribute("aria-rowcount"));
+        // Excel's rows and the Column Headings' row, which ARIA counts first (ADR-0033).
+        Assert.Equal("1048577", root.GetAttribute("aria-rowcount"));
         Assert.Equal("16384", root.GetAttribute("aria-colcount"));
         var headers = cut.FindAll(".ex-header [role=columnheader]").Select(h => h.TextContent.Trim()).ToList();
         Assert.Equal(["A", "B", "C"], headers.Take(3));
+    }
+
+    /// <summary>Each painted row's Sheet number, read from its Row Heading, beside its aria-rowindex.</summary>
+    private static List<(int Heading, int Index)> HeadingsAndIndices(IRenderedComponent<SheetComponent> cut)
+        => [.. cut.FindAll(".ex-viewport > .ex-row").Select(row => (
+            int.Parse(row.QuerySelector(".ex-row-heading")!.TextContent, System.Globalization.CultureInfo.InvariantCulture),
+            int.Parse(row.GetAttribute("aria-rowindex")!, System.Globalization.CultureInfo.InvariantCulture)))];
+
+    [Fact] // ADR-0033 (2026-10-12): the Column Headings are ARIA's row 1, so at the top a Sheet row is its number plus one
+    public void The_column_headings_are_row_one_and_a1_is_row_two()
+    {
+        var cut = RenderSheet();
+
+        Assert.Equal("row", cut.Find(".ex-header").GetAttribute("role"));
+        Assert.Equal("1", cut.Find(".ex-header").GetAttribute("aria-rowindex"));
+        Assert.Equal("2", Cell(cut, "A1").ParentElement!.GetAttribute("aria-rowindex"));
+        Assert.Equal("1048577", cut.Find(".ex-grid").GetAttribute("aria-rowcount"));
+        var rows = HeadingsAndIndices(cut);
+        Assert.Equal(1, rows[0].Heading);
+        Assert.All(rows, row => Assert.Equal(row.Heading + 1, row.Index));
+    }
+
+    [Fact] // ADR-0033 (2026-10-12): far down a Sheet row is still its number plus one, as near the top
+    public async Task Far_down_a_sheet_row_is_its_number_plus_one()
+    {
+        var cut = RenderSheet();
+
+        await GoToAsync(cut, "A500000");
+        await ScrollToAsync(cut, 499_999 * SheetComponent.DefaultRowHeightPx, 0);
+
+        var rows = HeadingsAndIndices(cut);
+        Assert.Contains((500_000, 500_001), rows);
+        Assert.All(rows, row => Assert.Equal(row.Heading + 1, row.Index));
+        Assert.Equal("500001", Cell(cut, "A500000").ParentElement!.GetAttribute("aria-rowindex"));
+    }
+
+    [Fact] // ADR-0033 / ADR-0050 item 1: with the Column Headings hidden there is no header row, and A1 is row 1
+    public async Task Without_column_headings_a_sheet_row_is_its_number()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.ShowColumnHeadings, false));
+
+        Assert.Empty(cut.FindAll(".ex-header"));
+        Assert.Equal("1048576", cut.Find(".ex-grid").GetAttribute("aria-rowcount"));
+        Assert.Equal("1", Cell(cut, "A1").ParentElement!.GetAttribute("aria-rowindex"));
+        Assert.All(HeadingsAndIndices(cut), row => Assert.Equal(row.Heading, row.Index));
+
+        await GoToAsync(cut, "A500000");
+        await ScrollToAsync(cut, 499_999 * SheetComponent.DefaultRowHeightPx, 0);
+
+        Assert.Contains((500_000, 500_000), HeadingsAndIndices(cut));
     }
 
     [Fact] // ADR-0046 / ticket 02: typing a constant and a Formula shows the Value
@@ -90,19 +142,30 @@ public class SheetRenderingTests : SheetTestContext
     public async Task The_dom_is_bounded_at_the_top_and_at_the_far_corner()
     {
         var cut = RenderSheet();
+        // Compare the same one-cell Selection at both ends, including its Heading labels.
+        await GoToAsync(cut, "A1");
         var atTop = cut.FindAll("*").Count;
         var cellsAtTop = cut.FindAll("[role=gridcell]").Count;
+        var gapsAtTop = cut.FindAll(".ex-gap").Count;
 
         await GoToAsync(cut, "XFD1048576");
         await ScrollToAsync(cut, (Sheet.RowCount - 1) * 28d, (Sheet.ColumnCount - 1) * SheetColumns.DefaultWidthPx);
 
-        Assert.Contains(cut.FindAll(".ex-row"), r => r.GetAttribute("aria-rowindex") == "1048576");
+        Assert.Contains(cut.FindAll(".ex-row"), r => SheetRowOf(r) == 1048576);
         Assert.Contains(cut.FindAll("[role=columnheader]"), h => h.TextContent.Trim() == "XFD");
         var atCorner = cut.FindAll("*").Count;
         var cellsAtCorner = cut.FindAll("[role=gridcell]").Count;
         Assert.True(cellsAtTop < 1_000, $"{cellsAtTop} cells at the top");
         Assert.True(cellsAtCorner <= cellsAtTop, $"{cellsAtCorner} cells at the corner, {cellsAtTop} at the top");
-        Assert.True(atCorner <= atTop + 20, $"{atCorner} elements at the corner, {atTop} at the top");
+        // Horizontal virtualisation adds one leading gap per painted row and one in the header.
+        // Pin that cost explicitly; every other element has the same bound as at A1.
+        var gapsAtCorner = cut.FindAll(".ex-gap").Count;
+        var rowsAtCorner = cut.FindAll(".ex-row");
+        Assert.Equal(rowsAtCorner.Count + 1, gapsAtCorner);
+        Assert.Single(cut.FindAll(".ex-header > .ex-gap"));
+        Assert.All(rowsAtCorner, row => Assert.Single(row.QuerySelectorAll(".ex-gap")));
+        Assert.True(atCorner - gapsAtCorner <= atTop - gapsAtTop,
+            $"{atCorner} elements ({gapsAtCorner} gaps) at the corner, {atTop} ({gapsAtTop} gaps) at the top");
     }
 
     [Fact] // ADR-0046: ExGrid's sort and filter are not wired — a header click selects, nothing sorts, the column menu cannot sort

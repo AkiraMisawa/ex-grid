@@ -1,4 +1,4 @@
-import { test, expect, scrollRowToTop, circuitQuiet, setRoundTrip } from './fixtures.mjs';
+import { test, expect, scrollRowToTop, circuitQuiet, setRoundTrip, dataRowCount } from './fixtures.mjs';
 import { readClipboard } from './sheet-helpers.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
@@ -46,7 +46,8 @@ async function open(page, chrome) {
     }
 }
 
-/** What a report paints: how many rows it has, and the text of every painted row's cells. */
+/** What a report paints: how many rows it has, and the text of every painted row's cells. Both
+ * reports stand under the same header, so the counts compare as ARIA states them (ADR-0033). */
 const painted = (page, side) => report(page, side).evaluate((root) => ({
     rows: Number(root.getAttribute('aria-rowcount')),
     text: [...root.querySelectorAll('.ex-viewport .ex-row')]
@@ -74,8 +75,8 @@ test('LV-24/ADR-0151: a server report scrolls beyond its first Window with bound
     const grid = report(page, 'server');
     await section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }).check();
     const status = await api('/api/status');
-    await expect.poll(async () => Number(await grid.getAttribute('aria-rowcount'))).toBeGreaterThanOrEqual(status.trades);
-    const count = Number(await grid.getAttribute('aria-rowcount'));
+    await expect.poll(() => dataRowCount(grid)).toBeGreaterThanOrEqual(status.trades);
+    const count = await dataRowCount(grid);
     expect(await rows(page, 'server').count()).toBeLessThan(100);
     const last = count - 1;
     await scrollRowToTop(grid, last);
@@ -89,7 +90,7 @@ test('LV-24/ADR-0151: a report that shrinks under the Window scrolled to shows i
     // Computed in the page over the Snapshot, and on the server: the same Window, asked of each.
     for (const side of ['snapshot', 'server']) {
         const grid = report(page, side);
-        const rowCount = async () => Number(await grid.getAttribute('aria-rowcount'));
+        const rowCount = () => dataRowCount(grid);
         // The first layout's rows: the regions and their desks, and the Grand Total.
         const first = await rowCount();
         const tradeId = section(page, side).getByRole('checkbox', { name: 'Trade ID', exact: true });
@@ -140,7 +141,7 @@ test('LV-34/FN-3a/ADR-0182/0183: a server report scrolls within the Window it re
         const grid = report(page, 'server');
         const placeholders = rows(page, 'server').and(page.locator('.ex-placeholder'));
         await section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }).check();
-        await expect.poll(async () => Number(await grid.getAttribute('aria-rowcount'))).toBeGreaterThan(1000);
+        await expect.poll(() => dataRowCount(grid)).toBeGreaterThan(1000);
         await circuitQuiet();
 
         // Row 500 at the top: past the Window, a jump the grid asks about once it settles (ADR-0004).
@@ -201,7 +202,7 @@ test('LV-34/FN-3a/ADR-0182/0183: a question asked early stays in flight while th
         const grid = report(page, 'server');
         const placeholders = rows(page, 'server').and(page.locator('.ex-placeholder'));
         await section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }).check();
-        await expect.poll(async () => Number(await grid.getAttribute('aria-rowcount'))).toBeGreaterThan(1000);
+        await expect.poll(() => dataRowCount(grid)).toBeGreaterThan(1000);
         await circuitQuiet();
 
         // Row 500 at the top: rows 440 on are asked for and held.
@@ -268,13 +269,13 @@ test('LV-28/ADR-0152: remote whole-column Copy and Summary include rows outside 
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await open(page, 'builtin');
     await section(page, 'snapshot').getByRole('checkbox', { name: 'Trade ID', exact: true }).check();
-    await expect.poll(async () => Number(await report(page, 'snapshot').getAttribute('aria-rowcount'))).toBeGreaterThan(1000);
+    await expect.poll(() => dataRowCount(report(page, 'snapshot'))).toBeGreaterThan(1000);
     await page.locator('#pivot-db-same-layout').click();
     await expectSameReports(page);
     const copies = {}, summaries = {};
     for (const side of ['snapshot', 'server']) {
         const grid = report(page, side);
-        const count = Number(await grid.getAttribute('aria-rowcount'));
+        const count = await dataRowCount(grid);
         expect(await rows(page, side).count()).toBeLessThan(100);
         await grid.locator("[id$='-r1c1']").click({ force: true });
         await page.keyboard.press('Control+Space');
@@ -342,7 +343,7 @@ for (const chrome of ['builtin', 'mud']) {
                 await expect(grid.locator('.ex-viewport .ex-row').first()).toBeVisible();
                 // Trade ID first, then Region: every record behind the cell is Americas'.
                 await expect(grid.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').nth(1)).toHaveText('Americas');
-                details[side] = { grid, rows: Number(await grid.getAttribute('aria-rowcount')) };
+                details[side] = { grid, rows: await dataRowCount(grid) };
             }
             expect(details.server.rows, `the trades behind ${cell}`).toBe(details.snapshot.rows);
             expect(details.server.rows).toBeGreaterThan(20);

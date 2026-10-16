@@ -22,10 +22,9 @@ public class SelectionLookTests : SelectionGridContext
     private static Task KeyAsync(IRenderedComponent<ExGrid<TestRow>> cut, string key, bool ctrl = false, bool shift = false)
         => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, ctrl, shift, false, false, false));
 
-    /// <summary>The sides of the Selection's outline that stay inside a range at the grid's top and
-    /// left edges, where the header, the Row Headings or the pinned block would cover them
-    /// (ADR-0008, 2026-10-01).</summary>
-    private const string InsideTopAndLeft = "; --ex-outline-in-t: 1; --ex-outline-in-l: 1";
+    /// <summary>The unheaded left edge and pinned boundary keep their outline inside;
+    /// the header replaces the covered top with its Heading Mark (ADR-0008, D2).</summary>
+    private const string InsideLeft = "; --ex-outline-in-l: 1; --ex-outline-heading-t: 1";
 
     /// <summary>The hole a range is painted with, in the range's own box.</summary>
     private static string Hole(double left, double top, double right, double bottom)
@@ -86,7 +85,7 @@ public class SelectionLookTests : SelectionGridContext
         await KeyAsync(cut, "Tab");                          // (1, 1): inside, touching no edge
         Assert.Equal(Rect(0, 0, 300, 60) + Hole(100, 20, 200, 40), Assert.Single(Tints(cut)));
         // The box does not move with the Focus: it draws the outline round the whole range.
-        Assert.Equal(Rect(0, 0, 300, 60) + InsideTopAndLeft, Assert.Single(Ranges(cut)).Style);
+        Assert.Equal(Rect(0, 0, 300, 60) + InsideLeft, Assert.Single(Ranges(cut)).Style);
     }
 
     [Fact] // ADR-0008 (2026-09-29) / UX-19: several ranges are each tinted with no outline, and their tint never covers the Focus cell
@@ -99,14 +98,14 @@ public class SelectionLookTests : SelectionGridContext
         // Ctrl+click adds a range of one cell, which is the Focus: the selection's tint covers
         // none of it, so it is not painted.
         await PressCellAsync(cut, 3, 2, ctrl: true);
-        Assert.Equal([("ex-range", Rect(0, 0, 200, 40) + InsideTopAndLeft)], Ranges(cut));
+        Assert.Equal([("ex-range", Rect(0, 0, 200, 40) + InsideLeft)], Ranges(cut));
         Assert.Equal([Rect(0, 0, 200, 40)], Tints(cut));
         Assert.Equal(Rect(200, 60, 100, 20), cut.Find(".ex-focus").GetAttribute("style"));
 
         // Extended, it is tinted round a hole where the Focus is, and still carries no outline.
         await PressCellAsync(cut, 4, 3, shift: true);
         Assert.Equal(
-            [("ex-range", Rect(0, 0, 200, 40) + InsideTopAndLeft), ("ex-range", Rect(200, 60, 200, 40))],
+            [("ex-range", Rect(0, 0, 200, 40) + InsideLeft), ("ex-range", Rect(200, 60, 200, 40))],
             Ranges(cut));
         Assert.Equal([Rect(0, 0, 200, 40), Rect(200, 60, 200, 40) + Hole(0, 0, 100, 20)], Tints(cut));
     }
@@ -157,7 +156,7 @@ public class SelectionLookTests : SelectionGridContext
         // Ctrl+click on the one cell it added takes that range out (SL-5): one range is left, and
         // it carries the outline again, round the whole range, with the plain Focus inside it.
         await PressCellAsync(cut, 3, 2, ctrl: true);
-        Assert.Equal([("ex-range ex-range-single", Rect(0, 0, 200, 40) + InsideTopAndLeft)], Ranges(cut));
+        Assert.Equal([("ex-range ex-range-single", Rect(0, 0, 200, 40) + InsideLeft)], Ranges(cut));
         Assert.Equal("ex-focus", FocusClass(cut));
     }
 
@@ -173,7 +172,7 @@ public class SelectionLookTests : SelectionGridContext
         await PressCellAsync(cut, 3, 0, ctrl: true);
         Assert.Equal("ex-focus ex-focus-among-ranges", FocusClass(cut, ".ex-selection-pinned"));
         Assert.Null(FocusClass(cut));
-        Assert.Equal([("ex-range", Rect(100, 0, 200, 40) + InsideTopAndLeft)], Ranges(cut));
+        Assert.Equal([("ex-range", Rect(100, 0, 200, 40) + InsideLeft)], Ranges(cut));
         Assert.Empty(Ranges(cut, ".ex-selection-pinned"));
     }
 
@@ -189,10 +188,10 @@ public class SelectionLookTests : SelectionGridContext
         // outline's outer sides only and no seam stands where the two meet; on its other sides
         // the clip lets a row's height past the edge, where the outline lies (2026-10-01).
         Assert.Equal(
-            [("ex-range ex-range-single", Rect(0, 0, 300, 40) + "; clip-path: inset(-20px 100px -20px -20px)" + InsideTopAndLeft)],
+            [("ex-range ex-range-single", Rect(0, 0, 300, 40) + "; clip-path: inset(-20px 100px -20px -20px)" + InsideLeft)],
             Ranges(cut, ".ex-selection-pinned"));
         Assert.Equal(
-            [("ex-range ex-range-single", Rect(0, 0, 300, 40) + "; clip-path: inset(-20px -20px -20px 200px)" + InsideTopAndLeft)],
+            [("ex-range ex-range-single", Rect(0, 0, 300, 40) + "; clip-path: inset(-20px -20px -20px 200px)" + InsideLeft)],
             Ranges(cut));
         // The tints are cut at the boundary instead, the pinned one in the pinned shade layer
         // (ADR-0206), and the hole is in the pinned part, which is where the Focus is.
@@ -210,10 +209,10 @@ public class SelectionLookTests : SelectionGridContext
         await PressCellAsync(cut, 1, 0, shift: true);
 
         Assert.Equal(
-            [("ex-range ex-range-single", Rect(0, 0, 300, 40) + "; clip-path: inset(-20px 100px -20px -20px)" + InsideTopAndLeft)],
+            [("ex-range ex-range-single", Rect(0, 0, 300, 40) + "; clip-path: inset(-20px 100px -20px -20px)" + InsideLeft)],
             Ranges(cut, ".ex-selection-pinned"));
         Assert.Equal(
-            [("ex-range ex-range-single", Rect(0, 0, 300, 40) + "; clip-path: inset(-20px -20px -20px 200px)" + InsideTopAndLeft)],
+            [("ex-range ex-range-single", Rect(0, 0, 300, 40) + "; clip-path: inset(-20px -20px -20px 200px)" + InsideLeft)],
             Ranges(cut));
         // The hole is in the scrollable tint, in the tint's own box, which starts at the boundary;
         // the boxes have none (ADR-0206).
@@ -243,7 +242,7 @@ public class SelectionLookTests : SelectionGridContext
         // starts at the boundary.
         Assert.Equal([Rect(0, 0, 100, 40) + Hole(0, 0, 100, 20)], tints.Pinned);
         Assert.Equal([Rect(100, 0, 200, 40)], tints.Scrollable);
-        Assert.Equal("; clip-path: inset(-20px -20px -20px 100px)" + InsideTopAndLeft, before.Scrollable.Single().Style[Rect(0, 0, 300, 40).Length..]);
+        Assert.Equal("; clip-path: inset(-20px -20px -20px 100px)" + InsideLeft, before.Scrollable.Single().Style[Rect(0, 0, 300, 40).Length..]);
     }
 
     [Fact] // ADR-0206 / DOM-2: a range's part that is the Focus's cell alone has no tint, since the hole would cut it out whole, and stands no pinned shade layer
@@ -282,7 +281,7 @@ public class SelectionLookTests : SelectionGridContext
         await ScrollToAsync(cut.Find(".ex-scroller"), top: 4 * RowHeightPx);
         await ScrollToAsync(cut.Find(".ex-scroller"), top: 8 * RowHeightPx);
 
-        Assert.Equal(("ex-range ex-range-single", Rect(0, -20, 10_000, 140) + InsideTopAndLeft), Assert.Single(Ranges(cut)));
+        Assert.Equal(("ex-range ex-range-single", Rect(0, -20, 10_000, 140) + InsideLeft), Assert.Single(Ranges(cut)));
         Assert.Equal(Rect(0, -20, 10_000, 140), Assert.Single(Tints(cut)));
     }
 
@@ -379,12 +378,12 @@ public class SelectionLookTests : SelectionGridContext
     private static Task PlaceAsync(IRenderedComponent<ExGrid<TestRow>> cut, SelectionRange range, CellPosition focus)
         => cut.InvokeAsync(() => cut.Instance.PlaceSelectionAsync(range, focus, 0));
 
-    [Theory] // ADR-0008 (2026-10-01) / UX-18: the outline lies outside its cell, as Excel's does, on every side but a top under the header or a left at the grid's edge
+    [Theory] // ADR-0008 (D2, 2026-10-14): the header replaces the covered top; the bare left edge stays inside
     [InlineData(1, 1, "")]
-    [InlineData(0, 1, "; --ex-outline-in-t: 1")]
+    [InlineData(0, 1, "; --ex-outline-heading-t: 1")]
     [InlineData(1, 0, "; --ex-outline-in-l: 1")]
-    [InlineData(0, 0, InsideTopAndLeft)]
-    public async Task The_focus_outline_stays_inside_only_on_a_side_something_would_cover(int row, int column, string inside)
+    [InlineData(0, 0, InsideLeft)]
+    public async Task ADR0008_the_focus_outline_stays_inside_only_without_a_replacing_heading(int row, int column, string inside)
     {
         var cut = RenderGrid();
 
@@ -393,15 +392,16 @@ public class SelectionLookTests : SelectionGridContext
         Assert.Equal(Rect(column * 100, row * 20, 100, 20) + inside, FocusStyle(cut));
     }
 
-    [Fact] // ADR-0008 (2026-10-01) / UX-18: scrolled, the row whose top is under the header keeps its outline's top inside, and the row below has it outside
-    public async Task Scrolled_the_top_under_the_header_stays_inside()
+    [Fact] // ADR-0008 (D2): scrolling a top beneath the header does not add a second outline inside
+    public async Task ADR0008_scrolled_the_heading_mark_replaces_the_covered_top()
     {
         var cut = RenderGrid();
         await PressCellAsync(cut, 1, 1);
         await ScrollToAsync(cut.Find(".ex-scroller"), top: 4 * RowHeightPx);
 
         await PlaceAsync(cut, new SelectionRange(4, 1, 2, 2), new CellPosition(4, 1));
-        Assert.Contains("--ex-outline-in-t: 1", Assert.Single(Ranges(cut)).Style);
+        Assert.DoesNotContain("--ex-outline-in-t", Assert.Single(Ranges(cut)).Style);
+        Assert.NotEmpty(cut.FindAll(".ex-heading-mark-column"));
 
         await PlaceAsync(cut, new SelectionRange(5, 1, 2, 2), new CellPosition(5, 1));
         Assert.DoesNotContain("--ex-outline-in", Assert.Single(Ranges(cut)).Style);
@@ -427,8 +427,8 @@ public class SelectionLookTests : SelectionGridContext
         Assert.Equal(Rect(300, 20, 100, 20), FocusStyle(cut));
     }
 
-    [Fact] // ADR-0008 (2026-10-01) / UX-18 / ADR-0050: beside the Row Headings the left stays inside, and a column clear of them has it outside
-    public async Task Beside_the_row_headings_the_left_stays_inside()
+    [Fact] // ADR-0008 (D2) / ADR-0050: a Row Heading replaces the covered left; a clear left lies outside
+    public async Task ADR0008_beside_the_row_headings_the_mark_replaces_the_covered_left()
     {
         var cut = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Many(200))
@@ -440,7 +440,8 @@ public class SelectionLookTests : SelectionGridContext
             .Add(g => g.RowHeadings, row => (row + 1).ToString(CultureInfo.InvariantCulture)));
 
         await PlaceAsync(cut, new SelectionRange(1, 0, 2, 2), new CellPosition(1, 0));
-        Assert.EndsWith("; --ex-outline-in-l: 1", WithoutHole(Assert.Single(Ranges(cut)).Style));
+        Assert.DoesNotContain("--ex-outline-in-l", WithoutHole(Assert.Single(Ranges(cut)).Style));
+        Assert.NotEmpty(cut.FindAll(".ex-heading-mark-row"));
 
         await PlaceAsync(cut, new SelectionRange(1, 1, 2, 2), new CellPosition(1, 1));
         Assert.DoesNotContain("--ex-outline-in", Assert.Single(Ranges(cut)).Style);

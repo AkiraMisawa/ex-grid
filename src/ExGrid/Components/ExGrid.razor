@@ -70,7 +70,7 @@
      id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Busy ? "true" : null)"
      data-ex-reveal="@_revealToken" data-ex-follow="@_followToken" data-ex-follow-focus="@FollowFocusId()"
      data-ex-pointed-from="@PointedFrom"
-     aria-rowcount="@(_total ?? _window.Count)" aria-colcount="@Columns.Count"
+     aria-rowcount="@((long)(_total ?? _window.Count) + HeaderRowCount)" aria-colcount="@Columns.Count"
      aria-activedescendant="@(keyFieldShown ? null : activeDescendant)"
      @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
     @* The stylesheet's notice (ADR-0123, ERR-11): it carries the stamp of the stylesheet this build
@@ -116,71 +116,99 @@
                default is suppressed so DOM focus stays where it is; so is a press on the rows. *@
             @if (!HideHeader)
             {
-            <div class="ex-header" role="row" style="@HeaderBandStyle()" @attributes="_headerDragHandler" @onclick="OnHeaderClickAsync" @onmousedown="HeaderPressHandler" @onmousedown:preventDefault="PointedAtNow">
+            @* Every row is counted where ARIA counts it (ADR-0033, 2026-10-12): the header's rows
+               first, from 1, and the data rows after them, so aria-rowindex gives a row the number
+               a reader counted from the rows painted before it near the top (NVDA, the seventeenth
+               Windows run), and the same number far down, where the DOM holds a Window. What is
+               checked is the accessibility tree (ADR-0033, 2026-10-13); what a reader says of it
+               is learned from users' reports. Untiered, the header is the one row it always was.
+               Tiered, it holds a row per tier of Header Groups, top first, and the leaf row below
+               them; each is display: contents, so the band lays out, paints and stacks exactly as
+               one element of cells and rectangles did (ADR-0032), and only the tree says rows. *@
+            var tiered = _headerLayout.TierCount > 0;
+            <div class="ex-header" role="@(tiered ? "rowgroup" : "row")" aria-rowindex="@(tiered ? null : CellIds.HeaderRowIndex(0))" style="@HeaderBandStyle()" @attributes="_headerDragHandler" @onclick="OnHeaderClickAsync" @onmousedown="HeaderPressHandler" @onmousedown:preventDefault="PointedAtNow">
+                @if (MarksColumns && MarksPinnedColumns)
+                {
+                    @* The Heading Mark over the Pinned Columns' headers (ADR-0008, 2026-10-13): their
+                       part of each run of marked columns, on a zero-size sticky layer held at the
+                       band's left edge, as the pinned header cells are. First in the band's flow, so
+                       its place in the flow is the band's left edge whatever stands after it, and it
+                       displaces nothing. Paint only: the band's delegated handlers read the press. *@
+                    var pinnedMarks = ColumnMarks(pinnedLayer: true);
+                    <div class="ex-heading-marks-pinned" aria-hidden="true">
+                        @for (var m = 0; m < pinnedMarks.Length; m++)
+                        {
+                            @if (pinnedMarks[m] is { } pinnedMark)
+                            {
+                                <div class="ex-heading-mark ex-heading-mark-column" style="@pinnedMark"></div>
+                            }
+                        }
+                    </div>
+                }
                 @if (_rowHeadingStyle is not null)
                 {
                     @* Where the two Headings meet (ADR-0050): held at the left edge as the
                        Row Headings are, and a click there selects all. Paint only — the
                        header's own delegated click reads the offsets. *@
-                    <div class="ex-headings-corner" style="@_rowHeadingStyle" aria-hidden="true"></div>
+                    <div class="@HeadingsCornerClass" style="@_rowHeadingStyle" aria-hidden="true"></div>
                 }
-                @if (_headerLayout.Groups.Count > 0 && GroupsHaveGeometry)
+                @if (tiered)
                 {
-                    @* The pinned rectangles ride a zero-size sticky anchor, exactly as
-                       the pinned selection layer does: a group is entirely pinned or
-                       entirely scrollable — a straddle was refused (ADR-0032). *@
-                    <div class="ex-header-groups-pinned">
-                        @for (var g = 0; g < _headerLayout.Groups.Count; g++)
-                        {
-                            var group = _headerLayout.Groups[g];
-                            @if (IsGroupHeld(group))
+                    @for (var headerRow = 0; headerRow < _headerLayout.TierCount; headerRow++)
+                    {
+                        var tier = _headerLayout.TierCount - headerRow;
+                        <div role="row" aria-rowindex="@CellIds.HeaderRowIndex(headerRow)" style="display: contents">
+                            @if (GroupsHaveGeometry && HoldsGroupAt(tier))
                             {
-                                <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colspan="@CellIds.Span(group.MemberCount)">@group.Label</div>
+                                @* The pinned rectangles ride a zero-size sticky anchor, exactly as
+                                   the pinned selection layer does: a group is entirely pinned or
+                                   entirely scrollable — a straddle was refused (ADR-0032). One
+                                   anchor per tier's row, each at the same place in the flow. *@
+                                <div class="ex-header-groups-pinned">
+                                    @for (var g = 0; g < _headerLayout.Groups.Count; g++)
+                                    {
+                                        var group = _headerLayout.Groups[g];
+                                        @if (group.TopTier == tier && IsGroupHeld(group))
+                                        {
+                                            <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(group.FirstColumn)" aria-colspan="@CellIds.Span(group.MemberCount)" aria-rowspan="@GroupRowSpan(group)">@group.Label</div>
+                                        }
+                                    }
+                                </div>
                             }
-                        }
+                            @* A rectangle stands correctly whether or not its leaves are in the
+                               DOM (ADR-0032): absolutely positioned from the geometry, so it never
+                               depends on the sliced flex flow beside it. *@
+                            @for (var g = 0; GroupsHaveGeometry && g < _headerLayout.Groups.Count; g++)
+                            {
+                                var group = _headerLayout.Groups[g];
+                                @if (group.TopTier == tier && !IsGroupHeld(group))
+                                {
+                                    <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(group.FirstColumn)" aria-colspan="@CellIds.Span(group.MemberCount)" aria-rowspan="@GroupRowSpan(group)">@group.Label</div>
+                                }
+                            }
+                        </div>
+                    }
+                    <div role="row" aria-rowindex="@CellIds.HeaderRowIndex(_headerLayout.TierCount)" style="display: contents">
+                        @{ LeafHeaderCells(__builder); }
                     </div>
                 }
-                @for (var i = 0; i < _columnStyles.Geometry.PinnedCount; i++)
+                else
                 {
-                    @* The buttons' handlers are held per column (MenuOpener, GripDown), never
-                       written as lambdas here: a lambda capturing the index allocated its
-                       closure at the top of every iteration, button or not, and handed the
-                       diff a new handler per render — re-registered and sent to the browser
-                       for every header button on every render of the root, which is every
-                       vertical scroll frame (PF-3). *@
-                    @* The ▾ is pressed, never reached by Tab (ADR-0080, decided with the user
-                       2026-10-02), as the action buttons are (ADR-0037): the Keyboard Field stands
-                       after the header in the markup, and a Tab into the grid went through every
-                       column's ▾ before the first cell. Alt+↓ opens the column's popover by key
-                       (ADR-0044). On every grid, and under every Chrome: the button is the core's. *@
-                    <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
-                        {@HeaderMark}@if (ShowMenuButtons)
-                        {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                        {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
+                    LeafHeaderCells(__builder);
                 }
-                @if (_scrollable is { } headerColumns)
+                @* The Heading Mark (ADR-0008, 2026-10-13): one rectangle per run of marked columns,
+                   over the band's last tier, on whose bottom edge the stylesheet draws the line. It
+                   passes beneath the pinned header cells and the Headings' corner as the columns do,
+                   and its pinned part rides the layer at the band's start. *@
+                @if (MarksColumns)
                 {
-                    @if (_columnStyles.HasGap(headerColumns.Start))
+                    var columnMarks = ColumnMarks(pinnedLayer: false);
+                    @for (var m = 0; m < columnMarks.Length; m++)
                     {
-                        <div class="ex-gap" style="@_columnStyles.Gap(headerColumns.Start)" aria-hidden="true"></div>
-                    }
-                    @for (var i = headerColumns.Start; i < headerColumns.Start + headerColumns.Count; i++)
-                    {
-                        <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
-                            {@HeaderMark}@if (ShowMenuButtons)
-                            {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                            {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
-                    }
-                }
-                @* A rectangle stands correctly whether or not its leaves are in the
-                   DOM (ADR-0032): absolutely positioned from the geometry, so it never
-                   depends on the sliced flex flow beside it. *@
-                @for (var g = 0; GroupsHaveGeometry && g < _headerLayout.Groups.Count; g++)
-                {
-                    var group = _headerLayout.Groups[g];
-                    @if (!IsGroupHeld(group))
-                    {
-                        <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colspan="@CellIds.Span(group.MemberCount)">@group.Label</div>
+                        @if (columnMarks[m] is { } columnMark)
+                        {
+                            <div class="ex-heading-mark ex-heading-mark-column" style="@columnMark" aria-hidden="true"></div>
+                        }
                     }
                 }
             </div>
@@ -448,6 +476,23 @@
                                 <div class="@PointOutlineClass(pointRange)" style="@point"></div>
                             }
                         </div>
+                        @* The Heading Mark over the Row Headings (ADR-0008, 2026-10-13): one rectangle
+                           per run of marked rows, cut to the painted rows, on whose right edge the
+                           stylesheet draws the line. A zero-size sticky layer held at the Viewport's left
+                           edge, as the Row Headings are, and above them; no row is told. *@
+                        @if (MarksRows)
+                        {
+                            var markedRows = MarkedRows;
+                            <div class="ex-heading-marks-rows" aria-hidden="true" @key="HeadingMarksLayerKey">
+                                @for (var m = 0; m < markedRows.Length; m++)
+                                {
+                                    @if (HeadingMarkStyles.Row(markedRows[m], visible, _metrics.RowHeightPx, _rowHeadingWidthPx) is { } rowMark)
+                                    {
+                                        <div class="ex-heading-mark ex-heading-mark-row" style="@rowMark"></div>
+                                    }
+                                }
+                            </div>
+                        }
                     }
                     @* The Cell Editor (ADR-0010): one input floated over the focused
                        cell — never inside a row, which would break the memoisation.
@@ -527,6 +572,7 @@
                        the delegate and the channel each row reports its marks through are the
                        same instances render after render. *@
                     var highlightNow = HighlightNow();
+                    var headingStates = _rowHeadingStyle is not null ? HeadingStates(visible) : null;
                     BeginAppearances();
                     BeginPaintedKeys();
                     @for (var row = visible.Start; row < visible.Start + visible.Count; row++)
@@ -544,7 +590,7 @@
                                        CellState="CellState" CellType="CellType" CellAlign="CellAlign" PaintedText="PaintedText" RowKind="RowKind"
                                        CellChangedAt="CellChangedAt" ChangeHighlightDuration="ChangeHighlightDuration" ChangeHighlightNow="highlightNow"
                                        ChangeHighlightPainted="@(_highlightPainted ??= _highlightEnds.Painted)"
-                                       RowIndex="row" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
+                                       RowIndex="row" HeaderRowCount="HeaderRowCount" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
                                        Engagement="EngagementFor(row)"
                                        Marked="@MarkedAt(data)" OnMark="@(_onMark ??= RaiseRowMarkAsync)"
@@ -560,12 +606,19 @@
                             {
                                 @* A Row Heading is a position's label, so a row that has not
                                    arrived still has one (ADR-0050). *@
-                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="PlaceholderKey(row)"><div class="ex-row-heading" style="@_rowHeadingStyle" aria-hidden="true">@RowHeadingAt(row)</div></div>
+                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@((long)HeaderRowCount + row + 1)" aria-busy="true" @key="PlaceholderKey(row)"><div class="ex-row-heading" style="@_rowHeadingStyle" aria-hidden="true">@RowHeadingAt(row)</div></div>
                             }
                             else
                             {
-                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="PlaceholderKey(row)"></div>
+                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@((long)HeaderRowCount + row + 1)" aria-busy="true" @key="PlaceholderKey(row)"></div>
                             }
+                        }
+                        @if (headingStates is not null)
+                        {
+                            @* A permanent, hidden marker lets CSS paint the original Row Heading.
+                               Its row receives no Selection parameter and retains its own text,
+                               typography and Row Kind even when it skips rendering. *@
+                            <div class="@RowHeadingStateClass(row)" aria-hidden="true" @key="headingStates[row - visible.Start]"></div>
                         }
                     }
                     EndRowComponents();
@@ -777,9 +830,11 @@
                                     }
                                 }
                             }
+                            @* Each closes the popover: marked so, the keys typed while it goes wait for the
+                               keyboard to land (ex-popover-closes; ADR-0010, ADR-0044's note of 2026-10-12). *@
                             <div class="ex-popover-actions">
-                                <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)" disabled="@(!PanelCanApply(panelColumn))">OK</button>
-                                <button type="button" @ref="_panelLast" @onclick="CancelPanel">Cancel</button>
+                                <button type="button" class="ex-popover-closes" @onclick="() => ApplyPanelAsync(panelColumn)" disabled="@(!PanelCanApply(panelColumn))">OK</button>
+                                <button type="button" class="ex-popover-closes" @ref="_panelLast" @onclick="CancelPanel">Cancel</button>
                             </div>
                         </form>
                     }
@@ -2289,6 +2344,9 @@
     // What the key gate was last told (ADR-0010/0020/0055): which keys this grid takes,
     // whether any column edits, whether anything can find. Null until attach.
     private GridKeyClaims? _jsClaims;
+    // Whether the gate was told the Consumer hears the Escape that leaves the grid (OnLeave): the keys
+    // after such an Escape wait for its answer (PassKeysOutAsync).
+    private bool _jsLeaves;
 
     // Interactive over the core's own actions (ADR-0037): the cell Space entered and the
     // action chosen in it. The keyboard never leaves the root; this is what the arrows
@@ -2387,6 +2445,14 @@
     /// <summary>The header band: one tier, plus one per declared tier above it
     /// (ADR-0032). Identical to the header height while no group is declared.</summary>
     private double BandHeightPx => HideHeader ? 0 : (1 + _headerLayout.TierCount) * _metrics.HeaderHeightPx;
+
+    /// <summary>
+    /// How many rows ARIA counts in the header before the first data row (ADR-0033,
+    /// 2026-10-12): none while it is hidden, else the leaf row and one per tier of Header
+    /// Groups. <c>aria-rowcount</c> adds them to the data rows' total, and every data row's
+    /// <c>aria-rowindex</c> starts after them.
+    /// </summary>
+    private int HeaderRowCount => HideHeader ? 0 : 1 + _headerLayout.TierCount;
 
     // The Row Headings' resolved width (ADR-0050/0028), zero while none are declared, and
     // the one style string every heading and the corner are painted with — rebuilt only
@@ -2621,8 +2687,10 @@
     private SelectionStyles.OutlineCover OutlineCoverAt(RowRange visible)
     {
         var first = visible.Start;
-        var open = _geometry.ViewportTopPxOf(first, _scrollTopPx) > 0.01 ? first : first + 1;
-        return new SelectionStyles.OutlineCover(open, _scrollLeftPx);
+        // Geometry is page-local, while the selected ranges and FirstOpenRow are absolute.
+        // The first row of a later page still touches the header (or the bare Viewport edge).
+        var open = _geometry.ViewportTopPxOf(first - _pageStartRow, _scrollTopPx) > 0.01 ? first : first + 1;
+        return new SelectionStyles.OutlineCover(open, _scrollLeftPx, HasHeader: !HideHeader);
     }
 
     /// <summary>The Focus row, every column wide — the Focus band's rectangle
@@ -3804,14 +3872,15 @@
         // changes the answer.
         // A Consumer's declared keys are re-told the same way (ADR-0050, item 14).
         var claims = KeyClaims();
-        if (_scrollHandle is not null && !_disposed && (claims != _jsClaims || !ReferenceEquals(_declared, _jsDeclared)))
+        if (_scrollHandle is not null && !_disposed && (claims != _jsClaims || !ReferenceEquals(_declared, _jsDeclared) || OnLeave.HasDelegate != _jsLeaves))
         {
             _jsClaims = claims;
             _jsDeclared = _declared;
+            _jsLeaves = OnLeave.HasDelegate;
             try
             {
                 await _scrollHandle.InvokeVoidAsync(
-                    "setClaims", TakenKeys(claims), claims.CanEdit, claims.CanFind, DeclaredForGate());
+                    "setClaims", TakenKeys(claims), claims.CanEdit, claims.CanFind, DeclaredForGate(), _jsLeaves);
             }
             catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
             {
@@ -3918,9 +3987,10 @@
             var claims = KeyClaims();
             _jsClaims = claims;
             _jsDeclared = _declared;
+            _jsLeaves = OnLeave.HasDelegate;
             var handle = await _module.InvokeAsync<IJSObjectReference>(
                 "attach", _root, _scroller, _self, TakenKeys(claims), claims.CanEdit,
-                PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate(), OnBrowserTimeZone.HasDelegate);
+                PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate(), OnBrowserTimeZone.HasDelegate, _jsLeaves);
             if (_disposed)
             {
                 // Disposal overtook the attach; nobody else holds this handle now. Its own
@@ -5693,6 +5763,13 @@
     private void ClosePopoverAndReturnFocus()
     {
         var wasOpen = AnyPopoverOpen;
+        // A closing Consumer's popover is no longer where the keyboard is going (ADR-0050 item 16;
+        // ADR-0044). Its contents may have reported focus while the gate still holds behind a choice:
+        // the gate cannot observe both that focus and the choice's menu gone at once. Withdraw any
+        // pending hand-off to the popover before the hand-back, so the held keys follow it. A hand-off
+        // to a Consumer's frame is left standing by the gate.
+        if (_consumerPopover is not null)
+            _ = HandOffAsync("none");
         if (wasOpen)
             _ = ReclaimFocusAsync();
         CloseMenus();
@@ -6856,6 +6933,11 @@
     /// async route from the start — so a later synchronous failure is a failure to be
     /// reported, never mistaken for a missing channel (ADR-0005/0017).
     ///
+    /// <para>Asked asynchronously too, as an empty question whose answer comes after everything the
+    /// browser sent before it has been taken up: the key gate's wait for a Consumer's answer to the
+    /// release of an Alt that went down alone (ADR-0100's KeyTips; ADR-0050 item 16's note of
+    /// 2026-10-12).</para>
+    ///
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
@@ -7053,11 +7135,16 @@
                     // for itself while the grid waits — a MudSelect puts DOM focus back
                     // on itself — and removing the popover then would leave focus on the
                     // page's body (KB-32, ADR-0039).
+                    // A Consumer that asked to hear Escape close its popover hears it first,
+                    // before the hand-back (ADR-0050 item 16's note of 2026-10-12).
+                    var escaped = fromDescendant ? ConsumerPopoverEscaping() : null;
                     if (fromDescendant)
                         ClosePopoverAndReturnFocus();
                     else
                         CloseMenus();
                     StateHasChanged();
+                    if (escaped is not null)
+                        await escaped;
                     return;
                 }
                 if (fromDescendant)
@@ -10247,16 +10334,29 @@
 
     // Interned per combination, the CellClasses economy: a header cell's class is
     // never composed in the render loop (ADR-0027 P5).
-    private static readonly string[] HeaderClasses =
-    [
-        "ex-header-cell", "ex-header-cell ex-pinned",
-        "ex-header-cell ex-align-left", "ex-header-cell ex-pinned ex-align-left",
-        "ex-header-cell ex-align-center", "ex-header-cell ex-pinned ex-align-center",
-        "ex-header-cell ex-align-right", "ex-header-cell ex-pinned ex-align-right",
-    ];
+    private static readonly string[] HeaderClasses = MakeHeaderClasses();
+
+    private static string[] MakeHeaderClasses()
+    {
+        string[] plain =
+        [
+            "ex-header-cell", "ex-header-cell ex-pinned",
+            "ex-header-cell ex-align-left", "ex-header-cell ex-pinned ex-align-left",
+            "ex-header-cell ex-align-center", "ex-header-cell ex-pinned ex-align-center",
+            "ex-header-cell ex-align-right", "ex-header-cell ex-pinned ex-align-right",
+        ];
+        var classes = new string[24];
+        for (var i = 0; i < plain.Length; i++)
+        {
+            classes[i] = plain[i];
+            classes[i + 8] = plain[i] + " ex-heading-marked";
+            classes[i + 16] = plain[i] + " ex-heading-marked ex-heading-whole";
+        }
+        return classes;
+    }
 
     private string HeaderClass(int column, bool pinned)
-        => HeaderClasses[((int)Columns[column].HeaderAlign * 2) + (pinned ? 1 : 0)];
+        => HeaderClasses[(ColumnHeadingMark(column) * 8) + ((int)Columns[column].HeaderAlign * 2) + (pinned ? 1 : 0)];
 
     /// <summary>
     /// One leaf header's style: the cached width and offset, and — while tiers exist —
@@ -10356,6 +10456,70 @@
     }
 
     private static string Px(double value) => FormattableString.Invariant($"{value}px");
+}
+
+@code {
+    /// <summary>
+    /// The leaf header cells: the Pinned Columns', then one gap for what is virtualised away
+    /// to the left, then the scrollable columns' on screen (ADR-0004). Written once, and
+    /// placed in the header itself when it is one row, or in the leaf row below the tiers
+    /// when Header Groups stand over it (ADR-0032/0033).
+    /// </summary>
+    private void LeafHeaderCells(RenderTreeBuilder __builder)
+    {
+        for (var i = 0; i < _columnStyles.Geometry.PinnedCount; i++)
+        {
+            @* The buttons' handlers are held per column (MenuOpener, GripDown), never
+               written as lambdas here: a lambda capturing the index allocated its
+               closure at the top of every iteration, button or not, and handed the
+               diff a new handler per render — re-registered and sent to the browser
+               for every header button on every render of the root, which is every
+               vertical scroll frame (PF-3). *@
+            @* The ▾ is pressed, never reached by Tab (ADR-0080, decided with the user
+               2026-10-02), as the action buttons are (ADR-0037): the Keyboard Field stands
+               after the header in the markup, and a Tab into the grid went through every
+               column's ▾ before the first cell. Alt+↓ opens the column's popover by key
+               (ADR-0044). On every grid, and under every Chrome: the button is the core's. *@
+            <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
+                {@HeaderMark}@if (ShowMenuButtons)
+                {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
+        }
+        if (_scrollable is { } headerColumns)
+        {
+            if (_columnStyles.HasGap(headerColumns.Start))
+            {
+                <div class="ex-gap" style="@_columnStyles.Gap(headerColumns.Start)" aria-hidden="true"></div>
+            }
+            for (var i = headerColumns.Start; i < headerColumns.Start + headerColumns.Count; i++)
+            {
+                <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
+                    {@HeaderMark}@if (ShowMenuButtons)
+                    {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                    {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
+            }
+        }
+    }
+
+    /// <summary>Whether a rectangle held at the left edge has its top in <paramref name="tier"/>,
+    /// so that tier's row carries the pinned rectangles' anchor (ADR-0032). Indexed, not
+    /// enumerated: the root renders on every scroll frame, and an enumerator over the list
+    /// would be an allocation per tier per frame (PF-3).</summary>
+    private bool HoldsGroupAt(int tier)
+    {
+        var groups = _headerLayout.Groups;
+        for (var g = 0; g < groups.Count; g++)
+        {
+            if (groups[g].TopTier == tier && IsGroupHeld(groups[g]))
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>A rectangle's <c>aria-rowspan</c>: its tiers, written only where it spans more
+    /// than one, since a cell spans one row unless it says otherwise (ADR-0033).</summary>
+    private static string? GroupRowSpan(ResolvedHeaderGroup group)
+        => group.TierSpan > 1 ? CellIds.Span(group.TierSpan) : null;
 }
 
 @code {

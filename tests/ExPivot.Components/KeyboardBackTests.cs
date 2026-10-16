@@ -66,6 +66,16 @@ public class KeyboardBackTests : PivotTestContext
                     && !pivot.Find(".ex-pivot-report").HasAttribute("inert")
                     && pivot.FindAll(".ex-pivot-sheet-covered").Count == 0);
             }
+            // The dialog's own close (decided with the user, 2026-10-13): from the dialog, still
+            // standing, with the report no longer inert, and the keys typed in the dialog since.
+            if (invocation.Identifier == "takeKeyboardBack")
+            {
+                var pivot = cut();
+                seen.Add(pivot.FindAll(".ex-pivot-dialog").Count == 1
+                    && invocation.Arguments[0] is Microsoft.AspNetCore.Components.ElementReference
+                    && !pivot.Find(".ex-pivot-report").HasAttribute("inert")
+                    && pivot.FindAll(".ex-pivot-sheet-covered").Count == 0);
+            }
             return false;
         });
         return seen;
@@ -95,7 +105,7 @@ public class KeyboardBackTests : PivotTestContext
         Assert.Equal(returns + 1, KeyboardReturns(report));
     }
 
-    [Theory] // ADR-0070 (PV-39): however the dialog closes — its grid's Escape, an Escape on its frame, Close, the backdrop — the report's grid takes the keyboard back, once, after the render that took the dialog away
+    [Theory] // ADR-0070 (PV-39): however the dialog closes — its grid's Escape, an Escape on its frame, Close, the backdrop — the report's grid takes the keyboard back, once, from the dialog still standing, after the render that took the report's inert away, and the dialog then goes (decided with the user, 2026-10-13)
     [InlineData("grid")]
     [InlineData("frame")]
     [InlineData("close")]
@@ -125,8 +135,44 @@ public class KeyboardBackTests : PivotTestContext
                 break;
         }
 
-        Assert.Empty(cut.FindAll(".ex-pivot-dialog"));
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-pivot-dialog")));
         Assert.Equal([true], seen);
+    }
+
+    [Fact] // ADR-0070 (decided with the user, 2026-10-13: keys typed while the keyboard comes back are held and handed on in order, ExPivot's dialogs too): the Escape that closes the dialog has its grid pass the keys after it out to the dialog's frame; the dialog stands while the report's grid takes the keyboard back from it, with the keys typed in it since, and then goes
+    public async Task Keys_typed_while_the_dialog_closes_go_to_the_report()
+    {
+        var report = ReportGridHandle();
+        var cut = RenderPivot(ByRegionAndProduct, ps => ps.Add(p => p.DetailsView, PivotDetailsView.Dialog));
+        await DoubleClickAsync(cut, 0, 1);
+        // The browser takes the keyboard back when the test says, as a circuit's round trip later.
+        var takeBack = report.SetupVoid("takeKeyboardBack", _ => true);
+        var passed = KeysPassedOut;
+
+        await PressAsync(RecordsGrid(cut), "Escape");
+
+        // The records grid passes the keys after the Escape out to the frame, told before the dialog closes.
+        Assert.Equal(passed + 1, KeysPassedOut);
+        // The dialog stands, the report no longer inert, and the report's grid asks for the keyboard
+        // back from the dialog's frame.
+        cut.WaitForAssertion(() => Assert.Single(report.Invocations["takeKeyboardBack"]));
+        Assert.Single(cut.FindAll(".ex-pivot-dialog"));
+        Assert.False(cut.Find(".ex-pivot-report").HasAttribute("inert"));
+        Assert.False(cut.Find(".ex-pivot-field-list").HasAttribute("inert"));
+        // Keys passed out of the records grid, or typed on Close, reach the frame: held, not the dialog's.
+        await cut.Find(".ex-pivot-dialog").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowDown" });
+        await cut.Find(".ex-pivot-dialog .ex-pivot-close").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        Assert.Single(cut.FindAll(".ex-pivot-dialog"));
+
+        // The browser has the keyboard back and asks for them: in order, the report's.
+        var ticket = (int)report.Invocations["takeKeyboardBack"][0].Arguments[1]!;
+        var grid = Grid(cut);
+        IReadOnlyList<KeyboardEventArgs> keys = [];
+        await grid.InvokeAsync(() => { keys = grid.Instance.KeysTypedOnTheWay(ticket); });
+        Assert.Equal(["ArrowDown", "Enter"], keys.Select(k => k.Key));
+        takeBack.SetVoidResult();
+
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-pivot-dialog")));
     }
 
     [Fact] // ADR-0070/0012 (PV-39): the dialog's grid peels its own layers first — the Escape that closes its Context Menu leaves the dialog standing, and the next one closes it

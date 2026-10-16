@@ -1,4 +1,4 @@
-import { test, expect, circuitQuiet } from './fixtures.mjs';
+import { test, expect, circuitQuiet, dataRowCount } from './fixtures.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 
 // /grid-live-local (ADR-0141, D8): the in-process path of ExGrid's live data. The page makes a
@@ -35,7 +35,7 @@ async function open(page, query, rows) {
 test('ADR-0141/D8, LV-9: a million trades in this process; a Change Batch reaches the screen and marks what changed, and a pause stops it', async ({ page }) => {
     test.setTimeout(240_000);
     await open(page, '', 1_000_000);
-    expect(Number(await grid(page).getAttribute('aria-rowcount'))).toBe(1_000_000);
+    expect(await dataRowCount(grid(page))).toBe(1_000_000);
 
     // The page's timer applies a batch four times a second, half of it on the trades in view.
     const from = await batches(page);

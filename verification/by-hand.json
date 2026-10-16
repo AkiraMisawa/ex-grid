@@ -256,9 +256,22 @@
         ":(glob)src/*.MudBlazor/**",
         "samples/ExGrid.DemoPages/"
       ],
-      "record": null,
+      "record": {
+        "commit": "0399f391ba2c89202aa477a1cdc42642994faaca",
+        "tag": "verified/2026-10-15-linux-mudblazor-floor",
+        "path": "verification/2026-10-15-linux-mudblazor-floor/report.md",
+        "verdict": "pass",
+        "versions": [
+          "9.6.0",
+          "9.7.0",
+          "9.8.0",
+          "9.9.0",
+          "9.10.0",
+          "9.11.0"
+        ]
+      },
       "laterRecords": [],
-      "note": "The Wrappers' MudBlazor floor run of Step 4 and the layer-2 runs across the declared range beside it (ADR-0205's notes of 2026-10-12): automated, made once by a person on a desktop with Chrome and Edge installed, and carried forward by its record while the Wrappers and the demo pages are unchanged. (2026-10-12, decided with the user: \"A MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only. The floor run (layer 3 at 9.6.0) holds while its paths are unchanged.\") (2026-10-12, decided with the user: an unlisted version is not asked for.) (2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own, recorded in a directory of its own and tagged by it, and this entry names its record besides the floor record.) Its record goes in 'laterRecords'. Never made: verification/2026-10-12-linux-mudblazor-floor/ (claude/mudblazor-range-floor) is a bisection on Playwright's bundled Chromium, and does not discharge it."
+      "note": "The Wrappers' MudBlazor floor run of Step 4 and the layer-2 runs across the declared range beside it (ADR-0205's notes of 2026-10-12): automated, made once by a person on a desktop with Chrome and Edge installed, and carried forward by its record while the Wrappers and the demo pages are unchanged. (2026-10-12, decided with the user: \"A MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only. The floor run (layer 3 at 9.6.0) holds while its paths are unchanged.\") (2026-10-12, decided with the user: an unlisted version is not asked for.) (2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own, recorded in a directory of its own and tagged by it, and this entry names its record besides the floor record.) Its record goes in 'laterRecords'. Made on 2026-10-15 at 0399f391 on Linux with Chrome and Edge installed (verification/2026-10-15-linux-mudblazor-floor/). Not the floor record: verification/2026-10-12-linux-mudblazor-floor/ (claude/mudblazor-range-floor) is a bisection on Playwright's bundled Chromium, and does not discharge it."
     }
   ]
 }

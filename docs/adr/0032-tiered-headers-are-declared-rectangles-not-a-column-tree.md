@@ -119,7 +119,8 @@ boundary that carries meaning, and a drag never crosses it.**
   ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md)) — tiered or not, no header row is
   ever pasted.
 - **The keyboard**: Focus never enters the header ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)).
-- **Rows and cells**: nothing below the band knows tiers exist.
+- **Rows and cells**: their geometry and content do not depend on the tiers. *(2026-10-12,
+  ADR-0033: a data row's ARIA index counts the header rows before it, including each tier.)*
 
 ## Consequences
 
@@ -129,7 +130,7 @@ boundary that carries meaning, and a drag never crosses it.**
 - **`ex-header-group`** joins the stable classes
   ([ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)); its
   ground defaults to the header background token.
-- **ARIA** (`aria-colspan` on group cells) lands with the structural surface of
+- **ARIA** (`aria-colspan` on group cells, and since 2026-10-12 each tier a row of its own) lands with the structural surface of
   [ADR-0033](./0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md).
 - The bUnit layer can pin all of it — rectangle positions are strings computed from
   `ColumnGeometry`, no browser needed.

@@ -235,6 +235,38 @@ under it, over the report, with a backdrop that closes them on a press elsewhere
 - One menu or panel is open at a time in each ExPivot, and two ExPivots on one page share nothing
   ([ADR-0018](./0018-multiple-instances-must-be-independent.md)).
 
+*(2026-10-13, decided with the user: the keys typed as the keyboard goes back are held and handed on in
+order, family-wide — ExPivot's menus and panels among the frames.)* A menu or a panel closed from inside
+it — Escape, a command, OK, Cancel — gives the keyboard back to its button a round trip later on a
+circuit, and a key typed meanwhile was the closing menu's: Enter typed straight after Escape ran its first
+command.
+
+- **Closed from inside with DOM focus in it, it stands until the keyboard has left it** for its button,
+  which the frame's `focusout` tells; its commands and OK do nothing meanwhile.
+- **The keys typed in it meanwhile are the button's**, in order: Enter or Space presses it; Tab, which only
+  the browser can act on, is dropped with every key after it (ADR-0010); anything else means nothing on a
+  button.
+- Closed with the keyboard outside it — its button pressed again, a press elsewhere — it goes at once.
+- Nothing listens on `document`, nothing is measured, and no JavaScript is added: the frame's own Blazor
+  `keydown`, `focusin` and `focusout` (ADR-0021).
+- Layer 3: Escape in a field's menu, then Enter typed at once, runs no command and opens the menu again,
+  under both Chromes, on both hosts.
+
+*(2026-10-13, decided with the user: the keys typed as the keyboard goes back are held and handed on in
+order, family-wide — ExPivot's menus and panels among the frames.)* A menu or a panel closed from inside
+it — Escape, a command, OK, Cancel — gives the keyboard back to its button a round trip later on a
+circuit, and a key typed meanwhile was the closing menu's: Enter typed straight after Escape ran its first
+command.
+
+- **Closed from inside with DOM focus in it, it stands until the keyboard has left it** for its button,
+  which the frame's `focusout` tells; its commands and OK do nothing meanwhile.
+- **The keys typed in it meanwhile are the button's**, in order: Enter or Space presses it; Tab, which only
+  the browser can act on, is dropped with every key after it (ADR-0010); anything else means nothing on a
+  button.
+- Closed with the keyboard outside it — its button pressed again, a press elsewhere — it goes at once.
+- Nothing listens on `document`, nothing is measured, and no JavaScript is added: the frame's own Blazor
+  `keydown`, `focusin` and `focusout` (ADR-0021).
+
 ## The seam: Chrome renders and calls back
 
 ExPivot's Chrome, `IPivotChrome`, has one member per surface. Each member returns the content to

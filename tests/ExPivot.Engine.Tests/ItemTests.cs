@@ -176,6 +176,123 @@ public class ItemTests
     public void A_key_that_names_no_item_is_refused(PivotItemKind kind, string? value)
         => Assert.ThrowsAny<ArgumentException>(() => new PivotItemKey(kind, value));
 
+    private sealed record Keyed(decimal Key, int Amount);
+
+    private static readonly PivotField<Keyed>[] KeyedFields =
+    [
+        new("Key", PivotFieldType.Number, k => k.Key),
+        new("Amount", PivotFieldType.Number, k => k.Amount),
+    ];
+
+    // The readings of 2026-10-12's e16b.csv (R3 (c)): Key read as Decimal and Amount as Integer, as
+    // the Schema ExPivot suggested for it.
+    private static readonly Keyed[] E16b = [new(1.23456789012345m, 1), new(123456789012.345m, 2)];
+
+    private static readonly PivotLayout ByKey = new() { Rows = [P("Key")], Values = [Sum("Amount")] };
+
+    [Fact] // ADR-0060, observed (the readings of 2026-10-12, R3 (c), e16b; the same in the English (US) edition): a number Item with no format is labelled in General, at most eleven characters
+    public void ADR0060_A_number_Item_is_labelled_in_General_as_Excel_labelled_e16b()
+    {
+        var report = PivotEngine.Compute(E16b, KeyedFields, ByKey, EnUs);
+
+        Assert.Equal(
+        [
+            "i 1.23456789 || 1",
+            "i 1.23457E+11 || 2",
+            "t Grand Total || 3",
+        ], Lines(report));
+    }
+
+    [Fact] // ADR-0060, PV-7, ADR-0005: a number Item's label is shown in General, and its copy carries the number in full, as a value cell's does — Excel's label cell holds 123456789012.345 (R3 (c))
+    public async Task ADR0060_PV7_A_number_Items_copy_carries_the_number_in_full()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var source = PivotReportSource.From(PivotSource.From(E16b, KeyedFields));
+        var client = new PivotReportClient(source);
+        Assert.True(await client.ReadAsync(ByKey, PivotReportSettings.Invariant, new(0, 3), cancellationToken: ct));
+        var shown = client.Current!.Metadata;
+        string[] columns = [shown.LabelColumns[0].Name, shown.ValueColumns[0].Name];
+
+        var copy = await source.CopyAsync(new(shown.Version, columns, [new(0, 0, 2, 1)]), ct);
+
+        var rows = copy.Blocks[0].Rows;
+        Assert.Equal(["1.23456789", "1.23457E+11", "Grand Total"], rows.Select(row => row[0].Text));
+        Assert.Equal(["1.23456789012345", "123456789012.345", "Grand Total"], rows.Select(row => row[0].Raw));
+        Assert.Equal([true, true, false], rows.Select(row => row[0].IsNumber));
+        Assert.Equal(["1", "2", "3"], rows.Select(row => row[1].Raw));
+    }
+
+    [Fact] // ADR-0005's note of 2026-10-13 (decided with the user), ADR-0060: a number column Item heads its column in General, and a copy's header carries its number in full for the HTML flavour; it travels a server's JSON
+    public async Task ADR0005_A_number_column_Items_header_carries_its_number_in_full()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var source = PivotReportSource.From(PivotSource.From(E16b, KeyedFields));
+        var client = new PivotReportClient(source);
+        var byColumn = new PivotLayout { Columns = [P("Key")], Values = [Sum("Amount")] };
+        Assert.True(await client.ReadAsync(byColumn, PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct));
+        var shown = client.Current!.Metadata;
+        var columns = shown.ValueColumns.Select(c => c.Name).ToArray();
+
+        var copy = await source.CopyAsync(new(shown.Version, columns, [new(0, 0, 0, columns.Length - 1)]), ct);
+
+        var block = copy.Blocks[0];
+        Assert.Equal(["1.23456789", "1.23457E+11", "Grand Total"], block.Headers);
+        Assert.Equal(["1.23456789012345", "123456789012.345", null], block.HeaderRaws!);
+        var travelled = PivotReportJson.Read<PivotReportCopyResult>(PivotReportJson.Write(copy)).Blocks[0];
+        Assert.Equal(block.HeaderRaws!, travelled.HeaderRaws!);
+        // A rectangle whose headers are all text has none.
+        var labels = await source.CopyAsync(new(shown.Version, [columns[^1]], [new(0, 0, 0, 0)]), ct);
+        Assert.Null(labels.Blocks[0].HeaderRaws);
+        Assert.Null(PivotReportJson.Read<PivotReportCopyResult>(PivotReportJson.Write(labels)).Blocks[0].HeaderRaws);
+    }
+
+    [Fact] // ADR-0060 (R3 (c)): Filter… lists a number Item by the same General label the report paints
+    public void ADR0060_Filter_lists_a_number_Item_by_its_General_label()
+    {
+        var cube = PivotEngine.Aggregate(E16b, KeyedFields, ByKey);
+
+        Assert.Equal(["1.23456789", "1.23457E+11"], PivotEngine.ItemsOf(cube, ByKey, "Key", EnUs).Select(i => i.Label));
+    }
+
+    [Theory] // ADR-0060 (R3 (c), by generalisation from the two Items observed): a number Item's label is General as a value cell shows it — the same rule, the same text
+    [InlineData(0.1)]
+    [InlineData(1234.5)]
+    [InlineData(1.4142135623730951)]
+    [InlineData(-2.6666666666666665)]
+    [InlineData(123456789012345.0)]
+    [InlineData(-0.000012345678901234567)]
+    [InlineData(1E+300)]
+    public void ADR0060_A_number_Items_label_is_the_value_cells_General(double number)
+    {
+        var report = PivotEngine.Compute([new Thing(number, 1m)],
+            [new PivotField<Thing>("Key", PivotFieldType.Number, t => t.Key), ThingFields[1]], ByKey, EnUs);
+
+        Assert.Equal(PivotGeneral.Text(number, CultureInfo.GetCultureInfo("en-US")), Labels(report).Single());
+        Assert.True(Labels(report).Single().TrimStart('-').Length <= PivotGeneral.Characters);
+    }
+
+    [Theory] // ADR-0060 (by generalisation, as the values' General): a number Item's minus sign is '-' in every culture, where G15 wrote the culture's own U+2212
+    [InlineData("sv-SE")]
+    [InlineData("fi-FI")]
+    [InlineData("nb-NO")]
+    public void ADR0060_A_number_Items_minus_sign_is_a_hyphen_minus_in_every_culture(string name)
+    {
+        var culture = CultureInfo.GetCultureInfo(name);
+        Assert.Equal("\u2212", culture.NumberFormat.NegativeSign);
+
+        var report = PivotEngine.Compute([new Keyed(-1.4142135623731m, 1)], KeyedFields, ByKey, new PivotOptions { Culture = culture });
+
+        Assert.Equal(["-1,414213562"], Labels(report));
+    }
+
+    [Fact] // ADR-0060: a number format of the field's own still labels its Items as written, not General
+    public void ADR0060_A_fields_number_format_labels_number_Items_as_written()
+    {
+        PivotField<Keyed>[] fields = [new("Key", PivotFieldType.Number, k => k.Key, format: "0.000"), KeyedFields[1]];
+
+        Assert.Equal(["1.235", "123456789012.345"], Labels(PivotEngine.Compute(E16b, fields, ByKey, EnUs)));
+    }
+
     [Fact] // ADR-0060: labels follow the report's culture; the keys do not
     public void Labels_follow_the_culture()
     {

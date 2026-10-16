@@ -1,4 +1,4 @@
-import { test, expect, record } from './fixtures.mjs';
+import { test, expect, record, dataRowCount } from './fixtures.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
 import fs from 'node:fs';
 
@@ -360,7 +360,7 @@ async function questions(page, layouts) {
             await layout.build();
             await expect(update).toBeEnabled();
             const result = await timed(page, layout.answer ?? ROW_COUNT, () => update.click(), update);
-            result.reportRows = Number(await page.locator(REPORT).getAttribute('aria-rowcount'));
+            result.reportRows = await dataRowCount(page.locator(REPORT));
             result.notice = await page.locator('.ex-pivot-refusal-notice').textContent({ timeout: 1_000 }).catch(() => null);
             runs.push(result);
         }

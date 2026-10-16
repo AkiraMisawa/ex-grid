@@ -614,22 +614,22 @@
    run, case 11): on the gridline and one pixel outside the range, so it covers a Border on every
    outer edge. That is the outline's width outside the top and the left edges, and on the bottom
    and the right the gridline's pixel, which is the range's own last, and the outline's width less
-   it past the edge. A side whose outer pixels something above the selection layer would cover —
-   the header over a top edge, the Row Headings or the pinned block beside a left edge — stays
-   inside, as the forced-colors outline does, so its width is the others' (UX-18): the core marks
-   such a side, --ex-outline-in-t and --ex-outline-in-l, from the geometry it already holds. The
+   it past the edge. The Heading Mark replaces a side covered by the header or Row Headings
+   (ADR-0008, D2, 2026-10-14). At an unheaded grid edge or a pinned block's boundary there is no
+   replacing mark, so that side stays inside: the core marks it with --ex-outline-in-t or
+   --ex-outline-in-l from the geometry it already holds. The
    outline is a box of its own, so a side can move without moving the range's tint, and its width
-   is --ex-outline-width: the Focus outline's 2px, above, unless a stylesheet draws it in device
-   pixels (ExSheet's Paper, ADR-0071). Paint only: nothing in C# reads the width. */
+   is --ex-outline-width, two Device Pixels by default so every side matches the Heading Mark
+   at every scale (ADR-0008 D2 / ADR-0090). Paint only: nothing in C# reads the width. */
 .ex-focus::after, .ex-range-single::after {
     content: "";
     position: absolute;
     box-sizing: border-box;
-    top: calc((var(--ex-outline-in-t, 0) - 1) * var(--ex-outline-width, 2px));
-    left: calc((var(--ex-outline-in-l, 0) - 1) * var(--ex-outline-width, 2px));
-    right: calc(var(--ex-rule-dp, 1px) - var(--ex-outline-width, 2px));
-    bottom: calc(var(--ex-rule-dp, 1px) - var(--ex-outline-width, 2px));
-    border: var(--ex-outline-width, 2px) solid var(--ex-focus-outline, CanvasText);
+    top: calc((var(--ex-outline-in-t, 0) - 1) * var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))));
+    left: calc((var(--ex-outline-in-l, 0) - 1) * var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))));
+    right: calc(var(--ex-rule-dp, 1px) - var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))));
+    bottom: calc(var(--ex-rule-dp, 1px) - var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))));
+    border: var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))) solid var(--ex-focus-outline, CanvasText);
 }
 /* The single range's outline has the token ADR-0029 reserved for it, the border Excel draws round
    the range's perimeter. It defaults to the Focus outline's colour, so a Theme that sets only that
@@ -661,6 +661,63 @@
     bottom: calc(var(--ex-rule-dp, 1px) + var(--ex-dp, 1px));
     border: var(--ex-dp, 1px) solid var(--ex-focus-among-ranges-outline, var(--ex-focus-outline, CanvasText));
 }
+/* The Heading Mark (ADR-0008, 2026-10-13). For every Selection, the Headings of the columns and the
+   rows that hold part of it carry a line of two Device Pixels on their edge toward the cells, where
+   Excel's lay: under a column's Heading and down a row's right edge, over the Heading's own rule and
+   the Device Pixel beside it (observed: the readings of 2026-10-12, R4 and R5). Wherever a header or
+   Row Headings stand: a plain grid's header is marked as a Sheet's Headings are. The core places one
+   box per run of marked Headings, the Headings' own, inline (ADR-0027/0028); the line is its border
+   on that edge, so it lies on Device Pixels wherever the band's edge does (ADR-0090), and nothing in
+   C# reads its width. Its colour is --ex-heading-mark, and where nothing names that token it is the
+   Focus outline's (2026-10-13, decided with the user), so a Theme or a Wrapper that colours the Focus
+   colours the mark too, with no mapping of its own.
+   A column's box stands in the header band above its cells, beneath the pinned header cells (5) and
+   the Headings' corner (7), as the columns pass beneath them; a Pinned Column's part rides a sticky
+   layer above the pinned cells (6) at the band's left edge, as a pinned Header Group does. A row's box
+   stands in a sticky layer of the Viewport above the Row Headings (4); the header covers it as it
+   covers them. Paint only: no part of it takes the pointer. */
+.ex-heading-marks-pinned, .ex-heading-marks-rows { position: sticky; left: 0; width: 0; height: 0; pointer-events: none; }
+.ex-heading-marks-pinned { z-index: 6; }
+.ex-heading-marks-rows { z-index: 6; }
+.ex-heading-mark {
+    position: absolute;
+    z-index: 1;
+    box-sizing: border-box;
+    pointer-events: none;
+    border-style: solid;
+    border-width: 0;
+    border-color: var(--ex-heading-mark, var(--ex-focus-outline, CanvasText));
+}
+.ex-heading-mark-column { border-bottom-width: calc(2 * var(--ex-dp, 1px)); }
+.ex-heading-mark-row { border-right-width: calc(2 * var(--ex-dp, 1px)); }
+/* D1 (ADR-0008, 2026-10-14): headers belong to the root render; a hidden state marker
+   follows every painted row with a Row Heading, so selection size does not change the DOM.
+   CSS paints the original Heading without rendering its row or replacing its typography.
+   The state conditions add no specificity; Sheet defaults can win in either load order.
+   The line remains one overlay rectangle per run, above the Headings. */
+.ex-heading-state { display: none; }
+.ex-header-cell.ex-heading-marked {
+    background-color: var(--ex-heading-mark-background, color-mix(in srgb, CanvasText 12%, var(--ex-header-background, Canvas)));
+    color: var(--ex-heading-mark, var(--ex-focus-outline, CanvasText));
+}
+.ex-row:where(:has(+ .ex-heading-state.ex-heading-marked)) > .ex-row-heading {
+    background-color: var(--ex-heading-mark-background, color-mix(in srgb, CanvasText 12%, var(--ex-heading-background, var(--ex-header-background, Canvas))));
+    color: var(--ex-heading-mark, var(--ex-focus-outline, CanvasText));
+}
+.ex-header-cell.ex-heading-whole {
+    background-color: var(--ex-heading-mark-whole-background, color-mix(in srgb, var(--ex-heading-mark, var(--ex-focus-outline, CanvasText)) 20%, var(--ex-header-background, Canvas)));
+}
+.ex-row:where(:has(+ .ex-heading-state.ex-heading-whole)) > .ex-row-heading {
+    background-color: var(--ex-heading-mark-whole-background, color-mix(in srgb, var(--ex-heading-mark, var(--ex-focus-outline, CanvasText)) 20%, var(--ex-heading-background, var(--ex-header-background, Canvas))));
+}
+.ex-headings-corner::after {
+    content: "";
+    position: absolute;
+    inset: 25%;
+    background-color: GrayText;
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+.ex-headings-corner-marked::after { background-color: var(--ex-heading-mark, var(--ex-focus-outline, CanvasText)); }
 /* The Copied Range (ADR-0170): dashes round a rectangle the clipboard holds as the grid copied it,
    Excel's moving border standing still (ADR-0027 P8). They lie where the Selection's outline lies,
    and are painted after it, because a copy usually shares its range: a band of the grid's ground
@@ -672,13 +729,13 @@
     content: "";
     position: absolute;
     box-sizing: border-box;
-    top: calc((var(--ex-outline-in-t, 0) - 1) * var(--ex-outline-width, 2px));
-    left: calc((var(--ex-outline-in-l, 0) - 1) * var(--ex-outline-width, 2px));
-    right: calc(var(--ex-rule-dp, 1px) - var(--ex-outline-width, 2px));
-    bottom: calc(var(--ex-rule-dp, 1px) - var(--ex-outline-width, 2px));
-    border: var(--ex-outline-width, 2px) solid var(--ex-background, Canvas);
-    outline: var(--ex-outline-width, 2px) dashed var(--ex-focus-outline, CanvasText);
-    outline-offset: calc(0px - var(--ex-outline-width, 2px));
+    top: calc((var(--ex-outline-in-t, 0) - 1) * var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))));
+    left: calc((var(--ex-outline-in-l, 0) - 1) * var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))));
+    right: calc(var(--ex-rule-dp, 1px) - var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))));
+    bottom: calc(var(--ex-rule-dp, 1px) - var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))));
+    border: var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))) solid var(--ex-background, Canvas);
+    outline: var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))) dashed var(--ex-focus-outline, CanvasText);
+    outline-offset: calc(0px - var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))));
 }
 /* The fill handle and a fill drag's target outline (ADR-0050, item 5): two more overlay
    rectangles, painted only when a Consumer declares fill. The handle's size and place are
@@ -1192,11 +1249,26 @@
        its outline, in place of its thin border (ADR-0008, 2026-10-12), beside ranges that are
        each outlined. */
     .ex-range { outline-style: solid; outline-color: Highlight; }
-    .ex-focus { outline-style: solid; }
+    /* The Heading Mark keeps its line, a border, which forced colors keep, restated in the system
+       colour a range's outline is restated in (ADR-0008, 2026-10-13). */
+    .ex-heading-mark { border-color: Highlight; }
+    .ex-header-cell.ex-heading-marked, .ex-row:where(:has(+ .ex-heading-state.ex-heading-marked)) > .ex-row-heading { background-color: Canvas; color: Highlight; }
+    .ex-headings-corner-marked::after { background-color: Highlight; }
     /* The tints are not painted at all (ADR-0206): stated here rather than left to how a browser
        forces a translucent background. Each range keeps its box, whose outline is above. */
     .ex-range-tint { display: none; }
-    .ex-focus::after, .ex-range-single::after { content: none; }
+    /* D2 applies to the restored Focus too. Its own border retains the inside placement
+       except at a Heading, where that Heading Mark replaces the covered side. */
+    .ex-focus, .ex-range-single { outline-style: none; }
+    .ex-focus::after, .ex-focus.ex-focus-among-ranges::after, .ex-range-single ~ .ex-focus::after, .ex-range-single::after {
+        content: "";
+        top: calc(0px - var(--ex-outline-heading-t, 0) * var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))));
+        left: calc(0px - var(--ex-outline-heading-l, 0) * var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))));
+        right: 0;
+        bottom: 0;
+        border: var(--ex-outline-width, calc(2 * var(--ex-dp, 1px))) solid Highlight;
+        box-shadow: none;
+    }
     /* The Copied Range keeps its dashes, in system colours, over a band of the system ground
        (ADR-0170): dashed, where the Selection's restated outlines are solid. */
     .ex-copied-range::after { border-color: Canvas; outline-color: Highlight; }

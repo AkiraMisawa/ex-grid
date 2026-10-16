@@ -170,7 +170,7 @@ public class SheetBorderTests : SheetTestContext
 
         Assert.True(await cut.Instance.SetCellFormatAsync(new CellFormatChange { Borders = BorderChange.Outline(Thin) }));
 
-        var rows = cut.FindAll(".ex-row").Select(r => r.GetAttribute("aria-rowindex")!).ToList();
+        var rows = cut.FindAll(".ex-row").Select(SheetRowOf).ToList();
         foreach (var row in rows)
         {
             Assert.Contains("ex-lr-thin-000000", Classes(cut, $"B{row}"));

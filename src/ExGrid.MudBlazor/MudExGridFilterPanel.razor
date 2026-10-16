@@ -42,7 +42,10 @@
    E — the field a search is typed into: the search box, or the first condition's value. Tab off
    either end is the core's, whose sentinels around the panel wrap to the commands (KB-31).
    Excel's letters on the value list are handed to the core through ValueListKey; clearing
-   the filter is the command above, so the actions are Apply and Cancel (ADR-0044). *@
+   the filter is the command above, so the actions are Apply and Cancel (ADR-0044). Each closes the
+   panel and carries ex-popover-closes, by which the grid's key listener holds the keys typed while
+   the panel goes, a round trip on a circuit, and hands them on where the keyboard lands (ADR-0010,
+   ADR-0044's note of 2026-10-12). *@
 <form class="mud-ex-grid-filter" @onsubmit="Apply" @onsubmit:preventDefault>
     @* The form's default button: the first submit button, which implicit submission clicks. *@
     <button type="submit" class="mud-ex-grid-filter-default" hidden tabindex="-1" aria-hidden="true"></button>
@@ -118,9 +121,9 @@
     }
     <div class="mud-ex-grid-filter-actions">
         <MudButton ButtonType="ButtonType.Submit" Disabled="@(!CanApply)" Color="Color.Primary" Size="Size.Small"
-                   Class="mud-ex-grid-filter-apply">@Mud("MudDataGrid_Apply")</MudButton>
+                   Class="mud-ex-grid-filter-apply ex-popover-closes">@Mud("MudDataGrid_Apply")</MudButton>
         <div style="display: contents" @ref="_cancelBox">
-            <MudButton @ref="_cancel" OnClick="Context.Close" Size="Size.Small" Class="mud-ex-grid-filter-cancel">@Mud("MudDataGrid_Cancel")</MudButton>
+            <MudButton @ref="_cancel" OnClick="Context.Close" Size="Size.Small" Class="mud-ex-grid-filter-cancel ex-popover-closes">@Mud("MudDataGrid_Cancel")</MudButton>
         </div>
     </div>
 </form>

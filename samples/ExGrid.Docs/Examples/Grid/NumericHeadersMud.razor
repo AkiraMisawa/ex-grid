@@ -1,0 +1,12 @@
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExGrid TRow="NumericHeaderCopy.Sample" Source="_copy.Source" Columns="_copy.Columns" CopyAnswer="_answer"
+            Chrome="_chrome" ViewportHeight="180" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+@code {
+    private readonly NumericHeaderCopy _copy = new();
+    private static readonly MudGridChrome _chrome = new();
+    private Func<ExGrid.Clipboard.GridCopyRequest, ExGrid.Clipboard.GridCopyAnswer> _answer = default!;
+
+    protected override void OnInitialized() => _answer = _copy.Answer;
+}

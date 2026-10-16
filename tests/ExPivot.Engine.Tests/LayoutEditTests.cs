@@ -207,6 +207,27 @@ public class LayoutEditTests
         Assert.Equal(layout.Rows[0].ToggledItems, PivotLayoutEdits.SetCollapsed(collapsed, "Region", east, false).Rows[0].ToggledItems);
     }
 
+    private static readonly PivotOptions JapaneseWords = new() { Label = PivotWords.Japanese };
+
+    private static readonly PivotLayout SumAndCount = new() { Values = [Sum("Amount"), Value("Amount", PivotAggregation.Count)] };
+
+    [Fact] // ADR-0060/0061 (decided with the user, 2026-10-13): under the Japanese words, 合計 / Amount typed for a Count beside a Sum of Amount, which shows 合計 / Amount, is taken
+    public void ADR0060_Value_field_settings_refuses_a_caption_the_report_shows_in_its_words()
+        => Assert.Equal(PivotRefusal.CaptionTaken, PivotLayoutEdits.SetValueField(
+            SumAndCount, 1, SumAndCount.Values[1] with { Caption = "合計 / Amount" }, Infos, JapaneseWords).Refusal);
+
+    [Fact] // ADR-0060/0061 (decided with the user, 2026-10-13): under the Japanese words, Sum of Amount is not taken beside a Sum shown as 合計 / Amount; with the options left out, the English words, it is
+    public void ADR0060_Value_field_settings_does_not_refuse_a_caption_of_other_words()
+    {
+        var typed = PivotLayoutEdits.SetValueField(
+            SumAndCount, 1, SumAndCount.Values[1] with { Caption = "Sum of Amount" }, Infos, JapaneseWords);
+
+        Assert.False(typed.IsRefused);
+        Assert.Equal(["合計 / Amount", "Sum of Amount"], ValueCaptions.Resolve(typed.Layout.Values, Infos, JapaneseWords));
+        Assert.Equal(PivotRefusal.CaptionTaken, PivotLayoutEdits.SetValueField(
+            SumAndCount, 1, SumAndCount.Values[1] with { Caption = "Sum of Amount" }, Infos).Refusal);
+    }
+
     [Fact] // ADR-0060/0061: Value Field Settings… refuses a taken or empty caption and an unusable format
     public void Value_field_settings_refusals()
     {

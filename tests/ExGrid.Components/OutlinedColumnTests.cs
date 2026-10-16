@@ -52,7 +52,7 @@ public class OutlinedColumnTests : GridTestContext
 
     /// <summary>A rectangle's inline style without the hole a range holding the Focus carries.</summary>
     private static string Rectangle(string? style)
-        => System.Text.RegularExpressions.Regex.Replace(style ?? "", @";\s*--ex-(range-hole|outline-in-[tl]):[^;]*", "");
+        => System.Text.RegularExpressions.Regex.Replace(style ?? "", @";\s*--ex-(range-hole|outline-(?:in|heading)-[tl]):[^;]*", "");
 
     /// <summary>The Reference Outlines in one layer of the overlay, as class and style.</summary>
     private static List<(string? Class, string? Style)> Outlines(IRenderedComponent<ExGrid<TestRow>> cut, string layer = ".ex-selection")

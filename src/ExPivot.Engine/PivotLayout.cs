@@ -101,7 +101,8 @@ public sealed record PivotValueField
     public PivotShowValuesAs ShowValuesAs { get; init; }
 
     /// <summary>A .NET format string the values are shown in under the report's culture, or null
-    /// for General — at most 15 significant digits, or <c>0.00%</c> for a percentage.</summary>
+    /// for General — Excel's, at most eleven characters besides a minus sign (<c>1.414213562</c>,
+    /// <c>1.23457E+11</c>) — or <c>0.00%</c> for a percentage.</summary>
     public string? NumberFormat { get; init; }
 }
 

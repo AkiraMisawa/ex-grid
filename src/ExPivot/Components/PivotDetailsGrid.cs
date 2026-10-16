@@ -18,6 +18,23 @@ namespace ExPivot.Components;
 internal sealed class PivotDetailsGrid : ComponentBase
 {
     private object? _rendered;
+    private ExGrid<PivotDetailRecord>? _grid;
+    private readonly EventCallback _leave;
+
+    /// <summary>The grid's way out, held in a field so it is the same callback on every render.</summary>
+    public PivotDetailsGrid() => _leave = new EventCallback(null, (Func<Task>)LeaveAsync);
+
+    // The Escape the grid has nothing left to dismiss closes the dialog: the keys typed after it are not
+    // the closing dialog's grid's, but go out, in order, to the dialog's frame, which hands them to the
+    // report with the keyboard (ExGrid's PassKeysOutAsync), so that the keys typed as the keyboard goes back
+    // are handed on in order (decided with the user, 2026-10-13). Told
+    // before the dialog is asked to close, so the keys held behind the Escape go out first.
+    private async Task LeaveAsync()
+    {
+        var passing = _grid?.PassKeysOutAsync() ?? Task.CompletedTask;
+        await OnLeave.InvokeAsync();
+        await passing;
+    }
 
     /// <summary>The sheet whose records are shown.</summary>
     [Parameter, EditorRequired] public PivotDetailsSheet Sheet { get; set; } = default!;
@@ -87,7 +104,8 @@ internal sealed class PivotDetailsGrid : ComponentBase
         if (CellMetrics is { } metrics)
             builder.AddComponentParameter(16, nameof(ExGrid<PivotDetailRecord>.CellMetrics), metrics);
         if (OnLeave.HasDelegate)
-            builder.AddComponentParameter(17, nameof(ExGrid<PivotDetailRecord>.OnLeave), OnLeave);
+            builder.AddComponentParameter(17, nameof(ExGrid<PivotDetailRecord>.OnLeave), _leave);
+        builder.AddComponentReferenceCapture(18, grid => _grid = (ExGrid<PivotDetailRecord>)grid);
         builder.CloseComponent();
     }
 }

@@ -44,6 +44,7 @@ public partial class ExPivot
             var block = answer.Blocks[i];
             if (block.Rows.Count != segment.BottomRow - segment.TopRow + 1
                 || block.Headers.Count != segment.RightColumn - segment.LeftColumn + 1
+                || block.HeaderRaws is { } raws && raws.Count != block.Headers.Count
                 || block.Rows.Any(row => row.Count != block.Headers.Count))
                 return GridCopyAnswer.Refuse(Word("copy-incomplete-range"));
         }
@@ -77,8 +78,18 @@ public partial class ExPivot
                     return answer.Blocks[i].Headers[column - plan.Segments[i].LeftColumn];
             throw new InvalidOperationException("The copy header is outside the approved plan.");
         }
+        // A number column Item's header goes into the HTML flavour in full, as a cell's number does;
+        // every other header is its text in both (ADR-0005's note of 2026-10-13).
+        string? HeaderRaw(int column)
+        {
+            for (var i = 0; i < plan.Segments.Count; i++)
+                if (column >= plan.Segments[i].LeftColumn && column <= plan.Segments[i].RightColumn)
+                    return answer.Blocks[i].HeaderRaws?[column - plan.Segments[i].LeftColumn];
+            throw new InvalidOperationException("The copy header is outside the approved plan.");
+        }
         var payload = ClipboardData.Assemble(plan, (row, column) => Cell(row, column).Text,
-            (row, column) => Cell(row, column).Raw ?? "", request.WithHeaders ? Header : null);
+            (row, column) => Cell(row, column).Raw ?? "", request.WithHeaders ? Header : null,
+            request.WithHeaders ? HeaderRaw : null);
         return GridCopyAnswer.Write(payload.Text, payload.Html);
     }
 

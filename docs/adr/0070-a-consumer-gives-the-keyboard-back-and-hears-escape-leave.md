@@ -225,6 +225,42 @@ inside its root or on nothing, the condition `ReturnKeyboardAsync()` reads.
   land. With either fix taken out, every run of those tests failed on the Server host; with both,
   every run passed on both hosts.
 
+## Keys passed out as a dialog closes *(2026-10-13)*
+
+*(Decided with the user: the keys typed as the keyboard goes back are held and handed on in order,
+family-wide — ExPivot's Show Details dialog among the frames.)* On a circuit the dialog stood a round trip
+and more after the Escape its grid raised `OnLeave` on, and the keyboard stayed in the dialog's grid
+until it had gone: ↓ typed straight after the Escape moved in the closing grid and was lost, the report's
+Focus staying where it was (observed 2026-10-13, the Server host at 80 ms, both Chromes).
+
+- **`ExGrid.PassKeysOutAsync()`**, called from `OnLeave` before its first await, tells the grid the
+  keyboard is leaving it for the Consumer's element around it. The keys the gate held behind that Escape,
+  and those typed on the root until DOM focus leaves it, are passed to the root's parent, in order, as the
+  keydowns they were, and the grid acts on none. A press on the grid takes the keyboard back into it.
+- **While a Consumer listens to `OnLeave`, the keys after a plain Escape on the root wait for its answer**,
+  as the keys after a declared key do, so none is the grid's before the Consumer has said where they go.
+- It is not "the grid lets Escape bubble", rejected below: the Escape is the grid's as before, and only the
+  keys after it go out, and only when the Consumer asks.
+- **ExPivot's dialog closes the other way round.** However it closes, its frame holds the keys typed in it
+  from then on, its grid passing its own out to it; a render takes the report's `inert` away while the
+  dialog stands; the report's grid takes the keyboard back from the dialog with those keys
+  (`ReturnKeyboardAsync(from, typedOnTheWay)`, ADR-0050 item 16's note of 2026-10-12); and then the dialog
+  goes. Layer 3: Escape in the dialog's grid then ↓, and Escape on its Close then ↓, ↓, typed at once,
+  under both Chromes, on both hosts.
+
+### Implementation correction: hand the held keys out before returning focus *(2026-10-14)*
+
+The first implementation deferred passing the held keys out until the leaving Escape's interop
+answer completed. A later key could already bubble to the frame, and the report could take focus
+and collect the frame's queue before the older keys reached it. Focus leaving also cleared the
+pass-out state, so those keys could be handled by the closing grid instead. CI reproduced the lost
+Down arrow in Show Details under the MudBlazor Chrome after the return-from-frame collection was
+fixed separately. `PassKeysOutAsync` now passes the held keys out when its request reaches the gate:
+the Consumer has already answered their destination. Later keys follow them, and a subsequent
+hand-back's collection follows all of them. A browser regression keeps the Escape's answer pending
+while it passes the keys out, types another key, and moves focus; both keys reach the frame in order.
+This implements the ordering decided above; it changes no destination or focus rule.
+
 ## Considered options
 
 - **The Consumer focuses the grid through JavaScript of its own** — rejected. It would need the

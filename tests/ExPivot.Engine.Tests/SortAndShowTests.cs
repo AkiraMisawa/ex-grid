@@ -120,7 +120,7 @@ public class SortAndShowTests
         Assert.Equal("i North || #DIV/0! |  | #DIV/0!", Lines(Report(layout, zeros))[1]);
     }
 
-    [Fact] // ADR-0060: Excel's default captions, and a number where one would repeat
+    [Fact] // ADR-0060: Excel's default captions, and a number where one would repeat; Count Numbers is captioned as Count is (the seventeenth Windows run)
     public void Default_captions()
     {
         var report = Report(new PivotLayout
@@ -128,7 +128,7 @@ public class SortAndShowTests
             Values = [Sum("Amount"), Sum("Amount"), Value("Amount", PivotAggregation.CountNumbers), Value("Region", PivotAggregation.Count)],
         });
 
-        Assert.Equal(["Sum of Amount", "Sum of Amount2", "Count Numbers of Amount", "Count of Region"], report.ValueCaptions);
+        Assert.Equal(["Sum of Amount", "Sum of Amount2", "Count of Amount", "Count of Region"], report.ValueCaptions);
     }
 
     [Fact] // ADR-0060: a caption of its own; one a default would repeat pushes the default to a number

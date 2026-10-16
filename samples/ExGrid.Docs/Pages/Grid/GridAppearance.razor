@@ -44,6 +44,8 @@
                 <tr><td><code>--ex-row-rule-color</code>, <code>--ex-column-rule-color</code></td><td>Lines between rows and columns; transparent until set.</td></tr>
                 <tr><td><code>--ex-row-stripe-background</code></td><td>Row Stripes.</td></tr>
                 <tr><td><code>--ex-selection-fill</code>, <code>--ex-selection-outline</code>, <code>--ex-focus-outline</code>, <code>--ex-focus-among-ranges-outline</code></td><td>The selection and the Focus cell. The last is the Focus's thin border among several ranges, and is the Focus outline's colour unless you set it.</td></tr>
+                <tr><td><code>--ex-heading-mark</code></td><td>The Heading Mark's line, marked letters and all-selected corner triangle. The Focus outline's colour unless you set it.</td></tr>
+                <tr><td><code>--ex-heading-mark-background</code>, <code>--ex-heading-mark-whole-background</code></td><td>The marked Heading's ground: the first for part of a column or row, the second when every cell in it is selected.</td></tr>
                 <tr><td><code>--ex-focus-row-fill</code>, <code>--ex-row-hover-background</code></td><td>The Focus row and hover bands.</td></tr>
                 <tr><td><code>--ex-tone-positive-color</code>, <code>--ex-tone-negative-color</code></td><td>Tones. Unset, a toned cell looks like any other.</td></tr>
                 <tr><td><code>--ex-state-stale-color</code>, <code>--ex-state-error-color</code>, <code>--ex-state-missing-background</code>, <code>--ex-state-modified-mark</code></td><td>Cell States. Each is a colour: the modified mark's is the corner triangle's.</td></tr>
@@ -64,6 +66,25 @@
             ExGrid.MudBlazor it is the palette's primary. The theme in "A theme, tones and a stale price" below sets
             <code>--ex-focus-outline</code> and not <code>--ex-focus-among-ranges-outline</code>: Ctrl+click in it
             (built-in).
+        </p>
+        <p>
+            The <a href="exgrid/selection#rectangles--a-focus-and-an-extent">Heading Mark</a> shades each header and
+            Row Heading whose column or row holds part of the selection, colours its letters, and draws a line two
+            device pixels thick on its edge toward the cells. A whole column or row takes a distinct shade. Where
+            the grid has a Headings corner, its triangle takes the mark's colour when every cell is selected.
+            <code>--ex-heading-mark</code> colours the line, letters and triangle, using the Focus outline's colour
+            unless you set it. The two background tokens above set the shades. A bare grid uses system colours;
+            ExGrid.MudBlazor uses its palette, with the primary for the line and letters. Your Theme's tokens win,
+            and the Headings follow the frame's colour scheme. Under forced colours the shades are dropped and
+            the line and marked letters use the system's highlight colour.
+        </p>
+        <p>
+            Where a header or Row Heading covers a side of the Focus or a single range, the Heading Mark supplies
+            that side's two device pixels; there is no second outline beside it. At a pinned block's edge, or a
+            grid edge without a Heading, the outline stays inside the cell. The thin Focus border among several
+            ranges is unchanged.
+            The ordinary Focus and single-range outline defaults to two device pixels on every side,
+            including at display scales above 100%.
         </p>
         <p>
             The font family is the exception. The grid decides whether a number fits — or becomes <code>####</code> —
@@ -145,6 +166,27 @@
             the meantime keeps it there. And <code>IGridChrome.Words</code> answers the words a refusal is
             announced in, by the ids in <code>RefusalLabelIds</code>; answering <code>null</code> leaves the
             built-in English (<a href="exgrid/clipboard#what-a-refusal-sounds-like">what a refusal sounds like</a>).
+            A third: a button that closes its panel — OK, Apply, Cancel — carries the class
+            <code>ex-popover-closes</code>, as the built-in and MudBlazor panels' do, so that the keys typed while
+            the panel goes wait for the keyboard to land rather than reach a button that is going.
+        </p>
+        <p>
+            <strong>A frame of your own</strong> outside the grid — a dialog, a toolbar — takes the keyboard through
+            <code>HandKeyboardToFrameAsync</code> and gives it back through <code>ReturnKeyboardAsync</code>, with the
+            frame's element and the keys it heard on the way. Await that return before removing your frame or
+            clearing its queue: completion means the grid has collected those keys. A popover of yours in the grid's frame
+            (<code>OpenPopoverAsync</code>) can ask to hear Escape close it, and hand the keyboard on from there. Over
+            Blazor Server each of these lands a round trip late, and the grid holds the keys typed meanwhile and
+            hands them on, in order, to where the keyboard lands. ExSheet's Sheet Toolbar is built this way. A dialog
+            of yours with a grid inside, closing on the Escape that raises the grid's <code>OnLeave</code>, calls
+            <code>PassKeysOutAsync</code> there: the keys typed after the Escape go out to your dialog, for it to hand
+            on with the keyboard, as ExPivot's Show Details dialog does.
+            A drawn control takes the held keyboard through <code>HandKeyboardToAsync</code>. A design-system
+            control that exposes only its contents' container may pass that container: its first enabled text
+            field takes the keyboard with its value selected, so held typing replaces the initial value.
+            For a change-bound text field, held Enter or leaving the field commits the held text once.
+            A control the user already chose keeps the keyboard. More Colours in ExSheet's MudBlazor Format Cells
+            uses this to start in HEX.
         </p>
     </DocsSection>
 

@@ -110,8 +110,10 @@ public class MudExGridPaperTests : MudTestContext
 
         var striped = RenderPaper(ps => ps.Add(p => p.Striped, true));
         var rows = striped.FindAll(".ex-row");
+        // A row's position is its aria-rowindex less the one header row, which ARIA counts first (ADR-0033).
+        Assert.Single(striped.FindAll(".ex-header[role=row]"));
         Assert.All(rows, row => Assert.Equal(
-            (int.Parse(row.GetAttribute("aria-rowindex")!) - 1) % 2 == 1, row.ClassList.Contains("ex-row-stripe")));
+            (int.Parse(row.GetAttribute("aria-rowindex")!) - 2) % 2 == 1, row.ClassList.Contains("ex-row-stripe")));
         Assert.NotEmpty(striped.FindAll(".ex-row-stripe"));
     }
 

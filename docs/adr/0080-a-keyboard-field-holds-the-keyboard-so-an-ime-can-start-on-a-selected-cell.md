@@ -82,6 +82,13 @@ display-only grid has none, and keeps the keyboard on its root, as before.
     heard by `keyup` on the root, which ADR-0021's seventh entry gains.)*
   - A second composition the IME finishes in the field before the first one's editor has the keyboard
     (a circuit, a fast typist) is typed into the edit at its caret, in order.
+  - A composition the IME finishes in the field while a popover or a frame of the Consumer's own takes
+    the keyboard is that one's, as the keys typed with it are (ADR-0039, note of 2026-10-01): typed into
+    its text field at the caret, as a held character is, or, on any other control, dropped with every
+    key held behind it, as a key script cannot reproduce (ADR-0010). *(2026-10-13, no new decision: found
+    while building #108. The hold asked the core to open the Cell Editor holding the text whatever held
+    the keyboard by then, and the editor opened behind Find or Format Cells and took the keyboard from
+    it.)*
   - A primary press anywhere in the root during a composition ends it first: the field gives up the
     keyboard, and the IME ends the composition there. Its text is held ahead of the press and goes to
     the cell it was composed on. The press then commits it there, as Excel's click-away does, and
@@ -141,6 +148,8 @@ which is also a text field inside the grid, the field cannot be `aria-hidden`, s
 Whether Chromium's accessibility tree resolves the field's active descendant to the cell is checked
 over the DevTools protocol, as ADR-0037's button was. If it does not, this stops and goes back to the
 user. What a screen reader then says is still owed a real one, as ADR-0033 already records.
+*(No longer owed: the tree is the check, 2026-10-13, ADR-0033's "Verified against the accessibility
+tree, not a screen reader".)*
 
 ## What differs from Excel, and is kept
 
@@ -230,3 +239,28 @@ text (ticket 78), and A11Y-21 resolved over CDP. Decided with the user, or recor
   "Scan" while DOM focus went to `body`. The run's method sent Narrator's copy command after each step
   to record the speech, and may have played a part. What a screen reader says stays owed, as ADR-0033
   records.
+  *(2026-10-12, the seventeenth Windows run, Part F: `verification/2026-10-11-windows-17/report.md`,
+  commits 76bd2116 and 2fc23f56 on `claude/exsheet-windows-verify-17`. `/sheet` on the WebAssembly
+  host, in Chrome and Edge, by real keys: ↓ → ↓ ↓ after two Tabs with no Focus, and after a press on
+  D10. Without a reader and under NVDA 2026.2, DOM focus stayed on the Keyboard Field at every step,
+  and the Focus moved. NVDA, as its Speech Viewer recorded, read the press on D10 as `table` /
+  `row 11  D  column 4` and the next ↓ as `row 12  D  column 4`. A pass whose first step was the
+  probe's scripted focus on the Revalue button said nothing from that focus to its last ↓, only the
+  page's load before it (`ExGrid demo host` / `Loading…`); one that began with a real press, on the
+  heading's empty right end or on the button, read every step (`Item  row 2  A  column 1` after the
+  first ↓). Narrator 10.0.26100.8972, heard from the playback device, starts in scan mode, and there
+  no arrow reached the page: DOM focus left the field for `body` at the first ↓, but in Chrome
+  without a Focus the grid was never reached, and DOM focus "moved among the page's buttons"
+  (`button#sheet-undo`, `button#sheet-redo`, `button#sheet-format-cells`, `button#sheet-insert-row`,
+  `button#sheet-revalue`). After the press on D10, ↓ read `column header cap E, column 5 of 16384.`,
+  Narrator's own cursor on the column headers. With scan mode turned off by Insert+Space (Narrator said "Scan off"), every arrow's
+  keydown reached the field, which kept DOM focus, and Narrator read
+  `Item, column header cap A, row 2 of 1,048,576, column 1` after the first ↓ and
+  `Row 12 of 1,048,576.` after ↓ from D10. As the second page loaded, Narrator said "Scan" again.)*
+  *(2026-10-12, decided with the user: **Narrator's scan mode taking the arrows is not a keyboard
+  defect.** With scan mode off every arrow reached the grid, and Narrator turns scan mode on again
+  with each new page. **NVDA's silence on the first pass comes from the probe's scripted focus before
+  any user input, and is recorded only.**)*
+  *(2026-10-13, decided with the user: no screen reader is run to verify a release, and none is owed;
+  ADR-0033's "Verified against the accessibility tree, not a screen reader". The notes above are
+  records.)*

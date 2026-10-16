@@ -37,21 +37,26 @@ public class HeaderGroupRenderingTests : GridTestContext
             .Add(g => g.PinnedColumnCount, pinned)
             .Add(g => g.HeaderGroups, groups ?? Groups()));
 
+    /// <summary>A rectangle by its label: the header lists them by tier, top first (ADR-0033).</summary>
+    private static AngleSharp.Dom.IElement Rectangle(IRenderedComponent<ExGrid<TestRow>> cut, string label)
+        => Assert.Single(cut.FindAll(".ex-header-group"), r => r.TextContent == label);
+
     [Fact] // ADR-0032 / HG-2: member count is the colspan; tierSpan is the rowspan
     public void The_rectangle_spans_its_members_and_tiers()
     {
         var cut = RenderGrid();
 
-        var rectangles = cut.FindAll(".ex-header-group");
-        Assert.Equal(2, rectangles.Count);
+        Assert.Equal(2, cut.FindAll(".ex-header-group").Count);
         // CVA: columns 1-3 of 100px, one 32px tier, on the tier directly above the leaves.
-        Assert.Contains("left: 100px", rectangles[0].GetAttribute("style"));
-        Assert.Contains("width: 300px", rectangles[0].GetAttribute("style"));
-        Assert.Contains("height: 32px", rectangles[0].GetAttribute("style"));
-        Assert.Contains("top: 32px", rectangles[0].GetAttribute("style"));
+        var cva = Rectangle(cut, "CVA").GetAttribute("style");
+        Assert.Contains("left: 100px", cva);
+        Assert.Contains("width: 300px", cva);
+        Assert.Contains("height: 32px", cva);
+        Assert.Contains("top: 32px", cva);
         // Adjustments: columns 1-4, tier 2 — the band's top.
-        Assert.Contains("width: 400px", rectangles[1].GetAttribute("style"));
-        Assert.Contains("top: 0px", rectangles[1].GetAttribute("style"));
+        var adjustments = Rectangle(cut, "Adjustments").GetAttribute("style");
+        Assert.Contains("width: 400px", adjustments);
+        Assert.Contains("top: 0px", adjustments);
     }
 
     [Fact] // ADR-0032 / HG-8: the band is (1 + tiers) × HeaderHeight and the first row is unchanged by it
@@ -64,8 +69,8 @@ public class HeaderGroupRenderingTests : GridTestContext
         await ScrollToAsync(untiered.Find(".ex-scroller"), 200, 0);
         await ScrollToAsync(tiered.Find(".ex-scroller"), 200, 0);
 
-        Assert.Equal("11", untiered.FindAll(".ex-row")[0].GetAttribute("aria-rowindex"));
-        Assert.Equal("11", tiered.FindAll(".ex-row")[0].GetAttribute("aria-rowindex"));
+        Assert.Equal(10, AriaRows.PositionOf(untiered.FindAll(".ex-row")[0]));
+        Assert.Equal(10, AriaRows.PositionOf(tiered.FindAll(".ex-row")[0]));
         // And the band's height is stated on the header: 3 tiers × 32px.
         Assert.Contains("height: 96px", tiered.Find(".ex-header").GetAttribute("style"));
         Assert.Contains("height: 96px", tiered.Find(".ex-header").GetAttribute("style"));
@@ -277,8 +282,8 @@ public class HeaderGroupRenderingTests : GridTestContext
     {
         var cut = RenderGrid();
 
-        Assert.Equal("3", cut.FindAll(".ex-header-group")[0].GetAttribute("aria-colspan"));
-        Assert.Equal("4", cut.FindAll(".ex-header-group")[1].GetAttribute("aria-colspan"));
+        Assert.Equal("3", Rectangle(cut, "CVA").GetAttribute("aria-colspan"));
+        Assert.Equal("4", Rectangle(cut, "Adjustments").GetAttribute("aria-colspan"));
     }
 
     [Fact] // ADR-0032 / HG-16: a click on a group rectangle sorts nothing; the leaf tier still sorts
@@ -489,12 +494,14 @@ public class HeaderGroupRenderingTests : GridTestContext
         var threeNarrow = Render<ExGrid<TestRow>>(ps => Push(ps, narrow));
 
         // One element per rectangle, however many columns it spans: a group over fifteen
-        // columns costs what a group over two costs.
+        // columns costs what a group over two costs. Beside them the band holds a row per tier and
+        // the leaf row, which ARIA counts (ADR-0033): per tier, never per column.
         Assert.Equal(3, three.FindAll(".ex-header-group").Count);
         static int Elements(IRenderedComponent<ExGrid<TestRow>> cut) => cut.FindAll("*").Count;
         Assert.Equal(none.FindAll(".ex-row").Count, three.FindAll(".ex-row").Count);
         Assert.Equal(Elements(three), Elements(threeNarrow));
-        Assert.Equal(3 + three.FindAll(".ex-header-groups-pinned").Count, Elements(three) - Elements(none));
+        Assert.Equal(2, AriaRows.HeaderRowsOf(three.Find(".ex-grid")));
+        Assert.Equal(3 + three.FindAll(".ex-header-groups-pinned").Count + 2, Elements(three) - Elements(none));
 
         // The rows know nothing of the band: the same scrolls cost the same row renders.
         static async Task<int> RowRendersOver(GridTestContext context, IRenderedComponent<ExGrid<TestRow>> cut)
@@ -639,9 +646,8 @@ public class HeaderGroupRenderingTests : GridTestContext
 
         await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 650, 200));
 
-        var rectangles = cut.FindAll(".ex-header-group");
-        Assert.Equal(2, rectangles.Count);
-        Assert.Contains("left: 100px", rectangles[0].GetAttribute("style"));
-        Assert.Contains("width: 300px", rectangles[0].GetAttribute("style"));
+        Assert.Equal(2, cut.FindAll(".ex-header-group").Count);
+        Assert.Contains("left: 100px", Rectangle(cut, "CVA").GetAttribute("style"));
+        Assert.Contains("width: 300px", Rectangle(cut, "CVA").GetAttribute("style"));
     }
 }
