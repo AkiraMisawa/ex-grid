@@ -286,11 +286,33 @@ whole, since the Focus is Excel's active cell everywhere
     at a 100% display is by generalisation); a cell with a Fill (whether the line between the
     border and the gridline is the Fill, as built, or white); and the active cell while it is
     edited (ExGrid's Cell Editor covers the cell, and the border inside it).
+    *(2026-10-14, after run 18a: a cell with a Fill.)* Run 18a filled D4 yellow before R4's first
+    selection and read the four lines again (`verification/2026-10-14-windows-readings-18a/report.md`,
+    `focus-among-ranges.md` 2; Excel's 100% and 150% zoom on a 150% display). The border is one device
+    pixel of `#217346`, as before. Between it and the gridline lies a white device pixel on the left and
+    the top, and the Fill on the right and the bottom: the left and top pixel is a line of its own, and
+    the right and bottom pixel is the cell's ground. The Paper had the Fill on all four sides, and now
+    draws the white line: on a Sheet, a Device Pixel of `--ex-sheet-selection-ring` outside the border's
+    top and left. The gridline's own pixel read `#C7C700`, the Fill under the shade: the line recorded
+    below as observed and not followed. The core grid keeps the cell's ground on every side: nothing on
+    its pages was observed against Excel's Fill.
+    *(2026-10-14, after run 18a: the active cell while it is edited.)* After F2 on D4, Excel draws no
+    border on any edge at either zoom. The `#AFAFAF` line round the area stays, and the cell is white
+    with the caret at its left (`focus-among-ranges.md` 3). On a Sheet the Cell Editor covers the cell,
+    and with it the border and its white line. *(2026-10-16, decided with the user)* The editor itself
+    draws no outline there while the keyboard is in the Sheet, and 1px while it is elsewhere
+    ([ADR-0018](./0018-multiple-instances-on-one-page.md) section 6, ED-27), so an edited cell on a
+    Sheet shows no border, as Excel's does.
   - *Observed and not followed* *(2026-10-13, decided with the user)*: R4's pictures frame each area
     among several ranges, a line of `#AFAFAF` on the gridline round it and a white Device Pixel
     inside it, and show the active cell's gridline as `#AFAFAF` on every side. The Paper draws
     neither. Whether that line is the gridline under the shade or a line drawn over it is
     unobserved: no run has looked with the gridlines hidden, and the next one does.
+    *(2026-10-14, after run 18a: the gridlines hidden.)* With View, Gridlines off, in R4's three
+    selections at both zooms, the `#AFAFAF` line is gone. That pixel is the shade, `#C7C7C7`, inside or
+    beside a shaded area, and white outside one; the white device pixel between the border and that
+    pixel stays (`focus-among-ranges.md` 4). So the line is the gridline under the shade, not a line
+    Excel draws. As decided with the user on 2026-10-13, the Paper draws neither: nothing is built.
   - *The Heading Mark* *(2026-10-13, decided with the user)*: Excel's Heading mark is added for
     every selection, not only several ranges — the selected rows' and columns' Headings marked, with a
     line of 2 Device Pixels on their edge toward the cells, as R4 pictured them. It is drawn as an

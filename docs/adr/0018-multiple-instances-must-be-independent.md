@@ -153,6 +153,15 @@ too.
   below ("distinguish the focused state visually") asks for this once two grids can each hold an
   open edit. The stylesheet does it with `:focus-within` on the root. The colour stays
   `--ex-editor-outline`'s, and no script is involved.
+  *(2026-10-16, decided with the user: on a Sheet, the Cell Editor draws no outline while the
+  keyboard is in it, and its 1px outline while the keyboard is elsewhere.)* Run 18a observed that
+  Excel draws no border on the cell it edits: after F2 on D4, no edge carried one at Excel's 100% or
+  150% zoom (`verification/2026-10-14-windows-readings-18a/report.md`, `focus-among-ranges.md` 3).
+  The Sheet stylesheet takes the width away from the editor over the rows while DOM focus is in the
+  Sheet's root; the core's rule for an edit whose keyboard is elsewhere outranks it and draws it 1px
+  wide, so ED-27's two states are still told apart, as no outline and 1px. The colour and style stay
+  `--ex-editor-outline`'s, a Wrapper's too. The core grid keeps its outline at the token's width, and
+  1px when the keyboard is elsewhere. The Formula Bar's field is unchanged. No script is involved.
 - **A press back within one round trip of the key that opens the edit is not brought back**
   *(accepted with the user the same day)*. Such a press is held behind that key (ADR-0021's
   `mousedown` note of 2026-09-27), and a held press suppresses its default, so DOM focus stays
