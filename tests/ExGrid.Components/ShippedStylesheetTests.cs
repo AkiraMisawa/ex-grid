@@ -1551,9 +1551,12 @@ public class ShippedStylesheetTests
 
         // The arrows, Home and End, the four Shift+arrows and Shift+Home, which extends the outline to
         // the row's first column (ADR-0010, ED-2; observed in Excel, the readings of 2026-10-12, R1
-        // (viii)).
+        // (viii)), and the Primary Modifier's arrows with Shift or without, which point at the data
+        // edge (ADR-0051; observed in Excel, run 18a).
         Assert.Matches(new Regex(@"const pointKeys = new Set\(\[\s*\.\.\.editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',\s*"
-            + @"'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight', 'Shift\+Home'\]\);"),
+            + @"'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight', 'Shift\+Home',\s*"
+            + @"'Control\+ArrowUp', 'Control\+ArrowDown', 'Control\+ArrowLeft', 'Control\+ArrowRight',\s*"
+            + @"'Control\+Shift\+ArrowUp', 'Control\+Shift\+ArrowDown', 'Control\+Shift\+ArrowLeft', 'Control\+Shift\+ArrowRight'\]\);"),
             script.Text);
         Assert.Matches(new Regex(@"const completionKeys = new Set\(\[\.\.\.editingKeys, 'ArrowUp', 'ArrowDown'\]\);"), script.Text);
         // ADR-0058 (the tenth Windows run; Part B of the ninth, Q51) / SH-36: a list open over Point
@@ -1578,10 +1581,8 @@ public class ShippedStylesheetTests
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
 
-        Assert.Matches(new Regex(
-            @"const pointedKeys = new Set\(\[\s*\.\.\.pointKeys, 'Control\+ArrowUp', 'Control\+ArrowDown', 'Control\+ArrowLeft', 'Control\+ArrowRight',\s*"
-            + @"'Control\+Shift\+ArrowUp', 'Control\+Shift\+ArrowDown', 'Control\+Shift\+ArrowLeft', 'Control\+Shift\+ArrowRight'\]\);"),
-            script);
+        // Point's own set holds the Primary Modifier's arrows, with Shift or without (ADR-0051, run 18a).
+        Assert.Matches(new Regex(@"const pointedKeys = new Set\(pointKeys\);"), script);
         Assert.Contains("pointed: pointedKeys", script, StringComparison.Ordinal);
     }
 

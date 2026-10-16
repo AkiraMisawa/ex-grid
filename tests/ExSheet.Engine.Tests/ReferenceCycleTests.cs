@@ -117,10 +117,10 @@ public class ReferenceCycleTests
         Assert.Equal(expected, CycledToCaret(marked));
     }
 
-    [Theory] // ADR-0051 / SH-28: a Sheet qualifier stands before the first end — a caret in it cycles the first end, and a caret at the second end leaves it
+    [Theory] // ADR-0051 / SH-28: a Sheet qualifier stands before the first end — a caret in it cycles the first end, and a caret at the second end leaves it; the span answered starts after the qualifier (observed, run 18a: =Sheet2!A1+1 with the caret after A1 gave $A$1 selected)
     [InlineData("=Sheet2!A1:B2|", "=Sheet2!A1:|$B$2|")]
-    [InlineData("=She|et2!A1:B2", "=|Sheet2!$A$1|:B2")]
-    [InlineData("=Sheet2!|A1:B2", "=|Sheet2!$A$1|:B2")]
+    [InlineData("=She|et2!A1:B2", "=Sheet2!|$A$1|:B2")]
+    [InlineData("=Sheet2!|A1:B2", "=Sheet2!|$A$1|:B2")]
     public void SH28_a_sheet_qualifier_stands_before_the_first_end(string marked, string expected)
     {
         Assert.Equal(expected, Cycled(marked));
@@ -194,15 +194,21 @@ public class ReferenceCycleTests
         }
     }
 
-    [Theory] // ADR-0051 / SH-28: a Sheet qualifier is kept, and only the cell part cycles; the span answered starts at the qualifier (Part C, case 10)
-    [InlineData("=Sheet2!A1|", "=|Sheet2!$A$1|")]
-    [InlineData("=Sheet2!$A$1|", "=|Sheet2!A$1|")]
-    [InlineData("=She|et2!A1", "=|Sheet2!$A$1|")]
+    [Theory] // ADR-0051 / SH-28: a Sheet qualifier is kept, and only the cell part cycles (Part C, case 10); the span answered starts after the qualifier, at $A$1 (observed, run 18a, answer 4)
+    [InlineData("=Sheet2!A1|", "=Sheet2!|$A$1|")]
+    [InlineData("=Sheet2!$A$1|", "=Sheet2!|A$1|")]
+    [InlineData("=She|et2!A1", "=Sheet2!|$A$1|")]
     [InlineData("='My Sheet'!B2:C3|", "='My Sheet'!B2:|$C$3|")]
-    [InlineData("=SUM(Sheet2!A:A|)", "=SUM(|Sheet2!$A:$A|)")]
+    [InlineData("=SUM(Sheet2!A:A|)", "=SUM(Sheet2!|$A:$A|)")]
     public void SH28_a_sheet_qualifier_is_kept(string marked, string expected)
     {
         Assert.Equal(expected, Cycled(marked));
+    }
+
+    [Fact] // ADR-0051, run 18a answer 4: with F2 first, =Sheet2!A1+1 and the caret after A1, F4 gave =Sheet2!$A$1+1 with $A$1 selected (8-12) — the span starts at $A$1, not at Sheet2!
+    public void ADR0051_the_span_after_F4_starts_after_a_sheet_qualifier()
+    {
+        Assert.Equal(new ReferenceCycle("=Sheet2!$A$1+1", 8, 12), FormulaEntry.CycleReference("=Sheet2!A1+1", 10, 10));
     }
 
     [Theory] // ADR-0051 / SH-28: a structured reference, a function name, a number, text in quotes and text that is not a Formula are unchanged

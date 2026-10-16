@@ -40,10 +40,11 @@ public partial class ExGrid<TRow>
     /// Formula Bar alike; it answers the whole new text and the selection in it, or null for
     /// nothing to change. The answer is written to both editor surfaces and its selection placed
     /// in the one being typed in: as a selection where the key carried a selection, or a caret
-    /// the user moved in that text by a key or a press, and as a caret at the selection's end
-    /// where the caret stood where typing, the edit's opening or an earlier F4 left it (ADR-0051;
-    /// observed in Excel by the seventeenth Windows run, Part C, and the readings of 2026-10-12,
-    /// R1 (iv) and (v)). While pointing, it is asked over the whole Reference the outline wrote,
+    /// anywhere before the text's end, and as a caret at the selection's end where the caret stood
+    /// at the text's end — however it got there (ADR-0051; observed in Excel by the seventeenth
+    /// Windows run, Part C, the readings of 2026-10-12, R1 (iv) and (v), and run 18a: ←, → back to
+    /// the end left a caret, and a caret typed at inside the text selected). While pointing, it is
+    /// asked over the whole Reference the outline wrote,
     /// so both ends of a pointed range cycle together (observed, R1 (vi)), and pointing goes on
     /// over the rewritten Reference. Excel reported it as the bar's selection there (R1 (vi)); the
     /// grid never selects the field's text while pointing, which a key typed would replace, and
@@ -216,8 +217,12 @@ public partial class ExGrid<TRow>
     }
 
     /// <summary>
-    /// An arrow, Shift and an arrow, Home, End, or Shift+Home, while editing (ADR-0051). While an
-    /// outline stands over unchanged text they move or extend it: Shift+Home extends it to the
+    /// An arrow, Shift and an arrow, Home, End, Shift+Home, or the Primary Modifier's arrow with
+    /// Shift or without, while editing (ADR-0051). While an outline stands over unchanged text they
+    /// move or extend it — the Primary Modifier's to the data edge the Consumer answers
+    /// (<see cref="DataEdge"/>; observed in Excel, run 18a: <c>=</c>, Ctrl+↓ in D10 on an empty
+    /// column gave <c>=D1048576</c>, and <c>=</c>, Ctrl+Shift+↓ gave <c>=D10:D1048576</c>, in
+    /// Point) — and Shift+Home extends it to the
     /// row's first column, and pointing goes on (observed in Excel, the readings of 2026-10-12, R1
     /// (viii): <c>=</c>, ↓, Shift+Home in D10 gave <c>=A11:D11</c>, still in Point). Otherwise, in
     /// Overwrite or Point, an arrow, a Shift+arrow, Home or Shift+Home starts pointing from the
@@ -252,6 +257,19 @@ public partial class ExGrid<TRow>
             // the edited cell, the reading after R1's first step; from a range's fixed end, a
             // reading). Caret's is the editor's and never reaches here.
             "Shift+Home" => (GridDirection.Left, 3),
+            // The Primary Modifier's arrows point at the data edge the Consumer answers, as they
+            // move a Selection there (ADR-0050, item 2), and with Shift extend to it, from the
+            // edited cell or the outline's fixed end (observed in Excel, run 18a: =, Ctrl+↓ in D10
+            // on an empty column gave =D1048576 in Point, and =, Ctrl+Shift+↓ gave =D10:D1048576;
+            // the other directions, and an outline already standing, by generalisation).
+            "Control+ArrowUp" => (GridDirection.Up, 4),
+            "Control+ArrowDown" => (GridDirection.Down, 4),
+            "Control+ArrowLeft" => (GridDirection.Left, 4),
+            "Control+ArrowRight" => (GridDirection.Right, 4),
+            "Control+Shift+ArrowUp" => (GridDirection.Up, 5),
+            "Control+Shift+ArrowDown" => (GridDirection.Down, 5),
+            "Control+Shift+ArrowLeft" => (GridDirection.Left, 5),
+            "Control+Shift+ArrowRight" => (GridDirection.Right, 5),
             _ => null,
         };
         if (step is not { } move)
@@ -288,6 +306,8 @@ public partial class ExGrid<TRow>
             0 => _pointer!.Move(move.Direction, extent),
             1 => _pointer!.Extend(move.Direction, extent),
             3 => _pointer!.ExtendToEdge(move.Direction, extent),
+            4 => _pointer!.MoveToEdge(move.Direction, extent, DataEdge),
+            5 => _pointer!.ExtendToEdge(move.Direction, extent, DataEdge),
             _ => _pointer!.MoveToEdge(move.Direction, extent),
         };
         WritePointedReference();
@@ -389,13 +409,13 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// F4 while an edit is open (ADR-0051, 2026-09-29): the Consumer's rewrite of the text the
     /// key carried, at the selection it carried, written back and its selection placed. Placed as
-    /// a selection where the key carried a selection, or a caret the user moved in that very text
-    /// — by a key or a press — and as a caret at the selection's end where the caret stood where
-    /// typing, the edit's opening or an earlier F4 left it, in any editing state (observed in
-    /// Excel: the seventeenth Windows run, Part C, cases 1 to 9, 18 to 22; the readings of
-    /// 2026-10-12, R1 (iv) and (v), in the Formula Bar. A caret moved and then typed at, and a
-    /// press in the text, are placed by generalisation). In two cases the selection is not the
-    /// key's to give. While pointing, it is the whole Reference the outline wrote, so both ends of
+    /// a selection where the key carried a selection, or a caret before the text's end, and as a
+    /// caret at the selection's end where the caret stood at the text's end, in any editing state
+    /// and however the caret got where it is — typed, moved by a key or a press, or placed by the
+    /// edit's opening or an earlier F4 (observed in Excel: the seventeenth Windows run, Part C,
+    /// cases 1 to 9, 18 to 22; the readings of 2026-10-12, R1 (iv) and (v); run 18a, answers 1, 2
+    /// and 4: ←, → back to the end left a caret, ←×3 and a digit typed inside the text selected,
+    /// as did a press in it). In two cases the selection is not the key's to give. While pointing, it is the whole Reference the outline wrote, so both ends of
     /// a pointed range cycle together (observed, R1 (vi): <c>=D11:D12</c> gave
     /// <c>=$D$11:$D$12</c>); pointing goes on over what it became. Excel reported that as the
     /// bar's selection (R1 (vi)); here it wears Point's own look and the field's text is never
@@ -463,12 +483,12 @@ public partial class ExGrid<TRow>
             && string.CompareOrdinal(rewritten, 0, text, 0, before) == 0
             && string.CompareOrdinal(rewritten, rewritten.Length - after, text, text.Length - after, after) == 0;
         _editText = rewritten;
-        // Selected where the key carried a selection or a caret the user moved; a caret at its
-        // end where the caret stood where typing left it (ADR-0051; Part C, R1 (iv) and (v)), and
-        // while pointing, where the pointed Reference wears Point's look and never the field's
-        // selection (ADR-0057). A placement still in flight carries the selection as it carries a
-        // caret.
-        var selects = !pointing && (start != end || moved);
+        // Selected where the key carried a selection or a caret before the text's end; a caret at
+        // its end where the caret stood at the text's end (ADR-0051; Part C, R1 (iv) and (v), run
+        // 18a), and while pointing, where the pointed Reference wears Point's look and never the
+        // field's selection (ADR-0057). A placement still in flight carries the selection as it
+        // carries a caret.
+        var selects = !pointing && (start != end || start < text.Length);
         _editCaret = selects ? answer.SelectionStart : answer.SelectionEnd;
         PlaceCaret(answer.SelectionEnd);
         if (pointing)

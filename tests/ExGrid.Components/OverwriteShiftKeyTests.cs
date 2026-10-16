@@ -17,8 +17,9 @@ namespace ExGrid.Components.Tests;
 /// move on Ctrl+→ and commit and extend on Ctrl+Shift+→ (the readings of 2026-10-12, R1 (vii)),
 /// where ExGrid selected the editor's text or moved its caret; the other directions follow by
 /// generalisation. Where a Reference can go the Shift keys point, as Point does with them (=, then
-/// Shift+Home, observed with a Ctrl+C before it in R1's reading after its first step), and the
-/// Primary Modifier's arrows do nothing (Excel not asked); elsewhere they commit, a Reject holding
+/// Shift+Home, observed with a Ctrl+C before it in R1's reading after its first step, and as it was
+/// typed by run 18a), and the Primary Modifier's arrows point at the edge (run 18a: =, Ctrl+↓ and
+/// =, Ctrl+Shift+↓); elsewhere they commit, a Reject holding
 /// the commit as it does for the arrows (ADR-0034). Caret keeps them the editor's. Shift+End stays
 /// the editor's: Excel's turns on an End Mode the grid does not have (R1 (vii); ADR-0058, Q53), and
 /// what it does here is not decided. The gate's half is read from the shipped script here; real
@@ -355,10 +356,14 @@ public class OverwriteShiftKeyTests : GridTestContext
         Assert.Equal("75", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
     }
 
-    [Theory] // ADR-0010 / ADR-0051 / ADR-0058 Q53 / ED-2: where a Reference can go, Overwrite's Primary Modifier's arrows are claimed and do nothing — Excel was not asked — rather than commit a Formula that ends too early
-    [InlineData("ArrowDown", false)]
-    [InlineData("ArrowRight", true)]
-    public async Task ED2_where_a_reference_can_go_a_primary_modifier_arrow_does_nothing(string arrow, bool shift)
+    [Theory] // ADR-0051 / ADR-0010 / ED-2: where a Reference can go, Overwrite's Primary Modifier's arrows point at the edge — with Shift from the edited cell — and nothing commits (observed in Excel, run 18a: =, Ctrl+↓ in D10 gave =D1048576 in Point, and =, Ctrl+Shift+↓ gave =D10:D1048576; the other directions by generalisation). No DataEdge is declared here, so the edge is the grid's
+    [InlineData("ArrowDown", false, "=B50")]
+    [InlineData("ArrowDown", true, "=B3:B50")]
+    [InlineData("ArrowLeft", false, "=A3")]
+    [InlineData("ArrowUp", true, "=B1:B3")]
+    [InlineData("ArrowRight", true, "=B3:C3")]
+    public async Task ADR0051_where_a_reference_can_go_a_primary_modifier_arrow_points_at_the_edge(
+        string arrow, bool shift, string written)
     {
         var edits = new List<GridEditIntent<TestRow>>();
         GridSelection? selection = null;
@@ -370,23 +375,42 @@ public class OverwriteShiftKeyTests : GridTestContext
         await PressAsync(cut, arrow, shift: shift, ctrl: true, text: "=", caret: 1);
 
         Assert.Empty(edits);
-        Assert.Equal("=", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
-        Assert.Empty(cut.FindAll(".ex-selection .ex-point"));
+        Assert.Equal(written, cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
+        Assert.NotEmpty(cut.FindAll(".ex-selection .ex-point"));
         Assert.Same(before, selection);
     }
 
-    [Fact] // ADR-0010 / ED-2: the gate's Point set claims the four Shift+arrows and Shift+Home beside the arrows, Home and End (R1 (viii)); its Overwrite set those and the Primary Modifier's arrows, with Shift or without (R1 (vii)) — and neither claims Shift+End
+    [Fact] // ADR-0051 / ED-2: while an outline stands, the Primary Modifier's arrows move or extend it to the edge, and pointing goes on (by generalisation from run 18a's =, Ctrl+↓)
+    public async Task ADR0051_while_pointing_a_primary_modifier_arrow_moves_the_outline_to_the_edge()
+    {
+        var edits = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(edits, _ => { }, point: true);
+        await ClickCellAsync(cut, 2, 1);
+        await TypeAsync(cut, "=");
+        await PressAsync(cut, "ArrowDown", text: "=", caret: 1);
+        Assert.Equal("=B4", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
+
+        await PressAsync(cut, "ArrowDown", ctrl: true, text: "=B4", caret: 3);
+        Assert.Equal("=B50", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
+
+        await PressAsync(cut, "ArrowUp", shift: true, ctrl: true, text: "=B50", caret: 4);
+        Assert.Equal("=B1:B50", cut.Find(".ex-viewport .ex-editor").GetAttribute("value"));
+        Assert.Empty(edits);
+        Assert.NotEmpty(cut.FindAll(".ex-selection .ex-point"));
+    }
+
+    [Fact] // ADR-0010 / ADR-0051 / ED-2: the gate's Point set claims the four Shift+arrows and Shift+Home beside the arrows, Home and End (R1 (viii)), and the Primary Modifier's arrows with Shift or without (run 18a); its Overwrite set is the same keys (R1 (vii), run 18a) — and neither claims Shift+End
     public void ED2_the_gate_claims_the_shift_keys_in_overwrite()
     {
         var script = AssetSources.Read("ExGrid", "ex-grid.js");
 
         Assert.Matches(new System.Text.RegularExpressions.Regex(
             @"const pointKeys = new Set\(\[\s*\.\.\.editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',\s*"
-            + @"'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight', 'Shift\+Home'\]\);"),
-            script);
-        Assert.Matches(new System.Text.RegularExpressions.Regex(
-            @"const overwriteKeys = new Set\(\[\s*\.\.\.pointKeys, 'Control\+ArrowUp', 'Control\+ArrowDown', 'Control\+ArrowLeft', 'Control\+ArrowRight',\s*"
+            + @"'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight', 'Shift\+Home',\s*"
+            + @"'Control\+ArrowUp', 'Control\+ArrowDown', 'Control\+ArrowLeft', 'Control\+ArrowRight',\s*"
             + @"'Control\+Shift\+ArrowUp', 'Control\+Shift\+ArrowDown', 'Control\+Shift\+ArrowLeft', 'Control\+Shift\+ArrowRight'\]\);"),
             script);
+        Assert.Matches(new System.Text.RegularExpressions.Regex(@"const overwriteKeys = new Set\(pointKeys\);"), script);
+        Assert.DoesNotContain("'Shift+End'", script.Split("const pointKeys")[1].Split("const completionKeys")[0], StringComparison.Ordinal);
     }
 }
