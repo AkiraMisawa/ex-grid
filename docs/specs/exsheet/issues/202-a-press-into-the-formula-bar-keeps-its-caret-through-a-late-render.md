@@ -1,7 +1,6 @@
 # 202: A press into the Formula Bar keeps its caret through a render that lands after it
 
-Status: ready-for-agent
-Roadmap: ExGrid — A press into the Formula Bar's text made straight after Enter and a press on a cell keeps the caret where it was pressed.
+Status: done
 
 **What to build:** found while pinning ticket 201, on the Server host. The cause is in ExGrid's core,
 not ExSheet. `=A1+B2` typed into D10, Enter, a press on D10 and a press into the Formula Bar's text
@@ -22,9 +21,29 @@ decision this ticket needs. The trace is in the comment below.
 its press, so it waits for the grid to settle before it presses (ADR-0220, rule 2), which is where
 a test reads; this ticket is the product side.
 
-- [ ] Decide what a press into the Formula Bar's text taken before a render that rewrites the bar
-      means at its turn: the caret where it was pressed in the text it was pressed on, or refused.
-- [ ] Layer 3 on the Server host, at machine speed, with `--repeat-each=20`.
+**The fix:** the press into the bar, held among the keys, keeps the text it was made on (the field's
+value at the press) and the caret it placed there (read at its release, while the field still holds
+that text). At its turn, once the core has answered it, where the bar holds that text and DOM focus,
+the listener puts the caret back where it was pressed and notes it as the user's move, reported to
+the core as such; F4 then cycles the Reference pressed, and a placement of the core's landing later
+leaves it standing, as it leaves any caret the user moved. Where the bar holds another text, the
+press placed no caret in it, and nothing is restored. No listener is added, and nothing is measured
+or timed.
+
+- [x] Decide what a press into the Formula Bar's text taken before a render that rewrites the bar
+      means at its turn: the caret where it was pressed in the text it was pressed on (option (a)).
+- [x] **Layer 3:** `hand-back-races.spec.mjs`, "on a 150 ms circuit, a press into the Formula Bar's
+      text straight after Enter and a press on the cell keeps its caret, and F4 cycles the Reference
+      pressed": before the fix 20 of 20 failed on the Server host (`=A1+$B$2`); after it 20 of 20
+      passed there and 10 of 10 on WebAssembly, `--project=chrome`. The 150 ms round trip makes the
+      window wide on purpose (ADR-0220, rule 5) and lets the test know the text it presses on; at
+      0 ms the same sequence failed 20 of 20 too.
+- [x] **Layer 2:** `ReferenceCycleTests`: an edit a press into the bar opens on the text the bar
+      shows places no caret over the press's, and the press's caret, told as the user's, is the one
+      F4 cycles from.
+- [x] `f4-enter-mode.spec.mjs` answer 2 (c) keeps its settled read before pressing the bar: it reads
+      where to press from the bar's text, and the Enter's move can leave an empty bar between that
+      read and the press (ADR-0220, rule 2), which is a reading, not this race.
 
 ## Comments
 

@@ -125,7 +125,9 @@ test('ADR-0051/SH-28: F4 leaves a caret where the caret stood at the text\'s end
     await expect(bar(grid)).toHaveValue('=A1+B2');
     // Where the press into the bar goes is read from the bar's text, so it is read once the grid
     // has settled: the Focus on D10 and the bar's text are also what the page showed before the
-    // Enter's move was painted, and a render landing after the press rewrites the text under it.
+    // Enter's move was painted, and the move's render, landing between the read and the press,
+    // would leave an empty bar to press into. (A press made on =A1+B2 keeps its caret through the
+    // renders after it, ticket 202; hand-back-races.spec.mjs drives that at once.)
     await circuitQuiet();
     await expectFocusAt(grid, 'D10');
     await pressBarAfter(grid, 3);
