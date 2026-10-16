@@ -441,6 +441,8 @@ ExPivot.Engine.PivotReportCopyBlock.Deconstruct(out System.Collections.Generic.I
 ExPivot.Engine.PivotReportCopyBlock.Equals(ExPivot.Engine.PivotReportCopyBlock? other) -> bool
 ExPivot.Engine.PivotReportCopyBlock.Headers.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExPivot.Engine.PivotReportCopyBlock.Headers.init -> void
+ExPivot.Engine.PivotReportCopyBlock.HeaderRaws.get -> System.Collections.Generic.IReadOnlyList<string?>?
+ExPivot.Engine.PivotReportCopyBlock.HeaderRaws.init -> void
 ExPivot.Engine.PivotReportCopyBlock.PivotReportCopyBlock(System.Collections.Generic.IReadOnlyList<string!>! Headers, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotReportCopyCell!>!>! Rows) -> void
 ExPivot.Engine.PivotReportCopyBlock.Rows.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotReportCopyCell!>!>!
 ExPivot.Engine.PivotReportCopyBlock.Rows.init -> void
@@ -1083,7 +1085,7 @@ static ExPivot.Engine.PivotLayoutEdits.SetFieldCollapsed(ExPivot.Engine.PivotLay
 static ExPivot.Engine.PivotLayoutEdits.SetHiddenItems(ExPivot.Engine.PivotLayout! layout, string! field, System.Collections.Generic.IEnumerable<ExPivot.Engine.PivotItemKey!>! hidden, System.Collections.Generic.IReadOnlyCollection<ExPivot.Engine.PivotItemKey!>! items) -> ExPivot.Engine.PivotEditResult!
 static ExPivot.Engine.PivotLayoutEdits.SetSort(ExPivot.Engine.PivotLayout! layout, string! field, ExPivot.Engine.PivotSort! sort) -> ExPivot.Engine.PivotLayout!
 static ExPivot.Engine.PivotLayoutEdits.SetSubtotals(ExPivot.Engine.PivotLayout! layout, string! field, bool subtotals) -> ExPivot.Engine.PivotLayout!
-static ExPivot.Engine.PivotLayoutEdits.SetValueField(ExPivot.Engine.PivotLayout! layout, int index, ExPivot.Engine.PivotValueField! value, System.Collections.Generic.IReadOnlyDictionary<string!, ExPivot.Engine.PivotFieldInfo!>! fields) -> ExPivot.Engine.PivotEditResult!
+static ExPivot.Engine.PivotLayoutEdits.SetValueField(ExPivot.Engine.PivotLayout! layout, int index, ExPivot.Engine.PivotValueField! value, System.Collections.Generic.IReadOnlyDictionary<string!, ExPivot.Engine.PivotFieldInfo!>! fields, ExPivot.Engine.PivotOptions? options = null) -> ExPivot.Engine.PivotEditResult!
 static ExPivot.Engine.PivotLayoutEdits.Tick(ExPivot.Engine.PivotLayout! layout, ExPivot.Engine.PivotFieldInfo! field) -> ExPivot.Engine.PivotLayout!
 static ExPivot.Engine.PivotLayoutEdits.Untick(ExPivot.Engine.PivotLayout! layout, string! field) -> ExPivot.Engine.PivotLayout!
 static ExPivot.Engine.PivotLayoutJson.Read(string! json) -> ExPivot.Engine.PivotLayout!
@@ -1177,6 +1179,8 @@ static ExPivot.Engine.PivotValueField.operator ==(ExPivot.Engine.PivotValueField
 static ExPivot.Engine.PivotWords.AggregationName(ExPivot.Engine.PivotAggregation aggregation) -> string!
 static ExPivot.Engine.PivotWords.CaptionOf(ExPivot.Engine.PivotAggregation aggregation) -> string!
 static ExPivot.Engine.PivotWords.EnglishFor(string! id) -> string?
+static ExPivot.Engine.PivotWords.EnglishUnitedKingdom.get -> System.Func<string!, string?>!
+static ExPivot.Engine.PivotWords.EnglishUnitedKingdomFor(string! id) -> string?
 static ExPivot.Engine.PivotWords.Fill(string! template, params string![]! arguments) -> string!
 static ExPivot.Engine.PivotWords.Ids.get -> System.Collections.Generic.IReadOnlyCollection<string!>!
 static ExPivot.Engine.PivotWords.Japanese.get -> System.Func<string!, string?>!

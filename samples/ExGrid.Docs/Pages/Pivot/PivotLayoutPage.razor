@@ -31,9 +31,16 @@
             </li>
             <li>
                 <strong>Every drag has a keyboard route.</strong> Space on a field's checkbox places it, and Enter
-                on an entry's ▾ opens the menu that moves it. A menu or a panel takes the keyboard as it opens;
+                on an entry's ▾ opens the menu that moves it. A menu or a panel takes the keyboard as it opens,
+                with the keys typed on its button meanwhile: Enter typed straight after the Enter that opens a
+                field's menu, or Layout ▾, presses its first command rather than closing it again, and letters
+                typed straight after Enter on a report filter above the report are typed into its search while the
+                report is shown. With no report to carry them — only report filters placed, or a details tab over the
+                report — they are dropped rather than typed elsewhere, a known limitation of <code>0.1.0</code>; Escape
+                typed then still closes the panel.
                 Escape closes it, a panel's changes are discarded unless OK applied them, and the keyboard goes
-                back to what opened it.
+                back to what opened it, with the keys typed as it closes: Enter typed straight after Escape opens the
+                menu again rather than running one of its commands. Both hold over Blazor Server too.
             </li>
             <li>
                 <strong>Defer Layout Update</strong>, at the pane's foot, holds the pane's changes until you
@@ -74,7 +81,25 @@
             Count, as in Excel, and the figures wear the format of the Focus cell's Value Field.
             <code>ShowSelectionSummary="false"</code> turns the line off.
         </p>
-        <DocsExample Builtin="typeof(ReportForms)" Mud="typeof(ReportFormsMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
+        <p>
+            The report's header shows which columns the selection holds: each such header is shaded, its letters
+            coloured, and a line two device pixels thick drawn along its bottom edge. This includes the pinned
+            label column when the selection reaches it. A whole column takes a distinct shade, including when
+            several ranges together cover it. It is ExGrid's
+            <a href="exgrid/selection#rectangles--a-focus-and-an-extent">Heading Mark</a>:
+            <code>--ex-heading-mark</code> colours the line and letters in the Focus outline's colour unless set;
+            <code>--ex-heading-mark-background</code> and <code>--ex-heading-mark-whole-background</code> set the
+            two shades. Your Theme's tokens win, ExPivot.MudBlazor uses its palette, and the header follows the
+            frame's colour scheme. Where the header covers a side of the Focus or a single range, the mark supplies
+            the two device pixels without a second outline beside it. Against the pinned block, the outline stays
+            inside the cell.
+            The ordinary Focus and single-range outline defaults to two device pixels on every side,
+            including at display scales above 100%.
+        </p>
+        <DocsExample Builtin="typeof(ReportForms)" Mud="typeof(ReportFormsMud)" Files="@(["Examples/Pivot/Sales.cs"])">
+            Select a cell, then Shift+click another to mark the columns between them. Click a report header to
+            select its whole column and compare the shade. Try Ctrl+A and switch between Built-in and MudBlazor.
+        </DocsExample>
     </DocsSection>
 
     <DocsSection Title="Expand and collapse, Hidden Items, sorting">

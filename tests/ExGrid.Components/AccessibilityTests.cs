@@ -11,7 +11,7 @@ namespace ExGrid.Components.Tests;
 /// <summary>
 /// The accessibility surface (ADR-0033): the root owns it, the counts and indices are
 /// the absolute ones, and no element anywhere carries aria-selected. What needs a real
-/// browser — one tab stop, the live region against a screen reader — is layer 3's.
+/// browser — one tab stop and the accessibility tree — is layer 3's.
 /// </summary>
 public class AccessibilityTests : GridTestContext
 {
@@ -101,29 +101,206 @@ public class AccessibilityTests : GridTestContext
         Assert.All(cut.FindAll(".ex-cell"), c => Assert.Equal("gridcell", c.GetAttribute("role")));
     }
 
-    [Fact] // A11Y-2: the counts state the total, not the DOM slice
-    public void The_counts_are_the_totals()
+    [Theory] // ADR-0033 / ADR-0015: header rows add to the full result's count and absolute indices, beyond Int32.
+    [InlineData(0, true, false)]
+    [InlineData(1, true, false)]
+    [InlineData(2, true, false)]
+    [InlineData(2, false, false)]
+    [InlineData(2, false, true)]
+    public async Task Header_rows_do_not_overflow_the_largest_paged_result(int headerRows, bool loaded, bool headings)
     {
-        var cut = RenderGrid();
+        // Page the result as ADR-0015 requires: only one data row occupies scroll height.
+        // Its absolute index still belongs to the whole result, including a Placeholder.
+        const int last = int.MaxValue - 1;
+        var cut = Render<ExGrid<TestRow>>(ps =>
+        {
+            ps.Add(g => g.Window, TestRows.Many(loaded ? 1 : 0))
+              .Add(g => g.WindowStart, last)
+              .Add(g => g.TotalCount, int.MaxValue)
+              .Add(g => g.Columns, TestRows.Wide(3))
+              .Add(g => g.PageSize, 1)
+              .Add(g => g.HideHeader, headerRows == 0)
+              .Add(g => g.ViewportHeight, 200);
+            if (headerRows == 2)
+                ps.Add(g => g.HeaderGroups, (Columns.HeaderGroup[])[
+                    new("Group", [TestRows.ColumnName(1), TestRows.ColumnName(2)])]);
+            if (headings) ps.Add(g => g.RowHeadings, row => (row + 1).ToString(System.Globalization.CultureInfo.InvariantCulture));
+        });
+        Assert.True(await cut.InvokeAsync(() => cut.Instance.PlaceSelectionAsync(
+            new SelectionRange(last, 0, 1, 1), new CellPosition(last, 0), 0)));
 
-        Assert.Equal("200", cut.Find(".ex-grid").GetAttribute("aria-rowcount"));
-        Assert.Equal("100", cut.Find(".ex-grid").GetAttribute("aria-colcount"));
-        // And the DOM holds far fewer than 200 rows.
-        Assert.True(cut.FindAll(".ex-row").Count < 20);
+        var expected = ((long)int.MaxValue + headerRows).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var row = Assert.Single(cut.FindAll(".ex-viewport .ex-row"));
+        Assert.Multiple(
+            () => Assert.Equal(expected, cut.Find(".ex-grid").GetAttribute("aria-rowcount")),
+            () => Assert.Equal(expected, row.GetAttribute("aria-rowindex")),
+            () => Assert.Equal(!loaded, row.ClassList.Contains("ex-placeholder")),
+            () => Assert.Equal(headings, row.QuerySelector(".ex-row-heading") is not null));
     }
 
-    [Fact] // A11Y-3: indices are absolute on both axes, 1-based as ARIA counts
-    public async Task Indices_are_absolute_after_scrolling()
+    private const int Million = 1_000_000;
+
+    /// <summary>A million rows, 100 columns of 100px, 40 rows on screen, and a Window of
+    /// <paramref name="count"/> rows from <paramref name="windowStart"/>.</summary>
+    private IRenderedComponent<ExGrid<TestRow>> RenderMillion(
+        int windowStart = 0, int count = 60, IReadOnlyList<Columns.HeaderGroup>? groups = null, bool hideHeader = false)
+        => Render<ExGrid<TestRow>>(ps =>
+        {
+            ps.Add(g => g.Window, TestRows.Many(count))
+              .Add(g => g.WindowStart, windowStart)
+              .Add(g => g.TotalCount, Million)
+              .Add(g => g.Columns, TestRows.Wide(100))
+              .Add(g => g.RowHeight, RowHeightPx)
+              .Add(g => g.HeaderHeight, RowHeightPx)
+              .Add(g => g.ViewportHeight, RowHeightPx + (40 * RowHeightPx))
+              .Add(g => g.ViewportWidth, 350)
+              .Add(g => g.HideHeader, hideHeader);
+            if (groups is not null)
+                ps.Add(g => g.HeaderGroups, groups);
+        });
+
+    /// <summary>Scrolls to <paramref name="row"/> and <paramref name="column"/> and lets the
+    /// fling settle, so the real cells are painted (ADR-0004).</summary>
+    private async Task ScrollToRowAsync(IRenderedComponent<ExGrid<TestRow>> cut, int row, int column = 0)
     {
-        var cut = RenderGrid();
-
-        await ScrollToAsync(cut.Find(".ex-scroller"), 100 * RowHeightPx, 0);
-        // A hundred rows at once is a fling; the real cells return on settle (ADR-0004).
+        await ScrollToAsync(cut.Find(".ex-scroller"), row * RowHeightPx, column * 100);
         await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+    }
 
-        var first = cut.FindAll(".ex-row")[0];
-        Assert.Equal("101", first.GetAttribute("aria-rowindex"));
-        Assert.Equal("1", first.QuerySelectorAll(".ex-cell")[0].GetAttribute("aria-colindex"));
+    /// <summary>The header's rows as ARIA reads them: each one's aria-rowindex, and the text of
+    /// the column headers it holds.</summary>
+    private static List<(string Index, string[] Headers)> HeaderRows(IRenderedComponent<ExGrid<TestRow>> cut)
+    {
+        var header = cut.Find(".ex-header");
+        var rows = header.GetAttribute("role") == "row" ? [header] : header.QuerySelectorAll("[role=row]").ToList();
+        return [.. rows.Select(row => (row.GetAttribute("aria-rowindex")!,
+            row.QuerySelectorAll("[role=columnheader]").Select(h => h.TextContent).ToArray()))];
+    }
+
+    /// <summary>The painted rows' aria-rowindex, top to bottom, Placeholders included.</summary>
+    private static string[] PaintedIndices(IRenderedComponent<ExGrid<TestRow>> cut)
+        => [.. cut.FindAll(".ex-viewport [role=row]").Select(row => row.GetAttribute("aria-rowindex")!)];
+
+    private static string[] Numbers(int from, int count)
+        => [.. Enumerable.Range(from, count).Select(n => n.ToString(System.Globalization.CultureInfo.InvariantCulture))];
+
+    [Fact] // ADR-0033 / A11Y-2: aria-rowcount is the data rows' total and the header's row, not the DOM slice
+    public void The_row_count_is_the_total_with_the_header_row()
+    {
+        var cut = RenderMillion();
+
+        Assert.Equal("1000001", cut.Find(".ex-grid").GetAttribute("aria-rowcount"));
+        Assert.Equal("100", cut.Find(".ex-grid").GetAttribute("aria-colcount"));
+        // And the DOM holds a few dozen rows of the million.
+        Assert.InRange(cut.FindAll(".ex-row").Count, 40, 60);
+    }
+
+    [Fact] // ADR-0033 / A11Y-3: at the top, the header row is 1 and the first data row is 2
+    public void At_the_top_the_header_row_is_one_and_the_data_rows_follow_it()
+    {
+        var cut = RenderMillion();
+
+        var header = Assert.Single(HeaderRows(cut));
+        Assert.Equal("1", header.Index);
+        Assert.Equal("row", cut.Find(".ex-header").GetAttribute("role"));
+        var painted = PaintedIndices(cut);
+        Assert.Equal(Numbers(2, painted.Length), painted);
+        // The first row's first cell is its column's, 1-based.
+        Assert.Equal("1", cut.FindAll(".ex-row")[0].QuerySelectorAll(".ex-cell")[0].GetAttribute("aria-colindex"));
+    }
+
+    [Fact] // ADR-0033 / A11Y-3: far down, a row's index is its position plus the header's row, absolute on both axes
+    public async Task Far_down_a_rows_index_is_its_position_after_the_header_row()
+    {
+        // The Window holds rows 499,995 to 500,004: the rows below it are Placeholders, and
+        // they are counted the same way.
+        var cut = RenderMillion(windowStart: 499_995, count: 10);
+
+        await ScrollToRowAsync(cut, 500_000, column: 30);
+
+        var painted = PaintedIndices(cut);
+        Assert.Equal("500002", painted[0]);
+        Assert.Equal(Numbers(500_002, painted.Length), painted);
+        Assert.Contains(cut.FindAll(".ex-viewport [role=row]"), row => row.GetAttribute("aria-busy") == "true");
+        // The cell at row 500,000 and column 30 keeps its id; its row and column indices are ARIA's.
+        var cell = cut.Find("[id$='r500000c30']");
+        Assert.Equal("31", cell.GetAttribute("aria-colindex"));
+        Assert.Equal("500002", cell.ParentElement!.GetAttribute("aria-rowindex"));
+        Assert.Equal("1000001", cut.Find(".ex-grid").GetAttribute("aria-rowcount"));
+    }
+
+    [Fact] // ADR-0033 / ADR-0032: a Header Group band is a row of its own before the header row, and the data rows count after both
+    public async Task A_header_group_band_is_a_row_before_the_header_row()
+    {
+        Columns.HeaderGroup[] groups = [new("CVA", [TestRows.ColumnName(1), TestRows.ColumnName(2), TestRows.ColumnName(3)])];
+        var cut = RenderMillion(windowStart: 499_990, count: 60, groups: groups);
+
+        Assert.Equal("rowgroup", cut.Find(".ex-header").GetAttribute("role"));
+        Assert.False(cut.Find(".ex-header").HasAttribute("aria-rowindex"));
+        var rows = HeaderRows(cut);
+        Assert.Equal(["1", "2"], rows.Select(r => r.Index));
+        Assert.Equal(["CVA"], rows[0].Headers);
+        Assert.Contains(TestRows.ColumnName(0), rows[1].Headers);
+        // The band's cell names where it stands among the columns, and how many it spans.
+        var cva = cut.Find(".ex-header-group");
+        Assert.Equal("2", cva.GetAttribute("aria-colindex"));
+        Assert.Equal("3", cva.GetAttribute("aria-colspan"));
+        Assert.False(cva.HasAttribute("aria-rowspan"));
+        Assert.Equal("1000002", cut.Find(".ex-grid").GetAttribute("aria-rowcount"));
+
+        await ScrollToRowAsync(cut, 500_000);
+
+        var painted = PaintedIndices(cut);
+        Assert.Equal(Numbers(500_003, painted.Length), painted);
+    }
+
+    [Fact] // ADR-0033 / ADR-0032: each tier of Header Groups is a row, top first; a rectangle over two tiers spans two rows
+    public void Each_tier_is_a_row_top_first()
+    {
+        Columns.HeaderGroup[] groups =
+        [
+            new("CVA", [TestRows.ColumnName(1), TestRows.ColumnName(2), TestRows.ColumnName(3)]),
+            new("Adjustments", [TestRows.ColumnName(1), TestRows.ColumnName(2), TestRows.ColumnName(3), TestRows.ColumnName(4)], tier: 2),
+            new("Tall", [TestRows.ColumnName(5), TestRows.ColumnName(6)], tier: 2, tierSpan: 2),
+        ];
+        var cut = RenderMillion(groups: groups);
+
+        var rows = HeaderRows(cut);
+        Assert.Equal(["1", "2", "3"], rows.Select(r => r.Index));
+        Assert.Equal(["Adjustments", "Tall"], rows[0].Headers);
+        Assert.Equal(["CVA"], rows[1].Headers);
+        Assert.Contains(TestRows.ColumnName(0), rows[2].Headers);
+        Assert.Equal("2", Assert.Single(cut.FindAll(".ex-header-group"), g => g.TextContent == "Tall").GetAttribute("aria-rowspan"));
+        Assert.Equal("4", PaintedIndices(cut)[0]);
+        Assert.Equal("1000003", cut.Find(".ex-grid").GetAttribute("aria-rowcount"));
+    }
+
+    [Fact] // ADR-0033: a band declared after the first render moves every painted row's index with it
+    public void A_band_declared_later_moves_every_rows_index()
+    {
+        var cut = RenderMillion();
+        Assert.Equal("2", PaintedIndices(cut)[0]);
+
+        cut.Render(ps => ps.Add(g => g.HeaderGroups, (Columns.HeaderGroup[])[
+            new("CVA", [TestRows.ColumnName(1), TestRows.ColumnName(2)])]));
+
+        var painted = PaintedIndices(cut);
+        Assert.Equal(Numbers(3, painted.Length), painted);
+        Assert.Equal("1000002", cut.Find(".ex-grid").GetAttribute("aria-rowcount"));
+    }
+
+    [Fact] // ADR-0033 / ADR-0050: with the header hidden there is no header row; the first data row is 1
+    public async Task With_the_header_hidden_the_first_data_row_is_one()
+    {
+        var cut = RenderMillion(windowStart: 499_990, count: 60, hideHeader: true);
+
+        Assert.Empty(cut.FindAll(".ex-header"));
+        Assert.Equal("1000000", cut.Find(".ex-grid").GetAttribute("aria-rowcount"));
+        Assert.Equal("1", PaintedIndices(cut)[0]);
+
+        await ScrollToRowAsync(cut, 500_000);
+
+        Assert.Equal("500001", PaintedIndices(cut)[0]);
     }
 
     [Fact] // A11Y-5: aria-activedescendant names the Focus cell, instance-prefixed, and resolves
@@ -367,16 +544,22 @@ public class AccessibilityTests : GridTestContext
         // The root could not take it yet: its own focus would do nothing, so nothing is asked...
         Assert.Empty(Js.FocusReclaimed.Invocations);
 
-        // ...until the attach has finished and its render has made the root a tab stop.
+        // ...until the attach has finished and its render has made the root a tab stop. The answer
+        // posts the rest of the attach to the dispatcher, and the reading is taken once the
+        // dispatcher is idle: once, whenever the process gets round to it, never against a clock.
         await cut.InvokeAsync(() => listening.SetResult(false));
-        cut.WaitForAssertion(() => Assert.Single(Js.FocusReclaimed.Invocations));
-        Assert.Equal(["0"], tabIndexAtReclaim);
-        Assert.Equal(Js.RootReferenceId, Js.Focused[^1]);
+        var reclaimed = await ReadWhenIdleAsync(() => (
+            Asked: Js.FocusReclaimed.Invocations.Select(i => (bool)i.Arguments[0]!).ToArray(),
+            TabIndex: tabIndexAtReclaim.ToArray(),
+            Focused: Js.Focused.ToArray(),
+            Root: Js.RootReferenceId));
         // Asked through the hand-back's condition, never by the root's own focus (ADR-0018).
-        Assert.False((bool)Js.FocusReclaimed.Invocations.First().Arguments[0]!);
+        Assert.Equal([false], reclaimed.Asked);
+        Assert.Equal("0", Assert.Single(reclaimed.TabIndex));
+        Assert.Equal(reclaimed.Root, reclaimed.Focused[^1]);
 
         // Owed once: the renders after it ask nothing more.
         cut.Render();
-        Assert.Single(Js.FocusReclaimed.Invocations);
+        Assert.Single(await ReadWhenIdleAsync(() => Js.FocusReclaimed.Invocations.ToArray()));
     }
 }

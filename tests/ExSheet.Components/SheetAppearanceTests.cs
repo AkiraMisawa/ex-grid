@@ -116,7 +116,7 @@ public class SheetAppearanceTests : SheetTestContext
 
         Assert.True(await cut.Instance.SetCellFormatAsync(new CellFormatChange { Fill = Yellow }));
 
-        var rows = cut.FindAll(".ex-row").Select(r => r.GetAttribute("aria-rowindex")!).ToList();
+        var rows = cut.FindAll(".ex-row").Select(SheetRowOf).ToList();
         Assert.True(rows.Count > 5);
         foreach (var row in rows)
         {

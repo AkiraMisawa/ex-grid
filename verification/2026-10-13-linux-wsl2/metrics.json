@@ -1,0 +1,15 @@
+{
+  "chrome": {
+    "MEM-2": {
+      "cycles": 50,
+      "baseline": {
+        "nodes": 117,
+        "listeners": 52
+      },
+      "drift": {
+        "nodes": 0,
+        "listeners": 0
+      }
+    }
+  }
+}

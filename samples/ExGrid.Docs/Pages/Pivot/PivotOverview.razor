@@ -24,7 +24,8 @@
             rows and columns, and a column Item with columns under it stands over them as a Header Group. Each
             cell is one combination of Items. It is computed, as every subtotal and the grand total are, from the
             Leaf Aggregates: for each combination of Items that has records, the counts, sums and extremes that
-            the Value Fields' Aggregations are computed from.
+            the Value Fields' Aggregations are computed from. For a screen reader the report's header rows come before
+            its first row: a row for each tier of column Items, then the row of column headers.
         </p>
         <DocsFigure Name="pivot-anatomy">
             2025's sales by region and country, with Europe open. A script draws the figure from

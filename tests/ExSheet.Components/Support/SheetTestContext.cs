@@ -35,7 +35,7 @@ public abstract class SheetTestContext : BunitContext
         _handle.Setup<bool>("metaIsPrimary").SetResult(false);
         _handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
         _handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose", "handOff", "takeFocus", "followFocus" })
+        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose", "handOff", "takeFocus", "followFocus", "takeKeyboardBack", "handKeyboardTo" })
         {
             _handle.SetupVoid(name, _ => true).SetVoidResult();
         }
@@ -56,6 +56,39 @@ public abstract class SheetTestContext : BunitContext
 
     /// <summary>Where the grid told its key gate the keyboard is going, in order (ADR-0050 item 16, 2026-10-01).</summary>
     internal IReadOnlyList<string> HandOffs => [.. _handle.Invocations["handOff"].Select(i => (string)i.Arguments[0]!)];
+
+    /// <summary>How many times a frame of the Sheet's own has asked the grid to take the keyboard back
+    /// from it, with the keys typed there on the way (ADR-0050 item 16's note of 2026-10-12).</summary>
+    internal int TakeBackCount => _handle.Invocations["takeKeyboardBack"].Count;
+
+    /// <summary>How many times a control of the Sheet's own — the toolbar's band — has been handed the
+    /// keyboard through the grid (ADR-0050 item 16's note of 2026-10-12).</summary>
+    internal int HandedToCount => _handle.Invocations["handKeyboardTo"].Count;
+
+    /// <summary>How many times the keyboard has been asked back for the Sheet, either way.</summary>
+    internal int KeyboardReturns => ReclaimCount + TakeBackCount;
+
+    private int _takeBacksAnswered;
+
+    /// <summary>
+    /// The browser's side of the hand-backs asked for since the last call (takeKeyboardBack): the key
+    /// gate has the keyboard and asks for the keys typed on the way, which it then holds as the root's.
+    /// Answers them, in order.
+    /// </summary>
+    internal IReadOnlyList<KeyboardEventArgs> AnswerTakeBacks(IRenderedComponent<SheetComponent> cut)
+    {
+        var grid = Grid(cut);
+        var asked = _handle.Invocations["takeKeyboardBack"];
+        var keys = new List<KeyboardEventArgs>();
+        for (; _takeBacksAnswered < asked.Count; _takeBacksAnswered++)
+        {
+            var ticket = (int)asked[_takeBacksAnswered].Arguments[1]!;
+            IReadOnlyList<KeyboardEventArgs> typed = [];
+            grid.InvokeAsync(() => { typed = grid.Instance.KeysTypedOnTheWay(ticket); }).GetAwaiter().GetResult();
+            keys.AddRange(typed);
+        }
+        return keys;
+    }
 
     /// <summary>Runs <paramref name="heard"/> at each request for the keyboard back on the root, as the
     /// grid makes it, so a test can read what stood on screen at that moment (ADR-0039). A handler that
@@ -124,10 +157,10 @@ public abstract class SheetTestContext : BunitContext
     internal static IRenderedComponent<ExGrid<SheetRow>> Grid(IRenderedComponent<SheetComponent> cut) =>
         cut.FindComponent<ExGrid<SheetRow>>();
 
-    internal static Task PressAsync(IRenderedComponent<SheetComponent> cut, string key, bool ctrl = false, bool shift = false)
+    internal static Task PressAsync(IRenderedComponent<SheetComponent> cut, string key, bool ctrl = false, bool shift = false, bool fromDescendant = false)
     {
         var grid = Grid(cut);
-        return grid.InvokeAsync(() => grid.Instance.OnKeyAsync(key, ctrl, shift, false, false, false));
+        return grid.InvokeAsync(() => grid.Instance.OnKeyAsync(key, ctrl, shift, false, false, false, fromDescendant: fromDescendant));
     }
 
     /// <summary>
@@ -202,8 +235,29 @@ public abstract class SheetTestContext : BunitContext
     internal static IElement Cell(IRenderedComponent<SheetComponent> cut, string address)
     {
         var at = CellAddress.Parse(address);
-        var row = cut.FindAll(".ex-row").Single(r => r.GetAttribute("aria-rowindex") == (at.Row + 1).ToString(System.Globalization.CultureInfo.InvariantCulture));
+        var row = cut.FindAll(".ex-row").Single(r => SheetRowOf(r) == at.Row + 1);
         return row.QuerySelectorAll("[role=gridcell]").Single(c => c.GetAttribute("aria-colindex") == (at.Column + 1).ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>
+    /// The Sheet's own number for a painted row, 1 for row 1: its <c>aria-rowindex</c> less the
+    /// header's rows, which ARIA counts first — the Column Headings' row, or none while they are
+    /// hidden (ADR-0033, decided with the user 2026-10-12).
+    /// </summary>
+    internal static int SheetRowOf(IElement row)
+        => int.Parse(row.GetAttribute("aria-rowindex")!, System.Globalization.CultureInfo.InvariantCulture)
+            - HeaderRowsOf(row.Closest(".ex-grid")!);
+
+    /// <summary>How many rows the header of <paramref name="grid"/> counts in ARIA: its own header,
+    /// one row, or one per tier and the leaf row, or none while it is hidden.</summary>
+    internal static int HeaderRowsOf(IElement grid)
+    {
+        static IElement? Child(IElement? parent, string className)
+            => parent?.Children.FirstOrDefault(child => child.ClassList.Contains(className));
+        var header = Child(Child(Child(grid, "ex-scroller"), "ex-spacer"), "ex-header");
+        return header is null ? 0
+            : header.GetAttribute("role") == "row" ? 1
+            : header.QuerySelectorAll("[role=row]").Length;
     }
 
     /// <summary>Moves the browser's scroll position and raises the scroll event the grid listens for:

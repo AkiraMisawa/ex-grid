@@ -65,6 +65,13 @@
             Density="GridDensity.Excel" ViewportHeight="220" ViewportWidth="480" />
 </div>
 
+<h2>Marked Row Headings keep their weight</h2>
+<p>Select a cell or a whole row. Group and Total Row Headings retain their own font weight under the Heading Mark.</p>
+<div id="appearance-headings" style="--ex-row-group-weight: 700; --ex-row-total-weight: 800">
+    <ExGrid TRow="AppearanceRow" Window="TintRows" Columns="TintColumns" RowKind="TintKindOf"
+            RowHeadings="HeadingNumber" RowHeadingWidth="44" ViewportHeight="300" ViewportWidth="480" />
+</div>
+
 <style>
     .demo-roboto { --ex-font-family: Roboto, "Helvetica Neue", Arial, sans-serif; }
 </style>
@@ -168,6 +175,8 @@
     private static readonly GridColumn<AppearanceRow>[] TintColumns =
         [.. "ABCDEFGHIJ".Select(name => new GridColumn<AppearanceRow>(
             name.ToString(), ColumnType.Text, _ => "", width: new ColumnWidthSpec(ColumnWidth.Fixed(44))))];
+
+    private static readonly Func<int, string> HeadingNumber = row => (row + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     private static readonly Func<AppearanceRow, RowKind> TintKindOf = row => row.Index switch
     {

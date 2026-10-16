@@ -402,7 +402,12 @@ key for the ribbon. Whether it is shown is yours to keep.
 Excel's KeyTips work while the toolbar is shown and no cell is being edited. Releasing Alt on its
 own, or pressing F10, shows a letter for each Toolbar Row. ExSheet's default row is H, as Excel's
 Home tab is. The row's letter then shows the items' letters, which are Excel's, so Alt, H, 1 sets
-bold. A row or a `ToolbarButton` of yours has a KeyTip only where you set its `KeyTip`. Two letters
+bold and Alt, H, O, E opens Format Cells. The letters can be typed straight after Alt: those typed
+before the KeyTips show wait for them, on a Blazor Server circuit too. Escape goes back one level, as
+Excel's did when read on Windows: from a list a KeyTip opened to its row's letters, then to the rows',
+then to the Sheet.
+A letter, an arrow, Enter or Escape typed while a list closes, or while the keyboard goes back to the
+Sheet, goes where the keyboard lands. A row or a `ToolbarButton` of yours has a KeyTip only where you set its `KeyTip`. Two letters
 that collide at one level are refused when the toolbar renders. ExSheet's items are `BoldItem`,
 `ItalicItem`, `UnderlineItem`, `StrikethroughItem`, `FontColourItem`, `FillItem`, `BordersItem`,
 `AlignLeftItem`, `AlignCenterItem`, `AlignRightItem`, `NumberFormatItem`, `PercentItem`,
@@ -410,7 +415,11 @@ that collide at one level are refused when the toolbar renders. ExSheet's items 
 
 - **The look is the Chrome's.** The built-in Chrome draws plain buttons with inline-SVG pictures.
   `MudSheetChrome` draws MudBlazor's controls. A Chrome of your own implements
-  `ISheetChrome.ToolbarItem`, which receives what the item means as a `ToolbarItemContext`.
+  `ISheetChrome.ToolbarItem`, which receives what the item means as a `ToolbarItemContext`. A list
+  of its own opens when `OpenRequest` changes and closes when `CloseRequest` does, without calling
+  `ChoicesClosed` unless it already held the keyboard. Closing on its own — a choice, Escape — it calls
+  `ChoicesClosing` with the closing key and passes on every key typed in it until it has gone, then
+  `ChoicesClosed`: the toolbar hands those keys on with the keyboard.
 - **An item of your own** derives from `ToolbarItemBase`. It reads the Sheet through the cascaded
   `SheetToolbarContext` and acts through the Sheet's public commands.
   `SetCellFormatFromFocusAsync` is the command for a change made from the Focus cell's Cell

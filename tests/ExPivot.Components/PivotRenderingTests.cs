@@ -1,6 +1,7 @@
 using Bunit;
 using ExGrid.Components;
 using ExGrid.Rows;
+using ExGrid.Selection;
 using ExPivot.Components.Tests.Support;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components.Web;
@@ -38,6 +39,25 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Equal(5, grid.TotalCount);
         Assert.Equal(["Row Labels", "Sum of Amount"], HeaderTexts(cut));
         Assert.Equal(["East | 180", "North | 10", "West | 90", "(blank) | 5", "Grand Total | 285"], RowTexts(cut));
+    }
+
+    [Fact] // ADR-0008 (2026-10-13) / ADR-0059: the report's header carries the Heading Mark ExGrid draws, over the pinned label column's header and over the values' — and no row learns the Selection
+    public async Task The_report_header_carries_the_heading_mark()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
+        var grid = Grid(cut);
+        Assert.Empty(grid.FindAll(".ex-heading-mark"));
+        var renders = grid.FindComponents<ExGridRow<PivotDisplayRow>>().Select(row => row.RenderCount).ToList();
+
+        await cut.InvokeAsync(() => grid.Instance.PlaceSelectionAsync(
+            new SelectionRange(0, 0, 2, 2), new CellPosition(0, 0), grid.Instance.RowSequenceVersion));
+
+        // The labels are pinned: their header's mark rides the band's pinned layer, the value's passes
+        // beneath it. No Row Headings, so no row is marked.
+        Assert.Single(grid.FindAll(".ex-header > .ex-heading-marks-pinned > .ex-heading-mark-column"));
+        Assert.Single(grid.FindAll(".ex-header > .ex-heading-mark-column"));
+        Assert.Empty(grid.FindAll(".ex-heading-mark-row"));
+        Assert.Equal(renders, grid.FindComponents<ExGridRow<PivotDisplayRow>>().Select(row => row.RenderCount).ToList());
     }
 
     [Fact] // ADR-0059/0024: group rows paint as Group, totals as Total, items as Detail
@@ -95,6 +115,36 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Equal(["FALSE", "TRUE"], groups.Select(g => g.Label));
         Assert.Equal(["FALSE", "TRUE"], cut.FindAll(".ex-header-group").Select(g => g.TextContent.Trim()));
         Assert.Contains("FALSE Total", HeaderTexts(cut));
+    }
+
+    [Fact] // ADR-0033 (2026-10-12): a report with no column field counts its header row first, and its rows after it
+    public void A_reports_header_row_is_aria_row_one()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
+
+        var grid = Grid(cut);
+        Assert.Equal("row", grid.Find(".ex-header").GetAttribute("role"));
+        Assert.Equal("1", grid.Find(".ex-header").GetAttribute("aria-rowindex"));
+        Assert.Equal("6", grid.Find(".ex-grid").GetAttribute("aria-rowcount"));
+        Assert.Equal(["2", "3", "4", "5", "6"], grid.FindAll(".ex-viewport .ex-row").Select(r => r.GetAttribute("aria-rowindex")));
+    }
+
+    [Fact] // ADR-0033 / ADR-0032 (2026-10-12): a report's column Items stand in a row of their own before its header row, and its rows count after both
+    public void A_reports_column_items_are_a_row_before_its_header_row()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Columns = [P("Online"), P("Product")], Values = [Sum("Amount")] });
+
+        var grid = Grid(cut);
+        var header = grid.Find(".ex-header");
+        Assert.Equal("rowgroup", header.GetAttribute("role"));
+        var rows = header.QuerySelectorAll("[role=row]");
+        Assert.Equal(["1", "2"], rows.Select(r => r.GetAttribute("aria-rowindex")));
+        Assert.Equal(["FALSE", "TRUE"], rows[0].QuerySelectorAll("[role=columnheader]").Select(h => h.TextContent.Trim()));
+        Assert.Contains("FALSE Total", rows[1].QuerySelectorAll("[role=columnheader]").Select(h => h.TextContent.Trim()));
+        Assert.Equal(2, HeaderRowsOf(cut));
+        Assert.Equal(grid.Instance.TotalCount + 2,
+            int.Parse(grid.Find(".ex-grid").GetAttribute("aria-rowcount")!, System.Globalization.CultureInfo.InvariantCulture));
+        Assert.Equal("3", grid.FindAll(".ex-viewport .ex-row")[0].GetAttribute("aria-rowindex"));
     }
 
     [Fact] // ADR-0059/0060: a value paints its engine text; its raw form for a copy is the number

@@ -224,6 +224,34 @@ every font. It errs towards `####`, never towards a cut number.
         lands on nothing, and the core takes the keyboard back.
       - No script is involved. A Chrome that owns its frame is responsible for leaving the keyboard
         where the core will take it back.
+      - *(2026-10-12.)* The element is not `aria-hidden`: it holds focus, and Chromium refuses to hide
+        a focused element and says so in the console (ADR-0100's note of 2026-10-12).
+      - *(2026-10-13, decided with the user: the keys typed as the keyboard goes back are held and handed
+        on in order, `ExSheet.MudBlazor`'s Format Cells among the frames.)* On a circuit the dialog stands a
+        round trip after Escape, OK or Cancel, and once MudBlazor removed it DOM focus was on nothing: ↓
+        typed straight after Escape was lost. Escape is now the dialog's own, not MudBlazor's
+        `CloseOnEscapeKey`, and those three close through the frame: OK sets what was touched as it is
+        pressed, so nothing typed after it changes what it sets; the frame's element takes the keyboard out
+        of the dialog before it closes; and the core takes the keyboard back from the element with the keys
+        typed in the dialog from the closing key on and on the element
+        (`FormatCellsContext.ReturnKeyboardFrom`, ADR-0050 item 16's note of 2026-10-12). ExSheet keeps a
+        Chrome's frame on the page after OK or Cancel until it has given the keyboard back. The ×, the
+        backdrop and an Escape an open dropdown's list takes are as they were. Layer 3: Escape then ↓, ↓,
+        and OK then ↓, typed at once on both hosts.
+      - *(2026-10-12.)* The element is not `aria-hidden`: it holds focus, and Chromium refuses to hide
+        a focused element and says so in the console (ADR-0100's note of 2026-10-12).
+      - *(2026-10-13, decided with the user: the keys typed as the keyboard goes back are held and handed
+        on in order, `ExSheet.MudBlazor`'s Format Cells among the frames.)* On a circuit the dialog stands a
+        round trip after Escape, OK or Cancel, and once MudBlazor removed it DOM focus was on nothing: ↓
+        typed straight after Escape was lost. Escape is now the dialog's own, not MudBlazor's
+        `CloseOnEscapeKey`, and those three close through the frame: OK sets what was touched as it is
+        pressed, so nothing typed after it changes what it sets; the frame's element takes the keyboard out
+        of the dialog before it closes; and the core takes the keyboard back from the element with the keys
+        typed in the dialog from the closing key on and on the element
+        (`FormatCellsContext.ReturnKeyboardFrom`, ADR-0050 item 16's note of 2026-10-12). ExSheet keeps a
+        Chrome's frame on the page after OK or Cancel until it has given the keyboard back. The ×, the
+        backdrop and an Escape an open dropdown's list takes are as they were. Layer 3: Escape then ↓, ↓,
+        and OK then ↓, typed at once on both hosts.
       - The hand-back waits until the browser has drawn the dialog's removal: the frame closes the
         dialog, re-renders, and calls the core's focus function from its `OnAfterRenderAsync`. On a
         circuit, an earlier call reached the browser before the removal and was declined, which
@@ -855,6 +883,17 @@ own. Under the built-in Chrome:
     the gridline, the Paper's white on a cell with no Fill, which is the white the readings of
     2026-10-12 observed there (R4; over a Fill, unobserved). Under `ExSheet.MudBlazor` it is the
     palette's primary, as the Focus outline is.
+  - *The Headings' line.* The Heading Mark
+    ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md), 2026-10-13) is the outline's colour on a
+    Sheet, `#217346` under the built-in Chrome, as the readings of 2026-10-12 measured Excel's line (R4),
+    and the palette's primary under `ExSheet.MudBlazor`. The Headings frame the Paper and follow the
+    scheme; the line stands on them as drawn.
+    *(2026-10-14, decided with the user, ADR-0008 D1: the shade, letters and corner are built too.)*
+    In the light scheme the marked Headings' ground is `#E1E1E1`, or `#D3F0E0` when the whole row or
+    column is selected; the letters and the all-selected corner's triangle take the mark's colour.
+    These are Visual Tokens, so a Theme or Wrapper can supply its own colours. The dark frame keeps
+    scheme-dependent shades rather than taking the Paper's light island; Excel's dark Heading
+    shades remain on the next readings' list.
 - **The shade is `#C7C7C7`, and the lines inside it stay as drawn.** Excel's black lines stay
   `#000000` over its shade.
   - The shade multiplies with what is beneath it, rather than lying over it. On white Paper it is
@@ -966,11 +1005,21 @@ en-GB):
 **What ExSheet builds** (`SheetWidening`, ticket 100's path):
 - **The formatting keys widen for a Number Format, underline or strikethrough**
   (`WidensAsAKeyDoes`). So do `SetCellFormatAsync` and `SetCellFormatFromFocusAsync`, the command the
-  toolbar's toggles set through (ADR-0100).
+  toolbar's toggles set through (ADR-0100). *(2026-10-14: `SetCellFormatFromFocusAsync` widens for a Font
+  colour too, and `SetCellFormatAsync` still does not: "What the readings of 2026-10-14 settled about
+  widening" below.)*
 - **Format Cells' OK widens for a Number Format or any part of the Font**
   (`WidensAsFormatCellsOkDoes`), under every Chrome. Only OK widens by this rule.
 - **The toolbar's Font Colour widens nothing**, its face or a colour from its list, since both set
   through `SetCellFormatAsync`. That Excel's Font Color button widens nothing is a reading.
+  *(Replaced 2026-10-14, decided with the user: the Sheet Toolbar's Font Colour widens a column as Excel's
+  Home tab Font Colour button does — by its face and from its list — while `SetCellFormatAsync` keeps
+  widening as COM's `Font.Color` does, which does not widen. The reading was wrong: the readings of
+  2026-10-14 saw the button widen. See "What the readings of 2026-10-14 settled about widening".)*
+  *(Replaced 2026-10-14, decided with the user: the Sheet Toolbar's Font Colour widens a column as Excel's
+  Home tab Font Colour button does — by its face and from its list — while `SetCellFormatAsync` keeps
+  widening as COM's `Font.Color` does, which does not widen. The reading was wrong: the readings of
+  2026-10-14 saw the button widen. See "What the readings of 2026-10-14 settled about widening".)*
 - **A Fill, Borders and an alignment widen nothing**, set any way.
   - Observed for the Home tab's Fill Colour button over `####` (the fourteenth run's case 7), and the
     Fill tab and the Alignment tab's vertical alignment over `####` (R6).
@@ -989,8 +1038,10 @@ en-GB):
   workbook of its own.
 - Strikethrough from the Font tab, and its Normal font box, widen as its other Font parts do.
 - A horizontal alignment from Format Cells widens nothing.
-- The Home tab's Font Color button widens nothing, as ExSheet's Font Colour does not.
-- `Range.Font` through COM acts as the keys for italic, strikethrough and a colour too.
+- The Home tab's Font Color button widens nothing, as ExSheet's Font Colour does not. *(Read 2026-10-14,
+  run 18a, widening case 5: it widens, by its face and from its list. See below.)*
+- `Range.Font` through COM acts as the keys for italic, strikethrough and a colour too. *(Read 2026-10-14,
+  run 18a, widening cases 2 and 6: it does — italic and a colour widen nothing, and strikethrough widens.)*
 - Over several ranges, whole columns or whole rows, each command widens every column it holds
   numbers in, as over one range.
 
@@ -1003,6 +1054,39 @@ en-GB):
   ("Bold, and what fits"). So the number shows whole, and the column is not widened further.
 - This is a difference that follows this ADR, not a change. It is a known limitation of `0.1.0`
   (ADR-0202's note of this date).
+
+## What the readings of 2026-10-14 settled about widening *(2026-10-14)*
+
+The readings were made on Windows (`verification/2026-10-14-windows-readings-18a/report.md`, its
+`widening.md` part; `records/widen.jsonl`). Each case was a new Excel, A1 holding 123456789.12 in `0.00`
+at the standard width (8.09), showing `########`.
+
+**What they observed.**
+- **The Home tab's Font Colour widened column A to 11.73**, pressed on its face (red), and with Blue
+  chosen from its list in a workbook of its own (case 5).
+- **`Font.Color = 255` set through COM did not widen it** (cases 2 and 6). Excel's button and Excel's
+  method part here, where for bold, italic and underline they agree (R6, cases (3) and (5); case 6).
+
+**Decided with the user.**
+- *(2026-10-14, decided with the user: the Sheet Toolbar's Font Colour widens a column as Excel's Home
+  tab Font Colour button does — by its face and from its list — while `SetCellFormatAsync` keeps widening
+  as COM's `Font.Color` does, which does not widen.)*
+
+**What ExSheet builds** *(as built)*:
+- **`SetCellFormatFromFocusAsync`, the command the Sheet Toolbar's toggles and colours set through,
+  widens as Excel's Home tab buttons do** (`WidensAsAHomeTabButtonDoes`): as the formatting keys do, and
+  for a Font colour too. ADR-0100 has an item act through public commands only, so the button's rule is a
+  command's. The toggles widen as before, each as the key it names, as Excel's Bold, Italic and Underline
+  buttons did (R6, case (3)).
+- **The toolbar's Font Colour sets through it**, by its face and from its list, and widens a column the
+  user has not sized, in the press's one undo step, recorded as a width an entry widened (SH-26). A column
+  the user sized never widens.
+- **The Fill Colour sets through it too, and widens nothing**, as Excel's Fill Color button did not (the
+  fourteenth run's case 7).
+- **`SetCellFormatAsync` is unchanged**: a Font colour set through it widens nothing, as `Font.Color` set
+  through COM did not. One change, a Font colour, so widens through `SetCellFormatFromFocusAsync` and not
+  through `SetCellFormatAsync`, as bold widens through Format Cells' OK and not through
+  `SetCellFormatAsync`.
 
 ## Consequences
 

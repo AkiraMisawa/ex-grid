@@ -44,9 +44,12 @@ async function noteKeysReachingFormatCells(page, chrome) {
                 window.__keysReachingFormatCells.push(e.key);
             }
         };
-        document.addEventListener('keydown', listener, true);
+        // Count after the root's capture-phase gate. A key aimed at the tabs while a hold
+        // still stands is stopped there and replayed later; document capture would count
+        // both the intercepted event and its delivery, though the tabs receive only one.
+        document.addEventListener('keydown', listener);
         return () => {
-            document.removeEventListener('keydown', listener, true);
+            document.removeEventListener('keydown', listener);
             delete window.__keysReachingFormatCells;
         };
     }, REACHING_FORMAT_CELLS[chrome]);
@@ -66,8 +69,11 @@ async function openBy(page, grid, address, how) {
         // The menu answers keys from its own place, which starts on its first item.
         await expect(page.getByRole('menuitem', { name: 'Copy' })).toBeFocused();
         for (let n = 0; n < 10 && !(await item.evaluate((e) => e === document.activeElement)); n++) {
+            const items = page.getByRole('menuitem');
+            const from = await items.evaluateAll((items) => items.findIndex((e) => e === document.activeElement));
+            expect(from).toBeGreaterThanOrEqual(0);
             await page.keyboard.press('ArrowDown');
-            await page.waitForTimeout(ROUND_TRIP_MS * 2);
+            await expect(items.nth(from)).not.toBeFocused();
         }
         await expect(item).toBeFocused();
         await page.keyboard.press('Enter');

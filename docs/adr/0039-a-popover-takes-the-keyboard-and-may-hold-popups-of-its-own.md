@@ -133,7 +133,8 @@ own script. What that does to the grid, read from MudBlazor 9.9's source rather 
 
 **Script.** [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s "Chrome implementations
 must not smuggle JS in" means **script a Wrapper adds**: a Wrapper ships no `.js` of its own and
-makes no interop calls of its own. The scripts a design system's own components run for
+makes no interop calls of its own, except for the narrowly scoped service configuration
+recorded below on 2026-10-15. The scripts a design system's own components run for
 themselves — MudBlazor's popup positioning, its key interceptor, its ripple — are that design
 system's, loaded by the Consumer's choice of it, and are not the grid's allowlist to count.
 
@@ -219,6 +220,37 @@ typed while it opens, too.**
   code they do not take this path: the first opens from a right-click, whose press already puts the
   keyboard on the root, and the toolbar closes its choices before it opens another popover. Find had
   the same gap, closed by FD-1's fix (#107).
+  - *(2026-10-13, as built, read off the toolbar's code after #108.)* One of the toolbar's choices opens
+    a popover: More Number Formats…, which opens Format Cells. Under the built-in Chrome its list closed
+    through the frame first, asking for the root, and Format Cells then opened over no popover, so the
+    hand-off to it reached the browser a message after that request; on a circuit a key landing between
+    the two was the grid's. Such a choice is now made before its list closes, so the core opens Format
+    Cells in the list's place and takes this path: the hand-off first, then the root, while the list
+    still holds DOM focus. The list is closed afterwards only where nothing took its place.
+  - *(2026-10-13, as built.)* Under `ExSheet.MudBlazor` Format Cells is a frame of the Chrome's, and its
+    hand-off was told while the toolbar's closing list still held the keyboard, outside the root, where
+    the gate took it as reached at once; the keys the toolbar then handed back were the grid's: Escape
+    typed straight after More Number Formats… was lost and Format Cells stayed open. The hand-off is now
+    told once the toolbar has asked the grid for the keyboard back, and the keys handed back go on to
+    Format Cells (ADR-0050 item 16's note of 2026-10-13).
+  - *(2026-10-13, as built, read off the toolbar's code after #108.)* One of the toolbar's choices opens
+    a popover: More Number Formats…, which opens Format Cells. Under the built-in Chrome its list closed
+    through the frame first, asking for the root, and Format Cells then opened over no popover, so the
+    hand-off to it reached the browser a message after that request; on a circuit a key landing between
+    the two was the grid's. Such a choice is now made before its list closes, so the core opens Format
+    Cells in the list's place and takes this path: the hand-off first, then the root, while the list
+    still holds DOM focus. The list is closed afterwards only where nothing took its place.
+  - *(2026-10-13, as built.)* Under `ExSheet.MudBlazor` Format Cells is a frame of the Chrome's, and its
+    hand-off was told while the toolbar's closing list still held the keyboard, outside the root, where
+    the gate took it as reached at once; the keys the toolbar then handed back were the grid's: Escape
+    typed straight after More Number Formats… was lost and Format Cells stayed open. The hand-off is now
+    told once the toolbar has asked the grid for the keyboard back, and the keys handed back go on to
+    Format Cells (ADR-0050 item 16's note of 2026-10-13).
+    Implementation correction, 2026-10-14: the frame's first render must follow that hand-back too.
+    Drawing it earlier let its focus overtake the hand-back, which then declined to take focus from
+    the new frame and dropped the toolbar's held keys. The frame is now drawn after the browser has
+    answered the hand-back and the destination has been told; a component test holds that answer
+    unfinished and proves that the frame cannot take the keyboard early.
 - **The fix.** The core asks for the root's focus ahead of that render, as a close does. The keys land
   on the root, are held, and are handed to the contents in order once they hold the keyboard.
 - **A Tab or Shift+Tab among them is dropped with the keys behind it**, as above. On this path, the
@@ -226,3 +258,113 @@ typed while it opens, too.**
   control. It is held and dropped, and DC-60's test changes with it. The other options were left: the
   gap kept, and the timing with it; or a new message for the core to answer a held Tab with the first
   or last control.
+
+## More Colours takes the keyboard in HEX *(2026-10-14, decided with the user)*
+
+The family-wide opening key hold includes More Colours in the MudBlazor Format Cells frame.
+Opening it puts the keyboard in HEX, with its initial value selected; characters typed while
+it opens replace that value in order. An earlier choice the user makes in the popup keeps the
+keyboard. Escape closes the inner popup first, leaving Format Cells standing.
+
+The old picker requested focus on its read-only opening field after the popup appeared.
+That request could take the keyboard back from HEX after the user had already selected it;
+typing then went to the read-only field and was lost. Waiting for that request before typing
+only concealed the race. The Wrapper now asks through the existing conditional hand-off:
+its opening button holds the early keys, the grid collects them and holds them for the popup,
+and the drawn HEX field takes them. The Wrapper still uses MudBlazor's colour picker and
+adds no script. `FormatCellsContext` exposes this hold and conditional hand-off to its Chrome;
+opening an inner popup does not end Format Cells or remove its frame.
+
+A design-system control need not expose its input as an ElementReference to the Wrapper.
+For this hand-off its contents' container may name the first enabled text field, whose value
+is selected before the held keys arrive. The existing focus condition is unchanged: another
+control already chosen by the user keeps the keyboard. This adds no listener or layout read.
+
+Implementation: the opener is a MudButton, with the colour controls still supplied by
+MudColorPicker. The old read-only input could also submit the surrounding Format Cells form
+on Enter before the opening render arrived, and its text-field container made a focus request
+of its own. A button is an opening action without either input behaviour; an Enter typed after
+its opening click is held for HEX, and its native click does not toggle the popup closed.
+
+The held Enter commits a text field's `change` before its form is submitted, as a native
+Enter does. Dispatching only `keydown` left a change-bound HEX field showing the new colour
+while its Consumer still held the old one. This is the existing keyboard replay's text-field
+behaviour, including a field outside a form, not a new event listener.
+
+A held Escape delivered to a Consumer's frame is acknowledged through the existing ordered
+`Ping` question (ADR-0050's Alt-release protocol) before the next held key is interpreted.
+The frame can declare its next hand-off before its Escape handler's first await. Without
+that acknowledgement, the drain treated a Down behind two Escapes as HEX's unsupported
+caret move and dropped it before the closing handler could hand it on. No elapsed-time
+condition or retry decides where the key goes.
+*(Implementation correction, 2026-10-16.)* The acknowledgement is asked only when the
+Escape's target is a text field, where the drain decides what the next held key does and no
+handler of the frame's hears it. Any other control of a frame hears the next key as the
+keydown it was, after the Escape, and answers its keys in the order they reach it, as with an
+Alt's release handed to a frame (ADR-0050 item 16); the keys behind it go on in the same task.
+Asked there, the acknowledgement left the frame holding the keyboard with keys still held for
+it, and a key typed straight on the frame overtook them. F10, H, Escape, H, A ended ExSheet's
+KeyTips at the A, and the held H opened an edit in the cell (SH-52, about one run in forty on
+the Server host).
+
+[ADR-0210](./0210-held-text-commits-when-its-field-is-left.md) permits the narrowly scoped blur supplement for held text,
+so leaving HEX also commits it without requiring Enter or duplicating a normal change.
+
+An outside press uses the same conditional keyboard hand-back before removing the picker.
+Removing a focused field need not raise blur, so it stays drawn until the hand-back leaves it
+and its edit commits. Each collection callback carries its own opening's key queue; an older
+reply cannot take or clear a later opening's keys.
+
+The returned opening button answers Enter and Space at keydown, including a key handed on
+from the hold: a dispatched key does not perform the browser's button activation. Closing
+finishes before the button receives those keys, so it cannot remove a picker they reopen.
+
+The button keeps the inherited picker's `mud-input-slot` class, which its existing key
+interceptor observes from the first render. Its Enter/Space prevention is needed even on
+WebAssembly: moving focus inside the keydown handler without preventing the native default
+let Space insert a blank into the Keyboard Field and then HEX. The replacement button had
+lost that class; restoring the picker's existing contract fixes the duplicate action while
+leaving Tab native. The Wrapper adds no interceptor subscription or interop call of its own.
+
+The inherited interceptor also calls CloseAsync on Escape/Tab when the picker is already
+closed. That is not another popup close: the Wrapper tracks whether a popup stands and starts
+no hand-back for that call. Otherwise a second Escape could close Format Cells while the
+picker's redundant hand-back discarded the Down meant for the Sheet.
+
+On 2026-10-15 the user approved configuring MudBlazor's existing KeyInterceptorService from
+the Wrapper for this opening button only, preventing Enter/Space defaults while retaining
+native Tab. Inspection found that the inherited picker already provides that configuration.
+The implementation uses it without a new subscription, so the proposed exception is not
+needed by this change; the general prohibition on Wrapper-owned interop remains.
+
+
+## Format Cells hears keys on its dialog root *(2026-10-15, decided with the user)*
+
+The Wrapper may configure MudBlazor's existing `KeyInterceptorService` on the Format Cells
+**dialog root**. This is a limited exception to the prohibition on Wrapper-owned interop:
+no Wrapper JavaScript is added, and no other surface gains permission to subscribe.
+
+A press on the title or empty space can leave DOM focus on MudBlazor's dialog root. The
+form's and actions' Blazor handlers are not its ancestors, and MudBlazor 9.6 and 9.9 omit
+Escape from the dialog's public `OnKeyDown` callback. Its built-in Escape close also bypasses
+the frame's ordered keyboard hand-back. Thus neither callback can satisfy the existing
+requirement that Escape closes the frame and a following key reaches the Sheet in order.
+
+The subscription hears keydown on this root and its descendants, including Escape, and
+uses the same closing protocol as the controls. It neither changes Tab's native action nor
+adds a second handler to the form or actions. An inner colour popup reports its lifetime;
+its keys remain its own, and an Escape cannot close both layers. Design-system dropdowns
+retain their own interception. Each dialog owns and releases its subscription, separately
+from MudBlazor's registration on the surrounding dialog container.
+
+The frame holds opening keys until this subscription is installed. The dialog stays hidden
+and its tabs do not take focus before that acknowledgement; readiness, not an elapsed wait,
+makes the controls available. Disposal removes the registration even if installation was
+still in flight. Layer 2 pins that lifecycle, and layer 3 exercises root-focus Escape followed
+immediately by Down, as well as ordinary controls and inner popups on both hosts.
+
+Implementation correction: hiding the opening dialog with inherited `visibility` was wrong.
+MudTabs transitions all properties on its tab wrapper, so it still computed `hidden` when
+the ready render requested tab focus (measured in Chrome on WebAssembly). The dialog now
+uses `display: none` until registration completes; no transition or elapsed wait decides
+when its initial focus works.

@@ -990,6 +990,7 @@ ExGrid.Components.ExGrid<TRow>.HighlightHoverRow.get -> bool
 ExGrid.Components.ExGrid<TRow>.HighlightHoverRow.set -> void
 ExGrid.Components.ExGrid<TRow>.IsLoading.get -> bool
 ExGrid.Components.ExGrid<TRow>.IsLoading.set -> void
+ExGrid.Components.ExGrid<TRow>.KeysTypedOnTheWay(int ticket) -> System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!
 ExGrid.Components.ExGrid<TRow>.MarkPressTakenAt(int paint, int pageStart = -1, int row = -1, int pageRows = -1) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.Marks.get -> ExGrid.Rows.IRowMarks<TRow!>?
 ExGrid.Components.ExGrid<TRow>.Marks.set -> void
@@ -1085,12 +1086,14 @@ ExGrid.Components.ExGrid<TRow>.OnUndo.get -> Microsoft.AspNetCore.Components.Eve
 ExGrid.Components.ExGrid<TRow>.OnUndo.set -> void
 ExGrid.Components.ExGrid<TRow>.OnViewportReportAsync(double gutterWidthPx, double gutterHeightPx, double widthPx, double heightPx) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.OpenPopoverAsync(Microsoft.AspNetCore.Components.RenderFragment<ExGrid.Chrome.GridPopoverContext!>! content, string! label) -> System.Threading.Tasks.Task<bool>!
+ExGrid.Components.ExGrid<TRow>.OpenPopoverAsync(Microsoft.AspNetCore.Components.RenderFragment<ExGrid.Chrome.GridPopoverContext!>! content, string! label, System.Func<System.Threading.Tasks.Task!>! closedByEscape) -> System.Threading.Tasks.Task<bool>!
 ExGrid.Components.ExGrid<TRow>.OutlinedColumns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Cells.OutlinedColumn!>?
 ExGrid.Components.ExGrid<TRow>.OutlinedColumns.set -> void
 ExGrid.Components.ExGrid<TRow>.PageSize.get -> int?
 ExGrid.Components.ExGrid<TRow>.PageSize.set -> void
 ExGrid.Components.ExGrid<TRow>.PaintedText.get -> ExGrid.Cells.PaintedTextOf<TRow!>?
 ExGrid.Components.ExGrid<TRow>.PaintedText.set -> void
+ExGrid.Components.ExGrid<TRow>.PassKeysOutAsync() -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.PasteByteCap.get -> long
 ExGrid.Components.ExGrid<TRow>.PasteByteCap.set -> void
 ExGrid.Components.ExGrid<TRow>.PasteMaySpill.get -> bool
@@ -1118,6 +1121,7 @@ ExGrid.Components.ExGrid<TRow>.ReferenceText.get -> System.Func<ExGrid.Selection
 ExGrid.Components.ExGrid<TRow>.ReferenceText.set -> void
 ExGrid.Components.ExGrid<TRow>.RefreshSummaryAsync() -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.ReturnKeyboardAsync() -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.ReturnKeyboardAsync(Microsoft.AspNetCore.Components.ElementReference from, System.Func<System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>! typedOnTheWay) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.RootId.get -> string!
 ExGrid.Components.ExGrid<TRow>.RowHeadings.get -> System.Func<int, string!>?
 ExGrid.Components.ExGrid<TRow>.RowHeadings.set -> void
@@ -1188,6 +1192,8 @@ ExGrid.Components.ExGridRow<TRow>.Dispose() -> void
 ExGrid.Components.ExGridRow<TRow>.Engagement.get -> ExGrid.Components.CellEngagement
 ExGrid.Components.ExGridRow<TRow>.Engagement.set -> void
 ExGrid.Components.ExGridRow<TRow>.ExGridRow() -> void
+ExGrid.Components.ExGridRow<TRow>.HeaderRowCount.get -> int
+ExGrid.Components.ExGridRow<TRow>.HeaderRowCount.set -> void
 ExGrid.Components.ExGridRow<TRow>.Heading.get -> string?
 ExGrid.Components.ExGridRow<TRow>.Heading.set -> void
 ExGrid.Components.ExGridRow<TRow>.HeadingStyle.get -> string?
@@ -2129,7 +2135,7 @@ static ExGrid.Chrome.SelectionSummaryContext.operator ==(ExGrid.Chrome.Selection
 static ExGrid.Chrome.SummaryFigureText.operator !=(ExGrid.Chrome.SummaryFigureText? left, ExGrid.Chrome.SummaryFigureText? right) -> bool
 static ExGrid.Chrome.SummaryFigureText.operator ==(ExGrid.Chrome.SummaryFigureText? left, ExGrid.Chrome.SummaryFigureText? right) -> bool
 static ExGrid.Chrome.SummaryLabelIds.For(ExGrid.Summarizing.SummaryFigures figure) -> string!
-static ExGrid.Clipboard.ClipboardData.Assemble(ExGrid.Clipboard.CopyPlan! plan, System.Func<int, int, string!>! displayAt, System.Func<int, int, string!>! rawAt, System.Func<int, string!>? headerAt = null) -> (string! Text, string! Html)
+static ExGrid.Clipboard.ClipboardData.Assemble(ExGrid.Clipboard.CopyPlan! plan, System.Func<int, int, string!>! displayAt, System.Func<int, int, string!>! rawAt, System.Func<int, string!>? headerAt = null, System.Func<int, string?>? headerRawAt = null) -> (string! Text, string! Html)
 static ExGrid.Clipboard.ClipboardParse.Parse(string? html, string? text) -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<string!>!>?
 static ExGrid.Clipboard.ClipboardPayload.Async.get -> ExGrid.Clipboard.ClipboardPayload!
 static ExGrid.Clipboard.ClipboardPayload.Data(string! text, string! html) -> ExGrid.Clipboard.ClipboardPayload!

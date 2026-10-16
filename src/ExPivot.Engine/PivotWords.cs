@@ -3,9 +3,16 @@ using System.Globalization;
 namespace ExPivot.Engine;
 
 /// <summary>
-/// The words ExPivot paints, by id, with their English (ADR-0060). A Consumer replaces any of
-/// them through a function from id to text, returning null to keep the English. A word with
-/// <c>{0}</c> (and <c>{1}</c>) is a template: the id says what goes in it.
+/// The words ExPivot paints, by id, with their English (ADR-0060), which is Excel's English
+/// (United States) edition's: <c>Max of {0}</c>, <c>Summarize value field by</c>. A Consumer
+/// replaces any of them through a function from id to text, returning null to keep the English. A
+/// word with <c>{0}</c> (and <c>{1}</c>) is a template: the id says what goes in it.
+///
+/// <para>The English (United Kingdom) edition's words are bundled where they differ:
+/// <see cref="EnglishUnitedKingdom"/> gives <c>Max. of {0}</c>, <c>Max.</c> and
+/// <c>Summarise value field by</c>. ExPivot paints them on its own under an <c>en-GB</c> UI culture,
+/// as Excel's English follows its display language; the language stays English, and the
+/// Consumer's <c>Label</c> still wins (ADR-0060's note of 2026-10-14).</para>
 ///
 /// <para>The words of Excel's Japanese edition are bundled: <see cref="Japanese"/> is such a
 /// function, chosen in one line (<c>Label="PivotWords.Japanese"</c>). They never follow the
@@ -94,6 +101,26 @@ public static class PivotWords
         return JapaneseWords.TryGetValue(id, out var word) ? word : null;
     }
 
+    /// <summary>
+    /// The words of Excel's English (United Kingdom) edition where they differ from the English
+    /// (United States) edition's, which are this class's English (ADR-0060's note of 2026-10-14):
+    /// <c>Max.</c> and <c>Min.</c> in Value Field Settings' list, <c>Max. of {0}</c> and
+    /// <c>Min. of {0}</c> as a Value Field's caption, and <c>Summarise value field by</c> over the
+    /// list. A function from id to word that answers null for every other id, which keeps the
+    /// English. ExPivot chooses it on its own under an <c>en-GB</c> UI culture; hand it to
+    /// ExPivot's <c>Label</c>, or to <see cref="PivotOptions.Label"/> on a server, to choose it
+    /// under any culture.
+    /// </summary>
+    public static Func<string, string?> EnglishUnitedKingdom { get; } = EnglishUnitedKingdomFor;
+
+    /// <summary>The English (United Kingdom) edition's word for an id, or null where that edition
+    /// writes what the English (United States) edition writes.</summary>
+    public static string? EnglishUnitedKingdomFor(string id)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+        return EnglishUnitedKingdomWords.TryGetValue(id, out var word) ? word : null;
+    }
+
     /// <summary>The word for <paramref name="id"/>: the Consumer's through
     /// <paramref name="label"/>, the English where it says nothing, and the id itself where
     /// neither knows it — an id painted is a missing word seen, never a blank.</summary>
@@ -121,6 +148,10 @@ public static class PivotWords
         _ => throw new ArgumentOutOfRangeException(nameof(aggregation), aggregation, "Unknown PivotAggregation."),
     };
 
+    // The English is Excel's English (United States) edition's (ADR-0060's notes of 2026-10-12 and
+    // 2026-10-14): "Max of", "Min of" and "Summarize", which that edition shows
+    // (verification/2026-10-12-windows-pivot-en-us, (a) and (d)). The English (United Kingdom)
+    // edition's, where they differ, are EnglishUnitedKingdomWords below.
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
     {
         [RowLabels] = "Row Labels",
@@ -152,7 +183,12 @@ public static class PivotWords
         ["caption-max"] = "Max of {0}",
         ["caption-min"] = "Min of {0}",
         ["caption-product"] = "Product of {0}",
-        ["caption-count-numbers"] = "Count Numbers of {0}",
+        // Excel captions Count Numbers as it captions Count, so a Count and a Count Numbers of one
+        // field are "Count of Value" and "Count of Value2": through COM in the seventeenth Windows
+        // run (item 4) and in the readings of 2026-10-12 (R3 (a)), and "Count of Amount" chosen in
+        // Value Field Settings (R3 (d)), in the English (UK) edition, and the same in the English
+        // (US) one (verification/2026-10-12-windows-pivot-en-us, (a) and (d)).
+        ["caption-count-numbers"] = "Count of {0}",
         ["caption-stddev"] = "StdDev of {0}",
         ["caption-stddevp"] = "StdDevp of {0}",
         ["caption-var"] = "Var of {0}",
@@ -165,6 +201,14 @@ public static class PivotWords
 
         // The Field List and its panels (ADR-0061).
         ["field-list"] = "PivotTable Fields",
+        // Both instruction lines end with a colon, as Excel's pane draws them in the English (UK)
+        // and the Japanese editions (the readings of 2026-10-12, R3 (b)) and in the English (US)
+        // one (verification/2026-10-12-windows-pivot-en-us, (b)). It was read from pictures:
+        // UI Automation's names leave the colon out, so the character itself was not read. In
+        // Japanese the colon on screen sits where U+003A sits when the same text is drawn for
+        // comparison, and U+FF1A begins about 10 px later; a full-width colon that Office draws
+        // narrower (proportional metrics) is not excluded by that measurement. ExPivot writes ':'
+        // U+003A.
         ["choose-fields"] = "Choose fields to add to report:",
         ["drag-fields"] = "Drag fields between areas below:",
         ["search-fields"] = "Search",
@@ -294,6 +338,23 @@ public static class PivotWords
         ["retry"] = "Retry",
     };
 
+    // The words of Excel's English (United Kingdom) edition where they differ from the English above
+    // (ADR-0060's note of 2026-10-14), as that edition showed them in the readings of 2026-10-12:
+    // "Max. of Note" and "Min. of Note" through COM (R3 (a)), "Max." and "Min." in Value Field
+    // Settings' list and "Summarise value field by" over it (R3 (d), shots/r3d-en-2-dialog.png).
+    // Every other word of ExPivot's read there was the English (United States) edition's
+    // (verification/2026-10-12-windows-pivot-en-us, (a), (b) and (d)). The list's StdDev, StdDevp,
+    // Var and Varp, below what R3 (d)'s pictures show, are taken as the same by generalisation from
+    // that edition's captions, "StdDev of Note" and the rest (R3 (a)).
+    private static readonly Dictionary<string, string> EnglishUnitedKingdomWords = new(StringComparer.Ordinal)
+    {
+        ["aggregation-max"] = "Max.",
+        ["aggregation-min"] = "Min.",
+        ["caption-max"] = "Max. of {0}",
+        ["caption-min"] = "Min. of {0}",
+        ["summarize-by"] = "Summarise value field by",
+    };
+
     // The words of Excel's Japanese edition (ADR-0060), for every id above, for the ExGrid
     // commands in the report's Context Menu (copy, copy-with-headers), and for what the report's
     // grid says when it refuses a copy or a paste (refused-*, ADR-0203), which ExGrid words only
@@ -314,7 +375,9 @@ public static class PivotWords
         [ValuesPseudoField] = "Σ 値",
 
         ["aggregation-sum"] = "合計",
-        ["aggregation-count"] = "データの個数",
+        // The Japanese edition lists Count as 個数 in Value Field Settings, and captions it
+        // データの個数 / {0} (the readings of 2026-10-12, R3 (d); decided with the user, 2026-10-13).
+        ["aggregation-count"] = "個数",
         ["aggregation-average"] = "平均",
         ["aggregation-max"] = "最大",
         ["aggregation-min"] = "最小",
@@ -331,7 +394,9 @@ public static class PivotWords
         ["caption-max"] = "最大 / {0}",
         ["caption-min"] = "最小 / {0}",
         ["caption-product"] = "積 / {0}",
-        ["caption-count-numbers"] = "数値の個数 / {0}",
+        // The Japanese edition captions Count Numbers as it captions Count (the readings of
+        // 2026-10-12, R3 (d): chosen in Value Field Settings, and added through COM).
+        ["caption-count-numbers"] = "データの個数 / {0}",
         ["caption-stddev"] = "標本標準偏差 / {0}",
         ["caption-stddevp"] = "標準偏差 / {0}",
         ["caption-var"] = "標本分散 / {0}",

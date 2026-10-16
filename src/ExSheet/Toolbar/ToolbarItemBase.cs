@@ -47,8 +47,15 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     private SheetToolbarContext? _joined;
     private ToolbarItemContext? _drawn;
     private int _openRequest;
+    // The opening the last close request closed (ToolbarItemContext.CloseRequest), and whether the
+    // item's choices may be open from the keyboard since: an opening was asked for, and neither the
+    // Chrome has said its list closed nor the toolbar has asked for it to close.
+    private int _closeRequest;
+    private bool _choicesMayBeOpen;
     private Func<Task>? _invoke;
     private Func<Task>? _choicesClosed;
+    private Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs?, Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs>>? _choicesClosing;
+    private Func<bool, IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs>>? _choicesOpened;
     private string? _id;
 
     /// <summary>The Sheet Toolbar this item stands in.</summary>
@@ -101,12 +108,18 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
         var disabledReason = context.IsEditing ? SheetWords.ToolbarWhileEditing : face.DisabledReason;
         _id ??= context.NextId();
         _invoke ??= () => Face().Kind == ToolbarItemKind.Menu ? OpenChoicesAsync() : Context.RunAsync(PressAsync);
-        _choicesClosed ??= () => Context.ReturnKeyboardAsync();
+        _choicesClosed ??= () =>
+        {
+            _choicesMayBeOpen = false;
+            return Context.ListClosedAsync(this);
+        };
+        _choicesClosing ??= closedBy => Context.ListClosing(this, closedBy);
+        _choicesOpened ??= took => Context.ListOpened(this, took);
         return new ToolbarItemContext(
             _id, face.Kind, face.Name, face.Shortcut, face.Icon, face.Text, face.Pressed,
             Enabled: face.Kind != ToolbarItemKind.Separator && disabledReason is null,
             disabledReason, _invoke, face.Choices, face.Colour,
-            Active: ReferenceEquals(context.Active, this), _openRequest, _choicesClosed, face.Content,
+            Active: ReferenceEquals(context.Active, this), _openRequest, _closeRequest, _choicesClosed, _choicesClosing, _choicesOpened, face.Content,
             KeyTipLetters, ShowKeyTip: context.ShowsKeyTip(this));
     }
 
@@ -119,7 +132,13 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
         if (openChoices && !fromKeyTip && face.Kind is not (ToolbarItemKind.Menu or ToolbarItemKind.Split)) return;
         if (face.Kind == ToolbarItemKind.Menu || (openChoices && face.Kind == ToolbarItemKind.Split))
         {
+            // Opened from a KeyTip, Escape goes back to the KeyTips (ADR-0100's note of 2026-10-12).
+            Context.KeyTipList = fromKeyTip ? this : null;
+            // The keys typed on the toolbar until the list holds the keyboard are the list's (decided
+            // with the user, 2026-10-13): held from now.
+            Context.ListOpening(this);
             _openRequest++;
+            _choicesMayBeOpen = true;
             StateHasChanged();
             return;
         }
@@ -128,7 +147,34 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     }
 
     /// <summary>Opens the item's choices in the Sheet's built-in frame.</summary>
-    internal Task OpenChoicesAsync() => Context.OpenChoicesAsync(Face().Name, Face().Choices);
+    internal Task OpenChoicesAsync() => Context.OpenChoicesOfAsync(this, Face().Name, Face().Choices);
+
+    /// <summary>
+    /// Opens the item's choices in the Sheet's built-in frame for the toolbar's keys (<see cref="ToolbarItemContext.OpenRequest"/>):
+    /// the keys the toolbar held meanwhile go to the grid, which hands them to the list once it holds the
+    /// keyboard (decided with the user, 2026-10-13).
+    /// </summary>
+    internal async Task OpenChoicesFromKeyboardAsync()
+    {
+        var opened = await Context.OpenChoicesOfAsync(this, Face().Name, Face().Choices);
+        await Context.ListOpenedInGridAsync(this, opened);
+    }
+
+    /// <summary>Closes the item's choices in the Sheet's built-in frame, if they are what it shows.</summary>
+    internal Task CloseChoicesAsync() => Context.CloseChoicesAsync(Face().Name);
+
+    /// <summary>
+    /// The toolbar is taking the keyboard back (ADR-0100's note of 2026-10-12): choices that may be
+    /// open from the keyboard are asked to close, so a list on its way does not take the keyboard
+    /// from the Sheet after it.
+    /// </summary>
+    internal void RequestCloseOfChoices()
+    {
+        if (!_choicesMayBeOpen) return;
+        _choicesMayBeOpen = false;
+        _closeRequest = _openRequest;
+        StateHasChanged();
+    }
 
     /// <inheritdoc />
     protected override void OnInitialized() => Place = Order?.Next() ?? Place;

@@ -296,13 +296,36 @@ public class SheetToolbarTests : SheetTestContext
 
         await Item(cut, "Fill Colour").QuerySelector(".ex-sheet-toolbar-arrow")!.ClickAsync(new MouseEventArgs());
         var blue = cut.FindAll(".ex-popover .ex-sheet-swatch-choice").First(b => b.GetAttribute("aria-label") == "Blue");
-        await blue.ClickAsync(new MouseEventArgs());
+        await blue.ClickAsync(new MouseEventArgs { Detail = 1 });
         Assert.Equal(CellFill.Solid(CellColour.FromRgb(0x0070C0)), FormatAt(cut, "B2").Fill);
         Assert.Empty(cut.FindAll(".ex-popover .ex-sheet-choices"));
 
         await GoToAsync(cut, "C2");
         await PressItemAsync(cut, "Fill Colour");
         Assert.Equal(CellFill.Solid(CellColour.FromRgb(0x0070C0)), FormatAt(cut, "C2").Fill);
+    }
+
+    [Theory] // ADR-0100 (decided with the user, 2026-10-13: the keys typed before a list holds the keyboard are its own): the built-in list answers Enter and Space at their keydown, choosing where the keys have reached, as the grid's hold hands them on — dispatched from script, a key activates no button, and Alt, H, H, ↓, →, Enter typed at once on the Server host filled nothing
+    [InlineData("Enter")]
+    [InlineData(" ")]
+    public async Task Enter_and_space_choose_where_the_keys_have_reached(string key)
+    {
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        await Item(cut, "Fill Colour").QuerySelector(".ex-sheet-toolbar-arrow")!.ClickAsync(new MouseEventArgs());
+
+        // From No Fill: ↓ to the palette's first swatch, → to its second, then the key, and no click.
+        foreach (var typed in new[] { "ArrowDown", "ArrowRight", key })
+        {
+            await cut.Find(".ex-popover .ex-sheet-choices").KeyDownAsync(new KeyboardEventArgs { Key = typed, Type = "keydown" });
+        }
+
+        Assert.Equal(CellFill.Solid(FormatCellsOffer.ThemeColours[0][1].Colour), FormatAt(cut, "B2").Fill);
+        Assert.Empty(cut.FindAll(".ex-popover .ex-sheet-choices"));
+        // One step: the list made one choice.
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.Equal(CellFill.None, FormatAt(cut, "B2").Fill);
+        Assert.False(cut.Instance.CanUndo);
     }
 
     [Fact] // ADR-0100: the Number Format lists Excel's categories, Accounting and Fraction disabled with the reason
@@ -320,9 +343,48 @@ public class SheetToolbarTests : SheetTestContext
         Assert.Equal("true", choices.Single(c => c.TextContent.StartsWith("Accounting")).GetAttribute("aria-disabled"));
         Assert.Equal("true", choices.Single(c => c.TextContent.StartsWith("Fraction")).GetAttribute("aria-disabled"));
 
-        await choices.Single(c => c.TextContent.StartsWith("Percentage")).ClickAsync(new MouseEventArgs());
+        await choices.Single(c => c.TextContent.StartsWith("Percentage")).ClickAsync(new MouseEventArgs { Detail = 1 });
         Assert.Equal("0.00%", FormatAt(cut, "B2").NumberFormat.Code);
         Assert.Contains("Percentage", Item(cut, "Number Format").TextContent);
+    }
+
+    [Fact] // ADR-0039, 2026-10-13 / ADR-0100: More Number Formats… opens Format Cells in the list's place, the hand-off told before the root is asked for
+    public async Task More_number_formats_hands_the_keyboard_on_before_it_asks_for_the_root()
+    {
+        // The list closed first, asking for the root a message ahead of the hand-off to Format Cells: on a
+        // circuit a key landing between the two was the grid's. Opened in the list's place, the core tells
+        // the key gate first, and asks for the root while the list still stands, as for a menu's command.
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        await PressItemAsync(cut, "Number Format");
+        // The list holds the keyboard, as it does in a browser once its choice has taken DOM focus.
+        await cut.Find(".ex-popover-consumer .ex-popover-body").FocusInAsync(new FocusEventArgs());
+        var handOffs = HandOffs.Count;
+        var reclaims = ReclaimCount;
+        var standing = new List<(int Lists, bool FormatCells, string HandedOff)>();
+        OnReclaim(() => standing.Add((cut.FindAll(".ex-popover .ex-sheet-choices").Count, cut.FindAll(".ex-format-cells").Count > 0,
+            string.Join(",", HandOffs.Skip(handOffs)))));
+
+        await cut.FindAll(".ex-popover .ex-sheet-choice").Single(c => c.TextContent.StartsWith("More Number Formats")).ClickAsync(new MouseEventArgs { Detail = 1 });
+
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".ex-format-cells")));
+        Assert.Equal([(1, false, "popover")], standing);
+        Assert.Equal(["popover"], HandOffs.Skip(handOffs));
+        Assert.Equal(reclaims + 1, ReclaimCount);
+        Assert.Empty(cut.FindAll(".ex-popover .ex-sheet-choices"));
+    }
+
+    [Fact] // ADR-0100: More Number Formats… with nothing selected opens nothing and closes its list
+    public async Task More_number_formats_with_nothing_selected_closes_its_list()
+    {
+        var cut = RenderToolbarSheet();
+        await PressItemAsync(cut, "Number Format");
+        Assert.NotEmpty(cut.FindAll(".ex-popover .ex-sheet-choices"));
+
+        await cut.FindAll(".ex-popover .ex-sheet-choice").Single(c => c.TextContent.StartsWith("More Number Formats")).ClickAsync(new MouseEventArgs { Detail = 1 });
+
+        Assert.Empty(cut.FindAll(".ex-popover .ex-sheet-choices"));
+        Assert.Empty(cut.FindAll(".ex-format-cells"));
     }
 
     [Fact] // ADR-0100: Comma Style is shown and disabled with the reason, never set as something else
@@ -392,12 +454,12 @@ public class SheetToolbarTests : SheetTestContext
         Assert.Equal(Item(cut, "Font Colour").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
 
         await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Home" });
-        var reclaimed = ReclaimCount;
+        var returned = KeyboardReturns;
         await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
 
         Assert.True(FormatAt(cut, "B2").Font.Bold);
         // A command run from the toolbar's keys gives the keyboard back to the Sheet.
-        Assert.True(ReclaimCount > reclaimed);
+        Assert.True(KeyboardReturns > returned);
     }
 
     [Fact] // ADR-0100: the keys follow the markup's order, the default row's items before a Consumer row beside it
@@ -430,11 +492,81 @@ public class SheetToolbarTests : SheetTestContext
     public async Task Escape_gives_the_keyboard_back()
     {
         var cut = RenderToolbarSheet();
+        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
+        var returned = KeyboardReturns;
+
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+
+        Assert.True(KeyboardReturns > returned);
+    }
+
+    [Fact] // ADR-0050 item 16's note of 2026-10-12: the keyboard goes back from the band itself, which the core takes it from; no element of the toolbar's own holds it on the way, to be hidden or not
+    public async Task The_keyboard_goes_back_from_the_band_itself()
+    {
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
+        var taken = TakeBackCount;
         var reclaimed = ReclaimCount;
 
         await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
 
-        Assert.True(ReclaimCount > reclaimed);
+        Assert.Equal(taken + 1, TakeBackCount);
+        Assert.Equal(reclaimed, ReclaimCount);
+        Assert.Empty(cut.FindAll(".ex-sheet-toolbar-leaving"));
+        Assert.Empty(AnswerTakeBacks(cut));
+    }
+
+    [Fact] // ADR-0100, ADR-0050 item 16's note of 2026-10-12: keys typed on the band while the keyboard is on its way back are held, in order, and handed to the grid; Enter never presses the item again
+    public async Task Keys_typed_on_the_way_back_are_the_sheets_in_order()
+    {
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        var toolbar = cut.Find(".ex-sheet-toolbar");
+        await toolbar.FocusAsync(new FocusEventArgs());
+        Assert.Equal(Item(cut, "Bold").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
+
+        // Enter presses Bold and asks for the keyboard back; on a circuit it lands a round trip later,
+        // and the keys typed meanwhile still reach the band.
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "x" });
+
+        // Bold was pressed once, and the keys after it pressed nothing, moved nothing on the band.
+        Assert.True(FormatAt(cut, "B2").Font.Bold);
+        Assert.Equal(Item(cut, "Bold").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
+        Assert.Equal(["Enter", "ArrowRight", "x"], AnswerTakeBacks(cut).Select(k => k.Key));
+        // Handed on, the band's keys are its own again.
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
+        Assert.Equal(Item(cut, "Italic").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
+    }
+
+    [Fact] // ADR-0100 (the verifier's round-2 finding 1, a keyboard trap): a key typed on a control inside the band that holds the keyboard itself — a Chrome's own, which a Tab reaches — is that control's: the band holds nothing and presses nothing, and its own keys work after it
+    public async Task A_key_typed_on_a_control_inside_the_band_is_that_controls_and_holds_nothing()
+    {
+        var cut = RenderToolbarSheet();
+        await GoToAsync(cut, "B2");
+        var toolbar = cut.Find(".ex-sheet-toolbar");
+        await toolbar.FocusAsync(new FocusEventArgs());
+        // Tab moves DOM focus to a control inside the band: the band itself holds the keyboard no longer.
+        await cut.Find(".ex-sheet-toolbar").FocusOutAsync(new FocusEventArgs());
+        var returned = KeyboardReturns;
+
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "x" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+
+        Assert.False(FormatAt(cut, "B2").Font.Bold);
+        Assert.Equal(returned, KeyboardReturns);
+        // Nothing is held: the band keeps no key's default from the control.
+        Assert.False(cut.Find(".ex-sheet-toolbar").HasAttribute("blazor:onkeydown:preventdefault"));
+        // Shift+Tab back to the band: its keys are its own, and nothing held before reaches the Sheet.
+        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        Assert.True(FormatAt(cut, "B2").Font.Bold);
+        Assert.Equal(returned + 1, KeyboardReturns);
+        Assert.Empty(AnswerTakeBacks(cut));
     }
 
     // ---- The Chrome draws, the meaning stays (SH-50) ----

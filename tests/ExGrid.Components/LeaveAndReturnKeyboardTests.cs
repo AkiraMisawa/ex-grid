@@ -116,6 +116,26 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
     private static string? ActiveDescendant(IRenderedComponent<ExGrid<TestRow>> cut)
         => cut.Find(".ex-grid").GetAttribute("aria-activedescendant");
 
+    // ---- Keys passed out (decided with the user, 2026-10-13) ----------------------------------------
+
+    [Fact] // ADR-0070, ADR-0010 (decided with the user, 2026-10-13): the gate is told whether the Consumer hears OnLeave, at attach and as it changes, so the keys after an Escape on the root wait for its answer; PassKeysOutAsync tells it they go out to the element around the root
+    public async Task The_gate_hears_of_onleave_and_the_keys_after_it_go_out_when_told()
+    {
+        var cut = RenderGrid();
+        var attach = JSInterop.Invocations.Last(i => i.Identifier == "attach");
+        Assert.Equal(false, attach.Arguments[^1]);
+
+        cut.Render(ps => ps.Add(g => g.OnLeave, () => { }));
+        Assert.Equal(true, Js.ClaimsTold.Invocations.Last().Arguments[^1]);
+        var passed = Js.KeysPassedOut.Invocations.Count;
+
+        await cut.InvokeAsync(cut.Instance.PassKeysOutAsync);
+
+        Assert.Equal(passed + 1, Js.KeysPassedOut.Invocations.Count);
+        // Told nothing else: no focus moves.
+        Assert.Equal(0, Js.TabReleases);
+    }
+
     // ---- DC-61: ReturnKeyboardAsync ------------------------------------------------------------
 
     [Fact] // ADR-0070/0021 (DC-61): the keyboard given back is the grid's own hand-back, asked of the handle under its condition — and never from the Formula Bar or the Name Box

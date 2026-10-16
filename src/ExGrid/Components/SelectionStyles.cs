@@ -170,8 +170,8 @@ internal static class SelectionStyles
     /// <summary>
     /// A rectangle of the Copied Range as one layer paints it (ADR-0170), or null when the layer
     /// holds no part of it: painted whole and clipped to the layer's side, as a selected range is,
-    /// with the outline's sides as a selected range's, so the dashes lie on the Selection's outline
-    /// where the two share a range. No hole: the Focus is under the dashes, not in them.
+    /// with covered sides kept inside so the dashes stay visible even when the current
+    /// Selection marks different Headings. No hole: the Focus is under the dashes, not in them.
     /// </summary>
     public static string? Copied(
         SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted, bool pinnedLayer, OutlineCover cover)
@@ -179,7 +179,7 @@ internal static class SelectionStyles
         if (Whole(range, columns, rowHeightPx, painted, pinnedLayer, outsidePx: rowHeightPx) is not { } style
             || Side(range, columns, pinnedLayer) is not { } side)
             return null;
-        return style + OutlineSides(range.TopRow, side.First, columns, pinnedLayer, cover);
+        return style + OutlineSides(range.TopRow, side.First, columns, pinnedLayer, cover, headingMark: false);
     }
 
     /// <summary>
@@ -202,8 +202,9 @@ internal static class SelectionStyles
     /// readable area, so every row before it has its top under the header (or above the
     /// Viewport); <paramref name="ScrollLeftPx"/> is the horizontal scroll offset, which takes a
     /// scrollable column's left edge under the Row Headings or the pinned block.
+    /// <paramref name="HasHeader"/> says whether a Heading Mark can replace the covered top side.
     /// </summary>
-    internal readonly record struct OutlineCover(int FirstOpenRow, double ScrollLeftPx);
+    internal readonly record struct OutlineCover(int FirstOpenRow, double ScrollLeftPx, bool HasHeader);
 
     /// <summary>
     /// Where the readable area begins, for a fill handle held at its edge (ADR-0050, item 5):
@@ -216,37 +217,38 @@ internal static class SelectionStyles
 
     // The sides of the Selection's outline that stay inside the range, as the stylesheet reads
     // them (ex-grid.css): written once, and none when every side lies outside, as Excel's does.
-    private const string InsideTop = "; --ex-outline-in-t: 1";
-    private const string InsideLeft = "; --ex-outline-in-l: 1";
-    private const string InsideTopAndLeft = "; --ex-outline-in-t: 1; --ex-outline-in-l: 1";
+    private static readonly string[] OutlineSideStyles = Enumerable.Range(0, 16).Select(flags =>
+        ((flags & 1) != 0 ? "; --ex-outline-in-t: 1" : "")
+        + ((flags & 2) != 0 ? "; --ex-outline-in-l: 1" : "")
+        + ((flags & 4) != 0 ? "; --ex-outline-heading-t: 1" : "")
+        + ((flags & 8) != 0 ? "; --ex-outline-heading-l: 1" : "")).ToArray();
 
     // A pixel's hundredth: a row's top edge or a column's left edge this close to what covers it
     // is flush with it.
     private const double FlushPx = 0.01;
 
     /// <summary>
-    /// The sides of the Selection's outline that stay inside the range (ADR-0008, 2026-10-01).
-    /// Excel draws it on the gridline and one pixel outside the range, so it covers a Border on
-    /// every outer edge, and so does the stylesheet, except on a side whose outer pixels
-    /// something above the selection layer would cover: a top edge at or above the readable
-    /// area's top, under the header; a left edge at or left of the Row Headings' edge, or of the
-    /// pinned block's for a scrollable column. There the side stays inside, as it was, so its
-    /// width stays the others' (UX-18). The bottom and right sides lie on the range's own last
-    /// pixels and one past, where nothing covers them.
+    /// The sides that need their outline inside (ADR-0008, D2, 2026-10-14). A Heading Mark
+    /// replaces the side hidden beneath a header or Row Headings. A pinned block's boundary
+    /// and an unheaded grid edge have no replacing mark, so their outline stays inside.
+    /// Copied Range dashes remain visible at all covered edges: they describe another range.
     /// </summary>
-    private static string OutlineSides(int topRow, int firstColumn, ColumnGeometry columns, bool pinnedLayer, OutlineCover cover)
+    private static string OutlineSides(int topRow, int firstColumn, ColumnGeometry columns, bool pinnedLayer, OutlineCover cover,
+        bool headingMark = true)
     {
+        // D2 (ADR-0008, 2026-10-14): keep a covered side outside beneath the Heading Mark.
+        // A pinned block has no mark down its edge, and a bare grid edge has no Heading;
+        // those still need the whole side inside. Copied Range dashes have no replacing mark.
         var top = topRow < cover.FirstOpenRow;
         var left = pinnedLayer
             ? columns.OffsetPxOf(firstColumn) <= columns.LeadWidthPx + FlushPx
             : columns.OffsetPxOf(firstColumn) - cover.ScrollLeftPx <= columns.PinnedWidthPx + FlushPx;
-        return (top, left) switch
-        {
-            (true, true) => InsideTopAndLeft,
-            (true, false) => InsideTop,
-            (false, true) => InsideLeft,
-            _ => "",
-        };
+        var headingTop = top && headingMark && cover.HasHeader;
+        var headingLeft = left && headingMark && columns.LeadWidthPx > 0 && (pinnedLayer || columns.PinnedCount == 0);
+        // The separate Heading flags let forced colors retain inside outlines elsewhere,
+        // while replacing exactly the covered sides, including the restored Focus outline.
+        return OutlineSideStyles[(top && !headingTop ? 1 : 0) | (left && !headingLeft ? 2 : 0)
+            | (headingTop ? 4 : 0) | (headingLeft ? 8 : 0)];
     }
 
     /// <summary>The part of a range that pans with the content, or null when the range

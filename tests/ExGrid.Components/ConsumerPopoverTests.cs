@@ -383,6 +383,64 @@ public class ConsumerPopoverTests : GridTestContext
         Assert.Equal(root, Js.Focused.Skip(before).Last());
     }
 
+    [Fact] // ADR-0050 item 16's note of 2026-10-12 (decided with the user: keys typed while the keyboard is in flight back from a closing popover go where it lands): a Consumer that asked hears Escape close its popover before the grid takes the keyboard back, so its hand-off reaches the key gate first
+    public async Task Escape_closing_it_tells_the_consumer_who_asked_before_the_root_takes_the_keyboard()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+        var escaped = 0;
+        var handOffsAtReclaim = -1;
+        Js.OnFocusReclaimed(() => handOffsAtReclaim = Js.HandedOff.Invocations.Count);
+        await cut.Instance.OpenPopoverAsync(new Probe().Content, "Probe", async () =>
+        {
+            escaped++;
+            await cut.Instance.HandKeyboardToFrameAsync();
+        });
+        cut.Render();
+        // The contents hold the keyboard, as the Escape typed in them says.
+        await cut.Find(".ex-popover-consumer > .ex-popover-body").FocusInAsync(new FocusEventArgs());
+
+        await PressAsync(cut, "Escape", fromDescendant: true);
+
+        Assert.Empty(cut.FindAll(".ex-popover-consumer"));
+        Assert.Equal(1, escaped);
+        Assert.Equal(["popover", "frame", "none"], Js.HandedOff.Invocations.Select(i => (string)i.Arguments[0]!));
+        // Told before the hand-back; "none" withdraws only the popover destination, leaving the frame.
+        Assert.Equal(3, handOffsAtReclaim);
+    }
+
+    [Fact] // ADR-0050 item 16's note of 2026-10-12: a popover closed any other way than by Escape tells the Consumer nothing
+    public async Task Closed_otherwise_it_tells_the_consumer_nothing()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+        var escaped = 0;
+        Task Escaped()
+        {
+            escaped++;
+            return Task.CompletedTask;
+        }
+        var probe = new Probe();
+
+        await cut.Instance.OpenPopoverAsync(probe.Content, "Probe", Escaped);
+        cut.Render();
+        await cut.Instance.ClosePopoverAsync();
+        await cut.Instance.OpenPopoverAsync(probe.Content, "Probe", Escaped);
+        cut.Render();
+        await cut.InvokeAsync(() => probe.Context!.Close());
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-popover-consumer")));
+        await cut.Instance.OpenPopoverAsync(probe.Content, "Probe", Escaped);
+        cut.Render();
+        await ClickCellAsync(cut, 50, 30);
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-popover-consumer")));
+        // Opened without asking, Escape tells nobody.
+        await OpenAsync(cut, probe);
+        await PressAsync(cut, "Escape", fromDescendant: true);
+
+        Assert.Empty(cut.FindAll(".ex-popover-consumer"));
+        Assert.Equal(0, escaped);
+    }
+
     [Fact] // ADR-0050 item 16 / DC-60 / ADR-0010: a pointer-down elsewhere in the instance closes it
     public async Task A_press_on_the_rows_closes_it()
     {
@@ -509,6 +567,59 @@ public class ConsumerPopoverTests : GridTestContext
         await cut.Instance.ReturnKeyboardAsync();
 
         Assert.Equal([root], Js.Focused.Skip(before));
+    }
+
+    [Fact] // ADR-0050 item 16's note of 2026-10-12: a frame of the Consumer's own gives the keyboard back from where it stands, and the keys typed on it on the way are the grid's, asked for once
+    public async Task Return_keyboard_from_a_frame_hands_the_keys_typed_there_to_the_grid()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+        var frame = new ElementReference("frame-of-the-consumers");
+        var asked = 0;
+        IReadOnlyList<KeyboardEventArgs> typed = [new() { Key = "Enter" }, new() { Key = "x", ShiftKey = true }];
+        var answer = Js.UnansweredKeyboardHandBack();
+
+        var returning = cut.Instance.ReturnKeyboardAsync(frame, () =>
+        {
+            asked++;
+            return typed;
+        });
+
+        var call = Assert.Single(answer.Invocations);
+        Assert.Equal(frame.Id, ((ElementReference)call.Arguments[0]!).Id);
+        var ticket = (int)call.Arguments[1]!;
+        Assert.Equal(0, asked);
+        Assert.False(returning.IsCompleted);
+        // The key gate has the keyboard, and asks for what the frame heard on the way.
+        IReadOnlyList<KeyboardEventArgs> handed = [];
+        await cut.InvokeAsync(() => { handed = cut.Instance.KeysTypedOnTheWay(ticket); });
+        Assert.Equal(["Enter", "x"], handed.Select(k => k.Key));
+        Assert.True(handed[1].ShiftKey);
+        Assert.Equal(1, asked);
+        // The browser completes the hand-back only after collecting the keys, so the Consumer
+        // can now remove its frame and queue. The shipped module's ordering is pinned in layer 3.
+        answer.SetVoidResult();
+        await returning;
+        // Asked once: a second question for the same hand-back finds nothing.
+        await cut.InvokeAsync(() => { handed = cut.Instance.KeysTypedOnTheWay(ticket); });
+        Assert.Empty(handed);
+        Assert.Equal(1, asked);
+    }
+
+    [Fact] // ADR-0050 item 16 / ADR-0044: closing withdraws the popover destination even after its contents report focus; the key gate may still hold behind a choice
+    public async Task Closing_a_consumer_popover_withdraws_its_destination_before_and_after_contents_report_focus()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+
+        await OpenAsync(cut, new Probe());
+        await cut.Instance.ClosePopoverAsync();
+        Assert.Equal(["popover", "none"], Js.HandedOff.Invocations.Select(i => (string)i.Arguments[0]!));
+
+        await OpenAsync(cut, new Probe());
+        await cut.Find(".ex-popover-consumer > .ex-popover-body").FocusInAsync(new FocusEventArgs());
+        await cut.Instance.ClosePopoverAsync();
+        Assert.Equal(["popover", "none", "popover", "none"], Js.HandedOff.Invocations.Select(i => (string)i.Arguments[0]!));
     }
 
     [Fact] // ADR-0050 item 16 / DC-60 / ADR-0018: two grids' popovers are independent

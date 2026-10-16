@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, layoutCeilingTold, setRoundTrip } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, dataRowCount, layoutCeilingTold, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { activeDescendant, expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
@@ -153,7 +153,7 @@ for (const chrome of ['builtin', 'mud']) {
     test(`a search typed straight after E lands whole in the search box, and Enter applies it (ADR-0044, ADR-0010, SRV-5, ${chrome})`, async ({ page }) => {
         await page.goto(`/features?chrome=${chrome}`);
         await expectTabStopTaken(grid(page));
-        const all = await grid(page).getAttribute('aria-rowcount');
+        const all = await dataRowCount(grid(page));
         await clickCell(page, 1, 0);
         await page.keyboard.press('Alt+ArrowDown');
         const search = grid(page).locator('.ex-popover input[type=search], .ex-popover .mud-ex-grid-filter-search input');
@@ -170,10 +170,10 @@ for (const chrome of ['builtin', 'mud']) {
         await page.keyboard.press('Enter');
 
         await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-        await expect.poll(() => grid(page).getAttribute('aria-rowcount')).not.toBe(all);
+        await expect.poll(() => dataRowCount(grid(page))).not.toBe(all);
         await expect(grid(page).locator('.ex-header-cell[aria-sort=ascending], .ex-header-cell[aria-sort=descending]')).toHaveCount(0);
         // Delta alone: the four books share the rows evenly.
-        expect(Number(await grid(page).getAttribute('aria-rowcount'))).toBe(Number(all) / 4);
+        expect(await dataRowCount(grid(page))).toBe(all / 4);
     });
 }
 

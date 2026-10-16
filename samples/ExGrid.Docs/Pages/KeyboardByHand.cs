@@ -116,7 +116,7 @@ internal static class KeyboardByHand
         new("The Sheet Toolbar", "[Ctrl] + [F1]", "Hide or show the toolbar, where ShowToolbar is bound both ways.",
             "exsheet/formatting#the-sheet-toolbar", ["ADR-0100"], Canonical: ["Control+F1"]),
         new("The Sheet Toolbar", "[Alt] released alone, or [F10]",
-            "Show the KeyTips: each row's letter, then each item's, so that [Alt], [H], [1] sets bold.",
+            "Show the KeyTips: each row's letter, then each item's, so that [Alt], [H], [1] sets bold and [Alt], [H], [O], [E] opens Format Cells. [Escape] goes back one level.",
             "exsheet/formatting#the-sheet-toolbar", ["ADR-0100"], Canonical: ["Alt+Alt", "F10"]),
     ];
 
