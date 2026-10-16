@@ -80,7 +80,10 @@
             filled active cell shows its Fill there, as Excel's did. Under ExSheet.MudBlazor the border is the
             palette's primary, as the outline is. <code>--ex-focus-among-ranges-outline</code> colours it, and
             <code>--ex-sheet-selection-ring</code> the white line. While the active cell is edited, the Cell Editor
-            covers both, and draws its own outline, <code>--ex-editor-outline</code>, as it does on every Sheet.
+            covers both, and on a Sheet it draws no outline of its own while the keyboard is in the Sheet, as Excel
+            draws no border on the cell it edits. An edit left standing while the keyboard is elsewhere, in another
+            Sheet or a control on the page, is outlined one pixel wide in <code>--ex-editor-outline</code>'s colour,
+            so it can be told apart.
         </p>
         <p>
             The <b>Heading Mark</b> shows where the Selection is: each column letter and row number whose column

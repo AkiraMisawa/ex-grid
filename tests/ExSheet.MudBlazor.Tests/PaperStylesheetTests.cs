@@ -126,6 +126,24 @@ public class PaperStylesheetTests
         Assert.DoesNotMatch(new Regex(@"\b(border|border-width|top|left|right|bottom):"), among.Body);
     }
 
+    [Fact] // ADR-0018 section 6 (2026-10-16) / ED-27 / ADR-0008 (run 18a): on a Sheet the Cell Editor draws no outline while the keyboard is in it, and the core's 1px while it is elsewhere
+    public void On_a_sheet_the_cell_editor_draws_no_outline_while_the_keyboard_is_in_it()
+    {
+        var sheet = Regex.Replace(Stylesheet("src", "ExSheet", "Assets", "ex-sheet.css"), @"/\*.*?\*/", "", RegexOptions.Singleline);
+        var core = Regex.Replace(Stylesheet("src", "ExGrid", "Assets", "ex-grid.css"), @"/\*.*?\*/", "", RegexOptions.Singleline);
+
+        // The width alone, so --ex-editor-outline's style and colour stay a Wrapper's; on the editor
+        // over the rows, not the Formula Bar's field. Three classes: fewer than the core's rule for an
+        // edit whose keyboard is elsewhere, which therefore still draws it 1px wide in any order.
+        var rule = Assert.Single(Regex.Matches(sheet, @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}"),
+            match => match.Groups["selectors"].Value.Trim() == ".ex-sheet .ex-viewport .ex-editor");
+        Assert.Equal("outline-width: 0;", rule.Groups["body"].Value.Trim());
+        Assert.Matches(new Regex(@"\.ex-grid:not\(:focus-within\) \.ex-viewport \.ex-editor \{\s*outline-width: 1px;\s*\}"), core);
+        // The core grid keeps its outline at the token's width.
+        Assert.Matches(new Regex(@"\.ex-editor \{[^}]*outline: var\(--ex-editor-outline, 2px solid Highlight\);"), core);
+        Assert.DoesNotMatch(new Regex(@"\.ex-sheet[^{}]*\.ex-editor[^{}]*\{[^}]*outline(-style|-color)?:"), sheet);
+    }
+
     [Fact] // ADR-0008 (2026-10-13) / ADR-0071: on a Sheet the Heading Mark is the outline's colour, #217346 where no token names it, as R4 measured Excel's; its width and place are the core's, and forced colors restate it
     public void On_a_sheet_the_heading_mark_is_the_outlines_green()
     {

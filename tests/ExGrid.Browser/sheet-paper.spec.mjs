@@ -1,6 +1,6 @@
 import { test, expect, alterPage, circuitQuiet, twoFrames } from './fixtures.mjs';
 import { sheet, cell, pressCell, clickCell, expectFocusAt, editor, bar, stretchesOf } from './sheet-helpers.mjs';
-import { painted, sameColour, resolvedColour, contrast, onDeviceGrid, wholePixelCentres, pixelsApart, stillPictures, edgePixels, onDevicePixels, acrossEdges, paints } from './pixels.mjs';
+import { painted, sameColour, resolvedColour, contrast, blend, onDeviceGrid, wholePixelCentres, pixelsApart, stillPictures, edgePixels, onDevicePixels, acrossEdges, paints } from './pixels.mjs';
 
 // ExSheet paints Font and Fill on white Paper (ticket 48; ADR-0071, "Paper and Ink"; SH-39, SH-40,
 // DC-58). The Paper is Excel's white and the Ink Excel's black under the light and the dark scheme
@@ -326,11 +326,13 @@ test('UX-19/SH-54 (built-in Chrome): R4\'s three selections on the Paper: the ac
 // the Fill shows on the right and the bottom. The gridline's own pixel round the cell is not read, as
 // in R4's test above: run 18a read it as the Fill under the shade, #C7C700, which is the line the Paper
 // does not draw (ADR-0008, 2026-10-13, observed and not followed). While D4 is edited the Cell Editor
-// covers the cell, and the border and the white line inside it with it: no device pixel across its
-// edges paints the border's green, and inside them the editor shows the cell's Fill, as Excel's cell
-// showed no border once F2 was pressed (focus-among-ranges.md 3). The editor's own outline
-// (--ex-editor-outline, ED-27) is not read here.
-test('UX-19/SH-54 (built-in Chrome): run 18a\'s D4 filled yellow among several ranges: the border, a white line outside it on the top and the left, the Fill on the right and the bottom, and none of it round the Cell Editor (ADR-0008, run 18a; ADR-0071)', async ({ page }, testInfo) => {
+// covers the cell, and the border and the white line inside it with it, and draws no outline of its
+// own while the keyboard is in the Sheet (2026-10-16, decided with the user): every device pixel of
+// the cell is the editor's ground, the cell's Fill, and every one past its edges is as it was before
+// the edit, as Excel's cell showed no border once F2 was pressed (focus-among-ranges.md 3). Once the
+// keyboard has gone to the page the edit stands and is told apart (ED-27): the editor's outline, 1px
+// of --ex-editor-outline's colour, a whole device pixel inside the cell, over the Fill, on every side.
+test('UX-19/SH-54 (built-in Chrome): run 18a\'s D4 filled yellow among several ranges: the border, a white line outside it on the top and the left, the Fill on the right and the bottom, and no outline round the Cell Editor until the keyboard leaves (ADR-0008, run 18a; ADR-0018 section 6, ED-27; ADR-0071)', async ({ page }, testInfo) => {
     await page.goto('/sheet?case=18a-2');
     const grid = sheet(page);
     await expect(grid.locator('.ex-row').first()).toBeVisible();
@@ -384,6 +386,10 @@ test('UX-19/SH-54 (built-in Chrome): run 18a\'s D4 filled yellow among several r
     ].filter(([x, y]) => !paints(region.at(x, y), WHITE)).map(([x, y]) => `${x},${y}: ${JSON.stringify(region.at(x, y))}`);
     expect(notWhite, 'the white line on the top and the left, its whole length').toEqual([]);
 
+    // What lies past D4's edges before the edit, which the edit leaves as it is.
+    const OUT = [-2, -1];
+    const outside = Object.fromEntries(['left', 'top', 'right', 'bottom'].map((side) => [side, OUT.map((i) => at(side, i))]));
+
     // F2: the Cell Editor covers D4, and the border and the white line inside it with it.
     await page.keyboard.press('F2');
     await expect(editor(grid)).toBeFocused();
@@ -393,16 +399,53 @@ test('UX-19/SH-54 (built-in Chrome): run 18a\'s D4 filled yellow among several r
     await twoFrames(page);
     const edited = await onDevicePixels(page, cell(grid, 'D4'));
     expect(edited, 'D4 where it was').toEqual(box);
-    expect(await edgePixels(page, edited, GREEN), 'no border round the edited D4').toEqual({
-        scale, left: [], top: [], right: [], bottom: [],
-    });
+    const editorBox = await onDevicePixels(page, grid.locator('.ex-viewport .ex-editor').first());
+    expect(editorBox, 'the editor\'s box is D4\'s').toEqual(box);
     const inEdit = await acrossEdges(page, edited);
     for (const side of ['left', 'top', 'right', 'bottom']) {
-        for (let index = gridline + 1; index <= 4; index++) {
+        for (let index = 0; index <= 4; index++) {
             const pixel = inEdit.at(side, index);
-            expect(paints(pixel, FILL), `the editor shows D4's Fill, ${side} at ${index}: ${JSON.stringify(pixel)}`).toBe(true);
+            expect(paints(pixel, FILL), `no outline, the editor shows D4's Fill: ${side} at ${index}: ${JSON.stringify(pixel)}`).toBe(true);
         }
+        expect(OUT.map((i) => inEdit.at(side, i)), `past D4's ${side} edge, as before the edit`).toEqual(outside[side]);
     }
+
+    // The keyboard goes to the page: the edit stands, and its editor is outlined 1px wide, in the
+    // token's colour over the Fill, on the cell's first device pixel on every side.
+    await page.locator('h1').click();
+    await expect(editor(grid)).not.toBeFocused();
+    await expect(editor(grid)).toHaveCount(1);
+    const ink = await editor(grid).evaluate((field) => {
+        const style = getComputedStyle(field.closest('.ex-editor'));
+        return { width: style.outlineWidth, offset: style.outlineOffset, color: style.outlineColor };
+    });
+    // 1px, which the browser draws on whole device pixels: one at a scale of 1 and at 1.5 alike
+    // (0.666667px there), with the offset its width inward.
+    const devicePixels = (css) => +(parseFloat(css) * scale).toFixed(3);
+    expect({ width: devicePixels(ink.width), offset: devicePixels(ink.offset) }, `the editor whose keyboard is elsewhere: ${JSON.stringify(ink)}`)
+        .toEqual({ width: gridline, offset: -gridline });
+    const rgba = ink.color.match(/^rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)$/);
+    expect(rgba, `the outline's colour, ${ink.color}, as rgb() or rgba()`).not.toBeNull();
+    const [r, g, b] = rgba.slice(1, 4).map(Number);
+    const alpha = Math.round((rgba[4] === undefined ? 1 : Number(rgba[4])) * 255) / 255;
+    const OUTLINE = blend([r, g, b], alpha, FILL);
+    await page.mouse.move(0, 0);
+    await circuitQuiet();
+    await twoFrames(page);
+    const away = await acrossEdges(page, await onDevicePixels(page, cell(grid, 'D4')));
+    for (const side of ['left', 'top', 'right', 'bottom']) {
+        const pixel = away.at(side, 0);
+        expect(paints(pixel, OUTLINE), `the 1px outline, ${side} of D4 at 0: ${JSON.stringify(pixel)}, want ${JSON.stringify(OUTLINE)}`).toBe(true);
+        for (let index = 2; index <= 4; index++) {
+            expect(paints(away.at(side, index), FILL), `inside the outline, ${side} at ${index}`).toBe(true);
+        }
+        expect(OUT.map((i) => away.at(side, i)), `past D4's ${side} edge, as before the edit`).toEqual(outside[side]);
+    }
+
+    // Back on D4's text: the keyboard returns to the edit, and the outline goes again.
+    await editor(grid).click();
+    await expect(editor(grid)).toBeFocused();
+    await expect.poll(() => editor(grid).evaluate((field) => getComputedStyle(field.closest('.ex-editor')).outlineWidth)).toBe('0px');
     await page.keyboard.press('Escape');
     await expect(editor(grid)).toHaveCount(0);
 });

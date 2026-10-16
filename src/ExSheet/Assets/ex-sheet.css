@@ -105,6 +105,15 @@
         0 calc(-1 * var(--ex-dp, 1px)) 0 0 var(--ex-sheet-selection-ring, #fff),
         calc(-1 * var(--ex-dp, 1px)) 0 0 0 var(--ex-sheet-selection-ring, #fff);
 }
+/* The Cell Editor over the rows draws no outline while the keyboard is in the Sheet, as Excel draws no
+   border on the cell it edits (2026-10-16, decided with the user, after run 18a's
+   focus-among-ranges.md 3: Excel drew none after F2 on D4, at either zoom). An edit whose keyboard
+   is elsewhere is still told apart (ED-27, ADR-0018 section 6): there the core's rule of four classes,
+   `.ex-grid:not(:focus-within) .ex-viewport .ex-editor`, outranks this one of three in any order and
+   draws it 1px wide, in --ex-editor-outline's style and colour. The width alone is set, so a
+   Wrapper's token keeps its colour; the Formula Bar's field is not in the Viewport and is untouched.
+   The core grid keeps its outline at the token's width. */
+.ex-sheet .ex-viewport .ex-editor { outline-width: 0; }
 /* The Copied Range's dashes (ADR-0170) are the outline's colour, as Excel's are: its green where no
    Theme or Wrapper names one, or they would be the core's CanvasText round a green outline. */
 .ex-sheet .ex-copied-range::after { outline-color: var(--ex-focus-outline, #217346); }
