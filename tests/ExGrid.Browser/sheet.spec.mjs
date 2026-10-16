@@ -808,8 +808,17 @@ test('ST-2 (ADR-0007, refined): a character typed as the Window moves off an F2 
 
 test('SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the extent', async ({ page }) => {
     const grid = sheet(page);
-    const count = () => grid.evaluate((root) => root.querySelectorAll('*').length);
+    // A count is read once the Focus it follows is painted and the host has said all it will
+    // (ADR-0056): read straight after the press, it could miss the press's own render (the
+    // Focus, the Selection, the fill handle and the Heading Marks, eight elements) and leave
+    // the far corner's count over a bound measured from too low a start.
+    const count = async () => {
+        await expect(grid.locator('.ex-focus')).toHaveCount(1);
+        await circuitQuiet();
+        return grid.evaluate((root) => root.querySelectorAll('*').length);
+    };
     await clickCell(grid, 'A1');
+    await expectFocusAt(grid, 'A1');
     const atTop = await count();
     await goTo(grid, 'XFD1048576');
     await expect(cell(grid, 'XFD1048576')).toBeVisible();
