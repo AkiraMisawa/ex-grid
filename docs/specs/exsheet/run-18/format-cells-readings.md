@@ -41,3 +41,11 @@ which edge buttons are pressed. Escape afterwards, and read back that every line
 10. **Ticket 103: month names under zh-CN and ko-KR.** Set-Culture zh-CN, a new Excel, A1 = 46027, Custom `d-mmm-yy`,
     then `mmm`, then `mmmm`; **read** the cell's text each time. The same under ko-KR, then put the regional format
     back. **Decides** whether ExSheet keeps ICU's names there (`1月`, `1월`) or needs Windows', as it took for ja-JP.
+
+## After run 18a: what is left (2026-10-16)
+
+- **ko-KR's `mmm`, after 0.1.0** (decided with the user, 2026-10-16). Excel shows `1`, Windows' abbreviated name, where
+  ExSheet shows ICU's `1월`. The change is one line in `NumberFormat.AbbreviatedMonthNamesOf`, as for ja-JP, but the
+  built-in formats then paint new strings under ko-KR (`1-1`, `1-1-26`, …), so `tests/GlyphWidths/corpus.json` is made
+  again and every record measured again, macOS's three and Windows' under an English and a Japanese display among
+  them, before it lands (`tests/GlyphWidths/README.md`, "Measuring again").

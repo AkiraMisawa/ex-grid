@@ -189,7 +189,7 @@ public partial class ReferenceCycleTests : GridTestContext
         Assert.Equal([("=A1+B2", 1, 5)], asked);
     }
 
-    [Fact] // ADR-0051 / DC-45: the answer is written to both editor surfaces, and the listener places its caret
+    [Fact] // ADR-0051 / DC-45: the answer is written to both editor surfaces, and the listener places its selection — a caret before the text's end selects what was rewritten (run 18a)
     public async Task DC45_the_answer_is_written_to_both_surfaces_and_its_caret_placed()
     {
         var cut = RenderGrid();
@@ -199,10 +199,10 @@ public partial class ReferenceCycleTests : GridTestContext
 
         Assert.Equal("=$A$1+B2", CellEditorText(cut));
         Assert.Equal("=$A$1+B2", BarText(cut));
-        Assert.Equal(("=$A$1+B2", 5, 5), SelectionsPlaced()[^1]);
+        Assert.Equal(("=$A$1+B2", 1, 5), SelectionsPlaced()[^1]);
     }
 
-    [Fact] // ADR-0051 / DC-45 / SH-28: a caret the user moved — ← after F2 in the cell — is placed as a selection: the rewritten Reference selected (observed, the seventeenth Windows run, Part C, cases 2 to 4 with F2: $A$1 selected, 1 to 5)
+    [Fact] // ADR-0051 / DC-45 / SH-28: a caret before the text's end — ← after F2 in the cell — is placed as a selection: the rewritten Reference selected (observed, the seventeenth Windows run, Part C, cases 2 to 4 with F2: $A$1 selected, 1 to 5)
     public async Task DC45_a_caret_the_user_moved_is_placed_as_a_selection()
     {
         var cut = RenderGrid();
@@ -242,7 +242,7 @@ public partial class ReferenceCycleTests : GridTestContext
         Assert.Equal("overwrite", EditingTold()[^1].Mode);
     }
 
-    [Fact] // ADR-0051 / DC-45: after F2 in a cell, a caret not moved since — where the edit's opening or typing left it — is placed as a caret at the end (by generalisation of R1 (iv): Excel was asked in the Formula Bar)
+    [Fact] // ADR-0051 / DC-45: after F2 in a cell, a caret at the text's end — where the edit's opening or typing left it — is placed as a caret at the end (by generalisation of R1 (iv) and run 18a answer 1: Excel was asked in the Formula Bar)
     public async Task DC45_in_caret_a_caret_not_moved_is_placed_as_a_caret()
     {
         var cut = RenderGrid();
@@ -328,6 +328,46 @@ public partial class ReferenceCycleTests : GridTestContext
         Assert.Equal(("=$B$2", 5, 5), SelectionsPlaced()[^1]);
     }
 
+    [Fact] // ADR-0051, run 18a answer 1: =A1+B2 typed into the Formula Bar, F2 (Enter mode), F4 gave =A1+$B$2 with a caret at the end (8, 8), nothing selected
+    public async Task ADR0051_F4_after_F2_in_the_formula_bar_leaves_a_caret_at_the_end()
+    {
+        var cut = RenderGrid();
+        await ClickAsync(cut, 50, 10);
+        var bar = cut.Find(".ex-formula-bar-text");
+        await bar.FocusAsync(new FocusEventArgs());
+        await bar.InputAsync(new ChangeEventArgs { Value = "=A1+B2" });
+        await cut.InvokeAsync(() => cut.Instance.OnEditorCaretAsync("=A1+B2", 6));
+        await PressAsync(cut, "F2", "=A1+B2", 6, fromBar: true);
+        Assert.Equal("overwrite", EditingTold()[^1].Mode);
+
+        await PressAsync(cut, "F4", "=A1+B2", 6, fromBar: true);
+
+        Assert.Equal("=A1+$B$2", BarText(cut));
+        Assert.Equal(("=A1+$B$2", 8, 8), SelectionsPlaced()[^1]);
+    }
+
+    [Theory] // ADR-0051, run 18a answer 2: in the Formula Bar, a caret moved back to the text's end (=A1+B2, ←, →) leaves a caret after F4 (8); a caret inside the text, after a digit typed there (=A10+B2, the caret at 4) or a press after A1 (3), selects what was rewritten (1-6, 1-5)
+    [InlineData("=A1+B2", 6, true, "=A1+$B$2", 8, 8)]
+    [InlineData("=A10+B2", 4, false, "=$A$10+B2", 1, 6)]
+    [InlineData("=A10+B2", 4, true, "=$A$10+B2", 1, 6)]
+    [InlineData("=A1+B2", 3, true, "=$A$1+B2", 1, 5)]
+    public async Task ADR0051_F4_selects_unless_the_caret_stands_at_the_texts_end(
+        string text, int caret, bool moved, string rewritten, int start, int end)
+    {
+        var cut = RenderGrid();
+        await ClickAsync(cut, 50, 10);
+        var bar = cut.Find(".ex-formula-bar-text");
+        await bar.FocusAsync(new FocusEventArgs());
+        await bar.InputAsync(new ChangeEventArgs { Value = text });
+        await cut.InvokeAsync(() => cut.Instance.OnEditorCaretAsync(text, caret));
+
+        await PressAsync(cut, "F4", text, caret, moved: moved, fromBar: true);
+
+        Assert.Equal(rewritten, BarText(cut));
+        Assert.Equal((rewritten, start, end), SelectionsPlaced()[^1]);
+        Assert.Equal("caret", EditingTold()[^1].Mode);
+    }
+
     [Fact] // ADR-0051 / DC-45: no answer — a caret touching no Reference — changes nothing
     public async Task DC45_no_answer_changes_nothing()
     {
@@ -376,7 +416,9 @@ public partial class ReferenceCycleTests : GridTestContext
         await PressAsync(cut, "F4", "=$A$1+B2", 8);
 
         Assert.Equal("=A$1+B2", CellEditorText(cut));
-        Assert.Equal(("=A$1+B2", 4, 4), SelectionsPlaced()[^1]);
+        // The placement in flight was a selection over $A$1 (the caret stood before the text's end,
+        // run 18a), and the second rewrite is selected as it was.
+        Assert.Equal(("=A$1+B2", 1, 4), SelectionsPlaced()[^1]);
     }
 
     [Fact] // ADR-0051 third round / DC-45: the user's own move in that text, before the placement lands, is newer — F4 cycles at it

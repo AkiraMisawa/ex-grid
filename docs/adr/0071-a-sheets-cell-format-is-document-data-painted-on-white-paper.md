@@ -744,6 +744,21 @@ written. This section says what the run changed, and what it still left to a rea
       cell with lines on two edges, none of them thin (R8's thin top cannot tell Thin from the top's
       line); one cell with the same line on two edges; a range whose edges show one line; and
       several one-cell ranges.
+      *(2026-10-14, after run 18a, `verification/2026-10-14-windows-readings-18a/`, format-cells 1 to 8:
+      asked, and the rule widened to what Excel showed.* Excel opened on Thick over B2 whose own left was
+      thick and over B2 beside C2's thick left, drawn as B2's right (1); on the top's Thick over a thick
+      top and a medium right (2) and over a thick top and bottom (3); on Thick over A2:B2 under A1:B1's
+      thick bottom (4), and over A2 and C2, two ranges, under A1's and C1's (5); and in the line's own
+      colour and style, Thick and red (6 (a)) and Medium Dashed and Automatic (6 (b)). **Format Cells now
+      opens the Style and the Colour on the first outer edge, of the top, the bottom, the left and the
+      right, whose line shows one line along it, over one cell, a range or several ranges, and on Thin
+      and Automatic where none does.** R8's thin top and thick right, opened on Thin, is the top's line
+      too, and R8's A2:B3, whose cells show different lines along each edge, still opens on Thin. That
+      the bottom comes before the left and the right, and the left before the right, no run has read:
+      it is ExSheet's order, by generalisation. Case 8 (A1's bottom thick, then A2's top thin through
+      COM, the tab over A1 on Thin) is the twelfth run's model again: COM's write of A2's top replaced
+      A1's bottom, and a copy saved then records nothing on A1 and a thin top on A2, so there were
+      never two records on that edge.)*
   - Where both cells record a line on an outer edge, the dialog shows the one drawn, the upper or
     left cell's (ticket 102). No run looked.
     *(2026-10-12, the seventeenth Windows run, h10: still not asked. By the twelfth run's model, a
@@ -755,6 +770,28 @@ written. This section says what the run changed, and what it still left to a rea
     thick red right while C2 kept its thin blue left. That is the one run that read two records on
     one edge. The twelfth run's cases 1, 3, 6, 7 and 9 read COM and the pixels, which show the edge
     and not each cell's record. A run asks this by case 12's paste, then Format Cells over C2.)*
+    *(2026-10-14, after run 18a, format-cells 7: asked by case 12's paste. With B2 recording a thick
+    red right and C2 a thin blue left, the saved file holding both, Excel's Border tab over C2 opened
+    with Left pressed, Thick and red, B2's drawn line and not C2's own record, and over B2 with Right
+    pressed, Thick and red. ExSheet shows the drawn line there, as ticket 102 built.)*
+- **A code of its own that spells a built-in is the built-in where a book is opened under a culture that
+  spells the built-in so** *(2026-10-16, decided with the user, after run 18a, format-cells 9)*. Under en-GB,
+  `d-mmm-yy` typed into Custom is recorded `numFmtId="164"`, `d\-mmm\-yy`; opened under en-US, a copy saved
+  straight away already records built-in 15. ExSheet reads it so when a Sheet Document is opened
+  (`NumberFormat.OpenedIn`): the code of its own whose unescaped spelling is a localised built-in's code as
+  the Sheet's culture spells it is that built-in, 15 under en-US, and stays its own under ja-JP and en-GB.
+  The other localised built-ins and cultures follow by generalisation. Excel's Number tab then opened on
+  Custom, Type `d-mmm-yy`, with the built-in's entry selected and Delete greyed; ExSheet's opens on the
+  built-in's category, Date, a difference left as it is, since keeping it would need the format to remember
+  where it came from.
+- **Under ko-KR and zh-CN** *(2026-10-16, decided with the user, after run 18a, format-cells 10)*. zh-CN's
+  `mmm`, `1月`, and `mmmm`, `一月`, are ICU's and Excel's alike. ko-KR's `mmmm` is `1월` in both, but Excel's
+  `mmm` is `1`, Windows' abbreviated name, where ICU's is `1월`. ExSheet takes Windows' after 0.1.0, as it
+  took it for ja-JP: the strings the built-in formats paint change, so the glyph corpus and its records are
+  measured again first (ADR-0016; `docs/specs/exsheet/run-18/format-cells-readings.md`). Under ko-KR Excel also
+  took a `-` typed into Custom as the culture's date separator and stored `d/mmm/yy`, showing `5-1-26`; ExSheet
+  keeps the code as typed, `d-mmm-yy`, which shows the same under ko-KR, a difference recorded here and taken
+  up on a user's report.
 - **Inside over whole rows sets every vertical side, A's left and XFD's right included**, and the
   lines between the rows (case 14). Excel records it as a row format: row 3 holds left, right and
   bottom, and row 4 left, right and top.

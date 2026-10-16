@@ -59,7 +59,7 @@ public readonly record struct PointSite(int Start, int Length);
 
 /// <summary>What F4 makes of the text being edited (ADR-0051): the new text, and the span in it of what was rewritten, which a grid selects or collapses to a caret at its end as the edit stands.</summary>
 /// <param name="Text">The text with the Reference or References cycled.</param>
-/// <param name="SelectionStart">Where what was rewritten starts in <paramref name="Text"/>, a Sheet qualifier before it included.</param>
+/// <param name="SelectionStart">Where what was rewritten starts in <paramref name="Text"/>: at its first column or row part, after any Sheet qualifier before it.</param>
 /// <param name="SelectionEnd">Where it ends.</param>
 public sealed record ReferenceCycle(string Text, int SelectionStart, int SelectionEnd);
 
@@ -562,9 +562,11 @@ public static partial class FormulaEntry
     /// <c>$A:$A</c>); a Sheet qualifier is kept, before the first end, and only the cell part
     /// cycles. The rewritten parts' column letters are written in upper case (<c>=b2</c> gives
     /// <c>=$B$2</c>); every other character, a Sheet qualifier among them, stays as it was typed.
-    /// The span answered runs from the first Reference rewritten — its Sheet qualifier included —
-    /// to the end of the last, for a caret as for a selection: the grid decides whether to select
-    /// it or leave a caret at its end (ADR-0051). <see langword="null"/> — nothing
+    /// The span answered runs from the first Reference rewritten — after its Sheet qualifier, which
+    /// is not rewritten (observed, run 18a: <c>=Sheet2!A1+1</c> with the caret after <c>A1</c> gave
+    /// <c>$A$1</c> selected, not <c>Sheet2!$A$1</c>) — to the end of the last, for a caret as for a
+    /// selection: the grid decides whether to select it or leave a caret at its end (ADR-0051).
+    /// <see langword="null"/> — nothing
     /// changes — for text that is not a Formula, and where no Reference is at the caret or in the
     /// selection: a function name, a number, text in quotes, a structured reference. A Reference
     /// is what the formula grammar reads as one.
@@ -603,7 +605,9 @@ public static partial class FormulaEntry
         var form = NextForm(targets[0]);
         var rewritten = new StringBuilder(text.Length + 4 * targets.Count);
         var at = 0;
-        var start = targets[0].Start;
+        // The span starts at the first part rewritten: a Sheet qualifier before it is kept as it was
+        // typed, and lies outside what F4 rewrote (observed, run 18a).
+        var start = targets[0].Parts[0].Part.Index;
         foreach (var target in targets)
         {
             foreach (var (part, column) in target.Parts)

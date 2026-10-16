@@ -465,7 +465,7 @@ public class FormulaEntryWiringTests : SheetTestContext
         Assert.Equal(new CellPosition(9, 3), Grid(cut).Instance.ReadSelection().Selection.Focus);
     }
 
-    [Fact] // ADR-0051 / ADR-0010, ED-2: while pointing at a range, Shift+Home extends it from its fixed end to the row's first column, as it extends a Selection (a reading: Excel was asked from a single cell, R1 (viii))
+    [Fact] // ADR-0051 / ADR-0010, ED-2: while pointing at a range, Shift+Home extends it from its fixed end to the row's first column, as it extends a Selection (a reading after R1 (viii); observed, run 18a answer 3: =, ↓, Shift+↓, Shift+Home in D10 gave =A11:D12, in Point)
     public async Task ED2_while_pointing_at_a_range_shift_home_extends_from_its_fixed_end()
     {
         var cut = RenderSheet();
@@ -479,7 +479,7 @@ public class FormulaEntryWiringTests : SheetTestContext
         Assert.Equal("D11", NameBox(cut));
     }
 
-    [Fact] // ADR-0051 / ADR-0010, ED-2: typed = into D10, Shift+Home points from D10 to the row's first column (observed with a Ctrl+C before it, R1's reading after (vi)'s first step: = in D10, a Ctrl+C that copied nothing, then Shift+Home pointed, and a Ctrl+C copied A10:D10; the text =A10:D10 by generalisation)
+    [Fact] // ADR-0051 / ADR-0010, ED-2: typed = into D10, Shift+Home points from D10 to the row's first column (observed with a Ctrl+C before it, R1's reading after (vi)'s first step: = in D10, a Ctrl+C that copied nothing, then Shift+Home pointed, and a Ctrl+C copied A10:D10; the text =A10:D10 in Point observed by run 18a, answer 8)
     public async Task ED2_after_equals_shift_home_points_from_the_edited_cell()
     {
         var cut = RenderSheet();
@@ -491,12 +491,64 @@ public class FormulaEntryWiringTests : SheetTestContext
         Assert.NotEmpty(cut.FindAll(".ex-selection .ex-point"));
     }
 
-    [Theory] // ADR-0010 / ED-2: typed into a cell (Enter mode), Ctrl+→ commits and moves to the Sheet's edge, Ctrl+Shift+→ commits and selects to it, and the Shift+arrows commit and extend from D10 (observed, R1 (vii))
+    [Theory] // ADR-0051, run 18a answer 5: in D10, = then Ctrl+↓ points, in Point, at the column's data edge — D1048576 on an empty column — and = then Ctrl+Shift+↓ gives =D10:D1048576, anchored at the cell being edited; nothing commits
+    [InlineData(false, "=D1048576", "D1048576")]
+    [InlineData(true, "=D10:D1048576", "D10")]
+    public async Task ADR0051_after_equals_a_primary_modifier_arrow_points_at_the_data_edge(bool shift, string written, string nameBox)
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", "=");
+
+        await PressInEditorAsync(cut, "ArrowDown", "=", 1, shift: shift, ctrl: true);
+
+        Assert.Equal(written, EditorText(cut));
+        Assert.NotEmpty(cut.FindAll(".ex-selection .ex-point"));
+        Assert.Equal(nameBox, NameBox(cut));
+        Assert.Equal(new CellPosition(9, 3), Grid(cut).Instance.ReadSelection().Selection.Focus);
+    }
+
+    [Fact] // ADR-0051 / ADR-0050 item 2: the edge pointed at is the Sheet's data edge, as Ctrl+↓ finds it with no edit open (D10, =, Ctrl+↓ stops above the next value in the column; by generalisation of run 18a answer 5, asked on an empty column)
+    public async Task ADR0051_a_primary_modifier_arrow_points_at_the_next_value()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("D20", "5"), ("D30", "6"))));
+        await StartTypingAsync(cut, "D10", "=");
+
+        await PressInEditorAsync(cut, "ArrowDown", "=", 1, ctrl: true);
+        Assert.Equal("=D20", EditorText(cut));
+
+        await PressInEditorAsync(cut, "ArrowDown", "=D20", 4, ctrl: true);
+        Assert.Equal("=D30", EditorText(cut));
+    }
+
+    [Theory] // ADR-0051, run 18a answer 4: with F2 first, F4 on a Reference with a Sheet qualifier selects from $A$1, not from Sheet2! — =Sheet2!A1+1, the caret after A1, gave $A$1 selected (8-12); =Sheet2!A1 with the caret at the text's end gave a caret at the end
+    [InlineData("=Sheet2!A1+1", 10, "=Sheet2!$A$1+1", 8, 12)]
+    [InlineData("=Sheet2!A1", 10, "=Sheet2!$A$1", 12, 12)]
+    public async Task ADR0051_F4_on_a_qualified_reference_selects_from_its_cell_part(
+        string text, int caret, string rewritten, int start, int end)
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", text);
+        await PressInEditorAsync(cut, "F2", text, text.Length);
+
+        await PressInEditorAsync(cut, "F4", text, caret, moved: caret != text.Length);
+
+        Assert.Equal(rewritten, EditorText(cut));
+        Assert.Equal((rewritten, start, end), LastPlaced());
+    }
+
+    [Theory] // ADR-0010 / ED-2: typed into a cell (Enter mode), each key commits and then moves or extends the Selection as with no edit open (observed, R1 (vii): Ctrl+→, Ctrl+Shift+→, Shift+→, Shift+↓, Shift+←; run 18a answer 7: Shift+↑ D9:D10, Ctrl+← A10, Ctrl+↑ D1, Ctrl+↓ D1048576, Ctrl+Shift+← A10:D10, Ctrl+Shift+↑ D1:D10, Ctrl+Shift+↓ D10:D1048576)
     [InlineData("ArrowRight", true, false, "XFD10", 9, 16383, 9, 16383)]
     [InlineData("ArrowRight", true, true, "D10", 9, 3, 9, 16383)]
     [InlineData("ArrowRight", false, true, "D10", 9, 3, 9, 4)]
     [InlineData("ArrowDown", false, true, "D10", 9, 3, 10, 3)]
     [InlineData("ArrowLeft", false, true, "D10", 9, 3, 9, 2)]
+    [InlineData("ArrowUp", false, true, "D10", 9, 3, 8, 3)]
+    [InlineData("ArrowLeft", true, false, "A10", 9, 0, 9, 0)]
+    [InlineData("ArrowUp", true, false, "D1", 0, 3, 0, 3)]
+    [InlineData("ArrowDown", true, false, "D1048576", 1048575, 3, 1048575, 3)]
+    [InlineData("ArrowLeft", true, true, "D10", 9, 3, 9, 0)]
+    [InlineData("ArrowUp", true, true, "D10", 9, 3, 0, 3)]
+    [InlineData("ArrowDown", true, true, "D10", 9, 3, 1048575, 3)]
     public async Task ED2_in_enter_mode_the_keys_commit_and_move_or_extend(
         string key, bool ctrl, bool shift, string nameBox, int focusRow, int focusColumn, int extentRow, int extentColumn)
     {

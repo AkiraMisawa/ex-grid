@@ -133,3 +133,15 @@ typed, on 12 October 2026 at 13:30 (46307.5625) and on 13:30 alone (0.5625). Of 
   `A_code_typed_into_custom_is_no_built_in_under_en_gb_r7` R7's two. They passed as the engine stood, so
   `NumberFormat` is unchanged.
 
+
+*(2026-10-16, after Windows run 18a, format-cells 9 and 10.)* **9.** Excel recorded `d\-mmm\-yy` as
+built-in 15 as soon as the book was opened under en-US, not only once the Number tab was touched. A Sheet
+Document opened under a culture that spells a localised built-in as the code of its own it holds now
+reads it as the built-in (`NumberFormat.OpenedIn`), decided with the user on 2026-10-16. Excel's dialog
+then opened on Custom with the built-in's entry selected; ExSheet's opens on the built-in's category,
+a difference recorded in ADR-0071. **10.** Under ko-KR, Excel's `mmm` is `1`, where ICU's is `1월`;
+taking Windows' name as for ja-JP changes what the built-in formats paint, so the glyph corpus and every
+record (macOS's among them) are measured again first, after 0.1.0 (decided with the user, 2026-10-16;
+`docs/specs/exsheet/run-18/format-cells-readings.md`). zh-CN's `1月` and `一月` agree with ICU. A `-`
+typed into Custom under ko-KR, which Excel took as the date separator and stored as `d/mmm/yy`, is kept
+as typed by ExSheet, a difference recorded in ADR-0071 (decided with the user, 2026-10-16).

@@ -359,6 +359,22 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     }
 
     /// <summary>
+    /// This format as a Sheet Document opened under <paramref name="culture"/> holds it (ADR-0071, ticket
+    /// 103): a code of its own that spells a localised built-in's code as the culture spells that
+    /// built-in (<see cref="TryParseLocal"/>) is the built-in, as Excel recorded <c>d\-mmm\-yy</c> as
+    /// built-in 15 as soon as a book was opened under en-US (Windows run 18a, format-cells 9); any other
+    /// format is itself. Under ja-JP, where 15 is spelled <c>dd-mmm-yy</c>, <c>d\-mmm\-yy</c> stays a code
+    /// of its own. Only 15 under en-US was observed; the other localised built-ins and cultures follow it
+    /// by generalisation.
+    /// </summary>
+    internal NumberFormat OpenedIn(CultureInfo culture) =>
+        BuiltInSpelled(Code) is { } unescaped
+        && TryParseLocal(unescaped, culture, out var read, out _)
+        && LocalisedBuiltIns.Contains(read)
+            ? read
+            : this;
+
+    /// <summary>
     /// Reads a code as <c>TEXT</c> reads it (ADR-0120): the invariant spelling under every culture,
     /// and as written — a code that spells a built-in shown in the culture's own form
     /// (<see cref="LocalIn"/>) is a code of its own, so <c>m/d/yyyy</c> shows <c>9/26/2026</c> under

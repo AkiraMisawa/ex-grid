@@ -8170,7 +8170,7 @@
     /// <c>editingKeys</c> / <c>overwriteKeys</c> / <c>pointKeys</c> in <c>ex-grid.js</c></b> — the
     /// two must move together: Overwrite claims the arrows, Home and End, the Shift+arrows and
     /// Shift+Home, and the Primary Modifier's arrows with Shift or without (ADR-0010, ED-2); Point
-    /// the arrows, Home and End, the Shift+arrows and Shift+Home. F4, which the gate adds to them
+    /// the same keys (ADR-0051: the Primary Modifier's point at the data edge, run 18a). F4, which the gate adds to them
     /// only where the Consumer declared <see cref="CycleReference"/>, is answered before this, from
     /// the selection its message carries (ADR-0051, 2026-09-29).</param>
     private async Task OnEditingKeyAsync(string canonical)
@@ -8272,16 +8272,9 @@
                 when _editMode == EditMode.Overwrite:
                 // The Primary Modifier's arrows too commit, and then move or extend to the edge as
                 // with no edit open (observed, R1 (vii): Ctrl+→ committed and moved to XFD10, and
-                // Ctrl+Shift+→ committed and selected D10:XFD10; the other directions by
-                // generalisation). Where a Reference can go at the caret, Excel was not asked: they
-                // are claimed and do nothing, as End does there (ADR-0058, Q53), rather than commit
-                // a Formula that ends too early.
-                if (PointAt is { } referenceCanGo && ReferenceText is not null && _editCaret >= 0
-                    && _editCaret <= _editText.Length && referenceCanGo(_editText, _editCaret))
-                {
-                    StateHasChanged();
-                    return;
-                }
+                // Ctrl+Shift+→ committed and selected D10:XFD10; run 18a: Shift+↑, Ctrl+←, Ctrl+↑,
+                // Ctrl+↓, Ctrl+Shift+←, Ctrl+Shift+↑ and Ctrl+Shift+↓ likewise). Where a Reference
+                // can go at the caret, Point took them first: they point at the data edge (run 18a).
                 await CommitAndKeyAsync(canonical);
                 return;
         }

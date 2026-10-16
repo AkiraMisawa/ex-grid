@@ -35,13 +35,20 @@ public sealed partial class Sheet
     /// <item>A single number in a line of a fill from whole columns or whole rows goes on by one per
     /// cell, held at 15 significant digits as a trend is: column C filled right from its Heading
     /// gave D1 2 and E1 3 from C1's 1 (observed, the readings of 2026-10-12 (R5)).</item>
-    /// <item>A single number in any other source, and text, booleans, Error Values and blanks, are
-    /// copied, repeating the source: one cell's handle copied C5's 1 down as 1, 1 (observed, R5's
-    /// control).</item>
+    /// <item>The one number of a source of several cells that holds nothing else goes on by one per
+    /// repeat of its line, the blanks beside it left blank: C1:C2 with C1 <c>1</c> and C2 empty, filled
+    /// right, gave D1:E1 <c>2 3</c>, and columns B:C with B1 <c>1</c> and C1 empty, filled right to E, gave
+    /// D1 <c>2</c> and E1 empty (observed, Windows run 18a, fill-handle-axis 4 and 5).</item>
+    /// <item>A single number in a line of a source of several cells each of which holds a number is
+    /// copied: C1:C2 with C1 <c>1</c> and C2 <c>5</c>, filled right, gave <c>1 1</c> and <c>5 5</c>
+    /// (observed, run 18a, 4). Text, booleans, Error Values and blanks are copied, and so is one cell's
+    /// number from its handle: C5's 1 down gave 1, 1 (observed, R5's control).</item>
     /// </list>
     /// Anything else is refused, never filled with copies: text Excel would continue (holding a
     /// digit, like <c>Item 1</c>, or a day or month name), two or more dates (Excel may step them
-    /// by month or year), a time of day, and numbers mixed with anything else.
+    /// by month or year), a time of day, numbers mixed with anything else but the blanks beside the lone
+    /// number above, and a single number in a line of any other source of several cells that is not a
+    /// whole axis, which Excel was not read to copy or continue.
     /// Cell Formats are repeated from the source. A fill from whole columns (whole rows) writes each
     /// target column's (row's) format as that column's (row's) own, the level its source column
     /// (row) records, and then the cells that hold something (<see cref="FillPlan.Levels"/>): what
@@ -77,6 +84,13 @@ public sealed partial class Sheet
         var count = vertical ? target.RowCount : target.ColumnCount;
         // Lines that run the whole axis: a fill down from whole rows, or across from whole columns.
         var wholeAxis = vertical ? source.IsWholeRows : source.IsWholeColumns;
+        var single = source.First == source.Last;
+        var held = _cells.Values.Where(c => c.Entry is not null && source.Contains(c.Address)).Take(2).ToList();
+        // The source's one Entry, a number: it goes on as a series from a source of several cells.
+        var loneNumber = !single && held is [{ Entry.Constant: { Kind: ValueKind.Number } }];
+        // Every cell of a source of several cells holds a number, so a line of one cell copies its own.
+        var allNumbers = !single && !wholeAxis && Enumerable.Range(0, source.RowCount).All(r => Enumerable.Range(0, source.ColumnCount)
+            .All(c => StateOf(new CellAddress(source.First.Row + r, source.First.Column + c)).Recorded.Entry?.Constant is { Kind: ValueKind.Number }));
         foreach (var line in LinesToFill(source, target, vertical, wholeAxis))
         {
             CellAddress SourceAt(int i) => vertical
@@ -86,7 +100,7 @@ public sealed partial class Sheet
             // Position along the axis relative to the source's first cell: 0..length-1 is the
             // source; the target is length.. going forward and ..-1 going back.
             var cells = Enumerable.Range(0, length).Select(i => CarriedState(SourceAt(i))).ToArray();
-            var rule = FillRule(cells, SourceAt, copyOnly, wholeAxis, out var refusal);
+            var rule = FillRule(cells, SourceAt, copyOnly, wholeAxis, single, loneNumber, allNumbers, out var refusal);
             if (refusal is not null) return new FillPlan(refusal, [], null);
             for (var k = 0; k < count; k++)
             {
@@ -225,8 +239,12 @@ public sealed partial class Sheet
     /// The rule for one line: given a position along the axis, the source cell it repeats and its
     /// address, the Entry written there. <paramref name="wholeAxis"/>: the line is one of a fill from
     /// whole columns or whole rows, where a single number goes on by one per cell.
+    /// <paramref name="single"/>: the source is one cell, whose number is copied.
+    /// <paramref name="loneNumber"/>: the source, of several cells, holds one Entry, a number, which goes
+    /// on by one per repeat of its line. <paramref name="allNumbers"/>: every cell of the source, of
+    /// several cells and not a whole axis, holds a number, so a line of one copies it.
     /// </summary>
-    private Func<int, int, CellAddress, Entry?> FillRule(CellState[] cells, Func<int, CellAddress> sourceAt, bool copyOnly, bool wholeAxis, out SheetRefusal? refusal)
+    private Func<int, int, CellAddress, Entry?> FillRule(CellState[] cells, Func<int, CellAddress> sourceAt, bool copyOnly, bool wholeAxis, bool single, bool loneNumber, bool allNumbers, out SheetRefusal? refusal)
     {
         refusal = null;
         Entry? Copy(int x, int i, CellAddress at)
@@ -268,13 +286,29 @@ public sealed partial class Sheet
         if (numbers == 0) return Copy;
         if (cells.Length == 1)
         {
-            var single = cells[0].Entry!.Constant!.Value.Number;
+            var number = cells[0].Entry!.Constant!.Value.Number;
+            if (dates == 1) return (x, _, _) => Series(number + x);
             // A single number is copied from one cell's handle and goes on by one from a whole column's
             // (observed, the readings of 2026-10-12 (R5): C5's 1 down gave 1, 1; column C's 1 right gave
-            // 2, 3). Held at 15 significant digits as a trend is held, and counted back by one going up
-            // or left: those two are by generalisation.
-            if (dates == 0) return wholeAxis ? (x, _, _) => Series(TrendDigits.Step(single, 1, x)) : Copy;
-            return (x, _, _) => Series(single + x);
+            // 2, 3), and from a source of several cells that holds nothing else (run 18a, 4: C1 1 over an
+            // empty C2 right gave 2, 3); among numbers in every cell of the source it is copied (run 18a,
+            // 4: C1 1 and C2 5 right gave 1 1, 5 5). Held at 15 significant digits as a trend is held,
+            // and counted back by one going up or left: those two are by generalisation.
+            if (single || allNumbers) return Copy;
+            if (wholeAxis || loneNumber) return (x, _, _) => Series(TrendDigits.Step(number, 1, x));
+            refusal = Refuse(sourceAt(0), "a single number in a line of a source of several cells, which Excel was not read to copy or continue there");
+            return Copy;
+        }
+        if (loneNumber && numbers == 1 && dates == 0)
+        {
+            // The source's one number and the blanks beside it in its line: the number goes on by one per
+            // repeat of the line, and the blanks stay blank (run 18a, 5: B1 1 and an empty C1 of
+            // columns B:C, right to E, gave D1 2 and an empty E1). Counted back by one going up or left,
+            // by generalisation.
+            var at = Array.FindIndex(cells, c => c.Entry is not null);
+            var number = cells[at].Entry!.Constant!.Value.Number;
+            var length = cells.Length;
+            return (x, i, _) => i == at ? Series(TrendDigits.Step(number, 1, (int)Math.Floor((double)x / length))) : null;
         }
         if (numbers != cells.Length)
         {

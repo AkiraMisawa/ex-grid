@@ -800,6 +800,14 @@ nobody had asked for. What that means when writing a test:
   with and without an edit open, and the positions grid, which declares nothing, leaving them
   to the browser (DC-30); grips without the menu button (DC-36); the positions grid keeping
   ExGrid's own behaviour beside the Sheet (DC-25).
+- `f4-enter-mode.spec.mjs` — what run 18a read of Excel's F4 and Enter mode
+  (`docs/specs/exsheet/run-18/f4-enter-mode.md`), typed into `/sheet` at machine speed: F4 leaving a
+  caret where the caret stood at the text's end — after F2 in the bar, after ←, → — and selecting
+  where it stood inside the text — a digit typed there, a press in the text — (ADR-0051, answers 1
+  and 2); a Sheet qualifier's selection starting at `$A$1` (answer 4); `=` then Ctrl+↓ and
+  Ctrl+Shift+↓ pointing at the column's data edge (answer 5); Shift+Home extending a pointed range
+  and pointing from the edited cell (answers 3 and 8); and Shift+↑ and the Primary Modifier's arrows
+  committing `abc` and moving or extending the Selection (ADR-0010, ED-2; answer 7).
 - `reference-text.spec.mjs` — the coloured text in the editor (ADR-0057) on `/sheet`, under the
   built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`, the Sheet on the Wrapper's paper
   with its stylesheet): a burst of typing with 150 ms on the Server host,

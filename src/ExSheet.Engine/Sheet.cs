@@ -59,7 +59,7 @@ public sealed partial class Sheet
         foreach (var table in document.LinkedTables) sheet.Declare(table.Name, table.Columns, table.KeyColumns);
         foreach (var run in document.Columns)
         {
-            for (var column = run.First; column <= run.Last; column++) sheet._columnFormats[column] = run.Level;
+            for (var column = run.First; column <= run.Last; column++) sheet._columnFormats[column] = sheet.Opened(run.Level);
         }
         foreach (var run in document.ColumnWidths)
         {
@@ -67,14 +67,14 @@ public sealed partial class Sheet
         }
         foreach (var run in document.Rows)
         {
-            for (var row = run.First; row <= run.Last; row++) sheet._rowFormats[row] = run.Level;
+            for (var row = run.First; row <= run.Last; row++) sheet._rowFormats[row] = sheet.Opened(run.Level);
         }
         foreach (var cell in document.Cells)
         {
             if (cell.NumberFormat is null && cell.Alignment is null && cell.Font is null && cell.Fill is null && cell.Borders is null) continue;
             sheet._cells[cell.Address] = new Cell(cell.Address)
             {
-                NumberFormat = cell.NumberFormat,
+                NumberFormat = cell.NumberFormat?.OpenedIn(sheet.Culture),
                 Alignment = cell.Alignment,
                 Font = cell.Font,
                 Fill = cell.Fill,
@@ -86,6 +86,10 @@ public sealed partial class Sheet
         sheet.Changes = 0;
         return sheet;
     }
+
+    /// <summary>A column's or row's format as this Sheet opens it: its Number Format read under the Sheet's culture (<see cref="NumberFormat.OpenedIn"/>).</summary>
+    private AxisFormat Opened(AxisFormat level) =>
+        level.NumberFormat is { } format ? level with { NumberFormat = format.OpenedIn(Culture) } : level;
 
     /// <summary>
     /// The Sheet as a Sheet Document: its culture, its name, its Linked Tables' declarations, its

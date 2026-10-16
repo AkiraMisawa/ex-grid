@@ -185,4 +185,24 @@ public class CellFormatDocumentTests
     {
         Assert.Throws<SheetDocumentException>(() => SheetDocument.FromJson(Head + rest));
     }
+
+    [Theory] // ADR-0071, ticket 103 (2026-10-14, after run 18a, format-cells 9): a code of its own typed under en-GB as d-mmm-yy is opened under en-US, which spells built-in 15 so, as built-in 15, as Excel recorded it as soon as the book was opened; under ja-JP and en-GB, which spell 15 otherwise, it stays a code of its own; on a cell and on a column alike
+    [InlineData("en-US", "d-mmm-yy")]
+    [InlineData("ja-JP", "d\\-mmm\\-yy")]
+    [InlineData("en-GB", "d\\-mmm\\-yy")]
+    public void Adr0071_a_code_of_its_own_spelling_a_built_in_opens_as_the_built_in_where_the_culture_spells_it_so(string culture, string code)
+    {
+        Assert.True(NumberFormat.TryParseLocal("d-mmm-yy", System.Globalization.CultureInfo.GetCultureInfo("en-GB"), out var own, out _));
+        Assert.Equal("d\\-mmm\\-yy", own.Code);
+        var sheet = new Sheet(System.Globalization.CultureInfo.GetCultureInfo("en-GB"));
+        sheet.SetNumberFormat(At("A1"), own);
+        var json = sheet.ToDocument().ToJson();
+        var columnJson = json.Replace("\"cells\":[{\"at\":\"A1\"", "\"columns\":[{\"at\":\"B:B\"", StringComparison.Ordinal);
+
+        var reopened = Sheet.Open(SheetDocument.FromJson(json.Replace("\"en-GB\"", $"\"{culture}\"", StringComparison.Ordinal)));
+        var column = Sheet.Open(SheetDocument.FromJson(columnJson.Replace("\"en-GB\"", $"\"{culture}\"", StringComparison.Ordinal)));
+
+        Assert.Equal(code, reopened.GetNumberFormat(At("A1")).Code);
+        Assert.Equal(code, column.GetNumberFormat(At("B7")).Code);
+    }
 }
