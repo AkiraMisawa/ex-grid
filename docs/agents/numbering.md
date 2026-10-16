@@ -65,7 +65,8 @@ reserved here.
 | 15 | `claude/exsheet-ime-and-scaling` | a real Japanese IME, VZ-14 at the current base, and ticket 74's readings asked of Excel |
 | 16 | `claude/exsheet-keyboard-field` | a real Japanese IME on a selected cell (the Keyboard Field), and the Name Box and Escape cases left by the fifteenth |
 | 17 | `claude/windows-run-17` | Before the release candidate: ExSheet's corpus, SH-28, SH-51/52, tickets 15 to 18's questions and ExPivot's 28 readings put to Excel, the screen readers, and the record of ExGrid's by-hand rows (decided with the user 2026-10-11; ADR-0208) |
-| 18– | free | reserve one at a time |
+| 18 | `claude/run-18-spec` (spec), `claude/exsheet-windows-verify-18` (the run) | The release candidate's run: ExGrid's by-hand rows renewed on `0.1.0-rc.1`, and what run 18a and its corrections left open (2026-10-17) |
+| 19– | free | reserve one at a time |
 
 ## Sheet Document versions (`SheetDocument.CurrentVersion`)
 
