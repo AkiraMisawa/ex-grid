@@ -12,19 +12,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/16/2026 - 11:49:54 |
+| Generated on: | 10/16/2026 - 12:07:29 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
-| Classes: | 847 |
+| Classes: | 849 |
 | Files: | 466 |
-| **Line coverage:** | 95.2% (58529 of 61433) |
-| Covered lines: | 58529 |
-| Uncovered lines: | 2904 |
-| Coverable lines: | 61433 |
-| Total lines: | 103855 |
-| **Branch coverage:** | 88.1% (34032 of 38621) |
-| Covered branches: | 34032 |
-| Total branches: | 38621 |
+| **Line coverage:** | 95.2% (58564 of 61467) |
+| Covered lines: | 58564 |
+| Uncovered lines: | 2903 |
+| Coverable lines: | 61467 |
+| Total lines: | 103954 |
+| **Branch coverage:** | 88.1% (34052 of 38641) |
+| Covered branches: | 34052 |
+| Total branches: | 38641 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -278,11 +278,11 @@
 |ExGrid.ViewStateDocument|100%||
 
 </details>
-<details><summary>ExGrid.Data - 94.6%</summary>
+<details><summary>ExGrid.Data - 94.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.6%**|
+|**ExGrid.Data**|**94.7%**|**90.6%**|
 |ExGrid.Data.AggregateAccumulator|86%|87.8%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -371,7 +371,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -839,12 +839,13 @@
 |ExSheet.Engine.Formulas.ErrorNode|100%||
 |ExSheet.Engine.Formulas.Evaluator|94.4%|89.7%|
 |ExSheet.Engine.Formulas.Evaluator.BindingSlot|100%||
-|ExSheet.Engine.Formulas.ExactPayment|99.3%|92.1%|
+|ExSheet.Engine.Formulas.ExactPayment|99.3%|91.3%|
+|ExSheet.Engine.Formulas.ExactPayment.Bound|100%||
 |ExSheet.Engine.Formulas.ExcelFunctionNames|100%||
 |ExSheet.Engine.Formulas.FormulaText|100%|97.5%|
 |ExSheet.Engine.Formulas.FunctionCall|100%|100%|
 |ExSheet.Engine.Formulas.FunctionDefinition|100%||
-|ExSheet.Engine.Formulas.FunctionLibrary|97.4%|88.5%|
+|ExSheet.Engine.Formulas.FunctionLibrary|97.4%|88.6%|
 |ExSheet.Engine.Formulas.FunctionLibrary.CriteriaRange|79.1%|43.7%|
 |ExSheet.Engine.Formulas.FunctionLibrary.Criterion|100%|86.3%|
 |ExSheet.Engine.Formulas.FunctionLibrary.DoubleDouble|100%||
@@ -852,6 +853,7 @@
 |ExSheet.Engine.Formulas.FunctionLibrary.RowColumnPart|100%|100%|
 |ExSheet.Engine.Formulas.FunctionLibrary.SearchOutcome|100%||
 |ExSheet.Engine.Formulas.FunctionLibrary.Vector|92%|87.5%|
+|ExSheet.Engine.Formulas.FunctionLibrary.XnpvOutcome|100%||
 |ExSheet.Engine.Formulas.FunctionNode|100%|100%|
 |ExSheet.Engine.Formulas.IntersectionNode|100%||
 |ExSheet.Engine.Formulas.KnownShape|95.6%|67.7%|
