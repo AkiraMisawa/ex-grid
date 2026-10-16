@@ -672,6 +672,25 @@ test('item 20: one number is copied, one date goes on by day, a Formula shifts (
     expect(await entryOf(page, 'E10')).toBe('=B4*2');
 });
 
+test('run 18a: a lone number over an empty cell, dragged right, goes on as a series; two numbers are copied (ADR-0050 item 5)', async ({ page }) => {
+    // Excel, fill-handle-axis 4: C1 1 over an empty C2 dragged two columns right gives 2 3, row 2 empty;
+    // C1 1 over C2 5 gives 1 1 and 5 5.
+    await enter(page, 'E1', '1');
+    await click(page, 'E1');
+    await click(page, 'E2', { modifiers: ['Shift'] });
+    await dragFillHandle(page, 'G2');
+    await expect(cell(page, 'G1')).toHaveText('3');
+    await expect(cell(page, 'F1')).toHaveText('2');
+    await expect(cell(page, 'F2')).toHaveText('');
+    await enter(page, 'E5', '1');
+    await enter(page, 'E6', '5');
+    await click(page, 'E5');
+    await click(page, 'E6', { modifiers: ['Shift'] });
+    await dragFillHandle(page, 'G6');
+    await expect(cell(page, 'G6')).toHaveText('5');
+    await expect(cell(page, 'G5')).toHaveText('1');
+});
+
 test('item 20: 1, 2, 4 continue as Excel\'s trend, to the 15 digits Excel keeps (ADR-0050, ticket 15)', async ({ page }) => {
     await enter(page, 'E1', '1');
     await enter(page, 'E2', '2');

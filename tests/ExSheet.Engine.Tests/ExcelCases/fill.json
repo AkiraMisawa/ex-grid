@@ -506,13 +506,11 @@
     {
       "id": "FILL-054",
       "source": "observed",
-      "description": "Numbers mixed with anything else are refused (1 and a blank)",
+      "description": "A lone number over a blank goes on by one per repeat, the blank left blank: 1 and a blank filled down give 2 and a blank (as Windows run 18a read the same pattern across, fill-handle-axis 4 and 5)",
       "cells": {"A1": "1"},
       "action": {"do": "fill", "source": "A1:A2", "target": "A3:A4", "direction": "down"},
       "check": "A3",
-      "expect": {"refused": "FillPatternNotSupported", "value2": null},
-      "engineDiffersByDecision": "ADR-0050: a fill pattern ExSheet has not implemented is refused, not filled with copies",
-      "excelExpect": {"value2": 2}
+      "expect": {"value2": 2}
     },
     {
       "id": "FILL-055",

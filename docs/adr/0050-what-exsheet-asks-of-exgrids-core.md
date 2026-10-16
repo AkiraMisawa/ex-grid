@@ -579,9 +579,14 @@ The readings of 2026-10-12 asked the rest (`verification/2026-10-12-windows-read
   (`SelectionRange.SpansEveryRow`, `SpansEveryColumn`). Several whole columns put it at the last
   column's top-right and several whole rows at the last row's bottom-left, as Excel did for columns
   B:D and rows 2:4, each selected from its first Heading (observed, R5 (2)). Where Excel puts it
-  when the Extent is the first column or row was not read; ExGrid keeps the last.
+  when the Extent is the first column or row was not read; ExGrid keeps the last. *(2026-10-14, after
+  run 18a: read. Selected from D's Heading to B's, B:D with the Focus in D, and from row 4's Heading to
+  row 2's, 2:4 with the Focus in A4, Excel put the handle at D's top right and at row 4's bottom left:
+  the last column or row, wherever the press began, as ExGrid does.)*
 - **Every cell (Ctrl+A) has none.** Excel showed none in view (observed, R5 (1)); whether it draws
-  one at XFD1048576 was not read. Nothing is left to fill to, so the core paints none anywhere, at a
+  one at XFD1048576 was not read. *(2026-10-14, after run 18a: read. With every cell selected and the
+  view at the far corner, row 1048520 and column 16347, Excel drew no handle at XFD1048576; the only
+  square there is the select-all corner, as ExGrid paints none.)* Nothing is left to fill to, so the core paints none anywhere, at a
   small grid's bottom-right too (by generalisation).
 - **It lies just inside the cells, beside the Heading.** It is centred on the edge that runs along
   the range, the column's right edge or the row's bottom edge, and lies inside the range across the
@@ -597,7 +602,9 @@ The readings of 2026-10-12 asked the rest (`verification/2026-10-12-windows-read
   the pixel, so the handle stands at the readable area's edge, placed at each render from the scroll
   the grid last read. A press is judged where the scroll it was taken at put the handle, so
   `PressTakenAt` carries the vertical scroll offset beside the horizontal one (ED-31; reading a
-  scroll offset is ADR-0021's second entry).
+  scroll offset is ADR-0021's second entry). *(2026-10-14, after run 18a: row 3 with column A scrolled
+  away showed Excel's handle at the left of the part in view, clipped to 4 by 6 pixels where unscrolled it
+  is 6 by 6: the generalisation above, observed.)*
 - **The drag fills along the axis the range does not span.** A whole column's handle fills across,
   a whole row's up or down, and the Selection is then the source and the target, whole columns or
   rows; dragged along the axis the range spans, nothing is reached and nothing is raised (observed,
@@ -611,7 +618,28 @@ The readings of 2026-10-12 asked the rest (`verification/2026-10-12-windows-read
   significant digits as the trend is, and counts back by one filled left or up (by generalisation).
   A single number in any other source of several cells is still copied: Excel was not read there.
   From several whole columns or rows, a line that holds a number beside a blank is refused, as any
-  such pattern is (`FillPatternNotSupported`), until the next Windows run reads it.
+  such pattern is (`FillPatternNotSupported`), until the next Windows run reads it. *(2026-10-14, after
+  run 18a, `verification/2026-10-14-windows-readings-18a/`, fill-handle-axis 4 and 5: **the lone
+  number of a source of several cells that holds nothing else goes on by one per repeat of its line,
+  and the blanks beside it stay blank.** C1:C2 with C1 `1` and C2 empty, dragged two columns right,
+  gave D1:E1 `2 3` and an empty row 2, where ExSheet had copied `1 1`, a plausible and wrong answer;
+  columns B:C with B1 `1` and C1 empty, dragged right to E, gave D1 `2` and an empty E1, where ExSheet
+  refused. C1:C2 with C1 `1` and C2 `5` gave `1 1` and `5 5`: a line's single number is copied where
+  every cell of the source holds a number. So ExSheet continues the one number of a source that holds
+  nothing else, whole axis or not, the number stepping by one each time its line repeats, and copies
+  a line's single number where every cell of a source that is not a whole axis holds a number. A
+  single number in a line of any other source of several cells that is not a whole axis — beside
+  text, a boolean, another number with a blank between, and the rest — is refused, not copied, since
+  Excel was read to copy in one such shape and continue in another. Counted back filled left or up,
+  and down or left at all, by generalisation. A whole axis's lines keep the rule above: a single
+  number per line goes on by one, and a line of a number beside a blank refuses where any other cell
+  of the source holds something.)* *(2026-10-14, after run 18a, fill-handle-axis 6 and 7: column C bold
+  with C1 `1`, dragged right to E, left D100, E100 and E1048576 bold and F100 not, D1 `2` and E1 `3`, a
+  `UsedRange` of C1:E1 and a saved `<col min="3" max="5" … style="1"/>`: the format written on the target
+  columns, as ExSheet writes it. Column C with C1 `5` dragged left to A gave B1 `4` and A1 `3`, the
+  counting back by one above, observed; a drop over A's middle reached only B, and further left, A.
+  C1 `9/26/2026` dragged right gave D1 `9/27/2026` and E1 `9/28/2026`, a day per cell, as one date
+  goes on.)*
 - **ExSheet writes a whole axis's format on the target axis.** A fill from whole columns writes each
   target column's format as the one its source column records, then only the lines that hold a
   cell; whole rows likewise. The handle reaches it, and Ctrl+D over whole rows; Ctrl+R over whole
