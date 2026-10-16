@@ -134,6 +134,18 @@ not an Error Value the call returns, so `IFERROR` cannot catch it and `COUNTA` c
 meets `#CIRC!` is `#CIRC!` (ADR-0047); SORT-034, 035, 038, 039, UNIQUE-021 to 023, FILTER-014 and TRANSPOSE-007 ask.
 `LEN` is not yet lifted (above), so UNIQUE-019 stays `#VALUE!` where Excel gives 2.)*
 
+*(2026-10-14, after run 18a: **the kept blank is read as a blank cell's by the aggregates, `COUNTA`, `IF` and
+`SORT`.** Excel's `AVERAGE` and `MIN` passed over the blank `FILTER`, `TRANSPOSE` and `UNIQUE` kept (FILTER-014,
+TRANSPOSE-007, UNIQUE-021, 022: 7, not 3.5 or 0), `COUNT` did not count `SORT`'s (SORT-034: 1), and `SUM` passed
+over it where reading it as 0 last would have moved its last addition (SORT-037: 0, not 2.78E-17). So every function
+that takes its numbers as `SUM` does passes over it, `MAX`, `PRODUCT`, `MEDIAN` and the spreads by generalisation.
+`COUNTA` counted the blank `INDEX` took out of `SORT`'s array, and `UNIQUE`'s of one blank cell (SORT-035,
+UNIQUE-023: 1), so it counts a kept blank given as one Value too. `IF` handed `SORT`'s array on with its blank, which
+`ISBLANK` then read blank (SORT-039: TRUE), so `IF`'s branch is handed on as it is. `SORT` given `FILTER`'s blank
+as a key sorted it last, as a blank cell's (SORT-038: 7), so `SORT` takes a kept blank in its array as a blank,
+and the other four functions' by generalisation. The rest above stays refused: `CHOOSE`, `IFERROR` and `IFNA` given
+it, `MATCH` and `XLOOKUP` over an array that holds it where they read it, and the other array functions given it.)*
+
 ## Considered options
 
 - **Only the functions built for arrays spill, and `=A1:A3*2` stays `#VALUE!`.** Rejected with the

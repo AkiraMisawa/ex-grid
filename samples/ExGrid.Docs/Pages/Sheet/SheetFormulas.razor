@@ -99,11 +99,14 @@
                 -2) answers only over a lookup array sorted as the mode says; otherwise it is <code>#VALUE!</code>.
             </li>
             <li>
-                <b>An Error Value among <code>SORT</code>'s keys</b> is sorted where it already follows every number:
-                over 7 and then <code>#N/A</code>, Excel's Anchor shows 7, which fits an Error Value sorted after the
-                numbers and one that keeps its place alike. With a number after it, beside text, a boolean, a blank or
-                another Error Value, in a descending sort, and among <code>SORTBY</code>'s keys, the Formula is
-                <code>#VALUE!</code> until Excel has been asked where it goes.
+                <b>An Error Value among <code>SORT</code>'s or <code>SORTBY</code>'s keys</b> sorts after numbers,
+                text and booleans, and before a blank, and descending before numbers, text and booleans, as Excel
+                sorts it: <code>=SORT(A1:A2)</code> over <code>#N/A</code> and 7 shows 7 first. Two different Error
+                Values sort as Excel's <code>#DIV/0!</code> before <code>#N/A</code> where the order
+                <code>ERROR.TYPE</code> numbers them in and the order of their texts agree; where they do not, and
+                for two different ones in a descending sort, the Formula is <code>#VALUE!</code> until Excel has
+                been asked. A <code>sort_index</code> that is not a whole number is truncated, as Excel's is:
+                <code>=SORT(G1:H5,1.5)</code> sorts by the first column.
             </li>
             <li>
                 <b>A blank among <code>SORT</code>'s or <code>SORTBY</code>'s keys</b> sorts after numbers, text and
@@ -112,7 +115,7 @@
                 and after a boolean ascending, its <code>SORTBY</code> after a number ascending, and its
                 <code>UNIQUE</code> to count it one of a kind only with another blank, and both <code>SORT</code> and
                 <code>UNIQUE</code> spilled it as 0; the rest is ExSheet's own reading until Excel has been asked.
-                Beside an Error Value key the Formula is <code>#VALUE!</code>.
+                An Error Value key sorts before it.
             </li>
             <li>
                 <b>A blank <code>UNIQUE</code>, <code>SORT</code>, <code>SORTBY</code>, <code>FILTER</code> or
@@ -121,9 +124,12 @@
                 in <code>SORT</code>'s and <code>UNIQUE</code>'s array, to find it blank with <code>ISBLANK</code>
                 once <code>INDEX</code> took it out of <code>SORT</code>'s, and equal to <code>""</code> once taken
                 out of <code>UNIQUE</code>'s; the rest, the other three included, is ExSheet's own reading until
-                Excel has been asked. A function whose readings of it part, such as <code>AVERAGE</code>, <code>MIN</code> or
-                <code>COUNT</code>, makes the Formula <code>#VALUE!</code>, which <code>IFERROR</code> does not catch,
-                so <code>=AVERAGE(FILTER(A2:A9, B2:B9="North"))</code> over a blank is <code>#VALUE!</code>.
+                Excel has been asked. The aggregates pass over it as over a blank cell, as Excel's do:
+                <code>=AVERAGE(FILTER(A2:A9, B2:B9="North"))</code> over a blank averages the numbers alone, and
+                <code>COUNT</code> does not count it. <code>COUNTA</code> counts it even taken out on its own,
+                <code>IF</code> hands it on as it is, and <code>SORT</code> sorts it last as a blank key. A function
+                whose readings of it part, such as <code>LEN</code> or <code>MATCH</code> over the array, makes the
+                Formula <code>#VALUE!</code>, which <code>IFERROR</code> does not catch.
             </li>
             <li>
                 <b><code>#GETTING_DATA</code></b>, a Linked Table's data still on its way, is not an error to
@@ -238,18 +244,17 @@
                 rounded, which ExSheet computes the same on every platform. A negative 1+rate has an odd root, as
                 <code>(-8)^(1/3)</code> does, and no other fractional power (<code>#NUM!</code>); at a rate of -1 no
                 periods is <code>#NUM!</code> and a negative number of periods <code>#DIV/0!</code>, as Excel gave
-                them. <code>PV</code> at a rate of -1 with periods is <code>#VALUE!</code> until Excel has
-                been asked. <code>type</code> is read as a truth value: any number but 0, 0.5 and 2 as well as 1, is
+                them. <code>PV</code> at a rate of -1 with periods is <code>#DIV/0!</code>, as Excel's is.
+                <code>type</code> is read as a truth value: any number but 0, 0.5 and 2 as well as 1, is
                 payment at the start of each period, as Excel reads it. <code>XNPV</code> counts the years as the days
-                over 365 and sums from the first value. A rate below 0 is <code>#NUM!</code>, which is Excel's answer
-                at every negative rate it was asked, -0.5 to -2, and ExSheet's own between -0.5 and 0 until Excel has
-                been asked; a rate of exactly 0, or values whose last addition nearly cancels, are
-                <code>#VALUE!</code> until Excel has been asked. An Error Value in the rate, the values or the dates is
-                that Error Value, but <code>#VALUE!</code> where another check would give another answer (a rate below
-                0 or of 0, counts that differ, a date before the first, or a different Error Value anywhere among
-                them), since the order Excel checks them in has not been observed. A cell of the values or the dates
-                that is not a number, whether text, a truth value or blank, is <code>#VALUE!</code> until Excel has
-                been asked, whatever else is among them.
+                over 365 and sums from the first value, the plain sum even where its last addition nearly cancels, as
+                Excel's is. A rate of 0 or below is <code>#NUM!</code>, as Excel answers. Where more than one thing
+                fails — an Error Value in the rate, the values or the dates, a rate of 0 or below, counts that differ,
+                a date before the first — the answer is Excel's where its observed answers settle the order it checks
+                them in, as a rate that is an Error Value before anything among the values, and <code>#VALUE!</code>
+                where they leave it open, as an Error Value among the dates after one among the values. A cell of the
+                values or the dates that is not a number, whether text, a truth value or blank, is
+                <code>#VALUE!</code> until Excel has been asked, unless a check before it answers.
                 <b><code>PMT</code></b>, where it answers, gives the exact payment, rounded once, at the end of each
                 period and at the start; it reads
                 <code>type</code> as <code>PV</code> and <code>FV</code> do. Excel's own payment can differ from
@@ -258,12 +263,13 @@
                 two of them shows in the 15th significant digit. No evaluation found gives every payment Excel gave,
                 and this is a known limitation of 0.1.0. Where the evaluations Excel's payments leave give different
                 kinds of answer, or answers far apart, <code>PMT</code> is <code>#VALUE!</code> until Excel has been
-                asked: at a rate of -1 or below (there a number of periods that is a fraction whose reciprocal is not
-                odd is <code>#NUM!</code>), where a number it works with would pass a double's range or fall below its
-                normal numbers, as in <code>=PMT(1,1020,1000)</code>, where 1+rate raised lies below
-                2<sup>-52</sup>, with no periods at the start of each period, and where the evaluations would lose more
-                than a few of their last digits, as where the present value grown and the future value nearly cancel
-                (<code>=PMT(0.1,2,1000,-1210)</code>) or a number of periods is tiny at the start of each period.
+                asked: where a number it works with would pass a double's range or fall below its normal numbers,
+                as where 1+rate raised falls below them, in <code>=PMT(-0.99,160,1000,500)</code>, and where the
+                evaluations would lose more than a few of their last digits, as where the present value grown and the
+                future value nearly cancel (<code>=PMT(0.1,2,1000,-1210)</code>) or a number of periods is tiny at the
+                start of each period. A rate of -1 or below, and no periods at the start of each period, are
+                <code>#NUM!</code>, as Excel answers, and <code>=PMT(1,1020,1000)</code> is -1000, as Excel's is,
+                though a number it works with passes a double's range.
                 <b><code>NPV</code></b> is <code>#NAME?</code>, which no Formula catches, as <code>IRR</code>'s is: its last digits differ from
                 Excel's, and no evaluation found gives every result Excel was seen to give.
             </li>
@@ -275,11 +281,6 @@
                 <code>#VALUE!</code>,
                 though Excel answers it: a fraction such as <code># ?/?</code>, or a condition such as
                 <code>[&lt;=9]</code>.
-            </li>
-            <li>
-                <b><code>SORT</code>'s <code>sort_index</code></b> that is not a whole number,
-                <code>=SORT(G1:H5,1.5)</code>, is <code>#VALUE!</code> until Excel has been asked whether it truncates
-                it, rounds it or takes no fraction at all.
             </li>
             <li>
                 <b>A serial below 0</b> under <code>DATEDIF</code>, <code>YEARFRAC</code>, <code>HOUR</code>,

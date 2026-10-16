@@ -85,12 +85,12 @@
     },
     {
       "id": "SORTBY-010",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: an Error Value in a by_array is #VALUE!; the Anchor would be 10 if SORTBY leaves the Error Value key after the 7, as SORT did (SORT-015), #N/A if the by_array's Error Value is the result, as FILTER's include's is",
+      "source": "observed",
+      "description": "An Error Value in a by_array is ordered as SORT orders one, after the 7, and is not the result: the Anchor is 10 (Windows run 18a)",
       "fixture": "lookupData",
       "cells": {"Z1": "7", "Z2": "=NA()", "ZZ1000": "=SORTBY(H1:H2,Z1:Z2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 10}
     },
     {
       "id": "SORTBY-011",

@@ -180,30 +180,30 @@
     },
     {
       "id": "UNIQUE-021",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: AVERAGE over a blank kept in UNIQUE's array is #VALUE!; 7 if it passes over it, 3.5 if it reads it as 0",
+      "source": "observed",
+      "description": "AVERAGE passes over a blank kept in UNIQUE's array, 7, and does not read it as 0, which would give 3.5 (Windows run 18a)",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=AVERAGE(UNIQUE(Q1:Q2))"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 7}
     },
     {
       "id": "UNIQUE-022",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: MIN over a blank kept in UNIQUE's array is #VALUE!; 7 if it passes over it, 0 if it reads it as 0",
+      "source": "observed",
+      "description": "MIN passes over a blank kept in UNIQUE's array, 7, and does not read it as 0 (Windows run 18a)",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=MIN(UNIQUE(Q1:Q2))"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 7}
     },
     {
       "id": "UNIQUE-023",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: COUNTA over UNIQUE of one blank cell, an array of that one blank, is #VALUE!; 1 if it counts it as in a longer array (UNIQUE-017), 0 if as a blank cell's",
+      "source": "observed",
+      "description": "COUNTA counts UNIQUE's array of one blank cell's blank, as in a longer array (UNIQUE-017): 1, not 0 as a blank cell's (Windows run 18a)",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=COUNTA(UNIQUE(Q2))"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": 1}
     },
     {
       "id": "UNIQUE-024",
