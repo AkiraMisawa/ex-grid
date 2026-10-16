@@ -26,7 +26,7 @@ public class FillTests
     public void One_refused_line_refuses_the_fill()
     {
         var sheet = NewSheet();
-        sheet.Enter("A1", "1");
+        sheet.Enter("A1", "x");
         sheet.Enter("B1", "Item 1");
 
         var refusal = Refusal(sheet, "A1:B1", "A2:B3", FillDirection.Down);
@@ -125,6 +125,61 @@ public class FillTests
 
         Assert.Equal("1", sheet.GetDisplay(At("C6")).Text);
         Assert.Equal("1", sheet.GetDisplay(At("C7")).Text);
+    }
+
+    [Fact] // ADR-0050 item 5 (2026-10-14, after run 18a, fill-handle-axis 4): C1:C2 of two numbers dragged right copies each, 1 1 and 5 5
+    public void Adr0050_a_lone_number_per_line_among_numbers_is_copied()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("C1", "1");
+        sheet.Enter("C2", "5");
+
+        Fill(sheet, "C1:C2", "D1:E2", FillDirection.Right);
+
+        Assert.Equal(["1", "1", "5", "5"], new[] { "D1", "E1", "D2", "E2" }.Select(a => sheet.GetDisplay(At(a)).Text));
+    }
+
+    [Theory] // ADR-0050 item 5 (2026-10-14, after run 18a, fill-handle-axis 4): the one number of a source of several cells that holds nothing else goes on by one, C1 1 over an empty C2 right giving 2 3 with row 2 empty; down, up and left by generalisation
+    [InlineData("C1:C2", "D1:E2", FillDirection.Right, "D1", "2", "E1", "3")]
+    [InlineData("C1:D1", "C2:D3", FillDirection.Down, "C2", "2", "C3", "3")]
+    [InlineData("C1:C2", "A1:B2", FillDirection.Left, "B1", "0", "A1", "-1")]
+    public void Adr0050_the_lone_number_of_a_source_of_several_cells_goes_on_by_one(string source, string target, FillDirection direction, string first, string firstText, string second, string secondText)
+    {
+        var sheet = NewSheet();
+        sheet.Enter("C1", "1");
+
+        Fill(sheet, source, target, direction);
+
+        Assert.Equal(firstText, sheet.GetDisplay(At(first)).Text);
+        Assert.Equal(secondText, sheet.GetDisplay(At(second)).Text);
+        foreach (var cell in CellRange.Parse(target).Cells().Where(a => a != At(first) && a != At(second)))
+            Assert.Null(sheet.GetEntry(cell));
+    }
+
+    [Fact] // ADR-0050 item 5 (2026-10-14, after run 18a, fill-handle-axis 5): columns B:C with B1 1 and C1 empty, dragged right to E, give D1 2 and an empty E1: the (number, blank) pattern is extended
+    public void Adr0050_whole_columns_extend_a_lone_number_beside_a_blank()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("B1", "1");
+
+        Fill(sheet, "B:C", "D:E", FillDirection.Right);
+
+        Assert.Equal("2", sheet.GetDisplay(At("D1")).Text);
+        Assert.Null(sheet.GetEntry(At("E1")));
+    }
+
+    [Theory] // ADR-0050 item 5 (2026-10-14, after run 18a): a single number in a line of any other source of several cells, which Excel was not read to copy or continue, is refused, not copied
+    [InlineData("1", "", "3")]
+    [InlineData("1", "a", "")]
+    [InlineData("1", "TRUE", "")]
+    public void Adr0050_a_lone_number_in_an_unread_source_is_refused(string c1, string c2, string c3)
+    {
+        var sheet = NewSheet();
+        sheet.Enter("C1", c1);
+        if (c2 != "") sheet.Enter("C2", c2);
+        if (c3 != "") sheet.Enter("C3", c3);
+
+        Assert.Equal(SheetRefusalReason.FillPatternNotSupported, Refusal(sheet, "C1:C3", "D1:E3", FillDirection.Right)!.Reason);
     }
 
     [Fact] // ADR-0050 item 5: row 3 filled down two rows, as the readings of 2026-10-12 (R5, (4)) observed Excel fill it
@@ -240,8 +295,8 @@ public class FillTests
     public void A_source_columns_format_is_carried_into_its_blank_rows()
     {
         var sheet = NewSheet();
-        sheet.Enter("A1", "1");
-        sheet.Enter("A3", "3");
+        sheet.Enter("A1", "a");
+        sheet.Enter("A3", "c");
         SetFormat(sheet, new CellFormatChange { Bold = true }, "A:A");
 
         Fill(sheet, "A1:A3", "B1:B3", FillDirection.Right);
@@ -254,8 +309,8 @@ public class FillTests
     public void A_target_columns_format_is_written_over_in_blank_rows_too()
     {
         var sheet = NewSheet();
-        sheet.Enter("A1", "1");
-        sheet.Enter("A3", "3");
+        sheet.Enter("A1", "a");
+        sheet.Enter("A3", "c");
         SetFormat(sheet, new CellFormatChange { Bold = true }, "B:B");
 
         Fill(sheet, "A1:A3", "B1:B3", FillDirection.Right);
@@ -269,8 +324,8 @@ public class FillTests
     public void A_target_rows_format_is_written_over_in_blank_columns_too()
     {
         var sheet = NewSheet();
-        sheet.Enter("A1", "1");
-        sheet.Enter("C1", "3");
+        sheet.Enter("A1", "a");
+        sheet.Enter("C1", "c");
         SetFormat(sheet, new CellFormatChange { Bold = true }, "2:2");
 
         Fill(sheet, "A1:C1", "A2:C2", FillDirection.Down);
