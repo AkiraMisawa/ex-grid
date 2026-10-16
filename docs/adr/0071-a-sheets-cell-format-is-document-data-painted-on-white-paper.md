@@ -744,6 +744,21 @@ written. This section says what the run changed, and what it still left to a rea
       cell with lines on two edges, none of them thin (R8's thin top cannot tell Thin from the top's
       line); one cell with the same line on two edges; a range whose edges show one line; and
       several one-cell ranges.
+      *(2026-10-14, after run 18a, `verification/2026-10-14-windows-readings-18a/`, format-cells 1 to 8:
+      asked, and the rule widened to what Excel showed.* Excel opened on Thick over B2 whose own left was
+      thick and over B2 beside C2's thick left, drawn as B2's right (1); on the top's Thick over a thick
+      top and a medium right (2) and over a thick top and bottom (3); on Thick over A2:B2 under A1:B1's
+      thick bottom (4), and over A2 and C2, two ranges, under A1's and C1's (5); and in the line's own
+      colour and style, Thick and red (6 (a)) and Medium Dashed and Automatic (6 (b)). **Format Cells now
+      opens the Style and the Colour on the first outer edge, of the top, the bottom, the left and the
+      right, whose line shows one line along it, over one cell, a range or several ranges, and on Thin
+      and Automatic where none does.** R8's thin top and thick right, opened on Thin, is the top's line
+      too, and R8's A2:B3, whose cells show different lines along each edge, still opens on Thin. That
+      the bottom comes before the left and the right, and the left before the right, no run has read:
+      it is ExSheet's order, by generalisation. Case 8 (A1's bottom thick, then A2's top thin through
+      COM, the tab over A1 on Thin) is the twelfth run's model again: COM's write of A2's top replaced
+      A1's bottom, and a copy saved then records nothing on A1 and a thin top on A2, so there were
+      never two records on that edge.)*
   - Where both cells record a line on an outer edge, the dialog shows the one drawn, the upper or
     left cell's (ticket 102). No run looked.
     *(2026-10-12, the seventeenth Windows run, h10: still not asked. By the twelfth run's model, a
@@ -755,6 +770,10 @@ written. This section says what the run changed, and what it still left to a rea
     thick red right while C2 kept its thin blue left. That is the one run that read two records on
     one edge. The twelfth run's cases 1, 3, 6, 7 and 9 read COM and the pixels, which show the edge
     and not each cell's record. A run asks this by case 12's paste, then Format Cells over C2.)*
+    *(2026-10-14, after run 18a, format-cells 7: asked by case 12's paste. With B2 recording a thick
+    red right and C2 a thin blue left, the saved file holding both, Excel's Border tab over C2 opened
+    with Left pressed, Thick and red, B2's drawn line and not C2's own record, and over B2 with Right
+    pressed, Thick and red. ExSheet shows the drawn line there, as ticket 102 built.)*
 - **Inside over whole rows sets every vertical side, A's left and XFD's right included**, and the
   lines between the rows (case 14). Excel records it as a row format: row 3 holds left, right and
   bottom, and row 4 left, right and top.

@@ -295,6 +295,29 @@ test.describe('on /sheet', () => {
         await expect(edge('Bottom')).toHaveAttribute('aria-pressed', 'false');
     });
 
+    test('SH-45, run 18a format-cells 2: over B2 with a thick top and a medium right the Border tab opens on the top\'s Thick (ADR-0071)', async ({ page }) => {
+        const grid = sheet(page);
+        const edge = (name) => formatCells(grid).getByRole('button', { name, exact: true });
+        // B2's top thick and its right medium, set through Format Cells itself.
+        await openFromMenu(grid, 'B2');
+        await tab(grid, 'Border').click();
+        await choice(grid, 'Thick').check();
+        await edge('Top').click();
+        await choice(grid, 'Medium').check();
+        await edge('Right').click();
+        await formatCells(grid).getByRole('button', { name: 'OK' }).click();
+        await expect(formatCells(grid)).toHaveCount(0);
+
+        // Reopened, it is on Thick, the top's line, as Excel's was; before run 18a it opened on Thin.
+        await openFromMenu(grid, 'B2');
+        await expect(tab(grid, 'Border')).toHaveAttribute('aria-selected', 'true');
+        await expect(choice(grid, 'Thick')).toBeChecked();
+        await expect(edge('Top')).toHaveAttribute('aria-pressed', 'true');
+        await expect(edge('Right')).toHaveAttribute('aria-pressed', 'true');
+        await formatCells(grid).getByRole('button', { name: 'Cancel' }).click();
+        await expect(formatCells(grid)).toHaveCount(0);
+    });
+
     // Decided with the user on 2026-10-12 (ADR-0071): Format Cells' OK widens a column over ####
     // for any part of the Font it sets, as Excel's Font tab widened column A for Bold in the
     // seventeenth Windows run's h7, where Ctrl+B does not; its Fill tab widens nothing.

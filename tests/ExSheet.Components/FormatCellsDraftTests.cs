@@ -327,28 +327,53 @@ public class FormatCellsDraftTests
         Assert.Equal((BorderLineStyle.Thin, CellColour.Automatic), PenOf(draft));
     }
 
-    [Theory] // ADR-0071 / SH-45 (a reading, asked next Windows run): B2 with a thick top and a medium right, two edges showing lines and none thin, opens on Thin, as ExSheet opens wherever more than one edge shows a line; so do several one-cell ranges, though each shows one line
+    [Theory] // ADR-0071 / SH-45 (2026-10-14, after run 18a, format-cells 2, 4 and 5, observed in Excel): B2 with a thick top and a medium right opens on the top's Thick; A2:B2 under A1:B1's thick bottom, and A2 and C2 under A1's and C1's, open on the Thick their top shows
     [InlineData("B2", "B2")]
+    [InlineData("A2", "A2:B2")]
     [InlineData("A2", "A2,C2")]
-    public void Several_lines_shown_open_the_tab_on_thin_a_reading(string focus, string ranges)
+    public void The_tab_opens_on_the_tops_line_over_a_cell_a_range_and_several_ranges_run_18a(string focus, string ranges)
     {
         var draft = Open(sheet =>
         {
             Format(sheet, "B2", new CellFormatChange { Borders = new BorderChange { Top = Thick, Right = new BorderLine(BorderLineStyle.Medium) } });
             Format(sheet, "A1", new CellFormatChange { Borders = new BorderChange { Bottom = Thick } });
+            Format(sheet, "B1", new CellFormatChange { Borders = new BorderChange { Bottom = Thick } });
             Format(sheet, "C1", new CellFormatChange { Borders = new BorderChange { Bottom = Thick } });
         }, focus, ranges.Split(','));
 
-        Assert.Equal((BorderLineStyle.Thin, CellColour.Automatic), PenOf(draft));
+        Assert.Equal((BorderLineStyle.Thick, CellColour.Automatic), PenOf(draft));
     }
 
-    [Theory] // ADR-0071 / SH-45 (a reading, asked next Windows run): one line shown where Excel was not seen to open on it, on a left or a right edge, in a style other than Thick or Thin, or in a colour other than Automatic or black, opens the tab on that line, as the top and bottom lines Excel was seen to open on did (run 17 h10, case 14-13)
+    [Fact] // ADR-0071 / SH-45 (2026-10-14, after run 18a, format-cells 3, observed in Excel): B2 with a thick top and a thick bottom opens on Thick
+    public void A_thick_top_and_bottom_open_the_tab_on_thick_run_18a()
+    {
+        var draft = Open(sheet => Format(sheet, "B2", new CellFormatChange { Borders = new BorderChange { Top = Thick, Bottom = Thick } }), "B2", "B2");
+
+        Assert.Equal((BorderLineStyle.Thick, CellColour.Automatic), PenOf(draft));
+    }
+
+    [Theory] // ADR-0071 / SH-45, ticket 102 (2026-10-14, after run 18a, format-cells 7, observed in Excel): B2's thick red right over C2's own thin blue left opens the tab on the drawn line, Thick and red, over C2 and over B2
+    [InlineData("C2")]
+    [InlineData("B2")]
+    public void The_tab_opens_on_the_drawn_line_not_the_cells_own_ticket_102_run_18a(string cell)
+    {
+        var thickRed = new BorderLine(BorderLineStyle.Thick, Red);
+        var draft = Open(sheet =>
+        {
+            Format(sheet, "C2", new CellFormatChange { Borders = new BorderChange { Left = new BorderLine(BorderLineStyle.Thin, CellColour.FromRgb(0x0000FF)) } });
+            Format(sheet, "B2", new CellFormatChange { Borders = new BorderChange { Right = thickRed } });
+        }, cell, cell);
+
+        Assert.Equal((BorderLineStyle.Thick, Red), PenOf(draft));
+    }
+
+    [Theory] // ADR-0071 / SH-45 (2026-10-14, after run 18a, format-cells 1 and 6, observed in Excel): one line shown on a left or a right edge, a neighbour's as drawn included, in Medium Dashed, or in red, opens the tab on that line
     [InlineData("B2's left thick", "B2")]
     [InlineData("B2's right thick", "B2")]
     [InlineData("C2's left thick, shown as B2's right", "B2")]
     [InlineData("A1's bottom medium dashed", "A2")]
     [InlineData("A1's bottom thick red", "A2")]
-    public void One_line_excel_was_not_seen_to_open_on_opens_the_tab_on_it_a_reading(string line, string cell)
+    public void One_line_on_any_edge_in_any_style_opens_the_tab_on_it_run_18a(string line, string cell)
     {
         var mediumDashed = new BorderLine(BorderLineStyle.MediumDashed);
         var thickRed = new BorderLine(BorderLineStyle.Thick, Red);
