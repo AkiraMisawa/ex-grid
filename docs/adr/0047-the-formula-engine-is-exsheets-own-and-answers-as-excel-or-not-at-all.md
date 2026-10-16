@@ -702,7 +702,14 @@ The rows of the function catalogue that still waited on a decision were put to t
   model the other widths: that only the hardware's formats are natural intermediates is a judgment, which
   no observed answer settles, and on it the engine answers 65,972 of those inputs (3.4%) where one of the
   31 gives another double, about 2% at 54 bits; MOD-039 and MOD-040 ask two.)* *(2026-10-13: the
-  judgment is accepted, and the engine models the widths of 53 and 64 bits alone.)*
+  judgment is accepted, and the engine models the widths of 53 and 64 bits alone.)* *(2026-10-14, after run 18a:
+  **`MOD` refuses nothing.** Excel's `MOD(-1E-17,1)` is 0, `MOD(-0.084474,2270)` 2269.915526,
+  `MOD(-0.008511,81200)` 81199.99148900001 and `MOD(0.071472,-276)` -275.92852800000003 (MOD-033 to 036): of the
+  three evaluations at 64 bits, the sum rounded to nearest in the register, stored as a double and taken as 0 where
+  that double is the divisor (`B9`), alone gives all four, and the engine computes it everywhere. MOD-039 and 040
+  agree with it, where the widths no hardware holds give another double. MOD-039 was reported as a disagreement
+  only because the oracle read the corpus's decimal through .NET Framework's `Double.Parse`, which is not correctly
+  rounded beside a midpoint; `oracle.ps1` now rounds the decimal once, as the engine's tests do.)*
 - **`ERROR.TYPE` gives `#GETTING_DATA` and `#CIRC!` back**, as `IFNA` and `ISBLANK` do (above), and
   never a number for them.
   - Microsoft's table numbers `#GETTING_DATA` 8. Answering 8 would let a Formula show a number
@@ -920,3 +927,12 @@ follow Excel's answers** (`verification/2026-10-12-windows-area/` and `-area-2/`
   (YEARFRAC-054), so neither observation answers the other argument: a boolean typed as `EOMONTH`'s start or as
   `EDATE`'s months stays `#VALUE!` until Excel is asked (EOMONTH-018, EDATE-023). `NETWORKDAYS` and `WORKDAY` still
   refuse a boolean typed as a date with `#VALUE!`; NETWORKDAYS-010 and WORKDAY-011 ask it.
+
+*(2026-10-14, after run 18a: **the date and time refusals above are answered.** Excel gives `#NUM!` at -0.5 under
+`DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` (DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003):
+it does not truncate the serial to 0, and the five give `#NUM!` for any serial below 0, between -1 and 0 by
+generalisation. `EDATE(0,0)` is 0, `EDATE(0,2)` 60 and `EDATE(0,97200)` `#NUM!` (EDATE-019, 018, 020): of the six
+readings, the one by `DATE`'s arithmetic alone gives all three, and `EDATE` from serial 0 takes it. A boolean is
+`#VALUE!` as `EOMONTH`'s start, as `EDATE`'s months and as a date of `NETWORKDAYS` and `WORKDAY` (EOMONTH-018,
+EDATE-023, NETWORKDAYS-010, WORKDAY-011), and NETWORKDAYS's end, read as its start is, by generalisation. These are
+Error Values a Formula catches, Excel's, and no longer refusals.)*

@@ -60,6 +60,10 @@ MONTHS_AWAY = [  # (case, function, start, months, Excel's answer)
     ("EDATE-010", "EDATE", 60, 1, 89), ("EDATE-011", "EDATE", 31, 1, 59), ("EDATE-012", "EDATE", 15, -1, NUM),
     ("EDATE-013", "EDATE", 60, 0, 59), ("EDATE-014", "EDATE", 60, 12, 425), ("EDATE-015", "EDATE", 60, -1, 29),
     ("EDATE-016", "EDATE", 0, 1, 31), ("EDATE-017", "EDATE", -0.5, 1, NUM),
+    # Windows run 18a (2026-10-14) answered the three where the six readings that fit the cases above part,
+    # and two on which they agree.
+    ("EDATE-018", "EDATE", 0, 2, 60), ("EDATE-019", "EDATE", 0, 0, 0), ("EDATE-020", "EDATE", 0, 97200, NUM),
+    ("EDATE-021", "EDATE", 0, 3, 91), ("EDATE-022", "EDATE", 0.5, 12, 366),
     ("EOMONTH-001", "EOMONTH", D(2011, 1, 1), 1, 40602), ("EOMONTH-002", "EOMONTH", D(2011, 1, 1), -3, 40482),
     ("EOMONTH-003", "EOMONTH", D(2011, 1, 1), 1.9, 40602), ("EOMONTH-004", "EOMONTH", -1, 0, NUM),
     ("EOMONTH-005", "EOMONTH", D(9999, 12, 1), 1, NUM), ("EOMONTH-006", "EOMONTH", D(2024, 1, 31), 1, 45351),
@@ -69,7 +73,8 @@ MONTHS_AWAY = [  # (case, function, start, months, Excel's answer)
     ("EOMONTH-014", "EOMONTH", 0, 0, 31), ("EOMONTH-015", "EOMONTH", 0, -1, NUM),
     ("EOMONTH-016", "EOMONTH", -0.5, 0, NUM), ("EOMONTH-017", "EOMONTH", -0.5, 1, NUM),
 ]
-# EDATE-009 and EOMONTH-009 (a boolean typed, #VALUE!) are no question of reading and are left out.
+# EDATE-009, EDATE-023, EOMONTH-009 and EOMONTH-018 (a boolean typed, #VALUE!) are no question of reading and
+# are left out.
 
 DATE_PARTS = [  # (case, the serial, the answer if the serial is whole and 0 or more, Excel's answer)
     ("YEAR-005", -1, None, NUM), ("YEAR-008", -0.5, 1900, NUM), ("YEAR-003", 0, 1900, 1900),

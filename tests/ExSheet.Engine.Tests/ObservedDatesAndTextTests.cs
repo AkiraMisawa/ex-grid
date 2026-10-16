@@ -74,15 +74,46 @@ public class ObservedDatesAndTextTests
     public void Adr0047_EDate_from_serial_0_before_1900_or_past_9999_is_NUM(string formula) =>
         Assert.Equal(Error(ErrorValue.Num), NewSheet().Evaluate(formula));
 
-    [Theory] // ADR-0047, ADR-0202: the readings that give every observed answer part at January 1900, March 1900 and January 10000; refused until Excel is asked (EDATE-018 to 020)
-    [InlineData("=EDATE(0,0)")]
-    [InlineData("=EDATE(0,2)")]
+    [Theory] // ADR-0047 (2026-10-14, after run 18a): EDATE-018 to 020, observed; day 0 is the day before the 1st by DATE's arithmetic, at January 1900, March 1900 and January 10000 too
+    [InlineData("=EDATE(0,0)", 0)]
+    [InlineData("=EDATE(0,2)", 60)]
+    [InlineData("=EDATE(0.5,2)", 60)]
+    [InlineData("=EDATE(0.9,0)", 0)]
+    [InlineData("=EDATE(0,24)", 731)]
+    public void Adr0047_EDate_from_serial_0_counts_day_0_by_DATEs_arithmetic_at_every_edge(string formula, double serial)
+    {
+        var value = NewSheet().Evaluate(formula);
+        Assert.Equal(Number(serial), value);
+        Assert.False(value.IsRefused, formula);
+    }
+
+    [Theory] // ADR-0047 (2026-10-14, after run 18a): EDATE-020, observed; January 10000 is past the last year, not the month before's last day
     [InlineData("=EDATE(0,97200)")]
-    [InlineData("=EDATE(0.5,2)")]
-    [InlineData("=EDATE(0.9,0)")]
     [InlineData("=EDATE(0.25,97200)")]
-    public void Adr0047_EDate_from_serial_0_is_refused_where_the_readings_that_fit_part(string formula) =>
-        Assert.Equal(Error(ErrorValue.Value), NewSheet().Evaluate(formula));
+    public void Adr0047_EDate_from_serial_0_to_January_10000_is_NUM(string formula)
+    {
+        var value = NewSheet().Evaluate(formula);
+        Assert.Equal(Error(ErrorValue.Num), value);
+        Assert.False(value.IsRefused, formula);
+    }
+
+    [Theory] // ADR-0047 (2026-10-14, after run 18a): a boolean typed into EOMONTH, EDATE, NETWORKDAYS or WORKDAY as a date or as the months is #VALUE!, an Error Value a Formula catches (EOMONTH-009 and 018, EDATE-009 and 023, NETWORKDAYS-010, WORKDAY-011)
+    [InlineData("EOMONTH(TRUE,1)")]
+    [InlineData("EOMONTH(45000,TRUE)")]
+    [InlineData("EDATE(TRUE,1)")]
+    [InlineData("EDATE(45000,TRUE)")]
+    [InlineData("EDATE(45000,FALSE)")]
+    [InlineData("NETWORKDAYS(TRUE,6)")]
+    [InlineData("NETWORKDAYS(1,TRUE)")]
+    [InlineData("WORKDAY(TRUE,1)")]
+    public void Adr0047_A_boolean_typed_into_the_month_and_workday_functions_is_a_catchable_VALUE(string call)
+    {
+        var sheet = NewSheet();
+        var value = sheet.Evaluate("=" + call);
+        Assert.Equal(Error(ErrorValue.Value), value);
+        Assert.False(value.IsRefused, call);
+        Assert.Equal(Number(0), sheet.Evaluate($"=IFERROR({call},0)"));
+    }
 
     [Fact] // ADR-0047: EOMONTH from serial 0 is not refused where EDATE's readings part; it reads no day
     public void Adr0047_EOMonth_from_serial_0_answers_where_EDates_readings_part()
@@ -119,10 +150,9 @@ public class ObservedDatesAndTextTests
             Assert.Equal(Error(ErrorValue.Num), sheet.Evaluate(formula));
     }
 
-    // ADR-0047 (2026-10-13): DATEDIF, YEARFRAC, HOUR, MINUTE and SECOND refuse a serial between -1 and 0 until Excel is
-    // asked (DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003), where the readings part: cut down to -1 it is
-    // #NUM!, truncated to 0 a date or a time of day. -1 is #NUM!, as Excel's was under three (DATEDIF-045, YEARFRAC-056,
-    // MINUTE-002), and below it #NUM! by generalisation.
+    // ADR-0047 (2026-10-14, after run 18a): DATEDIF, YEARFRAC, HOUR, MINUTE and SECOND give #NUM! for a serial between -1
+    // and 0, as Excel was observed to at -0.5 (DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003): not truncated
+    // to 0, a date or a time of day. Elsewhere between -1 and 0, by generalisation; an Error Value a Formula catches.
     [Theory]
     [InlineData("=DATEDIF(-0.5,1,\"D\")")]
     [InlineData("=DATEDIF(1,-0.5,\"D\")")]
@@ -132,9 +162,17 @@ public class ObservedDatesAndTextTests
     [InlineData("=HOUR(-0.5)")]
     [InlineData("=MINUTE(-0.5)")]
     [InlineData("=SECOND(-0.5)")]
-    [InlineData("=IFERROR(HOUR(-0.5),0)")]
-    public void Adr0047_DateDif_YearFrac_and_the_time_parts_refuse_a_serial_between_minus_1_and_0(string formula) =>
-        Assert.True(NewSheet().Evaluate(formula) is { IsRefused: true }, formula);
+    [InlineData("=SECOND(-0.0001)")]
+    public void Adr0047_DateDif_YearFrac_and_the_time_parts_give_NUM_for_a_serial_between_minus_1_and_0(string formula)
+    {
+        var value = NewSheet().Evaluate(formula);
+        Assert.Equal(Error(ErrorValue.Num), value);
+        Assert.False(value.IsRefused, formula);
+    }
+
+    [Fact] // ADR-0047 (2026-10-14, after run 18a): HOUR-005's #NUM! is Excel's, so IFERROR catches it
+    public void Adr0047_IfError_catches_the_time_parts_NUM_between_minus_1_and_0() =>
+        Assert.Equal(Number(0), NewSheet().Evaluate("=IFERROR(HOUR(-0.5),0)"));
 
     [Theory] // ADR-0047: -1 is #NUM! (DATEDIF-045, YEARFRAC-056, MINUTE-002, observed), and below it by generalisation
     [InlineData("=DATEDIF(-1,61,\"D\")")]

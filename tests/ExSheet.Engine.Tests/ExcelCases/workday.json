@@ -89,8 +89,8 @@
     },
     {
       "id": "WORKDAY-011",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked: a boolean typed as a date, which EDATE answers with #VALUE! (EDATE-009); read as 1, serial 1 is a Sunday and a workday on is Monday, serial 2",
+      "source": "observed",
+      "description": "A boolean typed as a date is #VALUE!, an Error Value a Formula catches, as EDATE's and EOMONTH's are (EDATE-009, EOMONTH-018); it is not read as 1, which would give serial 2 (Windows run 18a)",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=WORKDAY(TRUE,1)"},
       "check": "ZZ1000",

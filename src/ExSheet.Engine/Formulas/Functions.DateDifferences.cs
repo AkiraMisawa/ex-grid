@@ -98,10 +98,9 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// Dates accept numeric text and date text under the Sheet's culture, and discard the time. A serial
-    /// below 0 is <c>#NUM!</c>, but one between -1 and 0, which is refused (<see cref="Evaluator.Refuse"/>)
-    /// until Excel is asked (DATEDIF-048, YEARFRAC-058; 2026-10-13): cut down to 0 it is a date, and below 0
-    /// <c>#NUM!</c>, and no run has read which Excel takes. -1 and below stay <c>#NUM!</c>, as Excel's was
-    /// at -1.
+    /// below 0 is <c>#NUM!</c>, as Excel was observed to answer at -1 (DATEDIF-045, YEARFRAC-056) and at
+    /// -0.5, which it does not truncate to serial 0 (DATEDIF-048, YEARFRAC-058, run 18a); elsewhere below 0
+    /// it is the engine's answer, by generalisation.
     /// </summary>
     private static bool TryDifferenceDate(FunctionCall call, int index, bool allowBoolean, out int serial, out Operand failure)
     {
@@ -113,11 +112,6 @@ internal static partial class FunctionLibrary
             return false;
         }
         if (!TryNumber(call, index, out var number, out failure)) return false;
-        if (number < 0 && number > -1)
-        {
-            failure = call.Evaluator.Refuse();
-            return false;
-        }
         if (number < 0 || Math.Truncate(number) > DateSerial.Maximum)
         {
             failure = Operand.Of(ErrorValue.Num);

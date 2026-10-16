@@ -911,11 +911,11 @@
     },
     {
       "id": "YEARFRAC-058",
-      "source": "uncertain",
-      "description": "Refused until Excel is asked (2026-10-13): a serial between -1 and 0 under YEARFRAC, where the readings part. The nine functions the second area pass of 2026-10-12 asked gave #NUM! at -0.5 (YEAR-008 and its kin), Excel was observed to answer #NUM! at -1 under DATEDIF, YEARFRAC and MINUTE (DATEDIF-045, YEARFRAC-056, MINUTE-002), and between -1 and 0 no run has read it: truncated to serial 0, it is a number",
+      "source": "observed",
+      "description": "A serial between -1 and 0 is #NUM!, as -1 is (YEARFRAC-056), and as the nine functions the second area pass of 2026-10-12 asked answered at -0.5 (YEAR-008 and its kin); it is not truncated to serial 0, which would give a number (Windows run 18a)",
       "cells": {"Z1": "=YEARFRAC(-0.5,1)"},
       "check": "Z1",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#NUM!"}
     }
   ]
 }

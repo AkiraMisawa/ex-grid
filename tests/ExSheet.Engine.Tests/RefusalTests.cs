@@ -43,7 +43,6 @@ public class RefusalTests
     [
         "LEN(A1:A2)",                       // a range where one Value is wanted (ADR-0125)
         "MATCH(2,SORT(D1:D3),0)",           // a kept blank read where no run settled how (ADR-0125)
-        "MOD(-1E-17,1)",                    // MOD's evaluations part (MOD-033)
         "MROUND(6.05,0.1)",                 // a fractional multiple (MROUND-001)
         "CEILING.MATH(0.3,0.1)",            // a quotient integral at 15 digits only
         "RANDBETWEEN(1.1,1.9)",             // a fractional bound (ADR-0180)
@@ -52,9 +51,8 @@ public class RefusalTests
         "SEARCH(\"\U00010428\",\"a\U00010428\")", // the same, searched
         "TEXT(4.34,\"# ?/?\")",             // a code outside the cell formats' subset (TEXTFN-019)
         "DATEDIF(1,40,\"MD\")",             // DATEDIF's MD
-        "EDATE(45000,TRUE)",                // a boolean as EDATE's months (EDATE-023)
-        "EDATE(0,0)",                       // EDATE from serial 0 to January 1900 (EDATE-019)
-        "WORKDAY(TRUE,1)",                  // a boolean typed as a date (WORKDAY-011)
+        "DATEDIF(1,400,\"YD\")",            // DATEDIF's YD after a completed anniversary
+        "WORKDAY(1,1,TRUE)",                // a boolean typed among the holidays
         "PMT(0.1,2,1000,-1210)",            // PMT's readings magnify their roundings (PMT-049)
         "PV(-1,10,-100)",                   // PV at a rate of -1 (PV-013)
         "XNPV(0,J1:J2,K1:K2)",              // XNPV at a rate of 0 (XNPV-019)

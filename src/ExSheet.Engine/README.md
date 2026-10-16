@@ -271,11 +271,7 @@ could depend on a Value, nothing spills (ADR-0125, 2026-10-13). The refusals:
   empty code shows a number as empty text, as Excel's do. A code outside the cell formats' subset is
   `#VALUE!`, a fraction or a condition among them, though Excel answers both.
 - **Asked of Excel before they are answered**, each refused until the next Windows run says what
-  Excel gives: `EDATE` from serial 0 to January 1900, March 1900 or January 10000, where the readings
-  that give Excel's other answers part, `EOMONTH` with a boolean typed as its start, and `EDATE` with
-  one typed as its months (`#VALUE!`); `NETWORKDAYS` and `WORKDAY` with a boolean typed as a date
-  (`#VALUE!`); `MOD` where the evaluations at 64 bits that give every answer Excel gave part, as at
-  `MOD(-1E-17,1)` and `MOD(-0.084474,2270)` (`#VALUE!`; MOD-033 to 036); `PV` at a rate of -1 with an
+  Excel gives: `PV` at a rate of -1 with an
   `nper` above 0; `PMT` at a rate of -1 with periods, below -1 with a whole `nper` or a fraction whose
   reciprocal is odd, where a quantity the evaluations Excel's payments leave compute passes a double's
   range or falls below its normal numbers, at a growth below 2^-52, with no periods at the start, and
@@ -283,10 +279,22 @@ could depend on a Value, nothing spills (ADR-0125, 2026-10-13). The refusals:
   `nper` past 2^53 at a rate other than 0; and `XNPV` at a rate of 0, where its last addition nearly
   cancels, and where an Error Value in its rate or ranges fails beside another check that gives
   another answer (`#VALUE!`); `SORT` and `SORTBY` with two different Error Value keys whose readings
-  part, or in a descending sort (`#VALUE!`); `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` with a serial between -1 and 0
-  (`#VALUE!`; DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003); a blank `UNIQUE`, `SORT`, `SORTBY`, `FILTER` or `TRANSPOSE` keeps, read
+  part, or in a descending sort (`#VALUE!`); a blank `UNIQUE`, `SORT`, `SORTBY`, `FILTER` or `TRANSPOSE` keeps, read
   by a function whose readings of it part, such as `MATCH`'s lookup array or `LEN` (`#VALUE!`). Each of
   these refusals is the Formula's, and every Formula's that reads its cell: no Formula catches it.
+- **Answered as Windows run 18a read Excel** (2026-10-14). `EDATE` from serial 0 counts day 0 by
+  `DATE`'s arithmetic at every edge: `EDATE(0,0)` is 0, `EDATE(0,2)` the day that never existed, 60,
+  and `EDATE(0,97200)`, January 10000, `#NUM!`. A boolean typed into either argument of `EOMONTH` or
+  `EDATE`, or as a date of `NETWORKDAYS` or `WORKDAY`, is `#VALUE!`, an Error Value a Formula catches.
+  `DATEDIF`, `YEARFRAC`, `HOUR`, `MINUTE` and `SECOND` give `#NUM!` for a serial between -1 and 0, as
+  Excel does at -0.5: it is not cut down to serial 0. `MOD` refuses nothing: of the evaluations at 64
+  bits that gave Excel's answers before, one gives every answer it has given since (MOD-033 to 036),
+  the divisor added in an x87 register rounded to nearest and the sum stored as a double, 0 where that
+  double is the divisor itself. In R1C1 text, a cell joined to a whole column is the cell's row across
+  the columns they span (`R2C2:C3` is B2:C2), and a whole row joined to a cell the rows they span down
+  the cell's column (`R3:R2C2` is B2:B3); Excel's sums do not tell these extents from the whole rows,
+  and INDIRECT-101 to 103 ask them. A whole column joined to a cell (`C3:R2C2`) is `#VALUE!` until a
+  run observes it, since its readings part.
 - **Answered as the seventeenth Windows run read Excel.** `MOD` answers a quotient of 2^27 or more, and
   is `#NUM!` from 1,125,900,000,000, the limit a Microsoft 365 user reported, as the area pass of
   2026-10-12 read Excel on both sides of it (MOD-010 to 016). `LARGE`, and `AGGREGATE`'s 14, round a
@@ -303,11 +311,10 @@ could depend on a Value, nothing spills (ADR-0125, 2026-10-13). The refusals:
   0.09999999999999995, where `number - divisor*INT(number/divisor)` in doubles gives 0.5000152587890625
   and 0. Where the divisor is added to a remainder of the other sign, the sum is held at 64 bits before
   it is stored as a double, which gives Excel's `MOD(-0.087626,6630)`, 6629.9123739999995, and a sum
-  stored as the divisor itself is 0, as Excel's `MOD(-1E-20,1)` is. Where the evaluations at 64 bits
-  that give every answer Excel gave still part, `MOD` is `#VALUE!` (above). The same evaluations with the
-  sum held at a width no hardware holds (54 to 63 bits rounded, 54 to 65 truncated) give those answers
-  too; the engine does not model them, and answers as 64 bits do where they would give another last
-  digit, about 3 inputs of up to five digits in 100, a judgment Excel has yet to settle (MOD-039, 040).
+  stored as the divisor itself is 0, as Excel's `MOD(-1E-20,1)` is. Run 18a settled the evaluation
+  (below). The same evaluations with the sum held at a width no hardware holds (54 to 63 bits rounded,
+  54 to 65 truncated) would give another last digit than Excel's at `MOD(-0.024901,2350)` and
+  `MOD(-0.006664,5250)` (MOD-039, 040), and the engine does not model them.
 - **`PV`, `FV` and `XNPV` give every double and Error Value Excel was observed to give, to the bit**
   (ADR-0047, the seventeenth run and the area passes of 2026-10-12). `PV` and `FV`
   evaluate Microsoft's identity in doubles, the payment times (1+rate·type)·((g−1)/rate), with g the
@@ -383,8 +390,9 @@ could depend on a Value, nothing spills (ADR-0125, 2026-10-13). The refusals:
   `Table[Column]` typed is, waiting while the table waits, whatever `a1` says; and `#REF!` for text
   that names no place: another Sheet's name in A1 style, a column past `XFD`, A1 text read as R1C1 and
   R1C1 text read as A1, an intersection, a table never declared, a column it lacks, and R1C1 parts of
-  two kinds joined (`R2C2:R3`, `R3:C2`). Forms no run has asked — the other combinations of a number,
-  an offset and none, the other orders of parts of two kinds joined, `#` after a relative cell,
+  two kinds joined (`R2C2:R3`, `R3:C2`, `C2:R3`), but for a cell joined to a whole column and a whole
+  row joined to a cell, which name places (above). Forms no run has asked — the other combinations of a number,
+  an offset and none, `#` after a relative cell,
   another Sheet's name in R1C1 style — are read by the rule those answers settle, and put to the next
   run. `#REF!` too by that rule, though no case asks it: other A1 text that goes on past its
   Reference (the engine's rule, generalised from the intersection), a row past 1048576 in A1 style, as

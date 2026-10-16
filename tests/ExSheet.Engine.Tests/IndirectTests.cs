@@ -326,7 +326,7 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Value, sheet.Error("C2"));
     }
 
-    [Theory] // ADR-0124 (2026-10-10, 2026-10-12), ADR-0046: R1C1 text that names no place is #REF!: A1 text read as R1C1 (INDIRECT-035, observed) and, by that rule, other text that is not R1C1 notation, which no case asks; parts of two kinds joined (INDIRECT-058, 062, observed; 075 to 077 ask the other orders), whatever their parts would read; a # after one cell that does not spill (as A1#'s INDIRECT-042; 079 asks it); a table never declared; and another Sheet's name, by the rule INDIRECT-008 observed in A1 style (093 asks it), whatever follows it, since every reading of the rest names a place on a Sheet that is not there
+    [Theory] // ADR-0124 (2026-10-10, 2026-10-12, 2026-10-14), ADR-0046: R1C1 text that names no place is #REF!: A1 text read as R1C1 (INDIRECT-035, observed) and, by that rule, other text that is not R1C1 notation, which no case asks (two joins, INDIRECT-105, asked); a cell joined to a whole row, and a whole row and a whole column joined in either order (INDIRECT-058, 062, 077, observed), whatever their parts would read; a # after one cell that does not spill (as A1#'s INDIRECT-042; 079 observed); a table never declared; and another Sheet's name, as INDIRECT-008 observed in A1 style (093 observed in R1C1 style), whatever follows it, since every reading of the rest names a place on a Sheet that is not there
     [InlineData("B3")]
     [InlineData("Sheet2!R3")]
     [InlineData("Sheet2!C2")]
@@ -346,15 +346,13 @@ public class IndirectTests
     [InlineData("no place")]
     [InlineData("R2C2:R3")]
     [InlineData("R3C2:R5")]
-    [InlineData("R3:R5C2")]
     [InlineData("R3:C2")]
     [InlineData("C2:R3")]
-    [InlineData("R2C2:C3")]
-    [InlineData("C2:RC")]
+    [InlineData("C[-1]:R3")]
+    [InlineData("R2:R3C2:C3")]
+    [InlineData("R2C2:C3:C4")]
     [InlineData("RC[-1]:R")]
-    [InlineData("Sheet1!R3C2:C2")]
     [InlineData("R0C2:R3")]
-    [InlineData("R[-5]C[-1]:C2")]
     [InlineData("R1048577C2:R3")]
     [InlineData("R3C2#")]
     [InlineData("Sheet2!R1C1#")]
@@ -524,6 +522,44 @@ public class IndirectTests
         Assert.Equal(expected, sheet.Number(cell), 9);
     }
 
+    [Theory] // ADR-0124 (2026-10-14, after run 18a: INDIRECT-075, 076; 101 to 103 ask the extent): a cell joined to a whole column is the cell's row across the columns they span, and a whole row joined to a cell the rows they span down the cell's column, with the parts read as alone, numbers, offsets or none
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"R2C2:C3\",FALSE))", 1.333)]
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"R3:R2C2\",FALSE))", 46.333)]
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"R3:R5C2\",FALSE))", 117)]
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"R5:R3C2\",FALSE))", 117)]
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"R3C2:C1\",FALSE))", 45)]
+    [InlineData("ZZ1000", "=COLUMNS(INDIRECT(\"R2C2:C3\",FALSE))", 2)]
+    [InlineData("ZZ1000", "=ROWS(INDIRECT(\"R2C2:C3\",FALSE))", 1)]
+    [InlineData("ZZ1000", "=COLUMNS(INDIRECT(\"R3:R2C2\",FALSE))", 1)]
+    [InlineData("ZZ1000", "=ROWS(INDIRECT(\"R3:R2C2\",FALSE))", 2)]
+    [InlineData("ZZ1000", "=SUM(INDIRECT(\"Sheet1!R3C2:C2\",FALSE))", 45)]
+    [InlineData("E2", "=SUM(INDIRECT(\"RC[-3]:C[-2]\",FALSE))", 1.333)]
+    [InlineData("C2", "=SUM(INDIRECT(\"R[3]:RC[-1]\",FALSE))", 118.333)]
+    [InlineData("C3", "=SUM(INDIRECT(\"R:R[-1]C[-1]\",FALSE))", 46.333)]
+    [InlineData("C2", "=SUM(INDIRECT(\"r[1]c[-1]:c4\",FALSE))", 45)]
+    public void ADR0124_indirect_reads_a_cell_joined_to_a_column_and_a_row_joined_to_a_cell(string cell, string formula, double expected)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter(cell, formula);
+
+        Assert.Equal(expected, sheet.Number(cell), 9);
+    }
+
+    [Theory] // ADR-0124 (2026-10-14, after run 18a; INDIRECT-104 asks it): a whole column joined to a cell is refused with #VALUE!, whose readings part: the column part taking the cell's row, as a whole row joined to a cell takes its column, or no place, as a cell joined to a whole row is
+    [InlineData("C2", "C3:R2C2")]
+    [InlineData("C2", "C2:RC")]
+    [InlineData("C2", "C[-1]:R[1]C[1]")]
+    [InlineData("C2", "c1:r3c2")]
+    [InlineData("ZZ1000", "Sheet1!C2:R3C3")]
+    [InlineData("C2", "C3:R1048577C2")]
+    public void ADR0124_indirect_refuses_a_whole_column_joined_to_a_cell(string cell, string text)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter(cell, $"=INDIRECT(\"{text}\",FALSE)");
+
+        Assert.True(sheet.Value(cell) is { IsRefused: true, Error: ErrorValue.Value }, text);
+    }
+
     [Theory] // ADR-0124, ADR-0047 (2026-10-12, decided with the user: in R1C1 style, a row or column number past the Sheet's edge is refused with #VALUE! until Excel is asked; INDIRECT-074 asks it), INDIRECT-095 asking a column: it could name no place, as XFE1 does in A1 style, or a place, as an offset past the edge does (INDIRECT-052), and is refused whatever an offset beside it, a join or a # after it would read
     [InlineData("C2", "R1048577C2")]
     [InlineData("C2", "R2C16385")]
@@ -582,6 +618,8 @@ public class IndirectTests
     [InlineData("C2", "C[-3]")]
     [InlineData("C2", "R[-1]:R[-2]")]
     [InlineData("C2", "R[-5]C[-1]:R3C2")]
+    [InlineData("C2", "R[-5]C[-1]:C2")]
+    [InlineData("C2", "R[-2]:R2C2")]
     [InlineData("C2", "Sheet1!R[-5]C[-1]")]
     [InlineData("C2", "R[9999999999]C[-1]")]
     [InlineData("C2", "RC[-3]")]
