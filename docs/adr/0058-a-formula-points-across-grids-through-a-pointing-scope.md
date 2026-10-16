@@ -136,7 +136,11 @@ ADR-0057 decides the colours. This section says how they reach a registered grid
 - **The whole written `XLOOKUP(...)` lies on ADR-0057's grey ground** while Point goes on, unless it
   follows the Formula's `=` directly (ADR-0057, "What cases 24–32 settled"). The two column
   references inside it wear the darker shades of their colours. The grey covers exactly what a further
-  press would replace.
+  press would replace. *(2026-10-16, decided with the user: straight after the `=` too.)* Run 18a
+  (observed 2026-10-13, answer 6) saw Excel lay a Reference pointed straight after the `=` on the grey,
+  and what a press outside the grid writes follows the rule a pointed Reference does:
+  `=XLOOKUP("R-4471", Positions[Id], Positions[PV])` written after `=` lies on the grey as a whole, its
+  two column references in their darker shades inside it.
 
 ### The keyboard
 

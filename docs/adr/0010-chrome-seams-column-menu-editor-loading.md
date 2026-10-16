@@ -165,15 +165,20 @@ on Shift+Home and extended the Selection, which the Shift+→ after it narrowed 
 on Shift+→, Shift+↓ and Shift+← it committed and extended from D10 (`D10:E10`, `D10:D11`,
 `C10:D10`); on Ctrl+→ it committed and moved to XFD10, and on Ctrl+Shift+→ it committed and selected
 `D10:XFD10` (R1 (vii)). ExGrid left them to the editor, which selected its text or moved its caret.
-Shift+↑ and the Primary Modifier's other arrows follow by generalisation. Where the Consumer says a
+Shift+↑ and the Primary Modifier's other arrows follow by generalisation. *(Observed 2026-10-13, run
+18a, answer 7: from `abc` in D10, each from a fresh entry, Shift+↑ (D9:D10), Ctrl+← (A10), Ctrl+↑
+(D1), Ctrl+↓ (D1048576), Ctrl+Shift+← (A10:D10), Ctrl+Shift+↑ (D1:D10) and Ctrl+Shift+↓
+(D10:D1048576) all committed and moved or extended as with no edit open; what was built by
+generalisation is now observed.)* Where the Consumer says a
 Reference can go, the Shift keys point
 ([ADR-0051](./0051-formula-entry-completion-point-mode-and-the-formula-bar.md)): a Shift+arrow extends
 a pointing outline from the edited cell, as Point does with it, and Shift+Home points from the edited
 cell to the row's first column (observed with a Ctrl+C before it: in R1's reading after its first
 step, `=` in D10, a Ctrl+C that copied nothing, then Shift+Home pointed, and a Ctrl+C copied
-`A10:D10`); the Primary Modifier's arrows there are taken and do nothing, as `End` does
-([ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md), Q53), rather than
-commit a Formula that ends too early — a reading: Excel was not asked. Elsewhere they commit, and then
+`A10:D10`); the Primary Modifier's arrows there point at the data edge, with Shift from the edited
+cell *(observed 2026-10-13, run 18a, answer 5: `=D1048576`, `=D10:D1048576`; ADR-0051. The reading,
+that they are taken and do nothing there, as `End` does
+([ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md), Q53), was wrong)*. Elsewhere they commit, and then
 move or extend the Selection exactly as the same key does with no edit open
 ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)), an arrow with the Primary Modifier to
 the edge the Consumer answers; a Reject holds the commit, as it does for the arrows
