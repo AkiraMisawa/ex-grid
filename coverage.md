@@ -12,19 +12,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/16/2026 - 12:42:11 |
+| Generated on: | 10/16/2026 - 14:04:16 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 849 |
 | Files: | 466 |
-| **Line coverage:** | 95.2% (58558 of 61466) |
-| Covered lines: | 58558 |
-| Uncovered lines: | 2908 |
-| Coverable lines: | 61466 |
-| Total lines: | 103974 |
-| **Branch coverage:** | 88% (34023 of 38619) |
-| Covered branches: | 34023 |
-| Total branches: | 38619 |
+| **Line coverage:** | 95.2% (58565 of 61471) |
+| Covered lines: | 58565 |
+| Uncovered lines: | 2906 |
+| Coverable lines: | 61471 |
+| Total lines: | 103991 |
+| **Branch coverage:** | 88.1% (34020 of 38611) |
+| Covered branches: | 34020 |
+| Total branches: | 38611 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -161,8 +161,8 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|90.8%|85.9%|
 |ExGrid.Components.ExGrid<TRow>|95.5%|90.5%|
+|ExGrid.Components.ExGrid<TRow>|90.8%|85.8%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
@@ -252,7 +252,7 @@
 |ExGrid.Selection.FillRules|100%|100%|
 |ExGrid.Selection.GridExtent|100%||
 |ExGrid.Selection.GridFillIntent|100%||
-|ExGrid.Selection.GridSelection|91.8%|83.7%|
+|ExGrid.Selection.GridSelection|92.2%|84.9%|
 |ExGrid.Selection.HeadingMarks|98%|95.5%|
 |ExGrid.Selection.HeadingMarks.CoverageEvent|100%||
 |ExGrid.Selection.HeadingMarks.CoverageMinimum|100%|100%|
@@ -768,7 +768,7 @@
 |ExSheet.SheetColumnList|100%|100%|
 |ExSheet.SheetColumns|100%|77.7%|
 |ExSheet.SheetCommandIds|100%|100%|
-|ExSheet.SheetEdges|97.8%|95.5%|
+|ExSheet.SheetEdges|97.8%|97.7%|
 |ExSheet.SheetFind|96%|75%|
 |ExSheet.SheetFormatKeys|98.3%|90.9%|
 |ExSheet.SheetFormulaAids|98.3%|93.1%|
