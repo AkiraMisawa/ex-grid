@@ -12,7 +12,10 @@
             <li>
                 <b>Number Format</b>, in Excel's codes: <code>#,##0</code>, <code>#,##0;(#,##0)</code>,
                 <code>0.0%</code>, <code>dd-mmm-yy</code>, a colour such as <code>[Red]</code>. Excel's built-in date,
-                time and currency formats are shown in the Sheet culture's own form.
+                time and currency formats are shown in the Sheet culture's own form. A code typed under Format Cells'
+                Custom that spells a built-in's code another way is a code of its own, and a Sheet Document keeps it
+                so; opened under a culture that spells the built-in that way, it is the built-in, as Excel reads such a
+                book under en-US.
             </li>
             <li><b>Alignment</b>: General (numbers right, text left), left, centre or right.</li>
             <li><b>Font</b>: a colour, bold, italic, underline and strikethrough.</li>
@@ -138,14 +141,14 @@
             No Cell Editor opens behind the dialog; once it has the keyboard, its tabs answer keys as usual.
         </p>
         <p>
-            Over one cell that shows a line on exactly one of its edges, the Border tab's Style and Colour open on
-            that line, so pressing that edge's button takes the line away. Anywhere else they open on Thin and
-            Automatic. Excel's Border tab was seen to open on the line shown over a thick top line, black or
-            Automatic, a thin top line and a thick black bottom line, and on Thin and Automatic over a cell with a
-            thin top and a thick right, over a range whose cells show different lines, and over a cell with no line.
-            The rest is ExSheet's reading, not yet asked of Excel: a line on a left or right edge, any other bottom
-            line, a style other than Thick or Thin, a colour other than Automatic or black, and every other
-            Selection.
+            The Border tab's Style and Colour open on the line the Selection's outer edges show, as Excel's do: the
+            top's, else the bottom's, the left's or the right's, in its own style and colour, a neighbour's line as
+            it is drawn included, so pressing that edge's button takes the line away. With no such line they open
+            on Thin and Automatic. Excel was seen to open so over one cell on any of its four edges, in Thick, Thin,
+            Medium Dashed and red, over a range and over several ranges whose tops show one line, and on the top's
+            line where a cell shows two; over a range whose cells show different lines along each edge it opened
+            on Thin. Which of the bottom, the left and the right comes first where a cell shows two of those, and
+            no top, is ExSheet's reading, not yet asked of Excel.
         </p>
         <ul>
             <li><b>Under the built-in Chrome</b> it is a popover inside the Sheet's box, which scrolls when the box is small.</li>

@@ -58,31 +58,30 @@ public sealed class FormatCellsDraft
         FontColour = opening.Font.Colour;
         Fill = spread.FillDiffers ? CellFill.None : opening.Fill;
         _edges = [.. FormatCellsOffer.Edges.Select(edge => spread.Edges[(int)edge])];
-        var pen = OpeningPen(spread.OneCell, _edges);
+        var pen = OpeningPen(_edges);
         LineStyle = pen.Style;
         LineColour = pen.Colour;
     }
 
     /// <summary>
-    /// The line the Border tab opens on (ADR-0071): over one cell where exactly one edge shows a line,
-    /// that line, so a single press of that edge's button takes it away; everywhere else Thin and
-    /// Automatic. Excel was seen to open on the line shown only over a thick top line, black or
-    /// Automatic, a thin top line and a thick black bottom line: on Thick over A2 under A1's thick Automatic bottom, and on Thin where that
-    /// line was thin (the seventeenth Windows run, h10); on Thick and black over A2 and over A1 where
-    /// A1's bottom was thick and black (the fourteenth run, case 13). It was seen to open on Thin and
-    /// Automatic over B2 with a thin top and a thick right of its own, over A2:B3 with a different line
-    /// on four of its cells' sides, and over D5 with no line (the readings of 2026-10-12 (R8)). The
-    /// rest is a reading: a line on a left or right edge, in a style other than Thick or Thin or a colour
-    /// other than Automatic or black, and every other Selection.
+    /// The line the Border tab opens on (ADR-0071): the line an outer edge of the Selection shows, the
+    /// first of the top, the bottom, the left and the right that shows one, in its style and colour; with
+    /// none, Thin and Automatic. Excel was seen to open on the one line shown over one cell, on a top,
+    /// a bottom, a left and a right edge alike, its own or a neighbour's as drawn, in its colour and
+    /// style, Thick, Thin, Medium Dashed, red (the seventeenth Windows run, h10; the fourteenth run, case
+    /// 13; run 18a, format-cells 1, 6, 7 and 8); on it over a range and over several ranges whose top all
+    /// show it (run 18a, 4 and 5); and, with two lines shown, on the top's: Thick over a thick top and a
+    /// medium right, Thick over a thick top and bottom (run 18a, 2 and 3), and Thin over a thin top and a
+    /// thick right (the readings of 2026-10-12 (R8)). It opened on Thin and Automatic over A2:B3 with a
+    /// different line on four of its cells' sides, and over D5 with no line (R8). That the bottom comes
+    /// before the left and the right, and the left before the right, no run has read: it is the engine's
+    /// order, by generalisation, as an edge whose line differs along it is passed over.
     /// </summary>
-    private static BorderLine OpeningPen(bool oneCell, BorderLine?[] edges)
+    private static BorderLine OpeningPen(BorderLine?[] edges)
     {
-        if (oneCell)
+        foreach (var edge in new[] { BorderEdge.Top, BorderEdge.Bottom, BorderEdge.Left, BorderEdge.Right })
         {
-            BorderLine[] shown = [.. new[] { BorderEdge.Top, BorderEdge.Bottom, BorderEdge.Left, BorderEdge.Right }
-                .Select(edge => edges[(int)edge] ?? BorderLine.None)
-                .Where(line => !line.IsNone)];
-            if (shown.Length == 1) return shown[0];
+            if (edges[(int)edge] is { IsNone: false } line) return line;
         }
         return new BorderLine(BorderLineStyle.Thin);
     }
