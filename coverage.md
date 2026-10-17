@@ -12,16 +12,16 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/17/2026 - 18:16:47 |
+| Generated on: | 10/17/2026 - 20:33:27 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 851 |
 | Files: | 468 |
-| **Line coverage:** | 95% (61177 of 64347) |
-| Covered lines: | 61177 |
+| **Line coverage:** | 95% (61178 of 64348) |
+| Covered lines: | 61178 |
 | Uncovered lines: | 3170 |
-| Coverable lines: | 64347 |
-| Total lines: | 104486 |
+| Coverable lines: | 64348 |
+| Total lines: | 104489 |
 | **Branch coverage:** | 88% (35549 of 40384) |
 | Covered branches: | 35549 |
 | Total branches: | 40384 |
@@ -945,7 +945,7 @@
 |ExSheet.MudBlazor.MudFormatCellsDialog|97.8%|78.4%|
 |ExSheet.MudBlazor.MudFormatCellsFrame|81.9%|63.6%|
 |ExSheet.MudBlazor.MudFormatCellsTabs|82%|78.1%|
-|ExSheet.MudBlazor.MudMoreColours|73.7%|30%|
+|ExSheet.MudBlazor.MudMoreColours|73.9%|30%|
 |ExSheet.MudBlazor.MudSheetChrome|90%|100%|
 |ExSheet.MudBlazor.MudToolbarItem|86.6%|76%|
 |ExSheet.MudBlazor.MudToolbarItem.ListFrame|100%|75%|
