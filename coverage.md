@@ -12,18 +12,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/17/2026 - 00:28:17 |
+| Generated on: | 10/17/2026 - 08:45:03 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 851 |
 | Files: | 468 |
-| **Line coverage:** | 95% (61153 of 64314) |
-| Covered lines: | 61153 |
-| Uncovered lines: | 3161 |
+| **Line coverage:** | 95% (61154 of 64314) |
+| Covered lines: | 61154 |
+| Uncovered lines: | 3160 |
 | Coverable lines: | 64314 |
 | Total lines: | 104442 |
-| **Branch coverage:** | 88% (35538 of 40368) |
-| Covered branches: | 35538 |
+| **Branch coverage:** | 88% (35539 of 40368) |
+| Covered branches: | 35539 |
 | Total branches: | 40368 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -162,8 +162,8 @@
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
 |ExGrid.Components.ExGrid<TRow, T>|90.9%|85.8%|
-|ExGrid.Components.ExGrid<TRow>|95.4%|90.4%|
 |ExGrid.Components.ExGrid<TRow>|90.9%|85.8%|
+|ExGrid.Components.ExGrid<TRow>|95.4%|90.4%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
@@ -280,11 +280,11 @@
 |ExGrid.ViewStateDocument|100%||
 
 </details>
-<details><summary>ExGrid.Data - 94.6%</summary>
+<details><summary>ExGrid.Data - 94.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.6%**|
+|**ExGrid.Data**|**94.7%**|**90.6%**|
 |ExGrid.Data.AggregateAccumulator|86%|87.8%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -373,7 +373,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
