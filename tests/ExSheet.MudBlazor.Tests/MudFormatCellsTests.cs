@@ -188,6 +188,21 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.True(IsOpen(page));
     }
 
+    [Fact] // ADR-0071 / ADR-0220, ticket 260: the mode the user switched to outlives the dialog's next render
+    public async Task More_colours_keeps_the_mode_switched_to_when_the_dialog_renders_again()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Fill");
+        var picker = page.FindComponent<MudMoreColours>();
+        Assert.Equal(global::MudBlazor.ColorPickerMode.HEX, picker.Instance.ColorPickerMode);
+
+        await page.InvokeAsync(() => picker.Instance.ChangeMode());
+        page.FindComponent<MudFormatCellsDialog>().Render();
+
+        Assert.Equal(global::MudBlazor.ColorPickerMode.RGB, picker.Instance.ColorPickerMode);
+    }
+
     [Fact] // ADR-0039 / ADR-0071: a closed picker's Escape belongs to its enclosing frame
     public async Task More_colours_does_not_start_a_hand_back_when_the_picker_is_already_closed()
     {

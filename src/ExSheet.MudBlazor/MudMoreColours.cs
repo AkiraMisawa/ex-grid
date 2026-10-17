@@ -32,6 +32,10 @@ internal sealed class MudMoreColours : MudColorPicker
 
     public MudMoreColours()
     {
+        // HEX on every opening (OpenFromButtonAsync), and never as a parameter: a parameter is set
+        // again by each render of the dialog, and took back the mode the user had switched to
+        // whenever that render came after the switch (ticket 260).
+        ColorPickerMode = ColorPickerMode.HEX;
         _entryKey = EventCallback.Factory.Create<KeyboardEventArgs>(this, EntryKeyAsync);
         _popupKey = EventCallback.Factory.Create<KeyboardEventArgs>(this, PopupKeyAsync);
         _open = EventCallback.Factory.Create<MouseEventArgs>(this, OpenFromButtonAsync);
