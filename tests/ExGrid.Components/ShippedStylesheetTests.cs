@@ -1000,8 +1000,25 @@ public class ShippedStylesheetTests
         // departure is not granted.
         Assert.Contains("releaseEndsAtEscape = releaseEndsHeard;", script, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"releaseTab: \(\) => \{\s*tabReleased = releaseEndsHeard === releaseEndsAtEscape;\s*\},"), script);
-        Assert.Equal(2, Regex.Matches(script, @"releaseEndsHeard\+\+;").Count);
+        Assert.Equal(3, Regex.Matches(script, @"releaseEndsHeard\+\+;").Count);
         Assert.Contains("releaseEndsHeard++;", ListenerBody(script, "onPress"), StringComparison.Ordinal);
+        // ADR-0230 section 1: a release ended in the gate counts too, so a releaseTab still on its way
+        // for an Escape that released at its keydown grants nothing after the release was spent.
+        Assert.Matches(new Regex(@"const endRelease = \(\) => \{\s*if \(tabReleased\) \{\s*tabReleased = false;\s*releaseEndsHeard\+\+;\s*\}\s*\};"), script);
+    }
+
+    [Fact] // ADR-0230 section 1 / ticket 220: an Escape the stamp says leaves, once every input that could add a layer is answered, releases Tab at its keydown and holds nothing
+    public void ADR0230_an_escape_the_stamp_says_leaves_releases_tab_at_its_keydown()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        Assert.Matches(new Regex(@"const escapeLeavesNow = \(k\) => !leaves && k\.repeat !== true && stamp !== null\s*&& stamp\.hasAttribute\('data-ex-escape-leaves'\)\s*&& Number\(stamp\.getAttribute\('data-ex-answered'\)\) >= layerInputAt;"), script);
+        Assert.Matches(new Regex(@"if \(canonical === 'Escape'\) \{\s*releaseEndsAtEscape = releaseEndsHeard;\s*if \(escapeLeavesNow\(k\)\) \{\s*tabReleased = true;\s*return 'core';\s*\}\s*return 'mode';\s*\}"), script);
+        // Only the keys on the root that move the Focus or peel a layer leave the stamp to be trusted.
+        Assert.Matches(new Regex(@"function nextInput\(neutral = false\) \{\s*inputsSent \+= 1;\s*if \(!neutral\) \{\s*layerInputAt = inputsSent;\s*\}"), script);
+        Assert.Contains("const neutral = editing === 'none' && neutralKeys.has(canonicalOf(k)) && !declared.has(canonicalOf(k));", script, StringComparison.Ordinal);
+        Assert.Contains("layerInputAt = inputsSent + 1;", ListenerBody(script, "onPress"), StringComparison.Ordinal);
+        // (b): a held Tab that meets the release is refused aloud, not dropped silently.
+        Assert.Matches(new Regex(@"if \(verdict === 'out'\) \{\s*(?://[^\n]*\n\s*)+core\?\.invokeMethodAsync\('OnHeldTabRefusedAsync', nextInput\(true\)\)"), script);
     }
 
     [Fact] // ADR-0080 / ADR-0021 (decisions about focus): focus on the root itself goes on to its Keyboard Field, the hand-back puts the keyboard there, and DOM focus never moves while the field composes
@@ -1213,7 +1230,7 @@ public class ShippedStylesheetTests
         // text (F4, ADR-0051 2026-09-29) — reads of the field and of the listener's own note,
         // no layout read.
         Assert.Single(Regex.Matches(script.Text, @"'OnKeyAsync'"));
-        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*input \? input\.value : null, input \? \(input\.selectionStart \?\? input\.value\.length\) : -1,\s*input \? \(input\.selectionEnd \?\? input\.value\.length\) : -1, input \? movedByUser\(input\) : false,\s*k\.repeat === true, k\.paint, nextInput\(\)\)",
+        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*input \? input\.value : null, input \? \(input\.selectionStart \?\? input\.value\.length\) : -1,\s*input \? \(input\.selectionEnd \?\? input\.value\.length\) : -1, input \? movedByUser\(input\) : false,\s*k\.repeat === true, k\.paint, nextInput\(neutral\)\)",
             RegexOptions.Singleline), script.Text);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), script.Text);
     }
@@ -1229,7 +1246,7 @@ public class ShippedStylesheetTests
         // replayed after a hold says so as well. The core raises OnLeave once per press from it.
         // Only the render the key was pressed against comes after it (ADR-0142, LV-14).
         Assert.Matches(new Regex(@"const snapshot = \(event\) => \(\{[^}]*repeat: event\.repeat,", RegexOptions.Singleline), script.Text);
-        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*,\s*k\.repeat === true, k\.paint, nextInput\(\)\)\s*\.catch\(", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*,\s*k\.repeat === true, k\.paint, nextInput\(neutral\)\)\s*\.catch\(", RegexOptions.Singleline), script.Text);
     }
 
     [Fact] // ADR-0051 (2026-09-29) / ADR-0021 / DC-45 / DC-24: F4 is claimed only while an edit is open, and only where C# says the Consumer declared what it does
@@ -1248,7 +1265,7 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"if \(claimed\.has\(canonical\) \|\| \(cycleReferences && canonical === 'F4'\)\) \{\s*return 'mode';\s*\}"), gate.Value);
         // Told by C# with the editing mode, per instance, off until told.
         Assert.Matches(new Regex(@"let cycleReferences = false;"), script.Text);
-        Assert.Matches(new Regex(@"setEditing: \(mode, reportsCaret, cyclesReferences\) => \{[^}]*cycleReferences = cyclesReferences === true;", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"setEditing: \(mode, reportsCaret, cyclesReferences, version\) => \{[^}]*cycleReferences = cyclesReferences === true;", RegexOptions.Singleline), script.Text);
     }
 
     [Fact] // ADR-0007 / KB-39 / DC-30: the gate takes undo and redo only from C#'s list, and never while editing
@@ -1403,7 +1420,7 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"referenceTextObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-text', 'data-ex-colours'\], subtree: true \}\);"), script.Text);
         Assert.Single(Regex.Matches(script.Text, @"referenceTextObserver\.observe\("));
         Assert.Matches(new Regex(@"referenceTextObserver\.disconnect\(\);"), script.Text);
-        Assert.Matches(new Regex(@"setEditing: \(mode, reportsCaret, cyclesReferences\) => \{(?:(?!\n        \},).)*?watchReferenceTexts\(mode !== 'none'\);", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"setEditing: \(mode, reportsCaret, cyclesReferences, version\) => \{(?:(?!\n        \},).)*?watchReferenceTexts\(mode !== 'none'\);", RegexOptions.Singleline), script.Text);
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*?watchReferenceTexts\(false\);.*?root = null;", RegexOptions.Singleline), script.Text);
         // ...and whenever the selection moves while it is open, as it does when DOM focus moves
         // from one surface into the other.
@@ -1585,8 +1602,13 @@ public class ShippedStylesheetTests
         // read off the marks the core writes on the list's box, and nothing measured — whether it
         // is open over Point too.
         Assert.Matches(new Regex(@"const listShown = \(\) => \(root \? root\.querySelector\('\.ex-completion\[data-ex-list\]'\) : null\);"), script.Text);
-        Assert.Matches(new Regex(@"const list = listShown\(\);\s*const claimed = list === null\s*\? \(claimedWhile\[editing\] \?\? editingKeys\)\s*: \(list\.hasAttribute\('data-ex-over-point'\) \? completionOverPointKeys : completionKeys\);"), script.Text);
+        Assert.Matches(new Regex(@"const list = listShown\(\);\s*const claimed = list === null\s*\? \(claimedWhile\[editingShown\(\)\] \?\? editingKeys\)\s*: \(list\.hasAttribute\('data-ex-over-point'\) \? completionOverPointKeys : completionKeys\);"), script.Text);
         Assert.Single(Regex.Matches(script.Text, @"listShown\(\)"));
+        // ADR-0230 section 2 / ticket 221: every other mode is read off the edit's surfaces too, in
+        // the render that shows it, where that mark is newer than what the gate was told.
+        Assert.Matches(new Regex(@"root\.querySelectorAll\('\.ex-editor\[data-ex-mode\]'\)"), script.Text);
+        Assert.Matches(new Regex(@"if \(marked > version && surface\.closest\('\.ex-grid'\) === root\) \{"), script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"editingShown\(\)"));
     }
 
     [Fact] // ADR-0058 ("The keyboard") / SH-35: while what Point wrote came from outside, the gate claims Point's keys and the Primary Modifier's arrows, with Shift or without, and nothing else

@@ -38,6 +38,8 @@ public static class BuiltInCommandLabels
         GridLabelIds.FormulaBar => "Formula Bar",
         ReloadNoticeLabelIds.Script => "This page holds another version of the grid's script. Reload the page.",
         ReloadNoticeLabelIds.Stylesheet => "This page holds another version's stylesheet. Reload the page.",
+        KeyRefusalLabelIds.TabBeforeRelease =>
+            "Tab was pressed before Escape had let the keyboard leave the grid, so the keyboard stayed. Press Tab again to leave.",
         FindPanelLabelIds.Title => "Find",
         SummaryLabelIds.Average => "Average",
         SummaryLabelIds.Count => "Count",

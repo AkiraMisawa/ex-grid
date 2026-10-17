@@ -1,7 +1,6 @@
 # 221: The key gate knows the editor's mode with its render, not a message after it
 
-Status: ready-for-agent
-Roadmap: ExSheet — A key typed at once after a list closes, Point ends or the edit's mode changes is judged in the new mode
+Status: done
 
 **Found:** by the spec lint (#137, ADR-0220 §6). Five waits in `declarations.spec.mjs` sit between
 inputs, each kept with a reason that names this:
@@ -33,3 +32,5 @@ recommendation are in ADR-0230 section 2, proposed and not decided. The user dec
 follows on its own branch.
 
 2026-10-17. Decided with the user: ADR-0230 section 2, as recommended. Ready to build.
+
+2026-10-17. Done: the Cell Editor and the Formula Bar carry `data-ex-mode` and `data-ex-mode-version` in the render that shows the mode, and the gate reads the newest mark (`editingShown`). The five waits in `declarations.spec.mjs` are gone.
