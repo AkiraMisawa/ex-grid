@@ -546,6 +546,7 @@ for (const chrome of ['builtin', 'mud']) {
             await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
             await expect(records).toBeFocused();
             await page.keyboard.press('Escape');
+            // spec-lint: fixed-wait: a wait between Escape and Tab with no state to wait for on WebAssembly; suspected product race: a Tab typed before Escape's answer is held and dropped (see above)
             await page.waitForTimeout(500);
             await circuitQuiet();
             await expect(records).toBeFocused();
@@ -947,6 +948,7 @@ for (const chrome of ['builtin', 'mud']) {
             await button.click();
             const panel = page.getByRole('dialog', { name: 'Filter Currency' });
             await expect(panel.getByRole('checkbox', { name: 'USD', exact: true })).toBeVisible();
+            await expect(panel).toBeVisible();
             const at = await button.boundingBox();
             const box = await panel.boundingBox();
             expect(box.y).toBeGreaterThanOrEqual(at.y + at.height - 1);
@@ -955,6 +957,7 @@ for (const chrome of ['builtin', 'mud']) {
 
             // A press on the report beside the panel lands on the backdrop: it closes the panel,
             // drops its draft, and the keyboard goes back to the button.
+            // spec-lint: early-read: unchecking a box in the panel changes its draft only, and cannot move the report's box
             const grid = await report(page).boundingBox();
             await page.mouse.click(grid.x + grid.width - 20, grid.y + grid.height - 20);
 
@@ -1161,6 +1164,7 @@ test('ADR-0070 (DC-61): a control focused while the report\'s keyboard is on its
     await expect(dialog).toHaveCount(0);
     // Past the report's request, which on Server comes two round trips after the Escape: there,
     // once the circuit is quiet (ADR-0056); the fixed wait is the page's own time on WebAssembly.
+    // spec-lint: fixed-wait: proves an absence, the report's request for the keyboard must not take it from #pivot-save; the Settled Mark (PR #134, settled(grid)) will replace it
     await page.waitForTimeout(delayed ? 1000 : 100);
     await circuitQuiet();
     await expect(page.locator('#pivot-save')).toBeFocused();
@@ -1189,6 +1193,7 @@ test('ADR-0070/0018 (DC-61): a second grid pressed while the keyboard is on its 
     await rowsOf(second).nth(2).locator('[role=gridcell]').nth(1).click({ force: true });
 
     await expect(tabs).toHaveCount(0);
+    // spec-lint: fixed-wait: proves an absence, the first report's request for the keyboard must not take it from the second; the Settled Mark (PR #134, settled(grid)) will replace it
     await page.waitForTimeout(delayed ? 1000 : 100);
     await circuitQuiet();
     await expect(reportOf(second)).toBeFocused();

@@ -63,6 +63,7 @@ async function setVirtualised(page, on) {
         await button.click();
     }
     await expect(button).toContainText(on ? ': on' : ': off');
+    // spec-lint: fixed-wait: observational pacing, never gated: lets the toggle's repaint drain so the next measurement starts from rest
     await page.waitForTimeout(400);
 }
 
@@ -91,8 +92,10 @@ async function settleRepaints(page, client, samples) {
             scroller.scrollTop = scroller.scrollTop + px > max ? 0 : scroller.scrollTop + px;
         }, FLING_PX);
         await frames(page, 2);
+        // spec-lint: fixed-wait: observational timing, never gated: starts the clock inside the 150 ms settle delay, so the settle repaint is what is counted
         await page.waitForTimeout(30); // well inside the 150 ms settle delay
         const before = await workMs(client);
+        // spec-lint: fixed-wait: observational window, never gated: past the settle delay, so its repaint falls inside what workMs counts
         await page.waitForTimeout(400);
         await frames(page, 2);
         costs.push((await workMs(client)) - before);
@@ -153,10 +156,12 @@ test('the DOM, the settle repaint and the frame intervals, virtualised and not (
         const dom = await domCounts(page);
         const settle = await settleRepaints(page, client, 8);
         await page.evaluate(() => { document.querySelector('.ex-scroller').scrollTop = 0; });
+        // spec-lint: fixed-wait: observational pacing, never gated: lets the scroll back to the top and its settle drain before frames are timed
         await page.waitForTimeout(400);
         const ordinaryRows = await frameIntervals(page, 'scrollTop', 28, 150);
         const ordinaryColumns = await frameIntervals(page, 'scrollLeft', 90, 150);
         const fling = await frameIntervals(page, 'scrollTop', FLING_PX, 30);
+        // spec-lint: fixed-wait: observational pacing, never gated: lets the fling's settle drain before the next setting is measured
         await page.waitForTimeout(400);
 
         results[setting] = {

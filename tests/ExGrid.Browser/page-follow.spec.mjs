@@ -27,6 +27,7 @@ async function settled(page) {
         const tick = () => {
             frames += 1;
             if (frames >= 4) {
+                // spec-lint: fixed-wait: no duration: a zero-delay task after the fourth frame, the task after the paint in which the page follow runs
                 setTimeout(resolve, 0);
             } else {
                 requestAnimationFrame(tick);

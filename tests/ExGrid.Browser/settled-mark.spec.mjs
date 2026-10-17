@@ -41,6 +41,7 @@ test('ADR-0220: a key takes the mark off at once, and it comes back once the key
     // Off in the keydown itself: a reading straight after the key never finds the mark of before. On
     // WebAssembly the key is answered, and painted, before the press returns, so the mark is back.
     if (SERVER) {
+        // spec-lint: early-read: early on purpose: the test is that the mark is off in the keydown itself, before any answer
         expect(await grid.evaluate((root) => root.hasAttribute('data-ex-settled'))).toBe(false);
     }
     await settled(grid);

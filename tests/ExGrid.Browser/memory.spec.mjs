@@ -221,6 +221,7 @@ test('a ten-minute scripted scroll does not grow the JS heap (MEM-5, MEM-6)', as
 
     const samples = [(await counters(client)).jsHeap];
     for (let elapsed = sampleEveryMs; elapsed <= minutes * 60_000; elapsed += sampleEveryMs) {
+        // spec-lint: fixed-wait: a measurement's pacing: the heap is sampled at fixed times while the soak runs, and no state marks a sample's moment
         await page.waitForTimeout(sampleEveryMs);
         samples.push((await counters(client)).jsHeap);
     }

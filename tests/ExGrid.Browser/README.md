@@ -267,6 +267,38 @@ acknowledges every render batch once it has applied it, so by then the last one 
   A proxy left running from an older checkout does not know `/quiet`, and `circuitQuiet` says
   so rather than reading its answer as quiet.
 
+## The spec lint
+
+A layer-2 test reads every spec here and refuses two things (ADR-0220 §6;
+`tests/ExGrid.Components/SpecLintTests.cs`, the lint itself in `Support/SpecLint.cs`):
+
+- **A fixed wait**: `waitForTimeout`, a `setTimeout` waited on, or a `sleep`. Wait for the state the
+  test needs instead.
+- **A read straight after an input**: the DOM, a scroll offset or a picture read (`textContent`,
+  `inputValue`, `boundingBox`, `evaluate`, `count`, `screenshot`, `boxOf`, `readClipboard`, …) after
+  a key, a press, a fill or a resize, with nothing between them that waits for the grid's answer.
+  What waits is an awaited assertion that retries (`await expect(locator).toHaveText(…)` and the
+  other `toHave…`/`toBe…` matchers of a locator), `expect.poll`, `circuitQuiet()`, `settled(…)`
+  once the Settled Mark is in, and the helpers that wait through one of those (`pressCell`, `goTo`,
+  `enter`, `expectFocusAt`, …). A read whose value is used counts; a bare `await x.evaluate(…)` is an
+  action, not a read.
+
+It reads statements, not lines, so a call over several lines is one statement, and each test, hook
+or function starts owing nothing. It does not judge what a test asserts, and it does not see an input
+made inside `page.evaluate` or by a helper of a spec's own.
+
+A statement it cannot judge — a wait that proves nothing arrives, an input held on purpose, a read
+the input cannot change — is allowed by a comment on it, or in the comment block straight above it,
+naming the rule and why:
+
+```js
+// spec-lint: fixed-wait: nothing may arrive in the half second after the list is gone; settled(grid) replaces this
+await page.waitForTimeout(500);
+```
+
+`early-read` is the other rule. A reason shorter than a few words, or a rule the lint does not have,
+is itself a finding.
+
 ## Reading pixels
 
 A picture says what the browser put on the screen, and nothing else does. It is also the

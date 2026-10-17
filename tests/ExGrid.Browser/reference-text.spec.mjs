@@ -171,6 +171,8 @@ for (const chrome of ['builtin', 'mud']) {
             await expectColoured(editor(grid), formula.slice(0, i));
         }
         await expectPlain(bar(grid), formula);
+        await expect.poll(async () => (await stretchesOf(editor(grid))).map((reference) => [reference.text, reference.place]))
+            .toEqual([['A1', 1], ['B2', 2], ['C3:D4', 3]]);
 
         // The layer's text is one run, and its References are coloured over it (ADR-0057, note of
         // 2026-10-01).
@@ -199,6 +201,7 @@ for (const chrome of ['builtin', 'mud']) {
         await expectColoured(editor(grid), '=B2*C2');
         await expectPlain(bar(grid), '=B2*C2');
         // The caret keeps the field's colour, and selected text is drawn by the field.
+        // spec-lint: early-read: expectColoured and expectPlain above wait by expect.poll for the opened edit's colours; the lint cannot see into the file's own helpers
         const kept = await editor(grid).evaluate((input) => ({
             caret: getComputedStyle(input).caretColor,
             selected: getComputedStyle(input, '::selection').webkitTextFillColor,
@@ -270,6 +273,7 @@ for (const chrome of ['builtin', 'mud']) {
         // Long past the round trip, the core has rendered the composing text, and the field still
         // draws it itself: no highlight is left over the hidden layer.
         await expect.poll(async () => (await colouring(editor(grid))).text).toBe('=A1&にほ');
+        // spec-lint: fixed-wait: proves an absence: no highlight may come back over the hidden layer once the core renders; the Settled Mark (PR #134, settled(grid)) will replace it
         await page.waitForTimeout(400);
         await expectPlain(editor(grid), '=A1&にほ');
         expect(await stretchesOf(editor(grid))).toEqual([]);
@@ -306,6 +310,7 @@ test("ADR-0057: under the Mud Chrome without the Wrapper's stylesheet, the Cell 
     await page.keyboard.type('=A1+B2');
 
     await expectColoured(editor(grid), '=A1+B2');
+    // spec-lint: early-read: expectColoured above waits by expect.poll for the typed text's colours; the lint cannot see into the file's own helper
     const grounds = await editor(grid).evaluate((input) => ({
         field: getComputedStyle(input).backgroundColor,
         box: getComputedStyle(input.closest('.ex-editor')).backgroundColor,

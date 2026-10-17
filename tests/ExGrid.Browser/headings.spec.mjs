@@ -55,12 +55,15 @@ test('SR-2c: with the view at the top, a Column Heading click then Shift+→ lea
 
     // C:D: the range is two columns wide, and the Focus has not moved.
     const range = grid.locator('.ex-selection .ex-range');
+    // spec-lint: early-read: only the width C1:D1 spans is used, the same wherever the view is scrolled; the range's own width is what is polled for
     const c1 = await boxOf(cell(grid, 'C1'));
+    // spec-lint: early-read: as C1's, only the width C1:D1 spans is used, the same wherever the view is scrolled
     const d1 = await boxOf(cell(grid, 'D1'));
     await expect.poll(async () => Math.round((await boxOf(range)).width)).toBe(Math.round(d1.x + d1.width - c1.x));
     await expectFocusAt(grid, 'C1');
     // A reveal writes after the render that painted the range, and on a circuit its scroll event is
     // a round trip behind: long enough for either to have landed.
+    // spec-lint: fixed-wait: proves an absence — no reveal's scroll may arrive, from the render or a round trip behind it, and no state marks that none came; the Settled Mark (PR #134, settled(grid)) will replace it
     await page.waitForTimeout(500);
     expect((await scrollOf(grid)).top).toBe(0);
     await expect(cell(grid, 'C1')).toBeVisible();
@@ -95,9 +98,11 @@ test('SR-2c: with the view at the left, a Row Heading click then Shift+↓ leave
     await expectFocusAt(grid, 'A3');
     await page.keyboard.press('Shift+ArrowDown');
 
+    // spec-lint: early-read: only A3's height is used, the same wherever the view is scrolled; the range's own height is what is polled for
     const a3 = await boxOf(cell(grid, 'A3'));
     await expect.poll(async () => Math.round((await boxOf(grid.locator('.ex-selection-pinned .ex-range'))).height))
         .toBe(Math.round(2 * a3.height));
+    // spec-lint: fixed-wait: proves an absence — no reveal's sideways scroll may arrive, and no state marks that none came; the Settled Mark (PR #134, settled(grid)) will replace it
     await page.waitForTimeout(500);
     expect((await scrollOf(grid)).left).toBe(0);
     await expect(heading(grid, 'B')).toBeVisible();
@@ -156,6 +161,7 @@ test('DC-42: a drag across Column Headings selects whole columns, over the Headi
     await expectWholeColumns(grid, 'B', 'D');
 
     // Down over the cells: only the pointer's column counts, whatever row it is over.
+    // spec-lint: early-read: expectWholeColumns above has polled for the drag's answer, and a drag inside the readable area scrolls nothing, so E3 is where it was
     const e3 = centreOf(await boxOf(cell(grid, 'E3')));
     await page.mouse.move(e3.x, e3.y, { steps: 8 });
     await expectWholeColumns(grid, 'B', 'E');
@@ -178,6 +184,7 @@ test('DC-42: Shift+press on a Column Heading extends from the Focus\'s column, a
     await page.keyboard.down('Shift');
     await page.mouse.down();
     await expectWholeColumns(grid, 'C', 'E');
+    // spec-lint: early-read: expectWholeColumns above has polled for the press's answer, and a press inside the readable area scrolls nothing, so F's heading is where it was
     const f = centreOf(await boxOf(heading(grid, 'F')));
     await page.mouse.move(f.x, f.y, { steps: 6 });
     await expectWholeColumns(grid, 'C', 'F');
@@ -199,6 +206,7 @@ test('DC-42: a drag across Row Headings selects whole rows, over the Headings an
     await page.mouse.move(six.x, six.y, { steps: 8 });
     await expectWholeRows(grid, 3, 6);
 
+    // spec-lint: early-read: expectWholeRows above has polled for the drag's answer, and a drag inside the readable area scrolls nothing, so C8 is where it was
     const c8 = centreOf(await boxOf(cell(grid, 'C8')));
     await page.mouse.move(c8.x, c8.y, { steps: 8 });
     await expectWholeRows(grid, 3, 8);
@@ -221,6 +229,7 @@ test('DC-43: a Column Heading drag at the right edge scrolls sideways, and never
     await expect.poll(async () => (await scrollOf(grid)).left, { timeout: 10_000 }).toBeGreaterThan(200);
     // And down into the bottom band as well, over the cells: still sideways only.
     await page.mouse.move(readable.right - 3, readable.bottom - 3, { steps: 4 });
+    // spec-lint: fixed-wait: proves an absence — the edge band must scroll no row down while the pointer rests in it, and no state marks that none came; the Settled Mark (PR #134, settled(grid)) will replace it
     await page.waitForTimeout(600);
     expect((await scrollOf(grid)).top).toBe(0);
 
@@ -241,6 +250,7 @@ test('DC-43: a Row Heading drag at the bottom edge scrolls down, and never sidew
     // Into the bottom-right corner: both edge bands at once.
     await page.mouse.move(readable.right - 3, readable.bottom - 3, { steps: 8 });
     await expect.poll(async () => (await scrollOf(grid)).top, { timeout: 10_000 }).toBeGreaterThan(200);
+    // spec-lint: fixed-wait: proves an absence — the edge band must scroll no column sideways while the pointer rests in it, and no state marks that none came; the Settled Mark (PR #134, settled(grid)) will replace it
     await page.waitForTimeout(300);
     expect((await scrollOf(grid)).left).toBe(0);
 
@@ -342,12 +352,15 @@ test('DC-44: the Size Tip is redrawn only when the Extent moves to another Headi
 
     // Along D, over its heading and then over its cells: the Extent stays on D.
     await page.mouse.move(d.x + d.width - 4, b.y, { steps: 6 });
+    // spec-lint: early-read: a drag along D's heading inside the readable area scrolls nothing, so D4's box is the same before and after its answer
     const d4 = await boxOf(cell(grid, 'D4'));
     await page.mouse.move(d4.x + (d4.width / 2), d4.y + (d4.height / 2), { steps: 6 });
+    // spec-lint: fixed-wait: proves an absence — no write to the Size Tip may arrive while the Extent stays on D, and no state marks that none came; the Settled Mark (PR #134, settled(grid)) will replace it
     await page.waitForTimeout(300);
     expect(await writes()).toBe(0);
 
     // Onto E: the tip is redrawn for the new Heading.
+    // spec-lint: early-read: the drag stays inside the readable area and scrolls nothing, so E4's box is the same before and after its answer
     const e4 = await boxOf(cell(grid, 'E4'));
     await page.mouse.move(e4.x + (e4.width / 2), e4.y + (e4.height / 2), { steps: 6 });
     await expect(tip).toHaveText('1048576R x 4C');

@@ -155,6 +155,7 @@ test('a display-only grid leaves Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to
         // under it and Ctrl+D opens no bookmark bubble.
         await watchNextKey(page, name, { preventAfter: true });
         await page.keyboard.press(press);
+        // spec-lint: early-read: deterministic: the watcher's listener runs inside the press's own dispatch, so what it saw is recorded before the press returns
         expect(await keySeenUntouched(page), `${press} reached the page untouched`).toBe(true);
     }
     await expect(cells.locator('.ex-editor')).toHaveCount(0);

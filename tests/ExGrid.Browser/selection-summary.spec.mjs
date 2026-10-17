@@ -48,6 +48,7 @@ for (const chrome of ['builtin', 'mud']) {
 
             const texts = [];
             for (const row of [0, 1, 2]) {
+                // spec-lint: early-read: the cells' own text, which a change of selection cannot change; only the summary waits for the grid
                 texts.push(await grid(page).locator(`[id$='r${row}c2']`).innerText());
             }
             const sum = exactSum(texts);

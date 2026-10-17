@@ -47,6 +47,7 @@ const announced = (page) => sheet(page).locator('.ex-announce');
 // probes ask about Excel's behaviours, not that race.
 async function click(page, a1, options = {}) {
     await pressAt(cell(page, a1), options);
+    // spec-lint: fixed-wait: PACE_MS, a person's pace kept to match the by-hand Excel comparison; suspected to hide the Server-host race it names (a key or click before the previous answer lands in the wrong cell)
     await page.waitForTimeout(PACE_MS);
     if (Object.keys(options).length === 0) await expect(nameBox(page)).toHaveValue(a1);
 }
@@ -88,6 +89,7 @@ async function entryOf(page, a1) {
 }
 
 async function dragFillHandle(page, toA1) {
+    // spec-lint: fixed-wait: PACE_MS, a person's pace kept to match the by-hand Excel comparison; suspected to hide the Server-host race it names (a key or click before the previous answer lands in the wrong cell)
     await page.waitForTimeout(PACE_MS);
     // The drag ends where a user could see it: a target below the window's bottom edge is
     // scrolled into view first, as a user scrolls before dragging. Nothing past that edge
@@ -99,6 +101,7 @@ async function dragFillHandle(page, toA1) {
     await page.mouse.down();
     await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 12 });
     await page.mouse.up();
+    // spec-lint: fixed-wait: PACE_MS, a person's pace kept to match the by-hand Excel comparison; suspected to hide the Server-host race it names (a key or click before the previous answer lands in the wrong cell)
     await page.waitForTimeout(PACE_MS);
 }
 
@@ -116,6 +119,7 @@ test.beforeEach(async ({ page, context }) => {
         paced.add(page);
         for (const name of ['press', 'type']) {
             const act = page.keyboard[name].bind(page.keyboard);
+            // spec-lint: fixed-wait: PACE_MS, a person's pace kept to match the by-hand Excel comparison; suspected to hide the Server-host race it names (a key or click before the previous answer lands in the wrong cell)
             page.keyboard[name] = async (...args) => { await act(...args); await page.waitForTimeout(PACE_MS); };
         }
     }
@@ -259,7 +263,7 @@ test('active cell, case 1: Shift+arrows move the far corner, the Focus stays, an
     await expectSelection(page, 'B2', 'C44');
     await expectActive(page, 'B2');
     await expectInView(page, 'C44');
-    expect(await sheet(page).locator('.ex-scroller').evaluate((s) => s.scrollTop)).toBeGreaterThan(0);
+    await expect.poll(() => sheet(page).locator('.ex-scroller').evaluate((s) => s.scrollTop)).toBeGreaterThan(0);
 });
 
 test('active cell, case 2: while a drag is held the Name Box shows 4R x 3C, and D5 stays active after D5 to B2 (ADR-0052)', async ({ page }) => {
@@ -390,18 +394,23 @@ test('item 6: the Name Box selects what it is given and scrolls only as far as i
     await page.keyboard.press('Enter');
     await expectActive(page, 'D200');
     // Excel scrolled from row 1 until D200 was the last whole row on screen (rows 144–201 of 57).
-    const d200 = await cell(page, 'D200').boundingBox();
-    expect(d200.y + d200.height).toBeLessThanOrEqual(viewport.y + viewport.height + 1);
-    expect(d200.y + d200.height).toBeGreaterThan(viewport.y + viewport.height - 2 * d200.height);
+    // Read until the reveal's scroll has landed: the Name Box answers with the render, the scroll after it.
+    await expect(async () => {
+        const d200 = await cell(page, 'D200').boundingBox();
+        expect(d200.y + d200.height).toBeLessThanOrEqual(viewport.y + viewport.height + 1);
+        expect(d200.y + d200.height).toBeGreaterThan(viewport.y + viewport.height - 2 * d200.height);
+    }).toPass({ timeout: 5000 });
     // Back up to B2:C5: Excel scrolled only until row 2 was the first row on screen.
     await nameBox(page).click();
     await nameBox(page).fill('B2:C5');
     await page.keyboard.press('Enter');
     await expectSelection(page, 'B2', 'C5');
     await expectActive(page, 'B2');
-    const b2 = await cell(page, 'B2').boundingBox();
-    const header = await sheet(page).locator('.ex-header-cell').first().boundingBox();
-    expect(Math.abs(b2.y - (header.y + header.height))).toBeLessThanOrEqual(2);
+    await expect(async () => {
+        const b2 = await cell(page, 'B2').boundingBox();
+        const header = await sheet(page).locator('.ex-header-cell').first().boundingBox();
+        expect(Math.abs(b2.y - (header.y + header.height))).toBeLessThanOrEqual(2);
+    }).toPass({ timeout: 5000 });
 });
 
 // ---- Entering and editing (ADR-0051, ADR-0012) --------------------------------------------------
@@ -461,6 +470,7 @@ test('item 10: Point mode by mouse writes the clicked cell, then the dragged ran
     await page.keyboard.type('=');
     // A click while pointing: no waiting for the Name Box, which is the question here.
     await pressAt(cell(page, 'C3'));
+    // spec-lint: fixed-wait: PACE_MS, a person's pace kept to match the by-hand Excel comparison; suspected to hide the Server-host race it names (a key or click before the previous answer lands in the wrong cell)
     await page.waitForTimeout(PACE_MS);
     await expect(cellEditor(page)).toHaveValue('=C3');
     // Excel's Name Box names the pointed cell while pointing (C3 in its screenshot).

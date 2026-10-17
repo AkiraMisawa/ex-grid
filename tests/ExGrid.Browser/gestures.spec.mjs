@@ -1,4 +1,4 @@
-import { test, expect, alterPage, record } from './fixtures.mjs';
+import { test, expect, alterPage, record, circuitQuiet } from './fixtures.mjs';
 import { activeDescendant, expectActiveDescendant } from './keyboard.mjs';
 
 // The drag gestures with a real mouse (ADR-0011/0016/0032), the large-paste and
@@ -28,7 +28,10 @@ test('a leaf drag reorders within its group and clamps at its edge (HG-14)', asy
     await page.mouse.move(box.x + 55, leafY);
     await page.mouse.down();
     await page.mouse.move(box.x + 600, leafY, { steps: 8 });
-    // The indicator clamps at the group's edge: Book+Trader end at 230px.
+    // The indicator clamps at the group's edge: Book+Trader end at 230px. It is the host's
+    // render, so it is read once the host has answered the last move.
+    await expect(grid(page).locator('.ex-drop-indicator')).toBeVisible();
+    await circuitQuiet();
     const indicator = await grid(page).locator('.ex-drop-indicator').boundingBox();
     expect(indicator.x - box.x).toBeLessThanOrEqual(231);
     await page.mouse.up();
@@ -223,6 +226,7 @@ test('narrowing the scrollbar by token changes the gutter and the geometry follo
     await open(page);
     await grid(page).locator("[id$='r1c1']").click({ force: true });
 
+    // spec-lint: early-read: the click moves the Focus to a visible cell, which cannot change the scrollbar's width
     const gutterBefore = await grid(page).locator('.ex-scroller')
         .evaluate((el) => el.offsetWidth - el.clientWidth);
     // On body, which outlives the page: alterPage takes the tokens off as the test ends (ADR-0056).
@@ -234,7 +238,13 @@ test('narrowing the scrollbar by token changes the gutter and the geometry follo
             document.body.style.removeProperty('--ex-scrollbar-color');
         };
     });
-    await page.waitForTimeout(200);
+    // The strip narrows with the token; the ResizeObserver tells the grid in the next frame's
+    // rendering step, so two animation frames later the report has been sent, and on the
+    // Server host the circuit's quiet says the grid has taken it before End is pressed.
+    await expect.poll(() => grid(page).locator('.ex-scroller')
+        .evaluate((el) => el.offsetWidth - el.clientWidth)).toBe(8);
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await circuitQuiet();
     const gutterAfter = await grid(page).locator('.ex-scroller')
         .evaluate((el) => el.offsetWidth - el.clientWidth);
     expect(gutterAfter).toBe(8);
@@ -243,7 +253,8 @@ test('narrowing the scrollbar by token changes the gutter and the geometry follo
     // The Focus stays inside the readable area after the change — the scrollbar
     // suite's own invariant, re-checked here.
     await page.keyboard.press('End');
-    const fits = await page.evaluate(() => {
+    await expect.poll(() => activeDescendant(grid(page))).not.toMatch(/r1c1$/);
+    await expect.poll(() => page.evaluate(() => {
         const scroller = document.querySelector('.ex-scroller');
         const outer = scroller.getBoundingClientRect();
         const right = outer.left + scroller.clientLeft + scroller.clientWidth;
@@ -251,8 +262,7 @@ test('narrowing the scrollbar by token changes the gutter and the geometry follo
             .map((el) => el.getBoundingClientRect())
             .find((r) => r.width > 0);
         return { fits: focus.right <= right + 1, focusRight: focus.right, right };
-    });
-    expect(fits.fits, JSON.stringify(fits)).toBe(true);
+    })).toMatchObject({ fits: true });
 });
 
 test('a composing IME keydown is never taken (ED-11, the listener guard)', async ({ page }) => {
@@ -278,5 +288,6 @@ test('a composing IME keydown is never taken (ED-11, the listener guard)', async
     });
     expect(results).toEqual({ composingEnter: false, composingArrow: false, keyCode229: false });
     // And the Focus did not move under the half-finished word.
+    // spec-lint: early-read: the read asserts the Focus did NOT move after unprevented synthetic keydowns; no state says nothing more will arrive until the Settled Mark (PR #134, settled(grid)) replaces this
     expect(await activeDescendant(grid(page))).toBe(before);
 });

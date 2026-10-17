@@ -57,6 +57,7 @@ test('what the pointer reports cost on a circuit, at 0, 50 and 150 ms round trip
                     { capture: true, once: true });
             });
             await page.mouse.move(target.x + 80, target.y + target.height / 2);
+            // spec-lint: early-read: the measurement itself (EXGRID_MEASURE only): a frame loop in the page times how long the band takes to arrive
             const lag = await page.evaluate((top) => new Promise((resolve) => {
                 const tick = () => {
                     const band = document.querySelector('.ex-grid .ex-hover-row');
@@ -91,6 +92,7 @@ test('what the pointer reports cost on a circuit, at 0, 50 and 150 ms round trip
             if (step % 6 === 0) {
                 await page.mouse.wheel(0, phase < 24 ? 40 : -40);
             }
+            // spec-lint: fixed-wait: measurement pacing (EXGRID_MEASURE only): about a frame between the sweep's steps, the speed being measured
             await page.waitForTimeout(16);
             step += 1;
         }
@@ -161,12 +163,16 @@ test('how long the stale band stands while the window is dragged over a Stretch 
         const pressedAt = await page.evaluate(() => performance.now());
         for (let height = 440; height <= 820; height += 20) {
             await page.setViewportSize({ width: 1280, height });
+            // spec-lint: fixed-wait: measurement pacing (EXGRID_MEASURE only): about a frame between the drag's steps, the speed being measured
             await page.waitForTimeout(16);
         }
+        // spec-lint: early-read: the measurement itself (EXGRID_MEASURE only): the probe's count at the drag's last step, read on purpose before it settles
         const during = await page.evaluate(() => ({ at: performance.now(), frames: window.__probe.frames, stale: window.__probe.staleFrames }));
         const sentDuringDrag = sent;
+        // spec-lint: fixed-wait: measurement window (EXGRID_MEASURE only): how long the stale band outlives the drag is what the probe records over it
         await page.waitForTimeout(1_500);
         await client.detach();
+        // spec-lint: early-read: the measurement itself (EXGRID_MEASURE only): the probe recorded every frame of the window above
         const probe = await page.evaluate(() => {
             window.__probe.stopped = true;
             return window.__probe;

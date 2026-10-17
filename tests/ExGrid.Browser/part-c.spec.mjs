@@ -117,6 +117,7 @@ test('SH-54 (built-in Chrome): while an edit is open the white line inside the o
     const grid = await openCase(page, '11');
     await pressCell(grid, 'C3');
     await page.mouse.move(0, 0);
+    // spec-lint: early-read: moving the pointer off the Sheet takes the hover band away but cannot move C3's box
     const c3 = await cell(grid, 'C3').boundingBox();
     const before = await across(page, c3, 'bottom', 0.5);
     expect(sameColour(before.pixel(-2), WHITE, 2), `the white line before the edit: ${before.pixel(-2)}`).toBe(true);
@@ -269,6 +270,7 @@ test('DC-59: a Consumer\'s coloured --ex-selection-fill multiplies over a pinned
 
         // B2's thick bottom is three Device Pixels, on B2's last two and B3's first: black, under
         // the shade as over the Paper. Multiplied, blue over black is black; laid over, it would not be.
+        // spec-lint: early-read: expectRangeLanded above waited for the range's boxes and for circuitQuiet(); the lint does not know that helper
         const b2 = await across(page, await cell(grid, 'B2').boundingBox(), 'bottom', 0.5);
         for (const offset of [-2, -1, 0]) {
             expect(sameColour(b2.pixel(offset), BLACK, 2), `B2's thick bottom at ${offset} (${place}): ${b2.pixel(offset)}`).toBe(true);
@@ -276,9 +278,11 @@ test('DC-59: a Consumer\'s coloured --ex-selection-fill multiplies over a pinned
         // B3's yellow, darkened by the blue rather than tinted with it: (153, 153, 0), where a tint
         // laid over would be (153, 153, 102).
         const yellow = [255, 255, 0];
+        // spec-lint: early-read: the range landed and the circuit went quiet in expectRangeLanded; nothing was pressed since
         const b3 = await across(page, await cell(grid, 'B3').boundingBox(), 'bottom', 0.5);
         expect(paints(b3.pixel(-4), multiplied(fill, yellow)), `B3's Fill under the shade (${place}): ${b3.pixel(-4)}`).toBe(true);
         // And the Paper beside it, C3, in the same shade over white either way.
+        // spec-lint: early-read: the range landed and the circuit went quiet in expectRangeLanded; nothing was pressed since
         const c3 = await across(page, await cell(grid, 'C3').boundingBox(), 'bottom', 0.5);
         expect(paints(c3.pixel(-4), multiplied(fill, WHITE)), `C3's Paper under the shade (${place}): ${c3.pixel(-4)}`).toBe(true);
     }
@@ -294,6 +298,7 @@ async function expectLine(page, grid, style, side) {
     const target = cell(grid, `${side === 'bottom' ? 'B' : 'D'}${row}`);
     await expect(target).toBeVisible();
     await page.mouse.move(0, 0);
+    // spec-lint: early-read: moving the pointer off the Sheet takes the hover band away but cannot move the target cell's box
     const box = await target.boundingBox();
     const { scale, pixel } = await across(page, box, side, 0.5);
     const want = expected(style);
@@ -517,16 +522,19 @@ test('SH-53 (Part C, case 12): Ctrl+Shift+= over a whole row inserts a row above
     await expect(cell(grid, 'A1')).toHaveAccessibleName('-123456789');
     await pressCell(grid, 'A1');
     await page.keyboard.press('Shift+Space');
+    // spec-lint: early-read: devicePixelRatio is the browser's zoom, which selecting a row cannot change
     const zoom = await page.evaluate(() => devicePixelRatio);
 
     await watchNextKey(page, '+');
     await page.keyboard.press('Control+Shift+Equal');
+    // spec-lint: early-read: the keydown listener records the key inside the press's own dispatch, so the answer is final once the press returns
     expect(await keySeenUntouched(page), 'the page never saw the key').toBeNull();
     await expect(cell(grid, 'A2')).toHaveAccessibleName('-123456789');
     await expect(cell(grid, 'A1')).toHaveText('');
 
     await watchNextKey(page, '-');
     await page.keyboard.press('Control+Minus');
+    // spec-lint: early-read: the keydown listener records the key inside the press's own dispatch, so the answer is final once the press returns
     expect(await keySeenUntouched(page)).toBeNull();
     await expect(cell(grid, 'A1')).toHaveAccessibleName('-123456789');
     // keySeenUntouched above is what says the page never had the key; the ratio is read only to show

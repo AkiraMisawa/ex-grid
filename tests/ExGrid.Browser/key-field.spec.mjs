@@ -187,6 +187,7 @@ for (const chrome of ['builtin', 'mud']) {
         test('ED-30 (i1): a composition on a selected cell is drawn over the cell, nothing moves while it lasts, and its end opens the Cell Editor holding it; Enter commits and moves', async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
+            // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
             const before = await cell(grid, 'D10').textContent();
             const client = await page.context().newCDPSession(page);
             try {
@@ -224,6 +225,7 @@ for (const chrome of ['builtin', 'mud']) {
         test('ED-30 (i2): a composition the IME cancels leaves an edit open and empty, as Excel\'s does; Escape then cancels it', async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
+            // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
             const before = await cell(grid, 'D10').textContent();
             const client = await page.context().newCDPSession(page);
             try {
@@ -247,6 +249,7 @@ for (const chrome of ['builtin', 'mud']) {
         test('ED-30: a press on another cell while composing puts the composition in the cell it was composed on, commits it there and selects the pressed cell', async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
+            // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
             const before = await cell(grid, 'D10').textContent();
             const client = await page.context().newCDPSession(page);
             try {
@@ -272,6 +275,7 @@ for (const chrome of ['builtin', 'mud']) {
         test('ED-30 / ADR-0010 (the hold): a second composition ended before the first one\'s editor has the keyboard is appended to it, and a key typed at once waits for both (150 ms on the Server host)', async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
+            // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
             const before = await cell(grid, 'D10').textContent();
             await setRoundTrip(150);
             const client = await page.context().newCDPSession(page);
@@ -301,6 +305,7 @@ for (const chrome of ['builtin', 'mud']) {
         test('ED-30 / ADR-0080 (the sixteenth run\'s k6): the key that ends a composition and starts the next leaves DOM focus in the Keyboard Field until the second ends, and D10 holds both in order (150 ms on the Server host)', async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
+            // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
             const before = await cell(grid, 'D10').textContent();
             await setRoundTrip(150);
             const client = await page.context().newCDPSession(page);
@@ -349,6 +354,7 @@ for (const chrome of ['builtin', 'mud']) {
         test('ED-30 / ADR-0080: with the editor\'s request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host)', async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
+            // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
             const before = await cell(grid, 'D10').textContent();
             await setRoundTrip(150);
             const client = await page.context().newCDPSession(page);
@@ -393,6 +399,7 @@ for (const chrome of ['builtin', 'mud']) {
         test('ED-30 / ADR-0080 / ADR-0010: a composition that ends with no key the IME took being told gives the waiting editor the keyboard at its end, and one composed there at once comes after the text held for the edit (150 ms on the Server host)', async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
+            // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
             const before = await cell(grid, 'D10').textContent();
             await setRoundTrip(150);
             const client = await page.context().newCDPSession(page);
@@ -436,6 +443,7 @@ for (const chrome of ['builtin', 'mud']) {
         test('ED-30 / ADR-0080 (the sixteenth run\'s k15): a key the IME took whose keyup never comes — Alt+Tab mid-composition — ends as the keyboard leaves the field, and the editor the composition opened takes the keyboard holding its text (150 ms on the Server host)', async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
+            // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
             const before = await cell(grid, 'D10').textContent();
             await setRoundTrip(150);
             const client = await page.context().newCDPSession(page);
@@ -496,6 +504,7 @@ for (const chrome of ['builtin', 'mud']) {
 
             await page.evaluate(() => navigator.clipboard.writeText('42'));
             await pressAt(grid, 'E8');
+            // spec-lint: early-read: a press selects E8 and cannot change its text, and this file's pressAt has waited for the Focus there
             const before = await cell(grid, 'E8').textContent();
             await page.keyboard.press('ControlOrMeta+V');
             await expect(cell(grid, 'E8')).toHaveText('42');
@@ -514,7 +523,11 @@ for (const chrome of ['builtin', 'mud']) {
             await page.locator('#before-grid').focus();
             await page.keyboard.press('Tab');
             await expect(keyField(grid)).toBeFocused();
+            // Escape releases Tab (ADR-0012). The release is the Escape's answer, and a Tab typed before
+            // it is held behind the Escape and dropped (script cannot move DOM focus for it,
+            // ADR-0010/0021), on WebAssembly as on a circuit: the wait below stands until that is fixed.
             await page.keyboard.press('Escape');
+            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
             await page.waitForTimeout(500);
             await page.keyboard.press('Tab');
             await expect(page.locator('#after-grid')).toBeFocused();
@@ -522,6 +535,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Shift+Tab');
             await expect(keyField(grid)).toBeFocused();
             await page.keyboard.press('Escape');
+            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
             await page.waitForTimeout(500);
             // From the field, Shift+Tab leaves the grid: the root is no tab stop to land on and pass
             // the keyboard straight back (ADR-0080).
@@ -539,6 +553,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Escape');
             await expect(editor(grid)).toHaveCount(0);
             await page.keyboard.press('Escape');
+            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
             await page.waitForTimeout(500);
             await expect(keyField(grid)).toBeFocused();
 
@@ -560,6 +575,7 @@ for (const chrome of ['builtin', 'mud']) {
             await surround(page, '.ex-grid:has(> .ex-formula-bar)');
             await pressAt(grid, 'D10');
             await page.keyboard.press('Escape');
+            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
             await page.waitForTimeout(500);
             await page.keyboard.press('Tab');
             await expect(page.locator('#after-grid')).toBeFocused();
@@ -679,6 +695,7 @@ test('ADR-0080 / ADR-0035 / ED-30: over a cell that does not edit the Keyboard F
     const client = await page.context().newCDPSession(page);
     try {
         await compose(client, 'か', 'かな');
+        // spec-lint: fixed-wait: proves an absence — no composition, value or Cell Editor may arrive on the read-only field within the window, and no state marks that nothing came; the Settled Mark (PR #134, settled(grid)) will replace it
         await page.waitForTimeout(300);
         expect(await fieldState(grid)).toEqual({ value: '', drawn: false, focused: true });
         await expect(grid.locator('.ex-viewport .ex-editor')).toHaveCount(0);
@@ -722,8 +739,10 @@ for (const chrome of ['builtin', 'mud']) {
             await page.locator('#before-grid').focus();
             await page.keyboard.press('Tab');
             await expect(keyField(grid)).toBeFocused();
-            // Tab is the grid's until Escape releases it (ADR-0012); the released Tab leaves.
+            // Tab is the grid's until Escape releases it (ADR-0012); the released Tab leaves. The release
+            // is the Escape's answer, and a Tab typed before it is dropped (ADR-0010/0021).
             await page.keyboard.press('Escape');
+            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
             await page.waitForTimeout(500);
             await page.keyboard.press('Tab');
             await expect(page.locator('#after-grid')).toBeFocused();
@@ -731,6 +750,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Shift+Tab');
             await expect(keyField(grid)).toBeFocused();
             await page.keyboard.press('Escape');
+            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
             await page.waitForTimeout(500);
             await page.keyboard.press('Shift+Tab');
             await expect(page.locator('#before-grid')).toBeFocused();
@@ -752,6 +772,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Tab');
             await expect(grid).toBeFocused();
             await page.keyboard.press('Escape');
+            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
             await page.waitForTimeout(500);
             await page.keyboard.press('Tab');
             await expect(page.locator('#after-grid')).toBeFocused();
@@ -760,6 +781,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Shift+Tab');
             await expect(grid).toBeFocused();
             await page.keyboard.press('Escape');
+            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
             await page.waitForTimeout(500);
             await page.keyboard.press('Shift+Tab');
             await expect(page.locator('#before-grid')).toBeFocused();
@@ -796,6 +818,7 @@ test.describe('/wide, a display-only grid', () => {
         await page.keyboard.press('Tab');
         await expect(grid).toBeFocused();
         await page.keyboard.press('Escape');
+        // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
         await page.waitForTimeout(500);
         await page.keyboard.press('Tab');
         await expect(page.locator('#after-grid')).toBeFocused();
@@ -803,6 +826,7 @@ test.describe('/wide, a display-only grid', () => {
         await page.keyboard.press('Shift+Tab');
         await expect(grid).toBeFocused();
         await page.keyboard.press('Escape');
+        // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
         await page.waitForTimeout(500);
         await page.keyboard.press('Shift+Tab');
         await expect(page.locator('#before-grid')).toBeFocused();
@@ -814,6 +838,7 @@ test.describe('/wide, a display-only grid', () => {
         await grid.locator("[id$='r1c3']").click({ force: true });
         await expect(grid).toHaveAttribute('aria-activedescendant', /-r1c3$/);
         await page.keyboard.press('Escape');
+        // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
         await page.waitForTimeout(500);
 
         await page.locator('#before-grid').click();
@@ -882,6 +907,7 @@ test.describe('the Server host only', () => {
         await openSheet(page);
         const grid = sheet(page);
         await pressAt(grid, 'D10');
+        // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
         const before = await cell(grid, 'D10').textContent();
         await setRoundTrip(150);
         const client = await page.context().newCDPSession(page);
@@ -957,6 +983,7 @@ for (const chrome of ['builtin', 'mud']) {
         test('ADR-0039 / ADR-0010 / ED-30: a composition finished while Ctrl+F opens Find is typed into the find field, the key after it behind it, and opens no edit (150 ms)', async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
+            // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
             const before = await cell(grid, 'D10').textContent();
             await noteCompositionEnds(page);
             await setRoundTrip(150);
@@ -993,6 +1020,7 @@ for (const chrome of ['builtin', 'mud']) {
             const formatCells = formatCellsOf(page, grid, chrome);
             const number = formatCells.getByRole('tab', { name: 'Number', exact: true });
             await pressAt(grid, 'D10');
+            // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
             const before = await cell(grid, 'D10').textContent();
             await noteCompositionEnds(page);
             await setRoundTrip(150);
@@ -1031,6 +1059,7 @@ for (const chrome of ['builtin', 'mud']) {
             const number = formatCells.getByRole('tab', { name: 'Number', exact: true });
             const item = page.getByRole('menuitem', { name: 'Format Cells…' });
             await pressAt(grid, 'D10');
+            // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
             const before = await cell(grid, 'D10').textContent();
             await clickCell(grid, 'D10', { button: 'right' });
             await expect(item).toBeVisible();

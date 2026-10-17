@@ -179,6 +179,7 @@ for (const chrome of CHROMES) {
 
         test('a secondary click outside the selection moves it first (CTX-1, ADR-0036)', async ({ page }) => {
             await clickCell(page, 0, 1);
+            await expectActiveDescendant(grid(page), /r0c1$/);
             const before = await activeDescendant(grid(page));
 
             await grid(page).locator("[id$='r3c2']").click({ button: 'right', force: true });
@@ -724,7 +725,7 @@ for (const chrome of CHROMES) {
                     || active.closest('.mud-ex-grid-filter-operand') !== null);
             })).toBe(true);
             await page.keyboard.type('5');
-            expect(await page.evaluate(() => document.activeElement?.value)).toBe('5');
+            await expect.poll(() => page.evaluate(() => document.activeElement?.value)).toBe('5');
         });
 
         test('E on a checkbox outside the value list holds nothing: a Space after it ticks at once (ADR-0010/0044)', async ({ page }) => {
@@ -785,11 +786,13 @@ for (const chrome of CHROMES) {
             // Absence cannot be waited for, so the submission is given time to land.
             await values.search(popover).focus();
             await page.keyboard.press('Enter');
+            // spec-lint: fixed-wait: proves an absence: the Enter must not apply an empty In and close the panel; the Settled Mark (PR #134, settled(grid)) will replace it
             await page.waitForTimeout(600);
             await expect(popover).toHaveCount(1);
             await expect(values.apply(popover)).toBeDisabled();
             // A press on the unavailable Apply does nothing either.
             await values.apply(popover).click({ force: true });
+            // spec-lint: fixed-wait: proves an absence: the press on the unavailable Apply must not apply; the Settled Mark (PR #134, settled(grid)) will replace it
             await page.waitForTimeout(600);
             await expect(popover).toHaveCount(1);
             expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);

@@ -106,6 +106,7 @@ async function selectionLook(page) {
     await page.keyboard.press('Shift+ArrowDown');
     await expect(grid.locator('.ex-range-single')).toHaveCount(1);
     await page.mouse.move(0, 0);
+    await expect(grid.locator('.ex-hover-row')).toHaveCount(0);
     // The outline is the border of the range's box of its own, the ::after (ADR-0008, 2026-10-01).
     const outline = await resolvedColour(page, await grid.locator('.ex-range-single').first()
         .evaluate((el) => getComputedStyle(el, '::after').borderTopColor));
@@ -537,6 +538,7 @@ for (const [chrome, query] of CHROMES) {
                 await page.keyboard.press('F2');
                 await expect(editor(grid)).toBeFocused();
                 await page.mouse.move(0, 0);
+                await expect(grid.locator('.ex-hover-row')).toHaveCount(0);
 
                 for (const [name, surface] of [['field', editor(grid)], ['coloured text', editorLayer(grid)]]) {
                     expect(await lookOf(surface), `${address} (${what}): the ${name}`).toEqual(look);

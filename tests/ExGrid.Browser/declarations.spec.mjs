@@ -109,7 +109,6 @@ for (const chrome of ['builtin', 'mud']) {
             await clickCell(grid, 'F2');
             await page.keyboard.type('=SU');
             await expect(items(grid).first()).toHaveText('SUBSTITUTE');
-            await page.waitForTimeout(150); // the gate is told a message after the list is painted
             // ← is not claimed while the list is open: it moves the caret, the edit stays open, and the
             // list answers the text before the caret.
             await page.keyboard.press('ArrowLeft');
@@ -140,9 +139,8 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('=S');
             await expect(items(grid).first()).toBeVisible();
             // The list is painted by one message and the key listener told it is open by the
-            // next; on a circuit a ← pressed between the two is still gated as Overwrite's and
-            // is swallowed (found by this suite, 2026-09-27; reported, not pinned here).
-            await page.waitForTimeout(150);
+            // next; the gate reads the list's own mark, painted with it, so a ← pressed between
+            // the two is the editor's (found by this suite, 2026-09-27; circuit.spec.mjs pins it).
             await page.keyboard.press('ArrowLeft');
             await expect.poll(() => caret(editor(grid))).toBe(1);
             // A second S typed before the first: the text is =SS, and the new S is at the caret, 2.
@@ -262,7 +260,6 @@ for (const chrome of ['builtin', 'mud']) {
             await pressCell(grid, 'D10');
             await page.keyboard.type('=Posit');
             await expect(items(grid)).toHaveText(['Positions']);
-            await page.waitForTimeout(150); // the gate is told a message after the list is painted
             await page.keyboard.press('ArrowLeft');
             await expect.poll(() => caret(editor(grid))).toBe(5);
             await page.keyboard.press('ArrowRight');
@@ -301,6 +298,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}-1`);
             await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length + 2);
             await expect(completion(grid)).toContainText('match_mode');
+            // spec-lint: fixed-wait: proves an absence: the list Tab closed must not be asked for and painted again, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
             await page.waitForTimeout(300); // long enough for a list asked again to come back
             await expect(items(grid)).toHaveCount(0);
             await page.keyboard.press('Escape');
@@ -316,6 +314,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Tab');
             await expect(editor(grid)).toHaveValue('=SUM(Positions[PV');
             await expect(completion(grid)).toContainText('number1');
+            // spec-lint: fixed-wait: proves an absence: the column list Tab closed must not come back, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
             await page.waitForTimeout(300);
             await expect(items(grid)).toHaveCount(0);
             await page.keyboard.press('Escape');
@@ -327,6 +326,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(items(grid)).toHaveText(['Positions']);
             await page.keyboard.press('Tab');
             await expect(editor(grid)).toHaveValue('=Positions');
+            // spec-lint: fixed-wait: proves an absence: no hint or list may open for the table's name Tab wrote, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
             await page.waitForTimeout(300);
             await expect(completion(grid)).toHaveCount(0);
             await page.keyboard.press('Escape');
@@ -348,6 +348,7 @@ for (const chrome of ['builtin', 'mud']) {
 
             await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length);
             await expect(completion(grid)).toContainText('match_mode');
+            // spec-lint: fixed-wait: proves an absence: no value list may open for the caret moved back, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
             await page.waitForTimeout(300); // long enough for a list asked about this caret to come back
             await expect(items(grid)).toHaveCount(0);
 
@@ -376,6 +377,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(bar(grid)).toHaveValue(`${AT_MATCH_MODE}0`);
             await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length + 1);
             await expect(completion(grid)).toContainText('match_mode');
+            // spec-lint: fixed-wait: proves an absence: the list Tab closed must not be asked for and painted again, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
             await page.waitForTimeout(300); // long enough for a list asked again to come back
             await expect(items(grid)).toHaveCount(0);
             await page.keyboard.press('Escape');
@@ -386,6 +388,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type(`${AT_MATCH_MODE}4`);
             await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}4`);
             await expect(completion(grid)).toContainText('match_mode');
+            // spec-lint: fixed-wait: proves an absence: no list may stand for 4, nor the one for ,, linger, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
             await page.waitForTimeout(300); // long enough for the list for 4 to replace the one for ,,
             await expect(items(grid)).toHaveCount(0);
             await page.keyboard.press('Escape');
@@ -408,6 +411,7 @@ for (const chrome of ['builtin', 'mud']) {
 
             await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length);
             await expect(completion(grid)).toContainText('match_mode');
+            // spec-lint: fixed-wait: proves an absence: no value list may open for the caret moved back, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
             await page.waitForTimeout(300); // long enough for a list asked about this caret to come back
             await expect(items(grid)).toHaveCount(0);
 
@@ -444,6 +448,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(items(grid)).toHaveText(MATCH_MODES);
             await page.keyboard.press('End');
             await expect(items(grid)).toHaveCount(0);
+            // spec-lint: fixed-wait: proves an absence: End must ask no commit, so no refusal may be shown, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
             await page.waitForTimeout(300); // long enough for a refusal to have been shown
             await expect(editor(grid)).toHaveValue(AT_MATCH_MODE);
             await expect(grid.locator('.ex-message')).toHaveCount(0);
@@ -458,6 +463,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('=SUM(');
             await expect(editor(grid)).toHaveValue('=SUM(');
             await expect(items(grid)).toHaveCount(0);
+            // spec-lint: fixed-wait: a wait between inputs, kept: once the list is gone the gate reads the mode it was last told, a message after the render, so a Home typed in that gap would be the editor's (suspected product race, to be decided, not hidden by the lint)
             await page.waitForTimeout(150); // the gate is told a message after the list is gone
             await page.keyboard.press('Home');
             await expect(editor(grid)).toHaveValue('=SUM(A10');
@@ -467,8 +473,10 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('=SUM(');
             await expect(editor(grid)).toHaveValue('=SUM(');
             await expect(items(grid)).toHaveCount(0);
+            // spec-lint: fixed-wait: a wait between inputs, kept: once the list is gone the gate reads the mode it was last told, a message after the render, so an End typed in that gap would be the editor's (suspected product race, to be decided)
             await page.waitForTimeout(150);
             await page.keyboard.press('End');
+            // spec-lint: fixed-wait: proves an absence: End must write nothing and ask no commit, so no refusal may be shown, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
             await page.waitForTimeout(300);
             await expect(editor(grid)).toHaveValue('=SUM(');
             await expect(grid.locator('.ex-message')).toHaveCount(0);
@@ -498,7 +506,6 @@ for (const chrome of ['builtin', 'mud']) {
             await pressCell(grid, 'D10');
             await page.keyboard.type('=Posit');
             await expect(items(grid)).toHaveText(['Positions']);
-            await page.waitForTimeout(150); // the gate is told a message after the list is painted
             await page.keyboard.press('Home');
             await expect.poll(() => caret(editor(grid))).toBe(0);
             await expect(editor(grid)).toHaveValue('=Posit');
@@ -555,6 +562,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type(typed);
             await expect(editor(grid)).toHaveValue(typed);
             await expect(items(grid)).toHaveCount(0);
+            // spec-lint: fixed-wait: a wait between inputs, kept: once the names are no longer listed the gate reads the mode it was last told, a message after the render, so a ↓ typed in that gap would be the editor's (suspected product race, to be decided)
             await page.waitForTimeout(150); // the gate is told a message after the names typed are no longer listed
 
             // An arrow, at the end of the text.
@@ -761,6 +769,7 @@ for (const chrome of ['builtin', 'mud']) {
         await clickBarEnd(grid);
         await typeSteadily(page, bar(grid), '=SUM(');
         await page.keyboard.press('F2');
+        // spec-lint: early-read: F2 changes the bar's mode, not its box; the box only says where to press in its text
         const field = await boxOf(bar(grid));
         await setRoundTrip(150);
         await page.keyboard.press('ArrowDown');
@@ -770,6 +779,7 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(grid.locator('.ex-point')).toHaveCount(0);
         await expect.poll(() => caret(bar(grid))).toBeLessThan(3);
         // Long past the placement's round trip, the caret is still where the press put it.
+        // spec-lint: fixed-wait: proves an absence: the late caret placement must not put the caret back after the Reference, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
         await page.waitForTimeout(500);
         expect(await caret(bar(grid))).toBeLessThan(3);
         await expect(grid.locator('.ex-point')).toHaveCount(0);
@@ -875,6 +885,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(editor(grid)).toHaveValue('=A1+B1');
             await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(0);
             await expect(candidates(grid)).toHaveCount(0);
+            // spec-lint: fixed-wait: a wait between inputs, kept: typing that ends Point tells the gate a message after its render, so a Home typed in that gap would still be Point's (suspected product race, to be decided)
             await page.waitForTimeout(150); // typing that ends Point tells the gate after its render
 
             await page.keyboard.press('Home');
@@ -939,6 +950,7 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(bar(grid)).toBeFocused();
         await typeSteadily(page, bar(grid), '=A1+B1');
         await expect(editor(grid)).toHaveValue('=A1+B1');
+        // spec-lint: fixed-wait: a wait between inputs, kept: typing tells the gate its mode a message after its render, so an F2 typed in that gap would be judged in the old mode (suspected product race, to be decided)
         await page.waitForTimeout(150); // typing tells the gate after its render
 
         await page.keyboard.press('F2');
@@ -987,6 +999,7 @@ for (const chrome of ['builtin', 'mud']) {
         await clickCell(grid, 'F8');
         await nameBox(grid).click();
         await expect(nameBox(grid)).toHaveValue('F8');
+        // spec-lint: fixed-wait: a wait between inputs, kept: the Name Box's press is not held among the keys, so a render answering the row press can rewrite its text; typing waits for the round trips (suspected product race, named above; circuitQuiet() is the state, but it would still sit between inputs)
         await page.waitForTimeout(600);
         await expect(nameBox(grid)).toBeFocused();
         await page.keyboard.press('ControlOrMeta+A');
@@ -1020,6 +1033,7 @@ const cellEditorPainted = (grid) => grid.evaluate((root) => new Promise((resolve
             resolve();
         }
     });
+    // spec-lint: fixed-wait: a ceiling, not a wait: the promise resolves when the Cell Editor is painted, and the 5 s only turns a paint that never comes into a failure
     const timer = setTimeout(() => {
         observer.disconnect();
         reject(new Error('the Cell Editor was never painted'));
@@ -1123,6 +1137,7 @@ test('DC-28/ED-22: after keys held behind F2 on a 150 ms circuit, the next key l
     await expect(bar(grid)).toHaveValue('=7*+1');
     // Every answer has landed: the text in both surfaces is the one typed.
     await expect(editor(grid)).toHaveValue('=7*+1');
+    // spec-lint: fixed-wait: a wait between inputs, kept: the test types its next key once every answer to the held keys has landed; circuitQuiet() is the state, but it would still sit between inputs (to be decided)
     await page.waitForTimeout(1000);
     await expect.poll(() => caret(bar(grid))).toBe(3);
     await page.keyboard.type('2');
@@ -1428,6 +1443,7 @@ test('DC-45: on a 150 ms circuit, a second F4 before the caret is placed cycles 
     await expect(bar(grid)).toHaveValue('=A$1+B2');
     await expect.poll(() => selectionOf(bar(grid))).toEqual([1, 4]);
     // Long past the last placement's round trip, nothing else has changed.
+    // spec-lint: fixed-wait: proves an absence: no late placement may change the text or the selection over $A$1, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
     await page.waitForTimeout(500);
     await expect(bar(grid)).toHaveValue('=A$1+B2');
     expect(await selectionOf(bar(grid))).toEqual([1, 4]);
@@ -1879,6 +1895,7 @@ test('DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport
     await enter(page, grid, 'E3', '2');
     await clickCell(grid, 'E2');
     await clickCell(grid, 'E3', { modifiers: ['Shift'] });
+    // spec-lint: early-read: E3 is in view near the top, and the Shift+press on it does not move it; only its box is read
     const corner = await boxOf(cell(grid, 'E3'));
     await expect.poll(async () => {
         const box = await grid.locator('.ex-fill-handle').boundingBox();
@@ -2445,6 +2462,7 @@ test('DC-30/ADR-0007: with an edit open, Ctrl+Z undoes uncommitted typing', asyn
     await setRoundTrip(150);
     await page.keyboard.type('de');
     await expect(editor(grid)).toHaveValue('abcde');
+    // spec-lint: fixed-wait: a wait between inputs, kept: Ctrl+Z is pressed once every render answering the typing has landed, as the comment above says; circuitQuiet() is the state, but it would still sit between inputs (to be decided)
     await page.waitForTimeout(1000);
     await expect(editor(grid)).toHaveValue('abcde');
     await page.keyboard.press('ControlOrMeta+Z');

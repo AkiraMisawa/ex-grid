@@ -1,5 +1,5 @@
-import { test, expect, scrollRowToTop } from './fixtures.mjs';
-import { sheet, cell, pressCell } from './sheet-helpers.mjs';
+import { test, expect, scrollRowToTop, circuitQuiet } from './fixtures.mjs';
+import { sheet, cell, pressCell, expectCovers } from './sheet-helpers.mjs';
 import { sameColour, resolvedColour } from './pixels.mjs';
 import { STYLES, across, along, pattern, expected, isDark, isLight } from './line-pixels.mjs';
 
@@ -266,7 +266,11 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         await page.keyboard.press('Shift+ArrowRight');
         await page.keyboard.press('Shift+ArrowDown');
         await expect(grid.locator('.ex-range-single')).toHaveCount(1);
+        await expectCovers(grid.locator('.ex-range-single').first(), grid, 'B2', 'C3');
+        // The pointer leaves so no hover band lies over the pixels; the host has taken that once
+        // the circuit is quiet.
         await page.mouse.move(0, 0);
+        await circuitQuiet();
         const scale = await page.evaluate(() => devicePixelRatio);
 
         // The edges inside B2:C3, between C2 and C3 and between B3 and C3, over the shade: still
