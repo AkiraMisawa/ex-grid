@@ -60,6 +60,27 @@ Two things a keyboard user meets were recorded as undecided.
 - **Tested where the race is real**: layer 3 on the Server host with latency injected, the keyboard
   moved to another grid during the round trip, and the second grid keeps it (SRV-5).
 
+### A press inside the popover keeps the keyboard there *(decided with the user on 2026-10-17, ticket 240)*
+
+The question above asked only whether the keyboard had left the grid. A press inside the popover
+itself, made before its opening focus lands, is inside the root, so the opening focus went through and
+took the keyboard back from where the user had pressed. CI saw it on the Server host with no latency
+injected (#140, run 39031949301): Format Cells drawn, Percentage pressed 33 ms later, OK focused and
+Enter typed, and the opening focus, landing after them, put the keyboard on the first tab, where the
+Enter did nothing.
+
+- **A popover's first scripted focus is refused when a press inside that popover has already put DOM
+  focus there.** It was taken against a popover nobody had touched, which no longer holds. Later
+  requests — a key's move in a menu, Tab's wrap — answer a key typed in the popover, and are asked as
+  before. A press on the popover's own ground, which takes no focus, leaves the opening focus to place
+  the keyboard.
+- **A Consumer's popover (ADR-0050 item 16) is handed the core's focus function too**, as
+  `GridPopoverContext.TakeFocus`, and answers `FocusRequest` and `FocusLastRequest` through it instead
+  of its own `FocusAsync`; ExSheet's Format Cells does. Only the press question is asked of it, not the
+  editor's: a Consumer's popover may open from a control of the page's, outside the grid.
+- **Tested where the race is real**: layer 3 on the Server host with a 300 ms round trip, the choice
+  pressed in the frame it is painted, and it keeps the keyboard (`format-cells.spec.mjs`, ticket 240).
+
 ## Considered options
 
 - **The page never follows**, the editor included (`preventScroll` on its focus). Consistent, but the

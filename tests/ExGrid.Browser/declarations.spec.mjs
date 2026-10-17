@@ -1135,10 +1135,9 @@ test('DC-28/ED-22: after keys held behind F2 on a 150 ms circuit, the next key l
     await page.keyboard.press('F2');
     await page.keyboard.type('7*');
     await expect(bar(grid)).toHaveValue('=7*+1');
-    // Every answer has landed: the text in both surfaces is the one typed.
+    // Both surfaces show the text typed; the next key follows at once, with answers to the held
+    // keys still on their way (ticket 223: passed 20 of 20 on each host, 2026-10-17).
     await expect(editor(grid)).toHaveValue('=7*+1');
-    // spec-lint: fixed-wait: a wait between inputs, kept: the test types its next key once every answer to the held keys has landed; circuitQuiet() is the state, but it would still sit between inputs (to be decided)
-    await page.waitForTimeout(1000);
     await expect.poll(() => caret(bar(grid))).toBe(3);
     await page.keyboard.type('2');
     await expect(bar(grid)).toHaveValue('=7*2+1');
@@ -2458,12 +2457,11 @@ test('DC-30/ADR-0007: with an edit open, Ctrl+Z undoes uncommitted typing', asyn
     await page.keyboard.type('abc');
     await expect(editor(grid)).toHaveValue('abc');
     // At an ordinary round trip, so that the renders answering these two inputs land after
-    // both were typed, as they do on any real network; every answer is waited for.
+    // both were typed, as they do on any real network. Ctrl+Z follows at once, before every
+    // answer has landed (ticket 223: passed 20 of 20 on each host, 2026-10-17).
     await setRoundTrip(150);
     await page.keyboard.type('de');
     await expect(editor(grid)).toHaveValue('abcde');
-    // spec-lint: fixed-wait: a wait between inputs, kept: Ctrl+Z is pressed once every render answering the typing has landed, as the comment above says; circuitQuiet() is the state, but it would still sit between inputs (to be decided)
-    await page.waitForTimeout(1000);
     await expect(editor(grid)).toHaveValue('abcde');
     await page.keyboard.press('ControlOrMeta+Z');
     await expect(editor(grid)).toHaveCount(1);
