@@ -320,7 +320,8 @@ jobs:
   # browser (tests/ExGrid.Browser/README.md, "Before a new or changed spec goes in"). A test that
   # fails one time in a few fails here, on the branch that wrote it, rather than later on a
   # branch that did not touch it. Only the files themselves: a change to a helper they import is
-  # the full run's to cover. retries stays 0 (ADR-0026), so a repeat that fails is a failure.
+  # the full run's to cover. retries stays 0 (ADR-0026), so a repeat that fails is a failure, and
+  # counted-run.sh fails the job unless every test the files list ran three times (ADR-0220).
   browser-repeat:
     name: Changed specs, three times, against ${{ matrix.hosting }} on ${{ matrix.project }} (Linux, headed)
     needs: hosts
@@ -361,6 +362,11 @@ jobs:
           specs=$(printf '%s\n' "${changed}" | sed '/^$/d; s#^tests/ExGrid.Browser/##' | tr '\n' ' ')
           echo "specs=${specs}" >> "$GITHUB_OUTPUT"
           echo "Repeated: ${specs:-none}"
+          # A push that changes no spec file, a helper alone among them, repeats nothing, and the
+          # job's few seconds are that, said where the check is read rather than only in its log.
+          if [ -z "${specs}" ]; then
+            echo "Nothing repeated: this push changes no spec file of the pull request's." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - uses: actions/setup-dotnet@v6
         if: steps.changed.outputs.specs != ''
@@ -394,7 +400,7 @@ jobs:
           EXGRID_HOSTING: ${{ matrix.hosting }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
-          npx playwright test ${{ steps.changed.outputs.specs }} --project=${{ matrix.project }} --repeat-each=3
+          ./counted-run.sh 3 ${{ steps.changed.outputs.specs }} --project=${{ matrix.project }}
 
       - name: Keep the run's records
         if: always() && steps.changed.outputs.specs != ''

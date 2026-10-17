@@ -10,6 +10,10 @@
 // The round trip starts at 0. POST http://localhost:<controlPort>/?rtt=150 sets it for
 // every chunk that arrives after, and GET answers what it is set to.
 //
+// The widened run (ADR-0220 §5) starts the proxy with EXGRID_RTT_FLOOR=<ms>: every chunk then
+// waits that round trip on top of whatever a test sets, 0 included, and GET still answers what
+// the test set, so a test reads back its own number.
+//
 // Every byte between the browser and the host passes through here, so this is also the one
 // place that can say the two have stopped talking. GET /quiet?for=<ms>&within=<ms> answers
 // once nothing is held here or unsent on a socket, in either direction, and nothing has
@@ -20,6 +24,10 @@ import net from 'node:net';
 
 const [listenPort, targetPort, controlPort] = process.argv.slice(2).map(Number);
 let halfTripMs = 0;
+const floorMs = Number(process.env.EXGRID_RTT_FLOOR ?? 0);
+if (!(floorMs >= 0)) {
+    throw new Error(`EXGRID_RTT_FLOOR is "${process.env.EXGRID_RTT_FLOOR}"; it is a round trip of 0 ms or more.`);
+}
 
 // What /quiet reads. A chunk is held from the moment it arrives here until it is written on,
 // and a chunk written on can still sit unsent in its socket's buffer.
@@ -67,7 +75,7 @@ const delayed = (from, to, direction) => {
         crossed[direction]++;
         lastCrossed = Date.now();
         // Never earlier than the chunk before it, even if the delay was lowered since.
-        releaseAt = Math.max(Date.now() + halfTripMs, releaseAt);
+        releaseAt = Math.max(Date.now() + halfTripMs + floorMs / 2, releaseAt);
         queue.push({ chunk, at: releaseAt });
         if (timer === null) {
             drain();
