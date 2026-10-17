@@ -29,6 +29,7 @@ async function clickCell(page, row, column, n = 0) {
  * after a copy the test makes next. The one-shot listener leaves nothing behind. */
 async function writeElsewhere(page, text) {
     await page.evaluate((written) => new Promise((resolve) => {
+        // spec-lint: fixed-wait: a ceiling, not a wait: the promise resolves on the clipboardchange event, and the 2 s only ends it in a browser that never fires one
         const timer = setTimeout(resolve, 2000);
         navigator.clipboard.addEventListener('clipboardchange', () => {
             clearTimeout(timer);
@@ -151,6 +152,7 @@ test.describe('a browser that cannot say the clipboard changed', () => {
         await page.keyboard.press('ControlOrMeta+C');
 
         await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).not.toBe('SENTINEL');
+        // spec-lint: fixed-wait: proves an absence: no outline may arrive after the copy, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
         await page.waitForTimeout(300);
         await expect(outlines(page)).toHaveCount(0);
     });

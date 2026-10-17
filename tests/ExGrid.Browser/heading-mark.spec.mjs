@@ -207,9 +207,9 @@ for (const [chrome, mode] of CHROMES) {
         await expect(grid.locator('.ex-header-cell.ex-heading-whole')).toHaveCount(0);
 
         await pressAt(grid.locator('.ex-headings-corner'));
-        expect(await grid.locator('.ex-heading-state').count()).toBe(markerCount);
         const corner = grid.locator('.ex-headings-corner-marked');
         await expect(corner).toHaveCount(1);
+        expect(await grid.locator('.ex-heading-state').count()).toBe(markerCount);
         await parkPointer(page, grid);
         await circuitQuiet();
         expect(await resolvedColour(page, await corner.evaluate(el => getComputedStyle(el, '::after').backgroundColor))).toEqual(ink);

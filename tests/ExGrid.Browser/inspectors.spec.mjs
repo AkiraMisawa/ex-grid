@@ -70,6 +70,7 @@ async function expectKeyboardIn(page, selector, message) {
     await expect.poll(async () => (await focusedInside(page, selector)) || await keyboardAt(page),
         { message, timeout: 2_000 }).toBe(true);
     // And it stays there: the grid's reclaim, if it comes, comes after the handler.
+    // spec-lint: fixed-wait: proves an absence, the grid's reclaim of the keyboard must not arrive; the Settled Mark (PR #134, settled(grid)) will replace it
     await page.waitForTimeout(300);
     const still = (await focusedInside(page, selector)) || await keyboardAt(page);
     expect(still, `${message} (still, 300 ms later)`).toBe(true);
@@ -160,6 +161,7 @@ test('RI-9: floating: an inspector is dragged by its title bar, and closes on it
     await useFloating(page);
     await inspectButton(page, 0).click();
     await inspectButton(page, 1).click();
+    await expect(floating(page)).toHaveCount(2);
     const first = floating(page).and(page.locator(`[data-inspector-key="${id(0)}"]`));
     const before = await first.boundingBox();
     const bar = await first.locator('.demo-inspector-title').boundingBox();
@@ -249,6 +251,7 @@ test('RI-13: modal: the marked rows open one after another, and Escape ends the 
     await expectKeyboardIn(page, '.mud-dialog', 'the keyboard is inside the first of the queue');
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
+    // spec-lint: fixed-wait: proves an absence, the queue's next marked inspector must not open after Escape; the Settled Mark (PR #134, settled(grid)) will replace it
     await page.waitForTimeout(300);
     await expect(dialog).toHaveCount(0);
 });
@@ -260,6 +263,7 @@ test('RI-14: Enter on the Inspect cell moves down and opens nothing (ADR-0020)',
     await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c2$/);
     await page.keyboard.press('Enter');
     await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c2$/);
+    // spec-lint: fixed-wait: proves an absence, Enter on the Inspect cell must open no dialog; the Settled Mark (PR #134, settled(grid)) will replace it
     await page.waitForTimeout(300);
     await expect(page.locator('.mud-dialog')).toHaveCount(0);
 });
@@ -274,6 +278,7 @@ test('RI-15: while a modal inspector stands, the grid behind it cannot be presse
     // dialog — never on the row's button underneath.
     const box = await inspectButton(page, 6).boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    // spec-lint: fixed-wait: proves an absence, the row's inspector must not open under the backdrop; the Settled Mark (PR #134, settled(grid)) will replace it
     await page.waitForTimeout(500);
     await expect(page.locator(`[data-inspector-key="${id(6)}"]`)).toHaveCount(0);
 });

@@ -25,6 +25,7 @@ test('circuitQuiet returns once the Server host has answered, so what it decided
     await setRoundTrip(300);
 
     await page.keyboard.press('ArrowDown');
+    // spec-lint: early-read: early on purpose: the test shows the Name Box has not yet moved here, and that circuitQuiet is what makes the later read safe
     const early = await nameBox(page).inputValue();
     const started = Date.now();
     await circuitQuiet();

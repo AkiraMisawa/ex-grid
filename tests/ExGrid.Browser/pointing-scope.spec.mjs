@@ -73,6 +73,7 @@ async function pointedAtNow(grid) {
                 resolve();
             }
         });
+        // spec-lint: fixed-wait: a deadline that fails the wait if the class never arrives; the wait itself ends on the class, not on time
         const timer = setTimeout(() => {
             observer.disconnect();
             reject(new Error('the grid was never pointed at'));
@@ -314,6 +315,8 @@ test.describe('/sheet', () => {
             return { seen, stop: () => observer.disconnect() };
         });
         await page.keyboard.type('=');
+        // spec-lint: early-read: reads the class changes the observer heard over that window, which is the assertion that nothing painted otherwise
+        // spec-lint: fixed-wait: proves an absence: no unpointed paint may arrive within the second watched; the Settled Mark (PR #134, settled(grid)) will replace it
         const seen = await watch.evaluate((w) => new Promise((resolve) => setTimeout(() => {
             w.stop();
             resolve(w.seen);
@@ -397,6 +400,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=1+');
         await expectPointedAtFor(grid, table, '=1+');
+        // spec-lint: early-read: expectPointedAtFor above waits for the pointing; typing into the Sheet does not move the positions grid's C3
         const target = await boxOf(cell(table, 'C3'));
         const painted = await paintedAtNextPress(table);
         await setRoundTrip(150);

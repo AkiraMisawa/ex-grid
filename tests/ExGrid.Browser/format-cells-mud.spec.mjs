@@ -578,6 +578,7 @@ test.describe('on /sheet?chrome=mud', () => {
         await hex.fill('#FF0000');
         await hex.press('Enter');
         // A press outside the picker closes it; the dialog stays.
+        // spec-lint: early-read: the dialog's title is not moved by Enter in the picker's hex field; its box only says where to press outside the picker
         const title = await formatCells(page).locator('.mud-dialog-title').boundingBox();
         await page.mouse.click(title.x + 10, title.y + 10);
         await expect(page.locator('.mud-popover-open .mud-picker-color-picker')).toHaveCount(0);

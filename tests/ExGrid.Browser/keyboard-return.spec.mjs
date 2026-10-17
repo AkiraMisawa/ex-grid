@@ -43,6 +43,7 @@ test('ADR-0070: passing keys out hands over the held keys before a later key or 
         };
     });
 
+    // spec-lint: early-read: reads what the alterPage script recorded synchronously against a stub core; no grid answer is owed
     expect(await page.evaluate(() => ({
         before: window.__keysPassedOutCheck.before,
         heard: window.__keysPassedOutCheck.heard,
@@ -94,6 +95,7 @@ for (const granted of [true, false]) {
             };
         }, granted);
 
+        // spec-lint: early-read: reads what the alterPage script recorded synchronously against a stub core whose answer the test holds back
         expect(await page.evaluate(() => ({
             asked: window.__keyboardReturnCheck.asked,
             completed: window.__keyboardReturnCheck.completed,
@@ -150,6 +152,7 @@ test('ADR-0039/ADR-0050: a container hands held typing to its text field and pre
             delete window.__containerHandOff;
         };
     });
+    // spec-lint: early-read: reads what the alterPage script recorded synchronously against a stub core; no grid answer is owed
     expect(await page.evaluate(() => window.__containerHandOff)).toEqual({
         reachedHex: true, selected: [0, 7], earlySelection: [2, 4], keptOther: true,
     });

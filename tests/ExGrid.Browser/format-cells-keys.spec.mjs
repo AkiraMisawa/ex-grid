@@ -68,8 +68,10 @@ async function openBy(page, grid, address, how) {
     if (how === 'Enter') {
         // The menu answers keys from its own place, which starts on its first item.
         await expect(page.getByRole('menuitem', { name: 'Copy' })).toBeFocused();
+        // spec-lint: early-read: the menu's answer was awaited just above (its first item focused, an expectation the lint cuts at its object literal), and each later turn after the one that ends the loop's body
         for (let n = 0; n < 10 && !(await item.evaluate((e) => e === document.activeElement)); n++) {
             const items = page.getByRole('menuitem');
+            // spec-lint: early-read: as the loop's condition: the menu's answer, or the last ArrowDown's, has been awaited before this turn began
             const from = await items.evaluateAll((items) => items.findIndex((e) => e === document.activeElement));
             expect(from).toBeGreaterThanOrEqual(0);
             await page.keyboard.press('ArrowDown');

@@ -314,7 +314,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(nameBox(grid)).toHaveValue('F8');
             // Every round trip has landed — the renames, and the row's hand-back, which leaves the
             // Name Box its keyboard (ADR-0021).
-            await page.waitForTimeout(600);
+            await circuitQuiet();
             await expect(nameBox(grid)).toBeFocused();
 
             await page.keyboard.type('D');
@@ -856,6 +856,7 @@ for (const chrome of ['builtin', 'mud']) {
         // Read once the second Escape's answer has long landed: the keyboard left a round trip
         // after it on the Server host.
         await page.keyboard.press('Escape');
+        // spec-lint: fixed-wait: proves an absence: the second Escape's answer must not take the keyboard off the Sheet; the Settled Mark (PR #134, settled(grid)) will replace it
         await page.waitForTimeout(500);
         await expectKeyboardOn(grid);
         await expectFocusAt(grid, 'D10');
@@ -896,6 +897,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         // So does a press on the grid, made once the release has landed.
         await page.keyboard.press('Escape');
+        // spec-lint: fixed-wait: the Escape's release has no visible state to wait for before the press; the Settled Mark (PR #134, settled(grid)) will replace it
         await page.waitForTimeout(500);
         await pressCell(grid, 'E12');
         await page.keyboard.press('Tab');
@@ -908,6 +910,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         // A Tab typed before the Escape's answer is held and dropped (ADR-0010/0021): wait for it.
         await page.keyboard.press('Escape');
+        // spec-lint: fixed-wait: the Escape's release has no visible state to wait for before the Tab; the Settled Mark (PR #134, settled(grid)) will replace it
         await page.waitForTimeout(500);
         await page.keyboard.press('Tab');
         await expect(page.locator('#after-sheet')).toBeFocused();

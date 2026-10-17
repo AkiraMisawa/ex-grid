@@ -41,11 +41,13 @@ test('VZ-16: at a ratio of 2.25 a gridline is two whole Device Pixels, not the s
     await expect(page.locator('#sheet-positions .ex-row').first()).toBeVisible();
     await expect.poll(() => grid.evaluate((root) => /--ex-dp:\s*0\.4444/.test(root.getAttribute('style') ?? ''))).toBe(true);
     await page.mouse.move(0, 0);
+    // spec-lint: early-read: the page's devicePixelRatio is the emulated device's, which no move of the pointer changes
     expect(await page.evaluate(() => devicePixelRatio)).toBe(2.25);
 
     // A gridline is its 1px rounded down to whole Device Pixels: two, as at 200%. Read on a clip
     // whose origin lies on a Device Pixel (4 CSS px are 9 at 2.25): a run the browser blended over a
     // third pixel, as the stylesheet's step drew it, shows there.
+    // spec-lint: early-read: the pointer parked at the page's corner, outside the grid, moves no cell, so E8's box is the same before and after anything it answers
     const box = await cell(grid, 'E8').boundingBox();
     const right = await runAcross(page, box.x + box.width, box.y + box.height / 2, 'x');
     const bottom = await runAcross(page, box.y + box.height, box.x + box.width / 2, 'y');

@@ -275,7 +275,9 @@ test('LV-28/ADR-0152: remote whole-column Copy and Summary include rows outside 
     const copies = {}, summaries = {};
     for (const side of ['snapshot', 'server']) {
         const grid = report(page, side);
+        // spec-lint: early-read: expectSameReports above waits by expect.poll until both reports paint the same; the lint cannot see into the file's own function
         const count = await dataRowCount(grid);
+        // spec-lint: early-read: expectSameReports above waits by expect.poll until both reports paint the same; the lint cannot see into the file's own function
         expect(await rows(page, side).count()).toBeLessThan(100);
         await grid.locator("[id$='-r1c1']").click({ force: true });
         await page.keyboard.press('Control+Space');

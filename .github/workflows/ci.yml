@@ -327,7 +327,9 @@ jobs:
     needs: hosts
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # Three times over is three full runs of each file, on one runner: a pull request that changes
+    # a third of the suite takes about two hours.
+    timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
@@ -359,13 +361,27 @@ jobs:
           else
             changed=${in_pr}
           fi
-          specs=$(printf '%s\n' "${changed}" | sed '/^$/d; s#^tests/ExGrid.Browser/##' | tr '\n' ' ')
+          # A file the pull request changes only in comments runs as it did on the base, so it is not
+          # repeated: every line the pull request adds or removes in it is blank or a comment. On
+          # #137 the spec lint's allowances touched 46 files, and repeating them all took the jobs
+          # past their hour.
+          code=""
+          for file in ${changed}; do
+            if git diff -U0 "origin/${BASE}...HEAD" -- "${file}" | grep -E '^[-+]' | grep -vE '^(\+\+\+|---) ' \
+              | grep -qvE '^[-+][[:space:]]*(//.*|/?\*.*)?$'; then
+              code="${code} ${file}"
+            else
+              echo "Not repeated, changed only in comments: ${file}"
+            fi
+          done
+          changed=${code}
+          specs=$(printf '%s\n' ${changed} | sed '/^$/d; s#^tests/ExGrid.Browser/##' | tr '\n' ' ')
           echo "specs=${specs}" >> "$GITHUB_OUTPUT"
           echo "Repeated: ${specs:-none}"
-          # A push that changes no spec file, a helper alone among them, repeats nothing, and the
+          # A push that changes no spec file in code, a helper alone among them, repeats nothing, and the
           # job's few seconds are that, said where the check is read rather than only in its log.
           if [ -z "${specs}" ]; then
-            echo "Nothing repeated: this push changes no spec file of the pull request's." >> "$GITHUB_STEP_SUMMARY"
+            echo "Nothing repeated: this push changes no spec file of the pull request's in code." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - uses: actions/setup-dotnet@v6

@@ -210,7 +210,9 @@ test('the element count is the same at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, 
     const counts = {};
     for (const rows of [1_000, 100_000, ROWS]) {
         await openWide(page, rows);
-        await page.waitForTimeout(400); // past the settle delay: nothing is a Placeholder
+        // Past the settle delay: nothing is a Placeholder, and the host has said all it will.
+        await expect(page.locator('.ex-grid .ex-placeholder')).toHaveCount(0);
+        await circuitQuiet();
         counts[rows] = await elementCount(page);
     }
 
@@ -273,6 +275,7 @@ test('a scroll to the end made as the grid becomes ready is not undone by the La
     const firstRow = async () => Number(await page.locator('.ex-grid .ex-viewport').getAttribute('data-ex-first-row'));
 
     await expect.poll(firstRow, { timeout: 15_000 }).toBeGreaterThan(ROWS / 2);
+    // spec-lint: fixed-wait: proves an absence: no Layout Ceiling anchor may undo the scroll, on WebAssembly too; the Settled Mark (PR #134, settled(grid)) will replace it
     await page.waitForTimeout(400); // past the settle delay, and past any anchor still on its way
     const first = await firstRow();
     // Recorded, since which the grid heard first is the browser's timing, not the test's.
@@ -290,14 +293,20 @@ test('scrolling changes which rows exist, not how many elements do (ADR-0004 P1,
 
     const atTop = await elementCount(page);
     await page.evaluate(() => { document.querySelector('.ex-scroller').scrollTop = 500000; });
-    await page.waitForTimeout(400); // past the settle delay: real cells are back
+    // Past the settle delay: the slice there is painted in place of the top's, real cells are
+    // back, and the host has said all it will.
+    await expect(cell(page, 0, 0)).toHaveCount(0);
+    await expect(page.locator('.ex-grid .ex-placeholder')).toHaveCount(0);
+    await circuitQuiet();
     const midway = await elementCount(page);
 
     // The counts sit within a whisker of each other — the straddling row can differ.
     expect(Math.abs(midway - atTop)).toBeLessThanOrEqual(300);
     // And nothing per-frame accumulated: scroll again and return.
     await page.evaluate(() => { document.querySelector('.ex-scroller').scrollTop = 0; });
-    await page.waitForTimeout(400);
+    await expectRowPainted(page, 0);
+    await expect(page.locator('.ex-grid .ex-placeholder')).toHaveCount(0);
+    await circuitQuiet();
     expect(Math.abs(await elementCount(page) - atTop)).toBeLessThanOrEqual(300);
 });
 
@@ -466,6 +475,7 @@ async function scrollFrames(page, axis, step, frames) {
         const tick = () => {
             if (done === frames) {
                 // Past the settle delay, so a call the settle makes is counted too.
+                // spec-lint: fixed-wait: a counting window: the interop calls the settle makes after the last frame are counted; no state says none is still to come
                 setTimeout(() => {
                     scroller.removeEventListener('scroll', onScroll);
                     resolve({ frames, events, calls: { ...globalThis.__exInterop } });

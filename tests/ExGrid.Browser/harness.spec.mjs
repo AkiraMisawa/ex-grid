@@ -63,6 +63,7 @@ test('what a test changed through the harness is put back when it ends (ADR-0056
     await page.mouse.move(300, 300);
     // Scrolled, text selected, and the keyboard's place at the end of the page: none of which
     // a fresh load has.
+    // spec-lint: early-read: reads only what this evaluate itself scrolls, selects and focuses; the pointer move before it changes none of that
     const moved = await page.evaluate(() => {
         window.scrollTo(0, 400);
         getSelection().selectAllChildren(document.querySelector('h1'));
@@ -92,6 +93,7 @@ test('the next test finds none of it (ADR-0056)', async ({ page }) => {
     // Back to no delay on the Server host; WebAssembly has no round trip to set.
     expect(await roundTrip()).toBe(SERVER ? 0 : null);
     await page.keyboard.press('q');
+    // spec-lint: early-read: proves an absence: a key watch left by the last test would have run inside the press's own dispatch, before the press returns
     expect(await page.evaluate(() => window.__keySeen), 'the last test\'s key watch is gone').toBeUndefined();
     // No row under a pointer the last test left over the grid: the pointer is in the corner.
     await expect(grid(page).locator('.ex-hover-row')).toHaveCount(0);
@@ -99,6 +101,7 @@ test('the next test finds none of it (ADR-0056)', async ({ page }) => {
     const first = await page.evaluate(() => [...document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]')]
         .find((el) => el.tabIndex >= 0 && !el.disabled && el.getClientRects().length > 0)?.outerHTML);
     await page.keyboard.press('Tab');
+    // spec-lint: early-read: Tab here moves focus by the browser's default action, done within the press, not by the grid
     expect(await page.evaluate(() => document.activeElement?.outerHTML)).toBe(first);
 });
 
@@ -180,6 +183,7 @@ test('after it, the next test boots, with no key held (ADR-0056)', async ({ page
     expect(await documentOf(page)).not.toBe(document);
     await watchNextKey(page, 'a');
     await page.keyboard.press('a');
+    // spec-lint: early-read: watchNextKey's listener runs inside the press's own dispatch, so its answer is in before the press returns
     expect(await page.evaluate(() => window.__keySeen), 'a plain a, not a Shift+A').toBe(true);
 });
 

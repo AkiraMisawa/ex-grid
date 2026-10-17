@@ -193,6 +193,7 @@ test.describe('DC-59: lines', () => {
         await lined.click({ force: true });
         await expect(grid.locator('.ex-focus')).toHaveCount(1);
         await page.mouse.move(0, 0);
+        await expect(grid.locator('.ex-hover-row')).toHaveCount(0);
         const box = await lined.boundingBox();
         const read = await across(page, box, 'bottom', 0.5);
         let { pixel } = read;
@@ -213,6 +214,7 @@ test.describe('DC-59: lines', () => {
         await page.waitForFunction(() => [...document.querySelectorAll('#appearance-borders .ex-range')]
             .some((range) => range.getBoundingClientRect().height > 30));
         await page.mouse.move(0, 0);
+        await expect(grid.locator('.ex-hover-row')).toHaveCount(0);
         ({ pixel } = await across(page, box, 'bottom', 0.5));
         // Inside the range and outside the Focus, the Selection's tint lies over the line.
         const tinted = pixel(0);
@@ -323,6 +325,7 @@ async function tintGrounds(page) {
     await expect(cellOf(page, TINTS, MISSING_ROW, 9)).toBeVisible();
     await grid.scrollIntoViewIfNeeded();
     await page.mouse.move(0, 0);
+    await expect(grid.locator('.ex-hover-row')).toHaveCount(0);
     const region = await painted(page, await grid.boundingBox());
     const device = (n) => n / region.scale;
     return async (row, column) => {

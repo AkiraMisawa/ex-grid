@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip } from './fixtures.mjs';
+import { test, expect, circuitQuiet, setRoundTrip } from './fixtures.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import {
     sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, enter, candidates, typeSteadily,
@@ -143,7 +143,7 @@ test('ADR-0018: a Sheet the user has pressed keeps the keyboard when the other o
     await clickCell(right, 'D1');
     await expectFocusAt(right, 'D1');
     // Every answer in flight has landed.
-    await page.waitForTimeout(1000);
+    await circuitQuiet();
     await expectKeyboardOn(right);
     await page.keyboard.type('7');
     await page.keyboard.press('Enter');

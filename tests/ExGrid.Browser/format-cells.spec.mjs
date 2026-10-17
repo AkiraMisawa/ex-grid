@@ -372,8 +372,8 @@ test.describe('on /sheet', () => {
         await page.keyboard.press('Shift+ArrowDown');
         await page.locator('#sheet-format-cells').click();
         await expect(formatCells(grid)).toBeVisible();
-        // Past the move's notification, a round trip after the key's render.
-        await page.waitForTimeout(600);
+        // Past the move's notification, a round trip after the key's render: once the circuit is quiet.
+        await circuitQuiet();
         await expect(formatCells(grid)).toBeVisible();
         await setRoundTrip(0);
 
@@ -397,7 +397,8 @@ test.describe('on /sheet', () => {
         await pressAt(cell(grid, 'C3'), { button: 'right' });
         await page.getByRole('menuitem', { name: 'Format Cells…' }).click();
         await expect(formatCells(grid)).toBeVisible();
-        await page.waitForTimeout(600);
+        // Past the move's notification: once the circuit is quiet.
+        await circuitQuiet();
         await expect(formatCells(grid)).toBeVisible();
         await setRoundTrip(0);
 

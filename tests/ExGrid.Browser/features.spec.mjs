@@ -106,11 +106,11 @@ test('Escape with nothing to dismiss keeps the keyboard, and the next Tab or Shi
     await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
 
     // The second Escape has nothing to dismiss. Its answer is a round trip away on the Server
-    // host, and the grid used to drop DOM focus there: read once it has long landed. A Tab typed
+    // host, and the grid used to drop DOM focus there: read once it has landed. A Tab typed
     // before the answer is held behind the Escape and dropped, since script cannot move DOM focus
     // for it (ADR-0010/0021), so each Tab here waits for its Escape's answer.
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(500);
+    await circuitQuiet();
     await expectKeyboardOn(grid(page));
     await expectActiveDescendant(grid(page), /r0c1$/);
 
@@ -135,7 +135,7 @@ test('Escape with nothing to dismiss keeps the keyboard, and the next Tab or Shi
     // ▾ is reached, and the root is no tab stop, so nothing on the way out hands the keyboard back
     // to the field (ADR-0080).
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(500);
+    await circuitQuiet();
     await page.keyboard.press('Shift+Tab');
     await expect(page.locator('#before-grid')).toBeFocused();
 });
@@ -161,7 +161,7 @@ test('Escape, a press on a cell, then Tab cycles inside it (KB-8)', async ({ pag
     await clickCell(page, 0, 1);
     await page.keyboard.press('Escape');
     // Released once the answer has landed; the user who presses the grid has come back to it.
-    await page.waitForTimeout(500);
+    await circuitQuiet();
     await clickCell(page, 1, 1);
     await expectActiveDescendant(grid(page), /r1c1$/);
 
@@ -182,7 +182,7 @@ test('with a 150 ms round trip, the keys straight after Escape wait for its answ
     // the Focus does not move. The release stands for the Tab pressed again.
     await page.keyboard.press('Escape');
     await page.keyboard.press('Tab');
-    await page.waitForTimeout(1000);
+    await circuitQuiet();
     await expectKeyboardOn(grid(page));
     await expectActiveDescendant(grid(page), /r0c1$/);
     // The page's next element after the grid: the header's ▾ buttons are not tab stops (ADR-0080).
@@ -223,9 +223,8 @@ test('Escape held with nothing to dismiss, then Tab leaves for the page (KB-8, K
     await page.keyboard.down('Escape');
     await page.keyboard.down('Escape');
     await page.keyboard.up('Escape');
-    // Every answer has landed: on the Server host once the circuit is quiet (ADR-0056); the fixed
-    // wait is the page's own time, all there is on WebAssembly.
-    await page.waitForTimeout(500);
+    // Every answer has landed: on the Server host once the circuit is quiet (ADR-0056); WebAssembly
+    // answers before the next key.
     await circuitQuiet();
     await expectKeyboardOn(grid(page));
     await expectActiveDescendant(grid(page), /r0c1$/);
@@ -583,6 +582,7 @@ async function selectTextWithMouse(page, paragraph) {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width - 2, box.y + box.height / 2, { steps: 8 });
     await page.mouse.up();
+    // spec-lint: early-read: the document's text selection is the browser's own, made by the drag across a paragraph outside every grid, and no answer of a grid's changes it
     const selected = await page.evaluate(() => document.getSelection().toString());
     expect(selected.length, 'the mouse selected the paragraph\'s text').toBeGreaterThan(10);
     return selected;
@@ -1041,6 +1041,7 @@ test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) 
                 if (event.key === 'PageDown') resolve(event.defaultPrevented);
             };
             document.addEventListener('keydown', listener, { capture: false });
+            // spec-lint: fixed-wait: a cap inside the page, not a wait: the promise resolves when PageDown's keydown reaches document, and this only names a key that never came
             timer = setTimeout(() => resolve('never arrived'), 3000);
         });
         return () => {
@@ -1051,7 +1052,9 @@ test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) 
     });
     await page.keyboard.press('ControlOrMeta+PageDown');
 
+    // spec-lint: early-read: awaits the listener's promise, settled by the keydown inside the press itself, so it cannot be read before the key is heard
     expect(await page.evaluate(() => window.__kb15)).toBe(false);
+    // spec-lint: early-read: the assertion that the Focus did NOT move; no state marks that nothing came, and the Settled Mark (PR #134, settled(grid)) will stand before it
     expect(await activeDescendant(grid(page))).toBe(focusBefore);
 });
 

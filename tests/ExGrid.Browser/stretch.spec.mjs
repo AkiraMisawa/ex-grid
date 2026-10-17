@@ -74,6 +74,7 @@ test.describe('in a parent with no height', () => {
     test('nothing is painted and the grid names the parent (VZ-12b, ADR-0028)', async ({ page }) => {
         await page.goto('/stretch?parent=auto');
         await expect(page.locator('#auto-box .ex-grid')).toBeVisible();
+        // spec-lint: fixed-wait: proves an absence: no row may be painted in a parent with no height, and no state says none ever will; the Settled Mark (settled(grid), PR #134) replaces it
         await page.waitForTimeout(500);
         expect(await rowsIn(page, '#auto-box')).toBe(0);
     });

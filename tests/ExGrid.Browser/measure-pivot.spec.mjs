@@ -222,6 +222,7 @@ async function settle(page) {
 async function timed(page, answer, act, target) {
     if (target) {
         await target.hover();
+        // spec-lint: fixed-wait: measurement pacing (EXGRID_MEASURE only): lets the hover's own paint pass so it is not timed as the gesture's answer
         await page.waitForTimeout(300);
     }
     await page.evaluate((spec) => window.__pv21.arm(spec), answer);
@@ -243,6 +244,7 @@ async function openMillion(page) {
     await expect(page.locator('#pivot-read')).toContainText(`${MILLION.toLocaleString('en-US')} trades read into a Snapshot`, { timeout: 600_000 });
     await expect(page.locator(VIEWPORT).locator('.ex-row').first()).toBeVisible({ timeout: 300_000 });
     await page.waitForFunction(() => window.__pv21.seen('first report')?.frameAt != null, null, { polling: 100, timeout: 120_000 });
+    // spec-lint: fixed-wait: measurement pacing (EXGRID_MEASURE only): lets the first report's trailing work drain before the load is read
     await page.waitForTimeout(1_000);
     return page.evaluate(() => {
         const p = window.__pv21;
@@ -482,6 +484,7 @@ test('PV-21: 1,000 changes folded into a million trades on /pivot-live', async (
     const runs = [];
     for (let run = 0; run < 12; run++) {
         // Quiet for longer than the redraw interval, so that the batch is asked for at once (ADR-0067).
+        // spec-lint: fixed-wait: the measured input itself: a quiet longer than the redraw interval, so the batch is asked for at once (ADR-0067)
         await page.waitForTimeout(1_500);
         await page.evaluate(({ status, report }) => {
             const p = window.__pv21;
@@ -495,6 +498,7 @@ test('PV-21: 1,000 changes folded into a million trades on /pivot-live', async (
         await expect(localToggle).toHaveText("Resume the page's changes");
         await page.waitForFunction(() => window.__pv21.seen('batch').frameAt !== null && window.__pv21.seen('report').frameAt !== null,
             null, { polling: 50, timeout: 60_000 });
+        // spec-lint: fixed-wait: measurement pacing (EXGRID_MEASURE only): lets the batch's trailing frames drain before the probe is read
         await page.waitForTimeout(500);
         runs.push(await page.evaluate((status) => {
             const p = window.__pv21;
@@ -539,6 +543,7 @@ test('DA-17: a million trades read from Arrow on /pivot-db', async ({ page }, te
     await expect(page.locator(DB_REPORT).locator('.ex-row').first()).toBeVisible({ timeout: 300_000 });
     // The server's pivot answers in SQL beside it: its report is in before anything else is timed.
     await expect(page.locator(`#pivot-db-server ${VIEWPORT} .ex-row`).first()).toBeVisible({ timeout: 300_000 });
+    // spec-lint: fixed-wait: measurement pacing (EXGRID_MEASURE only): both reports are in; their trailing work drains before timing starts
     await page.waitForTimeout(2_000);
 
     // The request is the network's and the server's; the browser's part runs from its last byte to
@@ -571,6 +576,7 @@ test('DA-17: a million trades read from Arrow on /pivot-db', async ({ page }, te
         await page.locator('#pivot-db-reread').click();
         await page.waitForFunction(() => window.__pv21.seen('read')?.frameAt != null, null, { polling: 50, timeout: 300_000 });
         await expect(page.locator('#pivot-db-reread')).toBeEnabled();
+        // spec-lint: fixed-wait: measurement pacing (EXGRID_MEASURE only): each re-read starts from rest, not on the last one's tail
         await page.waitForTimeout(3_000);
         again.push(await page.evaluate(reading, DB_STATUS));
     }

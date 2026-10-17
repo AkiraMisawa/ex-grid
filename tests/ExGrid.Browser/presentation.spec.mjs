@@ -561,7 +561,11 @@ test('the pointer leaving the grid stops the auto-scroll (SL-14/SL-15)', async (
 
     // Leave the grid with the button still down: the scroll stops where it was.
     await page.mouse.move(box.x + 60, box.y + box.height + 200, { steps: 4 });
+    // The scroll may still step until the host has heard the pointer leave: read where it stopped
+    // once the host has said all it will.
+    await circuitQuiet();
     const atLeave = await g.locator('.ex-scroller').evaluate((el) => el.scrollTop);
+    // spec-lint: fixed-wait: proves an absence, no further scroll step must arrive once the pointer left; the Settled Mark (PR #134, settled(grid)) will replace it
     await page.waitForTimeout(800);
     const afterWait = await g.locator('.ex-scroller').evaluate((el) => el.scrollTop);
     expect(afterWait, 'no runaway scroll after the pointer left (SL-14)').toBe(atLeave);
@@ -569,6 +573,8 @@ test('the pointer leaving the grid stops the auto-scroll (SL-14/SL-15)', async (
     // Return with the button released: the drag is over and stays over.
     await page.mouse.up();
     await page.mouse.move(box.x + 60, box.y + box.height - 6);
+    await circuitQuiet();
+    // spec-lint: fixed-wait: proves an absence, the pointer back in the band with the button up must start no scroll; the Settled Mark (PR #134, settled(grid)) will replace it
     await page.waitForTimeout(400);
     expect(await g.locator('.ex-scroller').evaluate((el) => el.scrollTop)).toBe(afterWait);
 });
@@ -774,6 +780,7 @@ test('every class under the root is one ADR-0029 names, stable or internal (UX-4
     await page.mouse.move(trader.x + trader.width + 38, trader.y + trader.height - 10, { steps: 4 });
     await expect(features.locator('.ex-resize-guide')).toBeVisible();
     await page.mouse.up();
+    // spec-lint: early-read: only the header band's left and top are used, which a column's resize does not move
     const header = await features.locator('.ex-header').boundingBox();
     await page.mouse.move(header.x + 55, header.y + 42);
     await page.mouse.down();

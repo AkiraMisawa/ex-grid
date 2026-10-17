@@ -32,6 +32,7 @@ for (const chrome of ['builtin', 'mud']) {
             // held until it has (ADR-0010/0039).
             await page.keyboard.press('ControlOrMeta+f');
             await page.keyboard.type('novak');
+            // spec-lint: early-read: the keydown listener records the key inside the press's own dispatch, so the answer is final once the press returns
             expect(await keySeenUntouched(page), 'the grid took Ctrl+F').not.toBe(true);
 
             const panel = grid(page).locator('.ex-popover-find');
@@ -110,6 +111,7 @@ for (const chrome of ['builtin', 'mud']) {
             await watchNextKey(page, ['f', 'F']);
             await page.keyboard.press('ControlOrMeta+f');
 
+            // spec-lint: early-read: the keydown listener records the key inside the press's own dispatch, so the answer is final once the press returns
             expect(await keySeenUntouched(page), 'the grid took Ctrl+F in its own field').not.toBe(true);
             await expect(field).toBeFocused();
             await expect.poll(() => field.evaluate((el) => [el.selectionStart, el.selectionEnd])).toEqual([0, 5]);
@@ -123,6 +125,7 @@ for (const chrome of ['builtin', 'mud']) {
             await watchNextKey(page, ['f', 'F']);
             await page.keyboard.press('ControlOrMeta+f');
 
+            // spec-lint: early-read: the keydown listener records the key inside the press's own dispatch, so the answer is final once the press returns
             expect(await keySeenUntouched(page), 'the grid took Ctrl+F in its own popover').not.toBe(true);
             await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
             await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
@@ -146,6 +149,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(search).toBeFocused();
             await watchNextKey(page, ['f', 'F']);
             await page.keyboard.press('ControlOrMeta+f');
+            // spec-lint: early-read: the keydown listener records the key inside the press's own dispatch, so the answer is final once the press returns
             expect(await keySeenUntouched(page), 'the grid took Ctrl+F in the filter\'s field').not.toBe(true);
             await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
             await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
@@ -188,8 +192,7 @@ test('Tab stays inside the find panel (FD-8, ADR-0055/0039)', async ({ page }) =
 
     for (let i = 0; i < 8; i++) {
         await page.keyboard.press('Tab');
-        const inside = await panel.evaluate((el) => el.contains(document.activeElement));
-        expect(inside, `Tab ${i + 1} stayed inside the panel`).toBe(true);
+        await expect.poll(() => panel.evaluate((el) => el.contains(document.activeElement)), { message: `Tab ${i + 1} stayed inside the panel` }).toBe(true);
     }
 });
 
@@ -218,6 +221,7 @@ test('a grid with nothing to search takes Ctrl+F and opens nothing (FD-1/FD-2, A
 
     await watchNextKey(page, ['f', 'F']);
     await page.keyboard.press('ControlOrMeta+f');
+    // spec-lint: early-read: the keydown listener records the key inside the press's own dispatch, so the answer is final once the press returns
     expect(await keySeenUntouched(page), 'the grid took Ctrl+F').not.toBe(true);
     await expect(cells.locator('.ex-popover')).toHaveCount(0);
     // The key after it is not held behind a panel that never comes.
