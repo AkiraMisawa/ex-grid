@@ -1,4 +1,4 @@
-import { test, expect, scrollRowToTop } from './fixtures.mjs';
+import { test, expect, scrollRowToTop, settled } from './fixtures.mjs';
 import { chooseNumberFormat, expectCovers, expectSelectionIsCell, pressAt } from './sheet-helpers.mjs';
 
 // Excel's behaviours, observed beside ExSheet (docs/specs/exsheet/excel-behaviours.md). Each test
@@ -41,14 +41,13 @@ const cellEditor = (page) => sheet(page).locator('input.ex-editor:not(.ex-formul
 const announced = (page) => sheet(page).locator('.ex-announce');
 
 // Cells are pointer-events: none by design (ADR-0004): the click goes through to the Viewport,
-// as a user's does. A plain click waits until the Name Box names the cell, as a user waits for
-// the screen: a click that follows an Enter at once can land before the Enter's move does (found
-// on the Server host, verification/2026-09-27-windows-excel/typing-probe-2.mjs), and these
-// probes ask about Excel's behaviours, not that race.
+// as a user's does. Where to press is read from the cell's box, so it is read once the grid has
+// settled (ADR-0220): a reveal the keys before it asked for can still move the cells, and a box
+// read before it is a cell to the side of the one meant (ticket 224, item 2 on the Server host).
+// A plain click then expects the Name Box to name the cell, which reads the press's outcome.
 async function click(page, a1, options = {}) {
+    await settled(sheet(page));
     await pressAt(cell(page, a1), options);
-    // spec-lint: fixed-wait: PACE_MS, a person's pace kept to match the by-hand Excel comparison; suspected to hide the Server-host race it names (a key or click before the previous answer lands in the wrong cell)
-    await page.waitForTimeout(PACE_MS);
     if (Object.keys(options).length === 0) await expect(nameBox(page)).toHaveValue(a1);
 }
 
@@ -85,12 +84,14 @@ async function enter(page, a1, typed) {
 /** The Entry a cell holds, read from the Formula Bar with the cell selected. */
 async function entryOf(page, a1) {
     await click(page, a1);
+    // Read once, so only after the grid has handled every input before it (ADR-0220).
+    await settled(sheet(page));
     return bar(page).inputValue();
 }
 
 async function dragFillHandle(page, toA1) {
-    // spec-lint: fixed-wait: PACE_MS, a person's pace kept to match the by-hand Excel comparison; suspected to hide the Server-host race it names (a key or click before the previous answer lands in the wrong cell)
-    await page.waitForTimeout(PACE_MS);
+    // The handle is read where the Selection the inputs before it left has painted it (ADR-0220).
+    await settled(sheet(page));
     // The drag ends where a user could see it: a target below the window's bottom edge is
     // scrolled into view first, as a user scrolls before dragging. Nothing past that edge
     // receives the drag (/sheet's prose above the Sheet grew with ADR-0058, and E10 fell past it).
@@ -101,28 +102,9 @@ async function dragFillHandle(page, toA1) {
     await page.mouse.down();
     await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 12 });
     await page.mouse.up();
-    // spec-lint: fixed-wait: PACE_MS, a person's pace kept to match the by-hand Excel comparison; suspected to hide the Server-host race it names (a key or click before the previous answer lands in the wrong cell)
-    await page.waitForTimeout(PACE_MS);
 }
 
-// A person's pace: every key and click waits this long before the next. On the Server host a
-// click or key that follows the previous one at once can land before that one's answer, and a
-// value typed next then lands in the wrong cell (found in this run: typing-probe-2.mjs, wrong at
-// 0–60 ms on a local circuit, right from 100 ms). These probes ask what Excel does, not that.
-const PACE_MS = 150;
-
-// The file's tests share one page (ADR-0056), so its keyboard is paced once, not once per test.
-const paced = new WeakSet();
-
 test.beforeEach(async ({ page, context }) => {
-    if (!paced.has(page)) {
-        paced.add(page);
-        for (const name of ['press', 'type']) {
-            const act = page.keyboard[name].bind(page.keyboard);
-            // spec-lint: fixed-wait: PACE_MS, a person's pace kept to match the by-hand Excel comparison; suspected to hide the Server-host race it names (a key or click before the previous answer lands in the wrong cell)
-            page.keyboard[name] = async (...args) => { await act(...args); await page.waitForTimeout(PACE_MS); };
-        }
-    }
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto('/sheet');
     await expect(cell(page, 'A1')).toHaveText('Item');
@@ -432,7 +414,8 @@ test('item 8: F2 on a Formula shows it with the caret at the end, and the arrows
     await click(page, 'D2');
     await page.keyboard.press('F2');
     await expect(cellEditor(page)).toHaveValue('=B2*C2');
-    const caret = () => cellEditor(page).evaluate((e) => e.selectionStart);
+    // Read once each, after the grid has handled the keys before it (ADR-0220).
+    const caret = async () => { await settled(sheet(page)); return cellEditor(page).evaluate((e) => e.selectionStart); };
     expect(await caret()).toBe('=B2*C2'.length);
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowLeft');
@@ -470,8 +453,6 @@ test('item 10: Point mode by mouse writes the clicked cell, then the dragged ran
     await page.keyboard.type('=');
     // A click while pointing: no waiting for the Name Box, which is the question here.
     await pressAt(cell(page, 'C3'));
-    // spec-lint: fixed-wait: PACE_MS, a person's pace kept to match the by-hand Excel comparison; suspected to hide the Server-host race it names (a key or click before the previous answer lands in the wrong cell)
-    await page.waitForTimeout(PACE_MS);
     await expect(cellEditor(page)).toHaveValue('=C3');
     // Excel's Name Box names the pointed cell while pointing (C3 in its screenshot).
     await expect.soft(nameBox(page)).toHaveValue('C3');
@@ -494,6 +475,7 @@ test('item 11: F2 while pointing turns the arrows back to the caret (ADR-0051, t
     await page.keyboard.press('ArrowLeft');
     // Excel: the caret moved (=|E6); the pointer did not.
     await expect(cellEditor(page)).toHaveValue('=E6');
+    await settled(sheet(page));
     expect(await cellEditor(page).evaluate((e) => e.selectionStart)).toBe(1);
 });
 
