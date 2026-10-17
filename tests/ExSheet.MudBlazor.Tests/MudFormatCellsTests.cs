@@ -708,6 +708,23 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal(default, FormatAt(page, "B2").Font);
     }
 
+    [Fact] // ADR-0071 (2026-10-02), ticket 261: while the Font is the default, Normal font cannot be unchecked, as under the built-in Chrome
+    public async Task Normal_font_is_read_only_while_the_font_is_the_default()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Font");
+        IRenderedComponent<global::MudBlazor.MudCheckBox<bool>> Box() =>
+            page.FindComponents<global::MudBlazor.MudCheckBox<bool>>().Single(c => c.Instance.Label == "Normal font");
+        Assert.True(Box().Instance.GetState(x => x.Value));
+        Assert.True(Box().Instance.ReadOnly);
+
+        await page.Find(".mud-ex-sheet-format-cells-strikethrough input").ChangeAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = true });
+
+        page.WaitForAssertion(() => Assert.False(Box().Instance.GetState(x => x.Value)));
+        Assert.False(Box().Instance.ReadOnly);
+    }
+
     [Fact] // ADR-0071 / SH-45, case 23: the Fill tab offers No Colour, the theme's sixty and the ten standard colours, as the Fill tab names them
     public async Task The_fill_palette_is_case_23s()
     {
