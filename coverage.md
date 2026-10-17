@@ -2,7 +2,7 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 95.7% | 88.6% |
+| ExGrid | 95.1% | 88.3% |
 | ExSheet | 95.8% | 88.8% |
 | ExPivot | 94.4% | 85.3% |
 | Data | 94.5% | 90.3% |
@@ -12,29 +12,29 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/17/2026 - 00:05:49 |
+| Generated on: | 10/17/2026 - 00:28:17 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
-| Classes: | 849 |
-| Files: | 466 |
-| **Line coverage:** | 95.2% (58606 of 61514) |
-| Covered lines: | 58606 |
-| Uncovered lines: | 2908 |
-| Coverable lines: | 61514 |
-| Total lines: | 104114 |
-| **Branch coverage:** | 88.1% (34085 of 38677) |
-| Covered branches: | 34085 |
-| Total branches: | 38677 |
+| Classes: | 851 |
+| Files: | 468 |
+| **Line coverage:** | 95% (61153 of 64314) |
+| Covered lines: | 61153 |
+| Uncovered lines: | 3161 |
+| Coverable lines: | 64314 |
+| Total lines: | 104442 |
+| **Branch coverage:** | 88% (35538 of 40368) |
+| Covered branches: | 35538 |
+| Total branches: | 40368 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExGrid - 95.4%</summary>
+<details><summary>ExGrid - 94.8%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**95.4%**|**88.8%**|
+|**ExGrid**|**94.8%**|**88.4%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -161,8 +161,9 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|90.8%|85.8%|
-|ExGrid.Components.ExGrid<TRow>|95.5%|90.5%|
+|ExGrid.Components.ExGrid<TRow, T>|90.9%|85.8%|
+|ExGrid.Components.ExGrid<TRow>|95.4%|90.4%|
+|ExGrid.Components.ExGrid<TRow>|90.9%|85.8%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
@@ -176,6 +177,7 @@
 |ExGrid.Components.SelectionStyles|100%|96.6%|
 |ExGrid.Components.SelectionStyles.OutlineCover|100%||
 |ExGrid.Components.SelectionStyles.ReadableEdge|100%||
+|ExGrid.Components.SettledStamp|100%|100%|
 |ExGrid.Components.Share|100%|100%|
 |ExGrid.Components.SummaryFiguresMenu|80%|85.7%|
 |ExGrid.DisplayText|100%|90%|
@@ -228,8 +230,8 @@
 |ExGrid.RangeDocument|100%||
 |ExGrid.RowChange<TRow>|100%||
 |ExGrid.RowRange|100%||
-|ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
 |ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
+|ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
 |ExGrid.Rows.InMemoryRowMarks<TRow>|90.3%|77.4%|
 |ExGrid.Rows.RowMarkAdapter<TRow>|100%||
 |ExGrid.Rows.RowMarkCounts|100%||
