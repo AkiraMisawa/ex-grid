@@ -250,7 +250,7 @@ test('ADR-0039/ADR-0050: a held frame Escape is acknowledged before the next key
     await expect.poll(() => page.evaluate(() => window.__frameEscape.down)).toBe(1);
 });
 
-for (const ending of ['blur', 'restored', 'native change', 'held Enter then blur', 'dispose', 'replace detached field']) {
+for (const ending of ['blur', 'restored', 'native change', 'held Enter then blur', 'native Enter then blur', 'typed then native Enter', 'dispose', 'replace detached field']) {
     test(`ADR-0210: a held text edit commits once and releases its supplement (${ending})`, async ({ page }) => {
         await page.goto('/features');
         await expect(page.locator('.ex-grid').first()).not.toHaveAttribute('aria-busy', /.*/);
@@ -284,7 +284,7 @@ for (const ending of ['blur', 'restored', 'native change', 'held Enter then blur
             state.finish = (ending) => {
                 if (ending === 'restored') field.value = '#123456';
                 if (ending === 'dispose') { handle.dispose(); disposed = true; }
-                if (ending === 'held Enter then blur') {
+                if (ending === 'held Enter then blur' || ending === 'native Enter then blur' || ending === 'typed then native Enter') {
                     return;
                 }
                 if (ending === 'replace detached field') {
@@ -316,7 +316,19 @@ for (const ending of ['blur', 'restored', 'native change', 'held Enter then blur
             await page.keyboard.type('1');
         }
         await page.evaluate(ending => window.__heldBlurCommit.finish(ending), ending);
-        if (ending === 'held Enter then blur') {
+        if (ending === 'native Enter then blur') {
+            // Typed once the hold is over: the browser commits nothing it did not type itself.
+            await page.locator('#held-text-commit-field').press('Enter');
+        }
+        if (ending === 'typed then native Enter') {
+            // Typing after the held text: the browser's own commit, and no second one.
+            await page.locator('#held-text-commit-field').press('End');
+            await page.keyboard.type('1');
+            await page.keyboard.press('Enter');
+            await expect.poll(() => page.evaluate(() => window.__heldBlurCommit.changes)).toEqual(['#FF00001']);
+            await page.evaluate(() => window.__heldBlurCommit.leave());
+        }
+        if (ending === 'held Enter then blur' || ending === 'native Enter then blur') {
             await expect.poll(() => page.evaluate(() => window.__heldBlurCommit.changes)).toEqual(['#FF0000']);
             await page.evaluate(() => window.__heldBlurCommit.leave());
         }
@@ -328,7 +340,7 @@ for (const ending of ['blur', 'restored', 'native change', 'held Enter then blur
         }
         const expected = ending === 'restored' || ending === 'dispose' ? []
             : ending === 'replace detached field' ? ['B']
-            : ending === 'native change' ? ['#FF00001'] : ['#FF0000'];
+            : ending === 'native change' || ending === 'typed then native Enter' ? ['#FF00001'] : ['#FF0000'];
         expect(await page.evaluate(() => window.__heldBlurCommit.changes)).toEqual(expected);
     });
 }

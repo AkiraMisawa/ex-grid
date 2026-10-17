@@ -111,8 +111,9 @@ public class ShippedStylesheetTests
         // (ADR-0010's note of 2026-10-02) — the same events, no new use. And the clipboard entry a
         // last time (ADR-0170): clipboardchange on navigator.clipboard, which tells the grid that the
         // clipboard changed by a write other than its own copy, so the Copied Range can go.
-        // ADR-0210: a temporary blur and change listener only on a field changed by held typing.
-        string[] allowed = ["blur", "change", "change", "clipboardchange", "compositionend", "compositionend", "compositionstart", "copy", "copy", "cut", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
+        // ADR-0210: a temporary blur, change and keydown listener only on a field changed by held
+        // typing (keydown since 2026-10-17, for an Enter typed there once the hold is over).
+        string[] allowed = ["blur", "change", "change", "clipboardchange", "compositionend", "compositionend", "compositionstart", "copy", "copy", "cut", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
