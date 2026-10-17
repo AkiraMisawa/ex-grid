@@ -51,7 +51,8 @@ block on `main` before it uses the first number.
 | 160–179 | `claude/trusting-babbage-1tpuqo` | The Sheet Toolbar |
 | 180–199 | `claude/dod-gaps-sheet-pivot-tests` | Closing the Definition of Done's unproven ExSheet rows before 0.1.0: 180 is a structured reference written in its table's declared case (decided with the user 2026-10-13, after 0.1.0) |
 | 200–219 | `claude/settled-races` | Two Server-host races found by run 18a's F4 spec (#128): keys typed after the Name Box names the current cell, and a press right after Enter (2026-10-16) |
-| 220– | free | reserve a block of twenty |
+| 220–239 | `claude/spec-lint-races` | The waits between inputs the spec lint kept (#137), each a suspected race, made tickets with the user (ADR-0220 §2, 2026-10-17) |
+| 240– | free | reserve a block of twenty |
 
 Another spec's tickets (`docs/specs/<feature>/issues/`) are numbered within that spec, and are not
 reserved here.
