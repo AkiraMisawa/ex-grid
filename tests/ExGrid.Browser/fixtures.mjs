@@ -74,6 +74,29 @@ export async function setRoundTrip(ms) {
     return true;
 }
 
+/**
+ * The widened run (ADR-0220 §5): with EXGRID_CPU_THROTTLE set, every page a context opens runs
+ * that many times slower, as Chrome's DevTools throttle does, so a race that needs the browser to
+ * be slow fails nearly every run instead of one in forty. Unset, nothing changes. The round trip
+ * is raised by the latency proxy itself (EXGRID_RTT_FLOOR, latency-proxy.mjs).
+ */
+const CPU_THROTTLE = Number(process.env.EXGRID_CPU_THROTTLE ?? 1);
+if (!(CPU_THROTTLE >= 1)) {
+    throw new Error(`EXGRID_CPU_THROTTLE is "${process.env.EXGRID_CPU_THROTTLE}"; it is a rate of 1 or more.`);
+}
+
+function widened(context) {
+    if (CPU_THROTTLE > 1) {
+        context.on('page', async (page) => {
+            // A page closed before its session opens has nothing left to slow.
+            await context.newCDPSession(page)
+                .then((session) => session.send('Emulation.setCPUThrottlingRate', { rate: CPU_THROTTLE }))
+                .catch(() => { });
+        });
+    }
+    return context;
+}
+
 /** The round trip the latency proxy is set to, in ms; null on WebAssembly, which has none. */
 export async function roundTrip() {
     if (!SERVER) {
@@ -395,7 +418,7 @@ class FileApp {
         }
         this.file = testInfo.file;
         this.options = asked;
-        this.context = await browser.newContext({ ...contextOptions, baseURL: BASE_URL, viewport });
+        this.context = widened(await browser.newContext({ ...contextOptions, baseURL: BASE_URL, viewport }));
         this.page = await this.context.newPage();
         listen(this.page, () => this.sink);
     }
@@ -411,6 +434,11 @@ class FileApp {
     async boot(goto, gotoOptions) {
         await goto('/', gotoOptions);
         await ready(this.page);
+        // The record every later test is checked against is taken once the host has said all it will:
+        // on the Server host the head's <title> comes in a render after the prerendered page, and read
+        // before it lands, the record lacked it and the first test's return to the index was named a
+        // leak (the widened run, 150 ms and the CPU at a quarter, ADR-0220 §5).
+        await circuitQuiet();
         this.booted = await documentAtIndex(this.page);
         this.natives = await nativesOf(this.page);
     }
@@ -676,7 +704,7 @@ export const test = base.extend({
     // fixture makes them.
     context: async ({ app, browser, viewport, freshDocument, _combinedContextOptions }, use, testInfo) => {
         if (viewport === null || freshDocument) {
-            const context = await browser.newContext({ ..._combinedContextOptions, baseURL: BASE_URL, viewport });
+            const context = widened(await browser.newContext({ ..._combinedContextOptions, baseURL: BASE_URL, viewport }));
             await use(context);
             await context.close();
             return;
