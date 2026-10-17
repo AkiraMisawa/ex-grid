@@ -351,7 +351,33 @@ public partial class ExGrid<TRow>
 
     /// <summary>The frame's context, for the contents (ADR-0050, item 16).</summary>
     private GridPopoverContext BuildConsumerPopoverContext()
-        => new(CloseFromChrome, _consumerFocusRequest, _consumerFocusLastRequest, InnerPopupChangedFromChrome);
+        => new(CloseFromChrome, _consumerFocusRequest, _consumerFocusLastRequest, InnerPopupChangedFromChrome)
+        {
+            TakeFocus = TakeConsumerPopoverFocus,
+        };
+
+    /// <summary>The focus function a Consumer's popover is handed (<see cref="GridPopoverContext.TakeFocus"/>):
+    /// the control takes DOM focus unless a press inside the popover has overtaken its opening
+    /// (ticket 240). Not the editor's question, which a Built-in popover's focus asks: a Consumer's
+    /// popover may open from a control of the page's, outside the grid.</summary>
+    private Func<ElementReference, bool, Task> TakeConsumerPopoverFocus
+        => _takeConsumerPopoverFocus ??= (control, preventScroll) => InvokeAsync(async () =>
+        {
+            if (control.Id is null || _disposed)
+                return;
+            try
+            {
+                if (_scrollHandle is null)
+                    await control.FocusAsync(preventScroll);
+                else
+                    await _scrollHandle.InvokeVoidAsync("takeFocus", control, preventScroll, true);
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+            }
+        });
+
+    private Func<ElementReference, bool, Task>? _takeConsumerPopoverFocus;
 
     /// <summary>The contents hold the keyboard: the sentinels wrap from here on. Nothing is drawn
     /// for it.</summary>
