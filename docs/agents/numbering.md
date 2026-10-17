@@ -35,7 +35,8 @@ block on `main` before it uses the first number.
 | 0200–0209 | `claude/first-stable-release` | What the first stable version needs: its scope, the public C# surface, the Blazor Server declaration, and ADR-0042 rewritten at sign-off (decided with the user from 2026-10-11) |
 | 0210–0219 | `codex/handoff-toolbar` | More Colours opening keyboard and committing held text (decided with the user, 2026-10-14) |
 | 0220–0229 | `claude/settled-signal` | A test reads once the grid says it has settled, and a red is never settled by a re-run (decided with the user, 2026-10-16) |
-| 0230– | free | reserve a block of ten |
+| 0230–0239 | `claude/races-220-224` | Tickets 220 to 222: a key typed at once after a change of state means what it means typed slowly (proposed 2026-10-17, for the user to decide) |
+| 0240– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 

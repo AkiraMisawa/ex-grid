@@ -1,6 +1,6 @@
 # 221: The key gate knows the editor's mode with its render, not a message after it
 
-Status: needs-triage
+Status: needs-info
 Roadmap: ExSheet — A key typed at once after a list closes, Point ends or the edit's mode changes is judged in the new mode
 
 **Found:** by the spec lint (#137, ADR-0220 §6). Five waits in `declarations.spec.mjs` sit between
@@ -25,3 +25,9 @@ removed in #137. Its closing, and the other changes of mode, are still told afte
 - [ ] Make each change of mode known to the gate with the render that shows it, as the list's opening
       is, or hold the key until it is (decide which, in ADR-0021's terms).
 - [ ] Remove the five waits; the tests type at machine speed and pass on both hosts, 20 runs each.
+
+## Comments
+
+2026-10-17, claude/races-220-224. Triaged: needs a decision before a fix. The options and a
+recommendation are in ADR-0230 section 2, proposed and not decided. The user decides; the fix
+follows on its own branch.
