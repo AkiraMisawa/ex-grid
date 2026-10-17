@@ -227,11 +227,16 @@ nix develop -c dotnet test ExGrid.slnx      # layers 1 and 2, both suites
   - **Locally, run the targeted run**: the spec files and `--grep` the change bears on, on one
     host with `--project=chrome`. When CI fails, fix that test and rerun it alone, and a failure
     seen only in CI may be traced in a local run of that test.
-  - **A new spec, and a spec the change rewrites, runs locally before the push that opens or
-    updates the pull request** — on each host it runs on, `--project=chrome`, and a new one with
-    `--repeat-each=3`. Its first run is never CI's. *(Decided with the user, 2026-10-06: the first
-    CI run of #64 failed seventeen specs that had never run anywhere, on causes one local run
-    shows at once — a page that threw on render, a click on a cell that does not take presses.)*
+  - **A test the change adds or rewrites runs locally before the push that opens or updates the
+    pull request** — that test alone, picked with `--grep` (or `file:line`), never the whole file,
+    on one host it runs on, `--project=chrome`, `--repeat-each=3`. Its first run is never CI's.
+    The rest of its file, the other host and Edge are CI's: `browser-repeat` runs every spec file
+    the push changed three times, on both hosts in both browsers, and the full run takes the rest.
+    *(Decided with the user, 2026-10-06: the first CI run of #64 failed seventeen specs that had
+    never run anywhere, on causes one local run shows at once — a page that threw on render, a
+    click on a cell that does not take presses. Narrowed with the user, 2026-10-17: running whole
+    files on both hosts took an hour a host for a change to 27 tests, nearly all of it repeating
+    tests nobody had touched, which CI repeats anyway.)*
   - **Give a worktree's hosts ports no other checkout uses** — for example
     `EXGRID_BASE_URL=http://localhost:5398` for the Server host and `…:5399` for WebAssembly in one
     worktree, another pair in the next; `hosting.mjs` derives the rest — because a runner reuses a
@@ -298,7 +303,7 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
 - **A layer-3 test waits for what it reads, never for a fixed time** (ADR-0056, 2026-10-02).
   On the Server host, a reading that must see all the host will say awaits `circuitQuiet()`.
   Two pictures to compare are taken with `stillPictures`. A colour is judged with `paints`,
-  where the boundary lies on a device pixel. A new or changed spec runs with `--repeat-each`
+  where the boundary lies on a device pixel. A new or changed test runs with `--repeat-each`
   before it goes in. `tests/ExGrid.Browser/README.md` says how.
 
 - **The packages are checked as a Consumer takes them.** `tests/ExGrid.PackageSmoke/check.sh`

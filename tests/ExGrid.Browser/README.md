@@ -348,14 +348,15 @@ arrived between two pictures. So:
 
 ## Before a new or changed spec goes in
 
-A test that passes once has passed once. **Run each spec file you wrote or changed several
-times over, on both hosts, before it goes in** — headless and on a port of your own on this
-Mac (see "Two checkouts must not share a port" below):
+A test that passes once has passed once. **Run each test you wrote or changed three times over,
+on one host, before it goes in** — that test alone, picked with `--grep` or `file:line`, not the
+whole file, headless and on a port of your own on this Mac (see "Two checkouts must not share a
+port" below). The rest of the file, the other host and Edge are left to CI's `browser-repeat`
+below (decided with the user, 2026-10-17: whole files on both hosts took an hour a host):
 
 ```sh
 export EXGRID_HEADLESS=1 EXGRID_BASE_URL=http://localhost:5411
-npx playwright test harness-reading.spec.mjs --project=chrome --repeat-each=5
-EXGRID_HOSTING=server npx playwright test harness-reading.spec.mjs --project=chrome --repeat-each=5
+npx playwright test harness-reading.spec.mjs --grep "circuitQuiet refuses" --project=chrome --repeat-each=3
 ```
 
 `--repeat-each` runs every test of the file that many times, each repetition in a worker of its
