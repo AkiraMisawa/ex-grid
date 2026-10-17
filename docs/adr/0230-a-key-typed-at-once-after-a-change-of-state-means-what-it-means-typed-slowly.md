@@ -1,8 +1,8 @@
 # A key typed at once after a change of state means what it means typed slowly
 
-**Proposed 2026-10-17, not decided.** A draft for tickets 220, 221 and 222. Each section gives the
-options and a recommendation; the user chooses, and this text is rewritten as decided before any of
-it is built.
+Decided with the user, 2026-10-17, for tickets 220, 221 and 222. Proposed the same day with the
+options each section still lists; the user took the recommendation of every section, and the
+question of section 1 as recommended. Not yet built: each ticket is fixed on its own branch.
 
 ## Why
 
@@ -53,7 +53,7 @@ Typed slowly, the Tab leaves the grid. Typed at once, nothing happens. Seen on W
   layering, where each press is one dismissal. An Escape that clears a Copied Range would then also
   let the next Tab leave the grid. Rejected unless the user wants that layering changed.
 
-**Recommendation: (a), with (b) for what (a) leaves.** (a) makes an Escape deterministic when it is
+**Decision: (a), with (b) for what (a) leaves.** (a) makes an Escape deterministic when it is
 typed after keys that cannot add a layer. Of the twelve waits:
 
 - eight follow a Tab or Shift+Tab, and (a) covers them;
@@ -65,11 +65,12 @@ typed after keys that cannot add a layer. Of the twelve waits:
 What (a) leaves is an Escape typed at once after an input that could have added a layer but did
 not, followed by a Tab. For that case (b) says so instead of dropping the key silently.
 
-**A question for the user.** Should those three tests read the press's result before typing Escape?
-Each test already expects the Focus after the press, so the reading would be the Settled Mark, not
-a new kind of step. That is a reading of the press's outcome, which ADR-0220 §2 allows, not a wait
-to make the test pass, but it does sit between two inputs. If the user wants those three typed at
-once too, (b)'s refusal is the outcome they assert.
+**The three tests that follow a press read the press's outcome before they type Escape** (asked
+of the user with the proposal, and decided so). Each already expects the Focus after the press, so
+the reading is the Settled Mark (`settled(grid)`), not a new kind of step. It reads the press's
+outcome, which ADR-0220 §2 allows, though it sits between two inputs; the Escape is then judged
+after an answered input, and (a) covers it. (b)'s refusal is asserted by a test of its own, which
+types Escape and Tab at once behind an input that could have added a layer.
 
 The attribute rides on a render that happens anyway. No row learns it (RR-14), and nothing is
 measured. No JavaScript use is added: the gate reads it as it reads `data-ex-paint`, within
@@ -99,7 +100,7 @@ in that gap is judged in the old mode. `declarations.spec.mjs` has five waits fo
   rules in JavaScript, so a disagreement makes a key do something else. Rejected for the same
   reason ADR-0010 keeps the meaning of a key in C#.
 
-**Recommendation: (a).** It extends what #137 did for the list's opening to every change of mode,
+**Decision: (a).** It extends what #137 did for the list's opening to every change of mode,
 and adds nothing per key. The five waits go.
 
 ## 3. A press into the Name Box straight after a press on the rows (ticket 222)
@@ -124,10 +125,10 @@ render comes before the first key. `declarations.spec.mjs` waits 600 ms before t
 - **(c) Script puts back the text a render wrote over.** Script and Blazor would then fight over
   the field's value. That is the defect CLAUDE.md's `@bind` trap describes. Rejected.
 
-**Recommendation: (a).** It is ticket 202's decision applied to the second field beside the rows,
+**Decision: (a).** It is ticket 202's decision applied to the second field beside the rows,
 and it uses the hold that already exists. No listener is added.
 
-## Consequences, if recommended
+## Consequences
 
 - ADR-0012 gains a note on (1), ADR-0021 a note on (1), (2) and (3). None adds an allowlist entry.
 - The Settled Stamp gains one attribute (1). RR-14 still holds.

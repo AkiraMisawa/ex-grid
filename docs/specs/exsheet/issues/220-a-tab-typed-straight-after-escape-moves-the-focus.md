@@ -1,6 +1,6 @@
 # 220: A Tab typed straight after Escape moves the focus, as one typed slowly does
 
-Status: needs-info
+Status: ready-for-agent
 Roadmap: ExGrid, ExSheet, ExPivot — A Tab typed at once after Escape leaves the grid, as a Tab typed a moment later does
 
 **Found:** by the spec lint (#137, ADR-0220 §6). Eleven waits in `key-field.spec.mjs` and one in
@@ -34,3 +34,5 @@ release taken without a round trip, or another way that makes the outcome the sa
 2026-10-17, claude/races-220-224. Triaged: needs a decision before a fix. The options and a
 recommendation are in ADR-0230 section 1, proposed and not decided. The user decides; the fix
 follows on its own branch.
+
+2026-10-17. Decided with the user: ADR-0230 section 1, as recommended. Ready to build.

@@ -1,6 +1,6 @@
 # 222: A press into the Name Box after a row press keeps what is typed into it
 
-Status: needs-info
+Status: ready-for-agent
 Roadmap: ExSheet — Text typed into the Name Box straight after pressing a row is kept whole
 
 **Found:** by the spec lint (#137, ADR-0220 §6). In `declarations.spec.mjs`, "ADR-0021: a row press's
@@ -22,3 +22,5 @@ wait for (ADR-0220 §2; the same family as ticket 202 for the Formula Bar).
 2026-10-17, claude/races-220-224. Triaged: needs a decision before a fix. The options and a
 recommendation are in ADR-0230 section 3, proposed and not decided. The user decides; the fix
 follows on its own branch.
+
+2026-10-17. Decided with the user: ADR-0230 section 3, as recommended. Ready to build.
