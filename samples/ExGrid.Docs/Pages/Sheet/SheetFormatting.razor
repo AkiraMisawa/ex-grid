@@ -163,7 +163,9 @@
                 <b>Under <code>MudSheetChrome</code></b> (<code>ExSheet.MudBlazor</code>) it is a page-level, modal
                 <code>MudDialog</code>, with a More Colours button opening MudBlazor's colour picker. More Colours starts in HEX,
                 with the current value selected: type a colour with the opening click, and those characters arrive
-                there in order, even over Blazor Server. Enter or leaving the field commits the colour.
+                there in order, even over Blazor Server. The switch beside the fields moves to RGB and HSL, and the mode
+                switched to stays while the picker is open, however soon after the opening it is pressed. Enter or
+                leaving the field commits the colour.
                 Choosing HEX yourself before the opening finishes keeps
                 the keyboard there; Escape closes the colour picker before the dialog. It needs a
                 <code>&lt;MudDialogProvider /&gt;</code> in your layout, and is refused by name when it first opens
