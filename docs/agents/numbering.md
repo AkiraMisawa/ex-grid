@@ -35,7 +35,8 @@ block on `main` before it uses the first number.
 | 0200–0209 | `claude/first-stable-release` | What the first stable version needs: its scope, the public C# surface, the Blazor Server declaration, and ADR-0042 rewritten at sign-off (decided with the user from 2026-10-11) |
 | 0210–0219 | `codex/handoff-toolbar` | More Colours opening keyboard and committing held text (decided with the user, 2026-10-14) |
 | 0220–0229 | `claude/settled-signal` | A test reads once the grid says it has settled, and a red is never settled by a re-run (decided with the user, 2026-10-16) |
-| 0230– | free | reserve a block of ten |
+| 0230–0239 | `claude/races-220-224` | Tickets 220 to 222: a key typed at once after a change of state means what it means typed slowly (decided with the user, 2026-10-17) |
+| 0240– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 
@@ -53,7 +54,8 @@ block on `main` before it uses the first number.
 | 200–219 | `claude/settled-races` | Two Server-host races found by run 18a's F4 spec (#128): keys typed after the Name Box names the current cell, and a press right after Enter (2026-10-16) |
 | 220–239 | `claude/spec-lint-races` | The waits between inputs the spec lint kept (#137), each a suspected race, made tickets with the user (ADR-0220 §2, 2026-10-17) |
 | 240–259 | `claude/project-thread-mbbyg9` | A popover's opening focus that lands after the user has pressed inside it: found by #140's CI (SH-45 on the Server host, 2026-10-17) |
-| 260– | free | reserve a block of twenty |
+| 260–279 | `claude/project-thread-ivnmpy` | More Colours' mode taken back by the dialog's next render: found by #146's CI (Server host, 2026-10-17); 261, Normal font shown unchecked, found by the sweep for 260's pattern |
+| 280– | free | reserve a block of twenty |
 
 Another spec's tickets (`docs/specs/<feature>/issues/`) are numbered within that spec, and are not
 reserved here.

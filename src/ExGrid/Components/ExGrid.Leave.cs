@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using ExGrid.Chrome;
 using Microsoft.JSInterop;
 
 namespace ExGrid.Components;
@@ -68,6 +69,42 @@ public partial class ExGrid<TRow>
             {
             }
         });
+
+    /// <summary>Whether an Escape on the root would leave the grid now, releasing Tab: no popover or
+    /// menu open, no Interactive cell, no Copied Range and no edit, each of which an Escape peels
+    /// first (ADR-0012's layering). The Settled Stamp says it with the inputs answered, and the key
+    /// gate takes the release at the keydown when nothing unanswered could add a layer (ADR-0230
+    /// section 1).</summary>
+    private bool EscapeLeaves
+        => !AnyPopoverOpen && InteractiveChoice() is null && _copied is null && _editMode == EditMode.None;
+
+    /// <summary>
+    /// A Tab typed so soon after an Escape that it was held behind the Escape's answer, which turned out
+    /// to release Tab: the browser's move of DOM focus cannot be made for it from script (ADR-0021), so
+    /// the key is refused, and the live region says so and that the next Tab leaves (ADR-0230 section
+    /// 1 (b)). Not silent: the spine's first principle.
+    /// </summary>
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="input">The number the script gave this input, which the root names once it has
+    /// been answered (ADR-0220); 0 for none.</param>
+    /// <returns>A task that completes once the refusal is said.</returns>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public Task OnHeldTabRefusedAsync(int input = 0)
+    {
+        if (!_disposed)
+        {
+            var words = RefusalWords(KeyRefusalLabelIds.TabBeforeRelease);
+            if (!string.IsNullOrWhiteSpace(words))
+            {
+                Announce(words);
+                _suppressRender = false;
+                StateHasChanged();
+            }
+        }
+        InputAnswered(input);
+        return Task.CompletedTask;
+    }
 
     /// <summary>
     /// The Escape with nothing left to dismiss, pressed on the root (ADR-0012, ADR-0070): the

@@ -53,6 +53,43 @@ public class SettledMarkTests : GridTestContext
     private Task<bool> OwingAsync(IRenderedComponent<ExGrid<TestRow>> cut)
         => ReadWhenIdleAsync(() => cut.Find(".ex-grid > [data-ex-answered]").HasAttribute("data-ex-owing"));
 
+    private Task<bool> EscapeLeavesAsync(IRenderedComponent<ExGrid<TestRow>> cut)
+        => ReadWhenIdleAsync(() => cut.Find(".ex-grid > [data-ex-answered]").HasAttribute("data-ex-escape-leaves"));
+
+    [Fact] // ADR-0230 section 1: the stamp says whether an Escape on the root now leaves — not while an edit or a menu stands for it to peel
+    public async Task ADR0230_the_stamp_says_whether_an_escape_leaves()
+    {
+        var cut = RenderGrid();
+        Assert.True(await EscapeLeavesAsync(cut));
+
+        await cut.Find(".ex-viewport").MouseDownAsync(Press(50, 10));
+        await cut.Find(".ex-viewport").MouseUpAsync(Press(50, 10, buttons: 0));
+        await KeyAsync(cut, "F2", input: 1);
+        Assert.NotNull(cut.Find(".ex-editor"));
+        Assert.False(await EscapeLeavesAsync(cut));
+        await KeyAsync(cut, "Escape", input: 2);
+        Assert.Empty(cut.FindAll(".ex-editor"));
+        Assert.True(await EscapeLeavesAsync(cut));
+
+        await KeyAsync(cut, "F10", input: 3, shift: true);
+        Assert.NotEmpty(cut.FindAll(".ex-popover"));
+        Assert.False(await EscapeLeavesAsync(cut));
+        await KeyAsync(cut, "Escape", input: 4);
+        Assert.Empty(cut.FindAll(".ex-popover"));
+        Assert.True(await EscapeLeavesAsync(cut));
+        Assert.Equal("4", await AnsweredAsync(cut));
+    }
+
+    [Fact] // ADR-0230 section 1 (b): a held Tab the release met is refused aloud, and answered as an input
+    public async Task ADR0230_a_held_tab_refused_is_said()
+    {
+        var cut = RenderGrid();
+        await cut.InvokeAsync(() => cut.Instance.OnHeldTabRefusedAsync(input: 1));
+        Assert.Equal("1", await AnsweredAsync(cut));
+        Assert.Contains("Tab was pressed before Escape had let the keyboard leave the grid",
+            cut.Find(".ex-announce").TextContent, StringComparison.Ordinal);
+    }
+
     [Fact] // ADR-0220: the root names no input before any is answered, and each key once it has been
     public async Task ADR0220_the_root_names_the_last_key_answered()
     {

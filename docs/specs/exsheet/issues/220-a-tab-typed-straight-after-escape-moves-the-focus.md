@@ -1,7 +1,6 @@
 # 220: A Tab typed straight after Escape moves the focus, as one typed slowly does
 
-Status: needs-triage
-Roadmap: ExGrid, ExSheet, ExPivot — A Tab typed at once after Escape leaves the grid, as a Tab typed a moment later does
+Status: done
 
 **Found:** by the spec lint (#137, ADR-0220 §6). Eleven waits in `key-field.spec.mjs` and one in
 `pivot.spec.mjs` sit between an Escape and the Tab or Shift+Tab that follows it. They are waits
@@ -28,3 +27,13 @@ release taken without a round trip, or another way that makes the outcome the sa
 - [ ] Decide, and record it in ADR-0012 or ADR-0021.
 - [ ] Remove the twelve waits; `key-field.spec.mjs` and `pivot.spec.mjs` type Escape and Tab at
       once, and pass on both hosts, 20 runs each.
+
+## Comments
+
+2026-10-17, claude/races-220-224. Triaged: needs a decision before a fix. The options and a
+recommendation are in ADR-0230 section 1, proposed and not decided. The user decides; the fix
+follows on its own branch.
+
+2026-10-17. Decided with the user: ADR-0230 section 1, as recommended. Ready to build.
+
+2026-10-17. Done: the Settled Stamp says whether an Escape leaves (`data-ex-escape-leaves`), and the gate takes the release at the keydown once every input that could add a layer is answered. A held Tab the release meets is refused aloud (`KeyRefusalLabelIds.TabBeforeRelease`). The eleven waits in `key-field.spec.mjs` and the one in `pivot.spec.mjs` are gone; the three after a press read `settled(grid)` first.

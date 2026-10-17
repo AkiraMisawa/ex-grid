@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount, settled } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
 
@@ -539,15 +539,14 @@ for (const chrome of ['builtin', 'mud']) {
 
             // A tab is a sheet of its own, and Escape does not close a sheet: its grid keeps the
             // keyboard and releases Tab, as any grid's Escape with nothing to dismiss does (KB-8,
-            // ADR-0012 rewritten 2026-10-01), and the tab stays. The answer is a round trip away on
-            // the Server host, and a Tab typed before it would be held and dropped: on that host the
-            // circuit goes quiet first (ADR-0056); the fixed wait is the page's own time, all there
-            // is on WebAssembly.
+            // ADR-0012 rewritten 2026-10-01), and the tab stays. A press can engage an Interactive
+            // cell, so the press's outcome is read before Escape; the release is then taken at the
+            // Escape's keydown, and a Tab typed at once leaves (ADR-0230 section 1).
             await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
             await expect(records).toBeFocused();
+            await settled(records);
             await page.keyboard.press('Escape');
-            // spec-lint: fixed-wait: a wait between Escape and Tab with no state to wait for on WebAssembly; suspected product race: a Tab typed before Escape's answer is held and dropped (see above)
-            await page.waitForTimeout(500);
+            await settled(records);
             await circuitQuiet();
             await expect(records).toBeFocused();
             await expect(details).toHaveCount(1);

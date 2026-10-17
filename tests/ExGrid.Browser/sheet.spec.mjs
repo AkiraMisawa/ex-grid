@@ -907,10 +907,9 @@ for (const chrome of ['builtin', 'mud']) {
         await page.keyboard.press('ArrowLeft');
         await expectFocusAt(grid, 'E11');
 
-        // A Tab typed before the Escape's answer is held and dropped (ADR-0010/0021): wait for it.
+        // After keys that only move the Focus, the release is taken at the Escape's keydown, and a Tab
+        // typed at once leaves (ADR-0230 section 1).
         await page.keyboard.press('Escape');
-        // spec-lint: fixed-wait: the Escape's release has no visible state to wait for before the Tab; the Settled Mark (PR #134, settled(grid)) will replace it
-        await page.waitForTimeout(500);
         await page.keyboard.press('Tab');
         await expect(page.locator('#after-sheet')).toBeFocused();
         await expectFocusAt(grid, 'E11');

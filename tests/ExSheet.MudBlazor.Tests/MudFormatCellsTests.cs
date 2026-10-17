@@ -188,6 +188,21 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.True(IsOpen(page));
     }
 
+    [Fact] // ADR-0071 / ADR-0220, ticket 260: the mode the user switched to outlives the dialog's next render
+    public async Task More_colours_keeps_the_mode_switched_to_when_the_dialog_renders_again()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Fill");
+        var picker = page.FindComponent<MudMoreColours>();
+        Assert.Equal(global::MudBlazor.ColorPickerMode.HEX, picker.Instance.ColorPickerMode);
+
+        await page.InvokeAsync(() => picker.Instance.ChangeMode());
+        page.FindComponent<MudFormatCellsDialog>().Render();
+
+        Assert.Equal(global::MudBlazor.ColorPickerMode.RGB, picker.Instance.ColorPickerMode);
+    }
+
     [Fact] // ADR-0039 / ADR-0071: a closed picker's Escape belongs to its enclosing frame
     public async Task More_colours_does_not_start_a_hand_back_when_the_picker_is_already_closed()
     {
@@ -691,6 +706,23 @@ public class MudFormatCellsTests : MudSheetTestContext
 
         page.WaitForAssertion(() => Assert.False(IsOpen(page)));
         Assert.Equal(default, FormatAt(page, "B2").Font);
+    }
+
+    [Fact] // ADR-0071 (2026-10-02), ticket 261: while the Font is the default, Normal font cannot be unchecked, as under the built-in Chrome
+    public async Task Normal_font_is_read_only_while_the_font_is_the_default()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Font");
+        IRenderedComponent<global::MudBlazor.MudCheckBox<bool>> Box() =>
+            page.FindComponents<global::MudBlazor.MudCheckBox<bool>>().Single(c => c.Instance.Label == "Normal font");
+        Assert.True(Box().Instance.GetState(x => x.Value));
+        Assert.True(Box().Instance.ReadOnly);
+
+        await page.Find(".mud-ex-sheet-format-cells-strikethrough input").ChangeAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = true });
+
+        page.WaitForAssertion(() => Assert.False(Box().Instance.GetState(x => x.Value)));
+        Assert.False(Box().Instance.ReadOnly);
     }
 
     [Fact] // ADR-0071 / SH-45, case 23: the Fill tab offers No Colour, the theme's sixty and the ten standard colours, as the Fill tab names them
