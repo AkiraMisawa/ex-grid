@@ -347,7 +347,9 @@ so does the daily hunt, `.github/workflows/hunt.yml`, which gates nothing:
 
 - **The hunt** runs all of layer 3, each test ten times, against both hosts in Chrome and Edge, in
   ten shards each (ADR-0220 §4). A failure it finds is a defect to record and fix (§3), never one
-  to re-run.
+  to re-run. A shard is whole spec files, chosen by `shard-files.mjs`, never Playwright's
+  `--shard`: that one cuts the tests after `--repeat-each` has multiplied them, and the hunt's first
+  run took a third of a shard's repetitions that way, which `counted-run.sh` refused.
 - **The widened run** runs it once more, slowed (§5): `EXGRID_RTT_FLOOR=<ms>` makes the latency
   proxy add that round trip to every chunk, on top of what a test sets, 0 included, and
   `EXGRID_CPU_THROTTLE=<rate>` makes every page the fixture's contexts open run that many times

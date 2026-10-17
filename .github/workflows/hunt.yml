@@ -32,6 +32,8 @@ on:
     paths:
       - .github/workflows/hunt.yml
       - tests/ExGrid.Browser/counted-run.sh
+      - tests/ExGrid.Browser/shard-files.mjs
+      - tests/ExGrid.Browser/fixtures.mjs
       - tests/ExGrid.Browser/latency-proxy.mjs
 
 permissions:
@@ -126,37 +128,39 @@ jobs:
           name: hunt-hosts
           path: hosts
 
-      # A pull request's check runs one file, which falls in one shard; the others list nothing
-      # and have nothing to count. All of layer 3 fills every shard, so there a shard that lists
-      # nothing is a listing that failed, and the job says so rather than passing empty.
-      - name: Which tests this shard takes
+      # Whole spec files, every repetition of each (shard-files.mjs): Playwright's --shard cuts the
+      # tests after --repeat-each has multiplied them, and the first run of this workflow ran a third
+      # of a shard's repetitions that way. A pull request's check runs one file, which falls in one
+      # shard; the others take none and have nothing to count. All of layer 3 fills every shard, so
+      # there a shard with no file is sharding that failed, and the job says so rather than passing.
+      - name: Which spec files this shard takes
         id: shard
         working-directory: tests/ExGrid.Browser
         shell: bash
         run: |
-          listed=$(npx playwright test ${SPECS} --project=${{ matrix.project }} --shard=${{ matrix.shard }}/10 --list | sed -n 's/^Total: \([0-9][0-9]*\) tests\{0,1\} in .*/\1/p')
-          if [ "${listed:-0}" -gt 0 ]; then
-            echo "any=true" >> "$GITHUB_OUTPUT"
+          files=$(node shard-files.mjs ${{ matrix.shard }} 10 ${SPECS})
+          echo "files=${files}" >> "$GITHUB_OUTPUT"
+          if [ -n "${files}" ]; then
+            echo "Shard ${{ matrix.shard }}/10: ${files}"
           elif [ -z "${SPECS}" ]; then
-            echo "Shard ${{ matrix.shard }} of all of layer 3 lists no tests: the listing is broken, not empty." >&2
+            echo "Shard ${{ matrix.shard }}/10 of all of layer 3 takes no spec file: the sharding is broken, not empty." >&2
             exit 1
           else
-            echo "any=false" >> "$GITHUB_OUTPUT"
-            echo "Shard ${{ matrix.shard }}/10 of \`${SPECS:-all}\` takes no tests." >> "$GITHUB_STEP_SUMMARY"
+            echo "Shard ${{ matrix.shard }}/10 of \`${SPECS}\` takes no spec file." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Layer 3, each test ${{ env.REPEAT }} times, headed under xvfb
-        if: steps.shard.outputs.any == 'true'
+        if: steps.shard.outputs.files != ''
         working-directory: tests/ExGrid.Browser
         env:
           EXGRID_HOSTS: ${{ github.workspace }}/hosts
           EXGRID_HOSTING: ${{ matrix.hosting }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
-          ./counted-run.sh ${REPEAT} ${SPECS} --project=${{ matrix.project }} --shard=${{ matrix.shard }}/10
+          ./counted-run.sh ${REPEAT} ${{ steps.shard.outputs.files }} --project=${{ matrix.project }}
 
       - name: Keep the run's records
-        if: always() && steps.shard.outputs.any == 'true'
+        if: always() && steps.shard.outputs.files != ''
         uses: actions/upload-artifact@v7
         with:
           name: hunt-${{ matrix.hosting }}-${{ matrix.project }}-${{ matrix.shard }}
@@ -203,24 +207,24 @@ jobs:
           name: hunt-hosts
           path: hosts
 
-      - name: Which tests this shard takes
+      - name: Which spec files this shard takes
         id: shard
         working-directory: tests/ExGrid.Browser
         shell: bash
         run: |
-          listed=$(npx playwright test ${SPECS} --project=${{ matrix.project }} --shard=${{ matrix.shard }}/4 --list | sed -n 's/^Total: \([0-9][0-9]*\) tests\{0,1\} in .*/\1/p')
-          if [ "${listed:-0}" -gt 0 ]; then
-            echo "any=true" >> "$GITHUB_OUTPUT"
+          files=$(node shard-files.mjs ${{ matrix.shard }} 4 ${SPECS})
+          echo "files=${files}" >> "$GITHUB_OUTPUT"
+          if [ -n "${files}" ]; then
+            echo "Shard ${{ matrix.shard }}/4: ${files}"
           elif [ -z "${SPECS}" ]; then
-            echo "Shard ${{ matrix.shard }} of all of layer 3 lists no tests: the listing is broken, not empty." >&2
+            echo "Shard ${{ matrix.shard }}/4 of all of layer 3 takes no spec file: the sharding is broken, not empty." >&2
             exit 1
           else
-            echo "any=false" >> "$GITHUB_OUTPUT"
-            echo "Shard ${{ matrix.shard }}/4 of \`${SPECS:-all}\` takes no tests." >> "$GITHUB_STEP_SUMMARY"
+            echo "Shard ${{ matrix.shard }}/4 of \`${SPECS}\` takes no spec file." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Layer 3 widened, headed under xvfb
-        if: steps.shard.outputs.any == 'true'
+        if: steps.shard.outputs.files != ''
         working-directory: tests/ExGrid.Browser
         env:
           EXGRID_HOSTS: ${{ github.workspace }}/hosts
@@ -229,10 +233,10 @@ jobs:
           EXGRID_CPU_THROTTLE: ${{ env.CPU_THROTTLE }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
-          ./counted-run.sh 1 ${SPECS} --project=${{ matrix.project }} --shard=${{ matrix.shard }}/4
+          ./counted-run.sh 1 ${{ steps.shard.outputs.files }} --project=${{ matrix.project }}
 
       - name: Keep the run's records
-        if: always() && steps.shard.outputs.any == 'true'
+        if: always() && steps.shard.outputs.files != ''
         uses: actions/upload-artifact@v7
         with:
           name: widened-${{ matrix.hosting }}-${{ matrix.project }}-${{ matrix.shard }}

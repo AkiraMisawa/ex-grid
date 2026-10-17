@@ -434,6 +434,11 @@ class FileApp {
     async boot(goto, gotoOptions) {
         await goto('/', gotoOptions);
         await ready(this.page);
+        // The record every later test is checked against is taken once the host has said all it will:
+        // on the Server host the head's <title> comes in a render after the prerendered page, and read
+        // before it lands, the record lacked it and the first test's return to the index was named a
+        // leak (the widened run, 150 ms and the CPU at a quarter, ADR-0220 §5).
+        await circuitQuiet();
         this.booted = await documentAtIndex(this.page);
         this.natives = await nativesOf(this.page);
     }
