@@ -482,6 +482,27 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText('');
         });
 
+        // The race of #147's run (ADR-0230 section 2, note of 2026-10-17): typed at once on a circuit,
+        // the list of names the core opened for `=S` was painted while the field already held `=SUM(`,
+        // and Home, judged as that list's, moved the caret. Here the list for `=S` is shown, and the
+        // rest is typed behind a round trip longer than the typing, so the field runs ahead of every
+        // render while that list stands; Home typed at once still points, as it does typed slowly.
+        test('SH-36: Home typed at once after =SUM( points at A10 while the list for =S is still shown (ADR-0230 section 2)', async ({ page }) => {
+            test.skip(!SERVER, 'WebAssembly has no round trip to set');
+            const grid = sheet(page);
+            await pressCell(grid, 'D10');
+            await page.keyboard.type('=S');
+            await expect(items(grid).first()).toBeVisible();
+            await setRoundTrip(150);
+            await page.keyboard.type('UM(');
+            await page.keyboard.press('Home');
+            await expect(editor(grid)).toHaveValue('=SUM(A10');
+            await setRoundTrip(0);
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('');
+        });
+
         test('SH-36: Shift+→ at an open value list points at D10:E10 and closes the list; in a list of names Home moves the caret (Part B of the ninth run, x6)', async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'D10');

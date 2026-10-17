@@ -542,6 +542,47 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         return mode;
     };
 
+    // The keys whose meaning in an editor field differs between the modes (ADR-0230 section 2): the
+    // arrows, Home, End and their Shift and Primary Modifier forms. Escape, Enter, Tab and F2 are the
+    // core's in every mode, and a character is typed in every one.
+    const modeDependentKeys = new Set([...overwriteKeys, ...pointKeys, ...pointedKeys, ...completionKeys,
+        ...completionOverPointKeys].filter((canonical) => !editingKeys.has(canonical)));
+    // A mode mark is the mode of the text its surface showed in that render (data-ex-mode-text, ADR-0230
+    // section 2, note of 2026-10-17), and a field typed into faster than the core answers already holds
+    // text the core has not heard. On a circuit `=SUM(` typed at once painted the list of names the core
+    // opened for `=S` while the field held `=SUM(`; Home, read as a list's, moved the caret, where typed
+    // slowly it points at A10. So a key whose meaning depends on the mode, typed in a field whose
+    // surface's mark answers another text, waits, with every key after it, until the core's render has
+    // answered the field's text, and is gated then. A character never waits on it: typing goes on at
+    // the browser's speed, as section 2 decided (its option (b), rejected, stays rejected).
+    const markBehind = (target, k) => {
+        if (!k.inEditor || !isTextField(target) || !root.contains(target) || !modeDependentKeys.has(canonicalOf(k))) {
+            return null;
+        }
+        const surface = target.closest('.ex-editor[data-ex-mode-text]');
+        return surface !== null && surface.closest('.ex-grid') === root
+            && surface.getAttribute('data-ex-mode-text') !== target.value ? surface : null;
+    };
+    // Resolves once the render answering `field`'s text is in the DOM: its surface's mark is of the
+    // text the field holds, or the surface or the field is gone (the edit closed). The keys typed
+    // meanwhile are held, so the field's text does not move under it. Read from the attribute the
+    // core writes, looked at every animation frame while the key waits, as editorSettled's waits
+    // are: nothing is measured, and no observer is added. Bounded by two seconds, the hold's own
+    // fallback (ADR-0010).
+    const markAnswering = (field) => new Promise((resolve) => {
+        const since = performance.now();
+        const look = () => {
+            const surface = field.isConnected ? field.closest('.ex-editor[data-ex-mode-text]') : null;
+            if (!core || surface === null || surface.getAttribute('data-ex-mode-text') === field.value
+                || performance.now() - since > 2000) {
+                resolve();
+            } else {
+                requestAnimationFrame(look);
+            }
+        };
+        look();
+    });
+
     // The keys that open a popover from the root (ADR-0039): the popover takes DOM focus a
     // round trip later on a circuit, and a key typed in between must be the popover's, not
     // the grid's (ADR-0010's hold, widened).
@@ -2217,6 +2258,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             const rebased = {
                 ...k, onRoot: editing === 'none', inEditor: editing !== 'none', inPopover: false, inFindField: false,
             };
+            // Held behind another key while the field's surface marked the mode of an older text: gated
+            // once the core has answered the field's text, as at its keydown (markBehind).
+            const field = rebased.inEditor ? editorInput() : null;
+            if (field && markBehind(field, rebased) !== null) {
+                await markAnswering(field);
+            }
             const verdict = gate(rebased);
             if (verdict === 'out') {
                 // A released Tab held behind its Escape: the browser's move of DOM focus cannot be
@@ -2400,6 +2447,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // Any key but a modifier's own ends a release of Tab, as the gate has it.
             endRelease();
             holdBehindNameBoxEnter();
+            return;
+        }
+        // A mode-dependent key typed while its field's surface marks the mode of an older text
+        // (markBehind): held until the core has answered the field's text, then gated in its turn.
+        if (!replaying && markBehind(event.target, k) !== null) {
+            event.preventDefault();
+            event.stopPropagation();
+            noteAlt(k, k, true);
+            held.push(k);
+            startHold(markAnswering(event.target));
             return;
         }
         if (!replaying) {

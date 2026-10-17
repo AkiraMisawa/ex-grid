@@ -149,6 +149,17 @@ and it uses the hold that already exists. No listener is added.
   back. A key that carries text the core had not heard now marks the input events up to that text as
   overtaken, and the core drops them: every change of an edit surface's text fires one, the script's
   own typing included, and they arrive in order, so the one that brings the key's text arrives.
+  *(Note of 2026-10-17, from the red on #147's run.)* A third gap: the mark is the mode of the text
+  its surface showed in that render, and a field typed into faster than the core answers holds text
+  the core has not heard. On a circuit `=SUM(` typed at once painted the list of names the core opened
+  for `=S` while the field already held `=SUM(`; Home, read as that list's, was left to the field and
+  moved the caret, where typed slowly it points at A10. Each surface now carries the text it showed
+  (`data-ex-mode-text`), and a key whose meaning differs between the modes (the arrows, Home, End and
+  their Shift and Primary Modifier forms) typed in a field whose surface marks another text is held,
+  with every key after it, until the core's render shows the field's text, and is gated then; so is
+  such a key already held behind another. A character never waits on it, so typing still goes at the
+  browser's speed and option (b) stays rejected. Its test holds the list for `=S` on screen behind a
+  150 ms round trip while `UM(` and Home are typed: before the change it failed every run.
 - **(3)** At its turn, the Name Box's press waits for the stamp to answer every input sent before it,
   then selects the box's whole text.
 
