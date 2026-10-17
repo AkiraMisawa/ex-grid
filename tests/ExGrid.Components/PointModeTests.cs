@@ -103,6 +103,28 @@ public class PointModeTests : GridTestContext
     private List<string> EditingModesTold()
         => [.. JSInterop.Invocations.Where(i => i.Identifier == "setEditing").Select(i => (string)i.Arguments[0]!)];
 
+    [Fact] // ADR-0230 section 2 / ticket 221: a key that overtook the input events of the typing it carries points, and those events, heard after it, do not end pointing
+    public async Task ADR0230_input_events_a_key_overtook_do_not_undo_its_answer()
+    {
+        var cut = RenderGrid();
+        await StartFormulaAsync(cut);
+
+        // =SUM( typed and Home at once: the key reaches the core before the input events of the typing.
+        await PressAsync(cut, "Home", text: "=SUM(", caret: 5);
+        Assert.Equal("=SUM(A1", EditorText(cut));
+        Assert.Single(cut.FindAll(".ex-selection .ex-point"));
+
+        foreach (var typed in new[] { "=S", "=SU", "=SUM", "=SUM(" })
+            await TypeAsync(cut, typed);
+        Assert.Equal("=SUM(A1", EditorText(cut));
+        Assert.Single(cut.FindAll(".ex-selection .ex-point"));
+
+        // Typing after them is typing, and ends pointing as ever.
+        await TypeAsync(cut, "=SUM(A1+");
+        Assert.Equal("=SUM(A1+", EditorText(cut));
+        Assert.Empty(cut.FindAll(".ex-selection .ex-point"));
+    }
+
     [Fact] // ADR-0051/0012 / DC-1: without the predicate, the arrows commit and move as before
     public async Task Without_the_predicate_the_arrows_commit_and_move()
     {

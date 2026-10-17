@@ -458,13 +458,12 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(editor(grid)).toHaveCount(0);
 
             // With no list: Home points, End writes nothing. The names listed while SUM was typed
-            // must be gone, and the gate told so, or Home would be the editor's.
+            // are gone, and the key typed at once is judged in the mode the render marked (ADR-0230
+            // section 2), not the one the gate is told a message later.
             await pressCell(grid, 'D10');
             await page.keyboard.type('=SUM(');
             await expect(editor(grid)).toHaveValue('=SUM(');
             await expect(items(grid)).toHaveCount(0);
-            // spec-lint: fixed-wait: a wait between inputs, kept: once the list is gone the gate reads the mode it was last told, a message after the render, so a Home typed in that gap would be the editor's (suspected product race, to be decided, not hidden by the lint)
-            await page.waitForTimeout(150); // the gate is told a message after the list is gone
             await page.keyboard.press('Home');
             await expect(editor(grid)).toHaveValue('=SUM(A10');
             await page.keyboard.press('Escape');
@@ -473,8 +472,6 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('=SUM(');
             await expect(editor(grid)).toHaveValue('=SUM(');
             await expect(items(grid)).toHaveCount(0);
-            // spec-lint: fixed-wait: a wait between inputs, kept: once the list is gone the gate reads the mode it was last told, a message after the render, so an End typed in that gap would be the editor's (suspected product race, to be decided)
-            await page.waitForTimeout(150);
             await page.keyboard.press('End');
             // spec-lint: fixed-wait: proves an absence: End must write nothing and ask no commit, so no refusal may be shown, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
             await page.waitForTimeout(300);
@@ -562,8 +559,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type(typed);
             await expect(editor(grid)).toHaveValue(typed);
             await expect(items(grid)).toHaveCount(0);
-            // spec-lint: fixed-wait: a wait between inputs, kept: once the names are no longer listed the gate reads the mode it was last told, a message after the render, so a ↓ typed in that gap would be the editor's (suspected product race, to be decided)
-            await page.waitForTimeout(150); // the gate is told a message after the names typed are no longer listed
+            // ↓ follows at once: the gate judges it in the mode the render marked (ADR-0230 section 2).
 
             // An arrow, at the end of the text.
             await page.keyboard.press('ArrowDown');
@@ -885,8 +881,8 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(editor(grid)).toHaveValue('=A1+B1');
             await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(0);
             await expect(candidates(grid)).toHaveCount(0);
-            // spec-lint: fixed-wait: a wait between inputs, kept: typing that ends Point tells the gate a message after its render, so a Home typed in that gap would still be Point's (suspected product race, to be decided)
-            await page.waitForTimeout(150); // typing that ends Point tells the gate after its render
+            // Home follows at once: typing ended Point, and the gate judges Home in the mode the
+            // render marked, not Point's it is told of a message later (ADR-0230 section 2).
 
             await page.keyboard.press('Home');
             await page.keyboard.press('ArrowRight');
@@ -950,8 +946,7 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(bar(grid)).toBeFocused();
         await typeSteadily(page, bar(grid), '=A1+B1');
         await expect(editor(grid)).toHaveValue('=A1+B1');
-        // spec-lint: fixed-wait: a wait between inputs, kept: typing tells the gate its mode a message after its render, so an F2 typed in that gap would be judged in the old mode (suspected product race, to be decided)
-        await page.waitForTimeout(150); // typing tells the gate after its render
+        // F2 follows at once, judged in the mode the render marked (ADR-0230 section 2).
 
         await page.keyboard.press('F2');
         await page.keyboard.press('Home');
@@ -992,19 +987,16 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(cell(grid, 'F5')).toHaveText('7');
         await expectFocusAt(grid, 'F6');
         // The same for the Name Box, pressed straight after a row that nothing held: the row's
-        // focus asks for the keyboard back a round trip later. The Name Box's press is not held
-        // among the keys, so the render answering the row press can still rewrite its text:
-        // what is typed waits until the round trips have landed — the hand-back among them —
-        // and the Name Box has kept the keyboard through them.
+        // focus asks for the keyboard back a round trip later, and the render answering the row
+        // press renames the box. The Name Box's press takes its place among the held keys behind
+        // the row press (ADR-0230 section 3), so what is typed at once is typed over the name that
+        // render leaves, and the Name Box keeps the keyboard through the hand-back.
         await clickCell(grid, 'F8');
         await nameBox(grid).click();
-        await expect(nameBox(grid)).toHaveValue('F8');
-        // spec-lint: fixed-wait: a wait between inputs, kept: the Name Box's press is not held among the keys, so a render answering the row press can rewrite its text; typing waits for the round trips (suspected product race, named above; circuitQuiet() is the state, but it would still sit between inputs)
-        await page.waitForTimeout(600);
-        await expect(nameBox(grid)).toBeFocused();
         await page.keyboard.press('ControlOrMeta+A');
         await page.keyboard.type('D4');
         await expect(nameBox(grid)).toHaveValue('D4');
+        await expect(nameBox(grid)).toBeFocused();
         await page.keyboard.press('Enter');
         await expectFocusAt(grid, 'D4');
         await expectKeyboardOn(grid);

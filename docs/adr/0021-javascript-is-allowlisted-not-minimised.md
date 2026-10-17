@@ -628,3 +628,8 @@ existing KeyInterceptorService on the Format Cells dialog root only, so Escape a
 keys obey the frame's ordered hand-back even when the title or empty space holds focus.
 This limited exception adds no Wrapper script and no core listener; the design system's
 service owns attachment and removal. Other Wrapper-owned interop remains prohibited.
+
+*(2026-10-17, ADR-0230.)* The key gate reads three more things the core renders, none of them measured
+and none adding an entry: whether an Escape on the root leaves (`data-ex-escape-leaves` on the Settled
+Stamp), the editing mode on the edit's surfaces (`data-ex-mode`, `data-ex-mode-version`), and the stamp's
+answered count before a held press into the Name Box selects the box's text.

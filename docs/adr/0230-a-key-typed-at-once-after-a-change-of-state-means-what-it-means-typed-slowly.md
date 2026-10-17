@@ -2,7 +2,7 @@
 
 Decided with the user, 2026-10-17, for tickets 220, 221 and 222. Proposed the same day with the
 options each section still lists; the user took the recommendation of every section, and the
-question of section 1 as recommended. Not yet built: each ticket is fixed on its own branch.
+question of section 1 as recommended. Built the same day, the three tickets on one branch ("As built").
 
 ## Why
 
@@ -127,6 +127,30 @@ render comes before the first key. `declarations.spec.mjs` waits 600 ms before t
 
 **Decision: (a).** It is ticket 202's decision applied to the second field beside the rows,
 and it uses the hold that already exists. No listener is added.
+
+## As built (2026-10-17)
+
+- **(1)** The stamp's attribute is `data-ex-escape-leaves`: no popover or menu, no Interactive cell, no
+  Copied Range and no edit. The gate trusts it once the stamp's `data-ex-answered` reaches the last input
+  that could add a layer. The keys that cannot are the ones on the root that move the Focus or peel a
+  layer, unless a Consumer declared one: the arrows and their Shift and Control forms, Tab and
+  Shift+Tab, Home and End and their Control forms, the page keys, and Escape. Enter stays among the
+  keys that can, because an Interactive cell may answer it. A press the core hears without a number of
+  its own (a ▾, a heading) counts as the next input's. A release the gate ends (spent by its Tab, or
+  ended by another key) counts as an end heard, so the `releaseTab` still on its way for an Escape
+  released at its keydown grants nothing after it. (b)'s words have the id
+  `KeyRefusalLabelIds.TabBeforeRelease`, resolved as a refusal's are (ADR-0203); its test runs on the
+  Server host only, where a 150 ms round trip keeps the input before the Escape unanswered.
+- **(2)** The mark is `data-ex-mode` with `data-ex-mode-version`, a count of the mode's changes that the
+  tell carries too, so a render the core suppressed can never leave an older mark to outrank a newer
+  tell. Removing the waits found a second gap, outside the gate: on a circuit a key the script sends can
+  reach the core before Blazor's input events of the typing the key carries. `=SUM(` and Home typed at
+  once pointed, and the input event of the `(`, heard after, ended pointing as typing and put `=SUM(`
+  back. A key that carries text the core had not heard now marks the input events up to that text as
+  overtaken, and the core drops them: every change of an edit surface's text fires one, the script's
+  own typing included, and they arrive in order, so the one that brings the key's text arrives.
+- **(3)** At its turn, the Name Box's press waits for the stamp to answer every input sent before it,
+  then selects the box's whole text.
 
 ## Consequences
 
