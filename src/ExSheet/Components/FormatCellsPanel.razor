@@ -30,7 +30,8 @@
     tabs and show the one they reach. Excel's Ctrl+Tab is not offered, as the browser takes it. Each
     list of choices is a group of native radio buttons, so the arrow keys move inside it as the
     browser moves them, and a field typed into is bound, never written by hand (SRV-7). No script is
-    added: DOM focus moves by Blazor's FocusAsync when the frame's counts ask (ADR-0039).
+    added: DOM focus moves through the grid's focus function when the frame's counts ask (ADR-0039,
+    ADR-0204's note of 2026-10-17).
 
     OK and Cancel close the frame, a round trip later on a circuit, and carry ex-popover-closes, by
     which the grid's key listener holds the keys typed meanwhile, and after Enter in a field, which
@@ -147,12 +148,12 @@
         {
             _answeredFocus = Popover.FocusRequest;
             _answeredLast = Popover.FocusLastRequest;
-            await FocusQuietlyAsync(_tabs[(int)_tab], preventScroll: firstRender);
+            await FocusQuietlyAsync(_tabs[(int)_tab], preventScroll: firstRender, Popover.TakeFocus);
         }
         else if (Popover.FocusLastRequest != _answeredLast)
         {
             _answeredLast = Popover.FocusLastRequest;
-            await FocusQuietlyAsync(_cancel, preventScroll: false);
+            await FocusQuietlyAsync(_cancel, preventScroll: false, Popover.TakeFocus);
         }
         else if (_focusTab)
         {
@@ -161,12 +162,18 @@
         }
     }
 
-    private static async Task FocusQuietlyAsync(ElementReference element, bool preventScroll)
+    // The frame's counts are answered through the grid's focus function, which leaves the keyboard
+    // where a press inside the frame has put it before the opening focus lands (ticket 240); a tab
+    // the arrows reach is the keys' own move, and takes focus itself.
+    private static async Task FocusQuietlyAsync(ElementReference element, bool preventScroll, Func<ElementReference, bool, Task>? take = null)
     {
         if (element.Context is null) return;
         try
         {
-            await element.FocusAsync(preventScroll);
+            if (take is null)
+                await element.FocusAsync(preventScroll);
+            else
+                await take(element, preventScroll);
         }
         catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

@@ -796,16 +796,28 @@ public class ShippedStylesheetTests
     public void KB45_a_popovers_focus_asks_whether_the_keyboard_is_still_here()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
-        var method = Regex.Match(script, @"takeFocus: \(element, preventScroll\) => \{.*?\n        \},", RegexOptions.Singleline);
+        var method = Regex.Match(script, @"takeFocus: \(element, preventScroll, consumerPopover\) => \{.*?\n        \},", RegexOptions.Singleline);
         Assert.True(method.Success, "takeFocus is not in the handle");
         var body = method.Value;
 
-        Assert.Contains("(!active || active === document.body || active === document.documentElement", body, StringComparison.Ordinal);
+        Assert.Contains("!active || active === document.body || active === document.documentElement", body, StringComparison.Ordinal);
         Assert.Contains("(root.contains(active) && !own)", body, StringComparison.Ordinal);
         Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
         Assert.Contains("element.isConnected", body, StringComparison.Ordinal);
         Assert.Contains("target.focus({ preventScroll: preventScroll === true });", body, StringComparison.Ordinal);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
+
+        // Ticket 240 (ADR-0204's note of 2026-10-17): a popover's first scripted focus is refused where a
+        // press inside the popover has put the keyboard before it landed, a Consumer's popover's included,
+        // which alone skips the editor's question.
+        Assert.Contains("|| openingOvertaken(element)", body, StringComparison.Ordinal);
+        Assert.Contains("consumerPopover === true ||", body, StringComparison.Ordinal);
+        var overtaken = Regex.Match(script, @"const openingOvertaken = \(element\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(overtaken.Success, "openingOvertaken is not in the module");
+        Assert.Contains("openedPopovers.has(popover)", overtaken.Value, StringComparison.Ordinal);
+        Assert.Contains("pressedPopovers.has(popover) && active instanceof Element && popover.contains(active)", overtaken.Value, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), overtaken.Value);
+        Assert.Contains("pressedPopovers.add(pressedIn);", ListenerBody(script, "onPress"), StringComparison.Ordinal);
     }
 
     /// <summary>The body of the module's <c>const name = (event) =&gt; { … };</c>, at attach's level.</summary>

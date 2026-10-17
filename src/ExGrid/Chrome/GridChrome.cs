@@ -416,7 +416,18 @@ public sealed record GridPopoverContext(
     Action Close,
     int FocusRequest,
     int FocusLastRequest,
-    Action<bool> InnerPopupChanged);
+    Action<bool> InnerPopupChanged)
+{
+    /// <summary>
+    /// The core's focus function for the contents' controls (ADR-0204's note of 2026-10-17): the
+    /// control, and whether it may scroll into view. The contents answer a change of
+    /// <see cref="FocusRequest"/> or <see cref="FocusLastRequest"/> by calling it instead of the
+    /// control's own <c>FocusAsync</c>. It lands a round trip after the gesture that asked, and a
+    /// press the user has made inside the popover meanwhile keeps the keyboard where it was pressed:
+    /// the opening focus is then not taken. Null only in a context the core did not make.
+    /// </summary>
+    public Func<ElementReference, bool, Task>? TakeFocus { get; init; }
+}
 
 /// <summary>
 /// The Formula Bar's Name Box seam (ADR-0051, ADR-0010/0030). The core owns the box, its

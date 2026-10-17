@@ -112,6 +112,38 @@ test.describe('on /sheet', () => {
         }
     });
 
+    // A press inside Format Cells made as it appears keeps the keyboard where it was pressed (ticket 240,
+    // ADR-0204's note of 2026-10-17). On a circuit the frame's opening focus comes a round trip after the
+    // frame is drawn, and it took the keyboard back from the pressed choice to the first tab, where the
+    // Enter typed next did nothing and Format Cells stayed open. The round trip is long so that the press
+    // lands first; the outcome is the same whichever lands first.
+    test('ticket 240/ADR-0204: a choice pressed as Format Cells appears keeps the keyboard, and OK then Enter applies it', async ({ page }) => {
+        const grid = sheet(page);
+        await pressCell(grid, 'C2');
+        const circuit = await setRoundTrip(300);
+        try {
+            await page.locator('#sheet-format-cells').click();
+            // Pressed in the frame the choice is painted, as a user's press can be: a locator's own
+            // wait polls too slowly to land before the opening focus.
+            await page.waitForFunction(() => [...document.querySelectorAll('.ex-popover-consumer label')]
+                .some((label) => label.textContent.trim() === 'Percentage' && label.checkVisibility()), null, { polling: 'raf' });
+            const box = await choice(grid, 'Percentage').boundingBox();
+            await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+            await circuitQuiet();
+            await expect(choice(grid, 'Percentage')).toBeChecked();
+            await expect(choice(grid, 'Percentage')).toBeFocused();
+
+            await formatCells(grid).getByRole('button', { name: 'OK' }).focus();
+            await page.keyboard.press('Enter');
+            await expect(formatCells(grid)).toHaveCount(0);
+            await circuitQuiet();
+            await expect(cell(grid, 'C2')).toHaveText('50.00%');
+            await expectKeyboardOn(grid);
+        } finally {
+            if (circuit) await setRoundTrip(0);
+        }
+    });
+
     test('SH-42/SH-45, case 22: Ctrl+1 opens Format Cells from the keyboard, on Number, and no tab of the browser is selected', async ({ page }) => {
         const grid = sheet(page);
         await pressCell(grid, 'C2');

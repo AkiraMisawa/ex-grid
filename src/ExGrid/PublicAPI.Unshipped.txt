@@ -608,6 +608,8 @@ ExGrid.Chrome.GridPopoverContext.FocusRequest.init -> void
 ExGrid.Chrome.GridPopoverContext.GridPopoverContext(System.Action! Close, int FocusRequest, int FocusLastRequest, System.Action<bool>! InnerPopupChanged) -> void
 ExGrid.Chrome.GridPopoverContext.InnerPopupChanged.get -> System.Action<bool>!
 ExGrid.Chrome.GridPopoverContext.InnerPopupChanged.init -> void
+ExGrid.Chrome.GridPopoverContext.TakeFocus.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>?
+ExGrid.Chrome.GridPopoverContext.TakeFocus.init -> void
 ExGrid.Chrome.IGridChrome
 ExGrid.Chrome.IGridChrome.CellEditor(ExGrid.Chrome.CellEditorContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExGrid.Chrome.IGridChrome.CellMessage(ExGrid.Chrome.CellMessageContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
