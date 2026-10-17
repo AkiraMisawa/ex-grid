@@ -1,4 +1,4 @@
-import { test, expect, alterPage } from './fixtures.mjs';
+import { test, expect, alterPage, settled } from './fixtures.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
 import { sheet, cell, expectFocusAt, boxOf, spanOf, nameBox, pressCell, expectSelectionIsCell, pressAt } from './sheet-helpers.mjs';
 
@@ -62,9 +62,8 @@ test('SR-2c: with the view at the top, a Column Heading click then Shift+→ lea
     await expect.poll(async () => Math.round((await boxOf(range)).width)).toBe(Math.round(d1.x + d1.width - c1.x));
     await expectFocusAt(grid, 'C1');
     // A reveal writes after the render that painted the range, and on a circuit its scroll event is
-    // a round trip behind: long enough for either to have landed.
-    // spec-lint: fixed-wait: proves an absence — no reveal's scroll may arrive, from the render or a round trip behind it, and no state marks that none came; the Settled Mark (PR #134, settled(grid)) will replace it
-    await page.waitForTimeout(500);
+    // a round trip behind: once the grid has settled, the reveal's write and repaint are over.
+    await settled(grid);
     expect((await scrollOf(grid)).top).toBe(0);
     await expect(cell(grid, 'C1')).toBeVisible();
 });
@@ -102,8 +101,7 @@ test('SR-2c: with the view at the left, a Row Heading click then Shift+↓ leave
     const a3 = await boxOf(cell(grid, 'A3'));
     await expect.poll(async () => Math.round((await boxOf(grid.locator('.ex-selection-pinned .ex-range'))).height))
         .toBe(Math.round(2 * a3.height));
-    // spec-lint: fixed-wait: proves an absence — no reveal's sideways scroll may arrive, and no state marks that none came; the Settled Mark (PR #134, settled(grid)) will replace it
-    await page.waitForTimeout(500);
+    await settled(grid);
     expect((await scrollOf(grid)).left).toBe(0);
     await expect(heading(grid, 'B')).toBeVisible();
 });
@@ -229,7 +227,7 @@ test('DC-43: a Column Heading drag at the right edge scrolls sideways, and never
     await expect.poll(async () => (await scrollOf(grid)).left, { timeout: 10_000 }).toBeGreaterThan(200);
     // And down into the bottom band as well, over the cells: still sideways only.
     await page.mouse.move(readable.right - 3, readable.bottom - 3, { steps: 4 });
-    // spec-lint: fixed-wait: proves an absence — the edge band must scroll no row down while the pointer rests in it, and no state marks that none came; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: a pointer resting in the edge band is no input the gate takes, and the band's steps run on the script's own timer, which the Settled Mark does not cover (ADR-0220, As built); nothing marks that no step down will come
     await page.waitForTimeout(600);
     expect((await scrollOf(grid)).top).toBe(0);
 
@@ -250,7 +248,7 @@ test('DC-43: a Row Heading drag at the bottom edge scrolls down, and never sidew
     // Into the bottom-right corner: both edge bands at once.
     await page.mouse.move(readable.right - 3, readable.bottom - 3, { steps: 8 });
     await expect.poll(async () => (await scrollOf(grid)).top, { timeout: 10_000 }).toBeGreaterThan(200);
-    // spec-lint: fixed-wait: proves an absence — the edge band must scroll no column sideways while the pointer rests in it, and no state marks that none came; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: a pointer resting in the edge band is no input the gate takes, and the band's steps run on the script's own timer, which the Settled Mark does not cover (ADR-0220, As built); nothing marks that no step sideways will come
     await page.waitForTimeout(300);
     expect((await scrollOf(grid)).left).toBe(0);
 
@@ -355,7 +353,7 @@ test('DC-44: the Size Tip is redrawn only when the Extent moves to another Headi
     // spec-lint: early-read: a drag along D's heading inside the readable area scrolls nothing, so D4's box is the same before and after its answer
     const d4 = await boxOf(cell(grid, 'D4'));
     await page.mouse.move(d4.x + (d4.width / 2), d4.y + (d4.height / 2), { steps: 6 });
-    // spec-lint: fixed-wait: proves an absence — no write to the Size Tip may arrive while the Extent stays on D, and no state marks that none came; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: the pointer's moves in a drag are no input the gate takes, so the Settled Mark does not cover what they write (ADR-0220, As built); nothing marks that no write to the Size Tip will come
     await page.waitForTimeout(300);
     expect(await writes()).toBe(0);
 

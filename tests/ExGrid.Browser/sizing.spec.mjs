@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, circuitQuiet, settled } from './fixtures.mjs';
 
 // Column widths and a box that narrows, against the /sizing page (ADR-0016 and ADR-0045,
 // decided 2026-09-25). The estimates are checked against what the browser paints: a
@@ -143,8 +143,9 @@ test('a press that reaches another header selects whole columns, and never sorts
     await page.mouse.up();
 
     await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,1');
-    // spec-lint: fixed-wait: proves an absence: the press released must not sort; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: the press and the release on the headings are heard by Blazor on its own, as a heading's click is, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no sort will come
     await page.waitForTimeout(500);
+    await circuitQuiet();
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
@@ -157,8 +158,9 @@ test('a press on one header released on another sorts nothing: the click lands o
     await page.mouse.up();
 
     await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,3');
-    // spec-lint: fixed-wait: proves an absence: the press released on another header must not sort; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: the press and the release on the headings are heard by Blazor on its own, as a heading's click is, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no sort will come
     await page.waitForTimeout(500);
+    await circuitQuiet();
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
@@ -186,8 +188,9 @@ test('Ctrl+click on a header adds the whole column, a second takes it out, and n
     await header(page, 'Notional').click({ modifiers: ['ControlOrMeta'], position: { x: 20, y: 12 }, force: true });
     await expect(page.locator('#selection-status')).toHaveText('Selection: 2,0,1,1');
     await expect(grid(page)).toHaveAttribute('aria-activedescendant', /-r2c0$/);
-    // spec-lint: fixed-wait: proves an absence: the second Ctrl+click must not sort; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: the Ctrl+click on the heading is a click Blazor hears on its own, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no sort will come
     await page.waitForTimeout(300);
+    await circuitQuiet();
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
@@ -204,8 +207,9 @@ test('Ctrl+drag across headers adds the columns crossed as one range, and does n
     await page.keyboard.up('ControlOrMeta');
 
     await expect(page.locator('#selection-status')).toHaveText('Selection: 2,0,1,1;0,2,120,3');
-    // spec-lint: fixed-wait: proves an absence: the Ctrl+drag must not sort; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: the Ctrl+drag on the headings is heard by Blazor on its own, as a heading's click is, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no sort will come
     await page.waitForTimeout(300);
+    await circuitQuiet();
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
@@ -243,8 +247,7 @@ test('with the view at the top, a header Shift+click then Shift+→ never scroll
 
     await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,4');
     // A reveal writes after the render, and on a circuit its scroll event is a round trip behind.
-    // spec-lint: fixed-wait: proves an absence: no reveal may scroll the view down after Shift+Right; the Settled Mark (PR #134, settled(grid)) will replace it
-    await page.waitForTimeout(500);
+    await settled(grid(page));
     expect(await scroller.evaluate((el) => el.scrollTop)).toBe(0);
 });
 
@@ -257,8 +260,7 @@ test('with the view at the top, Ctrl+Space on the first row then Shift+→ never
     await page.keyboard.press('Shift+ArrowRight');
 
     await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,2');
-    // spec-lint: fixed-wait: proves an absence: no reveal may scroll the view down after Shift+Right; the Settled Mark (PR #134, settled(grid)) will replace it
-    await page.waitForTimeout(500);
+    await settled(grid(page));
     expect(await scroller.evaluate((el) => el.scrollTop)).toBe(0);
 
     // Shift+↑ leaves the columns a row short of the last, and the view goes to the Extent.

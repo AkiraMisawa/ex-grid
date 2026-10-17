@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, settled } from './fixtures.mjs';
 import { painted, sameColour } from './pixels.mjs';
 
 // The Copied Range (ADR-0170): after a copy lands, the grid outlines what it copied with dashes
@@ -152,8 +152,7 @@ test.describe('a browser that cannot say the clipboard changed', () => {
         await page.keyboard.press('ControlOrMeta+C');
 
         await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).not.toBe('SENTINEL');
-        // spec-lint: fixed-wait: proves an absence: no outline may arrive after the copy, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
-        await page.waitForTimeout(300);
+        await settled(grid(page));
         await expect(outlines(page)).toHaveCount(0);
     });
 });

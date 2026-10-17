@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, alterPage, circuitQuiet } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage, circuitQuiet, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     sheet, openSheet, cell, clickCell, editor, nameBox, at,
@@ -695,8 +695,7 @@ test('ADR-0080 / ADR-0035 / ED-30: over a cell that does not edit the Keyboard F
     const client = await page.context().newCDPSession(page);
     try {
         await compose(client, 'か', 'かな');
-        // spec-lint: fixed-wait: proves an absence — no composition, value or Cell Editor may arrive on the read-only field within the window, and no state marks that nothing came; the Settled Mark (PR #134, settled(grid)) will replace it
-        await page.waitForTimeout(300);
+        await settled(grid);
         expect(await fieldState(grid)).toEqual({ value: '', drawn: false, focused: true });
         await expect(grid.locator('.ex-viewport .ex-editor')).toHaveCount(0);
 

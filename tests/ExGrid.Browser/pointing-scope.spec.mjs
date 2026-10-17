@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, settled } from './fixtures.mjs';
+import { test, expect, setRoundTrip, settled, circuitQuiet } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import {
@@ -306,8 +306,10 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await setRoundTrip(150);
 
-        // Every class change on the positions grid from the = on, heard as it is applied, for a
-        // second: several round trips, which the stop and the start again took between them.
+        // Every class change on the positions grid from the = on, heard as it is applied, until
+        // all the = set going is over: the Sheet settled, with its editor's focus told; the circuit
+        // quiet, so the focusout Blazor heard on its own has been answered; and the positions grid
+        // settled once it is pointed at, the effect the Consumer carries to it (ADR-0220, As built).
         const watch = await table.evaluateHandle((root) => {
             const seen = [];
             const observer = new MutationObserver(() => seen.push(root.classList.contains('ex-pointed-at')));
@@ -315,15 +317,17 @@ test.describe('/sheet', () => {
             return { seen, stop: () => observer.disconnect() };
         });
         await page.keyboard.type('=');
-        // spec-lint: early-read: reads the class changes the observer heard over that window, which is the assertion that nothing painted otherwise
-        // spec-lint: fixed-wait: proves an absence: no unpointed paint may arrive within the second watched; the Settled Mark (PR #134, settled(grid)) will replace it
-        const seen = await watch.evaluate((w) => new Promise((resolve) => setTimeout(() => {
+        await expect(editor(grid)).toBeFocused();
+        await settled(grid);
+        await circuitQuiet();
+        await expect(table).toHaveClass(/\bex-pointed-at\b/);
+        await settled(table);
+        const seen = await watch.evaluate((w) => {
             w.stop();
-            resolve(w.seen);
-        }, 1000)));
+            return w.seen;
+        });
         await watch.dispose();
 
-        await expect(editor(grid)).toBeFocused();
         expect(seen[0], 'pointed at once the = was typed').toBe(true);
         expect(seen, 'never painted otherwise meanwhile').not.toContain(false);
         await setRoundTrip(0);

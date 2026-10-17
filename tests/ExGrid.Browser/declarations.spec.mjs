@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, setRoundTrip, record, watchNextKey, keySeenUntouched } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip, record, watchNextKey, keySeenUntouched, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
 import {
@@ -298,8 +298,8 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}-1`);
             await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length + 2);
             await expect(completion(grid)).toContainText('match_mode');
-            // spec-lint: fixed-wait: proves an absence: the list Tab closed must not be asked for and painted again, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
-            await page.waitForTimeout(300); // long enough for a list asked again to come back
+            await settled(grid);
+            await circuitQuiet();
             await expect(items(grid)).toHaveCount(0);
             await page.keyboard.press('Escape');
             await expect(editor(grid)).toHaveCount(0);
@@ -314,8 +314,8 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Tab');
             await expect(editor(grid)).toHaveValue('=SUM(Positions[PV');
             await expect(completion(grid)).toContainText('number1');
-            // spec-lint: fixed-wait: proves an absence: the column list Tab closed must not come back, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
-            await page.waitForTimeout(300);
+            await settled(grid);
+            await circuitQuiet();
             await expect(items(grid)).toHaveCount(0);
             await page.keyboard.press('Escape');
             await expect(editor(grid)).toHaveCount(0);
@@ -326,8 +326,8 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(items(grid)).toHaveText(['Positions']);
             await page.keyboard.press('Tab');
             await expect(editor(grid)).toHaveValue('=Positions');
-            // spec-lint: fixed-wait: proves an absence: no hint or list may open for the table's name Tab wrote, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
-            await page.waitForTimeout(300);
+            await settled(grid);
+            await circuitQuiet();
             await expect(completion(grid)).toHaveCount(0);
             await page.keyboard.press('Escape');
             await expect(editor(grid)).toHaveCount(0);
@@ -348,8 +348,8 @@ for (const chrome of ['builtin', 'mud']) {
 
             await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length);
             await expect(completion(grid)).toContainText('match_mode');
-            // spec-lint: fixed-wait: proves an absence: no value list may open for the caret moved back, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
-            await page.waitForTimeout(300); // long enough for a list asked about this caret to come back
+            await settled(grid);
+            await circuitQuiet();
             await expect(items(grid)).toHaveCount(0);
 
             await page.keyboard.press('Tab');
@@ -377,8 +377,8 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(bar(grid)).toHaveValue(`${AT_MATCH_MODE}0`);
             await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length + 1);
             await expect(completion(grid)).toContainText('match_mode');
-            // spec-lint: fixed-wait: proves an absence: the list Tab closed must not be asked for and painted again, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
-            await page.waitForTimeout(300); // long enough for a list asked again to come back
+            await settled(grid);
+            await circuitQuiet();
             await expect(items(grid)).toHaveCount(0);
             await page.keyboard.press('Escape');
             await expect(editor(grid)).toHaveCount(0);
@@ -388,8 +388,8 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type(`${AT_MATCH_MODE}4`);
             await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}4`);
             await expect(completion(grid)).toContainText('match_mode');
-            // spec-lint: fixed-wait: proves an absence: no list may stand for 4, nor the one for ,, linger, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
-            await page.waitForTimeout(300); // long enough for the list for 4 to replace the one for ,,
+            await settled(grid);
+            await circuitQuiet();
             await expect(items(grid)).toHaveCount(0);
             await page.keyboard.press('Escape');
             await expect(editor(grid)).toHaveCount(0);
@@ -411,8 +411,8 @@ for (const chrome of ['builtin', 'mud']) {
 
             await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length);
             await expect(completion(grid)).toContainText('match_mode');
-            // spec-lint: fixed-wait: proves an absence: no value list may open for the caret moved back, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
-            await page.waitForTimeout(300); // long enough for a list asked about this caret to come back
+            await settled(grid);
+            await circuitQuiet();
             await expect(items(grid)).toHaveCount(0);
 
             await page.keyboard.press('Tab');
@@ -448,8 +448,8 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(items(grid)).toHaveText(MATCH_MODES);
             await page.keyboard.press('End');
             await expect(items(grid)).toHaveCount(0);
-            // spec-lint: fixed-wait: proves an absence: End must ask no commit, so no refusal may be shown, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
-            await page.waitForTimeout(300); // long enough for a refusal to have been shown
+            await settled(grid);
+            await circuitQuiet();
             await expect(editor(grid)).toHaveValue(AT_MATCH_MODE);
             await expect(grid.locator('.ex-message')).toHaveCount(0);
             await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(0);
@@ -476,8 +476,8 @@ for (const chrome of ['builtin', 'mud']) {
             // spec-lint: fixed-wait: a wait between inputs, kept: once the list is gone the gate reads the mode it was last told, a message after the render, so an End typed in that gap would be the editor's (suspected product race, to be decided)
             await page.waitForTimeout(150);
             await page.keyboard.press('End');
-            // spec-lint: fixed-wait: proves an absence: End must write nothing and ask no commit, so no refusal may be shown, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
-            await page.waitForTimeout(300);
+            await settled(grid);
+            await circuitQuiet();
             await expect(editor(grid)).toHaveValue('=SUM(');
             await expect(grid.locator('.ex-message')).toHaveCount(0);
             await page.keyboard.press('Escape');
@@ -778,9 +778,9 @@ for (const chrome of ['builtin', 'mud']) {
         await bar(grid).click({ position: { x: 6, y: field.height / 2 } });
         await expect(grid.locator('.ex-point')).toHaveCount(0);
         await expect.poll(() => caret(bar(grid))).toBeLessThan(3);
-        // Long past the placement's round trip, the caret is still where the press put it.
-        // spec-lint: fixed-wait: proves an absence: the late caret placement must not put the caret back after the Reference, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
-        await page.waitForTimeout(500);
+        // Once the grid has settled, the placement the ↓ owed has landed: the caret is still where the press put it.
+        await settled(grid);
+        await circuitQuiet();
         expect(await caret(bar(grid))).toBeLessThan(3);
         await expect(grid.locator('.ex-point')).toHaveCount(0);
         await page.keyboard.press('ArrowDown');
@@ -1441,9 +1441,9 @@ test('DC-45: on a 150 ms circuit, a second F4 before the caret is placed cycles 
     // caret, and the second press cycles it again, which ends selected (ADR-0051).
     await expect(bar(grid)).toHaveValue('=A$1+B2');
     await expect.poll(() => selectionOf(bar(grid))).toEqual([1, 4]);
-    // Long past the last placement's round trip, nothing else has changed.
-    // spec-lint: fixed-wait: proves an absence: no late placement may change the text or the selection over $A$1, and no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
-    await page.waitForTimeout(500);
+    // Once the grid has settled, the placements the two F4s owed have landed, and nothing else has changed.
+    await settled(grid);
+    await circuitQuiet();
     await expect(bar(grid)).toHaveValue('=A$1+B2');
     expect(await selectionOf(bar(grid))).toEqual([1, 4]);
     await setRoundTrip(0);
