@@ -1,7 +1,6 @@
 # 223: Keys typed at once after held keys, and Ctrl+Z after typing, land as typed slowly
 
-Status: needs-triage
-Roadmap: ExSheet — Keys typed at machine speed after a burst land where the burst left the caret, and Ctrl+Z undoes all of it
+Status: done
 
 **Found:** by the spec lint (#137, ADR-0220 §6). Two tests in `declarations.spec.mjs` wait between
 inputs until every answer has landed:
@@ -15,5 +14,11 @@ inputs until every answer has landed:
 
 **Not yet known:** whether either fails typed at once. Each wait is a suspicion, not a finding.
 
-- [ ] Remove each wait and run the test 20 times on each host. If it passes, the wait goes and this
+- [x] Remove each wait and run the test 20 times on each host. If it passes, the wait goes and this
       ticket closes; if not, the race is fixed in the product, and recorded here.
+
+## Comments
+
+2026-10-17, claude/races-220-224. Both waits removed. Typed at once, each test passed 20 of 20 on the
+Server host and 20 of 20 on WebAssembly (`--project=chrome`, headless, Linux under WSL2). Neither wait
+hid a race, so the ticket closes with no change to the product.
