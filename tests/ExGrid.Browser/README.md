@@ -1224,7 +1224,10 @@ Two traps live in that, and the DemoHost has hit both:
 - Cells and header cells are `pointer-events: none` by design — the Viewport is the
   delegated target (ADR-0004). Playwright's actionability check must be bypassed with
   `{ force: true }`; the browser then hit-tests through to the Viewport, exactly as a
-  user's click does.
+  user's click does. A forced press reads its node twice, and a row built again in between
+  (a new instance of the row, ADR-0003/0140) fails it as "Element is not visible" with
+  nothing sent. `fixtures.mjs` makes such a press once more on the node now there
+  (`holdForcedPresses`), so a press is a press at the cell's place, as a user's is.
 - Restart the DemoHost after any rebuild: a stale host serves a stale app, and the
   first symptom is an unrelated-looking 404 or a page without the newest feature.
 - Two checkouts must not share a port. The host is started on whatever port
