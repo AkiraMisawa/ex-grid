@@ -182,4 +182,4 @@ No difference, so the mark is always on, and there is no switch for it.
   #123's failures are open; those three are the fixes.
 - CI's minutes grow by the daily run. Nothing that gates a pull request grows.
 - The Definition of Done gains a criterion for the mark when it is built (its conditions, and that
-  rows still skip their render), as every built feature does.
+  rows still skip their render), as every built feature does. *(Written 2026-10-17: ASY-7 and RR-14.)*
