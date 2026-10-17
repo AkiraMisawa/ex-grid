@@ -140,6 +140,12 @@ public partial class ExGrid<TRow>
     /// while no edit is open.</summary>
     private int? ModeMarkVersion() => _editMode == EditMode.None ? null : ModeVersion();
 
+    /// <summary>The text a surface shows in the render that marks <see cref="MarkedMode"/>
+    /// (<c>data-ex-mode-text</c>, ADR-0230 section 2, note of 2026-10-17): the mark is the mode of
+    /// that text, and the gate trusts it only while its field still holds it. Null, and no
+    /// attribute, while no edit is open.</summary>
+    private string? MarkedText(string shown) => _editMode == EditMode.None ? null : shown;
+
     private string? _modeVersioned;
     private int _modeVersion;
 
