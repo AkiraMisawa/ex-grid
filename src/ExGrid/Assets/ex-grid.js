@@ -1148,6 +1148,27 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // has been answered (replayPress, askAboutPress). Each mark is numbered, so taking one
     // press's mark off never takes a later press's.
     let staleField = null;
+    // A popover's first scripted focus — its opening focus — lands a round trip after the gesture that
+    // opened it (ADR-0039). A press the user makes inside the popover before then has put the keyboard
+    // where the user wanted it, and the opening focus, taken against a popover nobody had touched, is
+    // refused rather than pull the keyboard back to the first control: Percentage pressed, OK focused
+    // and Enter typed at once, the Enter landed on Format Cells' first tab and did nothing (ticket 240,
+    // ADR-0204's note of 2026-10-17). Each popover element is its own opening, as the core keys it.
+    // Only the first scripted focus is asked: a key's move, or Tab's wrap, answers a key typed there.
+    const pressedPopovers = new WeakSet();
+    const openedPopovers = new WeakSet();
+    const openingOvertaken = (element) => {
+        const popover = element.closest('.ex-popover');
+        if (!popover || openedPopovers.has(popover)) {
+            return false;
+        }
+        openedPopovers.add(popover);
+        // Only where the press left the keyboard inside it: a press on the popover's own ground, which
+        // takes no focus, leaves the opening focus to place it.
+        const active = document.activeElement;
+        return pressedPopovers.has(popover) && active instanceof Element && popover.contains(active)
+            && !active.classList.contains('ex-focus-wrap');
+    };
     let staleMarks = 0;
     const markStale = (field) => {
         staleField = field;
@@ -3039,6 +3060,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (keyFieldComposing && core && !replaying && event.button === 0) {
             keyFieldOf()?.blur();
         }
+        // A press inside one of this grid's popovers keeps the keyboard there from its opening focus
+        // (openingOvertaken).
+        if (!replaying && event.target instanceof Element) {
+            const pressedIn = event.target.closest('.ex-popover');
+            if (pressedIn && root.contains(pressedIn)) {
+                pressedPopovers.add(pressedIn);
+            }
+        }
         // A press on the grid ends a release of Tab: the user has come back to it (ADR-0012,
         // 2026-10-01). A held press ends it again at its replay, after the answer it waited for.
         // And the keyboard this press brings to the Keyboard Field shows no ring (KB-12).
@@ -4094,13 +4123,20 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // itself hands it to the first of its descendants that can, so a Chrome may name the box of a
         // control whose own element it cannot reach. Reads document.activeElement and no layout; the
         // seventh decision about focus made in script (ADR-0021's note of 2026-10-11).
-        takeFocus: (element, preventScroll) => {
+        //
+        // A Consumer's popover's control (ADR-0050 item 16) is handed this function too, with
+        // `consumerPopover`: the editor's question is not asked of it, since a Consumer's popover may
+        // open from a control of the page's, outside this root, as its contents' own focus never asked
+        // it. Of every popover's control, only whether a press inside the popover has overtaken its
+        // opening is asked (openingOvertaken; ticket 240).
+        takeFocus: (element, preventScroll, consumerPopover) => {
             const active = document.activeElement;
             const own = active instanceof Element && active !== staleField
                 && active.closest('.ex-formula-bar') !== null;
             if (!root || !(element instanceof HTMLElement) || !element.isConnected
-                || !(!active || active === document.body || active === document.documentElement
-                    || (root.contains(active) && !own))) {
+                || !(consumerPopover === true || !active || active === document.body || active === document.documentElement
+                    || (root.contains(active) && !own))
+                || openingOvertaken(element)) {
                 return;
             }
             // The element itself where it takes focus; else, inside it, a field first — a design

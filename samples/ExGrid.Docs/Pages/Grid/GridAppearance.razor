@@ -175,7 +175,11 @@
             <code>HandKeyboardToFrameAsync</code> and gives it back through <code>ReturnKeyboardAsync</code>, with the
             frame's element and the keys it heard on the way. Await that return before removing your frame or
             clearing its queue: completion means the grid has collected those keys. A popover of yours in the grid's frame
-            (<code>OpenPopoverAsync</code>) can ask to hear Escape close it, and hand the keyboard on from there. Over
+            (<code>OpenPopoverAsync</code>) can ask to hear Escape close it, and hand the keyboard on from there. Its
+            contents answer the context's <code>FocusRequest</code> and <code>FocusLastRequest</code> by handing the
+            control to the context's <code>TakeFocus</code>, not with their own <code>FocusAsync</code>: a control the
+            user presses as the popover appears keeps the keyboard, and the opening focus that lands after it is not
+            taken. Over
             Blazor Server each of these lands a round trip late, and the grid holds the keys typed meanwhile and
             hands them on, in order, to where the keyboard lands. ExSheet's Sheet Toolbar is built this way. A dialog
             of yours with a grid inside, closing on the Escape that raises the grid's <code>OnLeave</code>, calls
