@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip } from './fixtures.mjs';
+import { test, expect, setRoundTrip, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import {
@@ -1005,6 +1005,9 @@ test.describe('/pointing?narrow', () => {
 
         await expect(editor(grid)).toHaveValue('=Positions[PV]');
         await expect.poll(async () => (await scrollOf()).left).toBeGreaterThan(0);
+        // The positions grid's reveal has begun: what it leaves is read once that grid says it has
+        // settled, its repaint over (ADR-0220), never between the repaint's two frames.
+        await settled(positions);
         // PV's dashes lie whole inside the client area across, their right side against the vertical
         // gutter: the grid moved no further than it had to.
         const client = await clientAreaOf(scroller);
@@ -1014,24 +1017,19 @@ test.describe('/pointing?narrow', () => {
         expect(Math.abs(pv.x + pv.width - client.right), 'PV ends at the vertical gutter').toBeLessThanOrEqual(SLACK_PX);
         const pvHeader = await boxOf(header(positions, 'PV'));
         expect(Math.abs(pvHeader.x - pv.x), 'the dashes are down PV').toBeLessThanOrEqual(SLACK_PX);
-        // A reveal moves the offset one pixel and back over the two frames after it, so that the
-        // rows it brings in are painted (ex-grid.js, repaintAfterReveal): the rows are read once that
-        // has settled, never between its frames (ADR-0056). Rows that stayed moved fail here.
-        await expect.poll(async () => (await scrollOf()).top, { message: 'the rows stay where they were' }).toBe(top);
+        expect((await scrollOf()).top, 'the rows stay where they were').toBe(top);
 
         await page.keyboard.press('ArrowLeft');
 
         await expect(editor(grid)).toHaveValue('=Positions[Id]');
         await expect.poll(async () => (await scrollOf()).left).toBe(0);
+        await settled(positions);
         const id = await boxOf(dashes);
         const idHeader = await boxOf(header(positions, 'Id'));
         expect(Math.abs(id.x - idHeader.x), 'the dashes are down Id').toBeLessThanOrEqual(SLACK_PX);
         expect(id.x, 'Id starts inside the client area').toBeGreaterThanOrEqual(client.left - SLACK_PX);
         expect(id.x + id.width, 'Id ends inside the client area').toBeLessThanOrEqual(client.right + SLACK_PX);
-        // A reveal moves the offset one pixel and back over the two frames after it, so that the
-        // rows it brings in are painted (ex-grid.js, repaintAfterReveal): the rows are read once that
-        // has settled, never between its frames (ADR-0056). Rows that stayed moved fail here.
-        await expect.poll(async () => (await scrollOf()).top, { message: 'the rows stay where they were' }).toBe(top);
+        expect((await scrollOf()).top, 'the rows stay where they were').toBe(top);
         await expect(editor(grid)).toBeFocused();
         await expect(positions.locator('.ex-focus, .ex-range')).toHaveCount(0);
         await expect(page.locator('#pointing-refused')).toHaveText('');

@@ -215,6 +215,31 @@ land — and a key pressed in that gap is lost, as it would be for a user who ig
 grid. A test that clicked and typed straight after the rows appeared failed that way on a slow
 runner.
 
+## Reading once the grid has settled
+
+**After its inputs, a test awaits `settled(grid)` from `fixtures.mjs`, and then reads once**
+(ADR-0220). The grid's root carries the Settled Mark, `data-ex-settled`, while every input its key
+gate has taken — a key, a press on the rows, a paste, a composition, a copy — has been handled and
+its effect is in the DOM: nothing held, no hand-off of the keyboard under way, every input's answer
+rendered (the core writes the last one answered on the root, `data-ex-answered`), no render owed
+on the grid's own timers (`data-ex-owing`: the error message, the description of a selection, the
+Placeholders filling), and a reveal's write and its repaint over. The mark comes off in the keydown
+itself, so a reading straight after the input never finds the mark from before it.
+
+- **It stands for `circuitQuiet()` and `revealRepainted` where it applies**, on both hosts. It waits
+  for the grid's own state rather than for the wire to go still, so it does not wait out a 400 ms
+  window, and on WebAssembly it waits for what `circuitQuiet()` cannot see there.
+- **Inputs go in at machine speed.** A test never waits between them to make itself pass; the mark is
+  awaited after the last one. A test about slow input says so in its name.
+- **Read once, after the mark.** A reading that retries hides a mark that let it through too early;
+  `settled-mark.spec.mjs` reads with no retry for that reason.
+- **What it does not cover.** Text typed into a field — the Cell Editor, the Formula Bar, the Name
+  Box — reaches the core as Blazor's own input events, and so does a click on a heading, a menu or a
+  button of a Chrome or a toolbar: wait for their effect with an expectation, and `circuitQuiet()`
+  where a later answer could undo it. An effect a Consumer carries to another grid — a Pointing
+  Scope's reveal on the grid pointed at — is that grid's: once an expectation has seen it begin
+  there, await that grid's mark.
+
 ## Waiting on the Server host
 
 On the Server host, what the grid decides reaches the page a round trip after the key or the
@@ -539,6 +564,10 @@ nobody had asked for. What that means when writing a test:
   page never holds still, and not counting Playwright's own write to the fields; `paints`
   admitting either byte of ticket 92's 78.53 and only the byte of a whole value; and the
   device-pixel tools.
+- `settled-mark.spec.mjs` — the Settled Mark (ADR-0220) read with no retry: off in the keydown on the
+  Server host, back once the key's move is painted, changing once each way; twenty arrows typed at
+  once over a 150 ms round trip, the Name Box read once straight after the mark; the offset after a
+  reveal read once and unchanged three frames later; an edit opened by a key and committed by Enter.
 - `observational.spec.mjs` — the numbers that are recorded, never gated, into
   `metrics.json`: mount to first row at 10⁶ (BIG-7), the DOM with horizontal
   virtualisation on and off (DOM-5), the settle repaint and the frame intervals at both

@@ -1,0 +1,7 @@
+config         build      n  burst ms  burst B frames lag type p95 type >20 scroll p95 scroll >20
+server-0ms     without   14       6.6     7796       16.9      8.9        0        8.5          0
+server-0ms     with      14      15.4     7876       16.7      8.8        0        8.5          0
+server-60ms    without   14     212.2     7882      108.8      8.6        0        8.5          0
+server-60ms    with      14     212.4     7903      100.1      8.6        0        8.5          0
+wasm           without   14      62.7      nan        0.0      8.9        0        9.1          0
+wasm           with      14      64.8      nan        0.0      8.9        0        9.0          0

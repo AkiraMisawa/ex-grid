@@ -441,7 +441,7 @@ public class TypingAimedWithADroppedSelectionTests : GridTestContext
 
         Assert.Contains("keyFieldComposing = true;\n        keyFieldPaint = paintNow();", script);
         Assert.Contains("held.push({ text, paint: keyFieldPaint });", script);
-        Assert.Contains("'OnKeyFieldTextAsync', k.text, k.paint)", script);
+        Assert.Contains("'OnKeyFieldTextAsync', k.text, k.paint, nextInput())", script);
     }
 
     /// <summary>A source whose order the test moves, under a new Row Sequence Version.</summary>

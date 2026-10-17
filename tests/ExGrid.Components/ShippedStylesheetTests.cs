@@ -423,8 +423,9 @@ public class ShippedStylesheetTests
 
         // One attribute of this instance's own root, nothing wider and nothing measured. The
         // module's other observers are the coloured text's, on a layer's text and colours (DC-51),
-        // and the page follow's, on the root's own follow number (ADR-0204).
-        Assert.Equal(3, Regex.Matches(script.Text, @"new MutationObserver\(").Count);
+        // the page follow's, on the root's own follow number (ADR-0204), and the Settled Mark's, on
+        // the two attributes the core's render writes on the root (ADR-0220).
+        Assert.Equal(4, Regex.Matches(script.Text, @"new MutationObserver\(").Count);
         Assert.Matches(new Regex(@"revealObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-reveal'\] \}\)"), script.Text);
         // Let go as soon as the write is made or replaced, and with the instance.
         Assert.Matches(new Regex(@"const dropReveal = \(\) => \{[^}]*revealObserver\.disconnect\(\);", RegexOptions.Singleline), script.Text);
@@ -554,8 +555,8 @@ public class ShippedStylesheetTests
         // release, whichever comes first.
         var release = Regex.Match(script.Text, @"const onRelease = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
         Assert.True(release.Success, "onRelease is not in the module");
-        Assert.Matches(new Regex(@"^const onRelease = \(event\) => \{\s*(//[^\n]*\s*)*if \(!replaying\) \{\s*askAboutPress\(\);"), release.Value);
-        Assert.Matches(new Regex(@"const askAboutPress = \(\) => \{.*?core\.invokeMethodAsync\('PressAnsweredAsync'\).*?press\.resolve\(\);",
+        Assert.Matches(new Regex(@"^const onRelease = \(event\) => \{\s*(lookSettled\(\);\s*)?(//[^\n]*\s*)*if \(!replaying\) \{\s*askAboutPress\(\);"), release.Value);
+        Assert.Matches(new Regex(@"const askAboutPress = \(\) => \{.*?core\.invokeMethodAsync\('PressAnsweredAsync', nextInput\(\)\).*?press\.resolve\(\);",
             RegexOptions.Singleline), script.Text);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
     }
@@ -1008,9 +1009,9 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"if \(keyFieldComposing \|\| imeKeyTold\) \{\s*deferredEditorFocus = \{ bar, fromField \};\s*return;\s*\}"), focusEditor);
         // A primary press during a composition ends it first, by the field giving up the keyboard,
         // before anything else the press does.
-        Assert.Matches(new Regex(@"^const onPress = \(event\) => \{\s*(//[^\n]*\s*)*if \(keyFieldComposing && core && !replaying && event\.button === 0\) \{\s*keyFieldOf\(\)\?\.blur\(\);\s*\}"), ListenerBody(script, "onPress"));
+        Assert.Matches(new Regex(@"^const onPress = \(event\) => \{\s*(lookSettled\(\);\s*)?(//[^\n]*\s*)*if \(keyFieldComposing && core && !replaying && event\.button === 0\) \{\s*keyFieldOf\(\)\?\.blur\(\);\s*\}"), ListenerBody(script, "onPress"));
         // The composition's start is told to the core only with no edit open.
-        Assert.Matches(new Regex(@"if \(editing === 'none' && !answering\) \{\s*core\.invokeMethodAsync\('OnKeyFieldCompositionStartAsync'\)"), ListenerBody(script, "onKeyFieldCompositionStart"));
+        Assert.Matches(new Regex(@"if \(editing === 'none' && !answering\) \{\s*core\.invokeMethodAsync\('OnKeyFieldCompositionStartAsync', nextInput\(\)\)"), ListenerBody(script, "onKeyFieldCompositionStart"));
         Assert.Single(Regex.Matches(script, @"'OnKeyFieldTextAsync'"));
         // The document's selection is the field's caret, which the IME needs: a key on the field
         // does not drop it, as one on the root does (ADR-0021's clipboard note).
@@ -1074,7 +1075,7 @@ public class ShippedStylesheetTests
         // the keyboard leaving, and the instance's end. Nothing else leaves a request waiting on it.
         Assert.Single(Regex.Matches(script, @"imeKeyTold = true;"));
         Assert.Equal(3, Regex.Matches(script, @"(?<!let )imeKeyTold = false;").Count);
-        Assert.Matches(new Regex(@"const onRootKeyUp = \(event\) => \{\s*if \(imeKeyTold\) \{\s*imeKeyTold = false;\s*grantEditorFocus\(\);"), script);
+        Assert.Matches(new Regex(@"const onRootKeyUp = \(event\) => \{\s*(lookSettled\(\);\s*)?if \(imeKeyTold\) \{\s*imeKeyTold = false;\s*grantEditorFocus\(\);"), script);
         // The grant goes through focusEditor's own rule, judged where the keyboard is going.
         Assert.Contains("handle.focusEditor(pending.bar, pending.fromField, toward);", script, StringComparison.Ordinal);
         Assert.Contains("const active = toward instanceof Element ? toward : document.activeElement;", script, StringComparison.Ordinal);
@@ -1100,7 +1101,7 @@ public class ShippedStylesheetTests
         // Every wait of the hold's is one lookAgain reaches, and leaves the set as it settles, by
         // whichever path; looked at again, it leaves no second frame of its own behind, and once
         // settled it is never looked at again.
-        Assert.Matches(new Regex(@"const resolve = \(\) => \{\s*waiting = false;\s*settledWaits\.delete\(again\);\s*settle\(\);\s*\};"), settled);
+        Assert.Matches(new Regex(@"const resolve = \(\) => \{\s*waiting = false;\s*settledWaits\.delete\(again\);\s*settle\(\);\s*lookSettled\(\);\s*\};"), settled);
         Assert.Matches(new Regex(@"const again = \(\) => \{\s*if \(waiting\) \{\s*cancelAnimationFrame\(lookFrame\);\s*look\(\);\s*\}\s*\};\s*settledWaits\.add\(again\);\s*look\(\);"), settled);
         Assert.Contains("lookFrame = requestAnimationFrame(look);", settled, StringComparison.Ordinal);
         // The look settles the wait only through resolve, so that no path leaves it in the set.
@@ -1135,7 +1136,7 @@ public class ShippedStylesheetTests
             // In a text field it is typed at the caret, as a held character is.
             + @"typeInto\(holder, k\);\s*continue;\s*\}\s*"
             // Only with the keyboard still the grid's is the core asked to open an edit holding it.
-            + @"if \(editing === 'none'\) \{\s*const opened = await core\.invokeMethodAsync\('OnKeyFieldTextAsync', k\.text, k\.paint\)"),
+            + @"if \(editing === 'none'\) \{\s*const opened = await core\.invokeMethodAsync\('OnKeyFieldTextAsync', k\.text, k\.paint, nextInput\(\)\)"),
             branch);
         // The one place the core is asked to open an edit for a composition's text.
         Assert.Single(Regex.Matches(script, @"'OnKeyFieldTextAsync'"));
@@ -1173,7 +1174,7 @@ public class ShippedStylesheetTests
         // grid — Tab back in is the keyboard's — says it did not. Read off the listeners already
         // allowlisted: no listener of its own.
         Assert.Contains("keyboardByPress = true;", ListenerBody(script, "onPress"), StringComparison.Ordinal);
-        Assert.Matches(new Regex(@"^const onKeyDown = \(event\) => \{\s*if \(!core\) \{\s*return;\s*\}\s*(//[^\n]*\s*)*keyboardByPress = false;"), ListenerBody(script, "onKeyDown"));
+        Assert.Matches(new Regex(@"^const onKeyDown = \(event\) => \{\s*(lookSettled\(\);\s*)?if \(!core\) \{\s*return;\s*\}\s*(//[^\n]*\s*)*keyboardByPress = false;"), ListenerBody(script, "onKeyDown"));
         Assert.Matches(new Regex(@"releaseEndsHeard\+\+;\s*keyboardByPress = false;"), ListenerBody(script, "onFocusLeft"));
         Assert.Equal(3, Regex.Matches(script, @"(?<!let )keyboardByPress = (true|false);").Count);
     }
@@ -1200,7 +1201,7 @@ public class ShippedStylesheetTests
         // text (F4, ADR-0051 2026-09-29) — reads of the field and of the listener's own note,
         // no layout read.
         Assert.Single(Regex.Matches(script.Text, @"'OnKeyAsync'"));
-        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*input \? input\.value : null, input \? \(input\.selectionStart \?\? input\.value\.length\) : -1,\s*input \? \(input\.selectionEnd \?\? input\.value\.length\) : -1, input \? movedByUser\(input\) : false,\s*k\.repeat === true, k\.paint\)",
+        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*input \? input\.value : null, input \? \(input\.selectionStart \?\? input\.value\.length\) : -1,\s*input \? \(input\.selectionEnd \?\? input\.value\.length\) : -1, input \? movedByUser\(input\) : false,\s*k\.repeat === true, k\.paint, nextInput\(\)\)",
             RegexOptions.Singleline), script.Text);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), script.Text);
     }
@@ -1216,7 +1217,7 @@ public class ShippedStylesheetTests
         // replayed after a hold says so as well. The core raises OnLeave once per press from it.
         // Only the render the key was pressed against comes after it (ADR-0142, LV-14).
         Assert.Matches(new Regex(@"const snapshot = \(event\) => \(\{[^}]*repeat: event\.repeat,", RegexOptions.Singleline), script.Text);
-        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*,\s*k\.repeat === true, k\.paint\)\s*\.catch\(", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*,\s*k\.repeat === true, k\.paint, nextInput\(\)\)\s*\.catch\(", RegexOptions.Singleline), script.Text);
     }
 
     [Fact] // ADR-0051 (2026-09-29) / ADR-0021 / DC-45 / DC-24: F4 is claimed only while an edit is open, and only where C# says the Consumer declared what it does

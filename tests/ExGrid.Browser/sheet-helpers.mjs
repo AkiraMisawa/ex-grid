@@ -326,14 +326,25 @@ export async function spanOf(grid, from, to) {
     return { x: a.x, y: a.y, width: b.x + b.width - a.x, height: b.y + b.height - a.y };
 }
 
-/** Asserts one painted rectangle covers exactly the cells from..to, to within a pixel. */
+/**
+ * Asserts one painted rectangle covers exactly the cells from..to, to within a pixel. The cells are
+ * measured inside the poll, beside the rectangle: a render in flight after a commit can replace a
+ * row's cells between the locator finding one and its box being read, and a box measured once,
+ * before the poll, then read as not painted (f4-enter-mode's answer 7 on the Server host, 3 runs in
+ * 25 on main as on #134, 2026-10-16; ADR-0220: an early read is fixed where the test reads).
+ */
 export async function expectCovers(locator, grid, from, to) {
-    const want = await spanOf(grid, from, to);
     await expect.poll(async () => {
-        const box = await locator.boundingBox();
+        const [a, b, box] = await Promise.all([
+            cell(grid, from).boundingBox(), cell(grid, to).boundingBox(), locator.boundingBox(),
+        ]);
+        if (!a || !b) {
+            return 'the cells are not painted';
+        }
         if (!box) {
             return 'not painted';
         }
+        const want = { x: a.x, y: a.y, width: b.x + b.width - a.x, height: b.y + b.height - a.y };
         const near = (p, q) => Math.abs(p - q) <= 1.5;
         return near(box.x, want.x) && near(box.y, want.y) && near(box.width, want.width) && near(box.height, want.height)
             ? 'covers'

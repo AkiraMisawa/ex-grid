@@ -175,10 +175,10 @@ public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
 
     private Task OnPointedRowsPress(MouseEventArgs e)
     {
-        e = AsTaken(e, "mousedown");
+        e = AsTaken(e, "mousedown", out var input);
         var handedOn = ClaimHandedOnPress(e);
         _pointedPressHandOver = HandOverRowsPressAsync(e, handedOn);
-        return _pressAnswer = AnswerHandedOnAsync(_pointedPressHandOver, handedOn);
+        return _pressAnswer = AnsweredAsync(AnswerHandedOnAsync(_pointedPressHandOver, handedOn), input);
     }
 
     private Task OnPointedHeaderPress(MouseEventArgs e)

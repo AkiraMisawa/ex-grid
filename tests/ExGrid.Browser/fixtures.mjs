@@ -745,6 +745,26 @@ export const keySeenUntouched = (page) => page.evaluate(() => window.__keySeen);
 // geometry waits here first. At scale 1 nothing is compressed and this returns at once. The
 // length is read from the style attribute, never the CSSOM, which rounds it (ADR-0053).
 /**
+ * Returns once the grid says it has settled (ADR-0220): its root carries `data-ex-settled` while
+ * every input its key gate has taken — a key, a press on the rows, a paste, a composition, a copy —
+ * has been handled and its effect is in the DOM, with nothing held, no hand-off of the keyboard under
+ * way, no render owed on a timer of its own, and a reveal's write and repaint over. Await it after the
+ * inputs, before a reading: it stands for `circuitQuiet()` and for `revealRepainted` there, on both
+ * hosts, and it waits for the grid's own state rather than for the wire to go still.
+ *
+ * Text typed into a field (the Cell Editor, the Formula Bar, the Name Box) and a click Blazor hears
+ * on its own (a heading, a menu, a button of the Chrome) are not the gate's: read those with an
+ * expectation, then `circuitQuiet()`. Nor is an effect a Consumer carries to another grid: await that
+ * grid's mark once an expectation has seen the effect begin there.
+ *
+ * `grid` is the grid's root (`.ex-grid`), or a locator inside one, whose nearest root is meant.
+ */
+export async function settled(grid, { timeout = 10_000 } = {}) {
+    const root = grid.locator('xpath=ancestor-or-self::*[contains(concat(" ", normalize-space(@class), " "), " ex-grid ")][1]');
+    await expect(root, 'the grid has settled (data-ex-settled, ADR-0220)').toHaveAttribute('data-ex-settled', '', { timeout });
+}
+
+/**
  * Returns once a reveal's repaint is over (ADR-0012, 2026-10-08): after a reveal's write the grid
  * moves the offset a pixel in the next animation frame and back in the one after. A measurement
  * made as soon as the offset reads the target can land between the two and see the pixel. Called

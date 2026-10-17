@@ -58,6 +58,8 @@
 @* The page follows what a move revealed, asked from the render that paints it (ADR-0204). *@
 @{ StageFollow(); }
 @{
+    // A render whose OnAfterRenderAsync has yet to run (ExGrid.Settled.cs).
+    _rendersBuilt++;
     var keyFieldShown = KeyFieldShown;
     var activeDescendant = ActiveDescendant();
     // Once a render has made the root a tab stop, it is sent ahead of anything asked after it:
@@ -73,6 +75,8 @@
      aria-rowcount="@((long)(_total ?? _window.Count) + HeaderRowCount)" aria-colcount="@Columns.Count"
      aria-activedescendant="@(keyFieldShown ? null : activeDescendant)"
      @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
+    @* The core's half of the Settled Mark (ADR-0220): the root's first child, rendered on its own. *@
+    @SettledStampFragment
     @* The stylesheet's notice (ADR-0123, ERR-11): it carries the stamp of the stylesheet this build
        ships, and the inline display keeps it out of the way until a stylesheet's rules decide.
        Each shipped stylesheet shows it for any stamp and hides it for its own, so another
@@ -3808,6 +3812,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        var rendersAfterRendered = _rendersBuilt;
         // The rows of this render have painted their Change Highlights and told the grid
         // where each ends, so the one timer is armed for the earliest, or goes with the last
         // (ADR-0068). A prerender runs none of this, and so keeps no timer.
@@ -3949,6 +3954,9 @@
             if (OnEditDiscarded.HasDelegate)
                 await OnEditDiscarded.InvokeAsync(discarded);
         }
+        // Last, once everything this render owed the script has been told: the inputs answered since
+        // the root last said so, said by the next render (ADR-0220).
+        StampAnsweredInputs(rendersAfterRendered);
     }
 
     private async Task AttachScrollAsync()
@@ -6402,9 +6410,16 @@
             CloseMessage();
         _messageTarget = target;
         if (CellMessageOf is null || target is null)
+        {
+            _messageOwed = false;
             return closed;
+        }
         _messageTimer ??= Time.CreateTimer(OnMessageSettled, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _messageTimer.Change(PopoverDelay, Timeout.InfiniteTimeSpan);
+        // The root says a render is owed until the timer has run (ADR-0220): whether the message
+        // opens is known only then.
+        _messageOwed = true;
+        ShowSettledStamp();
         return closed;
     }
 
@@ -6412,9 +6427,11 @@
     {
         _ = InvokeAsync(() =>
         {
-            if (_disposed || _messageTarget is not { } target)
+            if (_disposed)
                 return;
-            ShowMessageAt(target);
+            if (_messageTarget is { } target)
+                ShowMessageAt(target);
+            OwedRenderDone(ref _messageOwed);
         });
     }
 
@@ -6603,8 +6620,13 @@
     /// counted against the cap (ADR-0005).</param>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="input">The number the script gave this input, which the root names once it has
+    /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public async Task<ClipboardPayload?> BuildCopyPayloadAsync(bool withHeaders = false)
+    public Task<ClipboardPayload?> BuildCopyPayloadAsync(bool withHeaders = false, int input = 0)
+        => AnsweredAsync(BuildCopyAsync(withHeaders), input);
+
+    private async Task<ClipboardPayload?> BuildCopyAsync(bool withHeaders)
     {
         if (_disposed)
             return null;
@@ -6670,8 +6692,13 @@
     /// <param name="paint">The render the paste was taken against (<c>data-ex-paint</c>).</param>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="input">The number the script gave this input, which the root names once it has
+    /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public async Task OnPasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint = PaintNotTold)
+    public Task OnPasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint = PaintNotTold, int input = 0)
+        => AnsweredAsync(TakePasteStreamsAsync(text, html, paint), input);
+
+    private async Task TakePasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint)
     {
         await using var textReference = text;
         await using var htmlReference = html;
@@ -6953,10 +6980,13 @@
     /// </summary>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="input">The number the script gave this input, which the root names once it has
+    /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task OnCopyWriteRejectedAsync()
+    public Task OnCopyWriteRejectedAsync(int input = 0)
     {
         NotifyCopyRefused(CopyRefusalReason.ClipboardUnavailable);
+        InputAnswered(input);
         return Task.CompletedTask;
     }
 
@@ -6978,16 +7008,26 @@
     /// was painted under has moved by the time the key is answered; values changed since land
     /// written over.</para>
     ///
+    /// <para>The key also carries the number the script gave it, which the root names once the key
+    /// has been answered (ADR-0220).</para>
+    ///
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public async Task OnKeyAsync(
+    public Task OnKeyAsync(
         string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary,
         bool fromDescendant = false, string? editorText = null, int editorCaret = -1,
-        int editorSelectionEnd = -1, bool editorCaretMoved = false, bool repeat = false, int paint = PaintNotTold)
+        int editorSelectionEnd = -1, bool editorCaretMoved = false, bool repeat = false, int paint = PaintNotTold,
+        int input = 0)
+        => AnsweredAsync(HandleKeyAsync(key, ctrl, shift, alt, meta, metaIsPrimary, fromDescendant, editorText,
+            editorCaret, editorSelectionEnd, editorCaretMoved, repeat, paint), input);
+
+    private async Task HandleKeyAsync(
+        string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary, bool fromDescendant,
+        string? editorText, int editorCaret, int editorSelectionEnd, bool editorCaretMoved, bool repeat, int paint)
     {
         if (_disposed)
             return;
@@ -8914,8 +8954,16 @@
 
     /// <summary>F2's other door (ADR-0010): a double click enters Caret on an editable
     /// cell — the original value stays, with the caret inside it. The edit keeps what the cell
-    /// paints when it opens (ADR-0142, LV-11).</summary>
-    private async Task OnViewportDoubleClickAsync(MouseEventArgs e)
+    /// paints when it opens (ADR-0142, LV-11). Answers the number its release was told to bring
+    /// (ADR-0220).</summary>
+    private Task OnViewportDoubleClickAsync(MouseEventArgs e)
+    {
+        var input = _doubleClickInput;
+        _doubleClickInput = 0;
+        return AnsweredAsync(DoubleClickAsync(e), input);
+    }
+
+    private async Task DoubleClickAsync(MouseEventArgs e)
     {
         // After the presses it ends, which a commit being heard holds (AnswerPressAsync): an editor
         // standing then is one a Reject or a refusal held, never one still being heard.
@@ -9525,6 +9573,8 @@
         }
         _announceTimer ??= Time.CreateTimer(OnAnnounceSettled, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _announceTimer.Change(SettleDelay, Timeout.InfiniteTimeSpan);
+        _announcementOwed = true;
+        ShowSettledStamp();
     }
 
     /// <summary>Says something through the root's one live region (ADR-0033). A repeat
@@ -9545,6 +9595,9 @@
         {
             _announcedRanges = _selection.Selection.Ranges;
             _announceTimer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+            // Stood down, the description is no longer owed; the render that says this sentence
+            // drops the root's data-ex-owing with it (ADR-0220).
+            _announcementOwed = false;
         }
         if (text.Length > 0 && text == _announcement)
         {
@@ -9566,7 +9619,11 @@
                 return;
             var ranges = _selection.Selection.Ranges;
             if (RangesEqual(ranges, _announcedRanges))
+            {
+                OwedRenderDone(ref _announcementOwed);
                 return;
+            }
+            _announcementOwed = false;
             _announcedRanges = ranges;
             Announce(DescribeSelection(_selection.Selection));
             _announcementDescribesSelection = true;
@@ -9666,6 +9723,8 @@
             return;
         _settleTimer ??= Time.CreateTimer(OnSettled, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         _settleTimer.Change(SettleDelay, Timeout.InfiniteTimeSpan);
+        _placeholdersOwed = true;
+        ShowSettledStamp();
     }
 
     private void OnSettled(object? state)
@@ -9674,8 +9733,14 @@
         // touches has to go back onto it.
         _ = InvokeAsync(() =>
         {
-            if (_disposed || !_placeholderMode)
+            if (_disposed)
                 return;
+            if (!_placeholderMode)
+            {
+                OwedRenderDone(ref _placeholdersOwed);
+                return;
+            }
+            _placeholdersOwed = false;
             try
             {
                 _placeholderMode = false;

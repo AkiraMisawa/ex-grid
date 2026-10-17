@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, alterPage, circuitQuiet, scrollRowToTop } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage, circuitQuiet, scrollRowToTop, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn, expectActiveDescendant, keyField } from './keyboard.mjs';
 import {
@@ -808,13 +808,12 @@ test('ST-2 (ADR-0007, refined): a character typed as the Window moves off an F2 
 
 test('SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the extent', async ({ page }) => {
     const grid = sheet(page);
-    // A count is read once the Focus it follows is painted and the host has said all it will
-    // (ADR-0056): read straight after the press, it could miss the press's own render (the
-    // Focus, the Selection, the fill handle and the Heading Marks, eight elements) and leave
-    // the far corner's count over a bound measured from too low a start.
+    // A count is read once the grid says it has settled (ADR-0220): read straight after the press,
+    // it could miss the press's own render (the Focus, the Selection, the fill handle and the
+    // Heading Marks, eight elements) and leave the far corner's count over a bound measured from too
+    // low a start.
     const count = async () => {
-        await expect(grid.locator('.ex-focus')).toHaveCount(1);
-        await circuitQuiet();
+        await settled(grid);
         return grid.evaluate((root) => root.querySelectorAll('*').length);
     };
     await clickCell(grid, 'A1');

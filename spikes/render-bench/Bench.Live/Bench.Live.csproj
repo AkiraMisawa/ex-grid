@@ -19,4 +19,9 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.7" />
   </ItemGroup>
 
+  <!-- The Settled Mark's measurement (ADR-0220): the real grid, driven by settled-bench.js. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\ExGrid\ExGrid.csproj" />
+  </ItemGroup>
+
 </Project>

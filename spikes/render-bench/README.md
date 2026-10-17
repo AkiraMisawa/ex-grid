@@ -186,6 +186,27 @@ candidate 2). Results and the reading of them:
   CDP_PORT=9391 nix develop .#browser -c node tools/cdp-ws.mjs http://127.0.0.1:5199/ ws.json 50 5
   ```
 
+## The Settled Mark (`/settled`, ADR-0220)
+
+What the Settled Mark costs, measured before its default was chosen. `Bench.Live/SettledGrid.razor` is
+the real ExGrid, 10,000 rows of eight columns with the first editable, on WebAssembly (`Bench.Host`,
+`/settled`) and on the circuit (`Bench.Server`, `/settled`). `Bench.Live/wwwroot/settled-bench.js` runs
+three phases in the page, reading what the user sees (the Focus the grid names) at animation frames and
+never the mark, which only one build has: 40 arrows dispatched in one task; one arrow per frame for 120
+frames; and the scroller moved 37 px per frame for 120 frames. On the Server host it also reads the
+bytes each burst put on the wire (`/api/wire`). The same files are built twice, here and in a checkout
+of `main` without the mark, and `tools/cdp-settled.mjs` drives a browser already listening for CDP:
+
+```sh
+nix develop -c dotnet run -c Release --project Bench.Server            # BENCH_PORT=5491
+nix develop -c dotnet run -c Release --project Bench.Host --urls http://0.0.0.0:5492
+node ../../tests/ExGrid.Browser/latency-proxy.mjs 5591 5491 5691       # then POST :5691/?rtt=60
+CDP_PORT=9333 node tools/cdp-settled.mjs http://localhost:5491/settled with-server-0ms 7 40 120
+```
+
+The results of 2026-10-16 are in `results/20261016-settled/`, with a summary beside each run
+(`root-render.txt`, `stamp.txt`); ADR-0220 reads them.
+
 ## Running it
 
 ```sh

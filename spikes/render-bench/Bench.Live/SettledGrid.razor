@@ -1,0 +1,29 @@
+@using global::ExGrid
+@using ExGrid.Components
+@* The Settled Mark's measurement (ADR-0220): the real ExGrid, 10,000 rows of eight columns, the
+   first editable, so the Keyboard Field holds the keyboard as on a Sheet. The same component on
+   WebAssembly (Bench.Client, /settled) and on the circuit (Bench.Server, /settled), driven by
+   wwwroot/settled-bench.js. Measured against the same page built over a grid without the mark. *@
+<div id="settled-bench" style="width: 900px">
+    <ExGrid TRow="SettledRow" Window="Rows" TotalCount="Rows.Count" Columns="Columns" RowHeight="22" ViewportHeight="600" ViewportWidth="900" />
+</div>
+
+@code {
+    public sealed record SettledRow(int Id, string Book, decimal A, decimal B, decimal C, decimal D, decimal E, decimal F);
+
+    private static readonly IReadOnlyList<SettledRow> Rows = Enumerable.Range(0, 10_000)
+        .Select(i => new SettledRow(i, $"BOOK-{i % 97:00}", i * 1.25m, i % 13, -i, i * 0.5m, i % 7 * 100, i))
+        .ToArray();
+
+    private static readonly GridColumn<SettledRow>[] Columns =
+    [
+        new("Book", ColumnType.Text, r => r.Book, editable: true),
+        new("A", ColumnType.Number, r => r.A),
+        new("B", ColumnType.Number, r => r.B),
+        new("C", ColumnType.Number, r => r.C),
+        new("D", ColumnType.Number, r => r.D),
+        new("E", ColumnType.Number, r => r.E),
+        new("F", ColumnType.Number, r => r.F),
+        new("Id", ColumnType.Number, r => r.Id),
+    ];
+}

@@ -30,7 +30,10 @@
 // telling the Device Pixel. And the ninth (ADR-0122): the browser's time zone, read once at
 // attach and only when the Consumer asked for it, so TODAY() is the user's day. The tenth
 // (ADR-0210): temporary blur and change listeners on the text field changed by held typing,
-// supplying its missing commit when it is left and retiring on a normal commit. Anything
+// supplying its missing commit when it is left and retiring on a normal commit. The Settled Mark
+// (ADR-0220; ADR-0021's note of 2026-10-16) adds no listener: the listeners above write
+// `data-ex-settled` on the root, with one MutationObserver on two attributes the core's render
+// writes on the root's first child, as the reveal's and the follow's observe theirs. Anything
 // else — text measurement, overlay geometry, popovers — stays in C#; adding to this file needs an
 // ADR.
 //
@@ -96,6 +99,74 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // leaving the root, a press on the grid, and disposal.
     let keysOut = false;
 
+    // The Settled Mark (ADR-0220; ADR-0021's note of 2026-10-16): `data-ex-settled` on the root while
+    // every input the gate has taken has been handled and its effect is in the DOM, so that a test, or
+    // any automation driving the grid at machine speed, reads only then. Written here, from what the
+    // gate already knows, and from two attributes the core's own render writes on the root's first
+    // child (SettledStamp, found by its data-ex-answered) — never measured from the page:
+    // - no key, press, paste or composition held, no hold standing, no press waiting on its answer,
+    //   no hand-off of the keyboard under way, and no wait for the editor's or a popover's focus;
+    // - every input sent to the core answered, and that answer's render in the DOM: each key, press on
+    //   the rows, paste, composition and copy carries a number (nextInput), and the stamp names the
+    //   last one answered (data-ex-answered) once everything that input left owed the script has been
+    //   told. An interop call's answer is not that: on a circuit it can arrive ahead of
+    //   the render it answers for;
+    // - no render owed on a timer of the core's own (data-ex-owing): the error message, the
+    //   description of a selection, the Placeholders filling;
+    // - a reveal's write, its repaint, and the page's follow over;
+    // - no copy's write to the clipboard in flight.
+    // Text typed into a field — the Cell Editor, the Formula Bar, the Name Box — is the field's, and
+    // goes to the core as Blazor's own input events: the mark does not wait on it.
+    // It changes once as a burst of input starts and once as it ends, on the root only. It is looked
+    // at in a microtask after anything that may change it, so a state passed through within one task
+    // is never shown. An observer of the two attributes the core writes is the one thing added, and it
+    // observes only while the mark is off, as the reveal's and the follow's observe only while they wait.
+    let stamp = root.querySelector(':scope > [data-ex-answered]');
+    let inputsSent = Number(stamp?.getAttribute('data-ex-answered')) || 0;
+    let clipboardWrites = 0;
+    let settledShown = null;
+    let settledLook = false;
+    function lookSettled() {
+        if (!settledLook) {
+            settledLook = true;
+            queueMicrotask(showSettled);
+        }
+    }
+    function showSettled() {
+        settledLook = false;
+        if (!core) {
+            return;
+        }
+        const settled = held.length === 0 && !answering && pressAnswer === null && pressToAsk === null
+            && handOff === null && settledWaits.size === 0 && pendingReveal === null && repaint === null
+            && follow === null && clipboardWrites === 0
+            && stamp !== null && Number(stamp.getAttribute('data-ex-answered')) >= inputsSent
+            && !stamp.hasAttribute('data-ex-owing');
+        if (settled !== settledShown) {
+            settledShown = settled;
+            root.toggleAttribute('data-ex-settled', settled);
+            // Observed only while the mark is off, as the reveal's and the follow's observers are only
+            // while they wait.
+            if (settled) {
+                dropSettledObserver();
+            } else if (stamp && settledObserver === null) {
+                settledObserver = new MutationObserver(lookSettled);
+                settledObserver.observe(stamp, { attributes: true, attributeFilter: ['data-ex-answered', 'data-ex-owing'] });
+            }
+        }
+    }
+    // The number the next input sent to the core carries (data-ex-answered).
+    function nextInput() {
+        inputsSent += 1;
+        lookSettled();
+        return inputsSent;
+    }
+    let settledObserver = null;
+    function dropSettledObserver() {
+        settledObserver?.disconnect();
+        settledObserver = null;
+    }
+
     // A reveal's scroll write, held until the render that paints its slice has reached the
     // DOM (ADR-0012, 2026-09-29). The core sends the write from inside that render, so on a
     // circuit it arrives as the message just ahead of the render's batch, and a frame
@@ -118,9 +189,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         scroller.scrollTop = reveal.top;
         scroller.scrollLeft = reveal.left;
         repaintAfterReveal(reveal.top, reveal.left);
+        lookSettled();
     };
     const holdReveal = (reveal) => {
         pendingReveal = reveal;
+        lookSettled();
         revealObserver.observe(root, { attributes: true, attributeFilter: ['data-ex-reveal'] });
         // A batch that never comes — the circuit went — must not hold the write forever.
         revealTimer = setTimeout(() => applyReveal(true), 2000);
@@ -150,6 +223,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (repaint) {
             cancelAnimationFrame(repaint.frame);
             repaint = null;
+            lookSettled();
         }
     };
     const yieldRepaint = () => {
@@ -194,6 +268,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     scroller.scrollTop = writtenTop;
                 }
                 repaint = null;
+                lookSettled();
             });
         });
     };
@@ -222,6 +297,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             cancelAnimationFrame(follow.frame);
             clearTimeout(follow.timer);
             follow = null;
+            lookSettled();
         }
         followObserver.disconnect();
     };
@@ -244,6 +320,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 }
                 follow = null;
                 run();
+                lookSettled();
             }, 0);
         });
     };
@@ -678,7 +755,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             'OnKeyAsync', k.key, k.ctrlKey, k.shiftKey, k.altKey, k.metaKey, metaIsPrimary, !k.onRoot,
             input ? input.value : null, input ? (input.selectionStart ?? input.value.length) : -1,
             input ? (input.selectionEnd ?? input.value.length) : -1, input ? movedByUser(input) : false,
-            k.repeat === true, k.paint)
+            k.repeat === true, k.paint, nextInput())
             .catch((error) => {
                 // Disposal can overtake a key in flight, and that is not a fault. Anything
                 // else is reported: a swallowed failure here means keys that silently stop
@@ -1399,6 +1476,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             waiting = false;
             settledWaits.delete(again);
             settle();
+            lookSettled();
         };
         const look = () => {
             // A grid disposed during the wait has nothing left to wait for, and is asked
@@ -1792,7 +1870,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // by time; an Enter that submitted nothing finds the last answer, long complete.
     const nameBoxAnswered = () => new Promise((submitted) => {
         setTimeout(submitted);
-    }).then(() => (core ? core.invokeMethodAsync('NameBoxAnsweredAsync').catch((error) => {
+    }).then(() => (core ? core.invokeMethodAsync('NameBoxAnsweredAsync', nextInput()).catch((error) => {
         if (core) {
             console.error('[ex-grid] the grid failed to answer the Name Box', error);
         }
@@ -1930,7 +2008,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     continue;
                 }
                 if (editing === 'none') {
-                    const opened = await core.invokeMethodAsync('OnKeyFieldTextAsync', k.text, k.paint).catch((error) => {
+                    const opened = await core.invokeMethodAsync('OnKeyFieldTextAsync', k.text, k.paint, nextInput()).catch((error) => {
                         if (core) {
                             console.error('[ex-grid] the grid failed to take a composition', error);
                         }
@@ -2068,6 +2146,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         answering = false;
         handOffMissed = false;
+        lookSettled();
         deliveringOutside = false;
         // A question the core asked while this hold stood is answered now, in its turn among the keys
         // (askUntouched); one that starts a hold of its own leaves the rest to that hold's end.
@@ -2077,6 +2156,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
 
     const onKeyDown = (event) => {
+        lookSettled();
         if (!core) {
             return;
         }
@@ -2423,6 +2503,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         field.classList.remove('ex-key-field-composing');
     };
     const onKeyFieldCompositionStart = (event) => {
+        lookSettled();
         // A composition in one of the edit's fields: the edit is being typed in (askUntouched).
         if (ownSurface(event.target) !== null) {
             surfaceComposing = true;
@@ -2434,7 +2515,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         keyFieldPaint = paintNow();
         event.target.classList.add('ex-key-field-composing');
         if (editing === 'none' && !answering) {
-            core.invokeMethodAsync('OnKeyFieldCompositionStartAsync').catch((error) => {
+            core.invokeMethodAsync('OnKeyFieldCompositionStartAsync', nextInput()).catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to hear a composition', error);
                 }
@@ -2442,6 +2523,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
     };
     const onKeyFieldCompositionEnd = (event) => {
+        lookSettled();
         const field = event.target;
         if (ownSurface(field) !== null) {
             surfaceComposing = false;
@@ -2488,6 +2570,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Consumer does not read them: held keys' would reach it out of turn. A release this listener hands
     // on itself is let through.
     const onRootKeyUp = (event) => {
+        lookSettled();
         if (imeKeyTold) {
             imeKeyTold = false;
             grantEditorFocus();
@@ -2671,7 +2754,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const active = document.activeElement;
         const inBar = active instanceof Element && root.contains(active)
             && active.closest('.ex-formula-bar-text') !== null;
-        await core.invokeMethodAsync('BarPressAnsweredAsync', inBar).catch((error) => {
+        await core.invokeMethodAsync('BarPressAnsweredAsync', inBar, nextInput()).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to answer a press', error);
             }
@@ -2793,8 +2876,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!core || !taken) {
             return;
         }
+        // Numbered as it goes (nextInput): the press, and the double click its release ends, which the
+        // browser fires next and the core answers in its turn (ADR-0220).
         core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left, taken.top,
-            taken.sequence, taken.layout, taken.editorRow ?? -1, taken.editorColumn ?? -1).catch((error) => {
+            taken.sequence, taken.layout, taken.editorRow ?? -1, taken.editorColumn ?? -1, nextInput(),
+            taken.doubleClick === true ? nextInput() : 0).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to hear where a press was taken', error);
             }
@@ -2827,7 +2913,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         pressToAsk = null;
         const answered = core
-            ? core.invokeMethodAsync('PressAnsweredAsync').catch((error) => {
+            ? core.invokeMethodAsync('PressAnsweredAsync', nextInput()).catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to answer a press', error);
                 }
@@ -2925,6 +3011,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // answer is the other core's because only that core knows whether it handed the press over at
     // all. Taking the event (preventDefault) says the press has its place here.
     const onPressHandedOn = (event) => {
+        lookSettled();
         const hand = event.detail;
         if (!core || !hand || typeof hand.inTurn !== 'function') {
             return;
@@ -2942,6 +3029,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     root.addEventListener('ex-press-handed-on', onPressHandedOn);
 
     const onPress = (event) => {
+        lookSettled();
         // A press while the Keyboard Field composes (ADR-0080): the press would end the
         // composition by its default, after the core had heard the press, and the composed text
         // would open an edit wherever the press had moved the Focus. So the composition ends
@@ -3145,6 +3233,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // A release is held only behind its press: once the press has been handed on, the
     // release follows it to Blazor as it comes, and Blazor keeps the two in order.
     const onRelease = (event) => {
+        lookSettled();
         // A passed-on press the keys wait behind is asked about now, ahead of this release
         // (holdBehindPress).
         if (!replaying) {
@@ -3193,6 +3282,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         const taken = core && !replaying && isOwnRows(event.target) ? takenAt(event) : null;
         if (!core || replaying || !held.some((k) => k.press === 'mousedown')) {
+            // A release that ends a double click: the browser fires the double click on the rows
+            // next, and its answer is awaited as an input of its own (ADR-0220). A release held and
+            // replayed is not one: the browser's double click has gone ahead of it.
+            if (taken && !replaying && event.button === 0 && event.detail === 2) {
+                taken.doubleClick = true;
+            }
             tellTaken('mouseup', taken);
             return;
         }
@@ -3238,7 +3333,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         } finally {
             replaying = false;
         }
-        await core.invokeMethodAsync('PressAnsweredAsync').catch((error) => {
+        await core.invokeMethodAsync('PressAnsweredAsync', nextInput()).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to answer a press', error);
             }
@@ -3263,7 +3358,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Chrome accepts a promise as a ClipboardItem value, so the user-activation context
     // survives the wait. A rejected promise aborts the whole write and the clipboard
     // stays as it was — never a fraction of the selection.
-    const buildCopy = (withHeaders) => core.invokeMethodAsync('BuildCopyPayloadAsync', withHeaders)
+    const buildCopy = (withHeaders) => core.invokeMethodAsync('BuildCopyPayloadAsync', withHeaders, nextInput())
         .catch((error) => {
             // A .NET failure — a Consumer delegate that threw, a circuit that
             // dropped. Reported here, because the null it becomes reads as a
@@ -3279,6 +3374,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // writes it, so the clipboardchange it causes finds it counted; a write that then fails gives
     // its count back (ADR-0170).
     const writeCopy = (answer) => {
+        // In flight until written or refused, the copy holds the Settled Mark (showSettled).
+        clipboardWrites += 1;
+        lookSettled();
         let counted = false;
         const payload = answer.then((p) => {
             if (p && clipboardWatched) {
@@ -3308,6 +3406,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 return;
             }
             copyNotWritten(error);
+        }).finally(() => {
+            clipboardWrites -= 1;
+            lookSettled();
         });
     };
     // The Copied Range (ADR-0170): the grid outlines what it copied while the clipboard still
@@ -3326,7 +3427,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         outlined = true;
-        core.invokeMethodAsync('OnCopyLandedAsync', payload.landing).catch((error) => {
+        core.invokeMethodAsync('OnCopyLandedAsync', payload.landing, nextInput()).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to outline a copy', error);
             }
@@ -3353,7 +3454,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const copyNotWritten = (error) => {
         if (error instanceof DOMException && error.name === 'NotAllowedError') {
             if (core) {
-                core.invokeMethodAsync('OnCopyWriteRejectedAsync').catch((reportError) => {
+                core.invokeMethodAsync('OnCopyWriteRejectedAsync', nextInput()).catch((reportError) => {
                     if (core) {
                         console.error('[ex-grid] the grid failed to report a rejected copy', reportError);
                     }
@@ -3366,6 +3467,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
     };
     const onCopy = (event) => {
+        lookSettled();
         // Only when the root itself holds the keyboard: a control inside a Template
         // Column keeps its own clipboard behaviour (ADR-0020).
         if (!core || !isRoot(event.target)) {
@@ -3414,6 +3516,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         writeAsync(false);
     };
     const onPaste = (event) => {
+        lookSettled();
         if (!core || !isRoot(event.target)) {
             return;
         }
@@ -3438,7 +3541,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const stream = (value) => (value
             ? DotNet.createJSStreamReference(encoder.encode(value))
             : null);
-        return core.invokeMethodAsync('OnPasteStreamsAsync', stream(plain), stream(markup), paint)
+        return core.invokeMethodAsync('OnPasteStreamsAsync', stream(plain), stream(markup), paint, nextInput())
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to take a paste', error);
@@ -3452,6 +3555,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // keyboard: done now, it would overtake the keys typed before it — a paste into a field ahead
     // of the text it follows, a copy of the Selection a held press is about to move.
     const onHeldClipboard = (event) => {
+        lookSettled();
         if (!clipboardKeyHeld || !core) {
             return;
         }
@@ -4218,6 +4322,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // scroller and the .NET reference the same way, and a notification arriving
             // after disposal would call into a component that no longer exists.
             forgetHeldText();
+            dropSettledObserver();
             observer.disconnect();
             ceilingObserver.disconnect();
             resolutionQuery?.removeEventListener('change', armResolution);
@@ -4280,6 +4385,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             dropHeld();
             root = null;
             scroller = null;
+            // The stamp too: the handle outlives this dispose until .NET releases it, a round trip
+            // later on a circuit, and the stamp's parent is the whole grid (MEM-2).
+            stamp = null;
             core = null;
             // A question the core still waits on is answered, with nothing left to hold.
             for (const ask of questionsAfterHold.splice(0)) {
@@ -4287,5 +4395,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
         },
     };
+    // Settled or not from the start: an attach on a circuit that has answered inputs before, under
+    // a script that has not, takes up the root's count (inputsSent).
+    lookSettled();
     return handle;
 }
