@@ -12,19 +12,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/18/2026 - 09:31:21 |
+| Generated on: | 10/18/2026 - 11:16:15 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
-| Classes: | 852 |
-| Files: | 468 |
-| **Line coverage:** | 95% (61275 of 64448) |
-| Covered lines: | 61275 |
-| Uncovered lines: | 3173 |
-| Coverable lines: | 64448 |
-| Total lines: | 104613 |
-| **Branch coverage:** | 88% (35652 of 40494) |
-| Covered branches: | 35652 |
-| Total branches: | 40494 |
+| Classes: | 853 |
+| Files: | 469 |
+| **Line coverage:** | 95% (61347 of 64521) |
+| Covered lines: | 61347 |
+| Uncovered lines: | 3174 |
+| Coverable lines: | 64521 |
+| Total lines: | 104775 |
+| **Branch coverage:** | 88% (35670 of 40514) |
+| Covered branches: | 35670 |
+| Total branches: | 40514 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -162,8 +162,8 @@
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
 |ExGrid.Components.ExGrid<TRow, T>|90.7%|85.7%|
-|ExGrid.Components.ExGrid<TRow>|95.4%|90.5%|
 |ExGrid.Components.ExGrid<TRow>|90.7%|85.7%|
+|ExGrid.Components.ExGrid<TRow>|95.4%|90.4%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
@@ -212,12 +212,13 @@
 |ExGrid.IGridSource<TRow>|100%||
 |ExGrid.InMemoryGridSource.ChangePlan<TRow>|100%|100%|
 |ExGrid.InMemoryGridSource.Pending<TRow>|100%||
-|ExGrid.InMemoryGridSource<TRow>|93.5%|77.7%|
 |ExGrid.InMemoryGridSource<TRow>|96.5%|91.5%|
+|ExGrid.InMemoryGridSource<TRow>|93.5%|77.7%|
 |ExGrid.InternedStrings|100%|100%|
 |ExGrid.KeyedRows.Held<TRow>|100%||
 |ExGrid.KeyedRows<TRow>|97.5%|87.5%|
 |ExGrid.Keys.GridDeclaredKeyPress|100%||
+|ExGrid.Keys.GridEditingKeys|100%||
 |ExGrid.Keys.GridKeyAction|100%||
 |ExGrid.Keys.GridKeyClaims|100%||
 |ExGrid.Keys.GridKeys|100%|99%|
@@ -230,8 +231,8 @@
 |ExGrid.RangeDocument|100%||
 |ExGrid.RowChange<TRow>|100%||
 |ExGrid.RowRange|100%||
-|ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
 |ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
+|ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
 |ExGrid.Rows.InMemoryRowMarks<TRow>|90.3%|77.4%|
 |ExGrid.Rows.RowMarkAdapter<TRow>|100%||
 |ExGrid.Rows.RowMarkCounts|100%||
