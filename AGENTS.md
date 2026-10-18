@@ -43,8 +43,9 @@ editor takes the keyboard only once the IME's key has been told whole (ADR-0080)
 eighth is a `matchMedia` listener that reports the Device Pixel when the resolution changes, so lines
 and column edges lie on Device Pixels at every scale and zoom (ADR-0090). The ninth reports the
 browser's time zone once at attach, when a Consumer asks, so `TODAY()` is the user's day and not
-the server's (ADR-0122). The tenth temporarily hears blur and change only on a text field changed
-by held typing, supplying its missing commit notification when the field is left (ADR-0210).
+the server's (ADR-0122). The tenth temporarily hears blur, change and Enter's keydown only on a text field changed
+by held typing, supplying its missing commit notification when the field is left or Enter is
+typed there (ADR-0210).
 
 **Anything else needs a new ADR.** See
 [ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md), which also lists what

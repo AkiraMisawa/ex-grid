@@ -1944,6 +1944,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         heldTextEdit = null;
         field.removeEventListener('blur', commitHeldText);
         field.removeEventListener('change', forgetHeldText);
+        field.removeEventListener('keydown', commitOnEnter);
     };
     const commitHeldText = () => {
         if (!heldTextEdit) return;
@@ -1953,12 +1954,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             field.dispatchEvent(new Event('change', { bubbles: true }));
         }
     };
+    // An Enter typed once the hold is over reaches the field natively, and the browser commits
+    // only a value that differs from the one script last wrote: none, so the held text went
+    // uncommitted while the field showed it (More Colours' HEX, seen in CI on WebAssembly). It
+    // commits here, before the field's handlers hear the key; where typing since has changed the
+    // value, the browser's own change comes and this one would be its duplicate. A held Enter is
+    // committed where it is handed on (handToPopover).
+    const commitOnEnter = (event) => {
+        if (!replaying && event.key === 'Enter' && !event.isComposing
+            && heldTextEdit?.written === heldTextEdit?.field.value) {
+            commitHeldText();
+        }
+    };
     const rememberHeldText = (field, before) => {
         if (heldTextEdit?.field === field) return;
         forgetHeldText();
-        heldTextEdit = { field, before };
+        heldTextEdit = { field, before, written: field.value };
         field.addEventListener('blur', commitHeldText);
         field.addEventListener('change', forgetHeldText);
+        field.addEventListener('keydown', commitOnEnter);
     };
 
     const handToPopover = (target, k) => {
@@ -1976,6 +1990,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             const before = target.value;
             if (typeInto(target, k)) {
                 if (before !== target.value) rememberHeldText(target, before);
+                if (heldTextEdit?.field === target) heldTextEdit.written = target.value;
                 return;
             }
         }
