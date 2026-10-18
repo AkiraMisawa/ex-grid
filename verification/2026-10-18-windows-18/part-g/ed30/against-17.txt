@@ -1,0 +1,21 @@
+Every reading of the seventeenth run that differs from the sixteenth run's record of the same case,
+state and configuration (the coloured layer by shown or hidden and its text; the events apart).
+
+k8-mud-server-150-chrome: no record of the sixteenth run
+k8-mud-server-150-msedge: no record of the sixteenth run
+k8-mud-server-chrome: no record of the sixteenth run
+k8-mud-server-msedge: no record of the sixteenth run
+k8-mud-wasm-chrome: no record of the sixteenth run
+k8-mud-wasm-msedge: no record of the sixteenth run
+k8-sheet-server-150-chrome: no record of the sixteenth run
+k8-sheet-server-150-msedge: no record of the sixteenth run
+k8-sheet-server-chrome: no record of the sixteenth run
+k8-sheet-server-msedge: no record of the sixteenth run
+k8-sheet-wasm-chrome: no record of the sixteenth run
+k8-sheet-wasm-msedge: no record of the sixteenth run
+mud-server-150-chrome k15 alt-tab-away: keyboard: now 'key-field', the sixteenth 'cell'; Keyboard Field: now "'かな' composing, opacity 1", the sixteenth "'', opacity 0"; layer: now "hidden 'かな'", the sixteenth "shown 'かな'"; grids: now "grid 0: keyboard edit 'かな', field 'かな' composing, Focus D10; sheet-positions: no edit, Focus None", the sixteenth "grid 0: keyboard edit 'かな', Focus D10; sheet-positions: no edit, Focus None"
+mud-server-150-chrome k15 alt-tab-back: keyboard: now 'key-field', the sixteenth 'cell'; Keyboard Field: now "'かな' composing, opacity 1", the sixteenth "'', opacity 0"; layer: now "hidden 'かな'", the sixteenth "shown 'かな'"; grids: now "grid 0: keyboard edit 'かな', field 'かな' composing, Focus D10; sheet-positions: no edit, Focus None", the sixteenth "grid 0: keyboard edit 'かな', Focus D10; sheet-positions: no edit, Focus None"
+sheet-server-chrome k15 alt-tab-away: keyboard: now 'key-field', the sixteenth 'cell'; Keyboard Field: now "'かな' composing, opacity 1", the sixteenth "'', opacity 0"; layer: now "hidden 'かな'", the sixteenth "shown 'かな'"; grids: now "grid 0: keyboard edit 'かな', field 'かな' composing, Focus D10; sheet-positions: no edit, Focus None", the sixteenth "grid 0: keyboard edit 'かな', Focus D10; sheet-positions: no edit, Focus None"
+sheet-server-chrome k15 alt-tab-back: keyboard: now 'key-field', the sixteenth 'cell'; Keyboard Field: now "'かな' composing, opacity 1", the sixteenth "'', opacity 0"; layer: now "hidden 'かな'", the sixteenth "shown 'かな'"; grids: now "grid 0: keyboard edit 'かな', field 'かな' composing, Focus D10; sheet-positions: no edit, Focus None", the sixteenth "grid 0: keyboard edit 'かな', Focus D10; sheet-positions: no edit, Focus None"
+
+4 of 1848 states compared read differently.
