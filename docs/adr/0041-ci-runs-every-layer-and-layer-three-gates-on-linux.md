@@ -19,6 +19,14 @@ scrollbars take their width out of the layout, which is the property ADR-0026 ne
 three gate.** *(Until 2026-09-25 this also named `dev/claude-code`, the branch work was gathered
 on before `main` took the merges. It was retired then, with the user's agreement: it held
 nothing `main` did not, and a second integration branch would only fall behind.)*
+*(Since 2026-10-18, decided with the user: a pull request that changes only documents — files
+under `docs/`, and Markdown at the repository's root — skips layer 3, its hosts and its repeats,
+and the two layer-3 verdicts pass on that skip alone. Layer 3 drives the DemoHost and the Server
+host, which read no file there, so the run could not have answered anything; on #153 and #154 it
+was twenty browser runners for an ADR and a ticket. Layers 1 and 2 still run on such a pull
+request, because the Docs Site's generator tests read those documents (a ticket without its
+`Roadmap:` line fails there). A push to `main`, the weekly run and a release run every layer as
+before, so nothing reaches `main` or a tag without layer 3 having run on it.)*
 
 - **Build, then layers 1 and 2**, on `ubuntu-latest`. The SDK comes from `global.json`, and the
   .NET 8 runtime is installed beside it, because the gating tests execute on `net8.0`

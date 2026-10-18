@@ -61,7 +61,7 @@ runs on has to be at least that (CI's xvfb screen is 2560×1600).
 npx playwright test --project=chrome --project=chrome-150   # where Edge is absent
 ```
 
-**CI runs this suite on every push and pull request** (ADR-0041): Linux, the runner's
+**CI runs this suite on every push and every pull request that changes more than documents** (ADR-0041): Linux, the runner's
 installed Chrome and Edge, headed under `xvfb-run`, with this directory's own config
 unchanged — against each host, Chrome and Edge in four shards each and `chrome-150` in two,
 every shard on a runner of its own (`--project=chrome --shard=1/4` and so on). A shard is a set
