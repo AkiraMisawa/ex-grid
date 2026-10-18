@@ -47,6 +47,8 @@ released, is a poor process. It is the ordinary one — a release branch, with r
   only, through the Docs Site's build. A candidate's GitHub release and its section on the site open
   with a note of its own, not the prerelease note. ADR-0202's "the eighteenth run … on `0.1.0-rc.1`
   itself" stays: that run is made at the candidate's commit, which the sign-off is made against.)*
+  *(2026-10-18, decided with the user, ADR-0208's note of this date: the run is made before the tag, at the head of
+  `release/0.1`, and the candidate is tagged on the commit that adds its records.)*
 - **The sign-off is made against a commit of the branch, X.** Every step of the Definition of Done's §22
   runs at X; `results.md` names X.
   *(2026-10-12, decided with the user: X is the commit a release candidate was tagged on. The sign-off
