@@ -18,3 +18,4 @@ that turns out to need one stops and records it first (`docs/agents/issue-tracke
 - [05](issues/05-the-popover-hold-mirrors-menukeys.md): the script's popover hold mirrors
   `MenuKeys.ResolveInColumnMenu`.
 - [06](issues/06-layer-3-presses-what-a-mac-presses.md): two layer-3 gaps a Mac shows.
+- [07](issues/07-escape-three-times-then-alt-h-h-loses-the-alt.md): a machine-speed KeyTips race CI found on this branch.
