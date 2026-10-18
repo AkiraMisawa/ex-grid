@@ -1,0 +1,489 @@
+﻿2026-10-18T19:21:03.1040083Z Current runner version: '2.337.0'
+2026-10-18T19:21:03.1067751Z ##[group]Runner Image Provisioner
+2026-10-18T19:21:03.1068839Z Hosted Compute Agent
+2026-10-18T19:21:03.1069456Z Version: 20261012.601
+2026-10-18T19:21:03.1070147Z Commit: f3dc54e1fb89da6852db922499a0233137369e1d
+2026-10-18T19:21:03.1070926Z Build Date: 2026-10-12T17:48:21Z
+2026-10-18T19:21:03.1071651Z Worker ID: {95549dad-c821-412d-98e3-363d3e93cd5a}
+2026-10-18T19:21:03.1072482Z Region: northcentralus
+2026-10-18T19:21:03.1073095Z Cloud: Azure
+2026-10-18T19:21:03.1073638Z ##[endgroup]
+2026-10-18T19:21:03.1075076Z ##[group]Operating System
+2026-10-18T19:21:03.1075891Z Ubuntu
+2026-10-18T19:21:03.1077200Z 24.04.5
+2026-10-18T19:21:03.1077744Z LTS
+2026-10-18T19:21:03.1078269Z ##[endgroup]
+2026-10-18T19:21:03.1078910Z ##[group]Runner Image
+2026-10-18T19:21:03.1079591Z Image: ubuntu-24.04
+2026-10-18T19:21:03.1080210Z Version: 20261012.334.1
+2026-10-18T19:21:03.1081572Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-18T19:21:03.1083188Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334
+2026-10-18T19:21:03.1084273Z ##[endgroup]
+2026-10-18T19:21:03.1085494Z ##[group]GITHUB_TOKEN Permissions
+2026-10-18T19:21:03.1088192Z Contents: read
+2026-10-18T19:21:03.1088905Z Metadata: read
+2026-10-18T19:21:03.1089522Z ##[endgroup]
+2026-10-18T19:21:03.1092186Z Secret source: Actions
+2026-10-18T19:21:03.1093287Z Cache mode: write
+2026-10-18T19:21:03.1094166Z Prepare workflow directory
+2026-10-18T19:21:03.1662181Z Prepare all required actions
+2026-10-18T19:21:03.1714589Z Getting action download info
+2026-10-18T19:21:03.4333884Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-18T19:21:03.5620772Z Download action repository 'actions/setup-dotnet@v6' (SHA:a98b56852c35b8e3190ac28c8c2271da59106c68)
+2026-10-18T19:21:03.9648339Z Download action repository 'actions/setup-node@v7' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-10-18T19:21:04.3936571Z Download action repository 'actions/download-artifact@v8' (SHA:9000827ccba6bdab643e8b6fd33ac0654aef8333)
+2026-10-18T19:21:04.7656242Z Download action repository 'actions/upload-artifact@v7' (SHA:cf430e030ddbb5b0abf93d22962f4752f3646cd9)
+2026-10-18T19:21:05.3473067Z Uses: AkiraMisawa/ex-grid/.github/workflows/ci.yml@refs/tags/v0.1.0-rc.3 (cff4a0dd94d0bbbb0fd171e5a276dabebbdb1c07)
+2026-10-18T19:21:05.3479369Z ##[group] Inputs
+2026-10-18T19:21:05.3480376Z   version: 0.1.0-rc.3
+2026-10-18T19:21:05.3481663Z   long: true
+2026-10-18T19:21:05.3482525Z ##[endgroup]
+2026-10-18T19:21:05.3484068Z Complete job name: Every layer, and the packages / Layer 3 on chrome-150, shard 1/2 (Linux, headed)
+2026-10-18T19:21:05.4406972Z ##[group]Run actions/checkout@v7
+2026-10-18T19:21:05.4408635Z with:
+2026-10-18T19:21:05.4409664Z   repository: AkiraMisawa/ex-grid
+2026-10-18T19:21:05.4417990Z   token: ***
+2026-10-18T19:21:05.4419096Z   ssh-strict: true
+2026-10-18T19:21:05.4420226Z   ssh-user: git
+2026-10-18T19:21:05.4421387Z   persist-credentials: true
+2026-10-18T19:21:05.4422501Z   clean: true
+2026-10-18T19:21:05.4423518Z   sparse-checkout-cone-mode: true
+2026-10-18T19:21:05.4424817Z   fetch-depth: 1
+2026-10-18T19:21:05.4426116Z   fetch-tags: false
+2026-10-18T19:21:05.4427228Z   show-progress: true
+2026-10-18T19:21:05.4428284Z   lfs: false
+2026-10-18T19:21:05.4429273Z   submodules: false
+2026-10-18T19:21:05.4430371Z   set-safe-directory: true
+2026-10-18T19:21:05.4431614Z   allow-unsafe-pr-checkout: false
+2026-10-18T19:21:05.4433160Z env:
+2026-10-18T19:21:05.4434160Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:05.4435314Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:05.4436532Z   LONG_RUN: true
+2026-10-18T19:21:05.4437700Z ##[endgroup]
+2026-10-18T19:21:05.5532171Z Syncing repository: AkiraMisawa/ex-grid
+2026-10-18T19:21:05.5535385Z ##[group]Getting Git version info
+2026-10-18T19:21:05.5537186Z Working directory is '/home/runner/work/ex-grid/ex-grid'
+2026-10-18T19:21:05.5539455Z [command]/usr/bin/git version
+2026-10-18T19:21:05.5555429Z git version 2.55.0
+2026-10-18T19:21:05.5578001Z ##[endgroup]
+2026-10-18T19:21:05.5590379Z Temporarily overriding HOME='/home/runner/work/_temp/d41bf42d-0dae-4c2f-9eec-c33707c4db3c' before making global git config changes
+2026-10-18T19:21:05.5594763Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-18T19:21:05.5598755Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ex-grid/ex-grid
+2026-10-18T19:21:05.5647153Z Deleting the contents of '/home/runner/work/ex-grid/ex-grid'
+2026-10-18T19:21:05.5651581Z ##[group]Determining repository object format
+2026-10-18T19:21:05.5654677Z ##[endgroup]
+2026-10-18T19:21:05.5657431Z ##[group]Initializing the repository
+2026-10-18T19:21:05.5659866Z [command]/usr/bin/git init /home/runner/work/ex-grid/ex-grid
+2026-10-18T19:21:05.5738787Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-18T19:21:05.5743042Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-18T19:21:05.5746908Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-18T19:21:05.5749719Z hint: call:
+2026-10-18T19:21:05.5751689Z hint:
+2026-10-18T19:21:05.5753709Z hint: 	git config --global init.defaultBranch <name>
+2026-10-18T19:21:05.5756153Z hint:
+2026-10-18T19:21:05.5758217Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-18T19:21:05.5761293Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-18T19:21:05.5763222Z hint:
+2026-10-18T19:21:05.5764409Z hint: 	git branch -m <name>
+2026-10-18T19:21:05.5765622Z hint:
+2026-10-18T19:21:05.5767657Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-18T19:21:05.5770493Z Initialized empty Git repository in /home/runner/work/ex-grid/ex-grid/.git/
+2026-10-18T19:21:05.5774615Z [command]/usr/bin/git remote add origin https://github.com/AkiraMisawa/ex-grid
+2026-10-18T19:21:05.5806149Z ##[endgroup]
+2026-10-18T19:21:05.5897565Z ##[group]Disabling automatic garbage collection
+2026-10-18T19:21:05.5901874Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-18T19:21:05.5907131Z ##[endgroup]
+2026-10-18T19:21:05.5908853Z ##[group]Setting up auth
+2026-10-18T19:21:05.5910301Z Removing SSH command configuration
+2026-10-18T19:21:05.5912179Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-18T19:21:05.5916721Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-18T19:21:05.6224082Z Removing HTTP extra header
+2026-10-18T19:21:05.6230813Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-18T19:21:05.6266443Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-18T19:21:05.6506651Z Removing includeIf entries pointing to credentials config files
+2026-10-18T19:21:05.6511612Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-18T19:21:05.6551066Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-18T19:21:05.6809492Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-cc3aa365-2346-4cbf-af37-04e96fe16bc9.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-18T19:21:05.6853541Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path /home/runner/work/_temp/git-credentials-cc3aa365-2346-4cbf-af37-04e96fe16bc9.config
+2026-10-18T19:21:05.6887154Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-cc3aa365-2346-4cbf-af37-04e96fe16bc9.config
+2026-10-18T19:21:05.6924550Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-cc3aa365-2346-4cbf-af37-04e96fe16bc9.config
+2026-10-18T19:21:05.6959697Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-cc3aa365-2346-4cbf-af37-04e96fe16bc9.config
+2026-10-18T19:21:05.6990253Z ##[endgroup]
+2026-10-18T19:21:05.6991722Z ##[group]Fetching the repository
+2026-10-18T19:21:05.6997136Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +refs/tags/v0.1.0-rc.3:refs/tags/v0.1.0-rc.3
+2026-10-18T19:21:11.0012642Z From https://github.com/AkiraMisawa/ex-grid
+2026-10-18T19:21:11.0013512Z  * [new tag]         v0.1.0-rc.3 -> v0.1.0-rc.3
+2026-10-18T19:21:11.0021880Z [command]/usr/bin/git tag --list v0.1.0-rc.3
+2026-10-18T19:21:11.0051944Z v0.1.0-rc.3
+2026-10-18T19:21:11.0061885Z [command]/usr/bin/git rev-parse refs/tags/v0.1.0-rc.3^{commit}
+2026-10-18T19:21:11.0089645Z cff4a0dd94d0bbbb0fd171e5a276dabebbdb1c07
+2026-10-18T19:21:11.0093886Z ##[endgroup]
+2026-10-18T19:21:11.0094332Z ##[group]Determining the checkout info
+2026-10-18T19:21:11.0125911Z ##[endgroup]
+2026-10-18T19:21:11.0126377Z [command]/usr/bin/git sparse-checkout disable
+2026-10-18T19:21:11.0157259Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-18T19:21:11.0184441Z ##[group]Checking out the ref
+2026-10-18T19:21:11.0188688Z [command]/usr/bin/git checkout --progress --force refs/tags/v0.1.0-rc.3
+2026-10-18T19:21:12.0633507Z Updating files:  52% (6751/12962)
+2026-10-18T19:21:12.0745023Z Updating files:  53% (6870/12962)
+2026-10-18T19:21:12.0885509Z Updating files:  54% (7000/12962)
+2026-10-18T19:21:12.1002103Z Updating files:  55% (7130/12962)
+2026-10-18T19:21:12.1111187Z Updating files:  56% (7259/12962)
+2026-10-18T19:21:12.1234654Z Updating files:  57% (7389/12962)
+2026-10-18T19:21:12.1338018Z Updating files:  58% (7518/12962)
+2026-10-18T19:21:12.1418347Z Updating files:  59% (7648/12962)
+2026-10-18T19:21:12.1487182Z Updating files:  60% (7778/12962)
+2026-10-18T19:21:12.1553470Z Updating files:  61% (7907/12962)
+2026-10-18T19:21:12.1624000Z Updating files:  62% (8037/12962)
+2026-10-18T19:21:12.1700406Z Updating files:  63% (8167/12962)
+2026-10-18T19:21:12.2238984Z Updating files:  64% (8296/12962)
+2026-10-18T19:21:12.2471207Z Updating files:  65% (8426/12962)
+2026-10-18T19:21:12.2690681Z Updating files:  66% (8555/12962)
+2026-10-18T19:21:12.2767926Z Updating files:  67% (8685/12962)
+2026-10-18T19:21:12.3041994Z Updating files:  68% (8815/12962)
+2026-10-18T19:21:12.3283560Z Updating files:  69% (8944/12962)
+2026-10-18T19:21:12.3399605Z Updating files:  70% (9074/12962)
+2026-10-18T19:21:12.3471715Z Updating files:  71% (9204/12962)
+2026-10-18T19:21:12.3629524Z Updating files:  72% (9333/12962)
+2026-10-18T19:21:12.3713533Z Updating files:  73% (9463/12962)
+2026-10-18T19:21:12.3788879Z Updating files:  74% (9592/12962)
+2026-10-18T19:21:12.3926232Z Updating files:  75% (9722/12962)
+2026-10-18T19:21:12.4074739Z Updating files:  76% (9852/12962)
+2026-10-18T19:21:12.4428739Z Updating files:  77% (9981/12962)
+2026-10-18T19:21:12.4681500Z Updating files:  78% (10111/12962)
+2026-10-18T19:21:12.4902094Z Updating files:  79% (10240/12962)
+2026-10-18T19:21:12.5029540Z Updating files:  80% (10370/12962)
+2026-10-18T19:21:12.5227622Z Updating files:  81% (10500/12962)
+2026-10-18T19:21:12.5314341Z Updating files:  82% (10629/12962)
+2026-10-18T19:21:12.5613746Z Updating files:  83% (10759/12962)
+2026-10-18T19:21:12.5719942Z Updating files:  84% (10889/12962)
+2026-10-18T19:21:12.5806663Z Updating files:  85% (11018/12962)
+2026-10-18T19:21:12.5928224Z Updating files:  86% (11148/12962)
+2026-10-18T19:21:12.6014855Z Updating files:  87% (11277/12962)
+2026-10-18T19:21:12.6087112Z Updating files:  88% (11407/12962)
+2026-10-18T19:21:12.6263631Z Updating files:  89% (11537/12962)
+2026-10-18T19:21:12.6539410Z Updating files:  90% (11666/12962)
+2026-10-18T19:21:12.6905945Z Updating files:  91% (11796/12962)
+2026-10-18T19:21:12.7209046Z Updating files:  92% (11926/12962)
+2026-10-18T19:21:12.7459119Z Updating files:  93% (12055/12962)
+2026-10-18T19:21:12.7664634Z Updating files:  94% (12185/12962)
+2026-10-18T19:21:12.8223025Z Updating files:  95% (12314/12962)
+2026-10-18T19:21:12.8398780Z Updating files:  96% (12444/12962)
+2026-10-18T19:21:12.8742879Z Updating files:  97% (12574/12962)
+2026-10-18T19:21:12.8957514Z Updating files:  98% (12703/12962)
+2026-10-18T19:21:12.9520268Z Updating files:  99% (12833/12962)
+2026-10-18T19:21:12.9520837Z Updating files: 100% (12962/12962)
+2026-10-18T19:21:12.9521521Z Updating files: 100% (12962/12962), done.
+2026-10-18T19:21:12.9650113Z Note: switching to 'refs/tags/v0.1.0-rc.3'.
+2026-10-18T19:21:12.9650567Z 
+2026-10-18T19:21:12.9650871Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-18T19:21:12.9651524Z changes and commit them, and you can discard any commits you make in this
+2026-10-18T19:21:12.9652230Z state without impacting any branches by switching back to a branch.
+2026-10-18T19:21:12.9652643Z 
+2026-10-18T19:21:12.9652914Z If you want to create a new branch to retain commits you create, you may
+2026-10-18T19:21:12.9653586Z do so (now or later) by using -c with the switch command. Example:
+2026-10-18T19:21:12.9653963Z 
+2026-10-18T19:21:12.9654128Z   git switch -c <new-branch-name>
+2026-10-18T19:21:12.9654363Z 
+2026-10-18T19:21:12.9654527Z Or undo this operation with:
+2026-10-18T19:21:12.9654773Z 
+2026-10-18T19:21:12.9654909Z   git switch -
+2026-10-18T19:21:12.9655089Z 
+2026-10-18T19:21:12.9655432Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-18T19:21:12.9656137Z 
+2026-10-18T19:21:12.9656480Z HEAD is now at cff4a0d Run 18b on macOS: KB-3 and FN-12e at 0.1.0-rc.3's commit (ADR-0208) (#173)
+2026-10-18T19:21:12.9750306Z ##[endgroup]
+2026-10-18T19:21:12.9801858Z [command]/usr/bin/git log -1 --format=%H
+2026-10-18T19:21:12.9830116Z cff4a0dd94d0bbbb0fd171e5a276dabebbdb1c07
+2026-10-18T19:21:13.0081240Z ##[group]Run actions/setup-dotnet@v6
+2026-10-18T19:21:13.0081531Z with:
+2026-10-18T19:21:13.0081744Z   global-json-file: global.json
+2026-10-18T19:21:13.0081997Z   cache: false
+2026-10-18T19:21:13.0082200Z env:
+2026-10-18T19:21:13.0082401Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:13.0082648Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:13.0082850Z   LONG_RUN: true
+2026-10-18T19:21:13.0083051Z ##[endgroup]
+2026-10-18T19:21:13.1481352Z [command]/home/runner/work/_actions/actions/setup-dotnet/v6/externals/install-dotnet.sh --skip-non-versioned-files --runtime dotnet --channel LTS
+2026-10-18T19:21:13.3930445Z dotnet-install: Attempting to download using aka.ms link https://builds.dotnet.microsoft.com/dotnet/Runtime/10.0.13/dotnet-runtime-10.0.13-linux-x64.tar.gz
+2026-10-18T19:21:13.5719115Z dotnet-install: Remote file https://builds.dotnet.microsoft.com/dotnet/Runtime/10.0.13/dotnet-runtime-10.0.13-linux-x64.tar.gz size is 36648012 bytes.
+2026-10-18T19:21:13.5724477Z dotnet-install: Extracting archive from https://builds.dotnet.microsoft.com/dotnet/Runtime/10.0.13/dotnet-runtime-10.0.13-linux-x64.tar.gz
+2026-10-18T19:21:14.2894367Z dotnet-install: Downloaded file size is 36648012 bytes.
+2026-10-18T19:21:14.2895229Z dotnet-install: The remote and local file sizes are equal.
+2026-10-18T19:21:14.3198538Z dotnet-install: Installed version is 10.0.13
+2026-10-18T19:21:14.3262297Z dotnet-install: Adding to current process PATH: `/usr/share/dotnet`. Note: This change will be visible only when sourcing script.
+2026-10-18T19:21:14.3263493Z dotnet-install: Note that the script does not resolve dependencies during installation.
+2026-10-18T19:21:14.3264743Z dotnet-install: To check the list of dependencies, go to https://learn.microsoft.com/dotnet/core/install, select your operating system and check the "Dependencies" section.
+2026-10-18T19:21:14.3265529Z dotnet-install: Installation finished successfully.
+2026-10-18T19:21:14.3285477Z [command]/home/runner/work/_actions/actions/setup-dotnet/v6/externals/install-dotnet.sh --skip-non-versioned-files --channel 10.0
+2026-10-18T19:21:14.5208011Z dotnet-install: Attempting to download using aka.ms link https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.402/dotnet-sdk-10.0.402-linux-x64.tar.gz
+2026-10-18T19:21:15.2509096Z dotnet-install: Remote file https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.402/dotnet-sdk-10.0.402-linux-x64.tar.gz size is 240279509 bytes.
+2026-10-18T19:21:15.2512449Z dotnet-install: Extracting archive from https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.402/dotnet-sdk-10.0.402-linux-x64.tar.gz
+2026-10-18T19:21:20.3388207Z dotnet-install: Downloaded file size is 240279509 bytes.
+2026-10-18T19:21:20.3389253Z dotnet-install: The remote and local file sizes are equal.
+2026-10-18T19:21:20.6021129Z dotnet-install: Installed version is 10.0.402
+2026-10-18T19:21:20.6083415Z dotnet-install: Adding to current process PATH: `/usr/share/dotnet`. Note: This change will be visible only when sourcing script.
+2026-10-18T19:21:20.6084831Z dotnet-install: Note that the script does not resolve dependencies during installation.
+2026-10-18T19:21:20.6086069Z dotnet-install: To check the list of dependencies, go to https://learn.microsoft.com/dotnet/core/install, select your operating system and check the "Dependencies" section.
+2026-10-18T19:21:20.6086891Z dotnet-install: Installation finished successfully.
+2026-10-18T19:21:20.6277440Z ##[group]Run actions/setup-node@v7
+2026-10-18T19:21:20.6277750Z with:
+2026-10-18T19:21:20.6277956Z   node-version: 22
+2026-10-18T19:21:20.6278172Z   cache: npm
+2026-10-18T19:21:20.6278479Z   cache-dependency-path: tests/ExGrid.Browser/package-lock.json
+2026-10-18T19:21:20.6278855Z   check-latest: false
+2026-10-18T19:21:20.6281127Z   token: ***
+2026-10-18T19:21:20.6281356Z   package-manager-cache: true
+2026-10-18T19:21:20.6281607Z env:
+2026-10-18T19:21:20.6281814Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:20.6282066Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:20.6282300Z   LONG_RUN: true
+2026-10-18T19:21:20.6282519Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:20.6282755Z ##[endgroup]
+2026-10-18T19:21:20.7604839Z Found in cache @ /opt/hostedtoolcache/node/22.23.3/x64
+2026-10-18T19:21:21.8028532Z ##[group]Environment details
+2026-10-18T19:21:23.9155078Z node: v22.23.3
+2026-10-18T19:21:23.9155451Z npm: 10.9.9
+2026-10-18T19:21:23.9156017Z yarn: 1.22.22
+2026-10-18T19:21:23.9156890Z ##[endgroup]
+2026-10-18T19:21:23.9172700Z [command]/opt/hostedtoolcache/node/22.23.3/x64/bin/npm config get cache
+2026-10-18T19:21:24.2273964Z /home/runner/.npm
+2026-10-18T19:21:24.3564008Z Cache hit for: node-cache-Linux-x64-npm-29c22a3ee550219573164ee5799c29ef3a61ce3fb606a2e9963ffbcac73f25bb
+2026-10-18T19:21:24.8933281Z Received 3981324 of 3981324 (100.0%), 9.0 MBs/sec
+2026-10-18T19:21:24.8933741Z Cache Size: ~4 MB (3981324 B)
+2026-10-18T19:21:24.8957752Z [command]/usr/bin/tar -xf /home/runner/work/_temp/e7216945-be56-4bf7-9b6e-358348079d62/cache.tzst -P -C /home/runner/work/ex-grid/ex-grid --use-compress-program unzstd
+2026-10-18T19:21:24.9122285Z Cache restored successfully
+2026-10-18T19:21:24.9129758Z Cache restored from key: node-cache-Linux-x64-npm-29c22a3ee550219573164ee5799c29ef3a61ce3fb606a2e9963ffbcac73f25bb
+2026-10-18T19:21:24.9274215Z ##[group]Run google-chrome --version
+2026-10-18T19:21:24.9274630Z [36;1mgoogle-chrome --version[0m
+2026-10-18T19:21:24.9274937Z [36;1mmicrosoft-edge --version[0m
+2026-10-18T19:21:24.9534521Z shell: /usr/bin/bash -e {0}
+2026-10-18T19:21:24.9534815Z env:
+2026-10-18T19:21:24.9535049Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:24.9535324Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:24.9535546Z   LONG_RUN: true
+2026-10-18T19:21:24.9535955Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:24.9536221Z ##[endgroup]
+2026-10-18T19:21:30.4042460Z Google Chrome 155.0.8059.39 
+2026-10-18T19:21:33.0216617Z Microsoft Edge 155.0.4283.45 
+2026-10-18T19:21:33.0287890Z ##[group]Run npm ci
+2026-10-18T19:21:33.0288152Z [36;1mnpm ci[0m
+2026-10-18T19:21:33.0355130Z shell: /usr/bin/bash -e {0}
+2026-10-18T19:21:33.0355393Z env:
+2026-10-18T19:21:33.0355610Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:33.0356047Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:33.0356270Z   LONG_RUN: true
+2026-10-18T19:21:33.0356488Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:33.0356742Z ##[endgroup]
+2026-10-18T19:21:34.8915293Z 
+2026-10-18T19:21:34.8916383Z added 3 packages, and audited 4 packages in 2s
+2026-10-18T19:21:34.8923282Z 
+2026-10-18T19:21:34.8923857Z found 0 vulnerabilities
+2026-10-18T19:21:34.9371859Z ##[group]Run actions/download-artifact@v8
+2026-10-18T19:21:34.9372168Z with:
+2026-10-18T19:21:34.9372378Z   name: layer3-hosts
+2026-10-18T19:21:34.9372618Z   path: hosts
+2026-10-18T19:21:34.9372839Z   merge-multiple: false
+2026-10-18T19:21:34.9373092Z   repository: AkiraMisawa/ex-grid
+2026-10-18T19:21:34.9373349Z   run-id: 39158128144
+2026-10-18T19:21:34.9373588Z   skip-decompress: false
+2026-10-18T19:21:34.9373827Z   digest-mismatch: error
+2026-10-18T19:21:34.9374049Z env:
+2026-10-18T19:21:34.9374285Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:34.9374554Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:34.9374773Z   LONG_RUN: true
+2026-10-18T19:21:34.9374996Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:34.9375241Z ##[endgroup]
+2026-10-18T19:21:35.0866292Z Downloading single artifact
+2026-10-18T19:21:35.2368217Z Preparing to download the following artifacts:
+2026-10-18T19:21:35.2369777Z - layer3-hosts (ID: 12147816512, Size: 46495794, Expected Digest: sha256:f29f158ea260804ffd2f4b42419bfdbb06049ef72f33b312a519d526831e9ea0)
+2026-10-18T19:21:35.4972439Z Redirecting to blob download url: https://productionresultssa18.blob.core.windows.net/actions-results/676b94d5-d3bc-84b8-bf40-fbe25180489d/workflow-job-run-8bbe9d44-8eb9-50f5-a5f5-e2660c849e74/artifacts/e5d39098aaa4cdedd7a5cb3ae8e8192302bf1bdbb24aa0ad756940b26e2a3812.zip
+2026-10-18T19:21:35.4973881Z Starting download of artifact to: /home/runner/work/ex-grid/ex-grid/hosts
+2026-10-18T19:21:35.6705635Z (node:2861) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-10-18T19:21:35.6707117Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-18T19:21:36.9128290Z SHA256 digest of downloaded artifact is f29f158ea260804ffd2f4b42419bfdbb06049ef72f33b312a519d526831e9ea0
+2026-10-18T19:21:36.9129327Z Artifact download completed successfully.
+2026-10-18T19:21:36.9129963Z Total of 1 artifact(s) downloaded
+2026-10-18T19:21:36.9136295Z Download artifact has finished successfully
+2026-10-18T19:21:36.9312608Z ##[group]Run xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24" npx playwright test --project=chrome-150 --shard=1/2
+2026-10-18T19:21:36.9313558Z [36;1mxvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24" npx playwright test --project=chrome-150 --shard=1/2[0m
+2026-10-18T19:21:36.9379325Z shell: /usr/bin/bash -e {0}
+2026-10-18T19:21:36.9379613Z env:
+2026-10-18T19:21:36.9379872Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:36.9380151Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:36.9380370Z   LONG_RUN: true
+2026-10-18T19:21:36.9380595Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:36.9380903Z   EXGRID_HOSTS: /home/runner/work/ex-grid/ex-grid/hosts
+2026-10-18T19:21:36.9381223Z   EXGRID_SOAK: 1
+2026-10-18T19:21:36.9381451Z ##[endgroup]
+2026-10-18T19:21:39.1278477Z [WebServer] Serving /home/runner/work/ex-grid/ex-grid/hosts/wasm/wwwroot at http://localhost:5299
+2026-10-18T19:21:40.5728938Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:21:40.5730490Z [DemoApi]       Generating 20000 trades into /tmp/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+2026-10-18T19:21:40.6992539Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:21:40.6993882Z [DemoApi]       Generated 10000 of 20000 trades (50%).
+2026-10-18T19:21:40.7378578Z [DemoApi] info: Microsoft.Hosting.Lifetime[14]
+2026-10-18T19:21:40.7379816Z [DemoApi]       Now listening on: http://localhost:8299
+2026-10-18T19:21:40.7389793Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-10-18T19:21:40.7391179Z [DemoApi]       Application started. Press Ctrl+C to shut down.
+2026-10-18T19:21:40.7392498Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-10-18T19:21:40.7393291Z [DemoApi]       Hosting environment: Development
+2026-10-18T19:21:40.7394027Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-10-18T19:21:40.7394966Z [DemoApi]       Content root path: /home/runner/work/ex-grid/ex-grid/hosts/api
+2026-10-18T19:21:40.7783666Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:21:40.7784696Z [DemoApi]       Generated 20000 trades in 0.2 s: 1.6 MB.
+2026-10-18T19:21:40.7950680Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:21:40.7951828Z [DemoApi]       Serving 20000 trades at version 11ac3f24-0 from /tmp/exgrid-demo-api/runs/trades-v1-20000.2929.11ac3f24.sqlite.
+2026-10-18T19:21:43.5724479Z 
+2026-10-18T19:21:43.5725496Z Running 53 tests using 1 worker, shard 1 of 2
+2026-10-18T19:21:43.5726099Z 
+2026-10-18T19:22:03.3580081Z   ✓   1 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Hair line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (2.2s)
+2026-10-18T19:22:05.1119373Z   ✓   2 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Hair line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:06.8460309Z   ✓   3 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Thin line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:08.5268623Z   ✓   4 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Thin line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:10.2750250Z   ✓   5 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Medium line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:12.0116932Z   ✓   6 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Medium line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:13.7421100Z   ✓   7 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Thick line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:15.5158662Z   ✓   8 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Thick line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.8s)
+2026-10-18T19:22:17.2762482Z   ✓   9 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Double line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.8s)
+2026-10-18T19:22:19.0279383Z   ✓  10 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Double line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:20.6779155Z   ✓  11 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Dotted line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.6s)
+2026-10-18T19:22:22.3320232Z   ✓  12 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Dotted line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.6s)
+2026-10-18T19:22:23.9954605Z   ✓  13 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Dashed line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:25.7174305Z   ✓  14 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Dashed line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:27.3472988Z   ✓  15 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a DashDot line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.6s)
+2026-10-18T19:22:29.0154541Z   ✓  16 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a DashDot line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.6s)
+2026-10-18T19:22:30.6294058Z   ✓  17 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a DashDotDot line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.6s)
+2026-10-18T19:22:32.3431210Z   ✓  18 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a DashDotDot line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:34.0269108Z   ✓  19 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a MediumDashed line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:35.7109789Z   ✓  20 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a MediumDashed line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:37.4111138Z   ✓  21 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a MediumDashDot line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:39.1273230Z   ✓  22 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a MediumDashDot line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:40.8146639Z   ✓  23 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a MediumDashDotDot line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:42.4583033Z   ✓  24 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a MediumDashDotDot line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.6s)
+2026-10-18T19:22:44.1264012Z   ✓  25 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a SlantedDashDot line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.7s)
+2026-10-18T19:22:45.7619270Z   ✓  26 [chrome-150] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a SlantedDashDot line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (1.6s)
+2026-10-18T19:22:47.2766341Z   ✓  27 [chrome-150] › appearance.spec.mjs:175:5 › DC-59: lines › DC-59: a line lies above the Fill, and a thick one reaches one pixel into the filled cell below (ADR-0071, case 10) (1.5s)
+2026-10-18T19:22:48.9957929Z   ✓  28 [chrome-150] › appearance.spec.mjs:187:5 › DC-59: lines › DC-59: the Focus and the Selection are drawn above a line (ADR-0071, case 11) (1.7s)
+2026-10-18T19:22:58.6150794Z   ✓  29 [chrome-150] › circuit.spec.mjs:805:1 › a far reveal paints rows in every frame, and never calls the Focus it scrolls to off screen (ADR-0012, ADR-0053) (9.6s)
+2026-10-18T19:23:02.9964277Z   ✓  30 [chrome-150] › heading-mark.spec.mjs:75:5 › UX-21 (built-in Chrome): on the Sheet the Headings of the columns and rows several ranges hold carry a line of two Device Pixels on their edge toward the cells, in the outline's colour, and the Headings between them none (ADR-0008, 2026-10-13; R4) (4.3s)
+2026-10-18T19:23:07.6419790Z   ✓  31 [chrome-150] › heading-mark.spec.mjs:75:5 › UX-21 (MudBlazor Chrome): on the Sheet the Headings of the columns and rows several ranges hold carry a line of two Device Pixels on their edge toward the cells, in the outline's colour, and the Headings between them none (ADR-0008, 2026-10-13; R4) (4.6s)
+2026-10-18T19:23:09.7869925Z   ✓  32 [chrome-150] › heading-mark.spec.mjs:268:1 › UX-21 at the display's scale: ExGrid's own header is marked in the Focus outline's colour, which a Theme recolours, and its own token wins (ADR-0008, 2026-10-13; ADR-0090) (2.1s)
+2026-10-18T19:23:11.6306518Z   ✓  33 [chrome-150] › heading-mark.spec.mjs:443:5 › UX-21 D2 at the display's scale: a bare grid's four outline sides are two Device Pixels at the header (normal colours, ADR-0008/0090) (1.8s)
+2026-10-18T19:23:13.4582615Z   ✓  34 [chrome-150] › heading-mark.spec.mjs:443:5 › UX-21 D2 at the display's scale: a bare grid's four outline sides are two Device Pixels at the header (forced colours, ADR-0008/0090) (1.8s)
+2026-10-18T19:23:15.6077879Z   ✓  35 [chrome-150] › marks.spec.mjs:41:1 › after "mark all", rows scrolled to far away paint ticked (MK-6) (2.1s)
+2026-10-18T19:23:17.6509323Z   ✓  36 [chrome-150] › mud.spec.mjs:160:1 › UX-19/UX-9: among several ranges the Focus's thin border is the Focus outline's colour, the primary in both palettes, with no mapping of its own (ADR-0008, 2026-10-12; ADR-0030) (2.0s)
+2026-10-18T19:23:20.0173549Z   ✓  37 [chrome-150] › part-c.spec.mjs:85:1 › SH-54/DC-59 (built-in Chrome): the outline is 2 Device Pixels of #217346 with a white line inside, the shade #C7C7C7, and a black line inside stays black (ADR-0071, case 11) (2.3s)
+2026-10-18T19:23:22.5430506Z   ✓  38 [chrome-150] › part-c.spec.mjs:134:1 › SH-54/DC-59 (MudBlazor Chrome): the outline is the palette's primary and the shade the primary mixed into white, and a black line inside stays black (ADR-0071, case 11) (2.5s)
+2026-10-18T19:23:25.1040962Z   ✓  39 [chrome-150] › part-c.spec.mjs:194:5 › SH-54/DC-59 (MudBlazor Chrome): in a Pinned Column, a black line inside the shade stays black and the shade is the primary mixed into white (ADR-0206, case 11) (2.5s)
+2026-10-18T19:23:27.4107539Z   ✓  40 [chrome-150] › part-c.spec.mjs:232:5 › SH-54/DC-59 (built-in Chrome): in a Pinned Column, the shade is #C7C7C7, a black line inside stays black, and the Focus is unshaded (ADR-0206, case 11) (2.3s)
+2026-10-18T19:23:29.9972224Z   ✓  41 [chrome-150] › part-c.spec.mjs:194:5 › SH-54/DC-59 (MudBlazor Chrome): across the pinned boundary, a black line inside the shade stays black and the shade is the primary mixed into white (ADR-0206, case 11) (2.6s)
+2026-10-18T19:23:32.4075577Z   ✓  42 [chrome-150] › part-c.spec.mjs:232:5 › SH-54/DC-59 (built-in Chrome): across the pinned boundary, the shade is #C7C7C7, a black line inside stays black, and the Focus is unshaded (ADR-0206, case 11) (2.4s)
+2026-10-18T19:23:36.7397745Z   ✓  43 [chrome-150] › part-c.spec.mjs:253:1 › DC-59: a Consumer's coloured --ex-selection-fill multiplies over a pinned Fill and a pinned line, in a Pinned Column and across the boundary (ADR-0206, ADR-0071) (4.3s)
+2026-10-18T19:23:42.3759477Z   ✓  44 [chrome-150] › part-c.spec.mjs:332:1 › DC-59: with a pinned tint on screen and the page a third of a pixel across and down, the lines outside the range keep their exact Device Pixels (ADR-0206, the sub-pixel gate) (5.6s)
+2026-10-18T19:23:45.3310615Z   ✓  45 [chrome-150] › part-c.spec.mjs:370:1 › DC-59: scrolling with column A selected, its shade stays on column A down and across, and never over the cells that pass beneath it (ADR-0206) (2.9s)
+2026-10-18T19:23:47.6808513Z   ✓  46 [chrome-150] › part-c.spec.mjs:410:1 › DC-59: under forced colors no tint is painted over a pinned range, and its outline is (ADR-0206) (2.3s)
+2026-10-18T19:23:49.9918501Z   ✓  47 [chrome-150] › part-c.spec.mjs:429:5 › DC-59/SH-39 (built-in Chrome, dark scheme): across the pinned boundary the shade is the same on both sides and a black line inside stays black, as in the light scheme (ADR-0206, ADR-0071) (2.3s)
+2026-10-18T19:23:52.5439215Z   ✓  48 [chrome-150] › part-c.spec.mjs:429:5 › DC-59/SH-39 (MudBlazor Chrome, dark scheme): across the pinned boundary the shade is the same on both sides and a black line inside stays black, as in the light scheme (ADR-0206, ADR-0071) (2.5s)
+2026-10-18T19:23:54.5934563Z   ✓  49 [chrome-150] › part-c.spec.mjs:449:1 › VZ-17/DC-59: a vertical gridline is one Device Pixel of #E0E0E0, and every column edge lies on a Device Pixel (ADR-0090) (2.0s)
+2026-10-18T19:23:56.3074041Z   ✓  50 [chrome-150] › scrollbar.spec.mjs:230:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars (1.7s)
+2026-10-18T19:23:58.0467145Z   ✓  51 [chrome-150] › scrollbar.spec.mjs:240:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout (1.7s)
+2026-10-18T19:24:00.4182340Z   ✓  52 [chrome-150] › scrollbar.spec.mjs:266:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again (2.4s)
+2026-10-18T19:24:01.8809517Z   -  53 [chrome-150] › scrollbar.spec.mjs:345:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling
+2026-10-18T19:24:02.0099054Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-10-18T19:24:02.0099877Z [DemoApi]       Application is shutting down...
+2026-10-18T19:24:02.0400918Z 
+2026-10-18T19:24:02.0405818Z   1 skipped
+2026-10-18T19:24:02.0406290Z   52 passed (2.4m)
+2026-10-18T19:24:02.0763430Z ##[group]Run actions/upload-artifact@v7
+2026-10-18T19:24:02.0763742Z with:
+2026-10-18T19:24:02.0763966Z   name: layer3-records-chrome-150-1
+2026-10-18T19:24:02.0764313Z   path: verification/
+tests/ExGrid.Browser/test-results/
+
+2026-10-18T19:24:02.0764659Z   if-no-files-found: ignore
+2026-10-18T19:24:02.0764905Z   retention-days: 30
+2026-10-18T19:24:02.0765137Z   compression-level: 6
+2026-10-18T19:24:02.0765367Z   overwrite: false
+2026-10-18T19:24:02.0765596Z   include-hidden-files: false
+2026-10-18T19:24:02.0766109Z   archive: true
+2026-10-18T19:24:02.0766317Z env:
+2026-10-18T19:24:02.0766539Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:24:02.0766800Z   DOTNET_NOLOGO: 1
+2026-10-18T19:24:02.0767014Z   LONG_RUN: true
+2026-10-18T19:24:02.0767243Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:24:02.0767519Z ##[endgroup]
+2026-10-18T19:24:03.2691856Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-10-18T19:24:03.2693934Z The least common ancestor is /home/runner/work/ex-grid/ex-grid. This will be the root directory of the artifact
+2026-10-18T19:24:03.2694845Z With the provided path, there will be 10437 files uploaded
+2026-10-18T19:24:03.2700718Z Artifact name is valid!
+2026-10-18T19:24:03.2701216Z Root directory input is valid!
+2026-10-18T19:24:03.6006821Z Uploading artifact: layer3-records-chrome-150-1.zip
+2026-10-18T19:24:03.6032284Z Beginning upload of artifact content to blob storage
+2026-10-18T19:24:04.7659134Z Uploaded bytes 8388608
+2026-10-18T19:24:04.9990491Z Uploaded bytes 16777216
+2026-10-18T19:24:05.4544369Z Uploaded bytes 25165824
+2026-10-18T19:24:05.9004256Z Uploaded bytes 33554432
+2026-10-18T19:24:06.4748525Z Uploaded bytes 41943040
+2026-10-18T19:24:07.2861086Z Uploaded bytes 50331648
+2026-10-18T19:24:07.7644319Z Uploaded bytes 58720256
+2026-10-18T19:24:08.2551581Z Uploaded bytes 67108864
+2026-10-18T19:24:08.9086964Z Uploaded bytes 75497472
+2026-10-18T19:24:09.2847374Z Uploaded bytes 83886080
+2026-10-18T19:24:09.7680137Z Uploaded bytes 92274688
+2026-10-18T19:24:10.1036327Z Uploaded bytes 100663296
+2026-10-18T19:24:10.9537319Z Uploaded bytes 109051904
+2026-10-18T19:24:11.4877079Z Uploaded bytes 117440512
+2026-10-18T19:24:11.9339799Z Uploaded bytes 125829120
+2026-10-18T19:24:12.8555137Z Uploaded bytes 134217728
+2026-10-18T19:24:13.2566872Z Uploaded bytes 142606336
+2026-10-18T19:24:13.8372740Z Uploaded bytes 150994944
+2026-10-18T19:24:14.4102682Z Uploaded bytes 159383552
+2026-10-18T19:24:15.2121751Z Uploaded bytes 167772160
+2026-10-18T19:24:15.5810434Z Uploaded bytes 176160768
+2026-10-18T19:24:15.9667240Z Uploaded bytes 184549376
+2026-10-18T19:24:16.5124332Z Uploaded bytes 192937984
+2026-10-18T19:24:16.8440510Z Uploaded bytes 201326592
+2026-10-18T19:24:17.3786672Z Uploaded bytes 209715200
+2026-10-18T19:24:17.4800195Z Uploaded bytes 213135435
+2026-10-18T19:24:17.5116867Z Finished uploading artifact content to blob storage!
+2026-10-18T19:24:17.5119489Z SHA256 digest of uploaded artifact is c9d747612cfc120fed9dba4018e33b464eb54d543bb909be5ff7ca760b0c8c3d
+2026-10-18T19:24:17.5121461Z Finalizing artifact upload
+2026-10-18T19:24:17.8246529Z Artifact layer3-records-chrome-150-1 successfully finalized. Artifact ID 12147528745
+2026-10-18T19:24:17.8247554Z Artifact layer3-records-chrome-150-1 has been successfully uploaded! Final size is 213135435 bytes. Artifact ID is 12147528745
+2026-10-18T19:24:17.8252263Z Artifact download URL: https://github.com/AkiraMisawa/ex-grid/actions/runs/39158128144/artifacts/12147528745
+2026-10-18T19:24:17.8718017Z Post job cleanup.
+2026-10-18T19:24:17.9855893Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-29c22a3ee550219573164ee5799c29ef3a61ce3fb606a2e9963ffbcac73f25bb, not saving cache.
+2026-10-18T19:24:17.9967295Z Post job cleanup.
+2026-10-18T19:24:18.1291681Z Post job cleanup.
+2026-10-18T19:24:18.2153140Z [command]/usr/bin/git version
+2026-10-18T19:24:18.2204811Z git version 2.55.0
+2026-10-18T19:24:18.2241079Z Temporarily overriding HOME='/home/runner/work/_temp/d5e5b90b-d6c2-42c0-aba6-be42e00e7d05' before making global git config changes
+2026-10-18T19:24:18.2242603Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-18T19:24:18.2247365Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ex-grid/ex-grid
+2026-10-18T19:24:18.2280783Z Removing SSH command configuration
+2026-10-18T19:24:18.2287300Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-18T19:24:18.2337908Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-18T19:24:18.2607323Z Removing HTTP extra header
+2026-10-18T19:24:18.2611999Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-18T19:24:18.2650929Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-18T19:24:18.2924250Z Removing includeIf entries pointing to credentials config files
+2026-10-18T19:24:18.2930842Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-18T19:24:18.2960839Z includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path
+2026-10-18T19:24:18.2962004Z includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-10-18T19:24:18.2962996Z includeif.gitdir:/github/workspace/.git.path
+2026-10-18T19:24:18.2970094Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-18T19:24:18.2971949Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path
+2026-10-18T19:24:18.2994872Z /home/runner/work/_temp/git-credentials-cc3aa365-2346-4cbf-af37-04e96fe16bc9.config
+2026-10-18T19:24:18.3004770Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-cc3aa365\-2346\-4cbf\-af37\-04e96fe16bc9\.config
+2026-10-18T19:24:18.3042422Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-10-18T19:24:18.3066663Z /home/runner/work/_temp/git-credentials-cc3aa365-2346-4cbf-af37-04e96fe16bc9.config
+2026-10-18T19:24:18.3083700Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-cc3aa365\-2346\-4cbf\-af37\-04e96fe16bc9\.config
+2026-10-18T19:24:18.3118375Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-18T19:24:18.3141749Z /github/runner_temp/git-credentials-cc3aa365-2346-4cbf-af37-04e96fe16bc9.config
+2026-10-18T19:24:18.3150392Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-cc3aa365\-2346\-4cbf\-af37\-04e96fe16bc9\.config
+2026-10-18T19:24:18.3186339Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-18T19:24:18.3210418Z /github/runner_temp/git-credentials-cc3aa365-2346-4cbf-af37-04e96fe16bc9.config
+2026-10-18T19:24:18.3218226Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-cc3aa365\-2346\-4cbf\-af37\-04e96fe16bc9\.config
+2026-10-18T19:24:18.3259010Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-18T19:24:18.3517239Z Removing credentials config '/home/runner/work/_temp/git-credentials-cc3aa365-2346-4cbf-af37-04e96fe16bc9.config'
+2026-10-18T19:24:18.3680727Z Cleaning up orphan processes

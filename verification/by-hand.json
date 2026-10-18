@@ -20,12 +20,12 @@
         "tests/ExGrid.Browser/scrollbar.spec.mjs"
       ],
       "record": {
-        "commit": "16552992f8fa6838114b7934c81190b788b3f32c",
-        "tag": "verified/2026-10-01-windows-15",
-        "path": "verification/2026-10-01-windows-15/report.md",
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-windows-18b",
+        "path": "verification/2026-10-18-windows-18b/report.md",
         "verdict": "pass"
       },
-      "note": "The fifteenth Windows run's Part A: scrollbar.spec.mjs's VZ-14 block at 150%, on both browsers and both hosts. 125% was not run, and the row has named 150% since its rewrite of 2026-10-01. Its commit is held by claude/exsheet-windows-verify-15; the tag verified/2026-10-01-windows-15 is pushed on it once the release mechanics' pull request has merged (decided with the user, 2026-10-12)."
+      "note": "The eighteenth Windows run's Part A, again at 0.1.0-rc.3's commit, the head of release/0.1 after the sign-off's fixes (#169): scrollbar.spec.mjs's VZ-14 block at 150%, headed, on Chrome and Edge, on both hosts."
     },
     {
       "row": "VZ-16",
@@ -45,8 +45,13 @@
         "samples/ExGrid.DemoPages/Pages/Wide.razor",
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
-      "record": null,
-      "note": "Never checked as written. The eleventh run's Part C read lines at a real devicePixelRatio of 2.25 (verification/2026-10-02-windows-excel-11c/beside-excel.md) before ADR-0090 decided the Device Pixel, and read neither a zoom told as it changes nor VZ-16's thin line and gridline."
+      "record": {
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-windows-18b",
+        "path": "verification/2026-10-18-windows-18b/report.md",
+        "verdict": "pass"
+      },
+      "note": "The eighteenth Windows run's Part A, again at 0.1.0-rc.3's commit, the head of release/0.1 after the sign-off's fixes (#169): a real browser zoom told as it changes on /wide, and a thin line and a gridline at a real 2.25 on /sheet?case=11, Chrome and Edge, WebAssembly."
     },
     {
       "row": "FN-12e",
@@ -79,8 +84,13 @@
         "tests/GlyphWidths/corpus.json",
         "tests/GlyphWidths/measure.mjs"
       ],
-      "record": null,
-      "note": "The painting on Windows: a bold amount and #### read painted on /sizing and /sheet?case=3c in Chrome and Edge. (2026-10-16, decided with the user: narrowed to the painting, as the macOS row is. The Windows widths are committed one per browser, tests/GlyphWidths/system-ui.windows.chrome.json and system-ui.windows.msedge.json, beside Roboto's two, and held by layer 1; the row kept the measurement while they were not, under the name system-ui.windows.json, which was never the name committed.) The Wrapper's two files are the MudBlazor Chrome's Roboto metrics (MudExGridPresentation, RobotoGlyphTable), which decide a bold amount's width and #### under that Chrome."
+      "record": {
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-windows-18b",
+        "path": "verification/2026-10-18-windows-18b/report.md",
+        "verdict": "pass"
+      },
+      "note": "The eighteenth Windows run's Part A, again at 0.1.0-rc.3's commit, the head of release/0.1 after the sign-off's fixes (#169): the two paintings, headed, on Chrome and Edge, on both hosts."
     },
     {
       "row": "FN-12e",
@@ -113,8 +123,13 @@
         "tests/GlyphWidths/corpus.json",
         "tests/GlyphWidths/measure.mjs"
       ],
-      "record": null,
-      "note": "The macOS glyph widths are measured (tests/GlyphWidths/*.macos.json, held by layer 1), but no record under verification/ names a commit at which a bold amount and #### were read painted on macOS. The Wrapper's two files are the MudBlazor Chrome's Roboto metrics (MudExGridPresentation, RobotoGlyphTable), which decide a bold amount's width and #### under that Chrome."
+      "record": {
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-macos-18b",
+        "path": "verification/2026-10-18-macos-18b/report.md",
+        "verdict": "pass"
+      },
+      "note": "The macOS glyph widths are measured (tests/GlyphWidths/*.macos.json, held by layer 1). Run 18b read the two paintings on macOS at 0.1.0-rc.3's commit, Chrome and Edge, both hosts, headless (verification/2026-10-18-macos-18b/; run 18's, at f6b5e8fe, no longer held after #168). The Wrapper's two files are the MudBlazor Chrome's Roboto metrics (MudExGridPresentation, RobotoGlyphTable), which decide a bold amount's width and #### under that Chrome."
     },
     {
       "row": "ED-30",
@@ -138,12 +153,12 @@
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
       "record": {
-        "commit": "bf13de1950975a5ec5f1ce9db675358db9e97aa9",
-        "tag": "verified/2026-10-02-windows-16",
-        "path": "verification/2026-10-02-windows-16/report.md",
-        "verdict": "fail"
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-windows-18b",
+        "path": "verification/2026-10-18-windows-18b/report.md",
+        "verdict": "pass"
       },
-      "note": "The sixteenth Windows run gave no verdict by row. Its differences 1 and 3 read against ED-30's statement (keys typed after a composition's end lost one on WebAssembly; a press on D12 mid-composition never reached the page), so its record is not a pass. Its commit is held by claude/exsheet-windows-verify-16; the tag verified/2026-10-02-windows-16 is pushed on it once the release mechanics' pull request has merged (decided with the user, 2026-10-12)."
+      "note": "The eighteenth Windows run's Part A, again at 0.1.0-rc.3's commit, the head of release/0.1 after the sign-off's fixes (#169): the sixteenth run's cases with run 17's additions, 12 configurations, k8 and k8x with the Microsoft IME's Predictive input Off, put back after."
     },
     {
       "row": "SH-42",
@@ -159,12 +174,12 @@
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
       "record": {
-        "commit": "76d3866c3233fc76b79956f157c2e3f7ee18a14a",
-        "tag": "verified/2026-10-01-windows-browser-11",
-        "path": "verification/2026-10-01-windows-browser-11/keys.md",
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-windows-18b",
+        "path": "verification/2026-10-18-windows-18b/report.md",
         "verdict": "pass"
       },
-      "note": "The eleventh run's Part B, the run the row names: Ctrl+1 to Ctrl+5 reached a standalone keys.html in Chrome and Edge, and no tab was selected. Never read on ExSheet; the seventeenth run's Part D reads them on /sheet. Its commit is held by claude/exsheet-windows-verify-11; the tag verified/2026-10-01-windows-browser-11, named for this record's directory, is pushed on it once the release mechanics' pull request has merged (decided with the user, 2026-10-12)."
+      "note": "The eighteenth Windows run's Part A, again at 0.1.0-rc.3's commit, the head of release/0.1 after the sign-off's fixes (#169): Ctrl+1 to Ctrl+5 on /sheet with seven tabs open, Chrome and Edge, both hosts."
     },
     {
       "row": "SH-51",
@@ -179,8 +194,13 @@
         "samples/ExGrid.DemoPages/Pages/SheetPage.razor",
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
-      "record": null,
-      "note": "Never checked by hand (ADR-0202): the seventeenth run's Part D is its first."
+      "record": {
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-windows-18b",
+        "path": "verification/2026-10-18-windows-18b/report.md",
+        "verdict": "pass"
+      },
+      "note": "The eighteenth Windows run's Part A, again at 0.1.0-rc.3's commit, the head of release/0.1 after the sign-off's fixes (#169): Ctrl+F1 twice on /sheet, Chrome and Edge, both hosts."
     },
     {
       "row": "SH-52",
@@ -200,8 +220,13 @@
         "samples/ExGrid.DemoPages/Pages/SheetPage.razor",
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
-      "record": null,
-      "note": "Never checked by hand (ADR-0202): the seventeenth run's Part D is its first."
+      "record": {
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-windows-18b",
+        "path": "verification/2026-10-18-windows-18b/report.md",
+        "verdict": "pass"
+      },
+      "note": "The eighteenth Windows run's Part A, again at 0.1.0-rc.3's commit, the head of release/0.1 after the sign-off's fixes (#169): run 17's d3, d4 and d6 on /sheet and /sheet?chrome=mud, and the keys at machine speed on WebAssembly and behind 80 ms, Chrome and Edge."
     },
     {
       "row": "KB-3",
@@ -221,8 +246,13 @@
         "src/ExSheet.MudBlazor/",
         "tests/ExGrid.Browser/"
       ],
-      "record": null,
-      "note": "The macOS records under verification/ are layer-3 runs' metrics.json and console.json, which name no commit (2026-09-23 to 2026-10-01), a targeted run of other specs (2026-10-03) and measurements; none names the commit of a layer-3 run on macOS that this row could hold on."
+      "record": {
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-macos-18b",
+        "path": "verification/2026-10-18-macos-18b/report.md",
+        "verdict": "pass"
+      },
+      "note": "Run 18b ran the row's named tests on macOS at 0.1.0-rc.3's commit, and run 18 the whole of layer 3 at f6b5e8fe, Chrome and Edge, both hosts, headless: Cmd+Enter fills on the editor's path (CP-16, LV-13), and the two ED-2 word-key tests pass. Run 18's report lists every other failure of its run and its differences, among them that no layer-3 test presses Command+Enter on the Sheet's editor (read once by a scratch copy) and that the Sheet's clipboard tests press Control+C / Control+V, which fail on a Mac."
     },
     {
       "row": "VZ-18",
@@ -257,9 +287,9 @@
         "samples/ExGrid.DemoPages/"
       ],
       "record": {
-        "commit": "885bfb98dd92a1e81e905b651d03e216afa24769",
-        "tag": "verified/2026-10-17-linux-mudblazor-floor",
-        "path": "verification/2026-10-17-linux-mudblazor-floor/report.md",
+        "commit": "f6b5e8fe6c4b87d077200616d305bdd87a723aba",
+        "tag": "verified/2026-10-18-linux-mudblazor-floor",
+        "path": "verification/2026-10-18-linux-mudblazor-floor/report.md",
         "verdict": "pass",
         "versions": [
           "9.6.0",
@@ -271,7 +301,7 @@
         ]
       },
       "laterRecords": [],
-      "note": "The Wrappers' MudBlazor floor run of Step 4 and the layer-2 runs across the declared range beside it (ADR-0205's notes of 2026-10-12): automated, made once by a person on a desktop with Chrome and Edge installed, and carried forward by its record while the Wrappers and the demo pages are unchanged. (2026-10-12, decided with the user: \"A MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only. The floor run (layer 3 at 9.6.0) holds while its paths are unchanged.\") (2026-10-12, decided with the user: an unlisted version is not asked for.) (2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own, recorded in a directory of its own and tagged by it, and this entry names its record besides the floor record.) Its record goes in 'laterRecords'. Made on 2026-10-17 at 885bfb98 on Linux (WSL2) with Chrome and Edge installed (verification/2026-10-17-linux-mudblazor-floor/). It replaces the record made on 2026-10-15 at 0399f391 (verification/2026-10-15-linux-mudblazor-floor/), which no longer held once samples/ExGrid.DemoPages/SheetCases.cs changed. Not the floor record: verification/2026-10-12-linux-mudblazor-floor/ (claude/mudblazor-range-floor) is a bisection on Playwright's bundled Chromium, and does not discharge it."
+      "note": "The Wrappers' MudBlazor floor run of Step 4 and the layer-2 runs across the declared range beside it (ADR-0205's notes of 2026-10-12): automated, made once by a person on a desktop with Chrome and Edge installed, and carried forward by its record while the Wrappers and the demo pages are unchanged. (2026-10-12, decided with the user: \"A MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only. The floor run (layer 3 at 9.6.0) holds while its paths are unchanged.\") (2026-10-12, decided with the user: an unlisted version is not asked for.) (2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own, recorded in a directory of its own and tagged by it, and this entry names its record besides the floor record.) Its record goes in 'laterRecords'. Made on 2026-10-18 at f6b5e8fe, the head of release/0.1 before 0.1.0-rc.1, on Linux (WSL2, headed under xvfb) with Chrome and Edge installed (verification/2026-10-18-linux-mudblazor-floor/). It replaces the record made on 2026-10-17 at 885bfb98, which no longer held: the Wrappers' public API lists and two ExSheet.MudBlazor files changed after it."
     }
   ]
 }

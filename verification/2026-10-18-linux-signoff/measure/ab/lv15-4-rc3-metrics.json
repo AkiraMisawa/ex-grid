@@ -1,0 +1,32 @@
+{
+  "chrome": {
+    "LV-15 1,000 changes, /grid-live-local over 1,000,000 rows": {
+      "rows": 1000000,
+      "load": "1,000,000 trades made in 3,351 ms; GridSource.From took 3,119 ms.",
+      "runs": 12,
+      "appliedMs": {
+        "median": 66,
+        "min": 44,
+        "max": 83
+      },
+      "applyToFrameMs": {
+        "median": 66,
+        "min": 44,
+        "max": 84
+      },
+      "taskStartToFrameMs": {
+        "median": 80,
+        "min": 59,
+        "max": 256
+      },
+      "longestTaskMs": {
+        "median": 78,
+        "min": 0,
+        "max": 255
+      },
+      "gridInTheBatchsFrame": 12,
+      "lastStatus": "Batch 15: 1,000 trades amended, applied in 76 ms.",
+      "against": "PV-21: 0.2 s"
+    }
+  }
+}

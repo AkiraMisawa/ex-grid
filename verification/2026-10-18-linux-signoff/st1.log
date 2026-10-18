@@ -1,0 +1,9 @@
+dotnet 10.0.203 (nix-managed)
+xUnit.net v3 In-Process Runner v2.0.3+216a74a292 (64-bit .NET 10.0.7)
+[37m  Discovering: ExGrid.Components
+[0m[37m  Discovered:  ExGrid.Components
+[0m[37m  Starting:    ExGrid.Components
+[0m[37m  Finished:    ExGrid.Components
+[0m[37m=== TEST EXECUTION SUMMARY ===
+[0m[37m   ExGrid.Components  Total: 21, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 55.309s
+[0m[0mexit 0

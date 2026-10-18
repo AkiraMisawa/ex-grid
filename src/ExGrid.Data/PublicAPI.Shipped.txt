@@ -1,1 +1,412 @@
 #nullable enable
+ExGrid.Data.AggregateAccumulator
+ExGrid.Data.AggregateAccumulator.Add(object? value) -> void
+ExGrid.Data.AggregateAccumulator.AddDouble(double value) -> void
+ExGrid.Data.AggregateAccumulator.AddError() -> void
+ExGrid.Data.AggregateAccumulator.AddExact(decimal value) -> void
+ExGrid.Data.AggregateAccumulator.AddOther() -> void
+ExGrid.Data.AggregateAccumulator.AggregateAccumulator() -> void
+ExGrid.Data.AggregateAccumulator.Merge(in ExGrid.Data.AggregateCounts counts, in ExGrid.Data.AggregateSum sum, in ExGrid.Data.AggregateExtremes extremes) -> void
+ExGrid.Data.AggregateAccumulator.Numbers.get -> long
+ExGrid.Data.AggregateAccumulator.Read(ExGrid.Data.Aggregation aggregation) -> ExGrid.Data.AggregateResult
+ExGrid.Data.AggregateAccumulator.Values.get -> long
+ExGrid.Data.AggregateArithmetic
+ExGrid.Data.AggregateCounts
+ExGrid.Data.AggregateCounts.AggregateCounts() -> void
+ExGrid.Data.AggregateCounts.NonFinite -> bool
+ExGrid.Data.AggregateCounts.Numbers -> long
+ExGrid.Data.AggregateCounts.Values -> long
+ExGrid.Data.AggregateError
+ExGrid.Data.AggregateError.DivideByZero = 1 -> ExGrid.Data.AggregateError
+ExGrid.Data.AggregateError.ErrorAmongValues = 3 -> ExGrid.Data.AggregateError
+ExGrid.Data.AggregateError.None = 0 -> ExGrid.Data.AggregateError
+ExGrid.Data.AggregateError.NotANumber = 2 -> ExGrid.Data.AggregateError
+ExGrid.Data.AggregateExtremes
+ExGrid.Data.AggregateExtremes.AggregateExtremes() -> void
+ExGrid.Data.AggregateExtremes.ExactMax -> decimal
+ExGrid.Data.AggregateExtremes.ExactMin -> decimal
+ExGrid.Data.AggregateExtremes.Inexact -> bool
+ExGrid.Data.AggregateExtremes.Max -> double
+ExGrid.Data.AggregateExtremes.Min -> double
+ExGrid.Data.AggregateResult
+ExGrid.Data.AggregateResult.AggregateResult() -> void
+ExGrid.Data.AggregateResult.Equals(ExGrid.Data.AggregateResult other) -> bool
+ExGrid.Data.AggregateResult.Error.get -> ExGrid.Data.AggregateError
+ExGrid.Data.AggregateResult.Exact.get -> decimal?
+ExGrid.Data.AggregateResult.IsEmpty.get -> bool
+ExGrid.Data.AggregateResult.IsNumber.get -> bool
+ExGrid.Data.AggregateResult.Number.get -> double
+ExGrid.Data.AggregateSum
+ExGrid.Data.AggregateSum.AggregateSum() -> void
+ExGrid.Data.AggregateSum.Compensation -> double
+ExGrid.Data.AggregateSum.Double -> double
+ExGrid.Data.AggregateSum.Exact -> decimal
+ExGrid.Data.AggregateSum.Inexact -> bool
+ExGrid.Data.AggregateVariance
+ExGrid.Data.AggregateVariance.AggregateVariance() -> void
+ExGrid.Data.AggregateVariance.M2 -> double
+ExGrid.Data.AggregateVariance.Mean -> double
+ExGrid.Data.Aggregation
+ExGrid.Data.Aggregation.Average = 2 -> ExGrid.Data.Aggregation
+ExGrid.Data.Aggregation.Count = 1 -> ExGrid.Data.Aggregation
+ExGrid.Data.Aggregation.CountNumbers = 6 -> ExGrid.Data.Aggregation
+ExGrid.Data.Aggregation.Max = 3 -> ExGrid.Data.Aggregation
+ExGrid.Data.Aggregation.Min = 4 -> ExGrid.Data.Aggregation
+ExGrid.Data.Aggregation.Product = 5 -> ExGrid.Data.Aggregation
+ExGrid.Data.Aggregation.StdDev = 7 -> ExGrid.Data.Aggregation
+ExGrid.Data.Aggregation.StdDevp = 8 -> ExGrid.Data.Aggregation
+ExGrid.Data.Aggregation.Sum = 0 -> ExGrid.Data.Aggregation
+ExGrid.Data.Aggregation.Var = 9 -> ExGrid.Data.Aggregation
+ExGrid.Data.Aggregation.Varp = 10 -> ExGrid.Data.Aggregation
+ExGrid.Data.BooleanColumn
+ExGrid.Data.BooleanColumnBuilder
+ExGrid.Data.BooleanColumnBuilder.Append(bool value) -> void
+ExGrid.Data.BooleanColumnBuilder.Append(bool? value) -> void
+ExGrid.Data.BooleanColumnBuilder.Append(System.ReadOnlySpan<bool> values, System.ReadOnlySpan<ulong> blanks = default(System.ReadOnlySpan<ulong>)) -> void
+ExGrid.Data.ChangeBatch
+ExGrid.Data.ChangeBatch.Added.get -> ExGrid.Data.Snapshot?
+ExGrid.Data.ChangeBatch.Changed.get -> ExGrid.Data.Snapshot?
+ExGrid.Data.ChangeBatch.RemovedKeys.get -> System.Collections.Generic.IReadOnlyList<object!>!
+ExGrid.Data.ColumnBuilder
+ExGrid.Data.ColumnBuilder.AppendBlank() -> void
+ExGrid.Data.ColumnBuilder.AppendBlanks(int count) -> void
+ExGrid.Data.ColumnBuilder.Caption.get -> string!
+ExGrid.Data.ColumnBuilder.Count.get -> int
+ExGrid.Data.ColumnBuilder.Kind.get -> ExGrid.Data.SnapshotKind
+ExGrid.Data.ColumnBuilder.Name.get -> string!
+ExGrid.Data.CsvColumn
+ExGrid.Data.CsvColumn.<Clone>$() -> ExGrid.Data.CsvColumn!
+ExGrid.Data.CsvColumn.BlankText.get -> System.Collections.Generic.IReadOnlyList<string!>?
+ExGrid.Data.CsvColumn.BlankText.init -> void
+ExGrid.Data.CsvColumn.Caption.get -> string?
+ExGrid.Data.CsvColumn.Caption.init -> void
+ExGrid.Data.CsvColumn.CsvColumn(string! Name, ExGrid.Data.SnapshotKind Kind) -> void
+ExGrid.Data.CsvColumn.Culture.get -> System.Globalization.CultureInfo?
+ExGrid.Data.CsvColumn.Culture.init -> void
+ExGrid.Data.CsvColumn.DateFormats.get -> System.Collections.Generic.IReadOnlyList<string!>?
+ExGrid.Data.CsvColumn.DateFormats.init -> void
+ExGrid.Data.CsvColumn.DecimalPoint.get -> string?
+ExGrid.Data.CsvColumn.DecimalPoint.init -> void
+ExGrid.Data.CsvColumn.Deconstruct(out string! Name, out ExGrid.Data.SnapshotKind Kind) -> void
+ExGrid.Data.CsvColumn.Equals(ExGrid.Data.CsvColumn? other) -> bool
+ExGrid.Data.CsvColumn.FalseText.get -> System.Collections.Generic.IReadOnlyList<string!>?
+ExGrid.Data.CsvColumn.FalseText.init -> void
+ExGrid.Data.CsvColumn.Header.get -> string?
+ExGrid.Data.CsvColumn.Header.init -> void
+ExGrid.Data.CsvColumn.Kind.get -> ExGrid.Data.SnapshotKind
+ExGrid.Data.CsvColumn.Kind.init -> void
+ExGrid.Data.CsvColumn.Name.get -> string!
+ExGrid.Data.CsvColumn.Name.init -> void
+ExGrid.Data.CsvColumn.Position.get -> int?
+ExGrid.Data.CsvColumn.Position.init -> void
+ExGrid.Data.CsvColumn.ThousandsSeparator.get -> string?
+ExGrid.Data.CsvColumn.ThousandsSeparator.init -> void
+ExGrid.Data.CsvColumn.TrueText.get -> System.Collections.Generic.IReadOnlyList<string!>?
+ExGrid.Data.CsvColumn.TrueText.init -> void
+ExGrid.Data.CsvColumnSuggestion
+ExGrid.Data.CsvColumnSuggestion.Column.get -> ExGrid.Data.CsvColumn!
+ExGrid.Data.CsvColumnSuggestion.Examples.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExGrid.Data.CsvColumnSuggestion.IsUnclear.get -> bool
+ExGrid.Data.CsvColumnSuggestion.Marks.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.CsvMark!>!
+ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvDoubt.AmbiguousSeparator = 3 -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvDoubt.BlankText = 7 -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvDoubt.BothSeparators = 2 -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvDoubt.CouldBeBoolean = 8 -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvDoubt.DayOrMonth = 5 -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvDoubt.Empty = 0 -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvDoubt.FieldCount = 13 -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvDoubt.Header = 12 -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvDoubt.HeaderName = 10 -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvDoubt.LeadingZeros = 1 -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvDoubt.MixedDateFormats = 4 -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvDoubt.MixedKinds = 6 -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvDoubt.Separator = 11 -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvDoubt.TooLong = 9 -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvEncoding
+ExGrid.Data.CsvEncoding.Name.get -> string!
+ExGrid.Data.CsvMark
+ExGrid.Data.CsvMark.<Clone>$() -> ExGrid.Data.CsvMark!
+ExGrid.Data.CsvMark.CsvMark(ExGrid.Data.CsvDoubt Doubt, string! Note) -> void
+ExGrid.Data.CsvMark.Deconstruct(out ExGrid.Data.CsvDoubt Doubt, out string! Note) -> void
+ExGrid.Data.CsvMark.Doubt.get -> ExGrid.Data.CsvDoubt
+ExGrid.Data.CsvMark.Doubt.init -> void
+ExGrid.Data.CsvMark.Equals(ExGrid.Data.CsvMark? other) -> bool
+ExGrid.Data.CsvMark.Note.get -> string!
+ExGrid.Data.CsvMark.Note.init -> void
+ExGrid.Data.CsvSchema
+ExGrid.Data.CsvSchema.<Clone>$() -> ExGrid.Data.CsvSchema!
+ExGrid.Data.CsvSchema.BlankText.get -> System.Collections.Generic.IReadOnlyList<string!>?
+ExGrid.Data.CsvSchema.BlankText.init -> void
+ExGrid.Data.CsvSchema.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.CsvColumn!>!
+ExGrid.Data.CsvSchema.Columns.init -> void
+ExGrid.Data.CsvSchema.CsvSchema(System.Collections.Generic.IReadOnlyList<ExGrid.Data.CsvColumn!>! Columns) -> void
+ExGrid.Data.CsvSchema.Deconstruct(out System.Collections.Generic.IReadOnlyList<ExGrid.Data.CsvColumn!>! Columns) -> void
+ExGrid.Data.CsvSchema.Encoding.get -> ExGrid.Data.CsvEncoding!
+ExGrid.Data.CsvSchema.Encoding.init -> void
+ExGrid.Data.CsvSchema.Equals(ExGrid.Data.CsvSchema? other) -> bool
+ExGrid.Data.CsvSchema.HasHeader.get -> bool
+ExGrid.Data.CsvSchema.HasHeader.init -> void
+ExGrid.Data.CsvSchema.ReadAsync(string! path, ExGrid.Data.SnapshotLoadOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.Snapshot!>
+ExGrid.Data.CsvSchema.ReadAsync(System.IO.Stream! stream, ExGrid.Data.SnapshotLoadOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.Snapshot!>
+ExGrid.Data.CsvSchema.RecordKey.get -> string?
+ExGrid.Data.CsvSchema.RecordKey.init -> void
+ExGrid.Data.CsvSchema.Separator.get -> ExGrid.Data.CsvSeparator
+ExGrid.Data.CsvSchema.Separator.init -> void
+ExGrid.Data.CsvSeparator
+ExGrid.Data.CsvSeparator.Comma = 0 -> ExGrid.Data.CsvSeparator
+ExGrid.Data.CsvSeparator.Semicolon = 2 -> ExGrid.Data.CsvSeparator
+ExGrid.Data.CsvSeparator.Tab = 1 -> ExGrid.Data.CsvSeparator
+ExGrid.Data.CsvSuggestion
+ExGrid.Data.CsvSuggestion.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.CsvColumnSuggestion!>!
+ExGrid.Data.CsvSuggestion.IsUnclear.get -> bool
+ExGrid.Data.CsvSuggestion.Marks.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.CsvMark!>!
+ExGrid.Data.CsvSuggestion.SampledRows.get -> int
+ExGrid.Data.CsvSuggestion.Schema.get -> ExGrid.Data.CsvSchema!
+ExGrid.Data.CsvSuggestionOptions
+ExGrid.Data.CsvSuggestionOptions.CsvSuggestionOptions() -> void
+ExGrid.Data.CsvSuggestionOptions.Culture.get -> System.Globalization.CultureInfo?
+ExGrid.Data.CsvSuggestionOptions.Culture.init -> void
+ExGrid.Data.CsvSuggestionOptions.Encoding.get -> ExGrid.Data.CsvEncoding!
+ExGrid.Data.CsvSuggestionOptions.Encoding.init -> void
+ExGrid.Data.CsvSuggestionOptions.HasHeader.get -> bool?
+ExGrid.Data.CsvSuggestionOptions.HasHeader.init -> void
+ExGrid.Data.CsvSuggestionOptions.Rows.get -> int
+ExGrid.Data.CsvSuggestionOptions.Rows.init -> void
+ExGrid.Data.CsvSuggestionOptions.Separator.get -> ExGrid.Data.CsvSeparator?
+ExGrid.Data.CsvSuggestionOptions.Separator.init -> void
+ExGrid.Data.DateColumn
+ExGrid.Data.DateColumn.HasTime.get -> bool
+ExGrid.Data.DateColumnBuilder
+ExGrid.Data.DateColumnBuilder.Append(System.DateOnly value) -> void
+ExGrid.Data.DateColumnBuilder.Append(System.DateTime value) -> void
+ExGrid.Data.DateColumnBuilder.Append(System.DateTimeOffset value) -> void
+ExGrid.Data.DateColumnBuilder.AppendTicks(long ticks) -> void
+ExGrid.Data.DateColumnBuilder.AppendTicks(System.ReadOnlySpan<long> ticks, System.ReadOnlySpan<ulong> blanks = default(System.ReadOnlySpan<ulong>)) -> void
+ExGrid.Data.DecimalColumn
+ExGrid.Data.DecimalColumnBuilder
+ExGrid.Data.DecimalColumnBuilder.Append(decimal value) -> void
+ExGrid.Data.DecimalColumnBuilder.Append(decimal? value) -> void
+ExGrid.Data.DecimalColumnBuilder.Append(System.ReadOnlySpan<decimal> values, System.ReadOnlySpan<ulong> blanks = default(System.ReadOnlySpan<ulong>)) -> void
+ExGrid.Data.DecimalColumnBuilder.AppendScaled(System.ReadOnlySpan<long> values, int scale, System.ReadOnlySpan<ulong> blanks = default(System.ReadOnlySpan<ulong>)) -> void
+ExGrid.Data.DecimalValues
+ExGrid.Data.DecimalValues.DecimalValues() -> void
+ExGrid.Data.DecimalValues.Exact.get -> System.ReadOnlySpan<decimal>
+ExGrid.Data.DecimalValues.Length.get -> int
+ExGrid.Data.DecimalValues.Scale.get -> int
+ExGrid.Data.DecimalValues.Scaled.get -> System.ReadOnlySpan<long>
+ExGrid.Data.DecimalValues.this[int offset].get -> decimal
+ExGrid.Data.DoubleColumn
+ExGrid.Data.DoubleColumnBuilder
+ExGrid.Data.DoubleColumnBuilder.Append(double value) -> void
+ExGrid.Data.DoubleColumnBuilder.Append(double? value) -> void
+ExGrid.Data.DoubleColumnBuilder.Append(System.ReadOnlySpan<double> values, System.ReadOnlySpan<ulong> blanks = default(System.ReadOnlySpan<ulong>)) -> void
+ExGrid.Data.IntegerColumn
+ExGrid.Data.IntegerColumnBuilder
+ExGrid.Data.IntegerColumnBuilder.Append(long value) -> void
+ExGrid.Data.IntegerColumnBuilder.Append(long? value) -> void
+ExGrid.Data.IntegerColumnBuilder.Append(System.ReadOnlySpan<long> values, System.ReadOnlySpan<ulong> blanks = default(System.ReadOnlySpan<ulong>)) -> void
+ExGrid.Data.Snapshot
+ExGrid.Data.Snapshot.Apply(ExGrid.Data.ChangeBatch! batch) -> ExGrid.Data.SnapshotChange!
+ExGrid.Data.Snapshot.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.SnapshotColumn!>!
+ExGrid.Data.Snapshot.Holds(ExGrid.Data.SnapshotRow row) -> bool
+ExGrid.Data.Snapshot.IsBlank(ExGrid.Data.SnapshotRow row, ExGrid.Data.SnapshotColumn! column) -> bool
+ExGrid.Data.Snapshot.KeepsRecords.get -> bool
+ExGrid.Data.Snapshot.RecordAt(ExGrid.Data.SnapshotRow row) -> object?
+ExGrid.Data.Snapshot.RecordKey.get -> ExGrid.Data.SnapshotColumn?
+ExGrid.Data.Snapshot.RowCount.get -> int
+ExGrid.Data.Snapshot.Rows.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.SnapshotRow>!
+ExGrid.Data.Snapshot.Slice(int index) -> ExGrid.Data.SnapshotSlice
+ExGrid.Data.Snapshot.SliceCount.get -> int
+ExGrid.Data.Snapshot.this[string! name].get -> ExGrid.Data.SnapshotColumn!
+ExGrid.Data.Snapshot.TryGetColumn(string! name, out ExGrid.Data.SnapshotColumn? column) -> bool
+ExGrid.Data.Snapshot.ValueAt(ExGrid.Data.SnapshotRow row, ExGrid.Data.SnapshotColumn! column) -> object?
+ExGrid.Data.Snapshot.Version.get -> long
+ExGrid.Data.SnapshotBuilder<T>
+ExGrid.Data.SnapshotBuilder<T>.Batch(System.Collections.Generic.IEnumerable<T>? added = null, System.Collections.Generic.IEnumerable<T>? changed = null, System.Collections.Generic.IEnumerable<object!>? removedKeys = null) -> ExGrid.Data.ChangeBatch!
+ExGrid.Data.SnapshotBuilder<T>.Boolean(string! name, System.Func<T, bool?>! value, string? caption = null) -> ExGrid.Data.SnapshotBuilder<T>!
+ExGrid.Data.SnapshotBuilder<T>.Build(System.Collections.Generic.IReadOnlyList<T>! records) -> ExGrid.Data.Snapshot!
+ExGrid.Data.SnapshotBuilder<T>.BuildAsync(System.Collections.Generic.IReadOnlyList<T>! records, ExGrid.Data.SnapshotLoadOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.Snapshot!>
+ExGrid.Data.SnapshotBuilder<T>.Column(string! name, ExGrid.Data.SnapshotKind kind, System.Func<T, object?>! value, string? caption = null) -> ExGrid.Data.SnapshotBuilder<T>!
+ExGrid.Data.SnapshotBuilder<T>.Date(string! name, System.Func<T, System.DateOnly?>! value, string? caption = null) -> ExGrid.Data.SnapshotBuilder<T>!
+ExGrid.Data.SnapshotBuilder<T>.Date(string! name, System.Func<T, System.DateTime?>! value, string? caption = null) -> ExGrid.Data.SnapshotBuilder<T>!
+ExGrid.Data.SnapshotBuilder<T>.Date(string! name, System.Func<T, System.DateTimeOffset?>! value, string? caption = null) -> ExGrid.Data.SnapshotBuilder<T>!
+ExGrid.Data.SnapshotBuilder<T>.Decimal(string! name, System.Func<T, decimal?>! value, string? caption = null) -> ExGrid.Data.SnapshotBuilder<T>!
+ExGrid.Data.SnapshotBuilder<T>.Double(string! name, System.Func<T, double?>! value, string? caption = null) -> ExGrid.Data.SnapshotBuilder<T>!
+ExGrid.Data.SnapshotBuilder<T>.Integer(string! name, System.Func<T, int?>! value, string? caption = null) -> ExGrid.Data.SnapshotBuilder<T>!
+ExGrid.Data.SnapshotBuilder<T>.Integer(string! name, System.Func<T, long?>! value, string? caption = null) -> ExGrid.Data.SnapshotBuilder<T>!
+ExGrid.Data.SnapshotBuilder<T>.Key(string! name) -> ExGrid.Data.SnapshotBuilder<T>!
+ExGrid.Data.SnapshotBuilder<T>.SnapshotBuilder() -> void
+ExGrid.Data.SnapshotBuilder<T>.Text(string! name, System.Func<T, string?>! value, string? caption = null) -> ExGrid.Data.SnapshotBuilder<T>!
+ExGrid.Data.SnapshotChange
+ExGrid.Data.SnapshotChange.Added.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.SnapshotRow>!
+ExGrid.Data.SnapshotChange.After.get -> ExGrid.Data.Snapshot!
+ExGrid.Data.SnapshotChange.Before.get -> ExGrid.Data.Snapshot!
+ExGrid.Data.SnapshotChange.Compacted.get -> bool
+ExGrid.Data.SnapshotChange.Removed.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.SnapshotRow>!
+ExGrid.Data.SnapshotColumn
+ExGrid.Data.SnapshotColumn.Caption.get -> string!
+ExGrid.Data.SnapshotColumn.Kind.get -> ExGrid.Data.SnapshotKind
+ExGrid.Data.SnapshotColumn.Name.get -> string!
+ExGrid.Data.SnapshotColumn.Ordinal.get -> int
+ExGrid.Data.SnapshotColumnsBuilder
+ExGrid.Data.SnapshotColumnsBuilder.Boolean(string! name, string? caption = null) -> ExGrid.Data.BooleanColumnBuilder!
+ExGrid.Data.SnapshotColumnsBuilder.Build() -> ExGrid.Data.Snapshot!
+ExGrid.Data.SnapshotColumnsBuilder.BuildAsync() -> System.Threading.Tasks.ValueTask<ExGrid.Data.Snapshot!>
+ExGrid.Data.SnapshotColumnsBuilder.CheckpointAsync(long? bytes = null, long? totalBytes = null) -> System.Threading.Tasks.ValueTask
+ExGrid.Data.SnapshotColumnsBuilder.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.ColumnBuilder!>!
+ExGrid.Data.SnapshotColumnsBuilder.Date(string! name, string? caption = null) -> ExGrid.Data.DateColumnBuilder!
+ExGrid.Data.SnapshotColumnsBuilder.Decimal(string! name, string? caption = null) -> ExGrid.Data.DecimalColumnBuilder!
+ExGrid.Data.SnapshotColumnsBuilder.Double(string! name, string? caption = null) -> ExGrid.Data.DoubleColumnBuilder!
+ExGrid.Data.SnapshotColumnsBuilder.Integer(string! name, string? caption = null) -> ExGrid.Data.IntegerColumnBuilder!
+ExGrid.Data.SnapshotColumnsBuilder.Key(string! name) -> ExGrid.Data.SnapshotColumnsBuilder!
+ExGrid.Data.SnapshotColumnsBuilder.RowCount.get -> int
+ExGrid.Data.SnapshotColumnsBuilder.SnapshotColumnsBuilder(ExGrid.Data.SnapshotLoadOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+ExGrid.Data.SnapshotColumnsBuilder.Text(string! name, string? caption = null) -> ExGrid.Data.TextColumnBuilder!
+ExGrid.Data.SnapshotColumnsBuilder.TotalRows.get -> long?
+ExGrid.Data.SnapshotColumnsBuilder.TotalRows.set -> void
+ExGrid.Data.SnapshotColumnsBuilder.Version.get -> long
+ExGrid.Data.SnapshotColumnsBuilder.Version.set -> void
+ExGrid.Data.SnapshotDataReaderBuilder
+ExGrid.Data.SnapshotDataReaderBuilder.Boolean<TField>(string! field, System.Func<TField, bool?>! read, string? name = null, string? caption = null) -> ExGrid.Data.SnapshotDataReaderBuilder!
+ExGrid.Data.SnapshotDataReaderBuilder.BuildAsync(System.Data.Common.DbDataReader! reader, ExGrid.Data.SnapshotLoadOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.Snapshot!>
+ExGrid.Data.SnapshotDataReaderBuilder.Column(string! field, string? name = null, string? caption = null) -> ExGrid.Data.SnapshotDataReaderBuilder!
+ExGrid.Data.SnapshotDataReaderBuilder.Date<TField>(string! field, System.Func<TField, System.DateTime?>! read, string? name = null, string? caption = null) -> ExGrid.Data.SnapshotDataReaderBuilder!
+ExGrid.Data.SnapshotDataReaderBuilder.Decimal<TField>(string! field, System.Func<TField, decimal?>! read, string? name = null, string? caption = null) -> ExGrid.Data.SnapshotDataReaderBuilder!
+ExGrid.Data.SnapshotDataReaderBuilder.Double<TField>(string! field, System.Func<TField, double?>! read, string? name = null, string? caption = null) -> ExGrid.Data.SnapshotDataReaderBuilder!
+ExGrid.Data.SnapshotDataReaderBuilder.Integer<TField>(string! field, System.Func<TField, long?>! read, string? name = null, string? caption = null) -> ExGrid.Data.SnapshotDataReaderBuilder!
+ExGrid.Data.SnapshotDataReaderBuilder.Key(string! name) -> ExGrid.Data.SnapshotDataReaderBuilder!
+ExGrid.Data.SnapshotDataReaderBuilder.SnapshotDataReaderBuilder() -> void
+ExGrid.Data.SnapshotDataReaderBuilder.Text<TField>(string! field, System.Func<TField, string?>! read, string? name = null, string? caption = null) -> ExGrid.Data.SnapshotDataReaderBuilder!
+ExGrid.Data.SnapshotException
+ExGrid.Data.SnapshotException.Column.get -> string?
+ExGrid.Data.SnapshotException.Key.get -> object?
+ExGrid.Data.SnapshotException.Key.init -> void
+ExGrid.Data.SnapshotException.Row.get -> long?
+ExGrid.Data.SnapshotException.SnapshotException(long? row, string? column, string! reason, System.Exception? innerException = null) -> void
+ExGrid.Data.SnapshotException.SnapshotException(string! message) -> void
+ExGrid.Data.SnapshotException.SnapshotException(string! message, System.Exception? innerException) -> void
+ExGrid.Data.SnapshotKind
+ExGrid.Data.SnapshotKind.Boolean = 5 -> ExGrid.Data.SnapshotKind
+ExGrid.Data.SnapshotKind.Date = 4 -> ExGrid.Data.SnapshotKind
+ExGrid.Data.SnapshotKind.Decimal = 1 -> ExGrid.Data.SnapshotKind
+ExGrid.Data.SnapshotKind.Double = 2 -> ExGrid.Data.SnapshotKind
+ExGrid.Data.SnapshotKind.Integer = 3 -> ExGrid.Data.SnapshotKind
+ExGrid.Data.SnapshotKind.Text = 0 -> ExGrid.Data.SnapshotKind
+ExGrid.Data.SnapshotLoadOptions
+ExGrid.Data.SnapshotLoadOptions.Progress.get -> System.IProgress<ExGrid.Data.SnapshotProgress>?
+ExGrid.Data.SnapshotLoadOptions.Progress.init -> void
+ExGrid.Data.SnapshotLoadOptions.SliceBudget.get -> System.TimeSpan
+ExGrid.Data.SnapshotLoadOptions.SliceBudget.init -> void
+ExGrid.Data.SnapshotLoadOptions.SnapshotLoadOptions() -> void
+ExGrid.Data.SnapshotLoadOptions.Yield.get -> System.Func<System.Threading.Tasks.ValueTask>?
+ExGrid.Data.SnapshotLoadOptions.Yield.init -> void
+ExGrid.Data.SnapshotProgress
+ExGrid.Data.SnapshotProgress.Bytes.get -> long?
+ExGrid.Data.SnapshotProgress.Bytes.init -> void
+ExGrid.Data.SnapshotProgress.Deconstruct(out long Rows, out long? TotalRows, out long? Bytes, out long? TotalBytes) -> void
+ExGrid.Data.SnapshotProgress.Equals(ExGrid.Data.SnapshotProgress other) -> bool
+ExGrid.Data.SnapshotProgress.Rows.get -> long
+ExGrid.Data.SnapshotProgress.Rows.init -> void
+ExGrid.Data.SnapshotProgress.SnapshotProgress() -> void
+ExGrid.Data.SnapshotProgress.SnapshotProgress(long Rows, long? TotalRows, long? Bytes = null, long? TotalBytes = null) -> void
+ExGrid.Data.SnapshotProgress.TotalBytes.get -> long?
+ExGrid.Data.SnapshotProgress.TotalBytes.init -> void
+ExGrid.Data.SnapshotProgress.TotalRows.get -> long?
+ExGrid.Data.SnapshotProgress.TotalRows.init -> void
+ExGrid.Data.SnapshotRow
+ExGrid.Data.SnapshotRow.Deconstruct(out int Slice, out int Offset) -> void
+ExGrid.Data.SnapshotRow.Equals(ExGrid.Data.SnapshotRow other) -> bool
+ExGrid.Data.SnapshotRow.Offset.get -> int
+ExGrid.Data.SnapshotRow.Offset.init -> void
+ExGrid.Data.SnapshotRow.Slice.get -> int
+ExGrid.Data.SnapshotRow.Slice.init -> void
+ExGrid.Data.SnapshotRow.SnapshotRow() -> void
+ExGrid.Data.SnapshotRow.SnapshotRow(int Slice, int Offset) -> void
+ExGrid.Data.SnapshotSlice
+ExGrid.Data.SnapshotSlice.Blanks(ExGrid.Data.SnapshotColumn! column) -> System.ReadOnlySpan<ulong>
+ExGrid.Data.SnapshotSlice.Booleans(ExGrid.Data.BooleanColumn! column) -> System.ReadOnlySpan<bool>
+ExGrid.Data.SnapshotSlice.Codes(ExGrid.Data.TextColumn! column) -> System.ReadOnlySpan<int>
+ExGrid.Data.SnapshotSlice.Decimals(ExGrid.Data.DecimalColumn! column) -> ExGrid.Data.DecimalValues
+ExGrid.Data.SnapshotSlice.Doubles(ExGrid.Data.DoubleColumn! column) -> System.ReadOnlySpan<double>
+ExGrid.Data.SnapshotSlice.HeldCount.get -> int
+ExGrid.Data.SnapshotSlice.Index.get -> int
+ExGrid.Data.SnapshotSlice.Integers(ExGrid.Data.IntegerColumn! column) -> System.ReadOnlySpan<long>
+ExGrid.Data.SnapshotSlice.Length.get -> int
+ExGrid.Data.SnapshotSlice.Removed.get -> System.ReadOnlySpan<ulong>
+ExGrid.Data.SnapshotSlice.SnapshotSlice() -> void
+ExGrid.Data.SnapshotSlice.Ticks(ExGrid.Data.DateColumn! column) -> System.ReadOnlySpan<long>
+ExGrid.Data.TextColumn
+ExGrid.Data.TextColumn.Dictionary.get -> ExGrid.Data.TextDictionary!
+ExGrid.Data.TextColumnBuilder
+ExGrid.Data.TextColumnBuilder.Append(string? value) -> void
+ExGrid.Data.TextColumnBuilder.Append(System.ReadOnlySpan<char> value) -> void
+ExGrid.Data.TextColumnBuilder.AppendCodes(System.ReadOnlySpan<int> codes, System.Collections.Generic.IReadOnlyList<string?>! dictionary) -> void
+ExGrid.Data.TextColumnBuilder.AppendUtf8(System.ReadOnlySpan<byte> value) -> void
+ExGrid.Data.TextDictionary
+ExGrid.Data.TextDictionary.Count.get -> int
+ExGrid.Data.TextDictionary.GetEnumerator() -> System.Collections.Generic.IEnumerator<string!>!
+ExGrid.Data.TextDictionary.this[int code].get -> string!
+ExGrid.Data.TextDictionary.TryGetCode(string! text, out int code) -> bool
+ExGrid.Data.TextDictionary.TryGetCode(System.ReadOnlySpan<char> text, out int code) -> bool
+override ExGrid.Data.AggregateResult.Equals(object? obj) -> bool
+override ExGrid.Data.AggregateResult.GetHashCode() -> int
+override ExGrid.Data.AggregateResult.ToString() -> string!
+override ExGrid.Data.CsvColumn.Equals(object? obj) -> bool
+override ExGrid.Data.CsvColumn.GetHashCode() -> int
+override ExGrid.Data.CsvColumn.ToString() -> string!
+override ExGrid.Data.CsvEncoding.ToString() -> string!
+override ExGrid.Data.CsvMark.Equals(object? obj) -> bool
+override ExGrid.Data.CsvMark.GetHashCode() -> int
+override ExGrid.Data.CsvMark.ToString() -> string!
+override ExGrid.Data.CsvSchema.Equals(object? obj) -> bool
+override ExGrid.Data.CsvSchema.GetHashCode() -> int
+override ExGrid.Data.CsvSchema.ToString() -> string!
+override ExGrid.Data.SnapshotColumn.ToString() -> string!
+override ExGrid.Data.SnapshotProgress.GetHashCode() -> int
+override ExGrid.Data.SnapshotRow.GetHashCode() -> int
+static ExGrid.Data.AggregateArithmetic.Add(ref ExGrid.Data.AggregateExtremes extremes, decimal value, bool first) -> void
+static ExGrid.Data.AggregateArithmetic.Add(ref ExGrid.Data.AggregateExtremes extremes, double value, bool first) -> void
+static ExGrid.Data.AggregateArithmetic.Add(ref ExGrid.Data.AggregateSum sum, decimal value, bool first) -> void
+static ExGrid.Data.AggregateArithmetic.Add(ref ExGrid.Data.AggregateSum sum, double value, bool first) -> void
+static ExGrid.Data.AggregateArithmetic.Add(ref ExGrid.Data.AggregateVariance variance, double value, long count) -> void
+static ExGrid.Data.AggregateArithmetic.Canonical(decimal value) -> decimal
+static ExGrid.Data.AggregateArithmetic.Canonical(double value) -> double
+static ExGrid.Data.AggregateArithmetic.Finish(ref ExGrid.Data.AggregateExtremes extremes) -> void
+static ExGrid.Data.AggregateArithmetic.Finish(ref ExGrid.Data.AggregateSum sum) -> void
+static ExGrid.Data.AggregateArithmetic.Finish(ref ExGrid.Data.AggregateVariance variance) -> void
+static ExGrid.Data.AggregateArithmetic.Fold(ref ExGrid.Data.AggregateExtremes extremes, decimal min, decimal max, bool first) -> void
+static ExGrid.Data.AggregateArithmetic.Merge(ref ExGrid.Data.AggregateExtremes extremes, in ExGrid.Data.AggregateExtremes other, bool first) -> void
+static ExGrid.Data.AggregateArithmetic.Merge(ref ExGrid.Data.AggregateSum sum, in ExGrid.Data.AggregateSum other, bool first) -> void
+static ExGrid.Data.AggregateArithmetic.Merge(ref ExGrid.Data.AggregateVariance variance, in ExGrid.Data.AggregateVariance other, long count, long otherCount) -> void
+static ExGrid.Data.AggregateArithmetic.Neumaier(ref ExGrid.Data.AggregateSum sum, double value) -> void
+static ExGrid.Data.AggregateArithmetic.Read(ExGrid.Data.Aggregation aggregation, in ExGrid.Data.AggregateCounts counts, ExGrid.Data.AggregateSum? sum = null, ExGrid.Data.AggregateExtremes? extremes = null, double? product = null, ExGrid.Data.AggregateVariance? variance = null) -> ExGrid.Data.AggregateResult
+static ExGrid.Data.AggregateArithmetic.ToInexact(ref ExGrid.Data.AggregateSum sum) -> void
+static ExGrid.Data.AggregateResult.Empty.get -> ExGrid.Data.AggregateResult
+static ExGrid.Data.AggregateResult.Of(decimal value) -> ExGrid.Data.AggregateResult
+static ExGrid.Data.AggregateResult.Of(double value) -> ExGrid.Data.AggregateResult
+static ExGrid.Data.AggregateResult.Of(ExGrid.Data.AggregateError error) -> ExGrid.Data.AggregateResult
+static ExGrid.Data.AggregateResult.operator !=(ExGrid.Data.AggregateResult left, ExGrid.Data.AggregateResult right) -> bool
+static ExGrid.Data.AggregateResult.operator ==(ExGrid.Data.AggregateResult left, ExGrid.Data.AggregateResult right) -> bool
+static ExGrid.Data.ChangeBatch.Of(ExGrid.Data.Snapshot? added = null, ExGrid.Data.Snapshot? changed = null, System.Collections.Generic.IReadOnlyList<object!>? removedKeys = null) -> ExGrid.Data.ChangeBatch!
+static ExGrid.Data.CsvColumn.ExcelFalse.get -> System.Collections.Generic.IReadOnlyList<string!>!
+static ExGrid.Data.CsvColumn.ExcelTrue.get -> System.Collections.Generic.IReadOnlyList<string!>!
+static ExGrid.Data.CsvColumn.IsoDateFormats.get -> System.Collections.Generic.IReadOnlyList<string!>!
+static ExGrid.Data.CsvColumn.operator !=(ExGrid.Data.CsvColumn? left, ExGrid.Data.CsvColumn? right) -> bool
+static ExGrid.Data.CsvColumn.operator ==(ExGrid.Data.CsvColumn? left, ExGrid.Data.CsvColumn? right) -> bool
+static ExGrid.Data.CsvEncoding.ShiftJis.get -> ExGrid.Data.CsvEncoding!
+static ExGrid.Data.CsvEncoding.Utf8.get -> ExGrid.Data.CsvEncoding!
+static ExGrid.Data.CsvMark.operator !=(ExGrid.Data.CsvMark? left, ExGrid.Data.CsvMark? right) -> bool
+static ExGrid.Data.CsvMark.operator ==(ExGrid.Data.CsvMark? left, ExGrid.Data.CsvMark? right) -> bool
+static ExGrid.Data.CsvSchema.operator !=(ExGrid.Data.CsvSchema? left, ExGrid.Data.CsvSchema? right) -> bool
+static ExGrid.Data.CsvSchema.operator ==(ExGrid.Data.CsvSchema? left, ExGrid.Data.CsvSchema? right) -> bool
+static ExGrid.Data.CsvSchema.SuggestAsync(string! path, ExGrid.Data.CsvSuggestionOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.CsvSuggestion!>
+static ExGrid.Data.CsvSchema.SuggestAsync(System.IO.Stream! stream, ExGrid.Data.CsvSuggestionOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.CsvSuggestion!>
+static ExGrid.Data.SnapshotProgress.operator !=(ExGrid.Data.SnapshotProgress left, ExGrid.Data.SnapshotProgress right) -> bool
+static ExGrid.Data.SnapshotProgress.operator ==(ExGrid.Data.SnapshotProgress left, ExGrid.Data.SnapshotProgress right) -> bool
+static ExGrid.Data.SnapshotRow.operator !=(ExGrid.Data.SnapshotRow left, ExGrid.Data.SnapshotRow right) -> bool
+static ExGrid.Data.SnapshotRow.operator ==(ExGrid.Data.SnapshotRow left, ExGrid.Data.SnapshotRow right) -> bool
+~override ExGrid.Data.SnapshotProgress.Equals(object obj) -> bool
+~override ExGrid.Data.SnapshotProgress.ToString() -> string
+~override ExGrid.Data.SnapshotRow.Equals(object obj) -> bool
+~override ExGrid.Data.SnapshotRow.ToString() -> string
