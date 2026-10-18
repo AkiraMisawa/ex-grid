@@ -361,6 +361,23 @@ screen reader reads
 ([ADR-0220](./docs/adr/0220-a-test-reads-once-the-grid-says-it-has-settled-and-a-red-is-never-settled-by-a-re-run.md)).
 _Avoid_: idle flag, busy attribute, ready state
 
+**Input Order**:
+The one order in which a product instance takes its input, one input at a time: keys, presses, text
+typed into a field, clicks on headings, menus and toolbars, a popover's opening and the input that
+commits it. Each input gets its number as it happens, and the core takes inputs by number, never by
+arrival, so an input sent at machine speed means what it means sent slowly, on either host. A draft
+inside a popover is outside it until the input that commits it. Every surface that takes input, a
+Consumer's Chrome included, puts its input in the order through its Chrome context
+([ADR-0240](./docs/adr/0240-input-to-one-product-instance-is-taken-in-one-order.md)).
+_Avoid_: event queue, input pipeline, serialised input
+
+**Input Root**:
+The outermost element of a product instance, where its Input Order is heard: a grid's root for an
+ExGrid on its own, the Sheet's for an ExSheet, the pivot's for an ExPivot. A surface rendered outside
+it (a Wrapper's dialog) is heard with it only while it is open
+([ADR-0240](./docs/adr/0240-input-to-one-product-instance-is-taken-in-one-order.md)).
+_Avoid_: host element, container
+
 **Overwrite / Caret**:
 The two states of cell **editing** (four modes in total, with **Interactive** and **Point**). **Overwrite** is
 entered by typing straight onto a selected cell: the original value is replaced, and **the arrow
