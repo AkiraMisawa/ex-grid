@@ -1,8 +1,6 @@
 # 16: SUBTOTAL and AGGREGATE, while a Sheet cannot hide a row
 
-Status: ready-for-human
-Roadmap: ExSheet — `AGGREGATE`'s and `SMALL`'s k checked against Excel above the count of the
-numbers, which they refuse with `#NUM!`, and `AGGREGATE` over a cell ExSheet refused.
+Status: done
 
 **What to build:** `SUBTOTAL` and `AGGREGATE` under
 [ADR-0047](../../../adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)'s
@@ -50,13 +48,15 @@ note of 2026-10-10, "The catalogue's last Decide rows".
       engine agrees with each answer, or is corrected to it, before this ticket is done. *Asked by the
       second area pass of 2026-10-12 (`verification/2026-10-12-windows-area-2/report.md`): all six
       agreed, and are `observed`*
-- [ ] `oracle.ps1 -Area aggregate,small` before the tag (ADR-0208): AGGREGATE-068, the `uncertain` case the
+- [x] `oracle.ps1 -Area aggregate,small` before the tag (ADR-0208): AGGREGATE-068, the `uncertain` case the
       second area pass's answers led to — `SMALL`'s k above the count of the numbers, which Excel's
       `SMALL` refuses before truncating it (SMALL-008) — with SMALL-011, `SMALL`'s own k a little above
       the count (ticket 04's comment of 2026-10-12), and AGGREGATE-069, option 6 over a cell ExSheet
       refused, which refuses the Formula (ADR-0047, 2026-10-12, decided with the user: a refusal is
       never caught, anywhere). The engine agrees with each answer, or is corrected to it, or records a
-      refusal by that decision, before this ticket is done
+      refusal by that decision, before this ticket is done. *AGGREGATE-068 and SMALL-011 were
+      asked by an earlier pass and are `observed`; AGGREGATE-069 by the oracle run of 2026-10-18,
+      which read Excel's 7 beside the engine's refusal, a difference by decision (`excelExpect`)*
 
 ## Comments
 
@@ -188,3 +188,8 @@ asks it of `AGGREGATE`'s 15 (`AGGREGATE(15,6,A1:A11,9.5)`, `#NUM!`), for the box
 `SMALL` at 9.2, which rounded to nearest would be 9. The Status stays `ready-for-human` until a pass asks
 them. The Change Note is `docs/releases/unreleased/area-kth-and-mod-small-k.md`; ADR-0047's note, the
 README's and the Formulas page's sentences are proposed in `docs/agents/proposals/area-corrections-apply.md`.
+
+2026-10-18: done. The oracle run of 2026-10-18 (`ExcelOracle/results-2026-10-18-rc1-com-en-US.json`,
+Excel 16.0.20430.20182) asked AGGREGATE-069: Excel's `AGGREGATE(9,6,B1:B2)` over a cell ExSheet refuses is 7,
+passing over Excel's own answer for MROUND, where the engine refuses the Formula by decision (ADR-0047,
+2026-10-12). The case is `observed` with Excel's answer as `excelExpect`. No case of this ticket's files is open.

@@ -70,12 +70,13 @@
     },
     {
       "id": "IFNA-008",
-      "source": "uncertain",
-      "description": "IFNA over a refused cell is refused: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001); what IFNA(B1,0) gives is asked",
+      "source": "observed",
+      "description": "IFNA over a refused cell is refused: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001); what IFNA(B1,0) gives is asked. Excel answers 6 (the oracle run of 2026-10-18), the difference by decision",
       "cells": {"B1": "=MROUND(6.05,0.1)", "ZZ1000": "=IFNA(B1,0)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND's fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell is refused; IFNA gave its #VALUE! back before, and the refusal now carries on"
+      "engineDiffersByDecision": "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND's fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell is refused; IFNA gave its #VALUE! back before, and the refusal now carries on",
+      "excelExpect": {"value2": 6}
     }
   ]
 }

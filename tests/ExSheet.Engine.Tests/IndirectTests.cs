@@ -304,7 +304,7 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Circ, sheet.Error("C2"));
     }
 
-    [Theory] // ADR-0124 (2026-10-12): a row or column number 0 is refused with #VALUE!, since no run has asked one and the observed forms do not say whether it names no place (INDIRECT-073 asks it)
+    [Theory] // ADR-0124 (2026-10-18, the oracle run: INDIRECT-073): a row or column number 0 names no place, #REF!
     [InlineData("R0C2")]
     [InlineData("R00C2")]
     [InlineData("r0c2")]
@@ -318,15 +318,15 @@ public class IndirectTests
     [InlineData("R0C2:R3C2")]
     [InlineData("R0C1#")]
     [InlineData("Sheet1!R0C2")]
-    public void ADR0124_indirect_refuses_a_row_or_column_number_0(string text)
+    public void ADR0124_indirect_r1c1_number_0_is_ref(string text)
     {
         var sheet = MicrosoftsExample();
         sheet.Enter("C2", $"=INDIRECT(\"{text}\",FALSE)");
 
-        Assert.Equal(ErrorValue.Value, sheet.Error("C2"));
+        Assert.Equal(ErrorValue.Ref, sheet.Error("C2"));
     }
 
-    [Theory] // ADR-0124 (2026-10-10, 2026-10-12, 2026-10-14), ADR-0046: R1C1 text that names no place is #REF!: A1 text read as R1C1 (INDIRECT-035, observed) and, by that rule, other text that is not R1C1 notation, which no case asks (two joins, INDIRECT-105, asked); a cell joined to a whole row, and a whole row and a whole column joined in either order (INDIRECT-058, 062, 077, observed), whatever their parts would read; a # after one cell that does not spill (as A1#'s INDIRECT-042; 079 observed); a table never declared; and another Sheet's name, as INDIRECT-008 observed in A1 style (093 observed in R1C1 style), whatever follows it, since every reading of the rest names a place on a Sheet that is not there
+    [Theory] // ADR-0124 (2026-10-10, 2026-10-12, 2026-10-14), ADR-0046: R1C1 text that names no place is #REF!: A1 text read as R1C1 (INDIRECT-035, observed) and, by that rule, other text that is not R1C1 notation, which no case asks; a cell joined to a whole row, a whole column joined to a cell (INDIRECT-104), and a whole row and a whole column joined in either order (INDIRECT-058, 062, 077, observed), whatever their parts would read; a # after one cell that does not spill (as A1#'s INDIRECT-042; 079 observed); a table never declared; and another Sheet's name, as INDIRECT-008 observed in A1 style (093 observed in R1C1 style), whatever follows it, since every reading of the rest names a place on a Sheet that is not there
     [InlineData("B3")]
     [InlineData("Sheet2!R3")]
     [InlineData("Sheet2!C2")]
@@ -349,8 +349,9 @@ public class IndirectTests
     [InlineData("R3:C2")]
     [InlineData("C2:R3")]
     [InlineData("C[-1]:R3")]
-    [InlineData("R2:R3C2:C3")]
-    [InlineData("R2C2:C3:C4")]
+    [InlineData("R2C2:R3:C4")]
+    [InlineData("C3:R2C2:C4")]
+    [InlineData("R2C2:C3:C4:C5")]
     [InlineData("RC[-1]:R")]
     [InlineData("R0C2:R3")]
     [InlineData("R1048577C2:R3")]
@@ -369,7 +370,7 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Ref, sheet.Error("C2"));
     }
 
-    [Theory] // ADR-0124 (2026-10-12), ADR-0047: a # after an R1C1 range, row or column, or inside a join, is refused with #VALUE!, whatever the parts joined, as in A1 style: the second area pass observed it after one cell only (INDIRECT-060), and the readings part, no place, the first cell's Spill Range, the cells themselves or the first cell joined to the second's Spill Range; after parts of two kinds joined, no place as R2C2:R3 is (INDIRECT-058) or the first cell's Spill Range; inside a join, no place, the first cell's Spill Range joined to the second part, or the cells themselves with the # passed over (INDIRECT-090, 091, 094, 097, 099 ask it)
+    [Theory] // ADR-0124 (2026-10-18, the oracle run: INDIRECT-090, 091, 094, 097, 099): a # after an R1C1 range, row or column, whatever the parts joined, or inside a join, names no place, #REF!, as in A1 style
     [InlineData("C2", "R2C2:R3C2#")]
     [InlineData("C2", "R1C1:R2C1#")]
     [InlineData("C2", "R3#")]
@@ -400,16 +401,16 @@ public class IndirectTests
     [InlineData("C2", "C1#:C2")]
     [InlineData("C2", "R2C2#:R3")]
     [InlineData("C2", "R3#:C2")]
-    public void ADR0124_indirect_refuses_a_hash_after_an_r1c1_range_row_or_column(string cell, string text)
+    public void ADR0124_indirect_hash_after_an_r1c1_range_row_or_column_is_ref(string cell, string text)
     {
         var sheet = MicrosoftsExample();
         sheet.Enter("A1", "=SEQUENCE(3)");
         sheet.Enter(cell, $"=SUM(INDIRECT(\"{text}\",FALSE))");
 
-        Assert.Equal(ErrorValue.Value, sheet.Error(cell));
+        Assert.Equal(ErrorValue.Ref, sheet.Error(cell));
     }
 
-    [Theory] // ADR-0124 (2026-10-12), ADR-0047: a # after an A1 range, whole row or whole column, or inside a join, is refused with #VALUE!, as in R1C1 style: no run has observed it, and the readings part; after a range, no place as the intersection is (INDIRECT-021), the first cell's Spill Range, the cells themselves, or the first cell joined to the second's Spill Range, A1:(A2#); inside a join, no place, the first cell's Spill Range joined to the second cell, (A1#):A2, as A1# is read (INDIRECT-026, 060), or the cells themselves with the # passed over (INDIRECT-092, 096, 098 ask it)
+    [Theory] // ADR-0124 (2026-10-18, the oracle run: INDIRECT-092, 096, 098): a # after an A1 range, whole row or whole column, or inside a join, names no place, #REF!, as in R1C1 style
     [InlineData("C2", "A1:A2#")]
     [InlineData("C2", "A2:A1#")]
     [InlineData("C2", "a1:a2#")]
@@ -432,17 +433,17 @@ public class IndirectTests
     [InlineData("C2", "A#:B")]
     [InlineData("C2", "1#:2")]
     [InlineData("ZZ1000", "A1#:A2")]
-    public void ADR0124_indirect_refuses_a_hash_after_an_a1_range_row_or_column(string cell, string text)
+    public void ADR0124_indirect_hash_after_an_a1_range_row_or_column_is_ref(string cell, string text)
     {
         var sheet = MicrosoftsExample();
         sheet.Enter("A1", "=SEQUENCE(3)");
         sheet.Enter(cell, $"=SUM(INDIRECT(\"{text}\"))");
 
-        Assert.Equal(ErrorValue.Value, sheet.Error(cell));
+        Assert.Equal(ErrorValue.Ref, sheet.Error(cell));
     }
 
-    [Fact] // ADR-0124 (2026-10-12), ADR-0047: where the second cell spills, a # after a range gives each reading a different answer, 4 for A1:(A2#), 2 for the range with the # passed over, #REF! for no place or A1's Spill Range, and is refused in either style (INDIRECT-096, 097 ask it)
-    public void ADR0124_indirect_refuses_a_hash_after_a_range_whose_second_cell_spills()
+    [Fact] // ADR-0124 (2026-10-18, the oracle run: INDIRECT-096, 097): where the second cell spills, a # after a range gives each reading a different answer, 4 for A1:(A2#), 2 for the range with the # passed over, #REF! for no place or A1's Spill Range, and Excel answers #REF!, in either style
+    public void ADR0124_indirect_hash_after_a_range_whose_second_cell_spills_is_ref()
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "1");
@@ -450,9 +451,9 @@ public class IndirectTests
         sheet.Enter("C1", "=SUM(INDIRECT(\"A1:A2#\"))");
         sheet.Enter("C2", "=SUM(INDIRECT(\"R1C1:R2C1#\",FALSE))");
 
-        Assert.Equal(ErrorValue.Value, sheet.Error("C1"));
-        Assert.Equal(ErrorValue.Value, sheet.Error("C2"));
-        // The readings the refusal keeps apart, each answered differently over this fixture.
+        Assert.Equal(ErrorValue.Ref, sheet.Error("C1"));
+        Assert.Equal(ErrorValue.Ref, sheet.Error("C2"));
+        // The readings Excel's answer tells apart, each answered differently over this fixture.
         Assert.Equal(4, sheet.Evaluate("=SUM(A1:A3)").Number);
         Assert.Equal(2, sheet.Evaluate("=SUM(INDIRECT(\"A1:A2\"))").Number);
         Assert.Equal(3, sheet.Evaluate("=SUM(INDIRECT(\"A2#\"))").Number);
@@ -545,22 +546,22 @@ public class IndirectTests
         Assert.Equal(expected, sheet.Number(cell), 9);
     }
 
-    [Theory] // ADR-0124 (2026-10-14, after run 18a; INDIRECT-104 asks it): a whole column joined to a cell is refused with #VALUE!, whose readings part: the column part taking the cell's row, as a whole row joined to a cell takes its column, or no place, as a cell joined to a whole row is
+    [Theory] // ADR-0124 (2026-10-18, the oracle run: INDIRECT-104): a whole column joined to a cell names no place, #REF!, as a cell joined to a whole row does
     [InlineData("C2", "C3:R2C2")]
     [InlineData("C2", "C2:RC")]
     [InlineData("C2", "C[-1]:R[1]C[1]")]
     [InlineData("C2", "c1:r3c2")]
     [InlineData("ZZ1000", "Sheet1!C2:R3C3")]
     [InlineData("C2", "C3:R1048577C2")]
-    public void ADR0124_indirect_refuses_a_whole_column_joined_to_a_cell(string cell, string text)
+    public void ADR0124_indirect_whole_column_joined_to_a_cell_is_ref(string cell, string text)
     {
         var sheet = MicrosoftsExample();
         sheet.Enter(cell, $"=INDIRECT(\"{text}\",FALSE)");
 
-        Assert.True(sheet.Value(cell) is { IsRefused: true, Error: ErrorValue.Value }, text);
+        Assert.True(sheet.Value(cell) is { IsRefused: false, Error: ErrorValue.Ref }, text);
     }
 
-    [Theory] // ADR-0124, ADR-0047 (2026-10-12, decided with the user: in R1C1 style, a row or column number past the Sheet's edge is refused with #VALUE! until Excel is asked; INDIRECT-074 asks it), INDIRECT-095 asking a column: it could name no place, as XFE1 does in A1 style, or a place, as an offset past the edge does (INDIRECT-052), and is refused whatever an offset beside it, a join or a # after it would read
+    [Theory] // ADR-0124 (2026-10-18, the oracle run: INDIRECT-074, 095): a row or column number past the Sheet's edge names no place, #REF!, as XFE1 does in A1 style, whatever an offset beside it, a join or a # after it would read
     [InlineData("C2", "R1048577C2")]
     [InlineData("C2", "R2C16385")]
     [InlineData("C2", "R3C16385")]
@@ -578,12 +579,12 @@ public class IndirectTests
     [InlineData("C2", "Sheet1!R1048577C2")]
     [InlineData("C2", "R01048577C2")]
     [InlineData("ZZ1000", "R1048577C[-1]")]
-    public void ADR0124_indirect_refuses_an_r1c1_number_past_the_sheets_edge(string cell, string text)
+    public void ADR0124_indirect_r1c1_number_past_the_sheets_edge_is_ref(string cell, string text)
     {
         var sheet = MicrosoftsExample();
         sheet.Enter(cell, $"=INDIRECT(\"{text}\",FALSE)");
 
-        Assert.Equal(ErrorValue.Value, sheet.Error(cell));
+        Assert.Equal(ErrorValue.Ref, sheet.Error(cell));
     }
 
     [Theory] // ADR-0124 (2026-10-12, decided with the user: A1 text past the Sheet's edge stays #REF!): a column past XFD names no place, as XFE1 was observed to (INDIRECT-017), and a row past 1048576 by the same rule, in a cell, a range, whole columns or whole rows, whatever follows, a # included, and whatever comes before it in a join, a # inside the join included
@@ -607,31 +608,66 @@ public class IndirectTests
         Assert.Equal(ErrorValue.Ref, sheet.Error("C2"));
     }
 
-    [Theory] // ADR-0124 (2026-10-12), ADR-0047: an offset past the Sheet's edge, on either side and on either axis, is refused with #VALUE!: Excel reads one as a place (INDIRECT-052 is 0, a blank cell, not #REF!), but no run has told whether it wraps round to the Sheet's far side or stops at the edge (INDIRECT-082 to 084 ask it)
-    [InlineData("C2", "R[-5]C[-1]")]
-    [InlineData("C2", "R[-2]C[-1]")]
-    [InlineData("C2", "R[-1]C[-3]")]
-    [InlineData("C2", "R[1048575]C[-1]")]
-    [InlineData("XFD1", "R1C[1]")]
-    [InlineData("A1048576", "R[1]C1")]
-    [InlineData("C2", "R[-2]")]
-    [InlineData("C2", "C[-3]")]
-    [InlineData("C2", "R[-1]:R[-2]")]
-    [InlineData("C2", "R[-5]C[-1]:R3C2")]
-    [InlineData("C2", "R[-5]C[-1]:C2")]
-    [InlineData("C2", "R[-2]:R2C2")]
-    [InlineData("C2", "Sheet1!R[-5]C[-1]")]
+    [Theory] // ADR-0124 (2026-10-18, the oracle run: INDIRECT-052, 082 to 084): an offset past the Sheet's edge, on either side and on either axis, wraps round to the Sheet's far side
+    [InlineData("C2", "R[-5]C[-1]", "B1048573")]
+    [InlineData("C2", "R[-2]C[-1]", "B1048576")]
+    [InlineData("C2", "R[-1]C[-3]", "XFD1")]
+    [InlineData("C2", "R[1048575]C[-1]", "B1")]
+    [InlineData("XFD1", "R1C[1]", "A1")]
+    [InlineData("A1048576", "R[1]C1", "A1")]
+    [InlineData("C2", "Sheet1!R[-5]C[-1]", "B1048573")]
+    [InlineData("C2", "RC[-3]", "XFD2")]
+    [InlineData("C2", "R[-2]C", "C1048576")]
+    [InlineData("C2", "R2C[-5]", "XFB2")]
+    [InlineData("C2", "r[-5]c[-1]", "B1048573")]
+    public void ADR0124_indirect_r1c1_offset_past_the_sheets_edge_wraps_round(string cell, string text, string lands)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter(lands, "9");
+        sheet.Enter(cell, $"=INDIRECT(\"{text}\",FALSE)");
+
+        Assert.Equal(9, sheet.Number(cell));
+    }
+
+    [Theory] // ADR-0124 (2026-10-18, the oracle run: INDIRECT-082 to 084): a range, whole rows or whole columns whose parts wrap round span the rectangle between the places they land on
+    [InlineData("C2", "=ROWS(INDIRECT(\"R[-1]:R[-2]\",FALSE))", 1048576)]
+    [InlineData("C2", "=ROWS(INDIRECT(\"R[-5]C[-1]:R3C2\",FALSE))", 1048571)]
+    [InlineData("C2", "=COLUMNS(INDIRECT(\"C[-3]\",FALSE))", 1)]
+    [InlineData("C2", "=ROWS(INDIRECT(\"R[-2]:R2C2\",FALSE))", 1048575)]
+    public void ADR0124_indirect_r1c1_parts_that_wrap_round_span_the_rectangle_between(string cell, string formula, double expected)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter(cell, formula);
+
+        Assert.Equal(expected, sheet.Number(cell));
+    }
+
+    [Theory] // ADR-0124 (2026-10-18): an offset as long as the Sheet or longer, which Excel's own R1C1 notation cannot write and no run has asked, names no place, #REF!, by the rule a number past the edge settles; a # after a wrapped cell that does not spill is #REF!, as any such #
+    [InlineData("C2", "R[1048576]C[-1]")]
+    [InlineData("C2", "R[-1048576]C[-1]")]
+    [InlineData("C2", "R2C[16384]")]
     [InlineData("C2", "R[9999999999]C[-1]")]
-    [InlineData("C2", "RC[-3]")]
-    [InlineData("C2", "R[-2]C")]
     [InlineData("C2", "R[-5]C[-1]#")]
-    [InlineData("C2", "R2C[-5]")]
-    public void ADR0124_indirect_r1c1_offset_past_the_sheets_edge_is_refused(string cell, string text)
+    public void ADR0124_indirect_r1c1_offset_the_sheets_length_or_longer_is_ref(string cell, string text)
     {
         var sheet = MicrosoftsExample();
         sheet.Enter(cell, $"=INDIRECT(\"{text}\",FALSE)");
 
-        Assert.Equal(ErrorValue.Value, sheet.Error(cell));
+        Assert.Equal(ErrorValue.Ref, sheet.Error(cell));
+    }
+
+    [Theory] // ADR-0124 (2026-10-18, the oracle run: INDIRECT-105): parts are joined left to right, each join the rectangle it spans, so R2:R3C2:C3 is B2:B3 joined to column C, B2:C3
+    [InlineData("=SUM(INDIRECT(\"R2:R3C2:C3\",FALSE))", 46.333)]
+    [InlineData("=ROWS(INDIRECT(\"R2:R3C2:C3\",FALSE))", 2)]
+    [InlineData("=COLUMNS(INDIRECT(\"R2:R3C2:C3\",FALSE))", 2)]
+    [InlineData("=SUM(INDIRECT(\"R2C2:R5C2:R3C2\",FALSE))", 118.333)]
+    [InlineData("=COLUMNS(INDIRECT(\"R2C2:C3:C4\",FALSE))", 3)]
+    public void ADR0124_indirect_joins_r1c1_parts_left_to_right(string formula, double expected)
+    {
+        var sheet = MicrosoftsExample();
+        sheet.Enter("ZZ1000", formula);
+
+        Assert.Equal(expected, sheet.Number("ZZ1000"), 9);
     }
 
     [Fact] // ADR-0124 (2026-10-12), ADR-0047, SH-59: relative R1C1 text that reaches the Formula's own cell, row or column is #CIRC!
