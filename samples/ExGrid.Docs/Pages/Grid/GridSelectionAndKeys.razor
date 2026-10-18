@@ -153,9 +153,11 @@
         </p>
         <p>
             The mark covers what the grid's own keyboard and pointer handling takes. Text typed into a field — the Cell
-            Editor, a Sheet's Formula Bar or Name Box — and a click on a control a substituted Chrome draws, a Sheet's
-            toolbar or a Pivot's field list reach the grid as ordinary Blazor events: read their effect with an
-            expectation that waits for it. It is not <code>aria-busy</code>, which a screen reader would read out.
+            Editor, a Sheet's Formula Bar or Name Box — and a click on a control a substituted Chrome draws without
+            claiming it, a Sheet's toolbar or a Pivot's field list reach the grid as ordinary Blazor events. (The
+            MudBlazor Wrapper's menu items, completion candidates, filter Cancel and Find steps claim theirs, and keep
+            their place as the built-in ones do; its filter's Apply submits a form, as Enter does, and is not
+            numbered.) Read their effect with an expectation that waits for it. It is not <code>aria-busy</code>, which a screen reader would read out.
         </p>
     </DocsSection>
 

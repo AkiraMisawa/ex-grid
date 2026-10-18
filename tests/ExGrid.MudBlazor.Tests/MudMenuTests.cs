@@ -82,6 +82,14 @@ public class MudMenuTests : MudTestContext
             items.Select(i => i.HasAttribute("disabled")));
     }
 
+    [Fact] // ADR-0240 §2: an item's click takes its place in the Input Order under MudBlazor as under the built-in Chrome
+    public void ADR0240_every_item_claims_its_click()
+    {
+        var cut = RenderMenu(MudGridChrome.Default);
+
+        Assert.All(Items(cut), item => Assert.Equal("click", item.GetAttribute("data-ex-claims")));
+    }
+
     [Fact] // WR-4 / ADR-0010/0036: every core command has an icon; a Consumer's has none unless the Chrome supplies one
     public void Every_core_command_has_an_icon_and_a_consumers_only_when_supplied()
     {

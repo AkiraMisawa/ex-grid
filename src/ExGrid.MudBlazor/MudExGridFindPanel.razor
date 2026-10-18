@@ -33,9 +33,9 @@
                  Label="@Own(FindPanelLabelIds.WholeCell)" Dense="true" Size="Size.Small" Class="mud-ex-grid-find-whole-cell" />
     <div class="mud-ex-grid-find-actions">
         <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowUp"
-                   OnClick="Context.Previous" Class="mud-ex-grid-find-previous">@Own(FindPanelLabelIds.Previous)</MudButton>
+                   OnClick="Context.Previous" data-ex-claims="click" Class="mud-ex-grid-find-previous">@Own(FindPanelLabelIds.Previous)</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowDown"
-                   OnClick="Context.Next" Class="mud-ex-grid-find-next">@Own(FindPanelLabelIds.Next)</MudButton>
+                   OnClick="Context.Next" data-ex-claims="click" Class="mud-ex-grid-find-next">@Own(FindPanelLabelIds.Next)</MudButton>
     </div>
     <MudText Typo="Typo.caption" Color="Color.Error" Class="mud-ex-grid-find-outcome" role="status">@OutcomeText</MudText>
 </form>

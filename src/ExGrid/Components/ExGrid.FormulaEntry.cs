@@ -520,7 +520,7 @@ public partial class ExGrid<TRow>
             shown.Candidates,
             _completionSelected,
             shown.Hint,
-            _acceptFromChrome ??= index => FromChrome(() => AcceptCandidate(index)),
+            _acceptFromChrome ??= index => _ = FromChromeAsync(() => ClaimedPressAsync(() => AcceptCandidate(index))),
             CompletionOptionPrefix);
 
     /// <summary>The instance-prefixed id of the list (ADR-0018/0033).</summary>

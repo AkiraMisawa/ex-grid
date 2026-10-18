@@ -5471,11 +5471,13 @@
             var command = commands[i];
             commands[i] = command with
             {
-                Invoke = () => InvokeAsync(async () =>
+                // A menu item's click, under any Chrome, takes the number the script told it by
+                // (ADR-0240 section 2); a key that runs the command finds none told, and runs as it is.
+                Invoke = () => InvokeAsync(() => ClaimedClickAsync(async () =>
                 {
                     await RunCommandAsync(command);
                     StateHasChanged();
-                }),
+                })),
             };
         }
         return commands;
@@ -5790,11 +5792,11 @@
 
     /// <summary>The contexts' <c>Close</c>: what a Chrome's own × or backdrop invokes. It
     /// arrives from the Chrome's event, not the grid's, so the grid renders itself.</summary>
-    private Action CloseFromChrome => _closeFromChrome ??= () => _ = InvokeAsync(() =>
+    private Action CloseFromChrome => _closeFromChrome ??= () => _ = InvokeAsync(() => ClaimedAsync("click", () =>
     {
         ClosePopoverAndReturnFocus();
         StateHasChanged();
-    });
+    }));
 
     /// <summary>The contexts' <c>InnerPopupChanged</c>: the contents report a popup of their
     /// own opening or closing (ADR-0039), and the key gate is told at once — the next
@@ -7756,8 +7758,8 @@
         text => _findText = text,
         value => _findMatchCase = value,
         value => _findWholeCell = value,
-        () => InvokeAsync(() => FindStepAsync(backward: false)),
-        () => InvokeAsync(() => FindStepAsync(backward: true)),
+        () => InvokeAsync(() => ClaimedClickAsync(() => FindStepAsync(backward: false))),
+        () => InvokeAsync(() => ClaimedClickAsync(() => FindStepAsync(backward: true))),
         CloseFromChrome,
         _findFocusRequest,
         InnerPopupChangedFromChrome,
@@ -10626,7 +10628,7 @@
             if (command.Enabled)
             {
                 <button type="button" role="menuitem" @ref="_menuItems[item]" data-ex-claims="click"
-                        @onclick="() => ClaimedClickAsync(command.Invoke)"
+                        @onclick="command.Invoke"
                         @onkeydown="e => OnMenuItemKeyAsync(e, commands, resolve)" @onkeydown:preventDefault>@LabelWithLetter(command, lettered)</button>
             }
             else

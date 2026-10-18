@@ -123,7 +123,7 @@
         <MudButton ButtonType="ButtonType.Submit" Disabled="@(!CanApply)" Color="Color.Primary" Size="Size.Small"
                    Class="mud-ex-grid-filter-apply ex-popover-closes">@Mud("MudDataGrid_Apply")</MudButton>
         <div style="display: contents" @ref="_cancelBox">
-            <MudButton @ref="_cancel" OnClick="Context.Close" Size="Size.Small" Class="mud-ex-grid-filter-cancel ex-popover-closes">@Mud("MudDataGrid_Cancel")</MudButton>
+            <MudButton @ref="_cancel" OnClick="Context.Close" data-ex-claims="click" Size="Size.Small" Class="mud-ex-grid-filter-cancel ex-popover-closes">@Mud("MudDataGrid_Cancel")</MudButton>
         </div>
     </div>
 </form>

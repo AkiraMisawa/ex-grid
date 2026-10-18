@@ -123,6 +123,14 @@ public class MudFilterPanelTests : MudTestContext
         Assert.Equal(["Alpha"], ValueLabels(cut));
     }
 
+    [Fact] // ADR-0240 §2: Cancel's click takes its place in the grid's Input Order, as the built-in panel's does
+    public void ADR0240_cancel_claims_its_click()
+    {
+        var cut = RenderPanel(Context());
+
+        Assert.Equal("click", Button(cut, "mud-ex-grid-filter-cancel").GetAttribute("data-ex-claims"));
+    }
+
     [Fact] // WR-1 / ADR-0044 / FL-16: Cancel closes as a discard, and the panel draws no Clear — clearing is the command above it
     public async Task Cancel_is_the_cores_exit_and_there_is_no_clear()
     {
