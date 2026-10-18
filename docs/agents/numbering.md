@@ -36,7 +36,8 @@ block on `main` before it uses the first number.
 | 0210–0219 | `codex/handoff-toolbar` | More Colours opening keyboard and committing held text (decided with the user, 2026-10-14) |
 | 0220–0229 | `claude/settled-signal` | A test reads once the grid says it has settled, and a red is never settled by a re-run (decided with the user, 2026-10-16) |
 | 0230–0239 | `claude/races-220-224` | Tickets 220 to 222: a key typed at once after a change of state means what it means typed slowly (decided with the user, 2026-10-17) |
-| 0240– | free | reserve a block of ten |
+| 0240–0249 | `claude/project-thread-8j2tu3` | One Input Order per product instance, for machine-speed input (decided with the user, 2026-10-18) |
+| 0250– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 

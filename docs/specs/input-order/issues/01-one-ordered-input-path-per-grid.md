@@ -1,7 +1,6 @@
 # 01: One ordered input path per grid, so machine-speed input cannot overtake itself
 
-Status: needs-triage
-Roadmap: ExGrid, ExSheet, ExPivot — Keys, presses and edits sent at machine speed, by a script or a fast hand, mean what they mean sent slowly, on Blazor Server and WebAssembly alike.
+Status: done
 
 **Why:** the races found on 2026-10-16 and 2026-10-17 were each fixed where they were found, one
 entry point at a time:
@@ -31,11 +30,11 @@ already looked.
    it was taken against. ADR-0220 and ADR-0230 are the decisions this one generalises.
 3. Build it, and move the local fixes above onto it.
 
-**Blocked by:** the ADR in step 2.
+**Blocked by:** nothing; the ADR is [ADR-0240](../../../adr/0240-input-to-one-product-instance-is-taken-in-one-order.md).
 
-- [ ] The inventory of input paths, on Server and on WebAssembly
-- [ ] The ADR
-- [ ] Input to each instance taken in one order, with the local fixes moved onto it
+- [x] The inventory of input paths, on Server and on WebAssembly ([inventory.md](../inventory.md))
+- [x] The ADR ([ADR-0240](../../../adr/0240-input-to-one-product-instance-is-taken-in-one-order.md))
+- [x] Input to each instance taken in one order, with the local fixes moved onto it: split into tickets 02 to 07, which build it
 
 ## Comments
 
@@ -43,3 +42,8 @@ already looked.
 after it, built on the one path from its start; its research and spike are on the branches
 `research/excharts` and `spike/exposure-chart`, whose tooltip and 3D rotation take input through
 JavaScript of their own.
+
+2026-10-18: The inventory and ADR-0240 written, decided with Akira in two rounds of questions; every
+recommendation taken. Step 3 is split into tickets 02 to 07 (ADR-0240 §7), each its own pull request,
+each green on the daily hunt and the widened run before the next starts. This ticket is done as the
+decision; the building is theirs.
