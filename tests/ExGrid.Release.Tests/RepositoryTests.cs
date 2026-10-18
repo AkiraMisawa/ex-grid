@@ -80,7 +80,8 @@ public partial class RepositoryTests
         var index = ByHand.ReadIndex(Tree, new Report())!;
 
         Assert.All(index.Where(r => r.Record is not null), r => Assert.Equal(ByHand.TagFor(r.Record!.Path), r.Record!.Tag));
-        Assert.Equal("verified/2026-10-01-windows-browser-11", Assert.Single(index, r => r.Row == "SH-42").Record!.Tag);
+        // Not vacuous: a row with a record is read, whichever run made it last.
+        Assert.StartsWith("verified/", Assert.Single(index, r => r.Row == "SH-42").Record!.Tag);
     }
 
     [Fact] // ADR-0208: a path that names nothing is a list nobody reviewed when its code moved
