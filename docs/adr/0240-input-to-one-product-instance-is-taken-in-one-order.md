@@ -177,8 +177,15 @@ The Chrome contexts' delegates may change shape to carry the order. Each change 
   menu click or key takes no number of its own, which would wait behind the input running it. ADR-0021
   gains two entries for the listeners this needed.
 - **No clock is left in the script.** Every wait ends on a number the Settled Stamp answers or on
-  `data-ex-focus-owed`, which the stamp renders while the editor, a popover's control or a substituted
-  Chrome's contents still owe the keyboard. Held input that can no longer be carried out is refused aloud
+  `data-ex-focus-owed`, which the stamp renders while the editor, a popover's control, a substituted
+  Chrome's contents or a Consumer's popover contents still owe the keyboard. A Consumer's popover owes it
+  from its opening until DOM focus enters its contents (however they take it: `TakeFocus`, or their own
+  focus, as the toolbar's lists do), until a `TakeFocus` it asked for has been told, or until it closes; owed
+  only from its sentinels at first, the keys held for a list opened from the ExSheet toolbar's KeyTips
+  were refused before the list's focus landed (CI, 2026-10-18). The core tells the script of a hand-off
+  to such a popover before the render that draws it, so the stamp read as that telling arrives is a
+  render behind: the script numbers the telling, the core answers it in its place after the opening
+  (`HandOffHeardAsync`), and the wait counts that number before it judges the keyboard missed. Held input that can no longer be carried out is refused aloud
   with `KeyRefusalLabelIds.KeyboardDidNotArrive`. A Consumer's frame is waited for until it takes the
   keyboard, another grid does, or the grid is disposed.
 - **A Chrome that marks a control `data-ex-claims` must reach the core every time that event comes**: a

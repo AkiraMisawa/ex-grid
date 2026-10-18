@@ -1304,6 +1304,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // keeps the keyboard where it can (the hand-back after a command, into the Keyboard Field on
     // a grid that edits), so the keys are heard here: one typed on nothing reaches no grid at all.
     let handOff = null;
+    // The number a hand-off to a Consumer's popover was told by (coreAnswered).
+    let handOffInput = 0;
     // The control outside this root that held DOM focus when a hand-off to a frame was told: the frame
     // the keyboard is coming from — ExPivot's button whose panel is opening, ExSheet's toolbar closing a
     // list as Format Cells opens — not the one it is going to, which the hand-off has reached only once
@@ -1599,8 +1601,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         && popoverOf(awaitingMove.from) !== popoverOf(document.activeElement);
     // Every input sent up to `upTo`, and the one the move waits on, answered, and no DOM focus owed by
     // the core to a control it will focus itself (data-ex-focus-owed).
+    // A hand-off to a Consumer's popover is told ahead of the render that draws it, and of the stamp that
+    // says its contents owe the keyboard: read then, the stamp answered everything and owed nothing, and
+    // the keys held for a list the ExSheet toolbar was opening were refused before it stood. The hand-off
+    // is numbered as it is told (handOffInput), and answered once the core has opened what it hands to, so
+    // the stamp that answers it says what is owed after the opening.
     const coreAnswered = (upTo) => stamp !== null
-        && Number(stamp.getAttribute('data-ex-answered')) >= Math.max(upTo, awaitingMove?.upTo ?? 0)
+        && Number(stamp.getAttribute('data-ex-answered')) >= Math.max(upTo, awaitingMove?.upTo ?? 0,
+            handOff === 'popover' ? handOffInput : 0)
         && !stamp.hasAttribute('data-ex-focus-owed');
     // The edit's own surface to type the held keys into when its focus did not come: the one that last
     // held the keyboard here, else the Cell Editor's.
@@ -4452,6 +4460,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             handOff = to;
             handOffFrom = to === 'frame' ? outsideControl() : null;
             keyboardMissed = false;
+            if (to === 'popover') {
+                handOffInput = nextInput(true);
+                core.invokeMethodAsync('HandOffHeardAsync', handOffInput).catch((error) => {
+                    if (core) {
+                        console.error('[ex-grid] the grid failed to hear a hand-off', error);
+                    }
+                });
+            }
             if (!answering) {
                 startHold();
             }

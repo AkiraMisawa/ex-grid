@@ -7219,7 +7219,14 @@
                     if (fromDescendant)
                         ClosePopoverAndReturnFocus();
                     else
+                    {
                         CloseMenus();
+                        // The root has the keyboard, but a focus the popover's contents asked for may
+                        // still land in it before the render that removes it, and leave the keyboard
+                        // on the page: it is taken back after that render, where it is still this
+                        // grid's (Format Cells from Alt, H, O, E, Escape typed as it opened).
+                        _reclaimFocusPending = true;
+                    }
                     StateHasChanged();
                     if (escaped is not null)
                         await escaped;

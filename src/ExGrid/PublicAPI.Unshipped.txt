@@ -977,6 +977,7 @@ ExGrid.Components.ExGrid<TRow>.FormulaBarBorrowedTextOf.set -> void
 ExGrid.Components.ExGrid<TRow>.GetFocusedValue() -> object?
 ExGrid.Components.ExGrid<TRow>.HandKeyboardToAsync(Microsoft.AspNetCore.Components.ElementReference control) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.HandKeyboardToFrameAsync() -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.HeaderClickSelects.get -> bool
 ExGrid.Components.ExGrid<TRow>.HeaderClickSelects.set -> void
 ExGrid.Components.ExGrid<TRow>.HeaderGroups.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Columns.HeaderGroup!>?
