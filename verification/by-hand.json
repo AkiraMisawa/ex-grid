@@ -123,8 +123,13 @@
         "tests/GlyphWidths/corpus.json",
         "tests/GlyphWidths/measure.mjs"
       ],
-      "record": null,
-      "note": "The macOS glyph widths are measured (tests/GlyphWidths/*.macos.json, held by layer 1), but no record under verification/ names a commit at which a bold amount and #### were read painted on macOS. The Wrapper's two files are the MudBlazor Chrome's Roboto metrics (MudExGridPresentation, RobotoGlyphTable), which decide a bold amount's width and #### under that Chrome."
+      "record": {
+        "commit": "f6b5e8fe6c4b87d077200616d305bdd87a723aba",
+        "tag": "verified/2026-10-18-macos-18",
+        "path": "verification/2026-10-18-macos-18/report.md",
+        "verdict": "pass"
+      },
+      "note": "The macOS glyph widths are measured (tests/GlyphWidths/*.macos.json, held by layer 1). Run 18 read the two paintings on macOS, Chrome and Edge, both hosts, headless (verification/2026-10-18-macos-18/). The Wrapper's two files are the MudBlazor Chrome's Roboto metrics (MudExGridPresentation, RobotoGlyphTable), which decide a bold amount's width and #### under that Chrome."
     },
     {
       "row": "ED-30",
@@ -241,8 +246,13 @@
         "src/ExSheet.MudBlazor/",
         "tests/ExGrid.Browser/"
       ],
-      "record": null,
-      "note": "The macOS records under verification/ are layer-3 runs' metrics.json and console.json, which name no commit (2026-09-23 to 2026-10-01), a targeted run of other specs (2026-10-03) and measurements; none names the commit of a layer-3 run on macOS that this row could hold on."
+      "record": {
+        "commit": "f6b5e8fe6c4b87d077200616d305bdd87a723aba",
+        "tag": "verified/2026-10-18-macos-18",
+        "path": "verification/2026-10-18-macos-18/report.md",
+        "verdict": "pass"
+      },
+      "note": "Run 18 ran layer 3 on macOS at the verified commit, Chrome and Edge, both hosts, headless: Cmd+Enter fills on the editor's path (CP-16, LV-13), and the two ED-2 word-key tests pass. The report lists every other failure of that run and its differences, among them that no layer-3 test presses Command+Enter on the Sheet's editor (read once by a scratch copy) and that the Sheet's clipboard tests press Control+C / Control+V, which fail on a Mac."
     },
     {
       "row": "VZ-18",
