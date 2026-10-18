@@ -1,4 +1,4 @@
-# Every layer, on every push to main and on every pull request
+# Every layer, on every push to main and on every pull request that changes more than documents
 # (ADR-0041). Layers 1 and 2 with coverage; layer 3 on the runner's installed Chrome and
 # Edge, headed under xvfb, as ADR-0026 asks, split by browser and into shards that each
 # run on a runner of their own. All three gate; coverage is reported, never gated. The
@@ -47,6 +47,41 @@ env:
   LONG_RUN: ${{ github.event_name == 'schedule' || inputs.long == true }}
 
 jobs:
+  # Whether layer 3 has anything to judge (ADR-0041). A pull request that changes only documents
+  # (`docs/`, and Markdown at the root) changes nothing the browser suite runs: the hosts it drives
+  # read no file there. Its hosts, its shards and its repeats are skipped, and the verdicts read
+  # that skip as passed. Layers 1 and 2 still run, because the Docs Site's generator tests read
+  # those documents. Every other event, a push to main and a release among them, runs everything.
+  changes:
+    name: What the change touches
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      layer3: ${{ steps.which.outputs.layer3 }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # A pull request's HEAD is its merge commit, whose first parent is the base's tip.
+          fetch-depth: 2
+
+      - name: Whether anything outside the documents changed
+        id: which
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "${EVENT}" != pull_request ]; then
+            echo "layer3=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          others=$(git diff --name-only HEAD^1 HEAD | grep -vE '^(docs/.*|[^/]+\.md)$' || true)
+          if [ -z "${others}" ]; then
+            echo "layer3=false" >> "$GITHUB_OUTPUT"
+            echo "Layer 3 skipped: this pull request changes only documents." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "layer3=true" >> "$GITHUB_OUTPUT"
+            printf 'Outside the documents:\n%s\n' "${others}"
+          fi
+
   tests:
     name: Build, layers 1 and 2, coverage
     runs-on: ubuntu-latest
@@ -129,6 +164,8 @@ jobs:
   # run in stays Development, as under `dotnet run`, so what changes is only how they are built.
   hosts:
     name: Layer 3's hosts, published in Release
+    needs: changes
+    if: needs.changes.outputs.layer3 == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -230,15 +267,18 @@ jobs:
 
   # The check the WebAssembly run has always been, green only when every shard of it was.
   # Always run: a job its `if` skips counts as passed for a required check, so a cancelled or
-  # skipped layer 3 would otherwise read as green.
+  # skipped layer 3 would otherwise read as green. The one skip it passes is the changes job's.
   browser-verdict:
     name: Layer 3 on Chrome and Edge (Linux, headed)
-    needs: browser
+    needs: [changes, browser]
     if: always()
     runs-on: ubuntu-latest
     steps:
+      # Passed when every shard did, or when a pull request of documents alone skipped them all.
       - name: Every shard passed
-        run: test "${{ needs.browser.result }}" = success
+        run: >
+          test "${{ needs.browser.result }}" = success ||
+          { test "${{ needs.changes.outputs.layer3 }}" = false && test "${{ needs.browser.result }}" = skipped; }
 
   # The same suite against the Blazor Server host (ADR-0019, Definition of Done SRV-2):
   # every page served over a circuit, prerendered, behind latency-proxy.mjs, with the host's
@@ -309,12 +349,15 @@ jobs:
 
   browser-server-verdict:
     name: Layer 3 on Chrome and Edge against the Server host (Linux, headed)
-    needs: browser-server
+    needs: [changes, browser-server]
     if: always()
     runs-on: ubuntu-latest
     steps:
+      # Passed when every shard did, or when a pull request of documents alone skipped them all.
       - name: Every shard passed
-        run: test "${{ needs.browser-server.result }}" = success
+        run: >
+          test "${{ needs.browser-server.result }}" = success ||
+          { test "${{ needs.changes.outputs.layer3 }}" = false && test "${{ needs.browser-server.result }}" = skipped; }
 
   # The spec files a push to a pull request changes, each run three times over on each host and
   # browser (tests/ExGrid.Browser/README.md, "Before a new or changed spec goes in"). A test that
