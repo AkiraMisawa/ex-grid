@@ -275,7 +275,7 @@ test('a scroll to the end made as the grid becomes ready is not undone by the La
     const firstRow = async () => Number(await page.locator('.ex-grid .ex-viewport').getAttribute('data-ex-first-row'));
 
     await expect.poll(firstRow, { timeout: 15_000 }).toBeGreaterThan(ROWS / 2);
-    // spec-lint: fixed-wait: proves an absence: no Layout Ceiling anchor may undo the scroll, on WebAssembly too; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: the Layout Ceiling is told by a ResizeObserver, not taken by the gate, so the Settled Mark does not cover its anchor (ADR-0220, As built), and nothing marks that none is still on its way
     await page.waitForTimeout(400); // past the settle delay, and past any anchor still on its way
     const first = await firstRow();
     // Recorded, since which the grid heard first is the browser's timing, not the test's.

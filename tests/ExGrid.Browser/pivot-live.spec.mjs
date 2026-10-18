@@ -182,7 +182,7 @@ for (const chrome of ['builtin', 'mud']) {
             await toggle.click();
             await expect(report(page, 'local').locator('.ex-pivot-toggle').first()).toHaveAttribute('aria-expanded', 'false');
             await expect(marked(page, 'local')).toHaveCount(0);
-            // spec-lint: fixed-wait: proves an absence: no value mark may arrive after a collapse, and on WebAssembly no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
+            // spec-lint: fixed-wait: the collapse is a click Blazor hears on its own (the report's toggle), which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no value mark will come
             await page.waitForTimeout(600);
             await circuitQuiet();
             await expect(marked(page, 'local')).toHaveCount(0);

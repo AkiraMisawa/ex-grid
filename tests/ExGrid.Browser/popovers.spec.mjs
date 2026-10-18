@@ -786,14 +786,16 @@ for (const chrome of CHROMES) {
             // Absence cannot be waited for, so the submission is given time to land.
             await values.search(popover).focus();
             await page.keyboard.press('Enter');
-            // spec-lint: fixed-wait: proves an absence: the Enter must not apply an empty In and close the panel; the Settled Mark (PR #134, settled(grid)) will replace it
+            // spec-lint: fixed-wait: Enter in the search box submits the popover's form, an event Blazor hears on its own, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that the panel will not close
             await page.waitForTimeout(600);
+            await circuitQuiet();
             await expect(popover).toHaveCount(1);
             await expect(values.apply(popover)).toBeDisabled();
             // A press on the unavailable Apply does nothing either.
             await values.apply(popover).click({ force: true });
-            // spec-lint: fixed-wait: proves an absence: the press on the unavailable Apply must not apply; the Settled Mark (PR #134, settled(grid)) will replace it
+            // spec-lint: fixed-wait: the press on Apply is a click Blazor hears on its own, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that nothing will be applied
             await page.waitForTimeout(600);
+            await circuitQuiet();
             await expect(popover).toHaveCount(1);
             expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
 

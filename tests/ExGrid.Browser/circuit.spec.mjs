@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, dataRowCount, layoutCeilingTold, setRoundTrip } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, dataRowCount, layoutCeilingTold, setRoundTrip, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { activeDescendant, expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
@@ -200,8 +200,8 @@ for (const chrome of ['builtin', 'mud']) {
         await page.keyboard.press('Enter');
 
         await expect(search).toHaveValue('Alpha ');
-        // spec-lint: fixed-wait: proves an absence: the held Enter must not close the panel or apply a filter, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
-        await page.waitForTimeout(600);
+        await settled(grid(page));
+        await circuitQuiet();
         await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
         expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
     });
@@ -222,8 +222,8 @@ test('a key typed straight after a letter that runs a command waits for the popo
     await page.keyboard.press('Enter');
 
     await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-    // spec-lint: fixed-wait: proves an absence: the Enter, held, must not run Sort ascending and undo the sort, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
-    await page.waitForTimeout(600);
+    await settled(grid(page));
+    await circuitQuiet();
     await expect(grid(page).locator('.ex-header-cell').first()).toHaveAttribute('aria-sort', 'descending');
 });
 
@@ -249,8 +249,8 @@ test('a held Tab that script cannot perform stops the held typing there, rather 
     await page.keyboard.press('Enter');
 
     await expect(search).toHaveValue('Alpha');
-    // spec-lint: fixed-wait: proves an absence: the dropped Tab, Space and Enter must not land in the search or apply it, and no state says they never will; the Settled Mark (settled(grid), PR #134) replaces it
-    await page.waitForTimeout(600);
+    await settled(grid(page));
+    await circuitQuiet();
     await expect(search).toHaveValue('Alpha');
     await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
     expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
@@ -280,11 +280,11 @@ for (const [what, column, open, closes] of [
         await expect(page.locator('.mud-popover-open')).not.toHaveCount(0);
         await page.keyboard.press('Escape');
 
-        // Had the grid taken it, the panel would close a round trip later. Absence cannot
-        // be waited for, so four round trips are given for it to happen — then the panel
-        // must still stand.
-        // spec-lint: fixed-wait: proves an absence: the panel must not close a round trip after the Escape, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
-        await page.waitForTimeout(600);
+        // Had the grid taken it, the panel would close a round trip later. Once the grid has
+        // settled and the circuit is quiet, nothing the Escape set going is still on its way,
+        // and the panel must still stand.
+        await settled(grid(page));
+        await circuitQuiet();
         await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
         // Whether the popup closes on it is the design system's: MudBlazor's select closes
         // its list; its date picker ignores an Escape while DOM focus is still on the
@@ -361,8 +361,9 @@ test('a menu taking the keyboard a round trip late keeps the scroll the user gav
     await last.scrollIntoViewIfNeeded();
 
     // Two round trips for the focus request to land; the view must not have moved.
-    // spec-lint: fixed-wait: proves an absence: the late focus request must not scroll the menu back, and on WebAssembly no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
+    // spec-lint: fixed-wait: the menu is opened by a click Blazor hears on its own, and its focus request follows that click, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that the request will not scroll the menu back
     await page.waitForTimeout(600);
+    await circuitQuiet();
     await expect(last).toBeInViewport();
 });
 
@@ -611,7 +612,7 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
 
             // Every answer has landed: on the Server host once the circuit is quiet, however long
             // that takes; the fixed wait is the page's own time, all there is on WebAssembly.
-            // spec-lint: fixed-wait: proves an absence: no render may write the field's value back, and on WebAssembly no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
+            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the value back
             await page.waitForTimeout(1000);
             await circuitQuiet();
             await expect(editor).toHaveValue('Xabcdefghij');
@@ -634,7 +635,7 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
 
         await page.keyboard.type('nonsense', { delay: 100 });
 
-        // spec-lint: fixed-wait: proves an absence: no render may write the Name Box's value back, and on WebAssembly no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
+        // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the value back
         await page.waitForTimeout(1000);
         await circuitQuiet();
         await expect(nameBox).toHaveValue('nonsense');
@@ -707,7 +708,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(() => editor.inputValue(), { timeout: 3000 }).toMatch(/123456789$/);
             // And stays whole once every round trip has landed: on the Server host once the
             // circuit is quiet, however long that takes; on WebAssembly after the fixed wait.
-            // spec-lint: fixed-wait: proves an absence: no late render may write the editor's text back, and on WebAssembly no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
+            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the text back
             await page.waitForTimeout(500);
             await circuitQuiet();
             expect(await editor.inputValue()).toMatch(/123456789$/);
@@ -720,7 +721,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(field).toBeFocused();
             await page.keyboard.type('5320984.5');
 
-            // spec-lint: fixed-wait: proves an absence: no late render may write the find field's text back, and on WebAssembly no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
+            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the text back
             await page.waitForTimeout(500);
             await circuitQuiet();
             expect(await field.inputValue()).toBe('5320984.5');
@@ -734,7 +735,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(field).toBeFocused();
             await page.keyboard.type('Gammadelta');
 
-            // spec-lint: fixed-wait: proves an absence: no late render may write the search box's text back, and on WebAssembly no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
+            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the text back
             await page.waitForTimeout(500);
             await circuitQuiet();
             expect(await field.inputValue()).toBe('Gammadelta');
@@ -748,7 +749,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(field).toHaveCount(1);
             await page.keyboard.type('1234567.89');
 
-            // spec-lint: fixed-wait: proves an absence: no late render may write the condition value's text back, and on WebAssembly no state says none will; the Settled Mark (settled(grid), PR #134) replaces it
+            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the text back
             await page.waitForTimeout(500);
             await circuitQuiet();
             expect(await field.inputValue()).toBe('1234567.89');

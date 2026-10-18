@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, alterPage } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
 import {
@@ -478,10 +478,10 @@ for (const chrome of ['builtin', 'mud']) {
                 await page.keyboard.type('=');
                 await pressCell(right, 'D2');
                 await expect(editor(left)).toHaveValue('=');
-                // Long past the round trip in which the left's editor would take focus: still the right's.
+                // Once both grids have settled, the left's editor has had every focus it was owed: still the right's.
                 // Soft, so a run says how many of the thirty rounds lost it.
-                // spec-lint: fixed-wait: proves an absence: the left's late focus must not arrive to take the keyboard back, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
-                await page.waitForTimeout(200);
+                await settled(left);
+                await settled(right);
                 expect.soft(await inRoot(page, 1), `round ${round}: the right holds the keyboard`).toBe(true);
                 await expect(editor(left)).toHaveValue('=');
 
@@ -503,8 +503,8 @@ for (const chrome of ['builtin', 'mud']) {
             await pressCell(right, 'D2');
             await expectKeyboardOn(right);
             await expect(editor(left)).toHaveValue('=1');
-            // spec-lint: fixed-wait: proves an absence: the left's late focus must not arrive to take the keyboard from the right, and no state says it never will; the Settled Mark (settled(grid), PR #134) replaces it
-            await page.waitForTimeout(200);
+            await settled(left);
+            await settled(right);
             expect(await inRoot(page, 1)).toBe(true);
             await expect(editor(left)).toHaveValue('=1');
             // Nothing reached the right: it opened no edit, and its cell is as it was.
