@@ -1,0 +1,778 @@
+﻿2026-10-18T19:21:02.3706841Z Current runner version: '2.337.0'
+2026-10-18T19:21:02.3742316Z ##[group]Runner Image Provisioner
+2026-10-18T19:21:02.3743930Z Hosted Compute Agent
+2026-10-18T19:21:02.3745247Z Version: 20261012.601
+2026-10-18T19:21:02.3746472Z Commit: f3dc54e1fb89da6852db922499a0233137369e1d
+2026-10-18T19:21:02.3747696Z Build Date: 2026-10-12T17:48:21Z
+2026-10-18T19:21:02.3748943Z Worker ID: {84708d89-1a7a-42a6-ae18-5c5ae6da28f2}
+2026-10-18T19:21:02.3750306Z Region: eastus
+2026-10-18T19:21:02.3751259Z Cloud: Azure
+2026-10-18T19:21:02.3752256Z ##[endgroup]
+2026-10-18T19:21:02.3754835Z ##[group]Operating System
+2026-10-18T19:21:02.3756106Z Ubuntu
+2026-10-18T19:21:02.3757704Z 24.04.5
+2026-10-18T19:21:02.3758696Z LTS
+2026-10-18T19:21:02.3759563Z ##[endgroup]
+2026-10-18T19:21:02.3760550Z ##[group]Runner Image
+2026-10-18T19:21:02.3761668Z Image: ubuntu-24.04
+2026-10-18T19:21:02.3762717Z Version: 20261012.334.1
+2026-10-18T19:21:02.3765168Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-18T19:21:02.3767976Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334
+2026-10-18T19:21:02.3769742Z ##[endgroup]
+2026-10-18T19:21:02.3771638Z ##[group]GITHUB_TOKEN Permissions
+2026-10-18T19:21:02.3774709Z Contents: read
+2026-10-18T19:21:02.3775892Z Metadata: read
+2026-10-18T19:21:02.3776850Z ##[endgroup]
+2026-10-18T19:21:02.3780200Z Secret source: Actions
+2026-10-18T19:21:02.3781662Z Cache mode: write
+2026-10-18T19:21:02.3783374Z Prepare workflow directory
+2026-10-18T19:21:02.4562908Z Prepare all required actions
+2026-10-18T19:21:02.4636891Z Getting action download info
+2026-10-18T19:21:02.6811508Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-18T19:21:02.7822725Z Download action repository 'actions/setup-dotnet@v6' (SHA:a98b56852c35b8e3190ac28c8c2271da59106c68)
+2026-10-18T19:21:02.9597020Z Download action repository 'actions/setup-node@v7' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-10-18T19:21:03.1197337Z Download action repository 'actions/download-artifact@v8' (SHA:9000827ccba6bdab643e8b6fd33ac0654aef8333)
+2026-10-18T19:21:03.2701259Z Download action repository 'actions/upload-artifact@v7' (SHA:cf430e030ddbb5b0abf93d22962f4752f3646cd9)
+2026-10-18T19:21:03.5261787Z Uses: AkiraMisawa/ex-grid/.github/workflows/ci.yml@refs/tags/v0.1.0-rc.3 (cff4a0dd94d0bbbb0fd171e5a276dabebbdb1c07)
+2026-10-18T19:21:03.5266859Z ##[group] Inputs
+2026-10-18T19:21:03.5267451Z   version: 0.1.0-rc.3
+2026-10-18T19:21:03.5268360Z   long: true
+2026-10-18T19:21:03.5268873Z ##[endgroup]
+2026-10-18T19:21:03.5269699Z Complete job name: Every layer, and the packages / Layer 3 on chrome, shard 1/4 (Linux, headed)
+2026-10-18T19:21:03.6056761Z ##[group]Run actions/checkout@v7
+2026-10-18T19:21:03.6057987Z with:
+2026-10-18T19:21:03.6058596Z   repository: AkiraMisawa/ex-grid
+2026-10-18T19:21:03.6063240Z   token: ***
+2026-10-18T19:21:03.6063868Z   ssh-strict: true
+2026-10-18T19:21:03.6064664Z   ssh-user: git
+2026-10-18T19:21:03.6065367Z   persist-credentials: true
+2026-10-18T19:21:03.6066024Z   clean: true
+2026-10-18T19:21:03.6066609Z   sparse-checkout-cone-mode: true
+2026-10-18T19:21:03.6067349Z   fetch-depth: 1
+2026-10-18T19:21:03.6067958Z   fetch-tags: false
+2026-10-18T19:21:03.6068618Z   show-progress: true
+2026-10-18T19:21:03.6069216Z   lfs: false
+2026-10-18T19:21:03.6069752Z   submodules: false
+2026-10-18T19:21:03.6070436Z   set-safe-directory: true
+2026-10-18T19:21:03.6071087Z   allow-unsafe-pr-checkout: false
+2026-10-18T19:21:03.6072128Z env:
+2026-10-18T19:21:03.6072730Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:03.6073409Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:03.6074043Z   LONG_RUN: true
+2026-10-18T19:21:03.6075229Z ##[endgroup]
+2026-10-18T19:21:03.7044734Z Syncing repository: AkiraMisawa/ex-grid
+2026-10-18T19:21:03.7047200Z ##[group]Getting Git version info
+2026-10-18T19:21:03.7048724Z Working directory is '/home/runner/work/ex-grid/ex-grid'
+2026-10-18T19:21:03.7050897Z [command]/usr/bin/git version
+2026-10-18T19:21:03.7126218Z git version 2.55.0
+2026-10-18T19:21:03.7148470Z ##[endgroup]
+2026-10-18T19:21:03.7159706Z Temporarily overriding HOME='/home/runner/work/_temp/0422269b-9524-45f8-8d2b-b29ff74196ed' before making global git config changes
+2026-10-18T19:21:03.7162002Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-18T19:21:03.7164963Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ex-grid/ex-grid
+2026-10-18T19:21:03.7214533Z Deleting the contents of '/home/runner/work/ex-grid/ex-grid'
+2026-10-18T19:21:03.7218432Z ##[group]Determining repository object format
+2026-10-18T19:21:03.7220204Z ##[endgroup]
+2026-10-18T19:21:03.7221493Z ##[group]Initializing the repository
+2026-10-18T19:21:03.7224713Z [command]/usr/bin/git init /home/runner/work/ex-grid/ex-grid
+2026-10-18T19:21:03.7329582Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-18T19:21:03.7331125Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-18T19:21:03.7332321Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-18T19:21:03.7333195Z hint: call:
+2026-10-18T19:21:03.7333818Z hint:
+2026-10-18T19:21:03.7334746Z hint: 	git config --global init.defaultBranch <name>
+2026-10-18T19:21:03.7335625Z hint:
+2026-10-18T19:21:03.7336427Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-18T19:21:03.7337527Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-18T19:21:03.7338487Z hint:
+2026-10-18T19:21:03.7339087Z hint: 	git branch -m <name>
+2026-10-18T19:21:03.7339749Z hint:
+2026-10-18T19:21:03.7340571Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-18T19:21:03.7346384Z Initialized empty Git repository in /home/runner/work/ex-grid/ex-grid/.git/
+2026-10-18T19:21:03.7357275Z [command]/usr/bin/git remote add origin https://github.com/AkiraMisawa/ex-grid
+2026-10-18T19:21:03.7410400Z ##[endgroup]
+2026-10-18T19:21:03.7483726Z ##[group]Disabling automatic garbage collection
+2026-10-18T19:21:03.7486043Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-18T19:21:03.7489324Z ##[endgroup]
+2026-10-18T19:21:03.7490748Z ##[group]Setting up auth
+2026-10-18T19:21:03.7491911Z Removing SSH command configuration
+2026-10-18T19:21:03.7493590Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-18T19:21:03.7498365Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-18T19:21:03.7845707Z Removing HTTP extra header
+2026-10-18T19:21:03.7852100Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-18T19:21:03.7886011Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-18T19:21:03.8101881Z Removing includeIf entries pointing to credentials config files
+2026-10-18T19:21:03.8107657Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-18T19:21:03.8141365Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-18T19:21:03.8375822Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-d0c2644e-e1bc-4f52-a3b7-31c4c5c07d08.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-18T19:21:03.8413519Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path /home/runner/work/_temp/git-credentials-d0c2644e-e1bc-4f52-a3b7-31c4c5c07d08.config
+2026-10-18T19:21:03.8443731Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-d0c2644e-e1bc-4f52-a3b7-31c4c5c07d08.config
+2026-10-18T19:21:03.8477961Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-d0c2644e-e1bc-4f52-a3b7-31c4c5c07d08.config
+2026-10-18T19:21:03.8512154Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-d0c2644e-e1bc-4f52-a3b7-31c4c5c07d08.config
+2026-10-18T19:21:03.8540989Z ##[endgroup]
+2026-10-18T19:21:03.8542587Z ##[group]Fetching the repository
+2026-10-18T19:21:03.8549666Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +refs/tags/v0.1.0-rc.3:refs/tags/v0.1.0-rc.3
+2026-10-18T19:21:10.1271522Z From https://github.com/AkiraMisawa/ex-grid
+2026-10-18T19:21:10.1272770Z  * [new tag]         v0.1.0-rc.3 -> v0.1.0-rc.3
+2026-10-18T19:21:10.1281450Z [command]/usr/bin/git tag --list v0.1.0-rc.3
+2026-10-18T19:21:10.1314687Z v0.1.0-rc.3
+2026-10-18T19:21:10.1323793Z [command]/usr/bin/git rev-parse refs/tags/v0.1.0-rc.3^{commit}
+2026-10-18T19:21:10.1349828Z cff4a0dd94d0bbbb0fd171e5a276dabebbdb1c07
+2026-10-18T19:21:10.1354823Z ##[endgroup]
+2026-10-18T19:21:10.1355805Z ##[group]Determining the checkout info
+2026-10-18T19:21:10.1356758Z ##[endgroup]
+2026-10-18T19:21:10.1360072Z [command]/usr/bin/git sparse-checkout disable
+2026-10-18T19:21:10.1413835Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-18T19:21:10.1458073Z ##[group]Checking out the ref
+2026-10-18T19:21:10.1458847Z [command]/usr/bin/git checkout --progress --force refs/tags/v0.1.0-rc.3
+2026-10-18T19:21:11.1627007Z Updating files:  54% (7058/12962)
+2026-10-18T19:21:11.1740446Z Updating files:  55% (7130/12962)
+2026-10-18T19:21:11.1847911Z Updating files:  56% (7259/12962)
+2026-10-18T19:21:11.1966407Z Updating files:  57% (7389/12962)
+2026-10-18T19:21:11.2068664Z Updating files:  58% (7518/12962)
+2026-10-18T19:21:11.2128975Z Updating files:  59% (7648/12962)
+2026-10-18T19:21:11.2193492Z Updating files:  60% (7778/12962)
+2026-10-18T19:21:11.2260814Z Updating files:  61% (7907/12962)
+2026-10-18T19:21:11.2332425Z Updating files:  62% (8037/12962)
+2026-10-18T19:21:11.2395347Z Updating files:  63% (8167/12962)
+2026-10-18T19:21:11.2885364Z Updating files:  64% (8296/12962)
+2026-10-18T19:21:11.3107672Z Updating files:  65% (8426/12962)
+2026-10-18T19:21:11.3317002Z Updating files:  66% (8555/12962)
+2026-10-18T19:21:11.3395316Z Updating files:  67% (8685/12962)
+2026-10-18T19:21:11.3619624Z Updating files:  68% (8815/12962)
+2026-10-18T19:21:11.3858767Z Updating files:  69% (8944/12962)
+2026-10-18T19:21:11.3973611Z Updating files:  70% (9074/12962)
+2026-10-18T19:21:11.4046235Z Updating files:  71% (9204/12962)
+2026-10-18T19:21:11.4197553Z Updating files:  72% (9333/12962)
+2026-10-18T19:21:11.4281974Z Updating files:  73% (9463/12962)
+2026-10-18T19:21:11.4357371Z Updating files:  74% (9592/12962)
+2026-10-18T19:21:11.4489694Z Updating files:  75% (9722/12962)
+2026-10-18T19:21:11.4631625Z Updating files:  76% (9852/12962)
+2026-10-18T19:21:11.4964669Z Updating files:  77% (9981/12962)
+2026-10-18T19:21:11.5205841Z Updating files:  78% (10111/12962)
+2026-10-18T19:21:11.5416058Z Updating files:  79% (10240/12962)
+2026-10-18T19:21:11.5539281Z Updating files:  80% (10370/12962)
+2026-10-18T19:21:11.5727441Z Updating files:  81% (10500/12962)
+2026-10-18T19:21:11.5813538Z Updating files:  82% (10629/12962)
+2026-10-18T19:21:11.6095126Z Updating files:  83% (10759/12962)
+2026-10-18T19:21:11.6201443Z Updating files:  84% (10889/12962)
+2026-10-18T19:21:11.6284630Z Updating files:  85% (11018/12962)
+2026-10-18T19:21:11.6399455Z Updating files:  86% (11148/12962)
+2026-10-18T19:21:11.6486345Z Updating files:  87% (11277/12962)
+2026-10-18T19:21:11.6559724Z Updating files:  88% (11407/12962)
+2026-10-18T19:21:11.6727381Z Updating files:  89% (11537/12962)
+2026-10-18T19:21:11.6988336Z Updating files:  90% (11666/12962)
+2026-10-18T19:21:11.7327966Z Updating files:  91% (11796/12962)
+2026-10-18T19:21:11.7614225Z Updating files:  92% (11926/12962)
+2026-10-18T19:21:11.7851254Z Updating files:  93% (12055/12962)
+2026-10-18T19:21:11.8045441Z Updating files:  94% (12185/12962)
+2026-10-18T19:21:11.8559714Z Updating files:  95% (12314/12962)
+2026-10-18T19:21:11.8733248Z Updating files:  96% (12444/12962)
+2026-10-18T19:21:11.9054097Z Updating files:  97% (12574/12962)
+2026-10-18T19:21:11.9257586Z Updating files:  98% (12703/12962)
+2026-10-18T19:21:11.9796885Z Updating files:  99% (12833/12962)
+2026-10-18T19:21:11.9797712Z Updating files: 100% (12962/12962)
+2026-10-18T19:21:11.9798591Z Updating files: 100% (12962/12962), done.
+2026-10-18T19:21:11.9973262Z Note: switching to 'refs/tags/v0.1.0-rc.3'.
+2026-10-18T19:21:11.9973679Z 
+2026-10-18T19:21:11.9974115Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-18T19:21:11.9975321Z changes and commit them, and you can discard any commits you make in this
+2026-10-18T19:21:11.9975814Z state without impacting any branches by switching back to a branch.
+2026-10-18T19:21:11.9976186Z 
+2026-10-18T19:21:11.9976380Z If you want to create a new branch to retain commits you create, you may
+2026-10-18T19:21:11.9976945Z do so (now or later) by using -c with the switch command. Example:
+2026-10-18T19:21:11.9977424Z 
+2026-10-18T19:21:11.9977612Z   git switch -c <new-branch-name>
+2026-10-18T19:21:11.9977935Z 
+2026-10-18T19:21:11.9978113Z Or undo this operation with:
+2026-10-18T19:21:11.9978412Z 
+2026-10-18T19:21:11.9978552Z   git switch -
+2026-10-18T19:21:11.9978768Z 
+2026-10-18T19:21:11.9979142Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-18T19:21:11.9979708Z 
+2026-10-18T19:21:11.9980180Z HEAD is now at cff4a0d Run 18b on macOS: KB-3 and FN-12e at 0.1.0-rc.3's commit (ADR-0208) (#173)
+2026-10-18T19:21:12.0073651Z ##[endgroup]
+2026-10-18T19:21:12.0127245Z [command]/usr/bin/git log -1 --format=%H
+2026-10-18T19:21:12.0153542Z cff4a0dd94d0bbbb0fd171e5a276dabebbdb1c07
+2026-10-18T19:21:12.0481951Z ##[group]Run actions/setup-dotnet@v6
+2026-10-18T19:21:12.0482264Z with:
+2026-10-18T19:21:12.0482474Z   global-json-file: global.json
+2026-10-18T19:21:12.0482720Z   cache: false
+2026-10-18T19:21:12.0482911Z env:
+2026-10-18T19:21:12.0483102Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:12.0483341Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:12.0483538Z   LONG_RUN: true
+2026-10-18T19:21:12.0483732Z ##[endgroup]
+2026-10-18T19:21:12.1787321Z [command]/home/runner/work/_actions/actions/setup-dotnet/v6/externals/install-dotnet.sh --skip-non-versioned-files --runtime dotnet --channel LTS
+2026-10-18T19:21:12.4567532Z dotnet-install: Attempting to download using aka.ms link https://builds.dotnet.microsoft.com/dotnet/Runtime/10.0.13/dotnet-runtime-10.0.13-linux-x64.tar.gz
+2026-10-18T19:21:12.6636846Z dotnet-install: Remote file https://builds.dotnet.microsoft.com/dotnet/Runtime/10.0.13/dotnet-runtime-10.0.13-linux-x64.tar.gz size is 36648012 bytes.
+2026-10-18T19:21:12.6643076Z dotnet-install: Extracting archive from https://builds.dotnet.microsoft.com/dotnet/Runtime/10.0.13/dotnet-runtime-10.0.13-linux-x64.tar.gz
+2026-10-18T19:21:13.3713626Z dotnet-install: Downloaded file size is 36648012 bytes.
+2026-10-18T19:21:13.3715028Z dotnet-install: The remote and local file sizes are equal.
+2026-10-18T19:21:13.5135661Z dotnet-install: Installed version is 10.0.13
+2026-10-18T19:21:13.5202890Z dotnet-install: Adding to current process PATH: `/usr/share/dotnet`. Note: This change will be visible only when sourcing script.
+2026-10-18T19:21:13.5205351Z dotnet-install: Note that the script does not resolve dependencies during installation.
+2026-10-18T19:21:13.5206966Z dotnet-install: To check the list of dependencies, go to https://learn.microsoft.com/dotnet/core/install, select your operating system and check the "Dependencies" section.
+2026-10-18T19:21:13.5208368Z dotnet-install: Installation finished successfully.
+2026-10-18T19:21:13.5230026Z [command]/home/runner/work/_actions/actions/setup-dotnet/v6/externals/install-dotnet.sh --skip-non-versioned-files --channel 10.0
+2026-10-18T19:21:13.9115290Z dotnet-install: Attempting to download using aka.ms link https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.402/dotnet-sdk-10.0.402-linux-x64.tar.gz
+2026-10-18T19:21:14.5973991Z dotnet-install: Remote file https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.402/dotnet-sdk-10.0.402-linux-x64.tar.gz size is 240279509 bytes.
+2026-10-18T19:21:14.5977265Z dotnet-install: Extracting archive from https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.402/dotnet-sdk-10.0.402-linux-x64.tar.gz
+2026-10-18T19:21:19.1861739Z dotnet-install: Downloaded file size is 240279509 bytes.
+2026-10-18T19:21:19.1862391Z dotnet-install: The remote and local file sizes are equal.
+2026-10-18T19:21:19.5191839Z dotnet-install: Installed version is 10.0.402
+2026-10-18T19:21:19.5254233Z dotnet-install: Adding to current process PATH: `/usr/share/dotnet`. Note: This change will be visible only when sourcing script.
+2026-10-18T19:21:19.5256102Z dotnet-install: Note that the script does not resolve dependencies during installation.
+2026-10-18T19:21:19.5257303Z dotnet-install: To check the list of dependencies, go to https://learn.microsoft.com/dotnet/core/install, select your operating system and check the "Dependencies" section.
+2026-10-18T19:21:19.5258092Z dotnet-install: Installation finished successfully.
+2026-10-18T19:21:19.5439193Z ##[group]Run actions/setup-node@v7
+2026-10-18T19:21:19.5439480Z with:
+2026-10-18T19:21:19.5439679Z   node-version: 22
+2026-10-18T19:21:19.5439882Z   cache: npm
+2026-10-18T19:21:19.5440177Z   cache-dependency-path: tests/ExGrid.Browser/package-lock.json
+2026-10-18T19:21:19.5440555Z   check-latest: false
+2026-10-18T19:21:19.5443205Z   token: ***
+2026-10-18T19:21:19.5443422Z   package-manager-cache: true
+2026-10-18T19:21:19.5443665Z env:
+2026-10-18T19:21:19.5443860Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:19.5444112Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:19.5444601Z   LONG_RUN: true
+2026-10-18T19:21:19.5444839Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:19.5445081Z ##[endgroup]
+2026-10-18T19:21:19.6674011Z Found in cache @ /opt/hostedtoolcache/node/22.23.3/x64
+2026-10-18T19:21:19.7664892Z ##[group]Environment details
+2026-10-18T19:21:20.1438804Z node: v22.23.3
+2026-10-18T19:21:20.1439199Z npm: 10.9.9
+2026-10-18T19:21:20.1439501Z yarn: 1.22.22
+2026-10-18T19:21:20.1440603Z ##[endgroup]
+2026-10-18T19:21:20.1456416Z [command]/opt/hostedtoolcache/node/22.23.3/x64/bin/npm config get cache
+2026-10-18T19:21:20.2589672Z /home/runner/.npm
+2026-10-18T19:21:20.3356290Z Cache hit for: node-cache-Linux-x64-npm-29c22a3ee550219573164ee5799c29ef3a61ce3fb606a2e9963ffbcac73f25bb
+2026-10-18T19:21:20.4928257Z Received 3981324 of 3981324 (100.0%), 33.9 MBs/sec
+2026-10-18T19:21:20.4929475Z Cache Size: ~4 MB (3981324 B)
+2026-10-18T19:21:20.4955233Z [command]/usr/bin/tar -xf /home/runner/work/_temp/84d8a900-7f6b-4ef9-ae45-e6fa8e7a6573/cache.tzst -P -C /home/runner/work/ex-grid/ex-grid --use-compress-program unzstd
+2026-10-18T19:21:20.5082836Z Cache restored successfully
+2026-10-18T19:21:20.5090682Z Cache restored from key: node-cache-Linux-x64-npm-29c22a3ee550219573164ee5799c29ef3a61ce3fb606a2e9963ffbcac73f25bb
+2026-10-18T19:21:20.5223380Z ##[group]Run google-chrome --version
+2026-10-18T19:21:20.5223802Z [36;1mgoogle-chrome --version[0m
+2026-10-18T19:21:20.5224134Z [36;1mmicrosoft-edge --version[0m
+2026-10-18T19:21:20.5460035Z shell: /usr/bin/bash -e {0}
+2026-10-18T19:21:20.5460312Z env:
+2026-10-18T19:21:20.5460528Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:20.5460790Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:20.5460996Z   LONG_RUN: true
+2026-10-18T19:21:20.5461220Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:20.5461472Z ##[endgroup]
+2026-10-18T19:21:20.6933006Z Google Chrome 155.0.8059.39 
+2026-10-18T19:21:22.3537019Z Microsoft Edge 155.0.4283.45 
+2026-10-18T19:21:22.3606530Z ##[group]Run npm ci
+2026-10-18T19:21:22.3606805Z [36;1mnpm ci[0m
+2026-10-18T19:21:22.3669184Z shell: /usr/bin/bash -e {0}
+2026-10-18T19:21:22.3669444Z env:
+2026-10-18T19:21:22.3669653Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:22.3670084Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:22.3670293Z   LONG_RUN: true
+2026-10-18T19:21:22.3670506Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:22.3670754Z ##[endgroup]
+2026-10-18T19:21:23.2251704Z 
+2026-10-18T19:21:23.2252606Z added 3 packages, and audited 4 packages in 800ms
+2026-10-18T19:21:23.2259719Z 
+2026-10-18T19:21:23.2259976Z found 0 vulnerabilities
+2026-10-18T19:21:23.2688695Z ##[group]Run actions/download-artifact@v8
+2026-10-18T19:21:23.2689006Z with:
+2026-10-18T19:21:23.2689209Z   name: layer3-hosts
+2026-10-18T19:21:23.2689424Z   path: hosts
+2026-10-18T19:21:23.2689631Z   merge-multiple: false
+2026-10-18T19:21:23.2689876Z   repository: AkiraMisawa/ex-grid
+2026-10-18T19:21:23.2690128Z   run-id: 39158128144
+2026-10-18T19:21:23.2690367Z   skip-decompress: false
+2026-10-18T19:21:23.2690600Z   digest-mismatch: error
+2026-10-18T19:21:23.2690816Z env:
+2026-10-18T19:21:23.2691017Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:23.2691259Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:23.2691489Z   LONG_RUN: true
+2026-10-18T19:21:23.2691699Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:23.2691940Z ##[endgroup]
+2026-10-18T19:21:23.4078410Z Downloading single artifact
+2026-10-18T19:21:23.4953662Z Preparing to download the following artifacts:
+2026-10-18T19:21:23.4955158Z - layer3-hosts (ID: 12147816512, Size: 46495794, Expected Digest: sha256:f29f158ea260804ffd2f4b42419bfdbb06049ef72f33b312a519d526831e9ea0)
+2026-10-18T19:21:23.6528778Z Redirecting to blob download url: https://productionresultssa18.blob.core.windows.net/actions-results/676b94d5-d3bc-84b8-bf40-fbe25180489d/workflow-job-run-8bbe9d44-8eb9-50f5-a5f5-e2660c849e74/artifacts/e5d39098aaa4cdedd7a5cb3ae8e8192302bf1bdbb24aa0ad756940b26e2a3812.zip
+2026-10-18T19:21:23.6530765Z Starting download of artifact to: /home/runner/work/ex-grid/ex-grid/hosts
+2026-10-18T19:21:23.7429229Z (node:2851) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-10-18T19:21:23.7430679Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-18T19:21:24.6857873Z SHA256 digest of downloaded artifact is f29f158ea260804ffd2f4b42419bfdbb06049ef72f33b312a519d526831e9ea0
+2026-10-18T19:21:24.6859056Z Artifact download completed successfully.
+2026-10-18T19:21:24.6859801Z Total of 1 artifact(s) downloaded
+2026-10-18T19:21:24.6863771Z Download artifact has finished successfully
+2026-10-18T19:21:24.7557448Z ##[group]Run xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24" npx playwright test --project=chrome --shard=1/4
+2026-10-18T19:21:24.7558444Z [36;1mxvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24" npx playwright test --project=chrome --shard=1/4[0m
+2026-10-18T19:21:24.7618587Z shell: /usr/bin/bash -e {0}
+2026-10-18T19:21:24.7618853Z env:
+2026-10-18T19:21:24.7619067Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:24.7619337Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:24.7619547Z   LONG_RUN: true
+2026-10-18T19:21:24.7619783Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:24.7620087Z   EXGRID_HOSTS: /home/runner/work/ex-grid/ex-grid/hosts
+2026-10-18T19:21:24.7620404Z   EXGRID_SOAK: 1
+2026-10-18T19:21:24.7620615Z ##[endgroup]
+2026-10-18T19:21:27.2028851Z [WebServer] Serving /home/runner/work/ex-grid/ex-grid/hosts/wasm/wwwroot at http://localhost:5299
+2026-10-18T19:21:28.6470469Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:21:28.6471719Z [DemoApi]       Generating 20000 trades into /tmp/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+2026-10-18T19:21:28.7818178Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:21:28.7819062Z [DemoApi]       Generated 10000 of 20000 trades (50%).
+2026-10-18T19:21:28.8096492Z [DemoApi] info: Microsoft.Hosting.Lifetime[14]
+2026-10-18T19:21:28.8125621Z [DemoApi]       Now listening on: http://localhost:8299
+2026-10-18T19:21:28.8126867Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-10-18T19:21:28.8128069Z [DemoApi]       Application started. Press Ctrl+C to shut down.
+2026-10-18T19:21:28.8129790Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-10-18T19:21:28.8130906Z [DemoApi]       Hosting environment: Development
+2026-10-18T19:21:28.8131715Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-10-18T19:21:28.8132859Z [DemoApi]       Content root path: /home/runner/work/ex-grid/ex-grid/hosts/api
+2026-10-18T19:21:28.8750865Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:21:28.8751876Z [DemoApi]       Generated 20000 trades in 0.2 s: 1.6 MB.
+2026-10-18T19:21:28.8923767Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:21:28.8925539Z [DemoApi]       Serving 20000 trades at version cc814d7f-0 from /tmp/exgrid-demo-api/runs/trades-v1-20000.2918.cc814d7f.sqlite.
+2026-10-18T19:21:31.5185380Z 
+2026-10-18T19:21:31.5186542Z Running 340 tests using 1 worker, shard 1 of 4
+2026-10-18T19:21:31.5187386Z 
+2026-10-18T19:21:36.6419802Z   ✓    1 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Hair line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (2.5s)
+2026-10-18T19:21:37.1341031Z   ✓    2 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Hair line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (479ms)
+2026-10-18T19:21:37.5669507Z   ✓    3 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Thin line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (418ms)
+2026-10-18T19:21:37.9996461Z   ✓    4 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Thin line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (419ms)
+2026-10-18T19:21:38.5166053Z   ✓    5 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Medium line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (503ms)
+2026-10-18T19:21:39.0163896Z   ✓    6 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Medium line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (485ms)
+2026-10-18T19:21:39.5042485Z   ✓    7 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Thick line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (472ms)
+2026-10-18T19:21:40.0137821Z   ✓    8 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Thick line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (497ms)
+2026-10-18T19:21:40.5144081Z   ✓    9 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Double line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (486ms)
+2026-10-18T19:21:40.9970374Z   ✓   10 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Double line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (470ms)
+2026-10-18T19:21:41.3975036Z   ✓   11 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Dotted line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (387ms)
+2026-10-18T19:21:41.7966954Z   ✓   12 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Dotted line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (386ms)
+2026-10-18T19:21:42.2299660Z   ✓   13 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Dashed line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (420ms)
+2026-10-18T19:21:42.6625948Z   ✓   14 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a Dashed line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (419ms)
+2026-10-18T19:21:43.1005183Z   ✓   15 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a DashDot line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (425ms)
+2026-10-18T19:21:43.5458485Z   ✓   16 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a DashDot line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (433ms)
+2026-10-18T19:21:43.9624707Z   ✓   17 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a DashDotDot line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (404ms)
+2026-10-18T19:21:44.4022424Z   ✓   18 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a DashDotDot line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (426ms)
+2026-10-18T19:21:44.9023793Z   ✓   19 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a MediumDashed line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (483ms)
+2026-10-18T19:21:45.3838957Z   ✓   20 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a MediumDashed line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (467ms)
+2026-10-18T19:21:45.8631963Z   ✓   21 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a MediumDashDot line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (455ms)
+2026-10-18T19:21:46.3490082Z   ✓   22 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a MediumDashDot line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (470ms)
+2026-10-18T19:21:46.8143224Z   ✓   23 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a MediumDashDotDot line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (451ms)
+2026-10-18T19:21:47.3033418Z   ✓   24 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a MediumDashDotDot line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (473ms)
+2026-10-18T19:21:47.7308874Z   ✓   25 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a SlantedDashDot line on a cell's bottom edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (411ms)
+2026-10-18T19:21:48.2048075Z   ✓   26 [chrome] › appearance.spec.mjs:137:13 › DC-59: lines › DC-59: a SlantedDashDot line on a cell's right edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) (460ms)
+2026-10-18T19:21:48.5305515Z   ✓   27 [chrome] › appearance.spec.mjs:175:5 › DC-59: lines › DC-59: a line lies above the Fill, and a thick one reaches one pixel into the filled cell below (ADR-0071, case 10) (311ms)
+2026-10-18T19:21:49.0742640Z   ✓   28 [chrome] › appearance.spec.mjs:187:5 › DC-59: lines › DC-59: the Focus and the Selection are drawn above a line (ADR-0071, case 11) (528ms)
+2026-10-18T19:21:49.5904985Z   ✓   29 [chrome] › appearance.spec.mjs:226:1 › DC-58: a bold number that fits at the regular widths and not at the bold ones is #### (ADR-0050 item 15, ADR-0016) (496ms)
+2026-10-18T19:21:50.2389814Z   ✓   30 [chrome] › appearance.spec.mjs:278:1 › DC-58: italic text is not cut at either edge of its cell (ADR-0071, "Bold, and what fits") (628ms)
+2026-10-18T19:21:50.8832942Z   ✓   31 [chrome] › appearance.spec.mjs:362:1 › ADR-0050 item 15 / ADR-0024: a lined cell of a group or total row keeps the row's tint, beneath its lines and above its Fill (628ms)
+2026-10-18T19:21:51.4351636Z   ✓   32 [chrome] › appearance.spec.mjs:380:1 › ADR-0050 item 15 / ADR-0038 (UX-15): a lined pinned cell of a striped row keeps the stripe, beneath its lines and above its Fill (538ms)
+2026-10-18T19:21:51.9708671Z   ✓   33 [chrome] › appearance.spec.mjs:392:1 › ADR-0050 item 15 / ADR-0006: a lined Missing cell keeps its state's tint, beneath its lines and above its Fill (522ms)
+2026-10-18T19:21:54.6845628Z   ✓   34 [chrome] › aria-rows.spec.mjs:100:5 › ADR-0033: /features › A11Y-3 / ADR-0033: a Header Group band is row 1, the header row 2, and the data rows count from 3, near the top and far down (2.7s)
+2026-10-18T19:21:56.4838553Z   ✓   35 [chrome] › aria-rows.spec.mjs:139:5 › ADR-0033: /features › A11Y-2 / A11Y-3 / ADR-0033: an untiered header is row 1, the first data row 2, and the count is the data rows and the header row (1.8s)
+2026-10-18T19:22:00.3447602Z   ✓   36 [chrome] › aria-rows.spec.mjs:161:5 › ADR-0033: /sheet › A11Y-2 / A11Y-3 / ADR-0033: the Column Headings are row 1, so a Sheet row is its number plus one, near the top and far down (3.8s)
+2026-10-18T19:22:02.1822941Z   ✓   37 [chrome] › circuit.spec.mjs:36:5 › keys typed faster than the round trip are neither lost nor reordered (ED-22, SRV-5) › a number typed at full speed is committed whole (1.8s)
+2026-10-18T19:22:02.5640694Z   ✓   38 [chrome] › circuit.spec.mjs:45:5 › keys typed faster than the round trip are neither lost nor reordered (ED-22, SRV-5) › continuous entry puts each value in its own cell (368ms)
+2026-10-18T19:22:02.8123369Z   ✓   39 [chrome] › circuit.spec.mjs:56:5 › keys typed faster than the round trip are neither lost nor reordered (ED-22, SRV-5) › keys held behind a key that opened nothing replay as ordinary keys (234ms)
+2026-10-18T19:22:03.4302080Z   ✓   40 [chrome] › circuit.spec.mjs:66:1 › a paste past a Server hub's message limit arrives whole (CP-21, ADR-0052) (605ms)
+2026-10-18T19:22:03.7473010Z   ✓   41 [chrome] › circuit.spec.mjs:92:1 › a clipboard write the browser rejects is refused by name (CP-23) (305ms)
+2026-10-18T19:22:04.1347258Z   ✓   42 [chrome] › circuit.spec.mjs:113:1 › keys typed together in a menu run the item the keys chose (ADR-0039, SRV-5) (370ms)
+2026-10-18T19:22:04.4486720Z   ✓   43 [chrome] › circuit.spec.mjs:135:1 › keys typed straight after a key that opens a menu reach the menu (KB-33, ADR-0010/0039) (301ms)
+2026-10-18T19:22:04.8005641Z   ✓   44 [chrome] › circuit.spec.mjs:153:5 › a search typed straight after E lands whole in the search box, and Enter applies it (ADR-0044, ADR-0010, SRV-5, builtin) (340ms)
+2026-10-18T19:22:05.4844889Z   ✓   45 [chrome] › circuit.spec.mjs:153:5 › a search typed straight after E lands whole in the search box, and Enter applies it (ADR-0044, ADR-0010, SRV-5, mud) (671ms)
+2026-10-18T19:22:08.1789770Z   ✓   46 [chrome] › circuit.spec.mjs:181:5 › a search matching nothing, typed straight after E with its Enter, applies nothing (ADR-0009/0023, SRV-5, ticket 76, builtin) (2.7s)
+2026-10-18T19:22:10.9316733Z   ✓   47 [chrome] › circuit.spec.mjs:181:5 › a search matching nothing, typed straight after E with its Enter, applies nothing (ADR-0009/0023, SRV-5, ticket 76, mud) (2.7s)
+2026-10-18T19:22:11.5112214Z   ✓   48 [chrome] › circuit.spec.mjs:210:1 › a key typed straight after a letter that runs a command waits for the popover to close (ADR-0010/0044, SRV-5) (567ms)
+2026-10-18T19:22:12.1296097Z   ✓   49 [chrome] › circuit.spec.mjs:230:1 › a held Tab that script cannot perform stops the held typing there, rather than letting it land in the wrong field (ADR-0010/0044, SRV-5) (605ms)
+2026-10-18T19:22:12.8442973Z   ✓   50 [chrome] › circuit.spec.mjs:263:5 › an Escape pressed straight after the operator list opens is not the grid's (KB-35, ADR-0039) (699ms)
+2026-10-18T19:22:13.4598095Z   ✓   51 [chrome] › circuit.spec.mjs:263:5 › an Escape pressed straight after the date calendar opens is not the grid's (KB-35, ADR-0039) (603ms)
+2026-10-18T19:22:14.1129196Z   ✓   52 [chrome] › circuit.spec.mjs:313:1 › a value typed and Enter pressed at once apply the condition (KB-31, SRV-5) (640ms)
+2026-10-18T19:22:14.5936885Z   ✓   53 [chrome] › circuit.spec.mjs:332:1 › Escape, Escape straight after an Inner Popup closes it and then the panel (ADR-0039, SRV-5) (468ms)
+2026-10-18T19:22:15.5282346Z   ✓   54 [chrome] › circuit.spec.mjs:349:1 › a menu taking the keyboard a round trip late keeps the scroll the user gave it (ADR-0039/0040, SRV-5) (921ms)
+2026-10-18T19:22:15.6760448Z   -   55 [chrome] › circuit.spec.mjs:375:5 › a Prerendered grid is busy and takes no tab stop until its circuit connects (A11Y-20, ADR-0080)
+2026-10-18T19:22:15.6763253Z   -   56 [chrome] › circuit.spec.mjs:400:5 › two users, one store (SRV-3, ADR-0018) › a store change reaches both, a sort reaches one, and a shared source is refused
+2026-10-18T19:22:17.3940779Z   ✓   57 [chrome] › circuit.spec.mjs:482:9 › a click between keys is ordered with them (ED-22, ADR-0010) › with 0 ms between the steps, each value lands in the cell clicked for it (1.7s)
+2026-10-18T19:22:18.9103277Z   ✓   58 [chrome] › circuit.spec.mjs:482:9 › a click between keys is ordered with them (ED-22, ADR-0010) › with 30 ms between the steps, each value lands in the cell clicked for it (1.5s)
+2026-10-18T19:22:20.7110599Z   ✓   59 [chrome] › circuit.spec.mjs:482:9 › a click between keys is ordered with them (ED-22, ADR-0010) › with 60 ms between the steps, each value lands in the cell clicked for it (1.8s)
+2026-10-18T19:22:23.6466919Z   ✓   60 [chrome] › circuit.spec.mjs:497:5 › a click between keys is ordered with them (ED-22, ADR-0010) › a click straight after a key waits for no fallback: each step lands before the hold would give up (ED-22, ADR-0010) (2.9s)
+2026-10-18T19:22:24.8784141Z   ✓   61 [chrome] › circuit.spec.mjs:515:5 › a click between keys is ordered with them (ED-22, ADR-0010) › with a 150 ms round trip and no pause, each value lands in the cell clicked for it (SRV-5) (1.2s)
+2026-10-18T19:22:25.9121316Z   ✓   62 [chrome] › circuit.spec.mjs:529:9 › a click between keys is ordered with them (ED-22, ADR-0010) › a press held behind a page move lands on the row painted under it at the press, at 0 ms (ED-31, ADR-0021) (1.0s)
+2026-10-18T19:22:25.9776539Z   -   63 [chrome] › circuit.spec.mjs:529:9 › a click between keys is ordered with them (ED-22, ADR-0010) › a press held behind a page move lands on the row painted under it at the press, at 150 ms (ED-31, ADR-0021)
+2026-10-18T19:22:28.2931182Z   ✓   64 [chrome] › circuit.spec.mjs:599:9 › typing into an open field on a 150 ms circuit loses nothing (SRV-5, ED-22) › the Cell Editor, at 10 keys a second (builtin) (2.3s)
+2026-10-18T19:22:30.6317066Z   ✓   65 [chrome] › circuit.spec.mjs:599:9 › typing into an open field on a 150 ms circuit loses nothing (SRV-5, ED-22) › the Cell Editor, at 10 keys a second (mud) (2.3s)
+2026-10-18T19:22:32.9267835Z   ✓   66 [chrome] › circuit.spec.mjs:625:5 › typing into an open field on a 150 ms circuit loses nothing (SRV-5, ED-22) › the Name Box, at 10 keys a second (2.3s)
+2026-10-18T19:22:33.4594085Z   ✓   67 [chrome] › circuit.spec.mjs:652:1 › a ← typed as the completion list is painted is left to the editor (ADR-0051, ADR-0010) (520ms)
+2026-10-18T19:22:34.2267326Z   ✓   68 [chrome] › circuit.spec.mjs:700:9 › text typed at full speed into the grid's own fields arrives whole, under the builtin Chrome (SRV-7) › in the Cell Editor (754ms)
+2026-10-18T19:22:34.9937968Z   ✓   69 [chrome] › circuit.spec.mjs:717:9 › text typed at full speed into the grid's own fields arrives whole, under the builtin Chrome (SRV-7) › in the find field (ADR-0055) (754ms)
+2026-10-18T19:22:35.7950573Z   ✓   70 [chrome] › circuit.spec.mjs:730:9 › text typed at full speed into the grid's own fields arrives whole, under the builtin Chrome (SRV-7) › in the filter's search box (ADR-0009) (788ms)
+2026-10-18T19:22:36.5786654Z   ✓   71 [chrome] › circuit.spec.mjs:744:9 › text typed at full speed into the grid's own fields arrives whole, under the builtin Chrome (SRV-7) › in the filter's condition value (ADR-0009) (770ms)
+2026-10-18T19:22:37.3765608Z   ✓   72 [chrome] › circuit.spec.mjs:700:9 › text typed at full speed into the grid's own fields arrives whole, under the mud Chrome (SRV-7) › in the Cell Editor (785ms)
+2026-10-18T19:22:38.2772485Z   ✓   73 [chrome] › circuit.spec.mjs:717:9 › text typed at full speed into the grid's own fields arrives whole, under the mud Chrome (SRV-7) › in the find field (ADR-0055) (887ms)
+2026-10-18T19:22:39.1601412Z   ✓   74 [chrome] › circuit.spec.mjs:730:9 › text typed at full speed into the grid's own fields arrives whole, under the mud Chrome (SRV-7) › in the filter's search box (ADR-0009) (869ms)
+2026-10-18T19:22:40.0927772Z   ✓   75 [chrome] › circuit.spec.mjs:744:9 › text typed at full speed into the grid's own fields arrives whole, under the mud Chrome (SRV-7) › in the filter's condition value (ADR-0009) (919ms)
+2026-10-18T19:22:48.5264967Z   ✓   76 [chrome] › circuit.spec.mjs:805:1 › a far reveal paints rows in every frame, and never calls the Focus it scrolls to off screen (ADR-0012, ADR-0053) (8.4s)
+2026-10-18T19:22:50.9617193Z   ✓   77 [chrome] › copied-range.spec.mjs:42:1 › a copy is outlined with dashes that stand still and read over the Selection's outline (ADR-0170, CP-26, UX-6) (2.4s)
+2026-10-18T19:22:51.3110055Z   ✓   78 [chrome] › copied-range.spec.mjs:82:1 › a write by anything but the grid's own copy drops the outline: another grid's copy, a script's write (ADR-0170, CP-27) (336ms)
+2026-10-18T19:22:51.6960751Z   ✓   79 [chrome] › copied-range.spec.mjs:99:1 › Escape takes the outline away and the grid keeps the keyboard; a paste leaves it (ADR-0170, ADR-0012, CP-28, CP-31) (372ms)
+2026-10-18T19:22:52.0939720Z   ✓   80 [chrome] › copied-range.spec.mjs:117:1 › a copied cell whose value moves upstream loses the outline; a row replaced with the same copied text keeps it (ADR-0170, ADR-0142, CP-30) (386ms)
+2026-10-18T19:22:53.9808232Z   ✓   81 [chrome] › copied-range.spec.mjs:142:5 › a browser that cannot say the clipboard changed › draws no outline, and the copy still lands (ADR-0170, CP-32) (1.9s)
+2026-10-18T19:22:55.7621357Z   ✓   82 [chrome] › copied-range.spec.mjs:160:1 › on a Sheet the dashes are its outline's colour, with and without a Wrapper (ADR-0170, ADR-0071) (1.8s)
+2026-10-18T19:22:57.7092640Z   ✓   83 [chrome] › date-text.spec.mjs:51:9 › under en-US › ADR-0006 (2026-10-01): a date column without a Format shows yyyy-MM-dd HH:mm:ss under en-US (1.9s)
+2026-10-18T19:22:59.7638936Z   ✓   84 [chrome] › date-text.spec.mjs:57:9 › under en-US › ADR-0006 (ticket 95): the Formula Bar shows an unformatted date in its ISO form under en-US (2.0s)
+2026-10-18T19:23:01.7673956Z   ✓   85 [chrome] › date-text.spec.mjs:51:9 › under en-GB › ADR-0006 (2026-10-01): a date column without a Format shows yyyy-MM-dd HH:mm:ss under en-GB (2.0s)
+2026-10-18T19:23:03.8498642Z   ✓   86 [chrome] › date-text.spec.mjs:57:9 › under en-GB › ADR-0006 (ticket 95): the Formula Bar shows an unformatted date in its ISO form under en-GB (2.1s)
+2026-10-18T19:23:05.8880696Z   ✓   87 [chrome] › date-text.spec.mjs:51:9 › under ja-JP › ADR-0006 (2026-10-01): a date column without a Format shows yyyy-MM-dd HH:mm:ss under ja-JP (2.0s)
+2026-10-18T19:23:07.9263917Z   ✓   88 [chrome] › date-text.spec.mjs:57:9 › under ja-JP › ADR-0006 (ticket 95): the Formula Bar shows an unformatted date in its ISO form under ja-JP (2.0s)
+2026-10-18T19:23:07.9512146Z   ✓   89 [chrome] › date-text.spec.mjs:63:1 › ADR-0006 (2026-10-01): the same dates read the same under en-US, en-GB and ja-JP (3ms)
+2026-10-18T19:23:07.9643008Z   ✓   90 [chrome] › date-text.spec.mjs:70:1 › ADR-0006 (ticket 95): the Formula Bar reads the same date the same under en-US, en-GB and ja-JP (1ms)
+2026-10-18T19:23:12.7948905Z   ✓   91 [chrome] › declarations.spec.mjs:51:9 › under the builtin Chrome › DC-17: the candidate list opens under the editor, inside the grid's box; Tab accepts (4.8s)
+2026-10-18T19:23:15.2095949Z   ✓   92 [chrome] › declarations.spec.mjs:94:9 › under the builtin Chrome › DC-17: Escape closes the list and leaves the edit open; the next Escape cancels (2.4s)
+2026-10-18T19:23:17.7274756Z   ✓   93 [chrome] › declarations.spec.mjs:107:9 › under the builtin Chrome › DC-31: with the list open, ← and → move the caret and the list stays (2.5s)
+2026-10-18T19:23:20.2928662Z   ✓   94 [chrome] › declarations.spec.mjs:136:9 › under the builtin Chrome › DC-31: a repeated letter (=SS) completes the span at the caret, and the caret sits after it (2.6s)
+2026-10-18T19:23:22.8410830Z   ✓   95 [chrome] › declarations.spec.mjs:170:9 › under the builtin Chrome › DC-17: completion works from the Formula Bar, its list inside the grid's box (2.5s)
+2026-10-18T19:23:27.6627476Z   ✓   96 [chrome] › declarations.spec.mjs:51:9 › under the mud Chrome › DC-17: the candidate list opens under the editor, inside the grid's box; Tab accepts (4.8s)
+2026-10-18T19:23:32.3228156Z   ✓   97 [chrome] › declarations.spec.mjs:94:9 › under the mud Chrome › DC-17: Escape closes the list and leaves the edit open; the next Escape cancels (4.6s)
+2026-10-18T19:23:37.1087140Z   ✓   98 [chrome] › declarations.spec.mjs:107:9 › under the mud Chrome › DC-31: with the list open, ← and → move the caret and the list stays (4.8s)
+2026-10-18T19:23:41.9252781Z   ✓   99 [chrome] › declarations.spec.mjs:136:9 › under the mud Chrome › DC-31: a repeated letter (=SS) completes the span at the caret, and the caret sits after it (4.8s)
+2026-10-18T19:23:46.7243355Z   ✓  100 [chrome] › declarations.spec.mjs:170:9 › under the mud Chrome › DC-17: completion works from the Formula Bar, its list inside the grid's box (4.8s)
+2026-10-18T19:23:49.4239540Z   ✓  101 [chrome] › declarations.spec.mjs:220:9 › SH-36 under the builtin Chrome › SH-36: → at an open value list points — E10, shown selected — and closes the list (the tenth run, case 6) (2.7s)
+2026-10-18T19:23:52.2590038Z   ✓  102 [chrome] › declarations.spec.mjs:246:9 › SH-36 under the builtin Chrome › SH-36: ← at an open value list points too; in a list of names ← and → move the caret and the list stays (2.8s)
+2026-10-18T19:23:55.9589018Z   ✓  103 [chrome] › declarations.spec.mjs:275:9 › SH-36 under the builtin Chrome › SH-36: Tab closes the list after a value, a column and a table's name, and it is not opened again on what Tab wrote (the tenth run, cases 1–5) (3.7s)
+2026-10-18T19:23:58.8080734Z   ✓  104 [chrome] › declarations.spec.mjs:337:9 › SH-36 under the builtin Chrome › SH-36: with the caret moved back before a value nothing is listed, the hint stays, and Tab commits (Part B of the ninth run, x1) (2.8s)
+2026-10-18T19:24:01.8569856Z   ✓  105 [chrome] › declarations.spec.mjs:363:9 › SH-36 under the builtin Chrome › SH-36: a letter at match_mode lists every value, 0 selected, and Tab writes 0 over it; 4 lists nothing (the thirteenth run, Q54) (3.0s)
+2026-10-18T19:24:04.7252611Z   ✓  106 [chrome] › declarations.spec.mjs:399:9 › SH-36 under the builtin Chrome › SH-36: with the caret before two spaces nothing is listed, and Tab commits the Formula with the spaces kept (the thirteenth run, Q55; 11a) (2.9s)
+2026-10-18T19:24:08.2248929Z   ✓  107 [chrome] › declarations.spec.mjs:426:9 › SH-36 under the builtin Chrome › SH-36: Home at an open value list points at A10 and closes the list; End closes it and writes nothing, list or no list (Part B of the ninth run, x4 and x5; Q53) (3.5s)
+2026-10-18T19:24:10.3549404Z   -  108 [chrome] › declarations.spec.mjs:490:9 › SH-36 under the builtin Chrome › SH-36: Home typed at once after =SUM( points at A10 while the list for =S is still shown (ADR-0230 section 2)
+2026-10-18T19:24:13.1744950Z   ✓  109 [chrome] › declarations.spec.mjs:506:9 › SH-36 under the builtin Chrome › SH-36: Shift+→ at an open value list points at D10:E10 and closes the list; in a list of names Home moves the caret (Part B of the ninth run, x6) (2.8s)
+2026-10-18T19:24:18.1220294Z   ✓  110 [chrome] › declarations.spec.mjs:220:9 › SH-36 under the mud Chrome › SH-36: → at an open value list points — E10, shown selected — and closes the list (the tenth run, case 6) (4.9s)
+2026-10-18T19:24:23.3227565Z   ✓  111 [chrome] › declarations.spec.mjs:246:9 › SH-36 under the mud Chrome › SH-36: ← at an open value list points too; in a list of names ← and → move the caret and the list stays (5.2s)
+2026-10-18T19:24:29.5576194Z   ✓  112 [chrome] › declarations.spec.mjs:275:9 › SH-36 under the mud Chrome › SH-36: Tab closes the list after a value, a column and a table's name, and it is not opened again on what Tab wrote (the tenth run, cases 1–5) (6.2s)
+2026-10-18T19:24:34.6715486Z   ✓  113 [chrome] › declarations.spec.mjs:337:9 › SH-36 under the mud Chrome › SH-36: with the caret moved back before a value nothing is listed, the hint stays, and Tab commits (Part B of the ninth run, x1) (5.1s)
+2026-10-18T19:24:40.0079753Z   ✓  114 [chrome] › declarations.spec.mjs:363:9 › SH-36 under the mud Chrome › SH-36: a letter at match_mode lists every value, 0 selected, and Tab writes 0 over it; 4 lists nothing (the thirteenth run, Q54) (5.3s)
+2026-10-18T19:24:45.1375420Z   ✓  115 [chrome] › declarations.spec.mjs:399:9 › SH-36 under the mud Chrome › SH-36: with the caret before two spaces nothing is listed, and Tab commits the Formula with the spaces kept (the thirteenth run, Q55; 11a) (5.1s)
+2026-10-18T19:24:51.0405416Z   ✓  116 [chrome] › declarations.spec.mjs:426:9 › SH-36 under the mud Chrome › SH-36: Home at an open value list points at A10 and closes the list; End closes it and writes nothing, list or no list (Part B of the ninth run, x4 and x5; Q53) (5.9s)
+2026-10-18T19:24:55.3386579Z   -  117 [chrome] › declarations.spec.mjs:490:9 › SH-36 under the mud Chrome › SH-36: Home typed at once after =SUM( points at A10 while the list for =S is still shown (ADR-0230 section 2)
+2026-10-18T19:25:00.5389503Z   ✓  118 [chrome] › declarations.spec.mjs:506:9 › SH-36 under the mud Chrome › SH-36: Shift+→ at an open value list points at D10:E10 and closes the list; in a list of names Home moves the caret (Part B of the ninth run, x6) (5.2s)
+2026-10-18T19:25:03.6047235Z   ✓  119 [chrome] › declarations.spec.mjs:554:9 › ticket 75 under the builtin Chrome › ticket 75 / SH-36: Home, and Shift+→ instead, at an open value list after =XLOOKUP(1,A2:A4,B2:B4,, in D10 show what they wrote (the thirteenth run, b3 and b5) (3.1s)
+2026-10-18T19:25:06.2233136Z   ✓  120 [chrome] › declarations.spec.mjs:576:9 › ticket 75 under the builtin Chrome › ticket 75: ↓ and a press on the Sheet show what they wrote at the end of a Formula longer than the Cell Editor (2.6s)
+2026-10-18T19:25:08.7539052Z   ✓  121 [chrome] › declarations.spec.mjs:598:9 › ticket 75 under the builtin Chrome › ticket 75: ↓ and a press on the Sheet show what they wrote in the Formula Bar, at the end of a Formula longer than the bar (2.5s)
+2026-10-18T19:25:14.1539367Z   ✓  122 [chrome] › declarations.spec.mjs:554:9 › ticket 75 under the mud Chrome › ticket 75 / SH-36: Home, and Shift+→ instead, at an open value list after =XLOOKUP(1,A2:A4,B2:B4,, in D10 show what they wrote (the thirteenth run, b3 and b5) (5.4s)
+2026-10-18T19:25:19.0206586Z   ✓  123 [chrome] › declarations.spec.mjs:576:9 › ticket 75 under the mud Chrome › ticket 75: ↓ and a press on the Sheet show what they wrote at the end of a Formula longer than the Cell Editor (4.9s)
+2026-10-18T19:25:23.8215414Z   ✓  124 [chrome] › declarations.spec.mjs:598:9 › ticket 75 under the mud Chrome › ticket 75: ↓ and a press on the Sheet show what they wrote in the Formula Bar, at the end of a Formula longer than the bar (4.8s)
+2026-10-18T19:25:26.5751489Z   ✓  125 [chrome] › declarations.spec.mjs:631:1 › DC-19: = ↓ ↓ points at F4, Shift+arrows extend, the Selection and the Focus stay put (2.7s)
+2026-10-18T19:25:29.0393813Z   ✓  126 [chrome] › declarations.spec.mjs:669:1 › DC-19: a click points at the clicked cell; Shift+click extends (2.5s)
+2026-10-18T19:25:31.4703915Z   ✓  127 [chrome] › declarations.spec.mjs:687:1 › DC-19: F2 switches from pointing to moving the caret (2.4s)
+2026-10-18T19:25:33.8871112Z   ✓  128 [chrome] › declarations.spec.mjs:710:1 › DC-31: a Reference written mid-text lands at the caret and the caret sits after it (2.4s)
+2026-10-18T19:25:36.7369292Z   ✓  129 [chrome] › declarations.spec.mjs:731:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (builtin Chrome) (2.8s)
+2026-10-18T19:25:41.9382970Z   ✓  130 [chrome] › declarations.spec.mjs:731:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (5.2s)
+2026-10-18T19:25:44.5541605Z   ✓  131 [chrome] › declarations.spec.mjs:782:5 › DC-19/DC-34: a press in the Formula Bar's text before a 150 ms circuit has placed the caret after a pointed Reference ends pointing (builtin Chrome) (2.6s)
+2026-10-18T19:25:49.4209701Z   ✓  132 [chrome] › declarations.spec.mjs:782:5 › DC-19/DC-34: a press in the Formula Bar's text before a 150 ms circuit has placed the caret after a pointed Reference ends pointing (mud Chrome) (4.9s)
+2026-10-18T19:25:52.3721111Z   ✓  133 [chrome] › declarations.spec.mjs:819:5 › DC-19/ADR-0010: keys typed into the Formula Bar before a 150 ms circuit has answered the press into it keep their meaning (builtin Chrome) (2.9s)
+2026-10-18T19:25:57.6842243Z   ✓  134 [chrome] › declarations.spec.mjs:819:5 › DC-19/ADR-0010: keys typed into the Formula Bar before a 150 ms circuit has answered the press into it keep their meaning (mud Chrome) (5.3s)
+2026-10-18T19:26:00.3705374Z   ✓  135 [chrome] › declarations.spec.mjs:895:9 › ED-29: =A1+B1 typed into the bar, then Home, → and three Deletes, leaves =B1 in the bar, the edit open and the Focus on D10 (builtin Chrome) (2.7s)
+2026-10-18T19:26:03.0364236Z   ✓  136 [chrome] › declarations.spec.mjs:895:9 › ED-29: =A1+B1 pointed from the bar, then typed on, then Home, → and three Deletes, leaves =B1 in the bar, the edit open and the Focus on D10 (builtin Chrome) (2.7s)
+2026-10-18T19:26:05.6862572Z   ✓  137 [chrome] › declarations.spec.mjs:895:9 › ED-29: =A1+B1 begun in the cell, then pressed into the bar, then Home, → and three Deletes, leaves =B1 in the bar, the edit open and the Focus on D10 (builtin Chrome) (2.6s)
+2026-10-18T19:26:10.6189909Z   ✓  138 [chrome] › declarations.spec.mjs:895:9 › ED-29: =A1+B1 typed into the bar, then Home, → and three Deletes, leaves =B1 in the bar, the edit open and the Focus on D10 (mud Chrome) (4.9s)
+2026-10-18T19:26:15.5383084Z   ✓  139 [chrome] › declarations.spec.mjs:895:9 › ED-29: =A1+B1 pointed from the bar, then typed on, then Home, → and three Deletes, leaves =B1 in the bar, the edit open and the Focus on D10 (mud Chrome) (4.9s)
+2026-10-18T19:26:20.4689203Z   ✓  140 [chrome] › declarations.spec.mjs:895:9 › ED-29: =A1+B1 begun in the cell, then pressed into the bar, then Home, → and three Deletes, leaves =B1 in the bar, the edit open and the Focus on D10 (mud Chrome) (4.9s)
+2026-10-18T19:26:23.0680022Z   ✓  141 [chrome] › declarations.spec.mjs:933:5 › ED-22/ED-29: =A1+ typed in the cell, the Formula Bar pressed and B1 typed at once, on a 150 ms circuit, commits =A1+B1 (builtin Chrome) (2.6s)
+2026-10-18T19:26:27.9882411Z   ✓  142 [chrome] › declarations.spec.mjs:933:5 › ED-22/ED-29: =A1+ typed in the cell, the Formula Bar pressed and B1 typed at once, on a 150 ms circuit, commits =A1+B1 (mud Chrome) (4.9s)
+2026-10-18T19:26:30.7518325Z   ✓  143 [chrome] › declarations.spec.mjs:962:5 › ED-29: =A1+B1 typed into the bar, then F2 and Home, enters the Formula into D10 and moves the Focus to A10, as Excel does (case 7k; builtin Chrome) (2.7s)
+2026-10-18T19:26:35.7851492Z   ✓  144 [chrome] › declarations.spec.mjs:962:5 › ED-29: =A1+B1 typed into the bar, then F2 and Home, enters the Formula into D10 and moves the Focus to A10, as Excel does (case 7k; mud Chrome) (5.0s)
+2026-10-18T19:26:38.6679885Z   ✓  145 [chrome] › declarations.spec.mjs:991:5 › ADR-0021: a row press's late hand-back does not take the keyboard from the Formula Bar or the Name Box pressed after it, on a 150 ms circuit (builtin Chrome) (2.9s)
+2026-10-18T19:26:43.9519760Z   ✓  146 [chrome] › declarations.spec.mjs:991:5 › ADR-0021: a row press's late hand-back does not take the keyboard from the Formula Bar or the Name Box pressed after it, on a 150 ms circuit (mud Chrome) (5.3s)
+2026-10-18T19:26:46.0837181Z   -  147 [chrome] › declarations.spec.mjs:1058:5 › ADR-0021: an edit's request for the Cell Editor, landing after a press into the Formula Bar, leaves the keyboard in the bar, on a 150 ms circuit (builtin Chrome)
+2026-10-18T19:26:48.2173389Z   -  148 [chrome] › declarations.spec.mjs:1058:5 › ADR-0021: an edit's request for the Cell Editor, landing after a press into the Formula Bar, leaves the keyboard in the bar, on a 150 ms circuit (mud Chrome)
+2026-10-18T19:26:50.9342977Z   ✓  149 [chrome] › declarations.spec.mjs:1084:1 › DC-20: typed quickly on a 150 ms circuit, no arrow points where the text forbids it (2.7s)
+2026-10-18T19:26:53.4347815Z   ✓  150 [chrome] › declarations.spec.mjs:1107:1 › DC-28: keys typed in the Formula Bar behind F2 on a 150 ms circuit land in the bar, in order (2.5s)
+2026-10-18T19:26:55.9682335Z   ✓  151 [chrome] › declarations.spec.mjs:1138:1 › DC-28/ED-22: after keys held behind F2 on a 150 ms circuit, the next key lands at the caret they left (2.5s)
+2026-10-18T19:26:58.6837999Z   ✓  152 [chrome] › declarations.spec.mjs:1202:5 › DC-45: =B2 and four F4 presses in a cell give $B$2, B$2, $B2 and B2, the caret after each (builtin Chrome) (2.7s)
+2026-10-18T19:27:01.3014901Z   ✓  153 [chrome] › declarations.spec.mjs:1226:5 › DC-45: =B2 and four F4 presses in the Formula Bar give the same four forms, the caret after each, and the bar keeps the keyboard (builtin Chrome) (2.6s)
+2026-10-18T19:27:06.3344997Z   ✓  154 [chrome] › declarations.spec.mjs:1202:5 › DC-45: =B2 and four F4 presses in a cell give $B$2, B$2, $B2 and B2, the caret after each (mud Chrome) (5.0s)
+2026-10-18T19:27:11.1996859Z   ✓  155 [chrome] › declarations.spec.mjs:1226:5 › DC-45: =B2 and four F4 presses in the Formula Bar give the same four forms, the caret after each, and the bar keeps the keyboard (mud Chrome) (4.9s)
+2026-10-18T19:27:13.4493421Z   ✓  156 [chrome] › declarations.spec.mjs:1247:1 › DC-45: with no edit open, F4 is left to the browser and opens nothing (2.2s)
+2026-10-18T19:27:16.2683779Z   ✓  157 [chrome] › declarations.spec.mjs:1261:1 › DC-45: F4 cycles the Reference the caret touches mid-text, and every Reference a selection covers or touches (2.8s)
+2026-10-18T19:27:18.6993323Z   ✓  158 [chrome] › declarations.spec.mjs:1303:1 › DC-45: while pointing, F4 cycles the pointed Reference and pointing goes on; the next arrow writes the relative form (2.4s)
+2026-10-18T19:27:21.1501437Z   ✓  159 [chrome] › declarations.spec.mjs:1329:1 › DC-45/SH-28: while pointing, F4 cycles both ends of the pointed range, and a key typed next follows it (ADR-0051; R1 (vi); the seventeenth Windows run, Part C, case 16) (2.4s)
+2026-10-18T19:27:23.7325138Z   ✓  160 [chrome] › declarations.spec.mjs:1355:1 › ED-2/DC-19: while pointing, Shift+Home extends the outline to the row's first column and pointing goes on; typed =, Shift+Home points from the edited cell (ADR-0010, ADR-0051; R1 (viii) and its first reading) (2.6s)
+2026-10-18T19:27:26.2158465Z   ✓  161 [chrome] › declarations.spec.mjs:1383:1 › ED-29/DC-19: in the Formula Bar, after =, ↓ does not point: the text stays =, nothing is outlined, F4 and ↓ change nothing, and + types on (ADR-0051; R1 (i) to (iii)) (2.5s)
+2026-10-18T19:27:28.6658145Z   ✓  162 [chrome] › declarations.spec.mjs:1412:1 › DC-45: on a 150 ms circuit, four F4 presses in a burst give the four forms in order (2.4s)
+2026-10-18T19:27:31.2995964Z   ✓  163 [chrome] › declarations.spec.mjs:1439:1 › DC-45: on a 150 ms circuit, a second F4 before the caret is placed cycles the same Reference (2.6s)
+2026-10-18T19:27:33.8331457Z   ✓  164 [chrome] › declarations.spec.mjs:1492:5 › SH-28/DC-45: =SUM(A:A), the caret after the Reference, F4 three times gives $A:$A, A:A and $A:$A, each selected (ADR-0051; the seventeenth Windows run, Part C, cases 8 and 9; cell) (2.5s)
+2026-10-18T19:27:36.4152155Z   ✓  165 [chrome] › declarations.spec.mjs:1506:5 › SH-28/DC-45: =SUM(A1:B2), the caret after B2, F4 four times cycles B2 alone through its four forms, each selected (ADR-0051; the seventeenth Windows run, Part C, case 5; cell) (2.6s)
+2026-10-18T19:27:39.1311408Z   ✓  166 [chrome] › declarations.spec.mjs:1492:5 › SH-28/DC-45: =SUM(A:A), the caret after the Reference, F4 three times gives $A:$A, A:A and $A:$A, each selected (ADR-0051; the seventeenth Windows run, Part C, cases 8 and 9; bar) (2.7s)
+2026-10-18T19:27:41.9644742Z   ✓  167 [chrome] › declarations.spec.mjs:1506:5 › SH-28/DC-45: =SUM(A1:B2), the caret after B2, F4 four times cycles B2 alone through its four forms, each selected (ADR-0051; the seventeenth Windows run, Part C, case 5; bar) (2.8s)
+2026-10-18T19:27:44.5487144Z   ✓  168 [chrome] › declarations.spec.mjs:1522:1 › SH-28/DC-45: typed into a cell, F4 leaves the caret after the rewritten Reference, in upper case, and the other end of a range as typed (ADR-0051; the seventeenth Windows run, Part C, cases 21 and 22) (2.6s)
+2026-10-18T19:27:47.0977378Z   ✓  169 [chrome] › declarations.spec.mjs:1542:1 › ED-2: typed into a cell, Shift+Home commits the Formula and extends the Selection to the row's first column; Shift+→ then moves the Extent (ADR-0010; the seventeenth Windows run, Part C, case 7) (2.5s)
+2026-10-18T19:27:50.1826788Z   ✓  170 [chrome] › declarations.spec.mjs:1564:1 › ED-2: typed into a cell, Shift+→, Shift+↓ and Shift+← commit and extend the Selection from it (ADR-0010; R1 (vii)) (3.1s)
+2026-10-18T19:27:53.1664513Z   ✓  171 [chrome] › declarations.spec.mjs:1600:1 › ED-2: typed into a cell, Ctrl+→ commits and moves to the Sheet's last column; Ctrl+Shift+→ commits and selects to it (ADR-0010, ADR-0012; R1 (vii)) (3.0s)
+2026-10-18T19:27:55.5965905Z   ✓  172 [chrome] › declarations.spec.mjs:1632:1 › ED-2/DC-19: typed = into a cell, Shift+↓ points a range from the edited cell instead of selecting text, and nothing commits (ADR-0010, ADR-0051) (2.4s)
+2026-10-18T19:27:58.0489952Z   ✓  173 [chrome] › declarations.spec.mjs:1658:1 › DC-46: =A1+B2:C3 outlines A1 and B2:C3, each once and in a colour of its own; Escape removes them (2.4s)
+2026-10-18T19:28:00.3981646Z   ✓  174 [chrome] › declarations.spec.mjs:1685:1 › DC-46: a Reference across the pinned boundary is drawn whole in each layer and clipped to its side, as a selected range is (ADR-0008) (2.3s)
+2026-10-18T19:28:02.7646134Z   ✓  175 [chrome] › declarations.spec.mjs:1703:1 › DC-46: =A1+A1 outlines A1 once per Reference, in one colour (the eighth Windows run) (2.4s)
+2026-10-18T19:28:05.3966885Z   ✓  176 [chrome] › declarations.spec.mjs:1717:1 › DC-46: =, ↓, ↓ outlines the pointed cell in the first colour under dashes in the Focus outline's colour, which go once an operator follows; Enter removes them all (2.6s)
+2026-10-18T19:28:07.9801275Z   ✓  177 [chrome] › declarations.spec.mjs:1769:1 › SH-31/DC-50: =A1+SUM(Positions[PV]) outlines the positions grid's PV column in the colour Positions[PV] was given; Escape removes it (2.6s)
+2026-10-18T19:28:11.0305087Z   ✓  178 [chrome] › declarations.spec.mjs:1800:1 › SH-31/DC-50: each column read is outlined once in its colour, whatever the Formula's casing; Enter removes them all (3.0s)
+2026-10-18T19:28:13.6993444Z   ✓  179 [chrome] › declarations.spec.mjs:1819:1 › SH-31: a table or column not declared outlines nothing in the positions grid (2.7s)
+2026-10-18T19:28:16.9466834Z   ✓  180 [chrome] › declarations.spec.mjs:1878:5 › DC-13/DC-27: dragging the fill handle continues a series; the Selection is source and target (builtin Chrome) (3.2s)
+2026-10-18T19:28:22.6302036Z   ✓  181 [chrome] › declarations.spec.mjs:1878:5 › DC-13/DC-27: dragging the fill handle continues a series; the Selection is source and target (mud Chrome) (5.7s)
+2026-10-18T19:28:26.7129640Z   ✓  182 [chrome] › declarations.spec.mjs:1904:1 › DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport (4.1s)
+2026-10-18T19:28:30.2968357Z   ✓  183 [chrome] › declarations.spec.mjs:1947:1 › DC-13: a Formula filled right shifts its References; a refused pattern leaves the Selection on the source (3.6s)
+2026-10-18T19:28:34.1469151Z   ✓  184 [chrome] › declarations.spec.mjs:2036:1 › DC-12/DC-13: a whole column's handle stands beside its Heading; dragged right it fills every row, a lone number as a series, and dragged down it changes nothing (the readings of 2026-10-12, R5 (3)) (3.8s)
+2026-10-18T19:28:38.0465649Z   ✓  185 [chrome] › declarations.spec.mjs:2074:1 › DC-12/DC-13: a whole row's handle stands at the row's left, beside its Heading; dragged down it fills every column, a lone number as a series, and dragged across it changes nothing (the readings of 2026-10-12, R5 (4)) (3.9s)
+2026-10-18T19:28:41.2787164Z   ✓  186 [chrome] › declarations.spec.mjs:2114:1 › DC-12/DC-13: with row 1 scrolled away, a whole column's handle stays at the top of the part in view and fills from there (the readings of 2026-10-12, R5 (5)) (3.2s)
+2026-10-18T19:28:43.7630371Z   ✓  187 [chrome] › declarations.spec.mjs:2137:1 › DC-8: a block pasted from the real clipboard onto one cell spills, and becomes the Selection (2.5s)
+2026-10-18T19:28:48.1454178Z   ✓  188 [chrome] › declarations.spec.mjs:2162:5 › CP-6/CP-10/CP-14: Ctrl+C and Ctrl+V reach the grid after every way out of an edit (builtin Chrome) (4.4s)
+2026-10-18T19:28:55.3787176Z   ✓  189 [chrome] › declarations.spec.mjs:2162:5 › CP-6/CP-10/CP-14: Ctrl+C and Ctrl+V reach the grid after every way out of an edit (mud Chrome) (7.2s)
+2026-10-18T19:28:58.7636629Z   ✓  190 [chrome] › declarations.spec.mjs:2239:5 › ED-22/ADR-0010: Ctrl+C and Ctrl+V typed at once behind an edit's end, a press and F2 are done in their turn on a 150 ms circuit (builtin Chrome) (3.4s)
+2026-10-18T19:29:04.7465377Z   ✓  191 [chrome] › declarations.spec.mjs:2239:5 › ED-22/ADR-0010: Ctrl+C and Ctrl+V typed at once behind an edit's end, a press and F2 are done in their turn on a 150 ms circuit (mud Chrome) (6.0s)
+2026-10-18T19:29:07.0613014Z   ✓  192 [chrome] › declarations.spec.mjs:2322:1 › DC-38/ADR-0048: Excel's too-narrow column pasted onto one cell is refused, the notice says why, and the Selection stays (2.3s)
+2026-10-18T19:29:09.4100155Z   ✓  193 [chrome] › declarations.spec.mjs:2342:1 › DC-8: Excel's column wide enough, with the same flavours, file and RTF included, pastes and spills (2.3s)
+2026-10-18T19:29:11.9392403Z DC-33 marker on the synchronous (copy event) route: kept
+2026-10-18T19:29:12.0298968Z   ✓  194 [chrome] › declarations.spec.mjs:2371:1 › SH-14/DC-33: a copy inside the Sheet carries Entries and shifts References; outward it carries Values (2.6s)
+2026-10-18T19:29:14.5036745Z DC-33 marker on the asynchronous route (menu copy): kept; html: <html><head></head><body><table data-ex-grid="invariant" xmlns:x="urn:schemas-microsoft-com:office:excel"><tbody><tr><td x:num="12">12</td><td x:num="0.5">0.5</td></tr><tr><td x:num="7">7</td><td x:num="0.75">0.75</td></tr></tbody></table></body></html>
+2026-10-18T19:29:14.5954584Z   ✓  195 [chrome] › declarations.spec.mjs:2401:1 › DC-33: whether the invariant marker survives the asynchronous clipboard route (a menu copy) (2.5s)
+2026-10-18T19:29:17.8941572Z   ✓  196 [chrome] › declarations.spec.mjs:2428:1 › DC-30: Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z walk the Sheet's stack; with an edit open they are the editor's (3.3s)
+2026-10-18T19:29:20.2445163Z   ✓  197 [chrome] › declarations.spec.mjs:2467:1 › DC-30/ADR-0007: with an edit open, Ctrl+Z undoes uncommitted typing (2.3s)
+2026-10-18T19:29:24.1629990Z   ✓  198 [chrome] › declarations.spec.mjs:2496:1 › SRV-5/ED-22: a Formula typed into an open editor at 10 keys a second on a 150 ms circuit loses nothing (3.9s)
+2026-10-18T19:29:26.3599319Z   ✓  199 [chrome] › declarations.spec.mjs:2509:1 › DC-30/DC-25: on the grid that declares no undo, Ctrl+Z stays the browser's (2.2s)
+2026-10-18T19:29:28.9269761Z   ✓  200 [chrome] › declarations.spec.mjs:2533:1 › DC-36: the grips resize a column and size it to fit, and no header carries a menu button (2.6s)
+2026-10-18T19:29:31.3268631Z   ✓  201 [chrome] › declarations.spec.mjs:2558:1 › DC-25: the positions grid, declaring nothing, keeps ExGrid's own behaviour beside the Sheet (2.4s)
+2026-10-18T19:29:34.1300473Z   ✓  202 [chrome] › device-pixel-225.spec.mjs:37:1 › VZ-16: at a ratio of 2.25 a gridline is two whole Device Pixels, not the step's 2.25 blended over three (ADR-0090) (2.8s)
+2026-10-18T19:29:38.9123237Z   ✓  203 [chrome] › edit-stands.spec.mjs:60:9 › /sheet under the builtin Chrome › ADR-0018/ED-26: an edit left for another grid stands, that grid's keys are its own, and a press back points with the keyboard in the edit (4.7s)
+2026-10-18T19:29:41.9144986Z   ✓  204 [chrome] › edit-stands.spec.mjs:96:9 › /sheet under the builtin Chrome › ADR-0018/ADR-0080/ED-26: a press back where no Reference can go commits, moves, and gives the Sheet the keyboard (3.0s)
+2026-10-18T19:29:44.8113362Z   ✓  205 [chrome] › edit-stands.spec.mjs:118:9 › /sheet under the builtin Chrome › ADR-0018/ED-26: an edit last typed in the Formula Bar gets the keyboard back in the bar (2.9s)
+2026-10-18T19:29:47.7619156Z   ✓  206 [chrome] › edit-stands.spec.mjs:136:9 › /sheet under the builtin Chrome › ADR-0018/ADR-0021/ADR-0080/ED-26: a press back that commits an edit last typed in the Formula Bar gives the grid the keyboard, not the bar (2.9s)
+2026-10-18T19:29:50.4794851Z   ✓  207 [chrome] › edit-stands.spec.mjs:158:9 › /sheet under the builtin Chrome › ADR-0021/ADR-0080/ED-26: a press on the rows that commits an edit typed in the Formula Bar gives the grid the keyboard (2.7s)
+2026-10-18T19:29:53.1135874Z   ✓  208 [chrome] › edit-stands.spec.mjs:174:9 › /sheet under the builtin Chrome › ADR-0018/ED-26: an edit left for a control on the page stands, and a press back commits it (2.6s)
+2026-10-18T19:29:55.7593102Z   ✓  209 [chrome] › edit-stands.spec.mjs:60:9 › /sheet under the mud Chrome › ADR-0018/ED-26: an edit left for another grid stands, that grid's keys are its own, and a press back points with the keyboard in the edit (2.6s)
+2026-10-18T19:29:58.9760677Z   ✓  210 [chrome] › edit-stands.spec.mjs:96:9 › /sheet under the mud Chrome › ADR-0018/ADR-0080/ED-26: a press back where no Reference can go commits, moves, and gives the Sheet the keyboard (3.2s)
+2026-10-18T19:30:02.0955952Z   ✓  211 [chrome] › edit-stands.spec.mjs:118:9 › /sheet under the mud Chrome › ADR-0018/ED-26: an edit last typed in the Formula Bar gets the keyboard back in the bar (3.1s)
+2026-10-18T19:30:04.8948186Z   ✓  212 [chrome] › edit-stands.spec.mjs:136:9 › /sheet under the mud Chrome › ADR-0018/ADR-0021/ADR-0080/ED-26: a press back that commits an edit last typed in the Formula Bar gives the grid the keyboard, not the bar (2.8s)
+2026-10-18T19:30:07.8589048Z   ✓  213 [chrome] › edit-stands.spec.mjs:158:9 › /sheet under the mud Chrome › ADR-0021/ADR-0080/ED-26: a press on the rows that commits an edit typed in the Formula Bar gives the grid the keyboard (3.0s)
+2026-10-18T19:30:10.6409982Z   ✓  214 [chrome] › edit-stands.spec.mjs:174:9 › /sheet under the mud Chrome › ADR-0018/ED-26: an edit left for a control on the page stands, and a press back commits it (2.8s)
+2026-10-18T19:30:13.1942305Z   ✓  215 [chrome] › edit-stands.spec.mjs:201:1 › ADR-0018/ADR-0021/ED-26: with a 150 ms round trip, the key straight after the press back is the Sheet's (2.5s)
+2026-10-18T19:30:15.5767353Z   ✓  216 [chrome] › edit-stands.spec.mjs:227:1 › ADR-0010/ADR-0018/ED-22: a press on the rows of a grid nested in the Sheet starts no hold of the Sheet's (2.4s)
+2026-10-18T19:30:16.6568456Z   ✓  217 [chrome] › edit-stands.spec.mjs:272:5 › /sheets › ADR-0018/ED-26: two Sheets each hold an edit, and a press back on the rows gives each its keyboard (1.1s)
+2026-10-18T19:30:17.7099983Z   ✓  218 [chrome] › edit-stands.spec.mjs:308:5 › /sheets › ADR-0018/ADR-0080/ED-26: a press back on a column heading or a Row Heading commits the edit left standing, and the Sheet has the keyboard (1.0s)
+2026-10-18T19:30:18.3747823Z   ✓  219 [chrome] › edit-stands.spec.mjs:335:5 › /sheets › ADR-0018/ADR-0021/ED-26: with a 150 ms round trip, the key straight after the press back is that Sheet's (651ms)
+2026-10-18T19:30:19.1585052Z   ✓  220 [chrome] › edit-stands.spec.mjs:365:5 › ADR-0018/ED-27: on a Sheet an edit whose keyboard is elsewhere is outlined 1px wide, and draws no outline once it returns (builtin Chrome) (773ms)
+2026-10-18T19:30:20.0075868Z   ✓  221 [chrome] › edit-stands.spec.mjs:365:5 › ADR-0018/ED-27: on a Sheet an edit whose keyboard is elsewhere is outlined 1px wide, and draws no outline once it returns (mud Chrome) (838ms)
+2026-10-18T19:30:20.3903643Z   ✓  222 [chrome] › edit-stands.spec.mjs:427:1 › ADR-0018/ED-27: on the core grid an edit whose keyboard is elsewhere is outlined 1px wide, and at the token's 2px while the keyboard is in it (371ms)
+2026-10-18T19:30:20.4757009Z   -  223 [chrome] › edit-stands.spec.mjs:471:9 › ADR-0021/ED-28: an edit opening on the left Sheet, and a press on the right at once, 40 ms round trip (builtin Chrome) › = typed on the left and the right pressed at once, thirty times: the right keeps the keyboard, and the left edit stands
+2026-10-18T19:30:20.5578881Z   -  224 [chrome] › edit-stands.spec.mjs:497:9 › ADR-0021/ED-28: an edit opening on the left Sheet, and a press on the right at once, 40 ms round trip (builtin Chrome) › =1 typed at full speed and the right pressed at once: the 1 held behind the = goes into the left edit, not the right
+2026-10-18T19:30:20.6412800Z   -  225 [chrome] › edit-stands.spec.mjs:471:9 › ADR-0021/ED-28: an edit opening on the left Sheet, and a press on the right at once, 40 ms round trip (mud Chrome) › = typed on the left and the right pressed at once, thirty times: the right keeps the keyboard, and the left edit stands
+2026-10-18T19:30:20.7249459Z   -  226 [chrome] › edit-stands.spec.mjs:497:9 › ADR-0021/ED-28: an edit opening on the left Sheet, and a press on the right at once, 40 ms round trip (mud Chrome) › =1 typed at full speed and the right pressed at once: the 1 held behind the = goes into the left edit, not the right
+2026-10-18T19:30:21.1098644Z   ✓  227 [chrome] › edit-stands.spec.mjs:534:9 › ADR-0010/ED-22: keys straight after a press on the rows while an edit is open, no injected latency › ADR-0010/ED-22: on a plain editable grid, the key after a press that commits opens an edit on the pressed cell (370ms)
+2026-10-18T19:30:23.7607240Z   ✓  228 [chrome] › edit-stands.spec.mjs:557:9 › ADR-0010/ED-22: keys straight after a press on the rows while an edit is open, no injected latency › ADR-0010/ADR-0021/ED-22: on a Sheet, the key after a press that commits opens an edit on the pressed cell (2.6s)
+2026-10-18T19:30:26.2917553Z   ✓  229 [chrome] › edit-stands.spec.mjs:576:9 › ADR-0010/ED-22: keys straight after a press on the rows while an edit is open, no injected latency › ADR-0010/ADR-0051/ED-22: on a Sheet, the keys after a press that points are typed after the Reference it wrote (2.5s)
+2026-10-18T19:30:26.5429379Z   ✓  230 [chrome] › edit-stands.spec.mjs:601:9 › ADR-0010/ED-22: keys straight after a press on the rows while an edit is open, no injected latency › ADR-0010/ED-22: outside an edit, a press on the rows and an arrow hold nothing (239ms)
+2026-10-18T19:30:26.9078670Z   ✓  231 [chrome] › edit-stands.spec.mjs:645:9 › ADR-0010/ED-22: keys straight after a press on the rows while an edit is open, no injected latency › ADR-0010/ED-22: on a plain editable grid, a double click on another cell commits the edit and opens that cell's text (352ms)
+2026-10-18T19:30:29.4566218Z   ✓  232 [chrome] › edit-stands.spec.mjs:669:9 › ADR-0010/ED-22: keys straight after a press on the rows while an edit is open, no injected latency › ADR-0010/ED-22: on a Sheet, a double click on another cell commits the edit and opens that cell's text (2.5s)
+2026-10-18T19:30:29.4761571Z   -  233 [chrome] › edit-stands.spec.mjs:534:9 › ADR-0010/ED-22: keys straight after a press on the rows while an edit is open, 150 ms round trip › ADR-0010/ED-22: on a plain editable grid, the key after a press that commits opens an edit on the pressed cell
+2026-10-18T19:30:29.4955885Z   -  234 [chrome] › edit-stands.spec.mjs:557:9 › ADR-0010/ED-22: keys straight after a press on the rows while an edit is open, 150 ms round trip › ADR-0010/ADR-0021/ED-22: on a Sheet, the key after a press that commits opens an edit on the pressed cell
+2026-10-18T19:30:29.5095247Z   -  235 [chrome] › edit-stands.spec.mjs:576:9 › ADR-0010/ED-22: keys straight after a press on the rows while an edit is open, 150 ms round trip › ADR-0010/ADR-0051/ED-22: on a Sheet, the keys after a press that points are typed after the Reference it wrote
+2026-10-18T19:30:29.5270763Z   -  236 [chrome] › edit-stands.spec.mjs:601:9 › ADR-0010/ED-22: keys straight after a press on the rows while an edit is open, 150 ms round trip › ADR-0010/ED-22: outside an edit, a press on the rows and an arrow hold nothing
+2026-10-18T19:30:29.5445102Z   -  237 [chrome] › edit-stands.spec.mjs:645:9 › ADR-0010/ED-22: keys straight after a press on the rows while an edit is open, 150 ms round trip › ADR-0010/ED-22: on a plain editable grid, a double click on another cell commits the edit and opens that cell's text
+2026-10-18T19:30:29.5584859Z   -  238 [chrome] › edit-stands.spec.mjs:669:9 › ADR-0010/ED-22: keys straight after a press on the rows while an edit is open, 150 ms round trip › ADR-0010/ED-22: on a Sheet, a double click on another cell commits the edit and opens that cell's text
+2026-10-18T19:30:32.3927034Z   ✓  239 [chrome] › edit-stands.spec.mjs:710:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, no injected latency › ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that points go into the edit after its Reference, in order (builtin Chrome) (2.8s)
+2026-10-18T19:30:35.2422360Z   ✓  240 [chrome] › edit-stands.spec.mjs:734:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, no injected latency › ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that commits open an edit on the pressed cell and go into it in order (builtin Chrome) (2.8s)
+2026-10-18T19:30:38.0584826Z   ✓  241 [chrome] › edit-stands.spec.mjs:755:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, no injected latency › ADR-0010/ADR-0018/ED-22: on /sheet, a key, a second press and keys after it, straight after a press back, are answered in order (builtin Chrome) (2.8s)
+2026-10-18T19:30:41.1070979Z   ✓  242 [chrome] › edit-stands.spec.mjs:710:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, no injected latency › ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that points go into the edit after its Reference, in order (mud Chrome) (3.0s)
+2026-10-18T19:30:44.2422364Z   ✓  243 [chrome] › edit-stands.spec.mjs:734:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, no injected latency › ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that commits open an edit on the pressed cell and go into it in order (mud Chrome) (3.1s)
+2026-10-18T19:30:47.3063684Z   ✓  244 [chrome] › edit-stands.spec.mjs:755:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, no injected latency › ADR-0010/ADR-0018/ED-22: on /sheet, a key, a second press and keys after it, straight after a press back, are answered in order (mud Chrome) (3.1s)
+2026-10-18T19:30:48.2757920Z   ✓  245 [chrome] › edit-stands.spec.mjs:782:9 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, no injected latency › ADR-0010/ADR-0018/ED-22: on /sheets, a press back on the left while the right holds an edit of its own: a key, a second press and keys after it go into the left edit in order, and the right edit stands (955ms)
+2026-10-18T19:30:48.3025555Z   -  246 [chrome] › edit-stands.spec.mjs:710:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, 150 ms round trip › ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that points go into the edit after its Reference, in order (builtin Chrome)
+2026-10-18T19:30:48.3185749Z   -  247 [chrome] › edit-stands.spec.mjs:734:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, 150 ms round trip › ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that commits open an edit on the pressed cell and go into it in order (builtin Chrome)
+2026-10-18T19:30:48.3361361Z   -  248 [chrome] › edit-stands.spec.mjs:755:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, 150 ms round trip › ADR-0010/ADR-0018/ED-22: on /sheet, a key, a second press and keys after it, straight after a press back, are answered in order (builtin Chrome)
+2026-10-18T19:30:48.3465324Z   -  249 [chrome] › edit-stands.spec.mjs:710:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, 150 ms round trip › ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that points go into the edit after its Reference, in order (mud Chrome)
+2026-10-18T19:30:48.3583390Z   -  250 [chrome] › edit-stands.spec.mjs:734:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, 150 ms round trip › ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that commits open an edit on the pressed cell and go into it in order (mud Chrome)
+2026-10-18T19:30:48.3705455Z   -  251 [chrome] › edit-stands.spec.mjs:755:13 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, 150 ms round trip › ADR-0010/ADR-0018/ED-22: on /sheet, a key, a second press and keys after it, straight after a press back, are answered in order (mud Chrome)
+2026-10-18T19:30:48.3836940Z   -  252 [chrome] › edit-stands.spec.mjs:782:9 › ADR-0010/ADR-0018/ED-22: what follows a press back at once keeps its order, 150 ms round trip › ADR-0010/ADR-0018/ED-22: on /sheets, a press back on the left while the right holds an edit of its own: a key, a second press and keys after it go into the left edit in order, and the right edit stands
+2026-10-18T19:30:50.9100509Z   ✓  253 [chrome] › excel-keys.spec.mjs:28:1 › Ctrl+Z and Ctrl+Y reach the Consumer's history, and the keydown is taken (KB-39, ADR-0007) (2.5s)
+2026-10-18T19:30:51.2257181Z   ✓  254 [chrome] › excel-keys.spec.mjs:51:1 › inside the editor Ctrl+Z, Delete and Backspace are the input's own (ADR-0007, ED-25) (302ms)
+2026-10-18T19:30:51.6409067Z   ✓  255 [chrome] › excel-keys.spec.mjs:68:1 › Delete raises one Clear Intent, and the Consumer blanks what it can (ED-24, ADR-0054) (401ms)
+2026-10-18T19:30:51.9263444Z   ✓  256 [chrome] › excel-keys.spec.mjs:86:1 › Delete over a non-editable column is refused whole, and says so (ED-24, ADR-0054) (272ms)
+2026-10-18T19:30:52.2409482Z   ✓  257 [chrome] › excel-keys.spec.mjs:97:1 › Backspace opens an empty editor, and Escape leaves the cell as it was (ED-23, ADR-0035) (300ms)
+2026-10-18T19:30:52.6126296Z   ✓  258 [chrome] › excel-keys.spec.mjs:116:1 › Ctrl+D fills down and Ctrl+R fills right, and the browser keeps neither key (CP-24, ADR-0035) (357ms)
+2026-10-18T19:30:52.8426990Z   ✓  259 [chrome] › excel-keys.spec.mjs:137:1 › Ctrl+D on the first row is refused by name (CP-25, ADR-0035) (216ms)
+2026-10-18T19:30:53.3423273Z   ✓  260 [chrome] › excel-keys.spec.mjs:143:1 › a display-only grid leaves Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25, KB-39, ADR-0054/0035/0007) (486ms)
+2026-10-18T19:30:59.2258558Z   ✓  261 [chrome] › f4-enter-mode.spec.mjs:88:1 › ADR-0051/SH-28: F4 leaves a caret where the caret stood at the text's end, and selects what it rewrote where it stood inside the text (run 18a, answers 1 and 2) (5.9s)
+2026-10-18T19:31:02.0865181Z   ✓  262 [chrome] › f4-enter-mode.spec.mjs:139:1 › ADR-0051/SH-28: with F2 first, F4 on a Reference with a Sheet qualifier selects from $A$1, and leaves a caret at the text's end (run 18a, answer 4) (2.8s)
+2026-10-18T19:31:05.2245356Z   ✓  263 [chrome] › f4-enter-mode.spec.mjs:158:1 › ADR-0051/DC-19: after =, Ctrl+↓ points at the column's data edge, and Ctrl+Shift+↓ points from the edited cell to it; nothing commits (run 18a, answer 5) (3.1s)
+2026-10-18T19:31:07.9410937Z   ✓  264 [chrome] › f4-enter-mode.spec.mjs:197:1 › ADR-0051/ED-2: Shift+Home extends a pointed range from its fixed end, and after = points from the edited cell, in Point (run 18a, answers 3 and 8) (2.7s)
+2026-10-18T19:31:12.6909988Z   ✓  265 [chrome] › f4-enter-mode.spec.mjs:231:1 › ADR-0010/ED-2: typed into a cell, Shift+↑, Ctrl+← and Ctrl+↑ commit and move or extend the Selection as with no edit open (run 18a, answer 7) (4.7s)
+2026-10-18T19:31:16.1240698Z   ✓  266 [chrome] › f4-enter-mode.spec.mjs:270:1 › ADR-0010/ED-2: typed into a cell, Ctrl+↓ commits and moves to the column's last row, and Ctrl+Shift+↓ commits and selects to it (run 18a, answer 7) (3.4s)
+2026-10-18T19:31:18.5441679Z   ✓  267 [chrome] › features.spec.mjs:33:1 › typing opens Overwrite containing the character, Enter commits and moves (ED-2/ED-4) (2.4s)
+2026-10-18T19:31:18.8925028Z   ✓  268 [chrome] › features.spec.mjs:54:1 › in Overwrite an arrow commits and moves; in Caret it moves the caret (ED-2) (335ms)
+2026-10-18T19:31:19.1567145Z   ✓  269 [chrome] › features.spec.mjs:71:1 › Escape cancels the editor and never blurs the grid mid-edit (ED-3) (251ms)
+2026-10-18T19:31:19.5435319Z   ✓  270 [chrome] › features.spec.mjs:101:1 › Escape with nothing to dismiss keeps the keyboard, and the next Tab or Shift+Tab leaves for the page (KB-8, ADR-0080) (373ms)
+2026-10-18T19:31:19.8611858Z   ✓  271 [chrome] › features.spec.mjs:143:1 › Escape, Escape, then a character opens an edit in the selected cell (KB-8) (304ms)
+2026-10-18T19:31:20.1746231Z   ✓  272 [chrome] › features.spec.mjs:160:1 › Escape, a press on a cell, then Tab cycles inside it (KB-8) (300ms)
+2026-10-18T19:31:20.3585067Z   -  273 [chrome] › features.spec.mjs:173:1 › with a 150 ms round trip, Escape and Tab typed at once leave the grid once every input is answered; behind an unanswered Enter the Tab is refused aloud, and a character opens an edit (KB-8, ADR-0230, ADR-0010, ADR-0080)
+2026-10-18T19:31:20.6387134Z   ✓  274 [chrome] › features.spec.mjs:217:1 › Escape, an arrow, then Tab cycles inside the selection (KB-8) (268ms)
+2026-10-18T19:31:20.9395132Z   ✓  275 [chrome] › features.spec.mjs:230:1 › Escape held with nothing to dismiss, then Tab leaves for the page (KB-8, KB-44) (288ms)
+2026-10-18T19:31:21.2243204Z   ✓  276 [chrome] › features.spec.mjs:253:1 › the clipboard carries both formats, and #### never reaches it (CP-4/CP-5/CP-6/CP-10) (271ms)
+2026-10-18T19:31:21.5061805Z   ✓  277 [chrome] › features.spec.mjs:300:1 › a misaligned selection refuses and the clipboard stays untouched (CP-1/CP-3) (269ms)
+2026-10-18T19:31:21.7909930Z   ✓  278 [chrome] › features.spec.mjs:314:1 › paste raises one intent shaped by the clipboard block (CP-14, PST-1) (270ms)
+2026-10-18T19:31:22.5909001Z   ✓  279 [chrome] › features.spec.mjs:335:1 › CP-6/CP-10/CP-14: Ctrl+C and Ctrl+V reach the grid after an edit ends by Enter, Tab or Escape (786ms)
+2026-10-18T19:31:23.1069048Z   ✓  280 [chrome] › features.spec.mjs:362:1 › ADR-0014 (amended 2026-09-29): one value of plain text over a range goes into its top-left alone, and the Selection collapses to it (501ms)
+2026-10-18T19:31:23.6232273Z   ✓  281 [chrome] › features.spec.mjs:386:1 › ADR-0014 (amended 2026-09-29): one cell copied inside the grid still fills the whole range (503ms)
+2026-10-18T19:31:23.8743678Z   ✓  282 [chrome] › features.spec.mjs:404:1 › a paste covering a non-editable column is refused whole (CP-16, ADR-0035) (236ms)
+2026-10-18T19:31:24.1426218Z   ✓  283 [chrome] › features.spec.mjs:419:1 › Ctrl+Enter fill across a non-editable column is refused, and says so (CP-16, ADR-0035, ADR-0052) (252ms)
+2026-10-18T19:31:24.4233680Z   ✓  284 [chrome] › features.spec.mjs:440:1 › a refusal is announced in the root's live region in the built-in words, and again when repeated (A11Y-16, ADR-0203, ERR-2) (265ms)
+2026-10-18T19:31:24.7041563Z   ✓  285 [chrome] › features.spec.mjs:538:1 › CP-6 / ADR-0005: a Ctrl+C inside the Window writes with no permission granted and no prompt, by the copy event on WebAssembly (268ms)
+2026-10-18T19:31:25.0246693Z   ✓  286 [chrome] › features.spec.mjs:566:1 › CP-19 / ADR-0005/0036: a menu copy writes with no permission granted and no prompt, by the asynchronous route, with headers (CP-17) (307ms)
+2026-10-18T19:31:25.4235068Z   ✓  287 [chrome] › features.spec.mjs:606:5 › CP-10 / ADR-0005: text selected with the mouse, then a press on the grid that edits: Ctrl+C copies the grid's cell, not the text (385ms)
+2026-10-18T19:31:25.7881432Z   ✓  288 [chrome] › features.spec.mjs:606:5 › CP-10 / ADR-0005: text selected with the mouse, then a press on the display-only grid: Ctrl+C copies the grid's cell, not the text (352ms)
+2026-10-18T19:31:26.2078431Z   ✓  289 [chrome] › features.spec.mjs:606:5 › CP-10 / ADR-0005: text selected with the mouse, then Tab back to the display-only grid: Ctrl+C copies the grid's cell, not the text (406ms)
+2026-10-18T19:31:26.4895136Z   ✓  290 [chrome] › features.spec.mjs:642:1 › CP-14 / ADR-0005: an Excel-shaped paste arrives typed and at full precision, from x:num and not the shown text (269ms)
+2026-10-18T19:31:26.7881488Z   ✓  291 [chrome] › features.spec.mjs:687:1 › CP-14 / ADR-0005: desktop Excel's paste, shown text with no x:num, arrives as the shown text and is read as numbers (286ms)
+2026-10-18T19:31:27.2078964Z   ✓  292 [chrome] › features.spec.mjs:717:5 › CON-8 / ADR-0005: a copy whose payload fails to build says so on the console on either route, and writes nothing (407ms)
+2026-10-18T19:31:27.7053058Z   ✓  293 [chrome] › features.spec.mjs:766:1 › in Overwrite Shift+Home and Shift+↓ commit and extend the Selection; in Caret Shift+Home selects the text (ED-2, ADR-0010) (485ms)
+2026-10-18T19:31:28.1229175Z   ✓  294 [chrome] › features.spec.mjs:804:1 › in Overwrite Ctrl+← commits and moves to the row's first column, Ctrl+Shift+← commits and extends to it; in Caret Ctrl+← moves the caret (ED-2, ADR-0010) (404ms)
+2026-10-18T19:31:28.6732816Z   ✓  295 [chrome] › features.spec.mjs:871:1 › in Caret Ctrl+← and Ctrl+→ move the caret by a word, with Shift extend the selection, and Ctrl+Backspace and Ctrl+Delete delete a word, in the field itself (ED-2, ADR-0010) (536ms)
+2026-10-18T19:31:28.8396339Z   -  296 [chrome] › features.spec.mjs:917:1 › with a 150 ms round trip, End, Ctrl+←, Shift+End typed straight after F2 move and extend as the field would; so do Ctrl+→, Ctrl+Shift+→, Ctrl+Backspace and Ctrl+Delete (ED-2, ADR-0010)
+2026-10-18T19:31:29.0901707Z   ✓  297 [chrome] › features.spec.mjs:955:1 › a Reject holds the commit Shift+↓ asks for in Overwrite, and the Selection stays (ED-2, ED-15, ADR-0034) (238ms)
+2026-10-18T19:31:29.3728386Z   ✓  298 [chrome] › features.spec.mjs:971:1 › a Reject holds the editor with real keys, and Escape is the way out (ED-15, ADR-0034) (270ms)
+2026-10-18T19:31:29.9573964Z   ✓  299 [chrome] › features.spec.mjs:990:1 › a Flag applies and is marked, and its message opens on the Focus (ED-16/ED-17, ADR-0034) (571ms)
+2026-10-18T19:31:30.5549951Z   ✓  300 [chrome] › features.spec.mjs:1007:1 › a flagged cell says why when the pointer rests on it (ED-17b, ADR-0021/0034) (586ms)
+2026-10-18T19:31:30.7712192Z   ✓  301 [chrome] › features.spec.mjs:1027:1 › a pasted value wears the same mark as a typed one (ADR-0034) (204ms)
+2026-10-18T19:31:31.0055359Z   ✓  302 [chrome] › features.spec.mjs:1037:1 › Ctrl+PageDown is neither handled nor prevented (KB-15) (222ms)
+2026-10-18T19:31:31.2728630Z   ✓  303 [chrome] › features.spec.mjs:1075:1 › the grid is one tab stop, its Keyboard Field on a grid that edits (A11Y-4, KB-12, ADR-0080) (254ms)
+2026-10-18T19:31:31.4382946Z   ✓  304 [chrome] › features.spec.mjs:1111:1 › two instances stay independent: no --ex-* on :root, no window global (DOM-4) (152ms)
+2026-10-18T19:31:31.6755624Z   ✓  305 [chrome] › features.spec.mjs:1130:1 › a header click sorts and the selection is untouched by it (SR-1) (224ms)
+2026-10-18T19:31:32.0907705Z   ✓  306 [chrome] › features.spec.mjs:1144:1 › a display-only grid does not take printable keys away from the page (ADR-0010/0020) (400ms)
+2026-10-18T19:31:32.4410430Z   ✓  307 [chrome] › features.spec.mjs:1171:1 › Escape returns the keyboard from a descendant control to the grid (ADR-0020/0012) (337ms)
+2026-10-18T19:31:32.9214291Z   ✓  308 [chrome] › features.spec.mjs:1206:1 › Space enters a cell with several actions; the arrows choose and Space fires once (KB-20/KB-21, ADR-0037) (467ms)
+2026-10-18T19:31:33.3557249Z   ✓  309 [chrome] › features.spec.mjs:1234:1 › inside a cell Enter never fires: it leaves and moves down (KB-22, ADR-0020/0037) (422ms)
+2026-10-18T19:31:33.7733149Z   ✓  310 [chrome] › features.spec.mjs:1246:1 › Escape leaves an Interactive cell and the grid keeps the keyboard (KB-22, ADR-0037) (404ms)
+2026-10-18T19:31:34.1890788Z   ✓  311 [chrome] › features.spec.mjs:1257:1 › Space puts the caret in a Template cell's field, and Escape brings the keyboard back (KB-23/KB-24, ADR-0037) (403ms)
+2026-10-18T19:31:34.6068264Z   ✓  312 [chrome] › features.spec.mjs:1274:1 › a held Space fires a one-action cell once (KB-26, ADR-0037) (404ms)
+2026-10-18T19:31:35.0057518Z   ✓  313 [chrome] › features.spec.mjs:1288:1 › holding Space to enter a cell fires nothing (KB-26, ADR-0037) (385ms)
+2026-10-18T19:31:35.3210050Z   ✓  314 [chrome] › features.spec.mjs:1302:1 › Shift+Tab from after the grid lands on the root, not on a button inside it (A11Y-17, ADR-0037) (302ms)
+2026-10-18T19:31:37.8107293Z   ✓  315 [chrome] › features.spec.mjs:1324:1 › the chosen action is outlined, with and without forced colors (UX-14, ADR-0029/0037) (2.5s)
+2026-10-18T19:31:39.8234580Z   ✓  316 [chrome] › features.spec.mjs:1340:1 › a press dragged off an action leaves no button holding the keyboard, and Enter fires nothing (KB-27, ADR-0020/0037) (2.0s)
+2026-10-18T19:31:42.2579904Z   ✓  317 [chrome] › find.spec.mjs:29:9 › under the builtin Chrome › Ctrl+F opens the grid's panel, the keys typed after it land in its field, and Enter steps (FD-1/FD-3/FD-5, ADR-0055) (2.4s)
+2026-10-18T19:31:42.6242816Z   ✓  318 [chrome] › find.spec.mjs:54:9 › under the builtin Chrome › a capital and a Shift+Enter typed straight after Ctrl+F keep their meaning (ADR-0055/0010, ED-22) (353ms)
+2026-10-18T19:31:43.0046734Z   ✓  319 [chrome] › find.spec.mjs:67:9 › under the builtin Chrome › a match beyond the painted rows is reached and revealed (FD-5, ADR-0055) (366ms)
+2026-10-18T19:31:43.4733492Z   ✓  320 [chrome] › find.spec.mjs:79:9 › under the builtin Chrome › with a range selected, Find searches it and the selection stands (FD-4/FD-5, ADR-0055) (456ms)
+2026-10-18T19:31:43.8428177Z   ✓  321 [chrome] › find.spec.mjs:94:9 › under the builtin Chrome › nothing found is said, in a live region (FD-6, ADR-0055) (353ms)
+2026-10-18T19:31:44.1553861Z   ✓  322 [chrome] › find.spec.mjs:105:9 › under the builtin Chrome › Ctrl+F in the find field selects its text, and the browser's find stays shut (FD-1, ADR-0055) (299ms)
+2026-10-18T19:31:44.4395323Z   ✓  323 [chrome] › find.spec.mjs:120:9 › under the builtin Chrome › Ctrl+F in a column's popover opens Find in its place (FD-1, ADR-0055) (272ms)
+2026-10-18T19:31:44.8068089Z   ✓  324 [chrome] › find.spec.mjs:134:9 › under the builtin Chrome › Ctrl+F in the Context Menu, and in the filter's text field, opens Find in its place (FD-1, ADR-0055) (353ms)
+2026-10-18T19:31:45.1046172Z   ✓  325 [chrome] › find.spec.mjs:158:9 › under the builtin Chrome › a Ctrl+F typed straight after Alt+Down opens Find, and the letters after it land in its field (FD-1, ED-22, ADR-0055) (285ms)
+2026-10-18T19:31:45.3735936Z   ✓  326 [chrome] › find.spec.mjs:172:9 › under the builtin Chrome › Escape closes the panel and hands the keyboard back to the grid (FD-3, ADR-0055) (255ms)
+2026-10-18T19:31:46.0549945Z   ✓  327 [chrome] › find.spec.mjs:29:9 › under the mud Chrome › Ctrl+F opens the grid's panel, the keys typed after it land in its field, and Enter steps (FD-1/FD-3/FD-5, ADR-0055) (669ms)
+2026-10-18T19:31:46.4566400Z   ✓  328 [chrome] › find.spec.mjs:54:9 › under the mud Chrome › a capital and a Shift+Enter typed straight after Ctrl+F keep their meaning (ADR-0055/0010, ED-22) (388ms)
+2026-10-18T19:31:46.9229846Z   ✓  329 [chrome] › find.spec.mjs:67:9 › under the mud Chrome › a match beyond the painted rows is reached and revealed (FD-5, ADR-0055) (453ms)
+2026-10-18T19:31:47.4727380Z   ✓  330 [chrome] › find.spec.mjs:79:9 › under the mud Chrome › with a range selected, Find searches it and the selection stands (FD-4/FD-5, ADR-0055) (537ms)
+2026-10-18T19:31:47.9386754Z   ✓  331 [chrome] › find.spec.mjs:94:9 › under the mud Chrome › nothing found is said, in a live region (FD-6, ADR-0055) (452ms)
+2026-10-18T19:31:48.3237120Z   ✓  332 [chrome] › find.spec.mjs:105:9 › under the mud Chrome › Ctrl+F in the find field selects its text, and the browser's find stays shut (FD-1, ADR-0055) (371ms)
+2026-10-18T19:31:48.7399821Z   ✓  333 [chrome] › find.spec.mjs:120:9 › under the mud Chrome › Ctrl+F in a column's popover opens Find in its place (FD-1, ADR-0055) (402ms)
+2026-10-18T19:31:49.2711787Z   ✓  334 [chrome] › find.spec.mjs:134:9 › under the mud Chrome › Ctrl+F in the Context Menu, and in the filter's text field, opens Find in its place (FD-1, ADR-0055) (517ms)
+2026-10-18T19:31:49.6218596Z   ✓  335 [chrome] › find.spec.mjs:158:9 › under the mud Chrome › a Ctrl+F typed straight after Alt+Down opens Find, and the letters after it land in its field (FD-1, ED-22, ADR-0055) (337ms)
+2026-10-18T19:31:49.9728183Z   ✓  336 [chrome] › find.spec.mjs:172:9 › under the mud Chrome › Escape closes the panel and hands the keyboard back to the grid (FD-3, ADR-0055) (338ms)
+2026-10-18T19:31:50.3557407Z   ✓  337 [chrome] › find.spec.mjs:185:1 › Tab stays inside the find panel (FD-8, ADR-0055/0039) (371ms)
+2026-10-18T19:31:50.6062047Z   ✓  338 [chrome] › find.spec.mjs:199:1 › the find panel stands inside the grid's box (FD-8, ADR-0055/0040) (238ms)
+2026-10-18T19:31:50.9209791Z   ✓  339 [chrome] › find.spec.mjs:216:1 › a grid with nothing to search takes Ctrl+F and opens nothing (FD-1/FD-2, ADR-0055) (303ms)
+2026-10-18T19:31:51.1704528Z   ✓  340 [chrome] › find.spec.mjs:232:1 › in the Cell Editor Ctrl+F does nothing (FD-1, ADR-0055) (237ms)
+2026-10-18T19:31:51.5851621Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-10-18T19:31:51.5852628Z [DemoApi]       Application is shutting down...
+2026-10-18T19:31:51.6168475Z 
+2026-10-18T19:31:51.6186413Z   Slow test file: [chrome] › declarations.spec.mjs (6.4m)
+2026-10-18T19:31:51.6187258Z   Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+2026-10-18T19:31:51.6187790Z   26 skipped
+2026-10-18T19:31:51.6188057Z   314 passed (10.4m)
+2026-10-18T19:31:51.6560685Z ##[group]Run actions/upload-artifact@v7
+2026-10-18T19:31:51.6561002Z with:
+2026-10-18T19:31:51.6561222Z   name: layer3-records-chrome-1
+2026-10-18T19:31:51.6561563Z   path: verification/
+tests/ExGrid.Browser/test-results/
+
+2026-10-18T19:31:51.6561922Z   if-no-files-found: ignore
+2026-10-18T19:31:51.6562171Z   retention-days: 30
+2026-10-18T19:31:51.6562408Z   compression-level: 6
+2026-10-18T19:31:51.6562632Z   overwrite: false
+2026-10-18T19:31:51.6563051Z   include-hidden-files: false
+2026-10-18T19:31:51.6563298Z   archive: true
+2026-10-18T19:31:51.6563497Z env:
+2026-10-18T19:31:51.6563703Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:31:51.6563953Z   DOTNET_NOLOGO: 1
+2026-10-18T19:31:51.6564154Z   LONG_RUN: true
+2026-10-18T19:31:51.6564889Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:31:51.6565172Z ##[endgroup]
+2026-10-18T19:31:53.1766729Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-10-18T19:31:53.1769237Z The least common ancestor is /home/runner/work/ex-grid/ex-grid. This will be the root directory of the artifact
+2026-10-18T19:31:53.1770001Z With the provided path, there will be 10438 files uploaded
+2026-10-18T19:31:53.1773915Z Artifact name is valid!
+2026-10-18T19:31:53.1774501Z Root directory input is valid!
+2026-10-18T19:31:53.4526055Z Uploading artifact: layer3-records-chrome-1.zip
+2026-10-18T19:31:53.4539765Z Beginning upload of artifact content to blob storage
+2026-10-18T19:31:54.3766650Z Uploaded bytes 8388608
+2026-10-18T19:31:54.7144858Z Uploaded bytes 16777216
+2026-10-18T19:31:55.1158073Z Uploaded bytes 25165824
+2026-10-18T19:31:55.5837457Z Uploaded bytes 33554432
+2026-10-18T19:31:56.0294855Z Uploaded bytes 41943040
+2026-10-18T19:31:56.8373612Z Uploaded bytes 50331648
+2026-10-18T19:31:57.3612421Z Uploaded bytes 58720256
+2026-10-18T19:31:57.9185225Z Uploaded bytes 67108864
+2026-10-18T19:31:58.6634752Z Uploaded bytes 75497472
+2026-10-18T19:31:59.0949886Z Uploaded bytes 83886080
+2026-10-18T19:31:59.6442034Z Uploaded bytes 92274688
+2026-10-18T19:32:00.0935583Z Uploaded bytes 100663296
+2026-10-18T19:32:00.9154962Z Uploaded bytes 109051904
+2026-10-18T19:32:01.5374127Z Uploaded bytes 117440512
+2026-10-18T19:32:02.0221744Z Uploaded bytes 125829120
+2026-10-18T19:32:03.0088277Z Uploaded bytes 134217728
+2026-10-18T19:32:03.4990716Z Uploaded bytes 142606336
+2026-10-18T19:32:04.0274642Z Uploaded bytes 150994944
+2026-10-18T19:32:04.6466017Z Uploaded bytes 159383552
+2026-10-18T19:32:05.4256810Z Uploaded bytes 167772160
+2026-10-18T19:32:05.8153017Z Uploaded bytes 176160768
+2026-10-18T19:32:06.1219496Z Uploaded bytes 184549376
+2026-10-18T19:32:06.6887848Z Uploaded bytes 192937984
+2026-10-18T19:32:07.0617780Z Uploaded bytes 201326592
+2026-10-18T19:32:07.6090711Z Uploaded bytes 209715200
+2026-10-18T19:32:07.6753194Z Uploaded bytes 213135686
+2026-10-18T19:32:07.6924853Z Finished uploading artifact content to blob storage!
+2026-10-18T19:32:07.6928964Z SHA256 digest of uploaded artifact is 0cba65e847015a46660bdcc77065560abebf8efd1c7e34be8a59636fa15415a3
+2026-10-18T19:32:07.6931197Z Finalizing artifact upload
+2026-10-18T19:32:07.9125243Z Artifact layer3-records-chrome-1 successfully finalized. Artifact ID 12147624651
+2026-10-18T19:32:07.9126410Z Artifact layer3-records-chrome-1 has been successfully uploaded! Final size is 213135686 bytes. Artifact ID is 12147624651
+2026-10-18T19:32:07.9131186Z Artifact download URL: https://github.com/AkiraMisawa/ex-grid/actions/runs/39158128144/artifacts/12147624651
+2026-10-18T19:32:07.9555330Z Post job cleanup.
+2026-10-18T19:32:08.0725574Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-29c22a3ee550219573164ee5799c29ef3a61ce3fb606a2e9963ffbcac73f25bb, not saving cache.
+2026-10-18T19:32:08.0831264Z Post job cleanup.
+2026-10-18T19:32:08.2160223Z Post job cleanup.
+2026-10-18T19:32:08.3069137Z [command]/usr/bin/git version
+2026-10-18T19:32:08.3109416Z git version 2.55.0
+2026-10-18T19:32:08.3158774Z Temporarily overriding HOME='/home/runner/work/_temp/8736d388-c2e2-4429-8121-b62a06723b36' before making global git config changes
+2026-10-18T19:32:08.3159741Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-18T19:32:08.3164609Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ex-grid/ex-grid
+2026-10-18T19:32:08.3198264Z Removing SSH command configuration
+2026-10-18T19:32:08.3205267Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-18T19:32:08.3242064Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-18T19:32:08.3486015Z Removing HTTP extra header
+2026-10-18T19:32:08.3491836Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-18T19:32:08.3529112Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-18T19:32:08.3769164Z Removing includeIf entries pointing to credentials config files
+2026-10-18T19:32:08.3776738Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-18T19:32:08.3807729Z includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path
+2026-10-18T19:32:08.3808507Z includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-10-18T19:32:08.3809135Z includeif.gitdir:/github/workspace/.git.path
+2026-10-18T19:32:08.3809680Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-18T19:32:08.3817305Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path
+2026-10-18T19:32:08.3839988Z /home/runner/work/_temp/git-credentials-d0c2644e-e1bc-4f52-a3b7-31c4c5c07d08.config
+2026-10-18T19:32:08.3850942Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-d0c2644e\-e1bc\-4f52\-a3b7\-31c4c5c07d08\.config
+2026-10-18T19:32:08.3889921Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-10-18T19:32:08.3913953Z /home/runner/work/_temp/git-credentials-d0c2644e-e1bc-4f52-a3b7-31c4c5c07d08.config
+2026-10-18T19:32:08.3932140Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-d0c2644e\-e1bc\-4f52\-a3b7\-31c4c5c07d08\.config
+2026-10-18T19:32:08.3966680Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-18T19:32:08.3989381Z /github/runner_temp/git-credentials-d0c2644e-e1bc-4f52-a3b7-31c4c5c07d08.config
+2026-10-18T19:32:08.3998548Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-d0c2644e\-e1bc\-4f52\-a3b7\-31c4c5c07d08\.config
+2026-10-18T19:32:08.4227589Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-18T19:32:08.4256192Z /github/runner_temp/git-credentials-d0c2644e-e1bc-4f52-a3b7-31c4c5c07d08.config
+2026-10-18T19:32:08.4266126Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-d0c2644e\-e1bc\-4f52\-a3b7\-31c4c5c07d08\.config
+2026-10-18T19:32:08.4302728Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-18T19:32:08.4554227Z Removing credentials config '/home/runner/work/_temp/git-credentials-d0c2644e-e1bc-4f52-a3b7-31c4c5c07d08.config'
+2026-10-18T19:32:08.4709611Z Cleaning up orphan processes

@@ -1,0 +1,15 @@
+  +0.0% ref      1e+06/1e+06  rc3      1e+06/1e+06  /LV-15/rows
+  +0.0% ref            12/12  rc3            12/12  /LV-15/runs
+  -1.5% ref            69/64  rc3            65/66  /LV-15/appliedMs/median
+  +3.7% ref            42/39  rc3            40/44  /LV-15/appliedMs/min
+  +0.7% ref           92/192  rc3           203/83  /LV-15/appliedMs/max
+  -1.5% ref            69/64  rc3            65/66  /LV-15/applyToFrameMs/median
+  +2.4% ref            42/40  rc3            40/44  /LV-15/applyToFrameMs/min
+  +0.7% ref           92/193  rc3           203/84  /LV-15/applyToFrameMs/max
+  -4.8% ref            83/85  rc3            80/80  /LV-15/taskStartToFrameMs/median
+  +1.8% ref            56/55  rc3            54/59  /LV-15/taskStartToFrameMs/min
+ -13.6% ref          298/275  rc3          239/256  /LV-15/taskStartToFrameMs/max
+  -9.0% ref            82/85  rc3            74/78  /LV-15/longestTaskMs/median
+-100.0% ref             0/54  rc3              0/0  /LV-15/longestTaskMs/min <<
+ -13.7% ref          297/274  rc3          238/255  /LV-15/longestTaskMs/max
+  +0.0% ref            12/12  rc3            12/12  /LV-15/gridInTheBatchsFrame

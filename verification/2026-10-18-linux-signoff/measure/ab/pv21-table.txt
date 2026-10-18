@@ -1,0 +1,416 @@
+  +0.0% ref      1e+06/1e+06  rc3      1e+06/1e+06  /PV-21/DA-17 objects, browser (/pivot?trades=1000000)/records
+  -3.5% ref        3410/3355  rc3        3231/3295  /PV-21/DA-17 objects, browser (/pivot?trades=1000000)/readIntoSnapshotMs
+  -8.3% ref        8007/7132  rc3        6781/7108  /PV-21/DA-17 objects, browser (/pivot?trades=1000000)/pageTaskMs
+  +0.5% ref          818/611  rc3          741/695  /PV-21/PV-21 first question at load, /pivot over 1,000,000 trades/answerMs
+ -13.4% ref          290/181  rc3          220/188  /PV-21/PV-21 first question at load, /pivot over 1,000,000 trades/longestTaskMs
+  -8.0% ref        9795/8480  rc3        8252/8567  /PV-21/PV-21 first question at load, /pivot over 1,000,000 trades/firstReportAtMs
+  +0.0% ref              5/5  rc3              5/5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/runs
+ +66.6% ref          15.5/18  rc3        28.6/27.2  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/firstVisualAnswerMs/median <<
+ +54.2% ref          12/16.4  rc3          22.8/21  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/firstVisualAnswerMs/min <<
+ +13.1% ref        64.4/60.7  rc3        66.8/74.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/firstVisualAnswerMs/max
+ +66.6% ref          15.5/18  rc3        28.6/27.2  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/answerMs/median <<
+ +54.2% ref          12/16.4  rc3          22.8/21  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/answerMs/min <<
+ +13.2% ref        64.4/60.7  rc3        66.8/74.8  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/answerMs/max
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/longestTaskMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/longestTaskMs/min
+ +12.2% ref            63/60  rc3            65/73  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/longestTaskMs/max
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/longestTaskSettlingMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/longestTaskSettlingMs/min
+ +12.2% ref            63/60  rc3            65/73  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/longestTaskSettlingMs/max
+  +7.1% ref          0.7/0.7  rc3          0.7/0.8  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/inputDelayMs/median
+  -8.3% ref          0.6/0.6  rc3          0.5/0.6  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/inputDelayMs/min
+ +81.2% ref          0.8/0.8  rc3            2/0.9  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open a field's menu/inputDelayMs/max <<
+  +0.0% ref              5/5  rc3              5/5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/runs
+ +36.4% ref          41/42.8  rc3        54.2/60.1  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/firstVisualAnswerMs/median <<
+ +11.8% ref        28.6/38.6  rc3        37.9/37.2  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/firstVisualAnswerMs/min
+ +19.2% ref        85.4/82.5  rc3       96.9/103.3  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/firstVisualAnswerMs/max
+ +36.5% ref          41/42.8  rc3        54.2/60.2  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/answerMs/median <<
+ +11.8% ref        28.6/38.6  rc3        37.9/37.2  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/answerMs/min
+ +19.3% ref        85.4/82.5  rc3       96.9/103.4  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/answerMs/max
+  +0.0% ref              0/0  rc3            53/59  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/longestTaskMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/longestTaskMs/min
+ +20.7% ref            83/81  rc3           96/102  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/longestTaskMs/max <<
+  +0.0% ref              0/0  rc3            53/59  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/longestTaskSettlingMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/longestTaskSettlingMs/min
+ +20.7% ref            83/81  rc3           96/102  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/longestTaskSettlingMs/max <<
+ +18.2% ref          0.5/0.6  rc3          0.7/0.6  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/inputDelayMs/median
+  +0.0% ref          0.5/0.6  rc3          0.6/0.5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/inputDelayMs/min
+ -26.1% ref          0.8/1.5  rc3          0.9/0.8  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort Z to A/inputDelayMs/max <<
+  +0.0% ref              5/5  rc3              5/5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/runs
+ +12.5% ref        39.7/44.5  rc3        50.9/43.8  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/firstVisualAnswerMs/median
+ +27.5% ref          27/40.3  rc3        44.7/41.1  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/firstVisualAnswerMs/min <<
+ +62.8% ref        56.2/54.7  rc3        97.1/83.4  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/firstVisualAnswerMs/max <<
+ +12.5% ref        39.7/44.5  rc3        50.9/43.8  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/answerMs/median
+ +27.5% ref          27/40.3  rc3        44.7/41.1  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/answerMs/min <<
+ +62.8% ref        56.2/54.7  rc3        97.1/83.4  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/answerMs/max <<
+  +0.0% ref              0/0  rc3             50/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/longestTaskMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/longestTaskMs/min
+ +63.3% ref            55/54  rc3            96/82  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/longestTaskMs/max <<
+  +0.0% ref              0/0  rc3             50/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/longestTaskSettlingMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/longestTaskSettlingMs/min
+ +63.3% ref            55/54  rc3            96/82  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/longestTaskSettlingMs/max <<
+  -7.1% ref          0.6/0.8  rc3          0.7/0.6  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/inputDelayMs/median
+ +10.0% ref          0.5/0.5  rc3          0.6/0.5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/inputDelayMs/min
+ -10.5% ref          0.6/1.3  rc3            1/0.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/sort A to Z/inputDelayMs/max
+  +0.0% ref              5/5  rc3              5/5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/runs
+ +14.4% ref        27.7/31.9  rc3        33.4/34.8  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/firstVisualAnswerMs/median
+  +4.9% ref        26.8/26.7  rc3        26.4/29.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/firstVisualAnswerMs/min
+ -21.5% ref        75.5/75.8  rc3          60.8/58  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/firstVisualAnswerMs/max <<
+ +14.4% ref        27.7/31.9  rc3        33.4/34.8  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/answerMs/median
+  +4.9% ref        26.8/26.7  rc3        26.4/29.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/answerMs/min
+ -21.5% ref        75.5/75.8  rc3          60.8/58  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/answerMs/max <<
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/longestTaskMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/longestTaskMs/min
+ -21.5% ref            74/75  rc3            60/57  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/longestTaskMs/max <<
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/longestTaskSettlingMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/longestTaskSettlingMs/min
+ -21.5% ref            74/75  rc3            60/57  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/longestTaskSettlingMs/max <<
+  +6.7% ref          0.7/0.8  rc3          0.8/0.8  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/inputDelayMs/median
+  +9.1% ref          0.5/0.6  rc3          0.6/0.6  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/inputDelayMs/min
+ +18.7% ref          0.7/0.9  rc3            0.9/1  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/collapse/inputDelayMs/max
+  +0.0% ref              5/5  rc3              5/5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/runs
+  +6.0% ref          24.5/29  rc3          28/28.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/firstVisualAnswerMs/median
+  +8.5% ref        17.4/25.2  rc3        23.1/23.1  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/firstVisualAnswerMs/min
+ +32.4% ref        48.6/43.5  rc3        54.5/67.4  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/firstVisualAnswerMs/max <<
+  +6.0% ref          24.5/29  rc3          28/28.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/answerMs/median
+  +8.5% ref        17.4/25.2  rc3        23.1/23.1  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/answerMs/min
+ +32.4% ref        48.6/43.5  rc3        54.5/67.4  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/answerMs/max <<
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/longestTaskMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/longestTaskMs/min
+  +0.0% ref              0/0  rc3            53/66  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/longestTaskMs/max
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/longestTaskSettlingMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/longestTaskSettlingMs/min
+  +0.0% ref              0/0  rc3            53/66  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/longestTaskSettlingMs/max
+ +14.3% ref          0.7/0.7  rc3          0.8/0.8  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/inputDelayMs/median
+  +0.0% ref          0.4/0.7  rc3          0.7/0.4  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/inputDelayMs/min
+ +18.8% ref          0.8/0.8  rc3          0.8/1.1  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/expand/inputDelayMs/max
+  +0.0% ref              5/5  rc3              5/5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/runs
+  +6.1% ref        18.6/20.8  rc3        21.7/20.1  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/firstVisualAnswerMs/median
+  +0.3% ref        14.7/19.7  rc3          15/19.5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/firstVisualAnswerMs/min
+ +30.0% ref        24.7/24.7  rc3        35.4/28.8  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/firstVisualAnswerMs/max <<
+  +6.3% ref        18.6/20.8  rc3        21.7/20.2  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/answerMs/median
+  +0.3% ref        14.7/19.7  rc3          15/19.5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/answerMs/min
+ +30.0% ref        24.7/24.7  rc3        35.4/28.8  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/answerMs/max <<
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/longestTaskMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/longestTaskMs/min
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/longestTaskMs/max
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/longestTaskSettlingMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/longestTaskSettlingMs/min
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/longestTaskSettlingMs/max
+  +0.0% ref          0.6/0.8  rc3          0.7/0.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/inputDelayMs/median
+ -16.7% ref          0.5/0.7  rc3          0.5/0.5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/inputDelayMs/min
+  +6.2% ref          0.7/0.9  rc3          0.8/0.9  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the Layout menu/inputDelayMs/max
+  +0.0% ref              5/5  rc3              5/5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/runs
+  +2.3% ref        52.9/37.9  rc3        45.7/47.2  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/firstVisualAnswerMs/median
+ +44.1% ref          27.4/32  rc3        39.9/45.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/firstVisualAnswerMs/min <<
+  +7.1% ref        77.4/55.5  rc3        81.6/60.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/firstVisualAnswerMs/max
+  +2.3% ref        52.9/37.9  rc3        45.7/47.2  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/answerMs/median
+ +44.1% ref          27.4/32  rc3        39.9/45.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/answerMs/min <<
+  +7.1% ref        77.4/55.5  rc3        81.6/60.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/answerMs/max
+-100.0% ref             52/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/longestTaskMs/median <<
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/longestTaskMs/min
+  +7.0% ref            75/54  rc3            78/60  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/longestTaskMs/max
+-100.0% ref             52/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/longestTaskSettlingMs/median <<
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/longestTaskSettlingMs/min
+  +7.0% ref            75/54  rc3            78/60  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/longestTaskSettlingMs/max
+  -7.1% ref          0.8/0.6  rc3          0.7/0.6  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/inputDelayMs/median
+  +9.1% ref          0.5/0.6  rc3          0.6/0.6  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/inputDelayMs/min
++100.0% ref          0.9/0.8  rc3          2.7/0.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Tabular/inputDelayMs/max <<
+  +0.0% ref              5/5  rc3              5/5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/runs
+ +16.2% ref        32.5/37.3  rc3        40.9/40.2  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/firstVisualAnswerMs/median
+ +12.7% ref        27.7/36.1  rc3        33.2/38.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/firstVisualAnswerMs/min
+ +25.7% ref        58.3/49.4  rc3          70.4/65  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/firstVisualAnswerMs/max <<
+ +16.2% ref        32.6/37.3  rc3        40.9/40.3  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/answerMs/median
+ +12.7% ref        27.7/36.1  rc3        33.2/38.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/answerMs/min
+ +25.7% ref        58.3/49.4  rc3          70.4/65  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/answerMs/max <<
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/longestTaskMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/longestTaskMs/min
++133.3% ref             57/0  rc3            69/64  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/longestTaskMs/max <<
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/longestTaskSettlingMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/longestTaskSettlingMs/min
++133.3% ref             57/0  rc3            69/64  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/longestTaskSettlingMs/max <<
+  +9.1% ref          0.6/0.5  rc3          0.6/0.6  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/inputDelayMs/median
+ +20.0% ref          0.5/0.5  rc3          0.6/0.6  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/inputDelayMs/min
++166.7% ref          0.9/0.6  rc3          3.3/0.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/change of form: Compact/inputDelayMs/max <<
+  +0.0% ref              5/5  rc3              5/5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/runs
+  +4.5% ref        52.4/55.4  rc3        59.4/53.3  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/firstVisualAnswerMs/median
+  -4.1% ref        48.4/51.6  rc3          46.9/49  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/firstVisualAnswerMs/min
+  +6.1% ref        65.8/72.3  rc3        78.2/68.3  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/firstVisualAnswerMs/max
+  +0.1% ref      202.1/211.8  rc3        230/184.5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/answerMs/median
+  -9.9% ref      176.2/181.1  rc3      159.2/162.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/answerMs/min
+ +12.7% ref      240.7/217.2  rc3      264.7/251.2  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/answerMs/max
+ -44.8% ref            51/54  rc3             58/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/longestTaskMs/median <<
+-100.0% ref             0/50  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/longestTaskMs/min <<
+ +13.4% ref            56/71  rc3            77/67  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/longestTaskMs/max
+ -44.8% ref            51/54  rc3             58/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/longestTaskSettlingMs/median <<
+-100.0% ref             0/50  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/longestTaskSettlingMs/min <<
+ +13.4% ref            56/71  rc3            77/67  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/longestTaskSettlingMs/max
+ +27.3% ref          0.5/0.6  rc3          0.7/0.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/inputDelayMs/median <<
+ +11.1% ref          0.5/0.4  rc3          0.5/0.5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/inputDelayMs/min
+ +26.7% ref          0.7/0.8  rc3            1/0.9  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: tick Book/inputDelayMs/max <<
+  +0.0% ref              5/5  rc3              5/5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/runs
+  -5.9% ref        51.4/52.9  rc3        50.9/47.2  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/firstVisualAnswerMs/median
+  +0.2% ref        43.4/46.4  rc3        46.2/43.8  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/firstVisualAnswerMs/min
+  -5.6% ref        57.6/56.7  rc3        55.2/52.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/firstVisualAnswerMs/max
+ -18.7% ref      210.3/208.2  rc3      172.2/168.1  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/answerMs/median
+ -13.4% ref      161.9/187.9  rc3        144.9/158  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/answerMs/min
+ -12.5% ref      252.7/214.7  rc3      225.3/183.9  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/answerMs/max
+ -49.0% ref            50/52  rc3             52/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/longestTaskMs/median <<
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/longestTaskMs/min
+  +0.9% ref            52/56  rc3            54/55  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/longestTaskMs/max
+ -49.0% ref            50/52  rc3             52/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/longestTaskSettlingMs/median <<
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/longestTaskSettlingMs/min
+  +0.9% ref            52/56  rc3            54/55  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/longestTaskSettlingMs/max
+ -25.0% ref          0.7/0.9  rc3          0.6/0.6  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/inputDelayMs/median <<
+ -23.1% ref          0.7/0.6  rc3          0.5/0.5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/inputDelayMs/min <<
+ -55.9% ref            1.4/2  rc3          0.8/0.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: untick Book/inputDelayMs/max <<
+  +0.0% ref              5/5  rc3              5/5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/runs
+ +42.2% ref        20.4/20.1  rc3        25.2/32.4  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/firstVisualAnswerMs/median <<
+ +52.3% ref        13.8/18.3  rc3        22.6/26.3  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/firstVisualAnswerMs/min <<
+ +63.7% ref        70.1/76.8  rc3        113.5/127  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/firstVisualAnswerMs/max <<
+ +42.2% ref        20.4/20.1  rc3        25.2/32.4  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/answerMs/median <<
+ +52.3% ref        13.8/18.3  rc3        22.6/26.3  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/answerMs/min <<
+ +63.8% ref        70.1/76.8  rc3      113.5/127.1  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/answerMs/max <<
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/longestTaskMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/longestTaskMs/min
+ +65.7% ref            68/75  rc3          112/125  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/longestTaskMs/max <<
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/longestTaskSettlingMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/longestTaskSettlingMs/min
+ +65.7% ref            68/75  rc3          112/125  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/longestTaskSettlingMs/max <<
+  +0.0% ref          0.6/0.8  rc3          0.7/0.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/inputDelayMs/median
+  -8.3% ref          0.6/0.6  rc3          0.5/0.6  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/inputDelayMs/min
++134.8% ref          0.7/1.6  rc3          0.7/4.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/open the report filter/inputDelayMs/max <<
+  +0.0% ref              5/5  rc3              5/5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/runs
+ +36.1% ref        51.7/57.5  rc3        76.5/72.1  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/firstVisualAnswerMs/median <<
+ +28.1% ref        49.9/52.5  rc3        60.5/70.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/firstVisualAnswerMs/min <<
+ +22.3% ref        67.3/67.7  rc3        85.8/79.3  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/firstVisualAnswerMs/max <<
+ +15.9% ref      174.7/182.7  rc3        196.2/218  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/answerMs/median
+  +5.5% ref      151.6/146.4  rc3      149.9/164.5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/answerMs/min
+  -9.9% ref      333.8/377.3  rc3        328.5/312  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/answerMs/max
+ +36.8% ref            50/56  rc3            75/70  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/longestTaskMs/median <<
++130.8% ref             0/52  rc3            59/61  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/longestTaskMs/min <<
+ -24.2% ref          175/181  rc3          141/129  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/longestTaskMs/max <<
+ +36.8% ref            50/56  rc3            75/70  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/longestTaskSettlingMs/median <<
++130.8% ref             0/52  rc3            59/61  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/longestTaskSettlingMs/min <<
+ -24.2% ref          175/181  rc3          141/129  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/longestTaskSettlingMs/max <<
+  +8.3% ref          0.6/0.6  rc3          0.6/0.7  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/inputDelayMs/median
+ +33.3% ref          0.4/0.5  rc3          0.6/0.6  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/inputDelayMs/min <<
+  +0.0% ref          0.7/0.9  rc3          0.8/0.8  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to USD/inputDelayMs/max
+  +0.0% ref              5/5  rc3              5/5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/runs
+ +43.1% ref        48.6/49.9  rc3        75.7/65.3  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/firstVisualAnswerMs/median <<
+ +49.0% ref          45/46.8  rc3        71.7/65.1  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/firstVisualAnswerMs/min <<
++220.5% ref          53.6/54  rc3      182.3/162.6  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/firstVisualAnswerMs/max <<
+ +15.6% ref      162.6/196.1  rc3      225.1/189.4  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/answerMs/median
+ +19.8% ref        149.8/162  rc3      197.1/176.5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/answerMs/min
+ +10.4% ref      278.9/264.6  rc3      334.7/265.3  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/answerMs/max
+ +34.0% ref            50/53  rc3            74/64  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/longestTaskMs/median <<
+  +0.0% ref              0/0  rc3            70/64  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/longestTaskMs/min
+ +12.9% ref          154/148  rc3          180/161  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/longestTaskMs/max
+ +34.0% ref            50/53  rc3            74/64  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/longestTaskSettlingMs/median <<
+  +0.0% ref              0/0  rc3            70/64  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/longestTaskSettlingMs/min
+ +12.9% ref          154/148  rc3          180/161  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/longestTaskSettlingMs/max
+  +0.0% ref          0.6/0.6  rc3          0.6/0.6  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/inputDelayMs/median
+ +25.0% ref          0.4/0.4  rc3          0.5/0.5  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/inputDelayMs/min <<
+ +18.8% ref          0.7/0.9  rc3          0.8/1.1  /PV-21/PV-21 gestures, /pivot over 1,000,000 trades/new question: filter to (All)/inputDelayMs/max
+ -16.4% ref          469/423  rc3        372.3/373  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/first/answerMs
+ -33.1% ref          145/127  rc3            86/96  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/first/longestTaskMs <<
+  +5.3% ref        67.6/63.4  rc3        73.9/64.1  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/first/firstVisualAnswerMs
+  +0.0% ref              3/3  rc3              3/3  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/runs
+  -1.8% ref        56.7/58.1  rc3        56.5/56.2  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/firstVisualAnswerMs/median
+  -0.8% ref        53.4/53.7  rc3        52.9/53.3  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/firstVisualAnswerMs/min
+  -5.1% ref        61.1/59.6  rc3        56.8/57.7  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/firstVisualAnswerMs/max
+ -12.7% ref      275.8/389.8  rc3      270.5/310.6  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/answerMs/median
+ -11.2% ref      268.2/266.7  rc3      221.1/253.9  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/answerMs/min
+ +16.0% ref      407.8/395.4  rc3      485.2/446.9  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/answerMs/max
+  +0.0% ref            60/89  rc3            56/93  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/longestTaskMs/median
+ -62.0% ref            55/82  rc3             0/52  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/longestTaskMs/min <<
+  -0.8% ref          107/142  rc3          125/122  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/longestTaskMs/max
+  +0.0% ref            60/89  rc3            56/93  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/longestTaskSettlingMs/median
+ -62.0% ref            55/82  rc3             0/52  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/longestTaskSettlingMs/min <<
+  -0.8% ref          107/142  rc3          125/122  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/longestTaskSettlingMs/max
+  -7.7% ref          0.6/0.7  rc3          0.5/0.7  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/inputDelayMs/median
+  +0.0% ref          0.5/0.5  rc3          0.5/0.5  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/inputDelayMs/min
+ +80.0% ref          0.7/0.8  rc3          1.8/0.9  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/inputDelayMs/max <<
+  +0.0% ref          271/271  rc3          271/271  /PV-21 below the cap/Rows TradeDate; Columns Product: 1,350 combinations/reportRows
+ -21.4% ref        426/582.7  rc3        409/384.3  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/first/answerMs <<
+ +18.8% ref            64/64  rc3            90/62  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/first/longestTaskMs
+  -7.6% ref          56.1/53  rc3        51.1/49.7  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/first/firstVisualAnswerMs
+  +0.0% ref              3/3  rc3              3/3  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/runs
+  +3.7% ref        52.4/55.2  rc3        59.1/52.5  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/firstVisualAnswerMs/median
+  -4.3% ref        51.6/51.3  rc3        48.9/49.6  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/firstVisualAnswerMs/min
+ +34.1% ref        54.9/55.8  rc3          81/67.5  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/firstVisualAnswerMs/max <<
+  +4.0% ref        384/369.3  rc3      369.4/414.2  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/answerMs/median
+  -1.7% ref      368.1/366.8  rc3      328.4/394.1  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/answerMs/min
+ +11.7% ref      544.6/538.6  rc3      693.8/516.6  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/answerMs/max
+  +0.0% ref            74/59  rc3            59/74  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/longestTaskMs/median
+  +0.9% ref            56/58  rc3            58/57  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/longestTaskMs/min
+  -8.7% ref          136/128  rc3          100/141  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/longestTaskMs/max
+  +0.0% ref            74/59  rc3            59/74  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/longestTaskSettlingMs/median
+  +0.9% ref            56/58  rc3            58/57  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/longestTaskSettlingMs/min
+  -8.7% ref          136/128  rc3          100/141  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/longestTaskSettlingMs/max
+ +23.1% ref          0.6/0.7  rc3          0.8/0.8  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/inputDelayMs/median <<
+  +0.0% ref          0.5/0.5  rc3          0.7/0.3  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/inputDelayMs/min
+ +17.6% ref          0.9/0.8  rc3          1.2/0.8  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/inputDelayMs/max
+  +0.0% ref        2971/2971  rc3        2971/2971  /PV-21 below the cap/Rows TradeDate, Book; Columns Product: 13,500 combinations/reportRows
+  +3.6% ref      905.2/823.8  rc3      826.7/964.2  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/first/answerMs
+  +6.8% ref          174/150  rc3          178/168  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/first/longestTaskMs
+  +6.6% ref      175.1/151.6  rc3      179.5/168.7  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/first/firstVisualAnswerMs
+  +0.0% ref              3/3  rc3              3/3  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/runs
+  -5.9% ref          56/55.8  rc3        51.4/53.8  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/firstVisualAnswerMs/median
+  +0.2% ref        51.4/50.6  rc3        49.8/52.4  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/firstVisualAnswerMs/min
+  +2.8% ref        145/170.6  rc3      171.6/152.7  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/firstVisualAnswerMs/max
+  -8.5% ref      927.2/899.1  rc3      831.6/838.9  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/answerMs/median
+  -7.1% ref      881.9/767.3  rc3      711.9/820.3  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/answerMs/min
+  -7.8% ref     1027.6/998.1  rc3      951.1/916.3  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/answerMs/max
+  +2.9% ref            78/59  rc3            71/70  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/longestTaskMs/median
+ -16.2% ref            73/57  rc3            50/59  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/longestTaskMs/min
+  +2.9% ref          144/169  rc3          170/152  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/longestTaskMs/max
+  +2.9% ref            78/59  rc3            71/70  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/longestTaskSettlingMs/median
+ -16.2% ref            73/57  rc3            50/59  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/longestTaskSettlingMs/min
+  +2.9% ref          144/169  rc3          170/152  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/longestTaskSettlingMs/max
+  -6.7% ref          0.8/0.7  rc3          0.8/0.6  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/inputDelayMs/median
+ -23.1% ref          0.7/0.6  rc3          0.5/0.5  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/inputDelayMs/min <<
+ -44.0% ref          1.1/1.4  rc3          0.8/0.6  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/inputDelayMs/max <<
+  +0.0% ref        8371/8371  rc3        8371/8371  /PV-21 below the cap/Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations/reportRows
+ -12.2% ref    1631.3/2106.9  rc3    1642.2/1638.9  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/first/answerMs
+ -26.8% ref          153/242  rc3          141/148  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/first/longestTaskMs <<
+  +7.4% ref        62.8/66.4  rc3        75.5/63.3  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/first/firstVisualAnswerMs
+  +0.0% ref              3/3  rc3              3/3  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/runs
+  -7.2% ref        61.5/60.7  rc3        55.3/58.1  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/firstVisualAnswerMs/median
+  +0.2% ref        50.4/51.4  rc3        48.1/53.9  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/firstVisualAnswerMs/min
+  -5.0% ref        68.4/66.1  rc3        57.5/70.3  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/firstVisualAnswerMs/max
+ -11.5% ref    1325.2/1532.1  rc3    1209.5/1318.7  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/answerMs/median
+ -10.5% ref    1283.7/1415.2  rc3    1203.1/1213.3  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/answerMs/min
+  +2.5% ref    1336.5/1731.8  rc3    1237.4/1908.2  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/answerMs/max
+ +11.2% ref          129/113  rc3          131/138  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/longestTaskMs/median
+ +11.0% ref          121/107  rc3          116/137  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/longestTaskMs/min
+ +21.3% ref          143/129  rc3          176/154  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/longestTaskMs/max <<
+ +11.2% ref          129/113  rc3          131/138  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/longestTaskSettlingMs/median
+ +11.0% ref          121/107  rc3          116/137  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/longestTaskSettlingMs/min
+ +21.3% ref          143/129  rc3          176/154  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/longestTaskSettlingMs/max <<
+  +0.0% ref          0.5/0.6  rc3          0.5/0.6  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/inputDelayMs/median
+ -10.0% ref          0.5/0.5  rc3          0.4/0.5  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/inputDelayMs/min
+ +11.8% ref          0.9/0.8  rc3          0.8/1.1  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/inputDelayMs/max
+  +0.0% ref      13501/13501  rc3      13501/13501  /PV-21 cap/Rows TradeDate, Quantity; Columns Product: 66,150 combinations/reportRows
+  +6.9% ref    3619.9/2823.6  rc3    3969.1/2920.6  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/first/answerMs
+ +36.8% ref          139/160  rc3          203/206  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/first/longestTaskMs <<
+  +8.1% ref        53.7/47.9  rc3        55.4/54.4  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/first/firstVisualAnswerMs
+  +0.0% ref              3/3  rc3              3/3  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/runs
+  -8.8% ref        55.5/50.3  rc3        47.3/49.2  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/firstVisualAnswerMs/median
+  -1.7% ref        46.2/47.1  rc3        46.6/45.1  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/firstVisualAnswerMs/min
+ -26.3% ref        67.3/72.8  rc3          49.2/54  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/firstVisualAnswerMs/max <<
+  -5.4% ref    3173.1/3372.6  rc3    2989.2/3202.8  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/answerMs/median
+ -16.7% ref    3122.4/3022.5  rc3    2540.8/2575.2  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/answerMs/min
+ -12.1% ref      3512/4206.4  rc3    3224.8/3559.9  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/answerMs/max
+  -9.1% ref          203/282  rc3          217/224  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/longestTaskMs/median
+ -21.7% ref          181/253  rc3          157/183  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/longestTaskMs/min <<
+ -20.9% ref          226/415  rc3          232/275  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/longestTaskMs/max <<
+  -9.1% ref          203/282  rc3          217/224  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/longestTaskSettlingMs/median
+ -21.7% ref          181/253  rc3          157/183  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/longestTaskSettlingMs/min <<
+ -20.9% ref          226/415  rc3          232/275  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/longestTaskSettlingMs/max <<
+ -15.4% ref          0.7/0.6  rc3          0.6/0.5  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/inputDelayMs/median
+  +0.0% ref          0.6/0.4  rc3          0.6/0.4  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/inputDelayMs/min
+  +0.0% ref          0.8/0.7  rc3          0.8/0.7  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/inputDelayMs/max
+  +0.0% ref    134917/134917  rc3    134917/134917  /PV-21 cap/Rows TradeDate, Notional: 134,730 combinations/reportRows
+  -1.1% ref    3302.8/3379.7  rc3    3119.9/3488.2  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/first/answerMs
+ -15.6% ref          213/241  rc3          169/214  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/first/longestTaskMs
+  +1.4% ref          48.7/54  rc3          47.1/57  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/first/firstVisualAnswerMs
+  +0.0% ref              3/3  rc3              3/3  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/runs
+  +7.4% ref        50.8/46.5  rc3          52.5/52  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/firstVisualAnswerMs/median
+ +10.4% ref        43.5/46.2  rc3        51.9/47.1  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/firstVisualAnswerMs/min
+  -5.1% ref        56.2/56.3  rc3          52.8/54  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/firstVisualAnswerMs/max
+  +9.1% ref    3097.5/3318.5  rc3      3465.8/3536  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/answerMs/median
+  +6.0% ref    2914.1/3279.2  rc3    3135.9/3431.8  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/answerMs/min
+ +16.8% ref    3172.3/3477.4  rc3    3917.5/3848.3  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/answerMs/max
+  -5.8% ref          183/179  rc3          174/167  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/longestTaskMs/median
+  -1.6% ref          173/149  rc3          151/166  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/longestTaskMs/min
+  -3.5% ref          197/203  rc3          212/174  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/longestTaskMs/max
+  -5.8% ref          183/179  rc3          174/167  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/longestTaskSettlingMs/median
+  -1.6% ref          173/149  rc3          151/166  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/longestTaskSettlingMs/min
+  -3.5% ref          197/203  rc3          212/174  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/longestTaskSettlingMs/max
+  -6.7% ref          0.7/0.8  rc3          0.7/0.7  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/inputDelayMs/median
+  +0.0% ref          0.7/0.6  rc3          0.6/0.7  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/inputDelayMs/min
+ +10.5% ref          0.8/1.1  rc3          0.9/1.2  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/inputDelayMs/max
+  +0.0% ref      13501/13501  rc3      13501/13501  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations/reportRows
+  +0.4% ref      458.3/573.9  rc3      488.8/547.1  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/first/answerMs
+ +25.1% ref           50/169  rc3          126/148  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/first/longestTaskMs <<
+  -7.5% ref        51.6/48.9  rc3            48/45  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/first/firstVisualAnswerMs
+  +0.0% ref              3/3  rc3              3/3  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/runs
+  -4.1% ref        56.3/49.9  rc3        53.6/48.2  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/firstVisualAnswerMs/median
+  -2.8% ref        48.8/47.5  rc3        47.7/45.9  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/firstVisualAnswerMs/min
+ +29.2% ref       224.5/52.3  rc3      174.7/182.9  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/firstVisualAnswerMs/max <<
+ -11.0% ref      611.9/599.7  rc3      486.2/591.8  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/answerMs/median
+  -7.4% ref      609.6/517.8  rc3      486.1/557.5  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/answerMs/min
+  -7.1% ref      665.4/613.4  rc3      565.7/622.7  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/answerMs/max
+ -13.9% ref          205/169  rc3          140/182  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/longestTaskMs/median
+ -20.6% ref          194/156  rc3          130/148  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/longestTaskMs/min <<
+  -7.7% ref          223/179  rc3          174/197  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/longestTaskMs/max
+ -13.9% ref          205/169  rc3          140/182  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/longestTaskSettlingMs/median
+ -20.6% ref          194/156  rc3          130/148  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/longestTaskSettlingMs/min <<
+  -7.7% ref          223/179  rc3          174/197  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/longestTaskSettlingMs/max
+  +0.0% ref          0.6/0.7  rc3          0.6/0.7  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/inputDelayMs/median
+  +0.0% ref          0.6/0.6  rc3          0.6/0.6  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/inputDelayMs/min
+  -6.7% ref          0.7/0.8  rc3          0.7/0.7  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/inputDelayMs/max
+  +0.0% ref            14/14  rc3            14/14  /PV-21 cap/Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused/reportRows
+  +0.0% ref            12/12  rc3            12/12  /PV-21 1,000 changes/runs
+  -7.0% ref            58/56  rc3            54/52  /PV-21 1,000 changes/appliedMs/median
+  +4.8% ref            39/44  rc3            42/45  /PV-21 1,000 changes/appliedMs/min
+ -10.7% ref            75/74  rc3            68/65  /PV-21 1,000 changes/appliedMs/max
+  -7.8% ref            58/57  rc3            54/52  /PV-21 1,000 changes/applyToReportFrameMs/median
+  +4.8% ref            39/44  rc3            42/45  /PV-21 1,000 changes/applyToReportFrameMs/min
+ -11.9% ref            75/76  rc3            68/65  /PV-21 1,000 changes/applyToReportFrameMs/max
+  -7.2% ref            63/62  rc3            57/59  /PV-21 1,000 changes/taskStartToReportFrameMs/median
+  -1.9% ref            54/51  rc3            50/53  /PV-21 1,000 changes/taskStartToReportFrameMs/min
+ -10.2% ref            78/79  rc3            72/69  /PV-21 1,000 changes/taskStartToReportFrameMs/max
+  -6.7% ref            60/59  rc3            56/55  /PV-21 1,000 changes/longestTaskMs/median
+  +0.0% ref              0/0  rc3              0/0  /PV-21 1,000 changes/longestTaskMs/min
+  -9.1% ref            77/77  rc3            72/68  /PV-21 1,000 changes/longestTaskMs/max
+  +0.0% ref            12/12  rc3            12/12  /PV-21 1,000 changes/reportInTheBatchsFrame
+  +0.0% ref      1e+06/1e+06  rc3      1e+06/1e+06  /DA-17 Arrow/trades
+  +5.8% ref       9239/10327  rc3       9968/10730  /DA-17 Arrow/firstRead/pageMs
+  +6.2% ref        6093/6565  rc3        6651/6787  /DA-17 Arrow/firstRead/requestMs
+  +5.4% ref        3212/3830  rc3        3387/4038  /DA-17 Arrow/firstRead/browserReadMs
+  +5.7% ref          561/560  rc3          545/640  /DA-17 Arrow/firstRead/longestTaskMs
+ +28.6% ref            80/88  rc3           87/129  /DA-17 Arrow/firstRead/readTaskMs <<
+  +2.4% ref          438/393  rc3          349/502  /DA-17 Arrow/firstRead/firstQuestionMs
+  +0.0% ref              5/5  rc3              5/5  /DA-17 Arrow/readAgain/runs
+  -1.2% ref        4350/3548  rc3        4058/3746  /DA-17 Arrow/readAgain/pageMs/median
+  -6.6% ref        3864/3428  rc3        3562/3247  /DA-17 Arrow/readAgain/pageMs/min
+  +2.6% ref        4638/3625  rc3        4462/4019  /DA-17 Arrow/readAgain/pageMs/max
+  -5.2% ref          675/479  rc3          616/478  /DA-17 Arrow/readAgain/requestMs/median
+  -1.2% ref          491/418  rc3          435/463  /DA-17 Arrow/readAgain/requestMs/min
+  +1.4% ref          851/514  rc3          734/650  /DA-17 Arrow/readAgain/requestMs/max
+  -2.7% ref        3769/3133  rc3        3381/3334  /DA-17 Arrow/readAgain/browserReadMs/median
+  -6.4% ref        3429/3017  rc3        3191/2842  /DA-17 Arrow/readAgain/browserReadMs/min
+  +2.8% ref        4032/3204  rc3        3904/3535  /DA-17 Arrow/readAgain/browserReadMs/max
+  -7.1% ref          403/367  rc3          368/347  /DA-17 Arrow/readAgain/longestTaskMs/median
+ -11.4% ref          291/313  rc3          265/270  /DA-17 Arrow/readAgain/longestTaskMs/min
+  -4.2% ref          885/413  rc3          823/421  /DA-17 Arrow/readAgain/longestTaskMs/max
+  +0.0% ref      1e+06/1e+06  rc3      1e+06/1e+06  /PV-21 CSV/rows
+  +0.0% ref        89.7/89.7  rc3        89.7/89.7  /PV-21 CSV/fileMiB
+  +0.0% ref              3/3  rc3              3/3  /PV-21 CSV/runs
+  -5.6% ref          4.4/4.5  rc3          4.1/4.3  /PV-21 CSV/pageSeconds/median
+  -3.5% ref          4.1/4.4  rc3            4/4.2  /PV-21 CSV/pageSeconds/min
+ -11.5% ref            5/4.6  rc3          4.2/4.3  /PV-21 CSV/pageSeconds/max
+  -5.0% ref        4665/4709  rc3        4366/4539  /PV-21 CSV/readMs/median
+  -3.1% ref        4345/4696  rc3        4246/4512  /PV-21 CSV/readMs/min
+ -10.3% ref        5240/4841  rc3        4481/4566  /PV-21 CSV/readMs/max
+ +12.7% ref          476/519  rc3          509/612  /PV-21 CSV/firstQuestionMs/median
+ +19.3% ref          439/462  rc3          503/572  /PV-21 CSV/firstQuestionMs/min
+  -2.6% ref          647/645  rc3          541/718  /PV-21 CSV/firstQuestionMs/max
+  -4.0% ref        5140/5303  rc3        4875/5150  /PV-21 CSV/reportMs/median
+  -1.7% ref        4784/5215  rc3        4749/5083  /PV-21 CSV/reportMs/min
+  -8.3% ref        5887/5354  rc3        5022/5284  /PV-21 CSV/reportMs/max
+  -4.1% ref          144/146  rc3          121/157  /PV-21 CSV/firstVisualAnswerMs/median
+  +6.1% ref          118/128  rc3          120/141  /PV-21 CSV/firstVisualAnswerMs/min
+  -2.6% ref          187/156  rc3          155/179  /PV-21 CSV/firstVisualAnswerMs/max
+  +7.2% ref          190/228  rc3          210/238  /PV-21 CSV/longestTaskWhileReadingMs/median
+ +10.5% ref          179/213  rc3          205/228  /PV-21 CSV/longestTaskWhileReadingMs/min
+  +9.7% ref          217/235  rc3          243/253  /PV-21 CSV/longestTaskWhileReadingMs/max
+  +7.2% ref          190/228  rc3          210/238  /PV-21 CSV/longestTaskUntilReportMs/median
+ +10.5% ref          179/213  rc3          205/228  /PV-21 CSV/longestTaskUntilReportMs/min
+  +9.7% ref          217/235  rc3          243/253  /PV-21 CSV/longestTaskUntilReportMs/max
+  +0.0% ref    100000/100000  rc3    100000/100000  /DA-17 CSV sample/rows
+ +30.0% ref          0.5/0.5  rc3          0.6/0.7  /DA-17 CSV sample/pageSeconds/median <<
+ +22.2% ref          0.4/0.5  rc3          0.5/0.6  /DA-17 CSV sample/pageSeconds/min <<
+ +40.0% ref          0.5/0.5  rc3          0.6/0.8  /DA-17 CSV sample/pageSeconds/max <<

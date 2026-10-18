@@ -1,0 +1,30 @@
+{
+  "chrome": {
+    "SRV-6": {
+      "rtt0": {
+        "bandLagMs": {
+          "median": 14,
+          "max": 24
+        },
+        "framesSentPerSecond": 39,
+        "framesReceivedPerSecond": 28
+      },
+      "rtt50": {
+        "bandLagMs": {
+          "median": 67,
+          "max": 68
+        },
+        "framesSentPerSecond": 49,
+        "framesReceivedPerSecond": 35
+      },
+      "rtt150": {
+        "bandLagMs": {
+          "median": 168,
+          "max": 183
+        },
+        "framesSentPerSecond": 50,
+        "framesReceivedPerSecond": 35
+      }
+    }
+  }
+}

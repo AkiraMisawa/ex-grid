@@ -1,0 +1,17 @@
+dotnet 10.0.203 (nix-managed)
+Using launch settings from Bench.Host/Properties/launchSettings.json...
+Building...
+/home/user/ex-grid/.claude/worktrees/rel/spikes/render-bench/Bench.Host/Bench.Host.csproj : warning NU1903: Package 'Microsoft.AspNetCore.Components.WebAssembly.Server' 10.0.7 has a known high severity vulnerability, https://github.com/advisories/GHSA-g27p-qf6j-c96c
+/home/user/ex-grid/.claude/worktrees/rel/spikes/render-bench/Bench.Host/Bench.Host.csproj : warning NU1903: Package 'Microsoft.AspNetCore.Components.WebAssembly.Server' 10.0.7 has a known high severity vulnerability, https://github.com/advisories/GHSA-qjpx-jqm5-h2c4
+/home/user/ex-grid/.claude/worktrees/rel/spikes/render-bench/Bench.Host/Bench.Host.csproj : warning NU1903: Package 'Microsoft.AspNetCore.Components.WebAssembly.Server' 10.0.7 has a known high severity vulnerability, https://github.com/advisories/GHSA-g27p-qf6j-c96c
+/home/user/ex-grid/.claude/worktrees/rel/spikes/render-bench/Bench.Host/Bench.Host.csproj : warning NU1903: Package 'Microsoft.AspNetCore.Components.WebAssembly.Server' 10.0.7 has a known high severity vulnerability, https://github.com/advisories/GHSA-qjpx-jqm5-h2c4
+[bench] results -> /home/user/ex-grid/.claude/worktrees/rel/spikes/render-bench/results
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://127.0.0.1:5199
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /home/user/ex-grid/.claude/worktrees/rel/spikes/render-bench/Bench.Host
+[bench] wrote /home/user/ex-grid/.claude/worktrees/rel/spikes/render-bench/results/20261018-122858-082.json (1613 bytes)

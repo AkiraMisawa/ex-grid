@@ -1,0 +1,16 @@
+# PRE-2
+src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+src/ExGrid.Data/ExGrid.Data.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj:6:    <TargetFramework>net10.0</TargetFramework>
+src/ExGrid/ExGrid.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+src/ExPivot.Engine/ExPivot.Engine.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+src/ExPivot/ExPivot.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+src/ExSheet.Engine/ExSheet.Engine.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+src/ExSheet/ExSheet.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+# PRE-2 LangVersion
+# PRE-5
+19:// What starts the hosts. By default the projects themselves, with `dotnet run`: the
+145:    projects: [
+# PRE-6
