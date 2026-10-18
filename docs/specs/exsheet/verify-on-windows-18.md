@@ -6,7 +6,7 @@ Roadmap: internal
 *(Numbered eighteenth from `docs/agents/numbering.md`. It is the second half of the sign-off's Windows run,
 as ADR-0202's note of 2026-10-11 splits it and ADR-0208 shapes it. The seventeenth run asked Excel before the
 release candidate, and run 18a, `verification/2026-10-14-windows-readings-18a/`, asked the questions its
-corrections raised. This run renews the record of every by-hand row **on `0.1.0-rc.1`**, and asks what run 18a
+corrections raised. This run renews the record of every by-hand row **at the commit `0.1.0-rc.1` is to be tagged on**, and asks what run 18a
 and the corrections after it (#125 to #133) left open.)*
 
 For the Claude Code session on the Windows desktop of the earlier runs. Read
@@ -24,15 +24,20 @@ Change no code and no test: a disagreement is listed, never fixed on the spot. T
 corpus, where `-Update` rewrites `source` for the cases that agree (Part C), and `verification/by-hand.json`,
 where each row this run records gets its record (Part A, "Filing the records").
 
-**The build is `0.1.0-rc.1`, not `main`.** The by-hand rows count only on the commit the release candidate is
-tagged on (ADR-0202's note of 2026-10-11, ADR-0205, ADR-0208). If `v0.1.0-rc.1` is not yet tagged when this run
-is handed over, do not start: say so and stop.
+**The build is the head of `release/0.1`, not `main`, and the run comes before the tag.** The release check refuses
+a release candidate unless every by-hand row holds at the commit it is tagged on, on a record whose covered code has
+not changed since (ADR-0208), so the records exist before `v0.1.0-rc.1` does. The run is made at the head of
+`release/0.1`, once the branch is cut (ADR-0205); its records are committed on top, and `v0.1.0-rc.1` is tagged on
+the commit carrying them, which differs from the verified commit only under `verification/` and in the corpus.
+*(2026-10-18, decided with the user: until then this file said not to start before the tag, which the release
+check could never let happen.)* If `release/0.1` is not yet cut when this run is handed over, do not start: say so
+and stop.
 
 What this run asks:
 
 | Part | What it asks | Where | Settles |
 |---|---|---|---|
-| A | ExGrid's and ExSheet's by-hand rows on this desk: VZ-14, VZ-16, FN-12e, ED-30, SH-42, SH-51, SH-52 | this desk | their records at `0.1.0-rc.1` (ADR-0208); the release check |
+| A | ExGrid's and ExSheet's by-hand rows on this desk: VZ-14, VZ-16, FN-12e, ED-30, SH-42, SH-51, SH-52 | this desk | their records at the commit `0.1.0-rc.1` is to be tagged on (ADR-0208); the release check |
 | B | The by-hand rows this desk cannot run: FN-12e and KB-3 on macOS, WR-10, VZ-18 | the user's Mac; Windows or Linux; none | the same |
 | C | The corpus's cases still `uncertain` or `documented` | Excel | ADR-0208's "no `uncertain` case without a written reason"; ADR-0047, ADR-0124 |
 | D | Excel's answers no run has read yet | Excel | the Toolbar's Escape, the Heading Mark, ExPivot's General and captions |
@@ -49,12 +54,12 @@ Every question file of `docs/specs/exsheet/run-18/`, and what this run does with
 |---|---|---|
 | `area-oracle.md` | 139 cases asked; 40 promoted; the rest corrected or recorded in #125 to #127 | Part C: PMT-043 by keys, and every case still `uncertain` |
 | `aria-rows.md` | not asked | Part D, d6's note: how the ExPivot probe's row numbers are read |
-| `dod-gaps-browser.md` | not asked (by-hand rows wait for rc.1) | Part A, VZ-14 |
+| `dod-gaps-browser.md` | not asked (by-hand rows wait for `release/0.1`) | Part A, VZ-14 |
 | `f4-enter-mode.md` | 1 to 8 read in Excel (18a §2), and built (#128); 9 on Windows passed (18a §3) | Part E, e1 to e8: ExSheet's side, which 18a did not read. Part B: 9's macOS half |
 | `fill-handle-axis.md` | 1 to 7 read; 4, 5 and 7 built (#129, ADR-0050's notes of 2026-10-14) | Part E, e9 to e11 |
 | `focus-among-ranges.md` | 2 to 4 read, and built (#131); 1 not asked (no display at 100%) | Part D, d5 (if a display at 100% is at hand); Part E, e12 and e13 |
 | `format-cells-readings.md` | 1 to 10 read; built (#130); ko-KR's `mmm` left for after `0.1.0` | nothing: the Border tab's state on opening is a dialog's, which layer 2 reads exactly; ko-KR is not asked for `0.1.0` (the file's note of 2026-10-16) |
-| `glyphs.md` | not asked (by-hand rows wait for rc.1) | Part A, FN-12e: item 1, the paintings. Item 2, the measurement, is no longer the row's (narrowed, decided with the user 2026-10-16) |
+| `glyphs.md` | not asked (by-hand rows wait for `release/0.1`) | Part A, FN-12e: item 1, the paintings. Item 2, the measurement, is no longer the row's (narrowed, decided with the user 2026-10-16) |
 | `heading-mark.md` | not asked | Part D, d2 to d5 |
 | `pivot-general.md` | not asked | Part D, d6 |
 | `toolbar.md` | not asked | 1: Part D, d1. 2: Part A, SH-52. 3: Part A, ED-30 |
@@ -63,10 +68,10 @@ Every question file of `docs/specs/exsheet/run-18/`, and what this run does with
 ## Setup
 
 - **Branches.**
-  - Fetch the tag **`v0.1.0-rc.1`** and record the commit it names, in full, as the verified commit.
-  - Branch **`claude/exsheet-windows-verify-18`** from it. If a later release candidate is tagged during the
-    run, do not move to it: the Parts made at another commit go in a directory of their own ("The verified
-    commit's tag").
+  - Fetch **`release/0.1`** and record its head, in full, as the verified commit.
+  - Branch **`claude/exsheet-windows-verify-18`** from it. If `release/0.1` moves during the run, do not move to
+    it: the Parts made at another commit go in a directory of their own ("The verified commit's tag"), and the
+    rows whose covered code the move changed are run again there (ADR-0208).
 - **Authorisation.** The request that hands this run over says whether the user has authorised it in advance.
   If it does not, ask before the first input.
   - What may be authorised in advance: real keys and mouse to Excel and the browsers, the IME switched on and
@@ -335,7 +340,7 @@ As in `verify-on-windows-17.md`, "The verified commit's tag" (ADR-0208; decided 
 - The tag is `verified/` followed by the name of the record's directory under `verification/`, and nothing else. It
   is never moved. Parts made at another commit go in a directory of their own, as `…-windows-18b/`, tagged by its
   name, and the report says which Parts ran at which.
-- The report names the tag beside the verified commit: "**Verified commit: `<sha>`** (`v0.1.0-rc.1`), tagged
+- The report names the tag beside the verified commit: "**Verified commit: `<sha>`** (head of `release/0.1`), tagged
   `verified/<date>-windows-18`".
 - Part B's runs tag their own directories in the same way.
 
@@ -348,4 +353,4 @@ As in `verify-on-windows-17.md`, "The verified commit's tag" (ADR-0208; decided 
 3. It proposes nothing on the user's behalf.
 4. The last message names the branch, the verified commit and the tag, says which Parts ran and which did not, and
    why, and lists the by-hand rows this run filed in `verification/by-hand.json` and those still without a record
-   that holds at `0.1.0-rc.1`.
+   that holds at the verified commit, which `v0.1.0-rc.1` is to be tagged on with the records on top.

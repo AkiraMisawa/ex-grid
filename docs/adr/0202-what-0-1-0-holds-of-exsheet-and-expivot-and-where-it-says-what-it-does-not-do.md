@@ -122,6 +122,9 @@ The run ExGrid's own by-hand rows need anyway (VZ-14, VZ-16, FN-12e, ED-30, SM-7
   the seventeenth run's Part G is the record of those rows, not a dry run. The eighteenth runs only the
   rows whose code changes between the seventeenth's commit and `0.1.0-rc.1`. If none changes, there is
   no eighteenth run.)*
+  *(2026-10-18, decided with the user, ADR-0208's note of this date: the eighteenth run is made at the head of
+  `release/0.1` before the tag, and `v0.1.0-rc.1` is tagged on the commit that adds its records, so "on
+  `0.1.0-rc.1` itself" is that commit.)*
 - *(2026-10-12, decided with the user.)* **`NPV`, and `PMT` at small rates, are asked of Excel before
   they are corrected or refused.** The seventeenth run found `NPV` four and thirty-two units in the last
   place from Excel on two observed cases, and no evaluation searched gives all three observed values.

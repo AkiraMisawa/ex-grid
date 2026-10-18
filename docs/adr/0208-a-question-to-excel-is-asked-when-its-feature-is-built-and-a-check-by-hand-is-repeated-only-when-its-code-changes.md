@@ -136,6 +136,12 @@ What the run does by hand is two kinds of work, and they age differently:
     on 2026-10-13);
   - ADR-0206's tints and pinned shade (VZ-16's lines).
 - **If none of them changes, there is no eighteenth run.**
+- *(2026-10-18, decided with the user.)* **The eighteenth run is made before `v0.1.0-rc.1` is tagged**, at the
+  head of `release/0.1`, and the candidate is tagged on the commit that adds its records. A release candidate is
+  judged at its tagged commit (above), so a record must exist there before the tag; a run that waited for the tag,
+  as `verify-on-windows-18.md` had said, could never let the tag through. The records' commit differs from the
+  verified commit only under `verification/` (and the corpus, whose `source` Part C rewrites), so every row holds
+  at the candidate. "At `0.1.0-rc.1`" elsewhere in this ADR, ADR-0202 and ADR-0205 means this commit.
 - *(2026-10-12, decided with the user.)* **The questions the seventeenth run's corrections raised are
   asked in one pass before the tag.** Correcting the engine by area added `uncertain` cases to features
   whose tickets were done (tickets 01, 02, 04, 07, 16, 18 and the arrays tickets). They are asked by one
