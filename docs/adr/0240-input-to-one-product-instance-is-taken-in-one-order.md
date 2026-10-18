@@ -2,8 +2,8 @@
 
 Decided with the user, 2026-10-18, for `docs/specs/input-order/issues/01`. Grilled in two rounds; the
 user took the recommendation of every question, and of (1) after it was explained with an example.
-The inventory it rests on is `docs/specs/input-order/inventory.md`. Not built yet: tickets 02 to 07 of
-the same spec build it in turn (7).
+The inventory it rests on is `docs/specs/input-order/inventory.md`. Tickets 02 to 07 of the same spec build
+it in turn (7); ticket 02 is built ("As built", below).
 
 ## Why
 
@@ -159,6 +159,33 @@ re-run). The Definition of Done gains it as a criterion when it is built.
 
 The Chrome contexts' delegates may change shape to carry the order. Each change is a Change Note
 (ADR-0190). No old path is kept beside the new one: two ways in is the defect this decision removes.
+
+## As built: ticket 02 (2026-10-18)
+
+- **The queue** is `InputOrder` (`src/ExGrid/InputOrder.cs`): one per instance, numbered inputs handled
+  one at a time in number order, every `await` included; a handling asked for inside the flow of the one
+  under way runs at once (the commit barrier's `_commitFlow`, generalised). Every numbered entry point
+  goes through it (`AnsweredAsync`); the commit barrier holds only what is asked for outside it.
+- **A told number is never voided by a later number.** A press the script told of can reach the core
+  after a key numbered behind it on the Server host (`SettledMarkTests`), so the key waits for the press.
+  A told number is void only at the next telling of the same kind of input, or at a claim of another kind
+  (`AsTaken`'s rule since 2026-10-16), or at disposal.
+- **Clicks, and the keys a popover's own handlers answer, are numbered** through `data-ex-claims` on the
+  control (`click`, `dblclick`, `contextmenu`, `mousedown`, `keydown`, `submit`, `focus`) and
+  `InputTakenAt`; the handler claims the number (`ClaimedAsync`, `ClaimedByKeyOrAsync`). The Wrapper's
+  controls carry the same marks, so swapping Chrome does not change the order. A copy run by a numbered
+  menu click or key takes no number of its own, which would wait behind the input running it. ADR-0021
+  gains two entries for the listeners this needed.
+- **No clock is left in the script.** Every wait ends on a number the Settled Stamp answers or on
+  `data-ex-focus-owed`, which the stamp renders while the editor, a popover's control or a substituted
+  Chrome's contents still owe the keyboard. Held input that can no longer be carried out is refused aloud
+  with `KeyRefusalLabelIds.KeyboardDidNotArrive`. A Consumer's frame is waited for until it takes the
+  keyboard, another grid does, or the grid is disposed.
+- **A Chrome that marks a control `data-ex-claims` must reach the core every time that event comes**: a
+  telling no handler claims holds the inputs behind it until the next telling. The Wrapper's filter form
+  therefore hands every submission to `Apply`, which refuses one it cannot apply.
+- **Not yet measured**: the `spikes/render-bench` comparison against `main` that "What it may cost" asks
+  for is still owed before ticket 02 is done.
 
 ## What it may cost
 
