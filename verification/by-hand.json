@@ -124,12 +124,12 @@
         "tests/GlyphWidths/measure.mjs"
       ],
       "record": {
-        "commit": "f6b5e8fe6c4b87d077200616d305bdd87a723aba",
-        "tag": "verified/2026-10-18-macos-18",
-        "path": "verification/2026-10-18-macos-18/report.md",
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-macos-18b",
+        "path": "verification/2026-10-18-macos-18b/report.md",
         "verdict": "pass"
       },
-      "note": "The macOS glyph widths are measured (tests/GlyphWidths/*.macos.json, held by layer 1). Run 18 read the two paintings on macOS, Chrome and Edge, both hosts, headless (verification/2026-10-18-macos-18/). The Wrapper's two files are the MudBlazor Chrome's Roboto metrics (MudExGridPresentation, RobotoGlyphTable), which decide a bold amount's width and #### under that Chrome."
+      "note": "The macOS glyph widths are measured (tests/GlyphWidths/*.macos.json, held by layer 1). Run 18b read the two paintings on macOS at 0.1.0-rc.3's commit, Chrome and Edge, both hosts, headless (verification/2026-10-18-macos-18b/; run 18's, at f6b5e8fe, no longer held after #168). The Wrapper's two files are the MudBlazor Chrome's Roboto metrics (MudExGridPresentation, RobotoGlyphTable), which decide a bold amount's width and #### under that Chrome."
     },
     {
       "row": "ED-30",
@@ -247,12 +247,12 @@
         "tests/ExGrid.Browser/"
       ],
       "record": {
-        "commit": "f6b5e8fe6c4b87d077200616d305bdd87a723aba",
-        "tag": "verified/2026-10-18-macos-18",
-        "path": "verification/2026-10-18-macos-18/report.md",
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-macos-18b",
+        "path": "verification/2026-10-18-macos-18b/report.md",
         "verdict": "pass"
       },
-      "note": "Run 18 ran layer 3 on macOS at the verified commit, Chrome and Edge, both hosts, headless: Cmd+Enter fills on the editor's path (CP-16, LV-13), and the two ED-2 word-key tests pass. The report lists every other failure of that run and its differences, among them that no layer-3 test presses Command+Enter on the Sheet's editor (read once by a scratch copy) and that the Sheet's clipboard tests press Control+C / Control+V, which fail on a Mac."
+      "note": "Run 18b ran the row's named tests on macOS at 0.1.0-rc.3's commit, and run 18 the whole of layer 3 at f6b5e8fe, Chrome and Edge, both hosts, headless: Cmd+Enter fills on the editor's path (CP-16, LV-13), and the two ED-2 word-key tests pass. Run 18's report lists every other failure of its run and its differences, among them that no layer-3 test presses Command+Enter on the Sheet's editor (read once by a scratch copy) and that the Sheet's clipboard tests press Control+C / Control+V, which fail on a Mac."
     },
     {
       "row": "VZ-18",
