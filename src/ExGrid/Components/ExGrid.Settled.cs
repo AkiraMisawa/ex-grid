@@ -151,7 +151,7 @@ public partial class ExGrid<TRow>
     /// the edit's surface, or a control of one of its popovers — or that a substituted Chrome's popover
     /// contents, asked to take it, have not yet (TakePopoverFocus).</summary>
     private bool FocusOwed => _editorNeedsFocus || _popoverFocusPending != PopoverFocus.None
-        || (_chromeFocusOwed && AnyPopoverOpen);
+        || (_chromeFocusOwed && AnyPopoverOpen) || (_consumerFocusOwed && _consumerPopover is not null);
 
     /// <summary>A timer's render is no longer owed.</summary>
     private void OwedRenderDone(ref bool owed)

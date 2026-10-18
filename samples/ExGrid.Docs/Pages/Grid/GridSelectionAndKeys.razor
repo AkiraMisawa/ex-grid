@@ -168,16 +168,19 @@
             </tbody>
         </MudSimpleTable>
         <p>
-            One wait still gives up after two seconds: behind a key a popover answers by itself — Enter on a menu
-            item, Tab into a filter, Enter in a filter's field — which the grid does not yet number.
+            The keys a popover answers itself keep their place too: Enter, Space, a letter or Tab on a menu's items,
+            a letter on a filter's value list, a filter or Find submitted with Enter, and Tab wrapping round a
+            popover are numbered like the keys the grid answers, under the built-in Chrome and the MudBlazor Wrapper
+            alike, so the keys after them wait for their answer rather than for a clock. Inside a popover of your own
+            (<code>OpenPopoverAsync</code>) the keyboard is your contents' to move: the keys after one of your items
+            wait until it has moved, until DOM focus has left your popover, or until the grid is gone.
         </p>
         <p>
             The mark covers what the grid's own keyboard and pointer handling takes. Text typed into a field — the Cell
             Editor, a Sheet's Formula Bar or Name Box — and a click on a control a substituted Chrome draws without
             claiming it, a Sheet's toolbar or a Pivot's field list reach the grid as ordinary Blazor events. (The
-            MudBlazor Wrapper's menu items, completion candidates, filter Cancel and Find steps claim theirs, and keep
-            their place as the built-in ones do; its filter's Apply submits a form, as Enter does, and is not
-            numbered.) Read their effect with an expectation that waits for it. It is not <code>aria-busy</code>, which a screen reader would read out.
+            MudBlazor Wrapper's menu items, completion candidates, filter Cancel and Find steps claim theirs, and its
+            filter and Find forms their submission, and keep their place as the built-in ones do.) Read their effect with an expectation that waits for it. It is not <code>aria-busy</code>, which a screen reader would read out.
         </p>
     </DocsSection>
 

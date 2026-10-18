@@ -1508,7 +1508,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (k.key !== 'Enter') {
             return null;
         }
-        // Enter in a field submits its form: the filter's, or one whose OK closes the popover.
+        // Enter in a field submits its form: the filter's, or one whose OK closes the popover — unless
+        // the form's default button is disabled, when the browser submits nothing.
+        const defaultButton = target instanceof HTMLInputElement
+            ? target.form?.querySelector('button[type=submit], input[type=submit]') : null;
+        if (defaultButton && defaultButton.disabled) {
+            return null;
+        }
         const submitsClosing = target instanceof HTMLInputElement && implicitSubmitTypes.has(target.type)
             && target.form?.querySelector('button[type=submit].ex-popover-closes:not(:disabled)');
         return (isTextField(target) && target.closest('.ex-popover-filter')) || submitsClosing ? closes : null;
@@ -1552,17 +1558,21 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Declined its focus, the edit is the surface that last held the keyboard here, as the press
     // back finds it (standingField).
     const editorInput = () => (focusDeclined ? standingField() : surfaceField(ownSurface(document.activeElement)));
-    // A move the keys after it wait for (awaitingMove), and what ends that wait. Answered by the core
-    // under a number — a key the gate forwards, a click a control claims — it has `upTo`, and once the
-    // stamp has answered it with no focus owed, a move that has not come will not (ADR-0240 section
-    // 4). Answered by a Blazor handler the script cannot number — a key a menu, a value list or a form
-    // in a popover answers itself, a press on an item whose click claims nothing yet — it has `since`,
-    // and keeps the hold's old two-second give-up until those keys are numbered too: the one clock
-    // left, pending that decision (ADR-0240 section 4 is not yet met there).
+    // A move the keys after it wait for (awaitingMove), and what ends that wait. Answered under a number
+    // — a key the gate forwards, or an event a control of the grid's claims: a menu's or a value list's
+    // key, a form's submission, a sentinel's focus, a button's click — it has `upTo`, and once the stamp
+    // has answered it with no focus owed, a move that has not come will not (ADR-0240 section 4). A press
+    // on an item starts one with no number yet (`unnumbered`), which its click or its form's submission
+    // numbers as it is told (onClaimedEvent). One a Consumer's own contents answer stays unnumbered: the
+    // keyboard is theirs to move, as a frame's is, and the wait ends when it has moved, when DOM focus has
+    // left their popover, or with the instance — never on a clock.
     const awaitMove = (move, upTo = 0) => {
-        awaitingMove = upTo > 0 ? { ...move, upTo } : { ...move, since: performance.now() };
+        awaitingMove = upTo > 0 ? { ...move, upTo } : { ...move, unnumbered: true };
     };
-    const unnumberedMoveGivenUp = () => awaitingMove?.since !== undefined && performance.now() - awaitingMove.since > 2000;
+    // An unnumbered move whose popover no longer holds DOM focus: the keyboard went elsewhere, and the
+    // held keys follow it there.
+    const unnumberedMoveLeft = () => awaitingMove?.unnumbered === true && awaitingMove.from instanceof Element
+        && popoverOf(awaitingMove.from) !== popoverOf(document.activeElement);
     // Every input sent up to `upTo`, and the one the move waits on, answered, and no DOM focus owed by
     // the core to a control it will focus itself (data-ex-focus-owed).
     const coreAnswered = (upTo) => stamp !== null
@@ -1636,9 +1646,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             const handOffReady = disposed || handedOver() || (handOff !== null && inOtherGrid());
             let ready = disposed || (editorReady && popoverReady && handOffReady && moved());
-            if (!ready && unnumberedMoveGivenUp()) {
-                ready = true;
-            } else if (!ready && (awaitingMove === null || awaitingMove.upTo !== undefined || moved()) && coreAnswered(upTo)) {
+            if (!ready && unnumberedMoveLeft()) {
+                awaitingMove = null;
+                ready = editorReady && popoverReady && handOffReady;
+            }
+            if (!ready && !disposed && !(awaitingMove?.unnumbered === true) && coreAnswered(upTo)) {
                 if (!editorReady && deferredEditorFocus === null) {
                     if (declinedSurface()) {
                         focusDeclined = true;
@@ -2461,7 +2473,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     const into = popoverOf(event.target)?.querySelector('.ex-popover-commands')
                         ? '.ex-popover-commands'
                         : '.ex-popover-body';
-                    awaitMove({ from: event.target, into });
+                    // The sentinel's own focus was told as it came (onFocused): the move waits on it.
+                    awaitMove({ from: event.target, into }, claimOf(event.target, 'focus') !== null ? inputsSent : 0);
                 }
                 startHold();
             }
@@ -2477,7 +2490,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (move.into) {
                 event.preventDefault();
             }
-            awaitMove(move);
+            // Numbered as it goes on to the handler that answers it — a menu's, a value list's — or by
+            // the click or the submission it brings (onClaimedEvent).
+            awaitMove(move, tellKeyClaim(event));
             // Behind a hold that is over but not yet cleared, its drain takes this one too.
             if (!answering) {
                 startHold();
@@ -2523,6 +2538,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (k.inEditor && caretMoveKeys.has(event.key) && isTextField(event.target) && root.contains(event.target)) {
                 noteCaretMove(event.target);
             }
+            tellKeyClaim(event);
             return;
         }
         event.preventDefault();
@@ -2834,6 +2850,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // decisions about focus made in script (ADR-0021). Heard in the capture phase, where the
     // field's own focus, which does not bubble, is heard too.
     const onFocused = (event) => {
+        // A popover's sentinel hands the keyboard on from its Blazor handler: its focus is numbered and
+        // told as it goes there (ADR-0240 section 4), and a key landing on it waits on that number.
+        if (core && claimOf(event.target, 'focus') !== null) {
+            tellClaim('focus');
+        }
         const field = keyFieldOf();
         if (field === null) {
             return;
@@ -3169,6 +3190,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const claims = claimant.getAttribute('data-ex-claims').split(' ');
         return claims.includes('mousedown') || claims.includes('click') || claims.includes('dblclick');
     };
+    // A keydown going on to the Blazor handler of a control that claims it — a menu's items, a value
+    // list — told, and its number answered (tellClaim); 0 for one no control claims.
+    const tellKeyClaim = (event) => (core && claimOf(event.target, 'keydown') !== null ? tellClaim('keydown') : 0);
     const tellClaim = (kind) => {
         const input = nextInput();
         core.invokeMethodAsync('InputTakenAt', kind, input).catch((error) => {
@@ -3715,10 +3739,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // layout is read.
     const onClaimedEvent = (event) => {
         lookSettled();
-        if (!core || replaying) {
+        if (!core || (replaying && event.type !== 'submit')) {
             return;
         }
-        if (held.some((k) => k.press === 'mousedown')) {
+        // A press on an item that did not end in a click on it moved nothing (onPress).
+        if (event.type === 'click' && awaitingMove?.unnumbered === true && awaitingMove.from instanceof Node
+            && !awaitingMove.from.contains(event.target) && !(event.target instanceof Node && event.target.contains(awaitingMove.from))) {
+            awaitingMove = null;
+            lookAgain();
+        }
+        if (event.type !== 'submit' && held.some((k) => k.press === 'mousedown')) {
             event.preventDefault();
             event.stopPropagation();
             held.push({ press: event.type, claim: true, target: event.target, init: mouseInit(event) });
@@ -3726,10 +3756,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         if (claimOf(event.target, event.type) !== null) {
             const input = tellClaim(event.type);
-            // The press on a menu item started a move with no number (awaitMove): its click carries one.
-            if (event.type === 'click' && awaitingMove?.since !== undefined && awaitingMove.from instanceof Node
-                && awaitingMove.from.contains(event.target)) {
-                const { since, ...move } = awaitingMove;
+            // A press on an item, or a key on a button or in a form, started a move with no number
+            // (awaitMove): the click on it, or its form's submission, carries one.
+            if (awaitingMove?.unnumbered === true && awaitingMove.from instanceof Node && event.target instanceof Node
+                && (awaitingMove.from.contains(event.target) || event.target.contains(awaitingMove.from))) {
+                const { unnumbered, ...move } = awaitingMove;
                 awaitingMove = { ...move, upTo: input };
             }
         }
@@ -3737,6 +3768,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     root.addEventListener('click', onClaimedEvent, true);
     root.addEventListener('dblclick', onClaimedEvent, true);
     root.addEventListener('contextmenu', onClaimedEvent, true);
+    root.addEventListener('submit', onClaimedEvent, true);
 
     // The clipboard (ADR-0005) — the fourth allowlist entry (ADR-0021). Both events
     // fire on the focused root — verified on the real Chrome: a non-editable,
@@ -4739,6 +4771,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.removeEventListener('click', onClaimedEvent, true);
             root.removeEventListener('dblclick', onClaimedEvent, true);
             root.removeEventListener('contextmenu', onClaimedEvent, true);
+            root.removeEventListener('submit', onClaimedEvent, true);
             root.removeEventListener('ex-press-handed-on', onPressHandedOn);
             // A press on another grid still waiting for its turn here is let go: that grid's core
             // hands it over rather than wait for keys this grid will never hand on.

@@ -56,7 +56,7 @@
             (RenderFragment)(label => label.AddContent(0, LabelOf(command.Id))));
         // Its click takes its place in the grid's Input Order (ADR-0240 section 2): the grid's script
         // numbers a click on a control that claims it, and the command claims the number.
-        builder.AddAttribute(12, "data-ex-claims", "click");
+        builder.AddAttribute(12, "data-ex-claims", "click keydown");
         builder.AddComponentReferenceCapture(13, reference => _items[item] = (MudExGridMenuItem)reference);
         builder.CloseComponent();
     };

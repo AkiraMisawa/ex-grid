@@ -227,6 +227,73 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Equal(RefOf(Item(cut, "Copy")), LastFocused());
     }
 
+    private Task<string?> AnsweredAsync(IRenderedComponent<ExGrid<TestRow>> cut)
+        => ReadWhenIdleAsync(() => cut.Find(".ex-grid > [data-ex-answered]").GetAttribute("data-ex-answered"));
+
+    [Fact] // ADR-0240 §4: a key a substituted Chrome's menu resolves takes the number told for it, and the command its handler runs is handled under it, after the input before it
+    public async Task ADR0240_a_chrome_menu_key_runs_its_command_under_the_number_told()
+    {
+        var chrome = new StubChrome();
+        var cut = RenderGrid(chrome);
+        await ClickCellAsync(cut, 50, 10);
+        await AltDownAsync(cut);
+        Assert.NotEmpty(cut.FindAll(".ex-popover"));
+
+        await cut.InvokeAsync(() => cut.Instance.InputTakenAt("keydown", 2));
+        Task run = Task.CompletedTask;
+        await cut.InvokeAsync(() =>
+        {
+            var menu = chrome.Menu!;
+            var meaning = menu.ResolveKey!("Enter", false, false);
+            Assert.Equal(MenuKeyKind.Run, meaning.Kind);
+            run = menu.Commands[meaning.Item].Invoke();
+        });
+        await WhenIdleAsync();
+        Assert.False(run.IsCompleted);
+        Assert.NotEmpty(cut.FindAll(".ex-popover"));
+
+        await cut.InvokeAsync(() => cut.Instance.OnHeldTabRefusedAsync(input: 1));
+        await run;
+        Assert.Equal("2", await AnsweredAsync(cut));
+        Assert.Empty(cut.FindAll(".ex-popover"));
+    }
+
+    [Fact] // ADR-0240 §4: a key a substituted Chrome's menu resolves and asks nothing more of is answered once its handler has run, never left owed
+    public async Task ADR0240_a_chrome_menu_key_that_asks_nothing_is_answered()
+    {
+        var chrome = new StubChrome();
+        var cut = RenderGrid(chrome);
+        await ClickCellAsync(cut, 50, 10);
+        await AltDownAsync(cut);
+
+        await cut.InvokeAsync(() => cut.Instance.InputTakenAt("keydown", 1));
+        await cut.InvokeAsync(() => chrome.Menu!.ResolveKey!("ArrowDown", false, false));
+
+        Assert.Equal("1", await AnsweredAsync(cut));
+    }
+
+    [Fact] // ADR-0240 §4: a substituted menu's close asked from a resolved key is handled under that key's number
+    public async Task ADR0240_a_chrome_menu_close_from_a_key_takes_its_number()
+    {
+        var chrome = new StubChrome();
+        var cut = RenderGrid(chrome);
+        await ClickCellAsync(cut, 50, 10);
+        await AltDownAsync(cut);
+
+        await cut.InvokeAsync(() => cut.Instance.InputTakenAt("keydown", 2));
+        await cut.InvokeAsync(() =>
+        {
+            chrome.Menu!.ResolveKey!("Escape", false, false);
+            chrome.Menu!.Close();
+        });
+        await WhenIdleAsync();
+        Assert.NotEmpty(cut.FindAll(".ex-popover"));
+
+        await cut.InvokeAsync(() => cut.Instance.OnHeldTabRefusedAsync(input: 1));
+        Assert.Equal("2", await AnsweredAsync(cut));
+        Assert.Empty(cut.FindAll(".ex-popover"));
+    }
+
     [Fact] // ADR-0240 §4: a substituted Chrome's menu owes the keyboard from its opening until its contents take it through TakeFocus, and nothing once it closes
     public async Task ADR0240_a_substituted_menu_owes_focus_until_it_takes_it()
     {

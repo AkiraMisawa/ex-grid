@@ -131,7 +131,7 @@ public class InputOrderClicksTests : GridTestContext
         await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 50, OffsetY = 10 });
         await cut.Find(".ex-viewport").ContextMenuAsync(new MouseEventArgs { OffsetX = 50, OffsetY = 10 });
         var copy = cut.FindAll("[role=menu] button[role=menuitem]").First(b => b.TextContent == "Copy");
-        Assert.Equal("click", copy.GetAttribute("data-ex-claims"));
+        Assert.Equal("click keydown", copy.GetAttribute("data-ex-claims"));
 
         await TellAsync(cut, "click", input: 1);
         await copy.ClickAsync(new MouseEventArgs());
@@ -139,6 +139,44 @@ public class InputOrderClicksTests : GridTestContext
         var written = Assert.Single(JSInterop.Invocations["writeCopy"]);
         Assert.Equal([false, true], written.Arguments);
         Assert.Equal("1", await AnsweredAsync(cut));
+    }
+
+    [Fact] // ADR-0240 §4, ADR-0036: a key on a menu item waits for the input numbered before it, and the copy Enter runs is that key's, never under a number of its own it would wait for
+    public async Task ADR0240_a_menu_key_waits_its_turn_and_its_copy_is_its_own()
+    {
+        var cut = RenderGrid();
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 50, OffsetY = 10 });
+        await cut.Find(".ex-viewport").ContextMenuAsync(new MouseEventArgs { OffsetX = 50, OffsetY = 10 });
+        var copy = cut.FindAll("[role=menu] button[role=menuitem]").First(b => b.TextContent == "Copy");
+
+        await TellAsync(cut, "keydown", input: 2);
+        Task key = Task.CompletedTask;
+        await cut.InvokeAsync(() => { key = copy.KeyDownAsync(new KeyboardEventArgs { Key = "Enter" }); });
+        await WhenIdleAsync();
+        Assert.Empty(JSInterop.Invocations["writeCopy"]);
+
+        await cut.InvokeAsync(() => cut.Instance.OnHeldTabRefusedAsync(input: 1));
+        await key;
+        Assert.Equal([false, true], Assert.Single(JSInterop.Invocations["writeCopy"]).Arguments);
+        Assert.Equal("2", await AnsweredAsync(cut));
+    }
+
+    [Fact] // ADR-0240 §4: the filter's form, submitted, and a popover's sentinel, focused, take the numbers told for them
+    public async Task ADR0240_a_filter_submission_and_a_sentinel_take_their_numbers()
+    {
+        var cut = RenderGrid();
+        await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
+        var form = cut.Find(".ex-popover-filter form.ex-popover-form");
+        Assert.Equal("submit", form.GetAttribute("data-ex-claims"));
+        Assert.All(cut.FindAll(".ex-popover .ex-focus-wrap"), wrap => Assert.Equal("focus", wrap.GetAttribute("data-ex-claims")));
+
+        await TellAsync(cut, "focus", input: 1);
+        await cut.FindAll(".ex-popover .ex-focus-wrap")[0].FocusAsync(new FocusEventArgs());
+        Assert.Equal("1", await AnsweredAsync(cut));
+
+        await TellAsync(cut, "submit", input: 2);
+        await cut.Find(".ex-popover-filter form.ex-popover-form").SubmitAsync();
+        Assert.Equal("2", await AnsweredAsync(cut));
     }
 
     [Fact] // ADR-0240 §2, ADR-0036: a menu copy nobody numbered keeps the script's own numbering of its payload

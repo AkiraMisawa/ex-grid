@@ -337,6 +337,7 @@ public partial class ExGrid<TRow>
         // The contents are the Consumer's, and focus themselves on their count.
         _popoverFocusPending = PopoverFocus.None;
         _chromeFocusOwed = false;
+        _consumerFocusOwed = false;
         _consumerFocusRequest++;
         _consumerFocusLastRequest = 0;
         _consumerContentsHeld = false;
@@ -365,6 +366,7 @@ public partial class ExGrid<TRow>
     private Func<ElementReference, bool, Task> TakeConsumerPopoverFocus
         => _takeConsumerPopoverFocus ??= (control, preventScroll) => InvokeAsync(async () =>
         {
+            _consumerFocusOwed = false;
             if (control.Id is null || _disposed)
                 return;
             try
@@ -398,6 +400,7 @@ public partial class ExGrid<TRow>
     /// </summary>
     private void OnConsumerTrailingSentinel()
     {
+        _consumerFocusOwed = true;
         if (_consumerContentsHeld)
             _consumerFocusRequest++;
         else
@@ -411,6 +414,7 @@ public partial class ExGrid<TRow>
     /// </summary>
     private void OnConsumerLeadingSentinel()
     {
+        _consumerFocusOwed = true;
         if (_consumerContentsHeld)
             _consumerFocusLastRequest++;
         else

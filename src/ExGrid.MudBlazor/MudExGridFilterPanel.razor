@@ -46,7 +46,7 @@
    panel and carries ex-popover-closes, by which the grid's key listener holds the keys typed while
    the panel goes, a round trip on a circuit, and hands them on where the keyboard lands (ADR-0010,
    ADR-0044's note of 2026-10-12). *@
-<form class="mud-ex-grid-filter" @onsubmit="Apply" @onsubmit:preventDefault>
+<form class="mud-ex-grid-filter" data-ex-claims="submit" @onsubmit="Apply" @onsubmit:preventDefault>
     @* The form's default button: the first submit button, which implicit submission clicks. *@
     <button type="submit" class="mud-ex-grid-filter-default" hidden tabindex="-1" aria-hidden="true"></button>
     @if (_awaiting)
@@ -68,7 +68,7 @@
             <MudCheckBox T="bool" @bind-Value="_addToCurrent" Label="@Own(MudExGridWords.AddToFilter)"
                          Dense="true" Size="Size.Small" Class="mud-ex-grid-filter-add" />
         }
-        <div class="mud-ex-grid-filter-values ex-value-list" @onkeydown="OnValueListKeyAsync">
+        <div class="mud-ex-grid-filter-values ex-value-list" data-ex-claims="keydown" @onkeydown="OnValueListKeyAsync">
             @* "(Select All)" over the values shown, with Excel's mixed state (ADR-0009). *@
             <MudCheckBox T="bool?" TriState="true" Value="@SelectAllValue(shown, chosen)"
                          ValueChanged="@(_ => FilterPanelChoices.ToggleAll(shown, chosen))"

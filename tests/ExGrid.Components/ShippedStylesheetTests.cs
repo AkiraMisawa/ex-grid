@@ -115,8 +115,9 @@ public class ShippedStylesheetTests
         // typing (keydown since 2026-10-17, for an Enter typed there once the hold is over).
         // ADR-0240 section 2: the capture-phase click, dblclick and contextmenu on the root, which number a
         // click on a control of the grid's own that claims it, and hold it in its place while the gate
-        // holds input (the entry ADR-0021 gains with ticket 02 of the Input Order).
-        string[] allowed = ["blur", "change", "change", "click", "clipboardchange", "compositionend", "compositionend", "compositionstart", "contextmenu", "copy", "copy", "cut", "dblclick", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
+        // holds input (the entry ADR-0021 gains with ticket 02 of the Input Order), and the capture-phase
+        // submit, which numbers a form of the grid's own submitted (ADR-0240 section 4).
+        string[] allowed = ["blur", "change", "change", "click", "clipboardchange", "compositionend", "compositionend", "compositionstart", "contextmenu", "copy", "copy", "cut", "dblclick", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange", "submit"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
@@ -1148,20 +1149,23 @@ public class ShippedStylesheetTests
         Assert.Contains("resolve();", look, StringComparison.Ordinal);
     }
 
-    [Fact] // ADR-0240 §4: no wait ends on a clock — the reveal, the close hold, the mark's wait and the editor's and popover's waits end on what they wait for — but the one left for moves no number covers yet
-    public void ADR0240_no_wait_ends_on_a_clock_but_a_move_no_number_covers()
+    [Fact] // ADR-0240 §4: no wait ends on a clock — the reveal, the close hold, the mark's wait, and the editor's, popover's and moves' waits end on what they wait for
+    public void ADR0240_no_wait_ends_on_a_clock()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
 
         Assert.DoesNotContain("revealTimer", script, StringComparison.Ordinal);
         Assert.DoesNotContain("fallback: setTimeout", script, StringComparison.Ordinal);
-        Assert.DoesNotContain("performance.now() - since", script, StringComparison.Ordinal);
-        var clock = Assert.Single(Regex.Matches(script, @"\b2000\b"));
-        Assert.Matches(new Regex(@"const unnumberedMoveGivenUp = \(\) => awaitingMove\?\.since !== undefined && performance\.now\(\) - awaitingMove\.since > 2000;"), script);
+        Assert.DoesNotContain("holdStartedAt", script, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"performance\.now\(\) - "), script);
+        Assert.DoesNotMatch(new Regex(@"\b2000\b"), script);
         // Judged instead once the core has answered every input the wait is behind and owes no focus.
         Assert.Contains("!stamp.hasAttribute('data-ex-focus-owed')", script, StringComparison.Ordinal);
         Assert.Contains("core.invokeMethodAsync('OnHeldInputsRefusedAsync', nextInput(true))", script, StringComparison.Ordinal);
-        Assert.True(clock.Index > 0);
+        // The keys, submissions and sentinel focus a popover answers itself are told, so moves wait on numbers.
+        Assert.Contains("claimOf(event.target, 'keydown') !== null ? tellClaim('keydown')", script, StringComparison.Ordinal);
+        Assert.Contains("root.addEventListener('submit', onClaimedEvent, true);", script, StringComparison.Ordinal);
+        Assert.Contains("tellClaim('focus');", script, StringComparison.Ordinal);
     }
 
     [Fact] // ADR-0039 (note of 2026-10-01) / ADR-0010 / ADR-0080: a composition finished in the Keyboard Field while a popover or a Consumer's frame takes the keyboard is handed to it as a held character is — typed into its text field, dropped with every key behind it on any other control — and the core is asked to open an edit only when neither has the keyboard

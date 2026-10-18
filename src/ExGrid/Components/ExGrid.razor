@@ -741,7 +741,7 @@
                    ask the filter for its first or last control. Blazor's own focus events, and
                    no key the filter's controls would have to give up; the keys typed while
                    either hand-off is under way are held by the key listener (ADR-0010). *@
-                <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToCommandsAsync"></span>
+                <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ReturnToCommandsHandler"></span>
                 <div class="ex-popover-filter">
                     @if (Chrome?.FilterPanel(panelContext) is { } panelFragment)
                     {
@@ -764,7 +764,7 @@
                            Cancel. OK shows it is unavailable while nothing is ticked among the
                            values the list shows; Enter is not gated on it, and what it submits is
                            refused on the same rule (ticket 76). *@
-                        <form class="ex-popover-form" @onsubmit="() => ApplyPanelAsync(panelColumn)" @onsubmit:preventDefault>
+                        <form class="ex-popover-form" data-ex-claims="submit" @onsubmit="() => ClaimedAsync(ClaimSubmit, () => ApplyPanelAsync(panelColumn))" @onsubmit:preventDefault>
                             @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
                             {
                                 var shown = domain.Values.Where(v => FilterPanelChoices.Matches(_panelSearch, PanelText(v, panelColumn))).ToArray();
@@ -778,7 +778,7 @@
                                         Add current selection to filter
                                     </label>
                                 }
-                                <div class="ex-popover-list ex-value-list" @onkeydown="OnBuiltInValueListKeyAsync">
+                                <div class="ex-popover-list ex-value-list" data-ex-claims="keydown" @onkeydown="BuiltInValueListKeyHandler">
                                     @* "(Select All)" over the values shown, with Excel's mixed state: a
                                        checkbox role on a button, because a native checkbox's mixed
                                        state is a property only script can set (ADR-0021). *@
@@ -843,7 +843,7 @@
                         </form>
                     }
                 </div>
-                <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToCommandsAsync"></span>
+                <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ReturnToCommandsHandler"></span>
             }
         </div>
     }
@@ -873,7 +873,7 @@
         var findContext = BuildFindContext();
         <div class="ex-popover ex-popover-find" style="@FindPopoverStyle()" role="dialog"
              aria-label="@Label(FindPanelLabelIds.Title)" @key="_popoverFocusRequest">
-            <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToFindAsync"></span>
+            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ReturnToFindHandler"></span>
             <div class="ex-popover-find-body ex-popover-body">
                 @if (Chrome?.FindPanel(findContext) is { } findFragment)
                 {
@@ -881,7 +881,7 @@
                 }
                 else
                 {
-                    <form class="ex-popover-form" @onsubmit="SubmitFindAsync" @onsubmit:preventDefault>
+                    <form class="ex-popover-form" data-ex-claims="submit" @onsubmit="SubmitFindHandler" @onsubmit:preventDefault>
                         <input type="search" class="ex-find-field" aria-label="@Label(FindPanelLabelIds.Field)"
                                @bind="_findText" @bind:event="oninput" @ref="_findField"
                                @onkeydown="OnFindFieldKeyDown" />
@@ -905,7 +905,7 @@
                     </form>
                 }
             </div>
-            <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToFindAsync"></span>
+            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ReturnToFindHandler"></span>
         </div>
     }
     @if (_consumerPopover is { } consumerPopover)
@@ -917,9 +917,9 @@
            the keyboard; before, a sentinel was entered from outside, and asks for the near end. *@
         <div class="ex-popover ex-popover-consumer" style="@ConsumerPopoverStyle()" role="dialog"
              aria-label="@consumerPopover.Label" @key="_popoverFocusRequest">
-            <span class="ex-focus-wrap" tabindex="0" @onfocus="OnConsumerLeadingSentinel"></span>
+            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ConsumerLeadingSentinelHandler"></span>
             <div class="ex-popover-body" @onfocusin="ConsumerContentsHeld">@consumerPopover.Content(BuildConsumerPopoverContext())</div>
-            <span class="ex-focus-wrap" tabindex="0" @onfocus="OnConsumerTrailingSentinel"></span>
+            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ConsumerTrailingSentinelHandler"></span>
         </div>
     }
     @if (MessageOnShow() is var (messageCell, messageText, isEditorError) && messageText is not null)
@@ -5473,7 +5473,7 @@
             {
                 // A menu item's click, under any Chrome, takes the number the script told it by
                 // (ADR-0240 section 2); a key that runs the command finds none told, and runs as it is.
-                Invoke = () => InvokeAsync(() => ClaimedClickAsync(async () =>
+                Invoke = () => InvokeAsync(() => ClaimedByKeyOrAsync(ClaimClick, async () =>
                 {
                     await RunCommandAsync(command);
                     StateHasChanged();
@@ -5794,10 +5794,11 @@
 
     /// <summary>The contexts' <c>Close</c>: what a Chrome's own × or backdrop invokes. It
     /// arrives from the Chrome's event, not the grid's, so the grid renders itself.</summary>
-    private Action CloseFromChrome => _closeFromChrome ??= () => _ = InvokeAsync(() => ClaimedAsync("click", () =>
+    private Action CloseFromChrome => _closeFromChrome ??= () => _ = InvokeAsync(() => ClaimedByKeyOrAsync(ClaimClick, () =>
     {
         ClosePopoverAndReturnFocus();
         StateHasChanged();
+        return Task.CompletedTask;
     }));
 
     /// <summary>The contexts' <c>InnerPopupChanged</c>: the contents report a popup of their
@@ -5906,11 +5907,11 @@
     /// <summary>The core's focus function a Chrome's popover is handed (ADR-0204), as a Chrome's
     /// editor is handed its own (ADR-0010): the control, and whether it may scroll into view.</summary>
     private Func<ElementReference, bool, Task> TakePopoverFocus
-        => _takePopoverFocus ??= (control, preventScroll) => InvokeAsync(() =>
+        => _takePopoverFocus ??= (control, preventScroll) => InvokeAsync(() => ClaimedByKeyOrAsync(null, () =>
         {
             _chromeFocusOwed = false;
             return FocusQuietlyAsync(control, preventScroll);
-        });
+        }));
 
     // A popover's contents drawn by a substituted Chrome owe the keyboard: asked to take it (an opening,
     // a move into the filter), and not yet through TakePopoverFocus (FocusOwed, ADR-0240 section 4).
@@ -5989,11 +5990,11 @@
 
     /// <summary>The Context Menu's <c>ResolveKey</c> over the commands it hands out.</summary>
     private MenuKeyResolver MenuKeysOver(IReadOnlyList<GridCommand> commands)
-        => (key, shift, chord) => ResolveMenuKey(commands, key, shift, chord);
+        => (key, shift, chord) => ClaimedKey(() => ResolveMenuKey(commands, key, shift, chord));
 
     /// <summary>The column menu's <c>ResolveKey</c> over the commands it hands out.</summary>
     private MenuKeyResolver ColumnMenuKeysOver(IReadOnlyList<GridCommand> commands, bool filterBelow)
-        => (key, shift, chord) => ResolveColumnMenuKey(commands, filterBelow, key, shift, chord);
+        => (key, shift, chord) => ClaimedKey(() => ResolveColumnMenuKey(commands, filterBelow, key, shift, chord));
 
     /// <summary>
     /// Sends the keyboard from the commands to the filter below them (ADR-0044): its first
@@ -6036,6 +6037,8 @@
         _menuFocusRequest++;
         if (_menuItems.Count > 0)
             await FocusQuietlyAsync(_menuItems[_menuItems.Keys.Min()]);
+        else
+            _chromeFocusOwed = true;
     }
 
     /// <summary>
@@ -6062,7 +6065,14 @@
     }
 
     /// <summary>The filter context's <c>ValueListKey</c>: one delegate, whatever renders.</summary>
-    private Func<KeyboardEventArgs, Task> ValueListKeyFromChrome => _valueListKey ??= e => OnValueListKeyAsync(e);
+    private Func<KeyboardEventArgs, Task> ValueListKeyFromChrome
+        => _valueListKey ??= e => ClaimedAsync(ClaimKeyDown, async () => await OnValueListKeyAsync(e));
+
+    /// <summary>The built-in list's keys, claimed in their place in the Input Order (ADR-0240).</summary>
+    private Func<KeyboardEventArgs, Task> BuiltInValueListKeyHandler
+        => _builtInValueListKey ??= e => ClaimedAsync(ClaimKeyDown, () => OnBuiltInValueListKeyAsync(e));
+
+    private Func<KeyboardEventArgs, Task>? _builtInValueListKey;
 
     private Func<KeyboardEventArgs, Task>? _valueListKey;
 
@@ -6208,7 +6218,7 @@
             FilterOperators.AllowedFor(declared.Type),
             declared.FilterUi,
             () => RequestDistinctValuesAsync(declared.Name),
-            spec => _ = InvokeAsync(() => ApplyFilterSpecAsync(declared.Name, spec)),
+            spec => _ = InvokeAsync(() => ClaimedAsync(ClaimSubmit, () => ApplyFilterSpecAsync(declared.Name, spec))),
             () => _ = InvokeAsync(() => ApplyFilterSpecAsync(declared.Name, null)),
             CloseFromChrome,
             _panelFocusRequest,
@@ -7773,8 +7783,8 @@
         text => _findText = text,
         value => _findMatchCase = value,
         value => _findWholeCell = value,
-        () => InvokeAsync(() => ClaimedClickAsync(() => FindStepAsync(backward: false))),
-        () => InvokeAsync(() => ClaimedClickAsync(() => FindStepAsync(backward: true))),
+        () => InvokeAsync(() => ClaimedAsync(ClaimClick, ClaimSubmit, () => FindStepAsync(backward: false))),
+        () => InvokeAsync(() => ClaimedAsync(ClaimClick, ClaimSubmit, () => FindStepAsync(backward: true))),
         CloseFromChrome,
         _findFocusRequest,
         InnerPopupChangedFromChrome,
@@ -7803,7 +7813,10 @@
         if (_findField.Context is not null)
             await FocusQuietlyAsync(_findField);
         else
+        {
+            _chromeFocusOwed = true;
             StateHasChanged();
+        }
     }
 
     /// <summary>The find panel's place (ADR-0040): the grid's top right, under the header,
@@ -10642,9 +10655,9 @@
             var command = commands[i];
             if (command.Enabled)
             {
-                <button type="button" role="menuitem" @ref="_menuItems[item]" data-ex-claims="click"
+                <button type="button" role="menuitem" @ref="_menuItems[item]" data-ex-claims="click keydown"
                         @onclick="command.Invoke"
-                        @onkeydown="e => OnMenuItemKeyAsync(e, commands, resolve)" @onkeydown:preventDefault>@LabelWithLetter(command, lettered)</button>
+                        @onkeydown="e => ClaimedAsync(ClaimKeyDown, () => OnMenuItemKeyAsync(e, commands, resolve))" @onkeydown:preventDefault>@LabelWithLetter(command, lettered)</button>
             }
             else
             {
