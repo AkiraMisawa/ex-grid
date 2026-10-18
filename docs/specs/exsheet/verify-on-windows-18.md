@@ -170,6 +170,18 @@ behind 150 ms: 12 records per case. k7 runs behind 150 ms only, k11 on `/feature
 k14 on `/sheets` and `/sheets?chrome=mud`. Use run 17's probe and scripts (`part-g/ed30/`), with the same keys
 and readings, and compare every state with run 17's record of the same case, state and configuration.
 
+- **k6, k6x and k6y read as ADR-0080 reads them, not as the sixteenth run's column.** That column expected one
+  composition of two clauses; ADR-0080 records it as the procedure's error: this IME ends a converted clause's
+  composition at the next clause's first key, in Excel too. So k6 expects two compositions, the Cell Editor
+  opening on the first while the keyboard stays in the Keyboard Field for the second, and D10 `かな感じ`, with no
+  key lost, doubled or reordered: the row's "keys typed after a composition's end follow it in order". Run 17
+  read exactly that and marked it "not met as written" against the old column; that mark is not carried here.
+- **What ED-30's last record failed on, and where each stands.** The record is the sixteenth run's, `fail`, for
+  its differences 1 and 3. Difference 1, a key of the second clause lost on WebAssembly, was fixed by ticket 120
+  and read gone in every configuration by run 17 (k6, k6x, k6y). Difference 3, the press on D12 that never reached
+  the page, is the IME's prediction list, which k8 now runs with off (below). Neither is expected again; a reading
+  of either is a defect, recorded as one.
+
 - **k8 with Predictive input off**, as the Definition of Done's Step 4 row says (decided with the user, 2026-10-16).
   In runs 16 and 17, k8's press on D12 landed on the IME's own prediction list and never reached the page.
   `verification/2026-10-12-windows-ed30-k8/` turned the Microsoft IME's Predictive input off and read k8 as written
