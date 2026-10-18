@@ -1508,16 +1508,30 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (k.key !== 'Enter') {
             return null;
         }
-        // Enter in a field submits its form: the filter's, or one whose OK closes the popover — unless
-        // the form's default button is disabled, when the browser submits nothing.
-        const defaultButton = target instanceof HTMLInputElement
-            ? target.form?.querySelector('button[type=submit], input[type=submit]') : null;
-        if (defaultButton && defaultButton.disabled) {
+        // Enter in a field submits its form: the filter's, or one whose OK closes the popover — when the
+        // browser will submit it at all (submitsOnEnter). One it will not submit moves nothing, and the
+        // keys after it wait on no submission that never comes.
+        if (target instanceof HTMLInputElement && target.form && !submitsOnEnter(target.form)) {
             return null;
         }
         const submitsClosing = target instanceof HTMLInputElement && implicitSubmitTypes.has(target.type)
             && target.form?.querySelector('button[type=submit].ex-popover-closes:not(:disabled)');
         return (isTextField(target) && target.closest('.ex-popover-filter')) || submitsClosing ? closes : null;
+    };
+    // Whether Enter in a field of `form` submits it, by the HTML standard's implicit submission: its
+    // default button, the first submit button, is not disabled; or, with none, exactly one field blocks
+    // implicit submission. Read from the form's own elements; nothing measured. The built-in filter's
+    // form with a second condition's value holds two such fields and no submit button: Enter there
+    // submits nothing (ADR-0039, KB-31).
+    const blocksImplicitSubmit = new Set(['text', 'search', 'url', 'tel', 'email', 'password', 'date', 'month', 'week', 'time', 'datetime-local', 'number']);
+    const submitsOnEnter = (form) => {
+        const elements = [...form.elements];
+        const defaultButton = elements.find((e) => (e instanceof HTMLButtonElement && e.type === 'submit')
+            || (e instanceof HTMLInputElement && (e.type === 'submit' || e.type === 'image')));
+        if (defaultButton) {
+            return !defaultButton.disabled;
+        }
+        return elements.filter((e) => e instanceof HTMLInputElement && blocksImplicitSubmit.has(e.type)).length === 1;
     };
     // The fields in which Enter submits the form they stand in, as the browser's implicit submission has it.
     const implicitSubmitTypes = new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number']);
@@ -1571,11 +1585,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // keyboard is theirs to move, as a frame's is, and the wait ends when it has moved, when DOM focus has
     // left their popover, or with the instance — never on a clock.
     const awaitMove = (move, upTo = 0) => {
-        awaitingMove = upTo > 0 ? { ...move, upTo } : { ...move, unnumbered: true };
+        awaitingMove = upTo > 0 ? { ...move, upTo } : { ...move, unnumbered: true, focusAtStart: document.activeElement };
     };
-    // An unnumbered move whose popover no longer holds DOM focus: the keyboard went elsewhere, and the
-    // held keys follow it there.
+    // An unnumbered move in a Consumer's popover whose popover no longer holds DOM focus: the keyboard
+    // went elsewhere, and the held keys follow it there. Only once DOM focus has moved since the move
+    // began: a press is heard before its default moves DOM focus, and the popover may not have taken
+    // the keyboard yet when it lands — read then, a press on an item released the keys it held before
+    // its click had run the item (ADR-0240 section 4). A move on one of the grid's own items waits for
+    // its click, which numbers it, or for a click elsewhere, which ends it (onClaimedEvent).
     const unnumberedMoveLeft = () => awaitingMove?.unnumbered === true && awaitingMove.from instanceof Element
+        && awaitingMove.from.closest('.ex-popover-consumer') !== null
+        && document.activeElement !== awaitingMove.focusAtStart
         && popoverOf(awaitingMove.from) !== popoverOf(document.activeElement);
     // Every input sent up to `upTo`, and the one the move waits on, answered, and no DOM focus owed by
     // the core to a control it will focus itself (data-ex-focus-owed).
@@ -3763,7 +3783,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // (awaitMove): the click on it, or its form's submission, carries one.
             if (awaitingMove?.unnumbered === true && awaitingMove.from instanceof Node && event.target instanceof Node
                 && (awaitingMove.from.contains(event.target) || event.target.contains(awaitingMove.from))) {
-                const { unnumbered, ...move } = awaitingMove;
+                const { unnumbered, focusAtStart, ...move } = awaitingMove;
                 awaitingMove = { ...move, upTo: input };
             }
         }
