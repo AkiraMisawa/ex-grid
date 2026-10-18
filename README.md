@@ -176,7 +176,7 @@ builder.RootComponents.Add<ExGrid.Components.ExGridStylesheet>("head::after");
 }
 ```
 
-The whole family is published to NuGet as prereleases at one shared `0.1.0-beta.N` version
+The whole family is published to NuGet as prereleases at one shared version, `0.1.0-beta.N` and then `0.1.0-rc.N`
 ([ADR-0042](docs/adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
 Each package depends on exactly the versions of the others it was built with, so upgrade them
 together. A MudBlazor application adds each product's Wrapper:
@@ -237,7 +237,8 @@ Every decision is recorded with its reasons in [`docs/adr/`](docs/adr/), and the
 ## Status
 
 **Beta.** The specification is settled and every test layer passes in CI, but the API may change
-between betas. The family's ten packages ship together as `0.1.0-beta.N`; a stable version waits
+between prereleases. The family's ten packages ship together as `0.1.0-beta.N`, then as release
+candidates `0.1.0-rc.N`; a stable version waits
 for the [Definition of Done](docs/definition-of-done.md) to be signed off. What remains is in
 [`docs/implementation-status.md`](docs/implementation-status.md).
 
