@@ -130,7 +130,7 @@
                them; each is display: contents, so the band lays out, paints and stacks exactly as
                one element of cells and rectangles did (ADR-0032), and only the tree says rows. *@
             var tiered = _headerLayout.TierCount > 0;
-            <div class="ex-header" role="@(tiered ? "rowgroup" : "row")" aria-rowindex="@(tiered ? null : CellIds.HeaderRowIndex(0))" style="@HeaderBandStyle()" @attributes="_headerDragHandler" @onclick="OnHeaderClickAsync" @onmousedown="HeaderPressHandler" @onmousedown:preventDefault="PointedAtNow">
+            <div class="ex-header" role="@(tiered ? "rowgroup" : "row")" aria-rowindex="@(tiered ? null : CellIds.HeaderRowIndex(0))" style="@HeaderBandStyle()" data-ex-claims="mousedown click" @attributes="_headerDragHandler" @onclick="HeaderClickHandler" @onmousedown="HeaderPressHandler" @onmousedown:preventDefault="PointedAtNow">
                 @if (MarksColumns && MarksPinnedColumns)
                 {
                     @* The Heading Mark over the Pinned Columns' headers (ADR-0008, 2026-10-13): their
@@ -247,8 +247,8 @@
             <div class="ex-viewport" style="@ViewportStyle()" data-ex-first-row="@(_visible?.Start)"
                  data-ex-sequence="@_sequenceVersion" data-ex-layout="@_paintLayoutId" data-ex-paint="@NotePaint()"
                  role="presentation" @attributes="_dragHandler" @onmousedown="RowsPressHandler" @onmousedown:preventDefault="RowsPressKeepsFocus" @onmouseup="OnMouseUp"
-                 @ondblclick="OnViewportDoubleClickAsync"
-                 @oncontextmenu="OnContextMenuAsync" @oncontextmenu:preventDefault="true">
+                 @ondblclick="OnViewportDoubleClickAsync" data-ex-claims="contextmenu"
+                 @oncontextmenu="RowsContextMenuHandler" @oncontextmenu:preventDefault="true">
                 @* The Keyboard Field (ADR-0080). While the grid has an editable column, the keyboard
                    with no edit open is held here instead of on the root itself, so that an IME has a
                    text field to start in: on the root, Chrome and Edge give it no input context, and
@@ -837,8 +837,8 @@
                             @* Each closes the popover: marked so, the keys typed while it goes wait for the
                                keyboard to land (ex-popover-closes; ADR-0010, ADR-0044's note of 2026-10-12). *@
                             <div class="ex-popover-actions">
-                                <button type="button" class="ex-popover-closes" @onclick="() => ApplyPanelAsync(panelColumn)" disabled="@(!PanelCanApply(panelColumn))">OK</button>
-                                <button type="button" class="ex-popover-closes" @ref="_panelLast" @onclick="CancelPanel">Cancel</button>
+                                <button type="button" class="ex-popover-closes" data-ex-claims="click" @onclick="() => ClaimedClickAsync(() => ApplyPanelAsync(panelColumn))" disabled="@(!PanelCanApply(panelColumn))">OK</button>
+                                <button type="button" class="ex-popover-closes" data-ex-claims="click" @ref="_panelLast" @onclick="CancelPanelHandler">Cancel</button>
                             </div>
                         </form>
                     }
@@ -896,8 +896,8 @@
                             @Label(FindPanelLabelIds.WholeCell)
                         </label>
                         <div class="ex-popover-actions">
-                            <button type="button" class="ex-find-previous" @onclick="() => FindStepAsync(backward: true)">@Label(FindPanelLabelIds.Previous)</button>
-                            <button type="button" class="ex-find-next" @onclick="() => FindStepAsync(backward: false)">@Label(FindPanelLabelIds.Next)</button>
+                            <button type="button" class="ex-find-previous" data-ex-claims="click" @onclick="FindPreviousHandler">@Label(FindPanelLabelIds.Previous)</button>
+                            <button type="button" class="ex-find-next" data-ex-claims="click" @onclick="FindNextHandler">@Label(FindPanelLabelIds.Next)</button>
                         </div>
                         @* What the last step came to, announced: a step that moves nothing is
                            otherwise a key that did nothing and said nothing (ADR-0033). *@
@@ -972,7 +972,7 @@
                             <div class="@(index == _completionSelected ? "ex-completion-item ex-completion-selected" : "ex-completion-item")"
                                  id="@(CompletionOptionPrefix + index.ToString(CultureInfo.InvariantCulture))" role="option"
                                  aria-selected="@(index == _completionSelected ? "true" : "false")"
-                                 @onmousedown="() => AcceptCandidate(index)">@completion.Candidates[index].Label</div>
+                                 data-ex-claims="mousedown" @onmousedown="() => ClaimedPressAsync(() => AcceptCandidate(index))">@completion.Candidates[index].Label</div>
                         }
                     </div>
                 }
@@ -994,9 +994,9 @@
         @* The pager (ADR-0015): a page click raises the same notification shape as a
            scroll. TotalCount feeds the display. *@
         <div class="ex-pager" role="presentation">
-            <button type="button" @onclick="() => TurnPageAsync(-1)" disabled="@(_pageIndex == 0)">‹</button>
+            <button type="button" data-ex-claims="click" @onclick="TurnBackHandler" disabled="@(_pageIndex == 0)">‹</button>
             <span>@(_pageIndex + 1) / @PageCount</span>
-            <button type="button" @onclick="() => TurnPageAsync(1)" disabled="@(_pageIndex >= PageCount - 1)">›</button>
+            <button type="button" data-ex-claims="click" @onclick="TurnOnHandler" disabled="@(_pageIndex >= PageCount - 1)">›</button>
         </div>
     }
     @{ ReviewSummary(); }
@@ -1012,11 +1012,11 @@
                 <span>@_selection.Selection.CellCount cells selected@(SelectionIntersectsView() ? "" : " (outside the visible range)")</span>
                 @if (!SelectionIntersectsView())
                 {
-                    <button type="button" @onclick="GoToSelectionAsync">Go to selection</button>
+                    <button type="button" data-ex-claims="click" @onclick="GoToSelectionHandler">Go to selection</button>
                 }
                 @if (PageSize is not null)
                 {
-                    <button type="button" @onclick="SelectWholeResultAsync">Select all @TotalRows rows</button>
+                    <button type="button" data-ex-claims="click" @onclick="SelectWholeResultHandler">Select all @TotalRows rows</button>
                 }
             }
             @if (MarkCountText() is { } markCount)
@@ -1025,7 +1025,7 @@
             }
             @if (PageSize is not null && _markColumn >= 0)
             {
-                <button type="button" class="ex-mark-result" @onclick="_onMarkWholeResult">Mark all @MarkableRows rows</button>
+                <button type="button" class="ex-mark-result" data-ex-claims="click" @onclick="_onMarkWholeResult">Mark all @MarkableRows rows</button>
             }
             @* Excel's status-bar figures over the selection (ADR-0130). *@
             @if (ShowsSummaryStrip)
@@ -5483,14 +5483,16 @@
 
     /// <summary>A copy invoked from a menu takes the asynchronous route whatever the
     /// selection's size, because a menu item's click fires no <c>copy</c> event
-    /// (ADR-0005/0036). Still the allowlisted clipboard use, not a new one.</summary>
+    /// (ADR-0005/0036). Still the allowlisted clipboard use, not a new one. Run from a menu item's
+    /// click in the Input Order (ADR-0240), the copy is that input's, and the payload the script asks
+    /// for takes no number of its own: numbered, it would wait for the click this waits on.</summary>
     private async Task MenuCopyAsync(bool withHeaders)
     {
         if (_scrollHandle is null || _disposed)
             return;
         try
         {
-            await _scrollHandle.InvokeVoidAsync("writeCopy", withHeaders);
+            await _scrollHandle.InvokeVoidAsync("writeCopy", withHeaders, _inputOrder?.InFlow == true);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
@@ -5612,15 +5614,15 @@
 
     // Their own methods so that only a miss captures anything: a lambda capturing a
     // parameter allocates its closure on entry to the method, cache hit or not.
-    private Func<Task> MenuOpenerFor(int column) => () => OpenMenuAsync(column);
+    private Func<Task> MenuOpenerFor(int column) => () => ClaimedAsync("click", () => OpenMenuAsync(column));
 
     private Action<MouseEventArgs> GripDownFor(int column) => e => OnResizeGripDown(column, e);
 
     /// <summary>A double-click on a grip is Size to fit, the column menu's command
     /// (ADR-0016, FN-12a).</summary>
-    private Func<Task> GripFitterFor(int column) => () => OnColumnWidthChanged.HasDelegate && !PointedAtNow
+    private Func<Task> GripFitterFor(int column) => () => ClaimedAsync("dblclick", () => OnColumnWidthChanged.HasDelegate && !PointedAtNow
         ? SizeToFitAsync(ColumnsResizedWith(column))
-        : Task.CompletedTask;
+        : Task.CompletedTask);
 
     /// <summary>The menu button is a toggle: the second press on the same column's
     /// button closes what the first opened — a popover the user cannot dismiss is a
@@ -9849,7 +9851,7 @@
     private RenderFragment? _headerMark;
 
     private Func<Task> _onHeaderMark => _onHeaderMarkField ??= PressHeaderMarkAsync;
-    private Func<Task> _onMarkWholeResult => _onMarkWholeResultField ??= MarkWholeResultAsync;
+    private Func<Task> _onMarkWholeResult => _onMarkWholeResultField ??= () => ClaimedAsync("click", MarkWholeResultAsync);
 
     /// <summary>
     /// Finds the Mark Column and who holds its marks, refusing by name what cannot be
@@ -10003,17 +10005,20 @@
         builder.AddAttribute(4, "aria-checked", HeaderMarkChecked());
         builder.AddAttribute(5, "aria-label", "Mark all rows");
         builder.AddAttribute(6, "tabindex", "-1");
-        builder.AddEventPreventDefaultAttribute(7, "onmousedown", true);
-        builder.AddEventStopPropagationAttribute(8, "onmousedown", true);
-        builder.AddEventStopPropagationAttribute(9, "onclick", true);
-        builder.AddAttribute(10, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _onHeaderMark));
+        // It claims nothing, and its press and click stop here: told as the header's, they would be
+        // numbers no handler claims (ADR-0240 section 2). Its click is told the paint instead (MK-9).
+        builder.AddAttribute(7, "data-ex-claims", "");
+        builder.AddEventPreventDefaultAttribute(8, "onmousedown", true);
+        builder.AddEventStopPropagationAttribute(9, "onmousedown", true);
+        builder.AddEventStopPropagationAttribute(10, "onclick", true);
+        builder.AddAttribute(11, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _onHeaderMark));
         // Under a pager the press names the page's rows: the listener reads which page — its first row
         // and how many rows it holds — with the paint at the press, and the core lines up that page
         // though it was turned, resized or the pager removed since (ADR-0043, MK-9).
         if (PageSize is not null)
         {
-            builder.AddAttribute(11, "data-ex-page", _pageStartRow);
-            builder.AddAttribute(12, "data-ex-page-rows", PageRows()?.Count ?? 0);
+            builder.AddAttribute(12, "data-ex-page", _pageStartRow);
+            builder.AddAttribute(13, "data-ex-page-rows", PageRows()?.Count ?? 0);
         }
         builder.CloseElement();
     };
@@ -10561,8 +10566,8 @@
                (ADR-0044). On every grid, and under every Chrome: the button is the core's. *@
             <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
                 {@HeaderMark}@if (ShowMenuButtons)
-                {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
+                {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" data-ex-claims="click" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                {<div class="ex-resize-grip" data-ex-claims="dblclick" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
         }
         if (_scrollable is { } headerColumns)
         {
@@ -10574,8 +10579,8 @@
             {
                 <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
                     {@HeaderMark}@if (ShowMenuButtons)
-                    {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                    {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
+                    {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" data-ex-claims="click" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                    {<div class="ex-resize-grip" data-ex-claims="dblclick" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
             }
         }
     }
@@ -10620,8 +10625,8 @@
             var command = commands[i];
             if (command.Enabled)
             {
-                <button type="button" role="menuitem" @ref="_menuItems[item]"
-                        @onclick="command.Invoke"
+                <button type="button" role="menuitem" @ref="_menuItems[item]" data-ex-claims="click"
+                        @onclick="() => ClaimedClickAsync(command.Invoke)"
                         @onkeydown="e => OnMenuItemKeyAsync(e, commands, resolve)" @onkeydown:preventDefault>@LabelWithLetter(command, lettered)</button>
             }
             else

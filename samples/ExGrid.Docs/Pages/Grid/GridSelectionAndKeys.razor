@@ -130,8 +130,8 @@
             Blazor Server every key waits a round trip for its answer. A script that reads the grid straight after
             typing reads it before the grid has finished. So the grid says when it has, with its Settled Mark: its root carries
             <code>data-ex-settled</code> while every input it has taken has been handled and its effect is on the
-            page. The attribute goes the moment a key, a press on the rows, a paste, a composition or a copy is
-            taken, and comes back once nothing is held, nothing is owed, and a cell brought into view has been
+            page. The attribute goes the moment a key, a press on the rows, a click on one of the grid's own controls,
+            a paste, a composition or a copy is taken, and comes back once nothing is held, nothing is owed, and a cell brought into view has been
             painted there. It changes once as a burst of input starts and once as it ends, and nothing else moves
             with it: the rows do not render for it.
         </p>
@@ -143,10 +143,19 @@
             its place.
         </p>
         <p>
-            The mark covers what the grid's own keyboard handling takes. Text typed into a field — the Cell Editor,
-            a Sheet's Formula Bar or Name Box — and a click on a heading, a menu or a button of the Chrome reach the
-            grid as ordinary Blazor events: read their effect with an expectation that waits for it. It is not
-            <code>aria-busy</code>, which a screen reader would read out.
+            <strong>Clicks keep their place among the keys.</strong> A click on a heading, a column's ▾, an item of the
+            column menu or the Context Menu, a completion candidate, the pager, the status line's buttons, a grip's
+            double click (Size to fit), a filter panel's OK and Cancel, and Find's Previous and Next is numbered as it
+            happens and taken in its turn: after every key typed before it, before every key typed after it, however
+            long the grid takes to answer either. A click made while keys are still being answered waits with them and
+            is carried out in its turn, so <code>Enter</code> then a click on ▾, sent at once, opens the menu of the row
+            the Enter moved to, as it does typed slowly.
+        </p>
+        <p>
+            The mark covers what the grid's own keyboard and pointer handling takes. Text typed into a field — the Cell
+            Editor, a Sheet's Formula Bar or Name Box — and a click on a control a substituted Chrome draws, a Sheet's
+            toolbar or a Pivot's field list reach the grid as ordinary Blazor events: read their effect with an
+            expectation that waits for it. It is not <code>aria-busy</code>, which a screen reader would read out.
         </p>
     </DocsSection>
 

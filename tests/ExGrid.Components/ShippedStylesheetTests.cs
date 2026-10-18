@@ -113,7 +113,10 @@ public class ShippedStylesheetTests
         // clipboard changed by a write other than its own copy, so the Copied Range can go.
         // ADR-0210: a temporary blur, change and keydown listener only on a field changed by held
         // typing (keydown since 2026-10-17, for an Enter typed there once the hold is over).
-        string[] allowed = ["blur", "change", "change", "clipboardchange", "compositionend", "compositionend", "compositionstart", "copy", "copy", "cut", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
+        // ADR-0240 section 2: the capture-phase click, dblclick and contextmenu on the root, which number a
+        // click on a control of the grid's own that claims it, and hold it in its place while the gate
+        // holds input (the entry ADR-0021 gains with ticket 02 of the Input Order).
+        string[] allowed = ["blur", "change", "change", "click", "clipboardchange", "compositionend", "compositionend", "compositionstart", "contextmenu", "copy", "copy", "cut", "dblclick", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
@@ -538,8 +541,9 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"if \(held\.length === 0 && \(!answering \|\| \(pressAnswer !== null && pressAnswer !== handedOnAnswer\)\)\) \{\s*handOn\(event\);.*?if \(editing !== 'none'\) \{\s*holdBehindPress\(field !== null \? markStale\(field\) : null\);",
             RegexOptions.Singleline), body);
         // Only a press on this grid's own rows, not on a grid nested in one of its cells, is held
-        // or holds the keys after it: this core never hears the nested one's press.
-        Assert.Contains("if (!core || replaying || event.button !== 0 || !isOwnRows(event.target)) {", body, StringComparison.Ordinal);
+        // or holds the keys after it: this core never hears the nested one's press. A secondary press
+        // is held as a primary one is, so the context menu behind it keeps its place (ADR-0240).
+        Assert.Contains("if (!core || replaying || (event.button !== 0 && event.button !== 2) || !isOwnRows(event.target)) {", body, StringComparison.Ordinal);
         Assert.DoesNotMatch(new Regex(@"event\.target\.classList\.contains\('ex-viewport'\)"), body);
         Assert.Matches(new Regex(@"const isOwnRows = \(target\) => inOwnScroller\(target\) && target\.classList\.contains\('ex-viewport'\);"), script.Text);
         // The hold: the keys after it are held from now, as behind a key, and the drain waits for
@@ -592,7 +596,7 @@ public class ShippedStylesheetTests
         // Told as the press goes on to Blazor, and only then: where it passes on untouched, and where
         // it leaves the listener — a heading's, or one replayed after it was held here.
         Assert.Equal(2, Regex.Matches(press.Value, @"handOn\(event\);").Count);
-        Assert.Matches(new Regex(@"if \(!core \|\| replaying \|\| event\.button !== 0 \|\| !isOwnRows\(event\.target\)\) \{\s*handOn\(event\);\s*tellTaken\('mousedown', taken\);\s*return;"), press.Value);
+        Assert.Matches(new Regex(@"if \(!core \|\| replaying \|\| \(event\.button !== 0 && event\.button !== 2\) \|\| !isOwnRows\(event\.target\)\) \{\s*handOn\(event\);\s*tellTaken\('mousedown', taken\);"), press.Value);
         // This grid's core is told of it, and of its turn when it comes, from one place each.
         Assert.Single(Regex.Matches(script.Text, @"'PressHandedOnAsync'"));
         Assert.Single(Regex.Matches(script.Text, @"'PressInTurn'"));

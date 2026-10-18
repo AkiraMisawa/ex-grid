@@ -992,6 +992,7 @@ ExGrid.Components.ExGrid<TRow>.HighlightFocusRow.get -> bool
 ExGrid.Components.ExGrid<TRow>.HighlightFocusRow.set -> void
 ExGrid.Components.ExGrid<TRow>.HighlightHoverRow.get -> bool
 ExGrid.Components.ExGrid<TRow>.HighlightHoverRow.set -> void
+ExGrid.Components.ExGrid<TRow>.InputTakenAt(string! kind, int input) -> void
 ExGrid.Components.ExGrid<TRow>.IsLoading.get -> bool
 ExGrid.Components.ExGrid<TRow>.IsLoading.set -> void
 ExGrid.Components.ExGrid<TRow>.KeysTypedOnTheWay(int ticket) -> System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!

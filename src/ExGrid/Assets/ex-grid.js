@@ -30,7 +30,10 @@
 // telling the Device Pixel. And the ninth (ADR-0122): the browser's time zone, read once at
 // attach and only when the Consumer asked for it, so TODAY() is the user's day. The tenth
 // (ADR-0210): temporary blur and change listeners on the text field changed by held typing,
-// supplying its missing commit when it is left and retiring on a normal commit. The Settled Mark
+// supplying its missing commit when it is left and retiring on a normal commit. The Input Order
+// (ADR-0240 section 2): a capture-phase click, dblclick and contextmenu on the root, beside the
+// mousedown and mouseup above, which number a click on one of the grid's own controls that claim it
+// (data-ex-claims) as it goes on to Blazor, and hold it in its place while the gate holds input. The Settled Mark
 // (ADR-0220; ADR-0021's note of 2026-10-16) adds no listener: the listeners above write
 // `data-ex-settled` on the root, with one MutationObserver on two attributes the core's render
 // writes on the root's first child, as the reveal's and the follow's observe theirs. Anything
@@ -132,8 +135,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // answered (ADR-0230 section 1). Every input can, but the keys on the root that only move the Focus
     // or peel a layer (neutral), unless the Consumer declared one: the arrows, Tab and Shift+Tab, Home
     // and End and their Control forms, the page keys, and Escape. A press
-    // the core hears without a number of its own (a ▾, a heading) counts as the next input's, so only
-    // an answer that came after it is trusted.
+    // the core hears without a number of its own (one no control claims, ADR-0240) counts as the next
+    // input's, so only an answer that came after it is trusted.
     let layerInputAt = inputsSent;
     let clipboardWrites = 0;
     let settledShown = null;
@@ -3075,6 +3078,45 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         });
     };
 
+    // A click on one of this grid's own controls takes its place in the Input Order (ADR-0240 section 2).
+    // A control whose Blazor handler the core answers says which events it claims (data-ex-claims): a
+    // heading's press and click, a ▾ opener's click, a menu item's, a completion candidate's press, the
+    // pager's and the status line's buttons, a grip's double click, a panel's OK and Cancel, Find's
+    // steps, the context menu on the rows and on the status line. The nearest such element to what was
+    // pressed decides, and it is this grid's own, never a nested grid's: one that claims nothing
+    // (data-ex-claims="") stops an event that its handler stops from being told as its ancestor's. The
+    // event is numbered as it goes on to Blazor (nextInput) and told to the core just before Blazor
+    // dispatches it (ExGrid.InputTakenAt), so the handler that hears it claims that number and is
+    // handled in its place among the keys and presses. Reads one attribute; nothing is measured.
+    const claimantOf = (target) => {
+        const claimant = target instanceof Element ? target.closest('[data-ex-claims]') : null;
+        return claimant !== null && root !== null && claimant.closest('.ex-grid') === root ? claimant : null;
+    };
+    const claimOf = (target, kind) => {
+        const claimant = claimantOf(target);
+        return claimant !== null && claimant.getAttribute('data-ex-claims').split(' ').includes(kind) ? claimant : null;
+    };
+    // A control a press on is held while the gate holds input, so that its release, its click and its
+    // double click are held behind it (onPress): one whose handler a press, a click or a double click
+    // reaches. The rows claim only their context menu, and keep their own hold.
+    const holdsClaimedPress = (target) => {
+        const claimant = claimantOf(target);
+        if (claimant === null) {
+            return false;
+        }
+        const claims = claimant.getAttribute('data-ex-claims').split(' ');
+        return claims.includes('mousedown') || claims.includes('click') || claims.includes('dblclick');
+    };
+    const tellClaim = (kind) => {
+        const input = nextInput();
+        core.invokeMethodAsync('InputTakenAt', kind, input).catch((error) => {
+            if (core) {
+                console.error('[ex-grid] the grid failed to hear a click', error);
+            }
+        });
+        return input;
+    };
+
     // The text field to put the keyboard back into: the surface that last held it while it is
     // still there, or else the first of this grid's own (surfaceField).
     const standingField = () => surfaceField(ownSurface(lastSurface));
@@ -3330,6 +3372,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             standingField()?.focus({ preventScroll: true });
             focusDeclined = false;
         }
+        // A press on one of this grid's own controls that claim their events (claimOf), made while the
+        // gate holds input, keeps its place among the held keys, and so do its release and its click
+        // behind it (onRelease, onClaimedEvent): told and handed to Blazor in its turn (replayClaimed),
+        // never ahead of the keys typed before it — a ▾ clicked straight after a key that is still being
+        // answered opened its menu against the state the key left (ADR-0240 section 2). Its default goes
+        // with it, as a held press's on the rows does.
+        if (core && !replaying && (answering || held.length > 0) && !isOwnRows(event.target)
+            && holdsClaimedPress(event.target)) {
+            event.preventDefault();
+            event.stopPropagation();
+            held.push({ press: 'mousedown', claim: true, target: event.target, init: mouseInit(event) });
+            return;
+        }
         // A press on one of the menu's items runs its command and closes the menu, as Enter on it
         // does (handsOver): a change of who holds the keyboard, and the keys typed after it wait
         // until the keyboard has followed — to the root, or to what the command opened (handOff;
@@ -3379,9 +3434,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // one is pointed at (handOn).
         // What the press was taken against, told as it goes on to Blazor (takenAt).
         const taken = core && !replaying && isOwnRows(event.target) ? takenAt(event) : null;
-        if (!core || replaying || event.button !== 0 || !isOwnRows(event.target)) {
+        // A secondary press on the rows is held as a primary one is, so that the context menu it opens
+        // keeps its place behind the keys typed before it (onClaimedEvent).
+        if (!core || replaying || (event.button !== 0 && event.button !== 2) || !isOwnRows(event.target)) {
             handOn(event);
             tellTaken('mousedown', taken);
+            // A press a control of this grid's own claims (claimOf), told as it goes on to Blazor; a
+            // replayed one was told by its replay (replayClaimed).
+            if (core && !replaying && claimOf(event.target, 'mousedown') !== null) {
+                tellClaim('mousedown');
+            }
             return;
         }
         // The Formula Bar or the Name Box holding DOM focus, which a press on the rows would take
@@ -3497,6 +3559,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         event.stopPropagation();
+        // The release of a press held on a control that claims its events goes as that press does
+        // (replayClaimed): handed to Blazor in its turn, where it was made.
+        const pressed = held.findLast((k) => k.press === 'mousedown');
+        if (pressed?.claim === true) {
+            held.push({ press: 'mouseup', claim: true, target: event.target, init: mouseInit(event) });
+            return;
+        }
         // A release on the Cell Editor goes as its press does (replayPress): taken against the cell the
         // editor stands over.
         const onEditor = ownCellEditor(event.target);
@@ -3517,6 +3586,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // mode it leaves (ExGrid.PressAnsweredAsync). The listener asks straight after dispatching, so
     // the core has always heard the press first; the answer is the core's, never a guess.
     const replayPress = async (k) => {
+        if (k.claim === true) {
+            await replayClaimed(k);
+            return;
+        }
         // A press held on the Cell Editor (onPress): the editor's own while its edit stands, whose
         // default has placed the caret already; once the edit has ended, a press on the rows over the
         // cell the editor stood on, which the core places from what it was taken against.
@@ -3552,6 +3625,52 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     root.addEventListener('mousedown', onPress, true);
     root.addEventListener('mouseup', onRelease, true);
 
+    // A held press on a control that claims its events, its release, or the click, double click or
+    // context menu behind it, handed to Blazor in its turn (ADR-0240 section 2): told first, when the
+    // control claims that event (tellClaim), and the inputs held behind it wait until the core has
+    // answered it — the number the stamp names (answeredUpTo), and then the keyboard where its answer
+    // left it (editorSettled). On the element it was made on: one a render has removed since was a
+    // control that no longer stands, and the event carries out nothing there.
+    const replayClaimed = async (k) => {
+        if (!k.target.isConnected || !root.contains(k.target)) {
+            return;
+        }
+        const input = claimOf(k.target, k.press) !== null ? tellClaim(k.press) : 0;
+        replaying = true;
+        try {
+            k.target.dispatchEvent(new MouseEvent(k.press, k.init));
+        } finally {
+            replaying = false;
+        }
+        if (input > 0) {
+            await answeredUpTo(input);
+            await editorSettled();
+        }
+    };
+    // The click, double click and context menu on the root (ADR-0240 section 2; the capture-phase entry
+    // ADR-0021 gains for them): one that a control of this grid's own claims is told as it goes on to
+    // Blazor (tellClaim); one whose press the gate holds is held behind it, in its turn, with its default
+    // (replayClaimed) — a press the gate let through takes its click with it. Reads one attribute; no
+    // layout is read.
+    const onClaimedEvent = (event) => {
+        lookSettled();
+        if (!core || replaying) {
+            return;
+        }
+        if (held.some((k) => k.press === 'mousedown')) {
+            event.preventDefault();
+            event.stopPropagation();
+            held.push({ press: event.type, claim: true, target: event.target, init: mouseInit(event) });
+            return;
+        }
+        if (claimOf(event.target, event.type) !== null) {
+            tellClaim(event.type);
+        }
+    };
+    root.addEventListener('click', onClaimedEvent, true);
+    root.addEventListener('dblclick', onClaimedEvent, true);
+    root.addEventListener('contextmenu', onClaimedEvent, true);
+
     // The clipboard (ADR-0005) — the fourth allowlist entry (ADR-0021). Both events
     // fire on the focused root — verified on the real Chrome: a non-editable,
     // user-select:none element with focus receives both — so Ctrl+C / Ctrl+V are never
@@ -3563,7 +3682,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Chrome accepts a promise as a ClipboardItem value, so the user-activation context
     // survives the wait. A rejected promise aborts the whole write and the clipboard
     // stays as it was — never a fraction of the selection.
-    const buildCopy = (withHeaders) => core.invokeMethodAsync('BuildCopyPayloadAsync', withHeaders, nextInput())
+    // A copy a menu item's click asked for, while the core handles that click in the Input Order
+    // (`owned`, ADR-0240), is that input's: the payload takes no number of its own, which would wait for
+    // the click that waits for this copy.
+    const buildCopy = (withHeaders, owned = false) => core.invokeMethodAsync('BuildCopyPayloadAsync', withHeaders,
+        owned ? 0 : nextInput())
         .catch((error) => {
             // A .NET failure — a Consumer delegate that threw, a circuit that
             // dropped. Reported here, because the null it becomes reads as a
@@ -3573,7 +3696,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             return null;
         });
-    const writeAsync = (withHeaders) => writeCopy(buildCopy(withHeaders));
+    const writeAsync = (withHeaders, owned = false) => writeCopy(buildCopy(withHeaders, owned));
     // The write of a copy whose payload is `answer`: a null one is a refusal, and lands nothing.
     // A payload is counted as the grid's own write the moment it is in hand, before the browser
     // writes it, so the clipboardchange it causes finds it counted; a write that then fails gives
@@ -4064,7 +4187,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // event, so there is no event route to take however small the selection is:
         // this always writes through the asynchronous API. Still the fourth allowlist
         // entry — the clipboard — and not a fifth (ADR-0021).
-        writeCopy: (withHeaders) => writeAsync(withHeaders === true),
+        // Asked from an input the core is handling in its order (`owned`), the payload is that input's.
+        writeCopy: (withHeaders, owned) => writeAsync(withHeaders === true, owned === true),
         // Which editing mode the key gate runs under (ADR-0010): 'none', 'overwrite',
         // 'caret', 'point', 'completion' (ADR-0051), 'completionOverPoint' (ADR-0058: a list
         // open where ←, →, Home, End and the Shift+arrows point) or 'pointed' (ADR-0058: what
@@ -4549,6 +4673,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.removeEventListener('keydown', onKeyDown, true);
             root.removeEventListener('mousedown', onPress, true);
             root.removeEventListener('mouseup', onRelease, true);
+            root.removeEventListener('click', onClaimedEvent, true);
+            root.removeEventListener('dblclick', onClaimedEvent, true);
+            root.removeEventListener('contextmenu', onClaimedEvent, true);
             root.removeEventListener('ex-press-handed-on', onPressHandedOn);
             // A press on another grid still waiting for its turn here is let go: that grid's core
             // hands it over rather than wait for keys this grid will never hand on.
