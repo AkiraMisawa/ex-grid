@@ -253,6 +253,42 @@ jobs:
             s{\]\((?!https://)([^)\s]+)\)}{]($ENV{SITE}$1)}g;
             s{(?<![\w\[/-])ADR-(\d{4})(?!\w)}{my @f = glob("docs/adr/$1-*.md"); @f ? "[ADR-$1](https://github.com/$ENV{REPO}/blob/$ENV{GITHUB_SHA}/$f[0])" : "ADR-$1"}ge;
           ' > "$RUNNER_TEMP/release-notes.md"
+          # A GitHub release holds 125,000 characters of text, and 0.1.0-rc.1's notes did not fit (its
+          # release was refused after its packages were on nuget.org). Notes that do not fit keep, in
+          # their order, what opens them, the Highlights, Known limitations and a stable version's four
+          # blocks (ADR-0205), and as many of the other sections as fit; each section left out keeps its
+          # heading and links the whole notes at this commit (ADR-0042's note of 2026-10-18).
+          python3 - "$RUNNER_TEMP/release-notes.md" <<'PY'
+          import os, re, sys
+          path = sys.argv[1]
+          text = open(path, encoding='utf-8').read()
+          LIMIT = 120_000   # GitHub's 125,000, less room for what the release page adds
+          if len(text) > LIMIT:
+              kept = ('Highlights', 'Known limitations', 'Signed off', 'SHOULD criteria accepted failing',
+                      'Out of scope for this version', 'Supported')
+              parts = re.split(r'(?m)^(?=## )', text)
+              head, sections = parts[0], parts[1:]
+              whole = (f"https://github.com/{os.environ['REPO']}/blob/{os.environ['GITHUB_SHA']}"
+                       f"/docs/releases/{os.environ['VERSION']}.md")
+              def heading(s): return s.split('\n', 1)[0][3:].strip()
+              def anchor(s): return re.sub(r'[^a-z0-9 -]', '', heading(s).lower()).replace(' ', '-')
+              def stub(s): return f"## {heading(s)}\n\nIn [the whole Release Notes]({whole}#{anchor(s)}): too long for a GitHub release.\n\n"
+              lead = (f"These notes are longer than a GitHub release holds. Each section shortened below is in "
+                      f"[the whole Release Notes]({whole}).\n\n")
+              out = [stub(s) for s in sections]
+              used = len(head) + len(lead) + sum(len(o) for o in out)
+              for i, s in enumerate(sections):
+                  if heading(s) in kept:
+                      used += len(s) - len(out[i]); out[i] = s
+              for i, s in enumerate(sections):
+                  if heading(s) not in kept and used + len(s) - len(out[i]) <= LIMIT:
+                      used += len(s) - len(out[i]); out[i] = s
+              text = head + lead + ''.join(out)
+              if len(text) > LIMIT:
+                  sys.exit(f'::error::The release text is {len(text)} characters with only its kept sections whole; a GitHub release holds 125,000.')
+              open(path, 'w', encoding='utf-8').write(text)
+              print(f'::notice::The Release Notes are shortened to {len(text)} characters for the GitHub release.')
+          PY
           cat "$RUNNER_TEMP/release-notes.md"
 
       # Whoever made the tag may have made its release too — GitHub's release page does both at once.
