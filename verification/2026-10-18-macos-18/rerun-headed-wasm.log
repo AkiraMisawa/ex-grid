@@ -1,0 +1,727 @@
+node v24.14.1, dotnet 10.0.203
+[WebServer] Using launch settings from ../../samples/ExGrid.DemoHost/Properties/launchSettings.json...
+[WebServer] Building...
+[WebServer] info: Microsoft.Hosting.Lifetime[14]
+[WebServer]       Now listening on: http://localhost:5299
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Application started. Press Ctrl+C to shut down.
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Hosting environment: Development
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Content root path: /Users/akira338/github/ex-grid/samples/ExGrid.DemoHost
+[DemoApi] Using launch settings from ../../samples/ExGrid.DemoApi/Properties/launchSettings.json...
+[DemoApi] Building...
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generating 20000 trades into /tmp/nix-shell.wDOLWM/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+[DemoApi] info: Microsoft.Hosting.Lifetime[14]
+[DemoApi]       Now listening on: http://localhost:8299
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application started. Press Ctrl+C to shut down.
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Hosting environment: Development
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Content root path: /Users/akira338/github/ex-grid/samples/ExGrid.DemoApi
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 10000 of 20000 trades (50%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 20000 trades in 0.1 s: 1.6 MB.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Serving 20000 trades at version 6120a874-0 from /tmp/nix-shell.wDOLWM/exgrid-demo-api/runs/trades-v1-20000.48138.6120a874.sqlite.
+
+Running 52 tests using 1 worker
+
+  ✓   1 [chrome] › declarations.spec.mjs:1904:1 › DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport (5.2s)
+  ✓   2 [chrome] › declarations.spec.mjs:1947:1 › DC-13: a Formula filled right shifts its References; a refused pattern leaves the Selection on the source (3.3s)
+  ✓   3 [chrome] › declarations.spec.mjs:2036:1 › DC-12/DC-13: a whole column's handle stands beside its Heading; dragged right it fills every row, a lone number as a series, and dragged down it changes nothing (the readings of 2026-10-12, R5 (3)) (3.6s)
+  ✓   4 [chrome] › declarations.spec.mjs:2074:1 › DC-12/DC-13: a whole row's handle stands at the row's left, beside its Heading; dragged down it fills every column, a lone number as a series, and dragged across it changes nothing (the readings of 2026-10-12, R5 (4)) (3.6s)
+  ✘   5 [chrome] › declarations.spec.mjs:2114:1 › DC-12/DC-13: with row 1 scrolled away, a whole column's handle stays at the top of the part in view and fills from there (the readings of 2026-10-12, R5 (5)) (1.1m)
+  ✓   6 [chrome] › features.spec.mjs:101:1 › Escape with nothing to dismiss keeps the keyboard, and the next Tab or Shift+Tab leaves for the page (KB-8, ADR-0080) (870ms)
+  ✓   7 [chrome] › features.spec.mjs:143:1 › Escape, Escape, then a character opens an edit in the selected cell (KB-8) (125ms)
+  ✓   8 [chrome] › features.spec.mjs:160:1 › Escape, a press on a cell, then Tab cycles inside it (KB-8) (125ms)
+  -   9 [chrome] › features.spec.mjs:173:1 › with a 150 ms round trip, Escape and Tab typed at once leave the grid once every input is answered; behind an unanswered Enter the Tab is refused aloud, and a character opens an edit (KB-8, ADR-0230, ADR-0010, ADR-0080)
+  ✓  10 [chrome] › features.spec.mjs:217:1 › Escape, an arrow, then Tab cycles inside the selection (KB-8) (110ms)
+  ✓  11 [chrome] › features.spec.mjs:230:1 › Escape held with nothing to dismiss, then Tab leaves for the page (KB-8, KB-44) (113ms)
+  ✓  12 [chrome] › features.spec.mjs:386:1 › ADR-0014 (amended 2026-09-29): one cell copied inside the grid still fills the whole range (374ms)
+  ✘  13 [chrome] › mud-app.spec.mjs:137:1 › WR-7: a grid in a tab that was hidden paints correctly once its tab is shown (ADR-0028) (3.6s)
+  ✘  14 [chrome] › mud-app.spec.mjs:191:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (2.4s)
+  ✓  15 [chrome] › mud-app.spec.mjs:247:1 › WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018, ADR-0052) (1.6s)
+  ✓  16 [chrome] › mud-app.spec.mjs:294:1 › WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039/0052) (849ms)
+  ✓  17 [chrome] › mud-app.spec.mjs:355:1 › WR-7: a grid in a MudDialog opens its popovers whole inside its box, and its Inner Popups above the dialog (ADR-0040/0039) (1.2s)
+  ✓  18 [chrome] › pointing-scope.spec.mjs:731:5 › /pointing › ADR-0058/SH-35/DC-55: ↓ past the painted rows scrolls the positions grid to keep the pointed cell in view (2.5s)
+  ✓  19 [chrome] › pointing-scope.spec.mjs:979:5 › /pointing?narrow › ADR-0058/DC-55/SH-35: =, a press on Id's header, → gives Positions[PV], and PV is brought whole into the client area across, scrollTop unchanged; ← brings Id back (484ms)
+  ✘  20 [chrome] › sheet-vs-excel.spec.mjs:541:1 › item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14) (8.7s)
+  ✘  21 [chrome] › sheet-vs-excel.spec.mjs:554:1 › item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14) (7.4s)
+  ✘  22 [chrome] › sheet-vs-excel.spec.mjs:583:1 › item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14) (2.4s)
+  ✘  23 [chrome] › sheet-vs-excel.spec.mjs:588:1 › item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14) (1.0m)
+  ✘  24 [chrome] › sheet-vs-excel.spec.mjs:593:1 › item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14) (1.0m)
+  ✘  25 [chrome] › sheet-vs-excel.spec.mjs:599:1 › fourth run, active cell item 3: one value of plain text over a range goes into its top-left alone, and the Selection collapses to it (ADR-0014, amended 2026-09-29) (1.0m)
+  ✘  26 [chrome] › sheet-vs-excel.spec.mjs:621:1 › one cell copied inside the Sheet still fills the whole range, as Excel's own copy does (ADR-0014, amended 2026-09-29) (7.3s)
+  ✓  27 [msedge] › declarations.spec.mjs:1904:1 › DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport (5.1s)
+  ✓  28 [msedge] › declarations.spec.mjs:1947:1 › DC-13: a Formula filled right shifts its References; a refused pattern leaves the Selection on the source (3.3s)
+  ✓  29 [msedge] › declarations.spec.mjs:2036:1 › DC-12/DC-13: a whole column's handle stands beside its Heading; dragged right it fills every row, a lone number as a series, and dragged down it changes nothing (the readings of 2026-10-12, R5 (3)) (3.6s)
+  ✓  30 [msedge] › declarations.spec.mjs:2074:1 › DC-12/DC-13: a whole row's handle stands at the row's left, beside its Heading; dragged down it fills every column, a lone number as a series, and dragged across it changes nothing (the readings of 2026-10-12, R5 (4)) (3.6s)
+  ✘  31 [msedge] › declarations.spec.mjs:2114:1 › DC-12/DC-13: with row 1 scrolled away, a whole column's handle stays at the top of the part in view and fills from there (the readings of 2026-10-12, R5 (5)) (1.1m)
+  ✓  32 [msedge] › features.spec.mjs:101:1 › Escape with nothing to dismiss keeps the keyboard, and the next Tab or Shift+Tab leaves for the page (KB-8, ADR-0080) (847ms)
+  ✓  33 [msedge] › features.spec.mjs:143:1 › Escape, Escape, then a character opens an edit in the selected cell (KB-8) (132ms)
+  ✓  34 [msedge] › features.spec.mjs:160:1 › Escape, a press on a cell, then Tab cycles inside it (KB-8) (114ms)
+  -  35 [msedge] › features.spec.mjs:173:1 › with a 150 ms round trip, Escape and Tab typed at once leave the grid once every input is answered; behind an unanswered Enter the Tab is refused aloud, and a character opens an edit (KB-8, ADR-0230, ADR-0010, ADR-0080)
+  ✓  36 [msedge] › features.spec.mjs:217:1 › Escape, an arrow, then Tab cycles inside the selection (KB-8) (111ms)
+  ✓  37 [msedge] › features.spec.mjs:230:1 › Escape held with nothing to dismiss, then Tab leaves for the page (KB-8, KB-44) (113ms)
+  ✓  38 [msedge] › features.spec.mjs:386:1 › ADR-0014 (amended 2026-09-29): one cell copied inside the grid still fills the whole range (370ms)
+  ✘  39 [msedge] › mud-app.spec.mjs:137:1 › WR-7: a grid in a tab that was hidden paints correctly once its tab is shown (ADR-0028) (3.5s)
+  ✘  40 [msedge] › mud-app.spec.mjs:191:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (2.6s)
+  ✓  41 [msedge] › mud-app.spec.mjs:247:1 › WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018, ADR-0052) (1.3s)
+  ✓  42 [msedge] › mud-app.spec.mjs:294:1 › WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039/0052) (845ms)
+  ✓  43 [msedge] › mud-app.spec.mjs:355:1 › WR-7: a grid in a MudDialog opens its popovers whole inside its box, and its Inner Popups above the dialog (ADR-0040/0039) (1.2s)
+  ✓  44 [msedge] › pointing-scope.spec.mjs:731:5 › /pointing › ADR-0058/SH-35/DC-55: ↓ past the painted rows scrolls the positions grid to keep the pointed cell in view (2.4s)
+  ✓  45 [msedge] › pointing-scope.spec.mjs:979:5 › /pointing?narrow › ADR-0058/DC-55/SH-35: =, a press on Id's header, → gives Positions[PV], and PV is brought whole into the client area across, scrollTop unchanged; ← brings Id back (455ms)
+  ✘  46 [msedge] › sheet-vs-excel.spec.mjs:541:1 › item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14) (8.7s)
+  ✘  47 [msedge] › sheet-vs-excel.spec.mjs:554:1 › item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14) (7.3s)
+  ✘  48 [msedge] › sheet-vs-excel.spec.mjs:583:1 › item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14) (2.5s)
+  ✘  49 [msedge] › sheet-vs-excel.spec.mjs:588:1 › item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14) (1.0m)
+  ✘  50 [msedge] › sheet-vs-excel.spec.mjs:593:1 › item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14) (1.0m)
+  ✘  51 [msedge] › sheet-vs-excel.spec.mjs:599:1 › fourth run, active cell item 3: one value of plain text over a range goes into its top-left alone, and the Selection collapses to it (ADR-0014, amended 2026-09-29) (1.0m)
+  ✘  52 [msedge] › sheet-vs-excel.spec.mjs:621:1 › one cell copied inside the Sheet still fills the whole range, as Excel's own copy does (ADR-0014, amended 2026-09-29) (7.5s)
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application is shutting down...
+
+
+  1) [chrome] › declarations.spec.mjs:2114:1 › DC-12/DC-13: with row 1 scrolled away, a whole column's handle stays at the top of the part in view and fills from there (the readings of 2026-10-12, R5 (5)) 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-viewport').first()
+    Expected: "3"
+    Received: "5"
+    Timeout:  60000ms
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 60000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-viewport').first()
+        122 × locator resolved to <div data-ex-paint="6" data-ex-layout="3" class="ex-viewport" role="presentation" data-ex-sequence="0" data-ex-first-row="5">…</div>
+            - unexpected value "5"
+
+
+      2121 |     const rowHeight = (await boxOf(cell(grid, 'E2'))).height;
+      2122 |     await grid.locator('.ex-scroller').first().evaluate((scroller, px) => { scroller.scrollTop = px; }, 3 * rowHeight);
+    > 2123 |     await expect(grid.locator('.ex-viewport').first()).toHaveAttribute('data-ex-first-row', '3');
+           |                                                        ^
+      2124 |
+      2125 |     // At E4's top-right, the top of the part in view, and grabbed there.
+      2126 |     await dragAxisHandle(page, grid, 'E4', (e4, side) => ({ x: e4.x + e4.width, y: e4.y + side / 2 }), 'F6');
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/declarations.spec.mjs:2123:56
+
+    Error Context: test-results/declarations-DC-12-DC-13-w-7c03f-eadings-of-2026-10-12-R5-5--chrome/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/declarations-DC-12-DC-13-w-7c03f-eadings-of-2026-10-12-R5-5--chrome/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/declarations-DC-12-DC-13-w-7c03f-eadings-of-2026-10-12-R5-5--chrome/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chrome] › mud-app.spec.mjs:137:1 › WR-7: a grid in a tab that was hidden paints correctly once its tab is shown (ADR-0028) 
+
+    Error: the scrollbars are not occupying layout, so this test proves nothing (measured 0x0)
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      131 | function expectScrollbarsOccupyLayout(measured) {
+      132 |     const message = `the scrollbars are not occupying layout, so this test proves nothing (measured ${measured.gutter.width}x${measured.gutter.height})`;
+    > 133 |     expect(measured.gutter.width, message).toBeGreaterThan(0);
+          |                                            ^
+      134 |     expect(measured.gutter.height, message).toBeGreaterThan(0);
+      135 | }
+      136 |
+        at expectScrollbarsOccupyLayout (/Users/akira338/github/ex-grid/tests/ExGrid.Browser/mud-app.spec.mjs:133:44)
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/mud-app.spec.mjs:167:5
+
+    Error Context: test-results/mud-app-WR-7-a-grid-in-a-t-ca509--its-tab-is-shown-ADR-0028--chrome/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mud-app-WR-7-a-grid-in-a-t-ca509--its-tab-is-shown-ADR-0028--chrome/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mud-app-WR-7-a-grid-in-a-t-ca509--its-tab-is-shown-ADR-0028--chrome/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chrome] › mud-app.spec.mjs:191:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) 
+
+    Error: the scrollbars are not occupying layout, so this test proves nothing (measured 0x0)
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      131 | function expectScrollbarsOccupyLayout(measured) {
+      132 |     const message = `the scrollbars are not occupying layout, so this test proves nothing (measured ${measured.gutter.width}x${measured.gutter.height})`;
+    > 133 |     expect(measured.gutter.width, message).toBeGreaterThan(0);
+          |                                            ^
+      134 |     expect(measured.gutter.height, message).toBeGreaterThan(0);
+      135 | }
+      136 |
+        at expectScrollbarsOccupyLayout (/Users/akira338/github/ex-grid/tests/ExGrid.Browser/mud-app.spec.mjs:133:44)
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/mud-app.spec.mjs:208:5
+
+    Error Context: test-results/mud-app-WR-7-a-Drawer-togg-9747d--geometry-follows-ADR-0028--chrome/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mud-app-WR-7-a-Drawer-togg-9747d--geometry-follows-ADR-0028--chrome/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mud-app-WR-7-a-Drawer-togg-9747d--geometry-follows-ADR-0028--chrome/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [chrome] › sheet-vs-excel.spec.mjs:541:1 › item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14) 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "SENTINEL"
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      545 |     await page.keyboard.press('Control+C');
+      546 |     // On the Server host the copy lands a round trip later (ADR-0005).
+    > 547 |     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
+          |                                                                                                         ^
+      548 |     await click(page, 'E3');
+      549 |     await page.keyboard.press('Control+V');
+      550 |     // Excel: =A1 copied from B1 into B3 is =A3.
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/sheet-vs-excel.spec.mjs:547:105
+
+    Error Context: test-results/sheet-vs-excel-item-16-a-c-db93f-shifted-ADR-0048-ticket-14--chrome/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sheet-vs-excel-item-16-a-c-db93f-shifted-ADR-0048-ticket-14--chrome/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sheet-vs-excel-item-16-a-c-db93f-shifted-ADR-0048-ticket-14--chrome/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [chrome] › sheet-vs-excel.spec.mjs:554:1 › item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14) 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "SENTINEL"
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      558 |     await page.keyboard.press('Control+C');
+      559 |     // On the Server host the copy lands a round trip later (ADR-0005).
+    > 560 |     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
+          |                                                                                                         ^
+      561 |     await click(page, 'C6');
+      562 |     await page.keyboard.press('Control+V');
+      563 |     // Excel: E5:G7 selected with the Focus on E5, and B2's =A2*2 written as =E6*2 at F6.
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/sheet-vs-excel.spec.mjs:560:105
+
+    Error Context: test-results/sheet-vs-excel-item-17-a-3-22e0f-lection-ADR-0050-ticket-14--chrome/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sheet-vs-excel-item-17-a-3-22e0f-lection-ADR-0050-ticket-14--chrome/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sheet-vs-excel-item-17-a-3-22e0f-lection-ADR-0050-ticket-14--chrome/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [chrome] › sheet-vs-excel.spec.mjs:583:1 › item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "=A1+1"
+    Received: ""
+
+      583 | test('item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)', async ({ page }) => {
+      584 |     await pasteText(page, 'E5', '=A1+1');
+    > 585 |     expect(await entryOf(page, 'E5')).toBe('=A1+1');
+          |                                       ^
+      586 | });
+      587 |
+      588 | test('item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)', async ({ page }) => {
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/sheet-vs-excel.spec.mjs:585:39
+
+    Error Context: test-results/sheet-vs-excel-item-19-pas-c4ae4-Formula-ADR-0048-ticket-14--chrome/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sheet-vs-excel-item-19-pas-c4ae4-Formula-ADR-0048-ticket-14--chrome/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sheet-vs-excel-item-19-pas-c4ae4-Formula-ADR-0048-ticket-14--chrome/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [chrome] › sheet-vs-excel.spec.mjs:588:1 › item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14) 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('[id$=\'-r4c4\']')
+    Expected: "1,234"
+    Received: ""
+    Timeout:  60000ms
+
+    Call log:
+      - Expect "toHaveText" with timeout 60000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r4c4\']')
+        123 × locator resolved to <div id="ex1-r4c4" class="ex-cell" role="gridcell" aria-colindex="5"></div>
+            - unexpected value ""
+
+
+      588 | test('item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)', async ({ page }) => {
+      589 |     await pasteText(page, 'E5', '1,234');
+    > 590 |     await expect(cell(page, 'E5')).toHaveText('1,234');
+          |                                    ^
+      591 | });
+      592 |
+      593 | test('item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14)', async ({ page }) => {
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/sheet-vs-excel.spec.mjs:590:36
+
+    Error Context: test-results/sheet-vs-excel-item-19-pas-86d48-akes-it-ADR-0048-ticket-14--chrome/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sheet-vs-excel-item-19-pas-86d48-akes-it-ADR-0048-ticket-14--chrome/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sheet-vs-excel-item-19-pas-86d48-akes-it-ADR-0048-ticket-14--chrome/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [chrome] › sheet-vs-excel.spec.mjs:593:1 › item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14) 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('[id$=\'-r4c4\']')
+    Expected: "=1+"
+    Received: ""
+    Timeout:  60000ms
+
+    Call log:
+      - Expect "toHaveText" with timeout 60000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r4c4\']')
+        123 × locator resolved to <div id="ex1-r4c4" class="ex-cell" role="gridcell" aria-colindex="5"></div>
+            - unexpected value ""
+
+
+      594 |     await pasteText(page, 'E5', '=1+');
+      595 |     // Excel took unreadable Formula text as the text itself, with no refusal and no dialog.
+    > 596 |     await expect(cell(page, 'E5')).toHaveText('=1+');
+          |                                    ^
+      597 | });
+      598 |
+      599 | test('fourth run, active cell item 3: one value of plain text over a range goes into its top-left alone, and the Selection collapses to it (ADR-0014, amended 2026-09-29)', async ({ page }) => {
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/sheet-vs-excel.spec.mjs:596:36
+
+    Error Context: test-results/sheet-vs-excel-item-19-and-32c1e-at-text-ADR-0048-ticket-14--chrome/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sheet-vs-excel-item-19-and-32c1e-at-text-ADR-0048-ticket-14--chrome/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sheet-vs-excel-item-19-and-32c1e-at-text-ADR-0048-ticket-14--chrome/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9) [chrome] › sheet-vs-excel.spec.mjs:599:1 › fourth run, active cell item 3: one value of plain text over a range goes into its top-left alone, and the Selection collapses to it (ADR-0014, amended 2026-09-29) 
+
+    Error: expect(locator).not.toHaveText(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('[id$=\'-r1c4\']')
+    Expected: not ""
+    Received: ""
+    Timeout:  60000ms
+
+    Call log:
+      - Expect "not toHaveText" with timeout 60000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r1c4\']')
+        123 × locator resolved to <div id="ex1-r1c4" class="ex-cell" role="gridcell" aria-colindex="5"></div>
+            - unexpected value ""
+
+
+      607 |     // Excel: B2 alone holds the Formula =A1 (showing 0), the other three cells stay empty, and
+      608 |     // the Selection is B2.
+    > 609 |     await expect(cell(page, 'E2')).not.toHaveText('');
+          |                                        ^
+      610 |     await expect(nameBox(page)).toHaveValue('E2');
+      611 |     // E2 alone (a 1×1 Selection is not announced: ADR-0033).
+      612 |     await expectSelectionIsCell(sheet(page), 'E2');
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/sheet-vs-excel.spec.mjs:609:40
+
+    Error Context: test-results/sheet-vs-excel-fourth-run--7227e-DR-0014-amended-2026-09-29--chrome/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sheet-vs-excel-fourth-run--7227e-DR-0014-amended-2026-09-29--chrome/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sheet-vs-excel-fourth-run--7227e-DR-0014-amended-2026-09-29--chrome/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10) [chrome] › sheet-vs-excel.spec.mjs:621:1 › one cell copied inside the Sheet still fills the whole range, as Excel's own copy does (ADR-0014, amended 2026-09-29) 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "SENTINEL"
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      628 |     await page.keyboard.press('Control+C');
+      629 |     // On the Server host the copy lands a round trip later (ADR-0005).
+    > 630 |     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
+          |                                                                                                         ^
+      631 |     await click(page, 'E3');
+      632 |     await click(page, 'F4', { modifiers: ['Shift'] });
+      633 |     await page.keyboard.press('Control+V');
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/sheet-vs-excel.spec.mjs:630:105
+
+    Error Context: test-results/sheet-vs-excel-one-cell-co-50137-DR-0014-amended-2026-09-29--chrome/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sheet-vs-excel-one-cell-co-50137-DR-0014-amended-2026-09-29--chrome/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sheet-vs-excel-one-cell-co-50137-DR-0014-amended-2026-09-29--chrome/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  11) [msedge] › declarations.spec.mjs:2114:1 › DC-12/DC-13: with row 1 scrolled away, a whole column's handle stays at the top of the part in view and fills from there (the readings of 2026-10-12, R5 (5)) 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-viewport').first()
+    Expected: "3"
+    Received: "5"
+    Timeout:  60000ms
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 60000ms
+      - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-viewport').first()
+        122 × locator resolved to <div data-ex-paint="6" data-ex-layout="3" class="ex-viewport" role="presentation" data-ex-sequence="0" data-ex-first-row="5">…</div>
+            - unexpected value "5"
+
+
+      2121 |     const rowHeight = (await boxOf(cell(grid, 'E2'))).height;
+      2122 |     await grid.locator('.ex-scroller').first().evaluate((scroller, px) => { scroller.scrollTop = px; }, 3 * rowHeight);
+    > 2123 |     await expect(grid.locator('.ex-viewport').first()).toHaveAttribute('data-ex-first-row', '3');
+           |                                                        ^
+      2124 |
+      2125 |     // At E4's top-right, the top of the part in view, and grabbed there.
+      2126 |     await dragAxisHandle(page, grid, 'E4', (e4, side) => ({ x: e4.x + e4.width, y: e4.y + side / 2 }), 'F6');
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/declarations.spec.mjs:2123:56
+
+    Error Context: test-results/declarations-DC-12-DC-13-w-7c03f-eadings-of-2026-10-12-R5-5--msedge/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/declarations-DC-12-DC-13-w-7c03f-eadings-of-2026-10-12-R5-5--msedge/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/declarations-DC-12-DC-13-w-7c03f-eadings-of-2026-10-12-R5-5--msedge/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  12) [msedge] › mud-app.spec.mjs:137:1 › WR-7: a grid in a tab that was hidden paints correctly once its tab is shown (ADR-0028) 
+
+    Error: the scrollbars are not occupying layout, so this test proves nothing (measured 0x0)
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      131 | function expectScrollbarsOccupyLayout(measured) {
+      132 |     const message = `the scrollbars are not occupying layout, so this test proves nothing (measured ${measured.gutter.width}x${measured.gutter.height})`;
+    > 133 |     expect(measured.gutter.width, message).toBeGreaterThan(0);
+          |                                            ^
+      134 |     expect(measured.gutter.height, message).toBeGreaterThan(0);
+      135 | }
+      136 |
+        at expectScrollbarsOccupyLayout (/Users/akira338/github/ex-grid/tests/ExGrid.Browser/mud-app.spec.mjs:133:44)
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/mud-app.spec.mjs:167:5
+
+    Error Context: test-results/mud-app-WR-7-a-grid-in-a-t-ca509--its-tab-is-shown-ADR-0028--msedge/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mud-app-WR-7-a-grid-in-a-t-ca509--its-tab-is-shown-ADR-0028--msedge/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mud-app-WR-7-a-grid-in-a-t-ca509--its-tab-is-shown-ADR-0028--msedge/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  13) [msedge] › mud-app.spec.mjs:191:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) 
+
+    Error: the scrollbars are not occupying layout, so this test proves nothing (measured 0x0)
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      131 | function expectScrollbarsOccupyLayout(measured) {
+      132 |     const message = `the scrollbars are not occupying layout, so this test proves nothing (measured ${measured.gutter.width}x${measured.gutter.height})`;
+    > 133 |     expect(measured.gutter.width, message).toBeGreaterThan(0);
+          |                                            ^
+      134 |     expect(measured.gutter.height, message).toBeGreaterThan(0);
+      135 | }
+      136 |
+        at expectScrollbarsOccupyLayout (/Users/akira338/github/ex-grid/tests/ExGrid.Browser/mud-app.spec.mjs:133:44)
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/mud-app.spec.mjs:208:5
+
+    Error Context: test-results/mud-app-WR-7-a-Drawer-togg-9747d--geometry-follows-ADR-0028--msedge/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/mud-app-WR-7-a-Drawer-togg-9747d--geometry-follows-ADR-0028--msedge/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/mud-app-WR-7-a-Drawer-togg-9747d--geometry-follows-ADR-0028--msedge/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  14) [msedge] › sheet-vs-excel.spec.mjs:541:1 › item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14) 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "SENTINEL"
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      545 |     await page.keyboard.press('Control+C');
+      546 |     // On the Server host the copy lands a round trip later (ADR-0005).
+    > 547 |     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
+          |                                                                                                         ^
+      548 |     await click(page, 'E3');
+      549 |     await page.keyboard.press('Control+V');
+      550 |     // Excel: =A1 copied from B1 into B3 is =A3.
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/sheet-vs-excel.spec.mjs:547:105
+
+    Error Context: test-results/sheet-vs-excel-item-16-a-c-db93f-shifted-ADR-0048-ticket-14--msedge/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sheet-vs-excel-item-16-a-c-db93f-shifted-ADR-0048-ticket-14--msedge/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sheet-vs-excel-item-16-a-c-db93f-shifted-ADR-0048-ticket-14--msedge/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  15) [msedge] › sheet-vs-excel.spec.mjs:554:1 › item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14) 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "SENTINEL"
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      558 |     await page.keyboard.press('Control+C');
+      559 |     // On the Server host the copy lands a round trip later (ADR-0005).
+    > 560 |     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
+          |                                                                                                         ^
+      561 |     await click(page, 'C6');
+      562 |     await page.keyboard.press('Control+V');
+      563 |     // Excel: E5:G7 selected with the Focus on E5, and B2's =A2*2 written as =E6*2 at F6.
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/sheet-vs-excel.spec.mjs:560:105
+
+    Error Context: test-results/sheet-vs-excel-item-17-a-3-22e0f-lection-ADR-0050-ticket-14--msedge/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sheet-vs-excel-item-17-a-3-22e0f-lection-ADR-0050-ticket-14--msedge/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sheet-vs-excel-item-17-a-3-22e0f-lection-ADR-0050-ticket-14--msedge/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  16) [msedge] › sheet-vs-excel.spec.mjs:583:1 › item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14) 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "=A1+1"
+    Received: ""
+
+      583 | test('item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)', async ({ page }) => {
+      584 |     await pasteText(page, 'E5', '=A1+1');
+    > 585 |     expect(await entryOf(page, 'E5')).toBe('=A1+1');
+          |                                       ^
+      586 | });
+      587 |
+      588 | test('item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)', async ({ page }) => {
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/sheet-vs-excel.spec.mjs:585:39
+
+    Error Context: test-results/sheet-vs-excel-item-19-pas-c4ae4-Formula-ADR-0048-ticket-14--msedge/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sheet-vs-excel-item-19-pas-c4ae4-Formula-ADR-0048-ticket-14--msedge/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sheet-vs-excel-item-19-pas-c4ae4-Formula-ADR-0048-ticket-14--msedge/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  17) [msedge] › sheet-vs-excel.spec.mjs:588:1 › item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14) 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('[id$=\'-r4c4\']')
+    Expected: "1,234"
+    Received: ""
+    Timeout:  60000ms
+
+    Call log:
+      - Expect "toHaveText" with timeout 60000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r4c4\']')
+        123 × locator resolved to <div id="ex1-r4c4" class="ex-cell" role="gridcell" aria-colindex="5"></div>
+            - unexpected value ""
+
+
+      588 | test('item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)', async ({ page }) => {
+      589 |     await pasteText(page, 'E5', '1,234');
+    > 590 |     await expect(cell(page, 'E5')).toHaveText('1,234');
+          |                                    ^
+      591 | });
+      592 |
+      593 | test('item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14)', async ({ page }) => {
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/sheet-vs-excel.spec.mjs:590:36
+
+    Error Context: test-results/sheet-vs-excel-item-19-pas-86d48-akes-it-ADR-0048-ticket-14--msedge/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sheet-vs-excel-item-19-pas-86d48-akes-it-ADR-0048-ticket-14--msedge/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sheet-vs-excel-item-19-pas-86d48-akes-it-ADR-0048-ticket-14--msedge/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  18) [msedge] › sheet-vs-excel.spec.mjs:593:1 › item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14) 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('[id$=\'-r4c4\']')
+    Expected: "=1+"
+    Received: ""
+    Timeout:  60000ms
+
+    Call log:
+      - Expect "toHaveText" with timeout 60000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r4c4\']')
+        123 × locator resolved to <div id="ex1-r4c4" class="ex-cell" role="gridcell" aria-colindex="5"></div>
+            - unexpected value ""
+
+
+      594 |     await pasteText(page, 'E5', '=1+');
+      595 |     // Excel took unreadable Formula text as the text itself, with no refusal and no dialog.
+    > 596 |     await expect(cell(page, 'E5')).toHaveText('=1+');
+          |                                    ^
+      597 | });
+      598 |
+      599 | test('fourth run, active cell item 3: one value of plain text over a range goes into its top-left alone, and the Selection collapses to it (ADR-0014, amended 2026-09-29)', async ({ page }) => {
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/sheet-vs-excel.spec.mjs:596:36
+
+    Error Context: test-results/sheet-vs-excel-item-19-and-32c1e-at-text-ADR-0048-ticket-14--msedge/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sheet-vs-excel-item-19-and-32c1e-at-text-ADR-0048-ticket-14--msedge/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sheet-vs-excel-item-19-and-32c1e-at-text-ADR-0048-ticket-14--msedge/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  19) [msedge] › sheet-vs-excel.spec.mjs:599:1 › fourth run, active cell item 3: one value of plain text over a range goes into its top-left alone, and the Selection collapses to it (ADR-0014, amended 2026-09-29) 
+
+    Error: expect(locator).not.toHaveText(expected) failed
+
+    Locator:  locator('.ex-grid').first().locator('[id$=\'-r1c4\']')
+    Expected: not ""
+    Received: ""
+    Timeout:  60000ms
+
+    Call log:
+      - Expect "not toHaveText" with timeout 60000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r1c4\']')
+        123 × locator resolved to <div id="ex1-r1c4" class="ex-cell" role="gridcell" aria-colindex="5"></div>
+            - unexpected value ""
+
+
+      607 |     // Excel: B2 alone holds the Formula =A1 (showing 0), the other three cells stay empty, and
+      608 |     // the Selection is B2.
+    > 609 |     await expect(cell(page, 'E2')).not.toHaveText('');
+          |                                        ^
+      610 |     await expect(nameBox(page)).toHaveValue('E2');
+      611 |     // E2 alone (a 1×1 Selection is not announced: ADR-0033).
+      612 |     await expectSelectionIsCell(sheet(page), 'E2');
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/sheet-vs-excel.spec.mjs:609:40
+
+    Error Context: test-results/sheet-vs-excel-fourth-run--7227e-DR-0014-amended-2026-09-29--msedge/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sheet-vs-excel-fourth-run--7227e-DR-0014-amended-2026-09-29--msedge/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sheet-vs-excel-fourth-run--7227e-DR-0014-amended-2026-09-29--msedge/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  20) [msedge] › sheet-vs-excel.spec.mjs:621:1 › one cell copied inside the Sheet still fills the whole range, as Excel's own copy does (ADR-0014, amended 2026-09-29) 
+
+    Error: expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "SENTINEL"
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      628 |     await page.keyboard.press('Control+C');
+      629 |     // On the Server host the copy lands a round trip later (ADR-0005).
+    > 630 |     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
+          |                                                                                                         ^
+      631 |     await click(page, 'E3');
+      632 |     await click(page, 'F4', { modifiers: ['Shift'] });
+      633 |     await page.keyboard.press('Control+V');
+        at /Users/akira338/github/ex-grid/tests/ExGrid.Browser/sheet-vs-excel.spec.mjs:630:105
+
+    Error Context: test-results/sheet-vs-excel-one-cell-co-50137-DR-0014-amended-2026-09-29--msedge/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sheet-vs-excel-one-cell-co-50137-DR-0014-amended-2026-09-29--msedge/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sheet-vs-excel-one-cell-co-50137-DR-0014-amended-2026-09-29--msedge/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  20 failed
+    [chrome] › declarations.spec.mjs:2114:1 › DC-12/DC-13: with row 1 scrolled away, a whole column's handle stays at the top of the part in view and fills from there (the readings of 2026-10-12, R5 (5)) 
+    [chrome] › mud-app.spec.mjs:137:1 › WR-7: a grid in a tab that was hidden paints correctly once its tab is shown (ADR-0028) 
+    [chrome] › mud-app.spec.mjs:191:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) 
+    [chrome] › sheet-vs-excel.spec.mjs:541:1 › item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14) 
+    [chrome] › sheet-vs-excel.spec.mjs:554:1 › item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14) 
+    [chrome] › sheet-vs-excel.spec.mjs:583:1 › item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14) 
+    [chrome] › sheet-vs-excel.spec.mjs:588:1 › item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14) 
+    [chrome] › sheet-vs-excel.spec.mjs:593:1 › item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14) 
+    [chrome] › sheet-vs-excel.spec.mjs:599:1 › fourth run, active cell item 3: one value of plain text over a range goes into its top-left alone, and the Selection collapses to it (ADR-0014, amended 2026-09-29) 
+    [chrome] › sheet-vs-excel.spec.mjs:621:1 › one cell copied inside the Sheet still fills the whole range, as Excel's own copy does (ADR-0014, amended 2026-09-29) 
+    [msedge] › declarations.spec.mjs:2114:1 › DC-12/DC-13: with row 1 scrolled away, a whole column's handle stays at the top of the part in view and fills from there (the readings of 2026-10-12, R5 (5)) 
+    [msedge] › mud-app.spec.mjs:137:1 › WR-7: a grid in a tab that was hidden paints correctly once its tab is shown (ADR-0028) 
+    [msedge] › mud-app.spec.mjs:191:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) 
+    [msedge] › sheet-vs-excel.spec.mjs:541:1 › item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14) 
+    [msedge] › sheet-vs-excel.spec.mjs:554:1 › item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14) 
+    [msedge] › sheet-vs-excel.spec.mjs:583:1 › item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14) 
+    [msedge] › sheet-vs-excel.spec.mjs:588:1 › item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14) 
+    [msedge] › sheet-vs-excel.spec.mjs:593:1 › item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14) 
+    [msedge] › sheet-vs-excel.spec.mjs:599:1 › fourth run, active cell item 3: one value of plain text over a range goes into its top-left alone, and the Selection collapses to it (ADR-0014, amended 2026-09-29) 
+    [msedge] › sheet-vs-excel.spec.mjs:621:1 › one cell copied inside the Sheet still fills the whole range, as Excel's own copy does (ADR-0014, amended 2026-09-29) 
+  2 skipped
+  30 passed (11.2m)

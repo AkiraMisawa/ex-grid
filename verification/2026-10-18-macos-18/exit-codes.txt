@@ -1,0 +1,2 @@
+wasm exit 1
+server exit 1

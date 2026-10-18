@@ -1,0 +1,41 @@
+pv21 1 ref start 11:52:47 load 1.84 2.52 1.72
+pv21 1 ref end exit 0 11:58:51 load 1.74 1.63 1.54
+pv21 2 rc3 start 11:58:57 load 1.60 1.61 1.53
+pv21 2 rc3 end exit 0 12:04:53 load 1.26 1.35 1.42
+pv21 3 rc3 start 12:04:59 load 1.16 1.33 1.41
+pv21 3 rc3 end exit 0 12:11:04 load 1.26 1.06 1.24
+pv21 4 ref start 12:11:10 load 1.24 1.06 1.23
+pv21 4 ref end exit 0 12:17:08 load 1.14 1.03 1.15
+lv15 1 rc3 start 12:17:14 load 1.05 1.01 1.14
+lv15 1 rc3 end exit 0 12:17:47 load 1.81 1.22 1.21
+lv15 2 ref start 12:17:53 load 1.67 1.20 1.20
+lv15 2 ref end exit 0 12:18:43 load 3.28 1.70 1.37
+lv15 3 ref start 12:18:49 load 3.01 1.67 1.36
+lv15 3 ref end exit 0 12:19:23 load 2.61 1.72 1.39
+lv15 4 rc3 start 12:19:29 load 2.40 1.69 1.38
+lv15 4 rc3 end exit 0 12:20:02 load 1.99 1.66 1.38
+pv48 r1 ref advance 1 start 12:20:08 load 1.91 1.65 1.38
+pv48 r1 ref end exit 0 12:20:34 load 1.67 1.61 1.37
+pv48 r1 rc3 advance 1 start 12:20:34 load 1.67 1.61 1.37
+pv48 r1 rc3 end exit 0 12:21:00 load 1.44 1.56 1.36
+pv48 r2 rc3 advance 1 start 12:21:00 load 1.44 1.56 1.36
+pv48 r2 rc3 end exit 0 12:21:29 load 1.27 1.51 1.35
+pv48 r2 ref advance 1 start 12:21:29 load 1.27 1.51 1.35
+pv48 r2 ref end exit 0 12:21:53 load 1.17 1.47 1.34
+pv48 r3 ref advance 5000 start 12:21:53 load 1.17 1.47 1.34
+pv48 r3 ref end exit 0 12:22:17 load 1.11 1.43 1.33
+pv48 r3 rc3 advance 5000 start 12:22:17 load 1.11 1.43 1.33
+pv48 r3 rc3 end exit 0 12:22:46 load 1.07 1.39 1.32
+lv23 b=100 rc3 start 12:22:52 load 0.91 1.35 1.30
+lv23 b=100 rc3 end exit 0 12:23:06 load 1.01 1.35 1.30
+lv23 b=100 ref start 12:23:18 load 0.85 1.30 1.29
+lv23 b=100 ref end exit 0 12:23:33 load 1.43 1.41 1.33
+lv23 b=10 rc3 start 12:23:45 load 1.21 1.37 1.31
+lv23 b=10 rc3 end exit 0 12:23:55 load 1.09 1.34 1.30
+lv23 b=10 ref start 12:24:07 load 0.85 1.27 1.28
+lv23 b=10 ref end exit 0 12:24:16 load 1.04 1.30 1.29
+lv23 b=400 rc3 start 12:24:28 load 0.88 1.25 1.27
+lv23 b=400 rc3 end exit 0 12:24:57 load 1.19 1.30 1.29
+lv23 b=400 ref start 12:25:09 load 1.00 1.26 1.27
+lv23 b=400 ref end exit 0 12:25:37 load 1.00 1.23 1.27
+done 12:25:43

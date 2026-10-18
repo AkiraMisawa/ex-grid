@@ -1,0 +1,120 @@
+{
+  "chrome": {
+    "SH-19 completion, the list opens (=S), Server host, 0 ms round trip": {
+      "runs": 12,
+      "keyToListMs": {
+        "median": 12.1,
+        "min": 9.2,
+        "max": 41.8
+      },
+      "keyToFrameMs": {
+        "median": 22.4,
+        "min": 18.5,
+        "max": 52.9
+      },
+      "keyToFrameMsByRun": [
+        44.2,
+        23.4,
+        25,
+        45.6,
+        24.7,
+        21.3,
+        19.8,
+        19.7,
+        52.9,
+        19.4,
+        18.5,
+        20.8
+      ],
+      "candidates": 21,
+      "first": "SEARCH"
+    },
+    "SH-19 completion, the list narrows (=SU), Server host, 0 ms round trip": {
+      "runs": 12,
+      "keyToListMs": {
+        "median": 11.5,
+        "min": 9.5,
+        "max": 16.7
+      },
+      "keyToFrameMs": {
+        "median": 23.4,
+        "min": 18,
+        "max": 41.1
+      },
+      "keyToFrameMsByRun": [
+        35.3,
+        30.2,
+        18,
+        32.5,
+        19.6,
+        41.1,
+        21.9,
+        23.6,
+        34,
+        20.9,
+        23.2,
+        19.7
+      ],
+      "candidates": 6,
+      "first": "SUBSTITUTE"
+    },
+    "SH-19 completion, the list opens (=S), Server host, 150 ms round trip": {
+      "runs": 12,
+      "keyToListMs": {
+        "median": 160.5,
+        "min": 158.8,
+        "max": 162.4
+      },
+      "keyToFrameMs": {
+        "median": 161.6,
+        "min": 160,
+        "max": 164.6
+      },
+      "keyToFrameMsByRun": [
+        161.7,
+        161.9,
+        161.4,
+        161.3,
+        161.9,
+        160.3,
+        161,
+        160,
+        162.6,
+        161,
+        164.6,
+        163.5
+      ],
+      "candidates": 21,
+      "first": "SEARCH"
+    },
+    "SH-19 completion, the list narrows (=SU), Server host, 150 ms round trip": {
+      "runs": 12,
+      "keyToListMs": {
+        "median": 201.2,
+        "min": 197.8,
+        "max": 211.8
+      },
+      "keyToFrameMs": {
+        "median": 202.5,
+        "min": 198.7,
+        "max": 213.2
+      },
+      "keyToFrameMsByRun": [
+        205.6,
+        202.6,
+        201.2,
+        198.7,
+        207.6,
+        201.5,
+        202,
+        201.1,
+        202.5,
+        205.2,
+        213.2,
+        204.1
+      ],
+      "candidates": 6,
+      "first": "SUBSTITUTE"
+    }
+  }
+}
