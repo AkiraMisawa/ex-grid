@@ -40,6 +40,8 @@ public static class BuiltInCommandLabels
         ReloadNoticeLabelIds.Stylesheet => "This page holds another version's stylesheet. Reload the page.",
         KeyRefusalLabelIds.TabBeforeRelease =>
             "Tab was pressed before Escape had let the keyboard leave the grid, so the keyboard stayed. Press Tab again to leave.",
+        KeyRefusalLabelIds.KeyboardDidNotArrive =>
+            "Keys typed while the grid was still answering were not carried out: the keyboard did not arrive where they could be.",
         FindPanelLabelIds.Title => "Find",
         SummaryLabelIds.Average => "Average",
         SummaryLabelIds.Count => "Count",

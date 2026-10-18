@@ -553,7 +553,9 @@ public class ShippedStylesheetTests
         // One way a hold begins, whoever begins it: a key, a move in a popover, a press into the
         // bar, a press on the rows.
         Assert.Single(Regex.Matches(script.Text, @"answering = true;"));
-        Assert.Matches(new Regex(@"const startHold = \(answer\) => \{\s*answering = true;\s*holdStartedAt = performance\.now\(\);"), script.Text);
+        // Nothing in it counts time: a hold ends on what it waits for (ADR-0240 section 4).
+        Assert.Matches(new Regex(@"const startHold = \(answer\) => \{\s*answering = true;\s*if \(answer\)"), script.Text);
+        Assert.DoesNotContain("holdStartedAt", script.Text, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"const drain = async \(\) => \{.*?while \(pressAnswer !== null\) \{\s*const answer = pressAnswer;\s*await answer;.*?await editorSettled\(\);",
             RegexOptions.Singleline), script.Text);
         // The core answers for the press or the release it heard last, so the question goes after
@@ -1146,6 +1148,22 @@ public class ShippedStylesheetTests
         Assert.Contains("resolve();", look, StringComparison.Ordinal);
     }
 
+    [Fact] // ADR-0240 §4: no wait ends on a clock — the reveal, the close hold, the mark's wait and the editor's and popover's waits end on what they wait for — but the one left for moves no number covers yet
+    public void ADR0240_no_wait_ends_on_a_clock_but_a_move_no_number_covers()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+
+        Assert.DoesNotContain("revealTimer", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("fallback: setTimeout", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("performance.now() - since", script, StringComparison.Ordinal);
+        var clock = Assert.Single(Regex.Matches(script, @"\b2000\b"));
+        Assert.Matches(new Regex(@"const unnumberedMoveGivenUp = \(\) => awaitingMove\?\.since !== undefined && performance\.now\(\) - awaitingMove\.since > 2000;"), script);
+        // Judged instead once the core has answered every input the wait is behind and owes no focus.
+        Assert.Contains("!stamp.hasAttribute('data-ex-focus-owed')", script, StringComparison.Ordinal);
+        Assert.Contains("core.invokeMethodAsync('OnHeldInputsRefusedAsync', nextInput(true))", script, StringComparison.Ordinal);
+        Assert.True(clock.Index > 0);
+    }
+
     [Fact] // ADR-0039 (note of 2026-10-01) / ADR-0010 / ADR-0080: a composition finished in the Keyboard Field while a popover or a Consumer's frame takes the keyboard is handed to it as a held character is — typed into its text field, dropped with every key behind it on any other control — and the core is asked to open an edit only when neither has the keyboard
     public void ADR0039_a_compositions_text_held_while_a_popover_opens_is_the_popovers()
     {
@@ -1166,8 +1184,8 @@ public class ShippedStylesheetTests
             // A cancelled composition typed nothing: nothing to hand on, and nothing dropped.
             + @"if \(k\.text\.length === 0\) \{\s*continue;\s*\}\s*"
             // Text no keydown carries is a key script cannot reproduce on a control that is not a
-            // text field: dropped, with every key held behind it (ADR-0010).
-            + @"if \(!isTextField\(holder\)\) \{\s*dropHeld\(\);\s*break;\s*\}\s*"
+            // text field: dropped, with every key held behind it, and refused aloud (ADR-0010, ADR-0240 section 4).
+            + @"if \(!isTextField\(holder\)\) \{\s*refuseHeld\(true\);\s*break;\s*\}\s*"
             // In a text field it is typed at the caret, as a held character is.
             + @"typeInto\(holder, k\);\s*continue;\s*\}\s*"
             // Only with the keyboard still the grid's is the core asked to open an edit holding it.

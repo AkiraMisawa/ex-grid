@@ -13,4 +13,12 @@ public static class KeyRefusalLabelIds
     /// behind the Escape's answer, it cannot then move DOM focus, so it is refused, and the next Tab
     /// leaves (ADR-0230 section 1 (b), ADR-0012).</summary>
     public const string TabBeforeRelease = "key-refusal-tab-before-release";
+
+    /// <summary>Keys typed while the grid was still answering an earlier key or click, held to be
+    /// handed on where the keyboard went, which could not be carried out there: the keyboard never
+    /// reached what was to take it — the editor, a popover, a frame of the Consumer's own — or reached
+    /// a control that cannot take them as typed (a Tab, a composition's text on a control that is not
+    /// a text field). They are refused together, never replayed against whatever holds the keyboard
+    /// (ADR-0240 section 4, ADR-0010).</summary>
+    public const string KeyboardDidNotArrive = "key-refusal-keyboard-did-not-arrive";
 }

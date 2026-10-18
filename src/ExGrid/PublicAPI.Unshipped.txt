@@ -24,6 +24,7 @@ const ExGrid.Chrome.GridCommandIds.SortDescending = "sort-descending" -> string!
 const ExGrid.Chrome.GridCommandIds.Unpin = "unpin" -> string!
 const ExGrid.Chrome.GridLabelIds.FormulaBar = "formula-bar" -> string!
 const ExGrid.Chrome.GridLabelIds.NameBox = "name-box" -> string!
+const ExGrid.Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive = "key-refusal-keyboard-did-not-arrive" -> string!
 const ExGrid.Chrome.KeyRefusalLabelIds.TabBeforeRelease = "key-refusal-tab-before-release" -> string!
 const ExGrid.Chrome.RefusalLabelIds.ColumnPlaceholder = "{column}" -> string!
 const ExGrid.Chrome.RefusalLabelIds.CopyClipboardUnavailable = "refused-copy-clipboard-unavailable" -> string!
@@ -1049,6 +1050,7 @@ ExGrid.Components.ExGrid<TRow>.OnFind.get -> System.Func<ExGrid.Finding.GridFind
 ExGrid.Components.ExGrid<TRow>.OnFind.set -> void
 ExGrid.Components.ExGrid<TRow>.OnFindRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Finding.FindRefusalReason>
 ExGrid.Components.ExGrid<TRow>.OnFindRefused.set -> void
+ExGrid.Components.ExGrid<TRow>.OnHeldInputsRefusedAsync(int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.OnHeldTabRefusedAsync(int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.OnKeyAsync(string! key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary, bool fromDescendant = false, string? editorText = null, int editorCaret = -1, int editorSelectionEnd = -1, bool editorCaretMoved = false, bool repeat = false, int paint = -1, int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.OnKeyFieldCompositionStartAsync(int input = 0) -> System.Threading.Tasks.Task!

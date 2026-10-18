@@ -274,10 +274,11 @@ public partial class ExGrid<TRow>
     /// <para>Until DOM focus has left the grid's root, the keys typed on the root, its Keyboard Field
     /// (ADR-0080) or the menu the command ran from are held, in order, and then handed to the
     /// element that took focus, as the keydown each would have been; a Tab, which only the browser
-    /// can act on, is dropped with every key after it (ADR-0010). The keys are never the grid's: a
-    /// digit gated against the root would open an edit behind the frame. If DOM focus does not
-    /// leave the root within the hold's fallback, or goes to another grid, the held keys are
-    /// dropped. A command's menu still hands the keyboard back to the root — its Keyboard Field on
+    /// can act on, is refused aloud with every key after it (ADR-0010, ADR-0240). The keys are never
+    /// the grid's: a digit gated against the root would open an edit behind the frame. They wait for
+    /// the frame however long it takes, never on a clock (ADR-0240 section 4): the call is a promise
+    /// that the keyboard is coming. If DOM focus goes to another grid instead, the held keys are
+    /// refused aloud (<see cref="Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive"/>). A command's menu still hands the keyboard back to the root — its Keyboard Field on
     /// a grid that edits — as it closes, so that the keys typed meanwhile land where they are held,
     /// not on nothing, where no grid hears them.</para>
     ///
@@ -335,6 +336,7 @@ public partial class ExGrid<TRow>
         BeginPopoverFocus();
         // The contents are the Consumer's, and focus themselves on their count.
         _popoverFocusPending = PopoverFocus.None;
+        _chromeFocusOwed = false;
         _consumerFocusRequest++;
         _consumerFocusLastRequest = 0;
         _consumerContentsHeld = false;

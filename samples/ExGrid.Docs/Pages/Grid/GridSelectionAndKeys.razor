@@ -152,6 +152,26 @@
             the Enter moved to, as it does typed slowly.
         </p>
         <p>
+            <strong>Nothing waits on a clock.</strong> Keys held while the grid answers wait for what they were
+            typed for — the editor or a popover to take the keyboard, a frame of yours to take it after
+            <code>HandKeyboardToFrameAsync</code> — however long the round trip. Once every input before them has
+            been answered and the grid owes the keyboard to nothing, a keyboard that has not arrived will not: an edit
+            whose focus went elsewhere still takes the keys, and otherwise they are not replayed against whatever
+            holds the keyboard. They are refused, every one, and the live region says so, in words you replace or
+            silence through <code>CommandLabel</code> as you do a paste's refusal:
+        </p>
+        <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
+            <thead><tr><th style="width: 30%"><code>KeyRefusalLabelIds</code></th><th>What is announced</th></tr></thead>
+            <tbody>
+                <tr><td><code>KeyboardDidNotArrive</code></td><td>@ExGrid.Chrome.BuiltInCommandLabels.For(ExGrid.Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive)</td></tr>
+                <tr><td><code>TabBeforeRelease</code></td><td>@ExGrid.Chrome.BuiltInCommandLabels.For(ExGrid.Chrome.KeyRefusalLabelIds.TabBeforeRelease)</td></tr>
+            </tbody>
+        </MudSimpleTable>
+        <p>
+            One wait still gives up after two seconds: behind a key a popover answers by itself — Enter on a menu
+            item, Tab into a filter, Enter in a filter's field — which the grid does not yet number.
+        </p>
+        <p>
             The mark covers what the grid's own keyboard and pointer handling takes. Text typed into a field — the Cell
             Editor, a Sheet's Formula Bar or Name Box — and a click on a control a substituted Chrome draws without
             claiming it, a Sheet's toolbar or a Pivot's field list reach the grid as ordinary Blazor events. (The
@@ -226,5 +246,6 @@
         <ApiTable Type="typeof(ExGrid.Summarizing.GridSummaryRequest)" />
         <ApiTable Type="typeof(ExGrid.Summarizing.GridSummaryResult)" />
         <ApiTable Type="typeof(ExGrid.Summarizing.SelectionSummary)" />
+        <ApiTable Type="typeof(ExGrid.Chrome.KeyRefusalLabelIds)" />
     </DocsSection>
 </DocsPage>

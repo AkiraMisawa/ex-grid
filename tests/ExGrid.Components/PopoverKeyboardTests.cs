@@ -227,6 +227,28 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.Equal(RefOf(Item(cut, "Copy")), LastFocused());
     }
 
+    [Fact] // ADR-0240 §4: a substituted Chrome's menu owes the keyboard from its opening until its contents take it through TakeFocus, and nothing once it closes
+    public async Task ADR0240_a_substituted_menu_owes_focus_until_it_takes_it()
+    {
+        var chrome = new StubChrome();
+        var cut = RenderGrid(chrome);
+        bool FocusOwed() => cut.Find(".ex-grid > [data-ex-answered]").HasAttribute("data-ex-focus-owed");
+        await ClickCellAsync(cut, 50, 10);
+
+        await AltDownAsync(cut);
+        Assert.True(await ReadWhenIdleAsync(FocusOwed));
+
+        await chrome.Menu!.TakeFocus!(new ElementReference("stub-item"), true);
+        cut.Render();
+        Assert.False(await ReadWhenIdleAsync(FocusOwed));
+
+        await KeyAsync(cut, "Escape", fromDescendant: true);
+        await AltDownAsync(cut);
+        Assert.True(await ReadWhenIdleAsync(FocusOwed));
+        await KeyAsync(cut, "Escape", fromDescendant: true);
+        Assert.False(await ReadWhenIdleAsync(FocusOwed));
+    }
+
     [Fact] // ADR-0039 / KB-29: each opening counts the request once, in every context, and a render does not
     public async Task Every_opening_counts_the_focus_request_once()
     {
@@ -840,6 +862,21 @@ public class PopoverKeyboardTests : GridTestContext
     {
         _ = cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find(".ex-popover[role=dialog]")));
+    }
+
+    [Fact] // ADR-0240 §4: while the filter's values are on their way the stamp says focus is owed, so the keys held behind E wait for the search field rather than a clock
+    public async Task ADR0240_the_stamp_says_focus_is_owed_until_the_waiting_filter_takes_it()
+    {
+        var source = new TestSource { DistinctPending = new() };
+        var cut = RenderGrid(source: source);
+        bool FocusOwed() => cut.Find(".ex-grid > [data-ex-answered]").HasAttribute("data-ex-focus-owed");
+        OpenPanelWhileTheListIsPending(cut);
+
+        await PressAsync(Item(cut, "Sort ascending"), "e");
+        Assert.True(await ReadWhenIdleAsync(FocusOwed));
+
+        await cut.InvokeAsync(() => source.DistinctPending.SetResult(DistinctValues.Of(["Alpha"])));
+        Assert.False(await ReadWhenIdleAsync(FocusOwed));
     }
 
     [Fact] // ADR-0039 / KB-29: a menu opened while a panel's value list is still on its way takes the keyboard

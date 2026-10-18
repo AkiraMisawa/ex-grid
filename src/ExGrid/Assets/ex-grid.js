@@ -208,12 +208,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the offset and the slice are painted together. It reads an attribute, never layout,
     // and observes only while a write is held. While it is held, it is where the scroller
     // stands for every read and every conditional write.
+    // Held until that render, until a newer reveal takes its place, or until the instance is gone
+    // (dispose): never on a clock (ADR-0240 section 4).
     let pendingReveal = null;
-    let revealTimer = 0;
-    const revealObserver = new MutationObserver(() => applyReveal(false));
-    const applyReveal = (anyway) => {
+    const revealObserver = new MutationObserver(() => applyReveal());
+    const applyReveal = () => {
         const reveal = pendingReveal;
-        if (!reveal || (!anyway && Number(root.getAttribute('data-ex-reveal')) < reveal.token)) {
+        if (!reveal || Number(root.getAttribute('data-ex-reveal')) < reveal.token) {
             return;
         }
         dropReveal();
@@ -226,14 +227,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         pendingReveal = reveal;
         lookSettled();
         revealObserver.observe(root, { attributes: true, attributeFilter: ['data-ex-reveal'] });
-        // A batch that never comes — the circuit went — must not hold the write forever.
-        revealTimer = setTimeout(() => applyReveal(true), 2000);
     };
     const dropReveal = () => {
         pendingReveal = null;
         revealObserver.disconnect();
-        clearTimeout(revealTimer);
-        revealTimer = 0;
     };
 
     // A reveal's repaint (ADR-0012, 2026-10-08). On a PC reached through Citrix, with the browser's
@@ -536,14 +533,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // text the field holds, or the surface or the field is gone (the edit closed). The keys typed
     // meanwhile are held, so the field's text does not move under it. Read from the attribute the
     // core writes, looked at every animation frame while the key waits, as editorSettled's waits
-    // are: nothing is measured, and no observer is added. Bounded by two seconds, the hold's own
-    // fallback (ADR-0010).
+    // are: nothing is measured, and no observer is added. Never on a clock: the mark, the field gone
+    // or the instance gone ends it (ADR-0240 section 4).
     const markAnswering = (field) => new Promise((resolve) => {
-        const since = performance.now();
         const look = () => {
             const surface = field.isConnected ? field.closest('.ex-editor[data-ex-mode-text]') : null;
-            if (!core || surface === null || surface.getAttribute('data-ex-mode-text') === field.value
-                || performance.now() - since > 2000) {
+            if (!core || surface === null || surface.getAttribute('data-ex-mode-text') === field.value) {
                 resolve();
             } else {
                 requestAnimationFrame(look);
@@ -1177,7 +1172,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // The questions asked while a hold stood, answered once its keys have gone where they were going.
     const questionsAfterHold = [];
     // The hold an "untouched" answer started: the fields it made read-only, with what they were, the
-    // answer the drain waits for, and its two-second fallback.
+    // answer the drain waits for. It ends at the core's answer (closeAnswered), which the core always
+    // sends, or with the instance (dispose): never on a clock (ADR-0240 section 4).
     let closing = null;
     // The text fields of the open edit's surfaces, this grid's own: the Cell Editor's and the
     // Formula Bar's, a Chrome's control inside either box.
@@ -1193,9 +1189,6 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         closing = {
             fields: fields.map((field) => ({ field, readOnly: field.readOnly })),
             answered,
-            // Past any round trip the grid is usable over, as the hold's own fallback (editorSettled):
-            // what was held then goes where it can, rather than wait for a core that cannot answer.
-            fallback: setTimeout(() => endCloseHold(), 2000),
         };
         for (const field of fields) {
             field.readOnly = true;
@@ -1208,7 +1201,6 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         closing = null;
-        clearTimeout(ending.fallback);
         for (const { field, readOnly } of ending.fields) {
             if (field.isConnected) {
                 field.readOnly = readOnly;
@@ -1305,8 +1297,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // keyboard on their count — or 'frame' — a frame of the Consumer's own, outside this root
     // (HandKeyboardToFrameAsync). Until it has arrived, the keys typed on the root — its Keyboard
     // Field among them (isRoot; ADR-0080) — or the menu are held, and then handed to what took
-    // it; if it never arrives within the hold's fallback they are dropped, never gated against
-    // the grid: a digit there would open an edit behind the frame. Set by C# ahead of the key's
+    // it; if it goes to another grid, or to a Consumer's popover that closes before it got there,
+    // they are refused, never gated against the grid: a digit there would open an edit behind the
+    // frame (ADR-0240 section 4). Set by C# ahead of the key's
     // answer and of the render that closes the menu the command ran from. Meanwhile the root
     // keeps the keyboard where it can (the hand-back after a command, into the Keyboard Field on
     // a grid that edits), so the keys are heard here: one typed on nothing reaches no grid at all.
@@ -1433,9 +1426,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
     };
     // The hand-off the drain is delivering: 'frame' once DOM focus has left the root for the
-    // frame, and whether the keyboard never arrived, so the held keys are dropped.
+    // frame; and whether the keyboard will never arrive where the held keys were going — the core has
+    // answered every input the wait was behind and owes no focus, and the editor, the popover or the
+    // move did not come, or the hand-off went to another grid — so the held keys are refused
+    // (ADR-0240 section 4).
     let deliveringOutside = false;
-    let handOffMissed = false;
+    let keyboardMissed = false;
     // Outside this root and not on nothing: where a frame of the Consumer's own has the keyboard.
     const outsideControl = () => {
         const active = document.activeElement;
@@ -1552,14 +1548,42 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // The editor the answer opened, once its element is there — the render that made it
     // and the answer travel separately, and the answer can arrive first. Of the editor
     // surfaces, the one holding DOM focus: the Formula Bar when the user was typing there,
-    // not the cell's editor that comes first in the markup (ADR-0051). The first one only
-    // when none holds it — the two-second hold has run out.
+    // not the cell's editor that comes first in the markup (ADR-0051).
     // Declined its focus, the edit is the surface that last held the keyboard here, as the press
     // back finds it (standingField).
     const editorInput = () => (focusDeclined ? standingField() : surfaceField(ownSurface(document.activeElement)));
-    // When the hold that is standing began: two seconds from it, whatever the keys held
-    // since have asked for, the rest is handed on (ADR-0010).
-    let holdStartedAt = 0;
+    // A move the keys after it wait for (awaitingMove), and what ends that wait. Answered by the core
+    // under a number — a key the gate forwards, a click a control claims — it has `upTo`, and once the
+    // stamp has answered it with no focus owed, a move that has not come will not (ADR-0240 section
+    // 4). Answered by a Blazor handler the script cannot number — a key a menu, a value list or a form
+    // in a popover answers itself, a press on an item whose click claims nothing yet — it has `since`,
+    // and keeps the hold's old two-second give-up until those keys are numbered too: the one clock
+    // left, pending that decision (ADR-0240 section 4 is not yet met there).
+    const awaitMove = (move, upTo = 0) => {
+        awaitingMove = upTo > 0 ? { ...move, upTo } : { ...move, since: performance.now() };
+    };
+    const unnumberedMoveGivenUp = () => awaitingMove?.since !== undefined && performance.now() - awaitingMove.since > 2000;
+    // Every input sent up to `upTo`, and the one the move waits on, answered, and no DOM focus owed by
+    // the core to a control it will focus itself (data-ex-focus-owed).
+    const coreAnswered = (upTo) => stamp !== null
+        && Number(stamp.getAttribute('data-ex-answered')) >= Math.max(upTo, awaitingMove?.upTo ?? 0)
+        && !stamp.hasAttribute('data-ex-focus-owed');
+    // The edit's own surface to type the held keys into when its focus did not come: the one that last
+    // held the keyboard here, else the Cell Editor's.
+    const declinedSurface = () => {
+        if (standingField()) {
+            return true;
+        }
+        const box = [...root.querySelectorAll('.ex-editor')]
+            .find((b) => ownSurface(b) === b && !b.classList.contains('ex-formula-bar-text'));
+        if (box && surfaceField(box)) {
+            lastSurface = box;
+            return true;
+        }
+        return false;
+    };
+    // One of this grid's popovers stands: its own, or a Consumer's in its frame.
+    const ownPopoverOpen = () => [...root.querySelectorAll('.ex-popover')].some((p) => p.closest('.ex-grid') === root);
     // The waits standing in editorSettled. Each is looked at every animation frame, and once more
     // the moment this listener gives the editor the keyboard itself (focusEditor): what the hold
     // has for the edit is then typed into it in a microtask, before the browser hands the page
@@ -1577,6 +1601,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // Settled once: a wait looked at again leaves no second frame of its own behind, and none
         // looks after it has settled.
         let waiting = true;
+        // The inputs sent as the wait began: what they owe is all it waits for.
+        const upTo = inputsSent;
         let lookFrame = 0;
         const resolve = () => {
             waiting = false;
@@ -1587,12 +1613,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const look = () => {
             // A grid disposed during the wait has nothing left to wait for, and is asked
             // first: its root is gone, and looking for DOM focus inside it would throw from
-            // the next frame, after the page that held it has moved on. Two seconds is past
-            // any round trip the grid is usable over; after it the held keys are replayed
-            // against whatever there is, rather than held forever.
+            // the next frame, after the page that held it has moved on. Nothing else ends it
+            // on a clock (ADR-0240 section 4): once the core has answered every input the wait
+            // is behind and owes no focus (coreAnswered), what has not come will not, and is
+            // judged — an edit whose focus went elsewhere takes the held keys all the same
+            // (focusDeclined), a popover key that opened nothing leaves them the grid's, and a
+            // popover, a move or a Consumer's popover that did not get the keyboard refuses
+            // them (keyboardMissed). A frame of the Consumer's own is waited for: the keyboard
+            // is its to take.
             const disposed = !core;
-            const editorReady = disposed || editing === 'none' || editorFocused() || focusDeclined;
-            const popoverReady = disposed || !awaitingPopover || popoverFocused();
+            let editorReady = disposed || editing === 'none' || editorFocused() || focusDeclined;
+            let popoverReady = disposed || !awaitingPopover || popoverFocused();
             // A frame of the Consumer's own whose control is to take the keyboard in turn (frameInTurn)
             // takes it now, when everything held before it has gone where it was going: the keys held
             // for the frame are handed to it in this same task, so none typed after can overtake them.
@@ -1604,12 +1635,38 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 handle.handKeyboardTo(frame, true);
             }
             const handOffReady = disposed || handedOver() || (handOff !== null && inOtherGrid());
-            if (disposed || (editorReady && popoverReady && handOffReady && moved()) || performance.now() - holdStartedAt > 2000) {
+            let ready = disposed || (editorReady && popoverReady && handOffReady && moved());
+            if (!ready && unnumberedMoveGivenUp()) {
+                ready = true;
+            } else if (!ready && (awaitingMove === null || awaitingMove.upTo !== undefined || moved()) && coreAnswered(upTo)) {
+                if (!editorReady && deferredEditorFocus === null) {
+                    if (declinedSurface()) {
+                        focusDeclined = true;
+                    } else {
+                        keyboardMissed = true;
+                    }
+                    editorReady = true;
+                }
+                if (!popoverReady) {
+                    if (ownPopoverOpen()) {
+                        keyboardMissed = true;
+                    }
+                    popoverReady = true;
+                }
+                if (!moved()) {
+                    keyboardMissed = true;
+                }
+                if (handOff === 'popover' && !handedOver() && !ownPopoverOpen()) {
+                    keyboardMissed = true;
+                }
+                ready = keyboardMissed || (editorReady && popoverReady && handOffReady);
+            }
+            if (ready) {
                 awaitingPopover = false;
                 awaitingMove = null;
                 if (handOff !== null) {
-                    handOffMissed = !disposed && !handedOver();
-                    deliveringOutside = handOff === 'frame' && !handOffMissed;
+                    keyboardMissed = keyboardMissed || (!disposed && !handedOver());
+                    deliveringOutside = handOff === 'frame' && !keyboardMissed;
                     handOff = null;
                     handOffFrom = null;
                 }
@@ -1974,14 +2031,26 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         held.length = 0;
     };
+    // Held input that cannot be carried out where the keyboard is now, dropped with every one behind
+    // it and refused aloud: the live region says so (ADR-0240 section 4, KeyRefusalLabelIds). Never
+    // replayed against whatever holds the keyboard, and never dropped silently. `dropped` says whether
+    // a key taken off the queue already is among them.
+    const refuseHeld = (dropped = false) => {
+        if (core && (dropped || held.length > 0)) {
+            core.invokeMethodAsync('OnHeldInputsRefusedAsync', nextInput(true)).catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to refuse the held keys', error);
+                }
+            });
+        }
+        dropHeld();
+    };
 
     // A hold begins: the keys typed from now are held, in order, and handed on by drain — at
-    // once, or once `answer` has come, for a key the core is answering. The two-second fallback
-    // counts from here. Each caller asks first whether a hold stands, and a drain already running
-    // takes what it holds.
+    // once, or once `answer` has come, for a key the core is answering. Each caller asks first whether
+    // a hold stands, and a drain already running takes what it holds.
     const startHold = (answer) => {
         answering = true;
-        holdStartedAt = performance.now();
         if (answer) {
             answer.then(drain);
         } else {
@@ -2004,9 +2073,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // among the held keys, which the drain waits on in its turn (onKeyDown).
     const holdBehindNameBoxEnter = () => {
         held.push({ nameBoxEnter: nameBoxAnswered() });
-        if (answering) {
-            holdStartedAt = performance.now();
-        } else {
+        if (!answering) {
             startHold();
         }
     };
@@ -2034,10 +2101,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 passHeldOut();
                 break;
             }
-            // The keyboard never reached what the core handed it to: the keys are dropped, not
-            // gated against the grid (handOff).
-            if (handOffMissed) {
-                dropHeld();
+            // The keyboard never reached what was to take it: the keys are refused, not gated
+            // against the grid (handOff, editorSettled).
+            if (keyboardMissed) {
+                refuseHeld();
                 break;
             }
             const k = held.shift();
@@ -2130,7 +2197,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                         continue;
                     }
                     if (!isTextField(holder)) {
-                        dropHeld();
+                        refuseHeld(true);
                         break;
                     }
                     typeInto(holder, k);
@@ -2196,10 +2263,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // A held key that itself sends the keyboard across the popover holds the
                 // rest again, until DOM focus has followed it.
                 if (!reproducible(target, k)) {
-                    dropHeld();
+                    refuseHeld(true);
                     break;
                 }
                 const move = handsOver(target, k) ?? escapeCloses(target, k);
+                // Forwarded to the core as it is handed on, the key is numbered, and the move waits on
+                // its number; answered by a Blazor handler of the popover's, it is not (awaitMove).
+                const sentBefore = inputsSent;
                 handToPopover(target, k);
                 // A held Enter handed to this grid's Name Box submitted its form: the keys behind it
                 // wait for its answer, as behind one typed there (holdBehindNameBoxEnter).
@@ -2229,7 +2299,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     await editorSettled();
                 }
                 if (move) {
-                    awaitingMove = move;
+                    awaitMove(move, inputsSent > sentBefore ? inputsSent : 0);
                     await editorSettled();
                 }
                 continue;
@@ -2286,7 +2356,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
         }
         answering = false;
-        handOffMissed = false;
+        keyboardMissed = false;
         lookSettled();
         deliveringOutside = false;
         // A question the core asked while this hold stood is answered now, in its turn among the keys
@@ -2391,7 +2461,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     const into = popoverOf(event.target)?.querySelector('.ex-popover-commands')
                         ? '.ex-popover-commands'
                         : '.ex-popover-body';
-                    awaitingMove = { from: event.target, into };
+                    awaitMove({ from: event.target, into });
                 }
                 startHold();
             }
@@ -2407,12 +2477,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (move.into) {
                 event.preventDefault();
             }
-            awaitingMove = move;
-            // Behind a hold that is over but not yet cleared, its drain takes this one too, and
-            // counts its fallback from here.
-            if (answering) {
-                holdStartedAt = performance.now();
-            } else {
+            awaitMove(move);
+            // Behind a hold that is over but not yet cleared, its drain takes this one too.
+            if (!answering) {
                 startHold();
             }
             return;
@@ -2481,11 +2548,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             awaitingPopover = verdict === 'popover';
             startHold(answer);
         } else if (verdict === 'core' && closing !== null) {
-            // Escape closing a popover: the keys after it wait until it is gone (escapeCloses).
-            awaitingMove = closing;
-            if (answering) {
-                holdStartedAt = performance.now();
-            } else {
+            // Escape closing a popover: the keys after it wait until it is gone (escapeCloses), or
+            // until its answer has come and the popover still stands.
+            awaitMove(closing, inputsSent);
+            if (!answering) {
                 startHold(answer);
             }
         } else if (verdict === 'core' && leaves && k.onRoot && k.key === 'Escape' && plain(k) && !k.shiftKey
@@ -2493,9 +2559,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // An Escape the Consumer may answer by taking the keyboard out of the grid (OnLeave): the
             // keys after it wait for its answer, and go out with the keyboard if it is told so
             // (keysOut), or are this grid's as ever.
-            if (answering) {
-                holdStartedAt = performance.now();
-            } else {
+            if (!answering) {
                 startHold(answer);
             }
         }
@@ -2909,9 +2973,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const unanswered = () => stamp !== null && Number(stamp.getAttribute('data-ex-answered')) < inputsSent;
     const holdBehindNameBoxPress = (field) => {
         held.push({ nameBoxPress: true, field, upTo: inputsSent });
-        if (answering) {
-            holdStartedAt = performance.now();
-        } else {
+        if (!answering) {
             startHold();
         }
     };
@@ -3396,10 +3458,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             const item = event.target.closest('[role=menuitem], [role=menuitemradio], .ex-popover-closes');
             const menu = item ? popoverOf(item) : null;
             if (item && menu && !item.matches(':disabled, [aria-disabled=true]')) {
-                awaitingMove = { from: item, closes: menu };
-                if (answering) {
-                    holdStartedAt = performance.now();
-                } else {
+                // Its click, claimed, numbers the move (onClaimedEvent).
+                awaitMove({ from: item, closes: menu });
+                if (!answering) {
                     startHold();
                 }
             }
@@ -3483,7 +3544,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // circuit, and that hand-over is not held. Taken at the press, it overtook the keys
         // held before it — landing after the Cell Editor a held key had opened took DOM focus,
         // it took the keyboard from the editor, and every key and click held behind it waited
-        // for an editor that no longer had focus, until the two-second fallback (Server host,
+        // for an editor that no longer had focus, until the hold gave up on a clock (Server host,
         // typing-probe-2, 2026-09-27). The keyboard stays where the held keys have it; whether
         // the press keeps an open edit is the core's to say at its turn (ADR-0051), and a
         // press that commits it hands the keyboard to the root then.
@@ -3664,7 +3725,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         if (claimOf(event.target, event.type) !== null) {
-            tellClaim(event.type);
+            const input = tellClaim(event.type);
+            // The press on a menu item started a move with no number (awaitMove): its click carries one.
+            if (event.type === 'click' && awaitingMove?.since !== undefined && awaitingMove.from instanceof Node
+                && awaitingMove.from.contains(event.target)) {
+                const { since, ...move } = awaitingMove;
+                awaitingMove = { ...move, upTo: input };
+            }
         }
     };
     root.addEventListener('click', onClaimedEvent, true);
@@ -4310,10 +4377,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             handOff = to;
             handOffFrom = to === 'frame' ? outsideControl() : null;
-            handOffMissed = false;
-            if (answering) {
-                holdStartedAt = performance.now();
-            } else {
+            keyboardMissed = false;
+            if (!answering) {
                 startHold();
             }
         },
@@ -4524,9 +4589,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 return;
             }
             held.push({ typedOnTheWay: typed, paint: paintNow() });
-            if (answering) {
-                holdStartedAt = performance.now();
-            } else {
+            if (!answering) {
                 startHold();
             }
             // The Consumer may remove its frame and clear its key queue once this call completes.

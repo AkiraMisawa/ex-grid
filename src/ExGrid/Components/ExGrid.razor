@@ -5693,6 +5693,7 @@
         _panelChecked = null;
         _panelAwaitingValues = false;
         _popoverFocusPending = PopoverFocus.None;
+        _chromeFocusOwed = false;
     }
 
     /// <summary>
@@ -5711,6 +5712,7 @@
         _panelFocusLastRequest = 0;
         _panelSearchRequest = 0;
         _popoverFocusPending = PopoverFocus.FirstCommand;
+        _chromeFocusOwed = true;
         _menuCursor = -1;
         _panelFirst = default;
         _panelLast = default;
@@ -5869,6 +5871,10 @@
         // Without scrolling: on a Server circuit this lands a round trip after the popover
         // is shown, and a menu taller than its grid (ADR-0040) may already have been
         // scrolled by the user, whose view it would pull back to the top.
+        // A substituted Chrome binds none of these: its contents take the keyboard on the request's
+        // count, through TakePopoverFocus, and the focus is theirs to give until then (FocusOwed).
+        if (element.Id is not null)
+            _chromeFocusOwed = false;
         await FocusQuietlyAsync(element, preventScroll: true);
     }
 
@@ -5900,7 +5906,15 @@
     /// <summary>The core's focus function a Chrome's popover is handed (ADR-0204), as a Chrome's
     /// editor is handed its own (ADR-0010): the control, and whether it may scroll into view.</summary>
     private Func<ElementReference, bool, Task> TakePopoverFocus
-        => _takePopoverFocus ??= (control, preventScroll) => InvokeAsync(() => FocusQuietlyAsync(control, preventScroll));
+        => _takePopoverFocus ??= (control, preventScroll) => InvokeAsync(() =>
+        {
+            _chromeFocusOwed = false;
+            return FocusQuietlyAsync(control, preventScroll);
+        });
+
+    // A popover's contents drawn by a substituted Chrome owe the keyboard: asked to take it (an opening,
+    // a move into the filter), and not yet through TakePopoverFocus (FocusOwed, ADR-0240 section 4).
+    private bool _chromeFocusOwed;
 
     private Func<ElementReference, bool, Task>? _takePopoverFocus;
 
@@ -6006,6 +6020,7 @@
                 _popoverFocusPending = PopoverFocus.PanelFirst;
                 break;
         }
+        _chromeFocusOwed = true;
         _ = InvokeAsync(StateHasChanged);
     }
 

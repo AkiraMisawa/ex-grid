@@ -105,6 +105,33 @@ public partial class ExGrid<TRow>
         }, input);
 
     /// <summary>
+    /// Keys the script held while an earlier input was answered, to hand on where the keyboard went,
+    /// that cannot be carried out there: the keyboard never reached what was to take it, once every
+    /// input before them was answered and no focus was owed, or reached a control that cannot take them
+    /// as typed. They are dropped, every one, and the live region says so (ADR-0240 section 4): never
+    /// replayed against whatever holds the keyboard, and never dropped silently.
+    /// </summary>
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="input">The number the script gave this input, which the root names once it has
+    /// been answered (ADR-0220); 0 for none.</param>
+    /// <returns>A task that completes once the refusal is said.</returns>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public Task OnHeldInputsRefusedAsync(int input = 0)
+        => AnsweredAsync(() =>
+        {
+            if (_disposed)
+                return;
+            var words = RefusalWords(KeyRefusalLabelIds.KeyboardDidNotArrive);
+            if (!string.IsNullOrWhiteSpace(words))
+            {
+                Announce(words);
+                _suppressRender = false;
+                StateHasChanged();
+            }
+        }, input);
+
+    /// <summary>
     /// The Escape with nothing left to dismiss, pressed on the root (ADR-0012, ADR-0070): the
     /// grid's way out of Enter/Tab cycling. Tab is released (ADR-0012, rewritten 2026-10-01), and a
     /// Consumer that declared <see cref="OnLeave"/> hears it too (ADR-0070, 2026-10-02). The release

@@ -29,6 +29,10 @@ namespace ExGrid.Components;
 //   or menu, no Interactive cell, no Copied Range and no edit to peel first (ADR-0230 section 1). Said
 //   with the inputs answered, so the gate trusts it for an Escape typed once every input that could
 //   add a layer is answered, and takes the release at the keydown.
+// - data-ex-focus-owed: the core owes DOM focus to a control it will focus itself — an edit's surface
+//   not yet painted, a popover's first control, a filter's control while its values are on their way.
+//   With the inputs a wait began behind all answered and nothing owed, a keyboard that has not
+//   arrived will not, and the script ends the wait on that rather than on a clock (ADR-0240 section 4).
 //
 // Neither reaches a row, nor renders the root: the stamp renders alone, and the rows skip their
 // render as before (ADR-0003). Nothing per cell crosses, and no message is sent for them (ADR-0027's
@@ -140,8 +144,14 @@ public partial class ExGrid<TRow>
     {
         if (_disposed || _rendersBuilt != _rendersAfterRendered)
             return;
-        _settledStamp?.Show(_answeredUpTo, RenderOwed, EscapeLeaves);
+        _settledStamp?.Show(_answeredUpTo, RenderOwed, EscapeLeaves, FocusOwed);
     }
+
+    /// <summary>Whether the core owes DOM focus to a control it will focus itself (data-ex-focus-owed):
+    /// the edit's surface, or a control of one of its popovers — or that a substituted Chrome's popover
+    /// contents, asked to take it, have not yet (TakePopoverFocus).</summary>
+    private bool FocusOwed => _editorNeedsFocus || _popoverFocusPending != PopoverFocus.None
+        || (_chromeFocusOwed && AnyPopoverOpen);
 
     /// <summary>A timer's render is no longer owed.</summary>
     private void OwedRenderDone(ref bool owed)
