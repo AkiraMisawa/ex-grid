@@ -77,10 +77,14 @@ export function stamp() {
  *   item 14), already among takenKeys: the editing branch claims them too
  * @param {boolean} reportTimeZone whether the Consumer asked for the browser's time zone
  *   (ADR-0122): only then is it read, once, and reported
+ * @param {Object<string, string[]>} gateKeys every other set of keys the gate reads, by name,
+ *   built by GridKeys.GateSets (ADR-0010): the keys the core claims in each editing mode, and the
+ *   neutral, popover-opening, find and clipboard keys — this file names none of them
  * @returns a handle owned by that one grid
  */
-export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared) {
+export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared, gateKeys) {
     let taken = new Set(takenKeys);
+    const gateSet = (name) => new Set(gateKeys?.[name] ?? []);
     // The Consumer's declared keys (ADR-0050, item 14), handed by C# like the core's own. With no
     // edit open they are in `taken`; while one is open they are claimed beside the editor's keys,
     // and the Consumer is told an edit is open. This file names none of them.
@@ -183,13 +187,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         lookSettled();
         return inputsSent;
     }
-    const neutralKeys = new Set([
-        'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-        'Control+ArrowUp', 'Control+ArrowDown', 'Control+ArrowLeft', 'Control+ArrowRight',
-        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight',
-        'Control+Shift+ArrowUp', 'Control+Shift+ArrowDown', 'Control+Shift+ArrowLeft', 'Control+Shift+ArrowRight',
-        'Tab', 'Shift+Tab', 'Home', 'End', 'Control+Home', 'Control+End', 'PageUp', 'PageDown', 'Escape',
-    ]);
+    // The keys on the root that cannot add a layer an Escape peels (ADR-0230 section 1).
+    const neutralKeys = gateSet('neutral');
     let settledObserver = null;
     function dropSettledObserver() {
         settledObserver?.disconnect();
@@ -469,48 +468,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const escapeLeavesNow = (k) => !leaves && k.repeat !== true && stamp !== null
         && stamp.hasAttribute('data-ex-escape-leaves')
         && Number(stamp.getAttribute('data-ex-answered')) >= layerInputAt;
-    // Ctrl+F too, taken and answered with nothing: Find is disabled while a cell is being
-    // edited, and the browser's own find would search only the painted rows (ADR-0055).
-    const editingKeys = new Set(
-        ['Escape', 'Enter', 'Shift+Enter', 'Control+Enter', 'Tab', 'Shift+Tab', 'F2',
-            'Control+f', 'Control+F']);
-    // Pointing (ADR-0051's second round): the arrows, Home and End, the four Shift+arrows and
-    // Shift+Home, which move or extend the outline rather than select text in the input (Shift+Home
-    // observed in Excel: the readings of 2026-10-12, R1 (viii)), and the Primary Modifier's arrows
-    // with Shift or without, which move or extend it to the data edge rather than move the caret by
-    // a word (observed in Excel, run 18a: =, Ctrl+↓ and =, Ctrl+Shift+↓). And while a completion list is
-    // open, only its ↑/↓ beside the editing keys (Tab, Escape): ←, →, Home, End and the
-    // Shift+arrows are the editor's — unless the list is open over Point, where they do what Point
-    // does with them, as they do without it (ADR-0058: the tenth Windows run, and Part B of the
-    // ninth).
-    const pointKeys = new Set([
-        ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',
-        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight', 'Shift+Home',
-        'Control+ArrowUp', 'Control+ArrowDown', 'Control+ArrowLeft', 'Control+ArrowRight',
-        'Control+Shift+ArrowUp', 'Control+Shift+ArrowDown', 'Control+Shift+ArrowLeft', 'Control+Shift+ArrowRight']);
-    // Overwrite, Excel's Enter mode (ADR-0010, ED-2): Point's keys, which commit and move or extend
-    // the Selection — or point, where a Reference can go — rather than move the caret or select
-    // text in the input; the Primary Modifier's arrows, with Shift or without, commit and move or
-    // extend to the edge. Observed in Excel: Shift+Home, Shift+→, Shift+↓, Shift+←, Ctrl+→ and
-    // Ctrl+Shift+→ (the seventeenth Windows run, Part C, case 7; R1 (vii)), and Shift+↑, Ctrl+←,
-    // Ctrl+↑, Ctrl+↓, Ctrl+Shift+←, Ctrl+Shift+↑ and Ctrl+Shift+↓ (run 18a). End's commit and move is the grid's,
-    // not Excel's: in Enter mode Excel's End turns on an End Mode (ADR-0058), which the grid does
-    // not have. Shift+End stays the editor's (decided with the user, 2026-10-13): Excel's commits
-    // and turns on an End Mode (R1 (vii)), which the grid does not have (ADR-0058, Q53).
-    const overwriteKeys = new Set(pointKeys);
-    // Pointing from outside (ADR-0058, "The keyboard"): while what Point wrote was written for a
-    // press on another grid, and the Consumer that wrote it hears the arrows, Point's keys, the
-    // Primary Modifier's arrows among them, which the Consumer refuses rather than let them move
-    // the caret.
-    const pointedKeys = new Set(pointKeys);
-    const completionKeys = new Set([...editingKeys, 'ArrowUp', 'ArrowDown']);
-    const completionOverPointKeys = new Set([
-        ...completionKeys, 'ArrowLeft', 'ArrowRight', 'Home', 'End',
-        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
-    const claimedWhile = {
-        overwrite: overwriteKeys, point: pointKeys, pointed: pointedKeys, completion: completionKeys,
-        completionOverPoint: completionOverPointKeys,
-    };
+    // The keys the core claims while a cell is being edited, one set for each mode (ADR-0010,
+    // ADR-0051, ADR-0058), built by GridEditingKeys and handed at attach like the core's own: this
+    // file names none of them. `editing` is every mode's (commit, cancel, Tab, F2, Ctrl+F); the
+    // others hold it, with the arrows and their forms each mode claims.
+    const claimedWhile = Object.fromEntries(['overwrite', 'point', 'pointed', 'completion', 'completionOverPoint']
+        .map((mode) => [mode, gateSet(mode)]));
+    const editingKeys = gateSet('editing');
+    const completionKeys = claimedWhile.completion;
+    const completionOverPointKeys = claimedWhile.completionOverPoint;
     // The keys macOS binds to a scroll in a text field, where Windows and Linux move the caret
     // (ADR-0010's note of 2026-09-30, ticket 32): Home and End scroll the document there, PageUp
     // and PageDown a page. Left to the browser in an editor surface, they scrolled the grid away
@@ -545,8 +511,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // The keys whose meaning in an editor field differs between the modes (ADR-0230 section 2): the
     // arrows, Home, End and their Shift and Primary Modifier forms. Escape, Enter, Tab and F2 are the
     // core's in every mode, and a character is typed in every one.
-    const modeDependentKeys = new Set([...overwriteKeys, ...pointKeys, ...pointedKeys, ...completionKeys,
-        ...completionOverPointKeys].filter((canonical) => !editingKeys.has(canonical)));
+    const modeDependentKeys = new Set(Object.values(claimedWhile).flatMap((keys) => [...keys])
+        .filter((canonical) => !editingKeys.has(canonical)));
     // A mode mark is the mode of the text its surface showed in that render (data-ex-mode-text, ADR-0230
     // section 2, note of 2026-10-17), and a field typed into faster than the core answers already holds
     // text the core has not heard. On a circuit `=SUM(` typed at once painted the list of names the core
@@ -586,11 +552,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // The keys that open a popover from the root (ADR-0039): the popover takes DOM focus a
     // round trip later on a circuit, and a key typed in between must be the popover's, not
     // the grid's (ADR-0010's hold, widened).
-    const popoverOpeners = new Set(['Alt+ArrowDown', 'Shift+F10', 'ContextMenu']);
+    const popoverOpeners = gateSet('popoverOpeners');
 
     // Find's key (ADR-0055), both cases for CapsLock, and the modifiers' own keydowns, which
     // mean nothing by themselves.
-    const findKeys = new Set(['Control+f', 'Control+F']);
+    const findKeys = gateSet('find');
     const modifierKeys = new Set(['Shift', 'Control', 'Alt', 'Meta']);
 
     // What the gate decides a key is for (ADR-0010): 'popover' — the core's, and it opens a
@@ -615,15 +581,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
 
     // The clipboard's keys: the browser's own copy, cut and paste commands are their default, and
     // the events those fire are what the core answers (ADR-0005, ADR-0014) and what a field acts on.
-    // The mirror of GridKeys' AnsweredOutsideTable, with cut, which the core does not answer and a
-    // field does, and paste as plain text; one the Consumer declared is its own, and is a key.
+    // Built by GridKeys.ClipboardKeys: the ones the core answers, with cut, which the core does not
+    // answer and a field does, and paste as plain text; one the Consumer declared is its own, and is
+    // a key.
     // Read only while a hold stands, where such a key is not held but taken by its event
     // (onHeldClipboard; ADR-0010, 2026-10-02).
-    const clipboardKeys = new Set([
-        'Control+c', 'Control+C', 'Control+Insert',
-        'Control+x', 'Control+X', 'Shift+Delete',
-        'Control+v', 'Control+V', 'Shift+Insert', 'Control+Shift+v', 'Control+Shift+V',
-    ]);
+    const clipboardKeys = gateSet('clipboard');
     const isClipboardKey = (k) => {
         const canonical = canonicalOf(k);
         return clipboardKeys.has(canonical) && !declared.has(canonical);

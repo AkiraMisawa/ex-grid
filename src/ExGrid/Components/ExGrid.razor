@@ -3998,7 +3998,8 @@
             _jsLeaves = OnLeave.HasDelegate;
             var handle = await _module.InvokeAsync<IJSObjectReference>(
                 "attach", _root, _scroller, _self, TakenKeys(claims), claims.CanEdit,
-                PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate(), OnBrowserTimeZone.HasDelegate, _jsLeaves);
+                PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate(), OnBrowserTimeZone.HasDelegate, _jsLeaves,
+                GridKeys.GateSets);
             if (_disposed)
             {
                 // Disposal overtook the attach; nobody else holds this handle now. Its own
@@ -6205,10 +6206,12 @@
     /// replaced or removed in the whole Filter, columns combined with AND, and the
     /// Consumer notified — the grid never evaluates any of it. An <c>In</c> with no values
     /// is refused here, whichever panel handed it over, and the panel stands: the engine
-    /// would refuse it inside this very handler (ADR-0023, ticket 76).</summary>
+    /// would refuse it inside this very handler (ADR-0023, ticket 76). So is a clause whose
+    /// operator is not one the core offered the column in <see cref="FilterPanelContext.Allowed"/>:
+    /// a Chrome renders the operators, it cannot add one (ADR-0009/0010, FN-18).</summary>
     private async Task ApplyFilterSpecAsync(string column, FilterSpec? spec)
     {
-        if (!FilterPanelChoices.CanApply(spec))
+        if (!FilterPanelChoices.CanApply(spec) || !OffersEveryOperator(column, spec))
             return;
         var columns = _filter is null
             ? new Dictionary<string, FilterSpec>(StringComparer.Ordinal)
@@ -6227,6 +6230,16 @@
         else if (OnFilterChanged.HasDelegate)
             await OnFilterChanged.InvokeAsync(next);
         StateHasChanged();
+    }
+
+    private bool OffersEveryOperator(string column, FilterSpec? spec)
+    {
+        if (spec is null)
+            return true;
+        if (ColumnNamed(column) is not { } index)
+            return false;
+        var allowed = FilterOperators.AllowedFor(Columns[index].Type);
+        return spec.Clauses.All(clause => allowed.Contains(clause.Operator));
     }
 
     /// <summary>The built-in panel's OK (ADR-0009): the working state becomes one
