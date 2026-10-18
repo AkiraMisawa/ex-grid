@@ -412,12 +412,16 @@ public partial class ExGrid<TRow>
         {
             builder.OpenComponent<SummaryFiguresMenu>(0);
             builder.AddComponentParameter(1, nameof(SummaryFiguresMenu.Shown), SummaryFigures);
-            builder.AddComponentParameter(2, nameof(SummaryFiguresMenu.Label), (Func<string, string>)Label);
-            builder.AddComponentParameter(3, nameof(SummaryFiguresMenu.Toggle), (Func<SummaryFigures, Task>)ToggleSummaryFigureAsync);
+            builder.AddComponentParameter(2, nameof(SummaryFiguresMenu.Label), _summaryLabel ??= Label);
+            builder.AddComponentParameter(3, nameof(SummaryFiguresMenu.Toggle), _toggleSummaryFigure ??= ToggleSummaryFigureAsync);
             builder.AddComponentParameter(4, nameof(SummaryFiguresMenu.Popover), context);
             builder.AddComponentParameter(5, nameof(SummaryFiguresMenu.TakeFocus), TakePopoverFocus);
             builder.CloseComponent();
         }, Label(SummaryLabelIds.Menu));
+
+    // Cached, so the menu's parameters are the same delegates on every render (RR-9).
+    private Func<string, string>? _summaryLabel;
+    private Func<SummaryFigures, Task>? _toggleSummaryFigure;
 
     private Task ToggleSummaryFigureAsync(SummaryFigures figure)
         => SummaryFiguresChanged.InvokeAsync(SummaryFigures ^ figure);

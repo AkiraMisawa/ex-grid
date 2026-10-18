@@ -47,7 +47,7 @@
             <li>A <strong>Blank</strong> is a value accessor returning <code>null</code>. An empty string is a value, not a Blank.</li>
             <li><strong>Blanks sort last</strong> in both directions, as in Excel, and the sort is stable.</li>
             <li>A Blank matches only <code>IsBlank</code>, or a value list that ticks it. <code>NotEquals</code> and <code>DoesNotContain</code> do not match a Blank.</li>
-            <li>Which operators a column offers follows its type: <code>Contains</code> and <code>StartsWith</code> for text, <code>GreaterThan</code> and friends for numbers and dates.</li>
+            <li>Which operators a column offers follows its type: <code>Contains</code> and <code>StartsWith</code> for text, <code>GreaterThan</code> and friends for numbers and dates. The grid decides it, not the filter panel: a panel of your own renders the operators its context's <code>Allowed</code> lists, and one it hands back that is not among them is refused, with the panel left open.</li>
             <li>Anything ambiguous is <strong>refused with an exception naming the column</strong> — an unknown column, an operator the type does not allow, a value of the wrong type — rather than guessed at.</li>
         </ul>
     </DocsSection>

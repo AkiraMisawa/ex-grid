@@ -122,8 +122,9 @@ public class ShippedStylesheetTests
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
 
-        var listed = Regex.Match(script, @"const clipboardKeys = new Set\(\[(?<keys>[^\]]*)\]\);").Groups["keys"].Value;
-        var letThrough = Regex.Matches(listed, @"'(?<key>[^']+)'").Select(match => match.Groups["key"].Value).ToHashSet();
+        // Built by the core and handed at attach (KB-2): the script names none of them.
+        Assert.Contains("const clipboardKeys = gateSet('clipboard');", script, StringComparison.Ordinal);
+        var letThrough = GridKeys.GateSets["clipboard"].ToHashSet();
 
         // Every key the core answers through the browser's own copy or paste event, which is why a
         // Consumer may not declare it, is one the hold lets through: held as a key, it was lost.
@@ -616,7 +617,7 @@ public class ShippedStylesheetTests
             .Where(line => line.Length > 0 && !char.IsWhiteSpace(line[0]) && !line.StartsWith("//", StringComparison.Ordinal)
                 && !line.StartsWith("/**", StringComparison.Ordinal))
             .ToList();
-        Assert.Equal(["export function stamp() {", "}", "export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared) {", "}"], topLevel);
+        Assert.Equal(["export function stamp() {", "}", "export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared, gateKeys) {", "}"], topLevel);
     }
 
     [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
@@ -1290,7 +1291,7 @@ public class ShippedStylesheetTests
         Assert.True(gate.Success, "the gate is not in the module");
 
         // Handed at attach and re-told with the claims, per instance.
-        Assert.Matches(new Regex(@"export function attach\([^)]*, declaredKeys, reportTimeZone, leaveDeclared\) \{"), script.Text);
+        Assert.Matches(new Regex(@"export function attach\([^)]*, declaredKeys, reportTimeZone, leaveDeclared, gateKeys\) \{"), script.Text);
         Assert.Matches(new Regex(@"let declared = new Set\(declaredKeys \?\? \[\]\);"), script.Text);
         Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys, leaveDeclared\) => \{[^}]*declared = new Set\(declaredKeys \?\? \[\]\);", RegexOptions.Singleline), script.Text);
         // With no edit open they are among the taken keys, and only a taken one is asked about: the
@@ -1583,22 +1584,25 @@ public class ShippedStylesheetTests
         // The arrows, Home and End, the four Shift+arrows and Shift+Home, which extends the outline to
         // the row's first column (ADR-0010, ED-2; observed in Excel, the readings of 2026-10-12, R1
         // (viii)), and the Primary Modifier's arrows with Shift or without, which point at the data
-        // edge (ADR-0051; observed in Excel, run 18a).
-        Assert.Matches(new Regex(@"const pointKeys = new Set\(\[\s*\.\.\.editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',\s*"
-            + @"'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight', 'Shift\+Home',\s*"
-            + @"'Control\+ArrowUp', 'Control\+ArrowDown', 'Control\+ArrowLeft', 'Control\+ArrowRight',\s*"
-            + @"'Control\+Shift\+ArrowUp', 'Control\+Shift\+ArrowDown', 'Control\+Shift\+ArrowLeft', 'Control\+Shift\+ArrowRight'\]\);"),
-            script.Text);
-        Assert.Matches(new Regex(@"const completionKeys = new Set\(\[\.\.\.editingKeys, 'ArrowUp', 'ArrowDown'\]\);"), script.Text);
+        // edge (ADR-0051; observed in Excel, run 18a). Built by the core and handed at attach (KB-2).
+        Assert.Equal(
+            [.. GridEditingKeys.Editing, "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End",
+                "Shift+ArrowUp", "Shift+ArrowDown", "Shift+ArrowLeft", "Shift+ArrowRight", "Shift+Home",
+                "Control+ArrowUp", "Control+ArrowDown", "Control+ArrowLeft", "Control+ArrowRight",
+                "Control+Shift+ArrowUp", "Control+Shift+ArrowDown", "Control+Shift+ArrowLeft", "Control+Shift+ArrowRight"],
+            GridKeys.GateSets["point"]);
+        Assert.Equal([.. GridEditingKeys.Editing, "ArrowUp", "ArrowDown"], GridKeys.GateSets["completion"]);
         // ADR-0058 (the tenth Windows run; Part B of the ninth, Q51) / SH-36: a list open over Point
         // takes only ↑, ↓, Tab and Escape, and ←, →, Home, End and the four Shift+arrows are claimed
         // beside them, to point; nothing else.
-        Assert.Matches(new Regex(
-            @"const completionOverPointKeys = new Set\(\[\s*\.\.\.completionKeys, 'ArrowLeft', 'ArrowRight', 'Home', 'End',\s*"
-            + @"'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight'\]\);"),
-            script.Text);
-        // ADR-0058 ("The keyboard") / SH-35: Point written from outside has a set of its own beside them.
-        Assert.Matches(new Regex(@"const claimedWhile = \{\s*overwrite: overwriteKeys, point: pointKeys, pointed: pointedKeys, completion: completionKeys,\s*completionOverPoint: completionOverPointKeys,\s*\};"), script.Text);
+        Assert.Equal(
+            [.. GridKeys.GateSets["completion"], "ArrowLeft", "ArrowRight", "Home", "End",
+                "Shift+ArrowUp", "Shift+ArrowDown", "Shift+ArrowLeft", "Shift+ArrowRight"],
+            GridKeys.GateSets["completionOverPoint"]);
+        // ADR-0058 ("The keyboard") / SH-35: Point written from outside has a set of its own beside them,
+        // each read by the name the core tells the gate.
+        Assert.Matches(new Regex(@"const claimedWhile = Object\.fromEntries\(\['overwrite', 'point', 'pointed', 'completion', 'completionOverPoint'\]\s*\.map\(\(mode\) => \[mode, gateSet\(mode\)\]\)\);"), script.Text);
+        Assert.Contains("const editingKeys = gateSet('editing');", script.Text, StringComparison.Ordinal);
         // A list painted is open from its own render, before the gate is told (ADR-0051/0010):
         // read off the marks the core writes on the list's box, and nothing measured — whether it
         // is open over Point too.
@@ -1612,14 +1616,44 @@ public class ShippedStylesheetTests
         Assert.Single(Regex.Matches(script.Text, @"editingShown\(\)"));
     }
 
+    [Fact] // ADR-0010 / KB-2: the sets of keys the gate reads are built by the core and handed at attach; the script spells none of them
+    public void KB2_the_script_names_no_set_of_keys()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+
+        // A set is made only from what the core handed: the taken and declared keys, and the gate's
+        // named sets. The script spells only the sets of what it answers itself, as KB-2 names them:
+        // Home and End on an Apple platform and PageUp and PageDown in an editor field (ADR-0010's note
+        // of 2026-09-30, ticket 32), the modifiers' own keydowns, which name no key, a text field's
+        // input types, which are not keys, and the keys a held key is handed on as (ADR-0010's notes on
+        // the hold): what a text field, a tab and a caret do with them.
+        var spelled = Regex.Matches(script, @"new Set\(\[\s*'[^']*'[^\]]*\]\)").Select(match => match.Value).ToList();
+        Assert.Equal(
+            [
+                "new Set(['Home', 'End', 'Shift+Home', 'Shift+End'])",
+                "new Set(['PageUp', 'PageDown'])",
+                "new Set(['Shift', 'Control', 'Alt', 'Meta'])",
+                "new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number'])",
+                "new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'])",
+                "new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'])",
+                "new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'])",
+            ],
+            spelled);
+        foreach (var name in new[] { "editing", "overwrite", "point", "pointed", "completion", "completionOverPoint", "neutral", "popoverOpeners", "find", "clipboard" })
+            Assert.Contains(name, GridKeys.GateSets.Keys);
+        Assert.Contains("const gateSet = (name) => new Set(gateKeys?.[name] ?? []);", script, StringComparison.Ordinal);
+        Assert.Equal(["Alt+ArrowDown", "ContextMenu", "Shift+F10"], GridKeys.GateSets["popoverOpeners"].Order(StringComparer.Ordinal));
+        Assert.Equal(["Control+F", "Control+f"], GridKeys.GateSets["find"].Order(StringComparer.Ordinal));
+    }
+
     [Fact] // ADR-0058 ("The keyboard") / SH-35: while what Point wrote came from outside, the gate claims Point's keys and the Primary Modifier's arrows, with Shift or without, and nothing else
     public void The_gate_has_a_set_for_point_written_from_outside()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
 
         // Point's own set holds the Primary Modifier's arrows, with Shift or without (ADR-0051, run 18a).
-        Assert.Matches(new Regex(@"const pointedKeys = new Set\(pointKeys\);"), script);
-        Assert.Contains("pointed: pointedKeys", script, StringComparison.Ordinal);
+        Assert.Equal(GridKeys.GateSets["point"], GridKeys.GateSets["pointed"]);
+        Assert.Contains("'pointed'", script, StringComparison.Ordinal);
     }
 
     [Fact] // ADR-0010's note of 2026-09-30 / ticket 32 / DC-24: on Apple platforms Home and End left to an editor field are answered by the listener, and on every platform PageUp and PageDown are taken, so nothing scrolls the grid away from an open edit
