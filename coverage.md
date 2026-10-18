@@ -12,7 +12,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/18/2026 - 00:24:43 |
+| Generated on: | 10/18/2026 - 00:44:07 |
 | Parser: | MultiReport (14x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 851 |
@@ -22,8 +22,8 @@
 | Uncovered lines: | 3173 |
 | Coverable lines: | 64393 |
 | Total lines: | 104604 |
-| **Branch coverage:** | 88% (35582 of 40420) |
-| Covered branches: | 35582 |
+| **Branch coverage:** | 88% (35580 of 40420) |
+| Covered branches: | 35580 |
 | Total branches: | 40420 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -230,8 +230,8 @@
 |ExGrid.RangeDocument|100%||
 |ExGrid.RowChange<TRow>|100%||
 |ExGrid.RowRange|100%||
-|ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
 |ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
+|ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
 |ExGrid.Rows.InMemoryRowMarks<TRow>|90.3%|77.4%|
 |ExGrid.Rows.RowMarkAdapter<TRow>|100%||
 |ExGrid.Rows.RowMarkCounts|100%||
@@ -730,10 +730,10 @@
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|91.1%|84.7%|
+|ExSheet.Components.ExSheet|91.1%|84.5%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91.1%|84.7%|
+|ExSheet.Components.ExSheet<T>|91.1%|84.5%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
