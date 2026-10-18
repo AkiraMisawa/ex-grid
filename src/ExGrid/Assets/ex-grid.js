@@ -4397,6 +4397,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             const moved = input ? movedByUser(input) : false;
             if (input && input.value === text) {
                 if (moved) {
+                    // Shown as the placement would have shown it: an End typed before the placement
+                    // came, with the caret at the end already, moved no caret, and the browser moved
+                    // no view for it, so the text stood shown from its start with the caret past the
+                    // field's right edge (ticket 32, the widened run on the Server host, ADR-0240).
+                    showCaret(input, input.selectionDirection === 'backward' ? input.selectionStart : input.selectionEnd);
                     reportedText = null;
                     reportCaretOf(input);
                     return;
