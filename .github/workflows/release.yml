@@ -253,6 +253,31 @@ jobs:
             s{\]\((?!https://)([^)\s]+)\)}{]($ENV{SITE}$1)}g;
             s{(?<![\w\[/-])ADR-(\d{4})(?!\w)}{my @f = glob("docs/adr/$1-*.md"); @f ? "[ADR-$1](https://github.com/$ENV{REPO}/blob/$ENV{GITHUB_SHA}/$f[0])" : "ADR-$1"}ge;
           ' > "$RUNNER_TEMP/release-notes.md"
+          # GitHub refuses a release's text over 125,000 characters (HTTP 422), and 0.1.0-rc.1's
+          # rendered to 191,000. Then each section that lists entries, the changes and the products,
+          # gives its count and links itself in the version's file at this tag, where GitHub renders
+          # it whole; the Highlights, the Known limitations and the release's blocks stay as they are.
+          # A text still too long after that is refused here, before anything is created (ADR-0190,
+          # 2026-10-18).
+          perl -CSD -0777 -i -pe '
+            my $limit = 125000;
+            if (length($_) > $limit) {
+              my %long = map { $_ => 1 } ("Breaking changes", "Behaviour changes", "ExGrid", "ExSheet", "ExPivot", "Data");
+              my $notes = "https://github.com/$ENV{REPO}/blob/$ENV{GITHUB_REF_NAME}/docs/releases/$ENV{VERSION}.md";
+              my @parts = split /(?m)^(?=## )/;
+              for (@parts) {
+                next unless /^## (.+)\n/ && $long{$1};
+                my $heading = $1;
+                my $entries = () = /^- /mg;
+                next unless $entries;
+                (my $anchor = lc $heading) =~ s/ /-/g;
+                my $noun = $entries == 1 ? "entry" : "entries";
+                $_ = "## $heading\n\n$entries $noun, listed in [the Release Notes]($notes#$anchor).\n\n";
+              }
+              $_ = join "", @parts;
+              die "The release'"'"'s text is " . length($_) . " characters even with its lists linked, over GitHub'"'"'s $limit.\n" if length($_) > $limit;
+            }
+          ' "$RUNNER_TEMP/release-notes.md"
           cat "$RUNNER_TEMP/release-notes.md"
 
       # Whoever made the tag may have made its release too — GitHub's release page does both at once.

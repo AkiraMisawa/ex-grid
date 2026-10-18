@@ -174,6 +174,13 @@ repository does not have, and MudBlazor's fetch is a server call.
   `--notes-file`. It no longer asks for `--generate-notes`.
   *(2026-10-12, decided with the user: for a release candidate it renders the candidate's note instead,
   and the site's section of a candidate opens with that note too.)*
+  *(2026-10-18, decided with the user after `v0.1.0-rc.1`: GitHub refuses a release's text over 125,000 characters,
+  and rc.1's rendered to 191,000, so its packages reached nuget.org and its release was refused. When
+  the rendered text is longer than that, each section that lists entries (Breaking changes, Behaviour
+  changes and the four products) is replaced by its count of entries and a link to that section of the
+  version's file at the tag, where GitHub renders it whole. The Highlights, the Known limitations and the
+  release's blocks stay in the text. A text still too long after that is refused before the release is
+  made. A version whose text fits is published as before.)*
   - A release that GitHub's page already made is given that text, replacing what it said.
   - **beta.1 and beta.2 are written once, after the fact,** from the git log, the pull requests and
     ADR-0042. They name beta.2's change of target as breaking. The user reviews them before they merge.
