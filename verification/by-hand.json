@@ -20,12 +20,12 @@
         "tests/ExGrid.Browser/scrollbar.spec.mjs"
       ],
       "record": {
-        "commit": "f6b5e8fe6c4b87d077200616d305bdd87a723aba",
-        "tag": "verified/2026-10-18-windows-18",
-        "path": "verification/2026-10-18-windows-18/report.md",
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-windows-18b",
+        "path": "verification/2026-10-18-windows-18b/report.md",
         "verdict": "pass"
       },
-      "note": "The eighteenth Windows run's Part A, at the head of release/0.1 before 0.1.0-rc.1: scrollbar.spec.mjs's VZ-14 block at 150%, headed, on Chrome and Edge, on both hosts."
+      "note": "The eighteenth Windows run's Part A, again at 0.1.0-rc.3's commit, the head of release/0.1 after the sign-off's fixes (#169): scrollbar.spec.mjs's VZ-14 block at 150%, headed, on Chrome and Edge, on both hosts."
     },
     {
       "row": "VZ-16",
@@ -46,12 +46,12 @@
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
       "record": {
-        "commit": "f6b5e8fe6c4b87d077200616d305bdd87a723aba",
-        "tag": "verified/2026-10-18-windows-18",
-        "path": "verification/2026-10-18-windows-18/report.md",
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-windows-18b",
+        "path": "verification/2026-10-18-windows-18b/report.md",
         "verdict": "pass"
       },
-      "note": "The eighteenth Windows run's Part A, at the head of release/0.1 before 0.1.0-rc.1: a real browser zoom told as it changes on /wide, and a thin line and a gridline at a real 2.25 on /sheet?case=11, Chrome and Edge, WebAssembly."
+      "note": "The eighteenth Windows run's Part A, again at 0.1.0-rc.3's commit, the head of release/0.1 after the sign-off's fixes (#169): a real browser zoom told as it changes on /wide, and a thin line and a gridline at a real 2.25 on /sheet?case=11, Chrome and Edge, WebAssembly."
     },
     {
       "row": "FN-12e",
@@ -85,12 +85,12 @@
         "tests/GlyphWidths/measure.mjs"
       ],
       "record": {
-        "commit": "f6b5e8fe6c4b87d077200616d305bdd87a723aba",
-        "tag": "verified/2026-10-18-windows-18",
-        "path": "verification/2026-10-18-windows-18/report.md",
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-windows-18b",
+        "path": "verification/2026-10-18-windows-18b/report.md",
         "verdict": "pass"
       },
-      "note": "The eighteenth Windows run's Part A, at the head of release/0.1 before 0.1.0-rc.1: the two paintings, headed, on Chrome and Edge, on both hosts."
+      "note": "The eighteenth Windows run's Part A, again at 0.1.0-rc.3's commit, the head of release/0.1 after the sign-off's fixes (#169): the two paintings, headed, on Chrome and Edge, on both hosts."
     },
     {
       "row": "FN-12e",
@@ -153,12 +153,12 @@
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
       "record": {
-        "commit": "f6b5e8fe6c4b87d077200616d305bdd87a723aba",
-        "tag": "verified/2026-10-18-windows-18",
-        "path": "verification/2026-10-18-windows-18/report.md",
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-windows-18b",
+        "path": "verification/2026-10-18-windows-18b/report.md",
         "verdict": "pass"
       },
-      "note": "The eighteenth Windows run's Part A, at the head of release/0.1 before 0.1.0-rc.1: the sixteenth run's cases with run 17's additions, 12 configurations, k8 and k8x with the Microsoft IME's Predictive input Off, put back after."
+      "note": "The eighteenth Windows run's Part A, again at 0.1.0-rc.3's commit, the head of release/0.1 after the sign-off's fixes (#169): the sixteenth run's cases with run 17's additions, 12 configurations, k8 and k8x with the Microsoft IME's Predictive input Off, put back after."
     },
     {
       "row": "SH-42",
@@ -174,12 +174,12 @@
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
       "record": {
-        "commit": "f6b5e8fe6c4b87d077200616d305bdd87a723aba",
-        "tag": "verified/2026-10-18-windows-18",
-        "path": "verification/2026-10-18-windows-18/report.md",
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-windows-18b",
+        "path": "verification/2026-10-18-windows-18b/report.md",
         "verdict": "pass"
       },
-      "note": "The eighteenth Windows run's Part A, at the head of release/0.1 before 0.1.0-rc.1: Ctrl+1 to Ctrl+5 on /sheet with seven tabs open, Chrome and Edge, both hosts."
+      "note": "The eighteenth Windows run's Part A, again at 0.1.0-rc.3's commit, the head of release/0.1 after the sign-off's fixes (#169): Ctrl+1 to Ctrl+5 on /sheet with seven tabs open, Chrome and Edge, both hosts."
     },
     {
       "row": "SH-51",
@@ -195,12 +195,12 @@
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
       "record": {
-        "commit": "f6b5e8fe6c4b87d077200616d305bdd87a723aba",
-        "tag": "verified/2026-10-18-windows-18",
-        "path": "verification/2026-10-18-windows-18/report.md",
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-windows-18b",
+        "path": "verification/2026-10-18-windows-18b/report.md",
         "verdict": "pass"
       },
-      "note": "The eighteenth Windows run's Part A, at the head of release/0.1 before 0.1.0-rc.1: Ctrl+F1 twice on /sheet, Chrome and Edge, both hosts."
+      "note": "The eighteenth Windows run's Part A, again at 0.1.0-rc.3's commit, the head of release/0.1 after the sign-off's fixes (#169): Ctrl+F1 twice on /sheet, Chrome and Edge, both hosts."
     },
     {
       "row": "SH-52",
@@ -221,12 +221,12 @@
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
       "record": {
-        "commit": "f6b5e8fe6c4b87d077200616d305bdd87a723aba",
-        "tag": "verified/2026-10-18-windows-18",
-        "path": "verification/2026-10-18-windows-18/report.md",
+        "commit": "28ab5e1bf8c1e4c71dbcb19e9bd430cbd0612f48",
+        "tag": "verified/2026-10-18-windows-18b",
+        "path": "verification/2026-10-18-windows-18b/report.md",
         "verdict": "pass"
       },
-      "note": "The eighteenth Windows run's Part A, at the head of release/0.1 before 0.1.0-rc.1: run 17's d3, d4 and d6 on /sheet and /sheet?chrome=mud, and the keys at machine speed on WebAssembly and behind 80 ms, Chrome and Edge."
+      "note": "The eighteenth Windows run's Part A, again at 0.1.0-rc.3's commit, the head of release/0.1 after the sign-off's fixes (#169): run 17's d3, d4 and d6 on /sheet and /sheet?chrome=mud, and the keys at machine speed on WebAssembly and behind 80 ms, Chrome and Edge."
     },
     {
       "row": "KB-3",
