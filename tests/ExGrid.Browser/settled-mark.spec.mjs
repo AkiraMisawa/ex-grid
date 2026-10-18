@@ -76,7 +76,7 @@ test('ADR-0220: twenty arrows typed at once, read once after the mark, find the 
     await setRoundTrip(0);
 });
 
-test('ADR-0220: after Ctrl+End reveals a far cell, the offset read once after the mark is the reveal\'s, never the repaint\'s pixel', async ({ page }) => {
+test('ADR-0220: after Ctrl+Down twice reveals a far cell, the offset read once after the mark is the reveal\'s, never the repaint\'s pixel', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'A1');
     await settled(grid);
