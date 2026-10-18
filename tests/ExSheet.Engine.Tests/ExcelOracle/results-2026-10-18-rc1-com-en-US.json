@@ -1,0 +1,1016 @@
+{
+    "ran":  "2026-10-18T02:08:48",
+    "excel":  "16.0 (build 20430); EXCEL.EXE 16.0.20430.20182",
+    "windowsRegionalFormat":  "en-US",
+    "formulasEnteredThrough":  "Range.Formula2",
+    "constantsEnteredThrough":  "Range.FormulaLocal",
+    "summary":  {
+                    "agree":  3,
+                    "disagree":  2,
+                    "blocked":  0,
+                    "recorded":  29
+                },
+    "cases":  [
+                  {
+                      "id":  "AGGREGATE-069",
+                      "area":  "aggregate",
+                      "source":  "uncertain",
+                      "description":  "AGGREGATE\u0027s option 6, which passes over Error Values, does not pass over a refused cell: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001), and B2 is 1; what AGGREGATE(9,6,B1:B2) gives is asked",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  7,
+                                    "kind":  "number",
+                                    "number":  "7",
+                                    "text":  "7",
+                                    "formula":  "=AGGREGATE(9,6,B1:B2)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND\u0027s fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell is refused, where option 6 passed over its #VALUE! and gave 1 before"
+                  },
+                  {
+                      "id":  "COUNT-009",
+                      "area":  "count",
+                      "source":  "uncertain",
+                      "description":  "COUNT over a range holding a refused cell is refused: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001), and B2 is 1; what COUNT(B1:B2) gives is asked",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  2,
+                                    "kind":  "number",
+                                    "number":  "2",
+                                    "text":  "2",
+                                    "formula":  "=COUNT(B1:B2)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND\u0027s fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell through a range is refused, where COUNT passed over its #VALUE! and gave 1 before"
+                  },
+                  {
+                      "id":  "COUNTA-009",
+                      "area":  "counta",
+                      "source":  "uncertain",
+                      "description":  "COUNTA over a range holding a refused cell is refused: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001), and B2 is 1; what COUNTA(B1:B2) gives is asked",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  2,
+                                    "kind":  "number",
+                                    "number":  "2",
+                                    "text":  "2",
+                                    "formula":  "=COUNTA(B1:B2)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND\u0027s fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell through a range is refused, where COUNTA counted its #VALUE! and gave 2 before"
+                  },
+                  {
+                      "id":  "ERRORTYPE-022",
+                      "area":  "error-type",
+                      "source":  "uncertain",
+                      "description":  "ERROR.TYPE does not number a refused cell\u0027s #VALUE!: B1 is MROUND(0.35,0.1), refused, which Excel answered 0.4 (MROUND-004); what ERROR.TYPE(B1) gives is asked",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#N/A",
+                                    "kind":  "error",
+                                    "text":  "#N/A",
+                                    "formula":  "=ERROR.TYPE(B1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND\u0027s fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell is refused, where ERROR.TYPE gave 3 before"
+                  },
+                  {
+                      "id":  "IFERROR-017",
+                      "area":  "iferror",
+                      "source":  "uncertain",
+                      "description":  "IFERROR does not turn into a fallback the refusal of a function given a range where it wants one Value, nested inside it, as it does not given the range itself (IFERROR-009)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  1,
+                                    "kind":  "number",
+                                    "number":  "1",
+                                    "text":  "1",
+                                    "formula":  "=IFERROR(LEN(A1:A3),0)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0125: functions are not lifted over arrays yet; LEN given a range is #VALUE!, where Excel 365 applies it to each Value and spills, and the refusal is the Formula\u0027s, which IFERROR does not catch"
+                  },
+                  {
+                      "id":  "IFERROR-018",
+                      "area":  "iferror",
+                      "source":  "uncertain",
+                      "description":  "IFERROR does not catch the refusal of a function the engine does not support, AGGREGATE\u0027s 16, PERCENTILE.INC, inside it. Excel\u0027s AGGREGATE(16,6,A1:A11,0.5) alone was 34 (AGGREGATE-028); what it gives under IFERROR is asked",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  34,
+                                    "kind":  "number",
+                                    "number":  "34",
+                                    "text":  "34",
+                                    "formula":  "=IFERROR(AGGREGATE(16,6,A1:A11,0.5),0)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): the Formula is refused whatever IFERROR would make of it, where IFERROR caught the refusal before"
+                  },
+                  {
+                      "id":  "IFERROR-019",
+                      "area":  "iferror",
+                      "source":  "uncertain",
+                      "description":  "IFERROR in another cell does not catch a refused cell: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001); what IFERROR over B1 gives is asked",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  6,
+                                    "kind":  "number",
+                                    "number":  "6",
+                                    "text":  "6",
+                                    "formula":  "=IFERROR(B1,0)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND\u0027s fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell is refused, whatever it does with it, where IFERROR gave 0 before"
+                  },
+                  {
+                      "id":  "IFERROR-020",
+                      "area":  "iferror",
+                      "source":  "uncertain",
+                      "description":  "A refusal is carried along a chain of three cells: B1 is MROUND(7.05,0.1), refused, which Excel answered 7.1000000000000005 (MROUND-002); C1 is IFERROR(B1,0) and the checked cell IFERROR(C1,1), each refused in turn. What Excel gives is asked",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  7.1000000000000005,
+                                    "kind":  "number",
+                                    "number":  "7.1000000000000005",
+                                    "text":  "7.1",
+                                    "formula":  "=IFERROR(C1,1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND\u0027s fractional multiple is refused (ADR-0047), and each Formula that reads a refused cell is refused in turn, along the chain"
+                  },
+                  {
+                      "id":  "IFNA-008",
+                      "area":  "ifna",
+                      "source":  "uncertain",
+                      "description":  "IFNA over a refused cell is refused: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001); what IFNA(B1,0) gives is asked",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  6,
+                                    "kind":  "number",
+                                    "number":  "6",
+                                    "text":  "6",
+                                    "formula":  "=IFNA(B1,0)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND\u0027s fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell is refused; IFNA gave its #VALUE! back before, and the refusal now carries on"
+                  },
+                  {
+                      "id":  "INDIRECT-073",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: R1C1 text with a row number 0, R0C2, a row the Sheet does not have (#REF! if it names no place)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#REF!",
+                                    "kind":  "error",
+                                    "text":  "#REF!",
+                                    "formula":  "=INDIRECT(\"R0C2\",FALSE)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-12): a row or column number 0 in R1C1 text is #VALUE! until a run observes it, since the observed forms do not say whether it names no place; recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-074",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: R1C1 text with a row number past the Sheet\u0027s edge, R1048577C2, with B1 holding 7 and B1048576 holding 9 (#REF! if it names no place, as XFE1 does in A1 style, INDIRECT-017; 7 if Excel wraps the row round to row 1; 9 if it stops at the last row)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#REF!",
+                                    "kind":  "error",
+                                    "text":  "#REF!",
+                                    "formula":  "=INDIRECT(\"R1048577C2\",FALSE)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-12, decided with the user: in R1C1 style, a row or column number past the Sheet\u0027s edge is refused with #VALUE! until Excel is asked; A1 text past the edge stays #REF!, as XFE1 was observed to be, INDIRECT-017): it could name no place, as XFE1 does, or a place, as an offset past the edge does (INDIRECT-052); recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-082",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: R[-5]C[-1] from C2 is above row 1, with B1 holding 7 and B1048573 holding 9 (9 if Excel wraps the offset round to the last rows, 7 if it stops at row 1)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  9,
+                                    "kind":  "number",
+                                    "number":  "9",
+                                    "text":  "9",
+                                    "formula":  "=INDIRECT(\"R[-5]C[-1]\",FALSE)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-12): an offset past the Sheet\u0027s edge is #VALUE! until a run tells where it lands (INDIRECT-052 is 0 in Excel, a blank cell, which both readings give there); recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-083",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: R2C[-5] from C2 is left of column A, with A2 holding 7 and XFB2 holding 9 (9 if Excel wraps the offset round to the last columns, 7 if it stops at column A)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  9,
+                                    "kind":  "number",
+                                    "number":  "9",
+                                    "text":  "9",
+                                    "formula":  "=INDIRECT(\"R2C[-5]\",FALSE)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-12): an offset past the Sheet\u0027s edge is #VALUE! until a run tells where it lands (INDIRECT-052 is 0 in Excel, a blank cell, which both readings give there); recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-084",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: R[1048575]C[-1] from C2 is below the last row, with B1 holding 7 and B1048576 holding 9 (7 if Excel wraps the offset round to the first rows, 9 if it stops at the last row)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  7,
+                                    "kind":  "number",
+                                    "number":  "7",
+                                    "text":  "7",
+                                    "formula":  "=INDIRECT(\"R[1048575]C[-1]\",FALSE)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-12): an offset past the Sheet\u0027s edge is #VALUE! until a run tells where it lands (INDIRECT-052 is 0 in Excel, a blank cell, which both readings give there); recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-090",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: R1C1 text with # after a range, R1C1:R2C1#, over =SEQUENCE(3) in A1 (#REF! if it names no place, or if it is R1C1 joined to R2C1\u0027s Spill Range, R1C1:(R2C1#), since A2 lies in A1\u0027s spill and spills nothing; 6 if it is the Spill Range of the range\u0027s first cell; 3 if the # is passed over and the range read). #REF! here does not tell no place from the join; INDIRECT-097 does",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#REF!",
+                                    "kind":  "error",
+                                    "text":  "#REF!",
+                                    "formula":  "=SUM(INDIRECT(\"R1C1:R2C1#\",FALSE))",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-12): a # after an R1C1 range, row or column is #VALUE! until a run observes it, as in A1 style, since the observed answers read # after one cell only (INDIRECT-060) and the readings part; recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-091",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: R1C1 text with # after a whole column, C1#, over =SEQUENCE(3) in A1 and 10 in A5 (#REF! if it names no place, 6 if it is the Spill Range of the column\u0027s first cell, 16 if the # is passed over and the column read)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#REF!",
+                                    "kind":  "error",
+                                    "text":  "#REF!",
+                                    "formula":  "=SUM(INDIRECT(\"C1#\",FALSE))",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-12): a # after an R1C1 range, row or column is #VALUE! until a run observes it, since the observed answers read # after one cell only (INDIRECT-060) and the readings part; recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-092",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: A1 text with # after a range, A1:A2#, over =SEQUENCE(3) in A1 (#REF! if it names no place, as the intersection does, INDIRECT-021, or if it is A1 joined to A2\u0027s Spill Range, A1:(A2#), since A2 lies in A1\u0027s spill and spills nothing; 6 if it is the Spill Range of the range\u0027s first cell; 3 if the # is passed over and the range read). #REF! here does not tell no place from the join; INDIRECT-096 does",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#REF!",
+                                    "kind":  "error",
+                                    "text":  "#REF!",
+                                    "formula":  "=SUM(INDIRECT(\"A1:A2#\"))",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-12): a # after an A1 range, row or column is #VALUE! until a run observes it, as in R1C1 style, since the observed answers read # after one cell only (INDIRECT-026, 042) and the readings part; the engine answered #REF! before, as text that goes on past its Reference; recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-094",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: R1C1 text with # after a cell joined to a whole row, R2C2:R3#, over =SEQUENCE(3) in B2 (#REF! if it names no place, as R2C2:R3 does, INDIRECT-058, whether the # is passed over or read after the row, which spills nothing; 6 if it is the Spill Range of B2, the first cell)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#REF!",
+                                    "kind":  "error",
+                                    "text":  "#REF!",
+                                    "formula":  "=SUM(INDIRECT(\"R2C2:R3#\",FALSE))",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-12): a # after an R1C1 range, row or column, whatever the parts joined, is #VALUE! until a run observes it, since the observed answers read # after one cell only (INDIRECT-060) and the readings part; recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-095",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: R1C1 text with a column number past the Sheet\u0027s edge, R2C16385, with A2 holding 7 and XFD2 holding 9 (#REF! if it names no place, as XFE1 does in A1 style, INDIRECT-017; 7 if Excel wraps the column round to column A; 9 if it stops at the last column)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#REF!",
+                                    "kind":  "error",
+                                    "text":  "#REF!",
+                                    "formula":  "=INDIRECT(\"R2C16385\",FALSE)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-12, decided with the user: in R1C1 style, a row or column number past the Sheet\u0027s edge is refused with #VALUE! until Excel is asked, INDIRECT-074 asking it; A1 text past the edge stays #REF!, as XFE1 was observed to be, INDIRECT-017): it could name no place, as XFE1 does, or a place, as an offset past the edge does (INDIRECT-052); this case asks a column, beside INDIRECT-074\u0027s row; recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-096",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: A1 text with # after a range whose second cell spills, A1:A2#, with A1 holding 1 and =SEQUENCE(2) in A2 (4 if it is A1 joined to A2\u0027s Spill Range, A1:(A2#), which is A1:A3; 2 if the # is passed over and the range read; #REF! if it names no place, as the intersection does, INDIRECT-021, or if it is the Spill Range of A1, which spills nothing). With INDIRECT-092, it tells each of the four readings apart",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#REF!",
+                                    "kind":  "error",
+                                    "text":  "#REF!",
+                                    "formula":  "=SUM(INDIRECT(\"A1:A2#\"))",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-12): a # after an A1 range, row or column is #VALUE! until a run observes it, as in R1C1 style, since the observed answers read # after one cell only (INDIRECT-026, 042) and the readings part; recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-097",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: R1C1 text with # after a range whose second cell spills, R1C1:R2C1#, with A1 holding 1 and =SEQUENCE(2) in A2 (4 if it is R1C1 joined to R2C1\u0027s Spill Range, R1C1:(R2C1#), which is A1:A3; 2 if the # is passed over and the range read; #REF! if it names no place, or if it is the Spill Range of A1, which spills nothing). With INDIRECT-090, it tells each of the four readings apart",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#REF!",
+                                    "kind":  "error",
+                                    "text":  "#REF!",
+                                    "formula":  "=SUM(INDIRECT(\"R1C1:R2C1#\",FALSE))",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-12): a # after an R1C1 range, row or column is #VALUE! until a run observes it, as in A1 style, since the observed answers read # after one cell only (INDIRECT-060) and the readings part; recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-098",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: A1 text with # inside a join, A1#:A2, over =SEQUENCE(3) in A1 (#REF! if it names no place, by the engine\u0027s rule generalised from the intersection, INDIRECT-021; 6 if the # binds to the cell before it, as A1# is read, INDIRECT-026, and A1\u0027s Spill Range is joined to A2, (A1#):A2, which is A1:A3; 3 if the # is passed over and the range A1:A2 read)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#REF!",
+                                    "kind":  "error",
+                                    "text":  "#REF!",
+                                    "formula":  "=SUM(INDIRECT(\"A1#:A2\"))",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-12): a # inside an A1 join is #VALUE! until a run observes it, as in R1C1 style, since the observed answers read # after one cell only (INDIRECT-026, 042) and the readings part; the engine answered #REF! before, as text that goes on past its Reference; recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-099",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: R1C1 text with # inside a join, R1C1#:R2C1, over =SEQUENCE(3) in A1 (#REF! if it names no place; 6 if the # binds to the cell before it, as R1C1# is read, INDIRECT-060, and A1\u0027s Spill Range is joined to R2C1, (R1C1#):R2C1, which is A1:A3; 3 if the # is passed over and the range R1C1:R2C1 read)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#REF!",
+                                    "kind":  "error",
+                                    "text":  "#REF!",
+                                    "formula":  "=SUM(INDIRECT(\"R1C1#:R2C1\",FALSE))",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-12): a # inside an R1C1 join is #VALUE! until a run observes it, as in A1 style, since the observed answers read # after one cell only (INDIRECT-060) and the readings part; the engine answered #REF! before, as text that is not R1C1 notation; recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-100",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "INDIRECT to a refused cell does not let IFERROR catch it: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001); what IFERROR(INDIRECT(\"B1\"),0) gives is asked",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  6,
+                                    "kind":  "number",
+                                    "number":  "6",
+                                    "text":  "6",
+                                    "formula":  "=IFERROR(INDIRECT(\"B1\"),0)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND\u0027s fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell through INDIRECT is refused, where IFERROR gave 0 before"
+                  },
+                  {
+                      "id":  "INDIRECT-101",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: R2C2:C3 is the cell\u0027s row across the columns the parts span, B2:C2, two columns, as INDIRECT-075\u0027s sum is read; the whole of row 2, which that sum does not rule out, would be 16384",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  2
+                                   },
+                      "engineExpect":  {
+                                           "value2":  2
+                                       },
+                      "excel":  {
+                                    "value2":  2,
+                                    "kind":  "number",
+                                    "number":  "2",
+                                    "text":  "2",
+                                    "formula":  "=COLUMNS(INDIRECT(\"R2C2:C3\",FALSE))",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "INDIRECT-102",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: R3:R2C2 is the rows the parts span down the cell\u0027s column, B2:B3, one column, as INDIRECT-076\u0027s sum is read; the whole of rows 2 and 3, which that sum does not rule out, would be 16384",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  1
+                                   },
+                      "engineExpect":  {
+                                           "value2":  1
+                                       },
+                      "excel":  {
+                                    "value2":  1,
+                                    "kind":  "number",
+                                    "number":  "1",
+                                    "text":  "1",
+                                    "formula":  "=COLUMNS(INDIRECT(\"R3:R2C2\",FALSE))",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "INDIRECT-103",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: R2C2:C3 over numbers on both sides of it in row 2, A2 4000, B2 1, C2 20 and D2 300, sums B2:C2, 21; the whole of row 2 would be 4321, and B2 alone 1",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  21
+                                   },
+                      "engineExpect":  {
+                                           "value2":  21
+                                       },
+                      "excel":  {
+                                    "value2":  21,
+                                    "kind":  "number",
+                                    "number":  "21",
+                                    "text":  "21",
+                                    "formula":  "=SUM(INDIRECT(\"R2C2:C3\",FALSE))",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ]
+                  },
+                  {
+                      "id":  "INDIRECT-104",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: R1C1 text joining a whole column to a cell, C3:R2C2, the order no run has asked; the column part could take the cell\u0027s row, as a whole row joined to a cell takes its column (INDIRECT-076), and sum B2:C2, 1.333, or the text could have to give its rows before its columns, as a cell joined to a whole row names no place (INDIRECT-058), and be #REF!",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#REF!",
+                                    "kind":  "error",
+                                    "text":  "#REF!",
+                                    "formula":  "=SUM(INDIRECT(\"C3:R2C2\",FALSE))",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0124 (2026-10-14, after run 18a): a whole column joined to a cell in R1C1 text is #VALUE! until a run observes it, since run 18a read a cell joined to a whole column and a whole row joined to a cell as places (INDIRECT-075, 076) and a cell joined to a whole row as none (INDIRECT-058), and the readings of this order part; the engine answered #REF! before, as parts of two kinds joined; recorded, so that a run reads Excel\u0027s answer"
+                  },
+                  {
+                      "id":  "INDIRECT-105",
+                      "area":  "indirect",
+                      "source":  "uncertain",
+                      "description":  "Engine\u0027s answer, Excel to be asked: R2:R3C2:C3, rows joined and then columns joined, is text that goes on past an R1C1 Reference and names no place, #REF!, as other text that is not R1C1 notation is (INDIRECT-035); read as rows 2 to 3 across columns 2 to 3, which INDIRECT-075 and 076 would also give, it would sum B2:C3, 46.333",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#REF!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#REF!"
+                                       },
+                      "excel":  {
+                                    "value2":  46.333,
+                                    "kind":  "number",
+                                    "number":  "46.332999999999998",
+                                    "text":  "46.333",
+                                    "formula":  "=SUM(INDIRECT(\"R2:R3C2:C3\",FALSE))",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#REF!\", Excel 46.333 (number)"
+                                      ]
+                  },
+                  {
+                      "id":  "ISERROR-011",
+                      "area":  "iserror",
+                      "source":  "uncertain",
+                      "description":  "ISERROR does not read a refused cell as an error: B1 is MROUND(0.15,0.1), refused, which Excel answered 0.2 (MROUND-003); what ISERROR(B1) gives is asked",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  false,
+                                    "kind":  "boolean",
+                                    "text":  "FALSE",
+                                    "formula":  "=ISERROR(B1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND\u0027s fractional multiple is refused (ADR-0047), and a Formula that reads the refused cell is refused, where ISERROR gave TRUE before"
+                  },
+                  {
+                      "id":  "TABLE-024",
+                      "area":  "linked-tables",
+                      "source":  "uncertain",
+                      "description":  "Refused by decision, and recorded so that Excel is asked: a declared table\u0027s bare name typed, which Excel reads through INDIRECT as the table\u0027s data (2 columns, INDIRECT-053); ExSheet offers no typed bare table name, so it is a Refused Formula that shows #NAME?, which no Formula catches, and a cell that reads it is refused (2026-10-13, decided with the user)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#NAME?"
+                                       },
+                      "excel":  {
+                                    "value2":  2,
+                                    "kind":  "number",
+                                    "number":  "2",
+                                    "text":  "2",
+                                    "formula":  "=COLUMNS(Positions)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0049 (rule 2: a Linked Table is read by key, never by position, and a whole column by name; 2026-10-12, decided with the user: a declared Linked Table\u0027s bare name through INDIRECT stays #VALUE!, in either style): a table\u0027s bare name typed is not offered and is #NAME?; recorded, so that a run reads Excel\u0027s answer beside INDIRECT-053"
+                  },
+                  {
+                      "id":  "PMT-043",
+                      "area":  "pmt",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: a rate below a double\u0027s normal numbers (whether Excel keeps such a number typed has not been observed either): the readings\u0027 products of the rate hold a few bits, and they give -2000, the exact payment rounded once, 0 or #NUM! (Search.cs --pmt-show). Run 18a\u0027s pass could not enter the Formula through COM (0x800A03EC); the keys pass asks it (docs/specs/exsheet/run-18/area-oracle.md)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "Excel would not enter =PMT(1E-320,0.5,1000) (Exception from HRESULT: 0x800A03EC)"
+                                },
+                      "differences":  [
+                                          "Excel would not enter =PMT(1E-320,0.5,1000) (Exception from HRESULT: 0x800A03EC)"
+                                      ]
+                  },
+                  {
+                      "id":  "REF-015",
+                      "area":  "references",
+                      "source":  "uncertain",
+                      "description":  "A Reference to a refused cell in a branch not taken refuses the Formula, as one to a cycle makes it #CIRC!: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001); what IF(TRUE,1,B1) gives is asked",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  1,
+                                    "kind":  "number",
+                                    "number":  "1",
+                                    "text":  "1",
+                                    "formula":  "=IF(TRUE,1,B1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND\u0027s fractional multiple is refused (ADR-0047), and a Formula whose text names a refused cell is refused whether or not the branch naming it is taken, as #CIRC! is (ADR-0047)"
+                  },
+                  {
+                      "id":  "SEQUENCE-009",
+                      "area":  "sequence",
+                      "source":  "uncertain",
+                      "description":  "A Spill Range read through a refused Anchor is refused, not #REF!: B1 is MROUND(6.05,0.1), refused, which Excel answered 6 (MROUND-001), and spills nothing; what IFERROR(SUM(B1#),0) gives is asked",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  6,
+                                    "kind":  "number",
+                                    "number":  "6",
+                                    "text":  "6",
+                                    "formula":  "=IFERROR(SUM(B1#),0)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047 (2026-10-12, decided with the user: a refusal is never caught, anywhere): MROUND\u0027s fractional multiple is refused (ADR-0047), and a Formula that reads the refused Anchor through A1# is refused, where IFERROR caught the #REF! of an Anchor that spills nothing and gave 0 before"
+                  }
+              ]
+}

@@ -810,7 +810,7 @@
     },
     {
       "id": "INDIRECT-101",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R2C2:C3 is the cell's row across the columns the parts span, B2:C2, two columns, as INDIRECT-075's sum is read; the whole of row 2, which that sum does not rule out, would be 16384",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=COLUMNS(INDIRECT(\"R2C2:C3\",FALSE))"},
       "check": "ZZ1000",
@@ -818,7 +818,7 @@
     },
     {
       "id": "INDIRECT-102",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R3:R2C2 is the rows the parts span down the cell's column, B2:B3, one column, as INDIRECT-076's sum is read; the whole of rows 2 and 3, which that sum does not rule out, would be 16384",
       "cells": {"A2": "B2", "A3": "B3", "A4": "George", "A5": "5", "B2": "1.333", "B3": "45", "B4": "10", "B5": "62", "ZZ1000": "=COLUMNS(INDIRECT(\"R3:R2C2\",FALSE))"},
       "check": "ZZ1000",
@@ -826,7 +826,7 @@
     },
     {
       "id": "INDIRECT-103",
-      "source": "uncertain",
+      "source": "observed",
       "description": "Engine's answer, Excel to be asked: R2C2:C3 over numbers on both sides of it in row 2, A2 4000, B2 1, C2 20 and D2 300, sums B2:C2, 21; the whole of row 2 would be 4321, and B2 alone 1",
       "cells": {"A2": "4000", "B2": "1", "C2": "20", "D2": "300", "ZZ1000": "=SUM(INDIRECT(\"R2C2:C3\",FALSE))"},
       "check": "ZZ1000",
