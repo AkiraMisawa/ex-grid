@@ -277,9 +277,9 @@
         "samples/ExGrid.DemoPages/"
       ],
       "record": {
-        "commit": "885bfb98dd92a1e81e905b651d03e216afa24769",
-        "tag": "verified/2026-10-17-linux-mudblazor-floor",
-        "path": "verification/2026-10-17-linux-mudblazor-floor/report.md",
+        "commit": "f6b5e8fe6c4b87d077200616d305bdd87a723aba",
+        "tag": "verified/2026-10-18-linux-mudblazor-floor",
+        "path": "verification/2026-10-18-linux-mudblazor-floor/report.md",
         "verdict": "pass",
         "versions": [
           "9.6.0",
@@ -291,7 +291,7 @@
         ]
       },
       "laterRecords": [],
-      "note": "The Wrappers' MudBlazor floor run of Step 4 and the layer-2 runs across the declared range beside it (ADR-0205's notes of 2026-10-12): automated, made once by a person on a desktop with Chrome and Edge installed, and carried forward by its record while the Wrappers and the demo pages are unchanged. (2026-10-12, decided with the user: \"A MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only. The floor run (layer 3 at 9.6.0) holds while its paths are unchanged.\") (2026-10-12, decided with the user: an unlisted version is not asked for.) (2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own, recorded in a directory of its own and tagged by it, and this entry names its record besides the floor record.) Its record goes in 'laterRecords'. Made on 2026-10-17 at 885bfb98 on Linux (WSL2) with Chrome and Edge installed (verification/2026-10-17-linux-mudblazor-floor/). It replaces the record made on 2026-10-15 at 0399f391 (verification/2026-10-15-linux-mudblazor-floor/), which no longer held once samples/ExGrid.DemoPages/SheetCases.cs changed. Not the floor record: verification/2026-10-12-linux-mudblazor-floor/ (claude/mudblazor-range-floor) is a bisection on Playwright's bundled Chromium, and does not discharge it."
+      "note": "The Wrappers' MudBlazor floor run of Step 4 and the layer-2 runs across the declared range beside it (ADR-0205's notes of 2026-10-12): automated, made once by a person on a desktop with Chrome and Edge installed, and carried forward by its record while the Wrappers and the demo pages are unchanged. (2026-10-12, decided with the user: \"A MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only. The floor run (layer 3 at 9.6.0) holds while its paths are unchanged.\") (2026-10-12, decided with the user: an unlisted version is not asked for.) (2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own, recorded in a directory of its own and tagged by it, and this entry names its record besides the floor record.) Its record goes in 'laterRecords'. Made on 2026-10-18 at f6b5e8fe, the head of release/0.1 before 0.1.0-rc.1, on Linux (WSL2, headed under xvfb) with Chrome and Edge installed (verification/2026-10-18-linux-mudblazor-floor/). It replaces the record made on 2026-10-17 at 885bfb98, which no longer held: the Wrappers' public API lists and two ExSheet.MudBlazor files changed after it."
     }
   ]
 }
