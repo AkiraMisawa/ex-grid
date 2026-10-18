@@ -156,4 +156,41 @@ public class InputOrderTests
         Assert.Equal("two", await second);
         Assert.Equal([1, 2], _answered);
     }
+    [Fact] // ADR-0240 §3: the flow of the input under way is named inside it, and to no later input and no work that outlives it
+    public async Task ADR0240_the_flow_names_the_input_under_way_and_no_other()
+    {
+        var order = NewOrder();
+        Assert.Null(order.Flow);
+        object? first = null;
+        object? second = null;
+        var outliving = new TaskCompletionSource();
+        Task? leftBehind = null;
+        object? seenAfterward = new();
+        await order.RunAsync(1, () =>
+        {
+            first = order.Flow;
+            leftBehind = LaterAsync();
+            return Task.CompletedTask;
+
+            async Task LaterAsync()
+            {
+                await outliving.Task;
+                seenAfterward = order.Flow;
+            }
+        });
+        await order.RunAsync(2, async () =>
+        {
+            await Task.Yield();
+            second = order.Flow;
+            outliving.SetResult();
+            await leftBehind!;
+        });
+
+        Assert.NotNull(first);
+        Assert.NotNull(second);
+        Assert.NotSame(first, second);
+        // Work input 1 started and left behind runs inside input 2's handling, but is not its flow.
+        Assert.Null(seenAfterward);
+        Assert.Null(order.Flow);
+    }
 }

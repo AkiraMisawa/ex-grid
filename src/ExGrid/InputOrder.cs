@@ -46,6 +46,12 @@ internal sealed class InputOrder
     /// handler it raised, or anything those call.</summary>
     public bool InFlow => _running is { } token && ReferenceEquals(_flow.Value, token);
 
+    /// <summary>The handling under way, when this runs inside its flow; null outside every input's flow.
+    /// Names the input's flow to work it starts that outlives a call (a commit), so that what that work
+    /// is asked for later from inside the same flow is told apart from what another input, or no input,
+    /// asks for.</summary>
+    public object? Flow => InFlow ? _running : null;
+
     /// <summary>Whether no input is waiting or being handled.</summary>
     public bool Idle => _running is null && _waiting.Count == 0 && _unnumbered.Count == 0;
 
