@@ -291,9 +291,9 @@ could depend on a Value, nothing spills (ADR-0125, 2026-10-13). The refusals:
   the divisor added in an x87 register rounded to nearest and the sum stored as a double, 0 where that
   double is the divisor itself. In R1C1 text, a cell joined to a whole column is the cell's row across
   the columns they span (`R2C2:C3` is B2:C2), and a whole row joined to a cell the rows they span down
-  the cell's column (`R3:R2C2` is B2:B3); Excel's sums do not tell these extents from the whole rows,
-  and INDIRECT-101 to 103 ask them. A whole column joined to a cell (`C3:R2C2`) is `#VALUE!` until a
-  run observes it, since its readings part.
+  the cell's column (`R3:R2C2` is B2:B3), extents the oracle run of 2026-10-18 confirmed
+  (INDIRECT-101 to 103). A whole column joined to a cell (`C3:R2C2`) names no place, `#REF!`
+  (INDIRECT-104), and parts are joined left to right, so `R2:R3C2:C3` is B2:C3 (INDIRECT-105).
 - **Answered as the seventeenth Windows run read Excel.** `MOD` answers a quotient of 2^27 or more, and
   is `#NUM!` from 1,125,900,000,000, the limit a Microsoft 365 user reported, as the area pass of
   2026-10-12 read Excel on both sides of it (MOD-010 to 016). `LARGE`, and `AGGREGATE`'s 14, round a
@@ -400,19 +400,14 @@ could depend on a Value, nothing spills (ADR-0125, 2026-10-13). The refusals:
   run. `#REF!` too by that rule, though no case asks it: other A1 text that goes on past its
   Reference (the engine's rule, generalised from the intersection), a row past 1048576 in A1 style, as
   `XFE1`'s column is *(2026-10-12, decided with the user: A1 text past the Sheet's edge stays
-  `#REF!`)*, and other text that is not R1C1 notation read in R1C1 style, as `B3` is. `#VALUE!` until
-  a run observes them, where the observed answers leave the readings apart: R1C1 text with a row or
-  column number 0 (`R0C2`); a row or column number past the Sheet's edge (`R1048577C2`, `R2C16385`),
-  which could name no place, as `XFE1` does in A1 style, or a place, as an offset past the edge does
-  *(2026-10-12, decided with the user: refused until Excel is asked, while A1 text past the edge stays
-  `#REF!`, as `XFE1` was observed to be)*; an offset past the Sheet's edge, which Excel reads as a
-  place but which no run has shown wrapped round to the far side or stopped at the edge; and, in
-  either style, `#` after a range, a row or a column, whatever the parts joined (`A1:A2#`, `A:A#`,
-  `R2C2:R3C2#`, `R3#`, `C2#`, `R2C2:R3#`), which could name no place, the first cell's Spill Range,
-  the cells themselves or the first cell joined to the second's Spill Range; and `#` inside a join,
-  after its first part (`A1#:A2`, `R1C1#:R2C1`), which could name no place, the first cell's Spill
-  Range joined to the second part, as `A1#` is read, or the cells themselves with the `#` passed over.
-  Another Sheet's name is judged first, so `Sheet2!A1#:A2` is `#REF!`. `#VALUE!` by decision, in
+  `#REF!`)*, and other text that is not R1C1 notation read in R1C1 style, as `B3` is. `#REF!` too, as the
+  oracle run of 2026-10-18 read Excel: R1C1 text with a row or column number 0 (`R0C2`) or past the
+  Sheet's edge (`R1048577C2`, `R2C16385`), as `XFE1` is in A1 style; and, in either style, `#` after a
+  range, a row or a column, whatever the parts joined (`A1:A2#`, `A:A#`, `R2C2:R3C2#`, `R3#`, `C2#`,
+  `R2C2:R3#`), and `#` inside a join, after its first part (`A1#:A2`, `R1C1#:R2C1`). An R1C1 offset
+  past the Sheet's edge wraps round to the far side (from C2, `R[-5]C[-1]` is B1048573, and
+  `R[1048575]C[-1]` B1), as that run read Excel; an offset as long as the Sheet or longer, which
+  Excel's own R1C1 notation cannot write, names no place, `#REF!`. Another Sheet's name is judged first, so `Sheet2!A1#:A2` is `#REF!`. `#VALUE!` by decision, in
   either style: a declared Linked Table's bare name (`INDIRECT("Positions")`), which Excel reads as
   the table's data, every column and every row without the header. A Formula could then read the
   table by position, and a Linked Table is read by key, never by position (ADR-0049's rule 2)

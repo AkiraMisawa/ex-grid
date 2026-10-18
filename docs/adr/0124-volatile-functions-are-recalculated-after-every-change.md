@@ -150,3 +150,21 @@ so the extent is the engine's reading, put to the next run (INDIRECT-101 to 103)
 `C3:R2C2`, stays `#VALUE!` until a run observes it: its column part could take the cell's row, as a row part takes a
 cell's column, or the text could name no place, as a cell joined to a whole row does (INDIRECT-058, 104). Two joins,
 `R2:R3C2:C3`, is text that is not R1C1 notation, `#REF!` (INDIRECT-105 asks it).)*
+
+*(2026-10-18, after the oracle run of that date (`ExcelOracle/results-2026-10-18-rc1-com-en-US.json`, Excel
+16.0.20430.20182; decided with the user: follow Excel wherever this ADR refused only until Excel was asked):
+**every form this ADR left at `#VALUE!` until a run observed it has been observed, and `INDIRECT` reads it as
+Excel does.** In R1C1 style a row or column number 0, or one past the Sheet's edge, names no place, `#REF!`
+(INDIRECT-073, 074, 095), as `XFE1` does in A1 style; an offset past the edge wraps round to the far side, so
+`R[-5]C[-1]` from C2 is B1048573 and `R[1048575]C[-1]` from C2 is B1 (INDIRECT-082 to 084; INDIRECT-052's 0
+was B1048573, blank there). An offset as long as the Sheet or longer, which Excel's own R1C1 notation cannot
+write and no run has asked, names no place, read by the rule the number past the edge settles. The extents the
+note of 2026-10-14 read are Excel's: `R2C2:C3` is B2:C2 and `R3:R2C2` B2:B3, not the whole rows (INDIRECT-101
+to 103). A whole column joined to a cell, `C3:R2C2`, names no place, `#REF!` (INDIRECT-104). Two joins are not
+text that is not R1C1 notation, as that note read them: Excel's `SUM(INDIRECT("R2:R3C2:C3",FALSE))` is 46.333
+(INDIRECT-105), so parts are joined left to right, each join by the rule above, `R2:R3C2` B2:B3 and that
+joined to column C, B2:C3; a third join and more follow the same rule. In either style, `#` after a range, a
+row or a column, whatever the parts joined, and `#` inside a join, name no place, `#REF!` (INDIRECT-090 to 092,
+094, 096 to 099); INDIRECT-096 and 097, whose second cell spills, rule out every reading but no place. A
+declared Linked Table's bare name stays `#VALUE!` by decision, as the note of 2026-10-12 says; the R1C1 number
+past the edge, a Known limitation of `0.1.0` by that note (ADR-0202), is one no longer.)*
