@@ -116,8 +116,10 @@ public class ShippedStylesheetTests
         // ADR-0240 section 2: the capture-phase click, dblclick and contextmenu on the root, which number a
         // click on a control of the grid's own that claims it, and hold it in its place while the gate
         // holds input (the entry ADR-0021 gains with ticket 02 of the Input Order), and the capture-phase
-        // submit, which numbers a form of the grid's own submitted (ADR-0240 section 4).
-        string[] allowed = ["blur", "change", "change", "click", "clipboardchange", "compositionend", "compositionend", "compositionstart", "contextmenu", "copy", "copy", "cut", "dblclick", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange", "submit"];
+        // submit and focus on the window, filtered to this root, which number a form of the grid's own
+        // submitted and a popover's sentinel focused (ADR-0240 section 4): Blazor hears both on the
+        // document in the capture phase, ahead of any listener on the root.
+        string[] allowed = ["blur", "change", "change", "click", "clipboardchange", "compositionend", "compositionend", "compositionstart", "contextmenu", "copy", "copy", "cut", "dblclick", "ex-press-handed-on", "focus", "focus", "focusout", "input", "keydown", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange", "submit"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
@@ -616,7 +618,10 @@ public class ShippedStylesheetTests
 
         // Nothing measured, nothing on the document or the window.
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects"), handOn.Value + heard.Value);
-        Assert.DoesNotMatch(new Regex(@"window\.addEventListener|window\.dispatchEvent|document\.dispatchEvent|document\.addEventListener\('ex-"), script.Text);
+        // The window hears only a form's submission and a sentinel's focus, ahead of Blazor's document
+        // listener for both (ADR-0240 section 4), and only those whose target is the instance's own.
+        Assert.DoesNotMatch(new Regex(@"window\.addEventListener\('(?!(submit|focus)', onClaimedAhead, true\))|window\.dispatchEvent|document\.dispatchEvent|document\.addEventListener\('ex-"), script.Text);
+        Assert.Matches(new Regex(@"const onClaimedAhead = \(event\) => \{\s*if \(!root \|\| !\(event\.target instanceof Node\) \|\| !root\.contains\(event\.target\)\) \{\s*return;"), script.Text);
         // And no state outside an instance: the module's top-level statements are attach, and the
         // stamp the grid reads before it (ADR-0123), which holds nothing; so everything above lives
         // in one instance's closure and no instance keeps another's.
@@ -1164,7 +1169,9 @@ public class ShippedStylesheetTests
         Assert.Contains("core.invokeMethodAsync('OnHeldInputsRefusedAsync', nextInput(true))", script, StringComparison.Ordinal);
         // The keys, submissions and sentinel focus a popover answers itself are told, so moves wait on numbers.
         Assert.Contains("claimOf(event.target, 'keydown') !== null ? tellClaim('keydown')", script, StringComparison.Ordinal);
-        Assert.Contains("root.addEventListener('submit', onClaimedEvent, true);", script, StringComparison.Ordinal);
+        // Heard on the window in the capture phase, ahead of Blazor's document listener for both.
+        Assert.Contains("window.addEventListener('submit', onClaimedAhead, true);", script, StringComparison.Ordinal);
+        Assert.Contains("window.addEventListener('focus', onClaimedAhead, true);", script, StringComparison.Ordinal);
         Assert.Contains("tellClaim('focus');", script, StringComparison.Ordinal);
     }
 

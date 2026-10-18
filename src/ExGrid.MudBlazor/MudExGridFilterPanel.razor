@@ -458,10 +458,22 @@
             _chosen!.Remove(value);
     }
 
+    // The answer Apply refuses, the panel standing (FilterPanelChoices.CanApply, ticket 76).
+    private static readonly FilterSpec NothingToApply = new([new FilterClause(FilterOperator.In, Values: [])]);
+
+    // Every submission is handed to Apply, even one it will refuse: the form claims its submission
+    // (data-ex-claims), so the number the grid's script told it by is taken by Apply's handling in its
+    // place in the Input Order, and a key typed after an Enter that applied nothing does not wait on it
+    // (ADR-0240 section 4). An answer that cannot be applied — nothing ticked, a value not yet given,
+    // the values still on their way — goes as the one Apply refuses, never as a condition left
+    // incomplete, which would read as no filter at all.
     private void Apply()
     {
         if (!CanApply)
+        {
+            Context.Apply(NothingToApply);
             return;
+        }
         Context.Apply(_chosen is not null && _domain is { IsTooMany: false } domain
             ? ValueListAnswer(domain, _chosen)
             : FilterPanelChoices.FromConditions(

@@ -1551,6 +1551,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             && root.contains(active) && active.closest(awaitingMove.into) !== null;
     };
 
+    // A close answered with its popover still standing and DOM focus still inside it.
+    const closeDeclined = () => awaitingMove?.closes instanceof Element && awaitingMove.closes.isConnected
+        && awaitingMove.closes.contains(document.activeElement);
+
     // The editor the answer opened, once its element is there — the render that made it
     // and the answer travel separately, and the answer can arrive first. Of the editor
     // surfaces, the one holding DOM focus: the Formula Bar when the user was typing there,
@@ -1665,7 +1669,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     }
                     popoverReady = true;
                 }
-                if (!moved()) {
+                // A close the answer did not make — a filter that cannot be applied, an Escape the
+                // popover's contents kept — leaves the popover standing with the keyboard still in it,
+                // and the keys after it are the popover's, where they were typed. Any other move that
+                // has not come will not.
+                if (!moved() && !closeDeclined()) {
                     keyboardMissed = true;
                 }
                 if (handOff === 'popover' && !handedOver() && !ownPopoverOpen()) {
@@ -2850,11 +2858,6 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // decisions about focus made in script (ADR-0021). Heard in the capture phase, where the
     // field's own focus, which does not bubble, is heard too.
     const onFocused = (event) => {
-        // A popover's sentinel hands the keyboard on from its Blazor handler: its focus is numbered and
-        // told as it goes there (ADR-0240 section 4), and a key landing on it waits on that number.
-        if (core && claimOf(event.target, 'focus') !== null) {
-            tellClaim('focus');
-        }
         const field = keyFieldOf();
         if (field === null) {
             return;
@@ -3768,7 +3771,26 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     root.addEventListener('click', onClaimedEvent, true);
     root.addEventListener('dblclick', onClaimedEvent, true);
     root.addEventListener('contextmenu', onClaimedEvent, true);
-    root.addEventListener('submit', onClaimedEvent, true);
+    // A form's submission and a sentinel's focus are events Blazor counts as not bubbling, and hears
+    // on the document in the capture phase — before any listener on the root, so a telling made there
+    // reached the core after the handler had run, unnumbered, and the number told behind it was owed
+    // until another telling voided it. They are heard on the window, in the capture phase, which the
+    // browser runs before the document's: only those whose target is this instance's own.
+    const onClaimedAhead = (event) => {
+        if (!root || !(event.target instanceof Node) || !root.contains(event.target)) {
+            return;
+        }
+        if (event.type === 'submit') {
+            onClaimedEvent(event);
+        } else if (core && claimOf(event.target, 'focus') !== null) {
+            // A popover's sentinel hands the keyboard on from its Blazor handler: its focus is numbered
+            // and told as it goes there (ADR-0240 section 4), and a key landing on it waits on that
+            // number.
+            tellClaim('focus');
+        }
+    };
+    window.addEventListener('submit', onClaimedAhead, true);
+    window.addEventListener('focus', onClaimedAhead, true);
 
     // The clipboard (ADR-0005) — the fourth allowlist entry (ADR-0021). Both events
     // fire on the focused root — verified on the real Chrome: a non-editable,
@@ -4771,7 +4793,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.removeEventListener('click', onClaimedEvent, true);
             root.removeEventListener('dblclick', onClaimedEvent, true);
             root.removeEventListener('contextmenu', onClaimedEvent, true);
-            root.removeEventListener('submit', onClaimedEvent, true);
+            window.removeEventListener('submit', onClaimedAhead, true);
+            window.removeEventListener('focus', onClaimedAhead, true);
             root.removeEventListener('ex-press-handed-on', onPressHandedOn);
             // A press on another grid still waiting for its turn here is let go: that grid's core
             // hands it over rather than wait for keys this grid will never hand on.

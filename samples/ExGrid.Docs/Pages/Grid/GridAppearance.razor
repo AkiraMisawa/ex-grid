@@ -169,6 +169,13 @@
             A third: a button that closes its panel — OK, Apply, Cancel — carries the class
             <code>ex-popover-closes</code>, as the built-in and MudBlazor panels' do, so that the keys typed while
             the panel goes wait for the keyboard to land rather than reach a button that is going.
+            A fourth: a control of your Chrome whose event should keep its place among the keys typed around it
+            carries <code>data-ex-claims</code>, naming the events it claims — <code>click</code>,
+            <code>keydown</code>, <code>submit</code> — as the built-in and MudBlazor ones do. Its handler then calls
+            the grid through the context's delegates every time that event comes: a menu resolves the key through
+            <code>ResolveKey</code>, and a filter form hands each submission to <code>Apply</code>, one that cannot
+            be applied as the answer <code>Apply</code> refuses (an <code>In</code> with no values). A claimed
+            event that never reaches the grid leaves the keys after it waiting for the next one.
         </p>
         <p>
             <strong>A frame of your own</strong> outside the grid — a dialog, a toolbar — takes the keyboard through
