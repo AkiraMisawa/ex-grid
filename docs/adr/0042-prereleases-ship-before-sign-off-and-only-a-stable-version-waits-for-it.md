@@ -182,6 +182,13 @@ What this section said before is quoted beside each change.
     candidate's note, held once in `docs/releases/candidate-note.md`: what a candidate promises, and that
     the sign-off is being made against it. The prerelease note opens an alpha's or a beta's, and a
     version without a suffix opens with neither.)*
+    *(2026-10-18, decided with the user: a GitHub release holds 125,000 characters of text, and
+    `0.1.0-rc.1`'s Release Notes did not fit. Its packages reached nuget.org, and then GitHub refused the
+    release, so the Docs Site was not published either. Notes that do not fit are shortened for the
+    release only. They keep, in order, what opens them, the Highlights, Known limitations and a stable
+    version's four blocks ([ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)),
+    and as many of the other sections as fit. Each section left out keeps its heading and links the whole
+    notes at the tagged commit. The notes in the repository and on the Docs Site stay whole.)*
   - **Then the release publishes the Docs Site** ([ADR-0110](./0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)),
     with the version, the tag and the UTC day the packages were pushed. The site states a version only
     once nuget.org has it.
