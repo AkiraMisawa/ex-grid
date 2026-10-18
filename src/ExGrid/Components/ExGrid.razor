@@ -6637,7 +6637,7 @@
     /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task<ClipboardPayload?> BuildCopyPayloadAsync(bool withHeaders = false, int input = 0)
-        => AnsweredAsync(BuildCopyAsync(withHeaders), input);
+        => AnsweredAsync(() => BuildCopyAsync(withHeaders), input);
 
     private async Task<ClipboardPayload?> BuildCopyAsync(bool withHeaders)
     {
@@ -6709,7 +6709,7 @@
     /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnPasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint = PaintNotTold, int input = 0)
-        => AnsweredAsync(TakePasteStreamsAsync(text, html, paint), input);
+        => AnsweredAsync(() => TakePasteStreamsAsync(text, html, paint), input);
 
     private async Task TakePasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint)
     {
@@ -6997,11 +6997,7 @@
     /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnCopyWriteRejectedAsync(int input = 0)
-    {
-        NotifyCopyRefused(CopyRefusalReason.ClipboardUnavailable);
-        InputAnswered(input);
-        return Task.CompletedTask;
-    }
+        => AnsweredAsync(() => NotifyCopyRefused(CopyRefusalReason.ClipboardUnavailable), input);
 
     /// <summary>
     /// A key the core claimed (ADR-0010). Called from the instance's own capture-phase
@@ -7035,7 +7031,7 @@
         bool fromDescendant = false, string? editorText = null, int editorCaret = -1,
         int editorSelectionEnd = -1, bool editorCaretMoved = false, bool repeat = false, int paint = PaintNotTold,
         int input = 0)
-        => AnsweredAsync(HandleKeyAsync(key, ctrl, shift, alt, meta, metaIsPrimary, fromDescendant, editorText,
+        => AnsweredAsync(() => HandleKeyAsync(key, ctrl, shift, alt, meta, metaIsPrimary, fromDescendant, editorText,
             editorCaret, editorSelectionEnd, editorCaretMoved, repeat, paint), input);
 
     private async Task HandleKeyAsync(
@@ -8978,7 +8974,7 @@
     {
         var input = _doubleClickInput;
         _doubleClickInput = 0;
-        return AnsweredAsync(DoubleClickAsync(e), input);
+        return AnsweredAsync(() => DoubleClickAsync(e), input);
     }
 
     private async Task DoubleClickAsync(MouseEventArgs e)
@@ -10117,6 +10113,7 @@
     public async ValueTask DisposeAsync()
     {
         _disposed = true;
+        _inputOrder?.Dispose();
         // A Find step still out is nobody's any more: the Consumer's search is told to stop
         // (ADR-0055, the fetching Source's rule).
         _findCancellation?.Cancel();

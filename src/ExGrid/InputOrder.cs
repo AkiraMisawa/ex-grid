@@ -73,7 +73,7 @@ internal sealed class InputOrder
     public async Task<T> RunAsync<T>(int input, Func<Task<T>> handling)
     {
         T result = default!;
-        await RunAsync(input, async () => result = await handling());
+        await RunAsync(input, async () => { result = await handling(); });
         return result;
     }
 
@@ -103,14 +103,15 @@ internal sealed class InputOrder
         return waiting.Completion.Task;
     }
 
-    /// <summary>Every input waiting is let go: its handling never runs, and its task ends cancelled.</summary>
+    /// <summary>Every input waiting is let go: its handling never runs, and its task ends at once, as an
+    /// input answered with nothing done (a disposed instance has nothing to do it on).</summary>
     public void Dispose()
     {
         _disposed = true;
         foreach (var waiting in _waiting.Values)
-            waiting.Completion.TrySetCanceled();
+            waiting.Completion.TrySetResult();
         foreach (var waiting in _unnumbered)
-            waiting.Completion.TrySetCanceled();
+            waiting.Completion.TrySetResult();
         _waiting.Clear();
         _unnumbered.Clear();
         _voided.Clear();

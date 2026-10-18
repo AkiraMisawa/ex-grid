@@ -1,3 +1,5 @@
+using Xunit;
+
 namespace ExGrid.Tests;
 
 // ADR-0240: input to one product instance is taken in one order, by number, one input at a time.
@@ -112,7 +114,7 @@ public class InputOrderTests
 
         order.Dispose();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiting);
+        await waiting;
         Assert.Empty(_log);
     }
 
@@ -142,5 +144,16 @@ public class InputOrderTests
 
         Assert.Equal(Enumerable.Range(1, 10_000).Select(n => n.ToString()), _log);
         Assert.Equal(10_000, order.AnsweredUpTo);
+    }
+
+    [Fact] // ADR-0240 §2: a handling that answers a value answers it in its place in the order
+    public async Task ADR0240_a_handling_that_answers_a_value_answers_it_in_order()
+    {
+        var order = NewOrder();
+        var second = order.RunAsync(2, () => Task.FromResult("two"));
+        await order.RunAsync(1, () => Task.FromResult("one"));
+
+        Assert.Equal("two", await second);
+        Assert.Equal([1, 2], _answered);
     }
 }

@@ -77,16 +77,15 @@ public partial class ExGrid<TRow>
     /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnKeyFieldCompositionStartAsync(int input = 0)
-    {
-        if (!_disposed && _editMode == EditMode.None && !_selection.Selection.IsEmpty && !FocusCellIsPainted())
+        => AnsweredAsync(() =>
         {
-            RequestFocusReveal();
-            _suppressRender = false;
-            StateHasChanged();
-        }
-        InputAnswered(input);
-        return Task.CompletedTask;
-    }
+            if (!_disposed && _editMode == EditMode.None && !_selection.Selection.IsEmpty && !FocusCellIsPainted())
+            {
+                RequestFocusReveal();
+                _suppressRender = false;
+                StateHasChanged();
+            }
+        }, input);
 
     /// <summary>
     /// A composition in the Keyboard Field has ended with <paramref name="text"/> — what the IME
@@ -113,7 +112,7 @@ public partial class ExGrid<TRow>
     /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task<bool> OnKeyFieldTextAsync(string text, int paint = PaintNotTold, int input = 0)
-        => AnsweredAsync(TakeKeyFieldTextAsync(text, paint), input);
+        => AnsweredAsync(() => TakeKeyFieldTextAsync(text, paint), input);
 
     private async Task<bool> TakeKeyFieldTextAsync(string text, int paint)
     {

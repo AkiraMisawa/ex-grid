@@ -91,9 +91,10 @@ public partial class ExGrid<TRow>
     /// <returns>A task that completes once the refusal is said.</returns>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnHeldTabRefusedAsync(int input = 0)
-    {
-        if (!_disposed)
+        => AnsweredAsync(() =>
         {
+            if (_disposed)
+                return;
             var words = RefusalWords(KeyRefusalLabelIds.TabBeforeRelease);
             if (!string.IsNullOrWhiteSpace(words))
             {
@@ -101,10 +102,7 @@ public partial class ExGrid<TRow>
                 _suppressRender = false;
                 StateHasChanged();
             }
-        }
-        InputAnswered(input);
-        return Task.CompletedTask;
-    }
+        }, input);
 
     /// <summary>
     /// The Escape with nothing left to dismiss, pressed on the root (ADR-0012, ADR-0070): the

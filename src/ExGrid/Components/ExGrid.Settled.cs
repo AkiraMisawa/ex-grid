@@ -98,31 +98,31 @@ public partial class ExGrid<TRow>
         ShowSettledStamp();
     }
 
-    /// <summary>The input's handling, and then its number answered, whether it succeeded or
-    /// threw: a failure has been reported on its own path, and the mark is not held by it.</summary>
-    private async Task AnsweredAsync(Task handling, int input)
-    {
-        try
-        {
-            await handling;
-        }
-        finally
-        {
-            InputAnswered(input);
-        }
-    }
+    // The Input Order (ADR-0240): the numbered inputs, handled one at a time by number. It tells each
+    // number, in order, once handled or voided (InputAnswered).
+    private InputOrder? _inputOrder;
 
-    /// <summary><see cref="AnsweredAsync(Task, int)"/> for a handling that answers a value.</summary>
-    private async Task<T> AnsweredAsync<T>(Task<T> handling, int input)
+    private InputOrder Inputs => _inputOrder ??= new InputOrder(InputAnswered);
+
+    /// <summary>The input's handling, in its place in the Input Order (ADR-0240): started once every
+    /// input numbered before it has been handled, and finished before any numbered after it starts.
+    /// Its number is then answered, whether it succeeded or threw: a failure has been reported on its
+    /// own path, and the mark is not held by it. An input with no number (0) is handled at once.</summary>
+    private Task AnsweredAsync(Func<Task> handling, int input) => Inputs.RunAsync(input, handling);
+
+    /// <summary><see cref="AnsweredAsync(Func{Task}, int)"/> for a handling that answers a value.</summary>
+    private Task<T> AnsweredAsync<T>(Func<Task<T>> handling, int input) => Inputs.RunAsync(input, handling);
+
+    /// <summary>An input handled at once, with nothing to wait on, in its place in the Input Order.</summary>
+    private Task AnsweredAsync(Action handling, int input)
+        => AnsweredAsync(() => { handling(); return Task.CompletedTask; }, input);
+
+    /// <summary>The input numbered <paramref name="input"/> will not be handled: told of ahead of an
+    /// event that never came. The Input Order moves past it (ADR-0240).</summary>
+    private void InputVoid(int input)
     {
-        try
-        {
-            return await handling;
-        }
-        finally
-        {
-            InputAnswered(input);
-        }
+        if (input > 0)
+            Inputs.Void(input);
     }
 
     /// <summary>Called last in OnAfterRenderAsync, with the renders built when it began: those have
