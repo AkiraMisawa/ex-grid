@@ -565,7 +565,7 @@ test('the pointer leaving the grid stops the auto-scroll (SL-14/SL-15)', async (
     // once the host has said all it will.
     await circuitQuiet();
     const atLeave = await g.locator('.ex-scroller').evaluate((el) => el.scrollTop);
-    // spec-lint: fixed-wait: proves an absence, no further scroll step must arrive once the pointer left; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: the pointer's leaving is no input the gate takes, and the band's steps run on the script's own timer, which the Settled Mark does not cover (ADR-0220, As built); nothing marks that no further step will come
     await page.waitForTimeout(800);
     const afterWait = await g.locator('.ex-scroller').evaluate((el) => el.scrollTop);
     expect(afterWait, 'no runaway scroll after the pointer left (SL-14)').toBe(atLeave);
@@ -574,7 +574,7 @@ test('the pointer leaving the grid stops the auto-scroll (SL-14/SL-15)', async (
     await page.mouse.up();
     await page.mouse.move(box.x + 60, box.y + box.height - 6);
     await circuitQuiet();
-    // spec-lint: fixed-wait: proves an absence, the pointer back in the band with the button up must start no scroll; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: the pointer's return with the button up is no input the gate takes, and the band's steps run on the script's own timer, which the Settled Mark does not cover (ADR-0220, As built); nothing marks that no scroll will start
     await page.waitForTimeout(400);
     expect(await g.locator('.ex-scroller').evaluate((el) => el.scrollTop)).toBe(afterWait);
 });

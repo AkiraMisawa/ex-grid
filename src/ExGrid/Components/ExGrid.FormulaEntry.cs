@@ -114,6 +114,41 @@ public partial class ExGrid<TRow>
         _ => "caret",
     };
 
+    /// <summary>The gate's mode as the edit's surfaces mark it (<c>data-ex-mode</c>, ADR-0230
+    /// section 2), or null while no edit is open. The gate is told its mode a message after the
+    /// render that shows it, and reads the mark meanwhile, so a key typed in that gap is judged in
+    /// the mode on screen.</summary>
+    private string? MarkedMode() => _editMode == EditMode.None ? null : GateMode();
+
+    /// <summary>Which change of the gate's mode <see cref="MarkedMode"/> and the tell
+    /// (<see cref="TellGateAsync"/>) are of (<c>data-ex-mode-version</c>, ADR-0230 section 2): one
+    /// more each time the mode differs from the one last marked or told. The gate takes the mark
+    /// only when it is newer than what it was told, so a render the grid suppressed can never leave
+    /// an older mark to outrank a newer tell.</summary>
+    private int ModeVersion()
+    {
+        var mode = GateMode();
+        if (mode != _modeVersioned)
+        {
+            _modeVersioned = mode;
+            _modeVersion++;
+        }
+        return _modeVersion;
+    }
+
+    /// <summary><see cref="ModeVersion"/> beside <see cref="MarkedMode"/>: null, and no attribute,
+    /// while no edit is open.</summary>
+    private int? ModeMarkVersion() => _editMode == EditMode.None ? null : ModeVersion();
+
+    /// <summary>The text a surface shows in the render that marks <see cref="MarkedMode"/>
+    /// (<c>data-ex-mode-text</c>, ADR-0230 section 2, note of 2026-10-17): the mark is the mode of
+    /// that text, and the gate trusts it only while its field still holds it. Null, and no
+    /// attribute, while no edit is open.</summary>
+    private string? MarkedText(string shown) => _editMode == EditMode.None ? null : shown;
+
+    private string? _modeVersioned;
+    private int _modeVersion;
+
     /// <summary>Whether the listener reports the caret with each input (ADR-0051): only where
     /// completion or pointing is declared, so a grid that declares neither sends nothing more
     /// than before (DC-1).</summary>

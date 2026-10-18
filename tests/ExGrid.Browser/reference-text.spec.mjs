@@ -273,8 +273,9 @@ for (const chrome of ['builtin', 'mud']) {
         // Long past the round trip, the core has rendered the composing text, and the field still
         // draws it itself: no highlight is left over the hidden layer.
         await expect.poll(async () => (await colouring(editor(grid))).text).toBe('=A1&にほ');
-        // spec-lint: fixed-wait: proves an absence: no highlight may come back over the hidden layer once the core renders; the Settled Mark (PR #134, settled(grid)) will replace it
+        // spec-lint: fixed-wait: a composition in the Cell Editor is the field's text, not an input the gate takes, so neither is the core's render of it, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no highlight will come back
         await page.waitForTimeout(400);
+        await circuitQuiet();
         await expectPlain(editor(grid), '=A1&にほ');
         expect(await stretchesOf(editor(grid))).toEqual([]);
 

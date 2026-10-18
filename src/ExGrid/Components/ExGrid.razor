@@ -528,7 +528,7 @@
                                        cell under the live editor. *@
                                     @if (editorChrome is not null)
                                     {
-                                        <div class="@editorClass" style="@pinnedBox" data-ex-cell="@EditorCellAttribute(editorCell)" @onmousedown:stopPropagation>@editorChrome</div>
+                                        <div class="@editorClass" style="@pinnedBox" data-ex-cell="@EditorCellAttribute(editorCell)" data-ex-mode="@MarkedMode()" data-ex-mode-version="@ModeMarkVersion()" data-ex-mode-text="@MarkedText(_editText)" @onmousedown:stopPropagation>@editorChrome</div>
                                     }
                                     else
                                     {
@@ -539,7 +539,7 @@
                                         {
                                             <div class="@referenceTextClass" style="@pinnedBox" data-ex-text="@_editText" data-ex-colours="@EditReferenceColours" aria-hidden="true"><div class="ex-reference-text-line">@_editText</div></div>
                                         }
-                                        <input class="@editorClass" style="@pinnedBox" data-ex-cell="@EditorCellAttribute(editorCell)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @onmousedown:stopPropagation @ref="_editorElement" />
+                                        <input class="@editorClass" style="@pinnedBox" data-ex-cell="@EditorCellAttribute(editorCell)" data-ex-mode="@MarkedMode()" data-ex-mode-version="@ModeMarkVersion()" data-ex-mode-text="@MarkedText(_editText)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @onmousedown:stopPropagation @ref="_editorElement" />
                                     }
                                 }
                             </div>
@@ -548,7 +548,7 @@
                         {
                             @if (editorChrome is not null)
                             {
-                                <div class="@editorClass" style="@editorBox" data-ex-cell="@EditorCellAttribute(editorCell)" @key="EditorLayerKey" @onmousedown:stopPropagation>@editorChrome</div>
+                                <div class="@editorClass" style="@editorBox" data-ex-cell="@EditorCellAttribute(editorCell)" data-ex-mode="@MarkedMode()" data-ex-mode-version="@ModeMarkVersion()" data-ex-mode-text="@MarkedText(_editText)" @key="EditorLayerKey" @onmousedown:stopPropagation>@editorChrome</div>
                             }
                             else
                             {
@@ -556,7 +556,7 @@
                                 {
                                     <div class="@referenceTextClass" style="@editorBox" data-ex-text="@_editText" data-ex-colours="@EditReferenceColours" aria-hidden="true" @key="ReferenceTextLayerKey"><div class="ex-reference-text-line">@_editText</div></div>
                                 }
-                                <input class="@editorClass" style="@editorBox" data-ex-cell="@EditorCellAttribute(editorCell)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
+                                <input class="@editorClass" style="@editorBox" data-ex-cell="@EditorCellAttribute(editorCell)" data-ex-mode="@MarkedMode()" data-ex-mode-version="@ModeMarkVersion()" data-ex-mode-text="@MarkedText(_editText)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
                             }
                         }
                     }
@@ -666,7 +666,7 @@
             </form>
             @if (barChrome is not null)
             {
-                <div class="ex-editor ex-formula-bar-text">@barChrome</div>
+                <div class="ex-editor ex-formula-bar-text" data-ex-mode="@MarkedMode()" data-ex-mode-version="@ModeMarkVersion()" data-ex-mode-text="@MarkedText(FormulaBarText())">@barChrome</div>
             }
             else
             {
@@ -677,7 +677,7 @@
                 {
                     <div class="ex-reference-text ex-reference-text-bar" style="@ReferenceTextBarStyle()" data-ex-text="@BarReferenceText" data-ex-colours="@BarReferenceColours" aria-hidden="true"><div class="ex-reference-text-line">@BarReferenceText</div></div>
                 }
-                <input class="@(FormulaBarBorrowed ? "ex-editor ex-formula-bar-text ex-formula-bar-borrowed" : "ex-editor ex-formula-bar-text")" @bind:get="FormulaBarText()" @bind:set="OnFormulaBarInput" @bind:event="oninput" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="@WordFor(GridLabelIds.FormulaBar)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
+                <input class="@(FormulaBarBorrowed ? "ex-editor ex-formula-bar-text ex-formula-bar-borrowed" : "ex-editor ex-formula-bar-text")" data-ex-mode="@MarkedMode()" data-ex-mode-version="@ModeMarkVersion()" data-ex-mode-text="@MarkedText(FormulaBarText())" @bind:get="FormulaBarText()" @bind:set="OnFormulaBarInput" @bind:event="oninput" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="@WordFor(GridLabelIds.FormulaBar)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
                        @onfocus="_onFormulaBarFocus ??= OnFormulaBarPressedAsync"
                        @ref="_formulaBarElement" />
             }
@@ -8173,7 +8173,7 @@
         try
         {
             _gateTold = GateMode();
-            await _scrollHandle.InvokeVoidAsync("setEditing", _gateTold, ReportsCaret, CycleReference is not null);
+            await _scrollHandle.InvokeVoidAsync("setEditing", _gateTold, ReportsCaret, CycleReference is not null, ModeVersion());
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
@@ -8650,6 +8650,8 @@
     /// </summary>
     private void OnEditorInput(string? text)
     {
+        if (InputOvertaken(text))
+            return;
         _editSurface = EditSurface.Cell;
         TextTyped(text ?? "");
     }
@@ -8744,9 +8746,12 @@
     {
         if (_editMode == EditMode.None)
         {
+            _inputOvertakenBy = null;
             _suppressRender = true;
             return;
         }
+        if (InputOvertaken(text))
+            return;
         _editSurface = EditSurface.Bar;
         TextTyped(text ?? "");
     }

@@ -602,3 +602,8 @@ checked as it is written.
 its layer-3 half still gates. 2026-10-13, decided with the user: `0.1.0`'s notes and the Docs Site name the
 remote browser isolation service, not Citrix: the PC reaches the web through such a service from inside an
 organisation whose desktops run under Citrix, and the service is the likelier cause.)*
+
+*(2026-10-17, ADR-0230 section 1.)* An Escape typed with nothing unanswered that could add a layer
+releases Tab at its keydown, read from the Settled Stamp's `data-ex-escape-leaves`, so a Tab typed at once
+leaves the grid as one typed slowly does. Where the gate cannot know yet, the Tab held behind the Escape is
+refused aloud, and the next Tab leaves.

@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, circuitQuiet, settled } from './fixtures.mjs';
 import { expectKeyboardOn, keyboardIsOn } from './keyboard.mjs';
 
 // Row inspectors on /inspectors (docs/specs/row-inspectors, page A). An Action Column
@@ -70,8 +70,9 @@ async function expectKeyboardIn(page, selector, message) {
     await expect.poll(async () => (await focusedInside(page, selector)) || await keyboardAt(page),
         { message, timeout: 2_000 }).toBe(true);
     // And it stays there: the grid's reclaim, if it comes, comes after the handler.
-    // spec-lint: fixed-wait: proves an absence, the grid's reclaim of the keyboard must not arrive; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: a handler that awaits its dialog leaves the Space or press that opened it unanswered until the dialog closes, so the grid does not settle meanwhile and the Settled Mark cannot stand in (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no reclaim will come
     await page.waitForTimeout(300);
+    await circuitQuiet();
     const still = (await focusedInside(page, selector)) || await keyboardAt(page);
     expect(still, `${message} (still, 300 ms later)`).toBe(true);
 }
@@ -251,8 +252,9 @@ test('RI-13: modal: the marked rows open one after another, and Escape ends the 
     await expectKeyboardIn(page, '.mud-dialog', 'the keyboard is inside the first of the queue');
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
-    // spec-lint: fixed-wait: proves an absence, the queue's next marked inspector must not open after Escape; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: the Escape is the Consumer's dialog's, outside the grid, and the next inspector would be opened by the Consumer's queue, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that none will open
     await page.waitForTimeout(300);
+    await circuitQuiet();
     await expect(dialog).toHaveCount(0);
 });
 
@@ -263,8 +265,8 @@ test('RI-14: Enter on the Inspect cell moves down and opens nothing (ADR-0020)',
     await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c2$/);
     await page.keyboard.press('Enter');
     await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c2$/);
-    // spec-lint: fixed-wait: proves an absence, Enter on the Inspect cell must open no dialog; the Settled Mark (PR #134, settled(grid)) will replace it
-    await page.waitForTimeout(300);
+    await settled(grid(page));
+    await circuitQuiet();
     await expect(page.locator('.mud-dialog')).toHaveCount(0);
 });
 
@@ -278,7 +280,8 @@ test('RI-15: while a modal inspector stands, the grid behind it cannot be presse
     // dialog — never on the row's button underneath.
     const box = await inspectButton(page, 6).boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-    // spec-lint: fixed-wait: proves an absence, the row's inspector must not open under the backdrop; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: the press lands on MudBlazor's backdrop, outside the grid, and the backdrop's close is a click Blazor hears on its own, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that the row's inspector will not open
     await page.waitForTimeout(500);
+    await circuitQuiet();
     await expect(page.locator(`[data-inspector-key="${id(6)}"]`)).toHaveCount(0);
 });

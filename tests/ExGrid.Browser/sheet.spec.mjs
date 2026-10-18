@@ -853,11 +853,10 @@ for (const chrome of ['builtin', 'mud']) {
         await page.keyboard.press('Escape');
         await expect(editor(grid)).toHaveCount(0);
 
-        // Read once the second Escape's answer has long landed: the keyboard left a round trip
+        // Read once the grid has settled, with the second Escape's answer landed: the keyboard left a round trip
         // after it on the Server host.
         await page.keyboard.press('Escape');
-        // spec-lint: fixed-wait: proves an absence: the second Escape's answer must not take the keyboard off the Sheet; the Settled Mark (PR #134, settled(grid)) will replace it
-        await page.waitForTimeout(500);
+        await settled(grid);
         await expectKeyboardOn(grid);
         await expectFocusAt(grid, 'D10');
 
@@ -908,10 +907,9 @@ for (const chrome of ['builtin', 'mud']) {
         await page.keyboard.press('ArrowLeft');
         await expectFocusAt(grid, 'E11');
 
-        // A Tab typed before the Escape's answer is held and dropped (ADR-0010/0021): wait for it.
+        // After keys that only move the Focus, the release is taken at the Escape's keydown, and a Tab
+        // typed at once leaves (ADR-0230 section 1).
         await page.keyboard.press('Escape');
-        // spec-lint: fixed-wait: the Escape's release has no visible state to wait for before the Tab; the Settled Mark (PR #134, settled(grid)) will replace it
-        await page.waitForTimeout(500);
         await page.keyboard.press('Tab');
         await expect(page.locator('#after-sheet')).toBeFocused();
         await expectFocusAt(grid, 'E11');

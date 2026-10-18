@@ -544,6 +544,21 @@ test.describe('on /sheet?chrome=mud', () => {
         });
     }
 
+    test('ADR-0039/ADR-0071/ADR-0210: an Enter typed once held HEX text is shown commits that text', async ({ page }) => {
+        await openFromMenu(page, sheet(page), 'C2');
+        await tab(page, 'Fill').click();
+        await setRoundTrip(150);
+        await formatCells(page).getByRole('button', { name: 'More Colours', exact: true }).click();
+        // Typed before HEX takes the keyboard, the text is held and written by script, which
+        // the browser does not count as typed. The Enter after it is typed natively, and must
+        // still commit that text, as an Enter commits text typed by hand (seen in CI).
+        await page.keyboard.type('#FF0000');
+        const hex = page.locator('.mud-popover-open .mud-picker-color-inputfield input');
+        await expect(hex).toHaveValue(/^#ff0000$/i);
+        await page.keyboard.press('Enter');
+        await expect(formatCells(page).getByRole('radio', { name: 'Red', exact: true })).toBeChecked();
+    });
+
     test('ADR-0039/ADR-0071: More Colours retains RGB and HSL controls and reopens in HEX', async ({ page }) => {
         await openFromMenu(page, sheet(page), 'C2');
         await tab(page, 'Fill').click();

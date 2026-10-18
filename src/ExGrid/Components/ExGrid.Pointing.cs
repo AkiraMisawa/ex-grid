@@ -188,6 +188,28 @@ public partial class ExGrid<TRow>
         _pointBefore = null;
     }
 
+    /// <summary>The text a key carried before the core had heard the input events that typed it
+    /// (AdoptKeyText), or null. Blazor delivers an input event as a message of its own, and on a
+    /// circuit it can reach the core after a key the script sent behind it: <c>=SUM(</c> and Home typed
+    /// at once pointed, and the input event of the <c>(</c>, heard after, ended pointing as typing and
+    /// put <c>=SUM(</c> back (ADR-0230 section 2). Every change of an edit surface's text fires an input
+    /// event, the script's own typing included, and they arrive in order, so the one that brings this
+    /// text arrives, and every one before it is older than the key.</summary>
+    private string? _inputOvertakenBy;
+
+    /// <summary>Whether an input event is one a key has overtaken (<see cref="_inputOvertakenBy"/>):
+    /// one from before the event that brings the key's text, or that event itself. Its text is
+    /// older than the key's, which the core already holds, and the key's own answer may have
+    /// rewritten it since; taken as typing, it would undo that answer.</summary>
+    private bool InputOvertaken(string? text)
+    {
+        if (_inputOvertakenBy is not { } carried)
+            return false;
+        if (string.Equals(text, carried, StringComparison.Ordinal))
+            _inputOvertakenBy = null;
+        return true;
+    }
+
     /// <summary>
     /// A key the gate forwarded while editing, carrying the editor's text and caret
     /// (ADR-0051): the text is the browser's, as the user sees it, and is taken over as the
@@ -203,6 +225,9 @@ public partial class ExGrid<TRow>
         int? carried = caret >= 0 && caret <= text.Length ? caret : null;
         if (!string.Equals(text, _editText, StringComparison.Ordinal))
         {
+            // The key overtook the input events of the typing it carries: they are still on their way
+            // (InputOvertaken).
+            _inputOvertakenBy = text;
             TextTyped(text, carried);
             return;
         }

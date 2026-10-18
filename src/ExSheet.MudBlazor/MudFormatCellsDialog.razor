@@ -436,8 +436,10 @@
                 <MudCheckBox T="bool" Value="Draft.Strikethrough" ValueChanged="Draft.SetStrikethrough" Dense="true" Size="Size.Small"
                              Label="Strikethrough" Class="mud-ex-sheet-format-cells-strikethrough" />
                 @* Excel's Normal font (ADR-0071, 2026-10-02): checking it sets every part of the Font to
-                   its default, and it shows checked while they are. *@
-                <MudCheckBox T="bool" Value="Draft.IsNormalFont" ValueChanged="_normalFont" Dense="true" Size="Size.Small"
+                   its default, and it shows checked while they are. Read-only while checked, as the built-in
+                   Chrome prevents the uncheck: MudCheckBox keeps its own unchecked state when its parameter comes
+                   back unchanged, and would show a Normal font Font as not Normal (ticket 261). *@
+                <MudCheckBox T="bool" Value="Draft.IsNormalFont" ValueChanged="_normalFont" ReadOnly="Draft.IsNormalFont" Dense="true" Size="Size.Small"
                              Label="Normal font" Class="mud-ex-sheet-format-cells-normal-font" />
             </div>
         </div>
@@ -641,7 +643,6 @@
         builder.AddComponentParameter(3, nameof(MudMoreColours.Value), PickerValue(chosen));
         builder.AddComponentParameter(4, nameof(MudMoreColours.ValueChanged), _colourPicked[(int)target]);
         builder.AddComponentParameter(5, nameof(MudMoreColours.ShowAlpha), false);
-        builder.AddComponentParameter(6, nameof(MudMoreColours.ColorPickerMode), ColorPickerMode.HEX);
         builder.AddComponentParameter(7, nameof(MudMoreColours.Variant), Variant.Outlined);
         builder.AddComponentParameter(8, nameof(MudMoreColours.Margin), Margin.Dense);
         builder.AddComponentParameter(9, nameof(MudMoreColours.Class), "mud-ex-sheet-more-colours");

@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, alterPage, circuitQuiet } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage, circuitQuiet, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     sheet, openSheet, cell, clickCell, editor, nameBox, at,
@@ -523,20 +523,15 @@ for (const chrome of ['builtin', 'mud']) {
             await page.locator('#before-grid').focus();
             await page.keyboard.press('Tab');
             await expect(keyField(grid)).toBeFocused();
-            // Escape releases Tab (ADR-0012). The release is the Escape's answer, and a Tab typed before
-            // it is held behind the Escape and dropped (script cannot move DOM focus for it,
-            // ADR-0010/0021), on WebAssembly as on a circuit: the wait below stands until that is fixed.
+            // Escape releases Tab (ADR-0012), and with nothing unanswered that could add a layer the gate
+            // takes the release at the keydown, so a Tab typed at once leaves (ADR-0230 section 1).
             await page.keyboard.press('Escape');
-            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
-            await page.waitForTimeout(500);
             await page.keyboard.press('Tab');
             await expect(page.locator('#after-grid')).toBeFocused();
 
             await page.keyboard.press('Shift+Tab');
             await expect(keyField(grid)).toBeFocused();
             await page.keyboard.press('Escape');
-            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
-            await page.waitForTimeout(500);
             // From the field, Shift+Tab leaves the grid: the root is no tab stop to land on and pass
             // the keyboard straight back (ADR-0080).
             await page.keyboard.press('Shift+Tab');
@@ -553,8 +548,6 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Escape');
             await expect(editor(grid)).toHaveCount(0);
             await page.keyboard.press('Escape');
-            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
-            await page.waitForTimeout(500);
             await expect(keyField(grid)).toBeFocused();
 
             // The keyboard leaves the grid for a control of the page's, and comes back by Tab.
@@ -574,9 +567,10 @@ for (const chrome of ['builtin', 'mud']) {
             const grid = sheet(page);
             await surround(page, '.ex-grid:has(> .ex-formula-bar)');
             await pressAt(grid, 'D10');
+            // A press can engage an Interactive cell, so an Escape typed before its answer is held: the
+            // press's outcome is read first (ADR-0230 section 1).
+            await settled(grid);
             await page.keyboard.press('Escape');
-            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
-            await page.waitForTimeout(500);
             await page.keyboard.press('Tab');
             await expect(page.locator('#after-grid')).toBeFocused();
 
@@ -695,8 +689,7 @@ test('ADR-0080 / ADR-0035 / ED-30: over a cell that does not edit the Keyboard F
     const client = await page.context().newCDPSession(page);
     try {
         await compose(client, 'か', 'かな');
-        // spec-lint: fixed-wait: proves an absence — no composition, value or Cell Editor may arrive on the read-only field within the window, and no state marks that nothing came; the Settled Mark (PR #134, settled(grid)) will replace it
-        await page.waitForTimeout(300);
+        await settled(grid);
         expect(await fieldState(grid)).toEqual({ value: '', drawn: false, focused: true });
         await expect(grid.locator('.ex-viewport .ex-editor')).toHaveCount(0);
 
@@ -739,19 +732,15 @@ for (const chrome of ['builtin', 'mud']) {
             await page.locator('#before-grid').focus();
             await page.keyboard.press('Tab');
             await expect(keyField(grid)).toBeFocused();
-            // Tab is the grid's until Escape releases it (ADR-0012); the released Tab leaves. The release
-            // is the Escape's answer, and a Tab typed before it is dropped (ADR-0010/0021).
+            // Tab is the grid's until Escape releases it (ADR-0012); the released Tab leaves, typed at once
+            // as typed slowly (ADR-0230 section 1).
             await page.keyboard.press('Escape');
-            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
-            await page.waitForTimeout(500);
             await page.keyboard.press('Tab');
             await expect(page.locator('#after-grid')).toBeFocused();
 
             await page.keyboard.press('Shift+Tab');
             await expect(keyField(grid)).toBeFocused();
             await page.keyboard.press('Escape');
-            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
-            await page.waitForTimeout(500);
             await page.keyboard.press('Shift+Tab');
             await expect(page.locator('#before-grid')).toBeFocused();
 
@@ -772,8 +761,6 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Tab');
             await expect(grid).toBeFocused();
             await page.keyboard.press('Escape');
-            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
-            await page.waitForTimeout(500);
             await page.keyboard.press('Tab');
             await expect(page.locator('#after-grid')).toBeFocused();
 
@@ -781,8 +768,6 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Shift+Tab');
             await expect(grid).toBeFocused();
             await page.keyboard.press('Escape');
-            // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
-            await page.waitForTimeout(500);
             await page.keyboard.press('Shift+Tab');
             await expect(page.locator('#before-grid')).toBeFocused();
         });
@@ -818,16 +803,12 @@ test.describe('/wide, a display-only grid', () => {
         await page.keyboard.press('Tab');
         await expect(grid).toBeFocused();
         await page.keyboard.press('Escape');
-        // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
-        await page.waitForTimeout(500);
         await page.keyboard.press('Tab');
         await expect(page.locator('#after-grid')).toBeFocused();
 
         await page.keyboard.press('Shift+Tab');
         await expect(grid).toBeFocused();
         await page.keyboard.press('Escape');
-        // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
-        await page.waitForTimeout(500);
         await page.keyboard.press('Shift+Tab');
         await expect(page.locator('#before-grid')).toBeFocused();
     });
@@ -837,9 +818,9 @@ test.describe('/wide, a display-only grid', () => {
         await surround(page, '.ex-grid');
         await grid.locator("[id$='r1c3']").click({ force: true });
         await expect(grid).toHaveAttribute('aria-activedescendant', /-r1c3$/);
+        // The press's outcome is read before Escape (ADR-0230 section 1).
+        await settled(grid);
         await page.keyboard.press('Escape');
-        // spec-lint: fixed-wait: a wait between inputs, for Escape's release of Tab: a Tab typed at once is dropped on WebAssembly too, where there is no circuit to wait on (a suspected product race, ADR-0220 §2); it stays until that is fixed
-        await page.waitForTimeout(500);
 
         await page.locator('#before-grid').click();
         await page.keyboard.press('Tab');
@@ -925,6 +906,32 @@ test.describe('the Server host only', () => {
         await pressAt(grid, 'D10');
         await page.keyboard.press('Delete');
         await expect(cell(grid, 'D10')).toHaveText(before ?? '');
+    });
+
+    // ADR-0230 section 1 (b). Enter can engage nothing here, but it is a key that could add a layer an
+    // Escape peels, so an Escape typed before its answer is held, and the Tab behind it with it. When the
+    // Escape's answer turns out to release Tab, the held Tab cannot move DOM focus (ADR-0021): it is
+    // refused, and the live region says so, never dropped silently. The 150 ms round trip is what keeps
+    // Enter unanswered as Escape is typed; on WebAssembly nothing does.
+    test('KB-8 / ADR-0230: Escape and Tab typed at once behind an unanswered Enter — the Tab is refused aloud, and the next Tab leaves (150 ms)', async ({ page }) => {
+        await openSheet(page);
+        const grid = sheet(page);
+        await surround(page, '.ex-grid:has(> .ex-formula-bar)');
+        await pressAt(grid, 'D10');
+        await settled(grid);
+        await setRoundTrip(150);
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('Escape');
+        await page.keyboard.press('Tab');
+        await expect(grid.locator('.ex-announce')).toContainText('Tab was pressed before Escape had let the keyboard leave the grid');
+        await settled(grid);
+        await expect(keyField(grid)).toBeFocused();
+        await expectFieldFocusAt(grid, 'D11');
+        await setRoundTrip(0);
+
+        // The release stands for the Tab pressed again.
+        await page.keyboard.press('Tab');
+        await expect(page.locator('#after-grid')).toBeFocused();
     });
 });
 

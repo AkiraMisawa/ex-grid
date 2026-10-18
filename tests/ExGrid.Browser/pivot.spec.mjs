@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount, settled } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
 
@@ -539,15 +539,14 @@ for (const chrome of ['builtin', 'mud']) {
 
             // A tab is a sheet of its own, and Escape does not close a sheet: its grid keeps the
             // keyboard and releases Tab, as any grid's Escape with nothing to dismiss does (KB-8,
-            // ADR-0012 rewritten 2026-10-01), and the tab stays. The answer is a round trip away on
-            // the Server host, and a Tab typed before it would be held and dropped: on that host the
-            // circuit goes quiet first (ADR-0056); the fixed wait is the page's own time, all there
-            // is on WebAssembly.
+            // ADR-0012 rewritten 2026-10-01), and the tab stays. A press can engage an Interactive
+            // cell, so the press's outcome is read before Escape; the release is then taken at the
+            // Escape's keydown, and a Tab typed at once leaves (ADR-0230 section 1).
             await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
             await expect(records).toBeFocused();
+            await settled(records);
             await page.keyboard.press('Escape');
-            // spec-lint: fixed-wait: a wait between Escape and Tab with no state to wait for on WebAssembly; suspected product race: a Tab typed before Escape's answer is held and dropped (see above)
-            await page.waitForTimeout(500);
+            await settled(records);
             await circuitQuiet();
             await expect(records).toBeFocused();
             await expect(details).toHaveCount(1);
@@ -1164,7 +1163,7 @@ test('ADR-0070 (DC-61): a control focused while the report\'s keyboard is on its
     await expect(dialog).toHaveCount(0);
     // Past the report's request, which on Server comes two round trips after the Escape: there,
     // once the circuit is quiet (ADR-0056); the fixed wait is the page's own time on WebAssembly.
-    // spec-lint: fixed-wait: proves an absence, the report's request for the keyboard must not take it from #pivot-save; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: the report's request for the keyboard is carried to it by the Consumer, as the dialog closes, and is not an input the report's gate took, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that the request will not come
     await page.waitForTimeout(delayed ? 1000 : 100);
     await circuitQuiet();
     await expect(page.locator('#pivot-save')).toBeFocused();
@@ -1193,7 +1192,7 @@ test('ADR-0070/0018 (DC-61): a second grid pressed while the keyboard is on its 
     await rowsOf(second).nth(2).locator('[role=gridcell]').nth(1).click({ force: true });
 
     await expect(tabs).toHaveCount(0);
-    // spec-lint: fixed-wait: proves an absence, the first report's request for the keyboard must not take it from the second; the Settled Mark (PR #134, settled(grid)) will replace it
+    // spec-lint: fixed-wait: the report's request for the keyboard follows the Close, a click Blazor hears on its own, and is not an input either grid's gate took, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that the request will not come
     await page.waitForTimeout(delayed ? 1000 : 100);
     await circuitQuiet();
     await expect(reportOf(second)).toBeFocused();

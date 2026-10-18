@@ -1,4 +1,4 @@
-import { test, expect, alterPage, setRoundTrip, circuitQuiet } from './fixtures.mjs';
+import { test, expect, alterPage, setRoundTrip, circuitQuiet, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     expectKeyboardOn, keyboardIsOn, keyField, activeDescendant, expectActiveDescendant,
@@ -170,22 +170,36 @@ test('Escape, a press on a cell, then Tab cycles inside it (KB-8)', async ({ pag
     await expectActiveDescendant(grid(page), /r1c2$/);
 });
 
-test('with a 150 ms round trip, the keys straight after Escape wait for its answer: a Tab is dropped, a character opens an edit (KB-8, ADR-0010, ADR-0080)', async ({ page }) => {
+test('with a 150 ms round trip, Escape and Tab typed at once leave the grid once every input is answered; behind an unanswered Enter the Tab is refused aloud, and a character opens an edit (KB-8, ADR-0230, ADR-0010, ADR-0080)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly answers before the next key: nothing is held long enough to see');
     await aButtonEitherSide(page);
     await clickCell(page, 0, 1);
     await expectActiveDescendant(grid(page), /r0c1$/);
+    await settled(grid(page));
     await setRoundTrip(150);
 
-    // A Tab typed before the Escape's answer is held behind it; released then, it is the browser's,
-    // which script cannot carry out (ADR-0021), so it is dropped: the grid keeps the keyboard and
-    // the Focus does not move. The release stands for the Tab pressed again.
+    // Every input answered, and nothing for an Escape to peel: the gate takes the release at the
+    // Escape's keydown, and the Tab typed at once leaves, as one typed after the answer does
+    // (ADR-0230 section 1). The page's next element after the grid: the header's ▾ buttons are not
+    // tab stops (ADR-0080).
     await page.keyboard.press('Escape');
     await page.keyboard.press('Tab');
+    await expect(page.locator('#after-grid')).toBeFocused();
+
+    // Behind an Enter not yet answered, which could have added a layer, the Escape is held, and the
+    // Tab behind it. Released then, the Tab is the browser's, which script cannot carry out
+    // (ADR-0021): it is refused aloud, the grid keeps the keyboard, and the release stands for the
+    // Tab pressed again (ADR-0230 section 1 (b)).
+    await grid(page).focus();
+    await expectKeyboardOn(grid(page));
+    await settled(grid(page));
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Tab');
+    await expect(grid(page).locator('.ex-announce')).toContainText('Tab was pressed before Escape had let the keyboard leave the grid');
     await circuitQuiet();
     await expectKeyboardOn(grid(page));
-    await expectActiveDescendant(grid(page), /r0c1$/);
-    // The page's next element after the grid: the header's ▾ buttons are not tab stops (ADR-0080).
+    await expectActiveDescendant(grid(page), /r1c1$/);
     await page.keyboard.press('Tab');
     await expect(page.locator('#after-grid')).toBeFocused();
 
@@ -195,7 +209,7 @@ test('with a 150 ms round trip, the keys straight after Escape wait for its answ
     await page.keyboard.type('x');
     const editor = grid(page).locator('input.ex-editor');
     await expect(editor).toHaveValue('x');
-    await expectActiveDescendant(grid(page), /r0c1$/);
+    await expectActiveDescendant(grid(page), /r1c1$/);
     await page.keyboard.press('Escape');
     await expect(editor).toHaveCount(0);
 });
@@ -1086,11 +1100,10 @@ test('the grid is one tab stop, its Keyboard Field on a grid that edits (A11Y-4,
     const activeIsCell = await page.evaluate(
         () => document.activeElement?.classList?.contains('ex-cell') ?? false);
     expect(activeIsCell).toBe(false);
-    // Escape releases Tab (ADR-0012, KB-8), and the next Tab leaves the grid entirely. On a circuit
-    // the release is the Escape's answer, a round trip away, and a Tab typed before it is held behind
-    // the Escape and dropped (script cannot move DOM focus for it, ADR-0010/0021): wait for it.
+    // Escape releases Tab (ADR-0012, KB-8), and the next Tab leaves the grid entirely: after a Tab,
+    // which only moves the Focus, the release is taken at the Escape's keydown, and a Tab typed at
+    // once leaves (ADR-0230 section 1).
     await page.keyboard.press('Escape');
-    await circuitQuiet();
     await page.keyboard.press('Tab');
     await expect(page.locator('#after-grid')).toBeFocused();
 });

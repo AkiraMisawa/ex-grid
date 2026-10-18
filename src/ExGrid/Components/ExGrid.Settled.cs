@@ -25,6 +25,10 @@ namespace ExGrid.Components;
 //   error message after the Focus stands still (PopoverDelay), the description of a selection
 //   (SettleDelay), and the Placeholders filling after a scroll (SettleDelay); and while a sentence
 //   said again is put back by the render after the one that emptied it (Announce).
+// - data-ex-escape-leaves: an Escape on the root would leave the grid now, releasing Tab — no popover
+//   or menu, no Interactive cell, no Copied Range and no edit to peel first (ADR-0230 section 1). Said
+//   with the inputs answered, so the gate trusts it for an Escape typed once every input that could
+//   add a layer is answered, and takes the release at the keydown.
 //
 // Neither reaches a row, nor renders the root: the stamp renders alone, and the rows skip their
 // render as before (ADR-0003). Nothing per cell crosses, and no message is sent for them (ADR-0027's
@@ -136,7 +140,7 @@ public partial class ExGrid<TRow>
     {
         if (_disposed || _rendersBuilt != _rendersAfterRendered)
             return;
-        _settledStamp?.Show(_answeredUpTo, RenderOwed);
+        _settledStamp?.Show(_answeredUpTo, RenderOwed, EscapeLeaves);
     }
 
     /// <summary>A timer's render is no longer owed.</summary>

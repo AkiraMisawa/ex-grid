@@ -2512,7 +2512,7 @@ public class WritesLandAsEnteredTests : GridTestContext
             reader.Groups["body"].Value);
         // A key carries it from its keydown, held or not.
         Assert.Matches(new Regex(@"const snapshot = \(event\) => \(\{[^}]*paint: paintNow\(\),"), script);
-        Assert.Matches(new Regex(@"'OnKeyAsync',[^;]*k\.paint, nextInput\(\)\)"), script);
+        Assert.Matches(new Regex(@"'OnKeyAsync',[^;]*k\.paint, nextInput\(neutral\)\)"), script);
         // A paste carries it from its event, held or not.
         Assert.Matches(new Regex(@"sendPaste\(event\.clipboardData\.getData\('text/plain'\), event\.clipboardData\.getData\('text/html'\), paintNow\(\)\)"), script);
         Assert.Matches(new Regex(@"clipboard: 'paste',[^}]*paint: paintNow\(\),"), script);

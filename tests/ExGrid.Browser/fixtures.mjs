@@ -526,8 +526,51 @@ async function arriveAt(page, target) {
 /** The frames in which what a disposal left to later — a wait that outlived its grid — runs. */
 export const twoFrames = (page) => page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
+/**
+ * A forced press on a node the grid has just built again lands as a user's press would (ADR-0220).
+ * A cell takes no pointer events (ADR-0004), so a test presses one with `{ force: true }`, and
+ * Playwright then reads the node it resolved twice: once to scroll it into view, once for the
+ * place to press. A row component keyed by its instance is built again, every element in it new,
+ * when its row is handed over as a new instance (ADR-0003/0140): on /sheet that is any row a
+ * change names, and a value arriving that the row was still getting (`#GETTING_DATA`). Built again
+ * between the two reads, the node read second is gone, and a forced press fails as "Element is not
+ * visible" with no input sent (ED-22 on #147's run, the twelfth press). A user's press is made at a
+ * place, where the new row stands just as the old one did. So when a forced press fails that way
+ * and its locator names one node now laid out, the press is made once more, on that node: nothing
+ * reached the page the first time, so this is the press the test asked for, made once. A second
+ * failure, or a node that is not laid out, is the test's failure.
+ */
+const HELD_FORCED_PRESSES = ['click', 'dblclick', 'hover'];
+
+function holdForcedPresses(page) {
+    const prototype = Object.getPrototypeOf(page.locator('html'));
+    if (prototype.__exForcedPressesHeld) {
+        return;
+    }
+    prototype.__exForcedPressesHeld = true;
+    for (const name of HELD_FORCED_PRESSES) {
+        const press = prototype[name];
+        prototype[name] = async function (options) {
+            try {
+                return await press.call(this, options);
+            } catch (error) {
+                if (!options?.force || !/Element is not visible/.test(String(error?.message))) {
+                    throw error;
+                }
+                const laidOut = await this.evaluateAll((nodes) => nodes.length === 1 && nodes[0].getClientRects().length > 0)
+                    .catch(() => false);
+                if (!laidOut) {
+                    throw error;
+                }
+                return await press.call(this, options);
+            }
+        };
+    }
+}
+
 // A test with a document of its own (ADR-0056): a context of its own, every navigation real.
 async function ownPage(app, page, use, options, testInfo) {
+    holdForcedPresses(page);
     app.startHostLog();
     const sink = newSink();
     listen(page, () => sink);
@@ -591,6 +634,7 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
         owned = true;
         return thenReady(page, reload)(...args);
     });
+    holdForcedPresses(page);
     const listenersBefore = new Map(page.eventNames().map((name) => [name, page.listeners(name)]));
 
     await use(page);

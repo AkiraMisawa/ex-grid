@@ -123,8 +123,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // observes only while the mark is off, as the reveal's and the follow's observe only while they wait.
     let stamp = root.querySelector(':scope > [data-ex-answered]');
     let inputsSent = Number(stamp?.getAttribute('data-ex-answered')) || 0;
+    // The last input that could add a layer an Escape peels — a popover or a menu, an Interactive
+    // cell, a Copied Range, an edit — and so make the stamp's data-ex-escape-leaves stale until it is
+    // answered (ADR-0230 section 1). Every input can, but the keys on the root that only move the Focus
+    // or peel a layer (neutral), unless the Consumer declared one: the arrows, Tab and Shift+Tab, Home
+    // and End and their Control forms, the page keys, and Escape. A press
+    // the core hears without a number of its own (a ▾, a heading) counts as the next input's, so only
+    // an answer that came after it is trusted.
+    let layerInputAt = inputsSent;
     let clipboardWrites = 0;
     let settledShown = null;
+    const answeredWaits = [];
     let settledLook = false;
     function lookSettled() {
         if (!settledLook) {
@@ -134,6 +143,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     }
     function showSettled() {
         settledLook = false;
+        // The waits on an input's answer (answeredUpTo) that the stamp now meets, or all of them with
+        // the instance gone.
+        for (let i = answeredWaits.length - 1; i >= 0; i--) {
+            const wait = answeredWaits[i];
+            if (!core || stamp === null || Number(stamp.getAttribute('data-ex-answered')) >= wait.upTo) {
+                answeredWaits.splice(i, 1);
+                wait.resolve();
+            }
+        }
         if (!core) {
             return;
         }
@@ -155,12 +173,23 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
         }
     }
-    // The number the next input sent to the core carries (data-ex-answered).
-    function nextInput() {
+    // The number the next input sent to the core carries (data-ex-answered). A neutral one cannot add a
+    // layer an Escape peels (layerInputAt).
+    function nextInput(neutral = false) {
         inputsSent += 1;
+        if (!neutral) {
+            layerInputAt = inputsSent;
+        }
         lookSettled();
         return inputsSent;
     }
+    const neutralKeys = new Set([
+        'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+        'Control+ArrowUp', 'Control+ArrowDown', 'Control+ArrowLeft', 'Control+ArrowRight',
+        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight',
+        'Control+Shift+ArrowUp', 'Control+Shift+ArrowDown', 'Control+Shift+ArrowLeft', 'Control+Shift+ArrowRight',
+        'Tab', 'Shift+Tab', 'Home', 'End', 'Control+Home', 'Control+End', 'PageUp', 'PageDown', 'Escape',
+    ]);
     let settledObserver = null;
     function dropSettledObserver() {
         settledObserver?.disconnect();
@@ -397,6 +426,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // these are gates only, and their mirror is the cases of OnEditingKeyAsync, which
     // reads the same canonical form — the two must move together.
     let editing = 'none';
+    // Which change of mode the gate was last told of (ADR-0230 section 2). The edit's surfaces mark
+    // the mode in the render that shows it (data-ex-mode), with the same count
+    // (data-ex-mode-version); a mark newer than the tell is the mode on screen, and the tell, a
+    // message after that render, has not come yet.
+    let editingVersion = 0;
     // Whether each input in an editor surface reports its caret (ADR-0051), told by C# with
     // the mode: only where completion or pointing is declared.
     let reportCaret = false;
@@ -417,6 +451,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     let tabReleased = false;
     let releaseEndsHeard = 0;
     let releaseEndsAtEscape = 0;
+    // A release ended here — spent by its Tab, or ended by another key — counts as an end heard, so a
+    // releaseTab still on its way for the Escape that granted it early (escapeLeavesNow) does not grant
+    // it again (ADR-0230 section 1).
+    const endRelease = () => {
+        if (tabReleased) {
+            tabReleased = false;
+            releaseEndsHeard++;
+        }
+    };
+    // Whether a plain Escape on the root leaves the grid now, read from the stamp the core renders with
+    // the inputs it has answered (data-ex-escape-leaves, ADR-0230 section 1): trusted once every input
+    // that could have added a layer is answered (layerInputAt). Then the release is taken at the keydown
+    // and nothing after the Escape is held, so a Tab typed at once leaves the grid as one typed slowly
+    // does. A Consumer that hears the Escape (OnLeave) still has it held for its answer. Reads two
+    // attributes; no layout.
+    const escapeLeavesNow = (k) => !leaves && k.repeat !== true && stamp !== null
+        && stamp.hasAttribute('data-ex-escape-leaves')
+        && Number(stamp.getAttribute('data-ex-answered')) >= layerInputAt;
     // Ctrl+F too, taken and answered with nothing: Find is disabled while a cell is being
     // edited, and the browser's own find would search only the painted rows (ADR-0055).
     const editingKeys = new Set(
@@ -472,6 +524,64 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const appleCaretKeys = new Set(['Home', 'End', 'Shift+Home', 'Shift+End']);
     const pageKeys = new Set(['PageUp', 'PageDown']);
     const listShown = () => (root ? root.querySelector('.ex-completion[data-ex-list]') : null);
+    // The editing mode the gate judges a key in (ADR-0230 section 2): the one this grid's edit
+    // surfaces mark, where the mark is newer than what the gate was told, else the one told. Read,
+    // not measured.
+    const editingShown = () => {
+        let mode = editing;
+        let version = editingVersion;
+        if (root) {
+            for (const surface of root.querySelectorAll('.ex-editor[data-ex-mode]')) {
+                const marked = Number(surface.getAttribute('data-ex-mode-version'));
+                if (marked > version && surface.closest('.ex-grid') === root) {
+                    mode = surface.getAttribute('data-ex-mode');
+                    version = marked;
+                }
+            }
+        }
+        return mode;
+    };
+
+    // The keys whose meaning in an editor field differs between the modes (ADR-0230 section 2): the
+    // arrows, Home, End and their Shift and Primary Modifier forms. Escape, Enter, Tab and F2 are the
+    // core's in every mode, and a character is typed in every one.
+    const modeDependentKeys = new Set([...overwriteKeys, ...pointKeys, ...pointedKeys, ...completionKeys,
+        ...completionOverPointKeys].filter((canonical) => !editingKeys.has(canonical)));
+    // A mode mark is the mode of the text its surface showed in that render (data-ex-mode-text, ADR-0230
+    // section 2, note of 2026-10-17), and a field typed into faster than the core answers already holds
+    // text the core has not heard. On a circuit `=SUM(` typed at once painted the list of names the core
+    // opened for `=S` while the field held `=SUM(`; Home, read as a list's, moved the caret, where typed
+    // slowly it points at A10. So a key whose meaning depends on the mode, typed in a field whose
+    // surface's mark answers another text, waits, with every key after it, until the core's render has
+    // answered the field's text, and is gated then. A character never waits on it: typing goes on at
+    // the browser's speed, as section 2 decided (its option (b), rejected, stays rejected).
+    const markBehind = (target, k) => {
+        if (!k.inEditor || !isTextField(target) || !root.contains(target) || !modeDependentKeys.has(canonicalOf(k))) {
+            return null;
+        }
+        const surface = target.closest('.ex-editor[data-ex-mode-text]');
+        return surface !== null && surface.closest('.ex-grid') === root
+            && surface.getAttribute('data-ex-mode-text') !== target.value ? surface : null;
+    };
+    // Resolves once the render answering `field`'s text is in the DOM: its surface's mark is of the
+    // text the field holds, or the surface or the field is gone (the edit closed). The keys typed
+    // meanwhile are held, so the field's text does not move under it. Read from the attribute the
+    // core writes, looked at every animation frame while the key waits, as editorSettled's waits
+    // are: nothing is measured, and no observer is added. Bounded by two seconds, the hold's own
+    // fallback (ADR-0010).
+    const markAnswering = (field) => new Promise((resolve) => {
+        const since = performance.now();
+        const look = () => {
+            const surface = field.isConnected ? field.closest('.ex-editor[data-ex-mode-text]') : null;
+            if (!core || surface === null || surface.getAttribute('data-ex-mode-text') === field.value
+                || performance.now() - since > 2000) {
+                resolve();
+            } else {
+                requestAnimationFrame(look);
+            }
+        };
+        look();
+    });
 
     // The keys that open a popover from the root (ADR-0039): the popover takes DOM focus a
     // round trip later on a circuit, and a key typed in between must be the popover's, not
@@ -542,7 +652,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (editing === 'none' && k.onRoot && (canonical === 'Tab' || canonical === 'Shift+Tab')) {
                 return 'out';
             }
-            tabReleased = false;
+            endRelease();
         }
 
         if (editing === 'none') {
@@ -619,8 +729,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             // Escape may release Tab, which changes the keys this gate claims (ADR-0012,
             // rewritten 2026-10-01): a mode change, so the keys after it wait for its answer.
+            // Unless the stamp already says this Escape leaves (escapeLeavesNow): then the release is
+            // taken here, and the Escape is forwarded for the core to say the same (ADR-0230 section 1).
             if (canonical === 'Escape') {
                 releaseEndsAtEscape = releaseEndsHeard;
+                if (escapeLeavesNow(k)) {
+                    tabReleased = true;
+                    return 'core';
+                }
                 return 'mode';
             }
             if (popoverOpeners.has(canonical)) {
@@ -662,10 +778,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // ← typed between them would be claimed as Overwrite's and swallowed. The core marks
         // the list on its box (data-ex-list) in the render itself, and a list open over Point
         // (data-ex-over-point), whose ←, →, Home, End and Shift+arrows point (ADR-0058); read,
-        // not measured.
+        // not measured. Every other change of mode is marked on the edit's surfaces the same way
+        // (editingShown; ADR-0230 section 2): a list closed, Point ended by typing, F2's switch.
         const list = listShown();
         const claimed = list === null
-            ? (claimedWhile[editing] ?? editingKeys)
+            ? (claimedWhile[editingShown()] ?? editingKeys)
             : (list.hasAttribute('data-ex-over-point') ? completionOverPointKeys : completionKeys);
         // Every key the core claims while editing commits, cancels, moves or switches
         // the mode: each is a mode change. F4 rewrites the text, and the keys after it wait
@@ -751,11 +868,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // pressed on, as a held press does (ADR-0142, LV-14).
     const forward = (k) => {
         const input = editing !== 'none' ? editorInput() : null;
+        // A key on the root that cannot add a layer an Escape peels (layerInputAt, ADR-0230 section 1).
+        const neutral = editing === 'none' && neutralKeys.has(canonicalOf(k)) && !declared.has(canonicalOf(k));
         return core.invokeMethodAsync(
             'OnKeyAsync', k.key, k.ctrlKey, k.shiftKey, k.altKey, k.metaKey, metaIsPrimary, !k.onRoot,
             input ? input.value : null, input ? (input.selectionStart ?? input.value.length) : -1,
             input ? (input.selectionEnd ?? input.value.length) : -1, input ? movedByUser(input) : false,
-            k.repeat === true, k.paint, nextInput())
+            k.repeat === true, k.paint, nextInput(neutral))
             .catch((error) => {
                 // Disposal can overtake a key in flight, and that is not a fault. Anything
                 // else is reported: a swallowed failure here means keys that silently stop
@@ -1775,6 +1894,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // dropped: the typing stops short rather than going on in a field it was not meant for
     // ("Alpha", Tab, Space, Enter would otherwise search for "Alpha " and apply it).
     const caretKeys = new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter']);
+    // The Primary Modifier's A, which selects a text field's whole text (typeInto): held behind the
+    // Name Box's press, it is typed into the Name Box at its turn (ADR-0230 section 3).
+    const selectsAll = (k) => (k.key === 'a' || k.key === 'A') && !k.shiftKey && primaryOnly(k);
     // The keys a tab of ARIA's tabs pattern answers itself.
     const tabKeys = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
     // The keys that move the caret in a field without changing its text.
@@ -1784,7 +1906,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return true;
         }
         if (isTextField(target)) {
-            return !k.ctrlKey && !k.metaKey && !k.altKey && (k.key.length === 1 || caretKeys.has(k.key));
+            return (!k.ctrlKey && !k.metaKey && !k.altKey && (k.key.length === 1 || caretKeys.has(k.key)))
+                || selectsAll(k);
         }
         // A frame of the Consumer's own took the keyboard (HandKeyboardToFrameAsync): what a key
         // means there is its handlers' to say, and every key but Tab — the browser's alone to
@@ -1821,6 +1944,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         heldTextEdit = null;
         field.removeEventListener('blur', commitHeldText);
         field.removeEventListener('change', forgetHeldText);
+        field.removeEventListener('keydown', commitOnEnter);
     };
     const commitHeldText = () => {
         if (!heldTextEdit) return;
@@ -1830,16 +1954,29 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             field.dispatchEvent(new Event('change', { bubbles: true }));
         }
     };
+    // An Enter typed once the hold is over reaches the field natively, and the browser commits
+    // only a value that differs from the one script last wrote: none, so the held text went
+    // uncommitted while the field showed it (More Colours' HEX, seen in CI on WebAssembly). It
+    // commits here, before the field's handlers hear the key; where typing since has changed the
+    // value, the browser's own change comes and this one would be its duplicate. A held Enter is
+    // committed where it is handed on (handToPopover).
+    const commitOnEnter = (event) => {
+        if (!replaying && event.key === 'Enter' && !event.isComposing
+            && heldTextEdit?.written === heldTextEdit?.field.value) {
+            commitHeldText();
+        }
+    };
     const rememberHeldText = (field, before) => {
         if (heldTextEdit?.field === field) return;
         forgetHeldText();
-        heldTextEdit = { field, before };
+        heldTextEdit = { field, before, written: field.value };
         field.addEventListener('blur', commitHeldText);
         field.addEventListener('change', forgetHeldText);
+        field.addEventListener('keydown', commitOnEnter);
     };
 
     const handToPopover = (target, k) => {
-        if (isTextField(target) && !k.ctrlKey && !k.metaKey && !k.altKey) {
+        if (isTextField(target) && ((!k.ctrlKey && !k.metaKey && !k.altKey) || selectsAll(k))) {
             if (k.key === 'Enter') {
                 // A native Enter commits a text field's change before submitting its form.
                 // A dispatched keydown does neither: a change-bound field such as More Colours'
@@ -1853,6 +1990,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             const before = target.value;
             if (typeInto(target, k)) {
                 if (before !== target.value) rememberHeldText(target, before);
+                if (heldTextEdit?.field === target) heldTextEdit.written = target.value;
                 return;
             }
         }
@@ -1946,6 +2084,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             if (k.barPress) {
                 await answerBarPress(k);
+                continue;
+            }
+            if (k.nameBoxPress) {
+                await answerNameBoxPress(k);
                 continue;
             }
             if (k.press) {
@@ -2131,12 +2273,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             const rebased = {
                 ...k, onRoot: editing === 'none', inEditor: editing !== 'none', inPopover: false, inFindField: false,
             };
+            // Held behind another key while the field's surface marked the mode of an older text: gated
+            // once the core has answered the field's text, as at its keydown (markBehind).
+            const field = rebased.inEditor ? editorInput() : null;
+            if (field && markBehind(field, rebased) !== null) {
+                await markAnswering(field);
+            }
             const verdict = gate(rebased);
             if (verdict === 'out') {
                 // A released Tab held behind its Escape: the browser's move of DOM focus cannot be
                 // made from script (ADR-0021), so it is dropped with every key behind it, as a held
                 // Tab is in a popover, rather than hand the grid keys meant for the page's next
-                // element. The release stands, for the Tab the user presses again.
+                // element. The release stands, for the Tab the user presses again, and the live
+                // region says so: refused, not dropped silently (ADR-0230 section 1 (b)).
+                core?.invokeMethodAsync('OnHeldTabRefusedAsync', nextInput(true)).catch((error) => {
+                    if (core) {
+                        console.error('[ex-grid] the grid failed to refuse a held Tab', error);
+                    }
+                });
                 dropHeld();
                 break;
             }
@@ -2306,8 +2460,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // then handed on where the keyboard is: on the root, against the Focus the placement left.
         if (!replaying && k.key === 'Enter' && ownNameBox(event.target) !== null) {
             // Any key but a modifier's own ends a release of Tab, as the gate has it.
-            tabReleased = false;
+            endRelease();
             holdBehindNameBoxEnter();
+            return;
+        }
+        // A mode-dependent key typed while its field's surface marks the mode of an older text
+        // (markBehind): held until the core has answered the field's text, then gated in its turn.
+        if (!replaying && markBehind(event.target, k) !== null) {
+            event.preventDefault();
+            event.stopPropagation();
+            noteAlt(k, k, true);
+            held.push(k);
+            startHold(markAnswering(event.target));
             return;
         }
         if (!replaying) {
@@ -2318,7 +2482,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const verdict = gate(k);
         if (verdict === 'out') {
             // The browser takes the keyboard out of the grid with it, and the release is spent.
-            tabReleased = false;
+            endRelease();
             return;
         }
         if (verdict === null) {
@@ -2760,6 +2924,46 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             reportCaretOf(field);
         }
     };
+    // A press into the Name Box behind an input still unanswered — a press on the rows, which nothing
+    // holds while no edit is open — takes its place among the held keys, as the bar's does (ADR-0230
+    // section 3; ticket 222). The press keeps its default, which gives the Name Box the keyboard, and
+    // the keys typed into it are held behind the input. Typed at once, they went into the box before
+    // the render answering the row press renamed it, and that render wrote the new address over them;
+    // the first key re-selected the text only where the render came before it (nameBoxSelected). At
+    // its turn, every input sent before it is answered and its render, the box's new name with it, is
+    // in the DOM (data-ex-answered): the box's whole text is selected (ticket 78), and the keys held
+    // behind it are typed over it. The outcome is the one a press made a moment later gives. Reads
+    // attributes and the field's value; no layout is read.
+    const holdsNameBoxPress = (event) => {
+        const target = event.target;
+        return !!core && !replaying && event.button === 0 && ownNameBox(target) !== null
+            && document.activeElement !== target
+            && (answering || held.length > 0 || unanswered());
+    };
+    const unanswered = () => stamp !== null && Number(stamp.getAttribute('data-ex-answered')) < inputsSent;
+    const holdBehindNameBoxPress = (field) => {
+        held.push({ nameBoxPress: true, field, upTo: inputsSent });
+        if (answering) {
+            holdStartedAt = performance.now();
+        } else {
+            startHold();
+        }
+    };
+    // Every input sent up to `upTo` answered, and its render in the DOM: seen by the Settled Mark's
+    // own look at the stamp (answeredWaits), which observes it while any input is unanswered.
+    const answeredUpTo = (upTo) => new Promise((resolve) => {
+        answeredWaits.push({ upTo, resolve });
+        lookSettled();
+    });
+    // At its turn: the Name Box's whole text selected, if it holds the keyboard still.
+    const answerNameBoxPress = async (k) => {
+        await answeredUpTo(k.upTo);
+        if (document.activeElement === k.field && k.field.isConnected) {
+            k.field.select();
+            nameBoxSelected = k.field;
+        }
+    };
+
     // Asked once the press's focus has gone to the core: focusing the bar is the press's default
     // action, dispatched after the listener in the same task, so the question waits for a later
     // task. The core answers once that focus has been handled in full (ExGrid.PressAnsweredAsync).
@@ -3071,9 +3275,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // A press on the grid ends a release of Tab: the user has come back to it (ADR-0012,
         // 2026-10-01). A held press ends it again at its replay, after the answer it waited for.
         // And the keyboard this press brings to the Keyboard Field shows no ring (KB-12).
+        // A press the core hears without a number of its own counts as the next input's (layerInputAt).
+        const ended = tabReleased;
         tabReleased = false;
-        if (!replaying) {
+        if (!replaying || ended) {
             releaseEndsHeard++;
+        }
+        if (!replaying) {
+            layerInputAt = inputsSent + 1;
             keyboardByPress = true;
             // A press between an Alt and its release: the release starts nothing here (altPending).
             altPending = null;
@@ -3133,6 +3342,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         if (holdsBarPress(event)) {
             holdBehindBarPress(event.target);
+            return;
+        }
+        if (holdsNameBoxPress(event)) {
+            holdBehindNameBoxPress(event.target);
             return;
         }
         // An edit is left standing here when DOM focus goes elsewhere — to another grid, a
@@ -3897,9 +4110,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // a mode change is a different set of claimed keys. (A focusable descendant holding
         // the keyboard — ADR-0020's interactive cell — is not a mode: it is read off
         // event.target, which is true whether focus arrived by click or by key.)
-        setEditing: (mode, reportsCaret, cyclesReferences) => {
+        setEditing: (mode, reportsCaret, cyclesReferences, version) => {
             const opened = editing === 'none' && mode !== 'none';
             editing = mode;
+            editingVersion = Number(version) || 0;
             reportCaret = reportsCaret === true;
             cycleReferences = cyclesReferences === true;
             if (mode === 'none') {
@@ -4428,6 +4642,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // A question the core still waits on is answered, with nothing left to hold.
             for (const ask of questionsAfterHold.splice(0)) {
                 ask();
+            }
+            // And a wait on an input's answer (answeredUpTo).
+            for (const wait of answeredWaits.splice(0)) {
+                wait.resolve();
             }
         },
     };
