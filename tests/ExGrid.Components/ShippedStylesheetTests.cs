@@ -1658,7 +1658,7 @@ public class ShippedStylesheetTests
         // named sets. The script spells only the sets of what it answers itself, as KB-2 names them:
         // Home and End on an Apple platform and PageUp and PageDown in an editor field (ADR-0010's note
         // of 2026-09-30, ticket 32), the modifiers' own keydowns, which name no key, a text field's
-        // input types, which are not keys, and the keys a held key is handed on as (ADR-0010's notes on
+        // input types, which are not keys (those that hold a form's implicit submission back too, ADR-0240), and the keys a held key is handed on as (ADR-0010's notes on
         // the hold): what a text field, a tab and a caret do with them.
         var spelled = Regex.Matches(script, @"new Set\(\[\s*'[^']*'[^\]]*\]\)").Select(match => match.Value).ToList();
         Assert.Equal(
@@ -1666,6 +1666,7 @@ public class ShippedStylesheetTests
                 "new Set(['Home', 'End', 'Shift+Home', 'Shift+End'])",
                 "new Set(['PageUp', 'PageDown'])",
                 "new Set(['Shift', 'Control', 'Alt', 'Meta'])",
+                "new Set(['text', 'search', 'url', 'tel', 'email', 'password', 'date', 'month', 'week', 'time', 'datetime-local', 'number'])",
                 "new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number'])",
                 "new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'])",
                 "new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'])",
