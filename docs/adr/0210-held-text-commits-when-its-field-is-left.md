@@ -31,6 +31,19 @@ value as a native edit, nor does it own the design system's private text field. 
 knows which field the hold wrote and supplies only the notification that write otherwise lacks.
 It does not choose or parse the colour, validate the text, or replace the field's existing handlers.
 
+### Widened 2026-10-17, decided with the user: an Enter typed after the hold
+
+The decision above committed a held Enter, and missed an Enter typed once the hold was over.
+That Enter reaches the field natively, and the browser commits only text it has typed itself
+since script last wrote the field: none. HEX showed `#FF0000` and the fill stayed unchanged
+(PR #147's CI, WebAssembly; reproduced each time on the Server host with a round trip, where
+the text is held while HEX opens and the Enter comes after it is shown). The same record now
+also hears `keydown` on that same field, and an Enter there that the core is not itself
+handing on supplies the missing `change` before the field's handlers hear the key. It is
+removed with the other two, and is the same entry of ADR-0021's allowlist, not a new one.
+Where typing after the held text has changed the value, the browser commits it itself, so the
+supplement stays out and no change is sent twice.
+
 ## Alternatives
 
 Keeping MudBlazor's existing inputs was chosen over replacing its colour entry and modes in
