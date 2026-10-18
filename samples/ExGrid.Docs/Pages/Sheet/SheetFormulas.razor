@@ -185,20 +185,17 @@
                 counted from the Formula's own cell by offsets in brackets, <code>R[1]C[-1]</code>, or from its own
                 row or column where R or C has no number, <code>RC[-1]</code>; naming whole rows and columns,
                 <code>R3</code>, <code>C[-1]</code> or <code>R2:R3</code>; or a Spill Range, <code>R1C1#</code>.
-                Other combinations of these forms are read by the same rule until Excel has been asked them. It
-                reads a Linked Table's column as text, <code>Positions[PV]</code>, which waits while the table
+                It reads a Linked Table's column as text, <code>Positions[PV]</code>, which waits while the table
                 does, and a Spill Range, <code>A1#</code>. R1C1 text that joins a cell to a whole column is the
                 cell's row across the columns they span, <code>R2C2:C3</code> is B2:C2, and a whole row joined to a
-                cell the rows they span down its column, <code>R3:R2C2</code> is B2:B3, as Excel's sums read; that
-                the extent stops there, and not at the whole rows, Excel has yet to be asked, and a whole column
-                joined to a cell, <code>C3:R2C2</code>, is <code>#VALUE!</code> until it has. R1C1 text that joins a
-                cell to a whole row, or a row to a column, <code>R2C2:R3</code> or <code>R3:C2</code>, names no place
-                and is <code>#REF!</code>, as in Excel; so is text naming another Sheet or a table that does not exist, as Excel's A1 text is. Some
-                text is <code>#VALUE!</code> until Excel has told what it names: in R1C1 style, an offset past the
-                Sheet's edge, <code>R[-5]C[-1]</code> from row 2, which Excel reads as a place without saying yet
-                which, and a row or column number 0, <code>R0C2</code>, or one past the Sheet's edge,
-                <code>R1048577C2</code>, while A1 text past the edge, <code>XFE1</code>, is <code>#REF!</code>, as
-                in Excel; and, in either style, <code>#</code> after a range, a row or a column,
+                cell the rows they span down its column, <code>R3:R2C2</code> is B2:B3, as in Excel. Parts are joined
+                left to right, so <code>R2:R3C2:C3</code> is B2:C3. An offset past the Sheet's edge wraps round to the
+                far side, as Excel's does: from C2, <code>R[-5]C[-1]</code> is B1048573. R1C1 text that joins a cell to
+                a whole row, a whole column to a cell, or a row to a column, <code>R2C2:R3</code>, <code>C3:R2C2</code>
+                or <code>R3:C2</code>, names no place and is <code>#REF!</code>, as in Excel; so is a row or column
+                number 0, <code>R0C2</code>, or one past the Sheet's edge, <code>R1048577C2</code>, as A1 text past
+                the edge, <code>XFE1</code>, is; so is text naming another Sheet or a table that does not exist, as
+                Excel's A1 text is; and so, in either style, is <code>#</code> after a range, a row or a column,
                 <code>A1:A2#</code>, <code>R3#</code> or <code>R2C2:R3#</code>, or inside a join,
                 <code>A1#:A2</code> or <code>R1C1#:R2C1</code>. A Linked
                 Table's name on its own, <code>"Positions"</code>, is

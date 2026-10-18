@@ -159,6 +159,8 @@ The run ExGrid's own by-hand rows need anyway (VZ-14, VZ-16, FN-12e, ED-30, SM-7
   the table by position, which ADR-0049's rule 2 does not offer; and, in R1C1 style, a row or column number
   past the Sheet's edge, `INDIRECT("R1048577C2",FALSE)`, which is `#VALUE!` until Excel is asked whether it
   names no place or a place. ADR-0124's note of that date has Excel's answers and the readings.)*
+  *(2026-10-18: the R1C1 number past the edge is no longer a limitation. The oracle run of that date asked
+  Excel, which names no place, `#REF!`, and the engine now answers so (ADR-0124's note of 2026-10-18).)*
   *(2026-10-13, decided with the user: also a refused Anchor whose array's shape could depend on a Value —
   a refused `FILTER`, `UNIQUE`, `SORT`, `SORTBY`, `SEQUENCE` or `LET`, a call that can give a Reference, or
   a function given an array where it wants one Value, `=LEN(A1:A3)`: nothing spills, and the cells its

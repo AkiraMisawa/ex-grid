@@ -1,8 +1,6 @@
 # 07: LOG and the trigonometric functions
 
-Status: ready-for-human
-Roadmap: ExSheet — `TAN`, `COT`, `SEC`, `COTH` and the reduction of large angles checked against Excel's
-full doubles where more than one way of computing them fits every answer read so far.
+Status: done
 
 **What to build:** `LOG` and the trigonometric and hyperbolic functions under ADR-0047's rule:
 `SIN`, `COS`, `TAN`, `COT`, `CSC`, `SEC`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `ACOT`, `SINH`, `COSH`,
@@ -23,10 +21,10 @@ and what they leave open is refused with an Error Value until Excel is asked (de
   - `LOG` to base 1, and `CSC`, `COTH` and `CSCH` at 0 (LOG-007, CSC-003, COTH-003, CSCH-003);
   - the double's remainders, `SIN(PI())` and `COS(PI()/2)`, to the last bit (SIN-004, COS-004).
   *Answered by the seventeenth Windows run (comment of 2026-10-12).*
-- [ ] `oracle.ps1 -Area tan,cot,sec,sin,cos,coth` before the tag (ADR-0208): the `uncertain` cases the
+- [x] `oracle.ps1 -Area tan,cot,sec,sin,cos,coth` before the tag (ADR-0208): the `uncertain` cases the
       seventeenth run's answers led to, TAN-006 and 007, COT-006 to 008, SEC-005, SIN-008, COS-006 and
       COTH-004 to 006. The engine agrees with each answer, or is corrected to it, before this ticket is
-      done
+      done. *Each is `observed`: the release gate lists none of them open on 2026-10-18*
 
 ## Comments
 
@@ -42,3 +40,7 @@ reduces an angle by the x87's 64-bit pi, which the engine now does (`SIN(PI())`
 008, SEC-005, SIN-008, COS-006 and COTH-004 to 006 are new `uncertain` cases; ADR-0208 does not close
 a ticket on "the next Windows run asks", so the Status is `ready-for-human` until an `oracle.ps1 -Area`
 run has asked them.
+
+2026-10-18: done. TAN-006 and 007, COT-006 to 008, SEC-005, SIN-008, COS-006 and COTH-004 to 006 are all
+`observed`, and the release gate (`ExGrid.Release gate`) lists no case of this ticket's files open; the
+oracle run of 2026-10-18 asked the gate's last 35 cases, none of them here.

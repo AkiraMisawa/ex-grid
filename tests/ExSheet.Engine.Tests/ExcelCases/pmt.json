@@ -435,7 +435,8 @@
       "fixture": "functionData",
       "cells": {"ZZ1000": "=PMT(1E-320,0.5,1000)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"}
+      "expect": {"value2": "#VALUE!"},
+      "oracleSkip": "Excel does not take 1E-320 in a Formula, so the case cannot be put to it as written: through COM it refuses the entry (0x800A03EC, run 18a and the oracle run of 2026-10-18), and typed it offers to correct it to E1-320, a different Formula, whose #NUM! answers nothing here. The engine refuses a rate below a double's normal numbers, #VALUE!"
     },
     {
       "id": "PMT-044",

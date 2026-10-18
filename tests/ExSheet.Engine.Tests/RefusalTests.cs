@@ -58,7 +58,6 @@ public class RefusalTests
         "XNPV(0.1,A1:A2,K1:K2)",            // text among XNPV's values
         "XLOOKUP(25,G1:G5,H1:H5,,0,2)",     // a binary search over unsorted data
         "MATCH(25,G1:G5,1)",                // an approximate search over unsorted data
-        "INDIRECT(\"A1:A2#\")",             // a # after a range (INDIRECT-092)
         "AGGREGATE(16,6,G1:G5,0.5)",        // a function number the engine does not support
     ];
 
