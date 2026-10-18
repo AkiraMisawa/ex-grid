@@ -1,0 +1,134 @@
+{
+  "inner": 10,
+  "redraws": 20,
+  "samples": [
+    {
+      "redraw": 0,
+      "managedMB": 15,
+      "linearMB": 80
+    },
+    {
+      "redraw": 1,
+      "redrawMs": 358,
+      "managedMB": 16.5,
+      "linearMB": 80
+    },
+    {
+      "redraw": 2,
+      "redrawMs": 120,
+      "managedMB": 17.3,
+      "linearMB": 80
+    },
+    {
+      "redraw": 3,
+      "redrawMs": 142,
+      "managedMB": 18.2,
+      "linearMB": 80
+    },
+    {
+      "redraw": 4,
+      "redrawMs": 101,
+      "managedMB": 19,
+      "linearMB": 80
+    },
+    {
+      "redraw": 5,
+      "redrawMs": 140,
+      "managedMB": 19.8,
+      "linearMB": 80
+    },
+    {
+      "redraw": 6,
+      "redrawMs": 118,
+      "managedMB": 20.7,
+      "linearMB": 80
+    },
+    {
+      "redraw": 7,
+      "redrawMs": 94,
+      "managedMB": 20.7,
+      "linearMB": 80
+    },
+    {
+      "redraw": 8,
+      "redrawMs": 87,
+      "managedMB": 21.6,
+      "linearMB": 80
+    },
+    {
+      "redraw": 9,
+      "redrawMs": 91,
+      "managedMB": 21.7,
+      "linearMB": 80
+    },
+    {
+      "redraw": 10,
+      "redrawMs": 94,
+      "managedMB": 21.7,
+      "linearMB": 80
+    },
+    {
+      "redraw": 11,
+      "redrawMs": 88,
+      "managedMB": 21.9,
+      "linearMB": 80
+    },
+    {
+      "redraw": 12,
+      "redrawMs": 94,
+      "managedMB": 22.7,
+      "linearMB": 80
+    },
+    {
+      "redraw": 13,
+      "redrawMs": 72,
+      "managedMB": 22.8,
+      "linearMB": 80
+    },
+    {
+      "redraw": 14,
+      "redrawMs": 107,
+      "managedMB": 22.9,
+      "linearMB": 80
+    },
+    {
+      "redraw": 15,
+      "redrawMs": 123,
+      "managedMB": 22.9,
+      "linearMB": 96
+    },
+    {
+      "redraw": 16,
+      "redrawMs": 112,
+      "managedMB": 22.3,
+      "linearMB": 96
+    },
+    {
+      "redraw": 17,
+      "redrawMs": 80,
+      "managedMB": 22.3,
+      "linearMB": 96
+    },
+    {
+      "redraw": 18,
+      "redrawMs": 87,
+      "managedMB": 22.4,
+      "linearMB": 96
+    },
+    {
+      "redraw": 19,
+      "redrawMs": 82,
+      "managedMB": 22.5,
+      "linearMB": 96
+    },
+    {
+      "redraw": 20,
+      "redrawMs": 118,
+      "managedMB": 22.6,
+      "linearMB": 96
+    }
+  ],
+  "errors": [],
+  "browser": "141.0.7390.37",
+  "firstReportSeconds": 2.033
+}

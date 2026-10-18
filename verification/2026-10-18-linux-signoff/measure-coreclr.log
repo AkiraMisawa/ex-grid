@@ -1,0 +1,143 @@
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> /home/user/ex-grid/.claude/worktrees/rel/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid.Data.Tests -> /home/user/ex-grid/.claude/worktrees/rel/tests/ExGrid.Data.Tests/bin/Release/net10.0/ExGrid.Data.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:05.14
+dotnet 10.0.203 (nix-managed)
+xUnit.net v3 In-Process Runner v2.0.3+216a74a292 (64-bit .NET 10.0.7)
+[37m  Discovering: ExGrid.Data.Tests
+[0m[37m  Discovered:  ExGrid.Data.Tests
+[0m[37m  Starting:    ExGrid.Data.Tests
+[0m[90m    ExGrid.Data.Tests.MeasureTests.DA17_a_million_records_built_from_objects [OUTPUT] 4 logical CPUs, .NET 10.0.7, Ubuntu 24.04.5 LTS, server GC False
+[0m[90m    ExGrid.Data.Tests.MeasureTests.DA17_a_million_records_built_from_objects [OUTPUT] Build, 1,000,000 records, 12 columns, keyed by Id: median 367 ms, best 356 ms, worst 460 ms (n=7), allocating 157.3 MiB
+[0m[90m    ExGrid.Data.Tests.MeasureTests.DA17_a_million_records_built_from_objects [OUTPUT] BuildAsync (30 ms slices), 1,000,000 records, 12 columns, keyed by Id: median 358 ms, best 352 ms, worst 379 ms (n=7)
+[0m[90m    ExGrid.Data.Tests.MeasureTests.DA17_a_million_records_built_from_objects [OUTPUT] Build, 1,000,000 records, 12 columns, no Record Key: median 391 ms, best 336 ms, worst 468 ms (n=7), allocating 145.5 MiB
+[0m[90m    ExGrid.Data.Tests.MeasureTests.DA17_a_million_records_built_from_objects [OUTPUT] BuildAsync (30 ms slices), 1,000,000 records, 12 columns, no Record Key: median 383 ms, best 359 ms, worst 469 ms (n=7)
+[0m[90m    ExGrid.Data.Tests.MeasureTests.DA17_a_million_rows_read_from_a_CSV [OUTPUT] 4 logical CPUs, .NET 10.0.7, Ubuntu 24.04.5 LTS, server GC False
+[0m[90m    ExGrid.Data.Tests.MeasureTests.DA17_a_million_rows_read_from_a_CSV [OUTPUT] The trade export: 1,000,000 rows, 89.7 MiB of UTF-8
+[0m[90m    ExGrid.Data.Tests.MeasureTests.DA17_a_million_rows_read_from_a_CSV [OUTPUT] Read from memory, 1,000,000 rows, 12 columns, keyed by Id: median 515 ms, best 467 ms, worst 679 ms (n=7), allocating 191.9 MiB
+[0m[90m    ExGrid.Data.Tests.MeasureTests.DA17_a_million_rows_read_from_a_CSV [OUTPUT] Read from a file (in the page cache), 1,000,000 rows: median 497 ms, best 447 ms, worst 547 ms (n=7)
+[0m[37m  Finished:    ExGrid.Data.Tests
+[0m[37m=== TEST EXECUTION SUMMARY ===
+[0m[37m   ExGrid.Data.Tests  Total: 368, Errors: 0, Failed: 0, Skipped: 0, Not Run: 366, Time: 43.659s
+[0m[0mdotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> /home/user/ex-grid/.claude/worktrees/rel/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid.Data.Arrow -> /home/user/ex-grid/.claude/worktrees/rel/src/ExGrid.Data.Arrow/bin/Release/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid.Data.Arrow.Tests -> /home/user/ex-grid/.claude/worktrees/rel/tests/ExGrid.Data.Arrow.Tests/bin/Release/net10.0/ExGrid.Data.Arrow.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:04.09
+dotnet 10.0.203 (nix-managed)
+xUnit.net v3 In-Process Runner v2.0.3+216a74a292 (64-bit .NET 10.0.7)
+[37m  Discovering: ExGrid.Data.Arrow.Tests
+[0m[37m  Discovered:  ExGrid.Data.Arrow.Tests
+[0m[37m  Starting:    ExGrid.Data.Arrow.Tests
+[0m[90m    ExGrid.Data.Arrow.Tests.MeasureTests.Measure_a_million_trades [OUTPUT] 4 logical CPUs, .NET 10.0.7, Ubuntu 24.04.5 LTS
+[0m[90m    ExGrid.Data.Arrow.Tests.MeasureTests.Measure_a_million_trades [OUTPUT] the demo's trades, keyed by TradeId: 1,000,000 rows, 11 columns
+[0m[90m    ExGrid.Data.Arrow.Tests.MeasureTests.Measure_a_million_trades [OUTPUT]   payload 75.7 MiB raw, 17.7 MiB with gzip, 18.2 MiB with Brotli
+[0m[90m    ExGrid.Data.Arrow.Tests.MeasureTests.Measure_a_million_trades [OUTPUT]   write best 160 ms, median 167 ms
+[0m[90m    ExGrid.Data.Arrow.Tests.MeasureTests.Measure_a_million_trades [OUTPUT]   read from memory best 283 ms, median 311 ms, allocating 214.3 MiB
+[0m[90m    ExGrid.Data.Arrow.Tests.MeasureTests.Measure_a_million_trades [OUTPUT]   read from a stream best 290 ms, median 300 ms
+[0m[90m    ExGrid.Data.Arrow.Tests.MeasureTests.Measure_a_million_trades [OUTPUT] ADR-0065's shape, without the unique id: 1,000,000 rows, 9 columns
+[0m[90m    ExGrid.Data.Arrow.Tests.MeasureTests.Measure_a_million_trades [OUTPUT]   payload 61.2 MiB raw, 10.7 MiB with gzip, 11.5 MiB with Brotli
+[0m[90m    ExGrid.Data.Arrow.Tests.MeasureTests.Measure_a_million_trades [OUTPUT]   write best 91 ms, median 99 ms
+[0m[90m    ExGrid.Data.Arrow.Tests.MeasureTests.Measure_a_million_trades [OUTPUT]   read from memory best 78 ms, median 83 ms, allocating 56.3 MiB
+[0m[90m    ExGrid.Data.Arrow.Tests.MeasureTests.Measure_a_million_trades [OUTPUT]   read from a stream best 94 ms, median 105 ms
+[0m[37m  Finished:    ExGrid.Data.Arrow.Tests
+[0m[37m=== TEST EXECUTION SUMMARY ===
+[0m[37m   ExGrid.Data.Arrow.Tests  Total: 183, Errors: 0, Failed: 0, Skipped: 0, Not Run: 182, Time: 41.822s
+[0m[0mdotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> /home/user/ex-grid/.claude/worktrees/rel/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /home/user/ex-grid/.claude/worktrees/rel/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExPivot.Engine.Tests -> /home/user/ex-grid/.claude/worktrees/rel/tests/ExPivot.Engine.Tests/bin/Release/net10.0/ExPivot.Engine.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:07.14
+dotnet 10.0.203 (nix-managed)
+xUnit.net v3 In-Process Runner v2.0.3+216a74a292 (64-bit .NET 10.0.7)
+[37m  Discovering: ExPivot.Engine.Tests
+[0m[37m  Discovered:  ExPivot.Engine.Tests
+[0m[37m  Starting:    ExPivot.Engine.Tests
+[0m[90m    ExPivot.Engine.Tests.Measurements.Folding_a_thousand_changes_into_a_million_records [OUTPUT] 1,000 changes, exact Sums (subtracted): build the batch        median      0.4 ms   min      0.3 ms   (n=30)   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Folding_a_thousand_changes_into_a_million_records [OUTPUT] 1,000 changes, exact Sums (subtracted): apply and fold         median      7.1 ms   min      3.9 ms   (n=30)   0 compacted   GCs:
+[0m[90m    ExPivot.Engine.Tests.Measurements.Folding_a_thousand_changes_into_a_million_records [OUTPUT] 1,000 changes, exact Sums (subtracted): the next answer        median      1.8 ms   min      0.9 ms   (n=30)   GCs:
+[0m[90m    ExPivot.Engine.Tests.Measurements.Folding_a_thousand_changes_into_a_million_records [OUTPUT] 1,000 changes, a double's Sum (leaves recomputed): build the batch median      0.3 ms   min      0.3 ms   (n=30)   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Folding_a_thousand_changes_into_a_million_records [OUTPUT] 1,000 changes, a double's Sum (leaves recomputed): apply and fold median     15.6 ms   min     13.7 ms   (n=30)   0 compacted   GCs:
+[0m[90m    ExPivot.Engine.Tests.Measurements.Folding_a_thousand_changes_into_a_million_records [OUTPUT] 1,000 changes, a double's Sum (leaves recomputed): the next answer median      0.5 ms   min      0.4 ms   (n=30)   GCs:
+[0m[90m    ExPivot.Engine.Tests.Measurements.Folding_a_thousand_changes_into_a_million_records [OUTPUT] 1,000 changes, Max of Notional (leaves recomputed): build the batch median      0.3 ms   min      0.2 ms   (n=30)   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Folding_a_thousand_changes_into_a_million_records [OUTPUT] 1,000 changes, Max of Notional (leaves recomputed): apply and fold median     13.1 ms   min     11.6 ms   (n=30)   0 compacted   GCs:
+[0m[90m    ExPivot.Engine.Tests.Measurements.Folding_a_thousand_changes_into_a_million_records [OUTPUT] 1,000 changes, Max of Notional (leaves recomputed): the next answer median      0.5 ms   min      0.4 ms   (n=30)   GCs:
+[0m[90m    ExPivot.Engine.Tests.Measurements.Folding_a_thousand_changes_into_a_million_records [OUTPUT] 1,000 changes, 270 dates, exact Sums: build the batch          median      0.2 ms   min      0.2 ms   (n=30)   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Folding_a_thousand_changes_into_a_million_records [OUTPUT] 1,000 changes, 270 dates, exact Sums: apply and fold           median      4.8 ms   min      3.2 ms   (n=30)   0 compacted   GCs:
+[0m[90m    ExPivot.Engine.Tests.Measurements.Folding_a_thousand_changes_into_a_million_records [OUTPUT] 1,000 changes, 270 dates, exact Sums: the next answer          median     29.8 ms   min     24.8 ms   (n=30)   GCs:
+[0m[90m    ExPivot.Engine.Tests.Measurements.Asking_a_million_records [OUTPUT] main: 3 row fields, Product, two Sums                          median     21.6 ms   min     20.8 ms   (n=7)   2,976 leaves   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Asking_a_million_records [OUTPUT] main with Month (a date part) in Columns                       median     52.4 ms   min     47.1 ms   (n=7)   26,784 leaves   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Asking_a_million_records [OUTPUT] 270 dates: TradeDate in Columns                                median    117.7 ms   min    110.8 ms   (n=7)   199,511 leaves   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Asking_a_million_records [OUTPUT] main: 3 row fields, Product, two Sums (keyed: rows kept)       median     25.2 ms   min     22.6 ms   (n=7)   2,976 leaves   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Asking_a_million_records [OUTPUT] main with Month (a date part) in Columns (keyed: rows kept)    median     51.5 ms   min     49.4 ms   (n=7)   26,784 leaves   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Asking_a_million_records [OUTPUT] 270 dates: TradeDate in Columns (keyed: rows kept)             median    127.7 ms   min    120.8 ms   (n=7)   199,511 leaves   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Asking_a_million_records [OUTPUT] main, money held as decimal (no 64-bit scale)                  median     46.2 ms   min     40.8 ms   (n=7)   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Asking_a_million_records [OUTPUT] main, first question over untyped accessors (builds too)       median    266.8 ms   min    249.7 ms   (n=3)   GCs: g0+1/g2+0 g0+1/g2+0 g0+1/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Building_the_snapshot_from_typed_declarations [OUTPUT] Build, 1,000,000 records, 13 columns                           median    149.5 ms   min    134.3 ms   (n=5)   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Building_the_snapshot_from_typed_declarations [OUTPUT] Build, 1,000,000 records, 13 columns, Record Key               median    171.5 ms   min    161.6 ms   (n=5)   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Laying_out_the_answer_held [OUTPUT] main: 3 row fields, Product, two Sums: the answer made a cube  median      3.6 ms   min      1.9 ms   (n=9)   2,976 leaves   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Laying_out_the_answer_held [OUTPUT] main: 3 row fields, Product, two Sums: as asked                median      1.9 ms   min      1.5 ms   (n=9)   2,976 leaves, 760 rows x 10 value columns   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Laying_out_the_answer_held [OUTPUT] main: 3 row fields, Product, two Sums: Americas collapsed      median      1.4 ms   min      1.2 ms   (n=9)   2,976 leaves, 508 rows x 10 value columns   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Laying_out_the_answer_held [OUTPUT] main: 3 row fields, Product, two Sums: Region sorted Z to A    median      1.6 ms   min      1.4 ms   (n=9)   2,976 leaves, 760 rows x 10 value columns   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Laying_out_the_answer_held [OUTPUT] main: 3 row fields, Product, two Sums: Book sorted by Sum of Notional, largest first median      1.3 ms   min      1.1 ms   (n=9)   2,976 leaves, 760 rows x 10 value columns   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Laying_out_the_answer_held [OUTPUT] main: 3 row fields, Product, two Sums: Tabular form            median      2.2 ms   min      1.8 ms   (n=9)   2,976 leaves, 760 rows x 10 value columns   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Laying_out_the_answer_held [OUTPUT] 270 dates: TradeDate in Columns: the answer made a cube        median    111.7 ms   min     99.6 ms   (n=9)   199,511 leaves   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Laying_out_the_answer_held [OUTPUT] 270 dates: TradeDate in Columns: as asked                      median      1.6 ms   min      1.3 ms   (n=9)   199,511 leaves, 760 rows x 542 value columns   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Laying_out_the_answer_held [OUTPUT] 270 dates: TradeDate in Columns: Americas collapsed            median      1.1 ms   min      1.0 ms   (n=9)   199,511 leaves, 508 rows x 542 value columns   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Laying_out_the_answer_held [OUTPUT] 270 dates: TradeDate in Columns: Region sorted Z to A          median      1.1 ms   min      1.0 ms   (n=9)   199,511 leaves, 760 rows x 542 value columns   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Laying_out_the_answer_held [OUTPUT] 270 dates: TradeDate in Columns: Book sorted by Sum of Notional, largest first median      2.0 ms   min      1.7 ms   (n=9)   199,511 leaves, 760 rows x 542 value columns   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExPivot.Engine.Tests.Measurements.Laying_out_the_answer_held [OUTPUT] 270 dates: TradeDate in Columns: Tabular form                  median      1.4 ms   min      1.2 ms   (n=9)   199,511 leaves, 760 rows x 542 value columns   GCs: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[37m  Finished:    ExPivot.Engine.Tests
+[0m[37m=== TEST EXECUTION SUMMARY ===
+[0m[37m   ExPivot.Engine.Tests  Total: 509, Errors: 0, Failed: 0, Skipped: 0, Not Run: 505, Time: 116.327s
+[0m[0mdotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExSheet.Engine -> /home/user/ex-grid/.claude/worktrees/rel/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  ExSheet.Engine.Tests -> /home/user/ex-grid/.claude/worktrees/rel/tests/ExSheet.Engine.Tests/bin/Release/net10.0/ExSheet.Engine.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:06.28
+dotnet 10.0.203 (nix-managed)
+xUnit.net v3 In-Process Runner v2.0.3+216a74a292 (64-bit .NET 10.0.7)
+[37m  Discovering: ExSheet.Engine.Tests
+[0m[37m  Discovered:  ExSheet.Engine.Tests
+[0m[37m  Starting:    ExSheet.Engine.Tests
+[0m[90m    ExSheet.Engine.Tests.Measurements.SH19_a_row_inserted_near_the_top [OUTPUT] 4 logical CPUs, .NET 10.0.7, Ubuntu 24.04.5 LTS, server GC False, load average 1.07 2.46 1.90
+[0m[90m    ExSheet.Engine.Tests.Measurements.SH19_a_row_inserted_near_the_top [OUTPUT] SH-19's case: a row inserted at row 2: median 1955.5 ms, best 1893.7 ms, worst 2124.5 ms (n=7); 50,015 recalculated, 10,000 rows changed; collections by run: g0+7/g2+1 g0+6/g2+0 g0+6/g2+0 g0+6/g2+0 g0+6/g2+0 g0+6/g2+0 g0+6/g2+0
+[0m[90m    ExSheet.Engine.Tests.Measurements.SH19_a_row_inserted_near_the_top [OUTPUT] SH-19's case: that insertion undone: median 2539.6 ms, best 2300.7 ms, worst 2947.7 ms (n=7); collections by run: g0+8/g2+1 g0+8/g2+1 g0+8/g2+1 g0+8/g2+1 g0+8/g2+1 g0+8/g2+1 g0+8/g2+1
+[0m[90m    ExSheet.Engine.Tests.Measurements.SH19_a_full_recalculation [OUTPUT] 4 logical CPUs, .NET 10.0.7, Ubuntu 24.04.5 LTS, server GC False, load average 1.06 2.23 1.85
+[0m[90m    ExSheet.Engine.Tests.Measurements.SH19_a_full_recalculation [OUTPUT] SH-19's case: 10,000 rows by 20 columns, and 20 totals beside them; 50,020 Formulas, 20 of them reading a whole column, and 150,000 constants (seed 20261011)
+[0m[90m    ExSheet.Engine.Tests.Measurements.SH19_a_full_recalculation [OUTPUT] SH-19's case: Sheet.Open, every Value computed: median 939.5 ms, best 866.7 ms, worst 1033.7 ms (n=7); collections by run: g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0 g0+1/g2+0
+[0m[90m    ExSheet.Engine.Tests.Measurements.SH19_one_edits_propagation [OUTPUT] 4 logical CPUs, .NET 10.0.7, Ubuntu 24.04.5 LTS, server GC False, load average 1.05 2.19 1.84
+[0m[90m    ExSheet.Engine.Tests.Measurements.SH19_one_edits_propagation [OUTPUT] SH-19's case: an edit to A1, which the whole running total reads: median 158.5 ms, best 123.1 ms, worst 177.1 ms (n=7); 10,010 recalculated, 10,011 Values changed; collections by run: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExSheet.Engine.Tests.Measurements.SH19_one_edits_propagation [OUTPUT] SH-19's case: an edit to A10000, which its own row and the totals read: median 93.0 ms, best 85.1 ms, worst 111.2 ms (n=7); 11 recalculated, 12 Values changed; collections by run: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[90m    ExSheet.Engine.Tests.Measurements.SH19_one_edits_propagation [OUTPUT] SH-19's case: an edit to O5000, which only its column's total reads: median 52.9 ms, best 48.7 ms, worst 67.7 ms (n=7); 1 recalculated, 2 Values changed; collections by run: g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0 g0+0/g2+0
+[0m[37m  Finished:    ExSheet.Engine.Tests
+[0m[37m=== TEST EXECUTION SUMMARY ===
+[0m[37m   ExSheet.Engine.Tests  Total: 6098, Errors: 0, Failed: 0, Skipped: 0, Not Run: 6095, Time: 76.300s
+[0m[0mexit 0

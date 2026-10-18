@@ -1,0 +1,42 @@
+dotnet 10.0.203 (nix-managed)
+== src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj
+Project reference(s)
+--------------------
+../ExGrid.Data/ExGrid.Data.csproj
+== src/ExGrid.Data/ExGrid.Data.csproj
+There are no Project to Project references in project src/ExGrid.Data/ExGrid.Data.csproj.
+== src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj
+Project reference(s)
+--------------------
+../ExGrid/ExGrid.csproj
+== src/ExGrid/ExGrid.csproj
+Project reference(s)
+--------------------
+../ExGrid.Data/ExGrid.Data.csproj
+== src/ExPivot.Engine/ExPivot.Engine.csproj
+Project reference(s)
+--------------------
+../ExGrid.Data/ExGrid.Data.csproj
+== src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj
+Project reference(s)
+--------------------
+../ExPivot/ExPivot.csproj
+../ExGrid.MudBlazor/ExGrid.MudBlazor.csproj
+== src/ExPivot/ExPivot.csproj
+Project reference(s)
+--------------------
+../ExPivot.Engine/ExPivot.Engine.csproj
+../ExGrid/ExGrid.csproj
+== src/ExSheet.Engine/ExSheet.Engine.csproj
+There are no Project to Project references in project src/ExSheet.Engine/ExSheet.Engine.csproj.
+== src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj
+Project reference(s)
+--------------------
+../ExSheet/ExSheet.csproj
+../ExGrid.MudBlazor/ExGrid.MudBlazor.csproj
+== src/ExSheet/ExSheet.csproj
+Project reference(s)
+--------------------
+../ExSheet.Engine/ExSheet.Engine.csproj
+../ExGrid/ExGrid.csproj
+exit 0

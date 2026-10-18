@@ -1,0 +1,833 @@
+﻿2026-10-18T19:21:03.2167824Z Current runner version: '2.337.0'
+2026-10-18T19:21:03.2193792Z ##[group]Runner Image Provisioner
+2026-10-18T19:21:03.2194822Z Hosted Compute Agent
+2026-10-18T19:21:03.2195465Z Version: 20261012.601
+2026-10-18T19:21:03.2196461Z Commit: f3dc54e1fb89da6852db922499a0233137369e1d
+2026-10-18T19:21:03.2197358Z Build Date: 2026-10-12T17:48:21Z
+2026-10-18T19:21:03.2198079Z Worker ID: {03c92525-6f2c-4600-a6a8-c14ce928acb2}
+2026-10-18T19:21:03.2198809Z Region: centralus
+2026-10-18T19:21:03.2199445Z Cloud: Azure
+2026-10-18T19:21:03.2199991Z ##[endgroup]
+2026-10-18T19:21:03.2201635Z ##[group]Operating System
+2026-10-18T19:21:03.2202304Z Ubuntu
+2026-10-18T19:21:03.2202867Z 24.04.5
+2026-10-18T19:21:03.2203835Z LTS
+2026-10-18T19:21:03.2204365Z ##[endgroup]
+2026-10-18T19:21:03.2204955Z ##[group]Runner Image
+2026-10-18T19:21:03.2205576Z Image: ubuntu-24.04
+2026-10-18T19:21:03.2206486Z Version: 20261012.334.1
+2026-10-18T19:21:03.2207972Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-18T19:21:03.2209573Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334
+2026-10-18T19:21:03.2210606Z ##[endgroup]
+2026-10-18T19:21:03.2211788Z ##[group]GITHUB_TOKEN Permissions
+2026-10-18T19:21:03.2213940Z Contents: read
+2026-10-18T19:21:03.2214661Z Metadata: read
+2026-10-18T19:21:03.2215372Z ##[endgroup]
+2026-10-18T19:21:03.2218186Z Secret source: Actions
+2026-10-18T19:21:03.2219314Z Cache mode: write
+2026-10-18T19:21:03.2220202Z Prepare workflow directory
+2026-10-18T19:21:03.2786463Z Prepare all required actions
+2026-10-18T19:21:03.2834795Z Getting action download info
+2026-10-18T19:21:03.5452600Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-18T19:21:03.6580009Z Download action repository 'actions/setup-dotnet@v6' (SHA:a98b56852c35b8e3190ac28c8c2271da59106c68)
+2026-10-18T19:21:04.1440521Z Download action repository 'actions/setup-node@v7' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-10-18T19:21:04.7212047Z Download action repository 'actions/download-artifact@v8' (SHA:9000827ccba6bdab643e8b6fd33ac0654aef8333)
+2026-10-18T19:21:05.1294929Z Download action repository 'actions/upload-artifact@v7' (SHA:cf430e030ddbb5b0abf93d22962f4752f3646cd9)
+2026-10-18T19:21:05.7365918Z Uses: AkiraMisawa/ex-grid/.github/workflows/ci.yml@refs/tags/v0.1.0-rc.3 (cff4a0dd94d0bbbb0fd171e5a276dabebbdb1c07)
+2026-10-18T19:21:05.7370495Z ##[group] Inputs
+2026-10-18T19:21:05.7370797Z   version: 0.1.0-rc.3
+2026-10-18T19:21:05.7371386Z   long: true
+2026-10-18T19:21:05.7371629Z ##[endgroup]
+2026-10-18T19:21:05.7372029Z Complete job name: Every layer, and the packages / Layer 3 on msedge, shard 2/4 (Linux, headed)
+2026-10-18T19:21:05.8041401Z ##[group]Run actions/checkout@v7
+2026-10-18T19:21:05.8042180Z with:
+2026-10-18T19:21:05.8042580Z   repository: AkiraMisawa/ex-grid
+2026-10-18T19:21:05.8045209Z   token: ***
+2026-10-18T19:21:05.8045516Z   ssh-strict: true
+2026-10-18T19:21:05.8045926Z   ssh-user: git
+2026-10-18T19:21:05.8046489Z   persist-credentials: true
+2026-10-18T19:21:05.8046910Z   clean: true
+2026-10-18T19:21:05.8047246Z   sparse-checkout-cone-mode: true
+2026-10-18T19:21:05.8047621Z   fetch-depth: 1
+2026-10-18T19:21:05.8048007Z   fetch-tags: false
+2026-10-18T19:21:05.8048310Z   show-progress: true
+2026-10-18T19:21:05.8048643Z   lfs: false
+2026-10-18T19:21:05.8048948Z   submodules: false
+2026-10-18T19:21:05.8049258Z   set-safe-directory: true
+2026-10-18T19:21:05.8049672Z   allow-unsafe-pr-checkout: false
+2026-10-18T19:21:05.8050356Z env:
+2026-10-18T19:21:05.8050709Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:05.8051180Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:05.8051477Z   LONG_RUN: true
+2026-10-18T19:21:05.8051925Z ##[endgroup]
+2026-10-18T19:21:05.9062485Z Syncing repository: AkiraMisawa/ex-grid
+2026-10-18T19:21:05.9064119Z ##[group]Getting Git version info
+2026-10-18T19:21:05.9064683Z Working directory is '/home/runner/work/ex-grid/ex-grid'
+2026-10-18T19:21:05.9065555Z [command]/usr/bin/git version
+2026-10-18T19:21:05.9145749Z git version 2.55.0
+2026-10-18T19:21:05.9166889Z ##[endgroup]
+2026-10-18T19:21:05.9177126Z Temporarily overriding HOME='/home/runner/work/_temp/acebefc4-3c29-4223-aaf6-3a6fbd97f458' before making global git config changes
+2026-10-18T19:21:05.9178846Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-18T19:21:05.9182471Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ex-grid/ex-grid
+2026-10-18T19:21:05.9231300Z Deleting the contents of '/home/runner/work/ex-grid/ex-grid'
+2026-10-18T19:21:05.9234689Z ##[group]Determining repository object format
+2026-10-18T19:21:05.9236361Z ##[endgroup]
+2026-10-18T19:21:05.9237012Z ##[group]Initializing the repository
+2026-10-18T19:21:05.9240479Z [command]/usr/bin/git init /home/runner/work/ex-grid/ex-grid
+2026-10-18T19:21:05.9363404Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-18T19:21:05.9364841Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-18T19:21:05.9365834Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-18T19:21:05.9366817Z hint: call:
+2026-10-18T19:21:05.9367446Z hint:
+2026-10-18T19:21:05.9368247Z hint: 	git config --global init.defaultBranch <name>
+2026-10-18T19:21:05.9369004Z hint:
+2026-10-18T19:21:05.9370044Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-18T19:21:05.9371468Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-18T19:21:05.9372725Z hint:
+2026-10-18T19:21:05.9373352Z hint: 	git branch -m <name>
+2026-10-18T19:21:05.9373782Z hint:
+2026-10-18T19:21:05.9441770Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-18T19:21:05.9442882Z Initialized empty Git repository in /home/runner/work/ex-grid/ex-grid/.git/
+2026-10-18T19:21:05.9444002Z [command]/usr/bin/git remote add origin https://github.com/AkiraMisawa/ex-grid
+2026-10-18T19:21:05.9444904Z ##[endgroup]
+2026-10-18T19:21:05.9445289Z ##[group]Disabling automatic garbage collection
+2026-10-18T19:21:05.9445641Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-18T19:21:05.9462940Z ##[endgroup]
+2026-10-18T19:21:05.9463577Z ##[group]Setting up auth
+2026-10-18T19:21:05.9463979Z Removing SSH command configuration
+2026-10-18T19:21:05.9469152Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-18T19:21:05.9499245Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-18T19:21:05.9862440Z Removing HTTP extra header
+2026-10-18T19:21:05.9867431Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-18T19:21:05.9896620Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-18T19:21:06.0115143Z Removing includeIf entries pointing to credentials config files
+2026-10-18T19:21:06.0116419Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-18T19:21:06.0147497Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-18T19:21:06.0372464Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-0a3e9830-0111-490b-8e30-72b1e4778b38.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-18T19:21:06.0408053Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path /home/runner/work/_temp/git-credentials-0a3e9830-0111-490b-8e30-72b1e4778b38.config
+2026-10-18T19:21:06.0439347Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-0a3e9830-0111-490b-8e30-72b1e4778b38.config
+2026-10-18T19:21:06.0472573Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-0a3e9830-0111-490b-8e30-72b1e4778b38.config
+2026-10-18T19:21:06.0504090Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-0a3e9830-0111-490b-8e30-72b1e4778b38.config
+2026-10-18T19:21:06.0531953Z ##[endgroup]
+2026-10-18T19:21:06.0532686Z ##[group]Fetching the repository
+2026-10-18T19:21:06.0539245Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +refs/tags/v0.1.0-rc.3:refs/tags/v0.1.0-rc.3
+2026-10-18T19:21:11.6306741Z From https://github.com/AkiraMisawa/ex-grid
+2026-10-18T19:21:11.6307503Z  * [new tag]         v0.1.0-rc.3 -> v0.1.0-rc.3
+2026-10-18T19:21:11.6315951Z [command]/usr/bin/git tag --list v0.1.0-rc.3
+2026-10-18T19:21:11.6346783Z v0.1.0-rc.3
+2026-10-18T19:21:11.6355563Z [command]/usr/bin/git rev-parse refs/tags/v0.1.0-rc.3^{commit}
+2026-10-18T19:21:11.6380572Z cff4a0dd94d0bbbb0fd171e5a276dabebbdb1c07
+2026-10-18T19:21:11.6385178Z ##[endgroup]
+2026-10-18T19:21:11.6385936Z ##[group]Determining the checkout info
+2026-10-18T19:21:11.6386809Z ##[endgroup]
+2026-10-18T19:21:11.6408523Z [command]/usr/bin/git sparse-checkout disable
+2026-10-18T19:21:11.6446991Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-18T19:21:11.6477310Z ##[group]Checking out the ref
+2026-10-18T19:21:11.6481461Z [command]/usr/bin/git checkout --progress --force refs/tags/v0.1.0-rc.3
+2026-10-18T19:21:12.6666624Z Updating files:  56% (7299/12962)
+2026-10-18T19:21:12.6781486Z Updating files:  57% (7389/12962)
+2026-10-18T19:21:12.6897768Z Updating files:  58% (7518/12962)
+2026-10-18T19:21:12.6965804Z Updating files:  59% (7648/12962)
+2026-10-18T19:21:12.7032147Z Updating files:  60% (7778/12962)
+2026-10-18T19:21:12.7100704Z Updating files:  61% (7907/12962)
+2026-10-18T19:21:12.7185576Z Updating files:  62% (8037/12962)
+2026-10-18T19:21:12.7272589Z Updating files:  63% (8167/12962)
+2026-10-18T19:21:12.7757658Z Updating files:  64% (8296/12962)
+2026-10-18T19:21:12.7971497Z Updating files:  65% (8426/12962)
+2026-10-18T19:21:12.8196260Z Updating files:  66% (8555/12962)
+2026-10-18T19:21:12.8273262Z Updating files:  67% (8685/12962)
+2026-10-18T19:21:12.8493441Z Updating files:  68% (8815/12962)
+2026-10-18T19:21:12.8747227Z Updating files:  69% (8944/12962)
+2026-10-18T19:21:12.8859859Z Updating files:  70% (9074/12962)
+2026-10-18T19:21:12.8933240Z Updating files:  71% (9204/12962)
+2026-10-18T19:21:12.9084457Z Updating files:  72% (9333/12962)
+2026-10-18T19:21:12.9167236Z Updating files:  73% (9463/12962)
+2026-10-18T19:21:12.9241868Z Updating files:  74% (9592/12962)
+2026-10-18T19:21:12.9375475Z Updating files:  75% (9722/12962)
+2026-10-18T19:21:12.9525876Z Updating files:  76% (9852/12962)
+2026-10-18T19:21:12.9871166Z Updating files:  77% (9981/12962)
+2026-10-18T19:21:13.0128722Z Updating files:  78% (10111/12962)
+2026-10-18T19:21:13.0341685Z Updating files:  79% (10240/12962)
+2026-10-18T19:21:13.0464175Z Updating files:  80% (10370/12962)
+2026-10-18T19:21:13.0648668Z Updating files:  81% (10500/12962)
+2026-10-18T19:21:13.0734545Z Updating files:  82% (10629/12962)
+2026-10-18T19:21:13.1012145Z Updating files:  83% (10759/12962)
+2026-10-18T19:21:13.1113517Z Updating files:  84% (10889/12962)
+2026-10-18T19:21:13.1195623Z Updating files:  85% (11018/12962)
+2026-10-18T19:21:13.1306385Z Updating files:  86% (11148/12962)
+2026-10-18T19:21:13.1405410Z Updating files:  87% (11277/12962)
+2026-10-18T19:21:13.1484451Z Updating files:  88% (11407/12962)
+2026-10-18T19:21:13.1650309Z Updating files:  89% (11537/12962)
+2026-10-18T19:21:13.1907806Z Updating files:  90% (11666/12962)
+2026-10-18T19:21:13.2236963Z Updating files:  91% (11796/12962)
+2026-10-18T19:21:13.2549418Z Updating files:  92% (11926/12962)
+2026-10-18T19:21:13.2803240Z Updating files:  93% (12055/12962)
+2026-10-18T19:21:13.2997349Z Updating files:  94% (12185/12962)
+2026-10-18T19:21:13.3509857Z Updating files:  95% (12314/12962)
+2026-10-18T19:21:13.3683795Z Updating files:  96% (12444/12962)
+2026-10-18T19:21:13.4003543Z Updating files:  97% (12574/12962)
+2026-10-18T19:21:13.4206481Z Updating files:  98% (12703/12962)
+2026-10-18T19:21:13.4724361Z Updating files:  99% (12833/12962)
+2026-10-18T19:21:13.4724996Z Updating files: 100% (12962/12962)
+2026-10-18T19:21:13.4725494Z Updating files: 100% (12962/12962), done.
+2026-10-18T19:21:13.4841967Z Note: switching to 'refs/tags/v0.1.0-rc.3'.
+2026-10-18T19:21:13.4842484Z 
+2026-10-18T19:21:13.4842894Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-18T19:21:13.4843919Z changes and commit them, and you can discard any commits you make in this
+2026-10-18T19:21:13.4845159Z state without impacting any branches by switching back to a branch.
+2026-10-18T19:21:13.4845862Z 
+2026-10-18T19:21:13.4846553Z If you want to create a new branch to retain commits you create, you may
+2026-10-18T19:21:13.4847806Z do so (now or later) by using -c with the switch command. Example:
+2026-10-18T19:21:13.4848460Z 
+2026-10-18T19:21:13.4848733Z   git switch -c <new-branch-name>
+2026-10-18T19:21:13.4849137Z 
+2026-10-18T19:21:13.4849388Z Or undo this operation with:
+2026-10-18T19:21:13.4849798Z 
+2026-10-18T19:21:13.4850037Z   git switch -
+2026-10-18T19:21:13.4850363Z 
+2026-10-18T19:21:13.4850969Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-18T19:21:13.4851868Z 
+2026-10-18T19:21:13.4852576Z HEAD is now at cff4a0d Run 18b on macOS: KB-3 and FN-12e at 0.1.0-rc.3's commit (ADR-0208) (#173)
+2026-10-18T19:21:13.4927703Z ##[endgroup]
+2026-10-18T19:21:13.4977256Z [command]/usr/bin/git log -1 --format=%H
+2026-10-18T19:21:13.5001733Z cff4a0dd94d0bbbb0fd171e5a276dabebbdb1c07
+2026-10-18T19:21:13.5238473Z ##[group]Run actions/setup-dotnet@v6
+2026-10-18T19:21:13.5238777Z with:
+2026-10-18T19:21:13.5238993Z   global-json-file: global.json
+2026-10-18T19:21:13.5239251Z   cache: false
+2026-10-18T19:21:13.5239460Z env:
+2026-10-18T19:21:13.5239662Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:13.5239947Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:13.5240149Z   LONG_RUN: true
+2026-10-18T19:21:13.5240346Z ##[endgroup]
+2026-10-18T19:21:13.6561309Z [command]/home/runner/work/_actions/actions/setup-dotnet/v6/externals/install-dotnet.sh --skip-non-versioned-files --runtime dotnet --channel LTS
+2026-10-18T19:21:14.0423532Z dotnet-install: Attempting to download using aka.ms link https://builds.dotnet.microsoft.com/dotnet/Runtime/10.0.13/dotnet-runtime-10.0.13-linux-x64.tar.gz
+2026-10-18T19:21:14.7091586Z dotnet-install: Remote file https://builds.dotnet.microsoft.com/dotnet/Runtime/10.0.13/dotnet-runtime-10.0.13-linux-x64.tar.gz size is 36648012 bytes.
+2026-10-18T19:21:14.7094651Z dotnet-install: Extracting archive from https://builds.dotnet.microsoft.com/dotnet/Runtime/10.0.13/dotnet-runtime-10.0.13-linux-x64.tar.gz
+2026-10-18T19:21:15.3360206Z dotnet-install: Downloaded file size is 36648012 bytes.
+2026-10-18T19:21:15.3360983Z dotnet-install: The remote and local file sizes are equal.
+2026-10-18T19:21:15.3643801Z dotnet-install: Installed version is 10.0.13
+2026-10-18T19:21:15.3703082Z dotnet-install: Adding to current process PATH: `/usr/share/dotnet`. Note: This change will be visible only when sourcing script.
+2026-10-18T19:21:15.3704833Z dotnet-install: Note that the script does not resolve dependencies during installation.
+2026-10-18T19:21:15.3707211Z dotnet-install: To check the list of dependencies, go to https://learn.microsoft.com/dotnet/core/install, select your operating system and check the "Dependencies" section.
+2026-10-18T19:21:15.3709384Z dotnet-install: Installation finished successfully.
+2026-10-18T19:21:15.3730429Z [command]/home/runner/work/_actions/actions/setup-dotnet/v6/externals/install-dotnet.sh --skip-non-versioned-files --channel 10.0
+2026-10-18T19:21:15.6966586Z dotnet-install: Attempting to download using aka.ms link https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.402/dotnet-sdk-10.0.402-linux-x64.tar.gz
+2026-10-18T19:21:18.1655139Z dotnet-install: Remote file https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.402/dotnet-sdk-10.0.402-linux-x64.tar.gz size is 240279509 bytes.
+2026-10-18T19:21:18.1658355Z dotnet-install: Extracting archive from https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.402/dotnet-sdk-10.0.402-linux-x64.tar.gz
+2026-10-18T19:21:22.8179797Z dotnet-install: Downloaded file size is 240279509 bytes.
+2026-10-18T19:21:22.8180417Z dotnet-install: The remote and local file sizes are equal.
+2026-10-18T19:21:23.0712002Z dotnet-install: Installed version is 10.0.402
+2026-10-18T19:21:23.0774152Z dotnet-install: Adding to current process PATH: `/usr/share/dotnet`. Note: This change will be visible only when sourcing script.
+2026-10-18T19:21:23.0776453Z dotnet-install: Note that the script does not resolve dependencies during installation.
+2026-10-18T19:21:23.0778191Z dotnet-install: To check the list of dependencies, go to https://learn.microsoft.com/dotnet/core/install, select your operating system and check the "Dependencies" section.
+2026-10-18T19:21:23.0779415Z dotnet-install: Installation finished successfully.
+2026-10-18T19:21:23.0963101Z ##[group]Run actions/setup-node@v7
+2026-10-18T19:21:23.0963411Z with:
+2026-10-18T19:21:23.0963614Z   node-version: 22
+2026-10-18T19:21:23.0963826Z   cache: npm
+2026-10-18T19:21:23.0964131Z   cache-dependency-path: tests/ExGrid.Browser/package-lock.json
+2026-10-18T19:21:23.0964499Z   check-latest: false
+2026-10-18T19:21:23.0967352Z   token: ***
+2026-10-18T19:21:23.0967595Z   package-manager-cache: true
+2026-10-18T19:21:23.0967847Z env:
+2026-10-18T19:21:23.0968045Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:23.0968298Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:23.0968531Z   LONG_RUN: true
+2026-10-18T19:21:23.0968745Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:23.0968991Z ##[endgroup]
+2026-10-18T19:21:23.2236561Z Found in cache @ /opt/hostedtoolcache/node/22.23.3/x64
+2026-10-18T19:21:23.3246570Z ##[group]Environment details
+2026-10-18T19:21:23.6667961Z node: v22.23.3
+2026-10-18T19:21:23.6668275Z npm: 10.9.9
+2026-10-18T19:21:23.6668506Z yarn: 1.22.22
+2026-10-18T19:21:23.6669206Z ##[endgroup]
+2026-10-18T19:21:23.6689900Z [command]/opt/hostedtoolcache/node/22.23.3/x64/bin/npm config get cache
+2026-10-18T19:21:23.7874407Z /home/runner/.npm
+2026-10-18T19:21:23.9376162Z Cache hit for: node-cache-Linux-x64-npm-29c22a3ee550219573164ee5799c29ef3a61ce3fb606a2e9963ffbcac73f25bb
+2026-10-18T19:21:24.5928389Z Received 3981324 of 3981324 (100.0%), 7.6 MBs/sec
+2026-10-18T19:21:24.5929080Z Cache Size: ~4 MB (3981324 B)
+2026-10-18T19:21:24.5957907Z [command]/usr/bin/tar -xf /home/runner/work/_temp/067acd91-5040-4c10-a79d-b87bca966144/cache.tzst -P -C /home/runner/work/ex-grid/ex-grid --use-compress-program unzstd
+2026-10-18T19:21:24.6079654Z Cache restored successfully
+2026-10-18T19:21:24.6087198Z Cache restored from key: node-cache-Linux-x64-npm-29c22a3ee550219573164ee5799c29ef3a61ce3fb606a2e9963ffbcac73f25bb
+2026-10-18T19:21:24.6222265Z ##[group]Run google-chrome --version
+2026-10-18T19:21:24.6222674Z [36;1mgoogle-chrome --version[0m
+2026-10-18T19:21:24.6222989Z [36;1mmicrosoft-edge --version[0m
+2026-10-18T19:21:24.6498725Z shell: /usr/bin/bash -e {0}
+2026-10-18T19:21:24.6499139Z env:
+2026-10-18T19:21:24.6499465Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:24.6499896Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:24.6500262Z   LONG_RUN: true
+2026-10-18T19:21:24.6500611Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:24.6501015Z ##[endgroup]
+2026-10-18T19:21:24.8447591Z Google Chrome 155.0.8059.39 
+2026-10-18T19:21:27.5238851Z Microsoft Edge 155.0.4283.45 
+2026-10-18T19:21:27.5317946Z ##[group]Run npm ci
+2026-10-18T19:21:27.5318271Z [36;1mnpm ci[0m
+2026-10-18T19:21:27.5380643Z shell: /usr/bin/bash -e {0}
+2026-10-18T19:21:27.5380975Z env:
+2026-10-18T19:21:27.5381245Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:27.5381585Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:27.5381869Z   LONG_RUN: true
+2026-10-18T19:21:27.5382149Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:27.5382652Z ##[endgroup]
+2026-10-18T19:21:28.6085182Z 
+2026-10-18T19:21:28.6086453Z added 3 packages, and audited 4 packages in 1s
+2026-10-18T19:21:28.6093047Z 
+2026-10-18T19:21:28.6093408Z found 0 vulnerabilities
+2026-10-18T19:21:28.6542563Z ##[group]Run actions/download-artifact@v8
+2026-10-18T19:21:28.6542889Z with:
+2026-10-18T19:21:28.6543102Z   name: layer3-hosts
+2026-10-18T19:21:28.6543336Z   path: hosts
+2026-10-18T19:21:28.6543571Z   merge-multiple: false
+2026-10-18T19:21:28.6543829Z   repository: AkiraMisawa/ex-grid
+2026-10-18T19:21:28.6544103Z   run-id: 39158128144
+2026-10-18T19:21:28.6544339Z   skip-decompress: false
+2026-10-18T19:21:28.6544607Z   digest-mismatch: error
+2026-10-18T19:21:28.6544842Z env:
+2026-10-18T19:21:28.6545052Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:28.6545319Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:28.6545543Z   LONG_RUN: true
+2026-10-18T19:21:28.6545773Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:28.6546298Z ##[endgroup]
+2026-10-18T19:21:28.8052027Z Downloading single artifact
+2026-10-18T19:21:28.9621606Z Preparing to download the following artifacts:
+2026-10-18T19:21:28.9623071Z - layer3-hosts (ID: 12147816512, Size: 46495794, Expected Digest: sha256:f29f158ea260804ffd2f4b42419bfdbb06049ef72f33b312a519d526831e9ea0)
+2026-10-18T19:21:29.2401734Z Redirecting to blob download url: https://productionresultssa18.blob.core.windows.net/actions-results/676b94d5-d3bc-84b8-bf40-fbe25180489d/workflow-job-run-8bbe9d44-8eb9-50f5-a5f5-e2660c849e74/artifacts/e5d39098aaa4cdedd7a5cb3ae8e8192302bf1bdbb24aa0ad756940b26e2a3812.zip
+2026-10-18T19:21:29.2404501Z Starting download of artifact to: /home/runner/work/ex-grid/ex-grid/hosts
+2026-10-18T19:21:29.4595291Z (node:2859) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-10-18T19:21:29.4599042Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-18T19:21:30.8562160Z SHA256 digest of downloaded artifact is f29f158ea260804ffd2f4b42419bfdbb06049ef72f33b312a519d526831e9ea0
+2026-10-18T19:21:30.8563434Z Artifact download completed successfully.
+2026-10-18T19:21:30.8564239Z Total of 1 artifact(s) downloaded
+2026-10-18T19:21:30.8569275Z Download artifact has finished successfully
+2026-10-18T19:21:30.8735349Z ##[group]Run xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24" npx playwright test --project=msedge --shard=2/4
+2026-10-18T19:21:30.8736629Z [36;1mxvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24" npx playwright test --project=msedge --shard=2/4[0m
+2026-10-18T19:21:30.8797931Z shell: /usr/bin/bash -e {0}
+2026-10-18T19:21:30.8798227Z env:
+2026-10-18T19:21:30.8798464Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:21:30.8798770Z   DOTNET_NOLOGO: 1
+2026-10-18T19:21:30.8799009Z   LONG_RUN: true
+2026-10-18T19:21:30.8799262Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:21:30.8799613Z   EXGRID_HOSTS: /home/runner/work/ex-grid/ex-grid/hosts
+2026-10-18T19:21:30.8799988Z   EXGRID_SOAK: 1
+2026-10-18T19:21:30.8800231Z ##[endgroup]
+2026-10-18T19:21:32.7608785Z [WebServer] Serving /home/runner/work/ex-grid/ex-grid/hosts/wasm/wwwroot at http://localhost:5299
+2026-10-18T19:21:34.2026877Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:21:34.2028964Z [DemoApi]       Generating 20000 trades into /tmp/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+2026-10-18T19:21:34.3371866Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:21:34.3373454Z [DemoApi]       Generated 10000 of 20000 trades (50%).
+2026-10-18T19:21:34.3660292Z [DemoApi] info: Microsoft.Hosting.Lifetime[14]
+2026-10-18T19:21:34.3666642Z [DemoApi]       Now listening on: http://localhost:8299
+2026-10-18T19:21:34.3694818Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-10-18T19:21:34.3707499Z [DemoApi]       Application started. Press Ctrl+C to shut down.
+2026-10-18T19:21:34.3708421Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-10-18T19:21:34.3709596Z [DemoApi]       Hosting environment: Development
+2026-10-18T19:21:34.3710460Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-10-18T19:21:34.3711242Z [DemoApi]       Content root path: /home/runner/work/ex-grid/ex-grid/hosts/api
+2026-10-18T19:21:34.4250212Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:21:34.4251159Z [DemoApi]       Generated 20000 trades in 0.2 s: 1.6 MB.
+2026-10-18T19:21:34.4377598Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:21:34.4379187Z [DemoApi]       Serving 20000 trades at version 5c7c40ac-0 from /tmp/exgrid-demo-api/runs/trades-v1-20000.2927.5c7c40ac.sqlite.
+2026-10-18T19:21:36.9171685Z 
+2026-10-18T19:21:36.9173049Z Running 321 tests using 1 worker, shard 2 of 4
+2026-10-18T19:21:36.9173988Z 
+2026-10-18T19:22:08.9160345Z   ✓    1 [msedge] › format-cells-keys.spec.mjs:104:13 › under the builtin Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0050/ADR-0039: a digit typed straight after a press reaches Format Cells, and never starts an edit (4.5s)
+2026-10-18T19:22:11.5312447Z   ✓    2 [msedge] › format-cells-keys.spec.mjs:104:13 › under the builtin Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0050/ADR-0039: a digit typed straight after a press, then the menu gone reaches Format Cells, and never starts an edit (2.6s)
+2026-10-18T19:22:14.3270714Z   ✓    3 [msedge] › format-cells-keys.spec.mjs:104:13 › under the builtin Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0050/ADR-0039: a digit typed straight after Enter reaches Format Cells, and never starts an edit (2.8s)
+2026-10-18T19:22:16.8759161Z   ✓    4 [msedge] › format-cells-keys.spec.mjs:104:13 › under the builtin Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0050/ADR-0039: a digit typed straight after Ctrl+1 reaches Format Cells, and never starts an edit (2.5s)
+2026-10-18T19:22:19.6541248Z   ✓    5 [msedge] › format-cells-keys.spec.mjs:132:13 › under the builtin Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0039: End typed straight after Enter reaches Format Cells' tabs, in order behind the digit (2.8s)
+2026-10-18T19:22:22.2019686Z   ✓    6 [msedge] › format-cells-keys.spec.mjs:132:13 › under the builtin Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0039: End typed straight after Ctrl+1 reaches Format Cells' tabs, in order behind the digit (2.5s)
+2026-10-18T19:22:23.2320350Z   ✓    7 [msedge] › format-cells-keys.spec.mjs:164:9 › two Sheets on /sheets under the builtin Chrome › ticket 93/ADR-0018: the keys held for one Sheet's Format Cells are never the other's, and the other types as ever (1.0s)
+2026-10-18T19:22:26.1751701Z   ✓    8 [msedge] › format-cells-keys.spec.mjs:104:13 › under the mud Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0050/ADR-0039: a digit typed straight after a press reaches Format Cells, and never starts an edit (2.9s)
+2026-10-18T19:22:28.7460262Z   ✓    9 [msedge] › format-cells-keys.spec.mjs:104:13 › under the mud Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0050/ADR-0039: a digit typed straight after a press, then the menu gone reaches Format Cells, and never starts an edit (2.5s)
+2026-10-18T19:22:31.8153873Z   ✓   10 [msedge] › format-cells-keys.spec.mjs:104:13 › under the mud Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0050/ADR-0039: a digit typed straight after Enter reaches Format Cells, and never starts an edit (3.0s)
+2026-10-18T19:22:34.6381795Z   ✓   11 [msedge] › format-cells-keys.spec.mjs:104:13 › under the mud Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0050/ADR-0039: a digit typed straight after Ctrl+1 reaches Format Cells, and never starts an edit (2.8s)
+2026-10-18T19:22:37.7554985Z   ✓   12 [msedge] › format-cells-keys.spec.mjs:132:13 › under the mud Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0039: End typed straight after Enter reaches Format Cells' tabs, in order behind the digit (3.1s)
+2026-10-18T19:22:40.5197030Z   ✓   13 [msedge] › format-cells-keys.spec.mjs:132:13 › under the mud Chrome, a key typed straight after Format Cells is chosen › ticket 93/ADR-0039: End typed straight after Ctrl+1 reaches Format Cells' tabs, in order behind the digit (2.8s)
+2026-10-18T19:22:41.5693061Z   ✓   14 [msedge] › format-cells-keys.spec.mjs:164:9 › two Sheets on /sheets under the mud Chrome › ticket 93/ADR-0018: the keys held for one Sheet's Format Cells are never the other's, and the other types as ever (1.0s)
+2026-10-18T19:22:47.2389801Z   ✓   15 [msedge] › format-cells-mud.spec.mjs:43:5 › on /sheet?chrome=mud › SH-45/ADR-0071: the Context Menu opens Format Cells as a MudDialog outside the Sheet, with the keyboard on its tab, and the arrows switch the tabs (5.6s)
+2026-10-18T19:22:50.1872074Z   ✓   16 [msedge] › format-cells-mud.spec.mjs:65:5 › on /sheet?chrome=mud › SH-45: OK sets the part touched as one undo step, and the keyboard is the Sheet's again (2.9s)
+2026-10-18T19:22:55.1900442Z   ✓   17 [msedge] › format-cells-mud.spec.mjs:87:5 › on /sheet?chrome=mud › SH-45, run 17 h10: over A2 under A1's thick bottom the Border tab opens on Thick, and the Top button alone takes the line away on both sides (5.0s)
+2026-10-18T19:22:57.8709420Z   ✓   18 [msedge] › format-cells-mud.spec.mjs:122:5 › on /sheet?chrome=mud › SH-42/SH-45: Ctrl+1 opens Format Cells on Number, and Escape closes it with the keyboard the Sheet's (2.7s)
+2026-10-18T19:23:00.6001513Z   ✓   19 [msedge] › format-cells-mud.spec.mjs:136:5 › on /sheet?chrome=mud › SH-45/ADR-0071 (the seventeenth Windows run, Part D): opened from the toolbar's keys, Alt, H, O, E, the frame hands the keyboard to the dialog with no console warning while the accessibility tree is on (2.7s)
+2026-10-18T19:23:06.0052802Z   ✓   20 [msedge] › format-cells-mud.spec.mjs:168:5 › on /sheet?chrome=mud › SH-45 (Part C): opened again on Border, every tab is in view and the strip does not scroll (ticket 147) (5.4s)
+2026-10-18T19:23:08.6708460Z   ✓   21 [msedge] › format-cells-mud.spec.mjs:204:5 › on /sheet?chrome=mud › ADR-0039: Escape on the dialog root hands the following arrows to the Sheet (2.6s)
+2026-10-18T19:23:11.7699091Z   ✓   22 [msedge] › format-cells-mud.spec.mjs:220:5 › on /sheet?chrome=mud › SH-45: Escape sets nothing, and the next arrow moves the Focus (3.1s)
+2026-10-18T19:23:14.8387407Z   ✓   23 [msedge] › format-cells-mud.spec.mjs:234:5 › on /sheet?chrome=mud › SH-45/ADR-0071 (decided with the user, 2026-10-13): Escape, then ↓ and ↓ typed at once, cancels Format Cells and moves the Focus two rows, as typed slowly (3.1s)
+2026-10-18T19:23:17.8702613Z   ✓   24 [msedge] › format-cells-mud.spec.mjs:253:5 › on /sheet?chrome=mud › SH-45/ADR-0071 (decided with the user, 2026-10-13): Cancel, then ↓ typed at once, sets nothing and moves the Focus, as typed slowly (3.0s)
+2026-10-18T19:23:20.7015826Z   ✓   25 [msedge] › format-cells-mud.spec.mjs:268:5 › on /sheet?chrome=mud › SH-45/ADR-0071 (decided with the user, 2026-10-13): OK, then ↓ typed at once, sets what was touched and moves the Focus, as typed slowly (2.8s)
+2026-10-18T19:23:24.0019188Z   ✓   26 [msedge] › format-cells-mud.spec.mjs:286:5 › on /sheet?chrome=mud › SH-45/ADR-0071: Escape in an open dropdown closes only its list; the next Escape cancels Format Cells (3.3s)
+2026-10-18T19:23:26.9843360Z   ✓   27 [msedge] › format-cells-mud.spec.mjs:316:5 › on /sheet?chrome=mud › SH-45: a press on the dialog's backdrop is a Cancel, and the keyboard is the Sheet's again (3.0s)
+2026-10-18T19:23:30.0358851Z   ✓   28 [msedge] › format-cells-mud.spec.mjs:330:5 › on /sheet?chrome=mud › SH-45: a Custom code ExSheet does not read is refused by name, and the dialog stays open (3.0s)
+2026-10-18T19:23:33.3851801Z   ✓   29 [msedge] › format-cells-mud.spec.mjs:344:5 › on /sheet?chrome=mud › SH-45/SRV-7: a Custom code typed at full speed arrives whole, and Enter is OK (3.3s)
+2026-10-18T19:23:36.1013324Z   ✓   30 [msedge] › format-cells-mud.spec.mjs:360:5 › on /sheet?chrome=mud › SH-45: Tab and Shift+Tab stay inside the dialog (2.7s)
+2026-10-18T19:23:42.2516318Z   ✓   31 [msedge] › format-cells-mud.spec.mjs:377:5 › on /sheet?chrome=mud › ADR-0071 (decided 2026-10-12; the seventeenth run, h7): OK with Bold over #### widens a column at the standard width and leaves a sized one; OK with a Fill widens nothing; one Ctrl+Z takes back the bold and the width (6.1s)
+2026-10-18T19:23:45.2368420Z   ✓   32 [msedge] › format-cells-mud.spec.mjs:414:5 › on /sheet?chrome=mud › ADR-0039/ADR-0071: More Colours never takes the keyboard back from HEX selected as its popup appears (3.0s)
+2026-10-18T19:23:48.3189826Z   ✓   33 [msedge] › format-cells-mud.spec.mjs:442:9 › on /sheet?chrome=mud › ADR-0039/ADR-0071/ADR-0210: More Colours receives typing made with its opening click (Enter) (3.1s)
+2026-10-18T19:23:51.5166283Z   ✓   34 [msedge] › format-cells-mud.spec.mjs:442:9 › on /sheet?chrome=mud › ADR-0039/ADR-0071/ADR-0210: More Colours receives typing made with its opening click (blur) (3.2s)
+2026-10-18T19:23:54.5168884Z   ✓   35 [msedge] › format-cells-mud.spec.mjs:472:9 › on /sheet?chrome=mud › ADR-0039/ADR-0071: Escape from More Colours closes its popup before Format Cells (with opening) (3.0s)
+2026-10-18T19:23:57.6025741Z   ✓   36 [msedge] › format-cells-mud.spec.mjs:472:9 › on /sheet?chrome=mud › ADR-0039/ADR-0071: Escape from More Colours closes its popup before Format Cells (after HEX takes the keyboard) (3.1s)
+2026-10-18T19:24:00.6951256Z   ✓   37 [msedge] › format-cells-mud.spec.mjs:488:5 › on /sheet?chrome=mud › ADR-0039/ADR-0071: two Escapes typed with More Colours opening close its two frames in order (3.1s)
+2026-10-18T19:24:03.8867760Z   ✓   38 [msedge] › format-cells-mud.spec.mjs:504:9 › on /sheet?chrome=mud › ADR-0039/ADR-0071: More Colours opens from its button's Enter without typing that key into HEX and keeps Tab native (3.2s)
+2026-10-18T19:24:07.0517196Z   ✓   39 [msedge] › format-cells-mud.spec.mjs:504:9 › on /sheet?chrome=mud › ADR-0039/ADR-0071: More Colours opens from its button's Space without typing that key into HEX and keeps Tab native (3.2s)
+2026-10-18T19:24:10.1699124Z   ✓   40 [msedge] › format-cells-mud.spec.mjs:527:9 › on /sheet?chrome=mud › ADR-0039/ADR-0071: More Colours reopens from keys typed with its closing Escape (Enter) (3.1s)
+2026-10-18T19:24:12.9044359Z   ✓   41 [msedge] › format-cells-mud.spec.mjs:527:9 › on /sheet?chrome=mud › ADR-0039/ADR-0071: More Colours reopens from keys typed with its closing Escape (Space) (2.7s)
+2026-10-18T19:24:15.9343728Z   ✓   42 [msedge] › format-cells-mud.spec.mjs:547:5 › on /sheet?chrome=mud › ADR-0039/ADR-0071/ADR-0210: an Enter typed once held HEX text is shown commits that text (3.0s)
+2026-10-18T19:24:19.0422068Z   ✓   43 [msedge] › format-cells-mud.spec.mjs:562:5 › on /sheet?chrome=mud › ADR-0039/ADR-0071: More Colours retains RGB and HSL controls and reopens in HEX (3.1s)
+2026-10-18T19:24:22.5820182Z   ✓   44 [msedge] › format-cells-mud.spec.mjs:584:5 › on /sheet?chrome=mud › SH-45/ADR-0071: More Colours is MudBlazor's colour picker, and the colour it picks is what OK sets (3.5s)
+2026-10-18T19:24:24.2323813Z   ✓   45 [msedge] › format-cells-mud.spec.mjs:623:5 › two Sheets on /sheets?chrome=mud › ADR-0018/ADR-0071: each Sheet's Format Cells is its own, and closing it hands the keyboard to that Sheet (1.6s)
+2026-10-18T19:24:28.8209214Z   ✓   46 [msedge] › format-cells.spec.mjs:50:5 › on /sheet › SH-45/DC-60: the Context Menu opens Format Cells inside the Sheet's box, with the keyboard on its tab, and the arrows switch the tabs (4.6s)
+2026-10-18T19:24:31.6154536Z   ✓   47 [msedge] › format-cells.spec.mjs:69:5 › on /sheet › SH-45: OK sets the part touched as one undo step, and the keyboard is the Sheet's again (2.8s)
+2026-10-18T19:24:34.2333181Z   ✓   48 [msedge] › format-cells.spec.mjs:91:5 › on /sheet › SH-45/ADR-0044: keys typed while Enter on OK closes Format Cells are the Sheet's, in order: ↓, ↓ typed at once move the Focus (2026-10-12) (2.6s)
+2026-10-18T19:24:36.7689194Z   ✓   49 [msedge] › format-cells.spec.mjs:120:5 › on /sheet › ticket 240/ADR-0204: a choice pressed as Format Cells appears keeps the keyboard, and OK then Enter applies it (2.5s)
+2026-10-18T19:24:39.1317055Z   ✓   50 [msedge] › format-cells.spec.mjs:147:5 › on /sheet › SH-42/SH-45, case 22: Ctrl+1 opens Format Cells from the keyboard, on Number, and no tab of the browser is selected (2.3s)
+2026-10-18T19:24:41.6311281Z   ✓   51 [msedge] › format-cells.spec.mjs:160:5 › on /sheet › SH-45/DC-60: Escape sets nothing, closes Format Cells, and the next arrow moves the Focus (2.5s)
+2026-10-18T19:24:44.1322966Z   ✓   52 [msedge] › format-cells.spec.mjs:174:5 › on /sheet › SH-45: a Custom code ExSheet does not read is refused by name, and Format Cells stays open (2.5s)
+2026-10-18T19:24:46.7638459Z   ✓   53 [msedge] › format-cells.spec.mjs:188:5 › on /sheet › SH-45/SRV-7: a Custom code typed at full speed arrives whole, and Enter is OK (2.6s)
+2026-10-18T19:24:49.1983604Z   ✓   54 [msedge] › format-cells.spec.mjs:203:5 › on /sheet › DC-60/ADR-0039: Tab and Shift+Tab wrap inside Format Cells once it holds the keyboard (2.4s)
+2026-10-18T19:24:51.3800940Z   -   55 [msedge] › format-cells.spec.mjs:224:5 › on /sheet › DC-60/ADR-0039: with a 150 ms round trip, a Shift+Tab typed while Format Cells opens from the menu is dropped with the keys behind it
+2026-10-18T19:24:54.3677067Z   ✓   56 [msedge] › format-cells.spec.mjs:253:5 › on /sheet › SH-45, case 24: over cells that differ the Font style is empty and the Fill is No Colour (3.0s)
+2026-10-18T19:24:57.2312836Z   ✓   57 [msedge] › format-cells.spec.mjs:277:5 › on /sheet › SH-45, case 14-13: A2 under A1's thick bottom opens with a thick top, its button pressed (2.8s)
+2026-10-18T19:25:00.6483538Z   ✓   58 [msedge] › format-cells.spec.mjs:296:5 › on /sheet › SH-45, run 17 h10: over A2 under A1's thick bottom the Border tab opens on Thick, and the Top button alone takes the line away on both sides (3.4s)
+2026-10-18T19:25:03.5802296Z   ✓   59 [msedge] › format-cells.spec.mjs:330:5 › on /sheet › SH-45, run 18a format-cells 2: over B2 with a thick top and a medium right the Border tab opens on the top's Thick (ADR-0071) (2.9s)
+2026-10-18T19:25:08.2629930Z   ✓   60 [msedge] › format-cells.spec.mjs:356:5 › on /sheet › ADR-0071 (decided 2026-10-12; the seventeenth run, h7): OK with Bold over #### widens a column at the standard width and leaves a sized one; OK with a Fill widens nothing; one Ctrl+Z takes back the bold and the width (4.7s)
+2026-10-18T19:25:10.8638742Z   ✓   61 [msedge] › format-cells.spec.mjs:399:5 › on /sheet › ticket 56: the page's Format Cells pressed straight after Shift+ArrowDown opens over the extended range, and stands when the move is heard (2.6s)
+2026-10-18T19:25:13.3957942Z   ✓   62 [msedge] › format-cells.spec.mjs:419:5 › on /sheet › ticket 56: the Context Menu's Format Cells…, chosen as soon as the menu opens on another cell, opens over that cell (2.5s)
+2026-10-18T19:25:16.0970709Z   ✓   63 [msedge] › format-cells.spec.mjs:446:5 › in a box that follows the window › DC-60/ADR-0040: Format Cells scrolls inside a small box, and closes as a Cancel when the box shrinks below one row (2.7s)
+2026-10-18T19:25:17.0790445Z   ✓   64 [msedge] › format-cells.spec.mjs:478:5 › two Sheets on /sheets › DC-60/ADR-0018: each Sheet's Format Cells is its own (968ms)
+2026-10-18T19:25:22.9828393Z   ✓   65 [msedge] › format-keys.spec.mjs:44:1 › SH-42/ADR-0071: Ctrl+B, Ctrl+I, Ctrl+U, Ctrl+5 and Ctrl+2 to Ctrl+4 each toggle the Focus cell, taken from the browser, one Ctrl+Z a press (5.9s)
+2026-10-18T19:25:25.9144279Z   ✓   66 [msedge] › format-keys.spec.mjs:73:1 › SH-42/ADR-0071: the toggle follows the Focus cell over a range (2.9s)
+2026-10-18T19:25:28.5147779Z   ✓   67 [msedge] › format-keys.spec.mjs:94:1 › ADR-0050 item 14 (note of 2026-10-01)/ticket 56/ADR-0100: a Toolbar Item pressed straight after Shift+ArrowDown formats the extended range, as one step (2.6s)
+2026-10-18T19:25:31.6961935Z   ✓   68 [msedge] › format-keys.spec.mjs:115:1 › SH-42/ADR-0071: Ctrl+Shift with ~ ! @ # $ % ^ applies Excel's Number Formats under en-US, by the character typed (3.2s)
+2026-10-18T19:25:34.5353536Z   ✓   69 [msedge] › format-keys.spec.mjs:141:1 › SH-43/ADR-0071: with an edit open, Ctrl+U changes nothing, is taken from the browser, and says why (2.8s)
+2026-10-18T19:25:38.9978400Z   ✓   70 [msedge] › format-keys.spec.mjs:176:1 › ADR-0071/SH-42 (the seventeenth run, h7): Ctrl+U over #### widens a column at the standard width and leaves a sized one at its width; Ctrl+I widens neither; one Ctrl+Z takes back both (4.4s)
+2026-10-18T19:26:19.6408482Z   ✓   71 [msedge] › freshness.spec.mjs:176:1 › ERR-9 / ADR-0123: a deploy over GitHub Pages' headers is met with the new script and stylesheet on a normal reload (4.3s)
+2026-10-18T19:26:22.3057016Z   ✓   72 [msedge] › gestures.spec.mjs:22:1 › a leaf drag reorders within its group and clamps at its edge (HG-14) (2.6s)
+2026-10-18T19:26:22.7702329Z   ✓   73 [msedge] › gestures.spec.mjs:44:1 › grabbing a group rectangle moves the whole group (HG-14) (446ms)
+2026-10-18T19:26:23.4368849Z   ✓   74 [msedge] › gestures.spec.mjs:75:1 › HG-15 / ADR-0032: HeaderGroups survives a reorder within a group and a whole-group move unchanged (651ms)
+2026-10-18T19:26:23.8215198Z   ✓   75 [msedge] › gestures.spec.mjs:113:1 › a resize drag with a real mouse applies on release (ADR-0016) (367ms)
+2026-10-18T19:26:24.2233512Z   ✓   76 [msedge] › gestures.spec.mjs:129:1 › a drag past MaxWidth is recorded as it came and painted at that width (ADR-0016, FN-12) (384ms)
+2026-10-18T19:26:24.6490954Z   ✓   77 [msedge] › gestures.spec.mjs:146:1 › pasting onto an off-screen selection works, and the indicator showed first (PST-3) (409ms)
+2026-10-18T19:26:29.9498952Z   ✓   78 [msedge] › gestures.spec.mjs:167:1 › a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded, ADR-0052) (5.3s)
+2026-10-18T19:26:30.2306600Z   ✓   79 [msedge] › gestures.spec.mjs:200:1 › the focus outline holds 3:1 against the cell ground under the default theme (UX-9) (263ms)
+2026-10-18T19:26:30.5945484Z   ✓   80 [msedge] › gestures.spec.mjs:225:1 › narrowing the scrollbar by token changes the gutter and the geometry follows (UX-10) (348ms)
+2026-10-18T19:26:30.8797585Z   ✓   81 [msedge] › gestures.spec.mjs:268:1 › a composing IME keydown is never taken (ED-11, the listener guard) (269ms)
+2026-10-18T19:26:42.0623506Z   ✓   82 [msedge] › grid-live-local.spec.mjs:35:1 › ADR-0141/D8, LV-9: a million trades in this process; a Change Batch reaches the screen and marks what changed, and a pause stops it (11.2s)
+2026-10-18T19:26:43.4265599Z   ✓   83 [msedge] › grid-live-local.spec.mjs:65:1 › ADR-0141 LV-5/LV-7: under a sort by P&L, the painted rows stay in order as batches move the values (1.4s)
+2026-10-18T19:26:43.6814503Z   ✓   84 [msedge] › grid-live-local.spec.mjs:94:1 › ADR-0141/0069: the code the page shows is the code it runs: GridSource.From by Row Key, a Change Batch, and CellChangedAt (241ms)
+2026-10-18T19:26:44.3141572Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:44.3142308Z [DemoApi]       Live updates off.
+2026-10-18T19:26:44.3502834Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:26:44.3505175Z [DemoApi]       Reset to the generated trades at version 5c7c40ac-1: 0 trades put back.
+2026-10-18T19:26:46.0646690Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:46.0680186Z [DemoApi]       Live updates on: 1000 trades every 250 ms.
+2026-10-18T19:26:46.3562509Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:46.3567410Z [DemoApi]       Live updates off.
+2026-10-18T19:26:47.1883564Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:47.1891241Z [DemoApi]       Live updates off.
+2026-10-18T19:26:47.2103549Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:47.2137180Z [DemoApi]       Live updates off.
+2026-10-18T19:26:47.3453953Z   ✓   85 [msedge] › grid-live.spec.mjs:123:1 › DC-65/ADR-0068: a mark stays on its cell across a scroll, and never moves with an element to another row (3.6s)
+2026-10-18T19:26:47.3547386Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:47.3548470Z [DemoApi]       Live updates off.
+2026-10-18T19:26:47.3919039Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:26:47.3920722Z [DemoApi]       Reset to the generated trades at version 5c7c40ac-4: 1490 trades put back.
+2026-10-18T19:26:47.5170851Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:47.5181833Z [DemoApi]       Live updates on: 1000 trades every 250 ms.
+2026-10-18T19:26:49.6509668Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:49.6511830Z [DemoApi]       Live updates off.
+2026-10-18T19:26:49.7389471Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:49.7390649Z [DemoApi]       Live updates off.
+2026-10-18T19:26:49.7838203Z   ✓   86 [msedge] › grid-live.spec.mjs:163:5 › DC-66/ADR-0068: marks paint without animating, forced colours restate them, and the live region says nothing (builtin) (2.4s)
+2026-10-18T19:26:49.8845973Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:49.8847326Z [DemoApi]       Live updates off.
+2026-10-18T19:26:49.9279794Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:26:49.9280950Z [DemoApi]       Reset to the generated trades at version 5c7c40ac-14: 4587 trades put back.
+2026-10-18T19:26:51.6651807Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:51.6668964Z [DemoApi]       Live updates on: 1000 trades every 250 ms.
+2026-10-18T19:26:53.8721114Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:53.8722128Z [DemoApi]       Live updates off.
+2026-10-18T19:26:53.9564692Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:53.9566306Z [DemoApi]       Live updates off.
+2026-10-18T19:26:53.9922075Z   ✓   87 [msedge] › grid-live.spec.mjs:163:5 › DC-66/ADR-0068: marks paint without animating, forced colours restate them, and the live region says nothing (mud) (4.2s)
+2026-10-18T19:26:54.0943887Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:54.0957232Z [DemoApi]       Live updates off.
+2026-10-18T19:26:54.1521248Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:26:54.1522267Z [DemoApi]       Reset to the generated trades at version 5c7c40ac-24: 4588 trades put back.
+2026-10-18T19:26:55.7023958Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:55.7036691Z [DemoApi]       Live updates on: 1000 trades every 250 ms.
+2026-10-18T19:26:56.1613367Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:56.1623887Z [DemoApi]       Live updates off.
+2026-10-18T19:26:56.2679335Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:56.2680230Z [DemoApi]       Live updates off.
+2026-10-18T19:26:56.3442294Z   ✓   88 [msedge] › grid-live.spec.mjs:288:1 › PV-20/ADR-0069: the Window is read from the server as the grid scrolls, and leaving turns the live updates off (2.3s)
+2026-10-18T19:26:56.3526849Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:56.3527957Z [DemoApi]       Live updates off.
+2026-10-18T19:26:56.3945836Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:26:56.3947135Z [DemoApi]       Reset to the generated trades at version 5c7c40ac-27: 1495 trades put back.
+2026-10-18T19:26:56.5224726Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:56.5256887Z [DemoApi]       Live updates on: 1000 trades every 250 ms.
+2026-10-18T19:26:56.7063517Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:56.7064391Z [DemoApi]       Live updates off.
+2026-10-18T19:26:56.7157478Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:56.7163997Z [DemoApi]       Live updates off.
+2026-10-18T19:26:56.7963524Z   ✓   89 [msedge] › grid-live.spec.mjs:311:1 › ADR-0069/0068/0141: the code the page shows is the code it runs: the hub's notice told to the source, and CellChangedAt answered by it (438ms)
+2026-10-18T19:26:56.8037346Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:56.8038378Z [DemoApi]       Live updates off.
+2026-10-18T19:26:56.8350307Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:26:56.8351801Z [DemoApi]       Reset to the generated trades at version 5c7c40ac-29: 1000 trades put back.
+2026-10-18T19:26:56.9811681Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:56.9857327Z [DemoApi]       Live updates on: 1000 trades every 250 ms.
+2026-10-18T19:26:57.1189440Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:57.1190828Z [DemoApi]       Live updates off.
+2026-10-18T19:26:57.2707583Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:26:57.2708815Z [DemoApi]       Cancelled T10000149 at version 5c7c40ac-31.
+2026-10-18T19:26:57.3901379Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:57.3902220Z [DemoApi]       Live updates off.
+2026-10-18T19:26:57.4210901Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-10-18T19:26:57.4213076Z [DemoApi]       Reset to the generated trades at version 5c7c40ac-32: 1000 trades put back.
+2026-10-18T19:26:57.4248302Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:57.4249509Z [DemoApi]       Live updates off.
+2026-10-18T19:26:57.4370155Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:26:57.4370972Z [DemoApi]       Live updates off.
+2026-10-18T19:26:57.5111657Z   ✓   90 [msedge] › grid-live.spec.mjs:326:1 › LV-8/ADR-0141: a trade cancelled after the Window, with a Selection reaching past it, drops the Selection (702ms)
+2026-10-18T19:27:02.3209116Z   ✓   91 [msedge] › hand-back-races.spec.mjs:17:1 › ADR-0010/ADR-0051: keys typed straight after the Name Box's Enter names the Focus open an edit on it (4.8s)
+2026-10-18T19:27:05.1964106Z   ✓   92 [msedge] › hand-back-races.spec.mjs:33:1 › ADR-0010/ADR-0051: keys typed straight after the Name Box's Enter names another cell open an edit on that cell (2.9s)
+2026-10-18T19:27:07.8424155Z   ✓   93 [msedge] › hand-back-races.spec.mjs:50:1 › ADR-0010: a press straight after the Enter that commits a Formula lands on the cell pressed (2.6s)
+2026-10-18T19:27:10.5597981Z   ✓   94 [msedge] › hand-back-races.spec.mjs:94:1 › ADR-0051/ADR-0010: on a 150 ms circuit, a press into the Formula Bar's text straight after Enter and a press on the cell keeps its caret, and F4 cycles the Reference pressed (2.7s)
+2026-10-18T19:27:13.3929753Z   ✓   95 [msedge] › harness-reading.spec.mjs:23:1 › circuitQuiet returns once the Server host has answered, so what it decided is there to read at once (2.8s)
+2026-10-18T19:27:13.4046727Z   -   96 [msedge] › harness-reading.spec.mjs:46:1 › circuitQuiet refuses a window the keep-alive pings could keep from ever being met
+2026-10-18T19:27:13.4766546Z   -   97 [msedge] › harness-reading.spec.mjs:51:1 › circuitQuiet says what kept the wire busy rather than waiting for ever
+2026-10-18T19:27:14.1247074Z   ✓   98 [msedge] › harness-reading.spec.mjs:92:1 › stillPictures takes every picture again when the page changed between them (636ms)
+2026-10-18T19:27:14.7928353Z   ✓   99 [msedge] › harness-reading.spec.mjs:117:1 › stillPictures fails, naming the change, when the page never holds still (656ms)
+2026-10-18T19:27:15.1754577Z   ✓  100 [msedge] › harness-reading.spec.mjs:133:1 › stillPictures does not count Playwright's own preparation of the fields for a picture (370ms)
+2026-10-18T19:27:15.1945928Z   ✓  101 [msedge] › harness-reading.spec.mjs:145:1 › a colour between two bytes is painted as either, and a whole one only as itself (6ms)
+2026-10-18T19:27:15.2116335Z   ✓  102 [msedge] › harness-reading.spec.mjs:162:1 › where to read: the edges off the device pixels, the pixels a box covers whole, a region on the grid (4ms)
+2026-10-18T19:27:17.3109148Z   ✓  103 [msedge] › harness.spec.mjs:32:1 › a spec file boots its app once, at the index (ADR-0056) (2.1s)
+2026-10-18T19:27:17.5415925Z   ✓  104 [msedge] › harness.spec.mjs:40:1 › the next test mounts its page afresh on the same document (ADR-0056) (218ms)
+2026-10-18T19:27:17.8272740Z   ✓  105 [msedge] › harness.spec.mjs:47:1 › what a test changed through the harness is put back when it ends (ADR-0056) (273ms)
+2026-10-18T19:27:18.0928056Z   ✓  106 [msedge] › harness.spec.mjs:79:1 › the next test finds none of it (ADR-0056) (252ms)
+2026-10-18T19:27:18.3111899Z   ✓  107 [msedge] › harness.spec.mjs:111:9 › a change made behind the harness's back is named, and the page is not handed on (ADR-0056) › a native stubbed with page.evaluate (202ms)
+2026-10-18T19:27:19.9259220Z   ✓  108 [msedge] › harness.spec.mjs:118:5 › a change made behind the harness's back is named, and the page is not handed on (ADR-0056) › after it, the next test has a document of its own (1.6s)
+2026-10-18T19:27:20.1597607Z   ✓  109 [msedge] › harness.spec.mjs:126:9 › a change made behind the harness's back is named, and the page is not handed on (ADR-0056) › a native stubbed on its instance rather than its prototype (219ms)
+2026-10-18T19:27:21.7742881Z   ✓  110 [msedge] › harness.spec.mjs:137:9 › a change made behind the harness's back is named, and the page is not handed on (ADR-0056) › an element left in the head (1.6s)
+2026-10-18T19:27:23.3915262Z   ✓  111 [msedge] › harness.spec.mjs:151:9 › a change made behind the harness's back is named, and the page is not handed on (ADR-0056) › an attribute left on the grid's parent (1.6s)
+2026-10-18T19:27:25.0107285Z   ✓  112 [msedge] › harness.spec.mjs:159:9 › a change made behind the harness's back is named, and the page is not handed on (ADR-0056) › a rule inserted into a stylesheet, which the markup does not show (1.6s)
+2026-10-18T19:27:26.6621072Z   ✓  113 [msedge] › harness.spec.mjs:167:9 › a change made behind the harness's back is named, and the page is not handed on (ADR-0056) › a global left on window (1.6s)
+2026-10-18T19:27:28.2161950Z   ✓  114 [msedge] › harness.spec.mjs:174:1 › a test that leaves a key held hands no page on (ADR-0056) (1.5s)
+2026-10-18T19:27:29.7935868Z   ✓  115 [msedge] › harness.spec.mjs:180:1 › after it, the next test boots, with no key held (ADR-0056) (1.6s)
+2026-10-18T19:27:29.9748491Z   ✓  116 [msedge] › harness.spec.mjs:190:1 › a test that leaves a mouse button held hands no page on (ADR-0056) (166ms)
+2026-10-18T19:27:31.5750026Z   ✓  117 [msedge] › harness.spec.mjs:197:1 › after it too, the next test boots (ADR-0056) (1.6s)
+2026-10-18T19:27:31.8665625Z   ✘  118 [msedge] › harness.spec.mjs:203:1 › a test whose console reports an error hands no page on (ADR-0056) (256ms)
+2026-10-18T19:27:33.4443132Z   ✓  119 [msedge] › harness.spec.mjs:210:1 › after that, the next test boots (ADR-0056) (1.6s)
+2026-10-18T19:27:33.6738272Z   ✘  120 [msedge] › harness.spec.mjs:216:1 › a test that fails hands no page on (ADR-0056) (207ms)
+2026-10-18T19:27:35.2732460Z   ✓  121 [msedge] › harness.spec.mjs:223:1 › after a failure, the next test boots (ADR-0056) (1.6s)
+2026-10-18T19:27:35.5381271Z   ✘  122 [msedge] › harness.spec.mjs:234:1 › CON-8 / ADR-0005: a console.log written by ExGrid fails the test (237ms)
+2026-10-18T19:27:37.1776317Z   ✘  123 [msedge] › harness.spec.mjs:240:1 › CON-8 / ADR-0005: a console.info under an ExGrid category fails the test (1.6s)
+2026-10-18T19:27:38.7943844Z   ✓  124 [msedge] › harness.spec.mjs:246:1 › CON-8 / ADR-0005: a console.log that names no ExGrid code is not the grid's, and passes (1.6s)
+2026-10-18T19:27:40.2299674Z   ✓  125 [msedge] › harness.spec.mjs:253:5 › a test that asks for a document of its own loads its page for real (ADR-0056) (1.4s)
+2026-10-18T19:27:45.3442896Z   ✓  126 [msedge] › heading-mark.spec.mjs:75:5 › UX-21 (built-in Chrome): on the Sheet the Headings of the columns and rows several ranges hold carry a line of two Device Pixels on their edge toward the cells, in the outline's colour, and the Headings between them none (ADR-0008, 2026-10-13; R4) (5.1s)
+2026-10-18T19:27:48.4325335Z   ✓  127 [msedge] › heading-mark.spec.mjs:122:5 › UX-21 (built-in Chrome): a whole column marks its Heading and every Row Heading in view, and a press on the corner, which selects every cell, every Heading (ADR-0008, 2026-10-13; R5) (3.1s)
+2026-10-18T19:27:51.4732491Z   ✓  128 [msedge] › heading-mark.spec.mjs:75:5 › UX-21 (MudBlazor Chrome): on the Sheet the Headings of the columns and rows several ranges hold carry a line of two Device Pixels on their edge toward the cells, in the outline's colour, and the Headings between them none (ADR-0008, 2026-10-13; R4) (3.0s)
+2026-10-18T19:27:54.7228596Z   ✓  129 [msedge] › heading-mark.spec.mjs:122:5 › UX-21 (MudBlazor Chrome): a whole column marks its Heading and every Row Heading in view, and a press on the corner, which selects every cell, every Heading (ADR-0008, 2026-10-13; R5) (3.2s)
+2026-10-18T19:27:58.0244801Z   ✓  130 [msedge] › heading-mark.spec.mjs:164:5 › UX-21 D1 (built-in Chrome): ordinary and whole-axis Headings have distinct shades and marked letters; the corner marks all cells (ADR-0008) (3.3s)
+2026-10-18T19:28:01.6249347Z   ✓  131 [msedge] › heading-mark.spec.mjs:164:5 › UX-21 D1 (MudBlazor Chrome): ordinary and whole-axis Headings have distinct shades and marked letters; the corner marks all cells (ADR-0008) (3.6s)
+2026-10-18T19:28:02.7887629Z   ✓  132 [msedge] › heading-mark.spec.mjs:241:5 › UX-21 D1 (built-in Chrome): marked Row Headings follow the dark frame, outside the Paper's light island (ADR-0008/0071) (1.2s)
+2026-10-18T19:28:04.1211850Z   ✓  133 [msedge] › heading-mark.spec.mjs:241:5 › UX-21 D1 (MudBlazor Chrome): marked Row Headings follow the dark frame, outside the Paper's light island (ADR-0008/0071) (1.3s)
+2026-10-18T19:28:05.0568940Z   ✓  134 [msedge] › heading-mark.spec.mjs:268:1 › UX-21 at the display's scale: ExGrid's own header is marked in the Focus outline's colour, which a Theme recolours, and its own token wins (ADR-0008, 2026-10-13; ADR-0090) (924ms)
+2026-10-18T19:28:05.9877297Z   ✓  135 [msedge] › heading-mark.spec.mjs:316:1 › UX-21: the mark over a Pinned Column's header stays with it, and a scrollable column's passes beneath the pinned headers as the column does (ADR-0008, 2026-10-13; ADR-0004) (918ms)
+2026-10-18T19:28:06.5196685Z   ✓  136 [msedge] › heading-mark.spec.mjs:374:1 › UX-21: under forced colors the line is kept, two Device Pixels on the edge, in the system colour a range's outline is restated in (ADR-0008, 2026-10-13) (519ms)
+2026-10-18T19:28:08.7413492Z   ✓  137 [msedge] › heading-mark.spec.mjs:420:5 › UX-21 (built-in Chrome): ExPivot's report header is marked over the selected value's column and not over the labels', in the Focus outline's colour (ADR-0008, 2026-10-13; ADR-0059) (2.2s)
+2026-10-18T19:28:09.7151916Z   ✓  138 [msedge] › heading-mark.spec.mjs:420:5 › UX-21 (MudBlazor Chrome): ExPivot's report header is marked over the selected value's column and not over the labels', in the Focus outline's colour (ADR-0008, 2026-10-13; ADR-0059) (961ms)
+2026-10-18T19:28:10.3725470Z   ✓  139 [msedge] › heading-mark.spec.mjs:443:5 › UX-21 D2 at the display's scale: a bare grid's four outline sides are two Device Pixels at the header (normal colours, ADR-0008/0090) (645ms)
+2026-10-18T19:28:10.9107483Z   ✓  140 [msedge] › heading-mark.spec.mjs:443:5 › UX-21 D2 at the display's scale: a bare grid's four outline sides are two Device Pixels at the header (forced colours, ADR-0008/0090) (523ms)
+2026-10-18T19:28:13.1907433Z   ✓  141 [msedge] › heading-mark.spec.mjs:481:1 › UX-21 D1: marked Row Headings keep Group and Total weights, including Consumer tokens and stable-class rules (ADR-0008/0024/0029) (2.3s)
+2026-10-18T19:28:13.6238093Z   ✓  142 [msedge] › heading-mark.spec.mjs:510:1 › UX-21 D1: a whole Row Heading shade mixes its own ground, independent of the column header ground (ADR-0008/0029) (421ms)
+2026-10-18T19:28:16.7246872Z   ✓  143 [msedge] › headings.spec.mjs:48:1 › SR-2c: with the view at the top, a Column Heading click then Shift+→ leaves scrollTop where it was (3.1s)
+2026-10-18T19:28:17.4883199Z   ✓  144 [msedge] › headings.spec.mjs:71:1 › SR-2c: Shift+↑ from a whole column leaves it one row short, and scrolls to show the Extent (751ms)
+2026-10-18T19:28:18.1884947Z   ✓  145 [msedge] › headings.spec.mjs:92:1 › SR-2c: with the view at the left, a Row Heading click then Shift+↓ leaves scrollLeft where it was (687ms)
+2026-10-18T19:28:19.2208723Z   ✓  146 [msedge] › headings.spec.mjs:148:1 › DC-42: a drag across Column Headings selects whole columns, over the Headings and over the cells (1.0s)
+2026-10-18T19:28:20.0216922Z   ✓  147 [msedge] › headings.spec.mjs:176:1 › DC-42: Shift+press on a Column Heading extends from the Focus's column, and the drag goes on (787ms)
+2026-10-18T19:28:21.0211130Z   ✓  148 [msedge] › headings.spec.mjs:196:1 › DC-42: a drag across Row Headings selects whole rows, over the Headings and over the cells (987ms)
+2026-10-18T19:28:24.4395489Z   ✓  149 [msedge] › headings.spec.mjs:217:1 › DC-43: a Column Heading drag at the right edge scrolls sideways, and never down (3.4s)
+2026-10-18T19:28:27.0555590Z   ✓  150 [msedge] › headings.spec.mjs:240:1 › DC-43: a Row Heading drag at the bottom edge scrolls down, and never sideways (2.6s)
+2026-10-18T19:28:28.0567960Z   ✓  151 [msedge] › headings.spec.mjs:261:1 › DC-44: over more than one column the Size Tip shows the size at the Extent's Heading, and the Name Box is empty (985ms)
+2026-10-18T19:28:28.7872892Z   ✓  152 [msedge] › headings.spec.mjs:298:1 › DC-44: a Row Heading drag shows its size beside the Extent's Row Heading (718ms)
+2026-10-18T19:28:30.0550489Z   ✓  153 [msedge] › headings.spec.mjs:320:1 › DC-44: the Size Tip is redrawn only when the Extent moves to another Heading (1.3s)
+2026-10-18T19:28:30.7383829Z   ✓  154 [msedge] › headings.spec.mjs:369:1 › SR-2e/DC-42: Ctrl+click on a Column Heading adds the column, and a second takes it out (670ms)
+2026-10-18T19:28:31.5210516Z   ✓  155 [msedge] › headings.spec.mjs:387:1 › SR-2e/DC-42: Ctrl+drag across Column Headings adds the columns crossed as one range (770ms)
+2026-10-18T19:28:32.1871694Z   ✓  156 [msedge] › headings.spec.mjs:405:1 › DC-42: Ctrl+click on a Row Heading adds the row, and a second takes it out (653ms)
+2026-10-18T19:28:34.3735248Z   ✓  157 [msedge] › inspector-edits.spec.mjs:44:1 › RI-16: an approval from the inspector reaches the grid as a new instance, and the inspector shows it without a banner (ADR-0003) (2.2s)
+2026-10-18T19:28:34.7531448Z   ✓  158 [msedge] › inspector-edits.spec.mjs:56:1 › RI-17: a change elsewhere raises the banner with the new value, keeps the old one shown, and disables the actions until reloaded (368ms)
+2026-10-18T19:28:35.0725834Z   ✓  159 [msedge] › inspector-edits.spec.mjs:76:1 › RI-18: a row deleted elsewhere says so, and its inspector acts on nothing (306ms)
+2026-10-18T19:28:35.4566413Z   ✓  160 [msedge] › inspector-edits.spec.mjs:86:1 › RI-19: an approval pressed before the news of a change arrives is refused by the store, and says why (371ms)
+2026-10-18T19:28:35.8220247Z   ✓  161 [msedge] › inspector-edits.spec.mjs:109:1 › RI-24: a deletion stays said, whatever news about the trade arrives after it (353ms)
+2026-10-18T19:28:36.1386938Z   ✓  162 [msedge] › inspector-edits.spec.mjs:125:1 › RI-25: an inspector opened while news is held back shows what the grid showed, and learns of the change when it is announced (303ms)
+2026-10-18T19:28:36.5544925Z   ✓  163 [msedge] › inspector-edits.spec.mjs:137:1 › RI-20: a note records the version it was written against, and is marked once the trade has moved on (405ms)
+2026-10-18T19:28:36.9233096Z   ✓  164 [msedge] › inspector-edits.spec.mjs:154:1 › RI-21: the inspector follows its trade by key when an approval moves it under the sort (356ms)
+2026-10-18T19:28:37.1053539Z   ✓  165 [msedge] › inspector-edits.spec.mjs:171:1 › RI-22: the page says whom the store is shared with — only this tab on WebAssembly, every tab on the Server host (169ms)
+2026-10-18T19:28:37.1860197Z   -  166 [msedge] › inspector-edits.spec.mjs:180:1 › RI-23: on the Server host, an approval in another tab raises the banner in this one (ADR-0018)
+2026-10-18T19:28:40.0388115Z   ✓  167 [msedge] › inspectors.spec.mjs:91:5 › RI-4: modal, by click, handler returning once the dialog is shown: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037) (2.8s)
+2026-10-18T19:28:40.7223070Z   ✓  168 [msedge] › inspectors.spec.mjs:108:5 › RI-26: modal, by click from outside the grid, handler returning once the dialog is shown: closing gives the keyboard back to where it was, not to the grid (ADR-0037) (671ms)
+2026-10-18T19:28:41.4230985Z   ✓  169 [msedge] › inspectors.spec.mjs:119:5 › RI-5: modal, by Space, handler returning once the dialog is shown: the keyboard is in the inspector (ADR-0020/0037) (689ms)
+2026-10-18T19:28:42.1217339Z   ✓  170 [msedge] › inspectors.spec.mjs:91:5 › RI-4: modal, by click, handler awaiting the dialog's result: the keyboard is in the inspector, and back in the grid when it closes (ADR-0020/0037) (686ms)
+2026-10-18T19:28:42.8235965Z   ✓  171 [msedge] › inspectors.spec.mjs:108:5 › RI-26: modal, by click from outside the grid, handler awaiting the dialog's result: closing gives the keyboard back to where it was, not to the grid (ADR-0037) (690ms)
+2026-10-18T19:28:43.4873785Z   ✓  172 [msedge] › inspectors.spec.mjs:119:5 › RI-5: modal, by Space, handler awaiting the dialog's result: the keyboard is in the inspector (ADR-0020/0037) (651ms)
+2026-10-18T19:28:44.5036254Z   ✓  173 [msedge] › inspectors.spec.mjs:127:1 › RI-6: floating, by click: the keyboard is in the inspector just opened (ADR-0020/0037) (1.0s)
+2026-10-18T19:28:45.1719588Z   ✓  174 [msedge] › inspectors.spec.mjs:139:1 › RI-7: floating, by Space: the keyboard is in the inspector (ADR-0020/0037) (656ms)
+2026-10-18T19:28:45.6202936Z   ✓  175 [msedge] › inspectors.spec.mjs:147:1 › RI-8: floating: a row whose inspector is open brings it to the front instead of opening another (436ms)
+2026-10-18T19:28:46.2369395Z   ✓  176 [msedge] › inspectors.spec.mjs:160:1 › RI-9: floating: an inspector is dragged by its title bar, and closes on its own (604ms)
+2026-10-18T19:28:46.7706183Z   ✓  177 [msedge] › inspectors.spec.mjs:187:1 › RI-10: the marked rows open as inspectors, one each, and the count names the ones outside the filter (ADR-0043) (522ms)
+2026-10-18T19:28:47.2701040Z   ✓  178 [msedge] › inspectors.spec.mjs:206:1 › RI-11: the marks survive a sort, so the rows opened are the rows ticked (ADR-0043) (488ms)
+2026-10-18T19:28:47.6700718Z   ✓  179 [msedge] › inspectors.spec.mjs:221:1 › RI-12: above the cap the marked rows are refused by count, and nothing opens (388ms)
+2026-10-18T19:28:49.1052268Z   ✓  180 [msedge] › inspectors.spec.mjs:234:1 › RI-13: modal: the marked rows open one after another, and Escape ends the queue (1.4s)
+2026-10-18T19:28:49.4043923Z   ✓  181 [msedge] › inspectors.spec.mjs:261:1 › RI-14: Enter on the Inspect cell moves down and opens nothing (ADR-0020) (286ms)
+2026-10-18T19:28:50.2034642Z   ✓  182 [msedge] › inspectors.spec.mjs:273:1 › RI-15: while a modal inspector stands, the grid behind it cannot be pressed (787ms)
+2026-10-18T19:28:54.6401119Z   ✓  183 [msedge] › key-field.spec.mjs:160:9 › /sheet under the builtin Chrome › ADR-0080: with a cell selected and no edit open, the keyboard is the Keyboard Field's, inside the root, unseen, over the Focus cell (4.4s)
+2026-10-18T19:28:57.4509971Z   ✓  184 [msedge] › key-field.spec.mjs:187:9 › /sheet under the builtin Chrome › ED-30 (i1): a composition on a selected cell is drawn over the cell, nothing moves while it lasts, and its end opens the Cell Editor holding it; Enter commits and moves (2.8s)
+2026-10-18T19:29:01.1835346Z   ✓  185 [msedge] › key-field.spec.mjs:225:9 › /sheet under the builtin Chrome › ED-30 (i2): a composition the IME cancels leaves an edit open and empty, as Excel's does; Escape then cancels it (3.7s)
+2026-10-18T19:29:05.2808882Z   ✓  186 [msedge] › key-field.spec.mjs:249:9 › /sheet under the builtin Chrome › ED-30: a press on another cell while composing puts the composition in the cell it was composed on, commits it there and selects the pressed cell (4.1s)
+2026-10-18T19:29:09.4794626Z   ✓  187 [msedge] › key-field.spec.mjs:275:9 › /sheet under the builtin Chrome › ED-30 / ADR-0010 (the hold): a second composition ended before the first one's editor has the keyboard is appended to it, and a key typed at once waits for both (150 ms on the Server host) (4.2s)
+2026-10-18T19:29:13.7618810Z   ✓  188 [msedge] › key-field.spec.mjs:305:9 › /sheet under the builtin Chrome › ED-30 / ADR-0080 (the sixteenth run's k6): the key that ends a composition and starts the next leaves DOM focus in the Keyboard Field until the second ends, and D10 holds both in order (150 ms on the Server host) (4.3s)
+2026-10-18T19:29:17.9850897Z   ✓  189 [msedge] › key-field.spec.mjs:354:9 › /sheet under the builtin Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (4.2s)
+2026-10-18T19:29:22.1633147Z   ✓  190 [msedge] › key-field.spec.mjs:399:9 › /sheet under the builtin Chrome › ED-30 / ADR-0080 / ADR-0010: a composition that ends with no key the IME took being told gives the waiting editor the keyboard at its end, and one composed there at once comes after the text held for the edit (150 ms on the Server host) (4.2s)
+2026-10-18T19:29:26.2872431Z   ✓  191 [msedge] › key-field.spec.mjs:443:9 › /sheet under the builtin Chrome › ED-30 / ADR-0080 (the sixteenth run's k15): a key the IME took whose keyup never comes — Alt+Tab mid-composition — ends as the keyboard leaves the field, and the editor the composition opened takes the keyboard holding its text (150 ms on the Server host) (4.1s)
+2026-10-18T19:29:30.3562377Z   ✓  192 [msedge] › key-field.spec.mjs:494:9 › /sheet under the builtin Chrome › ADR-0080 / CP-6: Ctrl+C and Ctrl+V from the Keyboard Field are the grid's copy and paste, and type nothing into it (4.1s)
+2026-10-18T19:29:32.7526545Z   ✓  193 [msedge] › key-field.spec.mjs:517:9 › /sheet under the builtin Chrome › A11Y-4 / ADR-0080: the Keyboard Field is the Sheet's one tab stop — Tab in from before it and out, Shift+Tab in from after it and out (2.4s)
+2026-10-18T19:29:35.3360247Z   ✓  194 [msedge] › key-field.spec.mjs:542:9 › /sheet under the builtin Chrome › KB-8 / ADR-0012 / ADR-0080: Escape, Escape, a press on a control elsewhere on the page, then Tab back into the Sheet — the release has ended, and Tab cycles inside the selection (2.6s)
+2026-10-18T19:29:37.7378062Z   ✓  195 [msedge] › key-field.spec.mjs:566:9 › /sheet under the builtin Chrome › KB-8 / ADR-0012 / ADR-0080: Escape, the released Tab out of the Sheet, Shift+Tab back in — Tab cycles inside the selection again (2.4s)
+2026-10-18T19:29:40.3523469Z   ✓  196 [msedge] › key-field.spec.mjs:584:9 › /sheet under the builtin Chrome › KB-12 / ADR-0080: the root's ring shows when the keyboard arrives by Tab, and not after a click (2.6s)
+2026-10-18T19:29:42.5696785Z   ✓  197 [msedge] › key-field.spec.mjs:618:9 › /sheet under the builtin Chrome › A11Y-21 / ADR-0080: over the DevTools protocol, the focused node is the Keyboard Field and its active descendant resolves to the Focus cell (2.2s)
+2026-10-18T19:29:46.9679663Z   ✓  198 [msedge] › key-field.spec.mjs:160:9 › /sheet under the mud Chrome › ADR-0080: with a cell selected and no edit open, the keyboard is the Keyboard Field's, inside the root, unseen, over the Focus cell (4.4s)
+2026-10-18T19:29:50.0200553Z   ✓  199 [msedge] › key-field.spec.mjs:187:9 › /sheet under the mud Chrome › ED-30 (i1): a composition on a selected cell is drawn over the cell, nothing moves while it lasts, and its end opens the Cell Editor holding it; Enter commits and moves (3.0s)
+2026-10-18T19:29:54.1139400Z   ✓  200 [msedge] › key-field.spec.mjs:225:9 › /sheet under the mud Chrome › ED-30 (i2): a composition the IME cancels leaves an edit open and empty, as Excel's does; Escape then cancels it (4.1s)
+2026-10-18T19:29:58.5283339Z   ✓  201 [msedge] › key-field.spec.mjs:249:9 › /sheet under the mud Chrome › ED-30: a press on another cell while composing puts the composition in the cell it was composed on, commits it there and selects the pressed cell (4.4s)
+2026-10-18T19:30:03.0600321Z   ✓  202 [msedge] › key-field.spec.mjs:275:9 › /sheet under the mud Chrome › ED-30 / ADR-0010 (the hold): a second composition ended before the first one's editor has the keyboard is appended to it, and a key typed at once waits for both (150 ms on the Server host) (4.5s)
+2026-10-18T19:30:07.7060445Z   ✓  203 [msedge] › key-field.spec.mjs:305:9 › /sheet under the mud Chrome › ED-30 / ADR-0080 (the sixteenth run's k6): the key that ends a composition and starts the next leaves DOM focus in the Keyboard Field until the second ends, and D10 holds both in order (150 ms on the Server host) (4.6s)
+2026-10-18T19:30:12.3632623Z   ✓  204 [msedge] › key-field.spec.mjs:354:9 › /sheet under the mud Chrome › ED-30 / ADR-0080: with the editor's request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) (4.6s)
+2026-10-18T19:30:16.9921599Z   ✓  205 [msedge] › key-field.spec.mjs:399:9 › /sheet under the mud Chrome › ED-30 / ADR-0080 / ADR-0010: a composition that ends with no key the IME took being told gives the waiting editor the keyboard at its end, and one composed there at once comes after the text held for the edit (150 ms on the Server host) (4.6s)
+2026-10-18T19:30:21.5922253Z   ✓  206 [msedge] › key-field.spec.mjs:443:9 › /sheet under the mud Chrome › ED-30 / ADR-0080 (the sixteenth run's k15): a key the IME took whose keyup never comes — Alt+Tab mid-composition — ends as the keyboard leaves the field, and the editor the composition opened takes the keyboard holding its text (150 ms on the Server host) (4.6s)
+2026-10-18T19:30:26.0177839Z   ✓  207 [msedge] › key-field.spec.mjs:494:9 › /sheet under the mud Chrome › ADR-0080 / CP-6: Ctrl+C and Ctrl+V from the Keyboard Field are the grid's copy and paste, and type nothing into it (4.4s)
+2026-10-18T19:30:28.0681129Z   ✓  208 [msedge] › key-field.spec.mjs:517:9 › /sheet under the mud Chrome › A11Y-4 / ADR-0080: the Keyboard Field is the Sheet's one tab stop — Tab in from before it and out, Shift+Tab in from after it and out (2.0s)
+2026-10-18T19:30:30.4935008Z   ✓  209 [msedge] › key-field.spec.mjs:542:9 › /sheet under the mud Chrome › KB-8 / ADR-0012 / ADR-0080: Escape, Escape, a press on a control elsewhere on the page, then Tab back into the Sheet — the release has ended, and Tab cycles inside the selection (2.4s)
+2026-10-18T19:30:33.0847463Z   ✓  210 [msedge] › key-field.spec.mjs:566:9 › /sheet under the mud Chrome › KB-8 / ADR-0012 / ADR-0080: Escape, the released Tab out of the Sheet, Shift+Tab back in — Tab cycles inside the selection again (2.6s)
+2026-10-18T19:30:35.4499667Z   ✓  211 [msedge] › key-field.spec.mjs:584:9 › /sheet under the mud Chrome › KB-12 / ADR-0080: the root's ring shows when the keyboard arrives by Tab, and not after a click (2.4s)
+2026-10-18T19:30:37.7975252Z   ✓  212 [msedge] › key-field.spec.mjs:618:9 › /sheet under the mud Chrome › A11Y-21 / ADR-0080: over the DevTools protocol, the focused node is the Keyboard Field and its active descendant resolves to the Focus cell (2.3s)
+2026-10-18T19:30:40.4069680Z   ✓  213 [msedge] › key-field.spec.mjs:630:1 › ADR-0080 / ADR-0018: on /sheets each Sheet has a Keyboard Field of its own, and a composition in one opens an edit in that one only (2.6s)
+2026-10-18T19:30:44.1014788Z   ✓  214 [msedge] › key-field.spec.mjs:670:1 › ADR-0080: focus put on the root itself goes on to the Keyboard Field (3.7s)
+2026-10-18T19:30:44.8738251Z   ✓  215 [msedge] › key-field.spec.mjs:679:1 › ADR-0080 / ADR-0035 / ED-30: over a cell that does not edit the Keyboard Field is read-only, and no composition starts there (759ms)
+2026-10-18T19:30:46.7338472Z   ✓  216 [msedge] › key-field.spec.mjs:723:9 › /features under the builtin Chrome › A11Y-4 / ADR-0080: Tab from before the first grid, which edits, reaches its field past every ▾, and the next Tab leaves the grid; Shift+Tab likewise (1.8s)
+2026-10-18T19:30:47.0836346Z   ✓  217 [msedge] › key-field.spec.mjs:754:9 › /features under the builtin Chrome › A11Y-4 / ADR-0080: on the second grid, which edits nothing, Tab and Shift+Tab reach its root and pass no ▾ on the way out (337ms)
+2026-10-18T19:30:47.8182936Z   ✓  218 [msedge] › key-field.spec.mjs:723:9 › /features under the mud Chrome › A11Y-4 / ADR-0080: Tab from before the first grid, which edits, reaches its field past every ▾, and the next Tab leaves the grid; Shift+Tab likewise (721ms)
+2026-10-18T19:30:48.1668076Z   ✓  219 [msedge] › key-field.spec.mjs:754:9 › /features under the mud Chrome › A11Y-4 / ADR-0080: on the second grid, which edits nothing, Tab and Shift+Tab reach its root and pass no ▾ on the way out (336ms)
+2026-10-18T19:30:48.5159804Z   ✓  220 [msedge] › key-field.spec.mjs:789:5 › /wide, a display-only grid › ADR-0080 / A11Y-5: a display-only grid has no Keyboard Field and keeps the keyboard and aria-activedescendant on its root (334ms)
+2026-10-18T19:30:48.8502916Z   ✓  221 [msedge] › key-field.spec.mjs:798:5 › /wide, a display-only grid › A11Y-4 / ADR-0080: the root is the one tab stop of a display-only grid — Tab in from before it and out, Shift+Tab in from after it and out (320ms)
+2026-10-18T19:30:49.2152499Z   ✓  222 [msedge] › key-field.spec.mjs:816:5 › /wide, a display-only grid › KB-8 / ADR-0012 / ADR-0080: on a grid without a field too, a press elsewhere on the page ends the release, and Tab back in cycles inside the selection (352ms)
+2026-10-18T19:30:49.5491597Z   ✓  223 [msedge] › key-field.spec.mjs:833:5 › /wide, a display-only grid › KB-12 / ADR-0080: a display-only grid keeps :focus-visible on its root — the ring after Tab, none after a click, and no mark (321ms)
+2026-10-18T19:30:50.0014849Z   ✓  224 [msedge] › key-field.spec.mjs:853:5 › A11Y-21 / ADR-0080 / ADR-0037 under the builtin Chrome: on /cells, while Interactive, the field's active descendant resolves to the chosen action's button (437ms)
+2026-10-18T19:30:51.9080875Z   ✓  225 [msedge] › key-field.spec.mjs:853:5 › A11Y-21 / ADR-0080 / ADR-0037 under the mud Chrome: on /cells, while Interactive, the field's active descendant resolves to the chosen action's button (1.9s)
+2026-10-18T19:30:51.9084441Z   -  226 [msedge] › key-field.spec.mjs:887:5 › the Server host only › ED-30 / ADR-0010 (the hold): Enter typed straight after a composition ends waits for the editor it opens, and commits it (150 ms)
+2026-10-18T19:30:51.9089310Z   -  227 [msedge] › key-field.spec.mjs:916:5 › the Server host only › KB-8 / ADR-0230: Escape and Tab typed at once behind an unanswered Enter — the Tab is refused aloud, and the next Tab leaves (150 ms)
+2026-10-18T19:30:51.9093588Z   -  228 [msedge] › key-field.spec.mjs:990:9 › /sheet under the builtin Chrome, a composition finished while a popover opens, on the Server host › ADR-0039 / ADR-0010 / ED-30: a composition finished while Ctrl+F opens Find is typed into the find field, the key after it behind it, and opens no edit (150 ms)
+2026-10-18T19:30:51.9098618Z   -  229 [msedge] › key-field.spec.mjs:1025:9 › /sheet under the builtin Chrome, a composition finished while a popover opens, on the Server host › ADR-0039 / ADR-0010 / ED-30: a composition finished while Ctrl+1 opens Format Cells is dropped with the key after it, and opens no edit (150 ms)
+2026-10-18T19:30:51.9103527Z   -  230 [msedge] › key-field.spec.mjs:1063:9 › /sheet under the builtin Chrome, a composition finished while a popover opens, on the Server host › ADR-0039 / ADR-0010 / ED-30: a composition finished once Format Cells…, run from the Context Menu, has closed it is dropped with the key after it, and opens no edit (150 ms)
+2026-10-18T19:30:51.9109094Z   -  231 [msedge] › key-field.spec.mjs:990:9 › /sheet under the mud Chrome, a composition finished while a popover opens, on the Server host › ADR-0039 / ADR-0010 / ED-30: a composition finished while Ctrl+F opens Find is typed into the find field, the key after it behind it, and opens no edit (150 ms)
+2026-10-18T19:30:51.9113713Z   -  232 [msedge] › key-field.spec.mjs:1025:9 › /sheet under the mud Chrome, a composition finished while a popover opens, on the Server host › ADR-0039 / ADR-0010 / ED-30: a composition finished while Ctrl+1 opens Format Cells is dropped with the key after it, and opens no edit (150 ms)
+2026-10-18T19:30:51.9118624Z   -  233 [msedge] › key-field.spec.mjs:1063:9 › /sheet under the mud Chrome, a composition finished while a popover opens, on the Server host › ADR-0039 / ADR-0010 / ED-30: a composition finished once Format Cells…, run from the Context Menu, has closed it is dropped with the key after it, and opens no edit (150 ms)
+2026-10-18T19:30:53.5346933Z   ✓  234 [msedge] › keyboard-return.spec.mjs:3:1 › ADR-0070: passing keys out hands over the held keys before a later key or focus departure can overtake them (1.6s)
+2026-10-18T19:30:53.7998432Z   ✓  235 [msedge] › keyboard-return.spec.mjs:57:5 › ADR-0050/ADR-0070: a frame's hand-back completes only after its held keys are collected (granted) (253ms)
+2026-10-18T19:30:54.0483947Z   ✓  236 [msedge] › keyboard-return.spec.mjs:57:5 › ADR-0050/ADR-0070: a frame's hand-back completes only after its held keys are collected (declined) (237ms)
+2026-10-18T19:30:54.2658807Z   ✓  237 [msedge] › keyboard-return.spec.mjs:112:1 › ADR-0039/ADR-0050: a container hands held typing to its text field and preserves an earlier choice (206ms)
+2026-10-18T19:30:54.4836446Z   ✓  238 [msedge] › keyboard-return.spec.mjs:162:5 › ADR-0039: held Enter commits only text changed by the hold (unchanged) (204ms)
+2026-10-18T19:30:54.6990220Z   ✓  239 [msedge] › keyboard-return.spec.mjs:162:5 › ADR-0039: held Enter commits only text changed by the hold (#FF0000) (204ms)
+2026-10-18T19:30:54.9148284Z   ✓  240 [msedge] › keyboard-return.spec.mjs:202:1 › ADR-0039/ADR-0050: a held frame Escape is acknowledged before the next key chooses its destination (204ms)
+2026-10-18T19:30:55.1337960Z   ✓  241 [msedge] › keyboard-return.spec.mjs:254:5 › ADR-0210: a held text edit commits once and releases its supplement (blur) (206ms)
+2026-10-18T19:30:55.3828366Z   ✓  242 [msedge] › keyboard-return.spec.mjs:254:5 › ADR-0210: a held text edit commits once and releases its supplement (restored) (237ms)
+2026-10-18T19:30:55.6326944Z   ✓  243 [msedge] › keyboard-return.spec.mjs:254:5 › ADR-0210: a held text edit commits once and releases its supplement (native change) (237ms)
+2026-10-18T19:30:55.8832400Z   ✓  244 [msedge] › keyboard-return.spec.mjs:254:5 › ADR-0210: a held text edit commits once and releases its supplement (held Enter then blur) (239ms)
+2026-10-18T19:30:56.1149109Z   ✓  245 [msedge] › keyboard-return.spec.mjs:254:5 › ADR-0210: a held text edit commits once and releases its supplement (native Enter then blur) (219ms)
+2026-10-18T19:30:56.3998523Z   ✓  246 [msedge] › keyboard-return.spec.mjs:254:5 › ADR-0210: a held text edit commits once and releases its supplement (typed then native Enter) (273ms)
+2026-10-18T19:30:56.6398517Z   ✓  247 [msedge] › keyboard-return.spec.mjs:254:5 › ADR-0210: a held text edit commits once and releases its supplement (dispose) (228ms)
+2026-10-18T19:30:56.9991068Z   ✓  248 [msedge] › keyboard-return.spec.mjs:254:5 › ADR-0210: a held text edit commits once and releases its supplement (replace detached field) (347ms)
+2026-10-18T19:30:59.8500368Z   ✓  249 [msedge] › marks.spec.mjs:41:1 › after "mark all", rows scrolled to far away paint ticked (MK-6) (2.8s)
+2026-10-18T19:31:01.7651847Z   ✓  250 [msedge] › marks.spec.mjs:56:1 › a filter keeps the marks and names the ones outside it (MK-7) (1.9s)
+2026-10-18T19:31:02.8982489Z   ✓  251 [msedge] › marks.spec.mjs:72:1 › Space in the Mark Column brings the selected rows into line (MK-1) (1.1s)
+2026-10-18T19:31:03.8497138Z   ✓  252 [msedge] › marks.spec.mjs:95:1 › a row arriving after "mark all" is not marked, and the header turns to "some" (MK-8) (939ms)
+2026-10-18T19:31:04.8802294Z   ✓  253 [msedge] › marks.spec.mjs:106:1 › an action over a mark whose row was deleted elsewhere reports it as gone (ADR-0043) (1.0s)
+2026-10-18T19:31:04.8803917Z   -  254 [msedge] › measure-live.spec.mjs:93:1 › LV-15: 1,000 changes applied to a million rows on /grid-live-local, from Apply to the frame that shows them
+2026-10-18T19:31:04.8805494Z   -  255 [msedge] › measure-pivot.spec.mjs:265:1 › PV-21/DA-17: a million trades read from objects on /pivot, and the gestures over them
+2026-10-18T19:31:04.8807319Z   -  256 [msedge] › measure-pivot.spec.mjs:379:1 › PV-21: questions of a thousand to thirty thousand leaves, over a million trades on /pivot
+2026-10-18T19:31:04.8809329Z   -  257 [msedge] › measure-pivot.spec.mjs:416:1 › PV-21: a question near the 200,000-leaf cap, and past it, over a million trades on /pivot
+2026-10-18T19:31:04.8810938Z   -  258 [msedge] › measure-pivot.spec.mjs:471:1 › PV-21: 1,000 changes folded into a million trades on /pivot-live
+2026-10-18T19:31:04.8811878Z   -  259 [msedge] › measure-pivot.spec.mjs:537:1 › DA-17: a million trades read from Arrow on /pivot-db
+2026-10-18T19:31:04.8812781Z   -  260 [msedge] › measure-pivot.spec.mjs:598:1 › PV-21/DA-17: a CSV of a million rows read on /pivot-csv
+2026-10-18T19:31:04.8813759Z   -  261 [msedge] › measure-pivot.spec.mjs:653:1 › DA-17: the trade export's 100,000-trade sample read from memory on /pivot-csv
+2026-10-18T19:31:04.8814969Z   -  262 [msedge] › measure-sheet.spec.mjs:108:1 › SH-19: completion's keystroke-to-list time on the Server host, with 150 ms injected and with none
+2026-10-18T19:31:04.8816351Z   -  263 [msedge] › measure.spec.mjs:33:1 › what the pointer reports cost on a circuit, at 0, 50 and 150 ms round trip (SRV-6)
+2026-10-18T19:31:04.8817653Z   -  264 [msedge] › measure.spec.mjs:114:1 › how long the stale band stands while the window is dragged over a Stretch grid, at 0, 50 and 150 ms round trip (§21.9, ADR-0028)
+2026-10-18T19:31:13.6659126Z   ✓  265 [msedge] › memory.spec.mjs:82:1 › mounting and disposing the grid fifty times returns nodes and listeners to baseline (MEM-2) (8.8s)
+2026-10-18T19:31:15.8905324Z   ✓  266 [msedge] › memory.spec.mjs:124:1 › disposal takes the module's listeners off the root, and the count comes back (MEM-4) (2.2s)
+2026-10-18T19:41:19.0458265Z   ✓  267 [msedge] › memory.spec.mjs:171:1 › a ten-minute scripted scroll does not grow the JS heap (MEM-5, MEM-6) (10.1m)
+2026-10-18T19:41:22.0435619Z   ✓  268 [msedge] › mud-app.spec.mjs:137:1 › WR-7: a grid in a tab that was hidden paints correctly once its tab is shown (ADR-0028) (3.0s)
+2026-10-18T19:41:23.7921457Z   ✓  269 [msedge] › mud-app.spec.mjs:191:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (1.7s)
+2026-10-18T19:41:24.5905820Z   ✓  270 [msedge] › mud-app.spec.mjs:247:1 › WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018, ADR-0052) (786ms)
+2026-10-18T19:41:25.7736413Z   ✓  271 [msedge] › mud-app.spec.mjs:294:1 › WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039/0052) (1.2s)
+2026-10-18T19:41:27.4752651Z   ✓  272 [msedge] › mud-app.spec.mjs:355:1 › WR-7: a grid in a MudDialog opens its popovers whole inside its box, and its Inner Popups above the dialog (ADR-0040/0039) (1.7s)
+2026-10-18T19:41:28.6243433Z   ✓  273 [msedge] › mud-app.spec.mjs:431:1 › WR-9: the application's own controls — theme, tabs, dialog — keep the console clean (CON-1/2/3/6) (1.1s)
+2026-10-18T19:41:29.1740126Z   ✓  274 [msedge] › mud-app.spec.mjs:450:1 › WR-5 (setup): /features?chrome=mud runs its grids under MudGridChrome, and the column menu opens (FN-17, UX-11) (538ms)
+2026-10-18T19:41:29.8419038Z   ✓  275 [msedge] › mud-app.spec.mjs:477:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (655ms)
+2026-10-18T19:41:32.1590853Z   ✓  276 [msedge] › mud.spec.mjs:24:1 › the painted geometry equals the declared metrics under the real Wrapper stylesheet (UX-3) (2.3s)
+2026-10-18T19:41:32.4414373Z   ✓  277 [msedge] › mud.spec.mjs:45:1 › nothing under the Viewport transitions or animates with the Wrapper loaded (UX-6) (270ms)
+2026-10-18T19:41:33.2755726Z   ✓  278 [msedge] › mud.spec.mjs:79:1 › the focus outline and the selection fill stay visible under the Wrapper theme, light and dark (UX-9) (819ms)
+2026-10-18T19:41:34.0774379Z   ✓  279 [msedge] › mud.spec.mjs:160:1 › UX-19/UX-9: among several ranges the Focus's thin border is the Focus outline's colour, the primary in both palettes, with no mapping of its own (ADR-0008, 2026-10-12; ADR-0030) (790ms)
+2026-10-18T19:41:34.3949048Z   ✓  280 [msedge] › mud.spec.mjs:203:1 › a loss is painted in the palette's error colour by the Consumer's tone rule, and only there (ADR-0006, FN-7a) (306ms)
+2026-10-18T19:41:34.6921114Z   ✓  281 [msedge] › mud.spec.mjs:225:1 › a theme switch re-renders nothing inside the grid: the rows are the same elements (RR-1) (283ms)
+2026-10-18T19:41:35.0408455Z   ✓  282 [msedge] › mud.spec.mjs:243:1 › the row under the pointer is highlighted by an overlay band, in the hovered instance only (UX-13) (336ms)
+2026-10-18T19:41:35.4922026Z   ✓  283 [msedge] › mud.spec.mjs:271:1 › the Wrapper's editor opens inside the core's box with the typed character, and commits (ED-4, ADR-0030) (439ms)
+2026-10-18T19:41:35.8753705Z   ✓  284 [msedge] › mud.spec.mjs:302:1 › the loading bar is a MudProgressLinear where the core places its seam, only while loading (371ms)
+2026-10-18T19:41:36.1757691Z   ✓  285 [msedge] › mud.spec.mjs:314:1 › the paper's corners: rounded with an inset, square flush; the grid's own box is untouched (288ms)
+2026-10-18T19:41:36.8913150Z   ✓  286 [msedge] › mud.spec.mjs:331:1 › the Wrapper's row rule runs on across the Pinned Column, light and dark (ticket 92, ADR-0030) (704ms)
+2026-10-18T19:41:38.6777051Z   ✓  287 [msedge] › navigation.spec.mjs:33:1 › RI-1: the index at / lists every routed page, once (1.8s)
+2026-10-18T19:41:39.2270802Z   ✓  288 [msedge] › navigation.spec.mjs:47:1 › RI-2: the Row Identity demo that was at / is at /identity (537ms)
+2026-10-18T19:41:40.8307871Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:41:40.8317692Z [DemoApi]       Live updates on: 1000 trades every 250 ms.
+2026-10-18T19:41:40.9636938Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:41:40.9638849Z [DemoApi]       Live updates off.
+2026-10-18T19:41:52.5576948Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:41:52.5579653Z [DemoApi]       Live updates on: 20 trades every 250 ms.
+2026-10-18T19:41:52.6359643Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-10-18T19:41:52.6361889Z [DemoApi]       Live updates off.
+2026-10-18T19:41:52.9456604Z   ✓  289 [msedge] › navigation.spec.mjs:54:1 › RI-3: every page opens from the index, names itself, and leads back to it (clean console) (13.7s)
+2026-10-18T19:41:54.3703841Z   ✓  290 [msedge] › observational.spec.mjs:136:5 › mount to first painted row at 10⁶ rows (BIG-7) (1.4s)
+2026-10-18T19:42:20.8824172Z   ✓  291 [msedge] › observational.spec.mjs:149:1 › the DOM, the settle repaint and the frame intervals, virtualised and not (DOM-5, PF-6, BIG-6) (26.5s)
+2026-10-18T19:42:24.6163654Z   ✓  292 [msedge] › observational.spec.mjs:193:1 › a selection drag, one row a step, costs this much per step (PF-7) (3.7s)
+2026-10-18T19:42:26.6054147Z   ✓  293 [msedge] › page-follow.spec.mjs:79:5 › KB-45: on a grid that edits, its Keyboard Field, the arrows bring the Focus into the window at the nearest edge, and a cell in the window moves nothing (ADR-0204) (2.0s)
+2026-10-18T19:42:27.2070569Z   ✓  294 [msedge] › page-follow.spec.mjs:79:5 › KB-45: on a display-only grid, its root, the arrows bring the Focus into the window at the nearest edge, and a cell in the window moves nothing (ADR-0204) (588ms)
+2026-10-18T19:42:27.6732673Z   ✓  295 [msedge] › page-follow.spec.mjs:102:1 › KB-45: while extending, the page follows the Extent, and the Focus may be left behind (ADR-0204, ADR-0052) (454ms)
+2026-10-18T19:42:28.7048923Z   ✓  296 [msedge] › page-follow.spec.mjs:114:1 › KB-45: extending past the grid's own Viewport still brings the Extent into the window, the Focus left off the painted rows (ADR-0204, ADR-0052) (1.0s)
+2026-10-18T19:42:29.3038818Z   ✓  297 [msedge] › page-follow.spec.mjs:152:1 › KB-45: a resize is not followed — the page stays where it is when the window shrinks over the Focus (ADR-0204) (587ms)
+2026-10-18T19:42:29.7203825Z   ✓  298 [msedge] › page-follow.spec.mjs:168:1 › KB-45: the editor opens in the window, at the nearest edge, on a cell scrolled out of it (ADR-0204) (405ms)
+2026-10-18T19:42:30.2207296Z   ✓  299 [msedge] › page-follow.spec.mjs:194:5 › SRV-5/KB-45: a column menu's opening focus on its way does not take the keyboard from a grid pressed meanwhile (ADR-0204, builtin Chrome) (488ms)
+2026-10-18T19:42:30.8702749Z   ✓  300 [msedge] › page-follow.spec.mjs:194:5 › SRV-5/KB-45: a column menu's opening focus on its way does not take the keyboard from a grid pressed meanwhile (ADR-0204, mud Chrome) (638ms)
+2026-10-18T19:42:31.2742697Z   ✓  301 [msedge] › page-follow.spec.mjs:220:1 › SRV-5/KB-45: a Template cell's request for the keyboard on its way does not take it from a grid pressed meanwhile (ADR-0204) (390ms)
+2026-10-18T19:42:31.6207666Z   ✓  302 [msedge] › page-follow.spec.mjs:246:1 › KB-23/ADR-0204: with nothing pressed meanwhile, Space still gives a Template cell's control the keyboard, through the grid (334ms)
+2026-10-18T19:42:34.7561356Z   ✓  303 [msedge] › part-c.spec.mjs:85:1 › SH-54/DC-59 (built-in Chrome): the outline is 2 Device Pixels of #217346 with a white line inside, the shade #C7C7C7, and a black line inside stays black (ADR-0071, case 11) (3.1s)
+2026-10-18T19:42:35.4222062Z   ✓  304 [msedge] › part-c.spec.mjs:116:1 › SH-54 (built-in Chrome): while an edit is open the white line inside the outline is not drawn (ADR-0071, the fourteenth run's case 19) (653ms)
+2026-10-18T19:42:36.3224703Z   ✓  305 [msedge] › part-c.spec.mjs:134:1 › SH-54/DC-59 (MudBlazor Chrome): the outline is the palette's primary and the shade the primary mixed into white, and a black line inside stays black (ADR-0071, case 11) (888ms)
+2026-10-18T19:42:37.3059130Z   ✓  306 [msedge] › part-c.spec.mjs:194:5 › SH-54/DC-59 (MudBlazor Chrome): in a Pinned Column, a black line inside the shade stays black and the shade is the primary mixed into white (ADR-0206, case 11) (971ms)
+2026-10-18T19:42:38.0378820Z   ✓  307 [msedge] › part-c.spec.mjs:232:5 › SH-54/DC-59 (built-in Chrome): in a Pinned Column, the shade is #C7C7C7, a black line inside stays black, and the Focus is unshaded (ADR-0206, case 11) (719ms)
+2026-10-18T19:42:38.9573320Z   ✓  308 [msedge] › part-c.spec.mjs:194:5 › SH-54/DC-59 (MudBlazor Chrome): across the pinned boundary, a black line inside the shade stays black and the shade is the primary mixed into white (ADR-0206, case 11) (907ms)
+2026-10-18T19:42:39.7038588Z   ✓  309 [msedge] › part-c.spec.mjs:232:5 › SH-54/DC-59 (built-in Chrome): across the pinned boundary, the shade is #C7C7C7, a black line inside stays black, and the Focus is unshaded (ADR-0206, case 11) (734ms)
+2026-10-18T19:42:41.1376291Z   ✓  310 [msedge] › part-c.spec.mjs:253:1 › DC-59: a Consumer's coloured --ex-selection-fill multiplies over a pinned Fill and a pinned line, in a Pinned Column and across the boundary (ADR-0206, ADR-0071) (1.4s)
+2026-10-18T19:42:45.0878355Z   ✓  311 [msedge] › part-c.spec.mjs:332:1 › DC-59: with a pinned tint on screen and the page a third of a pixel across and down, the lines outside the range keep their exact Device Pixels (ADR-0206, the sub-pixel gate) (3.9s)
+2026-10-18T19:42:46.3865481Z   ✓  312 [msedge] › part-c.spec.mjs:370:1 › DC-59: scrolling with column A selected, its shade stays on column A down and across, and never over the cells that pass beneath it (ADR-0206) (1.3s)
+2026-10-18T19:42:47.0368698Z   ✓  313 [msedge] › part-c.spec.mjs:410:1 › DC-59: under forced colors no tint is painted over a pinned range, and its outline is (ADR-0206) (633ms)
+2026-10-18T19:42:49.6225168Z   ✓  314 [msedge] › part-c.spec.mjs:429:5 › DC-59/SH-39 (built-in Chrome, dark scheme): across the pinned boundary the shade is the same on both sides and a black line inside stays black, as in the light scheme (ADR-0206, ADR-0071) (2.6s)
+2026-10-18T19:42:50.5894115Z   ✓  315 [msedge] › part-c.spec.mjs:429:5 › DC-59/SH-39 (MudBlazor Chrome, dark scheme): across the pinned boundary the shade is the same on both sides and a black line inside stays black, as in the light scheme (ADR-0206, ADR-0071) (954ms)
+2026-10-18T19:42:51.1539093Z   ✓  316 [msedge] › part-c.spec.mjs:449:1 › VZ-17/DC-59: a vertical gridline is one Device Pixel of #E0E0E0, and every column edge lies on a Device Pixel (ADR-0090) (550ms)
+2026-10-18T19:42:51.5362410Z   ✓  317 [msedge] › part-c.spec.mjs:472:1 › Part C (ticket 146): the Row Headings' edge is Excel's #ABABAB on a light page (ADR-0071) (371ms)
+2026-10-18T19:42:51.9202931Z   ✓  318 [msedge] › part-c.spec.mjs:481:1 › FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in, and no more fit (ADR-0016) (371ms)
+2026-10-18T19:42:52.6707705Z   ✓  319 [msedge] › part-c.spec.mjs:520:1 › SH-53 (Part C, case 12): Ctrl+Shift+= over a whole row inserts a row above it, Ctrl+Minus deletes it, and neither reaches the page (ADR-0050 item 14) (738ms)
+2026-10-18T19:42:53.4224491Z   ✓  320 [msedge] › part-c.spec.mjs:545:1 › SH-53: Ctrl+Shift+= over a whole column inserts a column to its left, and Ctrl+Minus deletes it (ADR-0050 item 14) (739ms)
+2026-10-18T19:42:53.8729226Z   ✓  321 [msedge] › part-c.spec.mjs:558:1 › SH-53: over a part of a row Ctrl+Minus changes nothing and says why (ADR-0050 item 14) (437ms)
+2026-10-18T19:42:54.5601172Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-10-18T19:42:54.5602053Z [DemoApi]       Application is shutting down...
+2026-10-18T19:42:54.5963696Z 
+2026-10-18T19:42:54.5972582Z   Slow test file: [msedge] › memory.spec.mjs (10.2m)
+2026-10-18T19:42:54.5974162Z   Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+2026-10-18T19:42:54.5975361Z   23 skipped
+2026-10-18T19:42:54.5975953Z   298 passed (21.4m)
+2026-10-18T19:42:54.6365216Z ##[group]Run actions/upload-artifact@v7
+2026-10-18T19:42:54.6365564Z with:
+2026-10-18T19:42:54.6365811Z   name: layer3-records-msedge-2
+2026-10-18T19:42:54.6366509Z   path: verification/
+tests/ExGrid.Browser/test-results/
+
+2026-10-18T19:42:54.6366918Z   if-no-files-found: ignore
+2026-10-18T19:42:54.6367213Z   retention-days: 30
+2026-10-18T19:42:54.6367471Z   compression-level: 6
+2026-10-18T19:42:54.6367728Z   overwrite: false
+2026-10-18T19:42:54.6367979Z   include-hidden-files: false
+2026-10-18T19:42:54.6368270Z   archive: true
+2026-10-18T19:42:54.6368500Z env:
+2026-10-18T19:42:54.6368725Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-10-18T19:42:54.6369017Z   DOTNET_NOLOGO: 1
+2026-10-18T19:42:54.6369257Z   LONG_RUN: true
+2026-10-18T19:42:54.6369501Z   DOTNET_ROOT: /usr/share/dotnet
+2026-10-18T19:42:54.6369785Z ##[endgroup]
+2026-10-18T19:42:56.1097643Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-10-18T19:42:56.1099971Z The least common ancestor is /home/runner/work/ex-grid/ex-grid. This will be the root directory of the artifact
+2026-10-18T19:42:56.1101329Z With the provided path, there will be 10442 files uploaded
+2026-10-18T19:42:56.1102373Z Artifact name is valid!
+2026-10-18T19:42:56.1102972Z Root directory input is valid!
+2026-10-18T19:42:56.4671850Z Uploading artifact: layer3-records-msedge-2.zip
+2026-10-18T19:42:56.4714280Z Beginning upload of artifact content to blob storage
+2026-10-18T19:42:57.6904645Z Uploaded bytes 8388608
+2026-10-18T19:42:58.0995428Z Uploaded bytes 16777216
+2026-10-18T19:42:58.2071276Z Uploaded bytes 25165824
+2026-10-18T19:42:58.7157429Z Uploaded bytes 33554432
+2026-10-18T19:42:59.2235908Z Uploaded bytes 41943040
+2026-10-18T19:42:59.9152396Z Uploaded bytes 50331648
+2026-10-18T19:43:00.4482316Z Uploaded bytes 58720256
+2026-10-18T19:43:00.9663649Z Uploaded bytes 67108864
+2026-10-18T19:43:01.7767283Z Uploaded bytes 75497472
+2026-10-18T19:43:02.0979391Z Uploaded bytes 83886080
+2026-10-18T19:43:02.6471416Z Uploaded bytes 92274688
+2026-10-18T19:43:03.0195703Z Uploaded bytes 100663296
+2026-10-18T19:43:03.9547429Z Uploaded bytes 109051904
+2026-10-18T19:43:04.5834823Z Uploaded bytes 117440512
+2026-10-18T19:43:05.3539236Z Uploaded bytes 125829120
+2026-10-18T19:43:06.3265257Z Uploaded bytes 134217728
+2026-10-18T19:43:06.7421005Z Uploaded bytes 142606336
+2026-10-18T19:43:07.4382631Z Uploaded bytes 150994944
+2026-10-18T19:43:08.1298257Z Uploaded bytes 159383552
+2026-10-18T19:43:09.0073490Z Uploaded bytes 167772160
+2026-10-18T19:43:09.3822728Z Uploaded bytes 176160768
+2026-10-18T19:43:09.6988711Z Uploaded bytes 184549376
+2026-10-18T19:43:10.3599038Z Uploaded bytes 192937984
+2026-10-18T19:43:10.6880385Z Uploaded bytes 201326592
+2026-10-18T19:43:11.1866937Z Uploaded bytes 209715200
+2026-10-18T19:43:11.2790011Z Uploaded bytes 213167536
+2026-10-18T19:43:11.3209184Z Finished uploading artifact content to blob storage!
+2026-10-18T19:43:11.3214418Z SHA256 digest of uploaded artifact is 5053ec97e33a6cce1d602c9209718c32025d794a2df31db3cc4da9b2b6e41942
+2026-10-18T19:43:11.3216818Z Finalizing artifact upload
+2026-10-18T19:43:11.6222934Z Artifact layer3-records-msedge-2 successfully finalized. Artifact ID 12148049354
+2026-10-18T19:43:11.6224744Z Artifact layer3-records-msedge-2 has been successfully uploaded! Final size is 213167536 bytes. Artifact ID is 12148049354
+2026-10-18T19:43:11.6229852Z Artifact download URL: https://github.com/AkiraMisawa/ex-grid/actions/runs/39158128144/artifacts/12148049354
+2026-10-18T19:43:11.6646926Z Post job cleanup.
+2026-10-18T19:43:11.7736965Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-29c22a3ee550219573164ee5799c29ef3a61ce3fb606a2e9963ffbcac73f25bb, not saving cache.
+2026-10-18T19:43:11.7845030Z Post job cleanup.
+2026-10-18T19:43:11.9155261Z Post job cleanup.
+2026-10-18T19:43:12.0042930Z [command]/usr/bin/git version
+2026-10-18T19:43:12.0083092Z git version 2.55.0
+2026-10-18T19:43:12.0126670Z Temporarily overriding HOME='/home/runner/work/_temp/8d37084f-4ae6-4b4a-8ae3-9a3c9384bf46' before making global git config changes
+2026-10-18T19:43:12.0128508Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-18T19:43:12.0132630Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ex-grid/ex-grid
+2026-10-18T19:43:12.0163499Z Removing SSH command configuration
+2026-10-18T19:43:12.0169697Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-18T19:43:12.0205331Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-18T19:43:12.0473023Z Removing HTTP extra header
+2026-10-18T19:43:12.0478260Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-18T19:43:12.0511874Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-18T19:43:12.0748246Z Removing includeIf entries pointing to credentials config files
+2026-10-18T19:43:12.0754352Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-18T19:43:12.0782843Z includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path
+2026-10-18T19:43:12.0783908Z includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-10-18T19:43:12.0784713Z includeif.gitdir:/github/workspace/.git.path
+2026-10-18T19:43:12.0785599Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-18T19:43:12.0791314Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path
+2026-10-18T19:43:12.0812905Z /home/runner/work/_temp/git-credentials-0a3e9830-0111-490b-8e30-72b1e4778b38.config
+2026-10-18T19:43:12.0822366Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-0a3e9830\-0111\-490b\-8e30\-72b1e4778b38\.config
+2026-10-18T19:43:12.0859480Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-10-18T19:43:12.0882496Z /home/runner/work/_temp/git-credentials-0a3e9830-0111-490b-8e30-72b1e4778b38.config
+2026-10-18T19:43:12.0891638Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-0a3e9830\-0111\-490b\-8e30\-72b1e4778b38\.config
+2026-10-18T19:43:12.0930138Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-18T19:43:12.0951066Z /github/runner_temp/git-credentials-0a3e9830-0111-490b-8e30-72b1e4778b38.config
+2026-10-18T19:43:12.0958613Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-0a3e9830\-0111\-490b\-8e30\-72b1e4778b38\.config
+2026-10-18T19:43:12.0988727Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-18T19:43:12.1009489Z /github/runner_temp/git-credentials-0a3e9830-0111-490b-8e30-72b1e4778b38.config
+2026-10-18T19:43:12.1018548Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-0a3e9830\-0111\-490b\-8e30\-72b1e4778b38\.config
+2026-10-18T19:43:12.1053781Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-18T19:43:12.1285142Z Removing credentials config '/home/runner/work/_temp/git-credentials-0a3e9830-0111-490b-8e30-72b1e4778b38.config'
+2026-10-18T19:43:12.1436441Z Cleaning up orphan processes
