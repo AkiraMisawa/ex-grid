@@ -1,0 +1,48 @@
+{
+    "ran":  "2026-10-18T02:10:03",
+    "excel":  "16.0 (build 20430); EXCEL.EXE 16.0.20430.20182",
+    "windowsRegionalFormat":  "en-US",
+    "formulasEnteredThrough":  "typed (keyboard input), as every other cell of a case",
+    "constantsEnteredThrough":  "typed (keyboard input: SendInput, then Enter)",
+    "summary":  {
+                    "agree":  0,
+                    "disagree":  1,
+                    "blocked":  0,
+                    "recorded":  0
+                },
+    "cases":  [
+                  {
+                      "id":  "PMT-043",
+                      "area":  "pmt",
+                      "source":  "uncertain",
+                      "description":  "Refused until Excel is asked: a rate below a double\u0027s normal numbers (whether Excel keeps such a number typed has not been observed either): the readings\u0027 products of the rate hold a few bits, and they give -2000, the exact payment rounded once, 0 or #NUM! (Search.cs --pmt-show). Run 18a\u0027s pass could not enter the Formula through COM (0x800A03EC); the keys pass asks it (docs/specs/exsheet/run-18/area-oracle.md)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#VALUE!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#VALUE!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#NUM!",
+                                    "kind":  "error",
+                                    "text":  "#NUM!",
+                                    "formula":  "=PMT(E1-320,0.5,1000)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "value2: expected \"#VALUE!\", Excel \"#NUM!\" (error)"
+                                      ],
+                      "keyDialogs":  [
+                                         "02:10:01.932 PMT-043: typing =PMT(1E-320,0.5,1000): [Microsoft Excel] Microsoft Excel | Information Icon | We found a typo in your formula and tried to correct it to:  ‭=PMT(E1-320,0.5,1000)‬  Do you want to accept this correction? | Yes | No | System Menu Bar | System | Close -\u003e Enter (its default button)"
+                                     ]
+                  }
+              ]
+}
