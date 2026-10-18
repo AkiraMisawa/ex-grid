@@ -8,7 +8,7 @@ Roadmap: ExGrid — Keys, presses and clicks on headings, menus and buttons sent
 - [x] One queue per instance; the commit barrier and the `core` keys sent without waiting folded into it (`_pressAnswer`'s chain still stands inside the press answers' slots)
 - [x] Every click the script hears inside the Input Root numbered and claimed; an unclaimed number answered void (at the next telling, not at a later number: ADR-0240, "As built")
 - [x] No wait ends on a clock; a refused input is said in the live region
-- [ ] `spikes/render-bench` mode measured against `main` (ADR-0240, "What it may cost")
+- [x] `spikes/render-bench` mode measured against `main` (ADR-0240, "What it may cost")
 - [ ] Layer 2 and the targeted layer 3 green; the hunt and the widened run green on the branch
 
 **Blocked by:** nothing.

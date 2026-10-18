@@ -191,8 +191,12 @@ The Chrome contexts' delegates may change shape to carry the order. Each change 
 - **A Chrome that marks a control `data-ex-claims` must reach the core every time that event comes**: a
   telling no handler claims holds the inputs behind it until the next telling. The Wrapper's filter form
   therefore hands every submission to `Apply`, which refuses one it cannot apply.
-- **Not yet measured**: the `spikes/render-bench` comparison against `main` that "What it may cost" asks
-  for is still owed before ticket 02 is done.
+- **Measured** (2026-10-18, `spikes/render-bench/results/20261018-input-order/`, headless Chromium,
+  interleaved against `main`): typing, presses, and a menu opened and closed with each step waited for
+  cost the same on the Server host at 0 and 60 ms and on WebAssembly; the largest difference, 20 clicks in
+  one task on WebAssembly, is about 10 ms in 170 and swaps sides between passes. Ten Shift+F10, Escape, ↓
+  in one task at 60 ms end on the wrong row on `main` in every round (four of the ↓ lost); the branch ends
+  on the right one in about 3.1 s, the round trips each step waits for.
 
 ## What it may cost
 
