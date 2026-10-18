@@ -281,7 +281,7 @@ test('active cell, case 3: after Enter, Shift+arrow moves the edge opposite the 
     await expectActive(page, 'F2');
     await page.keyboard.press('Shift+ArrowLeft');
     await page.keyboard.type('m');
-    await page.keyboard.press('Control+Enter');
+    await page.keyboard.press('ControlOrMeta+Enter');
     for (const a1 of ['E1', 'G3']) await expect(cell(page, a1)).toHaveText('m');
     await expect(cell(page, 'D1')).not.toHaveText('m');
     await expectActive(page, 'F2');
@@ -316,7 +316,7 @@ test('active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrol
     await page.keyboard.press('Shift+Backspace');
     // Collapsed: Ctrl+Enter now fills E1 alone.
     await page.keyboard.type('c');
-    await page.keyboard.press('Control+Enter');
+    await page.keyboard.press('ControlOrMeta+Enter');
     await expect(cell(page, 'E1')).toHaveText('c');
     await expect(cell(page, 'F1')).toHaveText('');
     await expectActive(page, 'E1');
@@ -335,7 +335,7 @@ test('active cell, cases 12 and 13: typing enters the Focus only, and Ctrl+Enter
     await click(page, 'E6');
     await click(page, 'G8', { modifiers: ['Shift'] });
     await page.keyboard.type('y');
-    await page.keyboard.press('Control+Enter');
+    await page.keyboard.press('ControlOrMeta+Enter');
     for (const a1 of ['E6', 'F7', 'G8']) await expect(cell(page, a1)).toHaveText('y');
     await expectActive(page, 'E6');
     await expectSelection(page, 'E6', 'G8');
@@ -349,7 +349,7 @@ test('third run, main keys case 5: Ctrl+Enter with =A1 over B2:C3 writes it in t
     await click(page, 'C3', { modifiers: ['Shift'] });
     await expectSelection(page, 'B2', 'C3');
     await page.keyboard.type('=A1');
-    await page.keyboard.press('Control+Enter');
+    await page.keyboard.press('ControlOrMeta+Enter');
     for (const [a1, shown] of [['B2', 'Item'], ['C2', 'Qty'], ['B3', 'Apples'], ['C3', 'Item']]) {
         await expect(cell(page, a1)).toHaveText(shown);
     }
@@ -542,11 +542,11 @@ test('item 16: a copied Formula pastes with its relative References shifted (ADR
     await enter(page, 'E1', '=B2');
     await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
     await click(page, 'E1');
-    await page.keyboard.press('Control+C');
+    await page.keyboard.press('ControlOrMeta+C');
     // On the Server host the copy lands a round trip later (ADR-0005).
     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
     await click(page, 'E3');
-    await page.keyboard.press('Control+V');
+    await page.keyboard.press('ControlOrMeta+V');
     // Excel: =A1 copied from B1 into B3 is =A3.
     expect(await entryOf(page, 'E3')).toBe('=B4');
 });
@@ -555,11 +555,11 @@ test('item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Sele
     await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
     await click(page, 'B2');
     await click(page, 'D4', { modifiers: ['Shift'] });
-    await page.keyboard.press('Control+C');
+    await page.keyboard.press('ControlOrMeta+C');
     // On the Server host the copy lands a round trip later (ADR-0005).
     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
     await click(page, 'C6');
-    await page.keyboard.press('Control+V');
+    await page.keyboard.press('ControlOrMeta+V');
     // Excel: E5:G7 selected with the Focus on E5, and B2's =A2*2 written as =E6*2 at F6.
     await expectSelection(page, 'C6', 'E8');
     await expectActive(page, 'C6');
@@ -577,7 +577,7 @@ test.fixme('item 18: cells from Excel, and to Excel (ADR-0048, ticket 14)', asyn
 async function pasteText(page, a1, text) {
     await page.evaluate((t) => navigator.clipboard.writeText(t), text);
     await click(page, a1);
-    await page.keyboard.press('Control+V');
+    await page.keyboard.press('ControlOrMeta+V');
 }
 
 test('item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)', async ({ page }) => {
@@ -603,7 +603,7 @@ test('fourth run, active cell item 3: one value of plain text over a range goes 
     await click(page, 'E2');
     await click(page, 'F3', { modifiers: ['Shift'] });
     await expectSelection(page, 'E2', 'F3');
-    await page.keyboard.press('Control+V');
+    await page.keyboard.press('ControlOrMeta+V');
     // Excel: B2 alone holds the Formula =A1 (showing 0), the other three cells stay empty, and
     // the Selection is B2.
     await expect(cell(page, 'E2')).not.toHaveText('');
@@ -625,12 +625,12 @@ test('one cell copied inside the Sheet still fills the whole range, as Excel\'s 
     expect(value).not.toBe('');
     await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
     await click(page, 'C2');
-    await page.keyboard.press('Control+C');
+    await page.keyboard.press('ControlOrMeta+C');
     // On the Server host the copy lands a round trip later (ADR-0005).
     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 }).not.toBe('SENTINEL');
     await click(page, 'E3');
     await click(page, 'F4', { modifiers: ['Shift'] });
-    await page.keyboard.press('Control+V');
+    await page.keyboard.press('ControlOrMeta+V');
     for (const a1 of ['E3', 'F3', 'E4', 'F4']) await expect(cell(page, a1)).toHaveText(value);
     await expectCovers(sheet(page).locator('.ex-selection .ex-range'), sheet(page), 'E3', 'F4');
     await expectActive(page, 'E3');
