@@ -123,7 +123,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
     {
         var cut = RenderGrid();
         var attach = JSInterop.Invocations.Last(i => i.Identifier == "attach");
-        Assert.Equal(false, attach.Arguments[^1]);
+        Assert.Equal(false, attach.Arguments[^2]);
 
         cut.Render(ps => ps.Add(g => g.OnLeave, () => { }));
         Assert.Equal(true, Js.ClaimsTold.Invocations.Last().Arguments[^1]);

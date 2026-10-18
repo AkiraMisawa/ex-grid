@@ -562,6 +562,27 @@ public class FilterChromeTests : GridTestContext
         Assert.Single(cut.FindAll(".ex-stub-panel"));
     }
 
+    [Fact] // ADR-0009/0010 / FN-18: an operator outside the column's Allowed, handed to the context's Apply by a substituted panel, is refused by the core, and the panel stands
+    public async Task The_core_refuses_an_operator_it_did_not_offer_from_any_chrome()
+    {
+        var source = PushedSource();
+        var stub = new StubChrome();
+        var cut = RenderGrid(source, stub);
+        await OpenPanelAsync(cut);
+        Assert.DoesNotContain(FilterOperator.GreaterThan, stub.Panel!.Allowed);
+
+        await cut.InvokeAsync(() => stub.Panel!.Apply(new FilterSpec(
+            [new FilterClause(FilterOperator.Contains, "Al"), new FilterClause(FilterOperator.GreaterThan, "Al")],
+            FilterCombinator.Or)));
+
+        Assert.Empty(source.FilterChanges);
+        Assert.Single(cut.FindAll(".ex-stub-panel"));
+
+        await cut.InvokeAsync(() => stub.Panel!.Apply(new FilterSpec([new FilterClause(FilterOperator.Contains, "Al")])));
+
+        Assert.Equal([FilterOperator.Contains], source.FilterChanges.Single()!.Columns["Book"].Clauses.Select(c => c.Operator));
+    }
+
     [Fact] // ADR-0009 / FL-14: two conditions joined by Or apply as one spec of two clauses
     public async Task Two_conditions_apply_as_one_spec()
     {

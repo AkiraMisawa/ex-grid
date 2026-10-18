@@ -225,6 +225,16 @@ nothing — visible — rather than a key that means something different in each
 asks for: in Caret the arrows come out of the set and reach the editor; in Overwrite they
 stay in it.
 
+*(2026-10-18, decided with the user.)* **The editing modes' sets are the core's too.** The 0.1.0
+sign-off found that, as Point, completion and Overwrite's Shift keys were added, their sets had been
+written in the listener as constants — with the keys that cannot add a layer an Escape peels
+(ADR-0230), the keys that open a popover, Find's and the clipboard's — beside C# that resolved the
+same keys. That is the duplication this section keeps out. They are built in C# now
+(`GridEditingKeys`, `GridKeys.GateSets`) and handed at attach beside the taken keys, each under the
+name the listener reads it by; the listener spells no set of keys but the ones it answers itself, as
+this ADR's notes give it to (the Apple platforms' Home and End and the dropped PageUp and PageDown of
+2026-09-30, and what a held key is handed on as), and KB-2 is restated to say so.
+
 **And the listener only claims a key aimed at the grid itself.** Capturing on the root
 means it also sees keys meant for anything focusable inside — a Consumer's control in a
 Template Column, one of the grid's own action buttons ([ADR-0020](./0020-action-and-template-columns.md)),

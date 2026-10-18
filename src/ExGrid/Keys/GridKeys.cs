@@ -56,6 +56,63 @@ internal static class GridKeys
         [.. Table.Keys.Where(key => !Conditions.ContainsKey(key))];
 
     /// <summary>
+    /// The keys on the root, with no edit open, that cannot add a layer an Escape peels: they move
+    /// the Focus or the Selection, or leave the grid (ADR-0230 section 1). The input such a key sends
+    /// leaves the stamp's answer to be trusted for the Escape after it (<c>layerInputAt</c>); a key the
+    /// Consumer declared is never one. Handed to the listener at attach, which names none (KB-2).
+    /// </summary>
+    public static IReadOnlyList<string> Neutral { get; } =
+    [
+        "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+        "Control+ArrowUp", "Control+ArrowDown", "Control+ArrowLeft", "Control+ArrowRight",
+        "Shift+ArrowUp", "Shift+ArrowDown", "Shift+ArrowLeft", "Shift+ArrowRight",
+        "Control+Shift+ArrowUp", "Control+Shift+ArrowDown", "Control+Shift+ArrowLeft", "Control+Shift+ArrowRight",
+        "Tab", "Shift+Tab", "Home", "End", "Control+Home", "Control+End", "PageUp", "PageDown", "Escape",
+    ];
+
+    /// <summary>The keys that open a popover from the root (ADR-0036/0039): the keys typed after one
+    /// wait for the popover, which takes DOM focus a round trip later on a circuit.</summary>
+    public static IReadOnlyList<string> PopoverOpeners { get; } =
+        [.. Table.Where(entry => entry.Value.Kind is GridKeyKind.OpenContextMenu or GridKeyKind.OpenColumnMenu).Select(entry => entry.Key)];
+
+    /// <summary>Find's key (ADR-0055), both cases for CapsLock.</summary>
+    public static IReadOnlyList<string> FindKeys { get; } =
+        [.. Table.Where(entry => entry.Value.Kind == GridKeyKind.Find).Select(entry => entry.Key)];
+
+    /// <summary>
+    /// The clipboard's keys: the ones the core answers through the browser's copy and paste
+    /// events (ADR-0005, ADR-0014), with cut, which the core does not answer and a field does, and
+    /// paste as plain text. Never taken; while a hold stands such a key is not held but taken by its
+    /// event (ADR-0010, 2026-10-02).
+    /// </summary>
+    public static IReadOnlyList<string> ClipboardKeys { get; } =
+    [
+        "Control+c", "Control+C", "Control+Insert",
+        "Control+x", "Control+X", "Shift+Delete",
+        "Control+v", "Control+V", "Shift+Insert", "Control+Shift+v", "Control+Shift+V",
+    ];
+
+    /// <summary>
+    /// Every set of keys the listener gates by beside <see cref="TakenFor"/>'s and the declared
+    /// keys, under the name it reads each by, handed at attach (ADR-0010; KB-2): the claimed sets of
+    /// the editing modes (<see cref="GridEditingKeys.ByMode"/>), and <c>neutral</c>,
+    /// <c>popoverOpeners</c>, <c>find</c> and <c>clipboard</c>.
+    /// </summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> GateSets { get; } = BuildGateSets();
+
+    private static Dictionary<string, IReadOnlyList<string>> BuildGateSets()
+    {
+        var sets = new Dictionary<string, IReadOnlyList<string>>(GridEditingKeys.ByMode, StringComparer.Ordinal)
+        {
+            ["neutral"] = Neutral,
+            ["popoverOpeners"] = PopoverOpeners,
+            ["find"] = FindKeys,
+            ["clipboard"] = ClipboardKeys,
+        };
+        return sets;
+    }
+
+    /// <summary>
     /// The keys one grid takes: <see cref="Taken"/>, plus the keys whose claim depends on
     /// what that grid can do. Delete, Backspace, Ctrl+D and Ctrl+R write, so they are taken
     /// only on a grid with an editable column — a display-only grid leaves the page its own
@@ -151,7 +208,7 @@ internal static class GridKeys
     private static readonly IReadOnlySet<string> NoneDeclared = new HashSet<string>(StringComparer.Ordinal);
 
     // The keys the core answers that are not in Table: two the editor claims while an edit is
-    // open (ex-grid.js's editingKeys and the F4 a Consumer's CycleReference adds), and the
+    // open (GridEditingKeys.Editing's Control+Enter and the F4 a Consumer's CycleReference adds), and the
     // clipboard's, which the core answers through the browser's own copy and paste events —
     // taken, the key would suppress the very event (ADR-0005).
     private static readonly Dictionary<string, string> AnsweredOutsideTable = new(StringComparer.Ordinal)

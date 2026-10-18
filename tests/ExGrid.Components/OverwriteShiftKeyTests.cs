@@ -2,6 +2,7 @@ using Bunit;
 using ExGrid.Cells;
 using ExGrid.Columns;
 using ExGrid.Components.Tests.Support;
+using ExGrid.Keys;
 using ExGrid.Selection;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -402,15 +403,13 @@ public class OverwriteShiftKeyTests : GridTestContext
     [Fact] // ADR-0010 / ADR-0051 / ED-2: the gate's Point set claims the four Shift+arrows and Shift+Home beside the arrows, Home and End (R1 (viii)), and the Primary Modifier's arrows with Shift or without (run 18a); its Overwrite set is the same keys (R1 (vii), run 18a) — and neither claims Shift+End
     public void ED2_the_gate_claims_the_shift_keys_in_overwrite()
     {
-        var script = AssetSources.Read("ExGrid", "ex-grid.js");
-
-        Assert.Matches(new System.Text.RegularExpressions.Regex(
-            @"const pointKeys = new Set\(\[\s*\.\.\.editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End',\s*"
-            + @"'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight', 'Shift\+Home',\s*"
-            + @"'Control\+ArrowUp', 'Control\+ArrowDown', 'Control\+ArrowLeft', 'Control\+ArrowRight',\s*"
-            + @"'Control\+Shift\+ArrowUp', 'Control\+Shift\+ArrowDown', 'Control\+Shift\+ArrowLeft', 'Control\+Shift\+ArrowRight'\]\);"),
-            script);
-        Assert.Matches(new System.Text.RegularExpressions.Regex(@"const overwriteKeys = new Set\(pointKeys\);"), script);
-        Assert.DoesNotContain("'Shift+End'", script.Split("const pointKeys")[1].Split("const completionKeys")[0], StringComparison.Ordinal);
+        Assert.Equal(
+            [.. GridEditingKeys.Editing, "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End",
+                "Shift+ArrowUp", "Shift+ArrowDown", "Shift+ArrowLeft", "Shift+ArrowRight", "Shift+Home",
+                "Control+ArrowUp", "Control+ArrowDown", "Control+ArrowLeft", "Control+ArrowRight",
+                "Control+Shift+ArrowUp", "Control+Shift+ArrowDown", "Control+Shift+ArrowLeft", "Control+Shift+ArrowRight"],
+            GridKeys.GateSets["point"]);
+        Assert.Equal(GridKeys.GateSets["point"], GridKeys.GateSets["overwrite"]);
+        Assert.DoesNotContain("Shift+End", GridKeys.GateSets["point"]);
     }
 }
