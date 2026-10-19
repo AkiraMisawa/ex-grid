@@ -88,6 +88,8 @@ test('ADR-0258: a chart keeps its rows; a deleted row is a gap with a note, and 
 test('ADR-0258, M3-Q6: a click on a point moves the grid\'s Focus to its cell', async ({ page }) => {
     await select(page, [0, 2], [1, 5]);
     await choose(page, [0, 2], /^Chart$/);
+    // The pointer entry hears the pointer only once it holds the chart's first drawing.
+    await expect(chart(page, 'Chart 1')).not.toHaveAttribute('aria-busy', 'true');
     const hit = chart(page, 'Chart 1').locator('.ex-chart-hit').first();
     await hit.scrollIntoViewIfNeeded();
     const box = await hit.boundingBox();
