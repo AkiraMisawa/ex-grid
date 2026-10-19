@@ -44,9 +44,12 @@ repository does not have, and MudBlazor's fetch is a server call.
   3. **Behaviour changes** — the same call giving a different result: a value painted, refused or
      rounded differently. This family displays money, so a different result for the same code is
      written down even when no signature changed.
-  4. **ExGrid**, **ExSheet**, **ExPivot**, **Data** — the Added and Fixed lines per product, each with
-     its pull request, ADR and criterion where it has them. A product with nothing new says "No change.
-     Its packages are republished at this version."
+  4. **ExGrid**, **ExSheet**, **ExPivot**, **ExChart**, **Data** — the Added and Fixed lines per
+     product, each with its pull request, ADR and criterion where it has them. A product with nothing
+     new says "No change. Its packages are republished at this version." **ExChart** joined the family
+     after versions were published (ADR-0280), so its heading stands only in a version whose
+     `Packages:` line names one of its packages: "No change" under it, in a version that never
+     published it, would be false of that version. *(Added 2026-10-19, when ExChart was registered.)*
 - **A prerelease's notes begin with the prerelease note.** It is held once, in
   `docs/releases/prerelease-note.md`, with a `{ref}` where the commit goes, and says what ADR-0042
   promises of a beta: every layer passed in CI on this commit, the Definition of Done is not signed
@@ -80,7 +83,7 @@ repository does not have, and MudBlazor's fetch is a server call.
   - **Their order.** Known limitations stands after Behaviour changes. The other four stand after the
     products, in this order: Signed off, SHOULD criteria accepted failing, Out of scope for this
     version, Supported. A release's headings are therefore Highlights, Breaking changes, Behaviour
-    changes, Known limitations, ExGrid, ExSheet, ExPivot, Data, Signed off, SHOULD criteria accepted
+    changes, Known limitations, ExGrid, ExSheet, ExPivot, ExChart (as above), Data, Signed off, SHOULD criteria accepted
     failing, Out of scope for this version and Supported.
   - **Known limitations**: what the version does not do, or "None.". Each line begins with the products
     it reaches in bold, as a Breaking line does, names the limitation in a sentence, and links the page
@@ -112,7 +115,7 @@ repository does not have, and MudBlazor's fetch is a server call.
 
 - **A change a Consumer can see adds a Change Note**, in the same branch:
   `docs/releases/unreleased/<slug>.md`. Header lines:
-  - `Product:` ExGrid, ExSheet, ExPivot or Data;
+  - `Product:` ExGrid, ExSheet, ExPivot, ExChart or Data;
   - `Kind:` Added, Fixed, Behaviour or Breaking;
   - `Docs:` the site's route and anchor that shows it, when one does;
   - `ADR:` the decision's number, when there is one.

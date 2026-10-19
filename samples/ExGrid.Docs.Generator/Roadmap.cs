@@ -373,7 +373,7 @@ public static class Roadmap
                 }
                 Add(RowMissing, file, statusLine.Start, statusLine.Span.Length,
                     $"This ticket is open (Status: {role}) and has no Roadmap: line. On the line after Status:, write "
-                    + "Roadmap: <Products> — <one sentence a Consumer understands>, the products from ExGrid, ExSheet, ExPivot and Data, "
+                    + "Roadmap: <Products> — <one sentence a Consumer understands>, the products from ExGrid, ExSheet, ExPivot, ExChart and Data, "
                     + $"or Roadmap: internal for work a Consumer would not care about, such as a verification run or a process change ({Adr}).");
                 return;
             }
