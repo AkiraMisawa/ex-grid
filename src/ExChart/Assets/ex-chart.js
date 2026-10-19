@@ -24,6 +24,10 @@ export function attach(root, core) {
     let lastIndex = -1;
     let lastPanel = -1;
     let pressed = false;
+    // Where the pointer last was, as the browser told it: the layer it was over and its offsets
+    // there. A new drawing re-reports it, so a pointer at rest is answered against the drawing
+    // shown, whichever of the move and the drawing reached the page first (spine rule 6).
+    let over = null;
 
     // The position nearest an offset: positions are sorted left to right, so the boundary between
     // two is halfway between them.
@@ -55,7 +59,11 @@ export function attach(root, core) {
     // layer the press was on even when the pointer has left it.
     const locate = (event) => {
         const layer = event.target instanceof Element ? event.target.closest('.ex-chart-hit') : null;
-        if (!layer || !root.contains(layer)) {
+        return layer ? at(layer, event.offsetX, event.offsetY) : null;
+    };
+
+    const at = (layer, offsetX, offsetY) => {
+        if (!layer.isConnected || !root.contains(layer)) {
             return null;
         }
         const left = Number(layer.getAttribute('data-ex-x'));
@@ -64,10 +72,11 @@ export function attach(root, core) {
         if (!Number.isFinite(left) || !Number.isFinite(top) || !Number.isInteger(panel)) {
             return null;
         }
-        return { x: left + event.offsetX, y: top + event.offsetY, panel };
+        return { x: left + offsetX, y: top + offsetY, panel };
     };
 
     const leave = () => {
+        over = null;
         if (lastIndex === -1 || !core) {
             return;
         }
@@ -76,24 +85,33 @@ export function attach(root, core) {
         core.invokeMethodAsync('OnPointerAsync', version, -1, -1, 0).catch(fail);
     };
 
-    const onMove = (event) => {
-        if (version < 0 || !core) {
+    const report = (point) => {
+        const index = nearest(point.x);
+        if (index === lastIndex && point.panel === lastPanel) {
             return;
         }
-        const at = locate(event);
-        if (!at) {
+        lastIndex = index;
+        lastPanel = point.panel;
+        core.invokeMethodAsync('OnPointerAsync', version, index, point.panel, point.y).catch(fail);
+    };
+
+    const onMove = (event) => {
+        if (!core) {
+            return;
+        }
+        const point = locate(event);
+        if (!point) {
             if (!pressed) {
                 leave();
             }
             return;
         }
-        const index = nearest(at.x);
-        if (index === lastIndex && at.panel === lastPanel) {
-            return;
+        if (!pressed) {
+            over = { layer: event.target.closest('.ex-chart-hit'), x: event.offsetX, y: event.offsetY };
         }
-        lastIndex = index;
-        lastPanel = at.panel;
-        core.invokeMethodAsync('OnPointerAsync', version, index, at.panel, at.y).catch(fail);
+        if (version >= 0) {
+            report(point);
+        }
     };
 
     const onDown = (event) => {
@@ -114,8 +132,9 @@ export function attach(root, core) {
             return;
         }
         pressed = false;
-        const at = locate(event);
-        core.invokeMethodAsync('OnReleaseAsync', version, at ? nearest(at.x) : -1).catch(fail);
+        const point = locate(event);
+        over = point ? { layer: event.target.closest('.ex-chart-hit'), x: event.offsetX, y: event.offsetY } : null;
+        core.invokeMethodAsync('OnReleaseAsync', version, point ? nearest(point.x) : -1).catch(fail);
     };
 
     const onLeave = () => {
@@ -137,6 +156,10 @@ export function attach(root, core) {
             xs = Array.isArray(newXs) ? newXs : [];
             lastIndex = -1;
             lastPanel = -1;
+            const point = over && !pressed && core ? at(over.layer, over.x, over.y) : null;
+            if (point && version >= 0) {
+                report(point);
+            }
         },
         dispose() {
             root.removeEventListener('pointermove', onMove);
