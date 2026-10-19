@@ -34,3 +34,8 @@ case.
   colours by rotating the hue cannot promise contrast between neighbours or in a dark theme.
 - **No colour, line pattern or marker size is a C# parameter** (ADR-0027/0028): the keys name slots,
   and the stylesheet's Visual Tokens say what a slot looks like.
+
+*(2026-10-19, [ADR-0281](./0281-the-mudblazor-wrapper-supplies-the-panel-toolbar-menus-and-palette.md),
+decided with the user: under the MudBlazor Wrapper, slots 1 to 3 take the theme's `Primary`, `Secondary`
+and `Tertiary`, slots 4 to 10 keep the default palette, and `Error`, `Warning`, `Success` and `Info` are
+never a series' colour.)*

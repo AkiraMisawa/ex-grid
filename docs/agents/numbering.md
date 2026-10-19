@@ -40,7 +40,8 @@ block on `main` before it uses the first number.
 | 0250–0259 | `claude/project-thread-8l24i3` | ExChart: the charting product, grilled with the user from the research on `research/excharts` (2026-10-19) |
 | 0260–0269 | `codex/responsive-touch-design` | Responsive layout and touch across ExGrid, ExSheet and ExPivot; scoped browser interop (decided with the user, 2026-10-19) |
 | 0270–0279 | `claude/project-thread-7nu0zc` | ExChart's components, grilled with the user beside M1's implementation: tooltip, legend, Chart Filters, the 3D surface, accessibility (2026-10-19) |
-| 0280– | free | reserve a block of ten |
+| 0280–0289 | `claude/project-thread-yozdqm` | ExChart's Showcases and pages, the MudBlazor Wrapper, the files entry, shipping and checks, grilled with the user (M4 and later, 2026-10-19) |
+| 0290– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 
