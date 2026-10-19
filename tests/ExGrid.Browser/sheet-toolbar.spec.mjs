@@ -773,6 +773,46 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(tips(page).filter({ hasText: /^FC$/ })).toHaveCount(1);
         });
 
+        // Ticket 07, found by CI on 2026-10-18: the Alt key went down while the Escapes before it were
+        // held, they took the keyboard to the toolbar and back to the Sheet, and only then was the Alt
+        // released. The key gate had forgotten its press when the keyboard left the grid, so the release
+        // started no KeyTips, and H, H opened an edit in the cell.
+        test(`SH-52/ADR-0100/ADR-0050 (ticket 07): Escape three times in a list a KeyTip opened, then Alt held down until the keyboard is back on the Sheet, then H, H, opens the next list, as typed slowly (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'B3');
+            await keyTips(page, 'h', 'f', 'c');
+            await expect(openLists(page)).toHaveCount(1);
+            await expect(page.locator(':focus')).toContainText('Automatic');
+            await setRoundTrip(80);
+
+            // The Escapes and the Alt's press in one burst, so that they reach the page before the list's
+            // Escape has been answered.
+            const client = await page.context().newCDPSession(page);
+            const escape = { key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 };
+            const alt = { key: 'Alt', code: 'AltLeft', windowsVirtualKeyCode: 18 };
+            await Promise.all([
+                ...[1, 2, 3].flatMap(() => [
+                    client.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...escape }),
+                    client.send('Input.dispatchKeyEvent', { type: 'keyUp', ...escape }),
+                ]),
+                client.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', modifiers: 1, ...alt }),
+            ]);
+            await expectKeyboardOn(grid);
+            await expect(tips(page)).toHaveCount(0);
+            await circuitQuiet();
+            await client.send('Input.dispatchKeyEvent', { type: 'keyUp', ...alt });
+            await page.keyboard.press('h');
+            await page.keyboard.press('h');
+
+            await expect(openLists(page)).toHaveCount(1);
+            await expect(page.locator(':focus')).toContainText('No Fill');
+            await circuitQuiet();
+            await expect(openLists(page)).toHaveCount(1);
+            await expect(editor(grid)).toHaveCount(0);
+            await page.keyboard.press('Escape');
+            await expect(openLists(page)).toHaveCount(0);
+        });
+
         test(`SH-52/ADR-0100 (decided with the user, 2026-10-13): Enter on an edit, then Alt, H, 1, all typed at once, commits the edit and sets bold below it, as typed slowly (${chrome})`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'A4');

@@ -1,0 +1,14 @@
+
+Running 4 tests using 1 worker
+
+(node:23508) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [chrome] › part-c.spec.mjs:481:1 › FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in, and no more fit (ADR-0016) (1.0s)
+  ok 2 [chrome] › sizing.spec.mjs:62:1 › a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016) (992ms)
+(node:49504) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 3 [msedge] › part-c.spec.mjs:481:1 › FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in, and no more fit (ADR-0016) (898ms)
+  ok 4 [msedge] › sizing.spec.mjs:62:1 › a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016) (948ms)
+
+  4 passed (6.5s)
+exit=0 

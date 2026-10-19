@@ -1,0 +1,14 @@
+node v24.14.1, dotnet 10.0.203
+BOOTED
+CLICKING RUN
+\n=== RESULTS ===
+  Direct | the floor, no abstraction | 800 | 15.30 | 26.30 | 50.10 | 37.5%
+  Accessor | + per-column accessor (boxes every decimal) | 800 | 15.70 | 19.20 | 23.60 | 22.5%
+  AccessorMeta | + per-cell metadata lookup | 800 | 20.50 | 29.90 | 32.50 | 100.0%
+  RowComponent | boundary at the row (row = component, cells = plain markup) | 800 | 25.30 | 31.90 | 35.50 | 100.0%
+  RowComponentTone | + a per-cell tone rule on the row boundary (ADR-0006) | 800 | 27.30 | 32.60 | 38.10 | 100.0%
+  Component | + every cell a Blazor component | 800 | 74.60 | 88.50 | 91.90 | 100.0%
+SAVE: saved ✓
+\nOUTCOME: COMPLETED
+\n=== BROWSER LOG (1 entries) ===
+  [console.info] Debugging hotkey: Shift+Alt+D (when application has focus)

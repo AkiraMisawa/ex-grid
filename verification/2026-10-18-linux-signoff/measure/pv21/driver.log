@@ -1,0 +1,5 @@
+ready after 4 polls 11:40:41 load 1.64 1.79 1.00 1/248 2958
+exit 0 11:46:32 load 2.10 1.48 1.07 1/245 3661
+5440/tcp:             2864
+$SCRATCH/measure-rc3/run-pv21.sh: line 4:  2864 Killed                  setsid node static-host.mjs $SCRATCH/measure-rc3/publish/wwwroot 5440 > $O/static.log 2>&1
+8440/tcp:             2869

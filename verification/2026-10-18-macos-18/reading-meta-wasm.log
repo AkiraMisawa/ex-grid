@@ -1,0 +1,54 @@
+node v24.14.1, dotnet 10.0.203
+[WebServer] Using launch settings from ../../samples/ExGrid.DemoHost/Properties/launchSettings.json...
+[WebServer] Building...
+[WebServer] info: Microsoft.Hosting.Lifetime[14]
+[WebServer]       Now listening on: http://localhost:5299
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Application started. Press Ctrl+C to shut down.
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Hosting environment: Development
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Content root path: /Users/akira338/github/ex-grid/samples/ExGrid.DemoHost
+[DemoApi] Using launch settings from ../../samples/ExGrid.DemoApi/Properties/launchSettings.json...
+[DemoApi] Building...
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generating 20000 trades into /tmp/nix-shell.eHielZ/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 10000 of 20000 trades (50%).
+[DemoApi] info: Microsoft.Hosting.Lifetime[14]
+[DemoApi]       Now listening on: http://localhost:8299
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application started. Press Ctrl+C to shut down.
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Hosting environment: Development
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Content root path: /Users/akira338/github/ex-grid/samples/ExGrid.DemoApi
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 20000 trades in 0.1 s: 1.6 MB.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Serving 20000 trades at version f18b7900-0 from /tmp/nix-shell.eHielZ/exgrid-demo-api/runs/trades-v1-20000.50868.f18b7900.sqlite.
+
+Running 18 tests using 1 worker
+
+  ✓   1 [chrome] › zz-run18-meta.spec.mjs:325:1 › active cell, cases 12 and 13: typing enters the Focus only, and Ctrl+Enter fills the Selection and moves nothing (ADR-0052) (2.2s)
+  ✓   2 [chrome] › zz-run18-meta.spec.mjs:344:1 › third run, main keys case 5: Ctrl+Enter with =A1 over B2:C3 writes it in the Focus and shifts its relative References into the other cells, as one undo step (ADR-0050, 2026-09-28; SH-27) (1.4s)
+  ✓   3 [chrome] › zz-run18-meta.spec.mjs:541:1 › item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14) (811ms)
+  ✓   4 [chrome] › zz-run18-meta.spec.mjs:554:1 › item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14) (1.1s)
+  ✓   5 [chrome] › zz-run18-meta.spec.mjs:583:1 › item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14) (478ms)
+  ✓   6 [chrome] › zz-run18-meta.spec.mjs:588:1 › item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14) (461ms)
+  ✓   7 [chrome] › zz-run18-meta.spec.mjs:593:1 › item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14) (461ms)
+  ✓   8 [chrome] › zz-run18-meta.spec.mjs:599:1 › fourth run, active cell item 3: one value of plain text over a range goes into its top-left alone, and the Selection collapses to it (ADR-0014, amended 2026-09-29) (827ms)
+  ✓   9 [chrome] › zz-run18-meta.spec.mjs:621:1 › one cell copied inside the Sheet still fills the whole range, as Excel's own copy does (ADR-0014, amended 2026-09-29) (644ms)
+  ✓  10 [msedge] › zz-run18-meta.spec.mjs:325:1 › active cell, cases 12 and 13: typing enters the Focus only, and Ctrl+Enter fills the Selection and moves nothing (ADR-0052) (2.2s)
+  ✓  11 [msedge] › zz-run18-meta.spec.mjs:344:1 › third run, main keys case 5: Ctrl+Enter with =A1 over B2:C3 writes it in the Focus and shifts its relative References into the other cells, as one undo step (ADR-0050, 2026-09-28; SH-27) (1.4s)
+  ✓  12 [msedge] › zz-run18-meta.spec.mjs:541:1 › item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14) (811ms)
+  ✓  13 [msedge] › zz-run18-meta.spec.mjs:554:1 › item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14) (1.1s)
+  ✓  14 [msedge] › zz-run18-meta.spec.mjs:583:1 › item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14) (477ms)
+  ✓  15 [msedge] › zz-run18-meta.spec.mjs:588:1 › item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14) (462ms)
+  ✓  16 [msedge] › zz-run18-meta.spec.mjs:593:1 › item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14) (461ms)
+  ✓  17 [msedge] › zz-run18-meta.spec.mjs:599:1 › fourth run, active cell item 3: one value of plain text over a range goes into its top-left alone, and the Selection collapses to it (ADR-0014, amended 2026-09-29) (829ms)
+  ✓  18 [msedge] › zz-run18-meta.spec.mjs:621:1 › one cell copied inside the Sheet still fills the whole range, as Excel's own copy does (ADR-0014, amended 2026-09-29) (662ms)
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application is shutting down...
+
+  18 passed (26.4s)

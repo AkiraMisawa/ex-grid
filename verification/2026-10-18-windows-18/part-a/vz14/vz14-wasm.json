@@ -1,0 +1,253 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\node-v24.14.1-win-x64\\node.exe",
+      "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-18-18\\browser\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "scrollbar.spec.mjs",
+      "--grep",
+      "fractional display scaling",
+      "--project=chrome",
+      "--project=msedge",
+      "--reporter=list,json"
+    ],
+    "configFile": "C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\run-2026-10-18-18\\browser\\playwright.config.mjs",
+    "rootDir": "C:/Users/amisa/AppData/Local/exgrid-layer3/run-2026-10-18-18/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/amisa/AppData/Local/exgrid-layer3/run-2026-10-18-18/browser/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chrome",
+        "name": "chrome",
+        "testDir": "C:/Users/amisa/AppData/Local/exgrid-layer3/run-2026-10-18-18/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 300000
+      },
+      {
+        "outputDir": "C:/Users/amisa/AppData/Local/exgrid-layer3/run-2026-10-18-18/browser/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "msedge",
+        "name": "msedge",
+        "testDir": "C:/Users/amisa/AppData/Local/exgrid-layer3/run-2026-10-18-18/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 300000
+      },
+      {
+        "outputDir": "C:/Users/amisa/AppData/Local/exgrid-layer3/run-2026-10-18-18/browser/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chrome-150",
+        "name": "chrome-150",
+        "testDir": "C:/Users/amisa/AppData/Local/exgrid-layer3/run-2026-10-18-18/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 300000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "scrollbar.spec.mjs",
+      "file": "scrollbar.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "on a Windows desktop at fractional display scaling (VZ-14)",
+          "file": "scrollbar.spec.mjs",
+          "line": 317,
+          "column": 6,
+          "specs": [
+            {
+              "title": "the Focus stays readable with the OS doing the scaling",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 300000,
+                  "annotations": [
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                    },
+                    {
+                      "type": "gutter",
+                      "description": "{\"width\":12,\"height\":12,\"deviceContent\":[1332,882]}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":1.3333333333333333}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chrome",
+                  "projectName": "chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1310,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T02:17:48.113Z",
+                      "annotations": [
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                        },
+                        {
+                          "type": "gutter",
+                          "description": "{\"width\":12,\"height\":12,\"deviceContent\":[1332,882]}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":1.3333333333333333}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                },
+                {
+                  "timeout": 300000,
+                  "annotations": [
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                    },
+                    {
+                      "type": "gutter",
+                      "description": "{\"width\":12,\"height\":12,\"deviceContent\":[1332,882]}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":1.3333333333333333}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "msedge",
+                  "projectName": "msedge",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1125,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-18T02:17:51.106Z",
+                      "annotations": [
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                        },
+                        {
+                          "type": "gutter",
+                          "description": "{\"width\":12,\"height\":12,\"deviceContent\":[1332,882]}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":1.3333333333333333}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8f2ffb2a1ee9da08754b-46c9ae5fc5d2139ecda3",
+              "file": "scrollbar.spec.mjs",
+              "line": 345,
+              "column": 5
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-18T02:17:47.719Z",
+    "duration": 6325.892,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
