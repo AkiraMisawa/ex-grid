@@ -57,11 +57,20 @@ never over it, with several charts as tabs
 _Avoid_: chart panel (a chart's panels are parts of one chart), chart window, floating chart
 
 **Series Kind**:
-What a series' numbers are — a **Level** at an instant, a **Rate over an interval**, or an **Amount
-per period** — declared by the Consumer for every series, and what decides how it is drawn: a line
-only for a Level, a step for the other two
+What a series' numbers are — a **Level** at an instant, a **Rate over an interval**, an **Amount
+per period**, or an **Observation** (one thing measured on two quantities, a scatter's point) —
+declared by the Consumer for every series, and what decides how it is drawn: a line only for a Level,
+a step for a Rate or an Amount, an unjoined marker for an Observation
+([ADR-0290](./docs/adr/0290-a-scatter-is-a-series-of-observations-each-a-row.md))
 ([ADR-0253](./docs/adr/0253-every-series-declares-its-series-kind-and-its-drawing-follows.md)).
 _Avoid_: chart type (a series kind is the data's, not the drawing's), series type
+
+**Fitted line**:
+A Level series the Consumer computed from an Observation series by a named method, drawn over the
+fitted points' range only, whose method and coefficients are a line of the Notes. ExChart fits
+nothing on its own; its fit helpers are the Consumer computing
+([ADR-0291](./docs/adr/0291-a-fitted-line-is-the-consumers-and-says-its-method-and-coefficients.md)).
+_Avoid_: trendline (Excel's, which reaches the plot's edges), regression line (names one method)
 
 **Thinning**:
 Keeping, for each device pixel across the plot, a series' first, last, minimum and maximum point,

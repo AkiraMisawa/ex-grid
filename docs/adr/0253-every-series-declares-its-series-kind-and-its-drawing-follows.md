@@ -16,6 +16,9 @@ default:
 | **Rate over an interval** | constant on (tᵢ₋₁, tᵢ] or [tᵢ, tᵢ₊₁) (a hazard rate, an instantaneous forward under log-linear discount factors) | a step: filled end where it takes the value, open where it does not, no riser | declared per series |
 | **Amount per period** | a total over its interval (CVA by bucket) | a step over its interval, its height the amount per year, never a line | always |
 
+*2026-10-19:* a fourth kind, **Observation** — one thing measured on two quantities, drawn as an
+unjoined marker on two value axes — was added for scatter (ADR-0290).
+
 - **A line joins only neighbours in the data.** A series over two stretches of rows is not drawn
   across the rows between them.
 - **A missing value is a gap, never a zero.** The tooltip says "(no value)"; a date where the series
