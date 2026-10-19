@@ -1,0 +1,31 @@
+# A series' look is chosen by three Appearance Keys: colour, line style and marker
+
+*Decided with the user, 2026-10-19 (grilling Q2). The user added line styles, then markers, to the
+colour key first proposed.*
+
+On the exposure page each of the EPE, ENE and CVA panels holds Before, After and Diff. If After is
+blue in one panel it must be blue in the next, and hiding Before must not turn After another colour.
+The proof of concept assigned colours by order, and a hidden series kept its slot only by a special
+case.
+
+**Every series carries three Appearance Keys**, and each key has a table of its own:
+
+| Key | Chooses | From |
+|---|---|---|
+| **Colour key** | a colour slot | the palette's slots, Visual Tokens |
+| **Line-style key** | solid, dashed, dotted … | line-style Visual Tokens |
+| **Marker key** | circle, square, diamond, triangle … | marker shapes |
+
+- **The same key always takes the same look**, in every panel of a chart, and a key keeps its look
+  when another series is hidden, filtered or added.
+- **Defaults.** Panels split by Header Group: colour by leaf (Before / After / Diff), solid lines,
+  the marker the series' style asks for. One axis for every group: colour by Header Group, line style
+  by leaf. Series in rows: colour by Row Key. The Consumer may set any of the three keys, or a slot
+  outright.
+- **Two channels, so colour is never alone.** A chart readable only by colour fails readers who see
+  colour differently and every black-and-white print (WCAG 1.4.1). The proof of concept's table
+  legend reads directly as keys: its rows are colours, its columns line styles.
+- **A step's ends keep the marker's shape**: filled where the function takes the value, an outline
+  where it does not (ADR-0253). Shape and fill are separate, so the two never collide.
+- **No colour, line pattern or marker size is a C# parameter** (ADR-0027/0028): the keys name slots,
+  and the stylesheet's Visual Tokens say what a slot looks like.

@@ -29,7 +29,7 @@ Chrome, Overwrite, Caret, …); do not translate those.
 ### 2. JavaScript is allowlisted, not "minimised"
 
 JS is used only where Blazor genuinely cannot do the job, or where a **recorded measurement**
-shows the Blazor-side approach is too slow. There are currently **ten** permitted uses:
+shows the Blazor-side approach is too slow. There are currently **twelve** permitted uses:
 capture-phase `keydown`, reading/setting scroll offsets, the clipboard, a `ResizeObserver`
 reporting the Scrollbar Gutter, and a `mousemove` listener that reports the pointer **only when
 it moves onto another row, and when it comes to rest** (the hover band, ADR-0029; the error
@@ -45,7 +45,9 @@ and column edges lie on Device Pixels at every scale and zoom (ADR-0090). The ni
 browser's time zone once at attach, when a Consumer asks, so `TODAY()` is the user's day and not
 the server's (ADR-0122). The tenth temporarily hears blur, change and Enter's keydown only on a text field changed
 by held typing, supplying its missing commit notification when the field is left or Enter is
-typed there (ADR-0210).
+typed there (ADR-0210). The eleventh reports the position under the pointer on an ExChart plot only
+when it moves onto another, in the hover band's shape; the twelfth projects and draws ExChart's 3D
+surface while it is turned, which a round trip per frame cannot follow (ADR-0255).
 
 **Anything else needs a new ADR.** See
 [ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md), which also lists what
