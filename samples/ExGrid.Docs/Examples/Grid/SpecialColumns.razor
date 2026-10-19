@@ -75,6 +75,7 @@
     // and the words are yours. Under live data that is a press the network was slower than.
     private void OnMarkRefused(MarkRefusalReason reason) => _markRefusal = reason switch
     {
+        MarkRefusalReason.RowLeftTheWindow => "Nothing marked: the row left the Window while your command waited. Press again on the current data.",
         MarkRefusalReason.OrderMoved => "Nothing marked: the rows moved before your press arrived. Press again on the rows as they are now.",
         MarkRefusalReason.SourceChanged => "Nothing marked: the data was replaced before your press arrived. Press again on what is shown now.",
         _ => $"Nothing marked: {reason}.",

@@ -1,10 +1,10 @@
 namespace ExGrid.Chrome;
 
 /// <summary>
-/// The ids of the words a key the grid refuses is said in (ADR-0230), resolved as a paste's or a copy's
+/// The ids of the words a key or queued row command the grid refuses is said in (ADR-0230), resolved as a paste's or a copy's
 /// refusal is (ADR-0203): a substituted Chrome's <see cref="IGridChrome.Words"/>, else the grid's
 /// <c>CommandLabel</c>, else <see cref="BuiltInCommandLabels"/>. The root's live region announces the
-/// words once, when the key is refused. A Consumer replaces them by answering the id, and silences
+/// words once, when the input is refused. A Consumer replaces them by answering the id, and silences
 /// them by answering the empty string.
 /// </summary>
 public static class KeyRefusalLabelIds
@@ -21,4 +21,7 @@ public static class KeyRefusalLabelIds
     /// a text field). They are refused together, never replayed against whatever holds the keyboard
     /// (ADR-0240 section 4, ADR-0010).</summary>
     public const string KeyboardDidNotArrive = "key-refusal-keyboard-did-not-arrive";
+
+    /// <summary>A queued row command lost its target from the current Window (ADR-0160).</summary>
+    public const string RowCommandTargetLeft = "key-refusal-row-command-target-left";
 }

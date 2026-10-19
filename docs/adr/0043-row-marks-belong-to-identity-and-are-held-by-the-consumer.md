@@ -272,3 +272,16 @@ when pressed. The grid's part is to have reported every change and to show the c
 - *(2026-10-05, [ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md).)* **The mark adapter's "row's key" is a Row Key.** The
   rejection above stands: the Row Key the grid now takes pairs one render's rows with the next and
   holds nothing between Windows, and the marks stay the Consumer's.
+
+## Row marks waiting in Input Order, 2026-10-19
+
+Decided with the user: a row Mark waits its turn in the owning Input Order (ADR-0240). Its row
+identity is followed only while continuously present in the current Window; leaving the painted
+slice alone is harmless. Once the identity leaves the Window, its waiting command releases the
+row and key and stays invalid even if the row returns. At its turn it raises no Mark intent and
+is refused as RowLeftTheWindow; Source replacement remains SourceChanged. Value replacement
+with the same Row Key and order moves inside the Window preserve the target.
+
+This narrows the earlier identity-following guarantee for waiting row commands to preserve
+ADR-0160's retention bound, rather than keeping historical rows or keys for unfinished clicks.
+The refusal is reported once and subsequent input continues.

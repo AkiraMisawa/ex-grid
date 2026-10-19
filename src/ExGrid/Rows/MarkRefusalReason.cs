@@ -32,4 +32,7 @@ public enum MarkRefusalReason
     /// sources' Row Sequence Versions are (ADR-0142). A row's checkbox is refused for this too.
     /// </summary>
     SourceChanged,
+
+    /// <summary>The waiting row command lost its identity from the current Window, even if it later returned (ADR-0160).</summary>
+    RowLeftTheWindow,
 }

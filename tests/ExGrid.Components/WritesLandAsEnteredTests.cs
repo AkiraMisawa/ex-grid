@@ -2518,7 +2518,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         Assert.Matches(new Regex(@"clipboard: 'paste',[^}]*paint: paintNow\(\),"), script);
         Assert.Contains("'OnPasteStreamsAsync', stream(plain), stream(markup), paint, nextInput())", script);
         // A press on an action carries it with the row, column and action it pressed.
-        Assert.Contains("'ActionPressTakenAt'", script);
+        Assert.Contains("'RememberRowClick'", script);
     }
 
     [Fact] // ADR-0142 / LV-12, ADR-0021: an action press reads its whole address — the paint, and the row, column and action its cell's id names — at the mousedown, and tells that at the release, so a keyed row's button moved in between still names the row it was pressed on; a press the platform makes a context menu of (Control with the primary button on macOS), which no click follows, is not told at all
@@ -2536,7 +2536,8 @@ public class WritesLandAsEnteredTests : GridTestContext
         var release = Regex.Match(script, @"const onRelease = \(event\) => \{(?<body>.*?)\n    \};", RegexOptions.Singleline);
         Assert.True(release.Success, "onRelease is defined");
         var released = release.Groups["body"].Value;
-        Assert.Contains("'ActionPressTakenAt', action.paint, action.row, action.column, action.index)", released);
+        Assert.Contains("rowCommandClick = { action };", released);
+        Assert.Contains("'RememberRowClick', ticket, press.paint, press.row,", script);
         // Nothing of the address is read again at the release.
         Assert.DoesNotContain("closest('[role=gridcell]')", released);
     }

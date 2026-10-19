@@ -207,7 +207,10 @@
             </li>
         </ul>
         <p>
-            An Action reaches <code>OnAction</code> once, with the row as it is now. Whether the command is still
+            An accepted Action reaches <code>OnAction</code> once, with the row as it is now.
+            While it waits behind earlier input, the row must remain in the Window: leaving it
+            invalidates the waiting command even if the row returns, with <code>RowLeftTheWindow</code>
+            reported through <code>OnActionRefused</code>. Scrolling it outside the painted slice is harmless. Whether the command is still
             allowed — a price limit, a status — is your business rule there, and your page says why it declines.
         </p>
         <DocsExample Title="A feed, a user's write and the Consumer's decisions" Builtin="typeof(LiveWrites)" Mud="typeof(LiveWritesMud)"

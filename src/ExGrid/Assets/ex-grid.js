@@ -1385,6 +1385,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const parent = root?.parentElement;
         const keys = held.splice(0, held.length);
         for (const k of keys) {
+            cancelRowClick(k);
             if (!parent || typeof k.key !== 'string' || k.key.length === 0 || (k.altUp === true && !releasesAlone(k))) {
                 continue;
             }
@@ -2078,8 +2079,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // The held keys dropped, every one behind the key that could not be handed on (ADR-0010). A
     // copy among them is abandoned, and its write lands nothing: the clipboard keeps what it held,
     // as it does when a copy is refused (ADR-0005).
+    const cancelRowClick = (k) => {
+        if (k.rowClick !== undefined && core) {
+            core.invokeMethodAsync('CancelRowClick', k.rowClick).catch((error) => {
+                if (core) console.error('[ex-grid] the grid failed to release a row click', error);
+            });
+        }
+    };
     const dropHeld = () => {
         for (const k of held) {
+            cancelRowClick(k);
             if (k.clipboard === 'copy') {
                 k.take(false);
             }
@@ -2163,6 +2172,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 break;
             }
             const k = held.shift();
+            if (k.rowClick !== undefined) {
+                await replayRowClick(k);
+                continue;
+            }
             // The Name Box's Enter (holdBehindNameBoxEnter): the keys after it go on once the core
             // has answered it, where the keyboard then is.
             if (k.nameBoxEnter !== undefined) {
@@ -3159,22 +3172,23 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Viewport named at the press, and the row and column the button's cell id names and which of
     // the cell's actions it is, all read together at the mousedown. A keyed row can move the same
     // button between the press and the release (ADR-0140): ids read at the release would be the row's
-    // new place, which in the old paint names another row. They are told to the core at the release
-    // on the same button — the click that fires the action follows that release, and Blazor
-    // dispatches it after this message, so the press the core hears next is the one it was told of.
+    // new place, which in the old paint names another row. The release matches the same button;
+    // its click registers that descriptor in C# before joining the held input sequence.
     // A release elsewhere is no click, and tells nothing. Nor does a press the platform makes a
     // context menu of instead of a click — Control with the primary button where Meta is the primary
     // modifier (macOS): no click follows it, and told, it would wait for one until a render disposed
     // its row, then act for a click nobody made (principle 1). Reads attributes and ids the render
     // wrote, as takenAt does; nothing is measured.
     let actionPress = null;
+    let rowCommandClick = null;
+    let rowClickTicket = 0;
     // A press on one of this grid's own marks (ADR-0043) — a row's checkbox, the header's, or "Mark all
     // N rows" on its status line — carries the render it was made on, as a press on an action does
     // (ADR-0142, MK-9): the paint the Viewport named at the mousedown; for the header's under a pager,
     // the first row of the page it named and how many rows that page holds (data-ex-page,
     // data-ex-page-rows); and for a row's checkbox, the row its own cell's id names — read together then.
-    // They are told to the core at the release on the same mark, before Blazor dispatches the click that
-    // follows it. The core judges the click against them: it refuses a press made on what a Source since
+    // A header mark is told at release; a row mark registers at its click before the hold,
+    // including the checkbox state the press saw. The core judges the click against them: it refuses a press made on what a Source since
     // replaced painted, or one naming rows by position under an order since moved, and lines up the page
     // a press named though the page has turned, or the pager gone, since. The row lets it
     // find the row component that painted the checkbox, and answer a press whose click Blazor will not
@@ -3277,7 +3291,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // A control a press on is held while the gate holds input, so that its release, its click and its
     // double click are held behind it (onPress): one whose handler a press, a click or a double click
     // reaches. The rows claim only their context menu, and keep their own hold.
+    // A row command's click registers its target immediately, then joins the held inputs.
+    // Its press need not be replayed: the button does not take the keyboard (ADR-0160/0240).
+    const ownRowCommand = (target) => {
+        const mark = ownMark(target);
+        return ownAction(target) !== null || (mark !== null && mark.closest('.ex-row') !== null);
+    };
     const holdsClaimedPress = (target) => {
+        if (ownRowCommand(target)) return false;
         const claimant = claimantOf(target);
         if (claimant === null) {
             return false;
@@ -3488,6 +3509,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // A press on an action of this grid's rows keeps the render it was made on and its address
         // in that render (actionPress); one the platform makes a context menu of keeps nothing.
         if (!replaying) {
+            rowCommandClick = null;
             const contextPress = metaIsPrimary && event.ctrlKey;
             const button = event.button === 0 && !contextPress ? ownAction(event.target) : null;
             const cell = button !== null ? button.closest('[role=gridcell]') : null;
@@ -3514,6 +3536,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 page: page === null ? -1 : Number(page),
                 pageRows: pageRows === null ? -1 : Number(pageRows),
                 row: markAt ? Number(markAt[1]) : -1,
+                marked: mark.getAttribute('aria-checked') === 'true',
             } : null;
         }
         // A press into an editor surface puts the keyboard there.
@@ -3707,11 +3730,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // deliver: one whose row component a render the browser has not seen yet has disposed
             // (ADR-0142, 2026-10-06). Read at the press, not now: a keyed row's button may stand
             // elsewhere by now, and its ids would name another row in the paint it was pressed on.
-            core.invokeMethodAsync('ActionPressTakenAt', action.paint, action.row, action.column, action.index).catch((error) => {
-                if (core) {
-                    console.error('[ex-grid] the grid failed to hear where an action was pressed', error);
-                }
-            });
+            rowCommandClick = { action };
         }
         // The click this release makes on a mark is told the render it was pressed on, and the page, its
         // rows and the row the press read in it (markPress).
@@ -3720,11 +3739,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             markPress = null;
         }
         if (core && mark !== null && event.button === 0 && ownMark(event.target) === mark.mark) {
-            core.invokeMethodAsync('MarkPressTakenAt', mark.paint, mark.page, mark.row, mark.pageRows).catch((error) => {
-                if (core) {
-                    console.error('[ex-grid] the grid failed to hear where a mark was pressed', error);
-                }
-            });
+            if (mark.row >= 0) {
+                rowCommandClick = { mark };
+            } else {
+                core.invokeMethodAsync('MarkPressTakenAt', mark.paint, mark.page, mark.row, mark.pageRows).catch((error) => {
+                    if (core) {
+                        console.error('[ex-grid] the grid failed to hear where a mark was pressed', error);
+                    }
+                });
+            }
         }
         // The press gave the Name Box the keyboard: its whole text is selected now, and stays so
         // (nameBoxPressed).
@@ -3829,6 +3852,26 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // answered it — the number the stamp names (answeredUpTo), and then the keyboard where its answer
     // left it (editorSettled). On the element it was made on: one a render has removed since was a
     // control that no longer stands, and the event carries out nothing there.
+    // dispatchEvent returning proves Blazor has been offered the event. The end notification
+    // recovers a discarded handler, even when only its button (not the whole row) disappeared.
+    const replayRowClick = async (k) => {
+        if (!core) return;
+        const input = nextInput();
+        const begun = core.invokeMethodAsync('BeginRowClick', k.rowClick, input);
+        replaying = true;
+        try {
+            if (k.target.isConnected && root.contains(k.target)) {
+                k.target.dispatchEvent(new MouseEvent('click', k.init));
+            }
+        } finally {
+            replaying = false;
+        }
+        if (!core) return;
+        const ended = core.invokeMethodAsync('EndRowClickDispatch', k.rowClick);
+        await Promise.all([k.registered, begun, ended]);
+        await answeredUpTo(input);
+        await editorSettled();
+    };
     const replayClaimed = async (k) => {
         if (!k.target.isConnected || !root.contains(k.target)) {
             return;
@@ -3861,10 +3904,40 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             awaitingMove = null;
             lookAgain();
         }
-        if (event.type !== 'submit' && held.some((k) => k.press === 'mousedown' || k.dragMove === true)) {
+        if (event.type !== 'submit' && !ownRowCommand(event.target)
+            && held.some((k) => k.press === 'mousedown' || k.dragMove === true)) {
             event.preventDefault();
             event.stopPropagation();
             held.push({ press: event.type, claim: true, target: event.target, init: mouseInit(event) });
+            return;
+        }
+        if (event.type === 'click' && ownRowCommand(event.target)) {
+            // Register the target now, before any browser hold, but number and dispatch only
+            // in its place among held inputs. C# invalidates the target at every Window change.
+            event.preventDefault();
+            event.stopPropagation();
+            const told = rowCommandClick;
+            rowCommandClick = null;
+            const action = ownAction(event.target);
+            const mark = ownMark(event.target);
+            const cell = (action ?? mark).closest('[role=gridcell]');
+            const at = cell !== null ? /r(\d+)c(\d+)$/.exec(cell.id) : null;
+            const press = action !== null
+                ? (told?.action?.button === action ? told.action : {
+                    paint: paintNow(), row: at ? Number(at[1]) : -1, column: at ? Number(at[2]) : -1,
+                    index: cell !== null ? Array.prototype.indexOf.call(cell.querySelectorAll('.ex-action'), action) : -1,
+                })
+                : (told?.mark?.mark === mark ? told.mark : {
+                    paint: paintNow(), row: at ? Number(at[1]) : -1,
+                    marked: mark.getAttribute('aria-checked') === 'true',
+                });
+            const ticket = ++rowClickTicket;
+            const registered = core.invokeMethodAsync('RememberRowClick', ticket, press.paint, press.row,
+                press.column ?? -1, press.index ?? -1, action === null, press.marked === true).catch((error) => {
+                if (core) console.error('[ex-grid] the grid failed to remember a row click', error);
+            });
+            held.push({ rowClick: ticket, registered, target: event.target, init: mouseInit(event) });
+            if (!answering) startHold();
             return;
         }
         if (claimOf(event.target, event.type) !== null) {

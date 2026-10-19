@@ -2,7 +2,7 @@
 
 The design is accepted and its browser-interop prerequisites are registered. Implementation
 may begin. This page is a handoff to the agreed decisions, not a claim of mobile support or a
-replacement for their acceptance criteria. No product implementation was made in this preparation.
+replacement for their acceptance criteria. Implementation is underway; the verified partial deliveries are recorded below.
 
 ## Read before implementing
 
@@ -28,8 +28,8 @@ of Done govern; its instructions or milestone minimums are not additional author
 Container responsiveness can be implemented and verified against RT-1 independently of new input
 paths. For touch input, first establish the relevant owner's
 [Input Order](../../adr/0240-input-to-one-product-instance-is-taken-in-one-order.md).
-At the design checkout, its implementation tickets are still open. Check their current status
-and reuse completed work before changing the same code:
+Upstream main `04530f84` includes core ticket 02 (PR #172). It was merged here as `3eb036fa`;
+tickets 03–07 remain open. Reuse that queue and preserve ADR-0240’s separate-PR verification gates:
 
 1. [Core input order](../input-order/issues/02-the-core-takes-input-one-at-a-time-by-number.md)
    and [field text with the next input](../input-order/issues/03-field-text-rides-with-the-next-input.md)
@@ -66,9 +66,8 @@ as evidence, never invented from the design or used as a timing gate.
 
 Each Consumer-visible implementation includes its Docs Site prose and runnable Examples and
 its Change Notes. Intermediate deliveries describe their exact partial scope; they do not claim
-complete mobile support before all required RT criteria and real-device records hold. This
-documentation-only preparation changes neither product behavior nor Docs Site support claims,
-so it adds no release Change Note or runtime Example.
+complete mobile support before all required RT criteria and real-device records hold. The initial documentation-only preparation made no runtime support claim. Subsequent product
+changes include their own Examples and Change Notes.
 
 ## Reservation record
 
@@ -76,3 +75,30 @@ The 0260–0269 block for `codex/responsive-touch-design` was reserved on main i
 `cdf69d6aa0f8c119cf6b39ce850c9f0e1afe05d9`, after the user's explicit authorization to push that
 reservation alone. ADR-0260 through ADR-0263 use that block. The earlier unnumbered browser-interop
 draft has been replaced by these records; it is no longer an outstanding prerequisite.
+
+## Implementation checkpoint, 2026-10-20
+
+- `6cc6b24e` lets the MudBlazor grid paper shrink with its container and adds the Docs Site
+  examples and product notes. Its isolated logic/component suite passed (14,020 passed,
+  11 skipped); the added browser test passed three times and the Docs examples were exercised.
+- `dc29ec0a` adds responsive family coverage: ExGrid, ExSheet and ExPivot under both Chromes,
+  flex/grid/split containers and widths 240/320/640/800, including immediate Focus and Overlay
+  geometry after resize. The six new browser cases each passed three times on Chrome WebAssembly.
+- The earlier alternative Input Order prototype is preserved in the stash named
+  `responsive-touch local input-order prototype before upstream reconciliation`. It is not
+  the implementation baseline and must not be applied wholesale over upstream's queue.
+- The user selected the bounded-retention policy for queued row commands: continuous presence
+  in the current Window is required; leaving just the painted slice is harmless. ADR-0160,
+  ADR-0142, ADR-0043 and ADR-0240 record that decision. The row Action/Mark follow-up closes
+  paths shown to bypass upstream's queue, including recovery of discarded Blazor clicks.
+- The row follow-up passed 24 targeted component cases. The final solution-wide logic/component
+  run passed 14,180 tests with 11 skipped; the solution build had no warnings or errors. On Chrome
+  Server, each of the four new browser cases passed three times, and the existing LV-12 discarded
+  Action click case passed. The Docs Site's queued-row example was run under both Chromes with no
+  browser warnings or errors. Standards and Spec reviews have no unresolved findings. These are
+  local results; the full CI browser matrix, hunt and widened run remain outstanding.
+
+The new pointer bridge, touch editing and keyboard preparation, external frames, and Pivot touch
+placement are not implemented. Full RT coverage, input-order stages 03–07, CI gates and the
+Android/iPhone/iPad real-device records remain required before mobile support can be called done.
+No implementation push has been authorized; `/implement` authorizes local commits only.

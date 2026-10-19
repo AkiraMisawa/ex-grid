@@ -1,0 +1,71 @@
+@page "/row-command-order"
+@using global::ExGrid.Chrome
+@using global::ExGrid.Keys
+@using global::ExGrid.Rows
+@using global::ExGrid.Cells
+@using global::ExGrid.MudBlazor
+@implements IDisposable
+
+<DemoChromeAssets Name="@ChromeName" />
+<DemoNav />
+<h1>Row commands wait for earlier input</h1>
+<p>Control+B starts a Consumer operation. Release completes it. Replace the Window while commands wait.</p>
+<button id="release-row-order" @onclick="Release">Release</button>
+<button id="drop-row-order" @onclick="Drop">Remove first two rows</button>
+<button id="restore-row-order" @onclick="Restore">Restore rows</button>
+<p id="row-order-trace">@string.Join(" | ", _trace)</p>
+<ExGrid TRow="CommandRow" Window="_rows" TotalCount="80" Columns="Columns" RowKey="Key"
+        RowSequenceVersion="_version" RowHeight="24" ViewportWidth="450" ViewportHeight="220"
+        Chrome="@(DemoChrome.IsMud(ChromeName) ? _chrome : null)" Marks="_marks"
+        DeclaredKeys="Keys" OnDeclaredKey="HoldAsync" OnAction="Act" OnActionRefused="RefusedAction"
+        OnMarkRefused="RefusedMark" />
+
+@code {
+    [SupplyParameterFromQuery(Name = "chrome")] public string? ChromeName { get; set; }
+    public sealed record CommandRow(int Id);
+    private static readonly string[] Keys = ["Control+b", "Control+i"];
+    private static readonly Func<CommandRow, object> Key = row => row.Id;
+    private static readonly GridColumn<CommandRow>[] Columns =
+    [
+        new("Id", ColumnType.Number, r => r.Id, width: new(ColumnWidth.Fixed(100))),
+        GridColumn<CommandRow>.ActionColumn("Action", [new GridAction("open", "Open")], width: new(ColumnWidth.Fixed(120))),
+        GridColumn<CommandRow>.MarkColumn("Mark", width: new(ColumnWidth.Fixed(60))),
+    ];
+    private readonly MudGridChrome _chrome = new();
+    private CommandRow[] _rows = Rows();
+    private static CommandRow[] Rows() => Enumerable.Range(0, 80).Select(id => new CommandRow(id)).ToArray();
+    private int _version;
+    private readonly List<string> _trace = [];
+    private TaskCompletionSource? _release;
+    private MarkAdapter _marks = default!;
+    protected override void OnInitialized() => _marks = new MarkAdapter(id => Record($"mark:{id}"));
+    private void Record(string value) { _trace.Add(value); StateHasChanged(); }
+    private async Task HoldAsync(GridDeclaredKeyPress press)
+    {
+        if (press.Key == "Control+i") { Record("second"); return; }
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _release = release;
+        Record("started");
+        await release.Task;
+        Record("finished");
+    }
+    private void Release() => _release?.TrySetResult();
+    private void Drop() { _rows = _rows.Where(row => row.Id >= 2).ToArray(); _version++; }
+    private void Restore() { _rows = Rows(); _version++; }
+    private void Act(GridActionEventArgs<CommandRow> args) => Record($"action:{args.Row.Id}");
+    private void RefusedAction(GridActionRefusal<CommandRow> refusal) => Record($"action:{refusal.Reason}");
+    private void RefusedMark(MarkRefusalReason reason) => Record($"mark:{reason}");
+    public void Dispose() => Release();
+    private sealed class MarkAdapter(Action<int> mark) : IRowMarks<CommandRow>
+    {
+        public RowMarkCounts? Counts => null;
+        public bool IsMarked(CommandRow row) => false;
+        public event Action? Changed { add { } remove { } }
+        public void OnRowKindChanged(Func<CommandRow, RowKind>? rowKind) { }
+        public Task OnMarkIntentAsync(RowMarkIntent<CommandRow> intent)
+        {
+            if (intent is RowMarkIntent<CommandRow>.OneRow one) mark(one.Row.Id);
+            return Task.CompletedTask;
+        }
+    }
+}

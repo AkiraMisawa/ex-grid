@@ -24,7 +24,10 @@ public partial class ExGrid<TRow>
     /// (<see cref="ActionRefusalReason.SourceChanged"/>), whatever the new source holds there.
     /// A press never is refused because its row's values changed: it acts on the row it was pressed
     /// on, as that row is now. With a Row Key, that is the row under the pressed row's key, wherever
-    /// the Window holds it. Without one, a press whose button a render has since disposed acts on
+    /// the Window continuously holds it while the command waits in Input Order. Once that row leaves
+    /// the Window, the waiting command is refused as RowLeftTheWindow even if it returns before the
+    /// command's turn; leaving only the painted slice does not count. Without a Row Key, a press whose
+    /// button a render has since disposed acts on
     /// the row at the position it was told, while the order it was taken under holds. Space taken
     /// under an order that has moved since is refused as OrderMoved with or without a Row Key: the
     /// Selection it was aimed with went with that order, and the grid kept no key of it (ADR-0160).
@@ -126,16 +129,48 @@ public partial class ExGrid<TRow>
     /// press the grid's listener told of, if it did (ADR-0142, LV-12).</summary>
     private Task RaiseActionAsync(GridActionEventArgs<TRow> args)
     {
+        if (TakeDispatchedRowCommand(false) is { } command)
+            return QueueRememberedRowCommand(command with
+            {
+                Column = command.Column ?? args.ColumnName,
+                Action = command.Action ?? args.ActionName,
+            });
         var press = _actionPress;
         var answered = _actionPressAnswered;
         _actionPress = null;
         _actionPressAnswered = false;
         // The click of a press the core has answered already, which its component, disposed since,
         // still delivered: the press was acted on once.
+        var input = ClaimInput(ClaimClick);
         if (press is null && answered && !RendersRowComponentOf(args.Row))
-            return Task.CompletedTask;
+            return QueueRowCommand(input, () => Task.CompletedTask);
+        if (input > 0)
+            return QueueActionAsync(input, KeepWaitingRow(args.Row), args.ColumnName, args.ActionName,
+                press?.Paint ?? PaintNotTold);
         return ActAsync(args.Row, args.ColumnName, args.ActionName, press?.Paint ?? PaintNotTold,
             press is { Row: >= 0 } told ? told.Row : null);
+    }
+
+    private Task QueueActionAsync(int input, WaitingRow waiting, string column, string action, int paint)
+    {
+        return QueueRowCommand(input, async () =>
+        {
+            var row = TakeWaitingRow(waiting);
+            if (_disposed) return;
+            if (waiting.Binding != _binding || AimedAtAReplacedSource(paint))
+            {
+                AnnounceRowCommandRefusal();
+                await RefuseActionAsync(null, column, action, ActionRefusalReason.SourceChanged);
+            }
+            else if (row is null)
+            {
+                AnnounceRowCommandRefusal();
+                await RefuseActionAsync(null, column, action, !waiting.Identified && AimedUnderAnotherOrder(paint)
+                    ? ActionRefusalReason.OrderMoved : ActionRefusalReason.RowLeftTheWindow);
+            }
+            else
+                await ActAsync(row, column, action, paint, null);
+        });
     }
 
     /// <summary>

@@ -305,3 +305,13 @@ against, so the window is near zero.
 - **The Definition of Done's LV-11 to LV-14, LV-16 and LV-17 are rewritten** (§32), and LV-19 to LV-21
   are added. LV-32 and LV-33 judge the section of 2026-10-08; LV-12, LV-16, LV-17 and LV-20 were restated
   with it.
+
+## Row commands waiting in Input Order, 2026-10-19
+
+Decided with the user: the identity-following rules above are bounded by continuous presence
+in the current Window while a row Action waits in Input Order (ADR-0240). Once its identity
+leaves, the waiting action is permanently invalid, even if the row returns before its turn;
+it is refused as RowLeftTheWindow with no historical row retained. Source replacement remains
+SourceChanged. An order move or a value-only replacement with the same Row Key inside the
+Window preserves identity. ADR-0160 records the retention reason and the rejected alternative.
+This changes the earlier guarantee specifically for waiting row commands.

@@ -30,7 +30,7 @@ namespace ExGrid.Components;
 public partial class ExGrid<TRow>
 {
     // The event the script told of last, and its number, until a handler claims it.
-    private (string Kind, int Input)? _claimTold;
+    private (string Kind, int Input, int RowCommand)? _claimTold;
 
     /// <summary>
     /// The next click, press, double click or context menu on one of the grid's own controls that
@@ -49,17 +49,23 @@ public partial class ExGrid<TRow>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public void InputTakenAt(string kind, int input)
+    public void InputTakenAt(string kind, int input) => TellInput(kind, input);
+
+    private void TellInput(string kind, int input, int rowCommand = 0)
     {
-        if (_claimTold is { } unheard)
-            InputVoid(unheard.Input);
+        var previous = _claimTold;
         _claimTold = null;
+        if (previous is { } unheard)
+        {
+            CancelRowClick(unheard.RowCommand);
+            InputVoid(unheard.Input);
+        }
         if (_disposed || string.IsNullOrEmpty(kind))
         {
             InputVoid(input);
             return;
         }
-        _claimTold = (kind, input);
+        _claimTold = (kind, input, rowCommand);
     }
 
     /// <summary>The number the script told the event of <paramref name="kind"/> by, taken by the
@@ -74,6 +80,7 @@ public partial class ExGrid<TRow>
         if (!string.Equals(claim.Kind, kind, StringComparison.Ordinal)
             && !string.Equals(claim.Kind, alsoKind, StringComparison.Ordinal))
         {
+            CancelRowClick(claim.RowCommand);
             InputVoid(claim.Input);
             return 0;
         }

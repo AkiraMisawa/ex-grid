@@ -3340,6 +3340,7 @@
         // A new Window, or a new Row Key over the one in hand, is checked for a row or a key that
         // appears twice, unless its source vouches for it (ADR-0003/0140/0141).
         TakeInWindow();
+        ReconcileWaitingRows();
 
         if (columnsChanged || metricsChanged)
         {
@@ -10199,6 +10200,7 @@
     {
         _disposed = true;
         _inputOrder?.Dispose();
+        ReleaseWaitingRows();
         // A Find step still out is nobody's any more: the Consumer's search is told to stop
         // (ADR-0055, the fetching Source's rule).
         _findCancellation?.Cancel();

@@ -665,3 +665,15 @@ service owns attachment and removal. Other Wrapper-owned interop remains prohibi
 and none adding an entry: whether an Escape on the root leaves (`data-ex-escape-leaves` on the Settled
 Stamp), the editing mode on the edit's surfaces (`data-ex-mode`, `data-ex-mode-version`), and the stamp's
 answered count before a held press into the Name Box selects the box's text.
+
+### Row click numbering, 2026-10-19
+
+The already allowed row Action/Mark press descriptor and capture-phase click listener register
+one row-click ticket in C# immediately. The descriptor is read at mousedown, matched at release,
+and registered at the click; a keyboard or script click reads the same rendered ids then.
+A Mark includes its painted `aria-checked` fact; C# decides the requested state. The click joins
+the existing browser hold, and receives its Input Order number only in its turn, after earlier
+held keys and presses. Its captured element is dispatched once; an explicit dispatch-finished
+notification recovers an event Blazor discarded, even if only a button disappeared. Dropping
+held input releases its ticket; the ticket holds only current-Window references (ADR-0160).
+No listener, layout measurement, target lookup at replay or per-cell render notification is added.

@@ -159,7 +159,7 @@ public class ShippedStylesheetTests
             Assert.Contains($"root.removeEventListener('{type}', onHeldClipboard, true);", script);
         }
         // Dropped with the keys before it, a held copy writes nothing: the clipboard keeps what it held.
-        Assert.Matches(new Regex(@"const dropHeld = \(\) => \{\s*for \(const k of held\) \{\s*if \(k\.clipboard === 'copy'\) \{\s*k\.take\(false\);"), script);
+        Assert.Matches(new Regex(@"const dropHeld = \(\) => \{\s*for \(const k of held\) \{\s*cancelRowClick\(k\);\s*if \(k\.clipboard === 'copy'\) \{\s*k\.take\(false\);"), script);
         Assert.DoesNotContain("held.length = 0;\n                break;", script);
     }
 

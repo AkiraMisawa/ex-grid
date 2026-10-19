@@ -232,3 +232,27 @@ pull request, with its reason.
 - The Docs Site's page on automation (the Settled Mark) and the Chrome seams' pages say what the order
   is and how a Consumer's Chrome takes part; each stage writes its Change Note.
 - `CONTEXT.md` gains **Input Order** and **Input Root**.
+
+## Row Action and row Mark paths, 2026-10-19
+
+Upstream ticket 02's implementation left the row Action and row Mark callbacks outside the
+order: an isolated component reproduction on main `04530f84` passed ordered keys and header
+clicks, but both row callbacks overtook a preceding asynchronous Consumer key. These paths join
+the existing Input Order; no second queue is introduced.
+
+Decided with the user: a waiting row command tracks identity only while continuously present
+in the current Window. If it leaves, the command releases the row/key and is refused in its
+turn even if the identity returns. ADR-0160 records the retention tradeoff; ADR-0142 and ADR-0043
+record the resulting Action/Mark behavior. Source replacement continues to take precedence.
+
+The row listener registers the existing press descriptor at the click, before the browser
+hold, including a Mark's painted checked state. C# tracks its current-Window target from that
+point. The browser puts execution in its existing held sequence and assigns the number in
+that turn, so an earlier held key or heading click cannot be overtaken. It tells the ticket and
+number, dispatches the captured element once, and tells that dispatch finished. The normal
+Blazor callback claims the command; if it was discarded, the finishing notification recovers
+the same command and number. A missing target is never looked up anew in the DOM. Ticket
+cancellation and ordinary claim abandonment release the target and void any assigned number.
+Existing unnumbered interop methods remain callable; the shipped row listener uses the ticket
+protocol. This adds no parallel command queue: tickets capture targets, and Input Order still
+executes every command.

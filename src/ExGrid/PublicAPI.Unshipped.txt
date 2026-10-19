@@ -1,5 +1,11 @@
 #nullable enable
 const ExGrid.Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive = "key-refusal-keyboard-did-not-arrive" -> string!
+const ExGrid.Chrome.KeyRefusalLabelIds.RowCommandTargetLeft = "key-refusal-row-command-target-left" -> string!
+ExGrid.Components.ExGrid<TRow>.BeginRowClick(int ticket, int input) -> void
+ExGrid.Components.ExGrid<TRow>.CancelRowClick(int ticket) -> void
+ExGrid.Components.ExGrid<TRow>.EndRowClickDispatch(int ticket) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.InputTakenAt(string! kind, int input) -> void
 ExGrid.Components.ExGrid<TRow>.OnHeldInputsRefusedAsync(int input = 0) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.RememberRowClick(int ticket, int paint, int row, int column, int action, bool mark, bool wasMarked) -> void
+ExGrid.Rows.MarkRefusalReason.RowLeftTheWindow = 2 -> ExGrid.Rows.MarkRefusalReason
