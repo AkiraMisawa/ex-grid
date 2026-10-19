@@ -9,7 +9,7 @@ Roadmap: ExGrid — Keys, presses and clicks on headings, menus and buttons sent
 - [x] Every click the script hears inside the Input Root numbered and claimed; an unclaimed number answered void (at the next telling, not at a later number: ADR-0240, "As built")
 - [x] No wait ends on a clock; a refused input is said in the live region
 - [x] `spikes/render-bench` mode measured against `main` (ADR-0240, "What it may cost")
-- [ ] Layer 2 and the targeted layer 3 green; the hunt and the widened run green on the branch
+- [ ] Layer 2 and the targeted layer 3 green; the hunt and the widened run no worse on the branch than on `main` (decided with the user, 2026-10-19: `main` itself fails about 33 tests in the widened run, none of them about the Input Order; those get tickets of their own, and a failure only the branch shows is fixed here)
 
 **Blocked by:** nothing.
 
