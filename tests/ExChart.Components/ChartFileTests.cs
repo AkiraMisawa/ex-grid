@@ -23,6 +23,10 @@ public class ChartFileTests : BunitContext
         handle.SetupVoid("dispose", _ => true).SetVoidResult();
         _module.Setup<byte[]>("paint", _ => true).SetResult([0x89, 0x50, 0x4e, 0x47]);
         _module.SetupVoid("save", _ => true).SetVoidResult();
+        // The screen's tokens: slot 0 as a theme set it, a value that would end the declaration, and the rest empty.
+        var names = ChartFiles.TokenNames.Value;
+        _module.Setup<string[]>("tokens", _ => true).SetResult(
+            [.. names.Select(n => n switch { "colour-0" => "rgb(89, 74, 226)", "colour-1" => "red;}", _ => "" }), "Roboto, sans-serif"]);
     }
 
     private static ChartPoint P(double x, double y) => new(x, ChartValue.Of(y));
@@ -86,6 +90,12 @@ public class ChartFileTests : BunitContext
         Assert.Contains(classes, c => c.Contains("ex-chart-legend-entry", StringComparison.Ordinal));
         Assert.DoesNotContain(classes, c => c.Contains("ex-chart-guide", StringComparison.Ordinal) || c.Contains("ex-chart-tooltip", StringComparison.Ordinal));
         Assert.Contains(svg.Descendants(SvgNs + "text"), t => t.Value == "EPE <before> & after");
+        // ADR-0282: the theme as the screen shows it is written on the file's root.
+        var style = (string)svg.Attribute("style")!;
+        Assert.Contains("--ex-chart-colour-0:rgb(89, 74, 226);", style, StringComparison.Ordinal);
+        Assert.Contains("font-family:Roboto, sans-serif;", style, StringComparison.Ordinal);
+        Assert.DoesNotContain("colour-1", style, StringComparison.Ordinal);
+        Assert.Contains("colour-0", ChartFiles.TokenNames.Value);
     }
 
     [Fact] // ADR-0282: the PNG is that SVG painted by the browser, then saved

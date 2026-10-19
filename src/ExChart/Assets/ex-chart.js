@@ -9,8 +9,18 @@
 // C# drops one taken against an earlier drawing (spine rule 6). Blazor's @onmousemove would cross
 // to .NET on every event, a wire round trip each on Server.
 
-// The files entry (ADR-0282), the fifteenth use: two exported functions, each run once on a click
+// The files entry (ADR-0282), the fifteenth use: three exported functions, each run once on a click
 // and never on a render, adding no listener and reading no layout (the SVG carries its own size).
+
+/**
+ * The values the chart's Visual Tokens have on screen, read from its root's computed style on the
+ * click, so a saved file has the theme's colours: a file has no page to inherit them from. `names`
+ * are the tokens' names without their prefix; the last value returned is the root's font family.
+ */
+export function tokens(root, names) {
+    const style = getComputedStyle(root);
+    return [...names.map((name) => style.getPropertyValue(`--_ex-chart-${name}`).trim()), style.fontFamily];
+}
 
 /**
  * Paints an SVG, written in C# on the click, to PNG, and returns its bytes. The canvas is the

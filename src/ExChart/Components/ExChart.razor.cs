@@ -438,7 +438,10 @@ public partial class ExChart
             else
             {
                 var font = GridMetrics.Resolve(Density).FontSizePx;
-                var svg = await ChartFiles.SvgAsync(Services, new ChartFileDrawing.Input(scene, Width, Height, font, metrics.LineHeight, AxisStyle?.Angle ?? 0, summary));
+                var angle = AxisStyle?.Angle ?? 0;
+                // The theme as the screen shows it, read on the click (ADR-0282).
+                var theme = ChartFiles.Theme(await module.InvokeAsync<string[]>("tokens", _root, ChartFiles.TokenNames.Value));
+                var svg = await ChartFiles.SvgAsync(Services, new ChartFileDrawing.Input(scene, Width, Height, font, metrics.LineHeight, angle, summary, theme));
                 bytes = format == ChartFileFormat.Svg
                     ? System.Text.Encoding.UTF8.GetBytes(svg)
                     : await module.InvokeAsync<byte[]>("paint", svg, Width, Height);

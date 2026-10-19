@@ -32,7 +32,7 @@ test('ADR-0282, CH-12: one click saves the CSV of the visible series', async ({ 
     expect(lines[1]).toMatch(/^2026-10-30,/);
 });
 
-test('ADR-0282, CH-12: one click saves the SVG, the drawing on screen with its stylesheet inside', async ({ page }) => {
+test('ADR-0282, CH-12: one click saves the SVG, the drawing on screen with its stylesheet and the screen\'s colours inside', async ({ page }) => {
     const { name, bytes } = await save(page, '.ex-chart-download-svg');
     expect(name).toMatch(/\.svg$/);
     const text = bytes.toString('utf8');
@@ -43,12 +43,16 @@ test('ADR-0282, CH-12: one click saves the SVG, the drawing on screen with its s
             series: doc.querySelectorAll('g.ex-chart-series').length,
             style: doc.querySelector('style')?.textContent.includes('.ex-chart-path') ?? false,
             width: doc.documentElement.getAttribute('width'),
+            rootStyle: doc.documentElement.getAttribute('style'),
         };
     }, text);
     expect(parsed.error).toBeNull();
     expect(parsed.series).toBe(5);
     expect(parsed.style).toBe(true);
     expect(parsed.width).toBe(await exposure(page).locator('svg.ex-chart-svg').getAttribute('width'));
+    // The tokens as the screen has them are written on the file's root (ADR-0282).
+    const onScreen = await exposure(page).evaluate((root) => getComputedStyle(root).getPropertyValue('--_ex-chart-colour-0').trim());
+    expect(parsed.rootStyle).toContain(`--ex-chart-colour-0:${onScreen};`);
 });
 
 test('ADR-0282, CH-10, CH-12: one click saves the PNG, painted at the Device Pixel of 150%', async ({ page }) => {

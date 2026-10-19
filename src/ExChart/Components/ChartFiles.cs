@@ -27,6 +27,31 @@ internal static class ChartFiles
         return reader.ReadToEnd();
     });
 
+    /// <summary>The names of the Visual Tokens the stylesheet reads, without their prefix (ADR-0282).</summary>
+    internal static readonly Lazy<string[]> TokenNames = new(() =>
+        System.Text.RegularExpressions.Regex.Matches(Stylesheet.Value, @"--_ex-chart-([a-z0-9-]+):")
+            .Select(m => m.Groups[1].Value).Distinct().ToArray());
+
+    /// <summary>
+    /// The style a saved file's root carries: each token's value as the screen has it, and the font,
+    /// so the file has the theme's colours (ADR-0282). A value that would end the declaration is left
+    /// out, and the stylesheet's default stands for it.
+    /// </summary>
+    internal static string Theme(IReadOnlyList<string> values)
+    {
+        var names = TokenNames.Value;
+        var b = new StringBuilder();
+        for (var i = 0; i < names.Length && i < values.Count; i++)
+        {
+            if (Declarable(values[i])) b.Append("--ex-chart-").Append(names[i]).Append(':').Append(values[i]).Append(';');
+        }
+        if (values.Count > names.Length && Declarable(values[names.Length])) b.Append("font-family:").Append(values[names.Length]).Append(';');
+        return b.ToString();
+    }
+
+    private static bool Declarable(string value) =>
+        value.Length > 0 && value.IndexOfAny([';', '{', '}', '<', '>']) < 0;
+
     /// <summary>The media type a format is saved as.</summary>
     internal static string MediaType(ChartFileFormat format) => format switch
     {
@@ -75,7 +100,7 @@ internal static class ChartFiles
 internal sealed class ChartFileDrawing : ComponentBase
 {
     /// <summary>What the file is drawn from.</summary>
-    internal sealed record Input(ChartScene Scene, double Width, double Height, double FontSize, double LineHeight, int Angle, string Summary);
+    internal sealed record Input(ChartScene Scene, double Width, double Height, double FontSize, double LineHeight, int Angle, string Summary, string Theme = "");
 
     [Parameter] public Input Drawing { get; set; } = null!;
 
@@ -88,7 +113,7 @@ internal sealed class ChartFileDrawing : ComponentBase
         b.AddAttribute(3, "width", Svg.N(d.Width));
         b.AddAttribute(4, "height", Svg.N(d.Height));
         b.AddAttribute(5, "viewBox", string.Create(CultureInfo.InvariantCulture, $"0 0 {Svg.N(d.Width)} {Svg.N(d.Height)}"));
-        b.AddAttribute(6, "style", string.Create(CultureInfo.InvariantCulture, $"font-size:{Svg.N(d.FontSize)}px;--ex-chart-line-height:{Svg.N(d.LineHeight)}px"));
+        b.AddAttribute(6, "style", string.Create(CultureInfo.InvariantCulture, $"font-size:{Svg.N(d.FontSize)}px;--ex-chart-line-height:{Svg.N(d.LineHeight)}px;{d.Theme}"));
         b.OpenElement(7, "style");
         b.AddMarkupContent(8, ChartFiles.StyleMarkup);
         b.CloseElement();
