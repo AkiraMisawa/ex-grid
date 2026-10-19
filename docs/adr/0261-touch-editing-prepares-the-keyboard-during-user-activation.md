@@ -53,7 +53,7 @@ survives rotation. Opening, closing and applying remain C# decisions in the owne
 
 ## Verification
 
-[Definition of Done, section 33](../definition-of-done.md#33-responsive-layout-and-touch-rt)
+[Definition of Done, section 34](../definition-of-done.md#34-responsive-layout-and-touch-rt)
 provides the acceptance criteria, particularly RT-7 through RT-9, RT-13, RT-14 and RT-17, with RT-18's real-device matrix.
 Use both hosting models and both Chromes, including immediate inputs under Server latency,
 interleaved instances, stale targets, cancellation and disposal. Real Android, iPhone and iPad

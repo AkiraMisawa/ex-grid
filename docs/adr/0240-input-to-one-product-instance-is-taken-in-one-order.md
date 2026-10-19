@@ -2,8 +2,8 @@
 
 Decided with the user, 2026-10-18, for `docs/specs/input-order/issues/01`. Grilled in two rounds; the
 user took the recommendation of every question, and of (1) after it was explained with an example.
-The inventory it rests on is `docs/specs/input-order/inventory.md`. Not built yet: tickets 02 to 07 of
-the same spec build it in turn (7).
+The inventory it rests on is `docs/specs/input-order/inventory.md`. Tickets 02 to 07 of the same spec build
+it in turn (7); ticket 02 is built ("As built", below).
 
 ## Why
 
@@ -159,6 +159,53 @@ re-run). The Definition of Done gains it as a criterion when it is built.
 
 The Chrome contexts' delegates may change shape to carry the order. Each change is a Change Note
 (ADR-0190). No old path is kept beside the new one: two ways in is the defect this decision removes.
+
+## As built: ticket 02 (2026-10-18)
+
+- **The queue** is `InputOrder` (`src/ExGrid/InputOrder.cs`): one per instance, numbered inputs handled
+  one at a time in number order, every `await` included; a handling asked for inside the flow of the one
+  under way runs at once (the commit barrier's `_commitFlow`, generalised). Every numbered entry point
+  goes through it (`AnsweredAsync`); the commit barrier holds only what is asked for outside it.
+- **A told number is never voided by a later number.** A press the script told of can reach the core
+  after a key numbered behind it on the Server host (`SettledMarkTests`), so the key waits for the press.
+  A told number is void only at the next telling of the same kind of input, or at a claim of another kind
+  (`AsTaken`'s rule since 2026-10-16), or at disposal.
+- **Clicks, and the keys a popover's own handlers answer, are numbered** through `data-ex-claims` on the
+  control (`click`, `dblclick`, `contextmenu`, `mousedown`, `keydown`, `submit`, `focus`) and
+  `InputTakenAt`; the handler claims the number (`ClaimedAsync`, `ClaimedByKeyOrAsync`). The Wrapper's
+  controls carry the same marks, so swapping Chrome does not change the order. A copy run by a numbered
+  menu click or key takes no number of its own, which would wait behind the input running it. ADR-0021
+  gains two entries for the listeners this needed.
+- **No clock is left in the script.** Every wait ends on a number the Settled Stamp answers or on
+  `data-ex-focus-owed`, which the stamp renders while the editor, a popover's control, a substituted
+  Chrome's contents or a Consumer's popover contents still owe the keyboard. A Consumer's popover owes it
+  from its opening until DOM focus enters its contents (however they take it: `TakeFocus`, or their own
+  focus, as the toolbar's lists do), until a `TakeFocus` it asked for has been told, or until it closes; owed
+  only from its sentinels at first, the keys held for a list opened from the ExSheet toolbar's KeyTips
+  were refused before the list's focus landed (CI, 2026-10-18). The core tells the script of a hand-off
+  to such a popover before the render that draws it, so the stamp read as that telling arrives is a
+  render behind: the script numbers the telling, the core answers it in its place after the opening
+  (`HandOffHeardAsync`), and the wait counts that number before it judges the keyboard missed. Held input that can no longer be carried out is refused aloud
+  with `KeyRefusalLabelIds.KeyboardDidNotArrive`. A Consumer's frame is waited for until it takes the
+  keyboard, another grid does, or the grid is disposed.
+- **A drag's moves are held behind its press until the press is answered.** The core attaches a drag's
+  move and release handlers in the render that answers its press (a heading drag, the rows' selection
+  drag, a grip's or a reorder's), so on the Server host a move made within a round trip of the press
+  reached no handler, and a drag faster than that grew nothing (`sizing.spec.mjs` SR-2d under the widened
+  run). While the press, or a press held before it, is unanswered and the primary button is down, ADR-0021's
+  pointer listener holds the move among the held inputs, keeping only the last; the release and the click
+  behind it stay behind it. At its turn the move is dispatched where it was made and the drag's handler,
+  attached by then, takes it. Decided on the recommended option of the question put to the user on
+  2026-10-18; ADR-0021's fifth entry is widened, not added to.
+- **A Chrome that marks a control `data-ex-claims` must reach the core every time that event comes**: a
+  telling no handler claims holds the inputs behind it until the next telling. The Wrapper's filter form
+  therefore hands every submission to `Apply`, which refuses one it cannot apply.
+- **Measured** (2026-10-18, `spikes/render-bench/results/20261018-input-order/`, headless Chromium,
+  interleaved against `main`): typing, presses, and a menu opened and closed with each step waited for
+  cost the same on the Server host at 0 and 60 ms and on WebAssembly; the largest difference, 20 clicks in
+  one task on WebAssembly, is about 10 ms in 170 and swaps sides between passes. Ten Shift+F10, Escape, ↓
+  in one task at 60 ms end on the wrong row on `main` in every round (four of the ↓ lost); the branch ends
+  on the right one in about 3.1 s, the round trips each step waits for.
 
 ## What it may cost
 

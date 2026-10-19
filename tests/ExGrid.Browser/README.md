@@ -103,7 +103,10 @@ On Server the browser does not reach the host directly. `latency-proxy.mjs` sits
 of it (the browser at 5298, the host at 6298, the proxy's control at 7298 — every port is
 derived in `hosting.mjs` from `EXGRID_BASE_URL`), delaying every chunk in both directions
 by half a round trip that starts at 0. A test that needs a real round trip sets one with
-`setRoundTrip(ms)` from `fixtures.mjs`, and the fixture puts it back to 0 afterwards. The
+`setRoundTrip(ms)` from `fixtures.mjs`, and the fixture puts it back to 0 afterwards. A test
+whose inputs must all be made before the host answers any of them does not count on a round
+trip to outlast them: `holdAnswers(true)` holds everything the host sends in the proxy until
+`holdAnswers(false)` lets it go in order, and the fixture lets go after every test. The
 browser's own network throttling is not used because it is not reliably applied to the
 WebSocket that carries the circuit, which is the one connection that matters.
 
@@ -209,7 +212,7 @@ warm-up asserts nothing; a page that never loads still fails the first test that
 ## Before the first key of each page
 
 Every `page.goto` and `page.reload` in a test returns only once the page is interactive and no
-grid is Prerendered (`aria-busy` gone, a tab stop taken — A11Y-20), on both hosts. Rows paint
+grid is Prerendered (`aria-busy` gone, a tab stop taken — A11Y-20) and no chart is busy (its pointer entry holds its first drawing, ADR-0255), on both hosts. Rows paint
 before the grid's listener attaches — on WebAssembly too, where the module import still has to
 land — and a key pressed in that gap is lost, as it would be for a user who ignored the busy
 grid. A test that clicked and typed straight after the rows appeared failed that way on a slow

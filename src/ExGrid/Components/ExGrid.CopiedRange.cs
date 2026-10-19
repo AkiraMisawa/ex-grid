@@ -84,11 +84,7 @@ public partial class ExGrid<TRow>
     /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnCopyLandedAsync(int landing, int input = 0)
-    {
-        OutlineLandedCopy(landing);
-        InputAnswered(input);
-        return Task.CompletedTask;
-    }
+        => AnsweredAsync(() => OutlineLandedCopy(landing), input);
 
     private void OutlineLandedCopy(int landing)
     {

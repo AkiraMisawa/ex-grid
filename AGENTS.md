@@ -29,7 +29,7 @@ Chrome, Overwrite, Caret, …); do not translate those.
 ### 2. JavaScript is allowlisted, not "minimised"
 
 JS is used only where Blazor genuinely cannot do the job, or where a **recorded measurement**
-shows the Blazor-side approach is too slow. There are currently **fourteen** permitted uses:
+shows the Blazor-side approach is too slow. There are currently **nineteen** permitted uses:
 capture-phase `keydown`, reading/setting scroll offsets, the clipboard, a `ResizeObserver`
 reporting the Scrollbar Gutter, and a `mousemove` listener that reports the pointer **only when
 it moves onto another row, and when it comes to rest** (the hover band, ADR-0029; the error
@@ -45,7 +45,15 @@ and column edges lie on Device Pixels at every scale and zoom (ADR-0090). The ni
 browser's time zone once at attach, when a Consumer asks, so `TODAY()` is the user's day and not
 the server's (ADR-0122). The tenth temporarily hears blur, change and Enter's keydown only on a text field changed
 by held typing, supplying its missing commit notification when the field is left or Enter is
-typed there (ADR-0210).
+typed there (ADR-0210). The eleventh is capture-phase `click`, `dblclick` and `contextmenu` on the
+root, numbering a click on a control of the grid's own that claims it (`data-ex-claims`) so it is
+handled in its place in the Input Order; the twelfth hears `submit` and `focus` in the window's
+capture phase, filtered to the grid's own root, because Blazor hears both on the document ahead of
+any listener on the root (ADR-0240). The thirteenth reports the position under the pointer on an
+ExChart plot only when it moves onto another, in the hover band's shape; the fourteenth projects and
+draws ExChart's 3D surface while it is turned, which a round trip per frame cannot follow (ADR-0255).
+The fifteenth paints a chart's SVG to PNG and saves its files, on the click, which Blazor cannot do
+(ADR-0282).
 The four touch additions are approved for implementation: the scoped pointer bridge and initial
 capability hint ([ADR-0260](docs/adr/0260-touch-input-reports-browser-facts-and-keeps-command-meaning-in-csharp.md)),
 provisional keyboard preparation during an edit gesture

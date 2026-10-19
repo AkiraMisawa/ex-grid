@@ -54,7 +54,10 @@
         builder.AddAttribute(9, "onfocus", EventCallback.Factory.Create<FocusEventArgs>(this, () => _current = item));
         builder.AddComponentParameter(10, nameof(MudButton.ChildContent),
             (RenderFragment)(label => label.AddContent(0, LabelOf(command.Id))));
-        builder.AddComponentReferenceCapture(11, reference => _items[item] = (MudExGridMenuItem)reference);
+        // Its click takes its place in the grid's Input Order (ADR-0240 section 2): the grid's script
+        // numbers a click on a control that claims it, and the command claims the number.
+        builder.AddAttribute(12, "data-ex-claims", "click keydown");
+        builder.AddComponentReferenceCapture(13, reference => _items[item] = (MudExGridMenuItem)reference);
         builder.CloseComponent();
     };
     private int _current = -1;

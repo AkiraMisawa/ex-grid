@@ -97,6 +97,25 @@ function widened(context) {
     return context;
 }
 
+/**
+ * Holds every answer from the Server host in the latency proxy, or lets the held ones go in
+ * order (latency-proxy.mjs). A test that must act before the host's answer reaches the page
+ * holds them across its inputs, instead of counting on the round trip outlasting them
+ * (ADR-0220). Answers false on WebAssembly, where there is no circuit; the fixture lets go of
+ * them after every test.
+ */
+export async function holdAnswers(held) {
+    if (!SERVER) {
+        return false;
+    }
+    const response = await fetch(`${LATENCY_CONTROL_URL}/hold?answers=${held ? 1 : 0}`, { method: 'POST' });
+    if (!response.ok) {
+        throw new Error(`the latency proxy refused to ${held ? 'hold' : 'let go of'} the host's answers: ${response.status}`
+            + ' (one started from an older checkout does not know /hold, so stop it and run again)');
+    }
+    return true;
+}
+
 /** The round trip the latency proxy is set to, in ms; null on WebAssembly, which has none. */
 export async function roundTrip() {
     if (!SERVER) {
@@ -172,12 +191,13 @@ function hostLogFrom(offset) {
 // (A11Y-20) — and a key pressed at it is lost. On the Server host the whole page is
 // prerendered and deaf until its circuit connects as well. A user who acts before that loses
 // the input — the grid says it is busy for exactly that reason — so every navigation here
-// waits, as that user would, for the page to be interactive and no grid to be Prerendered. On
+// waits, as that user would, for the page to be interactive and no grid to be Prerendered (and
+// no chart busy before its pointer entry holds its first drawing, ADR-0255). On
 // WebAssembly this used to be skipped as immediate; it is not: rows paint before the import
 // resolves, and a test that clicked and typed in that gap lost its keys on a slow runner.
 async function ready(page) {
     await page.locator('#demo-interactive').waitFor({ state: 'attached' });
-    await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy]'));
+    await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy], .ex-chart[aria-busy]'));
     // The HeadOutlet's first interactive render takes the head's static <title> and renders it as
     // its own, behind its comment (Blazor's getAndRemoveExistingTitle), on both hosts — on the
     // Server host a round trip after the page is interactive. Until it has, the head is not the
@@ -579,8 +599,10 @@ async function ownPage(app, page, use, options, testInfo) {
 
     await use(page);
 
+    // A test that raised the round trip, or held the host's answers, leaves the wire as the
+    // next one expects it.
+    await holdAnswers(false);
     await undoAlterations(page);
-    // A test that raised the round trip leaves it where the next one expects it.
     await setRoundTrip(0);
     for (const pattern of options.expectedLeaks) {
         expect.soft(false, `the harness named ${pattern}: a document of the test's own is not checked`).toBe(true);
@@ -650,6 +672,7 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
             }
         }
     }
+    await holdAnswers(false);
     await undoAlterations(page);
     await setRoundTrip(0);
     for (const other of context.pages().filter((p) => p !== page)) {

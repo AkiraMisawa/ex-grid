@@ -106,6 +106,28 @@ public class FindTests : GridTestContext
         Assert.Single(cut.FindAll("input.ex-find-field"));
     }
 
+    [Fact] // PF-3 / FD-6: the built-in panel's fields keep their handlers while text is typed, so an event the browser sent before a render still finds its handler
+    public async Task The_find_fields_keep_their_handlers_across_typing()
+    {
+        var cut = RenderGrid(new Heard(), Answer(0, "Book"));
+        await PressAsync(cut, "f", ctrl: true);
+        string?[] Handlers() =>
+        [
+            cut.Find("input.ex-find-field").GetAttribute("blazor:oninput"),
+            cut.Find("input.ex-find-field").GetAttribute("blazor:onkeydown"),
+            cut.Find("input.ex-find-match-case").GetAttribute("blazor:onchange"),
+            cut.Find("input.ex-find-whole-cell").GetAttribute("blazor:onchange"),
+        ];
+        var before = Handlers();
+        Assert.All(before, Assert.NotNull);
+
+        await cut.Find("input.ex-find-field").InputAsync(new ChangeEventArgs { Value = "n" });
+        await cut.Find("input.ex-find-field").InputAsync(new ChangeEventArgs { Value = "no" });
+        await cut.Find("input.ex-find-match-case").ChangeAsync(new ChangeEventArgs { Value = true });
+
+        Assert.Equal(before, Handlers());
+    }
+
     [Fact] // ADR-0055 / FD-4: a step asks with every field
     public async Task A_step_asks_with_the_focus_the_columns_and_the_version()
     {

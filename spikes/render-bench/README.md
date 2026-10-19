@@ -207,6 +207,27 @@ CDP_PORT=9333 node tools/cdp-settled.mjs http://localhost:5491/settled with-serv
 The results of 2026-10-16 are in `results/20261016-settled/`, with a summary beside each run
 (`root-render.txt`, `stamp.txt`); ADR-0220 reads them.
 
+### The Input Order (ADR-0240)
+
+What taking every input to one instance in one order costs, against the same page built from `main`
+("What it may cost"). The same `/settled` page, driven by `Bench.Live/wwwroot/input-bench.js`, which
+dispatches at machine speed, many inputs in one task, and reads only what the user sees at animation
+frames (the Focus, the Cell Editor's text, whether a popover stands), never the Settled Mark: 20
+printable keys typed onto the editable column until the editor holds all of them in order, then
+Escape; 20 clicks (mousedown, mouseup, click) on cells of different rows and columns until the Focus
+names the last; Shift+F10, Escape, ArrowDown ten times in one task until the Focus is ten rows down
+with no popover (a key dropped or taken out of order leaves it elsewhere, and the round records the
+phase as failed with what it saw); and the Context Menu opened and closed ten times, each waited for.
+`tools/cdp-input.mjs` drives it like `cdp-settled.mjs`, and also records every console error and
+uncaught exception; `tools/summarize-input.mjs` prints the table:
+
+```sh
+CDP_PORT=9333 node tools/cdp-input.mjs http://localhost:5491/settled branch-server-0ms 7   # rounds [chars presses menus]
+node tools/summarize-input.mjs results/20261018-input-order/runs
+```
+
+The results of 2026-10-18 are in `results/20261018-input-order/` (`summary.txt`).
+
 ## Running it
 
 ```sh

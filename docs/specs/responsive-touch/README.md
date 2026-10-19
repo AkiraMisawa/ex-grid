@@ -8,9 +8,9 @@ replacement for their acceptance criteria. No product implementation was made in
 
 - [ADR-0045](../../adr/0045-exgrid-is-a-desktop-grid.md) is the complete behavior contract:
   ExGrid, ExSheet and ExPivot, both Chromes, both hosting models, and Q1–Q27 including revised Q9.
-- [Definition of Done, section 33](../../definition-of-done.md#33-responsive-layout-and-touch-rt)
+- [Definition of Done, section 34](../../definition-of-done.md#34-responsive-layout-and-touch-rt)
   contains RT-1 through RT-19 and the real-device completion boundary.
-- [ADR-0021](../../adr/0021-javascript-is-allowlisted-not-minimised.md) now permits fourteen
+- [ADR-0021](../../adr/0021-javascript-is-allowlisted-not-minimised.md) now permits nineteen
   scoped uses. The four touch additions are accepted, not implemented:
 
 | Browser responsibility | Decision |

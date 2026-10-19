@@ -274,10 +274,11 @@ public partial class ExGrid<TRow>
     /// <para>Until DOM focus has left the grid's root, the keys typed on the root, its Keyboard Field
     /// (ADR-0080) or the menu the command ran from are held, in order, and then handed to the
     /// element that took focus, as the keydown each would have been; a Tab, which only the browser
-    /// can act on, is dropped with every key after it (ADR-0010). The keys are never the grid's: a
-    /// digit gated against the root would open an edit behind the frame. If DOM focus does not
-    /// leave the root within the hold's fallback, or goes to another grid, the held keys are
-    /// dropped. A command's menu still hands the keyboard back to the root — its Keyboard Field on
+    /// can act on, is refused aloud with every key after it (ADR-0010, ADR-0240). The keys are never
+    /// the grid's: a digit gated against the root would open an edit behind the frame. They wait for
+    /// the frame however long it takes, never on a clock (ADR-0240 section 4): the call is a promise
+    /// that the keyboard is coming. If DOM focus goes to another grid instead, the held keys are
+    /// refused aloud (<see cref="Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive"/>). A command's menu still hands the keyboard back to the root — its Keyboard Field on
     /// a grid that edits — as it closes, so that the keys typed meanwhile land where they are held,
     /// not on nothing, where no grid hears them.</para>
     ///
@@ -308,6 +309,20 @@ public partial class ExGrid<TRow>
     }
 
     /// <summary>
+    /// The key gate heard that the keyboard is going to a Consumer's popover, and numbered that telling
+    /// <paramref name="input"/> (ADR-0240 section 4). Answered in its place in the Input Order, after
+    /// the opening that told it: the Settled Stamp that answers it then says whether the popover's
+    /// contents still owe the keyboard, which the stamp read as the telling arrived did not yet say.
+    /// </summary>
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="input">The number the script gave the telling, which the root names once it has
+    /// been answered (ADR-0220).</param>
+    /// <returns>A task that completes once the telling is answered.</returns>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public Task HandOffHeardAsync(int input = 0) => AnsweredAsync(() => { }, input);
+
+    /// <summary>
     /// Opens the Consumer's contents in the frame, in place of any popover that stands.
     ///
     /// <para>In a popover's place — from a command of the Context Menu or a column's menu, ExSheet's
@@ -333,8 +348,13 @@ public partial class ExGrid<TRow>
         CloseMenus();
         _consumerPopover = new ConsumerPopover(content, label, closedByEscape);
         BeginPopoverFocus();
-        // The contents are the Consumer's, and focus themselves on their count.
+        // The contents are the Consumer's, and focus themselves on their count: until they have, the
+        // keyboard is owed to them, and the keys held for them wait for it (FocusOwed, ADR-0240 section
+        // 4). Not owed, a key the hold handed on before their focus landed was refused as a keyboard
+        // that did not arrive: Alt, H, F, C, Escape, 1 typed at once lost the Escape and the 1.
         _popoverFocusPending = PopoverFocus.None;
+        _chromeFocusOwed = false;
+        _consumerFocusOwed = true;
         _consumerFocusRequest++;
         _consumerFocusLastRequest = 0;
         _consumerContentsHeld = false;
@@ -363,8 +383,13 @@ public partial class ExGrid<TRow>
     private Func<ElementReference, bool, Task> TakeConsumerPopoverFocus
         => _takeConsumerPopoverFocus ??= (control, preventScroll) => InvokeAsync(async () =>
         {
-            if (control.Id is null || _disposed)
+            // A popover closed since has nothing to focus: its control would take the keyboard from
+            // the root for the moment before the render that removes it, and leave it on the page.
+            if (control.Id is null || _disposed || _consumerPopover is null)
+            {
+                ConsumerFocusTaken();
                 return;
+            }
             try
             {
                 if (_scrollHandle is null)
@@ -375,16 +400,31 @@ public partial class ExGrid<TRow>
             catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
             {
             }
+            // No longer owed once the focus has been asked of the script, never before: the stamp that
+            // says so travels behind it. Declined (a press elsewhere has overtaken the opening), the
+            // contents will not take it.
+            ConsumerFocusTaken();
         });
+
+    // The contents' focus is no longer owed; the Settled Stamp says so (ADR-0240 section 4).
+    private void ConsumerFocusTaken()
+    {
+        if (!_consumerFocusOwed)
+            return;
+        _consumerFocusOwed = false;
+        ShowSettledStamp();
+    }
 
     private Func<ElementReference, bool, Task>? _takeConsumerPopoverFocus;
 
-    /// <summary>The contents hold the keyboard: the sentinels wrap from here on. Nothing is drawn
-    /// for it.</summary>
+    /// <summary>The contents hold the keyboard: the sentinels wrap from here on, and the keyboard is
+    /// no longer owed to them, however they took it — through <c>TakeFocus</c> or their own focus, as the
+    /// toolbar's lists take it (ADR-0240 section 4). Nothing is drawn for it but the stamp.</summary>
     private void ConsumerContentsHeld()
     {
         _consumerContentsHeld = true;
         _suppressRender = true;
+        ConsumerFocusTaken();
     }
 
     /// <summary>
@@ -396,6 +436,7 @@ public partial class ExGrid<TRow>
     /// </summary>
     private void OnConsumerTrailingSentinel()
     {
+        _consumerFocusOwed = true;
         if (_consumerContentsHeld)
             _consumerFocusRequest++;
         else
@@ -409,6 +450,7 @@ public partial class ExGrid<TRow>
     /// </summary>
     private void OnConsumerLeadingSentinel()
     {
+        _consumerFocusOwed = true;
         if (_consumerContentsHeld)
             _consumerFocusLastRequest++;
         else

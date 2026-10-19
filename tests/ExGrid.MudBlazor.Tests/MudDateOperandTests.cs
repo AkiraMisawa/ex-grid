@@ -92,7 +92,7 @@ public class MudDateOperandTests : MudTestContext
 
         Assert.Contains($"“{typed}” {said}", cut.Find(".mud-ex-grid-filter-operand").TextContent);
         Assert.True(cut.Find(".mud-ex-grid-filter-apply").HasAttribute("disabled"));
-        Assert.Empty(_applied);
+        Assert.All(_applied, answer => Assert.False(FilterPanelChoices.CanApply(answer))); // ADR-0240 §4: only the answer Apply refuses
     }
 
     /// <summary>The time MudBlazor reads, moved only by the test.</summary>
@@ -130,6 +130,6 @@ public class MudDateOperandTests : MudTestContext
         Assert.Contains($"\u201C{typed}\u201D {said}", field.TextContent);
         Assert.Equal(typed, cut.Find(".mud-ex-grid-filter-operand input").GetAttribute("value"));
         Assert.True(cut.Find(".mud-ex-grid-filter-apply").HasAttribute("disabled"));
-        Assert.Empty(_applied);
+        Assert.All(_applied, answer => Assert.False(FilterPanelChoices.CanApply(answer))); // ADR-0240 §4: only the answer Apply refuses
     }
 }

@@ -1,1 +1,5 @@
 #nullable enable
+const ExGrid.Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive = "key-refusal-keyboard-did-not-arrive" -> string!
+ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.InputTakenAt(string! kind, int input) -> void
+ExGrid.Components.ExGrid<TRow>.OnHeldInputsRefusedAsync(int input = 0) -> System.Threading.Tasks.Task!

@@ -331,3 +331,8 @@ the public surface below is decided in an ADR of its own.)*
 - *(Added 2026-10-12, decided with the user.)* **The release workflow's checks are code with tests.**
   They are `tools/release/ExGrid.Release`, and their tests, `tests/ExGrid.Release.Tests`, run in layer 1
   on every push. A tag is therefore not the first time they run.
+
+*(2026-10-19, [ADR-0283](./0283-exchart-ships-on-the-familys-train-measured-and-checked-by-machine.md),
+decided with the user: ExChart's `ExChart.Engine`, `ExChart` and `ExChart.MudBlazor` join this train
+once they are in `src/`, making thirteen packages at the tag's one version. Until then the list above
+stands.)*

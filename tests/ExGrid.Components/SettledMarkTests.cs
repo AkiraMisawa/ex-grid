@@ -90,6 +90,29 @@ public class SettledMarkTests : GridTestContext
             cut.Find(".ex-announce").TextContent, StringComparison.Ordinal);
     }
 
+    [Fact] // ADR-0240 §4: held keys the keyboard never reached are refused aloud, in words a Consumer can replace, and answered as an input
+    public async Task ADR0240_held_keys_refused_are_said()
+    {
+        var cut = RenderGrid();
+        await cut.InvokeAsync(() => cut.Instance.OnHeldInputsRefusedAsync(input: 1));
+        Assert.Equal("1", await AnsweredAsync(cut));
+        Assert.Equal(ExGrid.Chrome.BuiltInCommandLabels.For(ExGrid.Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive),
+            cut.Find(".ex-announce").TextContent.Trim());
+    }
+
+    [Fact] // ADR-0240 §4: no focus is owed once an edit's surface has been asked to take the keyboard
+    public async Task ADR0240_the_stamp_owes_no_focus_once_the_editor_has_been_asked()
+    {
+        var cut = RenderGrid();
+        await cut.Find(".ex-viewport").MouseDownAsync(Press(50, 10));
+        await cut.Find(".ex-viewport").MouseUpAsync(Press(50, 10, buttons: 0));
+        await KeyAsync(cut, "F2", input: 1);
+
+        Assert.Equal("1", await AnsweredAsync(cut));
+        Assert.False(await ReadWhenIdleAsync(() => cut.Find(".ex-grid > [data-ex-answered]").HasAttribute("data-ex-focus-owed")));
+        Assert.Contains(JSInterop.Invocations, i => i.Identifier == "focusEditor");
+    }
+
     [Fact] // ADR-0220: the root names no input before any is answered, and each key once it has been
     public async Task ADR0220_the_root_names_the_last_key_answered()
     {
@@ -103,19 +126,22 @@ public class SettledMarkTests : GridTestContext
         Assert.Equal("3", await AnsweredAsync(cut));
     }
 
-    [Fact] // ADR-0220: an input not yet answered holds back every one after it
-    public async Task ADR0220_a_press_told_but_not_yet_heard_holds_back_the_keys_after_it()
+    [Fact] // ADR-0220, ADR-0240 §2: an input not yet heard holds back every one after it, its handling included
+    public async Task ADR0240_a_press_told_but_not_yet_heard_holds_back_the_keys_after_it()
     {
         var cut = RenderGrid();
         await KeyAsync(cut, "ArrowDown", input: 1);
 
-        // The script told of a press, and Blazor has not delivered it yet: the key after it is
-        // answered, but the root goes on naming the key before the press.
+        // The script told of a press, and Blazor has not delivered it yet: the key after it waits for
+        // it, and the root goes on naming the key before the press.
         await TellPressAsync(cut, "mousedown", input: 2);
-        await KeyAsync(cut, "ArrowDown", input: 3);
+        Task key = Task.CompletedTask;
+        await cut.InvokeAsync(() => { key = cut.Instance.OnKeyAsync("ArrowDown", false, false, false, false, false, input: 3); });
+        Assert.False(key.IsCompleted);
         Assert.Equal("1", await AnsweredAsync(cut));
 
         await cut.Find(".ex-viewport").MouseDownAsync(Press(50, 10));
+        await cut.InvokeAsync(() => key);
         Assert.Equal("3", await AnsweredAsync(cut));
     }
 

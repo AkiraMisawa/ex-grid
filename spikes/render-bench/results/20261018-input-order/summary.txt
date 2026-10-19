@@ -1,0 +1,15 @@
+ADR-0240 Input Order vs main, 2026-10-18. Bench.Live/SettledGrid (/settled), input-bench.js via tools/cdp-input.mjs,
+headless Chromium 1194 (--headless=new), Release builds, same machine and session, builds interleaved per pass.
+branch = claude/project-thread-8j2tu3 @ 854d9d9; main = origin/main @ b806898. Medians in ms over every round (7 per pass);
+server: 2 passes, wasm: 4. Readings at animation frames, so 0 ms server numbers are quantised to ~16.7 ms frames.
+type = 20 printable keys in one task until the editor holds them; press = 20 clicks in one task until the Focus names the last;
+menu burst = (Shift+F10, Escape, ArrowDown) x10 in one task until Focus 10 rows down, no popover; open/close = ContextMenu key / Escape, each waited.
+burst fail: main at 60 ms ends every round with the Focus on r6, not r10, and no popover (4 of 10 ArrowDowns lost).
+
+config       build     n  type ms  type esc  press ms  press p95  menu burst  burst fail  open p50  open p95  close p50  close p95  fails  complaints
+server-0ms   main     14     16.8      16.7      17.0       18.1       350.2        0/14      16.7      17.0       16.8       17.1      0           0
+server-0ms   branch   14     16.8      16.8      17.0       33.6       350.2        0/14      16.7      16.9       16.8       17.1      0           0
+server-60ms  main     14    200.1      83.6     183.5      183.9         nan       14/14      83.7     100.4      150.1      167.0      0           0
+server-60ms  branch   14    200.0      83.6     183.7      184.0      3092.0        0/14      83.7     100.4      150.1      166.8      0           0
+wasm         main     28     77.0       4.8     163.5      220.1       133.5        0/28       4.2       6.9        3.7        5.7      0           0
+wasm         branch   28     72.6       5.0     173.1      218.9       133.5        0/28       4.3       6.0        3.6        5.3      0           0

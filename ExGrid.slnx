@@ -9,6 +9,8 @@
   <Project Path="src/ExGrid.Data/ExGrid.Data.csproj" />
   <Project Path="src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj" />
   <Project Path="src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj" />
+  <Project Path="src/ExChart.Engine/ExChart.Engine.csproj" />
+  <Project Path="src/ExChart/ExChart.csproj" />
   <Project Path="src/ExPivot/ExPivot.csproj" />
   <Project Path="src/ExPivot.Engine/ExPivot.Engine.csproj" />
   <Project Path="src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj" />
@@ -23,6 +25,8 @@
   <Project Path="tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj" />
   <Project Path="tests/ExGrid.Release.Tests/ExGrid.Release.Tests.csproj" />
   <Project Path="tests/ExGrid.Tests/ExGrid.Tests.csproj" />
+  <Project Path="tests/ExChart.Engine.Tests/ExChart.Engine.Tests.csproj" />
+  <Project Path="tests/ExChart.Components/ExChart.Components.csproj" />
   <Project Path="tests/ExPivot.Components/ExPivot.Components.csproj" />
   <Project Path="tests/ExPivot.Engine.Tests/ExPivot.Engine.Tests.csproj" />
   <Project Path="tests/ExPivot.MudBlazor.Tests/ExPivot.MudBlazor.Tests.csproj" />
