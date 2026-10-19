@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, dataRowCount, layoutCeilingTold, setRoundTrip, settled } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, dataRowCount, holdAnswers, layoutCeilingTold, setRoundTrip, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { activeDescendant, expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
@@ -550,6 +550,11 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
             // F6's place before anything moves; the keys below move the view a page down.
             // spec-lint: early-read: the click on F1, in view, does not move F6; only the keys after this read move the view
             const f6 = await columnF(page, 5).boundingBox();
+            // On a circuit the host's answers are held until every input is made, so the press
+            // is made while the keys before it are unanswered and the page has not moved, however
+            // slow the browser is to take the inputs (ADR-0220). A round trip alone did not see to
+            // that: with the browser slowed, the page move was painted before the press came.
+            await holdAnswers(true);
             await page.keyboard.type('1');
             await page.keyboard.press('Enter');
             await page.keyboard.press('PageDown');
@@ -557,6 +562,7 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
             await page.mouse.click(f6.x + f6.width / 2, f6.y + f6.height / 2);
             await page.keyboard.type('2');
             await page.keyboard.press('Enter');
+            await holdAnswers(false);
 
             // spec-lint: early-read: deterministic: the capture-phase listener records the press inside its own dispatch, before the click returns
             const pressed = await page.evaluate(() => window.__pressed);
@@ -565,7 +571,7 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
             await expect(grid.locator('input.ex-name-box')).toHaveValue(`F${row + 2}`);
             await expect(columnF(page, row)).toHaveText('2');
             if (SERVER) {
-                // On a circuit the press is held behind the keys, and the page has not moved yet.
+                // On a circuit the press was made while the keys were unanswered: the page had not moved.
                 expect(row, 'the browser still showed F6 under the pointer').toBe(5);
             }
         });
