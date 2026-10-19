@@ -12,8 +12,8 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/19/2026 - 19:33:20 |
-| Parser: | MultiReport (14x Cobertura) |
+| Generated on: | 10/19/2026 - 20:23:40 |
+| Parser: | MultiReport (15x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 853 |
 | Files: | 469 |
@@ -22,8 +22,8 @@
 | Uncovered lines: | 3173 |
 | Coverable lines: | 64521 |
 | Total lines: | 104775 |
-| **Branch coverage:** | 88% (35671 of 40514) |
-| Covered branches: | 35671 |
+| **Branch coverage:** | 88% (35669 of 40514) |
+| Covered branches: | 35669 |
 | Total branches: | 40514 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -162,8 +162,8 @@
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
 |ExGrid.Components.ExGrid<TRow, T>|90.7%|85.7%|
-|ExGrid.Components.ExGrid<TRow>|90.7%|85.7%|
 |ExGrid.Components.ExGrid<TRow>|95.4%|90.4%|
+|ExGrid.Components.ExGrid<TRow>|90.7%|85.7%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
@@ -212,8 +212,8 @@
 |ExGrid.IGridSource<TRow>|100%||
 |ExGrid.InMemoryGridSource.ChangePlan<TRow>|100%|100%|
 |ExGrid.InMemoryGridSource.Pending<TRow>|100%||
-|ExGrid.InMemoryGridSource<TRow>|93.5%|77.7%|
 |ExGrid.InMemoryGridSource<TRow>|96.5%|91.5%|
+|ExGrid.InMemoryGridSource<TRow>|93.5%|77.7%|
 |ExGrid.InternedStrings|100%|100%|
 |ExGrid.KeyedRows.Held<TRow>|100%||
 |ExGrid.KeyedRows<TRow>|97.5%|87.5%|
@@ -731,10 +731,10 @@
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|91.1%|84.7%|
+|ExSheet.Components.ExSheet|91.1%|84.5%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91.1%|84.7%|
+|ExSheet.Components.ExSheet<T>|91.1%|84.5%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
