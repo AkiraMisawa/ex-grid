@@ -1,0 +1,10 @@
+dotnet 10.0.203 (nix-managed)
+xUnit.net v3 In-Process Runner v2.0.3+216a74a292 (64-bit .NET 10.0.7)
+[37m  Discovering: ExGrid.Components
+[0m[37m  Discovered:  ExGrid.Components
+[0m[37m  Starting:    ExGrid.Components
+[0m[90m    ExGrid.Components.Tests.AllocationTests.Bytes_per_scroll_frame_are_recorded [OUTPUT] MEM-7: 66,149 bytes allocated per one-row scroll frame, 6 rows x 2 columns painted, under bUnit's renderer (its own batch handling included)
+[0m[37m  Finished:    ExGrid.Components
+[0m[37m=== TEST EXECUTION SUMMARY ===
+[0m[37m   ExGrid.Components  Total: 1, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 1.043s
+[0m[0mexit 0

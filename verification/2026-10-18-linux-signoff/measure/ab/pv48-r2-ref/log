@@ -1,0 +1,9 @@
+dotnet 10.0.203 (nix-managed)
+xUnit.net v3 In-Process Runner v2.0.3+216a74a292 (64-bit .NET 10.0.7)
+[37m  Discovering: ExPivot.Components.Tests
+[0m[37m  Discovered:  ExPivot.Components.Tests
+[0m[37m  Starting:    ExPivot.Components.Tests
+[0m[37m  Finished:    ExPivot.Components.Tests
+[0m[37m=== TEST EXECUTION SUMMARY ===
+[0m[37m   ExPivot.Components.Tests  Total: 1, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 23.217s
+[0m[0m

@@ -1,0 +1,55 @@
+node v24.14.1, dotnet 10.0.203
+[DemoApi] Using launch settings from ../../samples/ExGrid.DemoApi/Properties/launchSettings.json...
+[DemoApi] Building...
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generating 20000 trades into /tmp/nix-shell.Nr49M8/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 10000 of 20000 trades (50%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 20000 trades in 0.4 s: 1.6 MB.
+[DemoApi] info: Microsoft.Hosting.Lifetime[14]
+[DemoApi]       Now listening on: http://localhost:8440
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application started. Press Ctrl+C to shut down.
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Hosting environment: Development
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Content root path: /home/user/ex-grid/.claude/worktrees/rel/samples/ExGrid.DemoApi
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Serving 20000 trades at version 1c997a55-0 from /tmp/nix-shell.Nr49M8/exgrid-demo-api/runs/trades-v1-20000.4035.1c997a55.sqlite.
+
+Running 1 test using 1 worker
+
+LV-15 {
+ "rows": 1000000,
+ "load": "1,000,000 trades made in 3,158 ms; GridSource.From took 2,584 ms.",
+ "runs": 12,
+ "appliedMs": {
+  "median": 67,
+  "min": 41,
+  "max": 104
+ },
+ "applyToFrameMs": {
+  "median": 67,
+  "min": 41,
+  "max": 105
+ },
+ "taskStartToFrameMs": {
+  "median": 76,
+  "min": 51,
+  "max": 296
+ },
+ "longestTaskMs": {
+  "median": 76,
+  "min": 51,
+  "max": 296
+ },
+ "gridInTheBatchsFrame": 12,
+ "lastStatus": "Batch 15: 1,000 trades amended, applied in 65 ms.",
+ "against": "PV-21: 0.2 s"
+}
+  ✓  1 [chrome] › measure-live.spec.mjs:93:1 › LV-15: 1,000 changes applied to a million rows on /grid-live-local, from Apply to the frame that shows them (12.6s)
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application is shutting down...
+
+  1 passed (22.0s)

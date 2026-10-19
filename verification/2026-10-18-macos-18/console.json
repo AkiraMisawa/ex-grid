@@ -1,0 +1,30 @@
+{
+  "chrome": {
+    "a test whose console reports an error hands no page on (ADR-0056)": {
+      "at": "2026-10-18T03:52:29.671Z",
+      "errors": [
+        {
+          "text": "harness.spec: an error on purpose",
+          "url": ""
+        }
+      ],
+      "expectedErrors": [],
+      "warnings": [],
+      "pageErrors": []
+    }
+  },
+  "msedge": {
+    "a test whose console reports an error hands no page on (ADR-0056)": {
+      "at": "2026-10-18T04:30:21.661Z",
+      "errors": [
+        {
+          "text": "harness.spec: an error on purpose",
+          "url": ""
+        }
+      ],
+      "expectedErrors": [],
+      "warnings": [],
+      "pageErrors": []
+    }
+  }
+}

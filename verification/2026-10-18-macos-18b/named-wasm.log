@@ -1,0 +1,49 @@
+node v24.14.1, dotnet 10.0.203
+[WebServer] Using launch settings from ../../samples/ExGrid.DemoHost/Properties/launchSettings.json...
+[WebServer] Building...
+[WebServer] info: Microsoft.Hosting.Lifetime[14]
+[WebServer]       Now listening on: http://localhost:5299
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Application started. Press Ctrl+C to shut down.
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Hosting environment: Development
+[WebServer] info: Microsoft.Hosting.Lifetime[0]
+[WebServer]       Content root path: /Users/akira338/github/ex-grid/samples/ExGrid.DemoHost
+[DemoApi] Using launch settings from ../../samples/ExGrid.DemoApi/Properties/launchSettings.json...[DemoApi] 
+[DemoApi] Building...
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generating 20000 trades into /tmp/nix-shell.i64Yak/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+[DemoApi] info: Microsoft.Hosting.Lifetime[14]
+[DemoApi]       Now listening on: http://localhost:8299
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application started. Press Ctrl+C to shut down.
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Hosting environment: Development
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Content root path: /Users/akira338/github/ex-grid/samples/ExGrid.DemoApi
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 10000 of 20000 trades (50%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 20000 trades in 0.1 s: 1.6 MB.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Serving 20000 trades at version 23dcc8e7-0 from /tmp/nix-shell.i64Yak/exgrid-demo-api/runs/trades-v1-20000.68336.23dcc8e7.sqlite.
+
+Running 12 tests using 1 worker
+
+  ✓   1 [chrome] › features.spec.mjs:419:1 › Ctrl+Enter fill across a non-editable column is refused, and says so (CP-16, ADR-0035, ADR-0052) (995ms)
+  ✓   2 [chrome] › features.spec.mjs:871:1 › in Caret Ctrl+← and Ctrl+→ move the caret by a word, with Shift extend the selection, and Ctrl+Backspace and Ctrl+Delete delete a word, in the field itself (ED-2, ADR-0010) (286ms)
+  -   3 [chrome] › features.spec.mjs:917:1 › with a 150 ms round trip, End, Ctrl+←, Shift+End typed straight after F2 move and extend as the field would; so do Ctrl+→, Ctrl+Shift+→, Ctrl+Backspace and Ctrl+Delete (ED-2, ADR-0010)
+  ✓   4 [chrome] › part-c.spec.mjs:481:1 › FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in, and no more fit (ADR-0016) (2.3s)
+  ✓   5 [chrome] › sizing.spec.mjs:62:1 › a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016) (2.0s)
+  -   6 [chrome] › write-lands.spec.mjs:208:1 › LV-13: a Ctrl+Enter fill whose target changed since the key was pressed lands as entered (ADR-0142, ADR-0035)
+  ✓   7 [msedge] › features.spec.mjs:419:1 › Ctrl+Enter fill across a non-editable column is refused, and says so (CP-16, ADR-0035, ADR-0052) (896ms)
+  ✓   8 [msedge] › features.spec.mjs:871:1 › in Caret Ctrl+← and Ctrl+→ move the caret by a word, with Shift extend the selection, and Ctrl+Backspace and Ctrl+Delete delete a word, in the field itself (ED-2, ADR-0010) (277ms)
+  -   9 [msedge] › features.spec.mjs:917:1 › with a 150 ms round trip, End, Ctrl+←, Shift+End typed straight after F2 move and extend as the field would; so do Ctrl+→, Ctrl+Shift+→, Ctrl+Backspace and Ctrl+Delete (ED-2, ADR-0010)
+  ✓  10 [msedge] › part-c.spec.mjs:481:1 › FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in, and no more fit (ADR-0016) (2.3s)
+  ✓  11 [msedge] › sizing.spec.mjs:62:1 › a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016) (2.1s)
+  -  12 [msedge] › write-lands.spec.mjs:208:1 › LV-13: a Ctrl+Enter fill whose target changed since the key was pressed lands as entered (ADR-0142, ADR-0035)
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application is shutting down...
+
+  4 skipped
+  8 passed (26.4s)

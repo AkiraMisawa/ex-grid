@@ -1,0 +1,4 @@
+named wasm exit 0
+named server exit 0
+meta wasm exit 0
+meta server exit 0
