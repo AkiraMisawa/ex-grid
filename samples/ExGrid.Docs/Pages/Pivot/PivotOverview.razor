@@ -5,6 +5,17 @@
 <DocsPage Product="ExPivot" Title="Overview"
           Lead="Excel's PivotTable for Blazor, drawn by ExGrid. Hand it your records and the fields they carry; your users build the report in the PivotTable Fields pane, and your application keeps the layout they made.">
 
+    <DocsSection Title="Responsive sizing">
+        <p>
+            ExPivot draws its cells with ExGrid. A <code>ViewportWidth="ViewportSize.Stretch"</code>
+            follows the available box while keeping column widths and the two-dimensional grid;
+            a narrower box is reached by horizontal scrolling. Enclosing flex and grid items must
+            permit shrinking with <code>min-width: 0</code>. A <code>MudExGridPaper</code> does so itself.
+            See the <a href="exgrid#a-responsive-box">responsive grid Example</a> for both Chromes.
+            This sizing support does not yet claim the complete mobile touch workflow.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="A first pivot">
         <p>
             Declare each field once with <code>PivotFields.Of&lt;T&gt;()</code>, hand ExPivot a source and
