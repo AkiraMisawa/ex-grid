@@ -70,7 +70,7 @@ public partial class RepositoryTests
 
         Assert.True(report.Admitted, string.Join("\n", report.Refusals.Select(r => r.Message)));
         Assert.Equal(
-            ["src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj", "src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj", "src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj"],
+            ["src/ExChart.MudBlazor/ExChart.MudBlazor.csproj", "src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj", "src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj", "src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj"],
             declared!.Select(d => d.Project).Order(StringComparer.Ordinal));
     }
 

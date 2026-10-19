@@ -18,6 +18,24 @@ core decides meaning (spine rule 4), so swapping the Wrapper in changes how the 
 what it does. Redrawing the legend as `MudChip`s or the tooltip as a `MudTooltip` would give the
 tooltip a second path beside the pointer entry (ADR-0255), and two paths drift.
 
+## How it is built
+
+*(Added 2026-10-19, in the shipping thread, as implementation follows the decision above.)*
+
+- **ExChart takes a Chrome** (`IChartChrome`), as ExGrid and ExPivot do: the toolbar and the context
+  menu's content are drawn by it, or by ExChart's built-in markup when it is null. ExChart hands it
+  its commands, in its order, with their state, and Chart Filters' typed range is read by ExChart.
+- **The built-in markup has the same context menu.** Spine rule 4 holds only if a right-click, or
+  Shift+F10, does the same under either Chrome, so the menu, its frame, where it opens and what
+  closes it are ExChart's, and the Wrapper draws only its items.
+- **The Chart Dock is `MudChartDock`**, which takes the selection bridge's events, so a page writes
+  no code to show a chart; a chart that can no longer be drawn says why in its tab.
+- **`MudChartChrome.GridChrome`** words the bridge's commands for the grid's Wrapper, which would
+  otherwise paint them as their ids.
+- **The palette mapping sets ExChart's tokens on an ancestor** (the grid Wrapper's paper, or the
+  dock). ExChart reads each token through a private copy with its default behind it, so an
+  ancestor's value reaches the chart whatever order the stylesheets load in.
+
 ## Which MudBlazor colours the colour slots take
 
 - **Slots 1 to 3 take `Primary`, `Secondary` and `Tertiary`.** A theme's own colours lead the chart.

@@ -21,6 +21,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ExChart\ExChart.csproj" />
+    <!-- The Wrapper is tested here too, beside the core it must not change (ADR-0281). -->
+    <ProjectReference Include="..\..\src\ExChart.MudBlazor\ExChart.MudBlazor.csproj" />
   </ItemGroup>
 
 </Project>

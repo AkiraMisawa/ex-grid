@@ -29,6 +29,7 @@
          nothing here uses ExPivot or ExChart. -->
     <ProjectReference Include="..\..\src\ExPivot.MudBlazor\ExPivot.MudBlazor.csproj" />
     <ProjectReference Include="..\..\src\ExChart\ExChart.csproj" />
+    <ProjectReference Include="..\..\src\ExChart.MudBlazor\ExChart.MudBlazor.csproj" />
   </ItemGroup>
 
 </Project>

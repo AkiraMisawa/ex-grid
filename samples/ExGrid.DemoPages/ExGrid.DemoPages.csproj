@@ -49,6 +49,7 @@
     <ProjectReference Include="..\..\src\ExGrid.Data.Arrow\ExGrid.Data.Arrow.csproj" />
     <!-- ExChart's page (/chart): with its tests, the only thing that references ExChart (ADR-0250). -->
     <ProjectReference Include="..\..\src\ExChart\ExChart.csproj" />
+    <ProjectReference Include="..\..\src\ExChart.MudBlazor\ExChart.MudBlazor.csproj" />
   </ItemGroup>
 
   <ItemGroup>

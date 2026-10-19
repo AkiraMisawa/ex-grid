@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0, like every shipped package (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ExChart.MudBlazor</RootNamespace>
+    <Description>MudBlazor for ExChart: a Chrome that draws the chart's toolbar (Chart Filters' range in MudBlazor's inputs, the axis switch, the reset and a download menu) and its context menu with MudBlazor's own controls; the Chart Dock, a panel beside or below the grid holding the charts made from its selection as tabs; and a stylesheet mapping ExChart's tokens onto the MudBlazor palette, the theme's Primary, Secondary and Tertiary leading the series. Ships at the same version as ExChart and depends on exactly that version.</Description>
+    <PackageTags>$(PackageTags);chart;svg;mudblazor;material</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 9.x from its floor, 9.6.0, as ExGrid.MudBlazor takes it (ADR-0022, ADR-0205). -->
+    <PackageReference Include="MudBlazor" Version="[9.6.0,10.0.0)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The one direction there is (ADR-0250, ADR-0281): the Wrapper references ExChart and the
+         grid's Wrapper; nothing in either knows this package exists. -->
+    <ProjectReference Include="..\ExChart\ExChart.csproj" />
+    <ProjectReference Include="..\ExGrid.MudBlazor\ExGrid.MudBlazor.csproj" />
+  </ItemGroup>
+
+  <!-- Exactly the ExChart and ExGrid.MudBlazor it was built with (ADR-0042). -->
+  <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+
+</Project>

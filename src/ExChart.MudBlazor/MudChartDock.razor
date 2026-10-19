@@ -1,0 +1,48 @@
+@* Written in each file, not in an _Imports.razor, whose class Razor makes public (ADR-0201); and
+   with global::, as this project's root namespace nests inside ExChart (the CS0426 trap in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExChart
+@using global::ExChart.Chrome
+@using global::ExChart.Components
+@using global::ExChart.Engine
+@using global::ExGrid
+@using global::MudBlazor
+@typeparam TRow where TRow : class
+@* The Chart Dock (ADR-0258, ADR-0281): the grid it is given, and a panel beside it or below it, never
+   over it, holding the charts made from the grid's selection as MudTabs. It takes the bridge's
+   events: a chart made opens as a new tab, one with a series added replaces its tab, and a refusal
+   is said in a warning MudAlert above the tabs. Every open chart is a target of "Add to chart", and a
+   click on a point shows its cell in the grid. Each chart is drawn again from the grid's rows on
+   every render, so it follows them (ADR-0258); the chart skips what did not change. *@
+<div class="@Classes">
+    <div class="mud-ex-chart-dock-content">@ChildContent</div>
+    @if (_charts.Count > 0 || _refusal is not null)
+    {
+        <MudPaper Outlined="true" Class="mud-ex-chart-dock-panel" role="region" aria-label="Charts">
+            @if (_refusal is { } refusal)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" ShowCloseIcon="true" CloseIconClicked="Dismiss" Class="mud-ex-chart-dock-refusal">@refusal</MudAlert>
+            }
+            @if (_charts.Count > 0)
+            {
+                <MudDynamicTabs @bind-ActivePanelIndex="_active" CloseTab="Close" Elevation="0" KeepPanelsAlive="true" Class="mud-ex-chart-dock-tabs">
+                    @foreach (var chart in _charts)
+                    {
+                        <MudTabPanel @key="chart.Name" ID="@chart.Name" Text="@chart.Name" ShowCloseIcon="true">
+                            @if (DefinitionOf(chart.Chart, out var why) is { } definition)
+                            {
+                                <ExChart Definition="definition" Title="@chart.Name" Width="ChartWidth" Height="ChartHeight"
+                                         Chrome="Chrome" OnPointClick="ClickOf(chart.Name)" />
+                            }
+                            else
+                            {
+                                <MudAlert Severity="Severity.Warning" Dense="true" Class="mud-ex-chart-dock-refusal">@why</MudAlert>
+                            }
+                        </MudTabPanel>
+                    }
+                </MudDynamicTabs>
+            }
+        </MudPaper>
+    }
+</div>

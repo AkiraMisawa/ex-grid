@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using global::ExChart.Chrome;
 using global::ExChart.Engine;
 using global::ExGrid;
 using global::ExGrid.Chrome;
@@ -74,6 +75,13 @@ public partial class ExChart
     /// </summary>
     [Parameter] public EventCallback<ChartPointClick> OnPointClick { get; set; }
 
+    /// <summary>
+    /// What draws the toolbar and the context menu (ADR-0281): ExChart.MudBlazor's
+    /// <c>MudChartChrome</c>, or null for the built-in markup. The legend, the tooltip and the plot
+    /// are ExChart's under any Chrome, and swapping it changes no behaviour.
+    /// </summary>
+    [Parameter] public IChartChrome? Chrome { get; set; }
+
     /// <summary>The name a saved file takes, without its extension; the title's when null, else "chart" (ADR-0282).</summary>
     [Parameter] public string? FileName { get; set; }
 
@@ -122,7 +130,27 @@ public partial class ExChart
     private string? _filterError;
 
     /// <summary>Creates the chart.</summary>
-    public ExChart() => _toggle = EventCallback.Factory.Create<string>(this, ToggleAsync);
+    public ExChart()
+    {
+        _toggle = EventCallback.Factory.Create<string>(this, ToggleAsync);
+        // Held once, so a context built from them is equal to the last while nothing changed.
+        _toggleFilters = () => { ToggleFilters(); StateHasChanged(); return Task.CompletedTask; };
+        _resetRange = ResetRangeAsync;
+        _toggleTable = () => { ToggleTable(); StateHasChanged(); return Task.CompletedTask; };
+        _csv = DownloadCsvAsync;
+        _svg = DownloadSvgAsync;
+        _png = DownloadPngAsync;
+        _apply = ApplyRangeAsync;
+        _setScale = scale => SetScaleAsync(scale.ToString());
+        _fromMenu = new Dictionary<string, Func<Task>>
+        {
+            [ChartCommandIds.ResetRange] = () => FromMenuAsync(_resetRange),
+            [ChartCommandIds.Table] = () => FromMenuAsync(_toggleTable),
+            [ChartCommandIds.DownloadCsv] = () => FromMenuAsync(_csv),
+            [ChartCommandIds.DownloadSvg] = () => FromMenuAsync(_svg),
+            [ChartCommandIds.DownloadPng] = () => FromMenuAsync(_png),
+        };
+    }
 
     /// <inheritdoc />
     protected override void OnParametersSet()
@@ -242,6 +270,9 @@ public partial class ExChart
     {
         _range = range;
         _filterError = null;
+        // Chart Filters shows the range as it now stands, however it was set (ADR-0273).
+        _fromText = range?.From is { } f ? Invariant(f) : null;
+        _toText = range?.To is { } t ? Invariant(t) : null;
         Rebuild();
         StateHasChanged();
         await OnRangeChanged.InvokeAsync(range);
@@ -275,17 +306,23 @@ public partial class ExChart
 
     // The range typed under Chart Filters (ADR-0273), in the axis' own values. A value that does
     // not read as one is said, never guessed (spine rule 1).
-    private async Task ApplyTypedRangeAsync()
+    private Task ApplyTypedRangeAsync() => ApplyRangeAsync(_fromText, _toText);
+
+    private async Task ApplyRangeAsync(string? fromText, string? toText)
     {
-        if (!TryRead(_fromText, out var from) || !TryRead(_toText, out var to))
+        _fromText = fromText;
+        _toText = toText;
+        if (!TryRead(fromText, out var from) || !TryRead(toText, out var to))
         {
-            var bad = !TryRead(_fromText, out _) ? _fromText : _toText;
+            var bad = !TryRead(fromText, out _) ? fromText : toText;
             _filterError = $"“{bad}” is not {AxisKind} on this axis.";
+            StateHasChanged();
             return;
         }
         if (from > to)
         {
             _filterError = "From is after To.";
+            StateHasChanged();
             return;
         }
         await SetRangeAsync(from is null && to is null ? null : new ChartRange(from, to));
@@ -296,6 +333,7 @@ public partial class ExChart
         if (!Enum.TryParse<AxisScale>(value, out var scale) || scale == (_scale ?? Definition.Axis.EffectiveScale)) return;
         _scale = scale;
         Rebuild();
+        StateHasChanged();
         await OnScaleChanged.InvokeAsync(scale);
     }
 
@@ -488,6 +526,7 @@ public partial class ExChart
     {
         if (firstRender)
             await AttachAsync();
+        await FocusMenuAsync();
         if (_handle is not null && _drawPending && !_disposed)
         {
             _drawPending = false;
