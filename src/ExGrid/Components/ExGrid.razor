@@ -882,17 +882,15 @@
                 else
                 {
                     <form class="ex-popover-form" data-ex-claims="submit" @onsubmit="SubmitFindHandler" @onsubmit:preventDefault>
-                        <input type="search" class="ex-find-field" aria-label="@Label(FindPanelLabelIds.Field)"
-                               @bind="_findText" @bind:event="oninput" @ref="_findField"
-                               @onkeydown="OnFindFieldKeyDown" />
+                        @FindField
                         <label>
                             <input type="checkbox" class="ex-find-match-case" checked="@_findMatchCase"
-                                   @onchange="e => _findMatchCase = e.Value is true" />
+                                   @onchange="FindMatchCaseChanged" />
                             @Label(FindPanelLabelIds.MatchCase)
                         </label>
                         <label>
                             <input type="checkbox" class="ex-find-whole-cell" checked="@_findWholeCell"
-                                   @onchange="e => _findWholeCell = e.Value is true" />
+                                   @onchange="FindWholeCellChanged" />
                             @Label(FindPanelLabelIds.WholeCell)
                         </label>
                         <div class="ex-popover-actions">
@@ -5909,11 +5907,23 @@
     /// <summary>The core's focus function a Chrome's popover is handed (ADR-0204), as a Chrome's
     /// editor is handed its own (ADR-0010): the control, and whether it may scroll into view.</summary>
     private Func<ElementReference, bool, Task> TakePopoverFocus
-        => _takePopoverFocus ??= (control, preventScroll) => InvokeAsync(() => ClaimedByKeyOrAsync(null, () =>
+        => _takePopoverFocus ??= (control, preventScroll) => InvokeAsync(() => ClaimedByKeyOrAsync(null, async () =>
         {
-            _chromeFocusOwed = false;
-            return FocusQuietlyAsync(control, preventScroll);
+            await FocusQuietlyAsync(control, preventScroll);
+            // No longer owed once the focus has been asked of the script, and said so: a substituted
+            // menu takes it from its own after-render, which may come after the root's has stamped
+            // the debt, and nothing renders the root for it (ADR-0240 section 4).
+            ChromeFocusTaken();
         }));
+
+    // The substituted Chrome's popover focus is no longer owed; the Settled Stamp says so.
+    private void ChromeFocusTaken()
+    {
+        if (!_chromeFocusOwed)
+            return;
+        _chromeFocusOwed = false;
+        ShowSettledStamp();
+    }
 
     // A popover's contents drawn by a substituted Chrome owe the keyboard: asked to take it (an opening,
     // a move into the filter), and not yet through TakePopoverFocus (FocusOwed, ADR-0240 section 4).
@@ -7798,6 +7808,37 @@
         _findFocusRequest,
         InnerPopupChangedFromChrome,
         TakePopoverFocus);
+
+    // The built-in find field, written as @bind writes it (the value the field's own typing
+    // outranks a render with, SetUpdatesAttributeName) but with its handlers kept: the same instance
+    // every render, so the diff leaves each registered (PF-3). Built afresh, each render of the root
+    // gave the field new event ids, and on a circuit a character typed behind a render arrived with
+    // an id already removed and was refused, so Find searched only what came before (FD-6 under the
+    // hunt, 2026-10-19).
+    private RenderFragment FindField => _findFieldFragment ??= FindFieldBuilder;
+
+    private void FindFieldBuilder(RenderTreeBuilder builder)
+    {
+        builder.OpenElement(0, "input");
+        builder.AddAttribute(1, "type", "search");
+        builder.AddAttribute(2, "class", "ex-find-field");
+        builder.AddAttribute(3, "aria-label", Label(FindPanelLabelIds.Field));
+        builder.AddAttribute(4, "value", _findText);
+        builder.AddAttribute(5, "oninput", _findTextInput ??= EventCallback.Factory.Create<ChangeEventArgs>(
+            this, e => _findText = e.Value as string ?? ""));
+        builder.SetUpdatesAttributeName("value");
+        builder.AddAttribute(6, "onkeydown", _findFieldKeyDown ??= EventCallback.Factory.Create<KeyboardEventArgs>(this, OnFindFieldKeyDown));
+        builder.AddElementReferenceCapture(7, field => _findField = field);
+        builder.CloseElement();
+    }
+
+    private RenderFragment? _findFieldFragment;
+    private EventCallback<ChangeEventArgs>? _findTextInput;
+    private EventCallback<KeyboardEventArgs>? _findFieldKeyDown;
+    private Action<ChangeEventArgs> FindMatchCaseChanged => _findMatchCaseChanged ??= e => _findMatchCase = e.Value is true;
+    private Action<ChangeEventArgs>? _findMatchCaseChanged;
+    private Action<ChangeEventArgs> FindWholeCellChanged => _findWholeCellChanged ??= e => _findWholeCell = e.Value is true;
+    private Action<ChangeEventArgs>? _findWholeCellChanged;
 
     /// <summary>Enter in the built-in field is the form's implicit submission — which an IME
     /// confirming a candidate does not trigger — and Shift says which way it runs.</summary>

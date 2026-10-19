@@ -305,8 +305,9 @@ public class PopoverKeyboardTests : GridTestContext
         await AltDownAsync(cut);
         Assert.True(await ReadWhenIdleAsync(FocusOwed));
 
+        // Nothing renders the root for it: a substituted menu takes focus from its own after-render,
+        // and the stamp must say so alone (KB-31 under the hunt, 2026-10-19).
         await chrome.Menu!.TakeFocus!(new ElementReference("stub-item"), true);
-        cut.Render();
         Assert.False(await ReadWhenIdleAsync(FocusOwed));
 
         await KeyAsync(cut, "Escape", fromDescendant: true);
