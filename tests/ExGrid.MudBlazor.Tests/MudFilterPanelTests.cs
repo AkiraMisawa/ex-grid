@@ -123,6 +123,14 @@ public class MudFilterPanelTests : MudTestContext
         Assert.Equal(["Alpha"], ValueLabels(cut));
     }
 
+    [Fact] // ADR-0240 §2: Cancel's click takes its place in the grid's Input Order, as the built-in panel's does
+    public void ADR0240_cancel_claims_its_click()
+    {
+        var cut = RenderPanel(Context());
+
+        Assert.Equal("click", Button(cut, "mud-ex-grid-filter-cancel").GetAttribute("data-ex-claims"));
+    }
+
     [Fact] // WR-1 / ADR-0044 / FL-16: Cancel closes as a discard, and the panel draws no Clear — clearing is the command above it
     public async Task Cancel_is_the_cores_exit_and_there_is_no_clear()
     {
@@ -381,14 +389,23 @@ public class MudFilterPanelTests : MudTestContext
         Assert.True(Button(flag, "mud-ex-grid-filter-apply").HasAttribute("disabled"));
     }
 
-    [Fact] // WR-2: the Enter that submits while Apply is unavailable applies nothing
+    [Fact] // WR-2, ADR-0240 §4: the Enter that submits while Apply is unavailable applies nothing — handed to Apply as the answer it refuses, so the submission takes its number
     public async Task A_submit_before_the_operand_applies_nothing()
     {
         var cut = RenderPanel(Context(ColumnType.Text, FilterUiMode.Condition));
 
         await cut.Find("form").SubmitAsync();
 
-        Assert.Empty(_applied);
+        AssertRefusedAnswer();
+    }
+
+    // The one answer handed over was one Apply refuses (FilterPanelChoices.CanApply): never a condition
+    // left incomplete, which would read as no filter at all.
+    private void AssertRefusedAnswer()
+    {
+        var answer = Assert.Single(_applied);
+        Assert.NotNull(answer);
+        Assert.False(FilterPanelChoices.CanApply(answer));
     }
 
     [Fact] // WR-2 / ADR-0009: a condition applies as FilterPanelChoices says — the typed operand, one clause
@@ -497,7 +514,7 @@ public class MudFilterPanelTests : MudTestContext
         Assert.Equal("(Select All Search Results)", cut.Find(".mud-ex-grid-filter-all").TextContent.Trim());
     }
 
-    [Fact] // WR-2 / ADR-0009/0023 (ticket 76): with nothing ticked Apply is unavailable, and the submit Enter makes applies nothing
+    [Fact] // WR-2 / ADR-0009/0023 (ticket 76), ADR-0240 §4: with nothing ticked Apply is unavailable, and the submit Enter makes applies nothing — it hands Apply the answer it refuses
     public async Task Nothing_ticked_cannot_be_applied()
     {
         var cut = RenderPanel(Context());
@@ -507,7 +524,7 @@ public class MudFilterPanelTests : MudTestContext
         Assert.True(Button(cut, "mud-ex-grid-filter-apply").HasAttribute("disabled"));
         await cut.Find("form").SubmitAsync();
 
-        Assert.Empty(_applied);
+        AssertRefusedAnswer();
     }
 
     [Fact] // WR-2 / FL-10 (ticket 76): a search with no chosen value among its matches is nothing to apply — SRV-5's "Alpha " and its Enter
@@ -519,7 +536,7 @@ public class MudFilterPanelTests : MudTestContext
         Assert.True(Button(cut, "mud-ex-grid-filter-apply").HasAttribute("disabled"));
         await cut.Find("form").SubmitAsync();
 
-        Assert.Empty(_applied);
+        AssertRefusedAnswer();
     }
 
     [Fact] // WR-1 / FN-17 (ticket 76): nothing ticked is applied by neither Chrome, and the reference source is never asked to refuse it

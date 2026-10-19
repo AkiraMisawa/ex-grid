@@ -46,7 +46,7 @@
    panel and carries ex-popover-closes, by which the grid's key listener holds the keys typed while
    the panel goes, a round trip on a circuit, and hands them on where the keyboard lands (ADR-0010,
    ADR-0044's note of 2026-10-12). *@
-<form class="mud-ex-grid-filter" @onsubmit="Apply" @onsubmit:preventDefault>
+<form class="mud-ex-grid-filter" data-ex-claims="submit" @onsubmit="Apply" @onsubmit:preventDefault>
     @* The form's default button: the first submit button, which implicit submission clicks. *@
     <button type="submit" class="mud-ex-grid-filter-default" hidden tabindex="-1" aria-hidden="true"></button>
     @if (_awaiting)
@@ -68,7 +68,7 @@
             <MudCheckBox T="bool" @bind-Value="_addToCurrent" Label="@Own(MudExGridWords.AddToFilter)"
                          Dense="true" Size="Size.Small" Class="mud-ex-grid-filter-add" />
         }
-        <div class="mud-ex-grid-filter-values ex-value-list" @onkeydown="OnValueListKeyAsync">
+        <div class="mud-ex-grid-filter-values ex-value-list" data-ex-claims="keydown" @onkeydown="OnValueListKeyAsync">
             @* "(Select All)" over the values shown, with Excel's mixed state (ADR-0009). *@
             <MudCheckBox T="bool?" TriState="true" Value="@SelectAllValue(shown, chosen)"
                          ValueChanged="@(_ => FilterPanelChoices.ToggleAll(shown, chosen))"
@@ -123,7 +123,7 @@
         <MudButton ButtonType="ButtonType.Submit" Disabled="@(!CanApply)" Color="Color.Primary" Size="Size.Small"
                    Class="mud-ex-grid-filter-apply ex-popover-closes">@Mud("MudDataGrid_Apply")</MudButton>
         <div style="display: contents" @ref="_cancelBox">
-            <MudButton @ref="_cancel" OnClick="Context.Close" Size="Size.Small" Class="mud-ex-grid-filter-cancel ex-popover-closes">@Mud("MudDataGrid_Cancel")</MudButton>
+            <MudButton @ref="_cancel" OnClick="Context.Close" data-ex-claims="click" Size="Size.Small" Class="mud-ex-grid-filter-cancel ex-popover-closes">@Mud("MudDataGrid_Cancel")</MudButton>
         </div>
     </div>
 </form>
@@ -458,10 +458,22 @@
             _chosen!.Remove(value);
     }
 
+    // The answer Apply refuses, the panel standing (FilterPanelChoices.CanApply, ticket 76).
+    private static readonly FilterSpec NothingToApply = new([new FilterClause(FilterOperator.In, Values: [])]);
+
+    // Every submission is handed to Apply, even one it will refuse: the form claims its submission
+    // (data-ex-claims), so the number the grid's script told it by is taken by Apply's handling in its
+    // place in the Input Order, and a key typed after an Enter that applied nothing does not wait on it
+    // (ADR-0240 section 4). An answer that cannot be applied — nothing ticked, a value not yet given,
+    // the values still on their way — goes as the one Apply refuses, never as a condition left
+    // incomplete, which would read as no filter at all.
     private void Apply()
     {
         if (!CanApply)
+        {
+            Context.Apply(NothingToApply);
             return;
+        }
         Context.Apply(_chosen is not null && _domain is { IsTooMany: false } domain
             ? ValueListAnswer(domain, _chosen)
             : FilterPanelChoices.FromConditions(

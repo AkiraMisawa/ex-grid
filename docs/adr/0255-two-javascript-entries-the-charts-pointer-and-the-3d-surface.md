@@ -1,7 +1,9 @@
 # Two entries join the JavaScript allowlist: the chart's pointer, and the 3D surface
 
 *Decided with the user, 2026-10-19. The user allowed both (U4 and U15, 2026-10-13; confirmed 2026-10-19). This
-rewrites ADR-0021's list from ten entries to twelve.*
+rewrites ADR-0021's list from ten entries to twelve.* *(2026-10-19: ADR-0240's two entries, decided on
+2026-10-18 in another branch, reached `main` after these, so the list holds fourteen and these two are its
+thirteenth and fourteenth. The headings below keep the numbers they were decided with.)*
 
 ## Eleventh: the chart reports the position under the pointer when it changes
 

@@ -369,33 +369,35 @@ public partial class ExGrid<TRow>
         });
         if (SummaryFiguresChanged.HasDelegate)
         {
-            builder.AddAttribute(2, "oncontextmenu", EventCallback.Factory.Create<MouseEventArgs>(this, OpenSummaryMenu));
-            builder.AddEventPreventDefaultAttribute(3, "oncontextmenu", true);
-            builder.AddEventStopPropagationAttribute(4, "oncontextmenu", true);
+            // Its context menu takes its place in the Input Order (ADR-0240 section 2).
+            builder.AddAttribute(2, "data-ex-claims", "contextmenu");
+            builder.AddAttribute(3, "oncontextmenu", EventCallback.Factory.Create<MouseEventArgs>(this, _openSummaryMenu ??= () => ClaimedAsync("contextmenu", OpenSummaryMenu)));
+            builder.AddEventPreventDefaultAttribute(4, "oncontextmenu", true);
+            builder.AddEventStopPropagationAttribute(5, "oncontextmenu", true);
         }
         if (Chrome?.SelectionSummary(context) is { } fragment)
         {
-            builder.AddContent(5, fragment);
+            builder.AddContent(6, fragment);
         }
         else
         {
             switch (context.Status)
             {
                 case SelectionSummaryStatus.Pending:
-                    builder.AddContent(6, Label(SummaryLabelIds.Pending));
+                    builder.AddContent(7, Label(SummaryLabelIds.Pending));
                     break;
                 case SelectionSummaryStatus.Declined:
-                    builder.AddContent(7, context.DeclineReason);
+                    builder.AddContent(8, context.DeclineReason);
                     break;
                 default:
                     foreach (var figure in context.Figures)
                     {
-                        builder.OpenElement(8, "span");
+                        builder.OpenElement(9, "span");
                         builder.SetKey(figure.Figure);
-                        builder.AddAttribute(9, "class", "ex-summary-figure");
-                        builder.AddContent(10, Label(figure.LabelId));
-                        builder.AddContent(11, ": ");
-                        builder.AddContent(12, figure.Text);
+                        builder.AddAttribute(10, "class", "ex-summary-figure");
+                        builder.AddContent(11, Label(figure.LabelId));
+                        builder.AddContent(12, ": ");
+                        builder.AddContent(13, figure.Text);
                         builder.CloseElement();
                     }
                     break;
@@ -413,7 +415,7 @@ public partial class ExGrid<TRow>
             builder.OpenComponent<SummaryFiguresMenu>(0);
             builder.AddComponentParameter(1, nameof(SummaryFiguresMenu.Shown), SummaryFigures);
             builder.AddComponentParameter(2, nameof(SummaryFiguresMenu.Label), _summaryLabel ??= Label);
-            builder.AddComponentParameter(3, nameof(SummaryFiguresMenu.Toggle), _toggleSummaryFigure ??= ToggleSummaryFigureAsync);
+            builder.AddComponentParameter(3, nameof(SummaryFiguresMenu.Toggle), ToggleSummaryFigureHandler);
             builder.AddComponentParameter(4, nameof(SummaryFiguresMenu.Popover), context);
             builder.AddComponentParameter(5, nameof(SummaryFiguresMenu.TakeFocus), TakePopoverFocus);
             builder.CloseComponent();
@@ -421,7 +423,9 @@ public partial class ExGrid<TRow>
 
     // Cached, so the menu's parameters are the same delegates on every render (RR-9).
     private Func<string, string>? _summaryLabel;
-    private Func<SummaryFigures, Task>? _toggleSummaryFigure;
+
+    // The status line's context menu, claimed in its place in the Input Order (ADR-0240 section 2).
+    private Func<Task>? _openSummaryMenu;
 
     private Task ToggleSummaryFigureAsync(SummaryFigures figure)
         => SummaryFiguresChanged.InvokeAsync(SummaryFigures ^ figure);

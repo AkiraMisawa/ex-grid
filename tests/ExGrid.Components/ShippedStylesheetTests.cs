@@ -113,7 +113,13 @@ public class ShippedStylesheetTests
         // clipboard changed by a write other than its own copy, so the Copied Range can go.
         // ADR-0210: a temporary blur, change and keydown listener only on a field changed by held
         // typing (keydown since 2026-10-17, for an Enter typed there once the hold is over).
-        string[] allowed = ["blur", "change", "change", "clipboardchange", "compositionend", "compositionend", "compositionstart", "copy", "copy", "cut", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
+        // ADR-0240 section 2: the capture-phase click, dblclick and contextmenu on the root, which number a
+        // click on a control of the grid's own that claims it, and hold it in its place while the gate
+        // holds input (the entry ADR-0021 gains with ticket 02 of the Input Order), and the capture-phase
+        // submit and focus on the window, filtered to this root, which number a form of the grid's own
+        // submitted and a popover's sentinel focused (ADR-0240 section 4): Blazor hears both on the
+        // document in the capture phase, ahead of any listener on the root.
+        string[] allowed = ["blur", "change", "change", "click", "clipboardchange", "compositionend", "compositionend", "compositionstart", "contextmenu", "copy", "copy", "cut", "dblclick", "ex-press-handed-on", "focus", "focus", "focusout", "input", "keydown", "keydown", "keyup", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange", "submit"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
@@ -442,8 +448,8 @@ public class ShippedStylesheetTests
         Assert.True(handOn.Success, "handKeyboardTo(element, inTurn) is not in the module");
         var body = handOn.Value;
 
-        // The hand-back's condition: this root's own focus, or none (ADR-0018)...
-        Assert.Contains("root.contains(active)", body, StringComparison.Ordinal);
+        // The hand-back's condition: this root's own focus, not a nested grid's, or none (ADR-0018)...
+        Assert.Contains("ownsFocus(active)", body, StringComparison.Ordinal);
         Assert.Contains("active === document.body", body, StringComparison.Ordinal);
         Assert.Contains("active === document.documentElement", body, StringComparison.Ordinal);
         // ...and not a field beside the rows with focus of its own, unless a press on the rows left
@@ -538,8 +544,9 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"if \(held\.length === 0 && \(!answering \|\| \(pressAnswer !== null && pressAnswer !== handedOnAnswer\)\)\) \{\s*handOn\(event\);.*?if \(editing !== 'none'\) \{\s*holdBehindPress\(field !== null \? markStale\(field\) : null\);",
             RegexOptions.Singleline), body);
         // Only a press on this grid's own rows, not on a grid nested in one of its cells, is held
-        // or holds the keys after it: this core never hears the nested one's press.
-        Assert.Contains("if (!core || replaying || event.button !== 0 || !isOwnRows(event.target)) {", body, StringComparison.Ordinal);
+        // or holds the keys after it: this core never hears the nested one's press. A secondary press
+        // is held as a primary one is, so the context menu behind it keeps its place (ADR-0240).
+        Assert.Contains("if (!core || replaying || (event.button !== 0 && event.button !== 2) || !isOwnRows(event.target)) {", body, StringComparison.Ordinal);
         Assert.DoesNotMatch(new Regex(@"event\.target\.classList\.contains\('ex-viewport'\)"), body);
         Assert.Matches(new Regex(@"const isOwnRows = \(target\) => inOwnScroller\(target\) && target\.classList\.contains\('ex-viewport'\);"), script.Text);
         // The hold: the keys after it are held from now, as behind a key, and the drain waits for
@@ -549,7 +556,9 @@ public class ShippedStylesheetTests
         // One way a hold begins, whoever begins it: a key, a move in a popover, a press into the
         // bar, a press on the rows.
         Assert.Single(Regex.Matches(script.Text, @"answering = true;"));
-        Assert.Matches(new Regex(@"const startHold = \(answer\) => \{\s*answering = true;\s*holdStartedAt = performance\.now\(\);"), script.Text);
+        // Nothing in it counts time: a hold ends on what it waits for (ADR-0240 section 4).
+        Assert.Matches(new Regex(@"const startHold = \(answer\) => \{\s*answering = true;\s*if \(answer\)"), script.Text);
+        Assert.DoesNotContain("holdStartedAt", script.Text, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"const drain = async \(\) => \{.*?while \(pressAnswer !== null\) \{\s*const answer = pressAnswer;\s*await answer;.*?await editorSettled\(\);",
             RegexOptions.Singleline), script.Text);
         // The core answers for the press or the release it heard last, so the question goes after
@@ -592,7 +601,7 @@ public class ShippedStylesheetTests
         // Told as the press goes on to Blazor, and only then: where it passes on untouched, and where
         // it leaves the listener — a heading's, or one replayed after it was held here.
         Assert.Equal(2, Regex.Matches(press.Value, @"handOn\(event\);").Count);
-        Assert.Matches(new Regex(@"if \(!core \|\| replaying \|\| event\.button !== 0 \|\| !isOwnRows\(event\.target\)\) \{\s*handOn\(event\);\s*tellTaken\('mousedown', taken\);\s*return;"), press.Value);
+        Assert.Matches(new Regex(@"if \(!core \|\| replaying \|\| \(event\.button !== 0 && event\.button !== 2\) \|\| !isOwnRows\(event\.target\)\) \{\s*handOn\(event\);\s*tellTaken\('mousedown', taken\);"), press.Value);
         // This grid's core is told of it, and of its turn when it comes, from one place each.
         Assert.Single(Regex.Matches(script.Text, @"'PressHandedOnAsync'"));
         Assert.Single(Regex.Matches(script.Text, @"'PressInTurn'"));
@@ -609,7 +618,10 @@ public class ShippedStylesheetTests
 
         // Nothing measured, nothing on the document or the window.
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects"), handOn.Value + heard.Value);
-        Assert.DoesNotMatch(new Regex(@"window\.addEventListener|window\.dispatchEvent|document\.dispatchEvent|document\.addEventListener\('ex-"), script.Text);
+        // The window hears only a form's submission and a sentinel's focus, ahead of Blazor's document
+        // listener for both (ADR-0240 section 4), and only those whose target is the instance's own.
+        Assert.DoesNotMatch(new Regex(@"window\.addEventListener\('(?!(submit|focus)', onClaimedAhead, true\))|window\.dispatchEvent|document\.dispatchEvent|document\.addEventListener\('ex-"), script.Text);
+        Assert.Matches(new Regex(@"const onClaimedAhead = \(event\) => \{\s*if \(!root \|\| !\(event\.target instanceof Node\) \|\| !root\.contains\(event\.target\)\) \{\s*return;"), script.Text);
         // And no state outside an instance: the module's top-level statements are attach, and the
         // stamp the grid reads before it (ADR-0123), which holds nothing; so everything above lives
         // in one instance's closure and no instance keeps another's.
@@ -727,8 +739,10 @@ public class ShippedStylesheetTests
         // core holds no reference to a control it did not render (ADR-0010).
         Assert.Contains("ownSurface(b) === b", body, StringComparison.Ordinal);
         Assert.Contains("surfaceField(box)", body, StringComparison.Ordinal);
-        // Granted only while DOM focus is inside this root or on nothing: reclaimFocus's condition.
-        Assert.Contains("!active || active === document.body || active === document.documentElement || root.contains(active)", body, StringComparison.Ordinal);
+        // Granted only while DOM focus is inside this root, not in a grid nested in it, or on nothing:
+        // reclaimFocus's condition (ED-22 under the hunt, 2026-10-19).
+        Assert.Contains("!active || active === document.body || active === document.documentElement || ownsFocus(active)", body, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"const ownsFocus = \(active\) => !!root && active instanceof Element && root\.contains\(active\)\s*&& active\.closest\('\.ex-grid'\) === root;"), script.Text);
         // Where DOM focus is, or, granted as the keyboard leaves the Keyboard Field, where it is going:
         // the browser has it on nothing while it tells the departure (ADR-0080, 2026-10-12).
         Assert.Contains("const active = toward instanceof Element ? toward : document.activeElement;", body, StringComparison.Ordinal);
@@ -787,7 +801,7 @@ public class ShippedStylesheetTests
         Assert.Contains("!keyboardStillHere() || root.getAttribute('data-ex-follow-focus') !== request.focus", awaited.Value, StringComparison.Ordinal);
         Assert.DoesNotContain("aria-activedescendant", awaited.Value, StringComparison.Ordinal);
         Assert.Contains("root.querySelector(`#${CSS.escape(request.target)}`)", awaited.Value, StringComparison.Ordinal);
-        Assert.Matches(new Regex(@"const keyboardStillHere = \(\) => \{\s*const active = document\.activeElement;\s*return !!root && \(!active \|\| active === document\.body \|\| active === document\.documentElement \|\| root\.contains\(active\)\);"), script);
+        Assert.Matches(new Regex(@"const keyboardStillHere = \(\) => \{\s*const active = document\.activeElement;\s*return !!root && \(!active \|\| active === document\.body \|\| active === document\.documentElement \|\| ownsFocus\(active\)\);"), script);
 
         // No layout is read anywhere in it.
         foreach (var part in new[] { bring.Value, after.Value, awaited.Value })
@@ -803,7 +817,7 @@ public class ShippedStylesheetTests
         var body = method.Value;
 
         Assert.Contains("!active || active === document.body || active === document.documentElement", body, StringComparison.Ordinal);
-        Assert.Contains("(root.contains(active) && !own)", body, StringComparison.Ordinal);
+        Assert.Contains("(ownsFocus(active) && !own)", body, StringComparison.Ordinal);
         Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
         Assert.Contains("element.isConnected", body, StringComparison.Ordinal);
         Assert.Contains("target.focus({ preventScroll: preventScroll === true });", body, StringComparison.Ordinal);
@@ -1142,6 +1156,27 @@ public class ShippedStylesheetTests
         Assert.Contains("resolve();", look, StringComparison.Ordinal);
     }
 
+    [Fact] // ADR-0240 §4: no wait ends on a clock — the reveal, the close hold, the mark's wait, and the editor's, popover's and moves' waits end on what they wait for
+    public void ADR0240_no_wait_ends_on_a_clock()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+
+        Assert.DoesNotContain("revealTimer", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("fallback: setTimeout", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("holdStartedAt", script, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"performance\.now\(\) - "), script);
+        Assert.DoesNotMatch(new Regex(@"\b2000\b"), script);
+        // Judged instead once the core has answered every input the wait is behind and owes no focus.
+        Assert.Contains("!stamp.hasAttribute('data-ex-focus-owed')", script, StringComparison.Ordinal);
+        Assert.Contains("core.invokeMethodAsync('OnHeldInputsRefusedAsync', nextInput(true))", script, StringComparison.Ordinal);
+        // The keys, submissions and sentinel focus a popover answers itself are told, so moves wait on numbers.
+        Assert.Contains("claimOf(event.target, 'keydown') !== null ? tellClaim('keydown')", script, StringComparison.Ordinal);
+        // Heard on the window in the capture phase, ahead of Blazor's document listener for both.
+        Assert.Contains("window.addEventListener('submit', onClaimedAhead, true);", script, StringComparison.Ordinal);
+        Assert.Contains("window.addEventListener('focus', onClaimedAhead, true);", script, StringComparison.Ordinal);
+        Assert.Contains("tellClaim('focus');", script, StringComparison.Ordinal);
+    }
+
     [Fact] // ADR-0039 (note of 2026-10-01) / ADR-0010 / ADR-0080: a composition finished in the Keyboard Field while a popover or a Consumer's frame takes the keyboard is handed to it as a held character is — typed into its text field, dropped with every key behind it on any other control — and the core is asked to open an edit only when neither has the keyboard
     public void ADR0039_a_compositions_text_held_while_a_popover_opens_is_the_popovers()
     {
@@ -1162,8 +1197,8 @@ public class ShippedStylesheetTests
             // A cancelled composition typed nothing: nothing to hand on, and nothing dropped.
             + @"if \(k\.text\.length === 0\) \{\s*continue;\s*\}\s*"
             // Text no keydown carries is a key script cannot reproduce on a control that is not a
-            // text field: dropped, with every key held behind it (ADR-0010).
-            + @"if \(!isTextField\(holder\)\) \{\s*dropHeld\(\);\s*break;\s*\}\s*"
+            // text field: dropped, with every key held behind it, and refused aloud (ADR-0010, ADR-0240 section 4).
+            + @"if \(!isTextField\(holder\)\) \{\s*refuseHeld\(true\);\s*break;\s*\}\s*"
             // In a text field it is typed at the caret, as a held character is.
             + @"typeInto\(holder, k\);\s*continue;\s*\}\s*"
             // Only with the keyboard still the grid's is the core asked to open an edit holding it.
@@ -1345,7 +1380,7 @@ public class ShippedStylesheetTests
         // the placement came: that caret stands, and is reported again as the user's.
         // The same call places the selection F4's rewrite answered (ADR-0051, 2026-09-29). It is
         // brought into view first (ticket 75; A_caret_placed_by_the_core_is_brought_into_view).
-        Assert.Matches(new Regex(@"setCaret: \(text, caret, end\) => \{\s*const input = editorInput\(\);\s*(?://[^\n]*\n\s*)*const moved = input \? movedByUser\(input\) : false;\s*if \(input && input\.value === text\) \{\s*if \(moved\) \{\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*(?://[^\n]*\n\s*)*showCaret\(input, end\);\s*input\.setSelectionRange\(caret, end\);\s*reportedText = text;\s*reportedCaret = caret;",
+        Assert.Matches(new Regex(@"setCaret: \(text, caret, end\) => \{\s*const input = editorInput\(\);\s*(?://[^\n]*\n\s*)*const moved = input \? movedByUser\(input\) : false;\s*if \(input && input\.value === text\) \{\s*if \(moved\) \{\s*(?://[^\n]*\n\s*)*showCaret\(input, input\.selectionDirection === 'backward' \? input\.selectionStart : input\.selectionEnd\);\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*(?://[^\n]*\n\s*)*showCaret\(input, end\);\s*input\.setSelectionRange\(caret, end\);\s*reportedText = text;\s*reportedCaret = caret;",
             RegexOptions.Singleline), script.Text);
         // The user's move: a press in an editor surface's text, or a caret key left to it or
         // answered by the listener on an Apple platform (ticket 32) — only while the field still
@@ -1382,7 +1417,10 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"if \(!k\.shiftKey\) \{\s*input\.setSelectionRange\(to, to\);\s*\} else if \(to < anchor\) \{\s*input\.setSelectionRange\(to, anchor, 'backward'\);\s*\} else \{\s*input\.setSelectionRange\(anchor, to, 'forward'\);\s*\}\s*showCaret\(input, to\);\s*return true;"), script);
         Assert.Matches(new Regex(@"showCaret\(input, input\.selectionEnd\);\s*(?://[^\n]*\n\s*)*input\.dispatchEvent\(new Event\('input', \{ bubbles: true \}\)\);\s*return true;\s*\};"), script);
         Assert.Equal(4, Regex.Matches(script, @"showCaret\(input, (end|edge|to|input\.selectionEnd)\);").Count);
-        Assert.Equal(4, Regex.Matches(script, @"showCaret\(").Count);
+        // The user's own move in the text the placement came for is shown as the placement would have
+        // shown it: an End typed before it, with the caret at the end already, moved no view (ticket 32).
+        Assert.Matches(new Regex(@"if \(moved\) \{\s*(?://[^\n]*\n\s*)*showCaret\(input, input\.selectionDirection === 'backward' \? input\.selectionStart : input\.selectionEnd\);"), script);
+        Assert.Equal(5, Regex.Matches(script, @"showCaret\(").Count);
         Assert.Equal(2, Regex.Matches(script, @"input\.scrollLeft = ").Count);
         // The coloured layer follows the offset through the field's own scroll event, as it does
         // when the user types (DC-48).
@@ -1625,7 +1663,7 @@ public class ShippedStylesheetTests
         // named sets. The script spells only the sets of what it answers itself, as KB-2 names them:
         // Home and End on an Apple platform and PageUp and PageDown in an editor field (ADR-0010's note
         // of 2026-09-30, ticket 32), the modifiers' own keydowns, which name no key, a text field's
-        // input types, which are not keys, and the keys a held key is handed on as (ADR-0010's notes on
+        // input types, which are not keys (those that hold a form's implicit submission back too, ADR-0240), and the keys a held key is handed on as (ADR-0010's notes on
         // the hold): what a text field, a tab and a caret do with them.
         var spelled = Regex.Matches(script, @"new Set\(\[\s*'[^']*'[^\]]*\]\)").Select(match => match.Value).ToList();
         Assert.Equal(
@@ -1633,6 +1671,7 @@ public class ShippedStylesheetTests
                 "new Set(['Home', 'End', 'Shift+Home', 'Shift+End'])",
                 "new Set(['PageUp', 'PageDown'])",
                 "new Set(['Shift', 'Control', 'Alt', 'Meta'])",
+                "new Set(['text', 'search', 'url', 'tel', 'email', 'password', 'date', 'month', 'week', 'time', 'datetime-local', 'number'])",
                 "new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number'])",
                 "new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'])",
                 "new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'])",

@@ -224,12 +224,13 @@ test('ADR-0018/ADR-0021/ED-26: with a 150 ms round trip, the key straight after 
 // root, scroller and rows inside the Sheet's root, taking the keyboard as a grid does and noting
 // the keys it hears — so the Sheet's listener sees the press and the keys as it would a real one's.
 // On the Server host at 150 ms, a hold of the Sheet's would still stand as the key is typed.
-test('ADR-0010/ADR-0018/ED-22: a press on the rows of a grid nested in the Sheet starts no hold of the Sheet\'s', async ({ page }) => {
-    await openSheet(page);
-    const grid = sheet(page);
-    await pressCell(grid, 'C4');
-    await page.keyboard.type('=');
-    await expect(editor(grid)).toHaveValue('=');
+/**
+ * Adds a stand-in for a grid nested in the Sheet: its own root, scroller and rows inside the Sheet's
+ * root, taking the keyboard as a grid does and noting the keys it hears. A key the Sheet's listener
+ * held and handed on later arrives dispatched from script, untrusted: only the browser's own keydown
+ * counts as heard, and one handed on is noted as such.
+ */
+async function addNestedGrid(grid) {
     await grid.evaluate((root) => {
         const nested = document.createElement('div');
         nested.className = 'ex-grid';
@@ -239,15 +240,27 @@ test('ADR-0010/ADR-0018/ED-22: a press on the rows of a grid nested in the Sheet
         nested.innerHTML = '<div class="ex-scroller" style="height: 60px"><div class="ex-spacer" style="height: 60px">'
             + '<div class="ex-viewport" style="top: 0; height: 60px"></div></div></div>';
         nested.dataset.heard = '';
-        // A key the Sheet's listener held and handed on later arrives dispatched from script,
-        // untrusted: only the browser's own keydown counts as heard.
         nested.addEventListener('keydown', (event) => {
             nested.dataset.heard += event.isTrusted ? event.key : `(handed on: ${event.key})`;
         });
         root.append(nested);
     });
-    const nested = page.locator('#edit-stands-nested');
+    const nested = grid.page().locator('#edit-stands-nested');
     await expect(nested.locator('.ex-viewport')).toBeVisible();
+    return nested;
+}
+
+test('ADR-0010/ADR-0018/ED-22: a press on the rows of a grid nested in the Sheet starts no hold of the Sheet\'s', async ({ page }) => {
+    await openSheet(page);
+    const grid = sheet(page);
+    await pressCell(grid, 'C4');
+    await page.keyboard.type('=');
+    await expect(editor(grid)).toHaveValue('=');
+    // What the press is taken against: the `=` answered. A key typed behind an unanswered `=` waits
+    // for it whatever it is aimed at, and is handed on where the keyboard then is (ADR-0240); the
+    // next test is that case. This one is the press's own: it starts no hold.
+    await settled(grid);
+    const nested = await addNestedGrid(grid);
     // A hold of the Sheet's would last until the Sheet's core had answered: on a circuit a round
     // trip, wide enough to type into.
     await setRoundTrip(150);
@@ -258,6 +271,29 @@ test('ADR-0010/ADR-0018/ED-22: a press on the rows of a grid nested in the Sheet
 
     await expect(nested).toBeFocused();
     await expect(nested).toHaveAttribute('data-heard', 'x');
+    await expect(editor(grid)).toHaveValue('=');
+    await nested.evaluate((element) => element.remove());
+});
+
+// The same press made before the `=` that opened the edit has been answered. The edit's request for
+// the keyboard lands a round trip after the `=`, after the press: it is not granted, for the keyboard
+// is the nested grid's now (ADR-0018), and the `x` held behind the `=` is handed on there, not into the
+// Sheet's edit (ED-22 under the hunt, 2026-10-19: the edit took the keyboard back from the nested grid).
+test('ADR-0010/ADR-0018/ED-22: a press on a nested grid made before the edit\'s answer keeps the keyboard, and the key typed after it reaches that grid', async ({ page }) => {
+    await openSheet(page);
+    const grid = sheet(page);
+    await pressCell(grid, 'C4');
+    const nested = await addNestedGrid(grid);
+    await setRoundTrip(150);
+
+    // No wait between the three.
+    await page.keyboard.type('=');
+    await nested.locator('.ex-viewport').click();
+    await page.keyboard.type('x');
+
+    await settled(grid);
+    await expect(nested).toBeFocused();
+    await expect(nested).toHaveAttribute('data-heard', /^(x|\(handed on: x\))$/);
     await expect(editor(grid)).toHaveValue('=');
     await nested.evaluate((element) => element.remove());
 });

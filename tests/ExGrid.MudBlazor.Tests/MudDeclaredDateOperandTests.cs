@@ -103,7 +103,7 @@ public class MudDeclaredDateOperandTests : MudTestContext
 
         Assert.Contains($"“{typed}” {said}", cut.Find(".mud-ex-grid-filter-operand").TextContent);
         Assert.True(cut.Find(".mud-ex-grid-filter-apply").HasAttribute("disabled"));
-        Assert.Empty(_applied);
+        Assert.All(_applied, answer => Assert.False(FilterPanelChoices.CanApply(answer))); // ADR-0240 §4: only the answer Apply refuses
     }
 
     [Fact] // ADR-0023: the Chrome's own word for the refusal stands in for the core's English

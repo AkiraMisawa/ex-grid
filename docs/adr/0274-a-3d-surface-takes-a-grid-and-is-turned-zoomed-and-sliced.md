@@ -1,6 +1,7 @@
 # A 3D surface takes a grid of values, and is turned, zoomed and sliced
 
-*Decided with the user, 2026-10-19 (M2 grilling Q5 and Q6). The 3D entry is ADR-0255's twelfth.*
+*Decided with the user, 2026-10-19 (M2 grilling Q5 and Q6). The 3D entry is ADR-0255's twelfth.* *(The fourteenth of ADR-0021's list since
+ADR-0240's two joined it, 2026-10-19.)*
 
 ## The data is a grid
 

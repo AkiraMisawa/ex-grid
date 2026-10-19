@@ -26,7 +26,7 @@
             <div class="@(selected ? "mud-list-item mud-ex-completion-item mud-selected-item mud-primary-text" : "mud-list-item mud-ex-completion-item")"
                  id="@(Context.OptionIdPrefix + index.ToString(System.Globalization.CultureInfo.InvariantCulture))" role="option"
                  aria-selected="@(selected ? "true" : "false")"
-                 @onmousedown="() => Context.Accept(index)">
+                 data-ex-claims="mousedown" @onmousedown="() => Context.Accept(index)">
                 <span class="mud-typography mud-typography-body2">@Context.Candidates[index].Label</span>
             </div>
         }

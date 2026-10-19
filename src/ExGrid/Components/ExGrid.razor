@@ -130,7 +130,7 @@
                them; each is display: contents, so the band lays out, paints and stacks exactly as
                one element of cells and rectangles did (ADR-0032), and only the tree says rows. *@
             var tiered = _headerLayout.TierCount > 0;
-            <div class="ex-header" role="@(tiered ? "rowgroup" : "row")" aria-rowindex="@(tiered ? null : CellIds.HeaderRowIndex(0))" style="@HeaderBandStyle()" @attributes="_headerDragHandler" @onclick="OnHeaderClickAsync" @onmousedown="HeaderPressHandler" @onmousedown:preventDefault="PointedAtNow">
+            <div class="ex-header" role="@(tiered ? "rowgroup" : "row")" aria-rowindex="@(tiered ? null : CellIds.HeaderRowIndex(0))" style="@HeaderBandStyle()" data-ex-claims="mousedown click" @attributes="_headerDragHandler" @onclick="HeaderClickHandler" @onmousedown="HeaderPressHandler" @onmousedown:preventDefault="PointedAtNow">
                 @if (MarksColumns && MarksPinnedColumns)
                 {
                     @* The Heading Mark over the Pinned Columns' headers (ADR-0008, 2026-10-13): their
@@ -247,8 +247,8 @@
             <div class="ex-viewport" style="@ViewportStyle()" data-ex-first-row="@(_visible?.Start)"
                  data-ex-sequence="@_sequenceVersion" data-ex-layout="@_paintLayoutId" data-ex-paint="@NotePaint()"
                  role="presentation" @attributes="_dragHandler" @onmousedown="RowsPressHandler" @onmousedown:preventDefault="RowsPressKeepsFocus" @onmouseup="OnMouseUp"
-                 @ondblclick="OnViewportDoubleClickAsync"
-                 @oncontextmenu="OnContextMenuAsync" @oncontextmenu:preventDefault="true">
+                 @ondblclick="OnViewportDoubleClickAsync" data-ex-claims="contextmenu"
+                 @oncontextmenu="RowsContextMenuHandler" @oncontextmenu:preventDefault="true">
                 @* The Keyboard Field (ADR-0080). While the grid has an editable column, the keyboard
                    with no edit open is held here instead of on the root itself, so that an IME has a
                    text field to start in: on the root, Chrome and Edge give it no input context, and
@@ -741,7 +741,7 @@
                    ask the filter for its first or last control. Blazor's own focus events, and
                    no key the filter's controls would have to give up; the keys typed while
                    either hand-off is under way are held by the key listener (ADR-0010). *@
-                <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToCommandsAsync"></span>
+                <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ReturnToCommandsHandler"></span>
                 <div class="ex-popover-filter">
                     @if (Chrome?.FilterPanel(panelContext) is { } panelFragment)
                     {
@@ -764,7 +764,7 @@
                            Cancel. OK shows it is unavailable while nothing is ticked among the
                            values the list shows; Enter is not gated on it, and what it submits is
                            refused on the same rule (ticket 76). *@
-                        <form class="ex-popover-form" @onsubmit="() => ApplyPanelAsync(panelColumn)" @onsubmit:preventDefault>
+                        <form class="ex-popover-form" data-ex-claims="submit" @onsubmit="() => ClaimedAsync(ClaimSubmit, () => ApplyPanelAsync(panelColumn))" @onsubmit:preventDefault>
                             @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
                             {
                                 var shown = domain.Values.Where(v => FilterPanelChoices.Matches(_panelSearch, PanelText(v, panelColumn))).ToArray();
@@ -778,7 +778,7 @@
                                         Add current selection to filter
                                     </label>
                                 }
-                                <div class="ex-popover-list ex-value-list" @onkeydown="OnBuiltInValueListKeyAsync">
+                                <div class="ex-popover-list ex-value-list" data-ex-claims="keydown" @onkeydown="BuiltInValueListKeyHandler">
                                     @* "(Select All)" over the values shown, with Excel's mixed state: a
                                        checkbox role on a button, because a native checkbox's mixed
                                        state is a property only script can set (ADR-0021). *@
@@ -837,13 +837,13 @@
                             @* Each closes the popover: marked so, the keys typed while it goes wait for the
                                keyboard to land (ex-popover-closes; ADR-0010, ADR-0044's note of 2026-10-12). *@
                             <div class="ex-popover-actions">
-                                <button type="button" class="ex-popover-closes" @onclick="() => ApplyPanelAsync(panelColumn)" disabled="@(!PanelCanApply(panelColumn))">OK</button>
-                                <button type="button" class="ex-popover-closes" @ref="_panelLast" @onclick="CancelPanel">Cancel</button>
+                                <button type="button" class="ex-popover-closes" data-ex-claims="click" @onclick="() => ClaimedClickAsync(() => ApplyPanelAsync(panelColumn))" disabled="@(!PanelCanApply(panelColumn))">OK</button>
+                                <button type="button" class="ex-popover-closes" data-ex-claims="click" @ref="_panelLast" @onclick="CancelPanelHandler">Cancel</button>
                             </div>
                         </form>
                     }
                 </div>
-                <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToCommandsAsync"></span>
+                <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ReturnToCommandsHandler"></span>
             }
         </div>
     }
@@ -873,7 +873,7 @@
         var findContext = BuildFindContext();
         <div class="ex-popover ex-popover-find" style="@FindPopoverStyle()" role="dialog"
              aria-label="@Label(FindPanelLabelIds.Title)" @key="_popoverFocusRequest">
-            <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToFindAsync"></span>
+            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ReturnToFindHandler"></span>
             <div class="ex-popover-find-body ex-popover-body">
                 @if (Chrome?.FindPanel(findContext) is { } findFragment)
                 {
@@ -881,23 +881,21 @@
                 }
                 else
                 {
-                    <form class="ex-popover-form" @onsubmit="SubmitFindAsync" @onsubmit:preventDefault>
-                        <input type="search" class="ex-find-field" aria-label="@Label(FindPanelLabelIds.Field)"
-                               @bind="_findText" @bind:event="oninput" @ref="_findField"
-                               @onkeydown="OnFindFieldKeyDown" />
+                    <form class="ex-popover-form" data-ex-claims="submit" @onsubmit="SubmitFindHandler" @onsubmit:preventDefault>
+                        @FindField
                         <label>
                             <input type="checkbox" class="ex-find-match-case" checked="@_findMatchCase"
-                                   @onchange="e => _findMatchCase = e.Value is true" />
+                                   @onchange="FindMatchCaseChanged" />
                             @Label(FindPanelLabelIds.MatchCase)
                         </label>
                         <label>
                             <input type="checkbox" class="ex-find-whole-cell" checked="@_findWholeCell"
-                                   @onchange="e => _findWholeCell = e.Value is true" />
+                                   @onchange="FindWholeCellChanged" />
                             @Label(FindPanelLabelIds.WholeCell)
                         </label>
                         <div class="ex-popover-actions">
-                            <button type="button" class="ex-find-previous" @onclick="() => FindStepAsync(backward: true)">@Label(FindPanelLabelIds.Previous)</button>
-                            <button type="button" class="ex-find-next" @onclick="() => FindStepAsync(backward: false)">@Label(FindPanelLabelIds.Next)</button>
+                            <button type="button" class="ex-find-previous" data-ex-claims="click" @onclick="FindPreviousHandler">@Label(FindPanelLabelIds.Previous)</button>
+                            <button type="button" class="ex-find-next" data-ex-claims="click" @onclick="FindNextHandler">@Label(FindPanelLabelIds.Next)</button>
                         </div>
                         @* What the last step came to, announced: a step that moves nothing is
                            otherwise a key that did nothing and said nothing (ADR-0033). *@
@@ -905,7 +903,7 @@
                     </form>
                 }
             </div>
-            <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToFindAsync"></span>
+            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ReturnToFindHandler"></span>
         </div>
     }
     @if (_consumerPopover is { } consumerPopover)
@@ -917,9 +915,9 @@
            the keyboard; before, a sentinel was entered from outside, and asks for the near end. *@
         <div class="ex-popover ex-popover-consumer" style="@ConsumerPopoverStyle()" role="dialog"
              aria-label="@consumerPopover.Label" @key="_popoverFocusRequest">
-            <span class="ex-focus-wrap" tabindex="0" @onfocus="OnConsumerLeadingSentinel"></span>
+            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ConsumerLeadingSentinelHandler"></span>
             <div class="ex-popover-body" @onfocusin="ConsumerContentsHeld">@consumerPopover.Content(BuildConsumerPopoverContext())</div>
-            <span class="ex-focus-wrap" tabindex="0" @onfocus="OnConsumerTrailingSentinel"></span>
+            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ConsumerTrailingSentinelHandler"></span>
         </div>
     }
     @if (MessageOnShow() is var (messageCell, messageText, isEditorError) && messageText is not null)
@@ -972,7 +970,7 @@
                             <div class="@(index == _completionSelected ? "ex-completion-item ex-completion-selected" : "ex-completion-item")"
                                  id="@(CompletionOptionPrefix + index.ToString(CultureInfo.InvariantCulture))" role="option"
                                  aria-selected="@(index == _completionSelected ? "true" : "false")"
-                                 @onmousedown="() => AcceptCandidate(index)">@completion.Candidates[index].Label</div>
+                                 data-ex-claims="mousedown" @onmousedown="() => ClaimedPressAsync(() => AcceptCandidate(index))">@completion.Candidates[index].Label</div>
                         }
                     </div>
                 }
@@ -994,9 +992,9 @@
         @* The pager (ADR-0015): a page click raises the same notification shape as a
            scroll. TotalCount feeds the display. *@
         <div class="ex-pager" role="presentation">
-            <button type="button" @onclick="() => TurnPageAsync(-1)" disabled="@(_pageIndex == 0)">‹</button>
+            <button type="button" data-ex-claims="click" @onclick="TurnBackHandler" disabled="@(_pageIndex == 0)">‹</button>
             <span>@(_pageIndex + 1) / @PageCount</span>
-            <button type="button" @onclick="() => TurnPageAsync(1)" disabled="@(_pageIndex >= PageCount - 1)">›</button>
+            <button type="button" data-ex-claims="click" @onclick="TurnOnHandler" disabled="@(_pageIndex >= PageCount - 1)">›</button>
         </div>
     }
     @{ ReviewSummary(); }
@@ -1012,11 +1010,11 @@
                 <span>@_selection.Selection.CellCount cells selected@(SelectionIntersectsView() ? "" : " (outside the visible range)")</span>
                 @if (!SelectionIntersectsView())
                 {
-                    <button type="button" @onclick="GoToSelectionAsync">Go to selection</button>
+                    <button type="button" data-ex-claims="click" @onclick="GoToSelectionHandler">Go to selection</button>
                 }
                 @if (PageSize is not null)
                 {
-                    <button type="button" @onclick="SelectWholeResultAsync">Select all @TotalRows rows</button>
+                    <button type="button" data-ex-claims="click" @onclick="SelectWholeResultHandler">Select all @TotalRows rows</button>
                 }
             }
             @if (MarkCountText() is { } markCount)
@@ -1025,7 +1023,7 @@
             }
             @if (PageSize is not null && _markColumn >= 0)
             {
-                <button type="button" class="ex-mark-result" @onclick="_onMarkWholeResult">Mark all @MarkableRows rows</button>
+                <button type="button" class="ex-mark-result" data-ex-claims="click" @onclick="_onMarkWholeResult">Mark all @MarkableRows rows</button>
             }
             @* Excel's status-bar figures over the selection (ADR-0130). *@
             @if (ShowsSummaryStrip)
@@ -5471,11 +5469,13 @@
             var command = commands[i];
             commands[i] = command with
             {
-                Invoke = () => InvokeAsync(async () =>
+                // A menu item's click, under any Chrome, takes the number the script told it by
+                // (ADR-0240 section 2); a key that runs the command finds none told, and runs as it is.
+                Invoke = () => InvokeAsync(() => ClaimedByKeyOrAsync(ClaimClick, async () =>
                 {
                     await RunCommandAsync(command);
                     StateHasChanged();
-                }),
+                })),
             };
         }
         return commands;
@@ -5483,14 +5483,16 @@
 
     /// <summary>A copy invoked from a menu takes the asynchronous route whatever the
     /// selection's size, because a menu item's click fires no <c>copy</c> event
-    /// (ADR-0005/0036). Still the allowlisted clipboard use, not a new one.</summary>
+    /// (ADR-0005/0036). Still the allowlisted clipboard use, not a new one. Run from a menu item's
+    /// click in the Input Order (ADR-0240), the copy is that input's, and the payload the script asks
+    /// for takes no number of its own: numbered, it would wait for the click this waits on.</summary>
     private async Task MenuCopyAsync(bool withHeaders)
     {
         if (_scrollHandle is null || _disposed)
             return;
         try
         {
-            await _scrollHandle.InvokeVoidAsync("writeCopy", withHeaders);
+            await _scrollHandle.InvokeVoidAsync("writeCopy", withHeaders, _inputOrder?.InFlow == true);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
@@ -5582,7 +5584,7 @@
     // moves a scrollable header's button to where another column's stood, and the diff,
     // comparing by position, registers that one afresh.
     private Func<Task>?[] _menuOpeners = [];
-    private Action<MouseEventArgs>?[] _gripDowns = [];
+    private Func<MouseEventArgs, Task>?[] _gripDowns = [];
     private Func<Task>?[] _gripFitters = [];
 
     /// <summary>How far a header press must travel before it is a drag — a resize or a
@@ -5596,7 +5598,7 @@
         return _menuOpeners[column] ??= MenuOpenerFor(column);
     }
 
-    private Action<MouseEventArgs> GripDown(int column)
+    private Func<MouseEventArgs, Task> GripDown(int column)
     {
         if (column >= _gripDowns.Length)
             Array.Resize(ref _gripDowns, Math.Max(column + 1, Columns.Count));
@@ -5612,15 +5614,17 @@
 
     // Their own methods so that only a miss captures anything: a lambda capturing a
     // parameter allocates its closure on entry to the method, cache hit or not.
-    private Func<Task> MenuOpenerFor(int column) => () => OpenMenuAsync(column);
+    private Func<Task> MenuOpenerFor(int column) => () => ClaimedAsync("click", () => OpenMenuAsync(column));
 
-    private Action<MouseEventArgs> GripDownFor(int column) => e => OnResizeGripDown(column, e);
+    // Numbered (ADR-0240): the script holds the drag's moves until this press is answered, because the
+    // handlers that follow them are attached by the render that answers it.
+    private Func<MouseEventArgs, Task> GripDownFor(int column) => e => ClaimedAsync("mousedown", () => OnResizeGripDown(column, e));
 
     /// <summary>A double-click on a grip is Size to fit, the column menu's command
     /// (ADR-0016, FN-12a).</summary>
-    private Func<Task> GripFitterFor(int column) => () => OnColumnWidthChanged.HasDelegate && !PointedAtNow
+    private Func<Task> GripFitterFor(int column) => () => ClaimedAsync("dblclick", () => OnColumnWidthChanged.HasDelegate && !PointedAtNow
         ? SizeToFitAsync(ColumnsResizedWith(column))
-        : Task.CompletedTask;
+        : Task.CompletedTask);
 
     /// <summary>The menu button is a toggle: the second press on the same column's
     /// button closes what the first opened — a popover the user cannot dismiss is a
@@ -5689,6 +5693,7 @@
         _panelChecked = null;
         _panelAwaitingValues = false;
         _popoverFocusPending = PopoverFocus.None;
+        _chromeFocusOwed = false;
     }
 
     /// <summary>
@@ -5707,6 +5712,7 @@
         _panelFocusLastRequest = 0;
         _panelSearchRequest = 0;
         _popoverFocusPending = PopoverFocus.FirstCommand;
+        _chromeFocusOwed = true;
         _menuCursor = -1;
         _panelFirst = default;
         _panelLast = default;
@@ -5788,11 +5794,12 @@
 
     /// <summary>The contexts' <c>Close</c>: what a Chrome's own × or backdrop invokes. It
     /// arrives from the Chrome's event, not the grid's, so the grid renders itself.</summary>
-    private Action CloseFromChrome => _closeFromChrome ??= () => _ = InvokeAsync(() =>
+    private Action CloseFromChrome => _closeFromChrome ??= () => _ = InvokeAsync(() => ClaimedByKeyOrAsync(ClaimClick, () =>
     {
         ClosePopoverAndReturnFocus();
         StateHasChanged();
-    });
+        return Task.CompletedTask;
+    }));
 
     /// <summary>The contexts' <c>InnerPopupChanged</c>: the contents report a popup of their
     /// own opening or closing (ADR-0039), and the key gate is told at once — the next
@@ -5865,6 +5872,10 @@
         // Without scrolling: on a Server circuit this lands a round trip after the popover
         // is shown, and a menu taller than its grid (ADR-0040) may already have been
         // scrolled by the user, whose view it would pull back to the top.
+        // A substituted Chrome binds none of these: its contents take the keyboard on the request's
+        // count, through TakePopoverFocus, and the focus is theirs to give until then (FocusOwed).
+        if (element.Id is not null)
+            _chromeFocusOwed = false;
         await FocusQuietlyAsync(element, preventScroll: true);
     }
 
@@ -5896,7 +5907,27 @@
     /// <summary>The core's focus function a Chrome's popover is handed (ADR-0204), as a Chrome's
     /// editor is handed its own (ADR-0010): the control, and whether it may scroll into view.</summary>
     private Func<ElementReference, bool, Task> TakePopoverFocus
-        => _takePopoverFocus ??= (control, preventScroll) => InvokeAsync(() => FocusQuietlyAsync(control, preventScroll));
+        => _takePopoverFocus ??= (control, preventScroll) => InvokeAsync(() => ClaimedByKeyOrAsync(null, async () =>
+        {
+            await FocusQuietlyAsync(control, preventScroll);
+            // No longer owed once the focus has been asked of the script, and said so: a substituted
+            // menu takes it from its own after-render, which may come after the root's has stamped
+            // the debt, and nothing renders the root for it (ADR-0240 section 4).
+            ChromeFocusTaken();
+        }));
+
+    // The substituted Chrome's popover focus is no longer owed; the Settled Stamp says so.
+    private void ChromeFocusTaken()
+    {
+        if (!_chromeFocusOwed)
+            return;
+        _chromeFocusOwed = false;
+        ShowSettledStamp();
+    }
+
+    // A popover's contents drawn by a substituted Chrome owe the keyboard: asked to take it (an opening,
+    // a move into the filter), and not yet through TakePopoverFocus (FocusOwed, ADR-0240 section 4).
+    private bool _chromeFocusOwed;
 
     private Func<ElementReference, bool, Task>? _takePopoverFocus;
 
@@ -5971,11 +6002,11 @@
 
     /// <summary>The Context Menu's <c>ResolveKey</c> over the commands it hands out.</summary>
     private MenuKeyResolver MenuKeysOver(IReadOnlyList<GridCommand> commands)
-        => (key, shift, chord) => ResolveMenuKey(commands, key, shift, chord);
+        => (key, shift, chord) => ClaimedKey(() => ResolveMenuKey(commands, key, shift, chord));
 
     /// <summary>The column menu's <c>ResolveKey</c> over the commands it hands out.</summary>
     private MenuKeyResolver ColumnMenuKeysOver(IReadOnlyList<GridCommand> commands, bool filterBelow)
-        => (key, shift, chord) => ResolveColumnMenuKey(commands, filterBelow, key, shift, chord);
+        => (key, shift, chord) => ClaimedKey(() => ResolveColumnMenuKey(commands, filterBelow, key, shift, chord));
 
     /// <summary>
     /// Sends the keyboard from the commands to the filter below them (ADR-0044): its first
@@ -6002,6 +6033,7 @@
                 _popoverFocusPending = PopoverFocus.PanelFirst;
                 break;
         }
+        _chromeFocusOwed = true;
         _ = InvokeAsync(StateHasChanged);
     }
 
@@ -6017,6 +6049,8 @@
         _menuFocusRequest++;
         if (_menuItems.Count > 0)
             await FocusQuietlyAsync(_menuItems[_menuItems.Keys.Min()]);
+        else
+            _chromeFocusOwed = true;
     }
 
     /// <summary>
@@ -6043,7 +6077,14 @@
     }
 
     /// <summary>The filter context's <c>ValueListKey</c>: one delegate, whatever renders.</summary>
-    private Func<KeyboardEventArgs, Task> ValueListKeyFromChrome => _valueListKey ??= e => OnValueListKeyAsync(e);
+    private Func<KeyboardEventArgs, Task> ValueListKeyFromChrome
+        => _valueListKey ??= e => ClaimedAsync(ClaimKeyDown, async () => await OnValueListKeyAsync(e));
+
+    /// <summary>The built-in list's keys, claimed in their place in the Input Order (ADR-0240).</summary>
+    private Func<KeyboardEventArgs, Task> BuiltInValueListKeyHandler
+        => _builtInValueListKey ??= e => ClaimedAsync(ClaimKeyDown, () => OnBuiltInValueListKeyAsync(e));
+
+    private Func<KeyboardEventArgs, Task>? _builtInValueListKey;
 
     private Func<KeyboardEventArgs, Task>? _valueListKey;
 
@@ -6189,7 +6230,7 @@
             FilterOperators.AllowedFor(declared.Type),
             declared.FilterUi,
             () => RequestDistinctValuesAsync(declared.Name),
-            spec => _ = InvokeAsync(() => ApplyFilterSpecAsync(declared.Name, spec)),
+            spec => _ = InvokeAsync(() => ClaimedAsync(ClaimSubmit, () => ApplyFilterSpecAsync(declared.Name, spec))),
             () => _ = InvokeAsync(() => ApplyFilterSpecAsync(declared.Name, null)),
             CloseFromChrome,
             _panelFocusRequest,
@@ -6637,7 +6678,7 @@
     /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task<ClipboardPayload?> BuildCopyPayloadAsync(bool withHeaders = false, int input = 0)
-        => AnsweredAsync(BuildCopyAsync(withHeaders), input);
+        => AnsweredAsync(() => BuildCopyAsync(withHeaders), input);
 
     private async Task<ClipboardPayload?> BuildCopyAsync(bool withHeaders)
     {
@@ -6709,7 +6750,7 @@
     /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnPasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint = PaintNotTold, int input = 0)
-        => AnsweredAsync(TakePasteStreamsAsync(text, html, paint), input);
+        => AnsweredAsync(() => TakePasteStreamsAsync(text, html, paint), input);
 
     private async Task TakePasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint)
     {
@@ -6997,11 +7038,7 @@
     /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnCopyWriteRejectedAsync(int input = 0)
-    {
-        NotifyCopyRefused(CopyRefusalReason.ClipboardUnavailable);
-        InputAnswered(input);
-        return Task.CompletedTask;
-    }
+        => AnsweredAsync(() => NotifyCopyRefused(CopyRefusalReason.ClipboardUnavailable), input);
 
     /// <summary>
     /// A key the core claimed (ADR-0010). Called from the instance's own capture-phase
@@ -7035,7 +7072,7 @@
         bool fromDescendant = false, string? editorText = null, int editorCaret = -1,
         int editorSelectionEnd = -1, bool editorCaretMoved = false, bool repeat = false, int paint = PaintNotTold,
         int input = 0)
-        => AnsweredAsync(HandleKeyAsync(key, ctrl, shift, alt, meta, metaIsPrimary, fromDescendant, editorText,
+        => AnsweredAsync(() => HandleKeyAsync(key, ctrl, shift, alt, meta, metaIsPrimary, fromDescendant, editorText,
             editorCaret, editorSelectionEnd, editorCaretMoved, repeat, paint), input);
 
     private async Task HandleKeyAsync(
@@ -7194,7 +7231,14 @@
                     if (fromDescendant)
                         ClosePopoverAndReturnFocus();
                     else
+                    {
                         CloseMenus();
+                        // The root has the keyboard, but a focus the popover's contents asked for may
+                        // still land in it before the render that removes it, and leave the keyboard
+                        // on the page: it is taken back after that render, where it is still this
+                        // grid's (Format Cells from Alt, H, O, E, Escape typed as it opened).
+                        _reclaimFocusPending = true;
+                    }
                     StateHasChanged();
                     if (escaped is not null)
                         await escaped;
@@ -7758,12 +7802,43 @@
         text => _findText = text,
         value => _findMatchCase = value,
         value => _findWholeCell = value,
-        () => InvokeAsync(() => FindStepAsync(backward: false)),
-        () => InvokeAsync(() => FindStepAsync(backward: true)),
+        () => InvokeAsync(() => ClaimedAsync(ClaimClick, ClaimSubmit, () => FindStepAsync(backward: false))),
+        () => InvokeAsync(() => ClaimedAsync(ClaimClick, ClaimSubmit, () => FindStepAsync(backward: true))),
         CloseFromChrome,
         _findFocusRequest,
         InnerPopupChangedFromChrome,
         TakePopoverFocus);
+
+    // The built-in find field, written as @bind writes it (the value the field's own typing
+    // outranks a render with, SetUpdatesAttributeName) but with its handlers kept: the same instance
+    // every render, so the diff leaves each registered (PF-3). Built afresh, each render of the root
+    // gave the field new event ids, and on a circuit a character typed behind a render arrived with
+    // an id already removed and was refused, so Find searched only what came before (FD-6 under the
+    // hunt, 2026-10-19).
+    private RenderFragment FindField => _findFieldFragment ??= FindFieldBuilder;
+
+    private void FindFieldBuilder(RenderTreeBuilder builder)
+    {
+        builder.OpenElement(0, "input");
+        builder.AddAttribute(1, "type", "search");
+        builder.AddAttribute(2, "class", "ex-find-field");
+        builder.AddAttribute(3, "aria-label", Label(FindPanelLabelIds.Field));
+        builder.AddAttribute(4, "value", _findText);
+        builder.AddAttribute(5, "oninput", _findTextInput ??= EventCallback.Factory.Create<ChangeEventArgs>(
+            this, e => _findText = e.Value as string ?? ""));
+        builder.SetUpdatesAttributeName("value");
+        builder.AddAttribute(6, "onkeydown", _findFieldKeyDown ??= EventCallback.Factory.Create<KeyboardEventArgs>(this, OnFindFieldKeyDown));
+        builder.AddElementReferenceCapture(7, field => _findField = field);
+        builder.CloseElement();
+    }
+
+    private RenderFragment? _findFieldFragment;
+    private EventCallback<ChangeEventArgs>? _findTextInput;
+    private EventCallback<KeyboardEventArgs>? _findFieldKeyDown;
+    private Action<ChangeEventArgs> FindMatchCaseChanged => _findMatchCaseChanged ??= e => _findMatchCase = e.Value is true;
+    private Action<ChangeEventArgs>? _findMatchCaseChanged;
+    private Action<ChangeEventArgs> FindWholeCellChanged => _findWholeCellChanged ??= e => _findWholeCell = e.Value is true;
+    private Action<ChangeEventArgs>? _findWholeCellChanged;
 
     /// <summary>Enter in the built-in field is the form's implicit submission — which an IME
     /// confirming a candidate does not trigger — and Shift says which way it runs.</summary>
@@ -7788,7 +7863,10 @@
         if (_findField.Context is not null)
             await FocusQuietlyAsync(_findField);
         else
+        {
+            _chromeFocusOwed = true;
             StateHasChanged();
+        }
     }
 
     /// <summary>The find panel's place (ADR-0040): the grid's top right, under the header,
@@ -8978,7 +9056,7 @@
     {
         var input = _doubleClickInput;
         _doubleClickInput = 0;
-        return AnsweredAsync(DoubleClickAsync(e), input);
+        return AnsweredAsync(() => DoubleClickAsync(e), input);
     }
 
     private async Task DoubleClickAsync(MouseEventArgs e)
@@ -9853,7 +9931,7 @@
     private RenderFragment? _headerMark;
 
     private Func<Task> _onHeaderMark => _onHeaderMarkField ??= PressHeaderMarkAsync;
-    private Func<Task> _onMarkWholeResult => _onMarkWholeResultField ??= MarkWholeResultAsync;
+    private Func<Task> _onMarkWholeResult => _onMarkWholeResultField ??= () => ClaimedAsync("click", MarkWholeResultAsync);
 
     /// <summary>
     /// Finds the Mark Column and who holds its marks, refusing by name what cannot be
@@ -10007,17 +10085,20 @@
         builder.AddAttribute(4, "aria-checked", HeaderMarkChecked());
         builder.AddAttribute(5, "aria-label", "Mark all rows");
         builder.AddAttribute(6, "tabindex", "-1");
-        builder.AddEventPreventDefaultAttribute(7, "onmousedown", true);
-        builder.AddEventStopPropagationAttribute(8, "onmousedown", true);
-        builder.AddEventStopPropagationAttribute(9, "onclick", true);
-        builder.AddAttribute(10, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _onHeaderMark));
+        // It claims nothing, and its press and click stop here: told as the header's, they would be
+        // numbers no handler claims (ADR-0240 section 2). Its click is told the paint instead (MK-9).
+        builder.AddAttribute(7, "data-ex-claims", "");
+        builder.AddEventPreventDefaultAttribute(8, "onmousedown", true);
+        builder.AddEventStopPropagationAttribute(9, "onmousedown", true);
+        builder.AddEventStopPropagationAttribute(10, "onclick", true);
+        builder.AddAttribute(11, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _onHeaderMark));
         // Under a pager the press names the page's rows: the listener reads which page — its first row
         // and how many rows it holds — with the paint at the press, and the core lines up that page
         // though it was turned, resized or the pager removed since (ADR-0043, MK-9).
         if (PageSize is not null)
         {
-            builder.AddAttribute(11, "data-ex-page", _pageStartRow);
-            builder.AddAttribute(12, "data-ex-page-rows", PageRows()?.Count ?? 0);
+            builder.AddAttribute(12, "data-ex-page", _pageStartRow);
+            builder.AddAttribute(13, "data-ex-page-rows", PageRows()?.Count ?? 0);
         }
         builder.CloseElement();
     };
@@ -10117,6 +10198,7 @@
     public async ValueTask DisposeAsync()
     {
         _disposed = true;
+        _inputOrder?.Dispose();
         // A Find step still out is nobody's any more: the Consumer's search is told to stop
         // (ADR-0055, the fetching Source's rule).
         _findCancellation?.Cancel();
@@ -10564,8 +10646,8 @@
                (ADR-0044). On every grid, and under every Chrome: the button is the core's. *@
             <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
                 {@HeaderMark}@if (ShowMenuButtons)
-                {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
+                {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" data-ex-claims="click" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                {<div class="ex-resize-grip" data-ex-claims="mousedown dblclick" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
         }
         if (_scrollable is { } headerColumns)
         {
@@ -10577,8 +10659,8 @@
             {
                 <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
                     {@HeaderMark}@if (ShowMenuButtons)
-                    {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                    {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
+                    {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" data-ex-claims="click" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                    {<div class="ex-resize-grip" data-ex-claims="mousedown dblclick" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
             }
         }
     }
@@ -10623,9 +10705,9 @@
             var command = commands[i];
             if (command.Enabled)
             {
-                <button type="button" role="menuitem" @ref="_menuItems[item]"
+                <button type="button" role="menuitem" @ref="_menuItems[item]" data-ex-claims="click keydown"
                         @onclick="command.Invoke"
-                        @onkeydown="e => OnMenuItemKeyAsync(e, commands, resolve)" @onkeydown:preventDefault>@LabelWithLetter(command, lettered)</button>
+                        @onkeydown="e => ClaimedAsync(ClaimKeyDown, () => OnMenuItemKeyAsync(e, commands, resolve))" @onkeydown:preventDefault>@LabelWithLetter(command, lettered)</button>
             }
             else
             {

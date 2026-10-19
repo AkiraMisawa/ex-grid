@@ -137,17 +137,19 @@ test('disposal takes the module\'s listeners off the root, and the count comes b
     await grid.mount();
     await page.evaluate(() => { window.__disposedRoot = document.querySelector('.ex-grid'); });
     const attached = (await grid.listenersOn('window.__disposedRoot')).map(key).sort();
-    // The per-instance handle's seventeen on the instance root (ADR-0018): the capture-phase
+    // The per-instance handle's twenty on the instance root (ADR-0018): the capture-phase
     // keys, the capture-phase press and release that keep a press on the rows among held
     // keys (ADR-0021/0010), the editor's input report (ADR-0051), the pointer report, the
     // two clipboard events, and copy, cut and paste again in the capture phase, which take
     // the event a clipboard key fires while a hold stands into its place among the held keys
     // (ADR-0010's note of 2026-10-02), the press another grid hands on while this one points
     // through a Pointing Scope (ADR-0058, DC-54), and the Keyboard Field's composition, focus
-    // and keyup (ADR-0080, ADR-0021's seventh entry), on every root, with a field or not.
+    // and keyup (ADR-0080, ADR-0021's seventh entry), on every root, with a field or not, and the
+    // capture-phase click, double click and context menu that number a click on a control that
+    // claims it (ADR-0240, ADR-0021's eleventh entry).
     expect(attached).toEqual([
-        'compositionend (capture)', 'compositionstart (capture)', 'copy (capture)', 'copy', 'cut (capture)',
-        'ex-press-handed-on', 'focus (capture)', 'focusout (capture)', 'input (capture)', 'keydown (capture)',
+        'click (capture)', 'compositionend (capture)', 'compositionstart (capture)', 'contextmenu (capture)',
+        'copy (capture)', 'copy', 'cut (capture)', 'dblclick (capture)', 'ex-press-handed-on', 'focus (capture)', 'focusout (capture)', 'input (capture)', 'keydown (capture)',
         'keyup (capture)', 'mousedown (capture)', 'mouseleave', 'mousemove', 'mouseup (capture)', 'paste (capture)', 'paste',
     ].map(fromModule));
     // And one on the document, the only place `selectionchange` fires: it acts only while

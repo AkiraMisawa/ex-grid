@@ -45,6 +45,15 @@ public class MudFindPanelTests : MudTestContext
         Assert.Equal(1, _previous);
     }
 
+    [Fact] // ADR-0240 §2: the two steps' clicks take their place in the grid's Input Order, as the built-in panel's do
+    public void ADR0240_the_steps_claim_their_clicks()
+    {
+        var cut = RenderPanel(Context());
+
+        Assert.Equal("click", cut.Find(".mud-ex-grid-find-next").GetAttribute("data-ex-claims"));
+        Assert.Equal("click", cut.Find(".mud-ex-grid-find-previous").GetAttribute("data-ex-claims"));
+    }
+
     [Fact] // ADR-0055: Enter is the form's submission — next, and previous with Shift held
     public async Task Enter_steps_forward_and_shift_enter_back()
     {

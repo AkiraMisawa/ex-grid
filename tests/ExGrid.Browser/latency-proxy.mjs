@@ -19,6 +19,11 @@
 // once nothing is held here or unsent on a socket, in either direction, and nothing has
 // crossed for `for` ms: 200 then, or 504 when that has not happened within `within` ms, with
 // what kept crossing (circuitQuiet in fixtures.mjs).
+//
+// POST /hold?answers=1 holds every chunk from the host, however long it has waited, until
+// POST /hold?answers=0 lets them go in order (holdAnswers in fixtures.mjs). A test that needs
+// the browser to act before an answer arrives holds them, rather than counting on the round
+// trip outlasting its own inputs (ADR-0220).
 import http from 'node:http';
 import net from 'node:net';
 
@@ -35,6 +40,8 @@ let held = 0;
 let lastCrossed = Date.now();
 const crossed = { fromBrowser: 0, fromHost: 0 };
 const sockets = new Set();
+let answersHeld = false;
+const answerDrains = new Set();
 
 // SignalR's keep-alive: each end pings the other every 15 s when it has sent nothing else —
 // the default of both HubOptions.KeepAliveInterval and the client's
@@ -56,6 +63,9 @@ const delayed = (from, to, direction) => {
     let timer = null;
     const drain = () => {
         timer = null;
+        if (direction === 'fromHost' && answersHeld) {
+            return;
+        }
         while (queue.length > 0 && queue[0].at <= Date.now()) {
             const next = queue.shift();
             held--;
@@ -70,6 +80,15 @@ const delayed = (from, to, direction) => {
             timer = setTimeout(drain, Math.max(0, queue[0].at - Date.now()));
         }
     };
+    if (direction === 'fromHost') {
+        const release = () => {
+            if (timer === null) {
+                drain();
+            }
+        };
+        answerDrains.add(release);
+        from.on('close', () => answerDrains.delete(release));
+    }
     from.on('data', (chunk) => {
         held++;
         crossed[direction]++;
@@ -151,6 +170,22 @@ http.createServer((request, response) => {
         } else {
             whenQuiet(quietFor, within, response);
         }
+        return;
+    }
+    if (url.pathname === '/hold') {
+        const answers = url.searchParams.get('answers');
+        if (request.method !== 'POST' || (answers !== '1' && answers !== '0')) {
+            response.statusCode = 400;
+            response.end('POST /hold?answers=1|0\n');
+            return;
+        }
+        answersHeld = answers === '1';
+        if (!answersHeld) {
+            for (const release of answerDrains) {
+                release();
+            }
+        }
+        response.end(`answers ${answersHeld ? 'held' : 'let go'}\n`);
         return;
     }
     const rtt = Number(url.searchParams.get('rtt'));

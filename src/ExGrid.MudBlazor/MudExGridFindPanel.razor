@@ -21,7 +21,7 @@
    around the panel turn into a request (ADR-0039) — through the core's focus function, which takes
    the keyboard only while it is still the grid's (ADR-0204). What the last step came to is worded here
    and written into a live region, because the grid holds no sentence (ADR-0033). *@
-<form class="mud-ex-grid-find" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+<form class="mud-ex-grid-find" data-ex-claims="submit" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
     <button type="submit" class="mud-ex-grid-find-default" hidden tabindex="-1" aria-hidden="true"></button>
     <MudTextField @ref="_field" T="string" Value="Context.Text" ValueChanged="Context.TextChanged" Immediate="true"
                   Label="@Own(FindPanelLabelIds.Field)" Variant="Variant.Outlined" Margin="Margin.Dense"
@@ -33,9 +33,9 @@
                  Label="@Own(FindPanelLabelIds.WholeCell)" Dense="true" Size="Size.Small" Class="mud-ex-grid-find-whole-cell" />
     <div class="mud-ex-grid-find-actions">
         <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowUp"
-                   OnClick="Context.Previous" Class="mud-ex-grid-find-previous">@Own(FindPanelLabelIds.Previous)</MudButton>
+                   OnClick="Context.Previous" data-ex-claims="click" Class="mud-ex-grid-find-previous">@Own(FindPanelLabelIds.Previous)</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowDown"
-                   OnClick="Context.Next" Class="mud-ex-grid-find-next">@Own(FindPanelLabelIds.Next)</MudButton>
+                   OnClick="Context.Next" data-ex-claims="click" Class="mud-ex-grid-find-next">@Own(FindPanelLabelIds.Next)</MudButton>
     </div>
     <MudText Typo="Typo.caption" Color="Color.Error" Class="mud-ex-grid-find-outcome" role="status">@OutcomeText</MudText>
 </form>

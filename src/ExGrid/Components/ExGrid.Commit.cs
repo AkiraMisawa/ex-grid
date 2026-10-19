@@ -384,14 +384,22 @@ public partial class ExGrid<TRow>
     // (AfterCommitInFlightAsync). The flow the commit runs in — its own code and every Consumer handler it
     // raises — carries the token (_commitFlow): a commit asked for from inside it, as a placement one of
     // those handlers asks for, is that commit's, and goes on at once, since waiting there would wait for
-    // itself.
+    // itself. So is the flow of the input in the Input Order that asked for the commit (_commitInput,
+    // ADR-0240 section 3): the order hands no other numbered input in while that input is handled, so
+    // nothing numbered can arrive under the commit, and what that input's flow asks for meanwhile is the
+    // commit's own. A commit asked for by a handler outside the order (one not yet numbered) still holds
+    // every gesture behind it, numbered or not, as it did.
     private Task<bool>? _commitInFlight;
     private object? _commitToken;
+    private object? _commitInput;
     private readonly AsyncLocal<object?> _commitFlow = new();
 
     /// <summary>Whether this runs inside the flow of the commit being made: its own code, a handler of
-    /// the Consumer's it raised, or anything those call.</summary>
-    private bool InCommitFlow => _commitToken is { } token && ReferenceEquals(_commitFlow.Value, token);
+    /// the Consumer's it raised, or anything those call; or inside the flow of the numbered input that
+    /// asked for it (ADR-0240 section 3).</summary>
+    private bool InCommitFlow
+        => (_commitToken is { } token && ReferenceEquals(_commitFlow.Value, token))
+            || (_commitInput is { } input && ReferenceEquals(_inputOrder?.Flow, input));
 
     /// <summary>
     /// Commits the open edit (ADR-0007, ADR-0142), one commit at a time. A commit asked for while one is
@@ -429,6 +437,7 @@ public partial class ExGrid<TRow>
     {
         var token = new object();
         _commitToken = token;
+        _commitInput = _inputOrder?.Flow;
         _commitFlow.Value = token;
         try
         {
@@ -437,6 +446,7 @@ public partial class ExGrid<TRow>
         finally
         {
             _commitToken = null;
+            _commitInput = null;
             _commitInFlight = null;
         }
     }
@@ -449,7 +459,9 @@ public partial class ExGrid<TRow>
     /// if it had arrived after it: it never commits the same editor a second time, and never reads the
     /// editor still standing while it is heard as one a Reject or a refusal held. The gestures that waited
     /// go on in the order they arrived, after the gesture that asked for the commit. Inside the commit's own
-    /// flow nothing waits: it would wait for itself.
+    /// flow nothing waits: it would wait for itself. Nor inside the flow of the numbered input that asked
+    /// for it: the Input Order already holds every numbered input behind that one (ADR-0240 section 3), so
+    /// the wait is kept only for a commit a handler outside the order asked for.
     /// </summary>
     private async Task AfterCommitInFlightAsync()
     {

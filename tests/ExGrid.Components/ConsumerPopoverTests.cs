@@ -26,13 +26,16 @@ public class ConsumerPopoverTests : GridTestContext
 
         public int Renders { get; private set; }
 
+        public ElementReference Button { get; private set; }
+
         public RenderFragment<GridPopoverContext> Content => context => builder =>
         {
             Context = context;
             Renders++;
             builder.OpenElement(0, "button");
             builder.AddAttribute(1, "class", "probe");
-            builder.AddContent(2, "Probe");
+            builder.AddElementReferenceCapture(2, r => Button = r);
+            builder.AddContent(3, "Probe");
             builder.CloseElement();
         };
     }
@@ -381,6 +384,50 @@ public class ConsumerPopoverTests : GridTestContext
 
         Assert.Empty(cut.FindAll(".ex-popover-consumer"));
         Assert.Equal(root, Js.Focused.Skip(before).Last());
+    }
+
+    [Fact] // ADR-0240 §4: the opening owes the keyboard to the contents until they take it, so the keys held for them wait for it rather than being refused
+    public async Task ADR0240_the_stamp_says_focus_is_owed_until_the_contents_take_it()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+        var probe = new Probe();
+        bool FocusOwed() => cut.Find(".ex-grid > [data-ex-answered]").HasAttribute("data-ex-focus-owed");
+
+        await OpenAsync(cut, probe);
+        Assert.True(await ReadWhenIdleAsync(FocusOwed));
+
+        await probe.Context!.TakeFocus!(probe.Button, false);
+        Assert.False(await ReadWhenIdleAsync(FocusOwed));
+    }
+
+    [Fact] // ADR-0240 §4: contents that focus themselves, without TakeFocus, end the owed focus as DOM focus enters them
+    public async Task ADR0240_focus_entering_the_contents_ends_the_owed_focus()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+        bool FocusOwed() => cut.Find(".ex-grid > [data-ex-answered]").HasAttribute("data-ex-focus-owed");
+        await OpenAsync(cut, new Probe());
+        Assert.True(await ReadWhenIdleAsync(FocusOwed));
+
+        await cut.Find(".ex-popover-body").TriggerEventAsync("onfocusin", new FocusEventArgs());
+
+        Assert.False(await ReadWhenIdleAsync(FocusOwed));
+    }
+
+    [Fact] // ADR-0240 §4 / ADR-0039: Escape on the root closes the popover, and the keyboard is taken back after the render that removes it, where a late focus of the contents' may have put it
+    public async Task ADR0240_Escape_on_the_root_takes_the_keyboard_back_after_the_close()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+        await OpenAsync(cut, new Probe());
+        var reclaims = Js.FocusReclaimed.Invocations.Count;
+
+        await PressAsync(cut, "Escape");
+
+        Assert.Empty(cut.FindAll(".ex-popover-consumer"));
+        Assert.True(await ReadWhenIdleAsync(() => Js.FocusReclaimed.Invocations.Count > reclaims));
+        Assert.False(await ReadWhenIdleAsync(() => cut.Find(".ex-grid > [data-ex-answered]").HasAttribute("data-ex-focus-owed")));
     }
 
     [Fact] // ADR-0050 item 16's note of 2026-10-12 (decided with the user: keys typed while the keyboard is in flight back from a closing popover go where it lands): a Consumer that asked hears Escape close its popover before the grid takes the keyboard back, so its hand-off reaches the key gate first

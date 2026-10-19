@@ -22,13 +22,13 @@ public partial class ExGrid<TRow>
     private Task OnMouseDown(MouseEventArgs e)
     {
         e = AsTaken(e, "mousedown", out var input);
-        return _pressAnswer = AnsweredAsync(AnswerPressAsync(e), input);
+        return _pressAnswer = AnsweredAsync(() => AnswerPressAsync(e), input);
     }
 
     private Task OnMouseUp(MouseEventArgs e)
     {
         e = AsTaken(e, "mouseup", out var input);
-        return _pressAnswer = AnsweredAsync(AnswerReleaseAsync(e), input);
+        return _pressAnswer = AnsweredAsync(() => AnswerReleaseAsync(e), input);
     }
 
     private Task OnFormulaBarPressedAsync() => _pressAnswer = OnFormulaBarFocusAsync();
@@ -81,7 +81,7 @@ public partial class ExGrid<TRow>
     public Task PressAnsweredAsync(int input = 0)
         => _disposed
             ? Task.CompletedTask
-            : AnsweredAsync(_pressAnswer.ContinueWith(static _ => { }, CancellationToken.None,
+            : AnsweredAsync(() => _pressAnswer.ContinueWith(static _ => { }, CancellationToken.None,
                 TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default), input);
 
     // The Name Box's Enter the core heard last, while the core is answering it (NameBoxAnsweredAsync).
@@ -109,7 +109,7 @@ public partial class ExGrid<TRow>
     public Task NameBoxAnsweredAsync(int input = 0)
         => _disposed
             ? Task.CompletedTask
-            : AnsweredAsync(_nameBoxAnswer.ContinueWith(static _ => { }, CancellationToken.None,
+            : AnsweredAsync(() => _nameBoxAnswer.ContinueWith(static _ => { }, CancellationToken.None,
                 TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default), input);
 
     // What the script said the next press or release on the rows was taken against (ED-31;
@@ -207,12 +207,12 @@ public partial class ExGrid<TRow>
         // double click still awaited, are no longer owed (ADR-0220).
         if (_taken is { } unheard)
         {
-            InputAnswered(unheard.Input);
-            InputAnswered(unheard.DoubleClickInput);
+            InputVoid(unheard.Input);
+            InputVoid(unheard.DoubleClickInput);
         }
         if (_doubleClickInput > 0)
         {
-            InputAnswered(_doubleClickInput);
+            InputVoid(_doubleClickInput);
             _doubleClickInput = 0;
         }
         // It crosses the JS boundary: a NaN would travel silently into the offsets.
@@ -224,8 +224,8 @@ public partial class ExGrid<TRow>
             : null;
         if (_taken is null)
         {
-            InputAnswered(input);
-            InputAnswered(doubleClickInput);
+            InputVoid(input);
+            InputVoid(doubleClickInput);
         }
     }
 
@@ -281,8 +281,8 @@ public partial class ExGrid<TRow>
             return e;
         if (told.Kind != kind)
         {
-            InputAnswered(told.Input);
-            InputAnswered(told.DoubleClickInput);
+            InputVoid(told.Input);
+            InputVoid(told.DoubleClickInput);
             return e;
         }
         input = told.Input;

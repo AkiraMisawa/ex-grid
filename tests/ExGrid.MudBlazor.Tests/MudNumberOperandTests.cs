@@ -88,7 +88,7 @@ public class MudNumberOperandTests : MudTestContext
 
         Assert.Contains($"“{typed}” {said}", cut.Find(".mud-ex-grid-filter-operand").TextContent);
         Assert.True(cut.Find(".mud-ex-grid-filter-apply").HasAttribute("disabled"));
-        Assert.Empty(_applied);
+        Assert.All(_applied, answer => Assert.False(FilterPanelChoices.CanApply(answer))); // ADR-0240 §4: only the answer Apply refuses
     }
 
     [Fact] // WR-10 / ADR-0205, WR-2 / ADR-0023, principle 1: a refused operand keeps its words — the field marked in error, aria-invalid, the refusal under it — through the echo of its own text, a second refusal after a reading, a submit and the renders after it. MudBlazor 9.3.0 to 9.5.0 re-validated a touched field on that echo and wrote its Error back to false over the Wrapper's: Apply stayed unavailable and nothing said why
@@ -113,7 +113,7 @@ public class MudNumberOperandTests : MudTestContext
         SaysTheRefusal(cut, "“1234.5” is not a value");
 
         Assert.True(cut.Find(".mud-ex-grid-filter-apply").HasAttribute("disabled"));
-        Assert.Empty(_applied);
+        Assert.All(_applied, answer => Assert.False(FilterPanelChoices.CanApply(answer))); // ADR-0240 §4: only the answer Apply refuses
     }
 
     // The field says the refusal as MudBlazor says any field's error: marked, invalid, and the words under it.

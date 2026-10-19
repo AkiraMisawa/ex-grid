@@ -103,7 +103,10 @@ On Server the browser does not reach the host directly. `latency-proxy.mjs` sits
 of it (the browser at 5298, the host at 6298, the proxy's control at 7298 — every port is
 derived in `hosting.mjs` from `EXGRID_BASE_URL`), delaying every chunk in both directions
 by half a round trip that starts at 0. A test that needs a real round trip sets one with
-`setRoundTrip(ms)` from `fixtures.mjs`, and the fixture puts it back to 0 afterwards. The
+`setRoundTrip(ms)` from `fixtures.mjs`, and the fixture puts it back to 0 afterwards. A test
+whose inputs must all be made before the host answers any of them does not count on a round
+trip to outlast them: `holdAnswers(true)` holds everything the host sends in the proxy until
+`holdAnswers(false)` lets it go in order, and the fixture lets go after every test. The
 browser's own network throttling is not used because it is not reliably applied to the
 WebSocket that carries the circuit, which is the one connection that matters.
 

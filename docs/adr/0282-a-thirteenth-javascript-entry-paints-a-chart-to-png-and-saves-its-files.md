@@ -2,7 +2,9 @@
 
 *Decided with the user, 2026-10-19 (M4 grilling Q9 and Q10). This rewrites ADR-0021's list from twelve
 entries to thirteen. ADR-0252 settled that files are written on the click, not on every render; how
-the PNG is made and how any file reaches the disk were open.*
+the PNG is made and how any file reaches the disk were open.* *(2026-10-19: ADR-0240's two entries,
+decided on 2026-10-18, joined the list on the same branch as this one, so this entry is the fifteenth
+and the list has fifteen.)*
 
 ## Why Blazor cannot
 
