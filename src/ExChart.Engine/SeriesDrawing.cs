@@ -1,0 +1,148 @@
+namespace ExChart.Engine;
+
+/// <summary>A point of a drawn line, in the axes' own units: the horizontal position and the height.</summary>
+/// <param name="X">The horizontal position.</param>
+/// <param name="Y">The height, in the vertical axis' units.</param>
+public readonly record struct DrawnPoint(double X, double Y);
+
+/// <summary>A marker: where it stands, and whether it is filled — the function takes the value there — or an outline — it does not (ADR-0253).</summary>
+/// <param name="X">The horizontal position.</param>
+/// <param name="Y">The height.</param>
+/// <param name="Filled">Filled where the function takes the value; an outline where it does not.</param>
+public readonly record struct DrawnMarker(double X, double Y, bool Filled);
+
+/// <summary>
+/// What one series draws, in the axes' units, before any pixel: the lines — each joining only
+/// neighbours in the data — and the markers. A step has no riser: the function takes no value between
+/// its levels (ADR-0253).
+/// </summary>
+/// <param name="Lines">Each an unbroken line; a gap, a step's level or a Segment's boundary starts another.</param>
+/// <param name="Markers">The markers, filled or an outline.</param>
+public sealed record SeriesDrawing(IReadOnlyList<IReadOnlyList<DrawnPoint>> Lines, IReadOnlyList<DrawnMarker> Markers)
+{
+    /// <summary>
+    /// What a series draws. A sampled series is asked at about <paramref name="pixels"/> positions over
+    /// the part of its range inside <paramref name="from"/>–<paramref name="to"/>, and always at each
+    /// Segment's boundary and at each of <paramref name="quotes"/> (ADR-0257).
+    /// </summary>
+    public static SeriesDrawing Of(ChartSeries series, ChartAxis axis, double from = double.NegativeInfinity, double to = double.PositiveInfinity, int pixels = 0, IReadOnlyCollection<double>? quotes = null) =>
+        series.Kind switch
+        {
+            SeriesKind.Level => series.Sampler is { } f
+                ? Level(Sample(f, series.Segments, from, to, pixels, quotes ?? []), series.Segments, withMarkers: false)
+                : Level(series.Points, series.Segments, withMarkers: true),
+            SeriesKind.RateOverInterval => Steps(series, axis, perYear: false),
+            SeriesKind.AmountPerPeriod => Steps(series, axis, perYear: true),
+            _ => throw new ChartRefusedException($"'{series.Name}' declares no Series Kind."),
+        };
+
+    /// <summary>The height a step at point <paramref name="i"/> is drawn at: its value, or for an amount its value per year.</summary>
+    internal static double Height(ChartSeries series, ChartAxis axis, int i)
+    {
+        var v = series.Points[i].Y!.Value.ToDouble();
+        if (series.Kind != SeriesKind.AmountPerPeriod) return v;
+        var (a, b) = Interval(series, i);
+        return v / axis.Years(a, b);
+    }
+
+    /// <summary>The interval a step's point <paramref name="i"/> stands for.</summary>
+    internal static (double From, double To) Interval(ChartSeries series, int i) =>
+        series.Step == StepSide.Preceding
+            ? (series.Points[i - 1].X, series.Points[i].X)
+            : (series.Points[i].X, series.Points[i + 1].X);
+
+    private static SeriesDrawing Level(IReadOnlyList<ChartPoint> points, IReadOnlyList<Segment> segments, bool withMarkers)
+    {
+        var lines = new List<IReadOnlyList<DrawnPoint>>();
+        var markers = new List<DrawnMarker>();
+        var line = new List<DrawnPoint>();
+        void End()
+        {
+            if (line.Count > 1) lines.Add(line);
+            line = [];
+        }
+        for (var i = 0; i < points.Count; i++)
+        {
+            var p = points[i];
+            if (p.Y is not { } y) { End(); continue; }
+            var d = new DrawnPoint(p.X, y.ToDouble());
+            if (line.Count > 0 && segments.Any(g => Crosses(g, line[^1].X, p.X))) End();
+            var atBoundary = segments.Any(g => g.From == p.X || g.To == p.X);
+            // Sampled, the curve was asked just short of the boundary from its left: the left line
+            // ends there and the right one starts at the boundary itself, never joined.
+            if (atBoundary && line.Count > 0 && line[^1].X == Math.BitDecrement(p.X)) End();
+            line.Add(d);
+            if (withMarkers) markers.Add(new DrawnMarker(d.X, d.Y, Filled: true));
+            // Handed in as points, a point on the boundary ends the left line and starts the right.
+            if (atBoundary && line.Count > 1) { End(); line.Add(d); }
+        }
+        End();
+        return new SeriesDrawing(lines, markers);
+    }
+
+    // A boundary strictly between two neighbours: the line is not joined across it, where the
+    // Consumer's method changes and a forward may jump (ADR-0257).
+    private static bool Crosses(Segment g, double a, double b) => (a < g.From && g.From < b) || (a < g.To && g.To < b);
+
+    private static SeriesDrawing Steps(ChartSeries series, ChartAxis axis, bool perYear)
+    {
+        var p = series.Points;
+        var lines = new List<IReadOnlyList<DrawnPoint>>();
+        var markers = new List<DrawnMarker>();
+        var preceding = series.Step == StepSide.Preceding;
+        for (var i = 0; i < p.Count; i++)
+        {
+            if (p[i].Y is null) continue;
+            var hasInterval = preceding ? i > 0 : i < p.Count - 1;
+            if (!hasInterval)
+            {
+                // A rate at the edge holds at its own instant only; an amount there is refused when
+                // the definition is made.
+                markers.Add(new DrawnMarker(p[i].X, p[i].Y!.Value.ToDouble(), Filled: true));
+                continue;
+            }
+            var h = Height(series, axis, i);
+            var (a, b) = Interval(series, i);
+            lines.Add([new DrawnPoint(a, h), new DrawnPoint(b, h)]);
+            var (own, other) = preceding ? (b, a) : (a, b);
+            markers.Add(new DrawnMarker(own, h, Filled: true));
+            var neighbour = preceding ? i - 1 : i + 1;
+            var continuous = p[neighbour].Y is not null && Height(series, axis, neighbour, preceding) == h;
+            if (!continuous) markers.Add(new DrawnMarker(other, h, Filled: false));
+        }
+        return new SeriesDrawing(lines, markers);
+    }
+
+    // The height the neighbour's own level takes at the shared end; at an edge with no interval the
+    // value itself, which an amount never has there.
+    private static double Height(ChartSeries series, ChartAxis axis, int i, bool preceding)
+    {
+        var hasInterval = preceding ? i > 0 : i < series.Points.Count - 1;
+        return hasInterval ? Height(series, axis, i) : series.Points[i].Y!.Value.ToDouble();
+    }
+
+    internal static List<ChartPoint> Sample(SeriesSampler f, IReadOnlyList<Segment> segments, double from, double to, int pixels, IReadOnlyCollection<double> quotes)
+    {
+        var lo = Math.Max(f.From, from);
+        var hi = Math.Min(f.To, to);
+        if (!(lo <= hi)) return [];
+        var xs = new SortedSet<double> { lo, hi };
+        var n = Math.Max(pixels, 2);
+        for (var k = 1; k < n; k++) xs.Add(lo + (hi - lo) * k / n);
+        foreach (var g in segments)
+            foreach (var b in new[] { g.From, g.To })
+                if (lo <= b && b <= hi) xs.Add(b);
+        foreach (var q in quotes)
+            if (lo <= q && q <= hi) xs.Add(q);
+        var points = new List<ChartPoint>(xs.Count);
+        foreach (var x in xs)
+        {
+            // Just short of a boundary the curve is asked from its left, so a jump there is drawn as
+            // the Consumer's method has it on each side.
+            if (segments.Any(g => (g.From == x || g.To == x) && x > lo))
+                points.Add(new ChartPoint(Math.BitDecrement(x), f.ValueAt(Math.BitDecrement(x))));
+            points.Add(new ChartPoint(x, f.ValueAt(x)));
+        }
+        return points;
+    }
+}
