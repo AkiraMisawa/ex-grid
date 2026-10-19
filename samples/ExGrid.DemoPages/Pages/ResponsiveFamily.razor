@@ -1,0 +1,119 @@
+@page "/responsive-family"
+@using System.Globalization
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+@using global::ExSheet
+@using global::ExSheet.Components
+@using global::ExSheet.Engine
+@using global::ExSheet.MudBlazor
+@using global::ExPivot
+@using global::ExPivot.Components
+@using global::ExPivot.Engine
+@using global::ExPivot.MudBlazor
+
+<DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true">
+    <Head>
+        <ExSheetStylesheet />
+        <ExPivotStylesheet />
+        @if (DemoChrome.IsMud(ChromeName)) { <MudExPivotStylesheet /> }
+    </Head>
+</DemoChromeAssets>
+<DemoNav />
+<h1>Responsive family — the report keeps its meaning</h1>
+<p>Parent-only widths model a phone portrait, phone landscape and narrow desktop panel.
+    The browser window stays unchanged. This page checks container sizing, not mobile gestures.</p>
+<label>Parent layout <select id="family-layout" @bind="_layoutKind"><option value="flex">Flex row</option><option value="grid">CSS grid</option><option value="split">Split pane</option></select></label>
+<button id="family-portrait" @onclick="() => _width = 320">Portrait box</button>
+<button id="family-landscape" @onclick="() => _width = 640">Landscape box</button>
+<button id="family-panel" @onclick="() => _width = 240">Narrow panel</button>
+<button id="family-wide" @onclick="() => _width = 800">Restore box</button>
+@if (Product != "pivot")
+{
+    <label><input id="family-pin" type="checkbox" @bind="_pin" /> Pin two columns</label>
+}
+<p id="family-state">Product changes: @_changes; requested pinning: @(Product == "pivot" ? "report labels" : (_pin ? "2" : "0"))</p>
+<div id="family-parent" style="@ParentStyle">
+    @if (_layoutKind == "split")
+    {
+        <aside style="width: 80px; flex: none">Other pane</aside>
+        <div role="separator" aria-orientation="vertical" style="width: 8px; flex: none; background: silver"></div>
+    }
+    <section id="family-box" style="@BoxStyle">
+        @if (_layoutKind != "split") { <aside style="width: 40px; flex: none">Box</aside> }
+        @if (DemoChrome.IsMud(ChromeName))
+        {
+            <MudExGridPaper Square="true" Elevation="0" Style="flex: 1 1 auto">@ProductView</MudExGridPaper>
+        }
+        else
+        {
+            <div style="min-width: 0; flex: 1 1 auto">@ProductView</div>
+        }
+    </section>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "product")] public string Product { get; set; } = "grid";
+    [SupplyParameterFromQuery(Name = "chrome")] public string? ChromeName { get; set; }
+    private int _width = 800;
+    private string _layoutKind = "flex";
+    private bool _pin = true;
+    private int _changes;
+    private readonly IGridChrome _gridChrome = new MudGridChrome();
+    private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
+    private string ParentStyle => _layoutKind == "split" ? FormattableString.Invariant($"display: flex; width: {_width + 88}px") : "display: block";
+    private string BoxStyle => FormattableString.Invariant($"display: {(_layoutKind == "grid" ? "grid" : "flex")}; grid-template-columns: auto 1fr; width: {_width}px; min-width: 0");
+
+    private RenderFragment ProductView => Product switch
+    {
+        "sheet" => @<ExSheet Document="_document" DocumentChanged="SheetChanged" PinnedColumnCount="@(_pin ? 2 : 0)"
+                            Chrome="@(DemoChrome.IsMud(ChromeName) ? MudSheetChrome.Default : null)"
+                            Culture="Culture" ViewportWidth="ViewportSize.Stretch" ViewportHeight="280" />,
+        "pivot" => @<ExPivot Source="_source" Layout="_pivotLayout" LayoutChanged="PivotChanged" ShowFieldList="false"
+                             PivotChrome="@(DemoChrome.IsMud(ChromeName) ? MudPivotChrome.Default : null)"
+                             ViewportWidth="ViewportSize.Stretch" ViewportHeight="280" />,
+        _ => @<ExGrid TRow="PreciseRow" Window="Rows" Columns="Columns" PinnedColumnCount="@(_pin ? 2 : 0)"
+                       Chrome="@(DemoChrome.IsMud(ChromeName) ? _gridChrome : null)" RowHeight="24"
+                       ViewportWidth="ViewportSize.Stretch" ViewportHeight="280"
+                       OnColumnWidthChanged="WidthChanged" OnColumnOrderChanged="OrderChanged" OnPinnedCountChanged="PinnedChanged" />,
+    };
+    private void WidthChanged(ColumnWidthChange _) => _changes++;
+    private void OrderChanged(IReadOnlyList<string> _) => _changes++;
+    private void PinnedChanged(int _) => _changes++;
+    private void SheetChanged(SheetDocument _) => _changes++;
+    private void PivotChanged(PivotLayout _) => _changes++;
+
+    public sealed record PreciseRow(string Group, string Item, decimal Amount, decimal Fraction);
+    private static readonly PreciseRow[] Rows = Enumerable.Range(0, 30)
+        .Select(i => new PreciseRow("Long report label that keeps its declared width", $"Item-{i:00}", 9007199254740993.25m, 0.000000000000000123m))
+        .ToArray();
+    private static readonly GridColumn<PreciseRow>[] Columns =
+    [
+        new("Group", ColumnType.Text, r => r.Group, width: new(ColumnWidth.Fixed(120))),
+        new("Item", ColumnType.Text, r => r.Item, width: new(ColumnWidth.Fixed(140))),
+        new("Amount", ColumnType.Number, r => r.Amount, width: new(ColumnWidth.Fixed(240)), format: v => ((decimal)v).ToString("0.00", Culture)),
+        new("Fraction", ColumnType.Number, r => r.Fraction, width: new(ColumnWidth.Fixed(220)), format: v => ((decimal)v).ToString("0.000000000000000000", Culture)),
+    ];
+    private readonly SheetDocument _document = MakeDocument();
+    private static SheetDocument MakeDocument()
+    {
+        var sheet = new Sheet(Culture);
+        sheet.Enter(new CellAddress(0, 0), "Account");
+        sheet.Enter(new CellAddress(0, 1), "Value");
+        sheet.Enter(new CellAddress(0, 2), "1234567890123.45");
+        sheet.Enter(new CellAddress(0, 3), "0.000000123456789");
+        sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse("A:B"), 18));
+        sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse("C:D"), 28));
+        sheet.Do(SheetEdit.SetNumberFormat(CellRange.Parse("C1"), NumberFormat.Parse("0.00")));
+        sheet.Do(SheetEdit.SetNumberFormat(CellRange.Parse("D1"), NumberFormat.Parse("0.000000000000000")));
+        return sheet.ToDocument();
+    }
+    private readonly PivotSource _source = PivotSource.From(Rows.Take(1).ToArray(), PivotFields.Of<PreciseRow>()
+        .Text("Group", r => r.Group).Text("Item", r => r.Item)
+        .Number("Amount", r => r.Amount).Number("Fraction", r => r.Fraction));
+    private readonly PivotLayout _pivotLayout = new()
+    {
+        Rows = [new PivotFieldPlacement("Group")],
+        Values = [new PivotValueField("Amount", PivotAggregation.Sum) { NumberFormat = "0.00" },
+                  new PivotValueField("Fraction", PivotAggregation.Sum) { NumberFormat = "0.000000000000000000" }],
+    };
+}
