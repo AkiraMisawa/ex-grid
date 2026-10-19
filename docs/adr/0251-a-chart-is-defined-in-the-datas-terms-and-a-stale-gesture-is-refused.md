@@ -52,6 +52,8 @@ other axis half the panel.
 
 `ExChart` turns a grid selection into a Chart Definition through the context menu's Consumer
 command (ADR-0036), which carries the ranges and the Row Sequence Version. No core change is needed.
+What the command is, where the chart goes, its orientation, adding a series and what the chart does when
+the data moves are in ADR-0258.
 
 - **A selection taken under another Row Sequence Version is refused** ("The rows were reordered after
   the selection was made. Select again.") — spine rule 6.
