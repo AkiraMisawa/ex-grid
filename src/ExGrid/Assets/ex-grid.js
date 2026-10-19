@@ -329,10 +329,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         followObserver.disconnect();
     };
+    // DOM focus on an element of this grid's own: inside this root and not inside a grid nested in it,
+    // whose keyboard a press on it made that grid's (ADR-0018). A request of this core's landing a round
+    // trip after that press would otherwise take the keyboard back from it: `=` typed and a nested grid
+    // pressed at once, and on a circuit the edit's focus, asked for by the `=`, landed after the press
+    // and put the keyboard back in the Sheet's edit (ED-22 under the hunt, 2026-10-19).
+    const ownsFocus = (active) => !!root && active instanceof Element && root.contains(active)
+        && active.closest('.ex-grid') === root;
     // DOM focus inside this root, or on nothing: the keyboard is still this grid's.
     const keyboardStillHere = () => {
         const active = document.activeElement;
-        return !!root && (!active || active === document.body || active === document.documentElement || root.contains(active));
+        return !!root && (!active || active === document.body || active === document.documentElement || ownsFocus(active));
     };
     // After the frame that paints what is held, and after a reveal's write and repaint: a rAF puts
     // the request in the frame, and a timer of no delay in the task after its paint.
@@ -4658,7 +4665,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 && active.closest('.ex-formula-bar') !== null;
             if (!root || !(element instanceof HTMLElement) || !element.isConnected
                 || !(consumerPopover === true || !active || active === document.body || active === document.documentElement
-                    || (root.contains(active) && !own))
+                    || (ownsFocus(active) && !own))
                 || openingOvertaken(element)) {
                 return;
             }
@@ -4708,7 +4715,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             const own = active instanceof Element && active !== staleField
                 && active.closest('.ex-formula-bar') !== null;
             if (root && (!active || active === document.body || active === document.documentElement
-                || (root.contains(active) && (fromField === true || !own))
+                || (ownsFocus(active) && (fromField === true || !own))
                 || (frame instanceof Element && frame.contains(active)))) {
                 if (frame instanceof Element && active instanceof Element && root.contains(active)) {
                     return true;
@@ -4783,7 +4790,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 && active.closest('.ex-formula-bar') !== null;
             if (root && element instanceof HTMLElement && element.isConnected
                 && (!active || active === document.body || active === document.documentElement
-                    || (root.contains(active) && !own))) {
+                    || (ownsFocus(active) && !own))) {
                 staleField = null;
                 // A Chrome can name the box of a design-system control whose input it cannot
                 // reference in .NET (More Colours, ADR-0039). A box starts at its first enabled
@@ -4850,7 +4857,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (fieldOfItsOwn && fromField !== true) {
                 return;
             }
-            if (!active || active === document.body || active === document.documentElement || root.contains(active)) {
+            if (!active || active === document.body || active === document.documentElement || ownsFocus(active)) {
                 focusDeclined = false;
                 // Not scrolled by the focus itself: the page follows the editor as it follows a move,
                 // to the nearest edge, once it has painted (ADR-0204) — an editor opened by keys below

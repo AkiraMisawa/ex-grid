@@ -448,8 +448,8 @@ public class ShippedStylesheetTests
         Assert.True(handOn.Success, "handKeyboardTo(element, inTurn) is not in the module");
         var body = handOn.Value;
 
-        // The hand-back's condition: this root's own focus, or none (ADR-0018)...
-        Assert.Contains("root.contains(active)", body, StringComparison.Ordinal);
+        // The hand-back's condition: this root's own focus, not a nested grid's, or none (ADR-0018)...
+        Assert.Contains("ownsFocus(active)", body, StringComparison.Ordinal);
         Assert.Contains("active === document.body", body, StringComparison.Ordinal);
         Assert.Contains("active === document.documentElement", body, StringComparison.Ordinal);
         // ...and not a field beside the rows with focus of its own, unless a press on the rows left
@@ -739,8 +739,10 @@ public class ShippedStylesheetTests
         // core holds no reference to a control it did not render (ADR-0010).
         Assert.Contains("ownSurface(b) === b", body, StringComparison.Ordinal);
         Assert.Contains("surfaceField(box)", body, StringComparison.Ordinal);
-        // Granted only while DOM focus is inside this root or on nothing: reclaimFocus's condition.
-        Assert.Contains("!active || active === document.body || active === document.documentElement || root.contains(active)", body, StringComparison.Ordinal);
+        // Granted only while DOM focus is inside this root, not in a grid nested in it, or on nothing:
+        // reclaimFocus's condition (ED-22 under the hunt, 2026-10-19).
+        Assert.Contains("!active || active === document.body || active === document.documentElement || ownsFocus(active)", body, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"const ownsFocus = \(active\) => !!root && active instanceof Element && root\.contains\(active\)\s*&& active\.closest\('\.ex-grid'\) === root;"), script.Text);
         // Where DOM focus is, or, granted as the keyboard leaves the Keyboard Field, where it is going:
         // the browser has it on nothing while it tells the departure (ADR-0080, 2026-10-12).
         Assert.Contains("const active = toward instanceof Element ? toward : document.activeElement;", body, StringComparison.Ordinal);
@@ -799,7 +801,7 @@ public class ShippedStylesheetTests
         Assert.Contains("!keyboardStillHere() || root.getAttribute('data-ex-follow-focus') !== request.focus", awaited.Value, StringComparison.Ordinal);
         Assert.DoesNotContain("aria-activedescendant", awaited.Value, StringComparison.Ordinal);
         Assert.Contains("root.querySelector(`#${CSS.escape(request.target)}`)", awaited.Value, StringComparison.Ordinal);
-        Assert.Matches(new Regex(@"const keyboardStillHere = \(\) => \{\s*const active = document\.activeElement;\s*return !!root && \(!active \|\| active === document\.body \|\| active === document\.documentElement \|\| root\.contains\(active\)\);"), script);
+        Assert.Matches(new Regex(@"const keyboardStillHere = \(\) => \{\s*const active = document\.activeElement;\s*return !!root && \(!active \|\| active === document\.body \|\| active === document\.documentElement \|\| ownsFocus\(active\)\);"), script);
 
         // No layout is read anywhere in it.
         foreach (var part in new[] { bring.Value, after.Value, awaited.Value })
@@ -815,7 +817,7 @@ public class ShippedStylesheetTests
         var body = method.Value;
 
         Assert.Contains("!active || active === document.body || active === document.documentElement", body, StringComparison.Ordinal);
-        Assert.Contains("(root.contains(active) && !own)", body, StringComparison.Ordinal);
+        Assert.Contains("(ownsFocus(active) && !own)", body, StringComparison.Ordinal);
         Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
         Assert.Contains("element.isConnected", body, StringComparison.Ordinal);
         Assert.Contains("target.focus({ preventScroll: preventScroll === true });", body, StringComparison.Ordinal);
