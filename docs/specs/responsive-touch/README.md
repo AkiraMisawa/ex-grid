@@ -101,4 +101,5 @@ draft has been replaced by these records; it is no longer an outstanding prerequ
 The new pointer bridge, touch editing and keyboard preparation, external frames, and Pivot touch
 placement are not implemented. Full RT coverage, input-order stages 03–07, CI gates and the
 Android/iPhone/iPad real-device records remain required before mobile support can be called done.
-No implementation push has been authorized; `/implement` authorizes local commits only.
+On 2026-10-20 the user authorized work-branch pushes, Draft PR creation and CI/hunt verification
+for this implementation and its later stages. Direct pushes to main and merging are not included.
