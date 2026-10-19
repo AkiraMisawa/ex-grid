@@ -68,6 +68,12 @@ public partial class ExChart
     /// <summary>Raised when the user switches the horizontal axis under Chart Filters.</summary>
     [Parameter] public EventCallback<AxisScale> OnScaleChanged { get; set; }
 
+    /// <summary>
+    /// Raised when the user clicks a point: pressed and released at one position, on the series
+    /// nearest the pointer that has a value there (ADR-0258). A grid bridge shows its cell.
+    /// </summary>
+    [Parameter] public EventCallback<ChartPointClick> OnPointClick { get; set; }
+
     [Inject] private IJSRuntime JS { get; set; } = null!;
 
     private static readonly IReadOnlySet<string> NoneHidden = new HashSet<string>();
@@ -208,9 +214,18 @@ public partial class ExChart
         var press = _press;
         _press = null;
         if (press is not { } p) return;
-        if (p.Version != _version || version != _version || index < 0 || index >= _scene.Positions.Count || index == p.Index)
+        if (p.Version != _version || version != _version || index < 0 || index >= _scene.Positions.Count)
         {
             StateHasChanged();
+            return;
+        }
+        if (index == p.Index)
+        {
+            // A click, read from the reading the pointer's position holds: one taken at another
+            // position, or none, names no point, and nothing is raised (spine rule 6).
+            if (_pointerIndex == index && _reading?.Lines.Where(l => l.Y is not null && l.Value is not null)
+                    .MinBy(l => Math.Abs(l.Y!.Value - _readingY)) is { } line)
+                await OnPointClick.InvokeAsync(new ChartPointClick(line.Id, _scene.Positions[index].Position));
             return;
         }
         var a = _scene.Positions[Math.Min(p.Index, index)].Position;

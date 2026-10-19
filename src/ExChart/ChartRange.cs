@@ -18,3 +18,8 @@ public sealed record ChartRange(double? From, double? To)
 /// <param name="Hidden">Whether it is now hidden.</param>
 public sealed record SeriesVisibility(string Key, bool Hidden);
 
+
+/// <summary>A click on a point of a chart (ADR-0258, M3-Q6): the series nearest the pointer, at the position clicked.</summary>
+/// <param name="SeriesId">The series' identity, as the Chart Definition gives it.</param>
+/// <param name="Position">The position clicked, in the axis' own values.</param>
+public sealed record ChartPointClick(string SeriesId, double Position);

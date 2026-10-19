@@ -78,6 +78,8 @@ public static class DemoPageList
             "A rate-delta report: desks and curves in Rows, tenors in Columns, ordered ON, TN, 1W … 30Y by an Order Key, with 18M and 1Y6M side by side (ADR-0060)."),
         new("chart", "Charts", "ExChart",
             "An exposure profile in two panels and a hazard curve drawn as steps: the tooltip lists every series at the pointer's date, the legend hides a series, a drag narrows the range, and Next run replaces the data keeping what the user changed (ADR-0252, ADR-0270 to ADR-0273)."),
+        new("chart-bridge", "Charting a selection", "ExChart",
+            "A curve history charted from the grid's context menu: series in columns along the dates or in rows across the tenors, Add to chart, a refusal by name, a chart that keeps its rows through a recalculation and a deleted row, and a click that moves the grid's Focus (ADR-0258)."),
     ];
 
     /// <summary>The entry for a base-relative path, ignoring any query or fragment, or null
