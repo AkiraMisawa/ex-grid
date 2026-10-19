@@ -62,6 +62,11 @@ exist, the drag has to answer to them anyway, and the answer had better be delib
 
 ## Reordering: what you grab is the unit that moves
 
+*(2026-10-19, responsive/touch Q16, [ADR-0045](./0045-exgrid-is-a-desktop-grid.md): touch
+reordering is entered explicitly from the column menu, with both a placement drag and non-drag
+movement commands. The units and Pinned/Header Group boundaries below apply to both. Ordinary
+header swipes scroll; a leaf move never becomes a group move merely because it went too far.)*
+
 [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md) settled the
 gesture — the grid notifies, the Consumer pushes back a reordered `Columns`, and a drag never
 crosses the pinned boundary. Header Groups add one rule in the same shape: **a group's edge is a

@@ -4,6 +4,16 @@ JavaScript is used **only** where Blazor genuinely cannot do the job, or where a
 shows the Blazor-side approach is too slow. "Keep JS to a minimum" is too vague to enforce,
 so the rule is stronger: **there is a list, and anything not on it needs a new ADR.**
 
+*(2026-10-19, responsive/touch Q13 and Q23–Q26,
+[ADR-0045](./0045-exgrid-is-a-desktop-grid.md): four individually justified uses were accepted.
+Their formal records are [ADR-0260](./0260-touch-input-reports-browser-facts-and-keeps-command-meaning-in-csharp.md),
+[ADR-0261](./0261-touch-editing-prepares-the-keyboard-during-user-activation.md),
+[ADR-0262](./0262-external-frames-follow-visual-viewport-notifications.md) and
+[ADR-0263](./0263-pivot-touch-drag-resolves-only-registered-live-targets.md).
+The list grows from ten to fourteen permitted uses. The four additions are approved for
+implementation, not claimed as shipped or verified. Product command meanings remain in C#;
+the new entries do not permit grid-cell measurement or rediscovering targets at replay time.)*
+
 ## The allowlist
 
 Every entry names the reason it cannot be done from Blazor.
@@ -20,8 +30,12 @@ Every entry names the reason it cannot be done from Blazor.
 | **A `matchMedia` listener reporting the Device Pixel** | Added 2026-10-02 ([ADR-0090](./0090-the-grid-is-told-its-device-pixel-and-puts-column-edges-on-it.md)). A line drawn in Device Pixels, and a column edge put on one, need the size of a Device Pixel at every resolution, and the stylesheet's `resolution` steps know it only at the steps. The listener watches `(resolution: <current>dppx)`, reports `devicePixelRatio` at attach and when that query stops matching (a zoom, or a window moved to a display of another scale), and arms itself on the new value. It is told, never read on the path to a paint, and fires never per render. Blazor has no media query listener and no `devicePixelRatio`. |
 | **The browser's time zone, reported once at attach** | Added 2026-10-03 ([ADR-0122](./0122-the-browser-tells-the-grid-its-time-zone.md)). `TODAY()` is the day on the user's device (ADR-0121), and on Blazor Server .NET runs on the server, where `TimeZoneInfo.Local` is the server's zone. The module reads `Intl.DateTimeFormat().resolvedOptions().timeZone` once at attach, only when the Consumer has asked through `OnBrowserTimeZone`, and the grid passes the IANA name on. No layout is read, and nothing runs per render. Browsers raise no event when the zone changes, so it is not reported again. Blazor has no way to read it. |
 | **Committing a text field changed by held typing when it is left** | Added 2026-10-14, decided with the user ([ADR-0210](./0210-held-text-commits-when-its-field-is-left.md)). A script-written value does not become a native edit. The core temporarily hears blur on the field it actually changed and supplies its missing change notification; a change listener on that same field removes the supplement when a normal commit comes first. *(Since 2026-10-17, ADR-0210's widening: a keydown listener on that same field supplies it for an Enter typed there once the hold is over, which the browser does not commit either.)* At most one field per instance, removed on commit, replacement or disposal. No document listener, layout read, timer or observer. Blazor cannot mark the script-written value as a native edit or reach a design system's private input. |
+| **Touch pointer lifecycle and gesture candidates, with a one-time input-capability hint** ([ADR-0260](./0260-touch-input-reports-browser-facts-and-keeps-command-meaning-in-csharp.md)) | Pointer capture, event arbitration before defaults and original gesture timing must be handled in the browser. Scoped to the owning Input Root and registered external surfaces; preserves type, target/Paint and cancellation, deduplicates compatibility events and retains native pan/pinch and assistive activation. C# decides commands and grid hit testing; no per-cell listeners or unmeasured per-move optimization. |
+| **Provisional keyboard preparation during an activating touch edit gesture** ([ADR-0261](./0261-touch-editing-prepares-the-keyboard-during-user-activation.md)) | A Server response may arrive after the software keyboard's user-activation opportunity. Focus only the actual input preregistered by C#, retain immediate text for its candidate target, and leave final acceptance/refusal in the owner's Input Order. Selection alone does not prepare the keyboard; no second edit or focus theft by a late answer. |
+| **Visual viewport notifications while external surfaces are open** ([ADR-0262](./0262-external-frames-follow-visual-viewport-notifications.md)) | Blazor does not expose visual viewport offsets, dimensions, scale or resize/scroll notifications. Report initially and on change; last close unsubscribes. C# places external frames; no cell/anchor measurement, polling or guessed keyboard height. |
+| **Registered target lookup during active ExPivot touch drag** ([ADR-0263](./0263-pivot-touch-drag-resolves-only-registered-live-targets.md)) | Captured pointer input does not supply HTML drag target transitions for browser-laid-out Field List entries. `elementFromPoint()` resolves only that instance's registered Area/entry/removal targets during the gesture; report changes and the final target with rendering identity. C# validates the move; no grid lookup or target rediscovery at replay. |
 
-That is the entire list. **Ten entries.**
+That is the entire list. **Fourteen permitted entries; the four touch additions are not yet implemented.**
 
 *(2026-10-11, decided with the user, [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)'s
 note on ST-2: when an untyped editor's row leaves the Window, the editor's listener answers one question,
@@ -176,7 +190,10 @@ These are the places where reaching for JS would be the easy answer, and where w
   ([ADR-0009](./0009-filter-panel-contract.md), ADR-0010,
   [ADR-0036](./0036-the-context-menu-is-the-column-menu-shape-over-a-selection.md)) need **no
   JS**: each stands under the instance root and stays inside the grid's box, bounded by a height
-  the core writes inline ([ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md)).
+  the core writes inline ([ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md)). The adaptive external frames
+  added by ADR-0045 use [ADR-0262](./0262-external-frames-follow-visual-viewport-notifications.md)'s
+  viewport notifications; C# still decides their presentation. This is a bounded exception to
+  the old in-grid-only scope, not permission to measure an anchor or position every popover in JS.
   *(Corrected 2026-09-24. This entry used to give the reason as the Popover API being driven
   by the `popover` and `popovertarget` attributes. That holds only for a popover opened by a
   click on a button. The grid's popovers also open from keys and a right-click, which would
@@ -186,7 +203,9 @@ These are the places where reaching for JS would be the easy answer, and where w
   Instead numeric columns assume `font-variant-numeric: tabular-nums` and estimate from digit
   count ([ADR-0016](./0016-column-width-and-overflow.md)). No measurement round-trip, and it
   works before the cell is painted.
-- **Focus.** `ElementReference.FocusAsync()` is enough. *(Refined while wiring the keyboard:
+- **Focus.** `ElementReference.FocusAsync()` is enough for ordinary focus requests. The
+  touch-edit activation exception is [ADR-0261](./0261-touch-editing-prepares-the-keyboard-during-user-activation.md):
+  a preregistered input is prepared during the gesture, with final acceptance still in C#. *(Refined while wiring the keyboard:
   that covers **taking** focus. **Releasing** it has no Blazor API, and Escape has to release
   it — Enter and Tab never leave the selection ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)),
   so without an exit the keyboard is trapped in the grid. The key handle therefore has a

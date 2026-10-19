@@ -1,5 +1,14 @@
 # A popover stays inside its grid's box, and scrolls rather than being cut
 
+*(2026-10-19, responsive/touch Q7, [ADR-0045](./0045-exgrid-is-a-desktop-grid.md): the user
+accepted adding adaptive editing and command frames that may extend outside the grid's box.
+Q22 chooses a shared application-level rendering host for Built-in Chrome and connection to the
+existing dialog infrastructure for MudBlazor. Each external surface retains its owning product's
+state, keyboard ownership and Input Order. Q25–Q27 define provisional keyboard preparation,
+visual viewport notification and dismissal, with Inner Popups closing first. The existing in-grid
+presentation below remains its own contract. This note records the accepted direction rather
+than claiming that an external frame already exists.)*
+
 [ADR-0017](./0017-target-chromium-browsers-only.md) and
 [ADR-0018](./0018-multiple-instances-must-be-independent.md) settled where the grid's popovers —
 the column menu, the filter panel, the Context Menu — would live: in the browser's **top layer**

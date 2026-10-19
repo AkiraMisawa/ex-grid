@@ -1,5 +1,11 @@
 # The context menu is the column menu's shape, aimed at a selection. Right-click moves the Focus first
 
+*(2026-10-19, responsive/touch Q5, [ADR-0045](./0045-exgrid-is-a-desktop-grid.md): selection
+actions also become reachable by a visible control and by long press. Inside Selection a long
+press preserves it; outside, it selects the pressed cell before opening the actions. Scrolling
+cancels a long-press candidate, and opening the menu writes no cell data. Q20 and Q24 define cancellation and the browser input boundary; timing thresholds are
+implementation parameters to verify. This is a decision, not an implemented touch path.)*
+
 A secondary click opens a menu whose items the core decides and the Consumer extends, exactly as
 [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) settled for the column menu. Almost
 all of this ADR is derivation; three things were genuine choices, and a fourth was a contradiction

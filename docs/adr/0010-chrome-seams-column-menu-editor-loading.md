@@ -69,6 +69,15 @@ them either.
 
 ## Cell editor — never inside the row; one floating input
 
+*(2026-10-19, responsive/touch Q7, [ADR-0045](./0045-exgrid-is-a-desktop-grid.md): an adaptive
+editing frame may use space outside the grid's box while sharing the editing target, draft,
+validation and commit/cancel meanings. Q11 chooses an editing dialog for touch-initiated edits,
+retained throughout the edit across rotation and software-keyboard changes; ordinary mouse edits
+remain inline. Q22 and Q25–Q27 define shared frame hosting, provisional keyboard preparation,
+visual viewport notifications and dismissal. Those contracts still need implementation;
+the cell-positioned presentation below remains the existing implementation. No editor is added
+to each row.)*
+
 An `<input>` must not go inside a row. It breaks row memoisation
 ([ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md)) and adds DOM weight.
 Use **one input floated over the focused cell** — the same idea as the selection overlay

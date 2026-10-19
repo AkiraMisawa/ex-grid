@@ -603,6 +603,12 @@ or a drag. The grid keeps it in view while extending, as Excel does. The fixed e
 ([ADR-0052](./docs/adr/0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)).
 _Avoid_: anchor (retired), moving end, cursor
 
+**Selection Handle**:
+The control a user drags to move the Extent of a selected range while its Focus stays fixed.
+It changes Selection only, never cell data. Distinct from the fill handle, which asks for Fill
+([ADR-0045](./docs/adr/0045-exgrid-is-a-desktop-grid.md)).
+_Avoid_: fill handle, resize handle (this changes a range, not a column's width)
+
 **Held Selection**:
 A Selection paired with the Row Sequence Version it was made under. Reconciling it
 against the current version is what drops the selection on reorder — the rule lives in
