@@ -77,6 +77,13 @@ and whether it is extrapolated. ExChart computes none of it
 ([ADR-0257](./docs/adr/0257-notes-and-interpolated-series-are-the-consumers-said-as-such.md)).
 _Avoid_: smoothed series, fitted series
 
+**Chart Filters**:
+What the user narrows a chart to without changing its Chart Definition: the series shown, the x range,
+and a declared axis' mode. Each change is raised to the Consumer and taken back as a parameter, held
+in the data's terms; the chart keeps no View State
+([ADR-0272](./docs/adr/0272-a-chart-holds-no-view-state-it-raises-what-the-user-changed.md)).
+_Avoid_: chart settings, zoom state
+
 > **How far do formulas go?** What people call "a formula" splits three ways, and **two of them
 > are already possible in ExGrid**.
 >
