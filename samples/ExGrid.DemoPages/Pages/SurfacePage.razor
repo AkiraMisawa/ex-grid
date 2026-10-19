@@ -1,0 +1,103 @@
+@page "/surface"
+@using global::ExChart.Components
+@using global::ExChart.Engine
+
+<DemoNav />
+
+@* ExChart's 3D surface (/surface): the browser layer's fixture for tickets 30-34. An FX volatility
+   surface of five deltas by eight tenors with one hole (25C at 5Y), which is drawn as a hole. The page
+   keeps the view and the slice, as a Consumer would (ADR-0272), and writes the last event raised
+   under the surface. "Next run" replaces the data, as tomorrow's run would; "Copy SVG" asks the
+   surface for its drawing as SVG text and writes its length (ADR-0282). *@
+<DemoChromeAssets>
+    <Head>
+        <ExChartStylesheet />
+    </Head>
+</DemoChromeAssets>
+
+<h1>3D surface</h1>
+
+<p>
+    Drag to turn the surface, or use the arrow keys; Shift pans, the wheel or + and - zoom (ADR-0274).
+    Move over it to read the grid point nearest the pointer, and click a tenor or a delta to draw that
+    slice beside it. The surface has no value at 25C 5Y, and is drawn with a hole there.
+</p>
+
+<section id="vol">
+    <button type="button" id="next-run" @onclick="NextRun">Next run</button>
+    <button type="button" id="svg-text" @onclick="SvgText">Copy SVG</button>
+    <ExSurface @ref="_surface"
+               Definition="_definition"
+               Title="EURUSD volatility"
+               Width="640"
+               Height="420"
+               View="_view"
+               OnViewChanged="ViewChanged"
+               Slice="_slice"
+               OnSliceChanged="SliceChanged" />
+    <p id="surface-events">@_events</p>
+    <p id="surface-svg">@_svg</p>
+</section>
+
+<section id="interpolated">
+    <h2>Interpolated by the page</h2>
+    <p>
+        The same quotes on years and deltas, interpolated bilinearly by the page with ExChart.Engine's
+        helper and handed in as a function (ADR-0257). The chart samples it, says the method under the
+        surface and in the tooltip, draws no dot at an interpolated value, and leaves a hole wherever a
+        cell has a missing corner: the helper does not reach past the quotes.
+    </p>
+    <ExSurface Definition="Interpolated" Title="EURUSD volatility, bilinear" Width="640" Height="420" />
+</section>
+
+@code {
+    private static readonly string[] Deltas = ["10P", "25P", "ATM", "25C", "10C"];
+    private static readonly string[] Tenors = ["1W", "1M", "3M", "6M", "1Y", "2Y", "5Y", "10Y"];
+
+    private ExSurface? _surface;
+    private SurfaceDefinition _definition = Vol(0);
+    private int _run;
+    private SurfaceView? _view;
+    private SurfaceSlice? _slice;
+    private string _events = "";
+    private string _svg = "";
+
+    // A smile over a term structure, deterministic, and moved a little by each run.
+    private static SurfaceDefinition Vol(int run)
+    {
+        double[] smile = [1.6, 0.5, 0, 0.3, 1.1];
+        double Term(int t) => 9.5 + 1.8 * Math.Exp(-t / 2.5) + 0.12 * t;
+        var z = Tenors.Select((_, t) => (IReadOnlyList<ChartValue?>)Deltas.Select((d, i) =>
+            d == "25C" && Tenors[t] == "5Y" ? (ChartValue?)null : ChartValue.Of(Math.Round(Term(t) + smile[i] * (1 + 0.1 * t) + run * 0.2, 2))).ToArray()).ToArray();
+        return new SurfaceDefinition(SurfaceAxis.Of("Delta", Deltas), SurfaceAxis.Of("Tenor", Tenors), z, "Volatility",
+            v => ((double)v).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) + "%");
+    }
+
+    private static readonly double[] DeltaValues = [10, 25, 50, 75, 90];
+    private static readonly double[] TenorYears = [7 / 365.0, 1 / 12.0, 0.25, 0.5, 1, 2, 5, 10];
+
+    private static readonly SurfaceDefinition Interpolated = SurfaceDefinition.Sampled(
+        global::ExChart.Engine.Interpolation.Interpolate.Bilinear(DeltaValues, TenorYears,
+            Vol(0).Z.Select(r => (IReadOnlyList<double?>)r.Select(v => v?.ToDouble()).ToArray()).ToArray()),
+        "Delta", "Years", "Volatility", samples: 13);
+
+    private void NextRun() => _definition = Vol(++_run);
+
+    private void ViewChanged(SurfaceView view)
+    {
+        _view = view;
+        _events = $"View: yaw {view.Yaw}, pitch {view.Pitch}, zoom {view.Zoom}, pan {view.PanX} {view.PanY}";
+    }
+
+    private void SliceChanged(SurfaceSlice slice)
+    {
+        _slice = slice;
+        _events = $"Slice: {slice.Axis} {slice.Value}";
+    }
+
+    private async Task SvgText()
+    {
+        var text = _surface is null ? null : await _surface.SvgTextAsync();
+        _svg = text is null ? "No drawing" : $"SVG: {text.Length} characters, {(text.Contains("ex-chart-heat") ? "with" : "without")} classes";
+    }
+}

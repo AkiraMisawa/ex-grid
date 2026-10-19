@@ -1,0 +1,84 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   Every product using is written with global:: (the CS0426 trap in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExChart.Engine
+@implements IAsyncDisposable
+
+<div class="ex-chart ex-chart-surface" style="@RootStyle" aria-busy="@(Busy ? "true" : null)">
+    <div data-ex-notice="stylesheet" data-ex-stylesheet="@ShippedAssets.StylesheetName" data-ex-stamp="@ShippedAssets.StylesheetStamp" style="display: none">@StylesheetNotice</div>
+    <div class="ex-chart-toolbar" role="toolbar" aria-label="@ToolbarName">
+        <button type="button" class="ex-chart-button ex-chart-surface-reset" disabled="@(_view == SurfaceView.Default)" @onclick="ResetViewAsync">Reset view</button>
+        <button type="button" class="ex-chart-button ex-chart-table-toggle" aria-expanded="@(_tableOpen ? "true" : "false")" @onclick="ToggleTable">View as table</button>
+    </div>
+    <div class="ex-chart-surface-row">
+        <div class="ex-chart-stage" style="@StageStyle">
+            @* The 3D entry draws inside this box and owns its children; Blazor renders none. *@
+            <div @ref="_box" class="ex-chart-surface-box" style="@StageStyle" tabindex="0" role="img" aria-roledescription="3D surface" aria-label="@_summary"></div>
+            @if (_point is { } p)
+            {
+                <div class="ex-chart-tooltip ex-chart-surface-tooltip@(p.X > Width / 2 ? " ex-chart-tooltip-flip" : "")" style="@TooltipStyle(p)" role="status">
+                    <div class="ex-chart-tooltip-line"><span class="ex-chart-tooltip-name">@AxisName(Definition.X.Title, "x")</span><span class="ex-chart-tooltip-value">@Definition.X.Write(p.I)</span></div>
+                    <div class="ex-chart-tooltip-line"><span class="ex-chart-tooltip-name">@AxisName(Definition.Y.Title, "y")</span><span class="ex-chart-tooltip-value">@Definition.Y.Write(p.J)</span></div>
+                    <div class="ex-chart-tooltip-line ex-chart-tooltip-position"><span class="ex-chart-tooltip-name">@AxisName(Definition.ZTitle, "Value")</span><span class="ex-chart-tooltip-value">@Definition.WriteZ(Definition.At(p.I, p.J)!.Value)</span></div>
+                    @if (Definition.Method is { } method)
+                    {
+                        <div class="ex-chart-tooltip-note">@(Definition.IsInterpolated(p.I, p.J) ? $"interpolated, {method}" : "quoted")</div>
+                    }
+                </div>
+            }
+        </div>
+        @if (_sliceChart is { } chart)
+        {
+            <div class="ex-chart-surface-slice-chart">
+                <ExChart Definition="chart" Title="@chart.Series[0].Name" Width="SliceWidth" Height="Height" Density="Density" />
+            </div>
+        }
+    </div>
+    @if (_scriptRefused)
+    {
+        <p class="ex-chart-script-notice" role="alert">@ScriptNotice</p>
+    }
+    @if (_sliceNote is not null || Definition.AllNotes.Count > 0)
+    {
+        <ul class="ex-chart-notes">
+            @foreach (var line in Definition.AllNotes)
+            {
+                <li>@line</li>
+            }
+            @if (_sliceNote is { } note)
+            {
+                <li>@note</li>
+            }
+        </ul>
+    }
+    @if (_tableOpen)
+    {
+        <div class="ex-chart-table-wrap">
+            <table class="ex-chart-table">
+                <caption>@(string.IsNullOrWhiteSpace(Title) ? "Surface data" : Title)</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">@AxisName(Definition.Y.Title, "y") \ @AxisName(Definition.X.Title, "x")</th>
+                        @for (var i = 0; i < Definition.X.Values.Count; i++)
+                        {
+                            <th scope="col">@Definition.X.Write(i)</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var j = 0; j < Definition.Y.Values.Count; j++)
+                    {
+                        <tr>
+                            <th scope="row">@Definition.Y.Write(j)</th>
+                            @for (var i = 0; i < Definition.X.Values.Count; i++)
+                            {
+                                <td>@(Definition.At(i, j) is { } v ? Definition.WriteZ(v) : "")</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

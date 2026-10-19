@@ -79,9 +79,24 @@ _Avoid_: colour index, series colour (a colour is never a series' property, only
 **Interpolated series**:
 A series the Consumer declares to be values computed between quotes rather than quoted, drawn as a
 line paired with its quotes' markers, optionally in **Segments** that name the method over each range
-and whether it is extrapolated. ExChart computes none of it
+and whether it is extrapolated. ExChart never computes it on its own; the Consumer may compute it
+with an **Interpolation Helper**
 ([ADR-0257](./docs/adr/0257-notes-and-interpolated-series-are-the-consumers-said-as-such.md)).
 _Avoid_: smoothed series, fitted series
+
+**Interpolation Helper**:
+A general interpolation method in `ExChart.Engine.Interpolation` — linear, bilinear, natural cubic
+spline, linear on triangles — that a Consumer calls explicitly; its result names its method, which the
+chart shows, and has no value outside its points. The chart never calls one
+([ADR-0257](./docs/adr/0257-notes-and-interpolated-series-are-the-consumers-said-as-such.md)).
+_Avoid_: smoothing, fitting, extrapolation
+
+**Surface**:
+A 3D chart of x values × y values × a table of z, drawn with a hole wherever a value is missing; it may
+arrive as a function z(x, y) or with interpolated values marked, naming the method. A click on a grid
+line draws its **Slice** — a smile or a term structure — as a 2D chart beside it
+([ADR-0274](./docs/adr/0274-a-3d-surface-takes-a-grid-and-is-turned-zoomed-and-sliced.md)).
+_Avoid_: mesh (a mesh is how it is drawn), heatmap
 
 **Chart Filters**:
 What the user narrows a chart to without changing its Chart Definition: the series shown, the x range,
