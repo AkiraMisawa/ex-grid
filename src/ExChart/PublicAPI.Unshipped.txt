@@ -1,4 +1,21 @@
 #nullable enable
+abstract ExChart.GridChartSeries.<Clone>$() -> ExChart.GridChartSeries!
+const ExChart.GridChartCommands.AddPrefix = "exchart.add:" -> string!
+const ExChart.GridChartCommands.Chart = "exchart.chart" -> string!
+const ExChart.GridChartCommands.InColumns = "exchart.chart.columns" -> string!
+const ExChart.GridChartCommands.InRows = "exchart.chart.rows" -> string!
+ExChart.ChartOrientation
+ExChart.ChartOrientation.SeriesInColumns = 0 -> ExChart.ChartOrientation
+ExChart.ChartOrientation.SeriesInRows = 1 -> ExChart.ChartOrientation
+ExChart.ChartPointClick
+ExChart.ChartPointClick.<Clone>$() -> ExChart.ChartPointClick!
+ExChart.ChartPointClick.ChartPointClick(string! SeriesId, double Position) -> void
+ExChart.ChartPointClick.Deconstruct(out string! SeriesId, out double Position) -> void
+ExChart.ChartPointClick.Equals(ExChart.ChartPointClick? other) -> bool
+ExChart.ChartPointClick.Position.get -> double
+ExChart.ChartPointClick.Position.init -> void
+ExChart.ChartPointClick.SeriesId.get -> string!
+ExChart.ChartPointClick.SeriesId.init -> void
 ExChart.ChartRange
 ExChart.ChartRange.<Clone>$() -> ExChart.ChartRange!
 ExChart.ChartRange.ChartRange(double? From, double? To) -> void
@@ -8,6 +25,23 @@ ExChart.ChartRange.From.get -> double?
 ExChart.ChartRange.From.init -> void
 ExChart.ChartRange.To.get -> double?
 ExChart.ChartRange.To.init -> void
+ExChart.ChartTarget
+ExChart.ChartTarget.<Clone>$() -> ExChart.ChartTarget!
+ExChart.ChartTarget.Chart.get -> ExChart.GridChart!
+ExChart.ChartTarget.Chart.init -> void
+ExChart.ChartTarget.ChartTarget(string! Name, ExChart.GridChart! Chart) -> void
+ExChart.ChartTarget.Deconstruct(out string! Name, out ExChart.GridChart! Chart) -> void
+ExChart.ChartTarget.Equals(ExChart.ChartTarget? other) -> bool
+ExChart.ChartTarget.Name.get -> string!
+ExChart.ChartTarget.Name.init -> void
+ExChart.ColumnSeries
+ExChart.ColumnSeries.Column.get -> string!
+ExChart.ColumnSeries.Column.init -> void
+ExChart.ColumnSeries.ColumnSeries(string! Id, string! Panel, string! Column, ExChart.Engine.EquatableList<ExChart.KeyedPosition!>! Rows) -> void
+ExChart.ColumnSeries.Deconstruct(out string! Id, out string! Panel, out string! Column, out ExChart.Engine.EquatableList<ExChart.KeyedPosition!>! Rows) -> void
+ExChart.ColumnSeries.Equals(ExChart.ColumnSeries? other) -> bool
+ExChart.ColumnSeries.Rows.get -> ExChart.Engine.EquatableList<ExChart.KeyedPosition!>!
+ExChart.ColumnSeries.Rows.init -> void
 ExChart.Components.ExChart
 ExChart.Components.ExChart.AxisStyle.get -> ExChart.Engine.AxisStyle?
 ExChart.Components.ExChart.AxisStyle.set -> void
@@ -29,6 +63,8 @@ ExChart.Components.ExChart.IndependentScales.get -> System.Collections.Generic.I
 ExChart.Components.ExChart.IndependentScales.set -> void
 ExChart.Components.ExChart.Legend.get -> ExChart.Engine.LegendPlacement?
 ExChart.Components.ExChart.Legend.set -> void
+ExChart.Components.ExChart.OnPointClick.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.ChartPointClick!>
+ExChart.Components.ExChart.OnPointClick.set -> void
 ExChart.Components.ExChart.OnRangeChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.ChartRange?>
 ExChart.Components.ExChart.OnRangeChanged.set -> void
 ExChart.Components.ExChart.OnScaleChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.Engine.AxisScale>
@@ -45,6 +81,96 @@ ExChart.Components.ExChart.Width.get -> double
 ExChart.Components.ExChart.Width.set -> void
 ExChart.Components.ExChartStylesheet
 ExChart.Components.ExChartStylesheet.ExChartStylesheet() -> void
+ExChart.GridCell
+ExChart.GridCell.<Clone>$() -> ExChart.GridCell!
+ExChart.GridCell.Column.get -> string!
+ExChart.GridCell.Column.init -> void
+ExChart.GridCell.Deconstruct(out object! RowKey, out string! Column) -> void
+ExChart.GridCell.Equals(ExChart.GridCell? other) -> bool
+ExChart.GridCell.GridCell(object! RowKey, string! Column) -> void
+ExChart.GridCell.RowKey.get -> object!
+ExChart.GridCell.RowKey.init -> void
+ExChart.GridChart
+ExChart.GridChart.<Clone>$() -> ExChart.GridChart!
+ExChart.GridChart.AxisColumn.get -> string?
+ExChart.GridChart.AxisColumn.init -> void
+ExChart.GridChart.Deconstruct(out ExChart.ChartOrientation Orientation, out string? AxisColumn, out ExChart.Engine.EquatableList<ExChart.GridChartSeries!>! Series) -> void
+ExChart.GridChart.Equals(ExChart.GridChart? other) -> bool
+ExChart.GridChart.GridChart(ExChart.ChartOrientation Orientation, string? AxisColumn, ExChart.Engine.EquatableList<ExChart.GridChartSeries!>! Series) -> void
+ExChart.GridChart.Orientation.get -> ExChart.ChartOrientation
+ExChart.GridChart.Orientation.init -> void
+ExChart.GridChart.RowKeys.get -> System.Collections.Generic.IReadOnlySet<object!>!
+ExChart.GridChart.Series.get -> ExChart.Engine.EquatableList<ExChart.GridChartSeries!>!
+ExChart.GridChart.Series.init -> void
+ExChart.GridChartBridge<TRow>
+ExChart.GridChartBridge<TRow>.CellOf(ExChart.GridChart! chart, ExChart.ChartPointClick! click) -> ExChart.GridCell?
+ExChart.GridChartBridge<TRow>.Commands(ExGrid.Chrome.ContextMenuContext<TRow!>! context) -> System.Collections.Generic.IEnumerable<ExGrid.Chrome.GridCommand!>!
+ExChart.GridChartBridge<TRow>.Declarations.get -> ExChart.GridChartDeclarations<TRow!>!
+ExChart.GridChartBridge<TRow>.Draw(ExChart.GridChart! chart) -> ExChart.Engine.ChartDefinition!
+ExChart.GridChartBridge<TRow>.Grid.get -> ExGrid.Components.ExGrid<TRow!>?
+ExChart.GridChartBridge<TRow>.Grid.set -> void
+ExChart.GridChartBridge<TRow>.GridChartBridge(ExChart.GridChartDeclarations<TRow!>! declarations) -> void
+ExChart.GridChartBridge<TRow>.OnAdded.get -> System.Func<ExChart.ChartTarget!, ExChart.GridChart!, System.Threading.Tasks.Task!>?
+ExChart.GridChartBridge<TRow>.OnAdded.set -> void
+ExChart.GridChartBridge<TRow>.OnChart.get -> System.Func<ExChart.GridChart!, System.Threading.Tasks.Task!>?
+ExChart.GridChartBridge<TRow>.OnChart.set -> void
+ExChart.GridChartBridge<TRow>.OnRefused.get -> System.Func<string!, System.Threading.Tasks.Task!>?
+ExChart.GridChartBridge<TRow>.OnRefused.set -> void
+ExChart.GridChartBridge<TRow>.ShowInGridAsync(ExChart.GridChart! chart, ExChart.ChartPointClick! click) -> System.Threading.Tasks.Task<bool>!
+ExChart.GridChartBridge<TRow>.Targets.get -> System.Collections.Generic.IReadOnlyList<ExChart.ChartTarget!>!
+ExChart.GridChartBridge<TRow>.Targets.set -> void
+ExChart.GridChartCommands
+ExChart.GridChartDeclarations<TRow>
+ExChart.GridChartDeclarations<TRow>.<Clone>$() -> ExChart.GridChartDeclarations<TRow>!
+ExChart.GridChartDeclarations<TRow>.AxisColumns.get -> System.Collections.Generic.IReadOnlySet<string!>!
+ExChart.GridChartDeclarations<TRow>.AxisColumns.init -> void
+ExChart.GridChartDeclarations<TRow>.Equals(ExChart.GridChartDeclarations<TRow>? other) -> bool
+ExChart.GridChartDeclarations<TRow>.GridChartDeclarations() -> void
+ExChart.GridChartDeclarations<TRow>.KindOf.get -> System.Func<string!, ExChart.Engine.SeriesKind>?
+ExChart.GridChartDeclarations<TRow>.KindOf.init -> void
+ExChart.GridChartDeclarations<TRow>.Orientation.get -> ExChart.ChartOrientation?
+ExChart.GridChartDeclarations<TRow>.Orientation.init -> void
+ExChart.GridChartDeclarations<TRow>.PositionOf.get -> System.Func<string!, double?>?
+ExChart.GridChartDeclarations<TRow>.PositionOf.init -> void
+ExChart.GridChartDeclarations<TRow>.PositionScale.get -> ExChart.Engine.AxisScale
+ExChart.GridChartDeclarations<TRow>.PositionScale.init -> void
+ExChart.GridChartDeclarations<TRow>.PositionTitle.get -> string!
+ExChart.GridChartDeclarations<TRow>.PositionTitle.init -> void
+ExChart.GridChartDeclarations<TRow>.RowKey.get -> System.Func<TRow, object!>!
+ExChart.GridChartDeclarations<TRow>.RowKey.init -> void
+ExChart.GridChartDeclarations<TRow>.RowName.get -> System.Func<TRow, string!>?
+ExChart.GridChartDeclarations<TRow>.RowName.init -> void
+ExChart.GridChartDeclarations<TRow>.RowOf.get -> System.Func<object!, TRow?>!
+ExChart.GridChartDeclarations<TRow>.RowOf.init -> void
+ExChart.GridChartSeries
+ExChart.GridChartSeries.Deconstruct(out string! Id, out string! Panel) -> void
+ExChart.GridChartSeries.GridChartSeries(ExChart.GridChartSeries! original) -> void
+ExChart.GridChartSeries.GridChartSeries(string! Id, string! Panel) -> void
+ExChart.GridChartSeries.Id.get -> string!
+ExChart.GridChartSeries.Id.init -> void
+ExChart.GridChartSeries.Panel.get -> string!
+ExChart.GridChartSeries.Panel.init -> void
+ExChart.KeyedPosition
+ExChart.KeyedPosition.<Clone>$() -> ExChart.KeyedPosition!
+ExChart.KeyedPosition.Deconstruct(out object! Key, out double X) -> void
+ExChart.KeyedPosition.Equals(ExChart.KeyedPosition? other) -> bool
+ExChart.KeyedPosition.Key.get -> object!
+ExChart.KeyedPosition.Key.init -> void
+ExChart.KeyedPosition.KeyedPosition(object! Key, double X) -> void
+ExChart.KeyedPosition.X.get -> double
+ExChart.KeyedPosition.X.init -> void
+ExChart.RowSeries
+ExChart.RowSeries.Columns.get -> ExChart.Engine.EquatableList<string!>!
+ExChart.RowSeries.Columns.init -> void
+ExChart.RowSeries.Deconstruct(out string! Id, out string! Panel, out object! RowKey, out string! Name, out string! Group, out ExChart.Engine.EquatableList<string!>! Columns) -> void
+ExChart.RowSeries.Equals(ExChart.RowSeries? other) -> bool
+ExChart.RowSeries.Group.get -> string!
+ExChart.RowSeries.Group.init -> void
+ExChart.RowSeries.Name.get -> string!
+ExChart.RowSeries.Name.init -> void
+ExChart.RowSeries.RowKey.get -> object!
+ExChart.RowSeries.RowKey.init -> void
+ExChart.RowSeries.RowSeries(string! Id, string! Panel, object! RowKey, string! Name, string! Group, ExChart.Engine.EquatableList<string!>! Columns) -> void
 ExChart.SeriesVisibility
 ExChart.SeriesVisibility.<Clone>$() -> ExChart.SeriesVisibility!
 ExChart.SeriesVisibility.Deconstruct(out string! Key, out bool Hidden) -> void
@@ -54,17 +180,70 @@ ExChart.SeriesVisibility.Hidden.init -> void
 ExChart.SeriesVisibility.Key.get -> string!
 ExChart.SeriesVisibility.Key.init -> void
 ExChart.SeriesVisibility.SeriesVisibility(string! Key, bool Hidden) -> void
+override ExChart.ChartPointClick.Equals(object? obj) -> bool
+override ExChart.ChartPointClick.GetHashCode() -> int
+override ExChart.ChartPointClick.ToString() -> string!
 override ExChart.ChartRange.Equals(object? obj) -> bool
 override ExChart.ChartRange.GetHashCode() -> int
 override ExChart.ChartRange.ToString() -> string!
+override ExChart.ChartTarget.Equals(object? obj) -> bool
+override ExChart.ChartTarget.GetHashCode() -> int
+override ExChart.ChartTarget.ToString() -> string!
+override ExChart.ColumnSeries.<Clone>$() -> ExChart.ColumnSeries!
+override ExChart.ColumnSeries.Equals(object? obj) -> bool
+override ExChart.ColumnSeries.GetHashCode() -> int
+override ExChart.ColumnSeries.ToString() -> string!
 override ExChart.Components.ExChart.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
 override ExChart.Components.ExChart.OnParametersSet() -> void
+override ExChart.GridCell.Equals(object? obj) -> bool
+override ExChart.GridCell.GetHashCode() -> int
+override ExChart.GridCell.ToString() -> string!
+override ExChart.GridChart.Equals(object? obj) -> bool
+override ExChart.GridChart.GetHashCode() -> int
+override ExChart.GridChart.ToString() -> string!
+override ExChart.GridChartDeclarations<TRow>.Equals(object? obj) -> bool
+override ExChart.GridChartDeclarations<TRow>.GetHashCode() -> int
+override ExChart.GridChartDeclarations<TRow>.ToString() -> string!
+override ExChart.GridChartSeries.Equals(object? obj) -> bool
+override ExChart.GridChartSeries.GetHashCode() -> int
+override ExChart.GridChartSeries.ToString() -> string!
+override ExChart.KeyedPosition.Equals(object? obj) -> bool
+override ExChart.KeyedPosition.GetHashCode() -> int
+override ExChart.KeyedPosition.ToString() -> string!
+override ExChart.RowSeries.<Clone>$() -> ExChart.RowSeries!
+override ExChart.RowSeries.Equals(object? obj) -> bool
+override ExChart.RowSeries.GetHashCode() -> int
+override ExChart.RowSeries.ToString() -> string!
 override ExChart.SeriesVisibility.Equals(object? obj) -> bool
 override ExChart.SeriesVisibility.GetHashCode() -> int
 override ExChart.SeriesVisibility.ToString() -> string!
+override sealed ExChart.ColumnSeries.Equals(ExChart.GridChartSeries? other) -> bool
+override sealed ExChart.RowSeries.Equals(ExChart.GridChartSeries? other) -> bool
+static ExChart.ChartPointClick.operator !=(ExChart.ChartPointClick? left, ExChart.ChartPointClick? right) -> bool
+static ExChart.ChartPointClick.operator ==(ExChart.ChartPointClick? left, ExChart.ChartPointClick? right) -> bool
 static ExChart.ChartRange.Dates(System.DateOnly? from, System.DateOnly? to) -> ExChart.ChartRange!
 static ExChart.ChartRange.operator !=(ExChart.ChartRange? left, ExChart.ChartRange? right) -> bool
 static ExChart.ChartRange.operator ==(ExChart.ChartRange? left, ExChart.ChartRange? right) -> bool
+static ExChart.ChartTarget.operator !=(ExChart.ChartTarget? left, ExChart.ChartTarget? right) -> bool
+static ExChart.ChartTarget.operator ==(ExChart.ChartTarget? left, ExChart.ChartTarget? right) -> bool
+static ExChart.ColumnSeries.operator !=(ExChart.ColumnSeries? left, ExChart.ColumnSeries? right) -> bool
+static ExChart.ColumnSeries.operator ==(ExChart.ColumnSeries? left, ExChart.ColumnSeries? right) -> bool
+static ExChart.GridCell.operator !=(ExChart.GridCell? left, ExChart.GridCell? right) -> bool
+static ExChart.GridCell.operator ==(ExChart.GridCell? left, ExChart.GridCell? right) -> bool
+static ExChart.GridChart.operator !=(ExChart.GridChart? left, ExChart.GridChart? right) -> bool
+static ExChart.GridChart.operator ==(ExChart.GridChart? left, ExChart.GridChart? right) -> bool
+static ExChart.GridChartCommands.Label(string! id) -> string?
+static ExChart.GridChartDeclarations<TRow>.operator !=(ExChart.GridChartDeclarations<TRow>? left, ExChart.GridChartDeclarations<TRow>? right) -> bool
+static ExChart.GridChartDeclarations<TRow>.operator ==(ExChart.GridChartDeclarations<TRow>? left, ExChart.GridChartDeclarations<TRow>? right) -> bool
+static ExChart.GridChartSeries.operator !=(ExChart.GridChartSeries? left, ExChart.GridChartSeries? right) -> bool
+static ExChart.GridChartSeries.operator ==(ExChart.GridChartSeries? left, ExChart.GridChartSeries? right) -> bool
+static ExChart.KeyedPosition.operator !=(ExChart.KeyedPosition? left, ExChart.KeyedPosition? right) -> bool
+static ExChart.KeyedPosition.operator ==(ExChart.KeyedPosition? left, ExChart.KeyedPosition? right) -> bool
+static ExChart.RowSeries.operator !=(ExChart.RowSeries? left, ExChart.RowSeries? right) -> bool
+static ExChart.RowSeries.operator ==(ExChart.RowSeries? left, ExChart.RowSeries? right) -> bool
 static ExChart.SeriesVisibility.operator !=(ExChart.SeriesVisibility? left, ExChart.SeriesVisibility? right) -> bool
 static ExChart.SeriesVisibility.operator ==(ExChart.SeriesVisibility? left, ExChart.SeriesVisibility? right) -> bool
+virtual ExChart.GridChartSeries.EqualityContract.get -> System.Type!
+virtual ExChart.GridChartSeries.Equals(ExChart.GridChartSeries? other) -> bool
+virtual ExChart.GridChartSeries.PrintMembers(System.Text.StringBuilder! builder) -> bool
 ~override ExChart.Components.ExChart.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
