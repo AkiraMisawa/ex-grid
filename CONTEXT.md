@@ -37,6 +37,32 @@ server reports follow the same meaning
 _Avoid_: pivot grid, OLAP grid, cube (the cube is how the engine keeps what it aggregated, not the
 product), and **Pivot Report**, which names what ExPivot computes, not the product
 
+**ExChart**:
+Charts of the data an application shows in ExGrid, ExSheet or ExPivot, or hands over directly, drawn
+as its own SVG. It turns a grid selection into a **Chart Definition**; analytics such as a curve's
+bootstrap stay the Consumer's. **Decided** with the user, 2026-10-19
+([ADR-0250](./docs/adr/0250-exchart-is-a-chart-of-the-familys-data-in-three-packages-drawn-as-its-own-svg.md)).
+_Avoid_: chart grid, integrated charts (another product's name), plot (the verb, not the product)
+
+**Chart Definition**:
+What a chart is of, in the data's terms: its series, each a column at a set of Row Keys or a row
+across a set of columns, and its axis. Never the selection's indices, so a sort leaves its meaning
+unchanged ([ADR-0251](./docs/adr/0251-a-chart-is-defined-in-the-datas-terms-and-a-stale-gesture-is-refused.md)).
+_Avoid_: chart spec, chart config
+
+**Series Kind**:
+What a series' numbers are — a **Level** at an instant, a **Rate over an interval**, or an **Amount
+per period** — declared by the Consumer for every series, and what decides how it is drawn: a line
+only for a Level, a step for the other two
+([ADR-0253](./docs/adr/0253-every-series-declares-its-series-kind-and-its-drawing-follows.md)).
+_Avoid_: chart type (a series kind is the data's, not the drawing's), series type
+
+**Thinning**:
+Keeping, for each device pixel across the plot, a series' first, last, minimum and maximum point,
+when it has more points than pixels. Files carry every point; a tooltip on a thinned pixel says its
+range ([ADR-0254](./docs/adr/0254-past-the-plots-pixels-a-series-is-thinned-to-its-minimum-and-maximum.md)).
+_Avoid_: sampling, downsampling (both suggest points are dropped silently)
+
 > **How far do formulas go?** What people call "a formula" splits three ways, and **two of them
 > are already possible in ExGrid**.
 >
