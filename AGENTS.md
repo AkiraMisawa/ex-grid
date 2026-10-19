@@ -29,7 +29,7 @@ Chrome, Overwrite, Caret, …); do not translate those.
 ### 2. JavaScript is allowlisted, not "minimised"
 
 JS is used only where Blazor genuinely cannot do the job, or where a **recorded measurement**
-shows the Blazor-side approach is too slow. There are currently **twelve** permitted uses:
+shows the Blazor-side approach is too slow. There are currently **fourteen** permitted uses:
 capture-phase `keydown`, reading/setting scroll offsets, the clipboard, a `ResizeObserver`
 reporting the Scrollbar Gutter, and a `mousemove` listener that reports the pointer **only when
 it moves onto another row, and when it comes to rest** (the hover band, ADR-0029; the error
@@ -49,7 +49,9 @@ typed there (ADR-0210). The eleventh is capture-phase `click`, `dblclick` and `c
 root, numbering a click on a control of the grid's own that claims it (`data-ex-claims`) so it is
 handled in its place in the Input Order; the twelfth hears `submit` and `focus` in the window's
 capture phase, filtered to the grid's own root, because Blazor hears both on the document ahead of
-any listener on the root (ADR-0240).
+any listener on the root (ADR-0240). The thirteenth reports the position under the pointer on an
+ExChart plot only when it moves onto another, in the hover band's shape; the fourteenth projects and
+draws ExChart's 3D surface while it is turned, which a round trip per frame cannot follow (ADR-0255).
 
 **Anything else needs a new ADR.** See
 [ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md), which also lists what

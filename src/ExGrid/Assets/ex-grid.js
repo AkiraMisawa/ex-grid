@@ -2370,6 +2370,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (field && markBehind(field, rebased) !== null) {
                 await markAnswering(field);
             }
+            // A declared Alt that went down alone, gated here in its turn, whose release is not held behind
+            // it: the release is still to be typed, on this root, and is this press's (altPending). One a
+            // frame of the Consumer's own heard on its way back (takeKeyboardBack) was never noted here,
+            // and its release, typed once the keyboard was back, started no KeyTips (ticket 07).
+            if (k.key === 'Alt' && k.altAlone === true && !held.some((h) => h.altUp === true && h.of === k)) {
+                altPending = { alone: true, entry: altPending?.entry === k ? k : null };
+            }
             const verdict = gate(rebased);
             if (verdict === 'out') {
                 // A released Tab held behind its Escape: the browser's move of DOM focus cannot be
@@ -2980,8 +2987,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         tabReleased = false;
         releaseEndsHeard++;
         keyboardByPress = false;
-        // An Alt still down when the keyboard left is not released here (altPending).
-        altPending = null;
+        // An Alt still down when the keyboard left is not released here (altPending) — unless its press
+        // is still held: the hold hands it on where the keyboard is at its turn, and its release, typed
+        // once the keyboard is back, is that press's. Forgotten, the release started no KeyTips: Escape
+        // three times in a list a KeyTip opened, then Alt, H, H, with the Alt held down while the held
+        // Escapes took the keyboard to the toolbar and back, typed H, H into the cell (ticket 07).
+        if (altPending === null || altPending.entry === null || !held.includes(altPending.entry)) {
+            altPending = null;
+        }
         // The keyboard has left: the keys typed from now are wherever it went (keysOut).
         keysOut = false;
     };
