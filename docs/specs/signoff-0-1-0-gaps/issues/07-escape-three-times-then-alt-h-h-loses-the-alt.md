@@ -1,7 +1,6 @@
 # 07: Escape three times, then Alt, H, H, typed at once, can lose the Alt
 
-Status: needs-triage
-Roadmap: internal
+Status: done
 
 **Why:** a red that passes on a re-run is a defect (AGENTS.md, layer 3). CI's run 39166277639 on PR #176
 failed `sheet-toolbar.spec.mjs`'s "Escape three times in a list a KeyTip opened, then Alt, H, H, all typed
@@ -18,3 +17,11 @@ afterwards, and make the outcome the one the keys have when typed slowly (spine 
 trace kept in that run's `layer3-records-chrome-4` artifact. One suspect is a focus taken back to the
 grid's root after the band already holds the keyboard. That would end the KeyTips through
 `OnFocusOut`.
+
+**Done:** the Alt went down while the Escapes before it were held by the grid's key gate. They took the
+keyboard to the toolbar and back to the Sheet, and only then was the Alt released. The key gate forgot
+an Alt still down when DOM focus left the grid, even while its press was still held. It also never
+noted one that the toolbar heard on the keyboard's way back. Either way, the release was dropped as no
+lone Alt's (`ex-grid.js`, `onFocusLeft` and the drain). Both now pair the release with its press.
+`sheet-toolbar.spec.mjs`'s ticket 07 test presses the Alt in the same burst as the Escapes and releases
+it once the keyboard is back. It failed before the fix under both Chromes.
