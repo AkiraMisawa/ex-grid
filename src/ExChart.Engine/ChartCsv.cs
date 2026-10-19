@@ -37,6 +37,22 @@ public static class ChartCsv
     /// </summary>
     public static string Wide(ChartDefinition definition, ChartMetrics metrics, ChartView? view = null)
     {
+        var table = WideTable(definition, metrics, view);
+        var sb = new StringBuilder(Bom);
+        Row(sb, table.Header);
+        foreach (var row in table.Rows)
+            Row(sb, row);
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// The wide form's header and rows, unquoted: what "View as table" shows (ADR-0275), the same
+    /// content as <see cref="Wide"/>.
+    /// </summary>
+    public static ChartTable WideTable(ChartDefinition definition, ChartMetrics metrics, ChartView? view = null)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        ArgumentNullException.ThrowIfNull(metrics);
         var shown = Shown(definition, metrics, view ?? ChartView.All);
         var columns = new List<(string Header, Dictionary<double, string> Values)>();
         foreach (var (s, points) in shown)
@@ -49,16 +65,14 @@ public static class ChartCsv
             columns.Add((name, main));
             if (extra.Count > 0) columns.Add(($"{s.Name} (extrapolated)", extra));
         }
-        var sb = new StringBuilder(Bom);
-        Row(sb, [Title(definition.Axis), .. columns.Select(c => c.Header)]);
-        foreach (var x in columns.SelectMany(c => c.Values.Keys).Distinct().Order())
-            Row(sb, [X(definition.Axis, x), .. columns.Select(c => c.Values.GetValueOrDefault(x, ""))]);
-        return sb.ToString();
+        var rows = columns.SelectMany(c => c.Values.Keys).Distinct().Order()
+            .Select(x => (IReadOnlyList<string>)[X(definition.Axis, x), .. columns.Select(c => c.Values.GetValueOrDefault(x, ""))]).ToList();
+        return new ChartTable([Title(definition.Axis), .. columns.Select(c => c.Header)], rows);
     }
 
     private static List<(ChartSeries Series, IReadOnlyList<ChartPoint> Points)> Shown(ChartDefinition d, ChartMetrics metrics, ChartView view)
     {
-        var (visible, from, to, _, _, devicePixels) = ChartScene.Frame(d, metrics, view);
+        var (_, visible, from, to, _, _, devicePixels) = ChartScene.Frame(d, metrics, view);
         return visible.Select(s => (s, (IReadOnlyList<ChartPoint>)(s.Sampler is { } f
             ? SeriesDrawing.Sample(f, s.Segments, from, to, devicePixels, ChartScene.QuotesOf(s, visible))
             : s.Points.Where(p => p.X >= from && p.X <= to).ToList()))).ToList();
@@ -71,7 +85,7 @@ public static class ChartCsv
         return (s.Interpolated ? "interpolated" : "quoted", g?.Method ?? "");
     }
 
-    private static string Title(ChartAxis axis) => axis.Title.Length > 0 ? axis.Title : axis.Values == AxisValues.Dates ? "Date" : "X";
+    internal static string Title(ChartAxis axis) => axis.Title.Length > 0 ? axis.Title : axis.Values == AxisValues.Dates ? "Date" : "X";
 
     private static string X(ChartAxis axis, double x) => axis.Values switch
     {
@@ -89,3 +103,8 @@ public static class ChartCsv
     private static string Field(string f) =>
         f.AsSpan().IndexOfAny(",\"\r\n") >= 0 ? "\"" + f.Replace("\"", "\"\"") + "\"" : f;
 }
+
+/// <summary>A table of what the chart shows: a header and rows of invariant text.</summary>
+/// <param name="Header">The column headers: the axis' title, then a column per series.</param>
+/// <param name="Rows">A row per position.</param>
+public sealed record ChartTable(IReadOnlyList<string> Header, IReadOnlyList<IReadOnlyList<string>> Rows);

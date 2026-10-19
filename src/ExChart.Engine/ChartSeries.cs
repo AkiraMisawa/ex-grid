@@ -55,6 +55,16 @@ public sealed record ChartSeries
     /// <summary>The function it is sampled from, or null when it is handed in as points.</summary>
     public SeriesSampler? Sampler { get; init; }
 
+    /// <summary>
+    /// Writes one of its values as it was handed in (a boxed <see cref="decimal"/> or
+    /// <see cref="double"/>): the column's own format, so the tooltip shows the cell's digits
+    /// (ADR-0250, ADR-0251). Null writes the value invariantly.
+    /// </summary>
+    public Func<object, string>? Format { get; init; }
+
+    /// <summary>Writes <paramref name="value"/> through <see cref="Format"/>.</summary>
+    public string Write(ChartValue value) => Format is { } f ? f(value.Value) : value.ToInvariantString();
+
     /// <summary>The keys its look is chosen by, its <see cref="Id"/> standing for a colour key it does not set.</summary>
     public AppearanceKeys EffectiveKeys => Keys ?? new AppearanceKeys(Id);
 

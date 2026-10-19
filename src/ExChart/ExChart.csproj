@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0, like every shipped package (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ExChart</RootNamespace>
+    <Description>ExChart: charts of the data an application shows in ExGrid, drawn as SVG elements Blazor diffs. Line, point and step charts on dates, numbers and categories, each series drawn as its Series Kind says, with a tooltip of every series at the pointer's position, a legend that hides a series, a drag that narrows the range, and an accessible summary and table; the application keeps what the user changed.</Description>
+    <PackageTags>$(PackageTags);chart;svg;finance;steps</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The one direction there is (ADR-0250): ExChart references its engine and ExGrid, and
+         nothing references ExChart but its Wrapper, the demo pages and its tests. -->
+    <ProjectReference Include="..\ExChart.Engine\ExChart.Engine.csproj" />
+    <ProjectReference Include="..\ExGrid\ExGrid.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ExChart.Components.Tests" />
+  </ItemGroup>
+
+  <!-- ExChart depends on exactly the core and engine versions it was built with, as ExPivot does
+       (ADR-0042). -->
+  <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+
+</Project>

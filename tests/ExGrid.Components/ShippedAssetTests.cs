@@ -15,7 +15,7 @@ namespace ExGrid.Components.Tests;
 /// </summary>
 public class ShippedAssetTests
 {
-    private static readonly string[] Packages = ["ExGrid", "ExGrid.MudBlazor", "ExPivot", "ExPivot.MudBlazor", "ExSheet", "ExSheet.MudBlazor"];
+    private static readonly string[] Packages = ["ExChart", "ExGrid", "ExGrid.MudBlazor", "ExPivot", "ExPivot.MudBlazor", "ExSheet", "ExSheet.MudBlazor"];
 
     private static readonly Regex Banner = new(@"^/\*! (?<name>[\w.-]+) sha256:(?<hash>[0-9a-f]{64}) ", RegexOptions.CultureInvariant);
 

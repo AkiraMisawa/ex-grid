@@ -76,6 +76,8 @@ public static class DemoPageList
             "Change Batches folded into the bundled source by the page's own timer, and a server whose data its live updates keep moving; changed values are marked in both, and a server cut off leaves a Stale Report (ADR-0067, ADR-0068)."),
         new("pivot-risk", "Pivot risk", "ExPivot",
             "A rate-delta report: desks and curves in Rows, tenors in Columns, ordered ON, TN, 1W … 30Y by an Order Key, with 18M and 1Y6M side by side (ADR-0060)."),
+        new("chart", "Charts", "ExChart",
+            "An exposure profile in two panels and a hazard curve drawn as steps: the tooltip lists every series at the pointer's date, the legend hides a series, a drag narrows the range, and Next run replaces the data keeping what the user changed (ADR-0252, ADR-0270 to ADR-0273)."),
     ];
 
     /// <summary>The entry for a base-relative path, ignoring any query or fragment, or null

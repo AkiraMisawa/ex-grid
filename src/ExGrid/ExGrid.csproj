@@ -31,6 +31,7 @@
     <InternalsVisibleTo Include="ExSheet.MudBlazor.Tests" />
     <InternalsVisibleTo Include="ExPivot.Components.Tests" />
     <InternalsVisibleTo Include="ExPivot.MudBlazor.Tests" />
+    <InternalsVisibleTo Include="ExChart.Components.Tests" />
     <!-- The keyboard reference is checked against the key table the core answers by. -->
     <InternalsVisibleTo Include="ExGrid.Docs.Generator.Tests" />
   </ItemGroup>
