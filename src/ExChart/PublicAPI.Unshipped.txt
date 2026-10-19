@@ -1,0 +1,70 @@
+#nullable enable
+ExChart.ChartRange
+ExChart.ChartRange.<Clone>$() -> ExChart.ChartRange!
+ExChart.ChartRange.ChartRange(double? From, double? To) -> void
+ExChart.ChartRange.Deconstruct(out double? From, out double? To) -> void
+ExChart.ChartRange.Equals(ExChart.ChartRange? other) -> bool
+ExChart.ChartRange.From.get -> double?
+ExChart.ChartRange.From.init -> void
+ExChart.ChartRange.To.get -> double?
+ExChart.ChartRange.To.init -> void
+ExChart.Components.ExChart
+ExChart.Components.ExChart.AxisStyle.get -> ExChart.Engine.AxisStyle?
+ExChart.Components.ExChart.AxisStyle.set -> void
+ExChart.Components.ExChart.ColourSlots.get -> int
+ExChart.Components.ExChart.ColourSlots.set -> void
+ExChart.Components.ExChart.Definition.get -> ExChart.Engine.ChartDefinition!
+ExChart.Components.ExChart.Definition.set -> void
+ExChart.Components.ExChart.Density.get -> ExGrid.GridDensity
+ExChart.Components.ExChart.Density.set -> void
+ExChart.Components.ExChart.Description.get -> string?
+ExChart.Components.ExChart.Description.set -> void
+ExChart.Components.ExChart.DisposeAsync() -> System.Threading.Tasks.ValueTask
+ExChart.Components.ExChart.ExChart() -> void
+ExChart.Components.ExChart.Height.get -> double
+ExChart.Components.ExChart.Height.set -> void
+ExChart.Components.ExChart.HiddenSeries.get -> System.Collections.Generic.IReadOnlySet<string!>?
+ExChart.Components.ExChart.HiddenSeries.set -> void
+ExChart.Components.ExChart.IndependentScales.get -> System.Collections.Generic.IReadOnlySet<string!>?
+ExChart.Components.ExChart.IndependentScales.set -> void
+ExChart.Components.ExChart.Legend.get -> ExChart.Engine.LegendPlacement?
+ExChart.Components.ExChart.Legend.set -> void
+ExChart.Components.ExChart.OnRangeChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.ChartRange?>
+ExChart.Components.ExChart.OnRangeChanged.set -> void
+ExChart.Components.ExChart.OnScaleChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.Engine.AxisScale>
+ExChart.Components.ExChart.OnScaleChanged.set -> void
+ExChart.Components.ExChart.OnSeriesVisibilityChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.SeriesVisibility!>
+ExChart.Components.ExChart.OnSeriesVisibilityChanged.set -> void
+ExChart.Components.ExChart.Range.get -> ExChart.ChartRange?
+ExChart.Components.ExChart.Range.set -> void
+ExChart.Components.ExChart.Scale.get -> ExChart.Engine.AxisScale?
+ExChart.Components.ExChart.Scale.set -> void
+ExChart.Components.ExChart.Title.get -> string?
+ExChart.Components.ExChart.Title.set -> void
+ExChart.Components.ExChart.Width.get -> double
+ExChart.Components.ExChart.Width.set -> void
+ExChart.Components.ExChartStylesheet
+ExChart.Components.ExChartStylesheet.ExChartStylesheet() -> void
+ExChart.SeriesVisibility
+ExChart.SeriesVisibility.<Clone>$() -> ExChart.SeriesVisibility!
+ExChart.SeriesVisibility.Deconstruct(out string! Key, out bool Hidden) -> void
+ExChart.SeriesVisibility.Equals(ExChart.SeriesVisibility? other) -> bool
+ExChart.SeriesVisibility.Hidden.get -> bool
+ExChart.SeriesVisibility.Hidden.init -> void
+ExChart.SeriesVisibility.Key.get -> string!
+ExChart.SeriesVisibility.Key.init -> void
+ExChart.SeriesVisibility.SeriesVisibility(string! Key, bool Hidden) -> void
+override ExChart.ChartRange.Equals(object? obj) -> bool
+override ExChart.ChartRange.GetHashCode() -> int
+override ExChart.ChartRange.ToString() -> string!
+override ExChart.Components.ExChart.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+override ExChart.Components.ExChart.OnParametersSet() -> void
+override ExChart.SeriesVisibility.Equals(object? obj) -> bool
+override ExChart.SeriesVisibility.GetHashCode() -> int
+override ExChart.SeriesVisibility.ToString() -> string!
+static ExChart.ChartRange.Dates(System.DateOnly? from, System.DateOnly? to) -> ExChart.ChartRange!
+static ExChart.ChartRange.operator !=(ExChart.ChartRange? left, ExChart.ChartRange? right) -> bool
+static ExChart.ChartRange.operator ==(ExChart.ChartRange? left, ExChart.ChartRange? right) -> bool
+static ExChart.SeriesVisibility.operator !=(ExChart.SeriesVisibility? left, ExChart.SeriesVisibility? right) -> bool
+static ExChart.SeriesVisibility.operator ==(ExChart.SeriesVisibility? left, ExChart.SeriesVisibility? right) -> bool
+~override ExChart.Components.ExChart.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void

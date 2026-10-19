@@ -47,6 +47,8 @@
     <!-- /pivot-db reads the demo API server's trades as an Arrow stream into a Snapshot
          (ADR-0065): with the tests, the demo is what references the Arrow package (DA-1). -->
     <ProjectReference Include="..\..\src\ExGrid.Data.Arrow\ExGrid.Data.Arrow.csproj" />
+    <!-- ExChart's page (/chart): with its tests, the only thing that references ExChart (ADR-0250). -->
+    <ProjectReference Include="..\..\src\ExChart\ExChart.csproj" />
   </ItemGroup>
 
   <ItemGroup>

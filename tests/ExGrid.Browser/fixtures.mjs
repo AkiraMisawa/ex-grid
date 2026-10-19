@@ -191,12 +191,13 @@ function hostLogFrom(offset) {
 // (A11Y-20) — and a key pressed at it is lost. On the Server host the whole page is
 // prerendered and deaf until its circuit connects as well. A user who acts before that loses
 // the input — the grid says it is busy for exactly that reason — so every navigation here
-// waits, as that user would, for the page to be interactive and no grid to be Prerendered. On
+// waits, as that user would, for the page to be interactive and no grid to be Prerendered (and
+// no chart busy before its pointer entry holds its first drawing, ADR-0255). On
 // WebAssembly this used to be skipped as immediate; it is not: rows paint before the import
 // resolves, and a test that clicked and typed in that gap lost its keys on a slow runner.
 async function ready(page) {
     await page.locator('#demo-interactive').waitFor({ state: 'attached' });
-    await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy]'));
+    await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy], .ex-chart[aria-busy]'));
     // The HeadOutlet's first interactive render takes the head's static <title> and renders it as
     // its own, behind its comment (Blazor's getAndRemoveExistingTitle), on both hosts — on the
     // Server host a round trip after the page is interactive. Until it has, the head is not the

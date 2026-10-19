@@ -1,0 +1,112 @@
+@page "/chart"
+@using global::ExChart
+@using global::ExChart.Components
+@using global::ExChart.Engine
+
+<DemoNav />
+
+@* ExChart's page (/chart): the browser layer's fixture for M2 (ticket 14). The exposure profile is
+   two panels of levels on dates; the hazard curve is a rate over each interval, drawn as steps. The
+   page keeps what the user changed, as a Consumer would (ADR-0272): the hidden series, the range and
+   the axis come back as parameters, and the last event raised is written under each chart.
+   "Next run" replaces the exposure data, as tomorrow's run would, keeping what the user changed. *@
+<DemoChromeAssets>
+    <Head>
+        <ExChartStylesheet />
+    </Head>
+</DemoChromeAssets>
+
+<h1>Charts</h1>
+
+<p>
+    Each series declares its Series Kind and is drawn as what it is (ADR-0253): exposures are levels
+    joined only to their neighbours, a hazard rate holds over each interval and is drawn as steps with
+    a filled and an open end. Move over a plot to read every series of its panel at that date
+    (ADR-0270); click a legend entry to hide it (ADR-0271); drag across a plot to narrow the range,
+    and double-click to return it (ADR-0273).
+</p>
+
+<section id="exposure">
+    <h2>Exposure profile</h2>
+    <button type="button" id="next-run" @onclick="NextRun">Next run</button>
+    <ExChart Definition="_exposure"
+             Title="Exposure profile"
+             Width="760"
+             Height="420"
+             HiddenSeries="_hidden"
+             OnSeriesVisibilityChanged="SeriesChanged"
+             Range="_range"
+             OnRangeChanged="RangeChanged" />
+    <p id="exposure-events">@_events</p>
+</section>
+
+<section id="hazard">
+    <h2>Hazard curve</h2>
+    <ExChart Definition="Hazard"
+             Title="Hazard rates"
+             Width="760"
+             Height="260"
+             Legend="new LegendPlacement(LegendPosition.Right, LegendAlign.Centre)" />
+</section>
+
+@code {
+    private static readonly DateOnly Start = new(2026, 10, 30);
+
+    private ChartDefinition _exposure = Exposure(0);
+    private int _run;
+    private IReadOnlySet<string> _hidden = new HashSet<string>();
+    private ChartRange? _range;
+    private string _events = "";
+
+    private static ChartDefinition Exposure(int run)
+    {
+        var dates = Enumerable.Range(0, 121).Select(m => Start.AddMonths(m)).ToList();
+        // A hump that peaks near year three, deterministic, and moved a little by each run.
+        double Hump(int m, double scale) => Math.Round(scale * Math.Sin(Math.PI * Math.Min(m, 120) / 120.0) * (1 + 0.6 * Math.Exp(-Math.Pow((m - 36) / 18.0, 2))) + run * 0.25, 2);
+        ChartSeries Series(string id, string name, string panel, string key, Func<int, double> value) =>
+            ChartSeries.Of(id, name, SeriesKind.Level, dates.Select((d, m) => new ChartPoint(d.DayNumber, ChartValue.Of((decimal)value(m)))))
+                with { Panel = panel, Keys = new AppearanceKeys(key), Format = v => ((decimal)v).ToString("N2", System.Globalization.CultureInfo.InvariantCulture) };
+        return new ChartDefinition(ChartAxis.Dates("Date"),
+        [
+            Series("epe-before", "EPE · Before", "EPE", "Before", m => Hump(m, 10)),
+            Series("epe-after", "EPE · After", "EPE", "After", m => Hump(m, 7)),
+            Series("pfe-after", "PFE95 · After", "EPE", "PFE", m => Hump(m, 12)),
+            Series("ene-before", "ENE · Before", "ENE", "Before", m => -Hump(m, 6)),
+            Series("ene-after", "ENE · After", "ENE", "After", m => -Hump(m, 4)),
+        ]);
+    }
+
+    private static readonly ChartDefinition Hazard = new(ChartAxis.Numbers("Tenor") with
+    {
+        Named = [(0.5, "6M"), (1, "1Y"), (2, "2Y"), (3, "3Y"), (5, "5Y"), (7, "7Y"), (10, "10Y")],
+    },
+    [
+        ChartSeries.Of("hazard", "Hazard rate", SeriesKind.RateOverInterval,
+            [new(0, null), new(0.5, 0.0110m), new(1, 0.0125m), new(2, 0.0150m), new(3, 0.0170m), new(5, 0.0190m), new(7, 0.0205m), new(10, 0.0210m)])
+            with { Keys = new AppearanceKeys("Hazard", null, "square") },
+    ]);
+
+    private void NextRun()
+    {
+        _run++;
+        _exposure = Exposure(_run);
+    }
+
+    private void SeriesChanged(SeriesVisibility change)
+    {
+        var hidden = new HashSet<string>(_hidden);
+        if (change.Hidden) hidden.Add(change.Key);
+        else hidden.Remove(change.Key);
+        _hidden = hidden;
+        _events = $"{change.Key} {(change.Hidden ? "hidden" : "shown")}";
+    }
+
+    private void RangeChanged(ChartRange? range)
+    {
+        _range = range;
+        _events = range is null ? "range: all"
+            : $"range: {Write(range.From)} to {Write(range.To)}";
+    }
+
+    private static string Write(double? day) => day is { } d ? DateOnly.FromDayNumber((int)d).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) : "…";
+}

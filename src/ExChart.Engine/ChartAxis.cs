@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ExChart.Engine;
 
 /// <summary>
@@ -27,6 +29,21 @@ public sealed record ChartAxis
 
     /// <summary>How many days a year has when an Amount per period on a Date axis is drawn per year.</summary>
     public double DaysPerYear { get; init; } = 365.25;
+
+    /// <summary>
+    /// Writes a position, as the column the positions came from writes it (ADR-0250). Null writes a
+    /// date as <c>yyyy-MM-dd</c>, a label as itself, a named position by its name and a number
+    /// invariantly.
+    /// </summary>
+    public Func<double, string>? Format { get; init; }
+
+    /// <summary>Writes <paramref name="position"/> through <see cref="Format"/>.</summary>
+    public string Write(double position) => Format is { } f ? f(position) : Values switch
+    {
+        AxisValues.Dates => DateOnly.FromDayNumber((int)position).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+        AxisValues.Labels => position >= 0 && position < Labels.Count && position == Math.Floor(position) ? Labels[(int)position] : position.ToString("R", CultureInfo.InvariantCulture),
+        _ => Named.FirstOrDefault(n => n.Position == position).Label ?? position.ToString("R", CultureInfo.InvariantCulture),
+    };
 
     /// <summary>The scale, defaults applied.</summary>
     public AxisScale EffectiveScale => Scale ?? (Values == AxisValues.Labels ? AxisScale.Categories : AxisScale.Proportional);

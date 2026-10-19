@@ -212,7 +212,7 @@ warm-up asserts nothing; a page that never loads still fails the first test that
 ## Before the first key of each page
 
 Every `page.goto` and `page.reload` in a test returns only once the page is interactive and no
-grid is Prerendered (`aria-busy` gone, a tab stop taken — A11Y-20), on both hosts. Rows paint
+grid is Prerendered (`aria-busy` gone, a tab stop taken — A11Y-20) and no chart is busy (its pointer entry holds its first drawing, ADR-0255), on both hosts. Rows paint
 before the grid's listener attaches — on WebAssembly too, where the module import still has to
 land — and a key pressed in that gap is lost, as it would be for a user who ignored the busy
 grid. A test that clicked and typed straight after the rows appeared failed that way on a slow

@@ -33,6 +33,8 @@ const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 /** Every package's sources, in a fixed order so the output never depends on the file system. */
 export const sources = [
+    'src/ExChart/Assets/ex-chart.js',
+    'src/ExChart/Assets/ex-chart.css',
     'src/ExGrid/Assets/ex-grid.js',
     'src/ExGrid/Assets/ex-grid.css',
     'src/ExGrid.MudBlazor/Assets/mud-ex-grid.css',
