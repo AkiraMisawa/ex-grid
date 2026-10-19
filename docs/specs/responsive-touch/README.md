@@ -97,6 +97,15 @@ draft has been replaced by these records; it is no longer an outstanding prerequ
   Action click case passed. The Docs Site's queued-row example was run under both Chromes with no
   browser warnings or errors. Standards and Spec reviews have no unresolved findings. These are
   local results; the full CI browser matrix, hunt and widened run remain outstanding.
+- Draft PR #187 carries this partial delivery. Its first CI run (`39339605690`) passed the
+  logic/component and package checks, but exposed missing demo-index registrations and an RT-1
+  test that assumed the Sheet's final test column was initially painted. The navigation fix
+  passed RI-1 and RI-3 locally. RT-1 now reveals that column before reading its width, and reads
+  its identity and width atomically so a recycled cell node cannot supply its neighbour's geometry.
+  All four queued-row browser cases passed three times on each host/browser combination in that
+  first CI run. After correction, each of the six RT-1 family cases passed three times locally on
+  Chrome WebAssembly, and all 127 spec-lint checks passed. Standards and Spec reviews found no
+  outstanding issues. The responsive correction still requires its own CI matrix before the gate closes.
 
 The new pointer bridge, touch editing and keyboard preparation, external frames, and Pivot touch
 placement are not implemented. Full RT coverage, input-order stages 03–07, CI gates and the

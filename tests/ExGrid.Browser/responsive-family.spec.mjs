@@ -4,6 +4,15 @@ import { expectCovers } from './sheet-helpers.mjs';
 
 test.use({ viewport: { width: 1280, height: 1100 } });
 
+async function scrollColumnToUnpinnedEdge(scroller, offset) {
+    await scroller.evaluate((element, offset) => {
+        const left = element.getBoundingClientRect().left;
+        const pinned = [...element.querySelector('.ex-row').querySelectorAll('.ex-pinned, .ex-row-heading')];
+        const right = Math.max(left, ...pinned.map(cell => cell.getBoundingClientRect().right));
+        element.scrollLeft = Math.max(0, offset - (right - left));
+    }, offset);
+}
+
 // A cell may be wider than the box (notably a Pivot label). Compare the part the
 // scrollport can paint, so a stale narrow outline cannot pass after restoration.
 async function expectPreservedFocus(grid) {
@@ -55,12 +64,27 @@ for (const product of ['grid', 'sheet', 'pivot']) {
             });
             const widths = await grid.locator('.ex-row').first().locator('.ex-cell[id]').evaluateAll(cells =>
                 Object.fromEntries(cells.map(c => [c.id.match(/c(\d+)$/)[1], c.getBoundingClientRect().width])));
-            const targetOffset = await cell(lastColumn).evaluate(element => {
-                const scroller = element.closest('.ex-grid').querySelector('.ex-scroller');
-                return element.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft;
-            });
             const amount = product === 'sheet' ? '1234567890123.45' : '9007199254740993.25';
             await expect(cell(lastColumn - 1)).toHaveText(amount);
+            // The final column may be outside the initial painted slice (the Sheet's
+            // character-based widths vary with the platform font). Reveal its leading
+            // edge from the preceding column before reading its unchanged geometry.
+            const targetOffset = await grid.evaluate((root, column) => {
+                const element = root.querySelector(`[id$="-r0c${column}"]`);
+                const scroller = root.querySelector('.ex-scroller');
+                return element.getBoundingClientRect().right - scroller.getBoundingClientRect().left + scroller.scrollLeft;
+            }, lastColumn - 1);
+            await scrollColumnToUnpinnedEdge(scroller, targetOffset);
+            await expect(cell(lastColumn)).toHaveText(fraction);
+            await circuitQuiet();
+            await settled(grid);
+            // A virtualised cell node can be reused between a locator resolving and
+            // its evaluation. Find the requested column and read it in one operation.
+            await expect.poll(async () => {
+                widths[lastColumn] = await grid.evaluate((root, column) =>
+                    root.querySelector(`[id$="-r0c${column}"]`)?.getBoundingClientRect().width ?? 0, lastColumn);
+                return widths[lastColumn];
+            }).toBeGreaterThan(0);
             const expectedState = pin => `Product changes: 0; requested pinning: ${product === 'pivot' ? 'report labels' : (pin ? '2' : '0')}`;
             for (const pin of (product === 'pivot' ? [true] : [true, false])) {
                 if (product !== 'pivot') await page.locator('#family-pin').setChecked(pin);
@@ -109,12 +133,7 @@ for (const product of ['grid', 'sheet', 'pivot']) {
                         }, { lastColumn, widths })).toEqual([]);
                         // Native scrolling reaches the unchanged column even in a narrow box.
                         // Keyboard reveal has separate Input Order regression coverage.
-                        await scroller.evaluate((element, offset) => {
-                            const left = element.getBoundingClientRect().left;
-                            const pinned = [...element.querySelector('.ex-row').querySelectorAll('.ex-pinned, .ex-row-heading')];
-                            const right = Math.max(left, ...pinned.map(cell => cell.getBoundingClientRect().right));
-                            element.scrollLeft = Math.max(0, offset - (right - left));
-                        }, targetOffset);
+                        await scrollColumnToUnpinnedEdge(scroller, targetOffset);
                         await expect(cell(lastColumn)).toHaveText(fraction);
                         await circuitQuiet();
                         await settled(grid);
