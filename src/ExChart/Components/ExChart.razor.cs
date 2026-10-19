@@ -74,7 +74,12 @@ public partial class ExChart
     /// </summary>
     [Parameter] public EventCallback<ChartPointClick> OnPointClick { get; set; }
 
+    /// <summary>The name a saved file takes, without its extension; the title's when null, else "chart" (ADR-0282).</summary>
+    [Parameter] public string? FileName { get; set; }
+
     [Inject] private IJSRuntime JS { get; set; } = null!;
+
+    [Inject] private IServiceProvider Services { get; set; } = null!;
 
     private static readonly IReadOnlySet<string> NoneHidden = new HashSet<string>();
 
@@ -348,33 +353,7 @@ public partial class ExChart
     private RenderFragment Drawing => b =>
     {
         var lh = _metrics.LineHeight;
-        for (var i = 0; i < _scene.Panels.Count; i++)
-        {
-            var panel = _scene.Panels[i];
-            b.OpenComponent<ChartAxesView>(0);
-            b.SetKey("axes:" + panel.Name);
-            b.AddComponentParameter(1, nameof(ChartAxesView.Panel), panel);
-            b.AddComponentParameter(2, nameof(ChartAxesView.XTicks), _scene.XTicks);
-            b.AddComponentParameter(3, nameof(ChartAxesView.Last), i == _scene.Panels.Count - 1);
-            b.AddComponentParameter(4, nameof(ChartAxesView.LineHeight), lh);
-            b.AddComponentParameter(5, nameof(ChartAxesView.Angle), AxisStyle?.Angle ?? 0);
-            b.CloseComponent();
-            foreach (var piece in panel.Series)
-            {
-                b.OpenComponent<ChartSeriesView>(6);
-                b.SetKey("series:" + piece.Id);
-                b.AddComponentParameter(7, nameof(ChartSeriesView.Piece), piece);
-                b.AddComponentParameter(8, nameof(ChartSeriesView.Plot), panel.Plot);
-                b.AddComponentParameter(9, nameof(ChartSeriesView.LineHeight), lh);
-                b.CloseComponent();
-            }
-            b.OpenComponent<ChartLegendView>(10);
-            b.SetKey("legend:" + panel.Name);
-            b.AddComponentParameter(11, nameof(ChartLegendView.Entries), panel.Legend);
-            b.AddComponentParameter(12, nameof(ChartLegendView.LineHeight), lh);
-            b.AddComponentParameter(13, nameof(ChartLegendView.Toggle), _toggle);
-            b.CloseComponent();
-        }
+        b.AddContent(0, ChartDrawing.Panels(_scene, lh, AxisStyle?.Angle ?? 0, _toggle));
         b.OpenComponent<ChartBandView>(14);
         b.AddComponentParameter(15, nameof(ChartBandView.Span), BandSpan);
         b.AddComponentParameter(16, nameof(ChartBandView.Top), PlotsTop);
@@ -428,6 +407,60 @@ public partial class ExChart
     private static string StylesheetNotice => BuiltInCommandLabels.For(ReloadNoticeLabelIds.Stylesheet);
 
     private static string ScriptNotice => BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script);
+
+    // ---- Files (ADR-0252, ADR-0282): written on the click, never during a render, and saved by the
+    // files entry, the fifteenth use the JavaScript allowlist permits.
+
+    /// <summary>
+    /// Saves the chart as a file, as the user sees it: CSV of the visible series in the range shown,
+    /// the SVG of the drawing, or that SVG painted to PNG at the screen's Device Pixel (ADR-0282).
+    /// One call is one save. False when the chart's script is not loaded, which the chart says on
+    /// its face, or the circuit has gone.
+    /// </summary>
+    public async Task<bool> DownloadAsync(ChartFileFormat format)
+    {
+        // Taken now: the file is the drawing on screen at the click, whatever renders meanwhile.
+        var module = _module;
+        var scene = _scene;
+        var definition = Definition;
+        var metrics = _metrics;
+        var view = _view;
+        var summary = _summary;
+        if (module is null || _scriptRefused || _disposed) return false;
+        var name = ChartFiles.Name(FileName, Title, format);
+        try
+        {
+            byte[] bytes;
+            if (format == ChartFileFormat.Csv)
+            {
+                bytes = ChartFiles.Csv(definition, metrics, view);
+            }
+            else
+            {
+                var font = GridMetrics.Resolve(Density).FontSizePx;
+                var svg = await ChartFiles.SvgAsync(Services, new ChartFileDrawing.Input(scene, Width, Height, font, metrics.LineHeight, AxisStyle?.Angle ?? 0, summary));
+                bytes = format == ChartFileFormat.Svg
+                    ? System.Text.Encoding.UTF8.GetBytes(svg)
+                    : await module.InvokeAsync<byte[]>("paint", svg, Width, Height);
+            }
+            await module.InvokeVoidAsync("save", name, ChartFiles.MediaType(format), bytes);
+            return true;
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            return false;
+        }
+    }
+
+    private Task DownloadCsvAsync() => DownloadAsync(ChartFileFormat.Csv);
+
+    private Task DownloadSvgAsync() => DownloadAsync(ChartFileFormat.Svg);
+
+    private Task DownloadPngAsync() => DownloadAsync(ChartFileFormat.Png);
+
+    // A file needs the script: until it is told the first drawing, and when it is refused, the
+    // buttons say so by being unavailable rather than doing nothing (spine rule 1).
+    private bool FilesUnavailable => !_told || _scriptRefused;
 
     // ---- The pointer entry (ADR-0255, eleventh): imported at its versioned address, refused when
     // its stamp is not this build's (ADR-0123).

@@ -12,6 +12,11 @@
         <button type="button" class="ex-chart-button ex-chart-filters-toggle" aria-expanded="@(_filtersOpen ? "true" : "false")" @onclick="ToggleFilters">Chart Filters</button>
         <button type="button" class="ex-chart-button ex-chart-reset" disabled="@(_range is null)" @onclick="ResetRangeAsync">Reset range</button>
         <button type="button" class="ex-chart-button ex-chart-table-toggle" aria-expanded="@(_tableOpen ? "true" : "false")" @onclick="ToggleTable">View as table</button>
+        <span class="ex-chart-downloads" role="group" aria-label="Download">
+            <button type="button" class="ex-chart-button ex-chart-download-csv" disabled="@FilesUnavailable" @onclick="DownloadCsvAsync">CSV</button>
+            <button type="button" class="ex-chart-button ex-chart-download-svg" disabled="@FilesUnavailable" @onclick="DownloadSvgAsync">SVG</button>
+            <button type="button" class="ex-chart-button ex-chart-download-png" disabled="@FilesUnavailable" @onclick="DownloadPngAsync">PNG</button>
+        </span>
     </div>
     @if (_filtersOpen)
     {

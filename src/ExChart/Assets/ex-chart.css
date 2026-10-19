@@ -78,6 +78,9 @@
 
 .ex-chart-stage { position: relative; }
 .ex-chart-svg { display: block; overflow: visible; }
+.ex-chart-downloads { display: inline-flex; gap: 0.25em; }
+/* A saved file's own background (ADR-0282): it has no page behind it. */
+.ex-chart-file-background { fill: var(--ex-chart-background); }
 
 /* Only the hit layers and the legend take the pointer: every move over a plot lands on its layer,
    whose offsets the pointer entry adds to the event's (ADR-0255). */

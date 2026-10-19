@@ -9,6 +9,60 @@
 // C# drops one taken against an earlier drawing (spine rule 6). Blazor's @onmousemove would cross
 // to .NET on every event, a wire round trip each on Server.
 
+// The files entry (ADR-0282), the fifteenth use: two exported functions, each run once on a click
+// and never on a render, adding no listener and reading no layout (the SVG carries its own size).
+
+/**
+ * Paints an SVG, written in C# on the click, to PNG, and returns its bytes. The canvas is the
+ * drawing's size at the screen's Device Pixel, so a PNG taken at 150% is drawn at 150% and not
+ * scaled up from 100% (ADR-0090). The browser lays out its text in the fonts the screen shows.
+ */
+export async function paint(svgText, width, height) {
+    const scale = window.devicePixelRatio > 0 ? window.devicePixelRatio : 1;
+    const url = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml' }));
+    try {
+        const image = new Image();
+        image.decoding = 'sync';
+        await new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = () => reject(new Error('the chart\'s SVG could not be painted'));
+            image.src = url;
+        });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(width * scale);
+        canvas.height = Math.round(height * scale);
+        const context = canvas.getContext('2d');
+        context.scale(canvas.width / width, canvas.height / height);
+        context.drawImage(image, 0, 0, width, height);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) {
+            throw new Error('the chart\'s PNG could not be encoded');
+        }
+        return new Uint8Array(await blob.arrayBuffer());
+    } finally {
+        URL.revokeObjectURL(url);
+    }
+}
+
+/**
+ * Saves bytes under a file name, through a Blob and an object URL revoked once the save has
+ * started: one click saves (ADR-0282).
+ */
+export function save(name, type, bytes) {
+    const url = URL.createObjectURL(new Blob([bytes], { type }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    try {
+        link.click();
+    } finally {
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+}
+
 /** The SHA-256 of this source, which the build writes in; the chart refuses a module of another version (ADR-0123). */
 export function stamp() {
     return typeof EX_SOURCE_SHA256 === 'string' ? EX_SOURCE_SHA256 : '';

@@ -4,6 +4,10 @@ const ExChart.GridChartCommands.AddPrefix = "exchart.add:" -> string!
 const ExChart.GridChartCommands.Chart = "exchart.chart" -> string!
 const ExChart.GridChartCommands.InColumns = "exchart.chart.columns" -> string!
 const ExChart.GridChartCommands.InRows = "exchart.chart.rows" -> string!
+ExChart.ChartFileFormat
+ExChart.ChartFileFormat.Csv = 0 -> ExChart.ChartFileFormat
+ExChart.ChartFileFormat.Png = 2 -> ExChart.ChartFileFormat
+ExChart.ChartFileFormat.Svg = 1 -> ExChart.ChartFileFormat
 ExChart.ChartOrientation
 ExChart.ChartOrientation.SeriesInColumns = 0 -> ExChart.ChartOrientation
 ExChart.ChartOrientation.SeriesInRows = 1 -> ExChart.ChartOrientation
@@ -54,7 +58,10 @@ ExChart.Components.ExChart.Density.set -> void
 ExChart.Components.ExChart.Description.get -> string?
 ExChart.Components.ExChart.Description.set -> void
 ExChart.Components.ExChart.DisposeAsync() -> System.Threading.Tasks.ValueTask
+ExChart.Components.ExChart.DownloadAsync(ExChart.ChartFileFormat format) -> System.Threading.Tasks.Task<bool>!
 ExChart.Components.ExChart.ExChart() -> void
+ExChart.Components.ExChart.FileName.get -> string?
+ExChart.Components.ExChart.FileName.set -> void
 ExChart.Components.ExChart.Height.get -> double
 ExChart.Components.ExChart.Height.set -> void
 ExChart.Components.ExChart.HiddenSeries.get -> System.Collections.Generic.IReadOnlySet<string!>?
