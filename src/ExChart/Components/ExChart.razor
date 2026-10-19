@@ -6,7 +6,7 @@
 @using global::ExChart.Engine
 @implements IAsyncDisposable
 
-<div @ref="_root" class="ex-chart" style="@RootStyle">
+<div @ref="_root" class="ex-chart" style="@RootStyle" aria-busy="@(Busy ? "true" : null)">
     <div data-ex-notice="stylesheet" data-ex-stylesheet="@ShippedAssets.StylesheetName" data-ex-stamp="@ShippedAssets.StylesheetStamp" style="display: none">@StylesheetNotice</div>
     <div class="ex-chart-toolbar" role="toolbar" aria-label="@ToolbarName">
         <button type="button" class="ex-chart-button ex-chart-filters-toggle" aria-expanded="@(_filtersOpen ? "true" : "false")" @onclick="ToggleFilters">Chart Filters</button>

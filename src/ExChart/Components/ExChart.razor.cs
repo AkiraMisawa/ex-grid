@@ -445,12 +445,24 @@ public partial class ExChart
             try
             {
                 await _handle.InvokeVoidAsync("draw", version, xs);
+                if (!_told)
+                {
+                    _told = true;
+                    StateHasChanged();
+                }
             }
             catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
             {
             }
         }
     }
+
+    // Busy until the pointer entry holds its first drawing, as a grid is while Prerendered (A11Y-20):
+    // a press or a move before then reaches no listener and is lost, so a user, or a script, waits
+    // for the mark to go (spine rule 6). A refused script ends it too: nothing more is coming.
+    private bool _told;
+
+    private bool Busy => !_told && !_scriptRefused;
 
     private async Task AttachAsync()
     {

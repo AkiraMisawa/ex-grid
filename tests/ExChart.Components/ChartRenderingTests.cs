@@ -270,9 +270,10 @@ public class ChartRenderingTests : BunitContext
         Assert.Single(cut.FindAll(".ex-chart-script-notice"));
         Assert.Equal(3, cut.FindAll("g.ex-chart-series").Count);
         Assert.DoesNotContain(_module.Invocations, i => i.Identifier == "attach");
+        Assert.False(cut.Find(".ex-chart").HasAttribute("aria-busy"));
     }
 
-    [Fact] // ADR-0255: the script is attached once and told each drawing's positions with its version
+    [Fact] // ADR-0255, A11Y-20: the script is attached once and told each drawing's positions with its version; the chart is busy only until the first is told
     public void The_script_is_told_each_drawing()
     {
         var cut = Render(Exposure());
@@ -281,5 +282,6 @@ public class ChartRenderingTests : BunitContext
         Assert.Equal(cut.Instance.Version, draw.Arguments[0]);
         Assert.Equal(3, ((double[])draw.Arguments[1]!).Length);
         Assert.Empty(cut.FindAll(".ex-chart-script-notice"));
+        Assert.False(cut.Find(".ex-chart").HasAttribute("aria-busy"));
     }
 }
