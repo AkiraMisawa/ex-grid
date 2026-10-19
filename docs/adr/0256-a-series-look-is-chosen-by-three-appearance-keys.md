@@ -27,5 +27,10 @@ case.
   legend reads directly as keys: its rows are colours, its columns line styles.
 - **A step's ends keep the marker's shape**: filled where the function takes the value, an outline
   where it does not (ADR-0253). Shape and fill are separate, so the two never collide.
+- **Ten colour slots by default; a theme may add more.** *(M2 grilling Q9, 2026-10-19.)* When a
+  chart has more colour keys than slots — fourteen counterparties on one axis — colours repeat in
+  order, and the chart writes a note under it that colours repeat (ADR-0257's notes). Legend and
+  tooltip still name every series. Refusing the chart would block an ordinary request; generating
+  colours by rotating the hue cannot promise contrast between neighbours or in a dark theme.
 - **No colour, line pattern or marker size is a C# parameter** (ADR-0027/0028): the keys name slots,
   and the stylesheet's Visual Tokens say what a slot looks like.

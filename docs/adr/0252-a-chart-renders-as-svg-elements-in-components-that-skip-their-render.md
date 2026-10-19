@@ -28,5 +28,12 @@ width whatever the row count.
 ## Measured, not gated
 
 The proof of concept's harness is rerun against the product on both hosts at 67, 1,566 and 10,959
-dates, and the readings are recorded beside the proof of concept's. Targets are set from those
-readings with the user; like every performance figure here they never gate CI.
+dates, and the readings are recorded beside the proof of concept's. Like every performance figure
+here they never gate CI.
+
+*Rewritten in part 2026-10-19 (M2 grilling Q7).* This section first said targets in milliseconds
+would be set from those readings. The user chose none: **what gates is render counts**, which do not
+swing with the machine, and they are criteria CH-1 to CH-3 of the Definition of Done — a move of the
+pointer renders only the tooltip and the guide; hiding one series renders no other series; a series'
+SVG nodes do not grow with its number of points. Timings are still measured and recorded, to watch the
+trend.
