@@ -1,0 +1,80 @@
+@using global::ExChart
+@using global::ExChart.Components
+@using global::ExChart.Engine
+@* ExChart's measurement (ADR-0283, M4): the real chart, 1,566 dates × six series in two panels, the
+   size of the proof of concept's exposure profile. The same component on WebAssembly (Bench.Client,
+   /chart) and on the circuit (Bench.Server, /chart), driven by wwwroot/chart-bench.js. The page keeps
+   what the user changed, as a Consumer does (ADR-0272): the hidden series and the range come back as
+   parameters, and "Next run" replaces the data with the next run's, keeping both. *@
+<div id="chart-bench">
+    <button type="button" id="chart-next-run" @onclick="NextRun">Next run</button>
+    <ExChart Definition="_definition"
+             Title="Exposure profile"
+             Width="1000"
+             Height="520"
+             HiddenSeries="_hidden"
+             OnSeriesVisibilityChanged="_seriesChanged"
+             Range="_range"
+             OnRangeChanged="_rangeChanged" />
+</div>
+
+@code {
+    public const int Dates = 1_566;
+
+    private ChartDefinition _definition = Exposure(0);
+    private int _run;
+    private IReadOnlySet<string> _hidden = new HashSet<string>();
+    private ChartRange? _range;
+    private EventCallback<SeriesVisibility> _seriesChanged;
+    private EventCallback<ChartRange?> _rangeChanged;
+
+    protected override void OnInitialized()
+    {
+        _seriesChanged = EventCallback.Factory.Create<SeriesVisibility>(this, SeriesChanged);
+        _rangeChanged = EventCallback.Factory.Create<ChartRange?>(this, range => _range = range);
+    }
+
+    // Business days from 2026-10-30, about six years: the proof of concept's daily exposure grid.
+    private static readonly int[] Days = BusinessDays(new DateOnly(2026, 10, 30), Dates);
+
+    private static int[] BusinessDays(DateOnly start, int count)
+    {
+        var days = new int[count];
+        var d = start;
+        for (var i = 0; i < count; d = d.AddDays(1))
+        {
+            if (d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday)) days[i++] = d.DayNumber;
+        }
+        return days;
+    }
+
+    private static ChartDefinition Exposure(int run)
+    {
+        // A hump that peaks near year two, with a daily wobble, deterministic, and moved by each run.
+        double Hump(int i, double scale, int seed) =>
+            Math.Round(scale * Math.Sin(Math.PI * i / Dates) * (1 + 0.6 * Math.Exp(-Math.Pow((i - 500) / 250.0, 2)))
+                       + 0.4 * Math.Sin(i * 0.37 + seed + run) + run * 0.25, 4);
+        ChartSeries Series(string id, string name, string panel, string key, Func<int, double> value) =>
+            ChartSeries.Of(id, name, SeriesKind.Level, Days.Select((day, i) => new ChartPoint(day, ChartValue.Of(value(i)))))
+                with { Panel = panel, Keys = new AppearanceKeys(key) };
+        return new ChartDefinition(ChartAxis.Dates("Date"),
+        [
+            Series("epe-before", "EPE · Before", "EPE", "Before", i => Hump(i, 10, 1)),
+            Series("epe-after", "EPE · After", "EPE", "After", i => Hump(i, 7, 2)),
+            Series("pfe-after", "PFE95 · After", "EPE", "PFE", i => Hump(i, 12, 3)),
+            Series("ene-before", "ENE · Before", "ENE", "Before", i => -Hump(i, 6, 4)),
+            Series("ene-after", "ENE · After", "ENE", "After", i => -Hump(i, 4, 5)),
+            Series("nfe-after", "NFE95 · After", "ENE", "PFE", i => -Hump(i, 8, 6)),
+        ]);
+    }
+
+    private void NextRun() => _definition = Exposure(++_run);
+
+    private void SeriesChanged(SeriesVisibility change)
+    {
+        var hidden = new HashSet<string>(_hidden);
+        if (change.Hidden) hidden.Add(change.Key);
+        else hidden.Remove(change.Key);
+        _hidden = hidden;
+    }
+}
