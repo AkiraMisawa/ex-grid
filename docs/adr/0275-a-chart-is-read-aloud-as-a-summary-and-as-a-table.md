@@ -16,3 +16,7 @@ reader walks by its own commands. Highcharts' accessibility module takes the sam
 - **The Consumer's description only**: a chart nobody described says nothing.
 - **Point-by-point keyboard navigation**: the table already lets a reader reach every value, and
   walking a thousand points by arrow key is not how anyone reads a series. Not in the first version.
+
+*(2026-10-19, [ADR-0283](./0283-exchart-ships-on-the-familys-train-measured-and-checked-by-machine.md),
+decided with the user: the summary and the table are fixed by an ARIA snapshot in layer 3, not read by
+a person; what a screen reader actually speaks is stated as not verified.)*

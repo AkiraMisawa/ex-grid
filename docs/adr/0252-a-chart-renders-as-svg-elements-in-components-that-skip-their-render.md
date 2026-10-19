@@ -17,7 +17,8 @@ as it diffs HTML:
   it does not, its component does not render. Hiding one series from the legend sends one element.
 - **The tooltip is its own component.** A hover re-renders it and nothing else.
 - **Files are written when asked for.** SVG, PNG and CSV are produced on the click, not encoded into
-  `data:` URLs on every render (more than half of the 67-date redraw).
+  `data:` URLs on every render (more than half of the 67-date redraw). *(How the PNG is painted and how
+  a file is saved: ADR-0282, 2026-10-19.)*
 - **No hover layer of dates × series.** The guide and dots are drawn for the one date the pointer is
   at (ADR-0255 reports it), not prewritten for every date (1,618 of 1,875 nodes at 67 dates).
 - **`MarkupString` is not used for drawing.**
