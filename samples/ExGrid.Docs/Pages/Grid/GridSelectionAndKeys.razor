@@ -152,6 +152,13 @@
             the Enter moved to, as it does typed slowly.
         </p>
         <p>
+            <strong>A drag is carried out however fast it is.</strong> A drag across the rows, across the headings, or
+            on a column's grip or heading to size or move it, is followed from its press. On Blazor Server the grid
+            answers a press a round trip later, and a move made before that answer is held, with the release behind it,
+            and handed on once the press has been answered: a drag from one cell to another sent at once selects the
+            same range as one made slowly.
+        </p>
+        <p>
             <strong>Nothing waits on a clock.</strong> Keys held while the grid answers wait for what they were
             typed for — the editor or a popover to take the keyboard, a frame of yours to take it after
             <code>HandKeyboardToFrameAsync</code> — however long the round trip. Once every input before them has

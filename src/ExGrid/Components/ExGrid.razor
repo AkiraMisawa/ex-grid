@@ -5586,7 +5586,7 @@
     // moves a scrollable header's button to where another column's stood, and the diff,
     // comparing by position, registers that one afresh.
     private Func<Task>?[] _menuOpeners = [];
-    private Action<MouseEventArgs>?[] _gripDowns = [];
+    private Func<MouseEventArgs, Task>?[] _gripDowns = [];
     private Func<Task>?[] _gripFitters = [];
 
     /// <summary>How far a header press must travel before it is a drag — a resize or a
@@ -5600,7 +5600,7 @@
         return _menuOpeners[column] ??= MenuOpenerFor(column);
     }
 
-    private Action<MouseEventArgs> GripDown(int column)
+    private Func<MouseEventArgs, Task> GripDown(int column)
     {
         if (column >= _gripDowns.Length)
             Array.Resize(ref _gripDowns, Math.Max(column + 1, Columns.Count));
@@ -5618,7 +5618,9 @@
     // parameter allocates its closure on entry to the method, cache hit or not.
     private Func<Task> MenuOpenerFor(int column) => () => ClaimedAsync("click", () => OpenMenuAsync(column));
 
-    private Action<MouseEventArgs> GripDownFor(int column) => e => OnResizeGripDown(column, e);
+    // Numbered (ADR-0240): the script holds the drag's moves until this press is answered, because the
+    // handlers that follow them are attached by the render that answers it.
+    private Func<MouseEventArgs, Task> GripDownFor(int column) => e => ClaimedAsync("mousedown", () => OnResizeGripDown(column, e));
 
     /// <summary>A double-click on a grip is Size to fit, the column menu's command
     /// (ADR-0016, FN-12a).</summary>
@@ -10604,7 +10606,7 @@
             <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
                 {@HeaderMark}@if (ShowMenuButtons)
                 {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" data-ex-claims="click" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                {<div class="ex-resize-grip" data-ex-claims="dblclick" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
+                {<div class="ex-resize-grip" data-ex-claims="mousedown dblclick" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
         }
         if (_scrollable is { } headerColumns)
         {
@@ -10617,7 +10619,7 @@
                 <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
                     {@HeaderMark}@if (ShowMenuButtons)
                     {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" data-ex-claims="click" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
-                    {<div class="ex-resize-grip" data-ex-claims="dblclick" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
+                    {<div class="ex-resize-grip" data-ex-claims="mousedown dblclick" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
             }
         }
     }

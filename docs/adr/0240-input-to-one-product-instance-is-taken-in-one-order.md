@@ -188,6 +188,15 @@ The Chrome contexts' delegates may change shape to carry the order. Each change 
   (`HandOffHeardAsync`), and the wait counts that number before it judges the keyboard missed. Held input that can no longer be carried out is refused aloud
   with `KeyRefusalLabelIds.KeyboardDidNotArrive`. A Consumer's frame is waited for until it takes the
   keyboard, another grid does, or the grid is disposed.
+- **A drag's moves are held behind its press until the press is answered.** The core attaches a drag's
+  move and release handlers in the render that answers its press (a heading drag, the rows' selection
+  drag, a grip's or a reorder's), so on the Server host a move made within a round trip of the press
+  reached no handler, and a drag faster than that grew nothing (`sizing.spec.mjs` SR-2d under the widened
+  run). While the press, or a press held before it, is unanswered and the primary button is down, ADR-0021's
+  pointer listener holds the move among the held inputs, keeping only the last; the release and the click
+  behind it stay behind it. At its turn the move is dispatched where it was made and the drag's handler,
+  attached by then, takes it. Decided on the recommended option of the question put to the user on
+  2026-10-18; ADR-0021's fifth entry is widened, not added to.
 - **A Chrome that marks a control `data-ex-claims` must reach the core every time that event comes**: a
   telling no handler claims holds the inputs behind it until the next telling. The Wrapper's filter form
   therefore hands every submission to `Apply`, which refuses one it cannot apply.

@@ -2645,7 +2645,51 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         return firstRow + Math.floor(offsetY / rowHeight);
     };
+    // A drag's moves made before the core has answered its press (ADR-0240, as built; ADR-0021's fifth entry). The core
+    // attaches a drag's move and release handlers in the render that answers the press — on a
+    // circuit a round trip after it — and a move made before that render reached no handler: a drag
+    // faster than a round trip moved nothing, and the selection it should have grown stayed where
+    // the press left it. So, while the press numbered `dragPressInput` is unanswered and the button
+    // is still down, the move is held, in its place among the inputs held behind the press, and only
+    // the last one is kept: the drag goes where the pointer is, not where it passed. At its turn it is
+    // handed to Blazor as the move it was, on the element it was made on, after the render that
+    // answered the press, whose handler takes it; the release and the click behind it follow it
+    // there (onRelease, onClaimedEvent). Reads the button state and the stamp; no layout is read.
+    let dragPressInput = 0;
+    const holdsDragMove = (event) => {
+        if (!core || replaying || !event.isTrusted || (event.buttons & 1) !== 1) {
+            return false;
+        }
+        if (held.some((k) => k.press === 'mousedown')) {
+            return true;
+        }
+        if (dragPressInput === 0) {
+            return false;
+        }
+        if (stamp !== null && Number(stamp.getAttribute('data-ex-answered')) >= dragPressInput) {
+            dragPressInput = 0;
+            return held.some((k) => k.dragMove === true);
+        }
+        return true;
+    };
+    const holdDragMove = (event) => {
+        event.stopPropagation();
+        const move = { press: 'mousemove', claim: true, dragMove: true, target: event.target, init: mouseInit(event) };
+        const last = held[held.length - 1];
+        if (last?.dragMove === true) {
+            held[held.length - 1] = move;
+        } else {
+            held.push(move);
+        }
+        if (!answering) {
+            startHold(dragPressInput > 0 ? answeredUpTo(dragPressInput) : undefined);
+        }
+    };
     const onPointerMove = (event) => {
+        if (holdsDragMove(event)) {
+            holdDragMove(event);
+            return;
+        }
         // Cells are pointer-events: none, so the Viewport is what a move over the rows
         // lands on. Anything else — the header, the message popover, a Template Column's
         // own control — is not a cell to describe, and the last report stands.
@@ -3558,7 +3602,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // A press a control of this grid's own claims (claimOf), told as it goes on to Blazor; a
             // replayed one was told by its replay (replayClaimed).
             if (core && !replaying && claimOf(event.target, 'mousedown') !== null) {
-                tellClaim('mousedown');
+                const input = tellClaim('mousedown');
+                if (event.button === 0) {
+                    dragPressInput = input;
+                }
+            } else if (taken && event.button === 0) {
+                dragPressInput = inputsSent;
             }
             return;
         }
@@ -3578,6 +3627,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (held.length === 0 && (!answering || (pressAnswer !== null && pressAnswer !== handedOnAnswer))) {
             handOn(event);
             tellTaken('mousedown', taken);
+            if (taken && event.button === 0) {
+                dragPressInput = inputsSent;
+            }
             // While an edit is open, the keys after it wait for its answer (holdBehindPress).
             // Where a press may point, the core also suppresses its default so the keyboard stays
             // in the edit (ADR-0051), and a Formula Bar the edit was typed in keeps DOM focus
@@ -3664,7 +3716,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             nameBoxSelected = nameBox;
         }
         const taken = core && !replaying && isOwnRows(event.target) ? takenAt(event) : null;
-        if (!core || replaying || !held.some((k) => k.press === 'mousedown')) {
+        // The drag this release ends holds no more moves (holdsDragMove).
+        if (!replaying && event.isTrusted && event.button === 0) {
+            dragPressInput = 0;
+        }
+        if (!core || replaying || !held.some((k) => k.press === 'mousedown' || k.dragMove === true)) {
             // A release that ends a double click: the browser fires the double click on the rows
             // next, and its answer is awaited as an input of its own (ADR-0220). A release held and
             // replayed is not one: the browser's double click has gone ahead of it.
@@ -3677,7 +3733,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         event.stopPropagation();
         // The release of a press held on a control that claims its events goes as that press does
         // (replayClaimed): handed to Blazor in its turn, where it was made.
-        const pressed = held.findLast((k) => k.press === 'mousedown');
+        // Behind a drag's held move (holdDragMove) it goes as the move does, after the render that
+        // answered the press: on the rows, told what it was taken against as a held press's is.
+        const pressed = held.findLast((k) => k.press === 'mousedown' || k.dragMove === true);
+        if (pressed?.dragMove === true && taken !== null) {
+            held.push({ press: 'mouseup', target: event.target, init: mouseInit(event), taken });
+            return;
+        }
         if (pressed?.claim === true) {
             held.push({ press: 'mouseup', claim: true, target: event.target, init: mouseInit(event) });
             return;
@@ -3779,7 +3841,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             awaitingMove = null;
             lookAgain();
         }
-        if (event.type !== 'submit' && held.some((k) => k.press === 'mousedown')) {
+        if (event.type !== 'submit' && held.some((k) => k.press === 'mousedown' || k.dragMove === true)) {
             event.preventDefault();
             event.stopPropagation();
             held.push({ press: event.type, claim: true, target: event.target, init: mouseInit(event) });

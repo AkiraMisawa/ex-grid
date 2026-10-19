@@ -1378,7 +1378,7 @@ public class ShippedStylesheetTests
         // the placement came: that caret stands, and is reported again as the user's.
         // The same call places the selection F4's rewrite answered (ADR-0051, 2026-09-29). It is
         // brought into view first (ticket 75; A_caret_placed_by_the_core_is_brought_into_view).
-        Assert.Matches(new Regex(@"setCaret: \(text, caret, end\) => \{\s*const input = editorInput\(\);\s*(?://[^\n]*\n\s*)*const moved = input \? movedByUser\(input\) : false;\s*if \(input && input\.value === text\) \{\s*if \(moved\) \{\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*(?://[^\n]*\n\s*)*showCaret\(input, end\);\s*input\.setSelectionRange\(caret, end\);\s*reportedText = text;\s*reportedCaret = caret;",
+        Assert.Matches(new Regex(@"setCaret: \(text, caret, end\) => \{\s*const input = editorInput\(\);\s*(?://[^\n]*\n\s*)*const moved = input \? movedByUser\(input\) : false;\s*if \(input && input\.value === text\) \{\s*if \(moved\) \{\s*(?://[^\n]*\n\s*)*showCaret\(input, input\.selectionDirection === 'backward' \? input\.selectionStart : input\.selectionEnd\);\s*reportedText = null;\s*reportCaretOf\(input\);\s*return;\s*\}\s*(?://[^\n]*\n\s*)*showCaret\(input, end\);\s*input\.setSelectionRange\(caret, end\);\s*reportedText = text;\s*reportedCaret = caret;",
             RegexOptions.Singleline), script.Text);
         // The user's move: a press in an editor surface's text, or a caret key left to it or
         // answered by the listener on an Apple platform (ticket 32) — only while the field still
@@ -1415,7 +1415,10 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"if \(!k\.shiftKey\) \{\s*input\.setSelectionRange\(to, to\);\s*\} else if \(to < anchor\) \{\s*input\.setSelectionRange\(to, anchor, 'backward'\);\s*\} else \{\s*input\.setSelectionRange\(anchor, to, 'forward'\);\s*\}\s*showCaret\(input, to\);\s*return true;"), script);
         Assert.Matches(new Regex(@"showCaret\(input, input\.selectionEnd\);\s*(?://[^\n]*\n\s*)*input\.dispatchEvent\(new Event\('input', \{ bubbles: true \}\)\);\s*return true;\s*\};"), script);
         Assert.Equal(4, Regex.Matches(script, @"showCaret\(input, (end|edge|to|input\.selectionEnd)\);").Count);
-        Assert.Equal(4, Regex.Matches(script, @"showCaret\(").Count);
+        // The user's own move in the text the placement came for is shown as the placement would have
+        // shown it: an End typed before it, with the caret at the end already, moved no view (ticket 32).
+        Assert.Matches(new Regex(@"if \(moved\) \{\s*(?://[^\n]*\n\s*)*showCaret\(input, input\.selectionDirection === 'backward' \? input\.selectionStart : input\.selectionEnd\);"), script);
+        Assert.Equal(5, Regex.Matches(script, @"showCaret\(").Count);
         Assert.Equal(2, Regex.Matches(script, @"input\.scrollLeft = ").Count);
         // The coloured layer follows the offset through the field's own scroll event, as it does
         // when the user types (DC-48).
