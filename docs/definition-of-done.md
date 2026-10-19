@@ -1874,3 +1874,12 @@ grilling. ExChart has no timed target: render counts gate, timings are recorded.
 | **CH-6** | MUST | Past the last colour slot, colours repeat and the chart says so in a note (ADR-0256) | Layer 2 markup | the note present |
 | **CH-7** | MUST | A 3D surface given scattered points is refused by name; a missing grid value is a hole, never 0 (ADR-0274) | Layer 1 | as stated |
 | **CH-8** | MUST | The chart's accessible summary names its axes with their ranges and each visible series with its maximum; "View as table" holds the CSV's content (ADR-0275) | Layer 2 markup; Layer 3 accessibility tree | as stated |
+| **CH-9** | MUST | The accessible summary and "View as table" of each ExChart Showcase match their recorded ARIA snapshot (ADR-0283) | Layer 3 ARIA snapshot | as recorded |
+| **CH-10** | MUST | At `deviceScaleFactor` 1.25 and 1.5 a 2D plot's lines lie on Device Pixels, and the PNG and the 3D surface are drawn at that scale (ADR-0282, ADR-0283) | Layer 3 `paints`; PNG size | as stated |
+| **CH-11** | MUST | Under `forcedColors: 'active'` every two series of a panel differ in line style or marker (ADR-0256, ADR-0283) | Layer 3 | as stated |
+| **CH-12** | MUST | CSV, SVG and PNG are each saved by one click, under the chart's file name, and none is encoded during a render (ADR-0252, ADR-0282) | Layer 2 markup (no `data:` URL); Layer 3 download | as stated |
+| **CH-13** | MUST | `ExChart.Engine`'s `.nuspec` declares no dependency, and `ExChart`'s declares exactly the ExGrid it was built with (ADR-0250, ADR-0283) | PackageSmoke | as stated |
+| **CH-14** | SHOULD | `spikes/render-bench`'s ExChart mode has a recorded result on Server, WebAssembly and WebAssembly with AOT (ADR-0283) | Recorded JSON | present; never a gate |
+
+*Not verified, by decision (ADR-0283, 2026-10-19): what NVDA or another screen reader actually speaks,
+and the chart on a real Windows display. CH-9 to CH-11 stand in for them in a browser.*
