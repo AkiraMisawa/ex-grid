@@ -14,3 +14,5 @@ reader can see and cost 61 MB a redraw.
 - **Thinning is redone when the width or the date range changes**, from the full series.
 - **A step is thinned by its levels**, so an open and a filled end are never drawn at a point the
   function does not reach.
+- **A sampled series is not thinned**: it is evaluated at about one position per device pixel to begin
+  with (ADR-0257).

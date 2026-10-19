@@ -63,6 +63,20 @@ when it has more points than pixels. Files carry every point; a tooltip on a thi
 range ([ADR-0254](./docs/adr/0254-past-the-plots-pixels-a-series-is-thinned-to-its-minimum-and-maximum.md)).
 _Avoid_: sampling, downsampling (both suggest points are dropped silently)
 
+**Appearance Keys**:
+The three keys a series' look is chosen by — a **colour key**, a **line-style key** and a **marker
+key** — each mapped to a slot of Visual Tokens, so the same key looks the same in every panel and
+keeps its look when another series is hidden
+([ADR-0256](./docs/adr/0256-a-series-look-is-chosen-by-three-appearance-keys.md)).
+_Avoid_: colour index, series colour (a colour is never a series' property, only its key's slot)
+
+**Interpolated series**:
+A series the Consumer declares to be values computed between quotes rather than quoted, drawn as a
+line paired with its quotes' markers, optionally in **Segments** that name the method over each range
+and whether it is extrapolated. ExChart computes none of it
+([ADR-0257](./docs/adr/0257-notes-and-interpolated-series-are-the-consumers-said-as-such.md)).
+_Avoid_: smoothed series, fitted series
+
 > **How far do formulas go?** What people call "a formula" splits three ways, and **two of them
 > are already possible in ExGrid**.
 >
