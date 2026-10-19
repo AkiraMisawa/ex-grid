@@ -38,7 +38,8 @@ block on `main` before it uses the first number.
 | 0230–0239 | `claude/races-220-224` | Tickets 220 to 222: a key typed at once after a change of state means what it means typed slowly (decided with the user, 2026-10-17) |
 | 0240–0249 | `claude/project-thread-8j2tu3` | One Input Order per product instance, for machine-speed input (decided with the user, 2026-10-18) |
 | 0250–0259 | `claude/project-thread-8l24i3` | ExChart: the charting product, grilled with the user from the research on `research/excharts` (2026-10-19) |
-| 0260– | free | reserve a block of ten |
+| 0260–0269 | `codex/responsive-touch-design` | Responsive layout and touch across ExGrid, ExSheet and ExPivot; scoped browser interop (decided with the user, 2026-10-19) |
+| 0270– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 
