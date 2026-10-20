@@ -20,7 +20,8 @@ listener added and nothing measured.
 
 *2026-10-19 (scatter grilling Q4, ADR-0290).* On a chart with an Observation series, the position
 reported is **the nearest mark**, chosen from the marks' pixel positions handed over with the drawing,
-and a drag reports the y of its press and release as well as the x. Still one listener, still nothing
+and a drag reports the y of its press and release as well as the x, and, while held, each lattice cell
+of a few pixels it moves into, so the rectangle follows it. Still one listener, still nothing
 measured.
 
 ## Twelfth: the 3D surface is projected and drawn in the browser while it is turned

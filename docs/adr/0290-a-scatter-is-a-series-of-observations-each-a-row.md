@@ -22,7 +22,7 @@ neighbours.
   "a line joins only neighbours") is a rule of the joined kinds; an Observation series is not refused
   for it.
 - **Each point may carry a Row Key and a name.** The tooltip says the name; a click raises the Row Key,
-  and the ready-made bridge goes to that row (ADR-0258). A point without a Row Key is not clickable,
+  and the bridge's `ShowInGridAsync` goes to that row (ADR-0258). A point without a Row Key is not clickable,
   and is not guessed from its x.
 - **A missing x or y is no point**, never a point at zero (ADR-0253's gap rule).
 - **It lives on the same chart as every other kind.** A fitted line over a scatter is an ordinary Level
@@ -39,11 +39,14 @@ or Dates, never categories, each written in its column's format (ADR-0251).
 
 - **Neither axis includes zero by default.** A scatter is read for its pattern and its slope; spreads
   of 180 to 320bp drawn from zero squeeze the pattern into a band at the top. An axis that does not
-  reach zero keeps the break mark at its foot (ADR-0253), so the reader is told. A series may declare
-  that it reads from zero.
+  reach zero keeps the break mark at its foot (ADR-0253), so the reader is told; a logarithmic axis has
+  no zero to reach and no mark. A series may declare that it reads from zero.
 - **Either axis may be logarithmic**, the x and the y on their own: spreads and sizes are read on a log
-  scale. A series with a value at or below zero on a log axis is **refused by name**, never drawn
-  without it. Log scale is not limited to Observation; a Level may take it too.
+  scale. The x is declared on the axis or switched by the viewer; the vertical axes take one scale
+  together, from the view. A position at or below zero on a log x the Consumer declares is **refused by
+  name**; a value at or below zero under a log y the viewer asked for — a point, or a fitted line that
+  crosses zero in its range — keeps the axis proportional with a Note naming the series and the value.
+  Nothing is drawn without it. Log scale is not limited to Observation; a Level may take it too.
 
 ## Past the pixels, marks on the same pixel are merged
 
@@ -71,7 +74,11 @@ point's row and the outlier's mark; translucent markers alone — they thin noth
   points share an x. The pointer entry (ADR-0255) reports the nearest point only when it changes, from
   the marks' positions handed to it with the drawing; it measures nothing.
 - **A drag draws a rectangle and narrows both axes**, raised as an event like ADR-0273's range; the
-  chart holds no View State (ADR-0272).
+  chart holds no View State (ADR-0272). On a chart of several panels it narrows the axis across only:
+  one range cannot say which panel's values it holds. While the button is held, the pointer entry
+  reports the drag on a lattice of a few pixels, once a cell, so the rectangle follows the pointer
+  without a report per move (*decided without the user, who had left work to go on, 2026-10-20*). A
+  release within a cell of the press is a click.
 - **A click on a point goes to its row** (ADR-0258). A rectangle does not select rows in the first
   version: the drag would then have two meanings and need a switch between them.
 

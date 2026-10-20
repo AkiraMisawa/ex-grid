@@ -88,15 +88,15 @@ public sealed record FittedCurve(string Method, IReadOnlyList<double> Coefficien
 public static class Fit
 {
     /// <summary>The most points <see cref="TheilSen"/> takes: it weighs every pair, which past this is too many to run.</summary>
-    public const int TheilSenLimit = 20_000;
+    public const int TheilSenLimit = 3_000;
 
     /// <summary>Ordinary least squares: the line that minimises the squared vertical distances.</summary>
     public static FittedCurve LeastSquares(IReadOnlyList<double> xs, IReadOnlyList<double> ys, FitSpace space = FitSpace.Linear) =>
-        Polynomial(xs, ys, 1, space, "OLS");
+        Fitted(xs, ys, 1, space, "OLS");
 
     /// <summary>Least squares of a polynomial of <paramref name="degree"/>, solved by Householder QR.</summary>
-    public static FittedCurve Polynomial(IReadOnlyList<double> xs, IReadOnlyList<double> ys, int degree) =>
-        Polynomial(xs, ys, degree, FitSpace.Linear, degree == 1 ? "OLS" : "Least squares");
+    public static FittedCurve Polynomial(IReadOnlyList<double> xs, IReadOnlyList<double> ys, int degree, FitSpace space = FitSpace.Linear) =>
+        Fitted(xs, ys, degree, space, degree == 1 ? "OLS" : "Least squares");
 
     /// <summary>
     /// Theil–Sen: the median of the slopes between every pair of points with different x, and the median
@@ -118,7 +118,7 @@ public static class Fit
         return Curve("Theil–Sen", c, x, y, xs, space);
     }
 
-    private static FittedCurve Polynomial(IReadOnlyList<double> xs, IReadOnlyList<double> ys, int degree, FitSpace space, string method)
+    private static FittedCurve Fitted(IReadOnlyList<double> xs, IReadOnlyList<double> ys, int degree, FitSpace space, string method)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(degree);
         var (x, y) = Prepared(xs, ys, space, degree + 1);

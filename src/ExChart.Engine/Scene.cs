@@ -160,7 +160,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         if (view.Scale == AxisScale.Logarithmic && !logX)
             notes.Add(NotLogarithmic(visible.FirstOrDefault(s => s.Points.Any(p => !(p.X > 0)) || s.Sampler is { From: <= 0 }), "across", axis.Values != AxisValues.Numbers));
         var logY = view.YScale == AxisScale.Logarithmic;
-        if (logY && LogarithmicRefusal(visible, axis) is { } refusal)
+        if (logY && LogarithmicRefusal(visible, axis, from, to, devicePixels) is { } refusal)
         {
             notes.Add(refusal);
             logY = false;
@@ -258,15 +258,20 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
 
     // A vertical log axis is refused, by name, by a series with a value at or below zero, or one that
     // always reaches zero (ADR-0290). A value is never dropped to make the axis fit.
-    private static string? LogarithmicRefusal(List<ChartSeries> visible, ChartAxis axis)
+    private static string? LogarithmicRefusal(List<ChartSeries> visible, ChartAxis axis, double from, double to, int devicePixels)
     {
         foreach (var s in visible)
         {
             if (s.Kind == SeriesKind.AmountPerPeriod)
                 return $"The vertical axis stays proportional: '{s.Name}' is an Amount per period, which is drawn from zero.";
-            var low = s.Sampler is null ? s.Points.FirstOrDefault(p => p.Y is { } v && !(v.ToDouble() > 0)) : default;
-            if (s.Sampler is null && low.Y is { } value)
-                return $"The vertical axis stays proportional: '{s.Name}' has {s.Write(value)} at {axis.Write(low.X)}, which a logarithmic axis cannot place.";
+            // A function is judged by the samples it would be drawn from, such as a fitted line that
+            // crosses zero inside its range.
+            var low = s.Sampler is null ? [] : SeriesDrawing.Of(s, axis, from, to, devicePixels, Quotes(s, visible)).Lines.SelectMany(l => l).Where(p => !(p.Y > 0)).Take(1).ToList();
+            if (low is [var sample])
+                return $"The vertical axis stays proportional: '{s.Name}' reaches {sample.Y.ToString("0.####", CultureInfo.InvariantCulture)} at {axis.Write(sample.X)}, which a logarithmic axis cannot place.";
+            var point = s.Sampler is null ? s.Points.FirstOrDefault(p => p.Y is { } v && !(v.ToDouble() > 0)) : default;
+            if (s.Sampler is null && point.Y is { } value)
+                return $"The vertical axis stays proportional: '{s.Name}' has {s.Write(value)} at {axis.Write(point.X)}, which a logarithmic axis cannot place.";
         }
         return null;
     }
@@ -417,7 +422,10 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         // A scatter's marks are not drawn on the plot's edge: its bounds are rounded out, to whole
         // decades on a logarithmic axis (ADR-0290).
         if (visible.Any(s => s.Kind == SeriesKind.Observation) && axis.Values == AxisValues.Numbers)
-            (lo, hi) = axis.EffectiveScale == AxisScale.Logarithmic ? TickLayout.Decades(lo, hi) : (TickLayout.Nice(lo, hi, 6).Min, TickLayout.Nice(lo, hi, 6).Max);
+        {
+            var nice = TickLayout.Nice(lo, hi, 6);
+            (lo, hi) = axis.EffectiveScale == AxisScale.Logarithmic ? TickLayout.Decades(lo, hi) : (nice.Min, nice.Max);
+        }
         return (view.From ?? lo, view.To ?? hi);
     }
 
@@ -519,7 +527,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         // What the axis does not show is not drawn: a mark outside it is left out, and a line is cut at
         // its edge (a rectangle narrows the left axis, ADR-0290).
         bool Shown(double v) => v >= axis.Min - Math.Abs(axis.Max - axis.Min) * 1e-9 && v <= axis.Max + Math.Abs(axis.Max - axis.Min) * 1e-9;
-        inRange = new SeriesDrawing(inRange.Lines.SelectMany(l => ClipLine(l, axis.Min, axis.Max)).ToList(), inRange.Markers.Where(m => Shown(m.Y)).ToList());
+        inRange = new SeriesDrawing(inRange.Lines.SelectMany(l => ClipLine(l, axis.Min, axis.Max, axis.Logarithmic)).ToList(), inRange.Markers.Where(m => Shown(m.Y)).ToList());
         if (s.Kind == SeriesKind.Observation)
             return new SeriesPiece(s.Id, s.Name, s.EffectiveKeys, look, s.Kind, s.Interpolated, EquatableList<EquatableList<DrawnPoint>>.Empty,
                 Merged(inRange.Markers.Select(m => m with { X = map(m.X), Y = YOf(axis, m.Y, plot) }), dpr).ToEquatableList(),
@@ -553,11 +561,13 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
     }
 
     // A line cut where it leaves [lo, hi], each piece ending on the edge it crosses.
-    private static IEnumerable<IReadOnlyList<DrawnPoint>> ClipLine(IReadOnlyList<DrawnPoint> line, double lo, double hi)
+    // On a logarithmic axis the segment is straight in the logarithm, so the crossing is found there.
+    private static IEnumerable<IReadOnlyList<DrawnPoint>> ClipLine(IReadOnlyList<DrawnPoint> line, double lo, double hi, bool logarithmic)
     {
         if (line.All(p => p.Y >= lo && p.Y <= hi)) { yield return line; yield break; }
         var piece = new List<DrawnPoint>();
-        static DrawnPoint Cross(DrawnPoint a, DrawnPoint b, double edge) => new(a.X + (b.X - a.X) * (edge - a.Y) / (b.Y - a.Y), edge);
+        double T(double v) => logarithmic ? Math.Log(v) : v;
+        DrawnPoint Cross(DrawnPoint a, DrawnPoint b, double edge) => new(a.X + (b.X - a.X) * (T(edge) - T(a.Y)) / (T(b.Y) - T(a.Y)), edge);
         for (var i = 0; i < line.Count; i++)
         {
             var p = line[i];

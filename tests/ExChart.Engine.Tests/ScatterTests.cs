@@ -158,4 +158,22 @@ public class ScatterTests
         var mark = scene.Marks.Single(m => m.Point == 1);
         Assert.Equal("row-b", d.Series[0].Points[mark.Point].Row);
     }
+
+    [Fact] // ADR-0290, ADR-0252: an unchanged Observation series builds an equal piece, so its component skips its render
+    public void An_unchanged_observation_builds_an_equal_piece()
+    {
+        var d = Names(O(1, 100, "A"), O(2, 200, "B"));
+        Assert.Equal(ChartScene.Build(d, Metrics).Panels[0].Series[0], ChartScene.Build(d, Metrics).Panels[0].Series[0]);
+    }
+
+    [Fact] // ADR-0290: a fitted line that crosses zero keeps a logarithmic vertical axis proportional, with a Note naming it
+    public void A_fitted_line_through_zero_keeps_the_axis_proportional()
+    {
+        var fit = ExChart.Engine.Fitting.Fit.LeastSquares([1, 2, 3], [1, 1, 100]);
+        var d = new ChartDefinition(ChartAxis.Numbers(), [Names(O(1, 1), O(2, 1), O(3, 100)).Series[0], fit.Series("fit", "OLS")]);
+        var scene = ChartScene.Build(d, Metrics, new ChartView(new HashSet<string>(), YScale: AxisScale.Logarithmic));
+        Assert.False(scene.Panels[0].Left!.Logarithmic);
+        Assert.Contains(scene.Notes, n => n.Contains("'OLS' reaches"));
+        Assert.Equal(3, scene.Marks.Count);
+    }
 }

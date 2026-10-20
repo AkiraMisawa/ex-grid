@@ -267,7 +267,9 @@ public partial class ExChart
             StateHasChanged();
             return;
         }
-        if (x == p.X && y == p.Y)
+        // Within one cell of the lattice it was pressed on, a click; a slip of a pixel across a cell's
+        // edge is still a click (ADR-0290).
+        if (Math.Abs(x - p.X) <= DragCell && Math.Abs(y - p.Y) <= DragCell)
         {
             StateHasChanged();
             if (index >= 0 && index == p.Index && index < _scene.Marks.Count)
@@ -280,7 +282,9 @@ public partial class ExChart
         }
         var panel = _scene.Panels[p.Panel];
         var (x0, x1) = (_scene.PositionAt(Math.Min(p.X, x)), _scene.PositionAt(Math.Max(p.X, x)));
-        if (panel.Left is not { } left)
+        // The left axis is narrowed only where it is the chart's one vertical axis that a rectangle
+        // can mean: one panel. Elsewhere the rectangle narrows the axis across alone (ADR-0290).
+        if (panel.Left is not { } left || _scene.Panels.Count > 1)
         {
             await SetRangeAsync(new ChartRange(x0, x1));
             return;

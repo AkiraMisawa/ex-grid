@@ -2,7 +2,7 @@
 const ExChart.Engine.Appearance.DefaultColourSlots = 10 -> int
 const ExChart.Engine.Appearance.LineStyles = 4 -> int
 const ExChart.Engine.Appearance.Markers = 4 -> int
-const ExChart.Engine.Fitting.Fit.TheilSenLimit = 20000 -> int
+const ExChart.Engine.Fitting.Fit.TheilSenLimit = 3000 -> int
 const ExChart.Engine.SurfaceMesh.BandCount = 9 -> int
 ExChart.Engine.Appearance
 ExChart.Engine.AppearanceKeys
@@ -810,7 +810,7 @@ static ExChart.Engine.DrawnPoint.operator ==(ExChart.Engine.DrawnPoint left, ExC
 static ExChart.Engine.EquatableList.ToEquatableList<T>(this System.Collections.Generic.IEnumerable<T>! items) -> ExChart.Engine.EquatableList<T>!
 static ExChart.Engine.EquatableList<T>.Empty.get -> ExChart.Engine.EquatableList<T>!
 static ExChart.Engine.Fitting.Fit.LeastSquares(System.Collections.Generic.IReadOnlyList<double>! xs, System.Collections.Generic.IReadOnlyList<double>! ys, ExChart.Engine.Fitting.FitSpace space = ExChart.Engine.Fitting.FitSpace.Linear) -> ExChart.Engine.Fitting.FittedCurve!
-static ExChart.Engine.Fitting.Fit.Polynomial(System.Collections.Generic.IReadOnlyList<double>! xs, System.Collections.Generic.IReadOnlyList<double>! ys, int degree) -> ExChart.Engine.Fitting.FittedCurve!
+static ExChart.Engine.Fitting.Fit.Polynomial(System.Collections.Generic.IReadOnlyList<double>! xs, System.Collections.Generic.IReadOnlyList<double>! ys, int degree, ExChart.Engine.Fitting.FitSpace space = ExChart.Engine.Fitting.FitSpace.Linear) -> ExChart.Engine.Fitting.FittedCurve!
 static ExChart.Engine.Fitting.Fit.TheilSen(System.Collections.Generic.IReadOnlyList<double>! xs, System.Collections.Generic.IReadOnlyList<double>! ys, ExChart.Engine.Fitting.FitSpace space = ExChart.Engine.Fitting.FitSpace.Linear) -> ExChart.Engine.Fitting.FittedCurve!
 static ExChart.Engine.Fitting.FittedCurve.operator !=(ExChart.Engine.Fitting.FittedCurve? left, ExChart.Engine.Fitting.FittedCurve? right) -> bool
 static ExChart.Engine.Fitting.FittedCurve.operator ==(ExChart.Engine.Fitting.FittedCurve? left, ExChart.Engine.Fitting.FittedCurve? right) -> bool
