@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <!-- ExChart's Showcases (ADR-0280): Exposure profile, CDS curves, Curves and Rates, each a page of
+    <!-- ExChart's Showcases (ADR-0280): Exposure profile, Curves and FX volatility, the pages of
          the proof of concept rebuilt from the shipped components, with its data as fixed values under
          Data/. The Docs Site shows them under /showcase/... and the demo pages under /chart-showcase/...,
          so layer 3 drives the same components on both hosts. Not shipped; targets what the SDK

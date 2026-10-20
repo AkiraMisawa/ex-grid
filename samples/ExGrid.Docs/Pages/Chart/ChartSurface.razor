@@ -25,6 +25,12 @@
             at an interpolated value. The helper does not reach past the quotes, so a cell with a missing corner
             stays a hole.
         </p>
+        <p>
+            The <MudLink Href="showcase/fx-volatility" Target="_blank">FX volatility showcase</MudLink> marks the
+            values it filled instead: its grid of quotes keeps the quoted values, a spline across each expiry's
+            smile fills a quote that did not come in, and the surface is handed the grid with those values marked,
+            so its tooltip says "quoted" or "interpolated" at each point.
+        </p>
         <DocsExample Builtin="typeof(SurfaceInterpolated)" Mud="typeof(SurfaceInterpolatedMud)" Files="@(["Examples/Chart/VolSurface.cs"])" />
     </DocsSection>
 

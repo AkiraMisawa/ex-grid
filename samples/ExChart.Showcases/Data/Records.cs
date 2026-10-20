@@ -93,3 +93,40 @@ public static partial class RateData
     public static BuiltCurve BuiltOf(string curve, DateOnly date, string interpolation) =>
         Built.First(b => b.Curve == curve && b.Date == date && b.Interpolation == interpolation);
 }
+
+/// <summary>
+/// One expiry of an FX volatility surface: its tenor, its expiry date and the implied volatilities quoted
+/// at each delta of <see cref="FxVolData.Deltas"/>, in percent; null where no quote came in.
+/// </summary>
+public sealed record FxVolRow(string Tenor, DateOnly Expiry, IReadOnlyList<double?> Vols);
+
+/// <summary>
+/// One tenor of the deposits and forwards behind the surface: the value date, the days from spot, the
+/// two currencies' deposit rates in percent (ACT/360), and the forward as points and as an outright.
+/// </summary>
+public sealed record FxForwardRow(string Tenor, DateOnly ValueDate, int Days, double EurPct, double UsdPct, double Points, double Outright);
+
+/// <summary>EURUSD implied volatilities by delta and tenor, with the deposits and forwards beside them.</summary>
+public static partial class FxVolData
+{
+    /// <summary>The pair.</summary>
+    public const string Pair = "EURUSD";
+
+    /// <summary>The date the quotes were taken on.</summary>
+    public static readonly DateOnly AsOf = new(2026, 10, 13);
+
+    /// <summary>The spot date, two business days on.</summary>
+    public static readonly DateOnly SpotDate = new(2026, 10, 15);
+
+    /// <summary>The spot rate, dollars per euro.</summary>
+    public const double Spot = 1.1650;
+
+    /// <summary>The deltas across, as the market quotes them: puts, at the money, calls.</summary>
+    public static readonly string[] Deltas = ["10P", "25P", "ATM", "25C", "10C"];
+
+    /// <summary>
+    /// Each delta as a number for the page's interpolation across the smile: a put's delta from the call
+    /// side (10P is a 90-delta call), at the money as 50.
+    /// </summary>
+    public static readonly double[] DeltaValues = [10, 25, 50, 75, 90];
+}

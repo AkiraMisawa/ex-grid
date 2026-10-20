@@ -1,0 +1,28 @@
+- table "EURUSD 1Y smile":
+  - caption: EURUSD 1Y smile
+  - rowgroup:
+    - row "Delta 1Y smile 1Y smile (interpolated)":
+      - columnheader "Delta"
+      - columnheader "1Y smile"
+      - columnheader "1Y smile (interpolated)"
+  - rowgroup:
+    - row "10P 8.67 8.67":
+      - rowheader "10P"
+      - cell "8.67"
+      - cell "8.67"
+    - row "25P 8.12 8.12":
+      - rowheader "25P"
+      - cell "8.12"
+      - cell "8.12"
+    - row "ATM 7.98 7.98":
+      - rowheader "ATM"
+      - cell "7.98"
+      - cell "7.98"
+    - row "25C 8.625933503836318":
+      - rowheader "25C"
+      - cell
+      - cell "8.625933503836318"
+    - row "10C 9.19 9.19":
+      - rowheader "10C"
+      - cell "9.19"
+      - cell "9.19"

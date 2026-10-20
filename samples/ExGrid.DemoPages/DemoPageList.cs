@@ -86,6 +86,8 @@ public static class DemoPageList
             "The Docs Site's Exposure profile Showcase: a netting set's EPE, ENE, CVA and PFE before and after a trade, charted from the grid's selection into tabs, CVA per year over its buckets, and a recalculation the charts follow; ?chrome=mud for MudBlazor (ADR-0280)."),
         new("chart-showcase/curves", "Curves showcase", "ExChart",
             "The Docs Site's Curves Showcase: a CDS curve with its hazard rates as steps, CDS curves charted from rows across tenors, and a rate curve with its interpolation named, switched in the bar; ?chrome=mud for MudBlazor (ADR-0280)."),
+        new("chart-showcase/fx-volatility", "FX volatility showcase", "ExChart",
+            "The Docs Site's FX volatility Showcase: EURUSD quotes beside the 3D surface made from them, missing quotes filled by the page's spline and said so, sliced by a click and saved as SVG or PNG, with the term structure, the smile and the deposits and forwards switched in the bar; ?chrome=mud for MudBlazor (ADR-0280)."),
         new("surface", "3D surface", "ExChart",
             "An FX volatility surface turned by dragging or with the arrow keys, zoomed and panned, read at the grid point nearest the pointer, sliced into a smile or a term structure by a click, with a hole drawn as a hole (ADR-0274)."),
     ];

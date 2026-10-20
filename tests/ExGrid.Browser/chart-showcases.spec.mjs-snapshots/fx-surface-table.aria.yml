@@ -1,0 +1,67 @@
+- table "EURUSD volatility":
+  - caption: EURUSD volatility
+  - rowgroup:
+    - row "Tenor \\ Delta 10P 25P ATM 25C 10C":
+      - columnheader "Tenor \\ Delta"
+      - columnheader "10P"
+      - columnheader "25P"
+      - columnheader "ATM"
+      - columnheader "25C"
+      - columnheader "10C"
+  - rowgroup:
+    - row "1W 7.62% 7.26% 7.15% 7.38% 7.84%":
+      - rowheader "1W"
+      - cell "7.62%"
+      - cell "7.26%"
+      - cell "7.15%"
+      - cell "7.38%"
+      - cell "7.84%"
+    - row "1M 7.83% 7.44% 7.32% 7.59% 8.10%":
+      - rowheader "1M"
+      - cell "7.83%"
+      - cell "7.44%"
+      - cell "7.32%"
+      - cell "7.59%"
+      - cell "8.10%"
+    - row "2M 7.96% 7.68% 7.41% 7.71% 8.29%":
+      - rowheader "2M"
+      - cell "7.96%"
+      - cell "7.68%"
+      - cell "7.41%"
+      - cell "7.71%"
+      - cell "8.29%"
+    - row "3M 8.08% 7.64% 7.52% 7.84% 8.45%":
+      - rowheader "3M"
+      - cell "8.08%"
+      - cell "7.64%"
+      - cell "7.52%"
+      - cell "7.84%"
+      - cell "8.45%"
+    - row "6M 8.37% 7.87% 7.74% 8.11% 8.81%":
+      - rowheader "6M"
+      - cell "8.37%"
+      - cell "7.87%"
+      - cell "7.74%"
+      - cell "8.11%"
+      - cell "8.81%"
+    - row "1Y 8.67% 8.12% 7.98% 8.63% 9.19%":
+      - rowheader "1Y"
+      - cell "8.67%"
+      - cell "8.12%"
+      - cell "7.98%"
+      - cell "8.63%"
+      - cell "9.19%"
+    - row "2Y 8.98% 8.37% 8.21% 8.68% 9.55%":
+      - rowheader "2Y"
+      - cell "8.98%"
+      - cell "8.37%"
+      - cell "8.21%"
+      - cell "8.68%"
+      - cell "9.55%"
+    - row "5Y 9.54% 9.03% 8.64% 9.18%":
+      - rowheader "5Y"
+      - cell "9.54%"
+      - cell "9.03%"
+      - cell "8.64%"
+      - cell "9.18%"
+      - cell
