@@ -17,9 +17,14 @@ read; the CSV says what it holds through its columns instead (ADR-0254).
 
 ## Interpolated series
 
-**ExChart holds no interpolation logic** (ADR-0250, the user's rule of 2026-10-13). It draws the
+**ExChart never interpolates on its own** (ADR-0250, the user's rule of 2026-10-13). It draws the
 points it is given and joins neighbours with a straight segment or a step (ADR-0253); that join is a
 way of drawing points, not a claim about values between them.
+
+*The rationale was replaced once, 2026-10-19.* This first read "ExChart holds no interpolation logic".
+The user then asked whether the chart could offer interpolation as a helper, after a survey of 3D charts
+found Consumers rebuilding the same general methods; the answer kept the rule — interpolation is the
+Consumer's — and moved the line from *holds* to *runs*, under the four conditions of "Helpers" below.
 
 - **Marking a series Interpolated is optional.** A Consumer that hands one series has the chart draw
   it, and claims nothing.
@@ -41,3 +46,22 @@ way of drawing points, not a claim about values between them.
   application to fill the gap is the Consumer's to do and to vouch for; it draws a different curve
   from the analytics' whenever the method differs. A forward drawn from pillars alone is drawn as
   points.
+
+## Helpers (2026-10-19)
+
+`ExChart.Engine` carries general interpolation methods in a namespace of their own,
+`ExChart.Engine.Interpolation`, as ExGrid carries `GridSource.From` beside a grid that sorts nothing
+(ADR-0001). Four conditions keep them the Consumer's:
+
+1. **The chart never calls them.** A Consumer calls one explicitly and hands its result in — a curve as
+   a sampled series, a surface as a function z(x, y) (ADR-0274). No interpolation sits on the drawing's
+   path.
+2. **The result carries its method's name** — "linear", "natural cubic spline", "bilinear", "linear on
+   triangles (P1)" — and handing it in writes that name in the Notes and the tooltip, through the
+   series' Segment or the surface's method. A Consumer cannot forget to say it.
+3. **Only general methods**: linear, bilinear, natural cubic spline, P1 on a triangle mesh. A
+   finance-specific choice — SVI, total-variance interpolation, delta or strike space — stays in the
+   Consumer's analytics; a helper that claimed the right way to build a volatility surface would blur
+   whose result it is.
+4. **No extrapolation.** Outside the points a result was made from it has no value, and the chart draws
+   a gap or a hole there, as it draws a missing value (ADR-0274).
