@@ -1,6 +1,7 @@
 # 61: Drawing a candle
 
 Status: ready-for-agent
+Roadmap: internal
 
 **Why:** [ADR-0300](../../../adr/0300-a-price-range-is-one-bar-a-row-refused-where-its-values-disagree.md).
 
@@ -10,5 +11,3 @@ Status: ready-for-agent
 - [ ] Rendered as components that skip their render (ADR-0252)
 
 **Blocked by:** 60.
-
-Roadmap: internal

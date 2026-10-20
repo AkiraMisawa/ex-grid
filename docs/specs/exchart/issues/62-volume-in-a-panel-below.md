@@ -1,6 +1,7 @@
 # 62: Volume in a panel below
 
 Status: ready-for-agent
+Roadmap: internal
 
 **Why:** [ADR-0300](../../../adr/0300-a-price-range-is-one-bar-a-row-refused-where-its-values-disagree.md).
 
@@ -8,5 +9,3 @@ Status: ready-for-agent
 - [ ] A bar follows its candle: hollow rising, filled falling
 
 **Blocked by:** 61.
-
-Roadmap: internal

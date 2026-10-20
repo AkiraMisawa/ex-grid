@@ -1,6 +1,7 @@
 # 68: The Equity index daily bars Showcase
 
 Status: ready-for-agent
+Roadmap: internal
 
 **Why:** grilling Q9 (2026-10-20); the Showcases of [ADR-0280](../../../adr/0280-exchart-is-shown-in-five-showcases-and-a-chart-section-of-seven-pages.md).
 
@@ -10,5 +11,3 @@ Status: ready-for-agent
 - [ ] Handed to the shipping thread for the README's GIFs
 
 **Blocked by:** 62–65.
-
-Roadmap: internal

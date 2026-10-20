@@ -1,6 +1,7 @@
 # 65: A candle's tooltip and click
 
 Status: ready-for-agent
+Roadmap: internal
 
 **Why:** [ADR-0300](../../../adr/0300-a-price-range-is-one-bar-a-row-refused-where-its-values-disagree.md), [ADR-0302](../../../adr/0302-past-the-plots-pixels-candles-merge-into-the-markets-own-periods.md).
 
@@ -8,5 +9,3 @@ Status: ready-for-agent
 - [ ] A click on a single candle goes to its row; on a merged candle it raises a narrowing to its period
 
 **Blocked by:** 64.
-
-Roadmap: internal

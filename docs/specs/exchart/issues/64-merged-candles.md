@@ -1,6 +1,7 @@
 # 64: Merged candles
 
 Status: ready-for-agent
+Roadmap: internal
 
 **Why:** [ADR-0302](../../../adr/0302-past-the-plots-pixels-candles-merge-into-the-markets-own-periods.md).
 
@@ -9,5 +10,3 @@ Status: ready-for-agent
 - [ ] `MergeTo` fixes the period; a fixed period that does not fit draws nothing and says so
 
 **Blocked by:** 61.
-
-Roadmap: internal

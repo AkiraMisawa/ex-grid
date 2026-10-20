@@ -1,6 +1,7 @@
 # 69: The Candlesticks and intervals page, and layer 3
 
 Status: ready-for-agent
+Roadmap: internal
 
 **Why:** grilling Q9 (2026-10-20); CLAUDE.md, "The Docs Site moves with the change".
 
@@ -8,5 +9,3 @@ Status: ready-for-agent
 - [ ] Layer 3: a candle and a band as painted, the tooltip, a click on a candle, at machine speed
 
 **Blocked by:** 62–67.
-
-Roadmap: internal
