@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.6% | 88.4% |
-| ExSheet | 95.7% | 88.7% |
+| ExSheet | 95.7% | 88.6% |
 | ExPivot | 94.4% | 85.3% |
 | ExChart | 89.6% | 80.4% |
 | Data | 94.5% | 90.3% |
@@ -13,18 +13,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/20/2026 - 22:54:51 |
+| Generated on: | 10/20/2026 - 23:09:23 |
 | Parser: | MultiReport (16x Cobertura) |
 | Assemblies: | 13 |
 | Classes: | 1003 |
 | Files: | 525 |
-| **Line coverage:** | 94.7% (65840 of 69497) |
-| Covered lines: | 65840 |
-| Uncovered lines: | 3657 |
+| **Line coverage:** | 94.7% (65839 of 69497) |
+| Covered lines: | 65839 |
+| Uncovered lines: | 3658 |
 | Coverable lines: | 69497 |
 | Total lines: | 116225 |
-| **Branch coverage:** | 87.1% (39348 of 45142) |
-| Covered branches: | 39348 |
+| **Branch coverage:** | 87.1% (39345 of 45142) |
+| Covered branches: | 39345 |
 | Total branches: | 45142 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -440,11 +440,11 @@
 |ExGrid.ViewStateDocument|100%||
 
 </details>
-<details><summary>ExGrid.Data - 94.7%</summary>
+<details><summary>ExGrid.Data - 94.6%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.7%**|**90.6%**|
+|**ExGrid.Data**|**94.6%**|**90.6%**|
 |ExGrid.Data.AggregateAccumulator|86%|87.8%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -533,7 +533,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -879,7 +879,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**92.9%**|**84.8%**|
+|**ExSheet**|**92.9%**|**84.7%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -890,10 +890,10 @@
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|90.7%|82.8%|
+|ExSheet.Components.ExSheet|90.7%|82.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|90.7%|82.8%|
+|ExSheet.Components.ExSheet<T>|90.7%|82.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
