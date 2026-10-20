@@ -48,6 +48,8 @@
     <ProjectReference Include="..\..\src\ExChart.MudBlazor\ExChart.MudBlazor.csproj" />
     <ProjectReference Include="..\..\src\ExGrid.Data\ExGrid.Data.csproj" />
     <ProjectReference Include="..\..\src\ExGrid.Data.Arrow\ExGrid.Data.Arrow.csproj" />
+    <!-- ExChart's Showcases (ADR-0280), shared with the demo pages so layer 3 drives them on both hosts. -->
+    <ProjectReference Include="..\ExChart.Showcases\ExChart.Showcases.csproj" />
     <!-- The build step that highlights the Examples, reads the API documentation, maps the site,
          reads the Release Notes and the Roadmap, and reads what the reference pages list. -->
     <ProjectReference Include="..\ExGrid.Docs.Generator\ExGrid.Docs.Generator.csproj"

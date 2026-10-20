@@ -135,6 +135,9 @@ public static class DocsNav
             new("Trade blotter", "showcase/blotter", DocsLinkKind.Showcase),
             new("Budget sheet", "showcase/budget", DocsLinkKind.Showcase),
             new("Sales analysis", "showcase/sales", DocsLinkKind.Showcase),
+            new("Exposure profile", "showcase/exposure", DocsLinkKind.Showcase),
+            new("Curves", "showcase/curves", DocsLinkKind.Showcase),
+            new("FX volatility", "showcase/fx-volatility", DocsLinkKind.Showcase),
         ]),
         new("Reference", DocsNavSection.Reference,
         [

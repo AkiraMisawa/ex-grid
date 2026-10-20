@@ -1,0 +1,119 @@
+@using System.Globalization
+@* Curves › CDS curve: one name's par spreads by tenor and the piecewise-constant hazard rates the
+   analytics bootstrapped from them, each holding over (tᵢ₋₁, tᵢ] — an open end where it does not hold, a
+   filled one where it does. The quotes can be shifted in steps of 10bp: each step is a curve the
+   analytics built, kept under Data/, and every open chart follows its rows. *@
+<div class="xs-tools">
+    <span>Recovery @CdsData.RecoveryPct%, a flat @CdsData.RatePct% rate, quarterly premiums on the IMM dates.</span>
+    <span class="xs-spacer"></span>
+    <span>Quotes shifted @ShiftText</span>
+    @if (Mud)
+    {
+        <MudButtonGroup Size="Size.Small" Variant="Variant.Outlined">
+            <MudButton Disabled="@(_shift == 0)" OnClick="() => Shift(-1)" Class="xs-shift-down">−10bp</MudButton>
+            <MudButton Disabled="@(_shift == CdsData.Shifts.Length - 1)" OnClick="() => Shift(1)" Class="xs-shift-up">+10bp</MudButton>
+        </MudButtonGroup>
+    }
+    else
+    {
+        <button type="button" class="xs-button xs-shift-down" disabled="@(_shift == 0)" @onclick="() => Shift(-1)">−10bp</button>
+        <button type="button" class="xs-button xs-shift-up" disabled="@(_shift == CdsData.Shifts.Length - 1)" @onclick="() => Shift(1)">+10bp</button>
+    }
+</div>
+@if (Mud)
+{
+    <MudChartDock @ref="_dock" TRow="CdsRow" Bridge="_bridge" Placement="ChartDockPlacement.Right" ChartWidth="ChartWidth" ChartHeight="ChartHeight">
+        <MudExGridPaper Elevation="1">
+            <ExGrid @ref="_bridge.Grid" TRow="CdsRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups"
+                    HeaderClickSelects="true" ContextCommands="_commands" CommandLabel="Label"
+                    ViewportHeight="GridHeight" ViewportWidth="GridWidth" Chrome="MudChartChrome.GridChrome" />
+        </MudExGridPaper>
+    </MudChartDock>
+}
+else
+{
+    <div class="xs-panel">
+        <ExGrid @ref="_bridge.Grid" TRow="CdsRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups"
+                HeaderClickSelects="true" ContextCommands="_commands" CommandLabel="Label"
+                ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" />
+    </div>
+    <ChartTabs @ref="_tabs" TRow="CdsRow" Bridge="_bridge" ChartWidth="ChartWidth" ChartHeight="ChartHeight" FileName="cds-curve" />
+}
+
+@code {
+    /// <summary>Whether the view is drawn with MudBlazor's Chrome.</summary>
+    [Parameter] public bool Mud { get; set; }
+
+    private const double ChartWidth = 760, ChartHeight = 380;
+    private static readonly ViewportSize GridHeight = 330, GridWidth = 640;
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private static Func<object, string> Digits(int digits) => v => ((decimal)v).ToString("N" + digits, Invariant);
+
+    private static readonly GridColumn<CdsRow>[] Columns =
+    [
+        new("Tenor", ColumnType.Text, r => r.Tenor),
+        new("Maturity", ColumnType.Date, r => r.Maturity, dateType: DateType.DateOnly),
+        new("Spread", ColumnType.Number, r => r.SpreadBp, header: "Par spread (bp)", format: Digits(2)),
+        new("Hazard", ColumnType.Number, r => r.HazardPct, header: "Hazard rate (%)", format: Digits(4)),
+        new("Survival", ColumnType.Number, r => r.SurvivalPct, header: "Survival (%)", format: Digits(4)),
+        new("Default", ColumnType.Number, r => r.DefaultPct, header: "Default prob. (%)", format: Digits(4)),
+    ];
+
+    private static readonly HeaderGroup[] Groups =
+    [
+        new("CDS quote", ["Tenor", "Maturity", "Spread"]),
+        new("Bootstrapped", ["Hazard", "Survival", "Default"]),
+    ];
+
+    // Held in fields, never rebuilt per render (AGENTS.md: a new delegate is a changed parameter).
+    private static readonly Func<CdsRow, object> KeyOf = r => r.Tenor;
+    private static readonly Func<string, string?> Label = GridChartCommands.Label;
+
+    private int _shift = Array.IndexOf(CdsData.Shifts, 0);
+    private IReadOnlyList<CdsRow> _rows = CdsData.Curves[Array.IndexOf(CdsData.Shifts, 0)];
+    private GridChartBridge<CdsRow> _bridge = null!;
+    private Func<ContextMenuContext<CdsRow>, IEnumerable<GridCommand>> _commands = null!;
+    private MudChartDock<CdsRow>? _dock;
+    private ChartTabs<CdsRow>? _tabs;
+    private bool? _openedUnderMud;
+
+    private string ShiftText => CdsData.Shifts[_shift].ToString("+0'bp';−0'bp';'0bp'", Invariant);
+
+    protected override void OnInitialized()
+    {
+        _bridge = new GridChartBridge<CdsRow>(new GridChartDeclarations<CdsRow>
+        {
+            RowKey = KeyOf,
+            RowOf = key => _rows.FirstOrDefault(r => r.Tenor == (string)key),
+            // A hazard rate holds over (tᵢ₋₁, tᵢ], which is how the bootstrap defined it: the page says so.
+            KindOf = column => column == "Hazard" ? SeriesKind.RateOverInterval : SeriesKind.Level,
+        });
+        _commands = _bridge.Commands;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Shown from the start: the spread and the hazard rate at every pillar, the curve's date included.
+        if (_openedUnderMud == Mud) return;
+        _openedUnderMud = Mud;
+        if (Mud && _dock is { } dock) await dock.OpenAsync(Initial());
+        else if (!Mud && _tabs is { } tabs) await tabs.OpenAsync(Initial());
+    }
+
+    private GridChart Initial()
+    {
+        var rows = _rows.Select(r => new KeyedPosition(r.Tenor, r.Maturity.DayNumber)).ToEquatableList();
+        return new GridChart(ChartOrientation.SeriesInColumns, "Maturity", new EquatableList<GridChartSeries>(
+        [
+            new ColumnSeries("Spread", "CDS quote", "Spread", rows),
+            new ColumnSeries("Hazard", "Bootstrapped", "Hazard", rows),
+        ]));
+    }
+
+    private void Shift(int step)
+    {
+        _shift = Math.Clamp(_shift + step, 0, CdsData.Shifts.Length - 1);
+        _rows = CdsData.Curves[_shift];
+    }
+}

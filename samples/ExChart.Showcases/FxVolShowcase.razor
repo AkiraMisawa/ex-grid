@@ -1,0 +1,59 @@
+@* FX volatility (ADR-0280): an EURUSD implied-volatility surface four ways, switched in the application
+   bar — the quotes beside the 3D surface, the term structure at a delta, the smile at an expiry, and the
+   deposits and forwards behind them. The vol table and the surface, two tabs of the proof of concept,
+   share a view, so the table is read beside the surface it makes. Every figure is a fixed value under
+   Data/; the only one the page computes is a missing quote, filled by the page's own interpolation and
+   named as such (FxVolSurface). *@
+<ShowcaseShell Mud="Mud" Crumb="@($"FX options · {FxVolData.Pair} volatility · {_view}")">
+    <Tools>
+        @if (Mud)
+        {
+            <MudToggleGroup T="string" Value="_view" ValueChanged="Select" Size="Size.Small" Outlined="false"
+                            Delimiters="false" SelectedClass="xs-mud-view-selected" Class="xs-mud-views">
+                @foreach (var view in Views)
+                {
+                    <MudToggleItem Value="@view" Text="@view" />
+                }
+            </MudToggleGroup>
+        }
+        else
+        {
+            <nav class="xs-views" aria-label="View">
+                @foreach (var view in Views)
+                {
+                    <button type="button" class="@(view == _view ? "xs-view xs-view-on" : "xs-view")" aria-pressed="@(view == _view ? "true" : "false")"
+                            @onclick="() => Select(view)">@view</button>
+                }
+            </nav>
+        }
+    </Tools>
+    <ChildContent>
+        @switch (_view)
+        {
+            case SurfaceTab:
+                <FxSurfaceView Mud="Mud" />
+                break;
+            case TermView:
+                <FxSliceView @key="TermView" Mud="Mud" Axis="SurfaceSliceAxis.X" />
+                break;
+            case SmileView:
+                <FxSliceView @key="SmileView" Mud="Mud" Axis="SurfaceSliceAxis.Y" />
+                break;
+            default:
+                <FxForwardsView Mud="Mud" />
+                break;
+        }
+    </ChildContent>
+</ShowcaseShell>
+
+@code {
+    /// <summary>Whether the screen is drawn with MudBlazor's Chrome.</summary>
+    [Parameter] public bool Mud { get; set; }
+
+    private const string SurfaceTab = "Surface", TermView = "Term structure", SmileView = "Smile", ForwardsView = "Deposits and forwards";
+    private static readonly string[] Views = [SurfaceTab, TermView, SmileView, ForwardsView];
+
+    private string _view = SurfaceTab;
+
+    private void Select(string view) => _view = view;
+}

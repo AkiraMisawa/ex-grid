@@ -1,0 +1,11 @@
+@page "/showcase/curves"
+@layout BareLayout
+@inject DocsState State
+@using global::ExChart.Showcases
+
+@* ExChart's Curves (ADR-0280): a CDS term structure, CDS curves by reference entity and a rate curve,
+   switched in the application bar. The screen is ExChart.Showcases', shared with the demo pages, so
+   layer 3 drives the same component on both hosts. *@
+<ShowcaseFrame Title="Curves">
+    <CurvesShowcase Mud="State.Mud" />
+</ShowcaseFrame>

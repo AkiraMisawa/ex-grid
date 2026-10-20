@@ -1,0 +1,3 @@
+- 'img "EURUSD ATM volatility by tenor. Tenor, 1W to 5Y. Left axis, 7 to 9. ATM volatility: maximum 8.64% at 5Y."':
+  - text: 7 7.5 8 8.5 9 1W 1M 2M 3M 6M 1Y 2Y 5Y
+  - button "ATM volatility" [pressed]

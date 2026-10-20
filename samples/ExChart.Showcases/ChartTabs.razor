@@ -1,0 +1,129 @@
+@typeparam TRow where TRow : class
+@* The charts made from a grid's selection, as tabs below it, under the built-in Chrome: what
+   MudChartDock is under MudBlazor's, written as page code. It takes the bridge's events: a chart made
+   opens as a new tab, one with a series added replaces its tab, a refusal is said above the tabs, every
+   open chart is a target of "Add to chart", and a click on a point shows its cell in the grid. Each
+   chart is drawn again from the grid's rows on every render, so it follows a recalculation. *@
+<div class="xs-panel xs-charts" role="region" aria-label="Charts">
+    @if (_refusal is { } refusal)
+    {
+        <p class="xs-refusal" role="alert">@refusal</p>
+    }
+    @if (_charts.Count > 0)
+    {
+        <div class="xs-tabs" role="tablist" aria-label="Charts">
+            @foreach (var chart in _charts)
+            {
+                var name = chart.Name;
+                <span>
+                    <button type="button" role="tab" class="xs-tab" aria-selected="@(name == _active ? "true" : "false")" @onclick="() => _active = name">@name</button>
+                    <button type="button" class="xs-tab-close" aria-label="@($"Close {name}")" @onclick="() => Close(name)">×</button>
+                </span>
+            }
+        </div>
+        @foreach (var chart in _charts.Where(c => c.Name == _active))
+        {
+            <div role="tabpanel" aria-label="@chart.Name" @key="chart.Name">
+                @if (DefinitionOf(chart.Chart, out var why) is { } definition)
+                {
+                    <ExChart Definition="definition" Title="@chart.Name" Width="ChartWidth" Height="ChartHeight" FileName="@FileName" OnPointClick="ClickOf(chart.Name)" />
+                }
+                else
+                {
+                    <p class="xs-refusal" role="alert">@why</p>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    /// <summary>The bridge of the grid the charts are made from. This component sets its callbacks and targets.</summary>
+    [Parameter, EditorRequired] public GridChartBridge<TRow> Bridge { get; set; } = null!;
+
+    /// <summary>Each chart's width in CSS pixels.</summary>
+    [Parameter] public double ChartWidth { get; set; } = 900;
+
+    /// <summary>Each chart's height in CSS pixels.</summary>
+    [Parameter] public double ChartHeight { get; set; } = 340;
+
+    /// <summary>The name a chart's saved files take.</summary>
+    [Parameter] public string? FileName { get; set; }
+
+    private readonly List<ChartTarget> _charts = [];
+    private readonly Dictionary<string, EventCallback<ChartPointClick>> _clicks = [];
+    private string? _active;
+    private string? _refusal;
+    private int _made;
+
+    protected override void OnParametersSet()
+    {
+        Bridge.OnChart = chart => OpenAsync(chart);
+        Bridge.OnAdded = Added;
+        Bridge.OnRefused = Refused;
+    }
+
+    /// <summary>Opens <paramref name="chart"/> as a new tab, named "Chart N", and selects it.</summary>
+    public Task OpenAsync(GridChart chart, string? name = null)
+    {
+        name ??= $"Chart {++_made}";
+        _refusal = null;
+        _charts.Add(new ChartTarget(name, chart));
+        _active = name;
+        Retarget();
+        return Task.CompletedTask;
+    }
+
+    private Task Added(ChartTarget target, GridChart chart)
+    {
+        _refusal = null;
+        var at = _charts.FindIndex(c => c.Name == target.Name);
+        if (at >= 0) _charts[at] = new ChartTarget(target.Name, chart);
+        _active = target.Name;
+        Retarget();
+        return Task.CompletedTask;
+    }
+
+    private Task Refused(string why)
+    {
+        _refusal = why;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private void Close(string name)
+    {
+        _charts.RemoveAll(c => c.Name == name);
+        if (_active == name) _active = _charts.LastOrDefault()?.Name;
+        Retarget();
+    }
+
+    private void Retarget()
+    {
+        Bridge.Targets = [.. _charts];
+        StateHasChanged();
+    }
+
+    private ChartDefinition? DefinitionOf(GridChart chart, out string? why)
+    {
+        try
+        {
+            why = null;
+            return Bridge.Draw(chart);
+        }
+        catch (ChartRefusedException e)
+        {
+            why = e.Message;
+            return null;
+        }
+    }
+
+    // Held per tab, never rebuilt per render (AGENTS.md: a new delegate is a changed parameter).
+    private EventCallback<ChartPointClick> ClickOf(string name)
+    {
+        if (!_clicks.TryGetValue(name, out var click))
+            _clicks[name] = click = EventCallback.Factory.Create<ChartPointClick>(this,
+                c => _charts.FirstOrDefault(x => x.Name == name) is { } t ? Bridge.ShowInGridAsync(t.Chart, c) : Task.CompletedTask);
+        return click;
+    }
+}

@@ -1,0 +1,11 @@
+@page "/showcase/fx-volatility"
+@layout BareLayout
+@inject DocsState State
+@using global::ExChart.Showcases
+
+@* ExChart's FX volatility (ADR-0280): an EURUSD volatility surface beside its quotes, its term structure,
+   its smile and the deposits and forwards behind it, switched in the application bar. The screen is
+   ExChart.Showcases', shared with the demo pages, so layer 3 drives the same component on both hosts. *@
+<ShowcaseFrame Title="FX volatility">
+    <FxVolShowcase Mud="State.Mud" />
+</ShowcaseFrame>

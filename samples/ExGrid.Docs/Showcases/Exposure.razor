@@ -1,0 +1,10 @@
+@page "/showcase/exposure"
+@layout BareLayout
+@inject DocsState State
+@using global::ExChart.Showcases
+
+@* ExChart's Exposure profile (ADR-0280): the screen is ExChart.Showcases', shared with the demo pages,
+   so layer 3 drives the same component on both hosts. *@
+<ShowcaseFrame Title="Exposure profile">
+    <ExposureShowcase Mud="State.Mud" />
+</ShowcaseFrame>
