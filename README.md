@@ -228,12 +228,13 @@ Ten years of an index merged into monthly candles, days again when the range is 
 </details>
 
 The [Chart section of the Docs Site](https://akiramisawa.github.io/ex-grid/exchart) has a page and
-an Example for each of these, and five Showcases put them in a desk's screens:
+an Example for each of these, and six Showcases put them in a desk's screens:
 [exposure profile](https://akiramisawa.github.io/ex-grid/showcase/exposure),
 [curves](https://akiramisawa.github.io/ex-grid/showcase/curves),
 [FX volatility](https://akiramisawa.github.io/ex-grid/showcase/fx-volatility),
-[CDS spread vs leverage](https://akiramisawa.github.io/ex-grid/showcase/cds-spread) and
-[equity index](https://akiramisawa.github.io/ex-grid/showcase/equity-index).
+[CDS spread vs leverage](https://akiramisawa.github.io/ex-grid/showcase/cds-spread),
+[equity index](https://akiramisawa.github.io/ex-grid/showcase/equity-index) and
+[binomial lattice](https://akiramisawa.github.io/ex-grid/showcase/binomial-lattice).
 
 ## Quick start
 

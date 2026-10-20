@@ -96,6 +96,8 @@ public static class DemoPageList
             "The Docs Site's CDS spread vs leverage Showcase: two hundred names in a grid beside their scatter, the least-squares and the Theil–Sen line with their coefficients in the Notes, a logarithmic spread switched in the bar, a rectangle that narrows both axes and a click to the row; ?chrome=mud for MudBlazor (ADR-0280, ADR-0290, ADR-0291)."),
         new("chart-showcase/equity-index", "Equity index showcase", "ExChart",
             "The Docs Site's Equity index daily bars Showcase: ten years of an index beside its candles, volume and 25-day average, merged into months and back to days, packed or on calendar time, in three colour conventions, a click to the row, and a Bid–Ask band and 95% CI whiskers in a second view; ?chrome=mud for MudBlazor (ADR-0280, ADR-0300 to ADR-0304)."),
+        new("chart-showcase/binomial-lattice", "Binomial lattice showcase", "ExChart",
+            "The Docs Site's Binomial lattice Showcase: an option priced on a CRR lattice, its nodes in a grid and on a chart coloured by value with early exercise ringed, the lattice price by N against Black–Scholes, and a light/dark switch in the bar; ?chrome=mud for MudBlazor (ADR-0280)."),
         new("surface", "3D surface", "ExChart",
             "An FX volatility surface turned by dragging or with the arrow keys, zoomed and panned, read at the grid point nearest the pointer, sliced into a smile or a term structure by a click, with a hole drawn as a hole (ADR-0274)."),
     ];
