@@ -105,7 +105,7 @@ public sealed partial class Sheet
         return RecalculateReaders(name);
     }
 
-    private void Declare(string name, IReadOnlyList<string> columns, IReadOnlyList<string> key, int? order = null)
+    internal void Declare(string name, IReadOnlyList<string> columns, IReadOnlyList<string> key, int? order = null)
     {
         var index = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < columns.Count; i++) index[columns[i]] = i;
@@ -145,7 +145,7 @@ public sealed partial class Sheet
     }
 
     /// <summary>The declarations, as a Sheet Document records them (ADR-0049).</summary>
-    private IReadOnlyList<SheetDocumentTable> TableDeclarations =>
+    internal IReadOnlyList<SheetDocumentTable> TableDeclarations =>
         [.. Tables.Values.OrderBy(t => t.Order).Select(t => new SheetDocumentTable(t.Name, t.Columns, t.Key.Count == 1 ? t.Key[0] : null) { KeyColumns = t.Key })];
 
     /// <summary>
