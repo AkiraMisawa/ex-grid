@@ -20,6 +20,10 @@ internal static class SheetWords
 
     internal static string Refused(SheetRefusal refusal) => refusal.Message;
 
+    // ADR-0331 §6: taken against the Sheet shown, the command's outcome would depend on whether a press on a tab reached the instance first.
+    internal static string SheetNotNamed(int sheets) =>
+        $"Nothing was changed: the Workbook holds {sheets} Sheets, and the command names none. Name the Sheet it acts on.";
+
     internal static string EditIsOpen =>
         "Nothing was changed: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then try again.";
 

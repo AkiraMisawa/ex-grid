@@ -1,4 +1,8 @@
 #nullable enable
+ExSheet.Components.ExSheet.CellFormatAt(string! sheet, ExSheet.Engine.CellAddress address) -> ExSheet.Engine.CellFormat!
+ExSheet.Components.ExSheet.DoAsync(string! sheet, ExSheet.Engine.SheetEdit! edit) -> System.Threading.Tasks.Task!
+ExSheet.Components.ExSheet.SheetsChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.SheetsChange!>
+ExSheet.Components.ExSheet.SheetsChanged.set -> void
 ExSheet.Components.ExSheet.ShowSheetTabs.get -> bool
 ExSheet.Components.ExSheet.ShowSheetTabs.set -> void
 ExSheet.Components.ExSheet.ToWorkbookDocument() -> ExSheet.Engine.WorkbookDocument!
@@ -6,4 +10,8 @@ ExSheet.Components.ExSheet.Workbook.get -> ExSheet.Engine.WorkbookDocument?
 ExSheet.Components.ExSheet.Workbook.set -> void
 ExSheet.Components.ExSheet.WorkbookChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.WorkbookDocument!>
 ExSheet.Components.ExSheet.WorkbookChanged.set -> void
+ExSheet.SheetsChange
+ExSheet.SheetsChange.After.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExSheet.SheetsChange.Before.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExSheet.SheetsChange.Shown.get -> string!
 override ExSheet.Components.ExSheet.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!

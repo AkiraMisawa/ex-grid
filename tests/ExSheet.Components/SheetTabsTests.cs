@@ -194,7 +194,7 @@ public class SheetTabsTests : SheetTestContext
     {
         var cut = RenderWorkbook(TwoSheets());
 
-        await cut.InvokeAsync(() => cut.Instance.DoAsync(SheetEdit.DeleteSheet()));
+        await cut.InvokeAsync(() => cut.Instance.DoAsync("One", SheetEdit.DeleteSheet()));
         Assert.Equal(["Two"], TabNames(cut));
         Assert.Equal("#REF!", CellText(cut, "A1"));
 

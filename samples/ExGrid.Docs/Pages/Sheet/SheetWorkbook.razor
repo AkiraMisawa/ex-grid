@@ -33,18 +33,50 @@
             </li>
             <li>
                 <b>One undo stack covers the Workbook.</b> <kbd>Ctrl</kbd> + <kbd>Z</kbd> undoes the latest operation
-                whichever Sheet it was made on, and a Sheet operation from your code —
-                <code>DoAsync(SheetEdit.InsertSheet())</code>, <code>Rename</code>, <code>MoveSheet</code>,
-                <code>CopySheet</code>, <code>DeleteSheet</code> — is one step on it, made on the Sheet shown. When an
-                operation takes the Sheet shown away, the Sheet the Workbook shows in its place is shown.
+                whichever Sheet it was made on, and every command from your code is one step on it.
             </li>
         </ul>
         <DocsExample Builtin="typeof(WorkbookTabs)" Mud="typeof(WorkbookTabsMud)" CodeOpen="true"
                      Files="@(["Examples/Sheet/Expenses.cs"])">
             The claim, and a summary that reads it. Change a quantity on Claim, then select the Summary tab. "Add a
-            sheet" inserts an empty Sheet after the one shown, named <code>Sheet</code> and the next number no Sheet
-            has, and <kbd>Ctrl</kbd> + <kbd>Z</kbd> takes it out again.
+            sheet" inserts an empty Sheet after the last, named <code>Sheet</code> and the next number no Sheet has,
+            the line beside the buttons says what the Sheets are now, and <kbd>Ctrl</kbd> + <kbd>Z</kbd> takes it out
+            again.
         </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="Commands name their Sheet">
+        <p>
+            A command from your code says which Sheet it acts on: <code>DoAsync("Claim", edit)</code> does the edit on
+            Claim whether Claim is shown or not, and <code>CellFormatAt("Claim", address)</code> reads a cell there.
+            While the Workbook holds one Sheet, <code>DoAsync(edit)</code> and <code>CellFormatAt(address)</code> act on
+            it as they always have. Once it holds several they are refused with
+            <code>SheetRefusalReason.SheetNotNamed</code> and change nothing: taken against the Sheet shown, what they
+            did would depend on whether the user's press on a tab reached the component first.
+        </p>
+        <pre class="docs-code"><code>await sheet.DoAsync("Claim", SheetEdit.Enter(CellAddress.Parse("B2"), "120"));
+await sheet.DoAsync("Summary", SheetEdit.Rename("Totals"));
+await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
+        <ul>
+            <li>
+                <b>The Sheet operations are edits like any other.</b> <code>SheetEdit.InsertSheet</code>,
+                <code>Rename</code>, <code>MoveSheet</code>, <code>CopySheet</code> and <code>DeleteSheet</code> act on the
+                Sheet you name, each one step on the undo stack. The Sheet shown stays shown, unless it is the one deleted;
+                then the Sheet that takes its place is. A name the Workbook does not have throws
+                <code>ArgumentException</code>.
+            </li>
+            <li>
+                <b><code>SheetsChanged</code> hears every change to the Sheets</b> — yours, the user's, and an undo or redo
+                of either — with the names in order before and after, and the Sheet shown. It is raised after
+                <code>WorkbookChanged</code>. Showing another Sheet changes no Sheet, and is not raised.
+            </li>
+            <li>
+                <b>A command that acts on the Selection acts on the Sheet shown</b>, where the Selection is:
+                <code>SetCellFormatAsync</code>, <code>SetNumberFormatAsync</code>, <code>SetAlignmentAsync</code> and
+                <code>SetCellFormatFromFocusAsync</code> read the Selection and its Sheet together, when they run, as the
+                toolbar's buttons do.
+            </li>
+        </ul>
     </DocsSection>
 
     <DocsSection Title="Sheet Tabs">
@@ -83,5 +115,6 @@
     <DocsSection Title="API">
         <ApiTable Type="typeof(global::ExSheet.Engine.WorkbookDocument)" />
         <ApiTable Type="typeof(global::ExSheet.Engine.WorkbookChange)" />
+        <ApiTable Type="typeof(global::ExSheet.SheetsChange)" />
     </DocsSection>
 </DocsPage>
