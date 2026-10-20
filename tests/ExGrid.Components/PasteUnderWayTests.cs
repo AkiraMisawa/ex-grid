@@ -94,6 +94,24 @@ public class PasteUnderWayTests : GridTestContext
         Assert.DoesNotContain("Pasting.", Announced(cut));
     }
 
+    [Fact] // ADR-0240 §12 / ADR-0033: the paste's sentence stands down for the paste only; a range selected straight before it is still described once it lands
+    public async Task ADR0240_a_range_selected_straight_before_a_paste_is_described_once_it_lands()
+    {
+        List<GridPasteIntent> intents = [];
+        List<PasteRefusalReason> refused = [];
+        var cut = RenderGrid(intents, refused);
+        await ClickCellAsync(cut);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
+
+        // A block of the range's shape, so the Selection stays as it was.
+        await (await PasteAsync(cut, FakeJSStream.Of("x\r\ny\r\nz\r\n"), input: 0));
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+
+        Assert.Single(intents);
+        Assert.Contains("3 rows by 1 columns selected", Announced(cut));
+    }
+
     [Fact] // ADR-0240 §12: a paste refused is no longer busy either
     public async Task ADR0240_a_paste_is_busy_until_it_is_refused()
     {

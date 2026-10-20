@@ -1,5 +1,6 @@
 using ExGrid.Chrome;
 using ExGrid.Clipboard;
+using ExGrid.Selection;
 using Microsoft.JSInterop;
 
 namespace ExGrid.Components;
@@ -47,6 +48,9 @@ public partial class ExGrid<TRow>
     // Escape's number, whose turn says so.
     private readonly HashSet<int> _pastesCancelledAhead = [];
     private readonly HashSet<int> _cancelsTooLate = [];
+
+    // What the live region said before the paste said it was under way, and the ranges it had described.
+    private (string Text, bool DescribesSelection, IReadOnlyList<SelectionRange> Ranges) _saidBeforePaste;
 
     // The last paste the order finished, so a cancel naming it is known to have come too late.
     private int _lastPasteDone;
@@ -103,6 +107,7 @@ public partial class ExGrid<TRow>
         _pasteUnderWay = underWay;
         if (input > 0 && _pastesCancelledAhead.Remove(input))
             underWay.TryCancel();
+        _saidBeforePaste = (_announcement, _announcementDescribesSelection, _announcedRanges);
         Announce(RefusalWords(GridLabelIds.PasteUnderWay));
         _suppressRender = false;
         StateHasChanged();
@@ -131,7 +136,13 @@ public partial class ExGrid<TRow>
         if (_disposed)
             return;
         if (_announcement == RefusalWords(GridLabelIds.PasteUnderWay))
-            Announce("");
+        {
+            // Nothing said since: the region goes back to what it said before, and the Selection is
+            // described as if the paste had said nothing, a description it stood down included.
+            (_announcement, _announcementDescribesSelection, _announcedRanges) = _saidBeforePaste;
+            _announcePending = null;
+            ScheduleAnnouncement();
+        }
         _suppressRender = false;
         StateHasChanged();
     }
