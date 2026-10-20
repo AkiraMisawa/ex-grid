@@ -10,7 +10,8 @@
    lattice's 2(N+1) diagonals, each a Level series; the ring is an Observation under the nodes with a
    wider stroke; and the colour bar is the page's markup over the legend's column, which is hidden.
    The rules that size the marks and hide the legend are the page's, under .xs-bin-lattice. *@
-<ShowcaseShell Mud="Mud" Crumb="Derivatives · Binomial lattice">
+<div class="xs-bin-app">
+<ShowcaseShell Mud="Mud" App="Option Lattice Pricer" Crumb="Derivatives · Binomial lattice">
     <Tools>
         @Switch("Scheme", ["Light", "Dark"], Dark ? "Dark" : "Light", s => DarkChanged.InvokeAsync(s == "Dark"))
     </Tools>
@@ -81,8 +82,17 @@
         </div>
     </ChildContent>
 </ShowcaseShell>
+</div>
 
 <style>
+    /* Under MudBlazor the screen's own blue and teal, whatever the host's theme: the switches, the fields'
+       focus and the convergence chart's two lines take them, as they do under the built-in Chrome. */
+    .xs-bin-app {
+        --mud-palette-primary: light-dark(#2457c5, #7aa2f7);
+        --mud-palette-primary-text: light-dark(#ffffff, #10131a);
+        --mud-palette-secondary: light-dark(#00838f, #4dd0e1);
+        --mud-palette-secondary-text: light-dark(#ffffff, #10131a);
+    }
     .xs-bin { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
     .xs-bin-inputs { flex: 0 0 240px; display: flex; flex-direction: column; gap: 10px; }
     .xs-mud .xs-bin-inputs { padding: 12px 16px; background: var(--xs-surface); border: 1px solid var(--xs-line); border-radius: 8px; }
