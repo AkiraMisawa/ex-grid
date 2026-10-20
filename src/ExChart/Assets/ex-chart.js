@@ -763,7 +763,7 @@ function drawSurface(svg, mesh, view, slice, W, H) {
     const top = H * 0.1;
     const bottom = H * 0.9;
     const left = W - SURFACE_BAR + 8;
-    const count = 9;
+    const count = mesh.bar.bands;
     const band = (bottom - top) / count;
     for (let k = 0; k < count; k++) {
         bar.append(svgElement('rect', { x: f1(left), y: f1(bottom - (k + 1) * band), width: '12', height: f1(band), class: `ex-chart-surface-bar-band ${heat}${k}` }));

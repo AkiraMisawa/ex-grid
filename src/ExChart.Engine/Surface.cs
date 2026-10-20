@@ -56,6 +56,7 @@ public sealed record SurfaceAxis
             }
             catch (Exception e) when (e is OverflowException or InvalidCastException)
             {
+                // Not a value of the axis' type: written invariantly below.
             }
         }
         return SurfaceMesh.Plain(position);
@@ -281,10 +282,16 @@ public sealed record SurfaceDefinition
     }
 
     /// <summary>Whether a grid's value at x index <paramref name="x"/> and y index <paramref name="y"/> is interpolated.</summary>
-    public bool IsInterpolated(int x, int y) => Method is not null && (Interpolated is null || Interpolated[y][x]);
+    /// <exception cref="InvalidOperationException">The surface is a mesh, which has no grid indices.</exception>
+    public bool IsInterpolated(int x, int y) => GridOnly() && Method is not null && (Interpolated is null || Interpolated[y][x]);
 
     /// <summary>A grid's value at x index <paramref name="x"/> and y index <paramref name="y"/>, or null at a hole.</summary>
-    public ChartValue? At(int x, int y) => Z[y][x];
+    /// <exception cref="InvalidOperationException">The surface is a mesh, which has no grid indices.</exception>
+    public ChartValue? At(int x, int y) => GridOnly() ? Z[y][x] : null;
+
+    // A grid's indices on a mesh would read the wrong value or none; refused by name (spine rule 1).
+    private bool GridOnly() => !IsMesh ? true
+        : throw new InvalidOperationException("A mesh has no grid to index: read its points through Node, counted as NodeCount counts them (ADR-0311).");
 
     /// <summary>How many points the surface holds: a grid's points, row by row, or a mesh's nodes.</summary>
     public int NodeCount => Nodes?.Count ?? X.Values.Count * Y.Values.Count;
@@ -383,7 +390,7 @@ public sealed record SurfaceDefinition
     /// <exception cref="ChartRefusedException">The function names no method, or has no value on the rectangle.</exception>
     public static SurfaceDefinition Sampled(string method, double xFrom, double xTo, double yFrom, double yTo, Func<double, double, ChartValue?> z,
         string xTitle, string yTitle, string zTitle = "", int samples = 25, Func<double, string>? xFormat = null, Func<double, string>? yFormat = null, Func<object, string>? zFormat = null,
-        AxisScale xScale = AxisScale.Proportional, AxisScale yScale = AxisScale.Proportional)
+        AxisScale xScale = AxisScale.Categories, AxisScale yScale = AxisScale.Categories)
     {
         if (string.IsNullOrWhiteSpace(method))
             throw new ChartRefusedException("A surface handed in as a function names its method, so the chart can say how its values were made (ADR-0257).");
@@ -406,7 +413,7 @@ public sealed record SurfaceDefinition
     /// <summary>A surface interpolated by one of <see cref="Interpolation.Interpolate"/>'s methods, sampled across its rectangle under its method's name.</summary>
     public static SurfaceDefinition Sampled(Interpolation.Interpolant2D surface, string xTitle, string yTitle, string zTitle = "", int samples = 25,
         Func<double, string>? xFormat = null, Func<double, string>? yFormat = null, Func<object, string>? zFormat = null,
-        AxisScale xScale = AxisScale.Proportional, AxisScale yScale = AxisScale.Proportional) =>
+        AxisScale xScale = AxisScale.Categories, AxisScale yScale = AxisScale.Categories) =>
         Sampled(surface.Method, surface.XFrom, surface.XTo, surface.YFrom, surface.YTo, surface.ValueAt, xTitle, yTitle, zTitle, samples, xFormat, yFormat, zFormat, xScale, yScale);
 
     /// <summary>
@@ -471,6 +478,8 @@ public sealed record SurfaceDefinition
         var fixedAxis = onX ? X : Y;
         if (c < fixedAxis.Number(0) || c > fixedAxis.Number(fixedAxis.Values.Count - 1)) return null;
 
+        var alongAxis = onX ? Y : X;
+        var span = Math.Max(alongAxis.Number(alongAxis.Values.Count - 1) - alongAxis.Number(0), double.Epsilon);
         var segments = new List<((double U, ChartValue Z) From, (double U, ChartValue Z) To)>();
         foreach (var t in triangles)
         {
@@ -501,7 +510,7 @@ public sealed record SurfaceDefinition
         foreach (var (from, to) in segments.OrderBy(s => s.From.U).ThenBy(s => s.To.U))
         {
             var run = runs.Count > 0 ? runs[^1] : null;
-            var tolerance = 1e-9 * Math.Max(1, Math.Abs(to.U));
+            var tolerance = 1e-9 * span;
             if (run is not null && from.U <= run[^1].Along + tolerance)
             {
                 if (to.U > run[^1].Along + tolerance) run.Add(to);

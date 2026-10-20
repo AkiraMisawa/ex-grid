@@ -27,7 +27,11 @@ public sealed record SurfaceFace(IReadOnlyList<int> Corners, int Band);
 /// <param name="To">The value at the head of the highest band, on the vertical scale.</param>
 /// <param name="Ticks">The labelled values along it, on the vertical scale.</param>
 /// <param name="Diverging">Whether the bands diverge from a centre, which the middle band holds.</param>
-public sealed record SurfaceColourBar(double From, double To, IReadOnlyList<SurfaceTick> Ticks, bool Diverging);
+public sealed record SurfaceColourBar(double From, double To, IReadOnlyList<SurfaceTick> Ticks, bool Diverging)
+{
+    /// <summary>How many bands it is drawn in, low to high: <see cref="SurfaceMesh.BandCount"/>, handed to the 3D entry so it holds no copy.</summary>
+    public int Bands => SurfaceMesh.BandCount;
+}
 
 /// <summary>A point of a slice's line on the surface, placed as <see cref="SurfaceMeshNode"/> is.</summary>
 /// <param name="X">Its place across the floor, 0 to 1.</param>
@@ -294,8 +298,14 @@ public sealed record SurfaceMesh(string XTitle, string YTitle, string ZTitle, IR
             List<double> ticks = Logarithmic
                 ? [.. TickLayout.LogSteps(Math.Pow(10, from), Math.Pow(10, to)).Select(Math.Log10)]
                 : [.. NiceWithin(from, to)];
-            if (centre is { } c && !ticks.Any(t => Math.Abs(t - c) <= 1e-9 * Math.Max(1, Math.Abs(c))))
+            // The centre is always labelled, clearing the round numbers that would crowd its label; a bar
+            // whose span holds fewer than two round numbers is labelled at its ends, so it always reads back.
+            if (centre is { } c)
+            {
+                ticks.RemoveAll(t => Math.Abs(t - c) < (to - from) / 20);
                 ticks.Add(c);
+            }
+            if (ticks.Count < 2) ticks = [.. ticks.Where(t => Math.Abs(t - from) >= (to - from) / 20 && Math.Abs(t - to) >= (to - from) / 20), from, to];
             return ticks.Order().Select(t => new SurfaceTick(t, Label(t))).ToArray();
         }
 

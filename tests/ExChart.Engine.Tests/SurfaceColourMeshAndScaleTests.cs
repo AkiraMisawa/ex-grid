@@ -50,6 +50,13 @@ public class SurfaceColourMeshAndScaleTests
         Assert.NotEmpty(mesh.Bar.Ticks);
     }
 
+    [Fact] // ADR-0310: a bar whose span holds no round number is labelled at its ends, so it always reads back
+    public void A_bar_without_a_round_number_is_labelled_at_its_ends()
+    {
+        var mesh = SurfaceMesh.Of(Pnl(3.1, 3.5, 3.9) with { ZScale = AxisScale.Logarithmic });
+        Assert.Equal(["3.1", "3.9"], mesh.Bar.Ticks.Select(t => t.Label));
+    }
+
     [Fact] // ADR-0310: a centre that is not a number is refused
     public void A_centre_that_is_not_finite_is_refused() =>
         Assert.Throws<ChartRefusedException>(() => Pnl(1, 2, 3) with { Centre = double.NaN });

@@ -132,9 +132,9 @@ test('ADR-0310: colours that diverge from zero paint below it red and above it b
     await expect(pnl.locator('polygon.ex-chart-surface-face[class*="ex-chart-heat-"]')).toHaveCount(0);
     await expect(pnl.locator('.ex-chart-surface-bar text').filter({ hasText: /^0$/ })).toHaveCount(1);
     const fill = (k) => pnl.locator(`rect.ex-chart-surface-bar-band.ex-chart-diverge-${k}`).evaluate((e) => getComputedStyle(e).fill);
-    expect(await fill(0)).toBe('rgb(178, 24, 43)');
-    expect(await fill(4)).toBe('rgb(247, 247, 247)');
-    expect(await fill(8)).toBe('rgb(33, 102, 172)');
+    await expect.poll(() => fill(0)).toBe('rgb(178, 24, 43)');
+    await expect.poll(() => fill(4)).toBe('rgb(247, 247, 247)');
+    await expect.poll(() => fill(8)).toBe('rgb(33, 102, 172)');
 });
 
 test('ADR-0311: a mesh is drawn as its own triangles, with a dot at each node and none where the domain has a hole', async ({ page }) => {

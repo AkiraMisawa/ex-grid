@@ -24,7 +24,8 @@ variance that spans decades needs its positions placed by their value, or by the
   shown, and the axis across is refused, because an axis across that fell back would move every
   position.
 - **The faces, the walls and the colour bar follow the vertical scale.** The vertical position is
-  the logarithm on a logarithmic scale. The walls carry decade ticks, written as the values are. A
+  the logarithm on a logarithmic scale. The walls carry ticks at 1, 2 and 5 times a power of ten, or
+  at powers of ten alone across more than three decades, as a 2D logarithmic axis does. A
   face's colour is the mean of its corners' logarithms.
 - **The floor's lines follow the axis' scale.** A grid keeps a line at each of its values, because
   those are the lines its faces are drawn between. Evenly spaced, they are labelled where twelve fit.
@@ -33,7 +34,8 @@ variance that spans decades needs its positions placed by their value, or by the
   its own. A mesh has no lines of its own, so its floor has them at round numbers, 1-2-5 per decade on
   a logarithmic axis (`TickLayout.LogSteps`). They are written through the axis' format when the
   round number is a value of the axis' own type.
-- **A function sampled on a logarithmic axis is sampled evenly in the logarithm**, as a 2D sampled
+- **A function's axes stay evenly spaced unless it asks.** A function sampled on a logarithmic axis is
+  sampled evenly in the logarithm, as a 2D sampled
   series is (ticket 51). Sampling from zero or below on one is refused.
 - **The slice keeps the scales.** Along an axis placed by value it is a chart of numbers on that
   scale, and its vertical axis is logarithmic when the surface's is.

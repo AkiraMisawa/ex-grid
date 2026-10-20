@@ -120,7 +120,7 @@ public partial class ExSurface
         _sliceChart = _slice is { } s ? Definition.SliceChart(s) : null;
         _sliceNote = _slice is { } t && _sliceChart is null
             ? $"No slice at {AxisName(t.Axis == SurfaceSliceAxis.X ? Definition.X.Title : Definition.Y.Title, t.Axis == SurfaceSliceAxis.X ? "x" : "y")} {(t.Axis == SurfaceSliceAxis.X ? Definition.X : Definition.Y).Write(t.Value)}: "
-              + (Definition.IsMesh ? "the mesh has no triangle there." : "this surface has no such value.")
+              + (Definition.IsMesh ? "no triangle of the mesh crosses there." : "this surface has no such value.")
             : null;
     }
 

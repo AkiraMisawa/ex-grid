@@ -15,10 +15,10 @@ internal static class ShippedAssets
     internal const string ScriptPath = "_content/ExChart/ex-chart.min.js";
 
     /// <summary>The first 12 hex digits of the SHA-256 of that file as shipped: the version its address carries.</summary>
-    internal const string ScriptVersion = "24c648ce93ca";
+    internal const string ScriptVersion = "6d605800696f";
 
     /// <summary>The SHA-256 of <c>Assets/ex-chart.js</c>, which the shipped file names and answers: its stamp.</summary>
-    internal const string ScriptStamp = "a351acf71fb32d0f561a3de03dcaa6b162c50d9e2fd7a7c5ffa18d1c641aa137";
+    internal const string ScriptStamp = "dae18ff0480e8f131f539ddb1a115d875efa1ba085d7b92e433218cfecdb8023";
 
     /// <summary>Where the package serves <c>ex-chart.css</c>, minified, under the application's base.</summary>
     internal const string StylesheetPath = "_content/ExChart/ex-chart.min.css";

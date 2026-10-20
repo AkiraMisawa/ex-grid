@@ -193,6 +193,6 @@ public class SurfaceTests : BunitContext
     public void A_slice_off_the_mesh_is_said()
     {
         var cut = Render(Plate(), ps => ps.Add(c => c.Slice, SurfaceSlice.AtX(2.0)));
-        Assert.Contains("the mesh has no triangle there.", cut.Find(".ex-chart-notes").TextContent);
+        Assert.Contains("no triangle of the mesh crosses there.", cut.Find(".ex-chart-notes").TextContent);
     }
 }
