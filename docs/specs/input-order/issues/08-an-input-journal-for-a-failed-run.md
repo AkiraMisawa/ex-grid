@@ -1,7 +1,6 @@
 # 08: Each instance keeps a journal of its numbered inputs, and a failed layer-3 test carries it
 
-Status: ready-for-agent
-Roadmap: internal
+Status: done
 
 **Why:** the Hunt traces of 2026-10-19 (FD-6, KB-31, ED-22 nested) could not say which inputs the
 script numbered, which it held, and which the core answered. A Playwright trace keeps the DOM and the
@@ -20,6 +19,6 @@ buffer kept by the existing listeners; the core's side goes to `ILogger` at Debu
 no ADR-0021 entry.
 
 - [x] The decision recorded
-- [ ] The script's side and the core's side recorded per instance
-- [ ] `tests/ExGrid.Browser` attaches the journal to a failed test, on both hosts
-- [ ] Nothing per cell, and nothing per pointer move, is recorded (ADR-0027 P1-P9)
+- [x] The script's side and the core's side recorded per instance
+- [x] `tests/ExGrid.Browser` attaches the journal to a failed test, on both hosts
+- [x] Nothing per cell, and nothing per pointer move, is recorded (ADR-0027 P1-P9)

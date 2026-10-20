@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace ExGrid.Tests;
@@ -192,5 +193,64 @@ public class InputOrderTests
         // Work input 1 started and left behind runs inside input 2's handling, but is not its flow.
         Assert.Null(seenAfterward);
         Assert.Null(order.Flow);
+    }
+
+    [Fact] // ADR-0240 §10: the core's side of the Input Journal says what happened to each number, at Debug
+    public async Task ADR0240_the_journal_names_each_number_received_started_finished_voided_and_answered()
+    {
+        var journal = new JournalLog(LogLevel.Debug);
+        var order = new InputOrder(_answered.Add, journal, "ex7-");
+
+        var third = order.RunAsync(3, () => Task.CompletedTask);
+        order.Void(2);
+        await order.RunAsync(1, () => Task.CompletedTask);
+        await third;
+
+        Assert.Equal(
+        [
+            "ex7- received 3 (done 0, waiting 1)",
+            "ex7- voided 2 (done 0, waiting 1)",
+            "ex7- received 1 (done 0, waiting 2)",
+            "ex7- started 1 (done 0, waiting 1)",
+            "ex7- finished 1 (done 0, waiting 1)",
+            "ex7- answered 1 (done 1, waiting 1)",
+            "ex7- answered 2 (done 2, waiting 1)",
+            "ex7- started 3 (done 2, waiting 0)",
+            "ex7- finished 3 (done 2, waiting 0)",
+            "ex7- answered 3 (done 3, waiting 0)",
+        ], journal.Lines);
+        Assert.All(journal.Levels, level => Assert.Equal(LogLevel.Debug, level));
+    }
+
+    [Fact] // ADR-0240 §10: with Debug off, the journal writes nothing
+    public async Task ADR0240_the_journal_writes_nothing_while_debug_is_off()
+    {
+        var journal = new JournalLog(LogLevel.Information);
+        var order = new InputOrder(_answered.Add, journal, "ex7-");
+
+        await order.RunAsync(1, () => Task.CompletedTask);
+
+        Assert.Empty(journal.Lines);
+        Assert.Equal([1], _answered);
+    }
+
+    private sealed class JournalLog(LogLevel minimum) : ILogger
+    {
+        public List<string> Lines { get; } = [];
+
+        public List<LogLevel> Levels { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= minimum;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            if (!IsEnabled(logLevel))
+                return;
+            Lines.Add(formatter(state, exception));
+            Levels.Add(logLevel);
+        }
     }
 }

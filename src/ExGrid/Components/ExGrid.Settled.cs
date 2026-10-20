@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 
 namespace ExGrid.Components;
 
@@ -106,7 +107,8 @@ public partial class ExGrid<TRow>
     // number, in order, once handled or voided (InputAnswered).
     private InputOrder? _inputOrder;
 
-    private InputOrder Inputs => _inputOrder ??= new InputOrder(InputAnswered);
+    private InputOrder Inputs => _inputOrder ??= new InputOrder(InputAnswered,
+        (Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory)?.CreateLogger(InputOrder.JournalCategory), _idPrefix);
 
     /// <summary>The input's handling, in its place in the Input Order (ADR-0240): started once every
     /// input numbered before it has been handled, and finished before any numbered after it starts.
