@@ -13,7 +13,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/20/2026 - 17:28:54 |
+| Generated on: | 10/20/2026 - 18:22:19 |
 | Parser: | MultiReport (16x Cobertura) |
 | Assemblies: | 13 |
 | Classes: | 970 |
@@ -297,8 +297,8 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|90.7%|85.6%|
 |ExGrid.Components.ExGrid<TRow>|95.3%|90.2%|
+|ExGrid.Components.ExGrid<TRow>|90.7%|85.6%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
