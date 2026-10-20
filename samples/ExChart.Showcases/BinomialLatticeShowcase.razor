@@ -92,7 +92,10 @@
         font: 500 14px "Roboto Mono", ui-monospace, monospace; color: var(--xs-text); background: var(--xs-surface);
         border: 1px solid var(--xs-line); border-radius: 6px; padding: 6px 8px;
     }
-    .xs-bin-main { flex: 1 1 760px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+    /* As wide as its charts, which are drawn at a width of their own: the cards and the grid stretch to it. */
+    .xs-bin-main { flex: 0 0 auto; width: max-content; max-width: 100%; display: flex; flex-direction: column; gap: 12px; }
+    /* The grid takes the width the charts give it, and asks for none of its own. */
+    .xs-bin-grid { width: 0; min-width: 100%; box-sizing: border-box; }
     .xs-bin-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .xs-bin-greeks { grid-template-columns: repeat(4, 1fr); }
     .xs-bin-card { padding: 10px 14px; border-radius: 8px; background: var(--xs-surface); border: 1px solid var(--xs-line); }
@@ -101,7 +104,7 @@
     .xs-bin-label { font-size: 12px; color: var(--xs-muted); }
     .xs-bin-value { font: 500 22px "Roboto Mono", ui-monospace, monospace; }
     .xs-bin-greeks .xs-bin-value { font-size: 17px; }
-    .xs-bin-lattice { position: relative; width: fit-content; }
+    .xs-bin-lattice { position: relative; }
     /* On the Wrapper's paper too, which sets the first three slots to the theme's colours. */
     .xs-bin-lattice, .xs-bin-lattice .mud-ex-grid {
         --xs-bin-secondary: light-dark(#00838f, #4dd0e1);
@@ -137,7 +140,6 @@
         content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle;
         border: 3px solid var(--ex-chart-colour-1); background: var(--ex-chart-colour-6);
     }
-    .xs-bin-grid { max-width: 940px; }
 </style>
 
 @code {
