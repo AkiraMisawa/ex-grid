@@ -2,6 +2,7 @@
 const ExChart.Engine.Appearance.DefaultColourSlots = 10 -> int
 const ExChart.Engine.Appearance.LineStyles = 4 -> int
 const ExChart.Engine.Appearance.Markers = 4 -> int
+const ExChart.Engine.Fitting.Fit.TheilSenLimit = 20000 -> int
 ExChart.Engine.Appearance
 ExChart.Engine.AppearanceKeys
 ExChart.Engine.AppearanceKeys.<Clone>$() -> ExChart.Engine.AppearanceKeys!
@@ -16,6 +17,7 @@ ExChart.Engine.AppearanceKeys.Marker.get -> string?
 ExChart.Engine.AppearanceKeys.Marker.init -> void
 ExChart.Engine.AxisScale
 ExChart.Engine.AxisScale.Categories = 1 -> ExChart.Engine.AxisScale
+ExChart.Engine.AxisScale.Logarithmic = 2 -> ExChart.Engine.AxisScale
 ExChart.Engine.AxisScale.Proportional = 0 -> ExChart.Engine.AxisScale
 ExChart.Engine.AxisSide
 ExChart.Engine.AxisSide.Left = 0 -> ExChart.Engine.AxisSide
@@ -95,6 +97,23 @@ ExChart.Engine.ChartDefinition.ChartDefinition(ExChart.Engine.ChartAxis! axis, S
 ExChart.Engine.ChartDefinition.Equals(ExChart.Engine.ChartDefinition? other) -> bool
 ExChart.Engine.ChartDefinition.Notes.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExChart.Engine.ChartDefinition.Series.get -> System.Collections.Generic.IReadOnlyList<ExChart.Engine.ChartSeries!>!
+ExChart.Engine.ChartMark
+ExChart.Engine.ChartMark.ChartMark() -> void
+ExChart.Engine.ChartMark.ChartMark(string! SeriesId, int Panel, double X, double Y, int Point, int Count) -> void
+ExChart.Engine.ChartMark.Count.get -> int
+ExChart.Engine.ChartMark.Count.init -> void
+ExChart.Engine.ChartMark.Deconstruct(out string! SeriesId, out int Panel, out double X, out double Y, out int Point, out int Count) -> void
+ExChart.Engine.ChartMark.Equals(ExChart.Engine.ChartMark other) -> bool
+ExChart.Engine.ChartMark.Panel.get -> int
+ExChart.Engine.ChartMark.Panel.init -> void
+ExChart.Engine.ChartMark.Point.get -> int
+ExChart.Engine.ChartMark.Point.init -> void
+ExChart.Engine.ChartMark.SeriesId.get -> string!
+ExChart.Engine.ChartMark.SeriesId.init -> void
+ExChart.Engine.ChartMark.X.get -> double
+ExChart.Engine.ChartMark.X.init -> void
+ExChart.Engine.ChartMark.Y.get -> double
+ExChart.Engine.ChartMark.Y.init -> void
 ExChart.Engine.ChartMetrics
 ExChart.Engine.ChartMetrics.<Clone>$() -> ExChart.Engine.ChartMetrics!
 ExChart.Engine.ChartMetrics.ChartMetrics(double Width, double Height, double DevicePixelRatio = 1, double LineHeight = 14, double Padding = 8, double PanelGap = 16, System.Func<string!, double>? TextWidth = null, int ColourSlots = 10) -> void
@@ -121,6 +140,10 @@ ExChart.Engine.ChartPoint.ChartPoint() -> void
 ExChart.Engine.ChartPoint.ChartPoint(double X, ExChart.Engine.ChartValue? Y) -> void
 ExChart.Engine.ChartPoint.Deconstruct(out double X, out ExChart.Engine.ChartValue? Y) -> void
 ExChart.Engine.ChartPoint.Equals(ExChart.Engine.ChartPoint other) -> bool
+ExChart.Engine.ChartPoint.Name.get -> string?
+ExChart.Engine.ChartPoint.Name.init -> void
+ExChart.Engine.ChartPoint.Row.get -> object?
+ExChart.Engine.ChartPoint.Row.init -> void
 ExChart.Engine.ChartPoint.X.get -> double
 ExChart.Engine.ChartPoint.X.init -> void
 ExChart.Engine.ChartPoint.Y.get -> ExChart.Engine.ChartValue?
@@ -142,13 +165,21 @@ ExChart.Engine.ChartRefusedException.ChartRefusedException(string! message) -> v
 ExChart.Engine.ChartScene
 ExChart.Engine.ChartScene.<Clone>$() -> ExChart.Engine.ChartScene!
 ExChart.Engine.ChartScene.ChartScene(ExChart.Engine.EquatableList<ExChart.Engine.PanelScene!>! Panels, ExChart.Engine.EquatableList<(double Position, double X, string? Label)>! XTicks, double XFrom, double XTo, ExChart.Engine.EquatableList<string!>! Notes, ExChart.Engine.EquatableList<(double Position, double X)>! Positions) -> void
+ExChart.Engine.ChartScene.Deconstruct(out ExChart.Engine.EquatableList<ExChart.Engine.PanelScene!>! Panels, out ExChart.Engine.EquatableList<(double Position, double X, string? Label)>! XTicks, out double XFrom, out double XTo, out ExChart.Engine.EquatableList<string!>! Notes, out ExChart.Engine.EquatableList<(double Position, double X)>! Positions) -> void
 ExChart.Engine.ChartScene.Equals(ExChart.Engine.ChartScene? other) -> bool
+ExChart.Engine.ChartScene.LogarithmicX.get -> bool
+ExChart.Engine.ChartScene.LogarithmicX.init -> void
+ExChart.Engine.ChartScene.Marks.get -> ExChart.Engine.EquatableList<ExChart.Engine.ChartMark>!
+ExChart.Engine.ChartScene.Marks.init -> void
 ExChart.Engine.ChartScene.Notes.get -> ExChart.Engine.EquatableList<string!>!
 ExChart.Engine.ChartScene.Notes.init -> void
 ExChart.Engine.ChartScene.Panels.get -> ExChart.Engine.EquatableList<ExChart.Engine.PanelScene!>!
 ExChart.Engine.ChartScene.Panels.init -> void
+ExChart.Engine.ChartScene.PositionAt(double x) -> double
 ExChart.Engine.ChartScene.Positions.get -> ExChart.Engine.EquatableList<(double Position, double X)>!
 ExChart.Engine.ChartScene.Positions.init -> void
+ExChart.Engine.ChartScene.Scatter.get -> bool
+ExChart.Engine.ChartScene.Scatter.init -> void
 ExChart.Engine.ChartScene.XFrom.get -> double
 ExChart.Engine.ChartScene.XFrom.init -> void
 ExChart.Engine.ChartScene.XTicks.get -> ExChart.Engine.EquatableList<(double Position, double X, string? Label)>!
@@ -206,9 +237,8 @@ ExChart.Engine.ChartValue.ToDouble() -> double
 ExChart.Engine.ChartValue.ToInvariantString() -> string!
 ExChart.Engine.ChartValue.Value.get -> object!
 ExChart.Engine.ChartView
-ExChart.Engine.ChartView.<Clone>$() -> ExChart.Engine.ChartView!
-ExChart.Engine.ChartView.ChartView(System.Collections.Generic.IReadOnlySet<string!>! Hidden, double? From = null, double? To = null, ExChart.Engine.AxisScale? Scale = null) -> void
-ExChart.Engine.ChartView.Equals(ExChart.Engine.ChartView? other) -> bool
+ExChart.Engine.ChartView.ChartView(System.Collections.Generic.IReadOnlySet<string!>! Hidden, double? From = null, double? To = null, ExChart.Engine.AxisScale? Scale = null, double? YFrom = null, double? YTo = null, ExChart.Engine.AxisScale? YScale = null) -> void
+ExChart.Engine.ChartView.Deconstruct(out System.Collections.Generic.IReadOnlySet<string!>! Hidden, out double? From, out double? To, out ExChart.Engine.AxisScale? Scale, out double? YFrom, out double? YTo, out ExChart.Engine.AxisScale? YScale) -> void
 ExChart.Engine.ChartView.From.get -> double?
 ExChart.Engine.ChartView.From.init -> void
 ExChart.Engine.ChartView.Hidden.get -> System.Collections.Generic.IReadOnlySet<string!>!
@@ -217,6 +247,12 @@ ExChart.Engine.ChartView.Scale.get -> ExChart.Engine.AxisScale?
 ExChart.Engine.ChartView.Scale.init -> void
 ExChart.Engine.ChartView.To.get -> double?
 ExChart.Engine.ChartView.To.init -> void
+ExChart.Engine.ChartView.YFrom.get -> double?
+ExChart.Engine.ChartView.YFrom.init -> void
+ExChart.Engine.ChartView.YScale.get -> ExChart.Engine.AxisScale?
+ExChart.Engine.ChartView.YScale.init -> void
+ExChart.Engine.ChartView.YTo.get -> double?
+ExChart.Engine.ChartView.YTo.init -> void
 ExChart.Engine.DateLabel
 ExChart.Engine.DateLabel.Auto = 0 -> ExChart.Engine.DateLabel
 ExChart.Engine.DateLabel.Date = 3 -> ExChart.Engine.DateLabel
@@ -225,12 +261,16 @@ ExChart.Engine.DateLabel.Tenor = 5 -> ExChart.Engine.DateLabel
 ExChart.Engine.DateLabel.Year = 1 -> ExChart.Engine.DateLabel
 ExChart.Engine.DateLabel.YearMonth = 2 -> ExChart.Engine.DateLabel
 ExChart.Engine.DrawnMarker
+ExChart.Engine.DrawnMarker.Count.get -> int
+ExChart.Engine.DrawnMarker.Count.init -> void
 ExChart.Engine.DrawnMarker.Deconstruct(out double X, out double Y, out bool Filled) -> void
 ExChart.Engine.DrawnMarker.DrawnMarker() -> void
 ExChart.Engine.DrawnMarker.DrawnMarker(double X, double Y, bool Filled) -> void
 ExChart.Engine.DrawnMarker.Equals(ExChart.Engine.DrawnMarker other) -> bool
 ExChart.Engine.DrawnMarker.Filled.get -> bool
 ExChart.Engine.DrawnMarker.Filled.init -> void
+ExChart.Engine.DrawnMarker.Point.get -> int
+ExChart.Engine.DrawnMarker.Point.init -> void
 ExChart.Engine.DrawnMarker.X.get -> double
 ExChart.Engine.DrawnMarker.X.init -> void
 ExChart.Engine.DrawnMarker.Y.get -> double
@@ -251,6 +291,36 @@ ExChart.Engine.EquatableList<T>.Equals(ExChart.Engine.EquatableList<T>? other) -
 ExChart.Engine.EquatableList<T>.EquatableList(System.Collections.Generic.IEnumerable<T>! items) -> void
 ExChart.Engine.EquatableList<T>.GetEnumerator() -> System.Collections.Generic.IEnumerator<T>!
 ExChart.Engine.EquatableList<T>.this[int index].get -> T
+ExChart.Engine.Fitting.Fit
+ExChart.Engine.Fitting.FitSpace
+ExChart.Engine.Fitting.FitSpace.Linear = 0 -> ExChart.Engine.Fitting.FitSpace
+ExChart.Engine.Fitting.FitSpace.LogLog = 2 -> ExChart.Engine.Fitting.FitSpace
+ExChart.Engine.Fitting.FitSpace.LogY = 1 -> ExChart.Engine.Fitting.FitSpace
+ExChart.Engine.Fitting.FittedCurve
+ExChart.Engine.Fitting.FittedCurve.<Clone>$() -> ExChart.Engine.Fitting.FittedCurve!
+ExChart.Engine.Fitting.FittedCurve.Coefficients.get -> System.Collections.Generic.IReadOnlyList<double>!
+ExChart.Engine.Fitting.FittedCurve.Coefficients.init -> void
+ExChart.Engine.Fitting.FittedCurve.Count.get -> int
+ExChart.Engine.Fitting.FittedCurve.Count.init -> void
+ExChart.Engine.Fitting.FittedCurve.Deconstruct(out string! Method, out System.Collections.Generic.IReadOnlyList<double>! Coefficients, out double RSquared, out int Count, out double From, out double To, out ExChart.Engine.Fitting.FitSpace Space) -> void
+ExChart.Engine.Fitting.FittedCurve.Degree.get -> int
+ExChart.Engine.Fitting.FittedCurve.Equals(ExChart.Engine.Fitting.FittedCurve? other) -> bool
+ExChart.Engine.Fitting.FittedCurve.FittedCurve(string! Method, System.Collections.Generic.IReadOnlyList<double>! Coefficients, double RSquared, int Count, double From, double To, ExChart.Engine.Fitting.FitSpace Space = ExChart.Engine.Fitting.FitSpace.Linear) -> void
+ExChart.Engine.Fitting.FittedCurve.From.get -> double
+ExChart.Engine.Fitting.FittedCurve.From.init -> void
+ExChart.Engine.Fitting.FittedCurve.Intercept.get -> double
+ExChart.Engine.Fitting.FittedCurve.Method.get -> string!
+ExChart.Engine.Fitting.FittedCurve.Method.init -> void
+ExChart.Engine.Fitting.FittedCurve.Note.get -> string!
+ExChart.Engine.Fitting.FittedCurve.RSquared.get -> double
+ExChart.Engine.Fitting.FittedCurve.RSquared.init -> void
+ExChart.Engine.Fitting.FittedCurve.Series(string! id, string! name) -> ExChart.Engine.ChartSeries!
+ExChart.Engine.Fitting.FittedCurve.Slope.get -> double
+ExChart.Engine.Fitting.FittedCurve.Space.get -> ExChart.Engine.Fitting.FitSpace
+ExChart.Engine.Fitting.FittedCurve.Space.init -> void
+ExChart.Engine.Fitting.FittedCurve.To.get -> double
+ExChart.Engine.Fitting.FittedCurve.To.init -> void
+ExChart.Engine.Fitting.FittedCurve.ValueAt(double x) -> ExChart.Engine.ChartValue?
 ExChart.Engine.LegendAlign
 ExChart.Engine.LegendAlign.Centre = 1 -> ExChart.Engine.LegendAlign
 ExChart.Engine.LegendAlign.End = 2 -> ExChart.Engine.LegendAlign
@@ -365,6 +435,7 @@ ExChart.Engine.SeriesDrawing.SeriesDrawing(System.Collections.Generic.IReadOnlyL
 ExChart.Engine.SeriesKind
 ExChart.Engine.SeriesKind.AmountPerPeriod = 3 -> ExChart.Engine.SeriesKind
 ExChart.Engine.SeriesKind.Level = 1 -> ExChart.Engine.SeriesKind
+ExChart.Engine.SeriesKind.Observation = 4 -> ExChart.Engine.SeriesKind
 ExChart.Engine.SeriesKind.RateOverInterval = 2 -> ExChart.Engine.SeriesKind
 ExChart.Engine.SeriesKind.Undeclared = 0 -> ExChart.Engine.SeriesKind
 ExChart.Engine.SeriesLook
@@ -440,6 +511,8 @@ ExChart.Engine.VerticalAxis.Broken.get -> bool
 ExChart.Engine.VerticalAxis.Broken.init -> void
 ExChart.Engine.VerticalAxis.Deconstruct(out ExChart.Engine.AxisSide Side, out double Min, out double Max, out ExChart.Engine.EquatableList<(double Value, double Y, string! Label)>! Ticks, out bool Broken) -> void
 ExChart.Engine.VerticalAxis.Equals(ExChart.Engine.VerticalAxis? other) -> bool
+ExChart.Engine.VerticalAxis.Logarithmic.get -> bool
+ExChart.Engine.VerticalAxis.Logarithmic.init -> void
 ExChart.Engine.VerticalAxis.Max.get -> double
 ExChart.Engine.VerticalAxis.Max.init -> void
 ExChart.Engine.VerticalAxis.Min.get -> double
@@ -448,7 +521,9 @@ ExChart.Engine.VerticalAxis.Side.get -> ExChart.Engine.AxisSide
 ExChart.Engine.VerticalAxis.Side.init -> void
 ExChart.Engine.VerticalAxis.Ticks.get -> ExChart.Engine.EquatableList<(double Value, double Y, string! Label)>!
 ExChart.Engine.VerticalAxis.Ticks.init -> void
+ExChart.Engine.VerticalAxis.ValueAt(double y, ExChart.Engine.Box plot) -> double
 ExChart.Engine.VerticalAxis.VerticalAxis(ExChart.Engine.AxisSide Side, double Min, double Max, ExChart.Engine.EquatableList<(double Value, double Y, string! Label)>! Ticks, bool Broken) -> void
+ExChart.Engine.VerticalAxis.YOf(double value, ExChart.Engine.Box plot) -> double
 override ExChart.Engine.AppearanceKeys.Equals(object? obj) -> bool
 override ExChart.Engine.AppearanceKeys.GetHashCode() -> int
 override ExChart.Engine.AppearanceKeys.ToString() -> string!
@@ -468,6 +543,7 @@ override ExChart.Engine.ChartAxis.ToString() -> string!
 override ExChart.Engine.ChartDefinition.Equals(object? obj) -> bool
 override ExChart.Engine.ChartDefinition.GetHashCode() -> int
 override ExChart.Engine.ChartDefinition.ToString() -> string!
+override ExChart.Engine.ChartMark.GetHashCode() -> int
 override ExChart.Engine.ChartMetrics.Equals(object? obj) -> bool
 override ExChart.Engine.ChartMetrics.GetHashCode() -> int
 override ExChart.Engine.ChartMetrics.ToString() -> string!
@@ -486,13 +562,13 @@ override ExChart.Engine.ChartTable.GetHashCode() -> int
 override ExChart.Engine.ChartTable.ToString() -> string!
 override ExChart.Engine.ChartValue.GetHashCode() -> int
 override ExChart.Engine.ChartValue.ToString() -> string!
-override ExChart.Engine.ChartView.Equals(object? obj) -> bool
-override ExChart.Engine.ChartView.GetHashCode() -> int
-override ExChart.Engine.ChartView.ToString() -> string!
 override ExChart.Engine.DrawnMarker.GetHashCode() -> int
 override ExChart.Engine.DrawnPoint.GetHashCode() -> int
 override ExChart.Engine.EquatableList<T>.Equals(object? obj) -> bool
 override ExChart.Engine.EquatableList<T>.GetHashCode() -> int
+override ExChart.Engine.Fitting.FittedCurve.Equals(object? obj) -> bool
+override ExChart.Engine.Fitting.FittedCurve.GetHashCode() -> int
+override ExChart.Engine.Fitting.FittedCurve.ToString() -> string!
 override ExChart.Engine.LegendEntry.Equals(object? obj) -> bool
 override ExChart.Engine.LegendEntry.GetHashCode() -> int
 override ExChart.Engine.LegendEntry.ToString() -> string!
@@ -549,6 +625,8 @@ static ExChart.Engine.ChartCsv.Wide(ExChart.Engine.ChartDefinition! definition, 
 static ExChart.Engine.ChartCsv.WideTable(ExChart.Engine.ChartDefinition! definition, ExChart.Engine.ChartMetrics! metrics, ExChart.Engine.ChartView? view = null) -> ExChart.Engine.ChartTable!
 static ExChart.Engine.ChartDefinition.operator !=(ExChart.Engine.ChartDefinition? left, ExChart.Engine.ChartDefinition? right) -> bool
 static ExChart.Engine.ChartDefinition.operator ==(ExChart.Engine.ChartDefinition? left, ExChart.Engine.ChartDefinition? right) -> bool
+static ExChart.Engine.ChartMark.operator !=(ExChart.Engine.ChartMark left, ExChart.Engine.ChartMark right) -> bool
+static ExChart.Engine.ChartMark.operator ==(ExChart.Engine.ChartMark left, ExChart.Engine.ChartMark right) -> bool
 static ExChart.Engine.ChartMetrics.operator !=(ExChart.Engine.ChartMetrics? left, ExChart.Engine.ChartMetrics? right) -> bool
 static ExChart.Engine.ChartMetrics.operator ==(ExChart.Engine.ChartMetrics? left, ExChart.Engine.ChartMetrics? right) -> bool
 static ExChart.Engine.ChartPoint.operator !=(ExChart.Engine.ChartPoint left, ExChart.Engine.ChartPoint right) -> bool
@@ -556,6 +634,7 @@ static ExChart.Engine.ChartPoint.operator ==(ExChart.Engine.ChartPoint left, ExC
 static ExChart.Engine.ChartReading.operator !=(ExChart.Engine.ChartReading? left, ExChart.Engine.ChartReading? right) -> bool
 static ExChart.Engine.ChartReading.operator ==(ExChart.Engine.ChartReading? left, ExChart.Engine.ChartReading? right) -> bool
 static ExChart.Engine.ChartReadings.At(ExChart.Engine.ChartDefinition! definition, ExChart.Engine.ChartScene! scene, ExChart.Engine.ChartMetrics! metrics, ExChart.Engine.ChartView! view, double position, int panel, double pointerY) -> ExChart.Engine.ChartReading!
+static ExChart.Engine.ChartReadings.OfMark(ExChart.Engine.ChartDefinition! definition, ExChart.Engine.ChartScene! scene, int mark) -> ExChart.Engine.ChartReading!
 static ExChart.Engine.ChartScene.Build(ExChart.Engine.ChartDefinition! definition, ExChart.Engine.ChartMetrics! metrics, ExChart.Engine.ChartView? view = null, ExChart.Engine.AxisStyle? style = null, System.Collections.Generic.IReadOnlySet<string!>? independentScales = null, ExChart.Engine.LegendPlacement? legend = null) -> ExChart.Engine.ChartScene!
 static ExChart.Engine.ChartScene.operator !=(ExChart.Engine.ChartScene? left, ExChart.Engine.ChartScene? right) -> bool
 static ExChart.Engine.ChartScene.operator ==(ExChart.Engine.ChartScene? left, ExChart.Engine.ChartScene? right) -> bool
@@ -573,14 +652,17 @@ static ExChart.Engine.ChartValue.Of(double value) -> ExChart.Engine.ChartValue
 static ExChart.Engine.ChartValue.operator !=(ExChart.Engine.ChartValue left, ExChart.Engine.ChartValue right) -> bool
 static ExChart.Engine.ChartValue.operator ==(ExChart.Engine.ChartValue left, ExChart.Engine.ChartValue right) -> bool
 static ExChart.Engine.ChartView.All.get -> ExChart.Engine.ChartView!
-static ExChart.Engine.ChartView.operator !=(ExChart.Engine.ChartView? left, ExChart.Engine.ChartView? right) -> bool
-static ExChart.Engine.ChartView.operator ==(ExChart.Engine.ChartView? left, ExChart.Engine.ChartView? right) -> bool
 static ExChart.Engine.DrawnMarker.operator !=(ExChart.Engine.DrawnMarker left, ExChart.Engine.DrawnMarker right) -> bool
 static ExChart.Engine.DrawnMarker.operator ==(ExChart.Engine.DrawnMarker left, ExChart.Engine.DrawnMarker right) -> bool
 static ExChart.Engine.DrawnPoint.operator !=(ExChart.Engine.DrawnPoint left, ExChart.Engine.DrawnPoint right) -> bool
 static ExChart.Engine.DrawnPoint.operator ==(ExChart.Engine.DrawnPoint left, ExChart.Engine.DrawnPoint right) -> bool
 static ExChart.Engine.EquatableList.ToEquatableList<T>(this System.Collections.Generic.IEnumerable<T>! items) -> ExChart.Engine.EquatableList<T>!
 static ExChart.Engine.EquatableList<T>.Empty.get -> ExChart.Engine.EquatableList<T>!
+static ExChart.Engine.Fitting.Fit.LeastSquares(System.Collections.Generic.IReadOnlyList<double>! xs, System.Collections.Generic.IReadOnlyList<double>! ys, ExChart.Engine.Fitting.FitSpace space = ExChart.Engine.Fitting.FitSpace.Linear) -> ExChart.Engine.Fitting.FittedCurve!
+static ExChart.Engine.Fitting.Fit.Polynomial(System.Collections.Generic.IReadOnlyList<double>! xs, System.Collections.Generic.IReadOnlyList<double>! ys, int degree) -> ExChart.Engine.Fitting.FittedCurve!
+static ExChart.Engine.Fitting.Fit.TheilSen(System.Collections.Generic.IReadOnlyList<double>! xs, System.Collections.Generic.IReadOnlyList<double>! ys, ExChart.Engine.Fitting.FitSpace space = ExChart.Engine.Fitting.FitSpace.Linear) -> ExChart.Engine.Fitting.FittedCurve!
+static ExChart.Engine.Fitting.FittedCurve.operator !=(ExChart.Engine.Fitting.FittedCurve? left, ExChart.Engine.Fitting.FittedCurve? right) -> bool
+static ExChart.Engine.Fitting.FittedCurve.operator ==(ExChart.Engine.Fitting.FittedCurve? left, ExChart.Engine.Fitting.FittedCurve? right) -> bool
 static ExChart.Engine.LegendEntry.operator !=(ExChart.Engine.LegendEntry? left, ExChart.Engine.LegendEntry? right) -> bool
 static ExChart.Engine.LegendEntry.operator ==(ExChart.Engine.LegendEntry? left, ExChart.Engine.LegendEntry? right) -> bool
 static ExChart.Engine.LegendPlacement.Default.get -> ExChart.Engine.LegendPlacement!
@@ -606,7 +688,9 @@ static ExChart.Engine.SeriesSampler.operator ==(ExChart.Engine.SeriesSampler? le
 static ExChart.Engine.ThinnedDrawing.operator !=(ExChart.Engine.ThinnedDrawing? left, ExChart.Engine.ThinnedDrawing? right) -> bool
 static ExChart.Engine.ThinnedDrawing.operator ==(ExChart.Engine.ThinnedDrawing? left, ExChart.Engine.ThinnedDrawing? right) -> bool
 static ExChart.Engine.Thinning.Of(ExChart.Engine.SeriesDrawing! drawing, System.Func<double, double>! toPixel, int pixels) -> ExChart.Engine.ThinnedDrawing!
+static ExChart.Engine.TickLayout.Decades(double min, double max) -> (double Min, double Max)
 static ExChart.Engine.TickLayout.Horizontal(ExChart.Engine.ChartAxis! axis, ExChart.Engine.AxisStyle! style, double from, double to, System.Collections.Generic.IReadOnlyCollection<double>! points, System.Func<double, double>! map, System.Func<string!, double>! textWidth, double lineHeight, double gap = 4) -> ExChart.Engine.AxisTicks!
+static ExChart.Engine.TickLayout.LogSteps(double min, double max) -> System.Collections.Generic.IReadOnlyList<double>!
 static ExChart.Engine.TickLayout.Nice(double min, double max, int target = 5) -> (double Min, double Max, double Step)
 static ExChart.Engine.TickLayout.Steps(double min, double max, double step) -> System.Collections.Generic.IReadOnlyList<double>!
 static ExChart.Engine.TickLayout.Tenor(double years) -> string!
@@ -614,6 +698,8 @@ static ExChart.Engine.VerticalAxis.operator !=(ExChart.Engine.VerticalAxis? left
 static ExChart.Engine.VerticalAxis.operator ==(ExChart.Engine.VerticalAxis? left, ExChart.Engine.VerticalAxis? right) -> bool
 ~override ExChart.Engine.Box.Equals(object obj) -> bool
 ~override ExChart.Engine.Box.ToString() -> string
+~override ExChart.Engine.ChartMark.Equals(object obj) -> bool
+~override ExChart.Engine.ChartMark.ToString() -> string
 ~override ExChart.Engine.ChartPoint.Equals(object obj) -> bool
 ~override ExChart.Engine.ChartPoint.ToString() -> string
 ~override ExChart.Engine.ChartValue.Equals(object obj) -> bool
@@ -624,7 +710,12 @@ static ExChart.Engine.VerticalAxis.operator ==(ExChart.Engine.VerticalAxis? left
 ~override ExChart.Engine.SeriesLook.Equals(object obj) -> bool
 ~override ExChart.Engine.SeriesLook.ToString() -> string
 ExChart.Engine.ChartMetrics.Deconstruct(out double Width, out double Height, out double DevicePixelRatio, out double LineHeight, out double Padding, out double PanelGap, out System.Func<string!, double>? TextWidth, out int ColourSlots) -> void
-ExChart.Engine.ChartScene.Deconstruct(out ExChart.Engine.EquatableList<ExChart.Engine.PanelScene!>! Panels, out ExChart.Engine.EquatableList<(double Position, double X, string? Label)>! XTicks, out double XFrom, out double XTo, out ExChart.Engine.EquatableList<string!>! Notes, out ExChart.Engine.EquatableList<(double Position, double X)>! Positions) -> void
-ExChart.Engine.ChartView.Deconstruct(out System.Collections.Generic.IReadOnlySet<string!>! Hidden, out double? From, out double? To, out ExChart.Engine.AxisScale? Scale) -> void
 ExChart.Engine.PanelScene.Deconstruct(out string! Name, out ExChart.Engine.Box Plot, out ExChart.Engine.VerticalAxis? Left, out ExChart.Engine.VerticalAxis? Right, out double? ZeroY, out ExChart.Engine.EquatableList<ExChart.Engine.SeriesPiece!>! Series, out ExChart.Engine.EquatableList<ExChart.Engine.LegendEntry!>! Legend) -> void
 ExChart.Engine.SeriesPiece.Deconstruct(out string! Id, out string! Name, out ExChart.Engine.AppearanceKeys! Keys, out ExChart.Engine.SeriesLook Look, out ExChart.Engine.SeriesKind Kind, out bool Interpolated, out ExChart.Engine.EquatableList<ExChart.Engine.EquatableList<ExChart.Engine.DrawnPoint>!>! Lines, out ExChart.Engine.EquatableList<ExChart.Engine.DrawnMarker>! Markers, out ExChart.Engine.EquatableList<(double From, double To)>! Extrapolated, out ExChart.Engine.EquatableList<ExChart.Engine.PixelSummary!>! Thinned) -> void
+ExChart.Engine.ChartView.<Clone>$() -> ExChart.Engine.ChartView!
+ExChart.Engine.ChartView.Equals(ExChart.Engine.ChartView? other) -> bool
+override ExChart.Engine.ChartView.Equals(object? obj) -> bool
+override ExChart.Engine.ChartView.GetHashCode() -> int
+override ExChart.Engine.ChartView.ToString() -> string!
+static ExChart.Engine.ChartView.operator !=(ExChart.Engine.ChartView? left, ExChart.Engine.ChartView? right) -> bool
+static ExChart.Engine.ChartView.operator ==(ExChart.Engine.ChartView? left, ExChart.Engine.ChartView? right) -> bool

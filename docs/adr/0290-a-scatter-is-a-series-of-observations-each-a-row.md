@@ -77,7 +77,7 @@ point's row and the outlier's mark; translucent markers alone — they thin noth
 
 ## Shown
 
-*Q6.* A sixth Showcase, **CDS spread vs leverage** (ADR-0280): synthetic names from a fixed seed in a
+*Q6.* A Showcase of its own, **CDS spread vs leverage** (the fourth, once CDS curves, Curves and Rates became one; ADR-0280 is amended by the shipping work): synthetic names from a fixed seed in a
 grid beside the scatter, the least-squares and the Theil–Sen line over it, a distressed name pulling
 only the first, a log y axis to switch on, a click going to the row, the fits' coefficients in the
 Notes. An eighth page of the Chart section, **Scatter and fitted lines**.

@@ -3,7 +3,14 @@ namespace ExChart.Engine;
 /// <summary>A point of a series: its position on the horizontal axis and its value, or null where it is missing — a gap, never a zero.</summary>
 /// <param name="X">The position: a day number, a number, or a category's index.</param>
 /// <param name="Y">The value, or null where it is missing.</param>
-public readonly record struct ChartPoint(double X, ChartValue? Y);
+public readonly record struct ChartPoint(double X, ChartValue? Y)
+{
+    /// <summary>What the point is, such as a name, which an Observation's tooltip says (ADR-0290); null when it has none.</summary>
+    public string? Name { get; init; }
+
+    /// <summary>The Row Key of the row the point was read from, raised when it is clicked (ADR-0290); null when it has none.</summary>
+    public object? Row { get; init; }
+}
 
 /// <summary>A range of an Interpolated series and the method the Consumer used over it (ADR-0257).</summary>
 /// <param name="From">Where the range starts.</param>

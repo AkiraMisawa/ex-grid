@@ -21,6 +21,9 @@ writing the arithmetic.
 - **Ordinary least squares** and **Theil–Sen** (the median of the pairwise slopes, and the median
   intercept), in the first version. Theil–Sen is the one a single defaulted name in a credit scatter
   does not drag.
+- **Least squares of degree M**, a polynomial (the user, 2026-10-19, for the Docs page's curve-fitting
+  example after PRML's first chapter: degrees 1, 3 and 9 through ten noisy points of sin 2πx, the last
+  passing through every point). Its Note gives the degree, R² and n rather than M + 1 coefficients.
 - **A fit carries its method, slope, intercept, R² and the number of points**, and the space it was
   fitted in when that is not the plotted one ("on ln y vs ln x").
 - **Its Note is one line**: "OLS: y = 41.2x + 88.5, R² = 0.63, n = 212". A line handed in from a fit

@@ -14,6 +14,12 @@ public enum SeriesKind
 
     /// <summary>A total over its interval: a step whose height is the amount per year, from zero.</summary>
     AmountPerPeriod,
+
+    /// <summary>
+    /// One thing measured on two quantities, such as a name's leverage and spread: a marker, never
+    /// joined, its points neither ordered nor unique in x (ADR-0290).
+    /// </summary>
+    Observation,
 }
 
 /// <summary>Which interval a step's point stands for.</summary>
@@ -36,7 +42,7 @@ public enum AxisSide
     Right,
 }
 
-/// <summary>How the horizontal axis places its positions (ADR-0251).</summary>
+/// <summary>How an axis places its positions (ADR-0251); a vertical axis is proportional or logarithmic (ADR-0290).</summary>
 public enum AxisScale
 {
     /// <summary>Proportional to the positions: dates by their day, numbers by their value.</summary>
@@ -44,6 +50,9 @@ public enum AxisScale
 
     /// <summary>Evenly spaced, in the declared order.</summary>
     Categories,
+
+    /// <summary>Proportional to the logarithm of the positions, which must all be above zero (ADR-0290).</summary>
+    Logarithmic,
 }
 
 /// <summary>What the horizontal positions are.</summary>

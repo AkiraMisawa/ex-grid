@@ -1,9 +1,5 @@
 # ExChart is shown in five Showcases and a Chart section of seven pages
 
-*2026-10-19: scatter joined the first version afterwards, and with it a sixth Showcase, CDS spread vs
-leverage, and an eighth page, Scatter and fitted lines (ADR-0290). The title keeps the counts this was
-decided with.*
-
 *Decided with the user, 2026-10-19 (M4 grilling Q1, Q4 and Q5). ADR-0250 put the proof of concept's
 pages into the first version; this says where they live and in what shape. ADR-0110 governs the Docs
 Site as a whole.*
@@ -42,7 +38,6 @@ As ExPivot's pages are a Pivot section, ExChart's are a **Chart** section:
 | Tooltip and Chart Filters | The tooltip, the dragged range, state raised as events (ADR-0270, ADR-0272, ADR-0273) |
 | From the grid | The selection bridge, adding a series, a click back to the grid (ADR-0258) |
 | 3D surface | Turning, zooming, the tooltip and the slice (ADR-0274) |
-| Scatter and fitted lines | Observation series, merged marks, log axes, the fit helpers and their Notes (ADR-0290, ADR-0291) |
 | Reading and export | The summary read aloud, "View as table", CSV, SVG and PNG (ADR-0275, ADR-0282) |
 
 Every Example carries the Built-in / MudBlazor switch (ADR-0110, ADR-0281).
