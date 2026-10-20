@@ -75,17 +75,23 @@ public class MudChartChromeTests : BunitContext
         cut.Find(".ex-chart-stage").ContextMenu(new MouseEventArgs());
         // Read once the menu is in the markup: CI's coverage run once found it missing at the first
         // read, after the click had opened it (main at 8fc6cc08).
+        // Each outcome is waited for, never read at once: under MudBlazor, a dispatch can wait behind
+        // a render the Wrapper's parts started on their own, and return before its handler has run
+        // (a reading taken too early; it failed so on CI for #205 and in 1 of 12 local runs).
         cut.WaitForElement($".ex-chart-menu [data-ex-command='{ChartCommandIds.Table}']").Click();
-        Assert.Empty(cut.FindAll(".ex-chart-menu"));
-        Assert.Single(cut.FindAll("table.ex-chart-table"));
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Empty(cut.FindAll(".ex-chart-menu"));
+            Assert.Single(cut.FindAll("table.ex-chart-table"));
+        });
 
         cut.Find(".ex-chart-stage").ContextMenu(new MouseEventArgs());
-        cut.Find(".ex-chart-menu").KeyDown(new KeyboardEventArgs { Key = "Escape" });
-        Assert.Empty(cut.FindAll(".ex-chart-menu"));
+        cut.WaitForElement(".ex-chart-menu").KeyDown(new KeyboardEventArgs { Key = "Escape" });
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-chart-menu")));
 
         cut.Find(".ex-chart-stage").ContextMenu(new MouseEventArgs());
-        cut.Find(".ex-chart-menu-backdrop").Click();
-        Assert.Empty(cut.FindAll(".ex-chart-menu"));
+        cut.WaitForElement(".ex-chart-menu-backdrop").Click();
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-chart-menu")));
     }
 
     [Fact] // ADR-0281, ADR-0273: the Wrapper's toolbar applies a typed range through ExChart, which refuses what it cannot read

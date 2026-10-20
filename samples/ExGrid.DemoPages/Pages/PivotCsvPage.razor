@@ -47,7 +47,9 @@
 <h2>A file this application knows: the trade export, under its declared Schema</h2>
 <div class="demo-toolbar">
     @* #region The code: input *@
-    <label>Choose a trade export <InputFile id="csv-file" accept=".csv,.txt" OnChange="ChooseExportAsync" disabled="@Busy" /></label>
+    @* Disabled until it can hear a choice: on Blazor Server, InputFile's script is attached a round
+       trip after the input is drawn, and a file chosen before that is lost (AttachedInputFile). *@
+    <label>Choose a trade export <AttachedInputFile id="csv-file" accept=".csv,.txt" OnChange="ChooseExportAsync" OnAttached="() => _exportAttached = true" disabled="@(Busy || !_exportAttached)" /></label>
     @* #endregion *@
 </div>
 <div class="demo-toolbar">
@@ -59,7 +61,7 @@
 
 <h2>A file nobody has described: a suggested Schema, read under once you confirm it</h2>
 <div class="demo-toolbar">
-    <label>Choose any CSV <InputFile id="csv-unknown-file" accept=".csv,.txt,.tsv" OnChange="ChooseUnknownAsync" disabled="@Busy" /></label>
+    <label>Choose any CSV <AttachedInputFile id="csv-unknown-file" accept=".csv,.txt,.tsv" OnChange="ChooseUnknownAsync" OnAttached="() => _unknownAttached = true" disabled="@(Busy || !_unknownAttached)" /></label>
 </div>
 <div class="demo-toolbar">
     <span>Or a sample:</span>
@@ -143,8 +145,9 @@
 <DemoCodeBlock File="DemoCsv.cs" Region="schema" />
 
 <p>
-    Choosing a file with Blazor's <code>InputFile</code>, in <code>PivotCsvPage.razor</code>. The
-    file is opened once for each read: a suggestion reads only its first rows.
+    Choosing a file with Blazor's <code>InputFile</code>, in <code>PivotCsvPage.razor</code>, kept
+    disabled until its script is attached and it can hear a choice (<code>AttachedInputFile.cs</code>).
+    The file is opened once for each read: a suggestion reads only its first rows.
 </p>
 <DemoCodeBlock File="PivotCsvPage.razor" Region="input" />
 <DemoCodeBlock File="PivotCsvPage.razor" Region="choose" />
@@ -165,6 +168,8 @@
     private string _shown = "";
     private CancellationTokenSource? _reading;
     private bool _writing;
+    private bool _exportAttached;
+    private bool _unknownAttached;
     private long _size;
     private long _rows;
     private long _bytes;
