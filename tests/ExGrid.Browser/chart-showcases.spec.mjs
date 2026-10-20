@@ -77,9 +77,11 @@ for (const [chrome, query] of CHROMES) {
     test(`ADR-0280, ADR-0258: Exposure profile charts a selection into a tab, and a recalculation redraws it (${chrome})`, async ({ page }) => {
         await open(page, `/chart-showcase/exposure${query}`);
         const grid = page.locator('.ex-grid').first();
+        // Rows the Viewport shows whole under either Chrome: a click on a row the Viewport cuts off
+        // scrolls the grid to it, and the rows above then leave the rendered window.
         await grid.locator("[id$='r1c0']").click({ force: true });
-        await grid.locator("[id$='r6c5']").click({ force: true, modifiers: ['Shift'] });
-        await grid.locator("[id$='r1c0']").click({ button: 'right', force: true });
+        await grid.locator("[id$='r3c5']").click({ force: true, modifiers: ['Shift'] });
+        await grid.locator("[id$='r3c5']").click({ button: 'right', force: true });
         await grid.locator('[role=menu] [role=menuitem]').filter({ hasText: /^Chart$/ }).click();
         await expect(chartTabs(page)).toHaveText(['Chart 1', 'Chart 2']);
         await settledCharts(page);
