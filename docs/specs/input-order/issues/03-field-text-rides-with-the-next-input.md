@@ -76,3 +76,12 @@ the exported row's terminating CRLF; omitting it failed after the copy itself ha
   all phases correct and no browser complaints. Results are retained, not timing gates.
 
 Normal CI and the preselected related-input gate remain required before stage 04 starts.
+
+## Follow-up from the asynchronous Hunt
+
+The optional full Hunt on `8027b9f5` was cancelled after its 27 active jobs left the required
+stage03 runs queued. Its observed paired click/key failure is retained in
+[the reading defect record](../../responsive-touch/hunt-2026-10-20-paired-input-read.md).
+The old regression still used a deadline tied to a fallback ADR-0240 removed; the original
+journal shows all inputs answered but the last render still owed. Its reading now uses the
+Settled Mark. The next gate runs the corrected test in the same preselected scope.
