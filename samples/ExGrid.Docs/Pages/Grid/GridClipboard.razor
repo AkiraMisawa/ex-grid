@@ -125,6 +125,7 @@
                 <tr><td><code>TargetNotEditable</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.PasteTargetNotEditable).Replace(RefusalLabelIds.ColumnPlaceholder, "Desk") — naming the column that refused, by its header, or by its name where the header is blank, as a Mark Column's is.</td></tr>
                 <tr><td><code>TooLarge</code> (copy)</td><td>@BuiltInCommandLabels.For(RefusalLabelIds.CopyTooLarge)</td></tr>
                 <tr><td><code>ClipboardUnavailable</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.CopyClipboardUnavailable)</td></tr>
+                <tr><td><code>Unreadable</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.PasteUnreadable) — the clipboard's data stopped arriving before it was read whole, as a large paste can on a slow Blazor Server connection. Nothing is pasted from part of it, and the grid goes on answering.</td></tr>
             </tbody>
         </MudSimpleTable>
         <p>

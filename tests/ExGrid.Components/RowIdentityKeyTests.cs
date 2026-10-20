@@ -95,4 +95,17 @@ public class RowIdentityKeyTests : GridTestContext
             .Add(g => g.Columns, TestRows.Columns())));
         Assert.Contains("Window[2]", ex.Message);
     }
+
+    [Fact] // ADR-0018/0033, widened-run ticket 08: grids of two row types on one page never share a root id
+    public void Grids_of_two_row_types_have_their_own_root_ids()
+    {
+        var trades = Render<ExGrid<RecordTrade>>(ps => ps
+            .Add(g => g.Window, new RecordTrade[] { new("Alpha", 1m) })
+            .Add(g => g.Columns, RecordColumns));
+        var rows = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Window())
+            .Add(g => g.Columns, [new GridColumn<TestRow>("Book", ColumnType.Text, r => r.Book)]));
+
+        Assert.NotEqual(trades.Find(".ex-grid").Id, rows.Find(".ex-grid").Id);
+    }
 }
