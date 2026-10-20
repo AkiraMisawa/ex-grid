@@ -30,6 +30,8 @@ paths. For touch input, first establish the relevant owner's
 [Input Order](../../adr/0240-input-to-one-product-instance-is-taken-in-one-order.md).
 Upstream main `04530f84` includes core ticket 02 (PR #172). It was merged here as `3eb036fa`;
 tickets 03–07 remain open. Reuse that queue and preserve ADR-0240’s separate-PR verification gates:
+normal CI plus repeated and widened runs of related input tests. The whole-suite hunt continues
+asynchronously and does not delay the next stage (user decision, 2026-10-20).
 
 1. [Core input order](../input-order/issues/02-the-core-takes-input-one-at-a-time-by-number.md)
    and [field text with the next input](../input-order/issues/03-field-text-rides-with-the-next-input.md)
@@ -112,3 +114,22 @@ placement are not implemented. Full RT coverage, input-order stages 03–07, CI 
 Android/iPhone/iPad real-device records remain required before mobile support can be called done.
 On 2026-10-20 the user authorized work-branch pushes, Draft PR creation and CI/hunt verification
 for this implementation and its later stages. Direct pushes to main and merging are not included.
+
+## Related input verification for the row-command follow-up
+
+Chosen before its targeted run, under the revised ADR-0240 §7:
+
+- `row-command-order.spec.mjs`: the changed Action/Mark paths, refusal and held-key ordering under both Chromes.
+- `write-lands.spec.mjs`: recovery of a discarded Action click (LV-12), and neighbouring press/commit paths against changing rows.
+- `marks.spec.mjs`: Mark command semantics and identity across filtering and live updates.
+- `keyboard-return.spec.mjs`: the shared browser hold and keyboard hand-back lifecycle.
+- `settled-mark.spec.mjs`: completion reporting for numbered inputs, editing and reveal.
+- `circuit.spec.mjs`: held keys, claimed menu commands, presses and editing across a Server round trip.
+
+Run these ten times, plus once with the widened settings, on both hosts and browsers through
+`hunt.yml`'s existing `specs` input. A separate verification ref keeps this targeted dispatch from
+cancelling the already-running whole-suite hunt. Normal CI passed at implementation revision
+`38c57a6a` ([run 39342985942](https://github.com/AkiraMisawa/ex-grid/actions/runs/39342985942));
+the policy update changes documentation only. The full hunt at that implementation revision is
+[run 39344122821](https://github.com/AkiraMisawa/ex-grid/actions/runs/39344122821) and is not the
+next-stage gate. The selected input run must pass before ticket 03 begins.

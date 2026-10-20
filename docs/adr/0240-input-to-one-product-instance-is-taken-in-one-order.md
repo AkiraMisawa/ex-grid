@@ -135,8 +135,26 @@ order the next input's text already gives.
 
 ### 7. How it is built: in stages, each green before the next
 
-Each stage is a pull request of its own, and the next starts only once the daily hunt and the widened
-run (ADR-0220 §4, §5) are green on it:
+Each stage is a pull request of its own. Normal CI must pass. Before the next stage starts, the
+**related input tests** must also pass the hunt's repeated run and the widened run
+(ADR-0220 §4, §5), on Server and WebAssembly in Chrome and Edge. Use the hunt's current settings:
+ten repetitions, plus the widened run with a 150 ms round-trip floor and CPU throttled by four.
+Record the selected specs, why they cover the changed input paths and their neighbours, the
+implementation revision, and the results in the stage's ticket or PR. Select the scope before
+reading its results; a failure is fixed, not excluded to make the gate green. Documentation-only
+changes do not invalidate results for an otherwise unchanged implementation and test revision.
+
+**The full hunt runs alongside the work; its completion is not a condition for starting the next
+stage.** Its findings still enter ADR-0220 §3's defect process. An observed defect in the stage's
+input paths must be resolved; an unfinished whole-suite run does not hold unrelated implementation.
+
+*Revised with the user, 2026-10-20:* this section originally required the whole daily hunt and
+widened run to finish before every stage. Running every browser test ten times made unrelated
+coverage the critical path for input work. The user chose to retain repeated and widened
+verification of the related input paths as the stage gate, and let the whole-suite hunt continue
+asynchronously. Normal CI and the rule against treating a passing re-run as a fix are unchanged.
+
+The stages are:
 
 1. **02** — the core's queue (3), numbers for every input the script hears (2), no clock (4), in ExGrid.
 2. **03** — field text rides with the next input (5), and the Settled Mark covers typing.
