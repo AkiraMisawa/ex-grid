@@ -82,6 +82,8 @@ public static class DemoPageList
             "A curve history charted from the grid's context menu: series in columns along the dates or in rows across the tenors, Add to chart, a refusal by name, a chart that keeps its rows through a recalculation and a deleted row, and a click that moves the grid's Focus (ADR-0258)."),
         new("chart-dock", "Charts under MudBlazor", "ExChart",
             "ExChart.MudBlazor: the Chart Dock beside the grid opening each chart made from the selection as a tab, and a chart in the grid Wrapper's paper with the MudBlazor toolbar, download menu and context menu, the theme's colours leading its series (ADR-0258, ADR-0281)."),
+        new("surface", "3D surface", "ExChart",
+            "An FX volatility surface turned by dragging or with the arrow keys, zoomed and panned, read at the grid point nearest the pointer, sliced into a smile or a term structure by a click, with a hole drawn as a hole (ADR-0274)."),
     ];
 
     /// <summary>The entry for a base-relative path, ignoring any query or fragment, or null
