@@ -3144,6 +3144,10 @@
         }
         if (_applying)
             return;
+        // Raised on this thread by a Consumer's handler of the grid's own write, as it changes the source
+        // row by row: taken in once, as the handler returns (HandleWriteAsync).
+        if (_handlingWriteOn == Environment.CurrentManagedThreadId)
+            return;
         // Marshalled: a Source that fetches raises this from whatever thread its answer
         // arrived on. ApplyState has to run with it — OnParametersSet does not run for a
         // change that came from outside the parameters, and rendering alone would paint
@@ -4548,7 +4552,7 @@
         // tell it as a change. The bound source puts out what it gathered as the handler completes
         // (D5).
         var written = NoteOwnWrite([intent.Target]);
-        await OnFill.InvokeAsync(intent);
+        await HandleWriteAsync(() => OnFill.InvokeAsync(intent));
         await OwnWriteAnsweredAsync(written, intent.IsRefused);
         AskSummaryAgain();
         if (!intent.IsRefused)
@@ -6761,16 +6765,53 @@
     /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnPasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint = PaintNotTold, int input = 0)
-        => AnsweredAsync(() => TakePasteStreamsAsync(text, html, paint, input), input);
+        => AnsweredAsync(async () =>
+        {
+            await using var textReference = text;
+            await using var htmlReference = html;
+            await TakePasteAsync(text?.Length ?? 0, html?.Length ?? 0, paint, input,
+                (flavour, _) => Task.FromResult(flavour == PasteText ? text : html), owned: false);
+        }, input);
 
-    private async Task TakePasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint, int input)
+    /// <summary>
+    /// The <c>paste</c> event, its flavours left with the script (ADR-0005, as amended 2026-10-20): the
+    /// call carries only their lengths in UTF-8, so a paste past <see cref="PasteByteCap"/> is refused
+    /// whole before anything crosses. In the paste's turn the core asks the script for each flavour, and
+    /// the script hands it over gzip-compressed, as a stream: on a slow Blazor Server connection a stream
+    /// crosses at about one chunk per round trip, and compressed, a large paste takes a fraction of the
+    /// round trips. The call is made, and numbered, at the event; the compressing happens in the turn,
+    /// so nothing typed after the paste can overtake it.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
+    /// </summary>
+    /// <param name="textLength">The <c>text/plain</c> flavour's length in UTF-8 bytes, 0 for none.</param>
+    /// <param name="htmlLength">The <c>text/html</c> flavour's length in UTF-8 bytes, 0 for none.</param>
+    /// <param name="paint">The render the paste was taken against (<c>data-ex-paint</c>).</param>
+    /// <param name="input">The number the script gave this input, which the root names once it has
+    /// been answered (ADR-0220); 0 for none.</param>
+    /// <returns>A task that completes once the paste has landed or been refused.</returns>
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public Task OnPasteTakenAsync(long textLength, long htmlLength, int paint = PaintNotTold, int input = 0)
+        => AnsweredAsync(() => TakePasteAsync(textLength, htmlLength, paint, input,
+            async (flavour, cancel) => _scrollHandle is { } handle
+                ? await handle.InvokeAsync<IJSStreamReference?>("takePaste", cancel, input, flavour)
+                : null, owned: true), input);
+
+    private const string PasteText = "text", PasteHtml = "html";
+
+    /// <summary>A paste in its turn: refused past the cap unread, else each flavour opened, read and, when it
+    /// crossed compressed, unpacked, then planned. <paramref name="owned"/>: the references opened here are
+    /// this method's to release.</summary>
+    private async Task TakePasteAsync(long textLength, long htmlLength, int paint, int input,
+        Func<string, CancellationToken, Task<IJSStreamReference?>> open, bool owned)
     {
-        await using var textReference = text;
-        await using var htmlReference = html;
         if (_disposed)
             return;
 
-        if ((text?.Length ?? 0) + (html?.Length ?? 0) > PasteByteCap)
+        if (textLength < 0 || htmlLength < 0 || textLength + htmlLength > PasteByteCap)
         {
             // Refused before it was under way: a cancel that named it finds it done.
             PasteDoneUnread(input);
@@ -6784,10 +6825,10 @@
             string? plain, marked;
             try
             {
-                plain = await ReadAsync(text, underWay.Token);
-                marked = await ReadAsync(html, underWay.Token);
+                plain = textLength == 0 ? null : await ReadAsync(PasteText, textLength, underWay.Token);
+                marked = htmlLength == 0 ? null : await ReadAsync(PasteHtml, htmlLength, underWay.Token);
             }
-            catch (Exception e) when (e is IOException or TimeoutException or JSException or OperationCanceledException)
+            catch (Exception e) when (e is IOException or InvalidDataException or TimeoutException or JSException or OperationCanceledException)
             {
                 // A stream that fails or stops delivering refuses the paste aloud; it never escapes as
                 // the circuit's unhandled exception, and nothing is pasted from part of it (ticket 06 of
@@ -6804,14 +6845,21 @@
             EndPaste(underWay);
         }
 
-        static async Task<string?> ReadAsync(IJSStreamReference? reference, CancellationToken cancel)
+        async Task<string?> ReadAsync(string flavour, long length, CancellationToken cancel)
         {
             cancel.ThrowIfCancellationRequested();
+            var reference = await open(flavour, cancel);
             if (reference is null)
-                return null;
-            await using var stream = await reference.OpenReadStreamAsync(maxAllowedSize: reference.Length, cancel);
-            using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
-            return await reader.ReadToEndAsync(cancel);
+                throw new IOException($"the script no longer holds the paste's {flavour} flavour");
+            try
+            {
+                return await PasteFlavour.ReadAsync(reference, length, cancel);
+            }
+            finally
+            {
+                if (owned)
+                    await reference.DisposeAsync();
+            }
         }
     }
 
@@ -6882,7 +6930,7 @@
             // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound
             // source puts out what it gathered as the handler completes (D5).
             var written = NoteOwnWrite(decision.Plan.Targets);
-            await OnPaste.InvokeAsync(intent);
+            await HandleWriteAsync(() => OnPaste.InvokeAsync(intent));
             await OwnWriteAnsweredAsync(written, intent.IsRefused);
         }
         AskSummaryAgain();
@@ -8051,7 +8099,7 @@
             // The user's own write (ADR-0142 D1), followed until it settles; the bound source puts out
             // what it gathered as the handler completes (D5).
             var written = NoteOwnWrite(decision.Plan.Targets);
-            await OnClear.InvokeAsync(new GridClearIntent(decision.Plan.Targets, _sequenceVersion));
+            await HandleWriteAsync(() => OnClear.InvokeAsync(new GridClearIntent(decision.Plan.Targets, _sequenceVersion)));
             await OwnWriteAnsweredAsync(written, refused: false);
         }
         AskSummaryAgain();
@@ -8116,7 +8164,7 @@
             // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound
             // source puts out what it gathered as the handler completes (D5).
             var written = NoteOwnWrite(plan.Paste.Targets);
-            await OnPaste.InvokeAsync(intent);
+            await HandleWriteAsync(() => OnPaste.InvokeAsync(intent));
             await OwnWriteAnsweredAsync(written, intent.IsRefused);
         }
         AskSummaryAgain();

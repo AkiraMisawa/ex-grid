@@ -4295,34 +4295,48 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         event.preventDefault();
         sendPaste(event.clipboardData.getData('text/plain'), event.clipboardData.getData('text/html'), paintNow());
     };
-    // Handed over as streams, never as two strings in one call (ADR-0005): on a
-    // Blazor Server circuit that call is one hub message, and a message past the
-    // hub's receive limit — 32 KB unless the application raised it — closes the
-    // connection. Excel's HTML for a few hundred cells is past it. A stream is
-    // Blazor's own route for large interop data and is not subject to that limit;
-    // its length travels with it, so C# can refuse a paste past the grid's ceiling
-    // without reading a byte. An empty flavour is sent as nothing at all. With them goes the
-    // render the paste was taken against, read at its event (paintNow): the paste is refused when
-    // the order that render was painted under has moved since (ADR-0142, LV-13/LV-14).
-    // Until it is answered, the paste is under way, and an Escape cancels it (onKeyDown).
+    // Handed over as streams, never as two strings in one call (ADR-0005): on a Blazor Server circuit
+    // that call is one hub message, and a message past the hub's receive limit — 32 KB unless the
+    // application raised it — closes the connection. The call carries only each flavour's length, so C#
+    // can refuse a paste past the grid's ceiling before anything crosses, and the render the paste was
+    // taken against, read at its event (paintNow): the paste is refused when the order that render was
+    // painted under has moved since (ADR-0142, LV-13/LV-14). The flavours stay here, by the paste's
+    // number, until the core takes them in the paste's turn (takePaste), compressed: a stream crosses a
+    // circuit at about one chunk per round trip, so ten megabytes took over half a minute on a slow one
+    // (ADR-0005, as amended 2026-10-20). Numbered and sent at the event, as every input is, so nothing
+    // typed after it overtakes it while it is compressed. Until it is answered, the paste is under way,
+    // and an Escape cancels it (onKeyDown).
+    const pastes = new Map();
     const sendPaste = (plain, markup, paint) => {
         const encoder = new TextEncoder();
-        const stream = (value) => (value
-            ? DotNet.createJSStreamReference(encoder.encode(value))
-            : null);
+        const flavours = {
+            text: plain ? encoder.encode(plain) : null,
+            html: markup ? encoder.encode(markup) : null,
+        };
         const input = nextInput();
+        pastes.set(input, flavours);
         pasteUnderWay = input;
-        return core.invokeMethodAsync('OnPasteStreamsAsync', stream(plain), stream(markup), paint, input)
+        return core.invokeMethodAsync('OnPasteTakenAsync', flavours.text?.byteLength ?? 0, flavours.html?.byteLength ?? 0, paint, input)
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to take a paste', error);
                 }
             })
             .finally(() => {
+                pastes.delete(input);
                 if (pasteUnderWay === input) {
                     pasteUnderWay = 0;
                 }
             });
+    };
+    // A flavour gzip-compressed for the crossing, or as it is where the browser cannot compress: C#
+    // tells the two apart by gzip's first bytes, which no UTF-8 text begins with.
+    const packed = async (bytes) => {
+        if (typeof CompressionStream !== 'function') {
+            return bytes;
+        }
+        const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
+        return new Uint8Array(await new Response(stream).arrayBuffer());
     };
 
     // A copy, cut or paste fired by a clipboard key let through a hold (onKeyDown), taken in the
@@ -4775,6 +4789,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (!answering) {
                 startHold();
             }
+        },
+        // A paste's flavour, asked for in the paste's turn (ExGrid.OnPasteTakenAsync): compressed, as the
+        // bytes Blazor makes the stream from, the result asked for being a stream; null if this script no
+        // longer holds it.
+        takePaste: async (input, flavour) => {
+            const bytes = pastes.get(input)?.[flavour];
+            return bytes ? packed(bytes) : null;
         },
         // The inputs numbered first to last never reached the core: sent while the Server circuit was
         // down, they are void and refused (ExGrid.InputsLost, ADR-0240 section 11). The calls that

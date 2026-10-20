@@ -146,6 +146,24 @@ in the data's terms; the chart keeps no View State
 ([ADR-0272](./docs/adr/0272-a-chart-holds-no-view-state-it-raises-what-the-user-changed.md)).
 _Avoid_: chart settings, zoom state
 
+**Chart Spec**:
+A chart said in JSON, as an AI writes it: the Data Handles and columns it reads, each series' Series
+Kind, and its Notes, against a published schema with a version. It holds no numbers; one that cannot
+be drawn is refused with a sentence naming where and why
+([ADR-0320](./docs/adr/0320-an-ai-draws-a-chart-by-writing-a-chart-spec-that-names-data-it-never-holds.md)).
+_Avoid_: chart config, chart JSON
+
+**Data Handle**:
+The name a host's capability gives a Snapshot it made, which a Chart Spec names instead of its values
+([ADR-0320](./docs/adr/0320-an-ai-draws-a-chart-by-writing-a-chart-spec-that-names-data-it-never-holds.md)).
+_Avoid_: dataset id, reference
+
+**Chart Source**:
+What a chart reads a column through, from one position to another at a number of pixels, answered
+already thinned, on whichever side holds the data
+([ADR-0322](./docs/adr/0322-a-chart-reads-its-data-through-a-chart-source-that-thins-where-the-data-lives.md)).
+_Avoid_: data provider, loader
+
 > **How far do formulas go?** What people call "a formula" splits three ways, and **two of them
 > are already possible in ExGrid**.
 >
