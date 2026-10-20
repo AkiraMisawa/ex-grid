@@ -44,7 +44,8 @@ block on `main` before it uses the first number.
 | 0290–0299 | `claude/project-thread-w5eo0t` | ExChart's scatter and fitted lines, put into the first version and grilled with the user (2026-10-19) |
 | 0300–0309 | `claude/project-thread-umb8fm` | ExChart's candlesticks (Price Range), volume and intervals, grilled with the user (2026-10-20) |
 | 0310–0319 | `claude/exchart-surface-remaining-d2lukv` | ExChart's 3D surface: the colour bar and colours that diverge from a centre, the Consumer's triangle mesh, and axes placed by value or logarithm (the three left open by ADR-0274; the user asked for all three, 2026-10-20) |
-| 0320– | free | reserve a block of ten |
+| 0320–0329 | `claude/project-thread-5x47er` | ExSheet opens and saves `.xlsx` with a reader and writer of its own (proposed 2026-10-20) |
+| 0330– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 
