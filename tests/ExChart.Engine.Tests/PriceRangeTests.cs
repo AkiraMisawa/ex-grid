@@ -187,6 +187,36 @@ public class PriceRangeTests
         Assert.NotEmpty(scene.XTicks);
     }
 
+    [Fact] // ADR-0302: a period the Consumer fixed is not said to be merged to fit
+    public void A_fixed_period_is_not_said_to_fit()
+    {
+        var d = new ChartDefinition(ChartAxis.Dates(), [ChartSeries.Candles("idx", "Index", Days(30)) with { MergeTo = CandlePeriod.Week }]);
+        var scene = ChartScene.Build(d, Wide);
+        Assert.Contains("Weekly (merged from rows)", scene.XTitle);
+        Assert.Contains("Index: weekly candles, merged from rows.", scene.Notes);
+    }
+
+    [Fact] // ADR-0302: when not even years fit, nothing is drawn in slivers
+    public void When_years_do_not_fit_nothing_is_drawn()
+    {
+        var d = Chart(Days(2_450));
+        var scene = ChartScene.Build(d, new ChartMetrics(80, 400));
+        Assert.Empty(scene.Panels[0].Series[0].Candles);
+        Assert.Contains(scene.Notes, n => n.Contains("yearly candles do not fit"));
+    }
+
+    [Fact] // ADR-0301: a packed axis gives a slot only to a row with a value
+    public void A_packed_axis_skips_rows_without_a_value()
+    {
+        var bars = Days(5);
+        bars[2] = new PriceBar(bars[2].X, null, null, null, null);
+        var scene = ChartScene.Build(Chart(bars, ChartAxis.Dates() with { Packed = true }), Wide);
+        var xs = scene.Panels[0].Series[0].Candles.Select(c => c.X).ToList();
+        Assert.Equal(4, xs.Count);
+        Assert.Single(xs.Zip(xs.Skip(1), (a, b) => Math.Round(b - a, 6)).Distinct());
+        Assert.Contains("Trading days (closed days packed)", scene.XTitle);
+    }
+
     [Fact] // ADR-0301: by default candles stand on calendar time, so a weekend is a gap
     public void By_default_a_weekend_is_a_gap()
     {

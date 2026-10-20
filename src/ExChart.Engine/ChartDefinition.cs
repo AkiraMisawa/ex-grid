@@ -35,7 +35,7 @@ public sealed record ChartDefinition
         if (!Axis.Packed) return;
         if (Axis.Values != AxisValues.Dates)
             throw new ChartRefusedException("Only a Dates axis packs its sessions.");
-        var candles = Series.Where(s => s.Kind == SeriesKind.PriceRange).SelectMany(s => s.Bars.Select(b => b.X)).ToHashSet();
+        var candles = ChartScene.PackedSessions(this).ToHashSet();
         if (candles.Count == 0)
             throw new ChartRefusedException("A packed axis takes its sessions from a Price Range, and the chart has none.");
         foreach (var s in Series.Where(s => s.Kind != SeriesKind.PriceRange))

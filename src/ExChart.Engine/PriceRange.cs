@@ -86,7 +86,9 @@ internal static class PriceRanges
     internal static bool Whole(PriceBar b, bool hasOpen) =>
         b.High is not null && b.Low is not null && b.Close is not null && (!hasOpen || b.Open is not null);
 
-    internal static bool HasOpen(ChartSeries s) => s.Bars.Any(b => b.Open is not null);
+    internal static bool HasOpen(ChartSeries s) => HasOpen(s.Bars);
+
+    internal static bool HasOpen(IEnumerable<PriceBar> bars) => bars.Any(b => b.Open is not null);
 
     internal static List<DrawnCandle> Candles(ChartSeries s, double from, double to, CandlePeriod period)
     {

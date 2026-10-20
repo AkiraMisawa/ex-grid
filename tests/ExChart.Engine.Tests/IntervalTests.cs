@@ -84,4 +84,20 @@ public class IntervalTests
         var table = ChartCsv.WideTable(Chart(Curve(Bounds("95% CI"))), Wide);
         Assert.Equal(["X", "2Y", "2Y lower (95% CI)", "2Y upper (95% CI)"], table.Header);
     }
+
+    [Fact] // ADR-0303: the long CSV marks the bound rows as an interval's
+    public void The_long_csv_marks_the_bounds_as_an_interval()
+    {
+        var rows = ChartCsv.Long(Chart(Curve(Bounds("95% CI"))), Wide).Split("\r\n");
+        Assert.Contains(rows, r => r.StartsWith("2Y lower (95% CI),") && r.Contains(",interval,"));
+        Assert.DoesNotContain(rows, r => r.StartsWith("2Y lower") && r.Contains(",quoted,"));
+    }
+
+    [Fact] // ADR-0303: the legend and the Notes carry the interval's meaning
+    public void The_legend_and_the_notes_carry_the_meaning()
+    {
+        var scene = ChartScene.Build(Chart(Curve(Bounds("95% CI"))), Wide);
+        Assert.Equal("2Y (95% CI)", scene.Panels[0].Legend.Single().Name);
+        Assert.Contains("2Y: the interval is 95% CI.", scene.Notes);
+    }
 }

@@ -63,7 +63,7 @@ public sealed record ChartSeries
         init
         {
             _bars = value;
-            var hasOpen = value.Any(b => b.Open is not null);
+            var hasOpen = PriceRanges.HasOpen(value);
             Points = value.Select(b => new ChartPoint(b.X, PriceRanges.Whole(b, hasOpen) ? b.Close : null)).ToArray();
         }
     }

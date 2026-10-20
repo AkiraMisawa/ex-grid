@@ -38,7 +38,7 @@ public static class ChartReadings
         var axis = definition.Axis;
         var byId = definition.Series.ToDictionary(s => s.Id);
         var lines = p.Series.Select(piece => byId[piece.Id].Kind == SeriesKind.PriceRange
-            ? Candle(byId[piece.Id], piece, p, axis, position)
+            ? Candle(byId[piece.Id], piece, p, scene, axis, position)
             : Line(byId[piece.Id], piece, p, axis, position)).ToList();
 
         // A header line, the lines, and the "more" line, all inside the plot's height.
@@ -99,13 +99,14 @@ public static class ChartReadings
     // A candle's four values, its change from the previous candle's close and its volume; a merged
     // candle names its period and how many rows it holds (ADR-0300, ADR-0302). In a volume panel, the
     // volume alone.
-    private static ReadingLine Candle(ChartSeries s, SeriesPiece piece, PanelScene panel, ChartAxis axis, double x)
+    private static ReadingLine Candle(ChartSeries s, SeriesPiece piece, PanelScene panel, ChartScene scene, ChartAxis axis, double x)
     {
         var vertical = panel.Left;
         double? Y(double height) => vertical is { } v ? panel.Plot.Y + panel.Plot.Height - (v.Max == v.Min ? 0.5 : (height - v.Min) / (v.Max - v.Min)) * panel.Plot.Height : null;
         ReadingLine Make(string? value, string? note, double? y) => new(s.Id, piece.Name, piece.Look, value, note, y);
         var period = piece.Period;
-        var candles = PriceRanges.Candles(s, double.NegativeInfinity, double.PositiveInfinity, period);
+        // The candles as drawn, over the range shown, so the tooltip reads what the plot draws.
+        var candles = PriceRanges.Candles(s, scene.XFrom, scene.XTo, period);
         var i = candles.FindIndex(c => period == CandlePeriod.Row ? c.From == x : PriceRanges.PeriodStart(c.From, period) == PriceRanges.PeriodStart(x, period));
         if (i < 0)
             return s.Bars.Any(b => b.X == x) ? Make(null, "(no value)", null) : Make(null, "no candle here", null);
@@ -116,7 +117,10 @@ public static class ChartReadings
         if (panel.VolumeOf is not null)
             return Make(Volume() ?? "(no value)", span, c.Volume is { } v0 ? Y(v0) : null);
         var values = c.Open is { } o ? $"O {W(o)} H {W(c.High)} L {W(c.Low)} C {W(c.Close)}" : $"H {W(c.High)} L {W(c.Low)} C {W(c.Close)}";
-        var change = i == 0 ? "Chg —" : $"Chg {(c.Close - candles[i - 1].Close >= 0 ? "+" : "")}{W(c.Close - candles[i - 1].Close)}{PriceRanges.Percent(c.Close - candles[i - 1].Close, candles[i - 1].Close)}";
+        // The change from the last close before this candle, shown or not.
+        var hasOpen = PriceRanges.HasOpen(s);
+        var previous = s.Bars.Where(b => b.X < c.From && PriceRanges.Whole(b, hasOpen)).Select(b => (double?)b.Close!.Value.ToDouble()).LastOrDefault();
+        var change = previous is not { } p0 ? "Chg —" : $"Chg {(c.Close - p0 >= 0 ? "+" : "")}{W(c.Close - p0)}{PriceRanges.Percent(c.Close - p0, p0)}";
         return Make(values, Join(Join(span, c.Unchanged ? "unchanged" : null), Join(change, Volume())), Y(c.Close));
     }
 

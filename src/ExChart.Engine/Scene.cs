@@ -116,6 +116,9 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
     // A volume panel's height against a price panel's.
     private const double VolumeShare = 0.35;
 
+    // A candle's body against the width it stands for.
+    private const double BodyShare = 0.7;
+
     /// <summary>
     /// Lays <paramref name="definition"/> out at <paramref name="metrics"/>, narrowed by
     /// <paramref name="view"/>. <paramref name="independentScales"/> lists the panels whose left and
@@ -175,7 +178,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
                 specs.Add(($"{s.Name} volume", s));
         }
         var swatch = lh * 1.5;
-        double EntryWidth(ChartSeries s) => swatch + pad / 2 + metrics.EffectiveTextWidth(s.Name) + pad;
+        double EntryWidth(ChartSeries s) => swatch + pad / 2 + metrics.EffectiveTextWidth(LegendName(s)) + pad;
         var rows = specs.Select(spec => spec.VolumeOf is null && legend.Position is LegendPosition.Top or LegendPosition.Bottom
             ? Rows(definition.Series.Where(s => s.Panel == spec.Name).ToList(), EntryWidth, plotWidth)
             : []).ToList();
@@ -193,10 +196,14 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             var (candles, period, unfit) = Merge(s, from, to, devicePixels);
             merged[s.Id] = (candles, period);
             if (unfit is not null) notes.Add(unfit);
-            else if (period != CandlePeriod.Row) notes.Add($"{s.Name}: {PriceRanges.Name(period).ToLowerInvariant()} candles, merged from rows to fit.");
+            else if (period != CandlePeriod.Row)
+                notes.Add($"{s.Name}: {PriceRanges.Name(period).ToLowerInvariant()} candles, merged from rows{(s.MergeTo is null ? " to fit" : "")}.");
         }
+        // An interval's meaning, in the legend and here (ADR-0303).
+        foreach (var s in visible.Where(s => s.Interval is not null))
+            notes.Add($"{s.Name}: the interval is {s.Interval!.Meaning}.");
         var rowWidth = RowWidth(visible, axis, map, from, to, plotWidth);
-        if (definition.Axis.Packed && axis.EffectiveScale == AxisScale.Categories)
+        if (axis.Packed)
             notes.Add("Dates are packed: the days nobody traded are left out, so the spacing is sessions, not calendar time.");
 
         var panels = new List<PanelScene>();
@@ -252,7 +259,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         return new ChartScene(panels.ToEquatableList(),
             xTicks.Ticks.Select(t => (t.Position, tickMap(t.Position), t.Label)).Where(t => double.IsFinite(t.Item2)).ToEquatableList(), from, to, notes.ToEquatableList(),
             positions.ToEquatableList())
-        { XTitle = TitleOf(definition.Axis, merged.Values.Select(m => m.Period)) };
+        { XTitle = TitleOf(axis, merged.Select(m => (m.Value.Period, visible.First(s => s.Id == m.Key).MergeTo is not null))) };
     }
 
     /// <summary>
@@ -267,7 +274,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         var (from, to) = Domain(axis, visible, view);
         var pad = metrics.Padding;
         var column = legend?.Position is LegendPosition.Left or LegendPosition.Right && definition.Series.Count > 0
-            ? definition.Series.Max(s => metrics.LineHeight * 1.5 + pad / 2 + metrics.EffectiveTextWidth(s.Name) + pad)
+            ? definition.Series.Max(s => metrics.LineHeight * 1.5 + pad / 2 + metrics.EffectiveTextWidth(LegendName(s)) + pad)
             : 0;
         var plotLeft = pad + (legend?.Position == LegendPosition.Left ? column : 0) + YAxisWidth(metrics);
         var plotRight = metrics.Width - pad - (legend?.Position == LegendPosition.Right ? column : 0)
@@ -286,7 +293,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             return axis with
             {
                 Scale = AxisScale.Categories,
-                Named = d.Series.Where(s => s.Kind == SeriesKind.PriceRange).SelectMany(s => s.Bars.Select(b => b.X)).Distinct().Order()
+                Named = PackedSessions(d).Order()
                     .Select(x => (x, axis.Write(x))).ToArray(),
             };
         if (axis.Packed) axis = axis with { Packed = false };
@@ -348,7 +355,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         var lh = metrics.LineHeight;
         var pad = metrics.Padding;
         var entries = new List<LegendEntry>();
-        LegendEntry Entry(ChartSeries s, double x, double y) => new(s.Id, s.Name, looks[s.Id], hidden.Contains(s.Id), new Box(x, y, width(s), lh));
+        LegendEntry Entry(ChartSeries s, double x, double y) => new(s.Id, LegendName(s), looks[s.Id], hidden.Contains(s.Id), new Box(x, y, width(s), lh));
         double Offset(double space, double used) => legend.Align switch
         {
             LegendAlign.Centre => (space - used) / 2,
@@ -536,7 +543,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
     {
         var a = map(c.From) - rowWidth / 2;
         var b = map(c.To) + rowWidth / 2;
-        return ((a + b) / 2, Math.Max(0.5, 0.35 * (b - a)));
+        return ((a + b) / 2, Math.Max(0.5, BodyShare / 2 * (b - a)));
     }
 
     // The width of one row in pixels: the narrowest gap between neighbouring candles.
@@ -566,7 +573,8 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             c = PriceRanges.Candles(s, from, to, period);
             if (Fits(c.Count, devicePixels)) return (c, period, null);
         }
-        return (c, CandlePeriod.Year, null);
+        // Not even years fit: nothing is drawn in slivers, and the chart says so (ADR-0302).
+        return ([], CandlePeriod.Year, $"{s.Name}: {c.Count.ToString("N0", CultureInfo.InvariantCulture)} yearly candles do not fit; narrow the range or widen the chart.");
     }
 
     private static PanelScene VolumePanel(string name, ChartSeries s, SeriesLook look, List<DrawnCandle> candles, Func<double, double> map, double rowWidth, Box plot)
@@ -584,14 +592,23 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         return new PanelScene(name, plot, axis, null, YOf(axis, 0, plot), new[] { piece }.ToEquatableList(), EquatableList<LegendEntry>.Empty) { VolumeOf = s.Id };
     }
 
-    private static string TitleOf(ChartAxis axis, IEnumerable<CandlePeriod> periods)
+    private static string TitleOf(ChartAxis axis, IEnumerable<(CandlePeriod Period, bool Fixed)> periods)
     {
-        var title = axis.Title.Length > 0 ? axis.Title : axis.Packed || periods.Any(p => p != CandlePeriod.Row) ? "Date" : "";
+        var title = axis.Title.Length > 0 ? axis.Title : axis.Packed ? "Trading days" : periods.Any(p => p.Period != CandlePeriod.Row) ? "Date" : "";
         if (axis.Packed) title += " (closed days packed)";
-        if (periods.Where(p => p != CandlePeriod.Row).Distinct().ToList() is [var period])
-            title += $" · {PriceRanges.Name(period)} candles, merged from rows to fit";
+        if (periods.Where(p => p.Period != CandlePeriod.Row).Distinct().ToList() is [var (period, isFixed)])
+            title += $" · {PriceRanges.Name(period)} (merged from rows{(isFixed ? "" : " to fit")})";
         return title;
     }
+
+    // A series' name in its legend, with its interval's meaning (ADR-0303).
+    internal static string LegendName(ChartSeries s) => s.Interval is { } i ? $"{s.Name} ({i.Meaning})" : s.Name;
+
+    // The packed axis's slots: each row of a Price Range with a value (ADR-0301).
+    internal static IEnumerable<double> PackedSessions(ChartDefinition d) =>
+        d.Series.Where(s => s.Kind == SeriesKind.PriceRange)
+            .SelectMany(s => { var hasOpen = PriceRanges.HasOpen(s); return s.Bars.Where(b => PriceRanges.Whole(b, hasOpen)).Select(b => b.X); })
+            .Distinct();
 
     private static string XLabel(ChartAxis axis, double x) =>
         axis.Format is null && axis.Values == AxisValues.Numbers && axis.Named.All(n => n.Position != x) ? TickLayout.Tenor(x) : axis.Write(x);

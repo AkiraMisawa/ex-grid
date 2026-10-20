@@ -64,3 +64,12 @@ and Monday's volume would be spread over the three days since Friday's close.
   in one area, and where a price line crosses a volume bar means nothing.
 - **Green and red by default**: colour alone fails in print and for colour vision, and it is the
   reverse of the Japanese convention.
+
+## Amended in implementation, 2026-10-20
+
+- **A Price Range stands on a Dates axis only.** Its merging, its packing and its tooltip's periods
+  are calendar periods; on a Numbers or Labels axis there are none, so the series is refused there
+  by name rather than drawn with half its rules.
+- **"Its period" is the candle's rows**: a click on a merged candle narrows the range from its first
+  row to its last ([ADR-0302](0302-past-the-plots-pixels-candles-merge-into-the-markets-own-periods.md)'s
+  amendment says why).

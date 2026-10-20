@@ -13,8 +13,8 @@ them. Trading screens (TradingView, Bloomberg) pack them.
   where it closed.
 - **The Consumer may declare the sessions packed** (`ChartAxis.Packed`): each row with a value is
   one slot, evenly spaced, in the data's order, and ticks are still the real dates. The axis title
-  says so (`Trading days (closed days packed)`), and so do the Notes, which ExChart draws under every
-  chart while it draws no axis title of its own, so a reader never takes the even spacing for
+  says so (`Trading days (closed days packed)`, or the Consumer's own title with the same words), and
+  so do the Notes, so a reader never takes the even spacing for
   calendar time. On a packed axis every series in the chart takes only the candles' positions; a
   point at another position is refused by name, because there is nowhere true to put it.
 - **Switching is the Consumer's.** The chart holds no View State
@@ -25,3 +25,18 @@ them. Trading screens (TradingView, Bloomberg) pack them.
 
 - **Packed by default**: dates would mean calendar time on one chart and sessions on the next.
 - **No default**: every Consumer would answer a question most of them do not have.
+
+## Amended in implementation, 2026-10-20
+
+What the first implementation (PR #192) found, recorded rather than left in the code:
+
+- **The Notes carry the packing too.** ExChart draws no axis title of its own yet; the title is
+  computed (`ChartScene.XTitle`) for a Consumer who draws one, and the Notes under the chart say
+  `Dates are packed: …` so the reader is told on every chart.
+- **Three refusals the decision implies, now named.** Only a Dates axis packs (a Numbers axis has
+  no sessions to leave out); a packed axis needs a Price Range to take its sessions from; and a
+  function series is refused on it, since it has no values between the sessions.
+- **A Proportional scale in the View unpacks the axis.** The Consumer's switch is still
+  `ChartAxis.Packed`; the View's scale toggle (ADR-0272) asks for proportional spacing in so many
+  words, and packing is the opposite of that, so the request wins. The chart holds no state of its
+  own either way.

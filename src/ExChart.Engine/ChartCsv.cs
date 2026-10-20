@@ -14,7 +14,8 @@ public static class ChartCsv
     private const string Bom = "﻿";
 
     /// <summary>
-    /// A row per point: Series, the axis' title, Value, Kind (quoted, interpolated, extrapolated) and
+    /// A row per point: Series, the axis' title, Value, Kind (quoted, interpolated, extrapolated; a
+    /// Price Range's columns are "price range", an Interval's bounds "interval") and
     /// Method (the Segment's). Its empty Value is only ever a missing one.
     /// </summary>
     public static string Long(ChartDefinition definition, ChartMetrics metrics, ChartView? view = null)
@@ -26,10 +27,13 @@ public static class ChartCsv
             if (Extra(s, points) is { Count: > 0 } extra)
             {
                 // A Price Range's every row, and an Interval's bounds named by their meaning (ADR-0300, ADR-0303).
-                var kind = s.Kind == SeriesKind.PriceRange ? "price range" : "quoted";
+                var kind = s.Kind == SeriesKind.PriceRange ? "price range" : "interval";
                 if (s.Kind != SeriesKind.PriceRange)
                     foreach (var p in points)
-                        Row(sb, [s.Name, X(definition.Axis, p.X), p.Y?.ToInvariantString() ?? "", KindOf(s, p.X).Kind, KindOf(s, p.X).Method]);
+                    {
+                        var (pk, pm) = KindOf(s, p.X);
+                        Row(sb, [s.Name, X(definition.Axis, p.X), p.Y?.ToInvariantString() ?? "", pk, pm]);
+                    }
                 foreach (var (header, values) in extra)
                     foreach (var (x, v) in values.OrderBy(e => e.Key))
                         Row(sb, [header, X(definition.Axis, x), v, kind, ""]);
@@ -110,7 +114,7 @@ public static class ChartCsv
         {
             var bars = s.Bars.Where(b => xs.Contains(b.X)).ToDictionary(b => b.X);
             var cols = new List<(string, Func<double, string>)>();
-            if (s.Bars.Any(b => b.Open is not null)) cols.Add(("open", x => V(bars[x].Open)));
+            if (PriceRanges.HasOpen(s)) cols.Add(("open", x => V(bars[x].Open)));
             cols.AddRange([("high", x => V(bars[x].High)), ("low", x => V(bars[x].Low)), ("close", x => V(bars[x].Close))]);
             if (s.Bars.Any(b => b.Volume is not null)) cols.Add(("volume", x => V(bars[x].Volume)));
             return Of([.. cols]);
