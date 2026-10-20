@@ -333,7 +333,7 @@ Every decision is recorded with its reasons in [`docs/adr/`](docs/adr/), and the
 ## Status
 
 **Beta.** The specification is settled and every test layer passes in CI, but the API may change
-between prereleases. The family's ten packages ship together as `0.1.0-beta.N`, then as release
+between prereleases. The family's thirteen packages, ExChart's three among them from the next prerelease, ship together as `0.1.0-beta.N`, then as release
 candidates `0.1.0-rc.N`; a stable version waits
 for the [Definition of Done](docs/definition-of-done.md) to be signed off. What remains is in
 [`docs/implementation-status.md`](docs/implementation-status.md).
