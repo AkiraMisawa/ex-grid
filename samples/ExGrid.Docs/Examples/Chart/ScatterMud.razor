@@ -1,0 +1,70 @@
+@using ExChart
+@using ExChart.Components
+@using ExChart.Engine
+@using ExChart.Engine.Fitting
+@using ExChart.MudBlazor
+
+<MudSwitch T="bool" Value="_log" ValueChanged="SetLog" Color="Color.Primary" Label="Spread on a logarithmic axis" />
+<div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start">
+    <MudExGridPaper Elevation="0" Outlined="true">
+        <ExGrid @ref="_bridge.Grid" TRow="CreditNames.Name" Window="CreditNames.All" RowKey="KeyOf" Columns="Columns"
+                ViewportHeight="360" ViewportWidth="300" Chrome="MudGridChrome.Default" />
+    </MudExGridPaper>
+    <MudExGridPaper Elevation="0" Outlined="true">
+        <ExChart Definition="Definition" Title="CDS spread vs leverage" Width="560" Height="360" YScale="_yScale"
+                 Range="_range" OnRangeChanged="r => _range = r" OnPointClick="_clicked" Chrome="MudChartChrome.Default" />
+    </MudExGridPaper>
+</div>
+
+@code {
+    private static string Bp(object v) => Convert.ToDouble(v).ToString("0") + "bp";
+
+    private static readonly GridColumn<CreditNames.Name>[] Columns =
+    [
+        new("Ticker", ColumnType.Text, n => n.Ticker, "Name"),
+        new("Leverage", ColumnType.Number, n => n.Leverage, format: v => ((double)v).ToString("0.00") + "x"),
+        new("Spread", ColumnType.Number, n => n.Spread, "5Y spread", format: Bp),
+    ];
+
+    // Held in fields, never rebuilt per render: a new delegate is a changed parameter.
+    private static readonly Func<CreditNames.Name, object> KeyOf = n => n.Ticker;
+
+    private static readonly ChartDefinition Definition = Make();
+
+    private static ChartDefinition Make()
+    {
+        double[] xs = [.. CreditNames.All.Select(n => n.Leverage)];
+        double[] ys = [.. CreditNames.All.Select(n => n.Spread)];
+        // Each point is a row: its name for the tooltip, its Row Key for a click.
+        var points = CreditNames.All.Select(n => new ChartPoint(n.Leverage, ChartValue.Of(n.Spread)) { Name = n.Ticker, Row = n.Ticker });
+        return new ChartDefinition(ChartAxis.Numbers("Leverage") with { Format = x => x.ToString("0.00") + "x" },
+        [
+            ChartSeries.Of("names", "Names", SeriesKind.Observation, points) with { Format = Bp },
+            // The page fits the lines; each says its method and coefficients in the Notes.
+            Fit.LeastSquares(xs, ys).Series("ols", "Least squares") with { Format = Bp },
+            Fit.TheilSen(xs, ys).Series("theil-sen", "Theil–Sen") with { Format = Bp },
+        ]);
+    }
+
+    private readonly GridChartBridge<CreditNames.Name> _bridge = new(new GridChartDeclarations<CreditNames.Name>
+    {
+        RowKey = KeyOf,
+        RowOf = key => CreditNames.All.FirstOrDefault(n => n.Ticker == (string)key),
+    });
+    private EventCallback<ChartPointClick> _clicked;
+    private bool _log;
+    private AxisScale? _yScale;
+    private ChartRange? _range;
+
+    protected override void OnInitialized() =>
+        // A click on a point goes to its row.
+        _clicked = EventCallback.Factory.Create<ChartPointClick>(this, c =>
+            c.Row is string ticker ? _bridge.ShowInGridAsync(new GridCell(ticker, "Spread")) : Task.CompletedTask);
+
+    private void SetLog(bool on)
+    {
+        _log = on;
+        _yScale = on ? AxisScale.Logarithmic : null;
+        _range = null;
+    }
+}

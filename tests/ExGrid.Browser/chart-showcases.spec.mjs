@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { test, expect, circuitQuiet } from './fixtures.mjs';
 
 // ExChart's Showcases (ADR-0280) on the DemoHost, the components the Docs Site shows at /showcase/exposure,
-// /showcase/curves and /showcase/fx-volatility: each opens with its charts drawn and a clean console (the fixture fails a test on
+// /showcase/curves, /showcase/fx-volatility, /showcase/cds-spread and /showcase/equity-index: each opens with its charts drawn and a clean console (the fixture fails a test on
 // an unexpected console message), under the built-in Chrome and MudBlazor's. CH-9: each chart's
 // accessible summary and "View as table" match the recorded ARIA snapshot, the same file under either
 // Chrome, because swapping the Chrome must not change what the chart says (spine rule 4). The snapshots
@@ -226,5 +226,157 @@ for (const [chrome, query] of CHROMES) {
         // And back: the surface comes back as it opens.
         await fxView(page, 'Surface');
         await expect(fxBox(page).locator('polygon.ex-chart-surface-face')).toHaveCount(4 * 7 - 1);
+    });
+}
+
+// CDS spread vs leverage (ADR-0290, ADR-0291): 200 names beside their scatter, the distressed DSTR at
+// row 57 the highest spread by far, with a least-squares and a Theil–Sen line over them.
+
+/** The page point of the highest mark of a series: DSTR on the CDS chart. */
+async function highestMark(chart, series) {
+    await chart.scrollIntoViewIfNeeded();
+    const svg = chart.locator('svg.ex-chart-svg').first();
+    const d = await chart.locator(`g.ex-chart-series[data-series="${series}"] path.ex-chart-markers`).first().getAttribute('d');
+    // Each marker starts with an absolute move to a point on its outline, a few pixels from its centre.
+    let best = null;
+    for (const [, x, y] of d.matchAll(/M(-?[\d.]+),(-?[\d.]+)/g)) {
+        if (best === null || Number(y) < best[1]) best = [Number(x), Number(y)];
+    }
+    const box = await svg.boundingBox();
+    return [box.x + best[0] + 2, box.y + best[1] + 2];
+}
+
+for (const [chrome, query] of CHROMES) {
+    test(`ADR-0280, ADR-0290, ADR-0291, CH-9: CDS spread vs leverage opens with the names beside both fits, as recorded (${chrome})`, async ({ page }) => {
+        await open(page, `/chart-showcase/cds-spread${query}`);
+        await expect(shownChart(page).locator('g.ex-chart-series')).toHaveCount(3);
+        await expect(shownChart(page).locator('.ex-chart-notes')).toContainText(/OLS: y = [\d.]+x [+−] [\d.]+, R² = [\d.]+, n = 200/);
+        await expect(shownChart(page).locator('.ex-chart-notes')).toContainText(/Theil–Sen: y = [\d.]+x/);
+        // The summary as recorded, and the table's heading; its rows — each name's leverage and each
+        // position the two fits are sampled at — are counted rather than recorded line by line.
+        const chart = shownChart(page);
+        await matchesSnapshot(chart.locator('svg.ex-chart-svg'), 'cds-spread-summary.aria.yml');
+        await chart.getByRole('button', { name: 'View as table' }).click();
+        await matchesSnapshot(chart.locator('table.ex-chart-table thead'), 'cds-spread-table-head.aria.yml');
+        await expect(chart.locator('table.ex-chart-table tbody tr')).toHaveCount(2504);
+        await chart.getByRole('button', { name: 'View as table' }).click();
+        await expect(chart.locator('table.ex-chart-table')).toHaveCount(0);
+    });
+
+    test(`ADR-0280, ADR-0290, ADR-0258: on CDS spread vs leverage a click goes to the row, a rectangle narrows and the spread turns logarithmic (${chrome})`, async ({ page }) => {
+        await open(page, `/chart-showcase/cds-spread${query}`);
+        const chart = shownChart(page);
+        const grid = page.locator('.ex-grid').first();
+
+        // DSTR, the highest mark: its tooltip, then a click that moves the grid's Focus to its spread.
+        await page.mouse.move(0, 0);
+        const [x, y] = await highestMark(chart, 'names');
+        await page.mouse.move(x, y);
+        await expect(chart.locator('.ex-chart-tooltip-position')).toHaveText('DSTR');
+        await page.mouse.down();
+        await page.mouse.up();
+        await circuitQuiet();
+        await expect.poll(() => grid.getAttribute('aria-activedescendant')).toMatch(/r57c2$/);
+        await expect(grid.locator('[role=row]').filter({ hasText: 'DSTR' })).toContainText('2,400bp');
+
+        // A rectangle across the lower left narrows both axes, and the page is handed the range.
+        const hit = chart.locator('.ex-chart-hit').first();
+        const box = await hit.boundingBox();
+        await page.mouse.move(box.x + box.width * 0.1, box.y + box.height * 0.95);
+        await page.mouse.down();
+        await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.6, { steps: 4 });
+        await page.mouse.up();
+        await circuitQuiet();
+        await expect(page.locator('.xs-range')).toHaveText(/^Leverage \d\.\d\dx–\d\.\d\dx, spread [\d,]+–[\d,]+bp$/);
+        await page.locator('.xs-reset').click();
+        await expect(page.locator('.xs-range')).toHaveText('200 names');
+
+        // The spread on a logarithmic axis, ticked by decades.
+        await page.locator('.xs-log').click();
+        await circuitQuiet();
+        await expect(chart.locator('text.ex-chart-tick:not(.ex-chart-tick-x)', { hasText: /^1,?000(bp)?$/ }).first()).toBeAttached();
+    });
+}
+
+// Equity index daily bars (ADR-0300 to ADR-0304): 2,608 sessions from 2016-01-04 to 2025-12-31 beside
+// their candles, volume and 25-day average; the intervals in a second view.
+
+/** A click at the middle of the candles' plot. */
+async function clickMiddleCandle(page) {
+    const layer = shownChart(page).locator('.ex-chart-hit[data-ex-panel="0"]');
+    await layer.scrollIntoViewIfNeeded();
+    const box = await layer.boundingBox();
+    await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.5);
+    await circuitQuiet();
+}
+
+for (const [chrome, query] of CHROMES) {
+    test(`ADR-0280, ADR-0300, ADR-0302, CH-9: Equity index merges ten years into months beside its rows, as recorded (${chrome})`, async ({ page }) => {
+        await open(page, `/chart-showcase/equity-index${query}`);
+        const chart = shownChart(page);
+        await expect(page.locator('.ex-grid').first().locator('[role=row]').filter({ hasText: '20,203.78' }).first()).toBeVisible();
+        await expect(chart.locator('.ex-chart-notes')).toContainText('Northgate 225: monthly candles, merged from rows to fit.');
+        await expect(chart.locator('path.ex-chart-rising')).toHaveCount(2);
+        await expect(chart.locator('path.ex-chart-falling')).toHaveCount(2);
+        await matchesSnapshot(chart.locator('svg.ex-chart-svg'), 'equity-index-summary.aria.yml');
+    });
+
+    test(`ADR-0280, ADR-0302, ADR-0258: on Equity index a merged candle narrows to its rows, and a day's candle goes to its row (${chrome})`, async ({ page }) => {
+        await open(page, `/chart-showcase/equity-index${query}`);
+        const chart = shownChart(page);
+        // The average hidden, the candle is the only series a click can name.
+        await chart.locator('.ex-chart-legend-entry', { hasText: '25-day average' }).click();
+        await circuitQuiet();
+        await page.mouse.move(0, 0);
+        await clickMiddleCandle(page);
+        await expect(page.locator('.xs-events')).toHaveText(/^(\d{4})-(\d{2})-\d{2} to \1-\2-\d{2}$/);
+        await expect(chart.locator('.ex-chart-notes li', { hasText: 'merged' })).toHaveCount(0);
+        await expect(page.locator('.xs-reset')).toBeEnabled();
+
+        await clickMiddleCandle(page);
+        await expect(page.locator('.xs-events')).toHaveText(/^Went to \d{4}-\d{2}-\d{2}$/);
+        const day = (await page.locator('.xs-events').textContent()).slice('Went to '.length);
+        const grid = page.locator('.ex-grid').first();
+        await expect.poll(() => grid.getAttribute('aria-activedescendant')).toMatch(/c4$/);
+        const active = await grid.getAttribute('aria-activedescendant');
+        await expect(grid.locator(`[id="${active}"]`).locator('xpath=ancestor::*[@role="row"][1]')).toContainText(day);
+
+        await page.locator('.xs-reset').click();
+        await expect(chart.locator('.ex-chart-notes')).toContainText('monthly candles, merged from rows to fit.');
+    });
+
+    test(`ADR-0280, ADR-0301, ADR-0300: Equity index packs its sessions and takes the page's rise and fall colours (${chrome})`, async ({ page }) => {
+        await open(page, `/chart-showcase/equity-index${query}`);
+        const chart = shownChart(page);
+        await expect(chart.locator('.ex-chart-notes li', { hasText: 'packed' })).toHaveCount(0);
+        await page.locator('.xs-packed').click();
+        await expect(chart.locator('.ex-chart-notes')).toContainText('Dates are packed');
+
+        const rising = chart.locator('path.ex-chart-rising').first();
+        const colours = page.locator('.xs-colours').locator('.xs-view, .mud-toggle-item');
+        await colours.filter({ hasText: 'Green rises, red falls' }).click();
+        await expect.poll(() => rising.evaluate(p => getComputedStyle(p).stroke)).toBe('rgb(46, 125, 50)');
+        await colours.filter({ hasText: 'Red rises, blue falls' }).click();
+        await expect.poll(() => rising.evaluate(p => getComputedStyle(p).stroke)).toBe('rgb(211, 47, 47)');
+    });
+
+    test(`ADR-0280, ADR-0303, ADR-0304, CH-9: Equity index's intervals, a Bid–Ask band and 95% CI whiskers, as recorded (${chrome})`, async ({ page }) => {
+        await open(page, `/chart-showcase/equity-index${query}`);
+        await page.locator('.xs-bar').locator('.xs-view, .mud-toggle-item').filter({ hasText: 'Intervals' }).click();
+        const charts = page.locator('.ex-chart').filter({ visible: true });
+        await expect(charts).toHaveCount(3);
+        await expect(page.locator('.ex-chart[aria-busy="true"]')).toHaveCount(0);
+        await circuitQuiet();
+        await expect(charts.nth(0).locator('path.ex-chart-interval-band')).toHaveCount(1);
+        await expect(charts.nth(1).locator('path.ex-chart-whiskers')).toHaveCount(1);
+        await expect(charts.nth(2).locator('path.ex-chart-whiskers')).not.toHaveCount(0);
+        for (const [k, name] of [[0, 'equity-curve'], [1, 'equity-forecasts'], [2, 'equity-strategies']]) {
+            const chart = charts.nth(k);
+            await matchesSnapshot(chart.locator('svg.ex-chart-svg'), `${name}-summary.aria.yml`);
+            await chart.getByRole('button', { name: 'View as table' }).click();
+            await matchesSnapshot(chart.locator('table.ex-chart-table'), `${name}-table.aria.yml`);
+            await chart.getByRole('button', { name: 'View as table' }).click();
+            await expect(chart.locator('table.ex-chart-table')).toHaveCount(0);
+        }
     });
 }

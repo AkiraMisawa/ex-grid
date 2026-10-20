@@ -1,0 +1,62 @@
+@using System.Globalization
+@* Equity index › Intervals: the figures beside the index that carry an interval, each saying what it
+   means (ADR-0303, ADR-0304). A government curve's mid with its Bid–Ask as a band; a survey's median
+   policy-rate forecast with its 95% interval as whiskers; and strategies' estimated volatility and return,
+   each with a 95% CI both ways. The page hands in the bounds as its sources quoted them; ExChart computes
+   no width. *@
+<div class="xs-side">
+    <div class="xs-panel">
+        @Chart(Curve, "Yield curve", 560, 300)
+    </div>
+    <div class="xs-panel">
+        @Chart(Forecasts, "Policy rate forecasts", 560, 300)
+    </div>
+    <div class="xs-panel">
+        @Chart(Estimates, "Strategies' risk and return", 560, 340)
+    </div>
+</div>
+
+@code {
+    /// <summary>Whether the view is drawn with MudBlazor's Chrome.</summary>
+    [Parameter] public bool Mud { get; set; }
+
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private static string Percent(object v) => Convert.ToDecimal(v, Invariant).ToString("0.00", Invariant) + "%";
+
+    private RenderFragment Chart(ChartDefinition definition, string title, double width, double height) => Mud
+        ? @<MudExGridPaper Elevation="1"><ExChart Definition="definition" Title="@title" FileName="@title" Width="width" Height="height" Chrome="MudChartChrome.Default" /></MudExGridPaper>
+        : @<ExChart Definition="definition" Title="@title" FileName="@title" Width="width" Height="height" />;
+
+    private static readonly ChartDefinition Curve = new(ChartAxis.Numbers("Tenor (years)"),
+    [
+        ChartSeries.Of("mid", "Mid", SeriesKind.Level, IntervalData.Curve.Select(q => new ChartPoint(q.Years, (q.Bid + q.Ask) / 2))) with
+        {
+            FromZero = false,
+            Format = Percent,
+            Interval = new SeriesInterval("Bid–Ask", [.. IntervalData.Curve.Select(q => new IntervalBound(q.Years, q.Bid, q.Ask))], IntervalStyle.Band),
+        },
+    ]);
+
+    private static readonly ChartDefinition Forecasts = new(ChartAxis.Categories([.. IntervalData.Forecasts.Select(f => f.Quarter)], "Quarter"),
+    [
+        ChartSeries.Of("median", "Median forecast", SeriesKind.Level, IntervalData.Forecasts.Select((f, k) => new ChartPoint(k, f.Median))) with
+        {
+            FromZero = false,
+            Format = Percent,
+            Keys = new AppearanceKeys("Median", null, "circle"),
+            Interval = new SeriesInterval("95% CI", [.. IntervalData.Forecasts.Select((f, k) => new IntervalBound(k, f.Low, f.High))]),
+        },
+    ]);
+
+    private static readonly ChartDefinition Estimates = new(ChartAxis.Numbers("Volatility (% a year)") with { Format = x => x.ToString("0.0", Invariant) + "%" },
+    [
+        ChartSeries.Of("strategies", "Strategies", SeriesKind.Observation,
+            IntervalData.Strategies.Select(s => new ChartPoint((double)s.Vol, s.Return) { Name = s.Name })) with
+        {
+            Format = Percent,
+            Interval = new SeriesInterval("95% CI", [.. IntervalData.Strategies.Select(s => new IntervalBound((double)s.Vol, s.ReturnLow, s.ReturnHigh))]),
+            XInterval = new SeriesInterval("95% CI", [.. IntervalData.Strategies.Select(s => new IntervalBound((double)s.Vol, s.VolLow, s.VolHigh))]),
+        },
+    ]);
+}

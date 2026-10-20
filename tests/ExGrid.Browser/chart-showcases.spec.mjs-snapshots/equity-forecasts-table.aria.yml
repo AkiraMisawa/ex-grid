@@ -1,0 +1,39 @@
+- table "Policy rate forecasts":
+  - caption: Policy rate forecasts
+  - rowgroup:
+    - row "Quarter Median forecast Median forecast lower (95% CI) Median forecast upper (95% CI)":
+      - columnheader "Quarter"
+      - columnheader "Median forecast"
+      - columnheader "Median forecast lower (95% CI)"
+      - columnheader "Median forecast upper (95% CI)"
+  - rowgroup:
+    - row "Now 4.25 4.25 4.25":
+      - rowheader "Now"
+      - cell "4.25"
+      - cell "4.25"
+      - cell "4.25"
+    - row "Q1 4.00 3.75 4.25":
+      - rowheader "Q1"
+      - cell "4.00"
+      - cell "3.75"
+      - cell "4.25"
+    - row "Q2 3.75 3.25 4.25":
+      - rowheader "Q2"
+      - cell "3.75"
+      - cell "3.25"
+      - cell "4.25"
+    - row "Q3 3.50 2.90 4.10":
+      - rowheader "Q3"
+      - cell "3.50"
+      - cell "2.90"
+      - cell "4.10"
+    - row "Q4 3.50 2.60 4.20":
+      - rowheader "Q4"
+      - cell "3.50"
+      - cell "2.60"
+      - cell "4.20"
+    - row "Q5 3.25 2.30 4.20":
+      - rowheader "Q5"
+      - cell "3.25"
+      - cell "2.30"
+      - cell "4.20"

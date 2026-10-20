@@ -1,0 +1,3 @@
+- 'img "Policy rate forecasts. Quarter, Now to Q5. Left axis, 2 to 4.5. Median forecast: maximum 4.25% at Now."':
+  - text: 2 2.5 3 3.5 4 4.5 Now Q1 Q2 Q3 Q4 Q5
+  - button "Median forecast (95% CI)" [pressed]

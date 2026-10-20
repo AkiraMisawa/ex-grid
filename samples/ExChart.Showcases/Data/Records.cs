@@ -130,3 +130,62 @@ public static partial class FxVolData
     /// </summary>
     public static readonly double[] DeltaValues = [10, 25, 50, 75, 90];
 }
+
+/// <summary>One reference name: its leverage (debt over EBITDA, times) and its five-year CDS spread in basis points.</summary>
+public sealed record CreditName(string Ticker, double Leverage, double SpreadBp);
+
+/// <summary>Reference names' leverage and spreads, as a credit desk's screen shows them.</summary>
+public static partial class CreditData
+{
+    /// <summary>The date the spreads were taken on.</summary>
+    public static readonly DateOnly AsOf = new(2026, 10, 13);
+}
+
+/// <summary>One session of an equity index: its open, high, low and close, and the volume traded.</summary>
+public sealed record IndexBar(DateOnly Date, decimal Open, decimal High, decimal Low, decimal Close, decimal Volume);
+
+/// <summary>Ten years of an equity index's daily bars.</summary>
+public static partial class IndexData
+{
+    /// <summary>The index's name.</summary>
+    public const string Name = "Northgate 225";
+}
+
+/// <summary>One tenor of a government curve, quoted bid and ask, in percent.</summary>
+public sealed record CurveQuote(string Tenor, double Years, decimal Bid, decimal Ask);
+
+/// <summary>One quarter of a survey of policy-rate forecasts: the median, and the 95% interval of the answers, in percent.</summary>
+public sealed record RateForecast(string Quarter, decimal Median, decimal Low, decimal High);
+
+/// <summary>
+/// One strategy's annualised volatility and return, in percent, each estimated with a bootstrap 95%
+/// confidence interval.
+/// </summary>
+public sealed record StrategyEstimate(string Name, decimal Vol, decimal VolLow, decimal VolHigh, decimal Return, decimal ReturnLow, decimal ReturnHigh);
+
+/// <summary>The figures that carry intervals, beside the index: each interval as its source quoted it.</summary>
+public static class IntervalData
+{
+    /// <summary>A government curve's bid and ask by tenor.</summary>
+    public static readonly CurveQuote[] Curve =
+    [
+        new("3M", 0.25, 3.71m, 3.75m), new("6M", 0.5, 3.62m, 3.65m), new("1Y", 1, 3.48m, 3.51m), new("2Y", 2, 3.30m, 3.34m),
+        new("3Y", 3, 3.27m, 3.30m), new("5Y", 5, 3.31m, 3.35m), new("7Y", 7, 3.42m, 3.47m), new("10Y", 10, 3.55m, 3.61m),
+        new("20Y", 20, 3.81m, 3.90m), new("30Y", 30, 3.86m, 3.98m),
+    ];
+
+    /// <summary>Forecasts of the policy rate, now and for the next five quarters.</summary>
+    public static readonly RateForecast[] Forecasts =
+    [
+        new("Now", 4.25m, 4.25m, 4.25m), new("Q1", 4.00m, 3.75m, 4.25m), new("Q2", 3.75m, 3.25m, 4.25m),
+        new("Q3", 3.50m, 2.90m, 4.10m), new("Q4", 3.50m, 2.60m, 4.20m), new("Q5", 3.25m, 2.30m, 4.20m),
+    ];
+
+    /// <summary>Six strategies' estimated risk and return.</summary>
+    public static readonly StrategyEstimate[] Strategies =
+    [
+        new("Carry", 6.1m, 5.4m, 6.9m, 4.2m, 1.1m, 7.3m), new("Momentum", 11.8m, 10.5m, 13.4m, 6.0m, 0.2m, 11.9m),
+        new("Value", 9.4m, 8.3m, 10.6m, 2.9m, -2.0m, 7.8m), new("Low vol", 5.2m, 4.7m, 5.8m, 3.8m, 1.3m, 6.4m),
+        new("Trend", 14.6m, 12.9m, 16.5m, 7.1m, -0.1m, 14.3m), new("Short vol", 8.7m, 6.2m, 12.9m, 5.5m, 0.9m, 10.0m),
+    ];
+}

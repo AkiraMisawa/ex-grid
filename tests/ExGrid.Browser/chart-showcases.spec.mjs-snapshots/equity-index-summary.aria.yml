@@ -1,0 +1,5 @@
+- 'img "Northgate 225. Date, 2016-01-04 to 2025-12-31. Left axis, 10000 to 70000. Northgate 225: maximum 61,887.06 at 2024-05-07. 25-day average: maximum 60,772.25 at 2024-10-10. Northgate 225 volume: Left axis, 0 to 30000000. Northgate 225 volume: maximum 3,761,234.00 at 2020-03-16."':
+  - text: 10000 20000 30000 40000 50000 60000 70000
+  - button "Northgate 225" [pressed]
+  - button "25-day average" [pressed]
+  - text: 0 10000000 20000000 30000000 2017 2018 2019 2020 2021 2022 2023 2024 2025
