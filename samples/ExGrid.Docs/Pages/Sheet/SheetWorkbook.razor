@@ -101,7 +101,14 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
                 can cross on the wire.
             </li>
             <li>
-                <b>While an edit is open the Sheet shown stays.</b> A tab pressed then is refused, and the Sheet's notice
+                <b>The Name Box goes to another Sheet.</b> Type the Sheet's name before the address, as a Reference
+                names it — <code>Summary!B5</code>, <code>'Q1 Sales'!A1:C3</code> — and press <kbd>Enter</kbd>: that
+                Sheet is shown with the cells selected and scrolled into view, in place of the view it kept. A name the
+                Workbook does not hold moves nothing, and the notice says the address could not be read.
+            </li>
+            <li>
+                <b>While an edit is open the Sheet shown stays.</b> A tab pressed, or another Sheet's address typed into
+                the Name Box, is refused then, and the Sheet's notice
                 says to finish the edit first. Pointing at another Sheet's cells while a Formula is typed is not built yet.
             </li>
             <li>

@@ -7,7 +7,7 @@ namespace ExGrid.Components;
 /// written in, and where the rows and columns are scrolled to. A Consumer that shows several sets of
 /// rows in one grid, one at a time — ExSheet's Sheets behind their tabs (ADR-0331) — keeps each set's
 /// view with <see cref="ExGrid{TRow}.ReadView"/> and hands it back with
-/// <see cref="ExGrid{TRow}.ShowViewWith"/> when that set is shown again.
+/// <see cref="ExGrid{TRow}.ShowViewWith(GridView)"/> when that set is shown again.
 /// </summary>
 /// <param name="RowSequenceVersion">The Row Sequence Version the Selection's positions are written in.</param>
 /// <param name="Selection">The Selection.</param>
@@ -32,6 +32,10 @@ public partial class ExGrid<TRow>
 {
     private GridView? _viewAhead;
     private bool _viewScrollOwed;
+
+    // The placement a view handed ahead carries in place of its own Selection, with its Focus revealed
+    // (ShowViewWith(GridView, SelectionRange, CellPosition)); null when the view's Selection stands.
+    private (SelectionRange Range, CellPosition Focus)? _viewAheadPlace;
 
     // The input whose handling handed the view ahead; 0 when none did.
     private int _viewAheadInput;
@@ -63,7 +67,33 @@ public partial class ExGrid<TRow>
         if (view.Selection is null)
             throw new ArgumentException("A view holds a Selection; start from GridSelection.Empty.", nameof(view));
         _viewAhead = view;
+        _viewAheadPlace = null;
         _viewAheadInput = Inputs.RunningInput;
+    }
+
+    /// <summary>
+    /// Shows <paramref name="view"/> as <see cref="ShowViewWith(GridView)"/> does, with
+    /// <paramref name="range"/> placed as its Selection and the Focus on <paramref name="focus"/>,
+    /// scrolled into view from the view's offsets, as <see cref="PlaceSelectionAsync"/> places them
+    /// (ADR-0050, item 4). A Consumer that shows other rows to go to a place among them — ExSheet's Name
+    /// Box taking <c>Sheet2!B5</c> (ADR-0331 §5) — hands the place with the rows, so it is placed under
+    /// the version that brings them: placed after it, it would hang on when the grid took that version.
+    /// A range reaching outside the grid's rows and columns once the version is taken is not placed,
+    /// and the grid shows what reconciling left, as for a view whose Selection lies outside them.
+    /// </summary>
+    /// <param name="view">The view, written in the version the Consumer is about to hand the grid; its Selection is replaced.</param>
+    /// <param name="range">The one range to place.</param>
+    /// <param name="focus">The Focus, inside <paramref name="range"/>.</param>
+    /// <exception cref="ArgumentException">The view holds no Selection (<c>default(GridView)</c>).</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The Focus lies outside the range, or the range starts before the first row or column.</exception>
+    public void ShowViewWith(GridView view, SelectionRange range, CellPosition focus)
+    {
+        if (range.TopRow < 0 || range.LeftColumn < 0)
+            throw new ArgumentOutOfRangeException(nameof(range), range, "A range starts at row and column 0 or after (ADR-0050).");
+        if (!range.Contains(focus))
+            throw new ArgumentOutOfRangeException(nameof(focus), focus, "The Focus is placed inside the range it belongs to (ADR-0050/0052).");
+        ShowViewWith(view);
+        _viewAheadPlace = (range, focus);
     }
 
     /// <summary>The view handed ahead of the version just taken, in place of what reconciling left
@@ -74,6 +104,8 @@ public partial class ExGrid<TRow>
         if (_viewAhead is not { } ahead || ahead.RowSequenceVersion != _sequenceVersion)
             return reconciled;
         _viewAhead = null;
+        var place = _viewAheadPlace;
+        _viewAheadPlace = null;
         _orderMovedByInput = _viewAheadInput > 0 ? (_viewAheadInput, _sequenceVersion, _orderPaintedFrom) : null;
         var top = Math.Max(0, ahead.ScrollTopPx);
         var left = Math.Max(0, ahead.ScrollLeftPx);
@@ -89,6 +121,15 @@ public partial class ExGrid<TRow>
         else
             _viewScrollOwed = true;
         var extent = Extent;
+        if (place is { } placed)
+        {
+            if (placed.Range.BottomRow >= extent.RowCount || placed.Range.RightColumn >= extent.ColumnCount)
+                return reconciled;
+            // Revealed from the view's offsets, in the render that takes them: the reveal's write, when the
+            // Focus lies outside them, follows the view's and supersedes it (StageReveal).
+            RequestFocusReveal();
+            return new HeldSelection(_sequenceVersion, GridSelection.Empty.Place(placed.Range, placed.Focus, extent));
+        }
         foreach (var range in ahead.Selection.Ranges)
         {
             if (range.BottomRow >= extent.RowCount || range.RightColumn >= extent.ColumnCount)

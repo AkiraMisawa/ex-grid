@@ -1425,15 +1425,33 @@
 
     private async Task OnNameBoxEnteredAsync(string typed)
     {
-        if (!NameBoxText.TryParse(typed, out var range))
+        if (!NameBoxText.TryParse(typed, out var named, out var range))
         {
             Tell(SheetWords.AddressUnreadable(typed));
             return;
         }
-        ClearNotice();
+        // A Sheet named before the address (ADR-0331 §5): one the Workbook does not hold is no place.
+        var sheet = named is null ? _sheet : _workbook?.Find(named);
+        if (sheet is null)
+        {
+            Tell(SheetWords.AddressUnreadable(typed));
+            return;
+        }
         var place = new SelectionRange(range.First.Row, range.First.Column, range.RowCount, range.ColumnCount);
+        var focus = new CellPosition(range.First.Row, range.First.Column);
+        if (sheet != _sheet)
+        {
+            // Another Sheet is shown with the place among its rows, as a tab shows it: not while an edit
+            // is open, and the place is handed with the rows, so it lands under the version that brings
+            // them whenever the grid takes it.
+            if (RefuseSwitchWhileEditing()) return;
+            ClearNotice();
+            if (ShowSheet(sheet, (place, focus))) await RaiseDocumentsAsync();
+            return;
+        }
+        ClearNotice();
         // Rows are places, so the Row Sequence Version is the document's (ADR-0046).
-        if (_grid is { } grid) await grid.PlaceSelectionAsync(place, new CellPosition(range.First.Row, range.First.Column), _sequence);
+        if (_grid is { } grid) await grid.PlaceSelectionAsync(place, focus, _sequence);
     }
 
     /// <summary>

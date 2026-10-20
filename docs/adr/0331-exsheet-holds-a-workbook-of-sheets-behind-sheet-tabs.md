@@ -109,6 +109,10 @@ typed is a question to Excel, put in the next Windows run, and built as observed
   An address names its Sheet: `DoAsync(sheet, edit)` and `CellFormatAt(sheet, address)`; the ones that
   name none are refused with `SheetRefusalReason.SheetNotNamed`. The application hears each change to
   the Sheets through `SheetsChanged`.
+- *As built, 2026-10-20:* the Name Box takes an address that names its Sheet, `Sheet2!B5`, and shows
+  that Sheet with the place selected and the Focus revealed. The place is handed to the grid with the
+  Sheet's rows, under the version that brings them (`ShowViewWith(view, range, focus)`), so it never
+  depends on when the grid takes that version. While an edit is open it is refused, as a tab press is.
 
 ### 7. 3D references are in the first version (W7)
 

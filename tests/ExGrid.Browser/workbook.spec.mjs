@@ -1,5 +1,5 @@
 import { test, expect, settled } from './fixtures.mjs';
-import { sheet, cell, clickCell, goTo, expectFocusAt, editor } from './sheet-helpers.mjs';
+import { sheet, cell, clickCell, goTo, expectFocusAt, editor, typeIntoNameBox, nameBox } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
 // The Sheet Tabs (ADR-0331 §4; exsheet-workbook ticket 05), on /workbook under both Chromes: one
@@ -91,6 +91,22 @@ for (const chrome of ['builtin', 'mud']) {
             // A key typed straight after a press on a tab is not tested here: the press is not numbered
             // in the Input Order until ExSheet's own surfaces join it (input-order ticket 04), and on a
             // circuit such a key is refused as aimed at the Sheet left.
+        });
+
+        test('WB-5: the Name Box goes to a cell on another Sheet, shows that Sheet and scrolls the cell into view', async ({ page }) => {
+            await openWorkbook(page);
+            const grid = sheet(page);
+            await tab(page, 'Summary').click();
+            await expect(cell(grid, 'A1')).toHaveText('Claimed');
+
+            await typeIntoNameBox(grid, 'Claim!A150');
+            await nameBox(grid).press('Enter');
+
+            await expect(tab(page, 'Claim')).toHaveAttribute('aria-selected', 'true');
+            await expectFocusAt(grid, 'A150');
+            await expect(cell(grid, 'A150')).toHaveText('Row 150');
+            await expect(cell(grid, 'A150')).toBeInViewport();
+            await expect(page.locator('#workbook-shown')).toHaveText('Claim');
         });
     });
 }

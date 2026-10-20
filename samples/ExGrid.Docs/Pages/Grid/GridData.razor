@@ -84,7 +84,11 @@
             shown. Handed from the handler of one of the grid's inputs — a declared key, say — the switch is that
             input's answer, and the keys and pastes after it in the grid's order are taken under the new version
             even on Blazor Server, where they left the browser before the new rows reached it, as they would be
-            typed slowly. ExSheet keeps each Sheet's view this way.
+            typed slowly. ExSheet keeps each Sheet's view this way. To go to a place among the rows you show,
+            hand it with them: <code>ShowViewWith(view, range, focus)</code> places <code>range</code> with the
+            Focus on <code>focus</code> under the same version, and scrolls the Focus into view from the view's
+            offsets, as <code>PlaceSelectionAsync</code> does among the rows already shown. ExSheet's Name Box takes
+            <code>Sheet2!B5</code> this way.
         </p>
         <p>
             <strong>Name your rows by a Row Key</strong> when you make them afresh — fetched again, or rebuilt from a

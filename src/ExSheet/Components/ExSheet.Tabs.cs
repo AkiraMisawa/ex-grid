@@ -117,7 +117,11 @@ public partial class ExSheet
     /// none for a Sheet not shown before — handed ahead of that version, so the two arrive together.
     /// Answers whether another Sheet is shown.
     /// </summary>
-    private bool ShowSheet(Sheet sheet)
+    private bool ShowSheet(Sheet sheet) => ShowSheet(sheet, null);
+
+    /// <summary>Shows <paramref name="sheet"/>, with <paramref name="place"/>, when given, placed as its
+    /// Selection and its Focus revealed in place of the Selection kept for it (the Name Box, ADR-0331 §5).</summary>
+    private bool ShowSheet(Sheet sheet, (SelectionRange Range, CellPosition Focus)? place)
     {
         if (_workbook is not { } workbook || sheet == _sheet) return false;
         if (_sheet is { } left && _grid is { } leaving) _views[left] = leaving.ReadView();
@@ -131,8 +135,16 @@ public partial class ExSheet
         var view = _views.TryGetValue(sheet, out var kept)
             ? kept with { RowSequenceVersion = _sequence }
             : new GridView(_sequence, GridSelection.Empty, 0, 0);
-        _grid?.ShowViewWith(view);
-        _selection = view.Selection;
+        if (place is { } placed)
+        {
+            _grid?.ShowViewWith(view, placed.Range, placed.Focus);
+            _selection = GridSelection.Empty;
+        }
+        else
+        {
+            _grid?.ShowViewWith(view);
+            _selection = view.Selection;
+        }
         _window = [];
         ShowRows(RowHeight > 0 ? (int)(view.ScrollTopPx / RowHeight) : 0, InitialRows);
         RefreshToolbar();
