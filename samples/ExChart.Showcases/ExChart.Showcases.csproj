@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!-- ExChart's Showcases (ADR-0280): Exposure profile, CDS curves, Curves and Rates, each a page of
+         the proof of concept rebuilt from the shipped components, with its data as fixed values under
+         Data/. The Docs Site shows them under /showcase/... and the demo pages under /chart-showcase/...,
+         so layer 3 drives the same components on both hosts. Not shipped; targets what the SDK
+         provides (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ExChart.Showcases</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MudBlazor" Version="9.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- A Consumer's pages: the core and the Wrappers, and nothing references these but the Docs Site
+         and the demo pages (ADR-0019). -->
+    <ProjectReference Include="..\..\src\ExGrid\ExGrid.csproj" />
+    <ProjectReference Include="..\..\src\ExGrid.MudBlazor\ExGrid.MudBlazor.csproj" />
+    <ProjectReference Include="..\..\src\ExChart\ExChart.csproj" />
+    <ProjectReference Include="..\..\src\ExChart.MudBlazor\ExChart.MudBlazor.csproj" />
+  </ItemGroup>
+
+</Project>

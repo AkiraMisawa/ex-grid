@@ -1,0 +1,4 @@
+- 'img "Chart 1. Date, 2026-10-13 to 2056-10-13. Left axis, 0 to 15000000. EPE(0) · Before: maximum 12,518,080.99 at 2030-04-13. EPE(0) · After: maximum 9,273,092.29 at 2033-04-13."':
+  - text: 0 5000000 10000000 15000000 2028 2030 2032 2034 2036 2038 2040 2042 2044 2046 2048 2050 2052 2054 2056
+  - button "EPE(0) · Before" [pressed]
+  - button "EPE(0) · After" [pressed]

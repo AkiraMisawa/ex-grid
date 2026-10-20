@@ -1,0 +1,5 @@
+- 'img "Chart 2. Tenor (years), 6m to 20y. Left axis, 0 to 10. ACMEC SNRFOR USD XR14 · Hazard rate (%): maximum 2.5157 at 20y. CYGNUS SNRFOR USD XR14 · Hazard rate (%): maximum 7.9660 at 5y. CYGNUS SUBLT2 USD XR14 · Hazard rate (%): maximum 8.2053 at 5y."':
+  - text: 0 2 4 6 8 10 6m 2y 3y 4y 5y 7y 10y 15y 20y
+  - button "ACMEC SNRFOR USD XR14 · Hazard rate (%)" [pressed]
+  - button "CYGNUS SNRFOR USD XR14 · Hazard rate (%)" [pressed]
+  - button "CYGNUS SUBLT2 USD XR14 · Hazard rate (%)" [pressed]

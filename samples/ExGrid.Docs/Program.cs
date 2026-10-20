@@ -1,3 +1,5 @@
+using ExChart.Components;
+using ExChart.MudBlazor;
 using ExGrid.Components;
 using ExGrid.Docs;
 using ExGrid.MudBlazor;
@@ -21,6 +23,8 @@ builder.RootComponents.Add<ExSheetStylesheet>("head::after");
 builder.RootComponents.Add<MudExSheetStylesheet>("head::after");
 builder.RootComponents.Add<ExPivotStylesheet>("head::after");
 builder.RootComponents.Add<MudExPivotStylesheet>("head::after");
+builder.RootComponents.Add<ExChartStylesheet>("head::after");
+builder.RootComponents.Add<MudExChartStylesheet>("head::after");
 builder.Services.AddMudServices();
 builder.Services.AddScoped<DocsState>();
 

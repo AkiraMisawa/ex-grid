@@ -82,6 +82,10 @@ public static class DemoPageList
             "A curve history charted from the grid's context menu: series in columns along the dates or in rows across the tenors, Add to chart, a refusal by name, a chart that keeps its rows through a recalculation and a deleted row, and a click that moves the grid's Focus (ADR-0258)."),
         new("chart-dock", "Charts under MudBlazor", "ExChart",
             "ExChart.MudBlazor: the Chart Dock beside the grid opening each chart made from the selection as a tab, and a chart in the grid Wrapper's paper with the MudBlazor toolbar, download menu and context menu, the theme's colours leading its series (ADR-0258, ADR-0281)."),
+        new("chart-showcase/exposure", "Exposure profile showcase", "ExChart",
+            "The Docs Site's Exposure profile Showcase: a netting set's EPE, ENE, CVA and PFE before and after a trade, charted from the grid's selection into tabs, CVA per year over its buckets, and a recalculation the charts follow; ?chrome=mud for MudBlazor (ADR-0280)."),
+        new("chart-showcase/curves", "Curves showcase", "ExChart",
+            "The Docs Site's Curves Showcase: a CDS curve with its hazard rates as steps, CDS curves charted from rows across tenors, and a rate curve with its interpolation named, switched in the bar; ?chrome=mud for MudBlazor (ADR-0280)."),
     ];
 
     /// <summary>The entry for a base-relative path, ignoring any query or fragment, or null

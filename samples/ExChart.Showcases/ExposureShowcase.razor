@@ -1,0 +1,132 @@
+@using System.Globalization
+@* Exposure profile (ADR-0280): a netting set's EPE, ENE, CVA and PFE by date, before and after a
+   proposed trade, as a risk system reported them. Select the Date and the figures — drag, Shift+click, or
+   click the headers — and choose Chart from the grid's context menu; each chart opens in a tab of its own.
+   "Recalculate" swaps in the profile at a larger hedge, and every open chart follows its rows. The figures
+   are fixed values under Data/; nothing here computes one. *@
+<ShowcaseShell Mud="Mud" Crumb="Counterparty risk · Exposure profile">
+    <Tools>
+        @if (Mud)
+        {
+            <MudText Typo="Typo.body2" Class="xs-crumb">Hedge ×@HedgeText</MudText>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="Recalculate" Class="xs-recalculate">Recalculate</MudButton>
+        }
+        else
+        {
+            <span class="xs-crumb">Hedge ×@HedgeText</span>
+            <button type="button" class="xs-button xs-recalculate" @onclick="Recalculate">Recalculate</button>
+        }
+    </Tools>
+    <ChildContent>
+        <p class="xs-note">
+            Select the Date and the figures to plot, then right-click and choose Chart. CVA is the amount of
+            each bucket, drawn per year over its bucket; a Diff that crosses zero gets a panel of its own.
+        </p>
+        @if (Mud)
+        {
+            <MudChartDock @ref="_dock" TRow="ExposureRow" Bridge="_bridge" Placement="ChartDockPlacement.Bottom" ChartWidth="ChartWidth" ChartHeight="ChartHeight">
+                <MudExGridPaper Elevation="1">
+                    <ExGrid @ref="_bridge.Grid" TRow="ExposureRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups"
+                            PinnedColumnCount="1" HeaderClickSelects="true" ContextCommands="_commands" CommandLabel="Label"
+                            ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" Chrome="MudChartChrome.GridChrome" />
+                </MudExGridPaper>
+            </MudChartDock>
+        }
+        else
+        {
+            <div class="xs-panel">
+                <ExGrid @ref="_bridge.Grid" TRow="ExposureRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups"
+                        PinnedColumnCount="1" HeaderClickSelects="true" ContextCommands="_commands" CommandLabel="Label"
+                        ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" />
+            </div>
+            <ChartTabs @ref="_tabs" TRow="ExposureRow" Bridge="_bridge" ChartWidth="ChartWidth" ChartHeight="ChartHeight" FileName="exposure-profile" />
+        }
+    </ChildContent>
+</ShowcaseShell>
+
+@code {
+    /// <summary>Whether the screen is drawn with MudBlazor's Chrome.</summary>
+    [Parameter] public bool Mud { get; set; }
+
+    private const double ChartWidth = 1000, ChartHeight = 380;
+    private static readonly ViewportSize GridHeight = 260;
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private static Func<object, string> Money => v => ((decimal)v).ToString("#,##0.00;-#,##0.00", Invariant);
+
+    private static readonly GridColumn<ExposureRow>[] Columns =
+    [
+        new("Date", ColumnType.Date, r => r.Date, dateType: DateType.DateOnly),
+        new("EpeBefore", ColumnType.Number, r => r.EpeBefore, header: "Before", format: Money),
+        new("EpeAfter", ColumnType.Number, r => r.EpeAfter, header: "After", format: Money),
+        new("EpeDiff", ColumnType.Number, r => r.EpeDiff, header: "Diff", format: Money),
+        new("EneBefore", ColumnType.Number, r => r.EneBefore, header: "Before", format: Money),
+        new("EneAfter", ColumnType.Number, r => r.EneAfter, header: "After", format: Money),
+        new("EneDiff", ColumnType.Number, r => r.EneDiff, header: "Diff", format: Money),
+        new("CvaBefore", ColumnType.Number, r => r.CvaBefore, header: "Before", format: Money),
+        new("CvaAfter", ColumnType.Number, r => r.CvaAfter, header: "After", format: Money),
+        new("CvaDiff", ColumnType.Number, r => r.CvaDiff, header: "Diff", format: Money),
+        new("PfeBefore", ColumnType.Number, r => r.PfeBefore, header: "Before", format: Money),
+        new("PfeAfter", ColumnType.Number, r => r.PfeAfter, header: "After", format: Money),
+        new("PfeDiff", ColumnType.Number, r => r.PfeDiff, header: "Diff", format: Money),
+    ];
+
+    private static readonly HeaderGroup[] Groups =
+    [
+        new("EPE(0)", ["EpeBefore", "EpeAfter", "EpeDiff"]),
+        new("ENE(0)", ["EneBefore", "EneAfter", "EneDiff"]),
+        new("CVA", ["CvaBefore", "CvaAfter", "CvaDiff"]),
+        new("PFE(97.5%)", ["PfeBefore", "PfeAfter", "PfeDiff"]),
+    ];
+
+    // Held in fields, never rebuilt per render (AGENTS.md: a new delegate is a changed parameter).
+    private static readonly Func<ExposureRow, object> KeyOf = r => r.Date;
+    private static readonly Func<string, string?> Label = GridChartCommands.Label;
+
+    private int _hedge;
+    private IReadOnlyList<ExposureRow> _rows = ExposureData.Profiles[0];
+    private GridChartBridge<ExposureRow> _bridge = null!;
+    private Func<ContextMenuContext<ExposureRow>, IEnumerable<GridCommand>> _commands = null!;
+    private MudChartDock<ExposureRow>? _dock;
+    private ChartTabs<ExposureRow>? _tabs;
+    private bool? _openedUnderMud;
+
+    private string HedgeText => ExposureData.Hedges[_hedge].ToString("0.0", Invariant);
+
+    protected override void OnInitialized()
+    {
+        _bridge = new GridChartBridge<ExposureRow>(new GridChartDeclarations<ExposureRow>
+        {
+            RowKey = KeyOf,
+            RowOf = key => _rows.FirstOrDefault(r => r.Date == (DateOnly)key),
+            // The page says what each figure is (ADR-0253): CVA is an amount per bucket, the rest are levels.
+            KindOf = column => column.StartsWith("Cva", StringComparison.Ordinal) ? SeriesKind.AmountPerPeriod : SeriesKind.Level,
+        });
+        _commands = _bridge.Commands;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // The screen opens on EPE before and after the trade, at every date: the chart a user makes first.
+        if (_openedUnderMud == Mud) return;
+        _openedUnderMud = Mud;
+        if (Mud && _dock is { } dock) await dock.OpenAsync(Initial());
+        else if (!Mud && _tabs is { } tabs) await tabs.OpenAsync(Initial());
+    }
+
+    private GridChart Initial()
+    {
+        var rows = _rows.Select(r => new KeyedPosition(r.Date, r.Date.DayNumber)).ToEquatableList();
+        return new GridChart(ChartOrientation.SeriesInColumns, "Date", new EquatableList<GridChartSeries>(
+        [
+            new ColumnSeries("EpeBefore", "EPE(0)", "EpeBefore", rows),
+            new ColumnSeries("EpeAfter", "EPE(0)", "EpeAfter", rows),
+        ]));
+    }
+
+    private void Recalculate()
+    {
+        _hedge = (_hedge + 1) % ExposureData.Hedges.Length;
+        _rows = ExposureData.Profiles[_hedge];
+    }
+}

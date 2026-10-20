@@ -1,0 +1,272 @@
+@using System.Globalization
+@* Curves › Rates: an interest-rate curve three ways — its market quotes, its zero rates, its discount
+   factors — and its forwards, after what a market screen's curve tab shows: a curve configuration, one
+   table with every figure of each pillar as columns, and a chart. Each curve, on each of two dates, was
+   built once under each interpolation by the analytics, and its pillars, the curve between them and its
+   forwards are kept under Data/; the page only picks which to show. The chart is defined here, in the
+   data's terms: the pillars are the quotes, the curve between them is declared Interpolated with the
+   interpolation's name (ADR-0257), and a forward under log-linear discount factors is a rate over each
+   interval (ADR-0253). *@
+<div class="xs-tools">
+    @if (Mud)
+    {
+        <MudSelect T="string" Value="_curve" ValueChanged="v => Change(() => _curve = v)" Label="Curve" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 140px" Class="xs-curve">
+            @foreach (var c in RateData.Curves) { <MudSelectItem Value="c">@c</MudSelectItem> }
+        </MudSelect>
+        <MudSelect T="string" Value="_interpolation" ValueChanged="v => Change(() => _interpolation = v)" Label="Interpolation" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 240px" Class="xs-interpolation">
+            @foreach (var i in RateData.Interpolations) { <MudSelectItem Value="i">@i</MudSelectItem> }
+        </MudSelect>
+        <MudSelect T="bool" Value="_annual" ValueChanged="v => Change(() => _annual = v)" Label="Zero rates" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 220px" Class="xs-compounding">
+            <MudSelectItem Value="false">continuously compounded</MudSelectItem>
+            <MudSelectItem Value="true">annually compounded</MudSelectItem>
+        </MudSelect>
+        <MudCheckBox T="bool" Value="_compare" ValueChanged="v => Change(() => _compare = v)" Label="@($"Compare with {Iso(RateData.Earlier)}")" Dense="true" Class="xs-compare" />
+    }
+    else
+    {
+        <label>Curve
+            <select class="xs-curve" @bind:get="_curve" @bind:set="(string? v) => Change(() => _curve = v ?? _curve)">
+                @foreach (var c in RateData.Curves) { <option value="@c">@c</option> }
+            </select>
+        </label>
+        <label>Interpolation
+            <select class="xs-interpolation" @bind:get="_interpolation" @bind:set="(string? v) => Change(() => _interpolation = v ?? _interpolation)">
+                @foreach (var i in RateData.Interpolations) { <option value="@i">@i</option> }
+            </select>
+        </label>
+        <label>Zero rates
+            <select class="xs-compounding" @bind:get="CompoundingText" @bind:set="v => Change(() => _annual = v == Annual)">
+                <option value="@Continuous">continuously compounded</option>
+                <option value="@Annual">annually compounded</option>
+            </select>
+        </label>
+        <label><input type="checkbox" class="xs-compare" @bind:get="_compare" @bind:set="v => Change(() => _compare = v)" /> Compare with @Iso(RateData.Earlier)</label>
+    }
+</div>
+<p class="xs-note">
+    Curve date @Iso(RateData.Today). Deposits, then par swaps paying a fixed rate once a year, built from the mid quotes;
+    instruments accrue ACT/360, the curve is in ACT/365 years. <b>Implied</b> is each instrument repriced off the built curve.
+    Fit: the largest gap between a mid quote and its repriced rate is @Fit bp.
+</p>
+<div class="xs-panel">
+    @if (Mud)
+    {
+        <MudExGridPaper Elevation="1">
+            <ExGrid TRow="PillarRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups" PinnedColumnCount="1"
+                    ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" Chrome="MudGridChrome.Default" />
+        </MudExGridPaper>
+    }
+    else
+    {
+        <ExGrid TRow="PillarRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups" PinnedColumnCount="1"
+                ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" />
+    }
+</div>
+<div class="xs-tools">
+    <b>Chart</b>
+    @if (Mud)
+    {
+        <MudToggleGroup T="ChartView" Value="_chart" ValueChanged="v => Change(() => _chart = v)" Size="Size.Small" Outlined="false"
+                        Delimiters="false" SelectedClass="xs-mud-view-selected" Class="xs-mud-views xs-chart-views">
+            @foreach (var (view, label) in ChartViews) { <MudToggleItem Value="view" Text="@label" /> }
+        </MudToggleGroup>
+    }
+    else
+    {
+        <nav class="xs-views xs-chart-views" aria-label="Chart">
+            @foreach (var (view, label) in ChartViews)
+            {
+                <button type="button" class="@(view == _chart ? "xs-view xs-view-on" : "xs-view")" aria-pressed="@(view == _chart ? "true" : "false")"
+                        @onclick="() => Change(() => _chart = view)">@label</button>
+            }
+        </nav>
+    }
+</div>
+<div class="xs-panel">
+    @if (Mud)
+    {
+        <MudExGridPaper Elevation="1">
+            <ExChart Definition="_definition" Title="@ChartTitle" Width="ChartWidth" Height="ChartHeight" AxisStyle="TenorTicks"
+                     FileName="@FileName" Chrome="MudChartChrome.Default" />
+        </MudExGridPaper>
+    }
+    else
+    {
+        <ExChart Definition="_definition" Title="@ChartTitle" Width="ChartWidth" Height="ChartHeight" AxisStyle="TenorTicks" FileName="@FileName" />
+    }
+    <p class="xs-note">@ViewNote</p>
+</div>
+
+@code {
+    /// <summary>Whether the view is drawn with MudBlazor's Chrome.</summary>
+    [Parameter] public bool Mud { get; set; }
+
+    /// <summary>One pillar as the table shows it: the instrument, its quotes, and what the curve made of it.</summary>
+    public sealed record PillarRow(string Term, string Type, DateOnly Maturity, double Bid, double Ask, double Mid,
+        double Zero, double Discount, double Forward1Y, double Implied);
+
+    private enum ChartView { Zero, Discount, Quotes, Forward, Overlay }
+
+    private static readonly (ChartView, string)[] ChartViews =
+    [
+        (ChartView.Zero, "Zero rates"), (ChartView.Discount, "Discount factors"), (ChartView.Quotes, "Market quotes"),
+        (ChartView.Forward, "Forwards"), (ChartView.Overlay, "Quotes, zeros and forwards"),
+    ];
+
+    private const string Continuous = "Continuous", Annual = "Annual", RatePanel = "Rate (%)", DiscountPanel = "Discount factor";
+    private const double ChartWidth = 1000, ChartHeight = 380;
+    private static readonly ViewportSize GridHeight = 300;
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private static Func<object, string> Digits(int digits) => v => ((double)v).ToString("N" + digits, Invariant);
+
+    private static readonly GridColumn<PillarRow>[] Columns =
+    [
+        new("Term", ColumnType.Text, r => r.Term),
+        new("Type", ColumnType.Text, r => r.Type),
+        new("Maturity", ColumnType.Date, r => r.Maturity, dateType: DateType.DateOnly),
+        new("Bid", ColumnType.Number, r => r.Bid, header: "Bid (%)", format: Digits(4)),
+        new("Ask", ColumnType.Number, r => r.Ask, header: "Ask (%)", format: Digits(4)),
+        new("Mid", ColumnType.Number, r => r.Mid, header: "Mid (%)", format: Digits(4)),
+        new("Zero", ColumnType.Number, r => r.Zero, header: "Zero rate (%)", format: Digits(4)),
+        new("Discount", ColumnType.Number, r => r.Discount, header: "Discount factor", format: Digits(6)),
+        new("Forward", ColumnType.Number, r => r.Forward1Y, header: "1Y forward (%)", format: Digits(4)),
+        new("Implied", ColumnType.Number, r => r.Implied, header: "Implied (%)", format: Digits(4)),
+    ];
+
+    private static readonly HeaderGroup[] Groups =
+    [
+        new("Instrument", ["Type", "Maturity"]),
+        new("Market", ["Bid", "Ask", "Mid"]),
+        new("Built curve", ["Zero", "Discount", "Forward", "Implied"]),
+    ];
+
+    // The market's tenors on a proportional axis, where the pillars bunch at the short end, as on the screens.
+    private static readonly string[] Ticked = ["1Y", "2Y", "3Y", "5Y", "7Y", "10Y", "15Y", "20Y", "30Y", "40Y", "50Y"];
+    private static readonly AxisStyle TenorTicks = new(TickPlacement.Named);
+    private static readonly ChartAxis TenorAxis = ChartAxis.Numbers("Tenor") with
+    {
+        Named = [.. Ticked.Select(t => (RateData.Years[Array.IndexOf(RateData.Tenors, t)], t))],
+        Format = position => Array.IndexOf(RateData.Years, position) is var i and >= 0
+            ? RateData.Tenors[i]
+            : position.ToString("0.####", Invariant) + "Y",
+    };
+
+    private static readonly Func<PillarRow, object> KeyOf = r => r.Term;
+
+    private string _curve = RateData.Curves[0];
+    private string _interpolation = RateData.Interpolations[0];
+    private bool _annual;
+    private bool _compare;
+    private ChartView _chart = ChartView.Zero;
+    private IReadOnlyList<PillarRow> _rows = [];
+    private ChartDefinition _definition = null!;
+
+    private string CompoundingText => _annual ? Annual : Continuous;
+    private string ChartTitle => $"{_curve} · {ChartViews.First(v => v.Item1 == _chart).Item2}";
+    private string FileName => $"{_curve.Replace(' ', '-')}-curve";
+    private bool LogLinear => _interpolation.StartsWith("Log", StringComparison.Ordinal);
+    private string Fit => _rows.Max(r => Math.Abs(r.Implied - r.Mid) * 100).ToString("0.000000", Invariant);
+
+    protected override void OnInitialized() => Rebuild();
+
+    private void Change(Action change)
+    {
+        change();
+        Rebuild();
+    }
+
+    private void Rebuild()
+    {
+        var quotes = RateData.QuotesOf(_curve, RateData.Today);
+        var built = RateData.BuiltOf(_curve, RateData.Today, _interpolation);
+        _rows = [.. RateData.Tenors.Select((t, i) => new PillarRow(t, i < RateData.Deposits ? "Deposit" : "Swap", quotes.Maturities[i],
+            quotes.Bid[i], quotes.Ask[i], quotes.Mid(i), (_annual ? built.ZeroAnnual : built.ZeroContinuous)[i],
+            built.Discount[i], built.Forward1Y[i], built.Implied[i]))];
+        var series = new List<ChartSeries>();
+        Add(series, RateData.Today);
+        if (_compare) Add(series, RateData.Earlier);
+        _definition = new ChartDefinition(TenorAxis, series);
+    }
+
+    // One date's series for the chosen view: the date is the line-style key, the measure the colour key,
+    // so the earlier date draws the same colours dashed.
+    private void Add(List<ChartSeries> series, DateOnly date)
+    {
+        var label = Iso(date);
+        var built = RateData.BuiltOf(_curve, date, _interpolation);
+        var quotes = RateData.QuotesOf(_curve, date);
+        var curveSegment = new Segment(built.CurveYears[0], built.CurveYears[^1], _interpolation);
+
+        ChartSeries Make(string id, string measure, string panel, IEnumerable<(double X, double? Y)> points, SeriesKind kind, int digits, bool fromZero) => new()
+        {
+            Id = $"{id}|{label}",
+            Name = $"{measure} · {label}",
+            Kind = kind,
+            Panel = panel,
+            Keys = new AppearanceKeys(measure, label),
+            FromZero = fromZero,
+            Points = [.. points.Select(p => new ChartPoint(p.X, p.Y is { } y ? ChartValue.Of(y) : null))],
+            Format = Digits(digits),
+        };
+        IEnumerable<(double, double?)> Pillars(double[] values) => RateData.Years.Select((t, i) => (t, (double?)values[i]));
+        IEnumerable<(double, double?)> Curve(double[] values) => built.CurveYears.Select((t, i) => (t, (double?)values[i]));
+
+        void Zero()
+        {
+            series.Add(Make("zero", "Zero rate", RatePanel, Pillars(_annual ? built.ZeroAnnual : built.ZeroContinuous), SeriesKind.Level, 4, false));
+            series.Add(Make("zero-curve", "Zero rate", RatePanel, Curve(_annual ? built.CurveZeroAnnual : built.CurveZeroContinuous), SeriesKind.Level, 4, false)
+                with { Interpolated = true, Segments = [curveSegment] });
+        }
+        void Quotes() => series.Add(Make("quote", "Market rate", RatePanel, RateData.Years.Select((t, i) => (t, (double?)quotes.Mid(i))), SeriesKind.Level, 4, false)
+            with { Keys = new AppearanceKeys("Market rate", label, "Market rate") });
+        void Forward()
+        {
+            // Under log-linear discount factors the forward is flat over each (tᵢ₋₁, tᵢ]: a rate over the
+            // interval, whose first interval starts at today. Under linear zero rates it moves between pillars.
+            if (LogLinear)
+                series.Add(Make("forward", "Instantaneous forward", RatePanel,
+                    built.ForwardYears.Select((t, i) => (t, (double?)built.Forward[i])).Prepend((0, null)), SeriesKind.RateOverInterval, 4, false));
+            else
+                series.Add(Make("forward", "Instantaneous forward", RatePanel,
+                    built.ForwardYears.Select((t, i) => (t, (double?)built.Forward[i])), SeriesKind.Level, 4, false)
+                    with { Interpolated = true, Segments = [new Segment(built.ForwardYears[0], built.ForwardYears[^1], _interpolation)] });
+        }
+
+        switch (_chart)
+        {
+            case ChartView.Zero:
+                Zero();
+                break;
+            case ChartView.Discount:
+                series.Add(Make("df", "Discount factor", DiscountPanel, Pillars(built.Discount), SeriesKind.Level, 6, true));
+                series.Add(Make("df-curve", "Discount factor", DiscountPanel, Curve(built.CurveDiscount), SeriesKind.Level, 6, true)
+                    with { Interpolated = true, Segments = [curveSegment] });
+                break;
+            case ChartView.Quotes:
+                Quotes();
+                break;
+            case ChartView.Forward:
+                Forward();
+                break;
+            default:
+                Quotes();
+                Zero();
+                Forward();
+                break;
+        }
+    }
+
+    private string ViewNote => _chart switch
+    {
+        ChartView.Zero => $"Zero rates, {(_annual ? "annually" : "continuously")} compounded: a marker at each pillar, the line between them as the {_interpolation.ToLowerInvariant()} reads the curve.",
+        ChartView.Discount => "Discount factors: the value today of one unit paid at each tenor; the line between pillars is the interpolation's.",
+        ChartView.Quotes => "The mid quotes the curve is built from — the deposits' and the par swaps' rates.",
+        ChartView.Forward => LogLinear
+            ? "Instantaneous forwards: with log-linear discount factors they are flat over each (tᵢ₋₁, tᵢ] — filled where the rate holds, open where it does not."
+            : "Instantaneous forwards: with linear zero rates they move between pillars, and jump at each.",
+        _ => "The mid quotes, the zero rates and the forwards on one axis, as a forward-curve analysis overlays them.",
+    };
+
+    private static string Iso(DateOnly d) => d.ToString("yyyy-MM-dd", Invariant);
+}
