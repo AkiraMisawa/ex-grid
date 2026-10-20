@@ -436,6 +436,20 @@ public static partial class FormulaEntry
     public static string ReferenceText(CellRange range) => range.ToString();
 
     /// <summary>
+    /// The Reference Point mode writes for a range pointed at on another Sheet than the one the Formula
+    /// is typed on (ADR-0331 §5): the range qualified with that Sheet's name, quoted where a Reference
+    /// must quote it — <c>Sheet2!B7</c>, <c>'Q1 Sales'!B7:C9</c>.
+    /// </summary>
+    /// <param name="range">The range pointed at.</param>
+    /// <param name="sheet">The name of the Sheet it is on.</param>
+    /// <exception cref="ArgumentException"><paramref name="sheet"/> is null or empty.</exception>
+    public static string ReferenceText(CellRange range, string sheet)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(sheet);
+        return Formulas.Reference.QuoteSheetName(sheet) + "!" + range;
+    }
+
+    /// <summary>
     /// What Point writes for a pressed column of a Linked Table, through a Pointing Scope
     /// (ADR-0058): Excel's structured reference, <c>Positions[PV]</c>, written as the engine writes
     /// one back — single brackets, with <c>'</c> before each of <c>[ ] # '</c> in the column's name.

@@ -104,6 +104,7 @@ public partial class ExGrid<TRow>
         _editCommittedText = typed ? null : OpeningTextOf(cell);
         _editNumber++;
         _editSequence = _sequenceVersion;
+        NoteEditSet();
         _editKey = _rowKey is { } rowKey && RowInHand(cell.Row) is { } row ? rowKey(row) : null;
         _editAwaits.Clear();
         _editRebaseOwed = false;
@@ -159,7 +160,8 @@ public partial class ExGrid<TRow>
     /// </summary>
     private void FollowEditedRow()
     {
-        if (_editMode == EditMode.None || _rowKey is not { } rowKey || _editKey is not { } key)
+        // Away, the rows shown are another set's, and no key among them names the edit's row.
+        if (_editMode == EditMode.None || EditAway || _rowKey is not { } rowKey || _editKey is not { } key)
             return;
         if (PositionOfKey(rowKey, key, _editingCell.Row) is not { } row)
             return;
@@ -266,14 +268,14 @@ public partial class ExGrid<TRow>
     /// has moved, that position names another row, and the Window holds none the editor can call its
     /// own (ADR-0011, ADR-0142, as <see cref="EditedRowInHand"/> has it).</summary>
     private bool EditedRowInWindow()
-        => _rowKey is { } rowKey && _editKey is { } key
+        => EditAway || (_rowKey is { } rowKey && _editKey is { } key
             ? PositionOfKey(rowKey, key, _editingCell.Row) is not null
-            : _sequenceVersion == _editSequence && RowInHand(_editingCell.Row) is not null;
+            : _sequenceVersion == _editSequence && RowInHand(_editingCell.Row) is not null);
 
     /// <summary>Whether the row the editor stands at is out of the painted rows, as a row it followed
     /// can be: the grid does not scroll to follow it (ADR-0011's note of 2026-10-07).</summary>
     private bool EditorAway(RowRange visible)
-        => _editingCell.Row < visible.Start - 1 || _editingCell.Row > visible.Start + visible.Count;
+        => EditAway || _editingCell.Row < visible.Start - 1 || _editingCell.Row > visible.Start + visible.Count;
 
     /// <summary>The cell whose box the editor takes: its own, or, while it is away, its column's on
     /// the first painted row, where it stays open and holds the keyboard — so the keys typed still

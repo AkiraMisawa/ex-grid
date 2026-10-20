@@ -46,9 +46,9 @@ public partial class ExGrid<TRow>
     private string ReferenceHighlightStyles => Highlights.Css;
 
     /// <summary>Whether the Formula Bar shows the open edit's text (ADR-0051): while an edit is
-    /// open on the Focus cell.</summary>
+    /// open on the Focus cell, or away among rows another set replaced (ADR-0331 §5).</summary>
     private bool BarShowsTheEdit
-        => _editMode != EditMode.None && !_selection.Selection.IsEmpty && _selection.Selection.Focus == _editingCell;
+        => EditAway || (_editMode != EditMode.None && !_selection.Selection.IsEmpty && _selection.Selection.Focus == _editingCell);
 
     /// <summary>The text the Formula Bar's layer is rendered for: the edit's while the bar shows
     /// it, and nothing otherwise. The bar's layer stands whenever a References function is

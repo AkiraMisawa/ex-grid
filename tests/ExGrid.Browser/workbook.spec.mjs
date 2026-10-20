@@ -1,5 +1,5 @@
 import { test, expect, settled } from './fixtures.mjs';
-import { sheet, cell, clickCell, goTo, expectFocusAt, editor, typeIntoNameBox, nameBox } from './sheet-helpers.mjs';
+import { sheet, cell, clickCell, pressCell, goTo, expectFocusAt, editor, bar, typeIntoNameBox, nameBox } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
 // The Sheet Tabs (ADR-0331 §4; exsheet-workbook ticket 05), on /workbook under both Chromes: one
@@ -107,6 +107,51 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'A150')).toHaveText('Row 150');
             await expect(cell(grid, 'A150')).toBeInViewport();
             await expect(page.locator('#workbook-shown')).toHaveText('Claim');
+        });
+
+        test('WB-6: a Formula typed at once across Ctrl+PageUp points at the Sheet before, and Enter commits it on its own Sheet', async ({ page }) => {
+            await openWorkbook(page);
+            const grid = sheet(page);
+            await pressCell(grid, 'B2');
+            await tab(page, 'Summary').click();
+            await expect(cell(grid, 'A1')).toHaveText('Claimed');
+            await pressCell(grid, 'B3');
+            await settled(grid);
+
+            // At machine speed: the typing, the switch, the point and the commit, nothing awaited between.
+            await page.keyboard.type('=');
+            await page.keyboard.press('Control+PageUp');
+            await page.keyboard.press('ArrowDown');
+            await page.keyboard.press('Enter');
+            await settled(grid);
+
+            await expect(tab(page, 'Summary')).toHaveAttribute('aria-selected', 'true');
+            await expect(cell(grid, 'B3')).toHaveText('6');
+            await expectFocusAt(grid, 'B4');
+            await expect(editor(grid)).toHaveCount(0);
+            await pressCell(grid, 'B3');
+            await expect(bar(grid)).toHaveValue('=Claim!B3');
+        });
+
+        test('WB-7: a press on a tab while a Formula is typed keeps the edit, and a press on a cell there writes its Reference', async ({ page }) => {
+            await openWorkbook(page);
+            const grid = sheet(page);
+            await tab(page, 'Summary').click();
+            await expect(cell(grid, 'A1')).toHaveText('Claimed');
+            await pressCell(grid, 'B3');
+            await page.keyboard.type('=');
+            await expect(editor(grid)).toHaveValue('=');
+
+            await tab(page, 'Claim').click();
+            await expect(tab(page, 'Claim')).toHaveAttribute('aria-selected', 'true');
+            await expect(bar(grid)).toHaveValue('=');
+            await clickCell(grid, 'D5');
+            await expect(bar(grid)).toHaveValue('=Claim!D5');
+            await page.keyboard.press('Enter');
+
+            await expect(tab(page, 'Summary')).toHaveAttribute('aria-selected', 'true');
+            await expect(cell(grid, 'B3')).toHaveText('4561.25');
+            await expectKeyboardOn(grid);
         });
     });
 }

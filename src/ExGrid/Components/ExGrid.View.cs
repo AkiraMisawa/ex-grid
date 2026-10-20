@@ -13,7 +13,13 @@ namespace ExGrid.Components;
 /// <param name="Selection">The Selection.</param>
 /// <param name="ScrollTopPx">The scroller's vertical offset, in pixels.</param>
 /// <param name="ScrollLeftPx">The scroller's horizontal offset, in pixels.</param>
-public readonly record struct GridView(int RowSequenceVersion, GridSelection Selection, double ScrollTopPx, double ScrollLeftPx);
+public readonly record struct GridView(int RowSequenceVersion, GridSelection Selection, double ScrollTopPx, double ScrollLeftPx)
+{
+    /// <summary>The set of rows the view was read of (<see cref="ExGrid{TRow}.ReadView"/>), carried through
+    /// <c>with</c>, so a view handed back brings the same set again; 0 for a view the grid did not read,
+    /// which brings a set of its own.</summary>
+    internal int RowSet { get; init; }
+}
 
 // A view handed ahead of the Row Sequence Version it is written in (ADR-0331): the grid takes it in the
 // render that takes that version, in place of the empty Selection a new version leaves (ADR-0011). So the
@@ -33,6 +39,23 @@ public partial class ExGrid<TRow>
     private GridView? _viewAhead;
     private bool _viewScrollOwed;
 
+    // The set of rows shown, by a number the grid gives each set a view brings in and stamps on the view it
+    // reads of it (ReadView), and the numbers given so far. Rows the Consumer hands under a new version with
+    // no view are the same set, in another order.
+    private int _rowSet = 1;
+    private int _rowSetsGiven = 1;
+
+    // The set the open edit was opened among. While another is shown the edit is away (EditAway): open, its
+    // editor holding the keyboard but neither seen nor pressed, its text in the Formula Bar, pointing at the
+    // rows shown, and its commit landing on _editRow.
+    private int _editSet;
+
+    // The row the open edit was opened on, held only while the edit is away, so its commit has a row to land
+    // on: read from the Window it was in as that Window was replaced (ApplyState), the one row the grid holds
+    // beyond its Window (ADR-0160).
+    private TRow? _editRow;
+    private TRow? _editRowLeaving;
+
     // The placement a view handed ahead carries in place of its own Selection, with its Focus revealed
     // (ShowViewWith(GridView, SelectionRange, CellPosition)); null when the view's Selection stands.
     private (SelectionRange Range, CellPosition Focus)? _viewAheadPlace;
@@ -50,7 +73,16 @@ public partial class ExGrid<TRow>
     /// (as <see cref="ReadSelection"/> reads it), and the scroll offsets the grid last knew. Read on the
     /// renderer's context, where the Consumer's handlers run.
     /// </summary>
-    public GridView ReadView() => new(_selection.RowSequenceVersion, _selection.Selection, _scrollTopPx, _scrollLeftPx);
+    public GridView ReadView() => new(_selection.RowSequenceVersion, _selection.Selection, _scrollTopPx, _scrollLeftPx) { RowSet = _rowSet };
+
+    /// <summary>
+    /// The open edit's text as the grid holds it — what the keys and the typing taken so far in the
+    /// Input Order left in it, the key being answered included — or null while no edit is open. Read on
+    /// the renderer's context, where the Consumer's handlers run: a Consumer deciding what a declared key
+    /// pressed with an edit open means reads the text the key was pressed over (ExSheet shows another
+    /// Sheet on Ctrl+PageDown while a Formula is typed, and not while a constant is, ADR-0331 §5).
+    /// </summary>
+    public string? ReadEditText() => _editMode == EditMode.None ? null : _editText;
 
     /// <summary>
     /// Shows <paramref name="view"/> when the grid next takes the Row Sequence Version it is written in
@@ -59,6 +91,13 @@ public partial class ExGrid<TRow>
     /// grid shows hands the view of the rows it brings, with the new version, before the render that
     /// hands the grid the version, from the same handler: the two then arrive together. A view handed
     /// later replaces one not yet taken; one whose version the grid never takes is never shown.
+    ///
+    /// <para>An edit open as the view is taken stays open with the rows it was opened among (ADR-0331
+    /// §5): while other rows are shown it is away — its editor holds the keyboard but is neither seen nor
+    /// pressed, the Formula Bar shows its text, and Point points at the rows shown — and its commit raises
+    /// the Edit Intent with the row it was opened on, as the grid last held it. A view this grid read of
+    /// those rows (<see cref="ReadView"/>), handed back, brings them back with the edit standing over its
+    /// cell again: the Consumer vouches that a view handed back is of the same rows in the same order.</para>
     /// </summary>
     /// <param name="view">The view, written in the version the Consumer is about to hand the grid.</param>
     /// <exception cref="ArgumentException">The view holds no Selection (<c>default(GridView)</c>).</exception>
@@ -104,6 +143,7 @@ public partial class ExGrid<TRow>
         if (_viewAhead is not { } ahead || ahead.RowSequenceVersion != _sequenceVersion)
             return reconciled;
         _viewAhead = null;
+        TakeRowSet(ahead.RowSet != 0 ? ahead.RowSet : ++_rowSetsGiven);
         var place = _viewAheadPlace;
         _viewAheadPlace = null;
         _orderMovedByInput = _viewAheadInput > 0 ? (_viewAheadInput, _sequenceVersion, _orderPaintedFrom) : null;
@@ -136,6 +176,56 @@ public partial class ExGrid<TRow>
                 return reconciled;
         }
         return new HeldSelection(_sequenceVersion, ahead.Selection);
+    }
+
+    /// <summary>Whether the open edit is away: opened among rows another set has replaced (ShowViewWith).</summary>
+    private bool EditAway => _editMode != EditMode.None && _editSet != _rowSet;
+
+    /// <summary>
+    /// The rows of <paramref name="set"/> are shown now. An open edit leaving its own set is set aside
+    /// with them: its row as last held, and Point's outline, which stood over the rows left, goes while
+    /// what it wrote stays, for the next point to replace (_pointAside). Back among its own set, the edit
+    /// stands over its cell under the version they are shown under now, as when it was opened.
+    /// </summary>
+    private void TakeRowSet(int set)
+    {
+        if (set == _rowSet)
+            return;
+        _rowSet = set;
+        if (_editMode == EditMode.None)
+            return;
+        if (set == _editSet)
+        {
+            _editSequence = _sequenceVersion;
+            _editRow = null;
+        }
+        else if (_editRowLeaving is { } leaving)
+        {
+            _editRow = leaving;
+        }
+        if (PointingContinues && _pointer is not null)
+        {
+            _pointer = null;
+            _pointAside = true;
+        }
+    }
+
+    /// <summary>Notes the set an edit opens among.</summary>
+    private void NoteEditSet()
+    {
+        _editSet = _rowSet;
+        _editRow = null;
+    }
+
+    /// <summary>Notes the row the open edit stands on in the Window about to be replaced, while it is still in
+    /// hand (ADR-0160), for a set the replacing rows may take the edit away from (TakeRowSet).</summary>
+    private void NoteEditRowLeaving(IReadOnlyList<TRow> window, int start)
+    {
+        if (_editMode == EditMode.None)
+            _editRow = null;
+        _editRowLeaving = _editMode != EditMode.None && !EditAway && _viewAhead is not null && _sequenceVersion == _editSequence
+            ? RowOf(window, start, _editingCell.Row)
+            : null;
     }
 
     /// <summary>Whether a gesture told the paint <paramref name="told"/>, of an order since moved, comes after

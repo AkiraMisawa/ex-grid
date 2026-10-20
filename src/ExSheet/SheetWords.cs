@@ -52,8 +52,11 @@ internal static class SheetWords
     // a Formula is not built yet (ticket 09 of exsheet-workbook).
     internal static string SheetTabsName => "Sheets";
 
+    internal static string EditSheetGone =>
+        "The edit was not committed: the Sheet it was typed on is no longer in the Workbook.";
+
     internal static string SheetSwitchWhileEditing =>
-        "Another Sheet was not shown: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then try again.";
+        "Another Sheet was not shown: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then try again. While a Formula is typed, another Sheet can be shown to point at its cells.";
 
     // ADR-0100: Excel's Comma Style pads with *, as Accounting does (FormatCellsOffer).
     internal static string CommaStyleUnread =>

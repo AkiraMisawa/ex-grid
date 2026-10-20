@@ -98,6 +98,11 @@ public partial class ExGrid<TRow>
     private bool _pointedFromOutside;
     private PointBefore? _pointBefore;
 
+    // Whether what Point wrote stands with no outline, which stood over rows another set has replaced
+    // (TakeRowSet): the next arrow or press points afresh, from where pointing starts among the rows
+    // shown (PointOrigin), and writes in its place.
+    private bool _pointAside;
+
     // The state the Consumer last heard (OnPointStateChanged).
     private PointState _pointStateTold;
 
@@ -130,7 +135,13 @@ public partial class ExGrid<TRow>
     /// <summary>Whether what Point wrote stands — its outline over this grid's cells, or text
     /// written from outside — and the editor's text is still the text it was written into.</summary>
     private bool PointingContinues
-        => (_pointer is not null || _pointedFromOutside) && string.Equals(_editText, _pointWritten, StringComparison.Ordinal);
+        => (_pointer is not null || _pointedFromOutside || _pointAside) && string.Equals(_editText, _pointWritten, StringComparison.Ordinal);
+
+    /// <summary>Where pointing starts: the edited cell, or, while the edit is away (ShowViewWith), the Focus
+    /// of the rows shown — the first cell where they have none — as Excel points from the active cell of
+    /// the Sheet shown (ADR-0331 §5).</summary>
+    private CellPosition PointOrigin
+        => !EditAway ? _editingCell : _selection.Selection.IsEmpty ? new CellPosition(0, 0) : _selection.Selection.Focus;
 
     /// <summary>Whether what Point wrote, and still stands, was written from outside the grid
     /// (ADR-0058).</summary>
@@ -186,6 +197,7 @@ public partial class ExGrid<TRow>
         _pointDragging = false;
         _pointedFromOutside = false;
         _pointBefore = null;
+        _pointAside = false;
     }
 
     /// <summary>The text a key carried before the core had heard the input events that typed it
@@ -322,9 +334,16 @@ public partial class ExGrid<TRow>
                 StateHasChanged();
                 return true;
             }
-            _pointer = GridSelection.Empty.Click(_editingCell, extent);
+            _pointer = GridSelection.Empty.Click(PointOrigin, extent);
             _pointStart = _editCaret;
             _pointLength = 0;
+        }
+        else if (_pointer is null)
+        {
+            // Set aside with the rows it stood over: the arrow points afresh from among the rows shown,
+            // over what was written.
+            _pointer = GridSelection.Empty.Click(PointOrigin, extent);
+            _pointAside = false;
         }
         _pointer = move.Kind switch
         {
@@ -392,12 +411,14 @@ public partial class ExGrid<TRow>
         }
         else if (PointingContinues)
         {
-            // What a press outside the grid wrote is replaced by this cell's Reference, in the same
-            // place (ADR-0058): there is no outline here to move, so Shift reaches from the edited
-            // cell, as it does before anything is pointed.
+            // What a press outside the grid wrote, or what was pointed among rows since replaced
+            // (TakeRowSet), is replaced by this cell's Reference, in the same place (ADR-0058, ADR-0331
+            // §5): there is no outline here to move, so Shift reaches from where pointing starts, as it
+            // does before anything is pointed.
             _pointer = e.ShiftKey
-                ? GridSelection.Empty.Click(_editingCell, extent).ExtendTo(cell, extent)
+                ? GridSelection.Empty.Click(PointOrigin, extent).ExtendTo(cell, extent)
                 : GridSelection.Empty.Click(cell, extent);
+            _pointAside = false;
         }
         else
         {
@@ -408,7 +429,7 @@ public partial class ExGrid<TRow>
             _pointStart = _editCaret;
             _pointLength = 0;
             _pointer = e.ShiftKey
-                ? GridSelection.Empty.Click(_editingCell, extent).ExtendTo(cell, extent)
+                ? GridSelection.Empty.Click(PointOrigin, extent).ExtendTo(cell, extent)
                 : GridSelection.Empty.Click(cell, extent);
         }
         WritePointedReference(reveal: false);

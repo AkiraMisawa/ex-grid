@@ -1,3 +1,4 @@
+using ExGrid.Cells;
 using ExGrid.Keys;
 using ExGrid.Components;
 using ExGrid.Selection;
@@ -28,10 +29,14 @@ public partial class ExSheet
     // The tab the arrow keys selected, focused once the render that selects it has landed.
     private Sheet? _tabToFocus;
 
+    // The Sheet the open edit was opened on, once another Sheet has been shown while it is typed
+    // (ADR-0331 §5): its Formula is committed there, and the edit's end shows it again.
+    private Sheet? _editHome;
+
     /// <summary>A press on a tab (ADR-0331 §4): the user's own action, so the notice it leaves is behind them.</summary>
     private async Task ShowSheetByUserAsync(Sheet sheet)
     {
-        if (!RefuseSwitchWhileEditing())
+        if (!RefuseSwitchWhileEditing(pointing: true))
         {
             ClearNotice();
             await ShowSheetAsync(sheet);
@@ -41,7 +46,7 @@ public partial class ExSheet
     /// <summary>Ctrl+PageUp and Ctrl+PageDown (ADR-0331 §4): the Sheet before or after the one shown, never past the first or the last.</summary>
     private async Task OnSheetTabKeyAsync(GridDeclaredKeyPress press, int step)
     {
-        if (press.EditOpen || RefuseSwitchWhileEditing()) return;
+        if (RefuseSwitchWhileEditing(pointing: true)) return;
         ClearNotice();
         await StepSheetAsync(step);
     }
@@ -53,13 +58,13 @@ public partial class ExSheet
         {
             case "ArrowLeft":
             case "ArrowRight":
-                if (RefuseSwitchWhileEditing()) return;
+                if (RefuseSwitchWhileEditing(pointing: true)) return;
                 ClearNotice();
                 if (await StepSheetAsync(key.Key == "ArrowLeft" ? -1 : 1)) _tabToFocus = _sheet;
                 break;
             case "Home":
             case "End":
-                if (RefuseSwitchWhileEditing() || _workbook is not { } workbook) return;
+                if (RefuseSwitchWhileEditing(pointing: true) || _workbook is not { } workbook) return;
                 ClearNotice();
                 await ShowSheetAsync(key.Key == "Home" ? workbook.Sheets[0] : workbook.Sheets[^1]);
                 _tabToFocus = _sheet;
@@ -92,17 +97,40 @@ public partial class ExSheet
     }
 
     /// <summary>
-    /// While an edit is open another Sheet is not shown, and the notice says why: the edit stands over a
-    /// cell of the Sheet shown, and a Formula pointing at another Sheet's cells is not built yet (ticket
-    /// 09 of exsheet-workbook). Answers whether it refused.
+    /// While an edit is open another Sheet is shown only to point at its cells: with
+    /// <paramref name="pointing"/>, while the edit's text is a Formula, as Excel shows one (ADR-0331 §5),
+    /// noting the Sheet the edit is typed on. Otherwise it is not, and the notice says why: what a tab
+    /// does while a constant is typed waits on a question to Excel (exsheet-workbook ticket 12). The text
+    /// is read from the grid, as the key or press being answered left it. Answers whether it refused.
     /// </summary>
-    private bool RefuseSwitchWhileEditing()
+    private bool RefuseSwitchWhileEditing(bool pointing = false)
     {
-        if (!IsEditing) return false;
+        var text = _grid?.ReadEditText();
+        if (text is null && !IsEditing) return false;
+        if (pointing && text is not null && text.StartsWith('='))
+        {
+            _editHome ??= _sheet;
+            return false;
+        }
         Tell(SheetWords.SheetSwitchWhileEditing);
         StateHasChanged();
         return true;
     }
+
+    /// <summary>The edit has ended: when another Sheet than the one it was typed on is shown, that one is
+    /// shown again, where its cell is (ADR-0331 §5).</summary>
+    private async Task ReturnToEditHomeAsync()
+    {
+        if (_editHome is not { } home) return;
+        _editHome = null;
+        if (home != _sheet && _workbook is { } workbook && workbook.Sheets.Contains(home) && ShowSheet(home))
+            await RaiseDocumentsAsync();
+    }
+
+    /// <summary>The References function for the Sheet shown (ADR-0057, ADR-0331 §5): a new instance with each
+    /// Sheet shown, so the grid asks again of the text it has.</summary>
+    private Func<string, IReadOnlyList<EditorReference>> ReferencesOnSheetShown()
+        => text => _sheet is { } sheet ? SheetFormulaAids.References(sheet, _editHome, text) : [];
 
     /// <summary>Shows <paramref name="sheet"/>, and tells the Consumer: the Workbook Document records the Sheet shown (ADR-0331 §2).</summary>
     private async Task ShowSheetAsync(Sheet sheet)
@@ -132,6 +160,7 @@ public partial class ExSheet
         _resizing = null;
         _columns = SheetColumnList.Of(sheet, CellMetrics);
         _cellAppearance = SheetAppearance.Lookup(++_formatReading);
+        _references = ReferencesOnSheetShown();
         var view = _views.TryGetValue(sheet, out var kept)
             ? kept with { RowSequenceVersion = _sequence }
             : new GridView(_sequence, GridSelection.Empty, 0, 0);
