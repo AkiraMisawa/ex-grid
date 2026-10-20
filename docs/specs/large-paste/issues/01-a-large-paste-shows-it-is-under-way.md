@@ -1,6 +1,6 @@
 # 01: A paste still being read says it is under way, and Escape cancels it
 
-Status: ready-for-agent
+Status: done
 Roadmap: ExGrid — A large paste shows that it is under way while its data is read, and Escape cancels it.
 
 **Why:** while a paste's streams are read and parsed, the inputs behind it wait (ADR-0240). On a slow
@@ -16,7 +16,10 @@ it, told to the core outside the order. A paste that has not raised its Edit Int
 Escape does nothing else.
 
 - [x] The decision recorded
-- [ ] Layer 2: a cancel before the intent refuses the paste; one after it leaves it standing and says so
-- [ ] Layer 2: busy from the paste's start to its landing or refusal
-- [ ] Layer 3: the sign is painted during the ~10 MB paste on the Server host
-- [ ] Docs Site's paste page and a Change Note
+- [x] Layer 2: a cancel before the intent refuses the paste; one after it leaves it standing and says so
+  (`PasteUnderWayTests`, with a cancel ahead of the paste's turn and one naming a finished paste)
+- [x] Layer 2: busy from the paste's start to its landing or refusal
+- [x] Layer 3: the sign is painted during a large paste on the Server host (`circuit.spec.mjs`, about
+  200 KB rather than 10 MB: the sign is read from the render that applies it, and the cancel holds the
+  host's answers instead of counting on a long read, ADR-0220)
+- [x] Docs Site's paste page and a Change Note

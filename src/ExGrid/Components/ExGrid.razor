@@ -69,7 +69,7 @@
 @* data-ex-pointed-from: while the grid is pointed at, the root of the grid that points, which the
    script tells of each press handed over (ADR-0058, "On a circuit"). *@
 <div class="@RootClass" style="@RootStyle()" tabindex="@RootTabIndex" dir="ltr" @ref="_root"
-     id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Busy ? "true" : null)"
+     id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Busy || Pasting ? "true" : null)"
      data-ex-reveal="@_revealToken" data-ex-follow="@_followToken" data-ex-follow-focus="@FollowFocusId()"
      data-ex-pointed-from="@PointedFrom"
      aria-rowcount="@((long)(_total ?? _window.Count) + HeaderRowCount)" aria-colcount="@Columns.Count"
@@ -2622,7 +2622,19 @@
 
     // Interned per combination, as the header cells' classes are (ADR-0027 P5). ex-pointed-at is
     // the grid pointed at from outside (ADR-0058, ADR-0029's note of 2026-09-30).
-    private string RootClass => (_loading || Busy, _editMode != EditMode.None, PointedAtNow) switch
+    // ex-pasting: a paste under way, which the stylesheet shows in its own token (ADR-0240 section 12).
+    private string RootClass => Pasting ? PastingClass(RootClassAtRest) : RootClassAtRest;
+
+    private string? _pastingClassOf, _pastingClass;
+
+    private string PastingClass(string atRest)
+    {
+        if (!ReferenceEquals(_pastingClassOf, atRest))
+            (_pastingClassOf, _pastingClass) = (atRest, atRest + " ex-pasting");
+        return _pastingClass!;
+    }
+
+    private string RootClassAtRest => (_loading || Busy, _editMode != EditMode.None, PointedAtNow) switch
     {
         (true, true, false) => "ex-grid ex-loading ex-editing",
         (true, false, false) => "ex-grid ex-loading",
@@ -6749,9 +6761,9 @@
     /// been answered (ADR-0220); 0 for none.</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnPasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint = PaintNotTold, int input = 0)
-        => AnsweredAsync(() => TakePasteStreamsAsync(text, html, paint), input);
+        => AnsweredAsync(() => TakePasteStreamsAsync(text, html, paint, input), input);
 
-    private async Task TakePasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint)
+    private async Task TakePasteStreamsAsync(IJSStreamReference? text, IJSStreamReference? html, int paint, int input)
     {
         await using var textReference = text;
         await using var htmlReference = html;
@@ -6760,34 +6772,46 @@
 
         if ((text?.Length ?? 0) + (html?.Length ?? 0) > PasteByteCap)
         {
+            // Refused before it was under way: a cancel that named it finds it done.
+            PasteDoneUnread(input);
             await RefuseWriteAsync(PasteRefusalReason.TooLarge);
             return;
         }
-        string? plain, marked;
+        // Under way until it lands or is refused, and an Escape meanwhile cancels it (ADR-0240 section 12).
+        var underWay = StartPaste(input);
         try
         {
-            plain = await ReadAsync(text);
-            marked = await ReadAsync(html);
-        }
-        catch (Exception e) when (e is IOException or TimeoutException or JSException or OperationCanceledException)
-        {
-            // A stream that fails or stops delivering refuses the paste aloud; it never escapes as
-            // the circuit's unhandled exception, and nothing is pasted from part of it (ticket 06 of
-            // the widened run; ADR-0005).
-            if (_disposed)
+            string? plain, marked;
+            try
+            {
+                plain = await ReadAsync(text, underWay.Token);
+                marked = await ReadAsync(html, underWay.Token);
+            }
+            catch (Exception e) when (e is IOException or TimeoutException or JSException or OperationCanceledException)
+            {
+                // A stream that fails or stops delivering refuses the paste aloud; it never escapes as
+                // the circuit's unhandled exception, and nothing is pasted from part of it (ticket 06 of
+                // the widened run; ADR-0005). One an Escape cancelled says so.
+                if (_disposed)
+                    return;
+                await RefuseWriteAsync(underWay.Cancelled ? PasteRefusalReason.Cancelled : PasteRefusalReason.Unreadable);
                 return;
-            await RefuseWriteAsync(PasteRefusalReason.Unreadable);
-            return;
+            }
+            await OnPasteAsync(plain, marked, paint, underWay);
         }
-        await OnPasteAsync(plain, marked, paint);
-
-        static async Task<string?> ReadAsync(IJSStreamReference? reference)
+        finally
         {
+            EndPaste(underWay);
+        }
+
+        static async Task<string?> ReadAsync(IJSStreamReference? reference, CancellationToken cancel)
+        {
+            cancel.ThrowIfCancellationRequested();
             if (reference is null)
                 return null;
-            await using var stream = await reference.OpenReadStreamAsync(maxAllowedSize: reference.Length);
+            await using var stream = await reference.OpenReadStreamAsync(maxAllowedSize: reference.Length, cancel);
             using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
-            return await reader.ReadToEndAsync();
+            return await reader.ReadToEndAsync(cancel);
         }
     }
 
@@ -6804,7 +6828,14 @@
     /// <param name="html">The <c>text/html</c> flavour, or null for none.</param>
     /// <param name="paint">The render the paste was taken against (ADR-0142); left out, the
     /// newest.</param>
-    internal async Task OnPasteAsync(string? text, string? html, int paint = PaintNotTold)
+    internal Task OnPasteAsync(string? text, string? html, int paint = PaintNotTold)
+        => OnPasteAsync(text, html, paint, null);
+
+    /// <summary>
+    /// <see cref="OnPasteAsync(string?, string?, int)"/> for a paste read from the clipboard's
+    /// streams, which an Escape can cancel until it raises its Edit Intent (ADR-0240 section 12).
+    /// </summary>
+    private async Task OnPasteAsync(string? text, string? html, int paint, PasteUnderWay? underWay)
     {
         if (_disposed)
             return;
@@ -6813,6 +6844,11 @@
         if (parsed is null)
             return;
         var block = parsed.Values;
+        if (underWay?.Cancelled == true)
+        {
+            await RefuseWriteAsync(PasteRefusalReason.Cancelled);
+            return;
+        }
 
         // Planned on the newest version the bound source holds (ADR-0142 D5, LV-16): a gathered
         // change that moved the order drops the Selection first (ADR-0011).
@@ -6827,6 +6863,16 @@
         {
             await RefuseWriteAsync(decision.Reason, decision.RefusedColumn);
             return;
+        }
+        // The last moment an Escape can cancel it: past here the Edit Intent is raised, and stands.
+        if (underWay is not null)
+        {
+            if (underWay.Cancelled)
+            {
+                await RefuseWriteAsync(PasteRefusalReason.Cancelled);
+                return;
+            }
+            underWay.IntentRaised = true;
         }
         var version = _sequenceVersion;
         var binding = _binding;

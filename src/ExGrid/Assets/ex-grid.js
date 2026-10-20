@@ -353,6 +353,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     }
     // The number the next input sent to the core carries (data-ex-answered). A neutral one cannot add a
     // layer an Escape peels (layerInputAt).
+    // The number of the paste sent and not yet answered, which an Escape cancels (ADR-0240 section 12);
+    // 0 for none.
+    let pasteUnderWay = 0;
     function nextInput(neutral = false) {
         inputsSent += 1;
         if (!neutral) {
@@ -2654,6 +2657,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             event.preventDefault();
             return;
         }
+        // An Escape typed while a paste is under way cancels it, and does nothing else (ADR-0240
+        // section 12). It is not held behind the paste, which is what it races: numbered as a cancel
+        // naming the paste, its call is heard at once, and its turn says so if it came too late.
+        if (pasteUnderWay !== 0 && !replaying && event.key === 'Escape' && !event.repeat
+            && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
+            event.preventDefault();
+            event.stopPropagation();
+            const paste = pasteUnderWay;
+            pasteUnderWay = 0;
+            core.invokeMethodAsync('OnPasteCancelAsync', paste, nextInput(true)).catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to cancel a paste', error);
+                }
+            });
+            return;
+        }
         const k = snapshot(event);
         // While the root itself holds the keyboard, the document keeps no text selection: a
         // key here is the grid's, and so is the clipboard command it may be (ADR-0005). The
@@ -4285,15 +4304,23 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // without reading a byte. An empty flavour is sent as nothing at all. With them goes the
     // render the paste was taken against, read at its event (paintNow): the paste is refused when
     // the order that render was painted under has moved since (ADR-0142, LV-13/LV-14).
+    // Until it is answered, the paste is under way, and an Escape cancels it (onKeyDown).
     const sendPaste = (plain, markup, paint) => {
         const encoder = new TextEncoder();
         const stream = (value) => (value
             ? DotNet.createJSStreamReference(encoder.encode(value))
             : null);
-        return core.invokeMethodAsync('OnPasteStreamsAsync', stream(plain), stream(markup), paint, nextInput())
+        const input = nextInput();
+        pasteUnderWay = input;
+        return core.invokeMethodAsync('OnPasteStreamsAsync', stream(plain), stream(markup), paint, input)
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to take a paste', error);
+                }
+            })
+            .finally(() => {
+                if (pasteUnderWay === input) {
+                    pasteUnderWay = 0;
                 }
             });
     };

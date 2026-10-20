@@ -789,6 +789,12 @@
    avoided. The Pinned Columns do stay, so the bar fills whatever is left beside them. */
 .ex-placeholder::after { content: ""; margin: calc(var(--ex-row-height) / 4) var(--ex-cell-padding-x, 8px); flex: 1 1 auto; border-radius: 2px; background: var(--ex-placeholder-background, currentColor); opacity: 0.08; }
 .ex-loading { opacity: var(--ex-loading-opacity, 0.7); }
+/* A paste under way (ADR-0240 section 12): from its start until it lands or is refused, a bar
+   across the root's top edge and a progress pointer say the grid is busy with it, and that an
+   Escape now cancels it. Nothing is dimmed: the rows are still the ones being pasted over. The
+   root's aria-busy says the same to a screen reader. */
+.ex-pasting { cursor: var(--ex-pasting-cursor, progress); }
+.ex-pasting::after { content: ""; position: absolute; inset: 0 0 auto 0; height: var(--ex-pasting-bar-height, 3px); background: var(--ex-pasting-bar, Highlight); pointer-events: none; z-index: 10; }
 /* The scrollbar's look, by token rather than by reaching the internal element
    (ADR-0029). The grid always draws its own bar: in Chrome and Edge any rule on
    ::-webkit-scrollbar makes the bar a custom one, and a custom bar paints no native

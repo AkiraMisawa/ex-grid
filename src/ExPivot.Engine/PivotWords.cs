@@ -549,6 +549,9 @@ public static class PivotWords
             "何も変更されませんでした: 選択範囲に、編集できない {column} が含まれています。編集できる列のセルだけを選択してください。",
         ["refused-paste-too-large"] = "何も変更されませんでした: 一度に読み込める量を超えています。より小さな範囲を使ってください。",
         ["refused-paste-unreadable"] = "何も貼り付けられませんでした: クリップボードを読み取れませんでした。もう一度貼り付けてください。",
+        ["refused-paste-cancelled"] = "何も貼り付けられませんでした: 貼り付けは取り消されました。",
+        ["paste-under-way"] = "貼り付けています。Escape キーで取り消せます。",
+        ["paste-already-landed"] = "貼り付けはすでに済んでいたため、取り消されませんでした。",
         ["refused-paste-spill-past-extent"] =
             "貼り付けられませんでした: コピーした範囲が最後の行または列を越えます。端から離れたセルを選択してください。",
         ["refused-paste-nothing-to-fill-from"] =

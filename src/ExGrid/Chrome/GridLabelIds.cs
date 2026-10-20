@@ -14,4 +14,12 @@ public static class GridLabelIds
 
     /// <summary>The Formula Bar's text field, as its accessible name (ADR-0051).</summary>
     public const string FormulaBar = "formula-bar";
+
+    /// <summary>The live region's sentence once a paste starts to be read, said once while it is under
+    /// way, with the root <c>aria-busy</c> (ADR-0240 section 12).</summary>
+    public const string PasteUnderWay = "paste-under-way";
+
+    /// <summary>The live region's sentence when an Escape typed to cancel a paste came after the paste had
+    /// raised its Edit Intent: the paste stands (ADR-0240 section 12).</summary>
+    public const string PasteAlreadyLanded = "paste-already-landed";
 }

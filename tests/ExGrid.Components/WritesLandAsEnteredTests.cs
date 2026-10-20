@@ -2516,7 +2516,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         // A paste carries it from its event, held or not.
         Assert.Matches(new Regex(@"sendPaste\(event\.clipboardData\.getData\('text/plain'\), event\.clipboardData\.getData\('text/html'\), paintNow\(\)\)"), script);
         Assert.Matches(new Regex(@"clipboard: 'paste',[^}]*paint: paintNow\(\),"), script);
-        Assert.Contains("'OnPasteStreamsAsync', stream(plain), stream(markup), paint, nextInput())", script);
+        Assert.Matches(new Regex(@"const input = nextInput\(\);[^;]*;\s*return core\.invokeMethodAsync\('OnPasteStreamsAsync', stream\(plain\), stream\(markup\), paint, input\)"), script);
         // A press on an action carries it with the row, column and action it pressed.
         Assert.Contains("'ActionPressTakenAt'", script);
     }

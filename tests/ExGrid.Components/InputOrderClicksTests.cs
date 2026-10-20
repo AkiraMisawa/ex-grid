@@ -163,10 +163,11 @@ public class InputOrderClicksTests : GridTestContext
         var cut = RenderGrid();
         await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 50, OffsetY = 10 });
         await cut.Find(".ex-viewport").ContextMenuAsync(new MouseEventArgs { OffsetX = 50, OffsetY = 10 });
-        var copy = cut.FindAll("[role=menu] button[role=menuitem]").First(b => b.TextContent == "Copy");
 
         var opens = new TaskCompletionSource();
         var paste = await HoldTheOrderAsync(cut, opens);
+        // Found once the paste is under way, whose render gives the menu's handlers new ids.
+        var copy = cut.FindAll("[role=menu] button[role=menuitem]").First(b => b.TextContent == "Copy");
         await TellAsync(cut, "keydown", input: 2);
         Task key = Task.CompletedTask;
         await cut.InvokeAsync(() => { key = copy.KeyDownAsync(new KeyboardEventArgs { Key = "Enter" }); });

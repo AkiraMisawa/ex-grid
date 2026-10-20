@@ -290,6 +290,14 @@ deliberately: a cancel exists to race the work it cancels. What keeps it honest 
 are said aloud, and which one happened is never left to be guessed. *Recommended against, and chosen:*
 progress alone, with no cancel.
 
+*As built (2026-10-20, large-paste ticket 01):* the Escape is one call, `OnPasteCancelAsync(paste,
+input)`, naming the paste by its number; the core hears it on arrival and answers it in its own turn.
+A cancel that arrives while the paste still waits for its turn cancels it as that turn starts, and one
+naming a paste already finished finds it landed. The visible sign is the root's `ex-pasting` class,
+painted from Visual Tokens (`--ex-pasting-bar`, `--ex-pasting-bar-height`, `--ex-pasting-cursor`): a
+bar across the top edge and a progress pointer, nothing dimmed, since the rows shown are the ones
+being pasted over.
+
 ## What it may cost
 
 Nothing per character (5) and nothing per cell. A click that was not numbered gains the number told
