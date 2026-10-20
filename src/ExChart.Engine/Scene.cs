@@ -192,7 +192,10 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         foreach (var key in view.Hidden.Where(k => definition.Series.All(s => s.Id != k)).Order(StringComparer.Ordinal))
             notes.Add($"\"{key}\" is hidden, but no series has that key.");
         // A scale asked for and not drawn is said by name (ADR-0290).
-        if (view.Scale == AxisScale.Logarithmic && !logX)
+        if (view.Scale == AxisScale.Logarithmic && !logX && axis.Values == AxisValues.Numbers
+            && visible.FirstOrDefault(s => LowBound(s.XInterval) is not null) is { } bounded && !visible.Any(s => s.Points.Any(p => !(p.X > 0)) || s.Sampler is { From: <= 0 }))
+            notes.Add($"The axis across stays proportional: '{bounded.Name}' has a bound of {LowBound(bounded.XInterval)!.Value.Bound.ToString("0.####", CultureInfo.InvariantCulture)} in its {bounded.XInterval!.Meaning} at {axis.Write(LowBound(bounded.XInterval)!.Value.X)}, which a logarithmic axis cannot place.");
+        else if (view.Scale == AxisScale.Logarithmic && !logX)
             notes.Add(NotLogarithmic(visible.FirstOrDefault(s => s.Points.Any(p => !(p.X > 0)) || s.Sampler is { From: <= 0 } || LowBound(s.XInterval) is not null), "across", axis.Values != AxisValues.Numbers));
         var logY = view.YScale == AxisScale.Logarithmic;
         if (logY && LogarithmicRefusal(visible, axis, from, to, devicePixels) is { } refusal)
@@ -639,8 +642,9 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
                 {
                     X = map(m.X),
                     Y = YOf(axis, m.Y, plot),
-                    YBounds = m.YBounds is { } yb ? Ordered(YOf(axis, yb.Lower, plot), YOf(axis, yb.Upper, plot)) : null,
-                    XBounds = m.XBounds is { } xb ? Ordered(map(xb.Lower), map(xb.Upper)) : null,
+                    // A whisker stops at the plot's edge when the range is narrowed past it (ADR-0304).
+                    YBounds = m.YBounds is { } yb ? Ordered(YOf(axis, Math.Clamp(yb.Lower, axis.Min, axis.Max), plot), YOf(axis, Math.Clamp(yb.Upper, axis.Min, axis.Max), plot)) : null,
+                    XBounds = m.XBounds is { } xb ? Ordered(map(Math.Clamp(xb.Lower, from, to)), map(Math.Clamp(xb.Upper, from, to))) : null,
                 }), dpr).ToEquatableList(),
                 EquatableList<(double, double)>.Empty, EquatableList<PixelSummary>.Empty);
         var thinned = Thinning.Of(inRange, x => (map(x) - plot.X) * dpr, devicePixels);

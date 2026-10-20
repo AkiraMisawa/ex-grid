@@ -104,6 +104,17 @@ public class ObservationIntervalTests
         var x = new SeriesInterval("±1σ", [new IntervalBound(1, 0m, 1.5m), new IntervalBound(3, 2.8m, 3.4m), new IntervalBound(3, 2.5m, 3.1m)]);
         scene = ChartScene.Build(Chart(null, x), Metrics, new ChartView(new HashSet<string>(), Scale: AxisScale.Logarithmic));
         Assert.False(scene.LogarithmicX);
-        Assert.Contains(scene.Notes, n => n.Contains("stays proportional") && n.Contains("Names"));
+        Assert.Contains(scene.Notes, n => n.Contains("'Names' has a bound of 0 in its ±1σ at 1"));
+    }
+
+    [Fact] // ADR-0304: a narrowed range cuts a whisker at the plot's edge, never past it
+    public void A_whisker_stops_at_the_plots_edge()
+    {
+        var scene = ChartScene.Build(Chart(Spread(), Leverage()), Metrics, new ChartView(new HashSet<string>(), From: 2.9, To: 3.3, YFrom: 230, YTo: 280));
+        var panel = scene.Panels[0];
+        var mark = panel.Series[0].Markers.Single(m => m.Point == 2);
+        Assert.True(mark.YBounds!.Value.Lower >= panel.Plot.Y - 1e-6);
+        Assert.True(mark.YBounds.Value.Upper <= panel.Plot.Y + panel.Plot.Height + 1e-6);
+        Assert.True(mark.XBounds!.Value.Lower >= panel.Plot.X - 1e-6);
     }
 }

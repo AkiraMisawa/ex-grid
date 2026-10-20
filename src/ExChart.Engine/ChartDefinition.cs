@@ -140,7 +140,7 @@ public sealed record ChartDefinition
             {
                 var b = iv.Bounds[i];
                 var at = s.Points[i].Name ?? $"row {i + 1}";
-                if (b.X != s.Points[i].X)
+                if (b.X != s.Points[i].X && !(double.IsNaN(b.X) && double.IsNaN(s.Points[i].X)))
                     throw new ChartRefusedException($"'{s.Name}' at {at}: the {which}bound stands at {Axis.Write(b.X)}, but its point at {Axis.Write(s.Points[i].X)}.");
                 if (b.Lower is { } lo && b.Upper is { } hi && lo.ToDouble() > hi.ToDouble())
                     throw new ChartRefusedException($"'{s.Name}' at {at}: the lower bound {Write(lo)} of its {iv.Meaning} is above the upper {Write(hi)}.");

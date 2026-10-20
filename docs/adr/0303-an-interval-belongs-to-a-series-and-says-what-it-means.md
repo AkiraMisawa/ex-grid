@@ -28,7 +28,10 @@ carries the same whisker, which looks like each point's error and is not.
   line does (ADR-0253).
 - **Past one point a device pixel, whiskers become the band**, thinned to the lowest lower and the
   highest upper per pixel column, so no interval is dropped where markers are (ADR-0254).
-- **On a log axis a bound at or below zero is refused** by name, as a value is.
+- **On a log axis a bound at or below zero is refused** by name, as a value is. *(Amended 2026-10-20 by
+  [ADR-0304](0304-an-observations-interval-is-one-bound-a-row-and-merges-with-its-mark.md): the
+  logarithmic axis, a View request since ADR-0290, is what gives way: it stays proportional and the
+  Notes name the bound, as they name a value. Nothing is drawn wrong either way.)*
 
 ## Rejected
 
