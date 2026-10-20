@@ -21,7 +21,7 @@ public class ChartFileTests : BunitContext
         var handle = _module.SetupModule("attach", _ => true);
         handle.SetupVoid("draw", _ => true).SetVoidResult();
         handle.SetupVoid("dispose", _ => true).SetVoidResult();
-        _module.Setup<byte[]>("paint", _ => true).SetResult([0x89, 0x50, 0x4e, 0x47]);
+        _module.SetupVoid("savePng", _ => true).SetVoidResult();
         _module.SetupVoid("save", _ => true).SetVoidResult();
         // The screen's tokens: slot 0 as a theme set it, a value that would end the declaration, and the rest empty.
         var names = ChartFiles.TokenNames.Value;
@@ -56,7 +56,7 @@ public class ChartFileTests : BunitContext
         cut.Find(".ex-chart-filters-toggle").Click();
         cut.Find(".ex-chart-table-toggle").Click();
         Assert.DoesNotContain("data:", cut.Markup, StringComparison.Ordinal);
-        Assert.Empty(_module.Invocations["paint"]);
+        Assert.Empty(_module.Invocations["savePng"]);
         Assert.Empty(_module.Invocations["save"]);
     }
 
@@ -72,6 +72,14 @@ public class ChartFileTests : BunitContext
         Assert.StartsWith("﻿", text, StringComparison.Ordinal);
         Assert.Contains("ENE", text, StringComparison.Ordinal);
     }
+
+    [Theory] // ADR-0282: a file name names a file: unsafe characters become underscores, and a stem of dots falls back
+    [InlineData("a/b:c", "a_b_c.csv")]
+    [InlineData("..", "chart.csv")]
+    [InlineData(" . ", "chart.csv")]
+    [InlineData("Report.", "Report.csv")]
+    public void A_file_name_names_a_file(string stem, string expected) =>
+        Assert.Equal(expected, ChartFiles.Name(stem, null, ChartFileFormat.Csv));
 
     [Fact] // ADR-0282: the SVG is the drawing on screen, standalone, with its stylesheet inside it
     public async Task The_svg_is_the_drawing_with_its_stylesheet()
@@ -98,18 +106,16 @@ public class ChartFileTests : BunitContext
         Assert.Contains("colour-0", ChartFiles.TokenNames.Value);
     }
 
-    [Fact] // ADR-0282: the PNG is that SVG painted by the browser, then saved
+    [Fact] // ADR-0282: the PNG is that SVG, painted and saved by the files entry; its bytes never cross back to .NET
     public async Task The_png_is_the_svg_painted_by_the_files_entry()
     {
         var cut = Render(title: null);
         Assert.True(await cut.InvokeAsync(() => cut.Instance.DownloadAsync(ChartFileFormat.Png)));
-        var paint = Assert.Single(_module.Invocations["paint"]);
-        XDocument.Parse((string)paint.Arguments[0]!);
-        Assert.Equal(800d, paint.Arguments[1]);
-        var (name, type, bytes) = Saved();
-        Assert.Equal("chart.png", name);
-        Assert.Equal("image/png", type);
-        Assert.Equal(new byte[] { 0x89, 0x50, 0x4e, 0x47 }, bytes);
+        var call = Assert.Single(_module.Invocations["savePng"]);
+        Assert.Equal("chart.png", call.Arguments[0]);
+        XDocument.Parse((string)call.Arguments[1]!);
+        Assert.Equal(800d, call.Arguments[2]);
+        Assert.Empty(_module.Invocations["save"]);
     }
 
     [Fact] // ADR-0123, spine rule 1: without its script the chart cannot save, and says so by its buttons

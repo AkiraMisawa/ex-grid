@@ -19,14 +19,14 @@
     <div class="mud-ex-chart-dock-content">@ChildContent</div>
     @if (_charts.Count > 0 || _refusal is not null)
     {
-        <MudPaper Outlined="true" Class="mud-ex-chart-dock-panel" role="region" aria-label="Charts">
+        <MudPaper Outlined="true" Class="mud-ex-chart-dock-panel" Style="@PanelStyle" role="region" aria-label="Charts">
             @if (_refusal is { } refusal)
             {
                 <MudAlert Severity="Severity.Warning" Dense="true" ShowCloseIcon="true" CloseIconClicked="Dismiss" Class="mud-ex-chart-dock-refusal">@refusal</MudAlert>
             }
             @if (_charts.Count > 0)
             {
-                <MudDynamicTabs @bind-ActivePanelIndex="_active" CloseTab="Close" Elevation="0" KeepPanelsAlive="true" Class="mud-ex-chart-dock-tabs">
+                <MudDynamicTabs @bind-ActivePanelIndex="_active" CloseTab="Close" AddIconClass="mud-ex-chart-dock-no-add" Elevation="0" KeepPanelsAlive="true" Class="mud-ex-chart-dock-tabs">
                     @foreach (var chart in _charts)
                     {
                         <MudTabPanel @key="chart.Name" ID="@chart.Name" Text="@chart.Name" ShowCloseIcon="true">

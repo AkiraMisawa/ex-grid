@@ -480,14 +480,18 @@ public partial class ExChart
                 // The theme as the screen shows it, read on the click (ADR-0282).
                 var theme = ChartFiles.Theme(await module.InvokeAsync<string[]>("tokens", _root, ChartFiles.TokenNames.Value));
                 var svg = await ChartFiles.SvgAsync(Services, new ChartFileDrawing.Input(scene, Width, Height, font, metrics.LineHeight, angle, summary, theme));
-                bytes = format == ChartFileFormat.Svg
-                    ? System.Text.Encoding.UTF8.GetBytes(svg)
-                    : await module.InvokeAsync<byte[]>("paint", svg, Width, Height);
+                if (format == ChartFileFormat.Png)
+                {
+                    // Painted and saved in the browser: the PNG's bytes never cross back (ADR-0282).
+                    await module.InvokeVoidAsync("savePng", name, svg, Width, Height);
+                    return true;
+                }
+                bytes = System.Text.Encoding.UTF8.GetBytes(svg);
             }
             await module.InvokeVoidAsync("save", name, ChartFiles.MediaType(format), bytes);
             return true;
         }
-        catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
             return false;
         }
@@ -503,7 +507,7 @@ public partial class ExChart
     // buttons say so by being unavailable rather than doing nothing (spine rule 1).
     private bool FilesUnavailable => !_told || _scriptRefused;
 
-    // ---- The pointer entry (ADR-0255, eleventh): imported at its versioned address, refused when
+    // ---- The pointer entry (ADR-0255, thirteenth): imported at its versioned address, refused when
     // its stamp is not this build's (ADR-0123).
 
     private IJSObjectReference? _module;

@@ -1,0 +1,33 @@
+ExChart, 1,566 dates x 6 series in 2 panels, 5 rounds each; ms until the user sees the result,
+median over rounds of each round's p50 / p95. "frame" = the animation frame after the DOM change.
+
+operation                             server dom        server frame          wasm dom          wasm frame      wasm-aot dom      wasm-aot frame
+pointer move                        3.7 /    7.7       16.6 /   17.3      2.9 /    4.6       16.6 /   17.6      2.0 /    3.0       16.6 /   17.0
+hide/show a series                 11.3 /   16.8       16.6 /   17.3    101.8 /  128.0      102.2 /  128.6     99.8 /  160.8      101.4 /  162.7
+dragged range (narrow)             14.4 /   17.8       17.7 /   20.3     77.2 /   97.4       80.8 /  102.7     57.5 /   65.9       60.9 /   69.6
+double-click (whole range)         22.9 /   27.7       33.2 /   34.5    118.7 /  129.6      124.3 /  133.4     81.2 /  105.2       85.0 /  110.1
+data replacement (Next run)        20.9 /   30.5       22.7 /   33.6    125.4 /  156.8      127.2 /  159.0     86.8 /  104.2       88.7 /  104.4
+
+server: sweep frame p50 16.7 ms, p95 17.0, max 19.6; lag after last move 0.0 ms; errors 0
+   wire bytes per op (round mean): pointer 164, hide 7374, range (narrow+widen) 81281, replace 52098
+wasm: sweep frame p50 16.7 ms, p95 17.0, max 22.2; lag after last move 0.0 ms; errors 0
+wasm-aot: sweep frame p50 16.7 ms, p95 17.0, max 33.4; lag after last move 0.0 ms; errors 0
+
+Where and how: 2026-10-19, a 4-core Linux container, headless Chromium 141 at 1400x1000, load
+average under 1.4. Each host was published in Release and served on loopback: Bench.Server (port
+5203), Bench.Client without AOT (5201) and with AOT (5202, RunAOTCompilation=true, wasm-tools
+workload). The Server host has no added latency, so a real circuit adds its round trip to every
+operation but the pointer's tooltip, which is one too. dotnet.native.wasm is 2.9 MB without AOT and
+22.2 MB with it.
+
+Beside the proof of concept: its redraw of 1,566 dates took 644 ms on Server and 1.8 s on
+WebAssembly. The same redraw here (data replacement) takes 21 ms on Server, 125 ms on WebAssembly
+and 87 ms with AOT, at its median; the slowest operation on any host, the return to the whole range
+on WebAssembly, takes 119 ms. A pointer move answers within the frame it was made in on all three.
+
+AOT: about 30% off the redraws (replace, narrow, widen), nothing off hiding a series, for a download
+7.6 times the size.
+
+The drag waits, untimed, for the tooltip after each return to the whole range: the return draws
+anew, and a drag pressed before the pointer entry has that drawing is refused (spine rule 6), which
+a script that drags at once meets on the Server host.

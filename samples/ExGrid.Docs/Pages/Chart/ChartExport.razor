@@ -1,0 +1,27 @@
+@page "/exchart/export"
+@using ExGrid.Docs.Examples.Chart
+
+<DocsPage Product="ExChart" Title="Reading and export"
+          Lead="Each chart is read aloud as a summary and as a table, and its CSV, SVG and PNG are saved on one click.">
+
+    <DocsSection Title="Read aloud">
+        <p>
+            A screen reader meets a chart as one image, with a summary written from its definition: the chart's
+            name, each axis with its range, and each visible series with its maximum, written through the
+            series' format. <code>Description</code> adds a sentence of your own. "View as table" shows what the
+            chart shows as a table, the same content as the CSV: the series and range after Chart Filters, and
+            every point.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="CSV, SVG and PNG">
+        <p>
+            The toolbar's buttons save the chart's files, each on one click and nothing encoded before it:
+            the CSV of the visible series, the SVG of the drawing on screen with its stylesheet inside it, and
+            a PNG painted from that SVG at the screen's Device Pixel. The files take the theme's colours as the
+            screen shows them, and are named after <code>FileName</code>, or the title. A page may save the same
+            files with <code>DownloadAsync</code>.
+        </p>
+        <DocsExample Builtin="typeof(Export)" Mud="typeof(ExportMud)" Files="@(["Examples/Chart/ChartData.cs"])" CodeOpen="true" />
+    </DocsSection>
+</DocsPage>

@@ -1,0 +1,25 @@
+@using ExChart
+@using ExChart.Components
+@using ExChart.Engine
+@using ExChart.MudBlazor
+
+<MudExGridPaper Class="docs-stretch-paper mb-3" Elevation="0" Outlined="true">
+    <ExChart @ref="_chart" Definition="Definition" Title="Exposure profile" FileName="exposure-2026-10-30"
+             Description="Expected exposure before and after the new trade, monthly over ten years."
+             Width="720" Height="360"
+             Chrome="MudChartChrome.Default" />
+</MudExGridPaper>
+<MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="SavePng">Save as PNG from the page</MudButton>
+
+@code {
+    private static readonly ChartDefinition Definition = new(ChartAxis.Dates("Date"), ChartData.Exposure().Take(2).ToList());
+
+    private global::ExChart.Components.ExChart? _chart;
+
+    // The toolbar's buttons save CSV, SVG and PNG on one click; a page may call the same method.
+    private async Task SavePng()
+    {
+        if (_chart is not null)
+            await _chart.DownloadAsync(ChartFileFormat.Png);
+    }
+}

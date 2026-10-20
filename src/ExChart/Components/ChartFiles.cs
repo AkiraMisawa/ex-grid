@@ -66,6 +66,9 @@ internal static class ChartFiles
         var stem = !string.IsNullOrWhiteSpace(fileName) ? fileName : !string.IsNullOrWhiteSpace(title) ? title : "chart";
         var invalid = Path.GetInvalidFileNameChars().Concat(['/', '\\', ':', '*', '?', '"', '<', '>', '|']).ToHashSet();
         var safe = new string(stem.Trim().Select(c => invalid.Contains(c) || char.IsControl(c) ? '_' : c).ToArray());
+        // A file system drops trailing dots, so "." or ".." would name no file at all.
+        safe = safe.TrimEnd('.', ' ');
+        if (safe.Length == 0) safe = "chart";
         return safe + format switch
         {
             ChartFileFormat.Csv => ".csv",

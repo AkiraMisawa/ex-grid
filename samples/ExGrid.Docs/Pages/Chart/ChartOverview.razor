@@ -1,0 +1,69 @@
+@page "/exchart"
+@using ExGrid.Docs.Examples.Chart
+
+<DocsPage Product="ExChart" Title="Overview"
+          Lead="Line, step and point charts of the data your application shows, drawn as SVG by Blazor. Hand ExChart a definition in your data's terms; it draws each series as what it is, and refuses rather than draws something that only looks right.">
+
+    <DocsSection Title="A first chart">
+        <p>
+            A <code>ChartDefinition</code> is an axis and its series. Each series has an id, a name, a
+            Series Kind and its points; hand the definition to <code>ExChart</code> with a size. Move over the
+            plot to read every series at that date, click a legend entry to hide it, and drag across the plot
+            to narrow the range. Under MudBlazor, <code>MudChartChrome.Default</code> draws the toolbar and the
+            context menu with MudBlazor's controls, and the theme's Primary, Secondary and Tertiary colour the
+            first three series.
+        </p>
+        <DocsExample Builtin="typeof(FirstChart)" Mud="typeof(FirstChartMud)" Files="@(["Examples/Chart/ChartData.cs"])" CodeOpen="true" />
+    </DocsSection>
+
+    <DocsSection Title="Two ways to make a chart">
+        <ul>
+            <li>
+                <strong>On its own</strong>, from a definition the page builds, as above.
+            </li>
+            <li>
+                <strong>From a grid's selection</strong>: the grid's context menu charts the selected cells,
+                and the chart keeps following the rows it was made from. See
+                <a href="exchart/grid">From the grid</a>.
+            </li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="What ExChart does, and what it leaves to you">
+        <ul>
+            <li>
+                <strong>Every series says what it is.</strong> A level is joined by a line, a rate over an
+                interval is a step, an amount per period is drawn per year. A series without a Series Kind is
+                refused, not drawn with a default. See <a href="exchart/series">Series and axes</a>.
+            </li>
+            <li>
+                <strong>It draws only what it is given.</strong> No spline, no extrapolation, no interpolation:
+                a missing value is a gap, never a zero, and a curve between quotes is your analytics', declared
+                as such.
+            </li>
+            <li>
+                <strong>It holds no View State.</strong> The hidden series, the range and the axis come back as
+                events, for the page to keep, store or hand back. See
+                <a href="exchart/tooltip">Tooltip and Chart Filters</a>.
+            </li>
+            <li>
+                <strong>It is read aloud.</strong> Each chart has a summary for a screen reader, and "View as
+                table" shows the values it draws. Its CSV, SVG and PNG are saved on one click. See
+                <a href="exchart/export">Reading and export</a>.
+            </li>
+            <li>
+                <strong>Nothing per point reaches JavaScript.</strong> The plot is SVG elements in components that
+                skip their render; a pointer move redraws the tooltip and the guide, not the series.
+            </li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="WebAssembly, and AOT">
+        <p>
+            AOT is not required. Measured on WebAssembly, ahead-of-time compilation redraws a chart about 30%
+            faster, while hiding a series is no faster, and the application's download grows from 2.9 MB to
+            22 MB. A chart redraws within a frame without it; turn it on only when a measurement of your own
+            pages says so.
+        </p>
+    </DocsSection>
+</DocsPage>

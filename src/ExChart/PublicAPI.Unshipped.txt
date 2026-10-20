@@ -158,6 +158,35 @@ ExChart.Components.ExChart.Width.get -> double
 ExChart.Components.ExChart.Width.set -> void
 ExChart.Components.ExChartStylesheet
 ExChart.Components.ExChartStylesheet.ExChartStylesheet() -> void
+ExChart.Components.ExSurface
+ExChart.Components.ExSurface.Definition.get -> ExChart.Engine.SurfaceDefinition!
+ExChart.Components.ExSurface.Definition.set -> void
+ExChart.Components.ExSurface.Density.get -> ExGrid.GridDensity
+ExChart.Components.ExSurface.Density.set -> void
+ExChart.Components.ExSurface.Description.get -> string?
+ExChart.Components.ExSurface.Description.set -> void
+ExChart.Components.ExSurface.DisposeAsync() -> System.Threading.Tasks.ValueTask
+ExChart.Components.ExSurface.DownloadAsync(ExChart.ChartFileFormat format) -> System.Threading.Tasks.Task<bool>!
+ExChart.Components.ExSurface.ExSurface() -> void
+ExChart.Components.ExSurface.FileName.get -> string?
+ExChart.Components.ExSurface.FileName.set -> void
+ExChart.Components.ExSurface.Height.get -> double
+ExChart.Components.ExSurface.Height.set -> void
+ExChart.Components.ExSurface.OnSliceChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.Engine.SurfaceSlice!>
+ExChart.Components.ExSurface.OnSliceChanged.set -> void
+ExChart.Components.ExSurface.OnViewChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.Engine.SurfaceView!>
+ExChart.Components.ExSurface.OnViewChanged.set -> void
+ExChart.Components.ExSurface.Slice.get -> ExChart.Engine.SurfaceSlice?
+ExChart.Components.ExSurface.Slice.set -> void
+ExChart.Components.ExSurface.SliceWidth.get -> double
+ExChart.Components.ExSurface.SliceWidth.set -> void
+ExChart.Components.ExSurface.SvgTextAsync() -> System.Threading.Tasks.ValueTask<string?>
+ExChart.Components.ExSurface.Title.get -> string?
+ExChart.Components.ExSurface.Title.set -> void
+ExChart.Components.ExSurface.View.get -> ExChart.Engine.SurfaceView?
+ExChart.Components.ExSurface.View.set -> void
+ExChart.Components.ExSurface.Width.get -> double
+ExChart.Components.ExSurface.Width.set -> void
 ExChart.GridCell
 ExChart.GridCell.<Clone>$() -> ExChart.GridCell!
 ExChart.GridCell.Column.get -> string!
@@ -284,6 +313,8 @@ override ExChart.ColumnSeries.GetHashCode() -> int
 override ExChart.ColumnSeries.ToString() -> string!
 override ExChart.Components.ExChart.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
 override ExChart.Components.ExChart.OnParametersSet() -> void
+override ExChart.Components.ExSurface.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+override ExChart.Components.ExSurface.OnParametersSet() -> void
 override ExChart.GridCell.Equals(object? obj) -> bool
 override ExChart.GridCell.GetHashCode() -> int
 override ExChart.GridCell.ToString() -> string!
@@ -344,3 +375,4 @@ virtual ExChart.GridChartSeries.EqualityContract.get -> System.Type!
 virtual ExChart.GridChartSeries.Equals(ExChart.GridChartSeries? other) -> bool
 virtual ExChart.GridChartSeries.PrintMembers(System.Text.StringBuilder! builder) -> bool
 ~override ExChart.Components.ExChart.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExChart.Components.ExSurface.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void

@@ -43,6 +43,12 @@ public partial class MudChartDock<TRow>
     /// <summary>The open charts, by name, in their tabs' order.</summary>
     public IReadOnlyList<ChartTarget> Charts => _charts;
 
+    // Beside the grid, the panel's content is as wide as its charts and the grid takes what is left, so a
+    // chart is never clipped by a narrow page. Content-box, so the stylesheet's padding is not paired here.
+    private string? PanelStyle => Placement == ChartDockPlacement.Right
+        ? FormattableString.Invariant($"flex: 0 0 auto; box-sizing: content-box; width: {ChartWidth}px;")
+        : null;
+
     private string Classes => Placement == ChartDockPlacement.Bottom
         ? "mud-ex-chart mud-ex-chart-dock mud-ex-chart-dock-bottom"
         : "mud-ex-chart mud-ex-chart-dock mud-ex-chart-dock-right";

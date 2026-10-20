@@ -1,0 +1,32 @@
+@page "/exchart/grid"
+@using ExGrid.Docs.Examples.Chart
+
+<DocsPage Product="ExChart" Title="From the grid"
+          Lead="A grid's selection becomes a chart from its context menu. The chart follows the rows it was made from: a recalculated value is redrawn, a deleted row becomes a gap with a note, and a click on a point shows its cell.">
+
+    <DocsSection Title="Charting a selection">
+        <p>
+            <code>GridChartBridge&lt;TRow&gt;</code> takes what the chart needs to know of your rows: how to find
+            a row again by its key, each column's Series Kind, and where a column stands along a curve. Its
+            <code>Commands</code> join the grid's context menu in one line. Select the rates below and open the
+            context menu: a selection with the Date column charts each column along the dates, one of tenor
+            columns charts each row as a curve across the tenors. "Add to chart" adds a selection to a chart
+            already open, and a selection the chart cannot read is refused with the reason.
+        </p>
+        <p>
+            Under MudBlazor, <code>MudChartDock</code> places each chart in a tab beside the grid or below it,
+            never over it, and takes the bridge's events itself. <code>MudChartChrome.GridChrome</code> words the
+            bridge's commands in the grid's menu.
+        </p>
+        <DocsExample Builtin="typeof(FromGrid)" Mud="typeof(FromGridMud)" Files="@(["Examples/Chart/CurveHistory.cs"])" CodeOpen="true" />
+    </DocsSection>
+
+    <DocsSection Title="A chart keeps its rows">
+        <p>
+            A chart is made from rows, not from a picture of them. When the rows change, the chart draws them
+            again by their keys; a row that no longer exists leaves a gap and a note, and a row added later is
+            never added to a chart made before it. A click on a point moves the grid's Focus to the cell it was
+            drawn from, through <code>ShowInGridAsync</code>.
+        </p>
+    </DocsSection>
+</DocsPage>

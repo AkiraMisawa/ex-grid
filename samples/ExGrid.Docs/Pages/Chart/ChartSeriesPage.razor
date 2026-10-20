@@ -1,0 +1,43 @@
+@page "/exchart/series"
+@using ExGrid.Docs.Examples.Chart
+
+<DocsPage Product="ExChart" Title="Series and axes"
+          Lead="Each series declares its Series Kind and is drawn as what it is. A line between two points claims the quantity passed through every value between them, which is true of a level and false of an amount per period.">
+
+    <DocsSection Title="Series Kinds">
+        <ul>
+            <li><strong>Level</strong>: a quantity at an instant, as an exposure, a zero rate or a spread. Points, joined to their neighbours by a line. Its axis includes zero unless the series sets <code>FromZero = false</code>, and an axis that does not reach zero shows a break mark at its foot.</li>
+            <li><strong>Rate over an interval</strong>: a hazard rate, or an instantaneous forward. A step with a filled end where it takes the value and an open end where it does not, and no riser.</li>
+            <li><strong>Amount per period</strong>: a total over its interval, as CVA by bucket. A step whose height is the amount per year, so buckets that widen from quarters to years do not read as a jump in risk. The tooltip gives both, the amount and the amount a year.</li>
+        </ul>
+        <DocsExample Builtin="typeof(SeriesKinds)" Mud="typeof(SeriesKindsMud)" Files="@(["Examples/Chart/ChartData.cs"])" CodeOpen="true" />
+    </DocsSection>
+
+    <DocsSection Title="Gaps">
+        <p>
+            A missing value is a gap, never a zero: the 3Y quote above has no value, and the line is not drawn
+            across it. The tooltip says "(no value)" there. A line joins only neighbours in the data.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Interpolated series and Segments">
+        <p>
+            ExChart holds no interpolation. To show the difference between quotes and a curve, hand two series
+            with the same colour key: the quotes, drawn as markers, and the curve your analytics evaluated,
+            declared <code>Interpolated</code>. The tooltip says "(quoted)" or "(interpolated)". Each still has a
+            legend entry of its own for now; one entry for both is planned. A curve may declare its <code>Segments</code>, each a range with its method's
+            name; the tooltip names the method at its position, no line is joined across a boundary, and an
+            extrapolated segment is drawn distinctly. A curve may also be handed as a function with
+            <code>ChartSeries.Sampled</code>, which ExChart asks at about one position per device pixel.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Axes">
+        <p>
+            <code>ChartAxis.Dates</code>, <code>ChartAxis.Numbers</code> and <code>ChartAxis.Categories</code>
+            make the three axes. A numbers axis may name its positions, as the tenors above
+            (<code>Named</code>), and <code>AxisStyle</code> chooses where the ticks stand and how a date is
+            written. The axis switch draws a tenor axis proportionally or as evenly spaced categories.
+        </p>
+    </DocsSection>
+</DocsPage>

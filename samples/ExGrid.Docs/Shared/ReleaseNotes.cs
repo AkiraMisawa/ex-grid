@@ -157,7 +157,7 @@ internal static partial class ReleaseNotes
     public const string UnreleasedAnchor = "unreleased";
 
     /// <summary>The products, in the order the notes' headings put them.</summary>
-    public static IReadOnlyList<string> Products { get; } = ["ExGrid", "ExSheet", "ExPivot", "Data"];
+    public static IReadOnlyList<string> Products { get; } = ["ExGrid", "ExSheet", "ExPivot", "ExChart", "Data"];
 
     /// <summary>Every published version, newest first.</summary>
     public static IReadOnlyList<ReleaseVersion> Versions { get; } = ReadVersions();

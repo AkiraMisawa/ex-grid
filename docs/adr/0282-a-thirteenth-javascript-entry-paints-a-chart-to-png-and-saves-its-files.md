@@ -19,9 +19,13 @@ and the list has fifteen.)*
 ## The entry: files, with exactly three jobs
 
 1. **Paint an SVG to PNG**: it takes the SVG text C# wrote on the click and a scale, draws it onto a
-   canvas off the page, and returns the PNG's bytes. The scale is the Device Pixel's (ADR-0090), so a
+   canvas off the page, and saves the PNG (job 2) itself. *(Changed 2026-10-20: it first returned the
+   PNG's bytes to C#, which saved them. On Server those bytes are one message from the browser, larger
+   than a circuit receives, and the circuit closed — CI's first run on the Server host showed it. Text
+   goes from C# to the browser, which has no such limit, and the bytes never come back.)* The scale is the Device Pixel's (ADR-0090), so a
    PNG at 150% is not a blurred 100% one; the entry reads it as `devicePixelRatio` on the click. The 3D surface's PNG is the SVG its own module draws
-   (ADR-0255's twelfth entry hands over its current drawing), painted the same way.
+   (ADR-0255's twelfth entry hands over its current drawing), painted the same way; the drawing is
+   handed from that entry to this one in the browser, and saved as SVG or PNG there.
 2. **Save bytes under a file name**: CSV, SVG or PNG, through a `Blob` and an object URL revoked once
    the save has started. One click saves.
 3. **Read the chart's Visual Tokens as the screen has them**, from its root's computed style, on the

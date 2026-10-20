@@ -9,8 +9,10 @@
 // C# drops one taken against an earlier drawing (spine rule 6). Blazor's @onmousemove would cross
 // to .NET on every event, a wire round trip each on Server.
 
-// The files entry (ADR-0282), the fifteenth use: three exported functions, each run once on a click
-// and never on a render, adding no listener and reading no layout (the SVG carries its own size).
+// The files entry (ADR-0282), the fifteenth use: its three jobs (read the tokens, paint to PNG, save),
+// each run once on a click and never on a render, adding no listener and reading no layout (the SVG
+// carries its own size). A PNG is painted and saved here, never handed back to .NET: on Server its
+// bytes would be one message from the browser, larger than a circuit takes, and the circuit would close.
 
 /**
  * The values the chart's Visual Tokens have on screen, read from its root's computed style on the
@@ -27,7 +29,7 @@ export function tokens(root, names) {
  * drawing's size at the screen's Device Pixel, so a PNG taken at 150% is drawn at 150% and not
  * scaled up from 100% (ADR-0090). The browser lays out its text in the fonts the screen shows.
  */
-export async function paint(svgText, width, height) {
+async function paint(svgText, width, height) {
     const scale = window.devicePixelRatio > 0 ? window.devicePixelRatio : 1;
     const url = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml' }));
     try {
@@ -71,6 +73,28 @@ export function save(name, type, bytes) {
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 0);
     }
+}
+
+/** Paints an SVG to PNG and saves it under a file name (ADR-0282). */
+export async function savePng(name, svgText, width, height) {
+    save(name, 'image/png', await paint(svgText, width, height));
+}
+
+/**
+ * Saves a 3D surface's drawing as it stands, as SVG or PNG: `drawing` is the surface's handle, whose
+ * svgText the 3D entry writes (ADR-0255). The text stays in the browser. False when it has no drawing.
+ */
+export async function saveDrawing(drawing, name, format, width, height) {
+    const svgText = drawing?.svgText();
+    if (!svgText) {
+        return false;
+    }
+    if (format === 'png') {
+        await savePng(name, svgText, width, height);
+    } else {
+        save(name, 'image/svg+xml', new TextEncoder().encode(svgText));
+    }
+    return true;
 }
 
 /** The SHA-256 of this source, which the build writes in; the chart refuses a module of another version (ADR-0123). */
@@ -234,4 +258,476 @@ export function attach(root, core) {
             core = null;
         },
     };
+}
+
+// ---- ExChart's 3D entry: the fourteenth use the JavaScript allowlist permits (ADR-0021, ADR-0255,
+// ADR-0274).
+//
+// Turning a surface follows the pointer at the frame rate, which a round trip per frame cannot. .NET
+// decides the mesh — its labels, its values and holes, its vertical scale and ticks, each face's
+// colour band — and hands it over whole with its version. This entry only projects it, orders the
+// faces far to near, fits the drawing to its box and draws it as SVG elements of its own box. It
+// formats no number and measures nothing: positions are the events' own offsets on the box, and
+// colours are Visual Tokens the stylesheet resolves. It reports, with the mesh's version, the grid
+// point nearest the pointer when it changes (the tooltip), the tenor or strike a click fell on (the
+// slice), and the view — angles, zoom and centre — when a gesture ends, so the view is the
+// Consumer's (ADR-0272). A report against an earlier mesh is dropped in C# (spine rule 6).
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/** How far, in CSS pixels, the pointer may be from a grid point and still read it. */
+const SURFACE_REACH = 32;
+
+/** How far a press may move and still be a click, not a turn. */
+const SURFACE_CLICK = 4;
+
+/**
+ * Attaches the 3D entry to one surface's box and returns its handle. `core` is the surface's .NET
+ * reference, which takes OnPointAsync, OnSliceAsync and OnViewAsync.
+ */
+export function attachSurface(box, core) {
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('class', 'ex-chart-surface-svg');
+    svg.setAttribute('aria-hidden', 'true');
+    box.appendChild(svg);
+
+    let version = -1;
+    let mesh = null;
+    let view = { yaw: -35, pitch: 28, zoom: 1, panX: 0, panY: 0 };
+    let viewRevision = -1;
+    let slice = null;
+    let width = 0;
+    let height = 0;
+    let points = [];
+    let lines = { rows: [], columns: [] };
+    let drag = null;
+    let lastPoint = '';
+
+    // The view is reported latest-wins with one report in flight, so the last view always arrives
+    // whatever the round trip, and a burst of wheel steps costs no burst of crossings.
+    let sending = false;
+    let unsent = false;
+    const sendView = () => {
+        if (!core || version < 0) {
+            return;
+        }
+        if (sending) {
+            unsent = true;
+            return;
+        }
+        sending = true;
+        unsent = false;
+        core.invokeMethodAsync('OnViewAsync', version, view.yaw, view.pitch, view.zoom, view.panX, view.panY)
+            .catch(fail)
+            .finally(() => {
+                sending = false;
+                if (unsent) {
+                    sendView();
+                }
+            });
+    };
+
+    const fail = (error) => {
+        if (core) {
+            console.error('[ex-chart] the surface failed to take a report', error);
+        }
+    };
+
+    const redraw = () => {
+        const drawn = drawSurface(svg, mesh, view, slice, width, height);
+        points = drawn.points;
+        lines = drawn.lines;
+    };
+
+    const nearest = (x, y) => {
+        let best = null;
+        let bestDistance = SURFACE_REACH * SURFACE_REACH;
+        for (const p of points) {
+            const d = (p.x - x) ** 2 + (p.y - y) ** 2;
+            if (d <= bestDistance) {
+                best = p;
+                bestDistance = d;
+            }
+        }
+        return best;
+    };
+
+    const reportPoint = (point, x, y) => {
+        const key = point ? `${point.i},${point.j}` : '';
+        if (key === lastPoint || !core || version < 0) {
+            return;
+        }
+        lastPoint = key;
+        core.invokeMethodAsync('OnPointAsync', version, point ? point.i : -1, point ? point.j : -1, x, y).catch(fail);
+    };
+
+    // The positions are the event's offsets on the box itself: the drawing takes no pointer events,
+    // so the box is always the target.
+    const own = (event) => event.target === box;
+
+    const onDown = (event) => {
+        if (event.button !== 0 || !mesh || !own(event)) {
+            return;
+        }
+        drag = { x: event.offsetX, y: event.offsetY, view: { ...view }, pan: event.shiftKey, moved: false, version };
+        box.setPointerCapture?.(event.pointerId);
+    };
+
+    const onMove = (event) => {
+        if (drag) {
+            const dx = event.offsetX - drag.x;
+            const dy = event.offsetY - drag.y;
+            if (!drag.moved && dx * dx + dy * dy < SURFACE_CLICK * SURFACE_CLICK) {
+                return;
+            }
+            drag.moved = true;
+            if (drag.pan) {
+                view = { ...drag.view, panX: drag.view.panX + dx / width, panY: drag.view.panY + dy / height };
+            } else {
+                view = { ...drag.view, yaw: turn(drag.view.yaw + dx * 0.4), pitch: clamp(drag.view.pitch + dy * 0.3, 0, 90) };
+            }
+            reportPoint(null, 0, 0);
+            redraw();
+            return;
+        }
+        if (!own(event)) {
+            return;
+        }
+        reportPoint(nearest(event.offsetX, event.offsetY), event.offsetX, event.offsetY);
+    };
+
+    const onUp = (event) => {
+        const pressed = drag;
+        drag = null;
+        if (!pressed || pressed.version !== version) {
+            return;
+        }
+        if (pressed.moved) {
+            sendView();
+            return;
+        }
+        const point = nearest(pressed.x, pressed.y);
+        if (point && core) {
+            const axis = sliceAxis(point, pressed.x, pressed.y);
+            core.invokeMethodAsync('OnSliceAsync', version, axis, axis === 'x' ? point.i : point.j).catch(fail);
+        }
+    };
+
+    const onCancel = () => {
+        if (drag?.moved) {
+            sendView();
+        }
+        drag = null;
+    };
+
+    const onLeave = () => {
+        if (!drag) {
+            reportPoint(null, 0, 0);
+        }
+    };
+
+    // A click on a grid point falls on two lines, a tenor's and a strike's; the one nearer the
+    // pointer is the one it fell on. A tenor's line runs along x, so a click on it slices that
+    // tenor (axis 'y' held fixed).
+    const sliceAxis = (point, x, y) => {
+        const row = distanceToLine(lines.rows[point.j], x, y);
+        const column = distanceToLine(lines.columns[point.i], x, y);
+        return column < row ? 'x' : 'y';
+    };
+
+    const onKey = (event) => {
+        if (!mesh || event.altKey || event.ctrlKey || event.metaKey) {
+            return;
+        }
+        const step = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
+        if (step && event.shiftKey) {
+            view = { ...view, panX: view.panX + step[0] * 0.05, panY: view.panY + step[1] * 0.05 };
+        } else if (step) {
+            view = { ...view, yaw: turn(view.yaw + step[0] * 5), pitch: clamp(view.pitch - step[1] * 5, 0, 90) };
+        } else if (event.key === '+' || event.key === '=') {
+            view = { ...view, zoom: clamp(view.zoom * 1.25, 0.5, 8) };
+        } else if (event.key === '-') {
+            view = { ...view, zoom: clamp(view.zoom / 1.25, 0.5, 8) };
+        } else {
+            return;
+        }
+        event.preventDefault();
+        redraw();
+        sendView();
+    };
+
+    const onWheel = (event) => {
+        if (!mesh || event.deltaY === 0) {
+            return;
+        }
+        event.preventDefault();
+        view = { ...view, zoom: clamp(view.zoom * (event.deltaY < 0 ? 1.1 : 1 / 1.1), 0.5, 8) };
+        redraw();
+        sendView();
+    };
+
+    box.addEventListener('pointerdown', onDown);
+    box.addEventListener('pointermove', onMove);
+    box.addEventListener('pointerup', onUp);
+    box.addEventListener('pointercancel', onCancel);
+    box.addEventListener('pointerleave', onLeave);
+    box.addEventListener('keydown', onKey);
+    box.addEventListener('wheel', onWheel, { passive: false });
+
+    return {
+        /**
+         * A new drawing: its version, the mesh, the view C# holds with its revision, the slice, and
+         * the box's size. A gesture begun against another mesh is ended unreported (ADR-0272).
+         */
+        draw(newVersion, newMesh, newView, newViewRevision, newSlice, newWidth, newHeight) {
+            if (newVersion !== version) {
+                drag = null;
+                lastPoint = '';
+            }
+            // The view C# holds is taken only when C# changed it — a Consumer's parameter, a reset —
+            // which bumps its revision. Otherwise it is an echo of a report, and the view here, where
+            // the keys and the drags land, is as new or newer: taking it would undo a key pressed
+            // while the report crossed (spine rule 6).
+            if (newViewRevision !== viewRevision) {
+                viewRevision = newViewRevision;
+                view = { ...newView };
+                drag = null;
+            }
+            version = newVersion;
+            mesh = newMesh;
+            slice = newSlice;
+            width = newWidth;
+            height = newHeight;
+            redraw();
+        },
+        /**
+         * The drawing as it stands, as SVG text that carries its own size and its colours resolved,
+         * for a file (ADR-0282): painted off the page, it has no stylesheet to read.
+         */
+        svgText() {
+            const copy = svg.cloneNode(true);
+            copy.setAttribute('xmlns', SVG_NS);
+            copy.setAttribute('width', String(width));
+            copy.setAttribute('height', String(height));
+            copy.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            copy.removeAttribute('aria-hidden');
+            const from = svg.querySelectorAll('*');
+            const to = copy.querySelectorAll('*');
+            const rootStyle = getComputedStyle(svg);
+            copy.setAttribute('style', `font-family:${rootStyle.fontFamily};font-size:${rootStyle.fontSize};background:${getComputedStyle(box).backgroundColor}`);
+            for (let k = 0; k < from.length; k++) {
+                const s = getComputedStyle(from[k]);
+                const props = ['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-opacity', 'opacity', 'paint-order', 'stroke-linejoin', 'font-weight'];
+                to[k].setAttribute('style', props.map((p) => `${p}:${s.getPropertyValue(p)}`).join(';'));
+                to[k].removeAttribute('class');
+            }
+            return new XMLSerializer().serializeToString(copy);
+        },
+        dispose() {
+            box.removeEventListener('pointerdown', onDown);
+            box.removeEventListener('pointermove', onMove);
+            box.removeEventListener('pointerup', onUp);
+            box.removeEventListener('pointercancel', onCancel);
+            box.removeEventListener('pointerleave', onLeave);
+            box.removeEventListener('keydown', onKey);
+            box.removeEventListener('wheel', onWheel);
+            svg.remove();
+            core = null;
+        },
+    };
+}
+
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+/** An angle brought into (-180, 180]. */
+const turn = (degrees) => {
+    const d = ((degrees % 360) + 360) % 360;
+    return d > 180 ? d - 360 : d;
+};
+
+const distanceToLine = (line, x, y) => {
+    if (!line || line.length === 0) {
+        return Infinity;
+    }
+    let best = Infinity;
+    for (let k = 0; k < line.length; k++) {
+        const p = line[k];
+        const q = line[k + 1];
+        if (!q) {
+            best = Math.min(best, Math.hypot(p[0] - x, p[1] - y));
+            continue;
+        }
+        const dx = q[0] - p[0];
+        const dy = q[1] - p[1];
+        const length = dx * dx + dy * dy;
+        const t = length === 0 ? 0 : clamp(((x - p[0]) * dx + (y - p[1]) * dy) / length, 0, 1);
+        best = Math.min(best, Math.hypot(p[0] + t * dx - x, p[1] + t * dy - y));
+    }
+    return best;
+};
+
+const svgElement = (name, attrs, text) => {
+    const e = document.createElementNS(SVG_NS, name);
+    for (const [k, v] of Object.entries(attrs)) {
+        e.setAttribute(k, v);
+    }
+    if (text !== undefined) {
+        e.textContent = text;
+    }
+    return e;
+};
+
+const f1 = (v) => v.toFixed(1);
+
+// Draws the mesh into the svg and returns the grid points where they were projected, and each
+// tenor's and strike's line, for the reports. A hole is a hole: a face with a hole at a corner is
+// not drawn, the hole has no point, and the lines through it break there.
+function drawSurface(svg, mesh, view, slice, W, H) {
+    svg.setAttribute('width', String(W));
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.replaceChildren();
+    const none = { points: [], lines: { rows: [], columns: [] } };
+    if (!mesh || mesh.values.length === 0 || W <= 0 || H <= 0) {
+        return none;
+    }
+    const nx = mesh.x.length;
+    const ny = mesh.y.length;
+    const { zMin, zMax } = mesh;
+    const a = (view.yaw * Math.PI) / 180;
+    const b = (view.pitch * Math.PI) / 180;
+    // World: x across the strikes, y along the tenors, z up; each within [-0.5, 0.5], z squashed.
+    const world = (i, j, z) => [i / (nx - 1) - 0.5, j / (ny - 1) - 0.5, ((z - zMin) / (zMax - zMin || 1) - 0.5) * 0.6];
+    const raw = ([x, y, z]) => {
+        const x1 = x * Math.cos(a) - y * Math.sin(a);
+        const y1 = x * Math.sin(a) + y * Math.cos(a);
+        return [x1, y1 * Math.sin(b) - z * Math.cos(b), y1 * Math.cos(b) + z * Math.sin(b)];
+    };
+    // Fitted to the box at every angle by the projected corners of the box the surface stands in,
+    // with room round it for the labels; then zoomed about the centre and panned.
+    const corners = [];
+    for (const cx of [-0.5, 0.5]) for (const cy of [-0.5, 0.5]) for (const cz of [-0.3, 0.3]) corners.push(raw([cx, cy, cz]));
+    const minX = Math.min(...corners.map((c) => c[0]));
+    const maxX = Math.max(...corners.map((c) => c[0]));
+    const minY = Math.min(...corners.map((c) => c[1]));
+    const maxY = Math.max(...corners.map((c) => c[1]));
+    const s = Math.max(1, Math.min((W * 0.78) / (maxX - minX), (H * 0.8) / (maxY - minY))) * view.zoom;
+    const cx = W / 2 + view.panX * W;
+    const cy = H / 2 + view.panY * H;
+    const project = (p) => {
+        const [x, y, depth] = raw(p);
+        return [cx + (x - (minX + maxX) / 2) * s, cy + (y - (minY + maxY) / 2) * s, depth];
+    };
+    const P = (i, j, z) => project(world(i, j, z));
+    const poly = (pts, cls) => svgElement('polygon', { points: pts.map((p) => `${f1(p[0])},${f1(p[1])}`).join(' '), class: cls });
+    const line = (p, q, cls) => svgElement('line', { x1: f1(p[0]), y1: f1(p[1]), x2: f1(q[0]), y2: f1(q[1]), class: cls });
+
+    // The floor and the two walls behind the surface, each with its grid; which walls are behind
+    // depends on where the viewer stands.
+    const backX = Math.sin(a) > 0 ? nx - 1 : 0;
+    const backY = Math.cos(a) > 0 ? ny - 1 : 0;
+    const walls = svgElement('g', { class: 'ex-chart-surface-walls' });
+    walls.append(poly([P(0, 0, zMin), P(nx - 1, 0, zMin), P(nx - 1, ny - 1, zMin), P(0, ny - 1, zMin)], 'ex-chart-surface-wall'));
+    const upright = view.pitch < 89;
+    if (upright) {
+        walls.append(poly([P(0, backY, zMin), P(nx - 1, backY, zMin), P(nx - 1, backY, zMax), P(0, backY, zMax)], 'ex-chart-surface-wall'));
+        walls.append(poly([P(backX, 0, zMin), P(backX, ny - 1, zMin), P(backX, ny - 1, zMax), P(backX, 0, zMax)], 'ex-chart-surface-wall'));
+        for (const tick of mesh.zTicks) {
+            walls.append(line(P(0, backY, tick.value), P(nx - 1, backY, tick.value), 'ex-chart-surface-grid'));
+            walls.append(line(P(backX, 0, tick.value), P(backX, ny - 1, tick.value), 'ex-chart-surface-grid'));
+            const at = P(backX, backY === 0 ? ny - 1 : 0, tick.value);
+            const right = Math.sin(a) > 0;
+            walls.append(svgElement('text', { x: f1(at[0] + (right ? 8 : -8)), y: f1(at[1] + 4), 'text-anchor': right ? 'start' : 'end', class: 'ex-chart-surface-label' }, tick.label));
+        }
+    }
+    for (let i = 0; i < nx; i++) walls.append(line(P(i, 0, zMin), P(i, ny - 1, zMin), 'ex-chart-surface-grid'));
+    for (let j = 0; j < ny; j++) walls.append(line(P(0, j, zMin), P(nx - 1, j, zMin), 'ex-chart-surface-grid'));
+    svg.append(walls);
+
+    // The faces, the farthest first, each in its colour band.
+    const faces = [];
+    for (let j = 0; j < ny - 1; j++) {
+        for (let i = 0; i < nx - 1; i++) {
+            const band = mesh.bands[j][i];
+            if (band === null || band === undefined) {
+                continue;
+            }
+            const v = mesh.values;
+            const pts = [P(i, j, v[j][i]), P(i + 1, j, v[j][i + 1]), P(i + 1, j + 1, v[j + 1][i + 1]), P(i, j + 1, v[j + 1][i])];
+            faces.push({ pts, depth: (pts[0][2] + pts[1][2] + pts[2][2] + pts[3][2]) / 4, band });
+        }
+    }
+    faces.sort((p, q) => q.depth - p.depth);
+    const surface = svgElement('g', { class: 'ex-chart-surface-faces' });
+    for (const face of faces) {
+        surface.append(poly(face.pts, `ex-chart-surface-face ex-chart-heat-${face.band}`));
+    }
+    svg.append(surface);
+
+    // The grid points, and each tenor's and strike's line through them, broken at a hole.
+    const points = [];
+    const rows = [];
+    const columns = Array.from({ length: nx }, () => []);
+    const dots = svgElement('g', { class: 'ex-chart-surface-points' });
+    for (let j = 0; j < ny; j++) {
+        const row = [];
+        for (let i = 0; i < nx; i++) {
+            const z = mesh.values[j][i];
+            if (z === null || z === undefined) {
+                continue;
+            }
+            const p = P(i, j, z);
+            points.push({ i, j, x: p[0], y: p[1] });
+            row.push(p);
+            columns[i].push(p);
+            // A dot marks a value the data holds; an interpolated one is the Consumer's surface between them.
+            if (mesh.interpolated?.[j]?.[i]) {
+                continue;
+            }
+            dots.append(svgElement('circle', { cx: f1(p[0]), cy: f1(p[1]), r: '2.4', class: 'ex-chart-surface-point' }));
+        }
+        rows.push(row);
+    }
+    svg.append(dots);
+
+    // The slice drawn on the surface, so the 2D chart beside it is seen to be this line.
+    if (slice) {
+        const pts = [];
+        const count = slice.axis === 'x' ? ny : nx;
+        const path = [];
+        for (let k = 0; k < count; k++) {
+            const i = slice.axis === 'x' ? slice.index : k;
+            const j = slice.axis === 'x' ? k : slice.index;
+            const z = mesh.values[j]?.[i];
+            if (z === null || z === undefined) {
+                if (pts.length > 0) path.push(pts.splice(0));
+                continue;
+            }
+            pts.push(P(i, j, z));
+        }
+        if (pts.length > 0) path.push(pts);
+        const g = svgElement('g', { class: 'ex-chart-surface-slice' });
+        for (const run of path) {
+            g.append(svgElement('polyline', { points: run.map((p) => `${f1(p[0])},${f1(p[1])}`).join(' ') }));
+        }
+        svg.append(g);
+    }
+
+    // The axes' labels along the front edges of the floor.
+    const frontY = backY === 0 ? ny - 1 : 0;
+    const frontX = backX === 0 ? nx - 1 : 0;
+    const labels = svgElement('g', { class: 'ex-chart-surface-labels' });
+    const stepX = Math.ceil(nx / 12);
+    const stepY = Math.ceil(ny / 12);
+    const label = (p, text, cls) => labels.append(svgElement('text', { x: f1(p[0]), y: f1(p[1] + 4), 'text-anchor': 'middle', class: cls }, text));
+    for (let i = 0; i < nx; i += stepX) label(P(i, frontY + (frontY === 0 ? -0.6 : 0.6), zMin), mesh.x[i], 'ex-chart-surface-label');
+    for (let j = 0; j < ny; j += stepY) label(P(frontX + (frontX === 0 ? -0.6 : 0.6), j, zMin), mesh.y[j], 'ex-chart-surface-label');
+    label(P((nx - 1) / 2, frontY + (frontY === 0 ? -1.6 : 1.6), zMin), mesh.xTitle, 'ex-chart-surface-label ex-chart-surface-title');
+    label(P(frontX + (frontX === 0 ? -1.8 : 1.8), (ny - 1) / 2, zMin), mesh.yTitle, 'ex-chart-surface-label ex-chart-surface-title');
+    if (upright && mesh.zTitle) {
+        label(P(backX, backY === 0 ? ny - 1 : 0, zMax + (zMax - zMin) * 0.12), mesh.zTitle, 'ex-chart-surface-label ex-chart-surface-title');
+    }
+    svg.append(labels);
+
+    return { points, lines: { rows, columns } };
 }

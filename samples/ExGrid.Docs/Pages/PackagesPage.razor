@@ -66,15 +66,16 @@
             <li><b>A grid</b>: <code>ExGrid</code>. It brings @Brings("ExGrid").</li>
             <li><b>A sheet</b>: <code>ExSheet</code>. It brings @Brings("ExSheet").</li>
             <li><b>A pivot table</b>: <code>ExPivot</code>. It brings @Brings("ExPivot").</li>
+            <li><b>A chart</b>: <code>ExChart</code>. It brings @Brings("ExChart").</li>
             <li>
                 <b>In a MudBlazor application</b>, add each product's Wrapper too: <code>ExGrid.MudBlazor</code>,
-                <code>ExSheet.MudBlazor</code>, <code>ExPivot.MudBlazor</code>. A Wrapper draws the product's menus,
+                <code>ExSheet.MudBlazor</code>, <code>ExPivot.MudBlazor</code>, <code>ExChart.MudBlazor</code>. A Wrapper draws the product's menus,
                 panels and editors with MudBlazor's controls, and never changes what the product does. See the
                 <a href="features#what-each-wrapper-draws">Feature matrix</a> for what each one draws.
             </li>
             <li>
                 <b>On a server, with no UI</b>: <code>ExSheet.Engine</code> computes a Sheet Document's Values and
-                <code>ExPivot.Engine</code> a pivot report, by the same rules as the screen; <code>ExGrid.Data</code>
+                <code>ExPivot.Engine</code> a pivot report, by the same rules as the screen, and <code>ExChart.Engine</code> lays out a chart's scene; <code>ExGrid.Data</code>
                 holds the data as a Snapshot.
             </li>
             <li><b>Apache Arrow</b>: <code>ExGrid.Data.Arrow</code> reads a Snapshot from Arrow and writes one as Arrow.</li>

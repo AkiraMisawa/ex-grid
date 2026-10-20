@@ -135,13 +135,14 @@ jobs:
           product ExGrid  "+ExGrid;+ExGrid.MudBlazor"
           product ExSheet "+ExSheet;+ExSheet.Engine;+ExSheet.MudBlazor"
           product ExPivot "+ExPivot;+ExPivot.Engine;+ExPivot.MudBlazor"
+          product ExChart "+ExChart;+ExChart.Engine;+ExChart.MudBlazor"
           product Data    "+ExGrid.Data;+ExGrid.Data.Arrow"
           {
             echo '## Coverage per product'
             echo
             echo '| Product | Line | Branch |'
             echo '|---|---|---|'
-            for name in ExGrid ExSheet ExPivot Data; do
+            for name in ExGrid ExSheet ExPivot ExChart Data; do
               summary="coverage/products/$name/Summary.txt"
               echo "| $name | $(grep -oP 'Line coverage: \K[0-9.]+' "$summary")% | $(grep -oP 'Branch coverage: \K[0-9.]+' "$summary")% |"
             done
@@ -543,7 +544,7 @@ jobs:
           cp "coverage/badge_shieldsio_branchcoverage_$(colour "$branch").svg" out/coverage-branch.svg
           endpoint coverage "$line" > out/coverage-total.json
           history="${line},${branch}"
-          for name in ExGrid ExSheet ExPivot Data; do
+          for name in ExGrid ExSheet ExPivot ExChart Data; do
             summary="coverage/products/$name/Summary.txt"
             p_line=$(figure Line "$summary")
             p_branch=$(figure Branch "$summary")
@@ -553,7 +554,7 @@ jobs:
           cat coverage/products/Summary.md coverage/SummaryGithub.md > out/coverage.md
           # The history gained a column pair per product when the ten packages were first counted;
           # rows before that have the total alone.
-          columns='date,commit,line,branch,exgrid_line,exgrid_branch,exsheet_line,exsheet_branch,expivot_line,expivot_branch,data_line,data_branch'
+          columns='date,commit,line,branch,exgrid_line,exgrid_branch,exsheet_line,exsheet_branch,expivot_line,expivot_branch,exchart_line,exchart_branch,data_line,data_branch'
           if [ ! -f out/history.csv ]; then
             echo "$columns" > out/history.csv
           elif [ "$(head -n 1 out/history.csv)" != "$columns" ]; then

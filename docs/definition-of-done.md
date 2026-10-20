@@ -1879,7 +1879,7 @@ grilling. ExChart has no timed target: render counts gate, timings are recorded.
 | **CH-11** | MUST | Under `forcedColors: 'active'` every two series of a panel differ in line style or marker (ADR-0256, ADR-0283) | Layer 3 | as stated |
 | **CH-12** | MUST | CSV, SVG and PNG are each saved by one click, under the chart's file name, and none is encoded during a render (ADR-0252, ADR-0282) | Layer 2 markup (no `data:` URL); Layer 3 download | as stated |
 | **CH-13** | MUST | `ExChart.Engine`'s `.nuspec` declares no dependency, and `ExChart`'s declares exactly the ExGrid it was built with (ADR-0250, ADR-0283) | PackageSmoke | as stated |
-| **CH-14** | SHOULD | `spikes/render-bench`'s ExChart mode has a recorded result on Server, WebAssembly and WebAssembly with AOT (ADR-0283) | Recorded JSON | present; never a gate |
+| **CH-14** | SHOULD | `spikes/render-bench`'s ExChart mode has a recorded result on Server, WebAssembly and WebAssembly with AOT (ADR-0283) *(Recorded 2026-10-19 in `spikes/render-bench/results/20261019-chart`: the proof of concept's redraw of 1,566 dates, 644 ms on Server and 1.8 s on WebAssembly, takes 21 ms, 125 ms and 87 ms with AOT; a pointer move answers within its frame on all three.)* | Recorded JSON | present; never a gate |
 
 *Not verified, by decision (ADR-0283, 2026-10-19): what NVDA or another screen reader actually speaks,
 and the chart on a real Windows display. CH-9 to CH-11 stand in for them in a browser.*
