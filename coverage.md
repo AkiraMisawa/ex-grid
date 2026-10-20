@@ -13,18 +13,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/20/2026 - 20:24:23 |
+| Generated on: | 10/20/2026 - 20:48:00 |
 | Parser: | MultiReport (16x Cobertura) |
 | Assemblies: | 13 |
 | Classes: | 1001 |
 | Files: | 522 |
-| **Line coverage:** | 94.7% (65496 of 69110) |
-| Covered lines: | 65496 |
-| Uncovered lines: | 3614 |
+| **Line coverage:** | 94.7% (65495 of 69110) |
+| Covered lines: | 65495 |
+| Uncovered lines: | 3615 |
 | Coverable lines: | 69110 |
 | Total lines: | 115754 |
-| **Branch coverage:** | 87.2% (39119 of 44844) |
-| Covered branches: | 39119 |
+| **Branch coverage:** | 87.2% (39118 of 44844) |
+| Covered branches: | 39118 |
 | Total branches: | 44844 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -389,8 +389,8 @@
 |ExGrid.RangeDocument|100%||
 |ExGrid.RowChange<TRow>|100%||
 |ExGrid.RowRange|100%||
-|ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
 |ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
+|ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
 |ExGrid.Rows.InMemoryRowMarks<TRow>|90.3%|77.4%|
 |ExGrid.Rows.RowMarkAdapter<TRow>|100%||
 |ExGrid.Rows.RowMarkCounts|100%||
@@ -439,11 +439,11 @@
 |ExGrid.ViewStateDocument|100%||
 
 </details>
-<details><summary>ExGrid.Data - 94.7%</summary>
+<details><summary>ExGrid.Data - 94.6%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.7%**|**90.6%**|
+|**ExGrid.Data**|**94.6%**|**90.6%**|
 |ExGrid.Data.AggregateAccumulator|86%|87.8%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -532,7 +532,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
