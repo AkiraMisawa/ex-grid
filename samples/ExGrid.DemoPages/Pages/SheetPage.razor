@@ -193,11 +193,12 @@
     // Whether the Sheet Toolbar is shown: the page's View State, which Ctrl+F1 changes (ADR-0100).
     private bool _toolbarShown = true;
 
-    // The Sheet's height includes its toolbar (ADR-0100). The page adds the toolbar's two rows, each
-    // the Formula Bar's height, so that the grid keeps the rows it showed before the toolbar came.
+    // The Sheet's height includes its toolbar (ADR-0100) and its Sheet Tabs (ADR-0331). The page adds
+    // the toolbar's two rows and the tabs' strip, each the Formula Bar's height, so that the grid keeps
+    // the rows it showed before either came.
     private static readonly double ToolbarRowPx = GridMetrics.Resolve(GridDensity.Compact, ExSheet.DefaultRowHeightPx).FormulaBarHeightPx;
 
-    private double SheetHeight => 420 + (_toolbarShown ? 2 * ToolbarRowPx : 0);
+    private double SheetHeight => 420 + ToolbarRowPx + (_toolbarShown ? 2 * ToolbarRowPx : 0);
 
     protected override void OnParametersSet()
     {
