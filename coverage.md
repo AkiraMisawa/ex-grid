@@ -5,7 +5,7 @@
 | ExGrid | 95.6% | 88.5% |
 | ExSheet | 95.8% | 88.8% |
 | ExPivot | 94.4% | 85.3% |
-| ExChart | 89.6% | 79.1% |
+| ExChart | 90.6% | 80.7% |
 | Data | 94.5% | 90.3% |
 
 # Summary
@@ -13,29 +13,29 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/20/2026 - 10:03:50 |
+| Generated on: | 10/20/2026 - 11:09:18 |
 | Parser: | MultiReport (16x Cobertura) |
 | Assemblies: | 13 |
-| Classes: | 960 |
-| Files: | 509 |
-| **Line coverage:** | 94.8% (63167 of 66573) |
-| Covered lines: | 63167 |
-| Uncovered lines: | 3406 |
-| Coverable lines: | 66573 |
-| Total lines: | 112313 |
-| **Branch coverage:** | 87.3% (37468 of 42910) |
-| Covered branches: | 37468 |
-| Total branches: | 42910 |
+| Classes: | 967 |
+| Files: | 510 |
+| **Line coverage:** | 94.9% (63754 of 67173) |
+| Covered lines: | 63754 |
+| Uncovered lines: | 3419 |
+| Coverable lines: | 67173 |
+| Total lines: | 112898 |
+| **Branch coverage:** | 87.3% (38023 of 43520) |
+| Covered branches: | 38023 |
+| Total branches: | 43520 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExChart - 87.9%</summary>
+<details><summary>ExChart - 88%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**87.9%**|**72.9%**|
+|**ExChart**|**88%**|**73.4%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|50%|0%|
 |ExChart.ChartTarget|100%||
@@ -54,11 +54,11 @@
 |ExChart.Components.ChartGuideView|100%|100%|
 |ExChart.Components.ChartLegendView|98.2%|62.5%|
 |ExChart.Components.ChartPointer|16.6%||
-|ExChart.Components.ChartSeriesView|89.6%|88.5%|
+|ExChart.Components.ChartSeriesView|89.6%|90%|
 |ExChart.Components.ChartTooltipView|100%|59%|
-|ExChart.Components.ExChart|89.7%|80.8%|
+|ExChart.Components.ExChart|89.7%|81.1%|
 |ExChart.Components.ExChartStylesheet|0%||
-|ExChart.Components.ExSurface|78%|76.6%|
+|ExChart.Components.ExSurface|79.2%|79.4%|
 |ExChart.Components.SurfaceReports|25%||
 |ExChart.Components.Svg|50%|25%|
 |ExChart.GridCell|100%||
@@ -76,18 +76,18 @@
 |ExChart.SeriesVisibility|100%||
 
 </details>
-<details><summary>ExChart.Engine - 96.2%</summary>
+<details><summary>ExChart.Engine - 96.6%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart.Engine**|**96.2%**|**84.8%**|
+|**ExChart.Engine**|**96.6%**|**85.9%**|
 |ExChart.Engine.Appearance|100%|100%|
 |ExChart.Engine.AppearanceKeys|100%||
 |ExChart.Engine.AxisStyle|100%||
 |ExChart.Engine.AxisTick|100%||
 |ExChart.Engine.AxisTicks|100%|100%|
 |ExChart.Engine.Box|100%||
-|ExChart.Engine.ChartAxis|96%|77.2%|
+|ExChart.Engine.ChartAxis|96%|81.8%|
 |ExChart.Engine.ChartCsv|97.4%|78%|
 |ExChart.Engine.ChartDefinition|86.2%|83.3%|
 |ExChart.Engine.ChartMark|100%||
@@ -96,7 +96,7 @@
 |ExChart.Engine.ChartReading|100%||
 |ExChart.Engine.ChartReadings|90%|60.3%|
 |ExChart.Engine.ChartRefusedException|100%||
-|ExChart.Engine.ChartScene|98.8%|87.9%|
+|ExChart.Engine.ChartScene|98.8%|88.4%|
 |ExChart.Engine.ChartSeries|100%|100%|
 |ExChart.Engine.ChartSummary|100%|92.8%|
 |ExChart.Engine.ChartTable|100%||
@@ -129,17 +129,24 @@
 |ExChart.Engine.SeriesLook|100%||
 |ExChart.Engine.SeriesPiece|100%||
 |ExChart.Engine.SeriesSampler|100%||
-|ExChart.Engine.SurfaceAxis|94.4%|91.6%|
-|ExChart.Engine.SurfaceAxis<T>|94.4%|91.6%|
-|ExChart.Engine.SurfaceDefinition|94.3%|90%|
-|ExChart.Engine.SurfaceDefinition<TX, TY>|94.3%|90%|
-|ExChart.Engine.SurfaceMesh|100%|89.1%|
+|ExChart.Engine.SurfaceAxis|85.2%|95.2%|
+|ExChart.Engine.SurfaceAxis<T>|85.2%|95.2%|
+|ExChart.Engine.SurfaceColourBar|50%||
+|ExChart.Engine.SurfaceDefinition|97.5%|90.6%|
+|ExChart.Engine.SurfaceDefinition<TX, TY>|97.5%|90.6%|
+|ExChart.Engine.SurfaceFace|100%||
+|ExChart.Engine.SurfaceMesh|99.4%|81.5%|
+|ExChart.Engine.SurfaceMesh.Frame|98.4%|91.3%|
+|ExChart.Engine.SurfaceMeshNode|100%||
+|ExChart.Engine.SurfaceMeshPoint|100%||
+|ExChart.Engine.SurfaceNode|100%||
 |ExChart.Engine.SurfaceSlice|100%||
 |ExChart.Engine.SurfaceTick|100%||
+|ExChart.Engine.SurfaceTriangle|100%||
 |ExChart.Engine.SurfaceView|100%||
 |ExChart.Engine.ThinnedDrawing|100%||
 |ExChart.Engine.Thinning|100%|95.2%|
-|ExChart.Engine.TickLayout|95.3%|79.2%|
+|ExChart.Engine.TickLayout|95.3%|80%|
 |ExChart.Engine.TickLayout.CalendarStep|100%||
 |ExChart.Engine.VerticalAxis|100%|62.5%|
 
@@ -360,8 +367,8 @@
 |ExGrid.RangeDocument|100%||
 |ExGrid.RowChange<TRow>|100%||
 |ExGrid.RowRange|100%||
-|ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
 |ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
+|ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
 |ExGrid.Rows.InMemoryRowMarks<TRow>|90.3%|77.4%|
 |ExGrid.Rows.RowMarkAdapter<TRow>|100%||
 |ExGrid.Rows.RowMarkCounts|100%||
