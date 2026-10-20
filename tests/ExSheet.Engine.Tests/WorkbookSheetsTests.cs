@@ -108,6 +108,24 @@ public class WorkbookSheetsTests
         Assert.Equal(8, workbook.Sheets[0].Number("A1"));
     }
 
+    [Fact] // ADR-0331 §3: a Formula whose only Reference to another Sheet the deletion turns into #REF! is recalculated to #REF!, and back on the undo
+    public void A_formula_left_naming_no_sheet_is_recalculated()
+    {
+        var workbook = NewWorkbook("One", "Two");
+        Enter(workbook, "One", "A1", "21");
+        Enter(workbook, "Two", "A1", "=One!A1*2");
+
+        var step = workbook.Do("One", SheetEdit.DeleteSheet());
+
+        Assert.Equal("=#REF!*2", Formula(workbook.Sheets[0], "A1"));
+        Assert.Equal(ErrorValue.Ref, workbook.Sheets[0].Error("A1"));
+        Assert.Contains(CellAddress.Parse("A1"), step.Change.For(workbook.Sheets[0]).ValueChanges);
+
+        step.Undo();
+
+        Assert.Equal(42, workbook.Sheets[1].Number("A1"));
+    }
+
     [Fact] // ADR-0331 §3: a deletion turns References to the Sheet into #REF!; undoing it gives back the Sheet and those Formulas exactly
     public void A_deletion_is_ref_and_undoes_exactly()
     {

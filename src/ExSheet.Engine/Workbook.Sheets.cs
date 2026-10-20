@@ -27,10 +27,10 @@ public sealed partial class Workbook
         if (string.Equals(oldName, name, StringComparison.Ordinal)) return new SheetRename(SheetChange.None, oldName, []);
         if (NameTaken(name, sheet) is { } refusal) throw new SheetRefusedException(refusal);
         var rewritten = new List<(Sheet, CellAddress, Entry)>();
-        var change = Reshape(sheet, _ =>
+        var change = Reshape(sheet, dirty =>
         {
             string? Requalify(string qualifier) => Sheet.Names(qualifier, oldName) ? name : qualifier;
-            Rewrite(r => r.SheetName is { } qualifier && Sheet.Names(qualifier, oldName) ? r with { SheetName = name } : r, Requalify, rewritten);
+            Rewrite(r => r.SheetName is { } qualifier && Sheet.Names(qualifier, oldName) ? r with { SheetName = name } : r, Requalify, rewritten, dirty);
             sheet.Name = name;
         });
         return new SheetRename(change, oldName, rewritten);
@@ -101,13 +101,13 @@ public sealed partial class Workbook
     internal SheetChange TakeOut(Sheet sheet, bool delete, List<(Sheet Sheet, CellAddress Address, Entry Entry)> rewritten)
     {
         var index = _sheets.IndexOf(sheet);
-        return Reshape(sheet, _ =>
+        return Reshape(sheet, dirty =>
         {
             _sheets.RemoveAt(index);
             if (delete)
             {
                 var name = sheet.Name;
-                Rewrite(r => r.SheetName is { } qualifier && Sheet.Names(qualifier, name) ? null : r, q => Sheet.Names(q, name) ? null : q, rewritten);
+                Rewrite(r => r.SheetName is { } qualifier && Sheet.Names(qualifier, name) ? null : r, q => Sheet.Names(q, name) ? null : q, rewritten, dirty);
             }
             if (_shown == sheet) _shown = _sheets[Math.Min(index, _sheets.Count - 1)];
         });
@@ -185,8 +185,9 @@ public sealed partial class Workbook
         return own;
     }
 
-    /// <summary>Rewrites every Formula on every Sheet that names a Sheet through <paramref name="map"/> and <paramref name="requalify"/>, recording each as it was.</summary>
-    private void Rewrite(Func<Reference, Reference?> map, Func<string, string?> requalify, List<(Sheet, CellAddress, Entry)> rewritten)
+    /// <summary>Rewrites every Formula on every Sheet that names a Sheet through <paramref name="map"/> and <paramref name="requalify"/>, recording each as it was,
+    /// and marks it to be recalculated: a Formula left naming no Sheet (<c>=#REF!*2</c>) is no longer among the qualified ones the change recalculates.</summary>
+    private void Rewrite(Func<Reference, Reference?> map, Func<string, string?> requalify, List<(Sheet, CellAddress, Entry)> rewritten, HashSet<SheetCell> dirty)
     {
         foreach (var sheet in _sheets)
         {
@@ -198,6 +199,7 @@ public sealed partial class Workbook
                 if (ReferenceEquals(mapped, entry)) continue;
                 rewritten.Add((sheet, address, entry));
                 sheet.ReplaceEntry(address, mapped);
+                dirty.Add(new SheetCell(sheet, address));
             }
         }
     }
