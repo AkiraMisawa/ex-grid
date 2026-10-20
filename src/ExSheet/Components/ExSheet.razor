@@ -591,12 +591,12 @@
     /// Whether an edit is open in the grid: from the moment a cell or the Formula Bar is typed in,
     /// or opened with F2 or a double click, until the edit is committed, cancelled or discarded.
     /// A commit the Sheet rejects — a Formula it cannot read — leaves it open (ADR-0034). While it
-    /// is, <see cref="DoAsync"/>, <see cref="UndoAsync"/>, <see cref="RedoAsync"/>,
+    /// is, <see cref="DoAsync(SheetEdit)"/>, <see cref="UndoAsync"/>, <see cref="RedoAsync"/>,
     /// <see cref="SetCellFormatAsync"/>, <see cref="SetNumberFormatAsync"/>,
     /// <see cref="SetAlignmentAsync"/> and <see cref="OpenFormatCellsAsync"/> are refused by name
     /// (ADR-0048, ADR-0071), and Excel's formatting keys change nothing
     /// (<see cref="OnFormatKeyRefused"/>).
-    /// <see cref="CellFormatAt"/> is a read, and answers. ExSheet learns it from its grid
+    /// <see cref="CellFormatAt(CellAddress)"/> is a read, and answers. ExSheet learns it from its grid
     /// (ADR-0050 section 6).
     /// </summary>
     public bool IsEditing { get; private set; }
@@ -717,10 +717,13 @@
 
     /// <summary>
     /// A Consumer command: does <paramref name="edit"/> as one operation on the user's undo
-    /// stack, in its place in the order (ADR-0048), and raises <see cref="DocumentChanged"/>.
+    /// stack, in its place in the order (ADR-0048), and raises <see cref="DocumentChanged"/>. It
+    /// names no Sheet, so it is taken only while the Workbook holds one; with several, name the Sheet
+    /// with <see cref="DoAsync(string, SheetEdit)"/> (ADR-0331 §6).
     /// </summary>
-    /// <exception cref="SheetRefusedException">The Sheet refuses the operation, or an edit is open
-    /// (<see cref="IsEditing"/>); nothing changed.</exception>
+    /// <exception cref="SheetRefusedException">The Sheet refuses the operation, an edit is open
+    /// (<see cref="IsEditing"/>), or the Workbook holds several Sheets
+    /// (<see cref="SheetRefusalReason.SheetNotNamed"/>); nothing changed.</exception>
     /// <exception cref="FormulaSyntaxException">A typed Formula cannot be read; nothing changed.</exception>
     public Task DoAsync(SheetEdit edit)
     {
@@ -729,6 +732,7 @@
         // caller is already on the renderer's context and the work runs inline.
         return InvokeAsync(async () =>
         {
+            RefuseUnnamedSheet();
             RefuseWhileEditing();
             await PerformAsync(edit);
         });
@@ -763,7 +767,7 @@
     /// Format Cells' OK widens for any part of the Font instead, as Excel's Font tab did for bold,
     /// italic, underline and a colour (h7; R6, case (1)), <see cref="SetCellFormatFromFocusAsync"/>
     /// widens for a Font colour too, as Excel's Home tab Font Color button did (run 18a, case 5), and
-    /// <see cref="DoAsync"/> does an edit exactly as it is written, and widens nothing.
+    /// <see cref="DoAsync(SheetEdit)"/> does an edit exactly as it is written, and widens nothing.
     /// </remarks>
     public Task<bool> SetCellFormatAsync(CellFormatChange change)
     {
@@ -808,7 +812,7 @@
             AdoptGridSelection();
             if (_selection.IsEmpty) return false;
             var focus = _selection.Focus;
-            var made = change(CellFormatAt(new CellAddress(focus.Row, focus.Column)));
+            var made = change(CurrentSheet.GetCellFormat(new CellAddress(focus.Row, focus.Column)));
             ArgumentNullException.ThrowIfNull(made, nameof(change));
             if (made.IsEmpty) throw new ArgumentException("The change sets no part of a Cell Format.", nameof(change));
             return await FormatSelectionAsync(made, widen: SheetWidening.WidensAsAHomeTabButtonDoes(made));
@@ -840,9 +844,16 @@
     /// over column, as in Excel — and each Border side the edge as shown, which reads the same from
     /// the cell beside it (<see cref="Sheet.GetBorders"/>). What a toolbar reads for the Focus cell
     /// whenever the Selection changes. It is a read, so it answers while an edit is open too: until
-    /// the edit is committed, the cell is as it was.
+    /// the edit is committed, the cell is as it was. The address names no Sheet, so it is read only
+    /// while the Workbook holds one; with several, name the Sheet with
+    /// <see cref="CellFormatAt(string, CellAddress)"/> (ADR-0331 §6).
     /// </summary>
-    public CellFormat CellFormatAt(CellAddress address) => CurrentSheet.GetCellFormat(address);
+    /// <exception cref="SheetRefusedException">The Workbook holds several Sheets (<see cref="SheetRefusalReason.SheetNotNamed"/>).</exception>
+    public CellFormat CellFormatAt(CellAddress address)
+    {
+        RefuseUnnamedSheet();
+        return CurrentSheet.GetCellFormat(address);
+    }
 
     /// <summary>
     /// One of Excel's formatting keys (ADR-0071, "Keys"), claimed by the grid and raised with
@@ -894,7 +905,7 @@
         }
         var focus = _selection.Focus;
         // On the Selection the key carries, which SetCellFormatAsync would read from the grid again.
-        var change = SheetFormatKeys.ChangeFor(kind, CellFormatAt(new CellAddress(focus.Row, focus.Column)), CurrentSheet.Culture);
+        var change = SheetFormatKeys.ChangeFor(kind, CurrentSheet.GetCellFormat(new CellAddress(focus.Row, focus.Column)), CurrentSheet.Culture);
         await FormatSelectionAsync(change, widen: SheetWidening.WidensAsAKeyDoes(change));
     }
 
@@ -1288,6 +1299,7 @@
             : document is not null ? Sheet.Open(document).Workbook
             : new Sheet(Culture ?? CultureInfo.CurrentCulture).Workbook;
         _sheet = _workbook.Shown;
+        HearSheetNames();
         _views.Clear();
         // A Sheet opened from a document has no day: the Sheet Day is not recorded (ADR-0121).
         // Each Sheet keeps its own until the Workbook holds them (ticket 13 of exsheet-workbook).
@@ -2034,7 +2046,7 @@
     private void RefreshToolbar()
     {
         if (_toolbar is null || _sheet is null) return;
-        var focus = _selection.IsEmpty ? CellFormat.Default : CellFormatAt(new CellAddress(_selection.Focus.Row, _selection.Focus.Column));
+        var focus = _selection.IsEmpty ? CellFormat.Default : CurrentSheet.GetCellFormat(new CellAddress(_selection.Focus.Row, _selection.Focus.Column));
         _toolbar.Update(focus, !_selection.IsEmpty, IsEditing, _sheet.Culture, Chrome as ISheetChrome);
     }
 
@@ -2120,10 +2132,12 @@
             if (byUser) ClearNotice();
             if (_grid is { } summarized) await summarized.RefreshSummaryAsync();
             if (raiseDocument) await RaiseDocumentsAsync();
+            await RaiseSheetsChangedAsync();
             return;
         }
         var sheet = CurrentSheet;
         await ChangedAsync([.. changes.Select(change => change.For(sheet))], raiseDocument, byUser);
+        if (changes.Any(change => change.ChangesSheets)) await RaiseSheetsChangedAsync();
     }
 
     /// <summary>

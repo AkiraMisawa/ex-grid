@@ -41,6 +41,13 @@ public enum SheetRefusalReason
 
     /// <summary>The Workbook's last Sheet would be deleted. A Workbook holds at least one Sheet, as Excel's does (ADR-0331).</summary>
     LastSheet,
+
+    /// <summary>
+    /// A command or an address that names no Sheet, given while the Workbook holds several (ADR-0331
+    /// §6). Taken against the Sheet shown, its outcome would depend on whether a press on a tab reached
+    /// the instance before it; it names its Sheet instead.
+    /// </summary>
+    SheetNotNamed,
 }
 
 /// <summary>An operation a Sheet refused, and why. Nothing was changed.</summary>

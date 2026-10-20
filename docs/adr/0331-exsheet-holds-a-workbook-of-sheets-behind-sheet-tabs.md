@@ -102,6 +102,13 @@ typed is a question to Excel, put in the next Windows run, and built as observed
   spine's sixth rule refuses.
 - **The application gets commands** to add, delete, rename, move and copy a Sheet, and hears each
   change. Every one goes onto the one undo stack (ADR-0048).
+- *As built, 2026-10-20:* a command that acts on the Selection — the Cell Format commands, and the
+  toolbar's buttons through them — names no Sheet and is still taken with several: the Selection is
+  the shown Sheet's, and the command reads the Selection and its Sheet together when it runs, so what
+  it acts on does not depend on when a tab press arrived any more than which cells are selected does.
+  An address names its Sheet: `DoAsync(sheet, edit)` and `CellFormatAt(sheet, address)`; the ones that
+  name none are refused with `SheetRefusalReason.SheetNotNamed`. The application hears each change to
+  the Sheets through `SheetsChanged`.
 
 ### 7. 3D references are in the first version (W7)
 

@@ -1,3 +1,4 @@
+@using ExSheet
 @using ExSheet.Components
 @using ExSheet.Engine
 
@@ -8,7 +9,7 @@
     <span>@_said</span>
 </div>
 
-<ExSheet @ref="_sheet" @bind-Workbook="_workbook" ViewportHeight="280" ViewportWidth="ViewportSize.Stretch" />
+<ExSheet @ref="_sheet" @bind-Workbook="_workbook" SheetsChanged="SheetsChanged" ViewportHeight="280" ViewportWidth="ViewportSize.Stretch" />
 
 @code {
     private ExSheet _sheet = default!;
@@ -20,8 +21,12 @@
     private string? _saved;
     private string _said = "";
 
+    // A command names the Sheet it acts on: with several Sheets, one naming none is refused.
     // A Sheet operation is one step on the undo stack, as an edit is.
-    private Task AddSheet() => _sheet.DoAsync(SheetEdit.InsertSheet());
+    private Task AddSheet() => _sheet.DoAsync(_workbook!.Sheets[^1].Name, SheetEdit.InsertSheet());
+
+    // Every change to the Sheets, the user's, a command's or an undo's, is heard with the names before and after.
+    private void SheetsChanged(SheetsChange change) => _said = $"Sheets: {string.Join(", ", change.After)}.";
 
     private void Save()
     {
