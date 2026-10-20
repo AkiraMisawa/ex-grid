@@ -1,0 +1,4 @@
+- 'img "USD OIS · Zero rates. Tenor, 0.0007Y to 50Y. Left axis, 3.8 to 4.6. Zero rate · 2026-10-13: maximum 4.4549 at ON. Zero rate · 2026-10-13: maximum 4.4549 at 0.0007Y."':
+  - text: 3.8 4 4.2 4.4 4.6 1Y 3Y 5Y 7Y 10Y 15Y 20Y 30Y 40Y 50Y
+  - button "Zero rate · 2026-10-13" [pressed]
+  - button "Zero rate · 2026-10-13" [pressed]

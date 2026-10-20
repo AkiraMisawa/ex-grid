@@ -1,0 +1,6 @@
+- rowgroup:
+  - row "Series Point Leverage Value":
+    - columnheader "Series"
+    - columnheader "Point"
+    - columnheader "Leverage"
+    - columnheader "Value"

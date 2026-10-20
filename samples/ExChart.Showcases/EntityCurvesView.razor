@@ -1,0 +1,136 @@
+@using System.Globalization
+@* Curves › By reference entity: one row per CDS curve, its tenors across — Excel's "series in rows".
+   Select rows, or any of their cells, and choose Chart from the context menu: each row draws its par
+   spreads or its hazard rates along the tenors' own years, which the page declares per column rather
+   than reading them off "6m". Selecting tenor columns charts only those. The quotes can be shifted in
+   steps of 25bp; a hazard rate that no curve fits at a shift is empty, and drawn as a gap. *@
+<div class="xs-tools">
+    <span>Par spreads in bp, hazard rates in % a year, piecewise constant over (tᵢ₋₁, tᵢ].</span>
+    <span class="xs-spacer"></span>
+    <span>Quotes shifted @ShiftText</span>
+    @if (Mud)
+    {
+        <MudButtonGroup Size="Size.Small" Variant="Variant.Outlined">
+            <MudButton Disabled="@(_shift == 0)" OnClick="() => Shift(-1)" Class="xs-shift-down">−25bp</MudButton>
+            <MudButton Disabled="@(_shift == CdsCurveData.Shifts.Length - 1)" OnClick="() => Shift(1)" Class="xs-shift-up">+25bp</MudButton>
+        </MudButtonGroup>
+    }
+    else
+    {
+        <button type="button" class="xs-button xs-shift-down" disabled="@(_shift == 0)" @onclick="() => Shift(-1)">−25bp</button>
+        <button type="button" class="xs-button xs-shift-up" disabled="@(_shift == CdsCurveData.Shifts.Length - 1)" @onclick="() => Shift(1)">+25bp</button>
+    }
+</div>
+@if (Mud)
+{
+    <MudChartDock @ref="_dock" TRow="CdsCurveRow" Bridge="_bridge" Placement="ChartDockPlacement.Bottom" ChartWidth="ChartWidth" ChartHeight="ChartHeight">
+        @* A block-level paper: the Wrapper's own is inline, as wide as its grids, which leaves a stretched grid no width. *@
+        <MudExGridPaper Elevation="1" Style="display: flex">
+            <ExGrid @ref="_bridge.Grid" TRow="CdsCurveRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups"
+                    PinnedColumnCount="1" HeaderClickSelects="true" ContextCommands="_commands" CommandLabel="Label"
+                    ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" Chrome="MudChartChrome.GridChrome" />
+        </MudExGridPaper>
+    </MudChartDock>
+}
+else
+{
+    <div class="xs-panel">
+        <ExGrid @ref="_bridge.Grid" TRow="CdsCurveRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups"
+                PinnedColumnCount="1" HeaderClickSelects="true" ContextCommands="_commands" CommandLabel="Label"
+                ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" />
+    </div>
+    <ChartTabs @ref="_tabs" TRow="CdsCurveRow" Bridge="_bridge" ChartWidth="ChartWidth" ChartHeight="ChartHeight" FileName="cds-curves" />
+}
+
+@code {
+    /// <summary>Whether the view is drawn with MudBlazor's Chrome.</summary>
+    [Parameter] public bool Mud { get; set; }
+
+    private const string SpreadGroup = "Par spread (bp)", HazardGroup = "Hazard rate (%)";
+    private const double ChartWidth = 1000, ChartHeight = 360;
+    private static readonly ViewportSize GridHeight = 250;
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private static ColumnWidthSpec Fixed(double px) => new(ColumnWidth.Fixed(px));
+    private static Func<object, string> Digits(int digits) => v => ((decimal)v).ToString("N" + digits, Invariant);
+
+    private static readonly string[] SpreadColumns = [.. CdsCurveData.TenorNames.Select(t => $"S_{t}")];
+    private static readonly string[] HazardColumns = [.. CdsCurveData.TenorNames.Select(t => $"H_{t}")];
+
+    private static readonly GridColumn<CdsCurveRow>[] Columns =
+    [
+        new("Ticker", ColumnType.Text, r => r.Ticker, width: Fixed(84)),
+        new("Entity", ColumnType.Text, r => r.Entity, header: "Ref entity name", width: Fixed(190)),
+        new("Ccy", ColumnType.Text, r => r.Ccy, width: Fixed(64)),
+        new("Seniority", ColumnType.Text, r => r.Seniority, width: Fixed(96)),
+        new("Doc", ColumnType.Text, r => r.DocClause, header: "Doc clause", width: Fixed(96)),
+        new("Recovery", ColumnType.Number, r => r.RecoveryPct, header: "Recovery (%)", width: Fixed(112), format: Digits(0)),
+        .. CdsCurveData.TenorNames.Select((t, i) => new GridColumn<CdsCurveRow>($"S_{t}", ColumnType.Number, r => r.Spreads[i], header: t, width: Fixed(72), format: Digits(1))),
+        .. CdsCurveData.TenorNames.Select((t, i) => new GridColumn<CdsCurveRow>($"H_{t}", ColumnType.Number, r => r.Hazards[i], header: t, width: Fixed(84), format: Digits(4))),
+    ];
+
+    private static readonly HeaderGroup[] Groups = [new(SpreadGroup, SpreadColumns), new(HazardGroup, HazardColumns)];
+
+    // Each tenor column's position on the axis, in years: declared here, never read off "6m".
+    private static readonly Dictionary<string, double> Positions = CdsCurveData.TenorNames
+        .SelectMany((t, i) => new[] { ($"S_{t}", CdsCurveData.TenorYears[i]), ($"H_{t}", CdsCurveData.TenorYears[i]) })
+        .ToDictionary(p => p.Item1, p => p.Item2);
+
+    // Held in fields, never rebuilt per render (AGENTS.md: a new delegate is a changed parameter).
+    private static readonly Func<CdsCurveRow, object> KeyOf = r => r.Key;
+    private static readonly Func<string, string?> Label = GridChartCommands.Label;
+
+    private int _shift = Array.IndexOf(CdsCurveData.Shifts, 0);
+    private IReadOnlyList<CdsCurveRow> _rows = CdsCurveData.Curves[Array.IndexOf(CdsCurveData.Shifts, 0)];
+    private GridChartBridge<CdsCurveRow> _bridge = null!;
+    private Func<ContextMenuContext<CdsCurveRow>, IEnumerable<GridCommand>> _commands = null!;
+    private MudChartDock<CdsCurveRow>? _dock;
+    private ChartTabs<CdsCurveRow>? _tabs;
+    private bool? _openedUnderMud;
+
+    private string ShiftText => CdsCurveData.Shifts[_shift].ToString("+0'bp';−0'bp';'0bp'", Invariant);
+
+    protected override void OnInitialized()
+    {
+        _bridge = new GridChartBridge<CdsCurveRow>(new GridChartDeclarations<CdsCurveRow>
+        {
+            RowKey = KeyOf,
+            RowOf = key => _rows.FirstOrDefault(r => r.Key == (string)key),
+            KindOf = column => column.StartsWith("H_", StringComparison.Ordinal) ? SeriesKind.RateOverInterval : SeriesKind.Level,
+            PositionOf = column => Positions.TryGetValue(column, out var years) ? years : null,
+            PositionTitle = "Tenor (years)",
+            RowName = r => r.Key,
+            Orientation = ChartOrientation.SeriesInRows,
+        });
+        _commands = _bridge.Commands;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // From the start: an investment-grade name, and one high-yield name senior and subordinated —
+        // their spreads in one chart and their hazard rates in another, as basis points and percent a
+        // year read on no common axis.
+        if (_openedUnderMud == Mud) return;
+        _openedUnderMud = Mud;
+        foreach (var chart in Initial())
+        {
+            if (Mud && _dock is { } dock) await dock.OpenAsync(chart);
+            else if (!Mud && _tabs is { } tabs) await tabs.OpenAsync(chart);
+        }
+    }
+
+    private static IEnumerable<GridChart> Initial()
+    {
+        string[] shown = ["ACMEC SNRFOR USD XR14", "CYGNUS SNRFOR USD XR14", "CYGNUS SUBLT2 USD XR14"];
+        GridChart Of(string group, string[] columns) => new(ChartOrientation.SeriesInRows, null,
+            shown.Select(k => (GridChartSeries)new RowSeries($"{k} · {group}", "", k, k, group, columns.ToEquatableList())).ToEquatableList());
+        yield return Of(SpreadGroup, SpreadColumns);
+        yield return Of(HazardGroup, HazardColumns);
+    }
+
+    private void Shift(int step)
+    {
+        _shift = Math.Clamp(_shift + step, 0, CdsCurveData.Shifts.Length - 1);
+        _rows = CdsCurveData.Curves[_shift];
+    }
+}

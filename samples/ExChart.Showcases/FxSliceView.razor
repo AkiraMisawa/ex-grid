@@ -1,0 +1,76 @@
+@* FX volatility › Term structure and Smile: one slice of the surface on a category axis — the volatility
+   at a delta by tenor, or at an expiry by delta — picked from the page's own list. What links the slice
+   to the surface is page code: the chart is the surface's own slice (SurfaceDefinition.SliceChart), with
+   the quotes drawn beside it under the same colour where the slice holds a filled value, so the tooltip
+   says which values are quoted and which the page's interpolation made. *@
+<div class="xs-tools">
+    @if (Mud)
+    {
+        <MudSelect T="string" Value="_at" ValueChanged="Pick" Label="@PickLabel" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 140px" Class="xs-slice-at">
+            @foreach (var choice in Choices) { <MudSelectItem Value="choice">@choice</MudSelectItem> }
+        </MudSelect>
+    }
+    else
+    {
+        <label>@PickLabel
+            <select class="xs-slice-at" @bind:get="_at" @bind:set="(string? v) => Pick(v ?? _at)">
+                @foreach (var choice in Choices) { <option value="@choice">@choice</option> }
+            </select>
+        </label>
+    }
+    <span>@Note</span>
+</div>
+<div class="xs-panel">
+    @if (Mud)
+    {
+        <MudExGridPaper Elevation="1">
+            <ExChart Definition="_definition" Title="@ChartTitle" Width="ChartWidth" Height="ChartHeight" FileName="@FileName" Chrome="MudChartChrome.Default" />
+        </MudExGridPaper>
+    }
+    else
+    {
+        <ExChart Definition="_definition" Title="@ChartTitle" Width="ChartWidth" Height="ChartHeight" FileName="@FileName" />
+    }
+</div>
+
+@code {
+    /// <summary>Whether the view is drawn with MudBlazor's Chrome.</summary>
+    [Parameter] public bool Mud { get; set; }
+
+    /// <summary>
+    /// The surface axis the slice is taken at: <see cref="SurfaceSliceAxis.X"/> fixes a delta and draws the
+    /// term structure, <see cref="SurfaceSliceAxis.Y"/> fixes an expiry and draws the smile.
+    /// </summary>
+    [Parameter] public SurfaceSliceAxis Axis { get; set; }
+
+    private const double ChartWidth = 900, ChartHeight = 380;
+
+    private bool Term => Axis == SurfaceSliceAxis.X;
+    private string[] Choices => Term ? FxVolData.Deltas : FxVolSurface.Tenors;
+    private string PickLabel => Term ? "Delta" : "Expiry";
+    private string Name => Term ? $"{_at} volatility" : $"{_at} smile";
+    private string ChartTitle => Term ? $"{FxVolData.Pair} {_at} volatility by tenor" : $"{FxVolData.Pair} {_at} smile";
+    private string FileName => Term ? $"{FxVolData.Pair} term structure {_at}" : $"{FxVolData.Pair} smile {_at}";
+    private string Note => Term
+        ? "Tenors are evenly spaced, as quoted, not by their length."
+        : "Puts on the left, calls on the right, at the money in the middle.";
+
+    // The term structure opens at the money; the smile opens at 1Y, whose 25C has no quote.
+    private string _at = "";
+    private ChartDefinition _definition = null!;
+
+    protected override void OnInitialized()
+    {
+        _at = Term ? "ATM" : "1Y";
+        Rebuild();
+    }
+
+    private void Pick(string at)
+    {
+        _at = at;
+        Rebuild();
+    }
+
+    private void Rebuild() =>
+        _definition = FxVolSurface.Slice(Term ? SurfaceSlice.AtX(_at) : SurfaceSlice.AtY(_at), Name);
+}

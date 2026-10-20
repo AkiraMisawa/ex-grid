@@ -96,6 +96,17 @@ public class PriceRangeTests
     public void A_price_range_is_refused_off_a_dates_axis() =>
         Assert.Throws<ChartRefusedException>(() => Chart(Days(2), ChartAxis.Numbers()));
 
+    [Fact] // ADR-0300, ADR-0275: the volume panel's summary says the volume, not the prices again
+    public void The_summary_of_the_volume_panel_says_its_volume()
+    {
+        var bars = Days(10, volume: true);
+        var definition = Chart(bars);
+        var scene = ChartScene.Build(definition, Wide);
+        var summary = ChartSummary.Of(definition, scene, ChartView.All);
+        Assert.Matches($@"Index volume: maximum 1,?009 at {definition.Axis.Write(bars[^1].X)}\.", summary);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(summary, @"Index: maximum"));
+    }
+
     [Fact] // ADR-0300: volume gets a panel of its own below, undivided and from zero
     public void Volume_is_drawn_in_a_panel_below_from_zero()
     {

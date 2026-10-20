@@ -1,4 +1,4 @@
-# ExChart is shown in three Showcases and a Chart section of seven pages
+# ExChart is shown in five Showcases and a Chart section of nine pages
 
 *Decided with the user, 2026-10-19 (M4 grilling Q1, Q4 and Q5). Rewritten the same day: the user
 merged the three curve Showcases into one whose views are switched by buttons. ADR-0250 put the proof of concept's
@@ -55,10 +55,11 @@ Every Example carries the Built-in / MudBlazor switch (ADR-0110, ADR-0281).
 *Decided with the user later on 2026-10-19 and 2026-10-20, in the threads that build them (the scatter's
 grilling Q6, ADR block 0290; the candlesticks' Q9, ADR block 0300).* Scatter charts and candlesticks with
 error bars joined the first version, each with a Showcase and a page of its own: **CDS spread vs
-leverage** and **Equity index daily bars**, and the pages **Scatter and regression** and **Candles and
-intervals**. The first version therefore has five Showcases and a Chart section of nine pages. This record
-keeps its three and seven; those threads' records say what theirs show, and this title is rewritten when
-their work lands beside this.
+leverage** and **Equity index daily bars**, and the pages **Scatter and fitted lines** (ADR-0290's name for it) and **Candles and
+intervals**. The first version therefore has five Showcases and a Chart section of nine pages. Those threads'
+records say what theirs show; the title was rewritten from "three Showcases and … seven pages" on 2026-10-20,
+when their work landed beside this, and the two Showcases follow the shape the first three set: the grid
+beside its charts, fixed data, and a view switched from the bar where there is more than one.
 
 ## Considered
 

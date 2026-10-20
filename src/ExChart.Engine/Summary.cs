@@ -29,7 +29,7 @@ public static class ChartSummary
             foreach (var v in new[] { panel.Left, panel.Right }.OfType<VerticalAxis>())
                 parts.Add($"{named}{(v.Side == AxisSide.Left ? "Left" : "Right")} axis, {Number(v.Min)} to {Number(v.Max)}.");
             foreach (var piece in panel.Series)
-                parts.Add(Series(byId[piece.Id], axis, scene));
+                parts.Add(panel.VolumeOf is null ? Series(byId[piece.Id], axis, scene) : Volume(byId[piece.Id], axis, scene));
         }
         if (!string.IsNullOrWhiteSpace(description)) parts.Add(description.Trim());
         return string.Join(" ", parts);
@@ -52,6 +52,15 @@ public static class ChartSummary
         if (valued.Count == 0) return $"{s.Name}: no value in range.";
         var max = valued.MaxBy(p => p.Y!.Value.ToDouble());
         return $"{s.Name}: maximum {s.Write(max.Y!.Value)} at {axis.Write(max.X)}.";
+    }
+
+    // A volume panel says the volume, never its series' prices again (ADR-0300).
+    private static string Volume(ChartSeries s, ChartAxis axis, ChartScene scene)
+    {
+        var seen = s.Bars.Where(b => b.Volume is not null && b.X >= scene.XFrom && b.X <= scene.XTo).ToList();
+        if (seen.Count == 0) return $"{s.Name} volume: no value in range.";
+        var max = seen.MaxBy(b => b.Volume!.Value.ToDouble());
+        return $"{s.Name} volume: maximum {s.Write(max.Volume!.Value)} at {axis.Write(max.X)}.";
     }
 
     private static string Number(double v) => v.ToString("0.####", CultureInfo.InvariantCulture);

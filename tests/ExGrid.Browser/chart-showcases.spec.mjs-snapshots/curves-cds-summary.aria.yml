@@ -1,0 +1,5 @@
+- 'img "Chart 1. Maturity, 2026-10-13 to 2036-12-20. CDS quote: Left axis, 0 to 150. CDS quote · Par spread (bp): maximum 148.00 at 2036-12-20. Bootstrapped: Left axis, 0 to 4. Bootstrapped · Hazard rate (%): maximum 3.2606 at 2036-12-20."':
+  - text: 0 50 100 150
+  - button "CDS quote · Par spread (bp)" [pressed]
+  - text: 0 1 2 3 4 2027 2028 2029 2030 2031 2032 2033 2034 2035 2036
+  - button "Bootstrapped · Hazard rate (%)" [pressed]

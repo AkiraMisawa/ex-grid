@@ -1,0 +1,11 @@
+@page "/showcase/cds-spread"
+@layout BareLayout
+@inject DocsState State
+@using global::ExChart.Showcases
+
+@* ExChart's CDS spread vs leverage (ADR-0290, ADR-0291): reference names in a grid beside their scatter,
+   with the least-squares and the Theil–Sen line. The screen is ExChart.Showcases', shared with the demo pages, so
+   layer 3 drives the same component on both hosts. *@
+<ShowcaseFrame Title="CDS spread vs leverage">
+    <CreditScatterShowcase Mud="State.Mud" />
+</ShowcaseFrame>

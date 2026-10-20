@@ -1,0 +1,98 @@
+@* The frame every ExChart Showcase shares: an application bar with the desk's name and the screen's, and
+   the screen below it. Under MudBlazor's Chrome the bar is a MudPaper; under the built-in one, plain
+   markup. The colours are the page's own, as an application's stylesheet would set them. *@
+<style>
+    .xs-app {
+        --xs-bg: light-dark(#f4f6f9, #121418);
+        --xs-surface: light-dark(#ffffff, #1b1e24);
+        --xs-line: light-dark(#e1e5ea, #2c3038);
+        --xs-text: light-dark(#1d2330, #e4e7ec);
+        --xs-muted: light-dark(#667085, #98a2b3);
+        --xs-accent: light-dark(#2457c5, #7aa2f7);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: calc(100vh - var(--docs-banner-height, 0px));
+        padding: 0 16px 16px;
+        box-sizing: border-box;
+        background: var(--xs-bg);
+        color: var(--xs-text);
+        font-family: Roboto, Helvetica, Arial, sans-serif;
+    }
+    .xs-bar { display: flex; align-items: center; gap: 16px; min-height: 52px; margin: 0 -16px; padding: 0 16px; flex-wrap: wrap; }
+    .xs-builtin .xs-bar { background: var(--xs-surface); border-bottom: 1px solid var(--xs-line); }
+    .xs-mark {
+        display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 7px;
+        background: var(--xs-accent); color: light-dark(#fff, #10131a); font-weight: 700; font-size: 14px;
+    }
+    .xs-name { font-weight: 600; font-size: 16px; }
+    .xs-crumb { color: var(--xs-muted); font-size: 13px; }
+    .xs-spacer { flex: 1; }
+    .xs-panel { padding: 10px; border-radius: 8px; background: var(--xs-surface); border: 1px solid var(--xs-line); }
+    .xs-mud .xs-panel { padding: 0; border: 0; background: none; }
+    .xs-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--xs-muted); }
+    .xs-builtin .xs-button, .xs-builtin .xs-tools select {
+        font: inherit; color: var(--xs-text); background: var(--xs-surface); border: 1px solid var(--xs-line);
+        border-radius: 6px; padding: 5px 10px; cursor: pointer;
+    }
+    .xs-builtin .xs-button[aria-pressed="true"] { border-color: var(--xs-accent); color: var(--xs-accent); font-weight: 600; }
+    .xs-builtin .xs-button:disabled { opacity: 0.5; cursor: default; }
+    .xs-note { font-size: 13px; color: var(--xs-muted); margin: 0; }
+    .xs-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--xs-line); margin-bottom: 8px; }
+    .xs-tab {
+        font: inherit; font-size: 13px; color: var(--xs-muted); background: none; border: 0;
+        border-bottom: 2px solid transparent; padding: 6px 10px; cursor: pointer;
+    }
+    .xs-tab[aria-selected="true"] { color: var(--xs-accent); border-bottom-color: var(--xs-accent); }
+    .xs-tab-close { font: inherit; background: none; border: 0; color: var(--xs-muted); cursor: pointer; padding: 0 6px 0 0; }
+    .xs-views { display: flex; gap: 2px; background: light-dark(#eef1f5, #262a32); border-radius: 6px; padding: 2px; }
+    .xs-view { appearance: none; border: 0; background: none; color: var(--xs-muted); font: 500 12px system-ui, sans-serif; padding: 5px 11px; border-radius: 4px; cursor: pointer; }
+    .xs-view:hover { color: var(--xs-text); }
+    .xs-view-on { background: var(--xs-accent); color: light-dark(#fff, #10131a); }
+    .xs-mud .xs-mud-views { background: light-dark(#eef1f5, #262a32); }
+    .xs-mud .xs-mud-view-selected { background: var(--mud-palette-primary) !important; color: var(--mud-palette-primary-text) !important; }
+    .xs-fx-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+    .xs-fx-quotes { flex: 1 1 520px; min-width: 320px; }
+    .xs-side { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+    .xs-side-grid { flex: 1 1 360px; min-width: 300px; }
+    .xs-builtin .xs-tools label { display: inline-flex; align-items: center; gap: 6px; color: var(--xs-text); }
+    .xs-refusal { color: light-dark(#a15c00, #f5b754); font-size: 13px; margin: 0 0 8px; }
+</style>
+
+<div class="@($"xs-app {(Mud ? "xs-mud" : "xs-builtin")}")">
+    @if (Mud)
+    {
+        <MudPaper Square="true" Elevation="1" Class="xs-bar" Style="min-height: 56px">
+            <span class="xs-mark">R</span>
+            <MudText Typo="Typo.subtitle1" Style="font-weight: 600">Northgate Risk</MudText>
+            <MudText Typo="Typo.body2" Class="xs-crumb">@Crumb</MudText>
+            <MudSpacer />
+            @Tools
+        </MudPaper>
+    }
+    else
+    {
+        <header class="xs-bar">
+            <span class="xs-mark">R</span>
+            <span class="xs-name">Northgate Risk</span>
+            <span class="xs-crumb">@Crumb</span>
+            <span class="xs-spacer"></span>
+            @Tools
+        </header>
+    }
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>Whether the screen is drawn with MudBlazor's Chrome.</summary>
+    [Parameter] public bool Mud { get; set; }
+
+    /// <summary>Where the screen sits in the application, shown beside its name.</summary>
+    [Parameter] public string Crumb { get; set; } = "";
+
+    /// <summary>The controls at the bar's end.</summary>
+    [Parameter] public RenderFragment? Tools { get; set; }
+
+    /// <summary>The screen.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

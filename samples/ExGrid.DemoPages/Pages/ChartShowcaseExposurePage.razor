@@ -1,0 +1,31 @@
+@page "/chart-showcase/exposure"
+@using global::ExChart.Components
+@using global::ExChart.MudBlazor
+@using global::ExChart.Showcases
+
+<DemoNav />
+
+@* ExChart's Exposure profile Showcase (ADR-0280), the component the Docs Site shows at
+   /showcase/exposure, here so layer 3 drives it on both hosts. ?chrome=mud draws it with MudBlazor's
+   Chrome. *@
+<DemoChromeAssets Name="@Chrome" Paper="true" Dark="DemoChrome.IsDark(Scheme)">
+    <Head>
+        <ExChartStylesheet />
+        @if (DemoChrome.IsMud(Chrome))
+        {
+            <MudExChartStylesheet />
+        }
+    </Head>
+</DemoChromeAssets>
+
+<ExposureShowcase Mud="DemoChrome.IsMud(Chrome)" />
+
+@code {
+    /// <summary><c>mud</c> for MudBlazor's Chrome; absent or <c>builtin</c> for the built-in one.</summary>
+    [SupplyParameterFromQuery(Name = "chrome")] public string? Chrome { get; set; }
+
+    /// <summary><c>dark</c> for the dark scheme; absent or <c>light</c> for the light one.</summary>
+    [SupplyParameterFromQuery(Name = "scheme")] public string? Scheme { get; set; }
+
+    protected override void OnParametersSet() => DemoChrome.From(Chrome);
+}
