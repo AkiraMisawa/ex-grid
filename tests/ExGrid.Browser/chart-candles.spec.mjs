@@ -74,3 +74,25 @@ test('ADR-0303: a Bid–Ask band and 95% CI whiskers, named in the tooltip', asy
     await page.mouse.move(x, y);
     await expect(forecasts.locator('.ex-chart-tooltip')).toContainText(/\[\d\.\d{2}, \d\.\d{2}\] 95% CI/);
 });
+
+test('ADR-0304: a scatter\'s intervals run both ways through each mark, and the tooltip names both', async ({ page }) => {
+    const chart = page.locator('#estimates .ex-chart');
+    await chart.scrollIntoViewIfNeeded();
+    const whiskers = await chart.locator('path.ex-chart-whiskers').getAttribute('d');
+    expect(whiskers.match(/V/g)).toHaveLength(6);
+    expect(whiskers.match(/H/g)).toHaveLength(6);
+    // The highest mark is Trend's.
+    const d = await chart.locator('path.ex-chart-markers').first().getAttribute('d');
+    let best = null;
+    for (const [, x, y] of d.matchAll(/M(-?[\d.]+),(-?[\d.]+)/g)) {
+        if (best === null || Number(y) < best[1]) best = [Number(x), Number(y)];
+    }
+    const box = await chart.locator('svg').first().boundingBox();
+    await page.mouse.move(box.x + best[0] + 2, box.y + best[1] + 2);
+    const tooltip = chart.locator('.ex-chart-tooltip');
+    await expect(tooltip.locator('.ex-chart-tooltip-position')).toHaveText('Trend');
+    await expect(tooltip).toContainText('y [-0.1, 14.3] 95% CI');
+    await expect(tooltip).toContainText('x [12.9, 16.5] 95% CI');
+    await expect(chart.locator('.ex-chart-legend')).toContainText('Strategies (95% CI)');
+});
+

@@ -222,6 +222,7 @@ internal sealed class ChartSeriesView : ComponentBase
         b.CloseElement();
         if (piece.Candles.Count > 0 || piece.Volumes.Count > 0) Candles(b, piece);
         if (piece.Whiskers.Count > 0 || piece.Bands.Count > 0) Intervals(b, piece, r);
+        if (piece.Markers.Any(m => m.YBounds is not null || m.XBounds is not null)) MarkIntervals(b, piece, r);
         b.CloseElement();
     }
 
@@ -301,6 +302,29 @@ internal sealed class ChartSeriesView : ComponentBase
         }
         Path(b, 42, "ex-chart-interval-band", band);
         Path(b, 45, "ex-chart-whiskers", whiskers);
+    }
+
+    // An Observation's intervals: a whisker up and down and one across, each capped, through its mark;
+    // a merged mark's is the union of its points' (ADR-0304).
+    private static void MarkIntervals(RenderTreeBuilder b, SeriesPiece piece, double r)
+    {
+        var d = new StringBuilder();
+        foreach (var m in piece.Markers)
+        {
+            if (m.YBounds is { } y)
+            {
+                VLine(d, m.X, y.Lower, y.Upper);
+                d.Append('M').Append(Svg.N(m.X - r)).Append(',').Append(Svg.N(y.Lower)).Append('h').Append(Svg.N(2 * r));
+                d.Append('M').Append(Svg.N(m.X - r)).Append(',').Append(Svg.N(y.Upper)).Append('h').Append(Svg.N(2 * r));
+            }
+            if (m.XBounds is { } x)
+            {
+                d.Append('M').Append(Svg.N(x.Lower)).Append(',').Append(Svg.N(m.Y)).Append('H').Append(Svg.N(x.Upper));
+                d.Append('M').Append(Svg.N(x.Lower)).Append(',').Append(Svg.N(m.Y - r)).Append('v').Append(Svg.N(2 * r));
+                d.Append('M').Append(Svg.N(x.Upper)).Append(',').Append(Svg.N(m.Y - r)).Append('v').Append(Svg.N(2 * r));
+            }
+        }
+        Path(b, 48, "ex-chart-whiskers", d);
     }
 }
 

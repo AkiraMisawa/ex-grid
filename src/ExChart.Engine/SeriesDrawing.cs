@@ -16,6 +16,12 @@ public readonly record struct DrawnMarker(double X, double Y, bool Filled)
 
     /// <summary>How many of the series' points the marker stands for: more than one where markers on one device pixel were merged (ADR-0290).</summary>
     public int Count { get; init; } = 1;
+
+    /// <summary>An Observation's vertical interval at the marker, or null: where marks merged, the union of theirs (ADR-0304).</summary>
+    public (double Lower, double Upper)? YBounds { get; init; }
+
+    /// <summary>An Observation's horizontal interval at the marker, or null: where marks merged, the union of theirs (ADR-0304).</summary>
+    public (double Lower, double Upper)? XBounds { get; init; }
 }
 
 /// <summary>
@@ -50,7 +56,7 @@ public sealed record SeriesDrawing(IReadOnlyList<IReadOnlyList<DrawnPoint>> Line
             SeriesKind.PriceRange => new SeriesDrawing([], []) { Candles = PriceRanges.Candles(series, from, to, CandlePeriod.Row) },
             SeriesKind.RateOverInterval => Steps(series, axis, perYear: false),
             SeriesKind.AmountPerPeriod => Steps(series, axis, perYear: true),
-            SeriesKind.Observation => Observations(series.Points),
+            SeriesKind.Observation => Observations(series),
             _ => throw new ChartRefusedException($"'{series.Name}' declares no Series Kind."),
         };
 
@@ -162,14 +168,20 @@ public sealed record SeriesDrawing(IReadOnlyList<IReadOnlyList<DrawnPoint>> Line
 
     // An Observation's points, each a marker of its own and none joined (ADR-0290); a point missing
     // its value is no marker.
-    private static SeriesDrawing Observations(IReadOnlyList<ChartPoint> points)
+    // An interval's bounds, one a row (ADR-0304).
+    private static SeriesDrawing Observations(ChartSeries series)
     {
+        var points = series.Points;
         var markers = new List<DrawnMarker>(points.Count);
         for (var i = 0; i < points.Count; i++)
             if (points[i].Y is { } y && double.IsFinite(points[i].X))
-                markers.Add(new DrawnMarker(points[i].X, y.ToDouble(), Filled: true) { Point = i });
+                markers.Add(new DrawnMarker(points[i].X, y.ToDouble(), Filled: true)
+                    { Point = i, YBounds = BoundsAt(series.Interval, i), XBounds = BoundsAt(series.XInterval, i) });
         return new SeriesDrawing([], markers);
     }
+
+    internal static (double Lower, double Upper)? BoundsAt(SeriesInterval? interval, int i) =>
+        interval?.Bounds[i] is { Lower: { } lo, Upper: { } hi } ? (lo.ToDouble(), hi.ToDouble()) : null;
 
     internal static List<ChartPoint> Sample(SeriesSampler f, IReadOnlyList<Segment> segments, double from, double to, int pixels, IReadOnlyCollection<double> quotes, bool logarithmic = false)
     {

@@ -192,8 +192,11 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         foreach (var key in view.Hidden.Where(k => definition.Series.All(s => s.Id != k)).Order(StringComparer.Ordinal))
             notes.Add($"\"{key}\" is hidden, but no series has that key.");
         // A scale asked for and not drawn is said by name (ADR-0290).
-        if (view.Scale == AxisScale.Logarithmic && !logX)
-            notes.Add(NotLogarithmic(visible.FirstOrDefault(s => s.Points.Any(p => !(p.X > 0)) || s.Sampler is { From: <= 0 }), "across", axis.Values != AxisValues.Numbers));
+        if (view.Scale == AxisScale.Logarithmic && !logX && axis.Values == AxisValues.Numbers
+            && visible.FirstOrDefault(s => LowBound(s.XInterval) is not null) is { } bounded && !visible.Any(s => s.Points.Any(p => !(p.X > 0)) || s.Sampler is { From: <= 0 }))
+            notes.Add($"The axis across stays proportional: '{bounded.Name}' has a bound of {LowBound(bounded.XInterval)!.Value.Bound.ToString("0.####", CultureInfo.InvariantCulture)} in its {bounded.XInterval!.Meaning} at {axis.Write(LowBound(bounded.XInterval)!.Value.X)}, which a logarithmic axis cannot place.");
+        else if (view.Scale == AxisScale.Logarithmic && !logX)
+            notes.Add(NotLogarithmic(visible.FirstOrDefault(s => s.Points.Any(p => !(p.X > 0)) || s.Sampler is { From: <= 0 } || LowBound(s.XInterval) is not null), "across", axis.Values != AxisValues.Numbers));
         var logY = view.YScale == AxisScale.Logarithmic;
         if (logY && LogarithmicRefusal(visible, axis, from, to, devicePixels) is { } refusal)
         {
@@ -259,7 +262,9 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         }
         // An interval's meaning, in the legend and here (ADR-0303).
         foreach (var s in visible.Where(s => s.Interval is not null))
-            notes.Add($"{s.Name}: the interval is {s.Interval!.Meaning}.");
+            notes.Add($"{s.Name}: the {(s.XInterval is null ? "" : "vertical ")}interval is {s.Interval!.Meaning}.");
+        foreach (var s in visible.Where(s => s.XInterval is not null))
+            notes.Add($"{s.Name}: the horizontal interval is {s.XInterval!.Meaning}.");
         var rowWidth = RowWidth(visible, axis, map, from, to, plotWidth);
         if (axis.Packed)
             notes.Add("Dates are packed: the days nobody traded are left out, so the spacing is sessions, not calendar time.");
@@ -350,6 +355,8 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             var point = s.Sampler is null ? s.Points.FirstOrDefault(p => p.Y is { } v && !(v.ToDouble() > 0)) : default;
             if (s.Sampler is null && point.Y is { } value)
                 return $"The vertical axis stays proportional: '{s.Name}' has {s.Write(value)} at {axis.Write(point.X)}, which a logarithmic axis cannot place.";
+            if (LowBound(s.Interval) is { } low0)
+                return $"The vertical axis stays proportional: '{s.Name}' has a bound of {low0.Bound.ToString("0.####", CultureInfo.InvariantCulture)} in its {s.Interval!.Meaning} at {axis.Write(low0.X)}, which a logarithmic axis cannot place.";
         }
         return null;
     }
@@ -394,7 +401,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         if (scale == AxisScale.Categories && d.Series.Any(s => s.Sampler is not null || s.Kind == SeriesKind.Observation))
             return axis;
         if (scale == AxisScale.Logarithmic && (axis.Values != AxisValues.Numbers
-                || d.Series.Any(s => s.Points.Any(p => !(p.X > 0)) || s.Sampler is { From: <= 0 })))
+                || d.Series.Any(s => s.Points.Any(p => !(p.X > 0)) || s.Sampler is { From: <= 0 } || LowBound(s.XInterval) is not null)))
             return axis;
         if (scale == AxisScale.Categories && axis.Named.Count == 0)
             axis = axis with
@@ -503,7 +510,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
                 : axis.Named.Count == 0 ? (0d, 0d) : (axis.Named.Min(n => n.Position), axis.Named.Max(n => n.Position));
             return (view.From ?? first, view.To ?? last);
         }
-        var xs = visible.SelectMany(s => s.Points.Select(p => p.X).Concat(s.Sampler is { } f ? [f.From, f.To] : [])).ToList();
+        var xs = visible.SelectMany(s => s.Points.Select(p => p.X).Concat(s.Sampler is { } f ? [f.From, f.To] : []).Concat(BoundValues(s.XInterval))).ToList();
         var lo = xs.Count > 0 ? xs.Min() : axis.EffectiveScale == AxisScale.Logarithmic ? 1 : 0;
         var hi = xs.Count > 0 ? xs.Max() : axis.EffectiveScale == AxisScale.Logarithmic ? 10 : 1;
         // A scatter's marks are not drawn on the plot's edge: its bounds are rounded out, to whole
@@ -529,7 +536,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             var ss = members.Where(s => s.Axis == side).ToList();
             if (ss.Count == 0) return null;
             var ys = ss.SelectMany(s => drawings[s.Id].Lines.SelectMany(l => l).Where(p => p.X >= from && p.X <= to).Select(p => p.Y)
-                .Concat(drawings[s.Id].Markers.Where(m => m.X >= from && m.X <= to).Select(m => m.Y))
+                .Concat(drawings[s.Id].Markers.Where(m => m.X >= from && m.X <= to).SelectMany(m => m.YBounds is { } yb ? [m.Y, yb.Lower, yb.Upper] : new[] { m.Y }))
                 .Concat(drawings[s.Id].Candles.SelectMany(c => new[] { c.Low, c.High }))
                 .Concat(drawings[s.Id].Whiskers.Concat(drawings[s.Id].Bands.SelectMany(b => b)).Where(w => w.X >= from && w.X <= to).SelectMany(w => new[] { w.Lower, w.Upper }))).ToList();
             var lo = ys.Count > 0 ? ys.Min() : logarithmic ? 1 : 0;
@@ -631,7 +638,14 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         inRange = new SeriesDrawing(inRange.Lines.SelectMany(l => ClipLine(l, axis.Min, axis.Max, axis.Logarithmic)).ToList(), inRange.Markers.Where(m => Shown(m.Y)).ToList());
         if (s.Kind == SeriesKind.Observation)
             return new SeriesPiece(s.Id, s.Name, s.EffectiveKeys, look, s.Kind, s.Interpolated, EquatableList<EquatableList<DrawnPoint>>.Empty,
-                Merged(inRange.Markers.Select(m => m with { X = map(m.X), Y = YOf(axis, m.Y, plot) }), dpr).ToEquatableList(),
+                Merged(inRange.Markers.Select(m => m with
+                {
+                    X = map(m.X),
+                    Y = YOf(axis, m.Y, plot),
+                    // A whisker stops at the plot's edge when the range is narrowed past it (ADR-0304).
+                    YBounds = m.YBounds is { } yb ? Ordered(YOf(axis, Math.Clamp(yb.Lower, axis.Min, axis.Max), plot), YOf(axis, Math.Clamp(yb.Upper, axis.Min, axis.Max), plot)) : null,
+                    XBounds = m.XBounds is { } xb ? Ordered(map(Math.Clamp(xb.Lower, from, to)), map(Math.Clamp(xb.Upper, from, to))) : null,
+                }), dpr).ToEquatableList(),
                 EquatableList<(double, double)>.Empty, EquatableList<PixelSummary>.Empty);
         var thinned = Thinning.Of(inRange, x => (map(x) - plot.X) * dpr, devicePixels);
         var (whiskers, bands) = Intervals(drawing with
@@ -730,13 +744,35 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
     }
 
     // A series' name in its legend, with its interval's meaning (ADR-0303).
-    internal static string LegendName(ChartSeries s) => s.Interval is { } i ? $"{s.Name} ({i.Meaning})" : s.Name;
+    internal static string LegendName(ChartSeries s) => (s.Interval?.Meaning, s.XInterval?.Meaning) switch
+    {
+        (null, null) => s.Name,
+        ({ } y, null) => $"{s.Name} ({y})",
+        (null, { } x) => $"{s.Name} (x: {x})",
+        ({ } y, { } x) when y == x => $"{s.Name} ({y})",
+        ({ } y, { } x) => $"{s.Name} (y: {y}; x: {x})",
+    };
+
+    // The bounds a series hands in, with values (ADR-0303, ADR-0304).
+    private static IEnumerable<double> BoundValues(SeriesInterval? interval) =>
+        interval?.Bounds.SelectMany(b => new[] { b.Lower, b.Upper }).OfType<ChartValue>().Select(v => v.ToDouble()) ?? [];
+
+    // A bound a logarithmic axis cannot place: one at or below zero (ADR-0304).
+    private static (double X, double Bound)? LowBound(SeriesInterval? interval) =>
+        interval?.Bounds.SelectMany(b => new[] { b.Lower, b.Upper }.OfType<ChartValue>().Select(v => (b.X, v.ToDouble()))).Where(e => !(e.Item2 > 0))
+            .Select(e => ((double, double)?)e).FirstOrDefault();
 
     // The packed axis's slots: each row of a Price Range with a value (ADR-0301).
     internal static IEnumerable<double> PackedSessions(ChartDefinition d) =>
         d.Series.Where(s => s.Kind == SeriesKind.PriceRange)
             .SelectMany(s => { var hasOpen = PriceRanges.HasOpen(s); return s.Bars.Where(b => PriceRanges.Whole(b, hasOpen)).Select(b => b.X); })
             .Distinct();
+
+    private static (double Lower, double Upper) Ordered(double a, double b) => (Math.Min(a, b), Math.Max(a, b));
+
+    // Merged marks carry the union of their intervals, so none is dropped (ADR-0304).
+    private static (double Lower, double Upper)? Union((double Lower, double Upper)? a, (double Lower, double Upper)? b) =>
+        a is { } p ? b is { } q ? (Math.Min(p.Lower, q.Lower), Math.Max(p.Upper, q.Upper)) : p : b;
 
     // Past the pixels, an Observation's marks centred on one device pixel are one mark, which says how
     // many it stands for (ADR-0290). The first point drawn there names it.
@@ -747,7 +783,8 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         foreach (var m in marks)
         {
             var cell = ((long)Math.Floor(m.X * dpr), (long)Math.Floor(m.Y * dpr));
-            if (at.TryGetValue(cell, out var i)) kept[i] = kept[i] with { Count = kept[i].Count + m.Count };
+            if (at.TryGetValue(cell, out var i))
+                kept[i] = kept[i] with { Count = kept[i].Count + m.Count, YBounds = Union(kept[i].YBounds, m.YBounds), XBounds = Union(kept[i].XBounds, m.XBounds) };
             else
             {
                 at[cell] = kept.Count;

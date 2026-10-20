@@ -83,7 +83,7 @@ public static class DemoPageList
         new("scatter", "Scatter and fitted lines", "ExChart",
             "CDS spreads against leverage beside their grid, with the least-squares and the Theil–Sen line; Old Faithful; and PRML's polynomial curve fitting of degree 0, 1, 3 and 9. The nearest point's tooltip, a click to the row, a rectangle that narrows both axes, a logarithmic spread axis (ADR-0290, ADR-0291)."),
         new("chart-candles", "Candles and intervals", "ExChart",
-            "Ten years of a synthetic index as candles with volume and a moving average: rising hollow and falling filled, merged into months to fit and back to days when narrowed, on calendar time or packed sessions, in three colour conventions; a yield curve with a Bid–Ask band and forecasts with 95% CI whiskers (ADR-0300 to ADR-0303)."),
+            "Ten years of a synthetic index as candles with volume and a moving average: rising hollow and falling filled, merged into months to fit and back to days when narrowed, on calendar time or packed sessions, in three colour conventions; a yield curve with a Bid–Ask band and forecasts with 95% CI whiskers; strategies' risk and return with intervals both ways (ADR-0300 to ADR-0304)."),
         new("surface", "3D surface", "ExChart",
             "An FX volatility surface turned by dragging or with the arrow keys, zoomed and panned, read at the grid point nearest the pointer, sliced into a smile or a term structure by a click, with a hole drawn as a hole (ADR-0274)."),
     ];
