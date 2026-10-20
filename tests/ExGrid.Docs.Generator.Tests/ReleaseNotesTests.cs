@@ -173,6 +173,25 @@ public class ReleaseNotesTests
         Assert.Contains(Notices(run), d => d.Id == "EXDOCS008" && d.GetMessage().Contains(message));
     }
 
+    [Fact] // ADR-0190, ADR-0280: a version that publishes ExChart's packages carries its heading
+    public void A_version_publishing_exchart_carries_its_heading()
+    {
+        var text = Version("0.1.0-beta.2").Replace("Packages: ExGrid, ExGrid.MudBlazor", "Packages: ExGrid, ExGrid.MudBlazor, ExChart.Engine, ExChart");
+        var run = Run(Valid().Where(f => !f.Item1.EndsWith("0.1.0-beta.2.md")).Append(Notes("0.1.0-beta.2.md", text)));
+        Assert.Contains("'## ExChart' is missing before '## Data'", One(run, "EXDOCS008").GetMessage());
+
+        var carried = text.Replace("## Data\n", "## ExChart\n\n- **Added:** The chart (ADR-0130).\n\n## Data\n");
+        Assert.Empty(Notices(Run(Valid().Where(f => !f.Item1.EndsWith("0.1.0-beta.2.md")).Append(Notes("0.1.0-beta.2.md", carried)))));
+    }
+
+    [Fact] // ADR-0190, ADR-0280: a version that never published ExChart has no heading for it
+    public void A_version_without_exchart_has_no_heading_for_it()
+    {
+        var text = Version("0.1.0-beta.2").Replace("## Data\n", "## ExChart\n\nNo change. Its packages are republished at this version.\n\n## Data\n");
+        var run = Run(Valid().Where(f => !f.Item1.EndsWith("0.1.0-beta.2.md")).Append(Notes("0.1.0-beta.2.md", text)));
+        Assert.Contains("'## ExChart' is not one of the notes' headings", One(run, "EXDOCS008").GetMessage());
+    }
+
     [Fact] // ADR-0190: a heading left out is an error at the heading that follows it
     public void A_missing_heading_is_an_error_where_it_belongs()
     {
@@ -200,7 +219,7 @@ public class ReleaseNotesTests
     [InlineData("ExGrid", "None.", "A product with nothing new says")]
     [InlineData("Breaking changes", "None.\n\n- **ExGrid:** Something.", "None. stands alone")]
     [InlineData("Breaking changes", "- Something broke.", "begins with the products it reaches in bold")]
-    [InlineData("Breaking changes", "- **ExChart:** Something broke.", "begins with the products it reaches in bold")]
+    [InlineData("Breaking changes", "- **ExPlot:** Something broke.", "begins with the products it reaches in bold")]
     [InlineData("Behaviour changes", "A paragraph.", "is a bullet that begins with the products it reaches")]
     [InlineData("ExGrid", "- Something new.", "begins with what it is, **Added:** or **Fixed:**")]
     [InlineData("ExGrid", "- **Behaviour:** It paints otherwise.", "A behaviour change goes under '## Behaviour changes'")]
@@ -242,7 +261,7 @@ public class ReleaseNotesTests
     [InlineData("Published: 2026-10-04\nPackages: ExGrid\nTarget: net10.0\nCommit: 92bdfae\n", 6, "Commit: is not a version's header line")]
     [InlineData("Published: 4 October 2026\nPackages: ExGrid\nTarget: net10.0\n", 3, "Published: is the UTC day")]
     [InlineData("Published: 2026-02-30\nPackages: ExGrid\nTarget: net10.0\n", 3, "Published: is the UTC day")]
-    [InlineData("Published: 2026-10-04\nPackages: ExGrid, ExChart\nTarget: net10.0\n", 4, "'ExChart' is not one")]
+    [InlineData("Published: 2026-10-04\nPackages: ExGrid, ExPlot\nTarget: net10.0\n", 4, "'ExPlot' is not one")]
     [InlineData("Published: 2026-10-04\nPackages: ExGrid\nTarget: .NET 10\n", 5, "Target: is the packages' target framework")]
     [InlineData("Published: 2026-10-04\nPackages: ExGrid\nTarget: net10.0\nThis line is prose.\n", 6, "The header lines are Key: value")]
     public void A_header_line_out_of_form_is_an_error_at_its_line(string headers, int line, string message)
@@ -378,7 +397,7 @@ public class ReleaseNotesTests
     [Theory] // ADR-0190: a Change Note names its Product and its Kind, and says what changed in a paragraph
     [InlineData("Kind: Added\n\nText.", "names no Product")]
     [InlineData("Product: ExGrid\n\nText.", "names no Kind")]
-    [InlineData("Product: ExChart\nKind: Added\n\nText.", "Product is one of ExGrid, ExSheet, ExPivot, Data, and 'ExChart' is not")]
+    [InlineData("Product: ExPlot\nKind: Added\n\nText.", "Product is one of ExGrid, ExSheet, ExPivot, ExChart, Data, and 'ExPlot' is not")]
     [InlineData("Product: ExGrid\nKind: Behavior\n\nText.", "(British spelling: Behaviour)")]
     [InlineData("Product: ExGrid\nKind: Added\nPR: 65\n\nText.", "PR: is not a Change Note's header line")]
     [InlineData("Product: ExGrid\nProduct: ExSheet\nKind: Added\n\nText.", "Product: is written twice")]

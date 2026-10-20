@@ -26,7 +26,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <TrimmerRootAssembly Include="ExGrid;ExGrid.MudBlazor;ExSheet;ExSheet.Engine;ExSheet.MudBlazor;ExPivot;ExPivot.Engine;ExPivot.MudBlazor;ExGrid.Data;ExGrid.Data.Arrow" />
+    <TrimmerRootAssembly Include="ExGrid;ExGrid.MudBlazor;ExSheet;ExSheet.Engine;ExSheet.MudBlazor;ExPivot;ExPivot.Engine;ExPivot.MudBlazor;ExChart;ExChart.Engine;ExChart.MudBlazor;ExGrid.Data;ExGrid.Data.Arrow" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,6 +44,8 @@
     <ProjectReference Include="..\..\src\ExSheet.MudBlazor\ExSheet.MudBlazor.csproj" />
     <ProjectReference Include="..\..\src\ExPivot\ExPivot.csproj" />
     <ProjectReference Include="..\..\src\ExPivot.MudBlazor\ExPivot.MudBlazor.csproj" />
+    <ProjectReference Include="..\..\src\ExChart\ExChart.csproj" />
+    <ProjectReference Include="..\..\src\ExChart.MudBlazor\ExChart.MudBlazor.csproj" />
     <ProjectReference Include="..\..\src\ExGrid.Data\ExGrid.Data.csproj" />
     <ProjectReference Include="..\..\src\ExGrid.Data.Arrow\ExGrid.Data.Arrow.csproj" />
     <!-- The build step that highlights the Examples, reads the API documentation, maps the site,

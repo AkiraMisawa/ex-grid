@@ -1,0 +1,12 @@
+@using ExChart.Components
+@using ExChart.Engine
+@using ExChart.MudBlazor
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExChart Definition="Definition" Title="Exposure profile" Width="720" Height="360" Chrome="MudChartChrome.Default" />
+</MudExGridPaper>
+
+@code {
+    // Held in a field: a new definition is a new chart, redrawn.
+    private static readonly ChartDefinition Definition = new(ChartAxis.Dates("Date"), ChartData.Exposure().Take(2).ToList());
+}

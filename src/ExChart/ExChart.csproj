@@ -16,6 +16,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- A saved SVG carries the stylesheet inside it (ADR-0282): the shipped, minified one. -->
+    <EmbeddedResource Include="wwwroot\ex-chart.min.css" LogicalName="ExChart.ex-chart.min.css" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="ExChart.Components.Tests" />
   </ItemGroup>
 

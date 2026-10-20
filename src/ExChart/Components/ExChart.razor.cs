@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using global::ExChart.Chrome;
 using global::ExChart.Engine;
 using global::ExGrid;
 using global::ExGrid.Chrome;
@@ -77,7 +78,19 @@ public partial class ExChart
     /// </summary>
     [Parameter] public EventCallback<ChartPointClick> OnPointClick { get; set; }
 
+    /// <summary>
+    /// What draws the toolbar and the context menu (ADR-0281): ExChart.MudBlazor's
+    /// <c>MudChartChrome</c>, or null for the built-in markup. The legend, the tooltip and the plot
+    /// are ExChart's under any Chrome, and swapping it changes no behaviour.
+    /// </summary>
+    [Parameter] public IChartChrome? Chrome { get; set; }
+
+    /// <summary>The name a saved file takes, without its extension; the title's when null, else "chart" (ADR-0282).</summary>
+    [Parameter] public string? FileName { get; set; }
+
     [Inject] private IJSRuntime JS { get; set; } = null!;
+
+    [Inject] private IServiceProvider Services { get; set; } = null!;
 
     private static readonly IReadOnlySet<string> NoneHidden = new HashSet<string>();
 
@@ -123,7 +136,27 @@ public partial class ExChart
     private string? _filterError;
 
     /// <summary>Creates the chart.</summary>
-    public ExChart() => _toggle = EventCallback.Factory.Create<string>(this, ToggleAsync);
+    public ExChart()
+    {
+        _toggle = EventCallback.Factory.Create<string>(this, ToggleAsync);
+        // Held once, so a context built from them is equal to the last while nothing changed.
+        _toggleFilters = () => { ToggleFilters(); StateHasChanged(); return Task.CompletedTask; };
+        _resetRange = ResetRangeAsync;
+        _toggleTable = () => { ToggleTable(); StateHasChanged(); return Task.CompletedTask; };
+        _csv = DownloadCsvAsync;
+        _svg = DownloadSvgAsync;
+        _png = DownloadPngAsync;
+        _apply = ApplyRangeAsync;
+        _setScale = scale => SetScaleAsync(scale.ToString());
+        _fromMenu = new Dictionary<string, Func<Task>>
+        {
+            [ChartCommandIds.ResetRange] = () => FromMenuAsync(_resetRange),
+            [ChartCommandIds.Table] = () => FromMenuAsync(_toggleTable),
+            [ChartCommandIds.DownloadCsv] = () => FromMenuAsync(_csv),
+            [ChartCommandIds.DownloadSvg] = () => FromMenuAsync(_svg),
+            [ChartCommandIds.DownloadPng] = () => FromMenuAsync(_png),
+        };
+    }
 
     /// <inheritdoc />
     protected override void OnParametersSet()
@@ -337,6 +370,9 @@ public partial class ExChart
     {
         _range = range;
         _filterError = null;
+        // Chart Filters shows the range as it now stands, however it was set (ADR-0273).
+        _fromText = range?.From is { } f ? Invariant(f) : null;
+        _toText = range?.To is { } t ? Invariant(t) : null;
         Rebuild();
         StateHasChanged();
         await OnRangeChanged.InvokeAsync(range);
@@ -370,17 +406,23 @@ public partial class ExChart
 
     // The range typed under Chart Filters (ADR-0273), in the axis' own values. A value that does
     // not read as one is said, never guessed (spine rule 1).
-    private async Task ApplyTypedRangeAsync()
+    private Task ApplyTypedRangeAsync() => ApplyRangeAsync(_fromText, _toText);
+
+    private async Task ApplyRangeAsync(string? fromText, string? toText)
     {
-        if (!TryRead(_fromText, out var from) || !TryRead(_toText, out var to))
+        _fromText = fromText;
+        _toText = toText;
+        if (!TryRead(fromText, out var from) || !TryRead(toText, out var to))
         {
-            var bad = !TryRead(_fromText, out _) ? _fromText : _toText;
+            var bad = !TryRead(fromText, out _) ? fromText : toText;
             _filterError = $"“{bad}” is not {AxisKind} on this axis.";
+            StateHasChanged();
             return;
         }
         if (from > to)
         {
             _filterError = "From is after To.";
+            StateHasChanged();
             return;
         }
         await SetRangeAsync(from is null && to is null ? null : new ChartRange(from, to));
@@ -391,6 +433,7 @@ public partial class ExChart
         if (!Enum.TryParse<AxisScale>(value, out var scale) || scale == (_scale ?? Definition.Axis.EffectiveScale)) return;
         _scale = scale;
         Rebuild();
+        StateHasChanged();
         await OnScaleChanged.InvokeAsync(scale);
     }
 
@@ -448,33 +491,7 @@ public partial class ExChart
     private RenderFragment Drawing => b =>
     {
         var lh = _metrics.LineHeight;
-        for (var i = 0; i < _scene.Panels.Count; i++)
-        {
-            var panel = _scene.Panels[i];
-            b.OpenComponent<ChartAxesView>(0);
-            b.SetKey("axes:" + panel.Name);
-            b.AddComponentParameter(1, nameof(ChartAxesView.Panel), panel);
-            b.AddComponentParameter(2, nameof(ChartAxesView.XTicks), _scene.XTicks);
-            b.AddComponentParameter(3, nameof(ChartAxesView.Last), i == _scene.Panels.Count - 1);
-            b.AddComponentParameter(4, nameof(ChartAxesView.LineHeight), lh);
-            b.AddComponentParameter(5, nameof(ChartAxesView.Angle), AxisStyle?.Angle ?? 0);
-            b.CloseComponent();
-            foreach (var piece in panel.Series)
-            {
-                b.OpenComponent<ChartSeriesView>(6);
-                b.SetKey((panel.VolumeOf is null ? "series:" : "volume:") + piece.Id);
-                b.AddComponentParameter(7, nameof(ChartSeriesView.Piece), piece);
-                b.AddComponentParameter(8, nameof(ChartSeriesView.Plot), panel.Plot);
-                b.AddComponentParameter(9, nameof(ChartSeriesView.LineHeight), lh);
-                b.CloseComponent();
-            }
-            b.OpenComponent<ChartLegendView>(10);
-            b.SetKey("legend:" + panel.Name);
-            b.AddComponentParameter(11, nameof(ChartLegendView.Entries), panel.Legend);
-            b.AddComponentParameter(12, nameof(ChartLegendView.LineHeight), lh);
-            b.AddComponentParameter(13, nameof(ChartLegendView.Toggle), _toggle);
-            b.CloseComponent();
-        }
+        b.AddContent(0, ChartDrawing.Panels(_scene, lh, AxisStyle?.Angle ?? 0, _toggle));
         b.OpenComponent<ChartBandView>(14);
         b.AddComponentParameter(15, nameof(ChartBandView.Span), BandSpan);
         b.AddComponentParameter(16, nameof(ChartBandView.Top), BandTop);
@@ -542,7 +559,68 @@ public partial class ExChart
 
     private static string ScriptNotice => BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script);
 
-    // ---- The pointer entry (ADR-0255, eleventh): imported at its versioned address, refused when
+    // ---- Files (ADR-0252, ADR-0282): written on the click, never during a render, and saved by the
+    // files entry, the fifteenth use the JavaScript allowlist permits.
+
+    /// <summary>
+    /// Saves the chart as a file, as the user sees it: CSV of the visible series in the range shown,
+    /// the SVG of the drawing, or that SVG painted to PNG at the screen's Device Pixel (ADR-0282).
+    /// One call is one save. False when the chart's script is not loaded, which the chart says on
+    /// its face, or the circuit has gone.
+    /// </summary>
+    public async Task<bool> DownloadAsync(ChartFileFormat format)
+    {
+        // Taken now: the file is the drawing on screen at the click, whatever renders meanwhile.
+        var module = _module;
+        var scene = _scene;
+        var definition = Definition;
+        var metrics = _metrics;
+        var view = _view;
+        var summary = _summary;
+        if (module is null || _scriptRefused || _disposed) return false;
+        var name = ChartFiles.Name(FileName, Title, format);
+        try
+        {
+            byte[] bytes;
+            if (format == ChartFileFormat.Csv)
+            {
+                bytes = ChartFiles.Csv(definition, metrics, view);
+            }
+            else
+            {
+                var font = GridMetrics.Resolve(Density).FontSizePx;
+                var angle = AxisStyle?.Angle ?? 0;
+                // The theme as the screen shows it, read on the click (ADR-0282).
+                var theme = ChartFiles.Theme(await module.InvokeAsync<string[]>("tokens", _root, ChartFiles.TokenNames.Value));
+                var svg = await ChartFiles.SvgAsync(Services, new ChartFileDrawing.Input(scene, Width, Height, font, metrics.LineHeight, angle, summary, theme));
+                if (format == ChartFileFormat.Png)
+                {
+                    // Painted and saved in the browser: the PNG's bytes never cross back (ADR-0282).
+                    await module.InvokeVoidAsync("savePng", name, svg, Width, Height);
+                    return true;
+                }
+                bytes = System.Text.Encoding.UTF8.GetBytes(svg);
+            }
+            await module.InvokeVoidAsync("save", name, ChartFiles.MediaType(format), bytes);
+            return true;
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            return false;
+        }
+    }
+
+    private Task DownloadCsvAsync() => DownloadAsync(ChartFileFormat.Csv);
+
+    private Task DownloadSvgAsync() => DownloadAsync(ChartFileFormat.Svg);
+
+    private Task DownloadPngAsync() => DownloadAsync(ChartFileFormat.Png);
+
+    // A file needs the script: until it is told the first drawing, and when it is refused, the
+    // buttons say so by being unavailable rather than doing nothing (spine rule 1).
+    private bool FilesUnavailable => !_told || _scriptRefused;
+
+    // ---- The pointer entry (ADR-0255, thirteenth): imported at its versioned address, refused when
     // its stamp is not this build's (ADR-0123).
 
     private IJSObjectReference? _module;
@@ -565,6 +643,7 @@ public partial class ExChart
     {
         if (firstRender)
             await AttachAsync();
+        await FocusMenuAsync();
         if (_handle is not null && _drawPending && !_disposed)
         {
             _drawPending = false;

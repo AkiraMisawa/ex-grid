@@ -144,7 +144,11 @@ export default defineConfig({
     // fails that project by name, which is the honest outcome (ADR-0026).
     projects: [
         { name: 'chrome', use: { channel: 'chrome' } },
-        { name: 'msedge', use: { channel: 'msedge' } },
+        // Edge opens its Downloads hub when a download ends, and from Edge 155 a page under that
+        // hub never finishes closing: every test that saved a file (ADR-0282) timed out tearing its
+        // page down, after its assertions had passed. The hub is the browser's own window furniture,
+        // not the page's behaviour, so it is turned off; the download itself still runs.
+        { name: 'msedge', use: { channel: 'msedge', launchOptions: { args: ['--disable-features=msDownloadsHub'] } } },
         // The Layout Ceiling at 150% (ADR-0053, VZ-15): Chrome with the display scale set
         // the way the OS sets it, on the command line, and the viewport left to the window.
         // Playwright's deviceScaleFactor does NOT reproduce this — it raises
@@ -168,7 +172,7 @@ export default defineConfig({
         // Headings under both Chromes.
         {
             name: 'chrome-150',
-            grep: /BIG-1\b|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3|MK-6|item 3:|item 5:|active cell, cases 7 and 8|far reveal|DC-59|VZ-19|UX-19\/SH-39|UX-19\/SH-54|UX-19\/UX-9|UX-19 at the display's scale|UX-21 at the display's scale|UX-21 D2 at the display's scale|UX-21 \([^)]*\): on the Sheet/,
+            grep: /BIG-1\b|CH-10|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3|MK-6|item 3:|item 5:|active cell, cases 7 and 8|far reveal|DC-59|VZ-19|UX-19\/SH-39|UX-19\/SH-54|UX-19\/UX-9|UX-19 at the display's scale|UX-21 at the display's scale|UX-21 D2 at the display's scale|UX-21 \([^)]*\): on the Sheet/,
             use: {
                 channel: 'chrome',
                 viewport: null,

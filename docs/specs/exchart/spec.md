@@ -28,6 +28,6 @@ Wrapper.
 
 ## Roadmap lines
 
-The Docs Site and the Release Notes know four products (ExGrid, ExSheet, ExPivot, Data), and both refuse
-another until it has a heading of its own. Until M6 makes ExChart one, these tickets carry
-`Roadmap: internal`; that ticket rewrites each open ticket's line to name ExChart.
+ExChart is a product of the Docs Site and the Release Notes since its Chart section was added
+(ADR-0280), so an open ticket's `Roadmap:` line names it: `Roadmap: ExChart — …`. A ticket a Consumer
+would not care about keeps `Roadmap: internal`.

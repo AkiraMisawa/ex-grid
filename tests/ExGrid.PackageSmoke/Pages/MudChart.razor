@@ -1,0 +1,19 @@
+@page "/mud-chart"
+@* A chart on the grid Wrapper's paper with ExChart.MudBlazor's Chrome, as src/ExChart.MudBlazor/README.md
+   writes it, taken from the packed ExChart, ExChart.Engine and ExChart.MudBlazor (ADR-0283). *@
+@using ExChart.Components
+@using ExChart.Engine
+@using ExChart.MudBlazor
+@using ExGrid.MudBlazor
+
+<MudExGridPaper>
+    <ExChart Definition="_definition" Title="Exposure" Chrome="MudChartChrome.Default" />
+</MudExGridPaper>
+
+@code {
+    private static readonly ChartDefinition _definition = new(ChartAxis.Numbers("Years"),
+    [
+        ChartSeries.Of("epe", "EPE", SeriesKind.Level,
+            [new(0, ChartValue.Of(0.0)), new(1, ChartValue.Of(4.2)), new(2, ChartValue.Of(6.1)), new(5, ChartValue.Of(3.5))]),
+    ]);
+}

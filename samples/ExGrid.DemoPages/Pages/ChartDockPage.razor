@@ -1,0 +1,112 @@
+@page "/chart-dock"
+@using global::ExChart
+@using global::ExChart.Components
+@using global::ExChart.Engine
+@using global::ExChart.MudBlazor
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+@using global::MudBlazor
+@* ExChart.MudBlazor's page (/chart-dock): the browser layer's fixture for the Wrapper (ADR-0281). The
+   curve history of /chart-bridge in a Chart Dock, which opens each chart the grid's context menu
+   makes as a tab beside the grid; and a chart of its own in the grid Wrapper's paper, with the
+   MudBlazor toolbar, download menu and context menu. "Toggle dark mode" switches the theme. *@
+<HeadContent>
+    <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <MudExGridStylesheet />
+    <ExChartStylesheet />
+    <MudExChartStylesheet />
+</HeadContent>
+
+<MudThemeProvider @bind-IsDarkMode="_dark" />
+<MudPopoverProvider />
+
+<DemoNav />
+
+<h1>Charts under MudBlazor</h1>
+<p>
+    Select cells and open the grid's context menu: each chart opens as a tab of the Chart Dock beside
+    the grid (ADR-0258). The chart below sits in the grid Wrapper's paper with ExChart.MudBlazor's
+    toolbar and context menu; the theme's Primary, Secondary and Tertiary lead its series (ADR-0281).
+</p>
+<p><button type="button" id="toggle-dark" @onclick="() => _dark = !_dark">Toggle dark mode</button></p>
+
+<MudChartDock TRow="CurveRow" Bridge="_bridge" ChartWidth="560" ChartHeight="280">
+    <MudExGridPaper>
+        <ExGrid @ref="_bridge.Grid" TRow="CurveRow"
+                Window="_rows"
+                RowKey="KeyOf"
+                Columns="Columns"
+                HeaderGroups="Groups"
+                ContextCommands="_commands"
+                CommandLabel="Label"
+                PinnedColumnCount="1"
+                ViewportHeight="260"
+                ViewportWidth="520"
+                Chrome="MudChartChrome.GridChrome" />
+    </MudExGridPaper>
+</MudChartDock>
+
+<section id="mud-chart">
+    <h2>A chart in the paper</h2>
+    <MudExGridPaper>
+        <ExChart Definition="_definition" Title="Curves" FileName="curves" Width="760" Height="280" Chrome="MudChartChrome.Default" />
+    </MudExGridPaper>
+</section>
+
+@code {
+    /// <summary>One date's rates.</summary>
+    public sealed record CurveRow(DateOnly Date, double Y1, double Y2, double Y5, double Y10);
+
+    private static readonly DateOnly Start = new(2026, 10, 1);
+
+    private static readonly GridColumn<CurveRow>[] Columns =
+    [
+        new("date", ColumnType.Date, r => r.Date, "Date"),
+        new("y1", ColumnType.Number, r => r.Y1, "1Y", format: v => ((double)v).ToString("0.000")),
+        new("y2", ColumnType.Number, r => r.Y2, "2Y", format: v => ((double)v).ToString("0.000")),
+        new("y5", ColumnType.Number, r => r.Y5, "5Y", format: v => ((double)v).ToString("0.000")),
+        new("y10", ColumnType.Number, r => r.Y10, "10Y", format: v => ((double)v).ToString("0.000")),
+    ];
+
+    private static readonly HeaderGroup[] Groups = [new("Rates", ["y1", "y2", "y5", "y10"])];
+    private static readonly Dictionary<string, double> Tenors = new() { ["y1"] = 1, ["y2"] = 2, ["y5"] = 5, ["y10"] = 10 };
+
+    // Held in fields, never rebuilt per render (CLAUDE.md: a new delegate is a changed parameter).
+    private static readonly Func<CurveRow, object> KeyOf = r => r.Date;
+    private static readonly Func<string, string?> Label = GridChartCommands.Label;
+
+    private readonly IReadOnlyList<CurveRow> _rows = Enumerable.Range(0, 8)
+        .Select(i => new CurveRow(Start.AddDays(i), 3.0 + i * 0.01, 3.1 + i * 0.01, 3.3 - i * 0.02, 3.6 - i * 0.01))
+        .ToList();
+
+    private bool _dark;
+    private GridChartBridge<CurveRow> _bridge = null!;
+    private Func<ContextMenuContext<CurveRow>, IEnumerable<GridCommand>> _commands = null!;
+
+    private static readonly ChartDefinition _definition = new(ChartAxis.Numbers("Tenor (years)"),
+    [
+        Curve("usd", "USD", 4.3, -0.05),
+        Curve("eur", "EUR", 2.4, 0.08),
+        Curve("jpy", "JPY", 0.5, 0.12),
+        Curve("gbp", "GBP", 4.0, -0.02),
+    ]);
+
+    private static ChartSeries Curve(string id, string name, double level, double slope) =>
+        ChartSeries.Of(id, name, SeriesKind.Level, new[] { 1d, 2, 3, 5, 7, 10, 20, 30 }
+            .Select(t => new ChartPoint(t, ChartValue.Of(Math.Round(level + slope * Math.Log(t + 1) * 2, 3)))).ToList());
+
+    protected override void OnInitialized()
+    {
+        _bridge = new GridChartBridge<CurveRow>(new GridChartDeclarations<CurveRow>
+        {
+            RowKey = KeyOf,
+            RowOf = key => _rows.FirstOrDefault(r => r.Date == (DateOnly)key),
+            KindOf = _ => SeriesKind.Level,
+            PositionOf = column => Tenors.TryGetValue(column, out var years) ? years : null,
+            PositionTitle = "Tenor (years)",
+            RowName = r => r.Date.ToString("yyyy-MM-dd"),
+        });
+        _commands = _bridge.Commands;
+    }
+}

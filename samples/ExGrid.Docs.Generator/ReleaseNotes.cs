@@ -27,7 +27,7 @@ public sealed record NotesInput(string FullPath, string Name, SourceText Text);
 public static class ReleaseNotes
 {
     /// <summary>The products a note names, in the order the notes' headings put them.</summary>
-    public static readonly ImmutableArray<string> Products = ["ExGrid", "ExSheet", "ExPivot", "Data"];
+    public static readonly ImmutableArray<string> Products = ["ExGrid", "ExSheet", "ExPivot", "ExChart", "Data"];
 
     /// <summary>What a Change Note says its change is.</summary>
     public static readonly ImmutableArray<string> Kinds = ["Added", "Fixed", "Behaviour", "Breaking"];
@@ -39,11 +39,18 @@ public static class ReleaseNotes
         "ExSheet.Engine", "ExSheet", "ExSheet.MudBlazor",
         "ExGrid.Data", "ExGrid.Data.Arrow",
         "ExPivot.Engine", "ExPivot", "ExPivot.MudBlazor",
+        "ExChart.Engine", "ExChart", "ExChart.MudBlazor",
     ];
+
+    /// <summary>
+    /// The products that joined the family after versions were published, whose heading a version carries only
+    /// when its Packages line names one of their packages (ADR-0190, ADR-0280).
+    /// </summary>
+    public static readonly ImmutableArray<string> LaterProducts = ["ExChart"];
 
     /// <summary>A prerelease's headings, in order (ADR-0190).</summary>
     public static readonly ImmutableArray<string> Headings =
-        ["Highlights", "Breaking changes", "Behaviour changes", "ExGrid", "ExSheet", "ExPivot", "Data"];
+        ["Highlights", "Breaking changes", "Behaviour changes", "ExGrid", "ExSheet", "ExPivot", "ExChart", "Data"];
 
     /// <summary>
     /// A release's blocks, the headings only a version without a suffix and a release candidate rehearsing it
@@ -61,7 +68,7 @@ public static class ReleaseNotes
     public static readonly ImmutableArray<string> StableOrder =
     [
         "Highlights", "Breaking changes", "Behaviour changes", "Known limitations",
-        "ExGrid", "ExSheet", "ExPivot", "Data",
+        "ExGrid", "ExSheet", "ExPivot", "ExChart", "Data",
         "Signed off", "SHOULD criteria accepted failing", "Out of scope for this version", "Supported",
     ];
 
@@ -810,9 +817,18 @@ public static class ReleaseNotes
                   + $"without a suffix does, and say {StableWhat(heading, header.Kind)} ({StableSource(heading)}).";
         }
 
+        // A product that joined the family after versions were published (ExChart, ADR-0280) has its heading
+        // only in a version whose Packages line names one of its packages: a heading saying "No change" in a
+        // version that never published it would be false of that version.
+        private static ImmutableArray<string> Expected(VersionHeader header)
+        {
+            var order = header.CarriesRelease ? StableOrder : Headings;
+            return order.RemoveAll(h => LaterProducts.Contains(h) && !header.Packages.Any(p => p == h || p.StartsWith(h + ".", StringComparison.Ordinal)));
+        }
+
         private ImmutableArray<Section> ReadSections(NotesInput file, ImmutableArray<NotesBlock> blocks, VersionHeader header, List<NotesProblem> problems)
         {
-            var expected = header.CarriesRelease ? StableOrder : Headings;
+            var expected = Expected(header);
             var groups = new List<(NotesHeading Heading, List<NotesBlock> Blocks)>();
             foreach (var block in blocks)
             {

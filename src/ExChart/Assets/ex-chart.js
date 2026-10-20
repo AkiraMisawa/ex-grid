@@ -9,6 +9,94 @@
 // C# drops one taken against an earlier drawing (spine rule 6). Blazor's @onmousemove would cross
 // to .NET on every event, a wire round trip each on Server.
 
+// The files entry (ADR-0282), the fifteenth use: its three jobs (read the tokens, paint to PNG, save),
+// each run once on a click and never on a render, adding no listener and reading no layout (the SVG
+// carries its own size). A PNG is painted and saved here, never handed back to .NET: on Server its
+// bytes would be one message from the browser, larger than a circuit takes, and the circuit would close.
+
+/**
+ * The values the chart's Visual Tokens have on screen, read from its root's computed style on the
+ * click, so a saved file has the theme's colours: a file has no page to inherit them from. `names`
+ * are the tokens' names without their prefix; the last value returned is the root's font family.
+ */
+export function tokens(root, names) {
+    const style = getComputedStyle(root);
+    return [...names.map((name) => style.getPropertyValue(`--_ex-chart-${name}`).trim()), style.fontFamily];
+}
+
+/**
+ * Paints an SVG, written in C# on the click, to PNG, and returns its bytes. The canvas is the
+ * drawing's size at the screen's Device Pixel, so a PNG taken at 150% is drawn at 150% and not
+ * scaled up from 100% (ADR-0090). The browser lays out its text in the fonts the screen shows.
+ */
+async function paint(svgText, width, height) {
+    const scale = window.devicePixelRatio > 0 ? window.devicePixelRatio : 1;
+    const url = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml' }));
+    try {
+        const image = new Image();
+        image.decoding = 'sync';
+        await new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = () => reject(new Error('the chart\'s SVG could not be painted'));
+            image.src = url;
+        });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(width * scale);
+        canvas.height = Math.round(height * scale);
+        const context = canvas.getContext('2d');
+        context.scale(canvas.width / width, canvas.height / height);
+        context.drawImage(image, 0, 0, width, height);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) {
+            throw new Error('the chart\'s PNG could not be encoded');
+        }
+        return new Uint8Array(await blob.arrayBuffer());
+    } finally {
+        URL.revokeObjectURL(url);
+    }
+}
+
+/**
+ * Saves bytes under a file name, through a Blob and an object URL revoked once the save has
+ * started: one click saves (ADR-0282).
+ */
+export function save(name, type, bytes) {
+    const url = URL.createObjectURL(new Blob([bytes], { type }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    try {
+        link.click();
+    } finally {
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+}
+
+/** Paints an SVG to PNG and saves it under a file name (ADR-0282). */
+export async function savePng(name, svgText, width, height) {
+    save(name, 'image/png', await paint(svgText, width, height));
+}
+
+/**
+ * Saves a 3D surface's drawing as it stands, as SVG or PNG: `drawing` is the surface's handle, whose
+ * svgText the 3D entry writes (ADR-0255). The text stays in the browser. False when it has no drawing.
+ */
+export async function saveDrawing(drawing, name, format, width, height) {
+    const svgText = drawing?.svgText();
+    if (!svgText) {
+        return false;
+    }
+    if (format === 'png') {
+        await savePng(name, svgText, width, height);
+    } else {
+        save(name, 'image/svg+xml', new TextEncoder().encode(svgText));
+    }
+    return true;
+}
+
 /** The SHA-256 of this source, which the build writes in; the chart refuses a module of another version (ADR-0123). */
 export function stamp() {
     return typeof EX_SOURCE_SHA256 === 'string' ? EX_SOURCE_SHA256 : '';

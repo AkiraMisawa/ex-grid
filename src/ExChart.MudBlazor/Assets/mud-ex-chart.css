@@ -1,0 +1,34 @@
+/* ExChart.MudBlazor — the Wrapper's stylesheet (ADR-0281). It does two things and nothing else.
+   It maps ExChart's Visual Tokens onto the variables MudThemeProvider emits, under the grid
+   Wrapper's paper, .mud-ex-grid, and under the Chart Dock, .mud-ex-chart, so a chart in either
+   follows the theme and a dark/light switch recolours it with no render anywhere (ADR-0027). And it
+   lays out this package's own elements, each rule scoped to its own mud-ex-chart- class. It writes
+   no geometry ExChart computes and no rule against a class of ExChart's own.
+
+   The colour slots: the theme's Primary, Secondary and Tertiary lead (slots 1 to 3, the tokens
+   --ex-chart-colour-0 to -2), and slots 4 to 10 keep ExChart's own palette. Error, Warning, Success
+   and Info are never a series' colour: on a screen of profit and risk a red series reads as an
+   error or a loss, and a green one as good news (ADR-0281). They stay for what they mean. */
+.mud-ex-grid,
+.mud-ex-chart {
+    --ex-chart-colour-0: var(--mud-palette-primary);
+    --ex-chart-colour-1: var(--mud-palette-secondary);
+    --ex-chart-colour-2: var(--mud-palette-tertiary);
+    --ex-chart-text: var(--mud-palette-text-primary);
+    --ex-chart-background: var(--mud-palette-surface);
+    --ex-chart-error: var(--mud-palette-error);
+    --ex-font-family: var(--mud-typography-default-family);
+}
+
+.mud-ex-chart-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding-bottom: 4px; }
+.mud-ex-chart-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; padding-bottom: 8px; }
+.mud-ex-chart-filters .mud-input-control { flex: 0 1 12em; margin-top: 0; }
+.mud-ex-chart-menu { display: flex; flex-direction: column; padding: 4px 0; }
+.mud-ex-chart-menu .mud-button-root { justify-content: flex-start; text-transform: none; border-radius: 0; }
+
+/* The Chart Dock (ADR-0258): the grid and a panel of charts beside it or below it, never over it. */
+.mud-ex-chart-dock { display: flex; gap: 12px; align-items: flex-start; }
+.mud-ex-chart-dock-bottom { flex-direction: column; align-items: stretch; }
+.mud-ex-chart-dock-content { flex: 1 1 auto; min-width: 0; overflow-x: auto; }
+.mud-ex-chart-dock-panel { flex: 1 1 auto; min-width: 0; padding: 4px 8px 8px; }
+.mud-ex-chart-dock-tabs .mud-ex-chart-dock-no-add { display: none; }

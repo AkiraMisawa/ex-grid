@@ -7,6 +7,7 @@
 [![ExGrid coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAkiraMisawa%2Fex-grid%2Fbadges%2Fcoverage-exgrid.json)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
 [![ExSheet coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAkiraMisawa%2Fex-grid%2Fbadges%2Fcoverage-exsheet.json)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
 [![ExPivot coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAkiraMisawa%2Fex-grid%2Fbadges%2Fcoverage-expivot.json)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
+[![ExChart coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAkiraMisawa%2Fex-grid%2Fbadges%2Fcoverage-exchart.json)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
 [![Data coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAkiraMisawa%2Fex-grid%2Fbadges%2Fcoverage-data.json)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
 
 **Excel-like grids for Blazor, built for reading money and risk numbers.**

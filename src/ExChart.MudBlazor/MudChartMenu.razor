@@ -1,0 +1,47 @@
+@* Written in each file, not in an _Imports.razor, whose class Razor makes public (ADR-0201); and
+   with global::, as this project's root namespace nests inside ExChart (the CS0426 trap in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExChart.Chrome
+@using global::MudBlazor
+@* Not the contract (ADR-0201): MudChartChrome draws this part, and no Consumer places it. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@* The chart's context menu under MudBlazor (ADR-0281): exactly ExChart's commands, in its order,
+   each with its Enabled state, as text MudButtons with role="menuitem". ExChart's frame around them
+   is the menu: where it opens, and what closes it. *@
+<div class="mud-ex-chart-menu" role="none">
+    @foreach (var command in Context.Commands)
+    {
+        <MudButton Variant="Variant.Text" Size="Size.Small" FullWidth="true" Class="mud-ex-chart-menu-item"
+                   StartIcon="@Chrome.IconFor(command.Id)" Disabled="@(!command.Enabled)" OnClick="command.Invoke"
+                   role="menuitem" data-ex-command="@command.Id">@command.Label</MudButton>
+    }
+</div>
+
+@code {
+    private ChartMenuContext? _last;
+    private bool _skip;
+
+    /// <summary>What ExChart hands the menu.</summary>
+    [Parameter, EditorRequired] public ChartMenuContext Context { get; set; } = null!;
+
+    /// <summary>The Chrome, for its icons.</summary>
+    [Parameter, EditorRequired] public MudChartChrome Chrome { get; set; } = null!;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        _skip = Equals(_last, Context);
+        _last = Context;
+    }
+
+    // A context equal to the last draws the same menu: the chart renders on every pointer move,
+    // and this part is not to render with it (ADR-0252).
+    /// <inheritdoc />
+    protected override bool ShouldRender()
+    {
+        var skip = _skip;
+        _skip = false;
+        return !skip;
+    }
+}

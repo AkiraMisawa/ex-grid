@@ -214,7 +214,8 @@ What this section said before is quoted beside each change.
 
 ### The family ships together *(added 2026-10-03)*
 
-A tag publishes ten packages, all at its one version:
+A tag publishes thirteen packages, all at its one version *(ten until 2026-10-19, when ExChart's three
+joined the train: ADR-0283)*:
 
 | Product | Packages |
 |---|---|
@@ -222,6 +223,7 @@ A tag publishes ten packages, all at its one version:
 | ExSheet | `ExSheet.Engine`, `ExSheet`, `ExSheet.MudBlazor` |
 | The Snapshot | `ExGrid.Data`, `ExGrid.Data.Arrow` |
 | ExPivot | `ExPivot.Engine`, `ExPivot`, `ExPivot.MudBlazor` |
+| ExChart | `ExChart.Engine`, `ExChart`, `ExChart.MudBlazor` |
 
 - **One version, not one per product.** Every reference inside the family is exact (`[x]`), as the
   Wrapper's on the core is above. ExSheet and ExPivot draw with ExGrid and depend on exactly the

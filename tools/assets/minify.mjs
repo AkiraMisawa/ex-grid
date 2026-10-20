@@ -35,6 +35,7 @@ const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 export const sources = [
     'src/ExChart/Assets/ex-chart.js',
     'src/ExChart/Assets/ex-chart.css',
+    'src/ExChart.MudBlazor/Assets/mud-ex-chart.css',
     'src/ExGrid/Assets/ex-grid.js',
     'src/ExGrid/Assets/ex-grid.css',
     'src/ExGrid.MudBlazor/Assets/mud-ex-grid.css',
