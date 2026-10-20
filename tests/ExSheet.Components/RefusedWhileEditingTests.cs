@@ -428,7 +428,7 @@ public class RefusedWhileEditingTests : SheetTestContext
 
         Assert.Equal(sentences.Length, sentences.Distinct().Count());
         var orderMoved = SheetWords.PasteRefused(global::ExGrid.Clipboard.PasteRefusalReason.OrderMoved);
-        Assert.Contains("another Sheet Document was opened", orderMoved);
+        Assert.Contains("another Sheet was shown, or another Sheet Document opened", orderMoved);
         Assert.Contains("nothing was written", orderMoved);
         Assert.NotEqual(SheetWords.PasteRefused(global::ExGrid.Clipboard.PasteRefusalReason.EmptySelection), orderMoved);
     }

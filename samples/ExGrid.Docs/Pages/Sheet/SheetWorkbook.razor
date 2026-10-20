@@ -1,0 +1,87 @@
+@page "/exsheet/workbook"
+@using ExGrid.Docs.Examples.Sheet
+
+<DocsPage Product="ExSheet" Title="Workbook"
+          Lead="Several Sheets in one ExSheet, as an Excel workbook holds them: a tab for each under the grid, Formulas that read one Sheet from another, and one document that saves them all.">
+
+    <DocsSection Title="A Workbook in one ExSheet">
+        <p>
+            Bind <code>Workbook</code> in place of <code>Document</code>, and ExSheet shows every Sheet of the
+            <code>WorkbookDocument</code> you hand it, one at a time in its one grid, with the Sheet Tabs under the
+            grid. After every change it raises <code>WorkbookChanged</code> with a new <code>WorkbookDocument</code>
+            — every Sheet in order, the Sheet shown and the Linked Tables' declarations — and stores nothing itself,
+            as it does with a Sheet Document.
+        </p>
+        <pre class="docs-code"><code>&lt;ExSheet @@bind-Workbook="_workbook" /&gt;</code></pre>
+        <ul>
+            <li>
+                <b>Set one of the two.</b> <code>Document</code> and <code>Workbook</code> set together throw: there would
+                be two answers to which Sheets the component shows. A Sheet Document opens as a Workbook of that one
+                Sheet, and <code>WorkbookDocument.FromJson</code> reads one too.
+            </li>
+            <li>
+                <b><code>DocumentChanged</code> is raised while the Workbook holds one Sheet</b>, so a page bound to
+                <code>Document</code> works as it always has. Once it holds several, a Sheet Document cannot say what
+                it holds: <code>DocumentChanged</code> stops, <code>ToDocument()</code> throws, and
+                <code>WorkbookChanged</code> and <code>ToWorkbookDocument()</code> carry the Workbook.
+            </li>
+            <li>
+                <b>A Formula reads another Sheet by naming it</b>, <code>=Claim!D7</code> or
+                <code>=SUM('Q1 Sales'!B2:B9)</code>, and a change on any Sheet recalculates what reads it on every
+                Sheet. <a href="exsheet/formulas#the-engine-on-its-own">The engine on its own</a> says what a rename,
+                a deletion and an inserted row do to those References.
+            </li>
+            <li>
+                <b>One undo stack covers the Workbook.</b> <kbd>Ctrl</kbd> + <kbd>Z</kbd> undoes the latest operation
+                whichever Sheet it was made on, and a Sheet operation from your code —
+                <code>DoAsync(SheetEdit.InsertSheet())</code>, <code>Rename</code>, <code>MoveSheet</code>,
+                <code>CopySheet</code>, <code>DeleteSheet</code> — is one step on it, made on the Sheet shown. When an
+                operation takes the Sheet shown away, the Sheet the Workbook shows in its place is shown.
+            </li>
+        </ul>
+        <DocsExample Builtin="typeof(WorkbookTabs)" Mud="typeof(WorkbookTabsMud)" CodeOpen="true"
+                     Files="@(["Examples/Sheet/Expenses.cs"])">
+            The claim, and a summary that reads it. Change a quantity on Claim, then select the Summary tab. "Add a
+            sheet" inserts an empty Sheet after the one shown, named <code>Sheet</code> and the next number no Sheet
+            has, and <kbd>Ctrl</kbd> + <kbd>Z</kbd> takes it out again.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="Sheet Tabs">
+        <p>
+            The strip under the grid holds a tab for each Sheet, in order, the shown Sheet's marked. Pressing a tab
+            shows its Sheet and leaves the keyboard in the grid; so do <kbd>Ctrl</kbd> + <kbd>Page Up</kbd> and
+            <kbd>Ctrl</kbd> + <kbd>Page Down</kbd>, which show the Sheet before or after, as in Excel, and stop at
+            the first and the last. <kbd>Tab</kbd> from the grid reaches the strip, where <kbd>←</kbd>,
+            <kbd>→</kbd>, <kbd>Home</kbd> and <kbd>End</kbd> select a tab and show its Sheet, and <kbd>Enter</kbd> or
+            <kbd>Escape</kbd> hands the keyboard back to the grid.
+        </p>
+        <ul>
+            <li>
+                <b>Each Sheet keeps its own view.</b> The Selection and the scroll position a Sheet had when you left it
+                are back when you return; a Sheet shown for the first time starts at A1 with nothing selected. Column
+                widths are recorded in each Sheet.
+            </li>
+            <li>
+                <b>A gesture is taken against the Sheet it was aimed at.</b> A paste, a <kbd>Delete</kbd> or typing that
+                reaches the component after another Sheet was shown is refused, as one aimed at a replaced document is,
+                and the Sheet's notice says so; it is never applied to the Sheet now shown. On Blazor Server the two
+                can cross on the wire.
+            </li>
+            <li>
+                <b>While an edit is open the Sheet shown stays.</b> A tab pressed then is refused, and the Sheet's notice
+                says to finish the edit first. Pointing at another Sheet's cells while a Formula is typed is not built yet.
+            </li>
+            <li>
+                The strip is as tall as the Formula Bar, and the height you give ExSheet includes it.
+                <code>ShowSheetTabs="false"</code> hides it; the Sheets stay, and <kbd>Ctrl</kbd> +
+                <kbd>Page Up</kbd> and <kbd>Ctrl</kbd> + <kbd>Page Down</kbd> still show them.
+            </li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExSheet.Engine.WorkbookDocument)" />
+        <ApiTable Type="typeof(global::ExSheet.Engine.WorkbookChange)" />
+    </DocsSection>
+</DocsPage>

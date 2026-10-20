@@ -74,6 +74,19 @@
             <li><strong>Bump <code>RowSequenceVersion</code></strong> when the order of the rows changes, so a selection that would now cover other rows is dropped.</li>
         </ul>
         <p>
+            <strong>Showing one set of rows after another in one grid</strong> — the Sheets of a workbook behind their
+            tabs, the books of a blotter behind a picker — keep each set's view. <code>ReadView()</code> gives the
+            Selection, with the version it is written in, and the scroll offsets; when you show that set again, hand
+            the view back with <code>ShowViewWith(view with { RowSequenceVersion = next })</code> from the same
+            handler that bumps the version to <code>next</code>. The grid takes the two in one render, so a key or a
+            press that follows the switch meets the set's own Selection, never an empty one a round trip before it.
+            A view whose version the grid never takes, or whose Selection lies outside the rows it now holds, is not
+            shown. Handed from the handler of one of the grid's inputs — a declared key, say — the switch is that
+            input's answer, and the keys and pastes after it in the grid's order are taken under the new version
+            even on Blazor Server, where they left the browser before the new rows reached it, as they would be
+            typed slowly. ExSheet keeps each Sheet's view this way.
+        </p>
+        <p>
             <strong>Name your rows by a Row Key</strong> when you make them afresh — fetched again, or rebuilt from a
             feed. <code>RowKey</code> is a function from a row to what tells it from every other row, such as a
             trade's id, kept in a field like the columns. A row that comes back as a new instance under the same key

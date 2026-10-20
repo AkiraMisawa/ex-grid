@@ -100,6 +100,7 @@ The parts of a sheet, as [the Docs Site](https://akiramisawa.github.io/ex-grid/e
 7. **Number Format**: turns a Value into the text shown, here 0.0%
 8. **Error Value**: an error, carried as data; here a division by nothing
 9. **Value**: what a cell's Entry evaluates to
+10. **Sheet Tab**: one for each Sheet of the Workbook; a press shows its Sheet
 <!-- /figure sheet-anatomy -->
 
 

@@ -86,7 +86,7 @@ public partial class ExSheet
         _todayParameter = Today;
         _timeZoneParameter = TimeZone;
         if (_sheet is not { } sheet) return;
-        _dayChange = [sheet.SetToday(ResolveDay()), sheet.RecalculateVolatile()];
+        _dayChange = [.. SetTodayOnEverySheet(), sheet.RecalculateVolatile()];
         ArmTheDay();
         ArmTheMinute();
     }
@@ -115,7 +115,7 @@ public partial class ExSheet
         }
         _browserZone = known;
         if (_sheet is not { } sheet) return;
-        var changes = new[] { sheet.SetToday(ResolveDay()), sheet.RecalculateVolatile() };
+        SheetChange[] changes = [.. SetTodayOnEverySheet(), sheet.RecalculateVolatile()];
         ArmTheDay();
         ArmTheMinute();
         await ChangedAsync(changes, raiseDocument: false, byUser: false);
@@ -150,10 +150,10 @@ public partial class ExSheet
 
     private async Task ReadTheDayAgainAsync()
     {
-        if (_disposedDay || _sheet is not { } sheet) return;
-        var change = sheet.SetToday(ResolveDay());
+        if (_disposedDay || _sheet is null) return;
+        var changes = SetTodayOnEverySheet();
         ArmTheDay();
-        if (change.Rows.Count > 0 || change.Recalculated.Count > 0) await ChangedAsync(change, raiseDocument: false, byUser: false);
+        if (changes.Any(change => change.Rows.Count > 0 || change.Recalculated.Count > 0)) await ChangedAsync(changes, raiseDocument: false, byUser: false);
     }
 
     /// <summary>
@@ -173,7 +173,7 @@ public partial class ExSheet
             {
                 if (_disposedDay || _sheet is not { } sheet) return;
                 ArmTheMinute();
-                if (!sheet.HasVolatileFormulas) return;
+                if (!sheet.Workbook.Sheets.Any(s => s.HasVolatileFormulas)) return;
                 var change = sheet.RecalculateVolatile();
                 if (change.Rows.Count > 0) await ChangedAsync(change, raiseDocument: false, byUser: false);
             }
@@ -183,6 +183,22 @@ public partial class ExSheet
                 await DispatchExceptionAsync(ex);
             }
         }), null, due, Timeout.InfiniteTimeSpan);
+    }
+
+    /// <summary>
+    /// Sets the Sheet Day on every Sheet of the Workbook, which keeps one each until the Workbook
+    /// holds it (ticket 13 of exsheet-workbook): what it changed on the Sheet shown. A recalculation
+    /// reaches every Sheet, and the others' rows are read afresh when their tab is selected.
+    /// </summary>
+    private SheetChange[] SetTodayOnEverySheet()
+    {
+        var shown = new List<SheetChange>();
+        foreach (var sheet in _workbook?.Sheets ?? [])
+        {
+            var change = sheet.SetToday(ResolveDay());
+            if (sheet == _sheet) shown.Add(change);
+        }
+        return [.. shown];
     }
 
     private bool _disposedDay;

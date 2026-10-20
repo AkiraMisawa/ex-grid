@@ -64,8 +64,9 @@
 
 @* ?box=window gives the Sheet a box that follows the window's height (ViewportSize.Stretch), so a
    popover's room changes with the window: the browser tests shrink it under Format Cells
-   (DC-60, ADR-0040). *@
-<div class="demo-side-by-side" style="@(InWindowBox ? "height: calc(100vh - 360px); min-height: 0" : null)">
+   (DC-60, ADR-0040). The box is the window less 332px: 360px, and the Sheet Tabs' strip (ADR-0331),
+   which takes its height from the Sheet's, so the grid's own height is what it was before the strip. *@
+<div class="demo-side-by-side" style="@(InWindowBox ? "height: calc(100vh - 332px); min-height: 0" : null)">
     @if (DemoChrome.IsMud(ChromeName))
     {
         <MudExGridPaper>@Sheet</MudExGridPaper>
@@ -193,11 +194,12 @@
     // Whether the Sheet Toolbar is shown: the page's View State, which Ctrl+F1 changes (ADR-0100).
     private bool _toolbarShown = true;
 
-    // The Sheet's height includes its toolbar (ADR-0100). The page adds the toolbar's two rows, each
-    // the Formula Bar's height, so that the grid keeps the rows it showed before the toolbar came.
+    // The Sheet's height includes its toolbar (ADR-0100) and its Sheet Tabs (ADR-0331). The page adds
+    // the toolbar's two rows and the tabs' strip, each the Formula Bar's height, so that the grid keeps
+    // the rows it showed before either came.
     private static readonly double ToolbarRowPx = GridMetrics.Resolve(GridDensity.Compact, ExSheet.DefaultRowHeightPx).FormulaBarHeightPx;
 
-    private double SheetHeight => 420 + (_toolbarShown ? 2 * ToolbarRowPx : 0);
+    private double SheetHeight => 420 + ToolbarRowPx + (_toolbarShown ? 2 * ToolbarRowPx : 0);
 
     protected override void OnParametersSet()
     {

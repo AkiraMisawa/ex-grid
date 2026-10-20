@@ -62,7 +62,7 @@ public sealed partial class Sheet
     }
 
     /// <summary>The Workbook the Sheet belongs to: one of its own, of this Sheet alone, for a Sheet created on its own (ADR-0331).</summary>
-    internal Workbook Workbook { get; }
+    public Workbook Workbook { get; }
 
     /// <summary>The Sheet's declared culture (ADR-0048). Formulas are in invariant syntax whatever it is (ADR-0047).</summary>
     public CultureInfo Culture { get; }

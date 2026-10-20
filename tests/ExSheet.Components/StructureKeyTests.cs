@@ -40,7 +40,7 @@ public class StructureKeyTests : SheetTestContext
         Assert.Contains("Control+Shift++", declared);
         Assert.Contains("Control++", declared);
         Assert.Contains("Control+-", declared);
-        Assert.Equal(SheetFormatKeys.Declared.Count + 3, declared.Count);
+        Assert.Equal(SheetFormatKeys.Declared.Count + 3 + SheetTabKeys.Declared.Count, declared.Count);
     }
 
     [Theory] // SH-53 (Part C, case 12): Ctrl+Plus over whole rows inserts as many rows above, one undo step

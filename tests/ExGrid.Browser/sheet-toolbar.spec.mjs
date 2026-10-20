@@ -296,11 +296,13 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('SH-48/ADR-0100: without the toolbar the Sheet is as it was, and the page can hide it', async ({ page }) => {
+// The Sheet's frame was display: contents without the toolbar until the Sheet Tabs (ADR-0331), which stand
+// under the grid in that frame on every Sheet; SheetTabsTests pins the frame without either.
+test('SH-48/ADR-0100: the page can hide the toolbar, and the Sheet keeps its Sheet Tabs under the grid', async ({ page }) => {
     await page.goto('/sheet?toolbar=off');
     await expect(cell(sheet(page), 'A1')).toHaveText('Item');
     await expect(page.locator('.ex-sheet-toolbar')).toHaveCount(0);
-    await expect(page.locator('.ex-sheet')).toHaveCSS('display', 'contents');
+    await expect(page.locator('.ex-sheet > .ex-sheet-tabs')).toHaveCount(1);
 });
 
 test('SH-50/ADR-0100: the toolbar is one tab stop; the arrows move among its items, Enter presses one, and the keyboard goes back to the Sheet', async ({ page }) => {
