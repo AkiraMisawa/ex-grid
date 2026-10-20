@@ -155,7 +155,7 @@ them:
 | `DATE` | `year, month, day` |
 | `TODAY` | (none) — the Sheet Day, `#GETTING_DATA` until it is set (`Workbook.SetToday`, ADR-0121) |
 | `NOW` | (none) — the moment `Workbook.NowSource` gives, read once per recalculation; volatile (ADR-0124) |
-| `RAND` | (none) — drawn from the Sheet Seed (`Sheet.SetSeed`), `#GETTING_DATA` until it is set; volatile (ADR-0180) |
+| `RAND` | (none) — drawn from the Sheet Seed (`Workbook.SetSeed`), `#GETTING_DATA` until it is set; volatile (ADR-0180) |
 | `RANDBETWEEN` | `bottom, top` — as `RAND`, a whole number with both bounds drawn |
 | `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND` | `serial_number` |
 | `TIME` | `hour, minute, second` |
@@ -353,16 +353,17 @@ could depend on a Value, nothing spills (ADR-0125, 2026-10-13). The refusals:
 - **`RAND` and `RANDBETWEEN` draw from the Sheet Seed** (ADR-0180). Excel names no generator and no
   seed, so its numbers cannot be matched; what is Excel's is its contract — a draw of `RAND` in
   [0,1), evenly spread; `RANDBETWEEN`'s whole numbers, both bounds drawn; two calls two draws; a
-  `LET` binding one draw. Each draw is a function of `Sheet.Seed`, the cell, the call's place in its
-  Formula and `Sheet.Changes`, the count of changes since the Sheet was made or opened, so the same
-  Entries, seed and count give the same draws whatever order cells are computed in. An edit, an
-  insertion or a deletion, a rename of the Sheet, the undo or redo of one, a Linked Table's snapshot
+  `LET` binding one draw. Each draw is a function of `Workbook.Seed`, the Sheet's name and the cell,
+  the call's place in its Formula and `Workbook.Changes`, the count of changes since the Workbook was
+  made or opened, so the same Entries, seed and count give the same draws whatever order cells are
+  computed in. An edit, an insertion or a deletion on any Sheet, a Sheet added, deleted, renamed,
+  moved or copied, the undo or redo of one, a Linked Table's snapshot
   whatever its rows, and a Linked Table's declaration that declares it or replaces it each count once
-  and draw again; a recalculation by the clock, a format, a rename to the Sheet's own name and a new
+  and draw again on every Sheet; a recalculation by the clock, a format, a rename to the Sheet's own name and a new
   seed draw nothing. Without a seed,
   every Formula that draws is `#GETTING_DATA`. The engine never chooses a seed of its own:
-  `Sheet.SetSeed(seed)` gives one, and `SetSeed(seed, changes)` the count as well, so a Sheet opened
-  from a document shows another Sheet's draws (SH-17). Neither is part of a Sheet Document. Unlike
+  `Workbook.SetSeed(seed)` gives one, and `SetSeed(seed, changes)` the count as well, so a Workbook
+  opened from a document shows another Workbook's draws (SH-17). Neither is part of a document. Unlike
   Excel, nothing draws without a change, and there is no manual recalculation. An undo, a redo and a
   rename draw again, as Excel's were seen to (ADR-0180, 2026-10-12).
   `RANDBETWEEN` refuses a fractional bound and a bound past 2^53 in magnitude with `#VALUE!`, and
