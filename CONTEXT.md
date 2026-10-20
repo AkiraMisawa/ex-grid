@@ -1005,6 +1005,13 @@ Entries, never Values, with constants already parsed — so opening it under ano
 cannot change a number. The Consumer persists it; ExSheet does not ([ADR-0048](./docs/adr/0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md)).
 _Avoid_: file, workbook, Snapshot (that is the Consumer's tabular data), save data
 
+**Open Report**:
+What reading an `.xlsx` file returns beside the Workbook Document: what the file held that ExSheet did
+not carry (merged cells, conditional formatting, a theme link, …), and the cells whose functions
+ExSheet does not support, each with its Sheet and place. The application tells the user
+([ADR-0320](./docs/adr/0320-exsheet-opens-and-saves-xlsx-with-a-reader-and-writer-of-its-own.md)).
+_Avoid_: warnings, import log, lossy report
+
 **Workbook Document**:
 The serialisable form of a Workbook: its Sheets in order, the Sheet shown, its culture and its
 Linked Tables, holding Entries and never Values, as a Sheet Document does. A Sheet Document opens as
