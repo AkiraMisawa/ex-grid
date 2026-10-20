@@ -183,8 +183,8 @@ body:has(.demo-mud-app) {
 }
 
 /* Row inspectors (/inspectors, /inspector-edits). A floating inspector is the page's own
-   panel, placed in the window and stacked by z-index; the drag layer covers the page for
-   the length of a drag only. */
+   panel, placed in the window and stacked by z-index; the drag layer covers the page while
+   its title bar is pressed only. */
 .demo-floating-inspector {
     position: fixed;
     width: 300px;
@@ -227,10 +227,17 @@ body:has(.demo-mud-app) {
 }
 
 .demo-drag-layer {
+    display: none;
     position: fixed;
     inset: 0;
     z-index: 100000;
     cursor: move;
+}
+
+/* Shown while the title bar is pressed, but not its close button: in the browser at the press,
+   never a round trip later (FloatingPanel.razor). */
+.demo-floating-inspector:has(> .demo-inspector-title:active):not(:has(.demo-inspector-close:active)) + .demo-drag-layer {
+    display: block;
 }
 
 .demo-inspector-body {

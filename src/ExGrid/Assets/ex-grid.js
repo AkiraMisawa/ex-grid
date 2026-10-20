@@ -3904,6 +3904,23 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             askAboutPress();
             noteBarPressCaret();
         }
+        // A release over the scroller where no rows are painted — the spacer a render still behind an
+        // edge band's scroll leaves bare under the pointer, or the space below a short grid's rows — is
+        // the rows': handed to the Viewport as the release it was, where the core hears it, so a drag
+        // ends wherever the button came up. Heard where it landed, nothing heard it, and a drag released
+        // at machine speed behind its scroll never ended (widened-run ticket 04). Its offsets are the
+        // browser's, from the Viewport; nothing is measured.
+        if (core && !replaying && event.isTrusted && event.button === 0 && scroller
+            && (event.target === scroller || (event.target.parentElement === scroller && event.target.classList.contains('ex-spacer')))) {
+            const viewport = scroller.querySelector('.ex-viewport');
+            if (viewport) {
+                event.stopPropagation();
+                // The drag this release ends holds no more moves (holdsDragMove), as below.
+                dragPressInput = 0;
+                viewport.dispatchEvent(new MouseEvent('mouseup', mouseInit(event)));
+                return;
+            }
+        }
         // The click this release makes on an action is told the render it was pressed on, and the
         // address the press read in it (actionPress).
         const action = replaying ? null : actionPress;

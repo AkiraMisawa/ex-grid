@@ -26,6 +26,17 @@ function choice(grid, name) {
     return formatCells(grid).getByLabel(name, { exact: true });
 }
 
+/**
+ * Presses a choice and waits until it reads as chosen. Not Playwright's check(), which reads the
+ * box straight after its click: on the Server host the render that answers the choice before it can
+ * land after the click and put that earlier choice back for a round trip, until this one's answer
+ * lands (widened-run ticket 07).
+ */
+async function pick(locator) {
+    await locator.click();
+    await expect(locator).toBeChecked();
+}
+
 async function openFromMenu(grid, address) {
     await pressCell(grid, address);
     await pressAt(cell(grid, address), { button: 'right' });
@@ -72,7 +83,7 @@ test.describe('on /sheet', () => {
         await page.locator('#sheet-format-cells').click();
         await expect(formatCells(grid)).toBeVisible();
 
-        await choice(grid, 'Percentage').check();
+        await pick(choice(grid, 'Percentage'));
         await formatCells(grid).getByRole('button', { name: 'OK' }).click();
 
         await expect(formatCells(grid)).toHaveCount(0);
@@ -93,7 +104,7 @@ test.describe('on /sheet', () => {
         await pressCell(grid, 'C2');
         await page.locator('#sheet-format-cells').click();
         await expect(formatCells(grid)).toBeVisible();
-        await choice(grid, 'Percentage').check();
+        await pick(choice(grid, 'Percentage'));
         const ok = formatCells(grid).getByRole('button', { name: 'OK' });
         await ok.focus();
         const circuit = await setRoundTrip(80);
@@ -160,7 +171,7 @@ test.describe('on /sheet', () => {
     test('SH-45/DC-60: Escape sets nothing, closes Format Cells, and the next arrow moves the Focus', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(grid, 'C2');
-        await choice(grid, 'Percentage').check();
+        await pick(choice(grid, 'Percentage'));
 
         await page.keyboard.press('Escape');
 
@@ -174,7 +185,7 @@ test.describe('on /sheet', () => {
     test('SH-45: a Custom code ExSheet does not read is refused by name, and Format Cells stays open', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(grid, 'C2');
-        await choice(grid, 'Custom').check();
+        await pick(choice(grid, 'Custom'));
         const code = formatCells(grid).locator('.ex-format-cells-code');
 
         await code.fill('[<0]0');
@@ -188,7 +199,7 @@ test.describe('on /sheet', () => {
     test('SH-45/SRV-7: a Custom code typed at full speed arrives whole, and Enter is OK', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(grid, 'C2');
-        await choice(grid, 'Custom').check();
+        await pick(choice(grid, 'Custom'));
         const code = formatCells(grid).locator('.ex-format-cells-code');
         await code.fill('');
 
@@ -255,9 +266,9 @@ test.describe('on /sheet', () => {
         // A1 bold with a red Fill, set through Format Cells itself; A2 plain.
         await openFromMenu(grid, 'A1');
         await tab(grid, 'Font').click();
-        await choice(grid, 'Bold').check();
+        await pick(choice(grid, 'Bold'));
         await tab(grid, 'Fill').click();
-        await formatCells(grid).getByRole('radio', { name: 'Red', exact: true }).check();
+        await pick(formatCells(grid).getByRole('radio', { name: 'Red', exact: true }));
         await formatCells(grid).getByRole('button', { name: 'OK' }).click();
         await expect(formatCells(grid)).toHaveCount(0);
 
@@ -279,7 +290,7 @@ test.describe('on /sheet', () => {
         // A1's bottom thick, set through Format Cells itself; A2 records nothing.
         await openFromMenu(grid, 'A1');
         await tab(grid, 'Border').click();
-        await choice(grid, 'Thick').check();
+        await pick(choice(grid, 'Thick'));
         await formatCells(grid).getByRole('button', { name: 'Bottom', exact: true }).click();
         await formatCells(grid).getByRole('button', { name: 'OK' }).click();
         await expect(formatCells(grid)).toHaveCount(0);
@@ -300,7 +311,7 @@ test.describe('on /sheet', () => {
         await openFromMenu(grid, 'A1');
         await tab(grid, 'Border').click();
         await expect(choice(grid, 'Thin')).toBeChecked();
-        await choice(grid, 'Thick').check();
+        await pick(choice(grid, 'Thick'));
         await edge('Bottom').click();
         await formatCells(grid).getByRole('button', { name: 'OK' }).click();
         await expect(formatCells(grid)).toHaveCount(0);
@@ -333,9 +344,9 @@ test.describe('on /sheet', () => {
         // B2's top thick and its right medium, set through Format Cells itself.
         await openFromMenu(grid, 'B2');
         await tab(grid, 'Border').click();
-        await choice(grid, 'Thick').check();
+        await pick(choice(grid, 'Thick'));
         await edge('Top').click();
-        await choice(grid, 'Medium').check();
+        await pick(choice(grid, 'Medium'));
         await edge('Right').click();
         await formatCells(grid).getByRole('button', { name: 'OK' }).click();
         await expect(formatCells(grid)).toHaveCount(0);
@@ -361,7 +372,7 @@ test.describe('on /sheet', () => {
         await page.keyboard.press('Control+1');
         await expect(formatCells(grid)).toBeVisible();
         await tab(grid, 'Fill').click();
-        await formatCells(grid).getByRole('radio', { name: 'Yellow', exact: true }).check();
+        await pick(formatCells(grid).getByRole('radio', { name: 'Yellow', exact: true }));
         await formatCells(grid).getByRole('button', { name: 'OK' }).click();
         await expect(formatCells(grid)).toHaveCount(0);
         await expectKeyboardOn(grid);
@@ -371,7 +382,7 @@ test.describe('on /sheet', () => {
         await page.keyboard.press('Control+1');
         await expect(formatCells(grid)).toBeVisible();
         await tab(grid, 'Font').click();
-        await choice(grid, 'Bold').check();
+        await pick(choice(grid, 'Bold'));
         await formatCells(grid).getByRole('button', { name: 'OK' }).click();
 
         await expect(formatCells(grid)).toHaveCount(0);
@@ -409,7 +420,7 @@ test.describe('on /sheet', () => {
         await expect(formatCells(grid)).toBeVisible();
         await setRoundTrip(0);
 
-        await choice(grid, 'Percentage').check();
+        await pick(choice(grid, 'Percentage'));
         await formatCells(grid).getByRole('button', { name: 'OK' }).click();
         await expect(formatCells(grid)).toHaveCount(0);
         await expect(cell(grid, 'C2')).toHaveText('50.00%');
@@ -434,7 +445,7 @@ test.describe('on /sheet', () => {
         await expect(formatCells(grid)).toBeVisible();
         await setRoundTrip(0);
 
-        await choice(grid, 'Percentage').check();
+        await pick(choice(grid, 'Percentage'));
         await formatCells(grid).getByRole('button', { name: 'OK' }).click();
         await expect(formatCells(grid)).toHaveCount(0);
         await expect(cell(grid, 'C3')).toHaveText('75.00%');
@@ -450,7 +461,7 @@ test.describe('in a box that follows the window', () => {
         // The page's Linked Table lands 1.5 s after the Sheet opens; Format Cells is opened after it.
         await expect(cell(grid, 'B12')).toHaveText('318.25', { timeout: 10_000 });
         await openFromMenu(grid, 'C2');
-        await choice(grid, 'Percentage').check();
+        await pick(choice(grid, 'Percentage'));
 
         // The box is the window less 360px: at 560 it is 200px, under a Formula Bar and a header.
         // The browser reports the new box, and the frame's bound follows it in the render after.
