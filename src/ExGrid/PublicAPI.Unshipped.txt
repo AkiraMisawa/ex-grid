@@ -1,7 +1,9 @@
 #nullable enable
 const ExGrid.Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive = "key-refusal-keyboard-did-not-arrive" -> string!
+const ExGrid.Chrome.KeyRefusalLabelIds.LostOnTheWay = "key-refusal-lost-on-the-way" -> string!
 const ExGrid.Chrome.RefusalLabelIds.PasteUnreadable = "refused-paste-unreadable" -> string!
 ExGrid.Clipboard.PasteRefusalReason.Unreadable = 12 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.InputsSent(int input) -> void
 ExGrid.Components.ExGrid<TRow>.InputTakenAt(string! kind, int input) -> void
 ExGrid.Components.ExGrid<TRow>.OnHeldInputsRefusedAsync(int input = 0) -> System.Threading.Tasks.Task!

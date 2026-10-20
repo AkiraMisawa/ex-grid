@@ -106,7 +106,13 @@ by half a round trip that starts at 0. A test that needs a real round trip sets 
 `setRoundTrip(ms)` from `fixtures.mjs`, and the fixture puts it back to 0 afterwards. A test
 whose inputs must all be made before the host answers any of them does not count on a round
 trip to outlast them: `holdAnswers(true)` holds everything the host sends in the proxy until
-`holdAnswers(false)` lets it go in order, and the fixture lets go after every test. The
+`holdAnswers(false)` lets it go in order, and the fixture lets go after every test. A test
+of input made while the connection is lost (ADR-0240 §11) takes `connectionMark()` before it
+opens its own page, cuts that page's connections with `dropCircuit(true, mark)`, lets the
+browser connect again with `dropCircuit(false)`, and waits with `circuitBack()` for Blazor's
+WebSocket to open again, never for a fixed time; the fixture lets the browser connect after
+every test. Blazor's errors for a lost connection, and the uncaught one its send raises while
+it is down, are named with `expectedErrors` and `expectedPageErrors`. The
 browser's own network throttling is not used because it is not reliably applied to the
 WebSocket that carries the circuit, which is the one connection that matters.
 

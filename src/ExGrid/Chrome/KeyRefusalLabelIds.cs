@@ -21,4 +21,9 @@ public static class KeyRefusalLabelIds
     /// a text field). They are refused together, never replayed against whatever holds the keyboard
     /// (ADR-0240 section 4, ADR-0010).</summary>
     public const string KeyboardDidNotArrive = "key-refusal-keyboard-did-not-arrive";
+
+    /// <summary>Input made while the Blazor Server circuit was down — a key, a press, a paste — that
+    /// never reached the grid: refused once the circuit is back and the next input finds it missing,
+    /// never replayed against whatever stands then (ADR-0240 section 11).</summary>
+    public const string LostOnTheWay = "key-refusal-lost-on-the-way";
 }

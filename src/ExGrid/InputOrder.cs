@@ -22,6 +22,8 @@ namespace ExGrid;
 /// finished or made void, and each answer, is written at Debug under the category
 /// <see cref="JournalCategory"/>, so that a failed run says what the core did with each input. Nothing is
 /// written while that level is off.</para>
+/// <para>A number sent while the Server circuit was down never arrives: the next message that does finds it
+/// missing (<see cref="Reached"/>), and it is made void (ADR-0240 section 11).</para>
 /// </remarks>
 internal sealed class InputOrder
 {
@@ -41,6 +43,9 @@ internal sealed class InputOrder
 
     // The highest number received, handled, waiting or voided: work the instance starts itself goes after it.
     private int _received;
+
+    // Every number up to this one has reached the core or been found lost on the way (Reached).
+    private int _arrived;
 
     // The handling under way, and the token its flow carries.
     private object? _running;
@@ -116,6 +121,34 @@ internal sealed class InputOrder
         if (input > _received)
             _received = input;
         Pump();
+    }
+
+    /// <summary>
+    /// A message from the script has reached the core, sent after every number up to
+    /// <paramref name="sentUpTo"/> (ADR-0240 section 11). The script sends each number in the call made as
+    /// it gives it, in order, over one connection, which delivers in order: a number at or below it that
+    /// has not reached the core never will, because it was sent while the circuit was down. Those numbers
+    /// are made void, so the inputs behind them are not kept waiting, and answered as lost.
+    /// </summary>
+    /// <param name="sentUpTo">The last number the script had sent; the message's own, when it carries one
+    /// (<paramref name="carried"/>).</param>
+    /// <param name="carried">Whether the message carries <paramref name="sentUpTo"/> itself, which has then
+    /// reached the core; otherwise it only says that every number up to it was sent ahead of it.</param>
+    /// <returns>The numbers found lost, first and last; null when none was.</returns>
+    public (int First, int Last)? Reached(int sentUpTo, bool carried = true)
+    {
+        if (sentUpTo <= 0 || _disposed)
+            return null;
+        var first = Math.Max(_arrived, _done) + 1;
+        var last = carried ? sentUpTo - 1 : sentUpTo;
+        if (sentUpTo > _arrived)
+            _arrived = sentUpTo;
+        if (first > last)
+            return null;
+        Note("lost", first, last);
+        for (var input = first; input <= last; input++)
+            Void(input);
+        return (first, last);
     }
 
     /// <summary>Runs work the instance starts itself, outside any input, after every input received so
@@ -229,7 +262,9 @@ internal sealed class InputOrder
     {
         if (_journal is null)
             return;
-        var subject = input > 0
+        var subject = what == "lost"
+            ? FormattableString.Invariant($"{input} to {after}")
+            : input > 0
             ? input.ToString(System.Globalization.CultureInfo.InvariantCulture)
             : "after " + after.ToString(System.Globalization.CultureInfo.InvariantCulture);
         _journal.LogDebug("{Instance} {What} {Subject} (done {Done}, waiting {Waiting})",

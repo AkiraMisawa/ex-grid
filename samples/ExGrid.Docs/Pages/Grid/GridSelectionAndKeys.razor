@@ -172,8 +172,18 @@
             <tbody>
                 <tr><td><code>KeyboardDidNotArrive</code></td><td>@ExGrid.Chrome.BuiltInCommandLabels.For(ExGrid.Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive)</td></tr>
                 <tr><td><code>TabBeforeRelease</code></td><td>@ExGrid.Chrome.BuiltInCommandLabels.For(ExGrid.Chrome.KeyRefusalLabelIds.TabBeforeRelease)</td></tr>
+                <tr><td><code>LostOnTheWay</code></td><td>@ExGrid.Chrome.BuiltInCommandLabels.For(ExGrid.Chrome.KeyRefusalLabelIds.LostOnTheWay)</td></tr>
             </tbody>
         </MudSimpleTable>
+        <p>
+            <strong>Input made while the connection is lost is refused, never replayed.</strong> On Blazor Server, a
+            key, a press or a paste made while the circuit is disconnected never reaches the grid, and Blazor does
+            not say so. Once the connection is back, the next input you make finds what went missing: the grid
+            refuses it aloud (<code>LostOnTheWay</code>), never carries it out against whatever stands by then, and
+            handles your new input as usual. Nothing is said until that next input, because the grid does not listen
+            to Blazor's reconnection. A circuit that does not come back is Blazor's to show, with its reconnection
+            display.
+        </p>
         <p>
             The keys a popover answers itself keep their place too: Enter, Space, a letter or Tab on a menu's items,
             a letter on a filter's value list, a filter or Find submitted with Enter, and Tab wrapping round a

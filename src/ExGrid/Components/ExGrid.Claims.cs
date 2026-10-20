@@ -51,6 +51,7 @@ public partial class ExGrid<TRow>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public void InputTakenAt(string kind, int input)
     {
+        InputReached(input);
         if (_claimTold is { } unheard)
             InputVoid(unheard.Input);
         _claimTold = null;

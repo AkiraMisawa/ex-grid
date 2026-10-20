@@ -88,6 +88,11 @@
             <code>MudExGridPaper</code> and pass <code>PivotChrome="MudPivotChrome.Default"</code>. The
             switch above each Example shows both: the behaviour is the same, only the drawing changes.
         </p>
+        <p>
+            On Blazor Server, input made in the report while the connection is lost never reaches it. Once the
+            connection is back, the next input finds it missing: it is refused aloud and never replayed, and the new
+            input is handled as usual, as on <MudLink Href="exgrid/selection">the grid</MudLink>.
+        </p>
     </DocsSection>
 
     <DocsSection Title="Saving the layout">

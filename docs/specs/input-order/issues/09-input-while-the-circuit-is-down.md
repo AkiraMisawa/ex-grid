@@ -1,6 +1,6 @@
 # 09: Input made while the Server circuit is down is refused aloud, and never stalls the order
 
-Status: ready-for-agent
+Status: done
 Roadmap: ExGrid, ExSheet, ExPivot — Keys and presses made while a Blazor Server connection is lost are refused visibly once it is back, and the grid keeps answering.
 
 **Why:** ADR-0240 numbers every input in the script and has the core take them one at a time, in
@@ -14,12 +14,13 @@ spine's first principle broken.
 core is refused aloud (ADR-0240 §4, ADR-0203), and its number is made void, so the order goes on. A
 circuit that does not come back is Blazor's to show.
 
-**Decided** (ADR-0240 section 11, 2026-10-20): refused, never replayed. The script learns of the
-failure from its own call's rejected promise, keeps the number owed-void and the root unsettled, and
-sends it with the next message that reaches the core; no ADR-0021 entry.
+**Decided** (ADR-0240 section 11, 2026-10-20): refused, never replayed. The mechanism first written
+(the script learns of the failure from a rejected promise) does not work, since Blazor never ends a call
+made while the connection is down; the core finds a number missing when a later one arrives, or when a
+hold says how far the numbers went, decided with the user the same day. No ADR-0021 entry.
 
 - [x] The decision recorded
-- [ ] Layer 3 on the Server host: drop the connection through the latency proxy, type and press, bring
+- [x] Layer 3 on the Server host: drop the connection through the latency proxy, type and press, bring
       it back; the inputs are refused aloud and the next key is answered
-- [ ] Layer 2: a number made void after reconnection releases the inputs behind it
-- [ ] Docs Site: the Server hosting page says what the user sees; a Change Note
+- [x] Layer 2: a number made void after reconnection releases the inputs behind it
+- [x] Docs Site: the Server hosting page says what the user sees; a Change Note

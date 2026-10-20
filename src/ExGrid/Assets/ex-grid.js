@@ -138,6 +138,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 for (const k of items) {
                     if (k?.dragMove !== true) {
                         note('held', heldEntry(k));
+                        this.taken?.();
                     }
                 }
                 return super.push(...items);
@@ -146,6 +147,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             unshift(...items) {
                 for (const k of items) {
                     note('held first', heldEntry(k));
+                    this.taken?.();
                 }
                 return super.unshift(...items);
             }
@@ -168,7 +170,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         return {
             note,
-            hold: () => new Hold(),
+            // `taken` is told of each input taken into the hold, a drag's moves aside.
+            hold: (taken) => Object.assign(new Hold(), { taken }),
             // The core, with each call it is asked for journaled, and how the call ended.
             watch: (raw) => (raw ? {
                 invokeMethod: (name, ...args) => raw.invokeMethod(name, ...args),
@@ -256,6 +259,49 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the core hears without a number of its own (one no control claims, ADR-0240) counts as the next
     // input's, so only an answer that came after it is trusted.
     let layerInputAt = inputsSent;
+    // The calls carrying an input's number that the core has not answered, by number (ADR-0240 section
+    // 11). Each number goes to the core in the call made as it is given (nextInput), so a call carries
+    // the numbers given since the call before it. One made while the Server circuit is down never
+    // reaches the core, and Blazor never ends its promise: the core, finding the number missing when a
+    // later message arrives, makes it void, refuses it aloud and tells this script (inputsLost), which
+    // ends the call with null, as a call that did nothing.
+    const carried = new Map();
+    let carriedUpTo = inputsSent;
+    core = ((raw) => (raw ? {
+        invokeMethod: (name, ...args) => raw.invokeMethod(name, ...args),
+        invokeMethodAsync: (name, ...args) => {
+            const reply = raw.invokeMethodAsync(name, ...args);
+            if (inputsSent <= carriedUpTo) {
+                return reply;
+            }
+            const first = carriedUpTo + 1;
+            carriedUpTo = inputsSent;
+            const last = carriedUpTo;
+            return new Promise((resolve, reject) => {
+                const end = () => {
+                    for (let n = first; n <= last; n++) {
+                        if (carried.get(n) === end) {
+                            carried.delete(n);
+                        }
+                    }
+                };
+                const lost = () => {
+                    end();
+                    resolve(null);
+                };
+                for (let n = first; n <= last; n++) {
+                    carried.set(n, lost);
+                }
+                reply.then((value) => {
+                    end();
+                    resolve(value);
+                }, (error) => {
+                    end();
+                    reject(error);
+                });
+            });
+        },
+    } : raw))(core);
     let clipboardWrites = 0;
     let settledShown = null;
     let journalAnswered = null;
@@ -315,6 +361,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         journal.note('numbered', { input: inputsSent });
         lookSettled();
         return inputsSent;
+    }
+    // An input taken into the hold while a call carrying a number is still unanswered (ADR-0240 section
+    // 11): the hold may be waiting on a call made while the circuit was down, which nothing numbered
+    // will follow until the hold lets go. So the core is told how far the numbers have gone, and finds
+    // any it never received.
+    function heldWhileCarried() {
+        if (core && carried.size > 0) {
+            core.invokeMethodAsync('InputsSent', inputsSent).catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to hear how far its inputs had gone', error);
+                }
+            });
+        }
     }
     // The keys on the root that cannot add a layer an Escape peels (ADR-0230 section 1).
     const neutralKeys = gateSet('neutral');
@@ -1282,7 +1341,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // cell would open Overwrite with `1` and lose `500` — so while a mode-changing key is
     // unanswered every key after it waits here, in order, and is gated again once the
     // answer has landed. Plain navigation changes no mode and is never held behind.
-    const held = journal.hold();
+    const held = journal.hold(heldWhileCarried);
     let answering = false;
     // A clipboard key's keydown let through a hold, until the copy, cut or paste event its default
     // fires in the same task takes its place among the held keys (onHeldClipboard).
@@ -4689,6 +4748,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (!answering) {
                 startHold();
             }
+        },
+        // The inputs numbered first to last never reached the core: sent while the Server circuit was
+        // down, they are void and refused (ExGrid.InputsLost, ADR-0240 section 11). The calls that
+        // carried them end with null, so nothing waits on them any longer.
+        inputsLost: (first, last) => {
+            journal.note('lost', { first, last });
+            for (let n = first; n <= last; n++) {
+                carried.get(n)?.();
+            }
+            lookSettled();
         },
         // The keyboard is leaving this grid for the Consumer's element around it (keysOut; ExGrid's
         // PassKeysOutAsync): told before the answer to the Escape

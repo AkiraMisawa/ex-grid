@@ -8,7 +8,7 @@ namespace ExGrid.Components.Tests.Support;
 /// length is known up front, the bytes only once the stream is opened. Records whether
 /// it was opened, so a test can say that a refused paste read nothing (CP-22).
 /// </summary>
-internal sealed class FakeJSStream(byte[] bytes, Exception? readFails = null) : IJSStreamReference
+internal sealed class FakeJSStream(byte[] bytes, Exception? readFails = null, Task? opens = null) : IJSStreamReference
 {
     public static FakeJSStream Of(string text) => new(Encoding.UTF8.GetBytes(text));
 
@@ -18,18 +18,24 @@ internal sealed class FakeJSStream(byte[] bytes, Exception? readFails = null) : 
 
     public static FakeJSStream OfLength(long length) => new(new byte[length]);
 
+    /// <summary>A stream that opens only once <paramref name="opens"/> ends, and whose read then fails:
+    /// a paste that holds the Input Order until the test lets it go, and then changes nothing.</summary>
+    public static FakeJSStream Held(Task opens) => new(new byte[1], new IOException("the read failed"), opens);
+
     public bool Opened { get; private set; }
 
     public bool Disposed { get; private set; }
 
     public long Length => bytes.LongLength;
 
-    public ValueTask<Stream> OpenReadStreamAsync(long maxAllowedSize = 512000, CancellationToken cancellationToken = default)
+    public async ValueTask<Stream> OpenReadStreamAsync(long maxAllowedSize = 512000, CancellationToken cancellationToken = default)
     {
         if (Length > maxAllowedSize)
             throw new ArgumentOutOfRangeException(nameof(maxAllowedSize), "the stream is longer than allowed");
         Opened = true;
-        return ValueTask.FromResult<Stream>(readFails is null ? new MemoryStream(bytes, writable: false) : new FailingStream(readFails));
+        if (opens is not null)
+            await opens;
+        return readFails is null ? new MemoryStream(bytes, writable: false) : new FailingStream(readFails);
     }
 
     private sealed class FailingStream(Exception failure) : Stream

@@ -234,15 +234,47 @@ core's half is not written to the console, which CON-8 keeps silent.
 
 ### 11. Input made while the Server circuit is down is refused, never replayed
 
-A numbered input whose call to the core fails (the circuit is disconnected, so the promise rejects) is
-**not** held for the reconnection. The script keeps its number as owed-void, keeps the root unsettled
-(`data-ex-owing`), and sends the number with the next message that reaches the core. The core makes
-the number void, so the inputs behind it are not kept waiting, and refuses the input aloud (section 4)
-only if it never ran: a call that reached the core before its reply was lost is not refused twice. No
-listener on Blazor's reconnection is needed: the script learns of the failure from its own call, so
-ADR-0021 gains no entry. A circuit that does not come back is Blazor's to show. *Rejected:* holding
-the input and replaying it after the reconnection, which would act against whatever stands then (section
-4).
+A numbered input made while the circuit is disconnected is **not** held for the reconnection. Its number
+is made void, so the inputs behind it are not kept waiting, and the input is refused aloud (section 4,
+`KeyRefusalLabelIds.LostOnTheWay`) only if it never reached the core: a call that reached the core before
+its reply was lost is not refused. A circuit that does not come back is Blazor's to show. *Rejected:*
+holding the input and replaying it after the reconnection, which would act against whatever stands then
+(section 4).
+
+**How the loss is found (the mechanism was replaced once, 2026-10-20, before it was built).** As first
+written, the script was to learn of the failure from its own call's rejected promise. It cannot:
+`blazor.web.js` (10.0.7) does not await the send of a call to .NET, so on a connection that is down the
+send's rejection escapes as an uncaught error and the call's promise never ends. Reproduced on the
+Server host through the latency proxy: two ↓ typed while the connection was cut never arrived, and the ↓
+typed after the reconnection reached the core and waited for them for good.
+
+So the loss is found by count, decided with the user (decision card, 2026-10-20; *rejected:* listening
+to Blazor's reconnection, which needs an ADR-0021 entry and does not fire under a Consumer's own
+reconnection handler):
+
+- **Every number reaches the core in order, or not at all.** The script gives a number in the call that
+  carries it (`nextInput` as an argument), so numbers are sent in order, over one connection that
+  delivers in order, and each call's first synchronous step runs in that order on the renderer. This rests
+  on the hub taking one invocation at a time per client (`HubOptions.MaximumParallelInvocationsPerClient`,
+  1 by default); a host that raises it can see a number overtaken, which reads here as lost.
+- **So a number missing when a later one arrives was lost.** Every call that carries a number marks it as
+  having reached the core first (`InputOrder.Reached`), and the numbers between the last that reached it
+  and this one are void and refused. An earlier number never arrives after a later one any more, so the
+  layer-2 tests that sent them out of order now hold the order with a paste still being read instead.
+- **A hold says how far the numbers went.** A key typed behind an unanswered call is held, so nothing
+  numbered follows a lost call that a hold waits on. An input taken into the hold while a numbered call is
+  unanswered sends the core how far the numbers have gone (`InputsSent`, unnumbered), which finds the lost
+  ones the same way. One small message per input held on a slow circuit is the cost.
+- **The script's waits end.** The core tells the script the numbers it found lost (`inputsLost` on the
+  instance's handle), and the calls that carried them end with null, as a call that did nothing, so a
+  hold waiting on one lets go.
+
+Nothing listens to the reconnection, so the refusal is said when the user's next input after it finds
+the loss, not at the reconnection itself; ADR-0021 gains no entry. **Not covered**, each a case of the
+connection dropping between two messages already on the wire rather than of input made while it is down:
+a reply lost after its call reached the core (the script's wait on it does not end), and a click whose
+telling arrived and whose Blazor event did not (its number waits for the next telling, as section 2
+says).
 
 ### 12. Escape cancels a paste still being read: the one input that acts ahead of its turn
 

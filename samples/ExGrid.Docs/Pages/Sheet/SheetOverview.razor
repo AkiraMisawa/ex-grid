@@ -165,6 +165,11 @@
             reads. Text typed into the Cell Editor, the Formula Bar or the Name Box, and a press on the toolbar,
             are read with an expectation that waits for their effect.
         </p>
+        <p>
+            On Blazor Server, input made while the connection is lost never reaches the Sheet. Once the connection is
+            back, the next input finds it missing: it is refused aloud and never replayed, and the new input is handled
+            as usual, as on <MudLink Href="exgrid/selection">the grid</MudLink>.
+        </p>
     </DocsSection>
 
     <DocsSection Title="See it in an application">

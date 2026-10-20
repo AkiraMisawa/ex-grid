@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, dataRowCount, holdAnswers, layoutCeilingTold, setRoundTrip, settled } from './fixtures.mjs';
+import { test, expect, alterPage, circuitBack, circuitQuiet, connectionMark, dataRowCount, dropCircuit, holdAnswers, layoutCeilingTold, setRoundTrip, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { activeDescendant, expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
@@ -60,6 +60,48 @@ test.describe('keys typed faster than the round trip are neither lost nor reorde
 
         await expect.poll(() => activeDescendant(grid(page))).toMatch(/r1c0$/);
         await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
+    });
+});
+
+test.describe('input made while the circuit is down is refused aloud, and the grid keeps answering (ADR-0240 §11)', () => {
+    // Blazor's own words for a connection that goes and comes back: its reconnection display, added to
+    // the body, and the errors its client writes and raises. A send made while the connection is down
+    // is rejected inside Blazor, which does not wait on it, so it surfaces as an uncaught error.
+    test.use({
+        freshDocument: true,
+        // A list of patterns is given as [list, options], or Playwright reads the second as options.
+        expectedErrors: [[
+            /WebSocket closed with status code: 1006/,
+            /Failed to complete negotiation with the server/,
+            /Failed to start the connection/,
+            /Failed to load resource: net::ERR_/,
+        ], { scope: 'test' }],
+        expectedPageErrors: [/Cannot send data if the connection is not in the 'Connected' State/],
+    });
+
+    test('keys typed while the connection is lost are refused once it is back, and the next key is answered', async ({ page }) => {
+        test.skip(!SERVER, 'a WebAssembly tab has no circuit to lose');
+        const ownConnections = await connectionMark();
+        await openFeatures(page);
+        await clickCell(page, 0, 1);                  // Trader, editable
+        await settled(grid(page));
+
+        // Two ↓ the script sends at once, and a letter it holds the keys behind until the editor opens:
+        // none reaches the host, and Blazor never ends the calls.
+        await dropCircuit(true, ownConnections);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('x');
+        await dropCircuit(false);
+        await circuitBack();
+
+        // The next key finds them missing: they are refused aloud, never replayed, and it is answered.
+        await page.keyboard.press('ArrowDown');
+        await settled(grid(page));
+        await expectActiveDescendant(grid(page), /r1c1$/);
+        await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
+        await expect(grid(page).locator('.ex-announce'))
+            .toHaveText('Input made while the connection to the server was lost was not carried out. Make it again.');
     });
 });
 
