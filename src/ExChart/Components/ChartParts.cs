@@ -220,7 +220,111 @@ internal sealed class ChartSeriesView : ComponentBase
         b.AddAttribute(24, "class", "ex-chart-markers ex-chart-markers-open");
         b.AddAttribute(25, "d", open.ToString());
         b.CloseElement();
+        if (piece.Candles.Count > 0 || piece.Volumes.Count > 0) Candles(b, piece);
+        if (piece.Whiskers.Count > 0 || piece.Bands.Count > 0) Intervals(b, piece, r);
+        if (piece.Markers.Any(m => m.YBounds is not null || m.XBounds is not null)) MarkIntervals(b, piece, r);
         b.CloseElement();
+    }
+
+    private static void Path(RenderTreeBuilder b, int seq, string cls, StringBuilder d)
+    {
+        if (d.Length == 0) return;
+        b.OpenElement(seq, "path");
+        b.AddAttribute(seq + 1, "class", cls);
+        b.AddAttribute(seq + 2, "d", d.ToString());
+        b.CloseElement();
+    }
+
+    private static void Rect(StringBuilder d, double x0, double y0, double x1, double y1) =>
+        d.Append('M').Append(Svg.N(x0)).Append(',').Append(Svg.N(Math.Min(y0, y1))).Append('H').Append(Svg.N(x1))
+            .Append('V').Append(Svg.N(Math.Max(y0, y1))).Append('H').Append(Svg.N(x0)).Append('Z');
+
+    private static void VLine(StringBuilder d, double x, double y0, double y1) =>
+        d.Append('M').Append(Svg.N(x)).Append(',').Append(Svg.N(y0)).Append('V').Append(Svg.N(y1));
+
+    // A candle's wick runs from its high to the body and from the body to its low, never through a
+    // hollow body; a High-Low-Close bar is its range with the close ticked to the right (ADR-0300).
+    private static void Candles(RenderTreeBuilder b, SeriesPiece piece)
+    {
+        var rising = new StringBuilder();
+        var falling = new StringBuilder();
+        var unchanged = new StringBuilder();
+        var hlc = new StringBuilder();
+        foreach (var c in piece.Candles)
+        {
+            if (c.OpenY is not { } o)
+            {
+                VLine(hlc, c.X, c.HighY, c.LowY);
+                hlc.Append('M').Append(Svg.N(c.X)).Append(',').Append(Svg.N(c.CloseY)).Append('H').Append(Svg.N(c.X + c.HalfWidth));
+                continue;
+            }
+            if (c.Unchanged)
+            {
+                VLine(unchanged, c.X, c.HighY, c.LowY);
+                unchanged.Append('M').Append(Svg.N(c.X - c.HalfWidth)).Append(',').Append(Svg.N(o)).Append('H').Append(Svg.N(c.X + c.HalfWidth));
+                continue;
+            }
+            var d = c.Rising ? rising : falling;
+            var (top, bottom) = (Math.Min(o, c.CloseY), Math.Max(o, c.CloseY));
+            VLine(d, c.X, c.HighY, top);
+            VLine(d, c.X, bottom, c.LowY);
+            Rect(d, c.X - c.HalfWidth, top, c.X + c.HalfWidth, bottom);
+        }
+        foreach (var v in piece.Volumes)
+            Rect(v.Unchanged ? unchanged : v.Rising ? rising : falling, v.X - v.HalfWidth, v.TopY, v.X + v.HalfWidth, v.BaseY);
+        Path(b, 30, "ex-chart-candles ex-chart-rising", rising);
+        Path(b, 33, "ex-chart-candles ex-chart-falling", falling);
+        Path(b, 36, "ex-chart-candles ex-chart-unchanged", unchanged);
+        Path(b, 39, "ex-chart-candles ex-chart-hlc", hlc);
+    }
+
+    // An Interval: whiskers with a cap at each bound, or a band between the bounds over each run of
+    // neighbours; a run of one is drawn as a whisker, never dropped (ADR-0303).
+    private static void Intervals(RenderTreeBuilder b, SeriesPiece piece, double r)
+    {
+        var whiskers = new StringBuilder();
+        var band = new StringBuilder();
+        void Whisker(DrawnWhisker w)
+        {
+            VLine(whiskers, w.X, w.Lower, w.Upper);
+            whiskers.Append('M').Append(Svg.N(w.X - r)).Append(',').Append(Svg.N(w.Lower)).Append('h').Append(Svg.N(2 * r));
+            whiskers.Append('M').Append(Svg.N(w.X - r)).Append(',').Append(Svg.N(w.Upper)).Append('h').Append(Svg.N(2 * r));
+        }
+        foreach (var w in piece.Whiskers) Whisker(w);
+        foreach (var run in piece.Bands)
+        {
+            if (run.Count == 1) { Whisker(run[0]); continue; }
+            for (var i = 0; i < run.Count; i++)
+                band.Append(i == 0 ? 'M' : 'L').Append(Svg.N(run[i].X)).Append(',').Append(Svg.N(run[i].Upper));
+            for (var i = run.Count - 1; i >= 0; i--)
+                band.Append('L').Append(Svg.N(run[i].X)).Append(',').Append(Svg.N(run[i].Lower));
+            band.Append('Z');
+        }
+        Path(b, 42, "ex-chart-interval-band", band);
+        Path(b, 45, "ex-chart-whiskers", whiskers);
+    }
+
+    // An Observation's intervals: a whisker up and down and one across, each capped, through its mark;
+    // a merged mark's is the union of its points' (ADR-0304).
+    private static void MarkIntervals(RenderTreeBuilder b, SeriesPiece piece, double r)
+    {
+        var d = new StringBuilder();
+        foreach (var m in piece.Markers)
+        {
+            if (m.YBounds is { } y)
+            {
+                VLine(d, m.X, y.Lower, y.Upper);
+                d.Append('M').Append(Svg.N(m.X - r)).Append(',').Append(Svg.N(y.Lower)).Append('h').Append(Svg.N(2 * r));
+                d.Append('M').Append(Svg.N(m.X - r)).Append(',').Append(Svg.N(y.Upper)).Append('h').Append(Svg.N(2 * r));
+            }
+            if (m.XBounds is { } x)
+            {
+                d.Append('M').Append(Svg.N(x.Lower)).Append(',').Append(Svg.N(m.Y)).Append('H').Append(Svg.N(x.Upper));
+                d.Append('M').Append(Svg.N(x.Lower)).Append(',').Append(Svg.N(m.Y - r)).Append('v').Append(Svg.N(2 * r));
+                d.Append('M').Append(Svg.N(x.Upper)).Append(',').Append(Svg.N(m.Y - r)).Append('v').Append(Svg.N(2 * r));
+            }
+        }
+        Path(b, 48, "ex-chart-whiskers", d);
     }
 }
 

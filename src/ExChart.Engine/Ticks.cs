@@ -87,6 +87,38 @@ public static class TickLayout
     }
 
     /// <summary>
+    /// The whole decades that hold <paramref name="min"/> to <paramref name="max"/>, both above zero:
+    /// the bounds a logarithmic axis is drawn between (ADR-0290).
+    /// </summary>
+    public static (double Min, double Max) Decades(double min, double max)
+    {
+        if (!(min > 0) || !(max > 0)) return (1, 10);
+        var lo = Math.Pow(10, Math.Floor(Math.Log10(min) + 1e-9));
+        var hi = Math.Pow(10, Math.Ceiling(Math.Log10(max) - 1e-9));
+        return hi > lo ? (lo, hi) : (lo, lo * 10);
+    }
+
+    /// <summary>
+    /// A logarithmic axis' ticks between <paramref name="min"/> and <paramref name="max"/>, both above
+    /// zero (ADR-0290): every 1, 2 and 5 times a power of ten across up to three decades, every power
+    /// of ten across more, and every whole multiple within less than one.
+    /// </summary>
+    public static IReadOnlyList<double> LogSteps(double min, double max)
+    {
+        if (!(min > 0) || !(max > min)) return min > 0 ? [min] : [];
+        var decades = Math.Log10(max / min);
+        int[] multiples = decades < 1 ? [1, 2, 3, 4, 5, 6, 7, 8, 9] : decades <= 3 ? [1, 2, 5] : [1];
+        var ticks = new List<double>();
+        for (var e = (int)Math.Floor(Math.Log10(min)) - 1; e <= (int)Math.Ceiling(Math.Log10(max)); e++)
+            foreach (var m in multiples)
+            {
+                var t = Math.Round(m * Math.Pow(10, e), 12 - Math.Min(12, Math.Max(0, e)));
+                if (t >= min * (1 - 1e-9) && t <= max * (1 + 1e-9)) ticks.Add(t);
+            }
+        return ticks;
+    }
+
+    /// <summary>
     /// Round-number ticks covering <paramref name="min"/>–<paramref name="max"/>, about
     /// <paramref name="target"/> of them, at a step of 1, 2, 2.5 or 5 times a power of ten.
     /// </summary>
@@ -125,7 +157,11 @@ public static class TickLayout
             : style.Placement;
 
         var ticks = new List<(double X, string Label)>();
-        if (axis.Values == AxisValues.Labels)
+        if (axis.EffectiveScale == AxisScale.Logarithmic && from > 0)
+        {
+            foreach (var x in LogSteps(from, to)) ticks.Add((x, axis.Format is { } f ? f(x) : x.ToString("0.####", CultureInfo.InvariantCulture)));
+        }
+        else if (axis.Values == AxisValues.Labels)
         {
             for (var i = 0; i < axis.Labels.Count; i++) ticks.Add((i, axis.Labels[i]));
         }

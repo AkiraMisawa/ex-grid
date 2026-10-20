@@ -33,6 +33,10 @@
     --_ex-chart-band: var(--ex-chart-band, color-mix(in srgb, var(--_ex-chart-colour-0) 15%, transparent));
     --_ex-chart-extrapolated: var(--ex-chart-extrapolated, color-mix(in srgb, var(--_ex-chart-text) 6%, transparent));
     --_ex-chart-error: var(--ex-chart-error, var(--ex-state-error-color, #b3261e));
+    /* A candle's rise and fall colours (ADR-0300): by default the series' own, so shape alone tells
+       them apart; a Consumer or the Wrapper sets Japan's, the West's or China's. */
+    --_ex-chart-rise: var(--ex-chart-rise, currentColor);
+    --_ex-chart-fall: var(--ex-chart-fall, currentColor);
     /* The 3D surface's faces, low to high, one per colour band .NET assigns (ADR-0255). */
     --_ex-chart-heat-0: var(--ex-chart-heat-0, #1a9850);
     --_ex-chart-heat-1: var(--ex-chart-heat-1, #66bd63);
@@ -119,6 +123,16 @@
 .ex-chart-markers { fill: currentColor; stroke: currentColor; stroke-width: 1; }
 /* A step's open end: the marker's shape outlined, filled with the background (ADR-0253). */
 .ex-chart-markers-open { fill: var(--_ex-chart-background); }
+
+/* Candles and volume (ADR-0300): rising hollow, falling filled, unchanged one line. */
+.ex-chart-rising { fill: var(--_ex-chart-background); stroke: var(--_ex-chart-rise); stroke-width: 1; }
+.ex-chart-falling { fill: var(--_ex-chart-fall); stroke: var(--_ex-chart-fall); stroke-width: 1; }
+.ex-chart-unchanged,
+.ex-chart-hlc { fill: none; stroke: currentColor; stroke-width: 1; }
+
+/* An Interval (ADR-0303): whiskers with caps, or a band. */
+.ex-chart-whiskers { fill: none; stroke: currentColor; stroke-width: 1; }
+.ex-chart-interval-band { fill: currentColor; fill-opacity: 0.18; stroke: none; }
 .ex-chart-extrapolated { fill: var(--_ex-chart-extrapolated); }
 
 .ex-chart-legend-entry { cursor: pointer; }
@@ -145,12 +159,14 @@
 }
 .ex-chart-tooltip-flip { transform: translateX(-100%); }
 .ex-chart-tooltip-position { font-weight: 600; }
-.ex-chart-tooltip-line { display: flex; align-items: center; gap: 0.4em; }
+.ex-chart-tooltip-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0 0.4em; max-width: 30em; }
 .ex-chart-swatch { flex: none; overflow: visible; }
 .ex-chart-tooltip-name { color: var(--_ex-chart-text); }
 .ex-chart-tooltip-value { color: var(--_ex-chart-text); font-variant-numeric: tabular-nums; margin-left: auto; }
 .ex-chart-tooltip-note,
 .ex-chart-tooltip-more { color: var(--_ex-chart-muted); }
+/* A long note (a candle's change and volume) takes a line of its own rather than widening the tooltip off the chart. */
+.ex-chart-tooltip-note { white-space: normal; }
 
 /* The context menu (ADR-0281): ExChart's frame, at the viewport point the browser gave with the
    event, over a backdrop that takes the click that closes it. */

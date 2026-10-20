@@ -109,6 +109,12 @@ export function stamp() {
 export function attach(root, core) {
     let version = -1;
     let xs = [];
+    // A scatter's marks (ADR-0290), as x, y and panel in turn, how near the pointer must be to one,
+    // and the lattice a drag is reported on; null on a chart of lines.
+    let marks = null;
+    let reach = 0;
+    let cell = 4;
+    let lastCell = '';
     let lastIndex = -1;
     let lastPanel = -1;
     let pressed = false;
@@ -136,6 +142,26 @@ export function attach(root, core) {
         return lo;
     };
 
+    // The mark nearest the point, in its panel and within reach, or -1. It reads only the positions
+    // .NET handed over with the drawing; nothing is measured (ADR-0255).
+    const nearestMark = (point) => {
+        let best = -1;
+        let bestDistance = reach * reach;
+        for (let i = 0; i < marks.length; i += 3) {
+            if (marks[i + 2] !== point.panel) {
+                continue;
+            }
+            const dx = marks[i] - point.x;
+            const dy = marks[i + 1] - point.y;
+            const distance = dx * dx + dy * dy;
+            if (distance <= bestDistance) {
+                best = i / 3;
+                bestDistance = distance;
+            }
+        }
+        return best;
+    };
+    const snap = (value) => (Math.floor(value / cell) + 0.5) * cell;
     const fail = (error) => {
         if (core) {
             console.error('[ex-chart] the chart failed to take a pointer report', error);
@@ -174,7 +200,14 @@ export function attach(root, core) {
     };
 
     const report = (point) => {
-        const index = nearest(point.x);
+        if (marks && pressed) {
+            const key = `${Math.floor(point.x / cell)},${Math.floor(point.y / cell)}`;
+            if (key !== lastCell) {
+                lastCell = key;
+                core.invokeMethodAsync('OnDragAsync', version, snap(point.x), snap(point.y)).catch(fail);
+            }
+        }
+        const index = marks ? nearestMark(point) : nearest(point.x);
         if (index === lastIndex && point.panel === lastPanel) {
             return;
         }
@@ -211,8 +244,9 @@ export function attach(root, core) {
             return;
         }
         pressed = true;
+        lastCell = `${Math.floor(at.x / cell)},${Math.floor(at.y / cell)}`;
         event.target.setPointerCapture?.(event.pointerId);
-        core.invokeMethodAsync('OnPressAsync', version, nearest(at.x)).catch(fail);
+        core.invokeMethodAsync('OnPressAsync', version, marks ? nearestMark(at) : nearest(at.x), snap(at.x), snap(at.y), at.panel).catch(fail);
     };
 
     const onUp = (event) => {
@@ -222,7 +256,8 @@ export function attach(root, core) {
         pressed = false;
         const point = locate(event);
         over = point ? { layer: event.target.closest('.ex-chart-hit'), x: event.offsetX, y: event.offsetY } : null;
-        core.invokeMethodAsync('OnReleaseAsync', version, point ? nearest(point.x) : -1).catch(fail);
+        const index = point ? (marks ? nearestMark(point) : nearest(point.x)) : -1;
+        core.invokeMethodAsync('OnReleaseAsync', version, index, point ? snap(point.x) : -1, point ? snap(point.y) : -1).catch(fail);
     };
 
     const onLeave = () => {
@@ -238,10 +273,16 @@ export function attach(root, core) {
     root.addEventListener('pointerleave', onLeave);
 
     return {
-        /** A new drawing: its version and its positions' offsets, left to right. */
-        draw(newVersion, newXs) {
+        /**
+         * A new drawing: its version and its positions' offsets, left to right; on a scatter, its marks
+         * as x, y and panel in turn, how near the pointer must come to one, and the drag's lattice.
+         */
+        draw(newVersion, newXs, newMarks, newReach, newCell) {
             version = newVersion;
             xs = Array.isArray(newXs) ? newXs : [];
+            marks = Array.isArray(newMarks) ? newMarks : null;
+            reach = Number.isFinite(newReach) ? newReach : 0;
+            cell = Number.isFinite(newCell) && newCell > 0 ? newCell : 4;
             lastIndex = -1;
             lastPanel = -1;
             const point = over && !pressed && core ? at(over.layer, over.x, over.y) : null;

@@ -18,6 +18,12 @@ The proof of concept measured 48 crossings for 89 mousemoves over 44 dates.
 reports — the position under the pointer when it changes, plus the press and the release — with no
 listener added and nothing measured.
 
+*2026-10-19 (scatter grilling Q4, ADR-0290).* On a chart with an Observation series, the position
+reported is **the nearest mark**, chosen from the marks' pixel positions handed over with the drawing,
+and a drag reports the y of its press and release as well as the x, and, while held, each lattice cell
+of a few pixels it moves into, so the rectangle follows it. Still one listener, still nothing
+measured.
+
 ## Twelfth: the 3D surface is projected and drawn in the browser while it is turned
 
 Turning a surface follows the pointer at the frame rate; a round trip per frame cannot. .NET decides

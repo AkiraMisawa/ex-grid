@@ -154,7 +154,7 @@ internal static class ChartDrawing
             foreach (var piece in panel.Series)
             {
                 b.OpenComponent<ChartSeriesView>(6);
-                b.SetKey("series:" + piece.Id);
+                b.SetKey((panel.VolumeOf is null ? "series:" : "volume:") + piece.Id);
                 b.AddComponentParameter(7, nameof(ChartSeriesView.Piece), piece);
                 b.AddComponentParameter(8, nameof(ChartSeriesView.Plot), panel.Plot);
                 b.AddComponentParameter(9, nameof(ChartSeriesView.LineHeight), lineHeight);
