@@ -12,7 +12,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/20/2026 - 01:06:54 |
+| Generated on: | 10/20/2026 - 01:47:41 |
 | Parser: | MultiReport (16x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 855 |
@@ -22,8 +22,8 @@
 | Uncovered lines: | 2957 |
 | Coverable lines: | 62243 |
 | Total lines: | 105385 |
-| **Branch coverage:** | 88.1% (34468 of 39123) |
-| Covered branches: | 34468 |
+| **Branch coverage:** | 88.1% (34470 of 39123) |
+| Covered branches: | 34470 |
 | Total branches: | 39123 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -161,8 +161,8 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|90.8%|85.9%|
 |ExGrid.Components.ExGrid<TRow>|95.3%|90.3%|
+|ExGrid.Components.ExGrid<TRow>|90.8%|85.9%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
@@ -211,8 +211,8 @@
 |ExGrid.IGridSource<TRow>|100%||
 |ExGrid.InMemoryGridSource.ChangePlan<TRow>|100%|100%|
 |ExGrid.InMemoryGridSource.Pending<TRow>|100%||
-|ExGrid.InMemoryGridSource<TRow>|93.5%|77.7%|
 |ExGrid.InMemoryGridSource<TRow>|96.5%|91.5%|
+|ExGrid.InMemoryGridSource<TRow>|93.5%|77.7%|
 |ExGrid.InputOrder|92.7%|81.2%|
 |ExGrid.InputOrder.Waiting|100%||
 |ExGrid.InputOrder<T>|92.7%|81.2%|
@@ -733,10 +733,10 @@
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|91.1%|84.5%|
+|ExSheet.Components.ExSheet|91.1%|84.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91.1%|84.5%|
+|ExSheet.Components.ExSheet<T>|91.1%|84.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
