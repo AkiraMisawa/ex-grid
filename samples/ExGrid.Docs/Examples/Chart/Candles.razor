@@ -1,0 +1,53 @@
+@using ExChart
+@using ExChart.Components
+@using ExChart.Engine
+
+<p>
+    <label><input type="checkbox" checked="@_packed" @onchange="e => _packed = e.Value is true" /> Packed sessions</label>
+    <label>
+        Colours
+        <select @bind="_colours">
+            <option value="shape">Shape only</option>
+            <option value="japan">Red rises, blue falls</option>
+            <option value="west">Green rises, red falls</option>
+        </select>
+    </label>
+</p>
+<div class="@($"candles-{_colours}")">
+    <ExChart Definition="_packed ? Packed : Calendar" Title="Equity index" Width="720" Height="420"
+             Range="_range" OnRangeChanged="r => _range = r" />
+</div>
+
+<style>
+    /* The rise and fall colours are Visual Tokens; by default both are the series' own colour. */
+    .candles-japan .ex-chart { --ex-chart-rise: #d32f2f; --ex-chart-fall: #1565c0; }
+    .candles-west .ex-chart { --ex-chart-rise: #2e7d32; --ex-chart-fall: #c62828; }
+</style>
+
+@code {
+    private static string Price(object v) => Convert.ToDecimal(v).ToString("N2");
+
+    // One Price Range: each session's open, high, low and close, and its volume, drawn in a panel below.
+    private static readonly PriceBar[] Bars =
+        [.. IndexSessions.All.Select(s => new PriceBar(s.Date.DayNumber, s.Open, s.High, s.Low, s.Close, s.Volume))];
+
+    // The page's own calculation, as a Consumer's would be: the mean of the last 25 closes.
+    private static readonly ChartSeries Average = ChartSeries.Of("average", "25-day average", SeriesKind.Level,
+        IndexSessions.All.Select((s, i) => new ChartPoint(s.Date.DayNumber, i < 24 ? null
+            : ChartValue.Of(Math.Round(IndexSessions.All.Skip(i - 24).Take(25).Average(x => x.Close), 2)))))
+        with { FromZero = false, Format = Price };
+
+    private static ChartDefinition Make(bool packed) => new(ChartAxis.Dates("Date") with { Packed = packed },
+    [
+        ChartSeries.Candles("index", "Index", Bars) with { Format = Price },
+        Average,
+    ]);
+
+    // Calendar time by default; packed, the days nobody traded are left out, and the Notes say so.
+    private static readonly ChartDefinition Calendar = Make(packed: false);
+    private static readonly ChartDefinition Packed = Make(packed: true);
+
+    private bool _packed;
+    private string _colours = "shape";
+    private ChartRange? _range;
+}

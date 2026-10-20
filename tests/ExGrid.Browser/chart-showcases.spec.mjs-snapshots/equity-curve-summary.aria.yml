@@ -1,0 +1,3 @@
+- 'img "Yield curve. Tenor (years), 0.25 to 30. Left axis, 3.2 to 4. Mid: maximum 3.92% at 30."':
+  - text: 3.2 3.4 3.6 3.8 4 5 10 15 20 25 30
+  - button "Mid (Bid–Ask)" [pressed]

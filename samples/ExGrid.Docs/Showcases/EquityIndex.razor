@@ -1,0 +1,11 @@
+@page "/showcase/equity-index"
+@layout BareLayout
+@inject DocsState State
+@using global::ExChart.Showcases
+
+@* ExChart's Equity index daily bars (ADR-0300 to ADR-0304): ten years of an index as candles beside its
+   rows, and the figures that carry intervals. The screen is ExChart.Showcases', shared with the demo pages, so
+   layer 3 drives the same component on both hosts. *@
+<ShowcaseFrame Title="Equity index daily bars">
+    <IndexShowcase Mud="State.Mud" />
+</ShowcaseFrame>

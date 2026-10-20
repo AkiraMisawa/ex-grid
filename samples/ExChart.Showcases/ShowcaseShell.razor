@@ -1,4 +1,4 @@
-@* The frame both ExChart Showcases share: an application bar with the desk's name and the screen's, and
+@* The frame every ExChart Showcase shares: an application bar with the desk's name and the screen's, and
    the screen below it. Under MudBlazor's Chrome the bar is a MudPaper; under the built-in one, plain
    markup. The colours are the page's own, as an application's stylesheet would set them. *@
 <style>
@@ -53,6 +53,9 @@
     .xs-mud .xs-mud-view-selected { background: var(--mud-palette-primary) !important; color: var(--mud-palette-primary-text) !important; }
     .xs-fx-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
     .xs-fx-quotes { flex: 1 1 520px; min-width: 320px; }
+    .xs-side { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+    .xs-side-grid { flex: 1 1 360px; min-width: 300px; }
+    .xs-builtin .xs-tools label { display: inline-flex; align-items: center; gap: 6px; color: var(--xs-text); }
     .xs-refusal { color: light-dark(#a15c00, #f5b754); font-size: 13px; margin: 0 0 8px; }
 </style>
 

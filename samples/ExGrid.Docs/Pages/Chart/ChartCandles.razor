@@ -1,0 +1,70 @@
+@page "/exchart/candles"
+@using ExGrid.Docs.Examples.Chart
+
+<DocsPage Product="ExChart" Title="Candles and intervals"
+          Lead="A Price Range draws one candle a row, with its volume in a panel below, and refuses a row whose values disagree. An interval belongs to the series it qualifies and says what it means.">
+
+    <DocsSection Title="Candles and volume">
+        <p>
+            <code>ChartSeries.Candles</code> takes one <code>PriceBar</code> a row: its open, high, low and close,
+            and optionally its volume. A rising candle, its close above its own open, is hollow, and a falling one
+            filled, so the two are told apart in print and without colour; a candle whose open equals its close is
+            one line, and the tooltip says "unchanged". The tooltip gives the period, the four values and the change
+            from the previous close. Volume is drawn as bars in a panel below that share the candles' axis, each
+            following its candle's rule, and its axis starts at zero; the price axis does not.
+        </p>
+        <p>
+            A row whose values disagree, a high below its open, is refused by name, never repaired. A row missing
+            any of the four is a gap. A Price Range stands on a Dates axis only.
+        </p>
+        <p>
+            The colours are Visual Tokens: <code>--ex-chart-rise</code> and <code>--ex-chart-fall</code>, by default
+            both the series' own colour. Japan's red and blue or the West's green and red are the page's setting,
+            as in the Example below. The 25-day average is the page's own calculation, an ordinary Level.
+        </p>
+        <DocsExample Builtin="typeof(Candles)" Mud="typeof(CandlesMud)" Files="@(["Examples/Chart/IndexSessions.cs"])" CodeOpen="true" />
+    </DocsSection>
+
+    <DocsSection Title="Merged to fit, and narrowed back">
+        <p>
+            A hollow body needs about three device pixels to be told from a filled one. Past that, consecutive
+            candles merge on calendar boundaries, into weeks, then months, quarters and years, the first that fits:
+            the market's own weekly and monthly bars, the first open, the highest high, the lowest low, the last close,
+            and the volume summed. The Notes say so ("Index: weekly candles, merged from rows to fit."), and the
+            tooltip gives the period and how many rows it holds. A click on a merged candle narrows the range to
+            its rows; a drag narrows to what it covers, and the rows come back as they are. A Consumer may fix the
+            period with <code>MergeTo</code>; one that does not fit draws nothing and says to narrow the range.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Calendar time, or packed sessions">
+        <p>
+            By default candles stand on calendar time, as every other series does, so a weekend is a gap, and
+            the gap is true. <code>ChartAxis.Dates(...) with { Packed = true }</code> gives each row one evenly spaced
+            slot and leaves the closed days out; the ticks are still the real dates, and the Notes say the dates are
+            packed. On a packed axis every series must stand on the candles' positions; one that does not is refused.
+            The chart holds no View State, so the switch is the page's, as the checkbox above is.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Intervals">
+        <p>
+            An interval is not a series. It is a <code>SeriesInterval</code> on the series it qualifies, with the
+            bounds the page hands in and a meaning that is required: <code>95% CI</code>, <code>±1σ</code>,
+            <code>Bid–Ask</code>. The meaning is said in the legend, the tooltip
+            (<code>3.32% [3.30%, 3.34%] Bid–Ask</code>), the Notes and the CSV's column names. ExChart computes
+            no width, so an asymmetric interval is drawn as it is. A lower bound above its upper is refused; a point
+            missing a bound has no interval there.
+        </p>
+        <p>
+            On a Level an interval is drawn as a band or as whiskers, an appearance choice. An Observation takes
+            whiskers both ways, <code>Interval</code> up and <code>XInterval</code> across, one bound a row in its
+            points' order; where marks merge, the mark carries the widest of their intervals.
+        </p>
+        <DocsExample Builtin="typeof(Intervals)" Mud="typeof(IntervalsMud)" />
+        <p>
+            The <MudLink Href="showcase/equity-index" Target="_blank">Equity index daily bars showcase</MudLink>
+            puts ten years of an index beside its grid, and these intervals in a second view.
+        </p>
+    </DocsSection>
+</DocsPage>
