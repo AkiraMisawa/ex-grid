@@ -602,6 +602,7 @@ test('PV-21/DA-17: a CSV of a million rows read on /pivot-csv', async ({ page },
     for (let run = 0; run < 3; run++) {
         await openMeasured(page, '/pivot-csv');
         await expect(page.locator('#csv-status')).toHaveText('Choose a file, or a sample.');
+        await expect(page.locator('#csv-file')).toBeEnabled();
         await page.evaluate(() => {
             const p = window.__pv21;
             p.watch('read', { kind: 'matches', selector: '#csv-status', pattern: 'rows read in' });
