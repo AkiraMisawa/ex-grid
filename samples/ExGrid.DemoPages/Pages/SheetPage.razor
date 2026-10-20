@@ -270,7 +270,8 @@
     // A few values, Formulas over them, and a date: the tracer's A1 + B1 and a little more.
     private static SheetDocument Opening()
     {
-        var sheet = new Sheet(Culture);
+        var workbook = new Workbook(Culture);
+        var sheet = workbook.Sheets[0];
         (string Address, string Typed)[] cells =
         [
             ("A1", "Item"), ("B1", "Qty"), ("C1", "Price"), ("D1", "Amount"),
@@ -286,9 +287,9 @@
             ("A13", "Count"), ("B13", $"=COUNTA({Table}[Id])"),
         ];
         // The declaration travels in the Sheet Document; the rows never do (ADR-0049).
-        sheet.DeclareLinkedTable(Table, TableColumns, TableKey);
-        foreach (var (address, typed) in cells) sheet.Enter(CellAddress.Parse(address), typed);
-        return sheet.ToDocument();
+        workbook.DeclareLinkedTable(Table, TableColumns, TableKey);
+        foreach (var (address, typed) in cells) workbook.Do(sheet.Name, SheetEdit.Enter(CellAddress.Parse(address), typed));
+        return workbook.ToDocument(sheet.Name);
     }
 
     // The Cell Metrics the Sheet paints with, resolved from what its paper cascades as ExSheet resolves

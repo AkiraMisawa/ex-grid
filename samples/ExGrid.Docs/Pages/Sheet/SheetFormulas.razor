@@ -349,17 +349,20 @@
         <p>
             <code>ExSheet.Engine</code> is the Formula engine with no UI and no dependency. Use it to compute a saved
             Sheet Document on a server, to validate one, or to build a document in code — every Example on this site
-            builds its document with it. <code>Enter</code> reads text exactly as a user's typing is read;
-            <code>GetDisplay</code> gives what a cell shows, formatted under the Sheet's culture.
+            builds its document with it. A <code>Workbook</code> holds the Sheets and everything that changes them:
+            <code>new Workbook(culture)</code> starts one with a single Sheet, <code>Sheet1</code>, and
+            <code>workbook.Do("Sheet1", SheetEdit.Enter(address, text))</code> reads text exactly as a user's typing is
+            read. A <code>Sheet</code> is read: <code>GetDisplay</code> gives what a cell shows, formatted under the
+            Sheet's culture.
         </p>
         <DocsExample Builtin="typeof(EngineOnly)" CodeOpen="true" />
         <p>
             Every operation a user can perform is a <code>SheetEdit</code> — insert or delete rows and columns, set
-            a Cell Format, paste, fill — and <code>Sheet.Do(edit)</code> returns the one <code>SheetStep</code> that
-            undoes and redoes it. A paste that writes in parts is still one edit: a copied block over several ranges
+            a Cell Format, paste, fill — and <code>Workbook.Do(sheet, edit)</code> returns the one
+            <code>WorkbookStep</code> that undoes and redoes it. A paste that writes in parts is still one edit: a copied block over several ranges
             (<code>SheetEdit.Paste(block, targets)</code>), and pasted text some of whose fields carry an exact
             number (<code>SheetEdit.PasteText(fields, entries)</code>). Each is one step, and one change, so
-            <code>RAND</code> draws once for it. <code>Sheet.Check(edit)</code> says whether an edit would be refused,
+            <code>RAND</code> draws once for it. <code>Workbook.Check(sheet, edit)</code> says whether an edit would be refused,
             without doing it. <code>GetDisplay(address, width)</code> gives what the cell shows in a column so many characters wide:
             General rounds to fit, and any other format that does not fit is <code>####</code>.
         </p>
@@ -368,11 +371,11 @@
             another's cells by naming it, <code>=Rates!A1</code> or <code>=SUM('Q1 Sales'!B2:B9)</code>, and a
             change on any Sheet recalculates what reads it on every Sheet, the new Values published together once
             the whole recalculation is done. A name no Sheet of the Workbook has is <code>#REF!</code>, as in
-            Excel. <code>Workbook.Do(sheet, edit)</code> names the Sheet an edit is made on and returns the step
-            that undoes it; its <code>WorkbookChange</code> says what changed on each Sheet. Linked Tables are
+            Excel. The step <code>Workbook.Do(sheet, edit)</code> returns carries a <code>WorkbookChange</code>,
+            which says what changed on each Sheet. Linked Tables are
             declared on the Workbook, and read from any of its Sheets. <code>ToDocument()</code> gives the
-            Workbook Document — every Sheet in order, the Sheet shown, the culture and the Linked Tables'
-            declarations, never a Value — and <code>Workbook.Open</code> opens one again;
+            Workbook Document, and <code>ToDocument(sheet)</code> one Sheet as a Sheet Document — every Sheet in order, the Sheet shown, the culture and the Linked Tables'
+            declarations, never a Value — and <code>Workbook.Open</code> opens either again;
             <code>WorkbookDocument.FromJson</code> reads a Sheet Document too, as a Workbook of that one Sheet,
             and refuses a version it does not know or anything it does not understand. <code>SheetEdit.InsertSheet</code>,
             <code>Rename</code>, <code>MoveSheet</code>, <code>CopySheet</code> and <code>DeleteSheet</code> change

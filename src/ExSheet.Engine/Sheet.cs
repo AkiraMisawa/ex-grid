@@ -37,14 +37,14 @@ public sealed partial class Sheet
     private readonly Dictionary<SheetCell, Area[]> _remoteAreaDependents = [];
 
     /// <summary>Creates an empty Sheet whose constants are read and whose Values are shown under <paramref name="culture"/>.</summary>
-    public Sheet(CultureInfo culture)
+    internal Sheet(CultureInfo culture)
         : this(culture, DefaultName)
     {
     }
 
     /// <summary>Creates an empty Sheet named <paramref name="name"/>, whose constants are read and whose Values are shown under <paramref name="culture"/>.</summary>
     /// <exception cref="ArgumentException">The name is not one a Sheet can have (<see cref="IsValidName"/>).</exception>
-    public Sheet(CultureInfo culture, string name)
+    internal Sheet(CultureInfo culture, string name)
     {
         ArgumentNullException.ThrowIfNull(culture);
         ArgumentNullException.ThrowIfNull(name);
@@ -72,7 +72,7 @@ public sealed partial class Sheet
     /// declared and waiting for their first snapshot, and its Entries, with every Value computed
     /// again (ADR-0048, ADR-0049). The culture of the thread that opens it plays no part.
     /// </summary>
-    public static Sheet Open(SheetDocument document)
+    internal static Sheet Open(SheetDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
         var sheet = new Sheet(SheetDocument.ResolveCulture(document.Culture), document.Name);
@@ -130,7 +130,7 @@ public sealed partial class Sheet
     /// ADR-0071). Adjacent columns or rows formatted alike, and adjacent columns of one width, are
     /// recorded as one entry; a column at the default width records none.
     /// </summary>
-    public SheetDocument ToDocument() => ToDocument(TableDeclarations);
+    internal SheetDocument ToDocument() => ToDocument(TableDeclarations);
 
     /// <summary>The Sheet as a Sheet Document declaring <paramref name="tables"/>: none for a Sheet of a Workbook Document, which records them once (ADR-0331).</summary>
     internal SheetDocument ToDocument(IReadOnlyList<SheetDocumentTable> tables) =>
@@ -209,7 +209,7 @@ public sealed partial class Sheet
 
     /// <summary>Takes text as the user typed it into a cell, read under the Sheet's culture, and recalculates.</summary>
     /// <exception cref="FormulaSyntaxException">The text is a Formula that cannot be read; nothing changes.</exception>
-    public SheetChange Enter(CellAddress address, string typed) =>
+    internal SheetChange Enter(CellAddress address, string typed) =>
         Enter([new KeyValuePair<CellAddress, string>(address, typed)]);
 
     /// <summary>
@@ -223,7 +223,7 @@ public sealed partial class Sheet
     /// given on entry is never changed by a later recalculation (ADR-0047).
     /// </remarks>
     /// <exception cref="FormulaSyntaxException">A text is a Formula that cannot be read.</exception>
-    public SheetChange Enter(IEnumerable<KeyValuePair<CellAddress, string>> typed) => Enter(typed, pasted: false);
+    internal SheetChange Enter(IEnumerable<KeyValuePair<CellAddress, string>> typed) => Enter(typed, pasted: false);
 
     /// <param name="typed">The texts, by cell.</param>
     /// <param name="pasted">
@@ -348,7 +348,7 @@ public sealed partial class Sheet
         SetEntries([new KeyValuePair<CellAddress, Entry?>(address, entry)]);
 
     /// <summary>Sets or clears several cells' Entries as one change, with one recalculation. A later pair for the same cell wins.</summary>
-    public SheetChange SetEntries(IEnumerable<KeyValuePair<CellAddress, Entry?>> entries)
+    internal SheetChange SetEntries(IEnumerable<KeyValuePair<CellAddress, Entry?>> entries)
     {
         ArgumentNullException.ThrowIfNull(entries);
         var changed = new HashSet<CellAddress>();

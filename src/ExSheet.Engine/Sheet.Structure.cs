@@ -20,7 +20,7 @@ public sealed partial class Sheet
     /// <exception cref="SheetRefusedException">
     /// A cell holding an Entry would be pushed off the Sheet's bottom edge. Nothing changes.
     /// </exception>
-    public SheetChange InsertRows(int row, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Rows, row, count, true)).Change;
+    internal SheetChange InsertRows(int row, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Rows, row, count, true)).Change;
 
     /// <summary>
     /// Deletes <paramref name="count"/> rows from <paramref name="row"/>; what was below moves up. Every
@@ -29,7 +29,7 @@ public sealed partial class Sheet
     /// own four sides, so where the two rows brought together both record a line on the edge they now
     /// share, the upper row's is shown (the twelfth Windows run, cases 6 and 9).
     /// </summary>
-    public SheetChange DeleteRows(int row, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Rows, row, count, false)).Change;
+    internal SheetChange DeleteRows(int row, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Rows, row, count, false)).Change;
 
     /// <summary>
     /// Inserts columns, as <see cref="InsertRows"/> does rows: each new cell takes the Number Format,
@@ -42,7 +42,7 @@ public sealed partial class Sheet
     /// it, and one pushed off the right edge is dropped.
     /// </summary>
     /// <exception cref="SheetRefusedException">A cell holding an Entry would be pushed off the Sheet's right edge. Nothing changes.</exception>
-    public SheetChange InsertColumns(int column, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Columns, column, count, true)).Change;
+    internal SheetChange InsertColumns(int column, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Columns, column, count, true)).Change;
 
     /// <summary>
     /// Deletes columns, as <see cref="DeleteRows"/> does rows: the widths set on them go, and those to
@@ -50,7 +50,7 @@ public sealed partial class Sheet
     /// both record a line on the edge they now share, the left column's is shown (the twelfth Windows
     /// run, case 7).
     /// </summary>
-    public SheetChange DeleteColumns(int column, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Columns, column, count, false)).Change;
+    internal SheetChange DeleteColumns(int column, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Columns, column, count, false)).Change;
 
     /// <summary>What a structural edit did, and what undoing it needs besides the inverse edit.</summary>
     internal sealed record StructuralOutcome(

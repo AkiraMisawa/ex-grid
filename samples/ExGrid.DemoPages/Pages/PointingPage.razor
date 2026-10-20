@@ -97,11 +97,12 @@
     // The table's total, so the page shows when its snapshot has landed.
     private static SheetDocument Opening()
     {
-        var sheet = new Sheet(Culture);
-        sheet.DeclareLinkedTable(Table, TableColumns, TableKey);
-        sheet.Enter(CellAddress.Parse("A1"), "Total PV");
-        sheet.Enter(CellAddress.Parse("B1"), $"=SUM({Table}[PV])");
-        return sheet.ToDocument();
+        var workbook = new Workbook(Culture);
+        var sheet = workbook.Sheets[0];
+        workbook.DeclareLinkedTable(Table, TableColumns, TableKey);
+        workbook.Do(sheet.Name, SheetEdit.Enter(CellAddress.Parse("A1"), "Total PV"));
+        workbook.Do(sheet.Name, SheetEdit.Enter(CellAddress.Parse("B1"), $"=SUM({Table}[PV])"));
+        return workbook.ToDocument(sheet.Name);
     }
 
     protected override void OnInitialized()

@@ -1263,7 +1263,7 @@
     /// <summary>The Sheet as it stands, as a Sheet Document: Entries, never Values (ADR-0048).</summary>
     /// <exception cref="InvalidOperationException">The Workbook holds several Sheets, which a Sheet Document cannot record (ADR-0331): <see cref="ToWorkbookDocument"/> records them.</exception>
     public SheetDocument ToDocument() => CurrentWorkbook.Sheets.Count == 1
-        ? CurrentSheet.ToDocument()
+        ? CurrentWorkbook.ToDocument(CurrentSheet.Name)
         : throw new InvalidOperationException("The Workbook holds several Sheets, which a Sheet Document cannot record; ToWorkbookDocument records them (ADR-0331).");
 
     /// <summary>The Workbook as it stands, as a Workbook Document: every Sheet in order, the Sheet shown, never a Value (ADR-0331).</summary>
@@ -1296,14 +1296,13 @@
     private void Open(SheetDocument? document, WorkbookDocument? workbook)
     {
         _workbook = workbook is not null ? global::ExSheet.Engine.Workbook.Open(workbook)
-            : document is not null ? Sheet.Open(document).Workbook
-            : new Sheet(Culture ?? CultureInfo.CurrentCulture).Workbook;
+            : document is not null ? global::ExSheet.Engine.Workbook.Open(document)
+            : new global::ExSheet.Engine.Workbook(Culture ?? CultureInfo.CurrentCulture);
         _sheet = _workbook.Shown;
         HearSheetNames();
         _views.Clear();
-        // A Sheet opened from a document has no day: the Sheet Day is not recorded (ADR-0121).
-        // Each Sheet keeps its own until the Workbook holds them (ticket 13 of exsheet-workbook).
-        foreach (var sheet in _workbook.Sheets) GiveTheDay(sheet);
+        // A Workbook opened from a document has no day: the Sheet Day is not recorded (ADR-0121).
+        GiveTheDay(_workbook);
         // Nor a seed: the Consumer's, or one chosen now, at a count of 0 changes (ADR-0180).
         GiveTheSeed(_workbook.Sheets);
         _edges = SheetEdges.Of(_sheet);
@@ -1642,7 +1641,7 @@
         var edit = SheetEdit.Fill(SheetFormulaAids.RangeOf(intent.Source), SheetFormulaAids.RangeOf(intent.Target), DirectionOf(intent.Direction));
         // Refused synchronously, before the handler's first await: the grid reads the answer
         // when the handler completes, and a refusal leaves the Selection on the source.
-        if (CurrentSheet.Check(edit) is { } refusal)
+        if (CurrentWorkbook.Check(CurrentSheet.Name, edit) is { } refusal)
         {
             intent.Refuse();
             Tell(SheetWords.Refused(refusal));
@@ -1663,7 +1662,7 @@
         var target = intent.Plan.Targets[0];
         var direction = target.TopRow > source.BottomRow ? FillDirection.Down : FillDirection.Right;
         var edit = SheetEdit.FillCopy(SheetFormulaAids.RangeOf(source), SheetFormulaAids.RangeOf(target), direction);
-        if (CurrentSheet.Check(edit) is { } refusal)
+        if (CurrentWorkbook.Check(CurrentSheet.Name, edit) is { } refusal)
         {
             intent.Refuse();
             Tell(SheetWords.Refused(refusal));
@@ -2185,7 +2184,7 @@
         var workbook = CurrentWorkbook;
         if (DocumentChanged.HasDelegate && workbook.Sheets.Count == 1)
         {
-            var document = workbook.Sheets[0].ToDocument();
+            var document = workbook.ToDocument(workbook.Sheets[0].Name);
             _emitted.AddOrUpdate(document, document);
             await DocumentChanged.InvokeAsync(document);
         }

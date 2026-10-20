@@ -59,7 +59,8 @@ public static class OperationsBudget
             new(Kind.Ratio, "Operating margin", Formula: "=IFERROR({c}25/{c}6, 0)"),
         ];
 
-        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"), "FY2025");
+        var workbook = new Workbook(CultureInfo.GetCultureInfo("en-US"), ["FY2025"]);
+        var sheet = workbook.Sheets[0];
         var random = new Random(2025);
         var typed = new List<KeyValuePair<CellAddress, string>>();
         void Enter(string column, int row, string text) =>
@@ -101,15 +102,15 @@ public static class OperationsBudget
                 Enter(Percent, n, $"=IFERROR({Variance}{n}/{Budget}{n}, 0)");
             }
         }
-        sheet.Enter(typed);
+        workbook.Do(sheet.Name, SheetEdit.Enter(typed));
 
         void Format(string range, CellFormatChange change) =>
-            sheet.Do(SheetEdit.SetCellFormat([CellRange.Parse(range)], change));
+            workbook.Do(sheet.Name, SheetEdit.SetCellFormat([CellRange.Parse(range)], change));
 
-        sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse("A:A"), 24));
-        sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse($"{FirstMonth}:{LastMonth}"), 6.5));
-        sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse($"{Actual}:{Variance}"), 9));
-        sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse($"{Percent}:{Percent}"), 7.5));
+        workbook.Do(sheet.Name, SheetEdit.SetColumnWidth(CellRange.Parse("A:A"), 24));
+        workbook.Do(sheet.Name, SheetEdit.SetColumnWidth(CellRange.Parse($"{FirstMonth}:{LastMonth}"), 6.5));
+        workbook.Do(sheet.Name, SheetEdit.SetColumnWidth(CellRange.Parse($"{Actual}:{Variance}"), 9));
+        workbook.Do(sheet.Name, SheetEdit.SetColumnWidth(CellRange.Parse($"{Percent}:{Percent}"), 7.5));
 
         var last = rows.Length;
         Format($"B2:{LastMonth}{last}", new CellFormatChange { NumberFormat = NumberFormat.Parse("#,##0;(#,##0)") });
@@ -145,7 +146,7 @@ public static class OperationsBudget
                     break;
             }
         }
-        return sheet.ToDocument();
+        return workbook.ToDocument(sheet.Name);
     }
 
     private static string Column(int month) => CellAddress.ColumnName(5 + month);

@@ -78,7 +78,8 @@ public static class SheetCases
     public static SheetDocument? Document(string? name, CultureInfo culture, CellTextMetrics metrics)
     {
         if (name is null) return null;
-        var sheet = new Sheet(culture);
+        var workbook = new Workbook(culture);
+        var sheet = workbook.Sheets[0];
         switch (name)
         {
             case "bold":
@@ -150,7 +151,7 @@ public static class SheetCases
                 // A #### keeps its section's colour: column A at the width Excel showed it at.
                 Enter(sheet, "A1", "-123456789");
                 Format(sheet, new CellFormatChange { NumberFormat = NumberFormat.Parse("0;[Red]-0") }, "A1");
-                sheet.Do(SheetEdit.SetColumnWidth(CellRange.WholeColumns(0, 0), 9.5));
+                workbook.Do(sheet.Name, SheetEdit.SetColumnWidth(CellRange.WholeColumns(0, 0), 9.5));
                 break;
             case "4":
                 Format(sheet, new CellFormatChange { Fill = Yellow }, "B2");
@@ -200,7 +201,7 @@ public static class SheetCases
                 Format(sheet, new CellFormatChange { Borders = new BorderChange { Left = new BorderLine(BorderLineStyle.Thin, Blue) } }, "C2");
                 Enter(sheet, "E5", "1");
                 Format(sheet, new CellFormatChange { Borders = new BorderChange { Right = new BorderLine(BorderLineStyle.Thick, Red) } }, "E5");
-                sheet.Do(SheetEdit.Paste(sheet.Copy(CellRange.Parse("E5")).Block!, CellAddress.Parse("B2")));
+                workbook.Do(sheet.Name, SheetEdit.Paste(sheet.Copy(CellRange.Parse("E5")).Block!, CellAddress.Parse("B2")));
                 break;
             case "12-14":
                 Format(sheet, new CellFormatChange { Borders = BorderChange.Outline(Thin) }, "3:3");
@@ -266,16 +267,16 @@ public static class SheetCases
                 throw new ArgumentException(
                     $"Unknown case '{name}': /sheet?case= opens one of {string.Join(", ", Names)}.", nameof(name));
         }
-        return sheet.ToDocument();
+        return workbook.ToDocument(sheet.Name);
     }
 
-    private static void Enter(Sheet sheet, string address, string typed) => sheet.Enter(CellAddress.Parse(address), typed);
+    private static void Enter(Sheet sheet, string address, string typed) => sheet.Workbook.Do(sheet.Name, SheetEdit.Enter(CellAddress.Parse(address), typed));
 
     private static void Format(Sheet sheet, CellFormatChange change, string range) =>
-        sheet.Do(SheetEdit.SetCellFormat([CellRange.Parse(range)], change));
+        sheet.Workbook.Do(sheet.Name, SheetEdit.SetCellFormat([CellRange.Parse(range)], change));
 
     // Columns first to last at the width, in characters, whose content is contentPx in these metrics:
     // a column's width in pixels is its characters' digits and the cell's padding on both sides.
     private static void SetContentWidth(Sheet sheet, CellTextMetrics metrics, int first, int last, double contentPx) =>
-        sheet.Do(SheetEdit.SetColumnWidth(CellRange.WholeColumns(first, last), contentPx / metrics.DigitWidthPx));
+        sheet.Workbook.Do(sheet.Name, SheetEdit.SetColumnWidth(CellRange.WholeColumns(first, last), contentPx / metrics.DigitWidthPx));
 }

@@ -125,14 +125,14 @@ public sealed partial class Sheet
     public HorizontalAlignment? GetColumnAlignment(int column) => _columnFormats.TryGetValue(CheckColumn(column), out var level) ? level.Alignment : null;
 
     /// <summary>Sets the Number Format of cells; <see langword="null"/> is <see cref="NumberFormat.General"/>. No Value changes.</summary>
-    public SheetChange SetNumberFormat(IEnumerable<CellAddress> addresses, NumberFormat? format)
+    internal SheetChange SetNumberFormat(IEnumerable<CellAddress> addresses, NumberFormat? format)
     {
         ArgumentNullException.ThrowIfNull(addresses);
         return FormatCells(addresses, new CellFormatChange { NumberFormat = format ?? NumberFormat.General }, null, null, null).Change;
     }
 
     /// <summary>Sets one cell's Number Format.</summary>
-    public SheetChange SetNumberFormat(CellAddress address, NumberFormat? format) => SetNumberFormat([address], format);
+    internal SheetChange SetNumberFormat(CellAddress address, NumberFormat? format) => SetNumberFormat([address], format);
 
     /// <summary>
     /// Sets the Number Format of a range; <see langword="null"/> is <see cref="NumberFormat.General"/>.
@@ -141,24 +141,24 @@ public sealed partial class Sheet
     /// own Number Format take the new one, as Excel's do. Any other range sets each of its cells.
     /// No Value changes.
     /// </summary>
-    public SheetChange SetNumberFormat(CellRange range, NumberFormat? format) =>
+    internal SheetChange SetNumberFormat(CellRange range, NumberFormat? format) =>
         ApplyCellFormat(range, new CellFormatChange { NumberFormat = format ?? NumberFormat.General }).Change;
 
     /// <summary>Sets the horizontal alignment of cells. No Value changes.</summary>
-    public SheetChange SetAlignment(IEnumerable<CellAddress> addresses, HorizontalAlignment alignment)
+    internal SheetChange SetAlignment(IEnumerable<CellAddress> addresses, HorizontalAlignment alignment)
     {
         ArgumentNullException.ThrowIfNull(addresses);
         return FormatCells(addresses, new CellFormatChange { Alignment = CheckAlignment(alignment) }, null, null, null).Change;
     }
 
     /// <summary>Sets one cell's horizontal alignment.</summary>
-    public SheetChange SetAlignment(CellAddress address, HorizontalAlignment alignment) => SetAlignment([address], alignment);
+    internal SheetChange SetAlignment(CellAddress address, HorizontalAlignment alignment) => SetAlignment([address], alignment);
 
     /// <summary>
     /// Sets the horizontal alignment of a range, recording whole columns and whole rows as one
     /// entry each, as <see cref="SetNumberFormat(CellRange, NumberFormat?)"/> does. No Value changes.
     /// </summary>
-    public SheetChange SetAlignment(CellRange range, HorizontalAlignment alignment) =>
+    internal SheetChange SetAlignment(CellRange range, HorizontalAlignment alignment) =>
         ApplyCellFormat(range, new CellFormatChange { Alignment = CheckAlignment(alignment) }).Change;
 
     /// <summary>
@@ -170,7 +170,7 @@ public sealed partial class Sheet
     /// </summary>
     /// <exception cref="ArgumentException">There is no range, or the change sets nothing.</exception>
     /// <exception cref="ArgumentOutOfRangeException">The alignment is not one.</exception>
-    public SheetChange SetCellFormat(IEnumerable<CellRange> ranges, CellFormatChange change) =>
+    internal SheetChange SetCellFormat(IEnumerable<CellRange> ranges, CellFormatChange change) =>
         ApplyCellFormats(CheckCellFormat(ranges, change), change).Change;
 
     /// <summary>The ranges a change is set on, checked with the change.</summary>

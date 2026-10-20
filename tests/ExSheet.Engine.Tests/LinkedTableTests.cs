@@ -196,12 +196,12 @@ public class LinkedTableTests
         Assert.Equal(["Id", "PV", "Book"], sheet.LinkedTables.Single().Columns);
     }
 
-    [Fact] // ADR-0049: a table is never undeclared — there is no API for it
+    [Fact] // ADR-0049, ADR-0331 §9: a table is never undeclared — the Workbook, which holds the tables, has no API for it
     public void A_table_is_never_undeclared()
     {
         Assert.Equal(
             ["DeclareLinkedTable", "DeclareLinkedTable", "PushLinkedTable", "get_LinkedTables"],
-            typeof(Sheet).GetMethods().Select(m => m.Name).Where(n => n.Contains("LinkedTable", StringComparison.Ordinal) || n.Contains("Undeclare", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
+            typeof(Workbook).GetMethods().Select(m => m.Name).Where(n => n.Contains("LinkedTable", StringComparison.Ordinal) || n.Contains("Undeclare", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
     }
 
     [Fact] // ADR-0049: several declarations, a table no Formula reads, and odd column names round-trip in order

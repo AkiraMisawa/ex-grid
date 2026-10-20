@@ -23,21 +23,22 @@
 
     protected override void OnInitialized()
     {
-        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        var workbook = new Workbook(CultureInfo.GetCultureInfo("en-US"));
+        var sheet = workbook.Sheets[0];
 
         // Interest on a deposit for 92 days, on an Actual/360 basis.
-        sheet.Enter(CellAddress.Parse("A1"), "2500000");
-        sheet.Enter(CellAddress.Parse("A2"), "4.25%");
-        sheet.Enter(CellAddress.Parse("A3"), "92");
-        sheet.Enter(CellAddress.Parse("A4"), "=ROUND(A1*A2*A3/360, 2)");
-        sheet.Enter(CellAddress.Parse("A5"), "=MEDIAN(A1:A3)");
+        workbook.Do(sheet.Name, SheetEdit.Enter(CellAddress.Parse("A1"), "2500000"));
+        workbook.Do(sheet.Name, SheetEdit.Enter(CellAddress.Parse("A2"), "4.25%"));
+        workbook.Do(sheet.Name, SheetEdit.Enter(CellAddress.Parse("A3"), "92"));
+        workbook.Do(sheet.Name, SheetEdit.Enter(CellAddress.Parse("A4"), "=ROUND(A1*A2*A3/360, 2)"));
+        workbook.Do(sheet.Name, SheetEdit.Enter(CellAddress.Parse("A5"), "=MEDIAN(A1:A3)"));
 
         // Only what the change reaches is recalculated.
-        var change = sheet.Enter(CellAddress.Parse("A2"), "4.5%");
+        var change = workbook.Do(sheet.Name, SheetEdit.Enter(CellAddress.Parse("A2"), "4.5%")).Change.For(sheet);
         _recalculated = string.Join(" and ", change.ValueChanges);
 
         // A Sheet Document carries Entries; opening one computes its Values again.
-        var saved = sheet.ToDocument().ToJson();
-        _sheet = Sheet.Open(SheetDocument.FromJson(saved));
+        var saved = workbook.ToDocument(sheet.Name).ToJson();
+        _sheet = Workbook.Open(SheetDocument.FromJson(saved)).Sheets[0];
     }
 }

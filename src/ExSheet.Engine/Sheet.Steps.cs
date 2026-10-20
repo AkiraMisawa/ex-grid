@@ -8,7 +8,7 @@ public sealed partial class Sheet
     /// </summary>
     /// <exception cref="SheetRefusedException">The Sheet refuses the operation (<see cref="Check"/> says why).</exception>
     /// <exception cref="FormulaSyntaxException">A typed Formula cannot be read.</exception>
-    public SheetStep Do(SheetEdit edit)
+    internal SheetStep Do(SheetEdit edit)
     {
         ArgumentNullException.ThrowIfNull(edit);
         if (edit.Check(this) is { } refusal) throw new SheetRefusedException(refusal);
@@ -17,7 +17,7 @@ public sealed partial class Sheet
     }
 
     /// <summary>Whether <see cref="Do"/> would refuse <paramref name="edit"/> as the Sheet stands, and why; <see langword="null"/> when it would not.</summary>
-    public SheetRefusal? Check(SheetEdit edit)
+    internal SheetRefusal? Check(SheetEdit edit)
     {
         ArgumentNullException.ThrowIfNull(edit);
         return edit.Check(this);
