@@ -73,7 +73,9 @@ public class MudChartChromeTests : BunitContext
     {
         var cut = Render(mud ? MudChartChrome.Default : null);
         cut.Find(".ex-chart-stage").ContextMenu(new MouseEventArgs());
-        cut.Find($".ex-chart-menu [data-ex-command='{ChartCommandIds.Table}']").Click();
+        // Read once the menu is in the markup: CI's coverage run once found it missing at the first
+        // read, after the click had opened it (main at 8fc6cc08).
+        cut.WaitForElement($".ex-chart-menu [data-ex-command='{ChartCommandIds.Table}']").Click();
         Assert.Empty(cut.FindAll(".ex-chart-menu"));
         Assert.Single(cut.FindAll("table.ex-chart-table"));
 
