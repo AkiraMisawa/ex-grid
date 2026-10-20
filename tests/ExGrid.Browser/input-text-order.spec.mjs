@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, settled } from './fixtures.mjs';
+import { test, expect, setRoundTrip, settled, alterPage } from './fixtures.mjs';
 import { expectTabStopTaken } from './keyboard.mjs';
 import { openSheet, sheet, pressCell, editor, bar, nameBox, cell } from './sheet-helpers.mjs';
 
@@ -69,9 +69,12 @@ for (const chrome of ['builtin', 'mud']) {
 }
 
 for (const chrome of ['builtin', 'mud']) {
-for (const target of ['heading', 'menu']) {
+for (const target of ['heading', 'menu', 'macOS Control-click menu']) {
     test(`ADR-0240: typing followed immediately by a ${target} command keeps the full text (${chrome})`, async ({ page, context }) => {
-        if (target === 'menu') await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        const menu = target !== 'heading';
+        const controlClick = target === 'macOS Control-click menu';
+        test.skip(controlClick && process.platform !== 'darwin', 'ADR-0021: Control-primary opens a context menu on macOS only');
+        if (menu) await context.grantPermissions(['clipboard-read', 'clipboard-write']);
         await page.goto(`/features?chrome=${chrome}`);
         const grid = page.locator('.ex-grid').first();
         await expectTabStopTaken(grid);
@@ -79,20 +82,45 @@ for (const target of ['heading', 'menu']) {
         await grid.locator("[id$='r0c1']").click({ force: true });
         await page.keyboard.press('F2');
         await settled(grid);
+        if (menu) {
+            // A Consumer's status can grow when the press commits. Force that movement between
+            // mousedown and contextmenu: the secondary click must keep the cell it started on.
+            await alterPage(page, () => {
+                const root = document.querySelector('.ex-grid');
+                const status = document.querySelector('.demo-status');
+                const before = status.getAttribute('style');
+                const move = (event) => {
+                    if (event.button === 2 || (event.button === 0 && event.ctrlKey)) status.style.paddingBottom = '48px';
+                };
+                root.addEventListener('mousedown', move);
+                return () => {
+                    root.removeEventListener('mousedown', move);
+                    if (before === null) status.removeAttribute('style');
+                    else status.setAttribute('style', before);
+                };
+            });
+        }
         const button = target === 'heading' ? grid.locator('.ex-header-cell').nth(1) : grid.locator("[id$='r3c1']");
-        const copiedText = target === 'menu' ? await button.textContent() : null;
+        const copiedText = menu ? await button.textContent() : null;
         const box = await button.boundingBox();
         expect(box).not.toBeNull();
 
         await page.keyboard.press('ControlOrMeta+A');
         await page.keyboard.type('command sees all 123456789');
+        if (controlClick) await page.keyboard.down('Control');
         await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2,
-            { button: target === 'menu' ? 'right' : 'left' });
-        if (target === 'menu') await page.keyboard.press('Enter');
+            { button: menu && !controlClick ? 'right' : 'left' });
+        if (controlClick) await page.keyboard.up('Control');
+        if (menu) await page.keyboard.press('Enter');
         await settled(grid);
         expect(await page.locator('#edit-status').textContent()).toContain('Trader=command sees all 123456789');
         expect(await grid.locator('[role=menu]').count()).toBe(0);
-        if (target === 'menu') expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(`${copiedText}\r\n`);
+        if (menu) {
+            // Control-primary adds the pressed cell to the existing Selection (ADR-0012).
+            // The menu opens inside that Selection and keeps both ranges (ADR-0036).
+            const copied = controlClick ? `command sees all 123456789\r\n${copiedText}\r\n` : `${copiedText}\r\n`;
+            expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(copied);
+        }
     });
 }
 

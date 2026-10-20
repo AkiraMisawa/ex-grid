@@ -179,7 +179,8 @@ public partial class ExGrid<TRow>
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    /// <param name="kind">The event told of: <c>mousedown</c> or <c>mouseup</c>.</param>
+    /// <param name="kind">The event told of: <c>mousedown</c>, <c>mouseup</c>, or the rows'
+    /// <c>contextmenu</c> carrying the secondary press's target.</param>
     /// <param name="offsetX">The x the browser gave the event, from the Viewport's left edge.</param>
     /// <param name="offsetY">The y the browser gave the event, from the Viewport's top edge.</param>
     /// <param name="firstRow">The first row the Viewport painted then (<c>data-ex-first-row</c>);

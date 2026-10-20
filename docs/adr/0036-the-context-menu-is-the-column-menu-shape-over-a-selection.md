@@ -44,6 +44,15 @@ Rejected: **leaving the selection alone**, the smaller change. It buys nothing a
 command whose target is invisible. Rejected: **opening only inside the selection** and letting the
 browser's own menu appear outside it — safe, and reads as a component that is broken in half.
 
+*Implementation correction, 2026-10-20 (ADR-0240 ticket 03):* the menu carries the secondary
+press's existing paint descriptor, including its offsets, first row, scroll and layout. A press
+can commit an edit, and the Consumer's result message can then grow and move the grid before
+the browser emits `contextmenu`. Reading that later event's offsets copied a different row in
+the widened WebAssembly run. The original target now travels through `PressTakenAt` and the
+same validation as other presses; held events keep that descriptor too. There is no additional
+message or layout measurement. A context menu event without a preceding secondary press uses
+its own descriptor. This corrects the implementation of the press rule above, not the rule.
+
 ## What a command is handed: coordinates, not rows
 
 ```csharp

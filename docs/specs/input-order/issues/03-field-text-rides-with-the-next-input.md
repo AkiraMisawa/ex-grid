@@ -85,3 +85,8 @@ stage03 runs queued. Its observed paired click/key failure is retained in
 The old regression still used a deadline tied to a fallback ADR-0240 removed; the original
 journal shows all inputs answered but the last render still owed. Its reading now uses the
 Settled Mark. The next gate runs the corrected test in the same preselected scope.
+
+The widened WebAssembly run also exposed a context menu that recalculated a secondary press's
+cell after the commit moved the grid on the page. The [defect record](../../responsive-touch/hunt-2026-10-20-context-menu-target.md)
+keeps the original evidence and deterministic red/green reproduction. The menu now reuses the
+existing press descriptor, preserving ADR-0036's original target without another message.

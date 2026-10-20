@@ -3512,17 +3512,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     const tellTaken = (kind, taken) => {
         if (!core || !taken) {
-            return;
+            return 0;
         }
         // Numbered as it goes (nextInput): the press, and the double click its release ends, which the
         // browser fires next and the core answers in its turn (ADR-0220).
+        const input = nextInput();
         core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left, taken.top,
-            taken.sequence, taken.layout, taken.editorRow ?? -1, taken.editorColumn ?? -1, nextInput(),
+            taken.sequence, taken.layout, taken.editorRow ?? -1, taken.editorColumn ?? -1, input,
             taken.doubleClick === true ? nextInput() : 0, inputText()).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to hear where a press was taken', error);
             }
         });
+        return input;
     };
 
     // A click on one of this grid's own controls takes its place in the Input Order (ADR-0240 section 2).
@@ -3564,12 +3566,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // A keydown going on to the Blazor handler of a control that claims it — a menu's items, a value
     // list — told, and its number answered (tellClaim); 0 for one no control claims.
     const tellKeyClaim = (event) => (core && claimOf(event.target, 'keydown') !== null ? tellClaim('keydown') : 0);
-    const tellClaim = (kind) => {
-        const input = nextInput();
+    const tellClaim = (kind, taken = null) => {
+        const input = taken !== null ? tellTaken(kind, taken) : nextInput();
         // A right-click opens the same popover as Shift+F10. Its held keys wait for that
         // keyboard destination too, even if the press committed the editor before the menu renders.
         if (kind === 'contextmenu') awaitingPopover = true;
-        core.invokeMethodAsync('InputTakenAt', kind, input, inputText()).catch((error) => {
+        if (taken === null) core.invokeMethodAsync('InputTakenAt', kind, input, inputText()).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to hear a click', error);
             }
@@ -3719,6 +3721,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     root.addEventListener('ex-press-handed-on', onPressHandedOn);
 
+    // A secondary press can commit an edit whose Consumer moves the root before the browser
+    // emits contextmenu. Keep the press's existing paint descriptor, never recalculate its target.
+    let secondaryPress = null;
     const onPress = (event) => {
         lookSettled();
         // A press while the Keyboard Field composes (ADR-0080): the press would end the
@@ -3769,7 +3774,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // in that render (actionPress); one the platform makes a context menu of keeps nothing.
         if (!replaying) {
             rowCommandClick = null;
-            const contextPress = metaIsPrimary && event.ctrlKey;
+            const contextPress = event.button === 2 || (metaIsPrimary && event.ctrlKey);
+            secondaryPress = contextPress && isOwnRows(event.target) ? takenAt(event) : null;
             const button = event.button === 0 && !contextPress ? ownAction(event.target) : null;
             const cell = button !== null ? button.closest('[role=gridcell]') : null;
             const at = cell !== null ? /r(\d+)c(\d+)$/.exec(cell.id) : null;
@@ -4157,7 +4163,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!k.target.isConnected || !root.contains(k.target)) {
             return;
         }
-        const input = claimOf(k.target, k.press) !== null ? tellClaim(k.press) : 0;
+        const input = claimOf(k.target, k.press) !== null ? tellClaim(k.press, k.taken ?? null) : 0;
         replaying = true;
         try {
             k.target.dispatchEvent(new MouseEvent(k.press, k.init));
@@ -4179,6 +4185,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!core || (replaying && event.type !== 'submit')) {
             return;
         }
+        const taken = event.type === 'contextmenu' && isOwnRows(event.target)
+            ? secondaryPress ?? takenAt(event) : null;
+        if (event.type === 'contextmenu') secondaryPress = null;
         // A press on an item that did not end in a click on it moved nothing (onPress).
         if (event.type === 'click' && awaitingMove?.unnumbered === true && awaitingMove.from instanceof Node
             && !awaitingMove.from.contains(event.target) && !(event.target instanceof Node && event.target.contains(awaitingMove.from))) {
@@ -4189,7 +4198,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             && held.some((k) => k.press === 'mousedown' || k.dragMove === true)) {
             event.preventDefault();
             event.stopPropagation();
-            held.push({ press: event.type, claim: true, target: event.target, init: mouseInit(event) });
+            held.push({ press: event.type, claim: true, target: event.target, init: mouseInit(event), taken });
             return;
         }
         if (event.type === 'click' && ownRowCommand(event.target)) {
@@ -4235,7 +4244,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         if (claimOf(event.target, event.type) !== null) {
-            const input = tellClaim(event.type);
+            const input = tellClaim(event.type, taken);
             // A press on an item, or a key on a button or in a form, started a move with no number
             // (awaitMove): the click on it, or its form's submission, carries one.
             if (awaitingMove?.unnumbered === true && awaitingMove.from instanceof Node && event.target instanceof Node

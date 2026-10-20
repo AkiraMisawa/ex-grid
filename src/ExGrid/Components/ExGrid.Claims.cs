@@ -211,7 +211,11 @@ public partial class ExGrid<TRow>
         => _onSelectWholeResult ??= () => ClaimedAsync("click", SelectWholeResultAsync);
 
     private Func<MouseEventArgs, Task> RowsContextMenuHandler
-        => _onRowsContextMenu ??= e => ClaimedAsync("contextmenu", () => OnContextMenuAsync(e));
+        => _onRowsContextMenu ??= e =>
+        {
+            e = AsTaken(e, "contextmenu", out var input);
+            return AnsweredAsync(() => OnContextMenuAsync(e), input > 0 ? input : ClaimInput("contextmenu"));
+        };
 
     private Func<Task> CancelPanelHandler => _onCancelPanel ??= () => ClaimedAsync("click", CancelPanel);
 
