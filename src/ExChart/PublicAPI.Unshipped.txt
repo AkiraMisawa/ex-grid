@@ -166,7 +166,10 @@ ExChart.Components.ExSurface.Density.set -> void
 ExChart.Components.ExSurface.Description.get -> string?
 ExChart.Components.ExSurface.Description.set -> void
 ExChart.Components.ExSurface.DisposeAsync() -> System.Threading.Tasks.ValueTask
+ExChart.Components.ExSurface.DownloadAsync(ExChart.ChartFileFormat format) -> System.Threading.Tasks.Task<bool>!
 ExChart.Components.ExSurface.ExSurface() -> void
+ExChart.Components.ExSurface.FileName.get -> string?
+ExChart.Components.ExSurface.FileName.set -> void
 ExChart.Components.ExSurface.Height.get -> double
 ExChart.Components.ExSurface.Height.set -> void
 ExChart.Components.ExSurface.OnSliceChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.Engine.SurfaceSlice!>

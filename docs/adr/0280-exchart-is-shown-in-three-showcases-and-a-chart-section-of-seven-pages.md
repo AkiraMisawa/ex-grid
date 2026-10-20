@@ -50,6 +50,16 @@ As ExPivot's pages are a Pivot section, ExChart's are a **Chart** section:
 
 Every Example carries the Built-in / MudBlazor switch (ADR-0110, ADR-0281).
 
+## Two more Showcases and pages, from the scatter and the candlesticks
+
+*Decided with the user later on 2026-10-19 and 2026-10-20, in the threads that build them (the scatter's
+grilling Q6, ADR block 0290; the candlesticks' Q9, ADR block 0300).* Scatter charts and candlesticks with
+error bars joined the first version, each with a Showcase and a page of its own: **CDS spread vs
+leverage** and **Equity index daily bars**, and the pages **Scatter and regression** and **Candles and
+intervals**. The first version therefore has five Showcases and a Chart section of nine pages. This record
+keeps its three and seven; those threads' records say what theirs show, and this title is rewritten when
+their work lands beside this.
+
 ## Considered
 
 - **Five Showcases, one per page of the proof of concept**: chosen first, then replaced the same day

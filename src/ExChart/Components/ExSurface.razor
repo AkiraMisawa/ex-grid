@@ -10,6 +10,10 @@
     <div class="ex-chart-toolbar" role="toolbar" aria-label="@ToolbarName">
         <button type="button" class="ex-chart-button ex-chart-surface-reset" disabled="@(_view == SurfaceView.Default)" @onclick="ResetViewAsync">Reset view</button>
         <button type="button" class="ex-chart-button ex-chart-table-toggle" aria-expanded="@(_tableOpen ? "true" : "false")" @onclick="ToggleTable">View as table</button>
+        <span class="ex-chart-downloads" role="group" aria-label="Download">
+            <button type="button" class="ex-chart-button ex-chart-download-svg" disabled="@FilesUnavailable" @onclick="DownloadSvgAsync">SVG</button>
+            <button type="button" class="ex-chart-button ex-chart-download-png" disabled="@FilesUnavailable" @onclick="DownloadPngAsync">PNG</button>
+        </span>
     </div>
     <div class="ex-chart-surface-row">
         <div class="ex-chart-stage" style="@StageStyle">

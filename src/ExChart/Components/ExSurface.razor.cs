@@ -54,6 +54,9 @@ public partial class ExSurface
     /// <summary>Raised when the user clicks a tenor or a strike, with the slice it names (ADR-0274).</summary>
     [Parameter] public EventCallback<SurfaceSlice> OnSliceChanged { get; set; }
 
+    /// <summary>The name a saved file takes, without its extension; the title when not set, then "surface" (ADR-0282).</summary>
+    [Parameter] public string? FileName { get; set; }
+
     [Inject] private IJSRuntime JS { get; set; } = null!;
 
     private ElementReference _box;
@@ -147,6 +150,42 @@ public partial class ExSurface
             return null;
         }
     }
+
+    /// <summary>
+    /// Saves the drawing as it stands as an SVG or a PNG file, the PNG painted from that SVG at the
+    /// screen's Device Pixel (ADR-0282). One call is one save. False when the 3D entry is not attached,
+    /// which the surface says on its face, or the circuit has gone. A CSV is not a surface's file: its
+    /// values are read in "View as table".
+    /// </summary>
+    public async Task<bool> DownloadAsync(ChartFileFormat format)
+    {
+        var module = _module;
+        if (module is null || _scriptRefused || _disposed || format == ChartFileFormat.Csv) return false;
+        var name = ChartFiles.Name(FileName, string.IsNullOrWhiteSpace(Title) ? "surface" : Title, format);
+        var width = Width;
+        var height = Height;
+        try
+        {
+            if (await SvgTextAsync() is not { } svg) return false;
+            var bytes = format == ChartFileFormat.Svg
+                ? System.Text.Encoding.UTF8.GetBytes(svg)
+                : await module.InvokeAsync<byte[]>("paint", svg, width, height);
+            await module.InvokeVoidAsync("save", name, ChartFiles.MediaType(format), bytes);
+            return true;
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            return false;
+        }
+    }
+
+    private Task DownloadSvgAsync() => DownloadAsync(ChartFileFormat.Svg);
+
+    private Task DownloadPngAsync() => DownloadAsync(ChartFileFormat.Png);
+
+    // A file needs the 3D entry: until it holds its first drawing, and when it is refused, the buttons
+    // say so by being unavailable rather than doing nothing (spine rule 1).
+    private bool FilesUnavailable => !_told || _scriptRefused;
 
     internal Task Dispatch(Func<Task> work) => InvokeAsync(work);
 

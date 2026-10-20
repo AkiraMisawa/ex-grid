@@ -121,6 +121,7 @@ public static class DocsNav
             new("Panels, legend and colours", "exchart/panels"),
             new("Tooltip and Chart Filters", "exchart/tooltip"),
             new("From the grid", "exchart/grid"),
+            new("3D surface", "exchart/surface"),
             new("Reading and export", "exchart/export"),
         ]),
         new("Data", DocsNavSection.Docs,
