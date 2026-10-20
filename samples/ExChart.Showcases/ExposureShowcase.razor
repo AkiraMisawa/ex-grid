@@ -25,7 +25,8 @@
         @if (Mud)
         {
             <MudChartDock @ref="_dock" TRow="ExposureRow" Bridge="_bridge" Placement="ChartDockPlacement.Bottom" ChartWidth="ChartWidth" ChartHeight="ChartHeight">
-                <MudExGridPaper Elevation="1">
+                @* A block-level paper: the Wrapper's own is inline, as wide as its grids, which leaves a stretched grid no width. *@
+                <MudExGridPaper Elevation="1" Style="display: flex">
                     <ExGrid @ref="_bridge.Grid" TRow="ExposureRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups"
                             PinnedColumnCount="1" HeaderClickSelects="true" ContextCommands="_commands" CommandLabel="Label"
                             ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" Chrome="MudChartChrome.GridChrome" />

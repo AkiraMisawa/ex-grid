@@ -51,7 +51,8 @@
 <div class="xs-panel">
     @if (Mud)
     {
-        <MudExGridPaper Elevation="1">
+        @* A block-level paper: the Wrapper's own is inline, as wide as its grids, which leaves a stretched grid no width. *@
+        <MudExGridPaper Elevation="1" Style="display: flex">
             <ExGrid TRow="PillarRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups" PinnedColumnCount="1"
                     ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" Chrome="MudGridChrome.Default" />
         </MudExGridPaper>

@@ -40,6 +40,8 @@ async function open(page, route) {
 
 /** Waits until a chart is on screen and none is busy, and, on the Server host, until the circuit has said all it will. */
 async function settledCharts(page) {
+    // The view's grid shows its rows, under either Chrome: a stretched grid given no width shows none.
+    await expect(page.locator('.ex-grid [role=gridcell]').filter({ visible: true }).first()).toBeVisible();
     await expect(shownChart(page)).toHaveCount(1);
     await expect(page.locator('.ex-chart[aria-busy="true"]')).toHaveCount(0);
     await circuitQuiet();
