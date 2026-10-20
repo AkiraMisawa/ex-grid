@@ -869,6 +869,22 @@ extent. The product is **ExSheet**; a Sheet is what it holds. Its rows and colum
 inserting a row changes what the rows below hold, and moves none of them ([ADR-0046](./docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)).
 _Avoid_: worksheet, tab, spreadsheet
 
+**Workbook**:
+The ordered Sheets one ExSheet shows, with one engine and one undo stack. A Reference may reach
+any Sheet of it (`Sheet2!A1`), and inserting a row on one Sheet rewrites the References to it on
+every other ([ADR-0331](./docs/adr/0331-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md)).
+_Avoid_: book, file, document (that is the Workbook Document)
+
+**Sheet Tab**:
+The tab at an ExSheet's foot that names one Sheet of its Workbook and shows it when selected. It is
+where a Sheet is added, renamed, moved, copied and deleted ([ADR-0331](./docs/adr/0331-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md)).
+_Avoid_: page, worksheet tab, a details tab (that is ExPivot's Show Details)
+
+**3D Reference**:
+A Reference that reads one range on every Sheet from one to another in tab order
+(`Sheet1:Sheet3!B2`). Only the functions Excel accepts one in take it ([ADR-0331](./docs/adr/0331-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md)).
+_Avoid_: cross-sheet range, multi-sheet reference
+
 **Entry**:
 What a user put into a cell — a constant (`42`, `Tokyo`, `TRUE`) or a **Formula**. It is what a
 **Sheet Document** records, and what the user sees again when they edit the cell. Distinct from
@@ -1006,6 +1022,19 @@ The serialisable form of a Sheet that ExSheet hands to its Consumer and takes ba
 Entries, never Values, with constants already parsed — so opening it under another culture
 cannot change a number. The Consumer persists it; ExSheet does not ([ADR-0048](./docs/adr/0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md)).
 _Avoid_: file, workbook, Snapshot (that is the Consumer's tabular data), save data
+
+**Open Report**:
+What reading an `.xlsx` file returns beside the Workbook Document: what the file held that ExSheet did
+not carry (merged cells, conditional formatting, a theme link, …), and the cells whose functions
+ExSheet does not support, each with its Sheet and place. The application tells the user
+([ADR-0330](./docs/adr/0330-exsheet-opens-and-saves-xlsx-with-a-reader-and-writer-of-its-own.md)).
+_Avoid_: warnings, import log, lossy report
+
+**Workbook Document**:
+The serialisable form of a Workbook: its Sheets in order, the Sheet shown, its culture and its
+Linked Tables, holding Entries and never Values, as a Sheet Document does. A Sheet Document opens as
+a Workbook of one Sheet ([ADR-0331](./docs/adr/0331-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md)).
+_Avoid_: file, `.xlsx` (that is Excel's format, read and written by ADR-0330), save data
 
 ### Pivots
 
