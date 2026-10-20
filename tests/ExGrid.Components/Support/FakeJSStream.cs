@@ -16,6 +16,16 @@ internal sealed class FakeJSStream(byte[] bytes, Exception? readFails = null, Ta
     /// as a Server circuit's <c>RemoteJSDataStream</c> does when no chunk arrives in time.</summary>
     public static FakeJSStream Failing(long length, Exception failure) => new(new byte[length], failure);
 
+    /// <summary><paramref name="text"/> gzip-compressed, as the script hands a paste's flavour over where the
+    /// browser can compress (ADR-0005, as amended 2026-10-20).</summary>
+    public static FakeJSStream Gzipped(string text)
+    {
+        var packed = new MemoryStream();
+        using (var gzip = new System.IO.Compression.GZipStream(packed, System.IO.Compression.CompressionLevel.Fastest, leaveOpen: true))
+            gzip.Write(Encoding.UTF8.GetBytes(text));
+        return new(packed.ToArray());
+    }
+
     public static FakeJSStream OfLength(long length) => new(new byte[length]);
 
     /// <summary>A stream that opens only once <paramref name="opens"/> ends, and whose read then fails:

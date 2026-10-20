@@ -285,6 +285,33 @@ keys and presses before it leave. Before this, such a copy was lost, and the cli
 it held: the silent outcome this ADR refuses. A Ctrl+V pressed then has its data read in its
 `paste` event and is pasted at its turn (ADR-0014).
 
+*(Added 2026-10-20, decided with the user; widened-run ticket 05.)* **A paste crosses compressed,
+and is taken at its turn.** Blazor's script sends a JS stream in chunks the size of the hub limit,
+and on a slow circuit it waits for each chunk's acknowledgement before sending the next: one chunk
+a round trip. A 10 MB paste at a 150 ms round trip is about 330 chunks, some 50 seconds; the
+server gives up on a stream that sends nothing for a minute, and the user sees a grid that does not
+answer. So the paste's call now carries only the two flavours' lengths and the paste's number. The
+script holds the flavours under that number, and when the core reaches the paste in the Input
+Order it asks for each (`takePaste`) and the script hands it over gzip-compressed. Compressing is
+done then and not at the `paste` event, because the event must number the input and send its call
+synchronously ([ADR-0240](./0240-input-to-one-product-instance-is-taken-in-one-order.md)). A spreadsheet's text
+compresses about tenfold, so the same paste crosses in a few seconds.
+- **The format is told by the data, not a flag.** gzip begins with `1F 8B`, and no UTF-8 text
+  does; a browser without `CompressionStream` sends the bytes as they are, and they are read as
+  they are.
+- **The cap is judged on the declared lengths**, before anything is asked for, as before. A flavour
+  that crosses longer than its length could compress to, or unpacks to any length but the one
+  declared, is refused as `Unreadable` and is never unpacked past its declared length: the cap is
+  what stops one client filling the server's memory, and a stream that unpacked to more would walk
+  round it.
+- **A paste the script no longer holds is refused as `Unreadable`**, not waited for.
+
+The same ticket found that a Consumer's `OnPaste` that replaces rows one at a time had the grid
+re-applying the source once per row, which on WebAssembly made 400 long cells take seconds. The
+changes a paste, fill or clear handler makes to the Grid Source before its first await are now
+taken in once, as the write is answered; a change raised from another thread, or after that await,
+is taken in as ever.
+
 ## Consequences
 
 - **It presupposes the selection model** — rectangular ranges (anchor plus focus), whole rows and
