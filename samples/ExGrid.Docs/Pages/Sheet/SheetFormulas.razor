@@ -223,9 +223,10 @@
             </li>
             <li>
                 <b><code>RAND</code> and <code>RANDBETWEEN</code></b> draw from the Sheet Seed. Each draw is made from
-                the seed, the cell, which call in its Formula it is and how many changes the Sheet has had since it
-                was opened, so every edit, insertion, deletion, rename of the Sheet, undo, redo, Linked Table
-                snapshot and Linked Table declaration draws again,
+                the seed, the Sheet's name and the cell, which call in its Formula it is and how many changes the
+                Workbook has had since it was opened, so every edit, insertion and deletion on any Sheet, every Sheet
+                added, deleted, renamed, moved or copied, and every undo, redo, Linked Table snapshot and Linked Table
+                declaration draws again on every Sheet, as Excel's recalculation does,
                 while the clock, a format or a width draws nothing. Unlike Excel, nothing draws without a change.
                 An undo and a redo draw again rather than bringing back the draws they undo, as Excel's do; a
                 rename draws again, as Excel's does, and so do its undo and redo. A snapshot draws again even

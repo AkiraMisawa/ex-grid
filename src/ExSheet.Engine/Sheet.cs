@@ -112,11 +112,11 @@ public sealed partial class Sheet
         }
     }
 
-    /// <summary>Takes a document's Entries, computing every Value again. Opening is no change: the count starts from 0, and the Sheet has no seed yet (ADR-0180).</summary>
+    /// <summary>Takes a document's Entries, computing every Value again. Opening is no change: the Workbook's count starts from 0, and it has no seed yet (ADR-0180).</summary>
     internal void OpenEntries(SheetDocument document)
     {
         SetEntries(document.Cells.Where(c => c.Entry is not null).Select(c => new KeyValuePair<CellAddress, Entry?>(c.Address, c.Entry)));
-        Changes = 0;
+        Workbook.ForgetChanges();
     }
 
     /// <summary>A column's or row's format as this Sheet opens it: its Number Format read under the Sheet's culture (<see cref="NumberFormat.OpenedIn"/>).</summary>

@@ -1304,7 +1304,7 @@
         // A Workbook opened from a document has no day: the Sheet Day is not recorded (ADR-0121).
         GiveTheDay(_workbook);
         // Nor a seed: the Consumer's, or one chosen now, at a count of 0 changes (ADR-0180).
-        GiveTheSeed(_workbook.Sheets);
+        GiveTheSeed(_workbook);
         _edges = SheetEdges.Of(_sheet);
         _history.Clear();
         _resizing = null;

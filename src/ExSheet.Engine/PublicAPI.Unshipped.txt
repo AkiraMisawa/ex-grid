@@ -6,6 +6,7 @@ ExSheet.Engine.SheetRefusalReason.LastSheet = 7 -> ExSheet.Engine.SheetRefusalRe
 ExSheet.Engine.SheetRefusalReason.SheetNameTaken = 6 -> ExSheet.Engine.SheetRefusalReason
 ExSheet.Engine.SheetRefusalReason.SheetNotNamed = 8 -> ExSheet.Engine.SheetRefusalReason
 ExSheet.Engine.Workbook
+ExSheet.Engine.Workbook.Changes.get -> long
 ExSheet.Engine.Workbook.Check(string! sheet, ExSheet.Engine.SheetEdit! edit) -> ExSheet.Engine.SheetRefusal?
 ExSheet.Engine.Workbook.Culture.get -> System.Globalization.CultureInfo!
 ExSheet.Engine.Workbook.DeclareLinkedTable(string! name, System.Collections.Generic.IReadOnlyList<string!>! columns, string? key = null) -> ExSheet.Engine.WorkbookChange!
@@ -18,6 +19,9 @@ ExSheet.Engine.Workbook.NowSource.get -> System.Func<System.DateTime?>?
 ExSheet.Engine.Workbook.NowSource.set -> void
 ExSheet.Engine.Workbook.PushLinkedTable(string! name, System.Collections.Generic.IEnumerable<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>!>! rows) -> ExSheet.Engine.WorkbookChange!
 ExSheet.Engine.Workbook.RecalculateVolatile() -> ExSheet.Engine.WorkbookChange!
+ExSheet.Engine.Workbook.Seed.get -> ulong?
+ExSheet.Engine.Workbook.SetSeed(ulong? seed) -> ExSheet.Engine.WorkbookChange!
+ExSheet.Engine.Workbook.SetSeed(ulong? seed, long changes) -> ExSheet.Engine.WorkbookChange!
 ExSheet.Engine.Workbook.SetToday(System.DateOnly? today) -> ExSheet.Engine.WorkbookChange!
 ExSheet.Engine.Workbook.Sheets.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Sheet!>!
 ExSheet.Engine.Workbook.Shown.get -> ExSheet.Engine.Sheet!
@@ -83,3 +87,7 @@ static ExSheet.Engine.WorkbookDocument.FromJson(string! json) -> ExSheet.Engine.
 *REMOVED*ExSheet.Engine.Sheet.ToDocument() -> ExSheet.Engine.SheetDocument!
 *REMOVED*ExSheet.Engine.Sheet.Today.get -> System.DateOnly?
 *REMOVED*static ExSheet.Engine.Sheet.Open(ExSheet.Engine.SheetDocument! document) -> ExSheet.Engine.Sheet!
+*REMOVED*ExSheet.Engine.Sheet.Changes.get -> long
+*REMOVED*ExSheet.Engine.Sheet.Seed.get -> ulong?
+*REMOVED*ExSheet.Engine.Sheet.SetSeed(ulong? seed) -> ExSheet.Engine.SheetChange!
+*REMOVED*ExSheet.Engine.Sheet.SetSeed(ulong? seed, long changes) -> ExSheet.Engine.SheetChange!
