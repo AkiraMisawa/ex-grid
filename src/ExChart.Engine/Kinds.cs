@@ -14,6 +14,12 @@ public enum SeriesKind
 
     /// <summary>A total over its interval: a step whose height is the amount per year, from zero.</summary>
     AmountPerPeriod,
+
+    /// <summary>
+    /// One period's open, high, low and close, and optionally its volume: a candle, never a line, its
+    /// axis not from zero (ADR-0300).
+    /// </summary>
+    PriceRange,
 }
 
 /// <summary>Which interval a step's point stands for.</summary>
@@ -57,4 +63,36 @@ public enum AxisValues
 
     /// <summary>Labels, each position its index in the declared order.</summary>
     Labels,
+}
+
+/// <summary>
+/// The calendar period candles merge into past the plot's pixels (ADR-0302): each is the market's own,
+/// so a merged candle is the week's or the month's bar, never an arbitrary run of rows.
+/// </summary>
+public enum CandlePeriod
+{
+    /// <summary>One candle a row, as handed in.</summary>
+    Row,
+
+    /// <summary>A week, Monday to Sunday.</summary>
+    Week,
+
+    /// <summary>A calendar month.</summary>
+    Month,
+
+    /// <summary>A calendar quarter.</summary>
+    Quarter,
+
+    /// <summary>A calendar year.</summary>
+    Year,
+}
+
+/// <summary>How a series' Interval is drawn (ADR-0303): the data is the same either way.</summary>
+public enum IntervalStyle
+{
+    /// <summary>A vertical whisker with a cap at each bound, at each point.</summary>
+    Whiskers,
+
+    /// <summary>A band between the lower and the upper bounds, joining only neighbours.</summary>
+    Band,
 }

@@ -22,11 +22,25 @@ public static class ChartCsv
         var sb = new StringBuilder(Bom);
         Row(sb, ["Series", Title(definition.Axis), "Value", "Kind", "Method"]);
         foreach (var (s, points) in Shown(definition, metrics, view ?? ChartView.All))
+        {
+            if (Extra(s, points) is { Count: > 0 } extra)
+            {
+                // A Price Range's every row, and an Interval's bounds named by their meaning (ADR-0300, ADR-0303).
+                var kind = s.Kind == SeriesKind.PriceRange ? "price range" : "quoted";
+                if (s.Kind != SeriesKind.PriceRange)
+                    foreach (var p in points)
+                        Row(sb, [s.Name, X(definition.Axis, p.X), p.Y?.ToInvariantString() ?? "", KindOf(s, p.X).Kind, KindOf(s, p.X).Method]);
+                foreach (var (header, values) in extra)
+                    foreach (var (x, v) in values.OrderBy(e => e.Key))
+                        Row(sb, [header, X(definition.Axis, x), v, kind, ""]);
+                continue;
+            }
             foreach (var p in points)
             {
                 var (kind, method) = KindOf(s, p.X);
                 Row(sb, [s.Name, X(definition.Axis, p.X), p.Y?.ToInvariantString() ?? "", kind, method]);
             }
+        }
         return sb.ToString();
     }
 
@@ -57,6 +71,11 @@ public static class ChartCsv
         var columns = new List<(string Header, Dictionary<double, string> Values)>();
         foreach (var (s, points) in shown)
         {
+            if (s.Kind == SeriesKind.PriceRange)
+            {
+                columns.AddRange(Extra(s, points));
+                continue;
+            }
             var main = new Dictionary<double, string>();
             var extra = new Dictionary<double, string>();
             foreach (var p in points)
@@ -64,6 +83,7 @@ public static class ChartCsv
             var name = s.Interpolated ? $"{s.Name} (interpolated)" : s.Name;
             columns.Add((name, main));
             if (extra.Count > 0) columns.Add(($"{s.Name} (extrapolated)", extra));
+            columns.AddRange(Extra(s, points));
         }
         var rows = columns.SelectMany(c => c.Values.Keys).Distinct().Order()
             .Select(x => (IReadOnlyList<string>)[X(definition.Axis, x), .. columns.Select(c => c.Values.GetValueOrDefault(x, ""))]).ToList();
@@ -76,6 +96,32 @@ public static class ChartCsv
         return visible.Select(s => (s, (IReadOnlyList<ChartPoint>)(s.Sampler is { } f
             ? SeriesDrawing.Sample(f, s.Segments, from, to, devicePixels, ChartScene.QuotesOf(s, visible))
             : s.Points.Where(p => p.X >= from && p.X <= to).ToList()))).ToList();
+    }
+
+    // The columns a series carries beyond its points: a Price Range's open, high, low, close and
+    // volume, and an Interval's lower and upper bounds, each named by its meaning.
+    private static List<(string Header, Dictionary<double, string> Values)> Extra(ChartSeries s, IReadOnlyList<ChartPoint> points)
+    {
+        var xs = points.Select(p => p.X).ToHashSet();
+        string V(ChartValue? v) => v?.ToInvariantString() ?? "";
+        List<(string, Dictionary<double, string>)> Of(params (string Name, Func<double, string> Value)[] cols) =>
+            cols.Select(c => ($"{s.Name} {c.Name}", xs.ToDictionary(x => x, c.Value))).ToList();
+        if (s.Kind == SeriesKind.PriceRange)
+        {
+            var bars = s.Bars.Where(b => xs.Contains(b.X)).ToDictionary(b => b.X);
+            var cols = new List<(string, Func<double, string>)>();
+            if (s.Bars.Any(b => b.Open is not null)) cols.Add(("open", x => V(bars[x].Open)));
+            cols.AddRange([("high", x => V(bars[x].High)), ("low", x => V(bars[x].Low)), ("close", x => V(bars[x].Close))]);
+            if (s.Bars.Any(b => b.Volume is not null)) cols.Add(("volume", x => V(bars[x].Volume)));
+            return Of([.. cols]);
+        }
+        if (s.Interval is { } iv)
+        {
+            var bounds = iv.Bounds.Where(b => xs.Contains(b.X)).ToDictionary(b => b.X);
+            return Of(($"lower ({iv.Meaning})", x => bounds.TryGetValue(x, out var b) ? V(b.Lower) : ""),
+                ($"upper ({iv.Meaning})", x => bounds.TryGetValue(x, out var b) ? V(b.Upper) : ""));
+        }
+        return [];
     }
 
     private static (string Kind, string Method) KindOf(ChartSeries s, double x)

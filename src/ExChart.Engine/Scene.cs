@@ -59,7 +59,26 @@ public sealed record VerticalAxis(AxisSide Side, double Min, double Max, Equatab
 /// <param name="Thinned">What each thinned pixel holds (ADR-0254).</param>
 public sealed record SeriesPiece(string Id, string Name, AppearanceKeys Keys, SeriesLook Look, SeriesKind Kind, bool Interpolated,
     EquatableList<EquatableList<DrawnPoint>> Lines, EquatableList<DrawnMarker> Markers,
-    EquatableList<(double From, double To)> Extrapolated, EquatableList<PixelSummary> Thinned);
+    EquatableList<(double From, double To)> Extrapolated, EquatableList<PixelSummary> Thinned)
+{
+    /// <summary>A Price Range's candles in pixels (ADR-0300).</summary>
+    public EquatableList<PlacedCandle> Candles { get; init; } = EquatableList<PlacedCandle>.Empty;
+
+    /// <summary>The period its candles stand for: a row each, or the market period they were merged into (ADR-0302).</summary>
+    public CandlePeriod Period { get; init; } = CandlePeriod.Row;
+
+    /// <summary>A volume panel's bars in pixels (ADR-0300).</summary>
+    public EquatableList<PlacedVolume> Volumes { get; init; } = EquatableList<PlacedVolume>.Empty;
+
+    /// <summary>Its Interval's whiskers in pixels: the position, and the heights of the lower and the upper bound (ADR-0303).</summary>
+    public EquatableList<DrawnWhisker> Whiskers { get; init; } = EquatableList<DrawnWhisker>.Empty;
+
+    /// <summary>Its Interval's bands in pixels, each a run of neighbours.</summary>
+    public EquatableList<EquatableList<DrawnWhisker>> Bands { get; init; } = EquatableList<EquatableList<DrawnWhisker>>.Empty;
+
+    /// <summary>What its Interval means, or null when it has none.</summary>
+    public string? IntervalMeaning { get; init; }
+}
 
 /// <summary>A panel: its plot's box, its vertical axes and its series.</summary>
 /// <param name="Name">The panel's name.</param>
@@ -69,7 +88,11 @@ public sealed record SeriesPiece(string Id, string Name, AppearanceKeys Keys, Se
 /// <param name="ZeroY">The height of zero in pixels, where the plot holds it.</param>
 /// <param name="Series">The visible series, in the definition's order.</param>
 /// <param name="Legend">Its legend: every series of the panel, hidden ones included (ADR-0271).</param>
-public sealed record PanelScene(string Name, Box Plot, VerticalAxis? Left, VerticalAxis? Right, double? ZeroY, EquatableList<SeriesPiece> Series, EquatableList<LegendEntry> Legend);
+public sealed record PanelScene(string Name, Box Plot, VerticalAxis? Left, VerticalAxis? Right, double? ZeroY, EquatableList<SeriesPiece> Series, EquatableList<LegendEntry> Legend)
+{
+    /// <summary>The Price Range whose volume this panel draws, or null for a panel of the Consumer's (ADR-0300).</summary>
+    public string? VolumeOf { get; init; }
+}
 
 /// <summary>
 /// A chart laid out in CSS pixels as immutable pieces (ADR-0252): panels stacked down the chart, the
@@ -84,6 +107,15 @@ public sealed record PanelScene(string Name, Box Plot, VerticalAxis? Left, Verti
 public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<(double Position, double X, string? Label)> XTicks, double XFrom, double XTo, EquatableList<string> Notes,
     EquatableList<(double Position, double X)> Positions)
 {
+    /// <summary>
+    /// The horizontal axis' title as drawn: the axis' own, and what the scene must add to it — that the
+    /// sessions are packed (ADR-0301), or the period candles were merged into (ADR-0302).
+    /// </summary>
+    public string XTitle { get; init; } = "";
+
+    // A volume panel's height against a price panel's.
+    private const double VolumeShare = 0.35;
+
     /// <summary>
     /// Lays <paramref name="definition"/> out at <paramref name="metrics"/>, narrowed by
     /// <paramref name="view"/>. <paramref name="independentScales"/> lists the panels whose left and
@@ -120,29 +152,60 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             notes.Add($"No series has a point between {axis.Write(from)} and {axis.Write(to)}.");
 
         var points = visible.SelectMany(s => s.Points.Select(p => p.X)).ToHashSet();
-        var xTicks = TickLayout.Horizontal(axis, style, from, to, points, map, metrics.EffectiveTextWidth, lh);
+        // On packed sessions a date tick (a month's start) stands at the first session on or after it (ADR-0301).
+        var sessions = categories && axis.Values == AxisValues.Dates ? slots.Keys.Order().ToArray() : null;
+        Func<double, double> tickMap = sessions is null ? map : x =>
+        {
+            var i = Array.BinarySearch(sessions, x);
+            if (i < 0) i = ~i;
+            return i < sessions.Length ? map(sessions[i]) : double.NaN;
+        };
+        var xTicks = TickLayout.Horizontal(axis, style, from, to, points, tickMap, metrics.EffectiveTextWidth, lh);
         var ticksBand = xTicks.Depth + lh / 2;
 
         // Every series' panel, hidden ones included, so a panel whose series are all hidden keeps
         // its legend and can show them again.
         var panelNames = definition.Series.Select(s => s.Panel).Distinct().ToList();
+        // A visible Price Range with a volume column gets a panel of its own below its panel (ADR-0300).
+        var specs = new List<(string Name, ChartSeries? VolumeOf)>();
+        foreach (var name in panelNames)
+        {
+            specs.Add((name, null));
+            foreach (var s in visible.Where(s => s.Panel == name && s.Kind == SeriesKind.PriceRange && s.Bars.Any(b => b.Volume is not null)))
+                specs.Add(($"{s.Name} volume", s));
+        }
         var swatch = lh * 1.5;
         double EntryWidth(ChartSeries s) => swatch + pad / 2 + metrics.EffectiveTextWidth(s.Name) + pad;
-        var rows = panelNames.Select(name => legend.Position is LegendPosition.Top or LegendPosition.Bottom
-            ? Rows(definition.Series.Where(s => s.Panel == name).ToList(), EntryWidth, plotWidth)
+        var rows = specs.Select(spec => spec.VolumeOf is null && legend.Position is LegendPosition.Top or LegendPosition.Bottom
+            ? Rows(definition.Series.Where(s => s.Panel == spec.Name).ToList(), EntryWidth, plotWidth)
             : []).ToList();
         double Band(int i) => rows[i].Count == 0 ? 0 : rows[i].Count * lh + pad / 2;
+        static double Weight((string Name, ChartSeries? VolumeOf) spec) => spec.VolumeOf is null ? 1 : VolumeShare;
 
-        var bands = Enumerable.Range(0, panelNames.Count).Sum(Band);
-        var panelHeight = panelNames.Count == 0 ? 0
-            : Math.Max(1, (metrics.Height - 2 * pad - ticksBand - bands - metrics.PanelGap * (panelNames.Count - 1)) / panelNames.Count);
+        var bands = Enumerable.Range(0, specs.Count).Sum(Band);
+        var unit = specs.Count == 0 ? 0
+            : Math.Max(1, (metrics.Height - 2 * pad - ticksBand - bands - metrics.PanelGap * (specs.Count - 1)) / specs.Sum(Weight));
+
+        // Candles merged into the market's own periods where the plot is too narrow for each (ADR-0302).
+        var merged = new Dictionary<string, (List<DrawnCandle> Candles, CandlePeriod Period)>();
+        foreach (var s in visible.Where(s => s.Kind == SeriesKind.PriceRange))
+        {
+            var (candles, period, unfit) = Merge(s, from, to, devicePixels);
+            merged[s.Id] = (candles, period);
+            if (unfit is not null) notes.Add(unfit);
+            else if (period != CandlePeriod.Row) notes.Add($"{s.Name}: {PriceRanges.Name(period).ToLowerInvariant()} candles, merged from rows to fit.");
+        }
+        var rowWidth = RowWidth(visible, axis, map, from, to, plotWidth);
+        if (definition.Axis.Packed && axis.EffectiveScale == AxisScale.Categories)
+            notes.Add("Dates are packed: the days nobody traded are left out, so the spacing is sessions, not calendar time.");
 
         var panels = new List<PanelScene>();
         var y = pad;
-        for (var pi = 0; pi < panelNames.Count; pi++)
+        for (var pi = 0; pi < specs.Count; pi++)
         {
-            var name = panelNames[pi];
-            var last = pi == panelNames.Count - 1;
+            var (name, volumeOf) = specs[pi];
+            var panelHeight = Weight(specs[pi]) * unit;
+            var last = pi == specs.Count - 1;
             double plotY, legendY;
             if (legend.Position == LegendPosition.Top)
             {
@@ -159,15 +222,22 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             y += metrics.PanelGap;
 
             var plot = new Box(plotLeft, plotY, plotWidth, panelHeight);
+            if (volumeOf is not null)
+            {
+                panels.Add(VolumePanel(name, volumeOf, looks[volumeOf.Id], merged[volumeOf.Id].Candles, map, rowWidth, plot));
+                continue;
+            }
             var members = visible.Where(s => s.Panel == name).ToList();
-            var drawings = members.ToDictionary(s => s.Id, s =>
-                SeriesDrawing.Of(s, axis, from, to, devicePixels, Quotes(s, visible)));
+            var drawings = members.ToDictionary(s => s.Id, s => s.Kind == SeriesKind.PriceRange
+                ? new SeriesDrawing([], []) { Candles = merged[s.Id].Candles }
+                : SeriesDrawing.Of(s, axis, from, to, devicePixels, Quotes(s, visible)));
             var (left, right, independent) = VerticalAxes(members, drawings, from, to, plot, independentScales?.Contains(name) == true);
             if (independent)
                 notes.Add(panelNames.Count > 1 && name.Length > 0
                     ? $"{name}: the left and right axes put zero at different heights."
                     : "The left and right axes put zero at different heights.");
-            var pieces = members.Select(s => Piece(s, looks[s.Id], Marked(s, visible), drawings[s.Id], s.Axis == AxisSide.Right ? right! : left!, map, plot, from, to, metrics.DevicePixelRatio, devicePixels)).ToEquatableList();
+            var pieces = members.Select(s => Piece(s, looks[s.Id], Marked(s, visible), drawings[s.Id], s.Axis == AxisSide.Right ? right! : left!, map, plot, from, to, metrics.DevicePixelRatio, devicePixels, rowWidth)
+                with { Period = merged.TryGetValue(s.Id, out var m) ? m.Period : CandlePeriod.Row }).ToEquatableList();
             var zero = left is { } l && l.Min <= 0 && l.Max >= 0 ? YOf(l, 0, plot) : right is { } r && r.Min <= 0 && r.Max >= 0 ? YOf(r, 0, plot) : (double?)null;
             var entries = Legend(definition.Series.Where(s => s.Panel == name).ToList(), rows[pi], legend, metrics, plot, legendY, looks, view.Hidden, EntryWidth);
             panels.Add(new PanelScene(name, plot, left, right, zero, pieces, entries));
@@ -180,8 +250,9 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             notes.Add("Colours repeat: there are more series than colours. The legend and the tooltip name each series.");
 
         return new ChartScene(panels.ToEquatableList(),
-            xTicks.Ticks.Select(t => (t.Position, map(t.Position), t.Label)).ToEquatableList(), from, to, notes.ToEquatableList(),
-            positions.ToEquatableList());
+            xTicks.Ticks.Select(t => (t.Position, tickMap(t.Position), t.Label)).Where(t => double.IsFinite(t.Item2)).ToEquatableList(), from, to, notes.ToEquatableList(),
+            positions.ToEquatableList())
+        { XTitle = TitleOf(definition.Axis, merged.Values.Select(m => m.Period)) };
     }
 
     /// <summary>
@@ -210,6 +281,15 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
     private static ChartAxis AxisOf(ChartDefinition d, ChartView view)
     {
         var axis = d.Axis;
+        // A packed axis is the candles' positions as categories (ADR-0301).
+        if (axis.Packed && view.Scale != AxisScale.Proportional)
+            return axis with
+            {
+                Scale = AxisScale.Categories,
+                Named = d.Series.Where(s => s.Kind == SeriesKind.PriceRange).SelectMany(s => s.Bars.Select(b => b.X)).Distinct().Order()
+                    .Select(x => (x, axis.Write(x))).ToArray(),
+            };
+        if (axis.Packed) axis = axis with { Packed = false };
         if (view.Scale is not { } scale || scale == axis.EffectiveScale || axis.Values == AxisValues.Labels)
             return axis;
         if (scale == AxisScale.Categories && d.Series.Any(s => s.Sampler is not null))
@@ -339,7 +419,9 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             var ss = members.Where(s => s.Axis == side).ToList();
             if (ss.Count == 0) return null;
             var ys = ss.SelectMany(s => drawings[s.Id].Lines.SelectMany(l => l).Where(p => p.X >= from && p.X <= to).Select(p => p.Y)
-                .Concat(drawings[s.Id].Markers.Where(m => m.X >= from && m.X <= to).Select(m => m.Y))).ToList();
+                .Concat(drawings[s.Id].Markers.Where(m => m.X >= from && m.X <= to).Select(m => m.Y))
+                .Concat(drawings[s.Id].Candles.SelectMany(c => new[] { c.Low, c.High }))
+                .Concat(drawings[s.Id].Whiskers.Concat(drawings[s.Id].Bands.SelectMany(b => b)).Where(w => w.X >= from && w.X <= to).SelectMany(w => new[] { w.Lower, w.Upper }))).ToList();
             var zero = ss.Any(s => s.ReachesZero);
             var lo = ys.Count > 0 ? ys.Min() : 0;
             var hi = ys.Count > 0 ? ys.Max() : 1;
@@ -399,18 +481,116 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         s.Kind != SeriesKind.Level || s.Keys?.Marker is not null || s.Interpolated
         || visible.Any(o => o.Id != s.Id && o.Interpolated && o.EffectiveKeys.Colour == s.EffectiveKeys.Colour);
 
-    private static SeriesPiece Piece(ChartSeries s, SeriesLook look, bool marked, SeriesDrawing drawing, VerticalAxis axis, Func<double, double> map, Box plot, double from, double to, double dpr, int devicePixels)
+    private static SeriesPiece Piece(ChartSeries s, SeriesLook look, bool marked, SeriesDrawing drawing, VerticalAxis axis, Func<double, double> map, Box plot, double from, double to, double dpr, int devicePixels, double rowWidth)
     {
+        if (s.Kind == SeriesKind.PriceRange)
+            return new SeriesPiece(s.Id, s.Name, s.EffectiveKeys, look, s.Kind, s.Interpolated, EquatableList<EquatableList<DrawnPoint>>.Empty,
+                EquatableList<DrawnMarker>.Empty, EquatableList<(double, double)>.Empty, EquatableList<PixelSummary>.Empty)
+            {
+                Candles = drawing.Candles.Select(c =>
+                {
+                    var (x, half) = Extent(c, map, rowWidth);
+                    return new PlacedCandle(x, half, c.Open is { } o ? YOf(axis, o, plot) : null, YOf(axis, c.High, plot), YOf(axis, c.Low, plot), YOf(axis, c.Close, plot),
+                        c.Rising, c.Unchanged, c.Rows, c.From, c.To);
+                }).ToEquatableList(),
+            };
+
         var inRange = new SeriesDrawing(
             drawing.Lines.Select(l => (IReadOnlyList<DrawnPoint>)l.Where(p => p.X >= from && p.X <= to).ToList()).Where(l => l.Count > 1).ToList(),
             drawing.Markers.Where(m => m.X >= from && m.X <= to).ToList());
         var thinned = Thinning.Of(inRange, x => (map(x) - plot.X) * dpr, devicePixels);
+        var (whiskers, bands) = Intervals(drawing with
+        {
+            Whiskers = drawing.Whiskers.Where(w => w.X >= from && w.X <= to).ToList(),
+            Bands = drawing.Bands.Select(b => (IReadOnlyList<DrawnWhisker>)b.Where(w => w.X >= from && w.X <= to).ToList()).Where(b => b.Count > 0).ToList(),
+        }, x => (map(x) - plot.X) * dpr, devicePixels);
         DrawnPoint Px(DrawnPoint p) => new(map(p.X), YOf(axis, p.Y, plot));
+        DrawnWhisker Wpx(DrawnWhisker w) => new(map(w.X), YOf(axis, w.Lower, plot), YOf(axis, w.Upper, plot));
         return new SeriesPiece(s.Id, s.Name, s.EffectiveKeys, look, s.Kind, s.Interpolated,
             thinned.Drawing.Lines.Select(l => l.Select(Px).ToEquatableList()).ToEquatableList(),
             (marked ? thinned.Drawing.Markers : []).Select(m => m with { X = map(m.X), Y = YOf(axis, m.Y, plot) }).ToEquatableList(),
             s.Segments.Where(g => g.Extrapolated).Select(g => (map(Math.Max(g.From, from)), map(Math.Min(g.To, to)))).ToEquatableList(),
-            thinned.Thinned.ToEquatableList());
+            thinned.Thinned.ToEquatableList())
+        {
+            Whiskers = whiskers.Select(Wpx).ToEquatableList(),
+            Bands = bands.Select(b => b.Select(Wpx).ToEquatableList()).ToEquatableList(),
+            IntervalMeaning = s.Interval?.Meaning,
+        };
+    }
+
+    // Past one point a device pixel, whiskers become the band, thinned to the lowest lower and the
+    // highest upper per pixel column, so no interval is dropped where markers are (ADR-0303).
+    private static (List<DrawnWhisker> Whiskers, List<IReadOnlyList<DrawnWhisker>> Bands) Intervals(SeriesDrawing inRange, Func<double, double> toPixel, int devicePixels)
+    {
+        var whiskers = inRange.Whiskers.ToList();
+        var bands = inRange.Bands.ToList();
+        if (whiskers.Count > devicePixels) { bands = [whiskers]; whiskers = []; }
+        if (bands.Sum(b => b.Count) <= devicePixels) return (whiskers, bands);
+        return (whiskers, bands.Select(b => (IReadOnlyList<DrawnWhisker>)b.GroupBy(w => Math.Floor(toPixel(w.X)))
+            .Select(g => new DrawnWhisker((g.First().X + g.Last().X) / 2, g.Min(w => w.Lower), g.Max(w => w.Upper))).ToList()).ToList());
+    }
+
+    // A candle centred on what it stands for, 70% as wide: one row's width, or a merged candle's rows
+    // from first to last (ADR-0302).
+    private static (double X, double Half) Extent(DrawnCandle c, Func<double, double> map, double rowWidth)
+    {
+        var a = map(c.From) - rowWidth / 2;
+        var b = map(c.To) + rowWidth / 2;
+        return ((a + b) / 2, Math.Max(0.5, 0.35 * (b - a)));
+    }
+
+    // The width of one row in pixels: the narrowest gap between neighbouring candles.
+    private static double RowWidth(List<ChartSeries> visible, ChartAxis axis, Func<double, double> map, double from, double to, double plotWidth)
+    {
+        var xs = visible.Where(s => s.Kind == SeriesKind.PriceRange).SelectMany(s => s.Bars.Select(b => b.X)).Where(x => x >= from && x <= to).Distinct().Order().ToList();
+        if (xs.Count < 2) return plotWidth / 10;
+        var gap = double.PositiveInfinity;
+        for (var i = 1; i < xs.Count; i++) gap = Math.Min(gap, map(xs[i]) - map(xs[i - 1]));
+        return double.IsFinite(gap) && gap > 0 ? gap : plotWidth / xs.Count;
+    }
+
+    // The first of the market's periods whose candles fit three device pixels each, or the Consumer's
+    // fixed one, which says so when it does not fit (ADR-0302).
+    private static (List<DrawnCandle> Candles, CandlePeriod Period, string? Unfit) Merge(ChartSeries s, double from, double to, int devicePixels)
+    {
+        static bool Fits(int count, int pixels) => count <= 1 || count * 3 <= pixels;
+        if (s.MergeTo is { } fixedPeriod)
+        {
+            var candles = PriceRanges.Candles(s, from, to, fixedPeriod);
+            return Fits(candles.Count, devicePixels) ? (candles, fixedPeriod, null)
+                : ([], fixedPeriod, $"{s.Name}: {candles.Count.ToString("N0", CultureInfo.InvariantCulture)} {(fixedPeriod == CandlePeriod.Row ? "rows" : PriceRanges.Name(fixedPeriod).ToLowerInvariant() + " candles")} do not fit; narrow the range.");
+        }
+        List<DrawnCandle> c = [];
+        foreach (var period in Enum.GetValues<CandlePeriod>())
+        {
+            c = PriceRanges.Candles(s, from, to, period);
+            if (Fits(c.Count, devicePixels)) return (c, period, null);
+        }
+        return (c, CandlePeriod.Year, null);
+    }
+
+    private static PanelScene VolumePanel(string name, ChartSeries s, SeriesLook look, List<DrawnCandle> candles, Func<double, double> map, double rowWidth, Box plot)
+    {
+        var max = candles.Count == 0 ? 1 : Math.Max(candles.Max(c => c.Volume ?? 0), 0);
+        var (lo, hi, step) = TickLayout.Nice(0, max == 0 ? 1 : max);
+        var axis = Axis(AxisSide.Left, (lo, hi, step, true), plot);
+        var bars = candles.Where(c => c.Volume is not null).Select(c =>
+        {
+            var (x, half) = Extent(c, map, rowWidth);
+            return new PlacedVolume(x, half, YOf(axis, c.Volume!.Value, plot), YOf(axis, 0, plot), c.Rising, c.Unchanged, c.Rows, c.From, c.To);
+        }).ToEquatableList();
+        var piece = new SeriesPiece(s.Id, name, s.EffectiveKeys, look, s.Kind, false, EquatableList<EquatableList<DrawnPoint>>.Empty,
+            EquatableList<DrawnMarker>.Empty, EquatableList<(double, double)>.Empty, EquatableList<PixelSummary>.Empty) { Volumes = bars };
+        return new PanelScene(name, plot, axis, null, YOf(axis, 0, plot), new[] { piece }.ToEquatableList(), EquatableList<LegendEntry>.Empty) { VolumeOf = s.Id };
+    }
+
+    private static string TitleOf(ChartAxis axis, IEnumerable<CandlePeriod> periods)
+    {
+        var title = axis.Title.Length > 0 ? axis.Title : axis.Packed || periods.Any(p => p != CandlePeriod.Row) ? "Date" : "";
+        if (axis.Packed) title += " (closed days packed)";
+        if (periods.Where(p => p != CandlePeriod.Row).Distinct().ToList() is [var period])
+            title += $" · {PriceRanges.Name(period)} candles, merged from rows to fit";
+        return title;
     }
 
     private static string XLabel(ChartAxis axis, double x) =>

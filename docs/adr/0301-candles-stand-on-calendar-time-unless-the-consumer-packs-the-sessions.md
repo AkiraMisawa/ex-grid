@@ -13,7 +13,8 @@ them. Trading screens (TradingView, Bloomberg) pack them.
   where it closed.
 - **The Consumer may declare the sessions packed** (`ChartAxis.Packed`): each row with a value is
   one slot, evenly spaced, in the data's order, and ticks are still the real dates. The axis title
-  says so (`Trading days (closed days packed)`), so a reader never takes the even spacing for
+  says so (`Trading days (closed days packed)`), and so do the Notes, which ExChart draws under every
+  chart while it draws no axis title of its own, so a reader never takes the even spacing for
   calendar time. On a packed axis every series in the chart takes only the candles' positions; a
   point at another position is refused by name, because there is nowhere true to put it.
 - **Switching is the Consumer's.** The chart holds no View State

@@ -37,7 +37,9 @@ public static class ChartReadings
         var p = scene.Panels[panel];
         var axis = definition.Axis;
         var byId = definition.Series.ToDictionary(s => s.Id);
-        var lines = p.Series.Select(piece => Line(byId[piece.Id], piece, p, axis, position)).ToList();
+        var lines = p.Series.Select(piece => byId[piece.Id].Kind == SeriesKind.PriceRange
+            ? Candle(byId[piece.Id], piece, p, axis, position)
+            : Line(byId[piece.Id], piece, p, axis, position)).ToList();
 
         // A header line, the lines, and the "more" line, all inside the plot's height.
         var room = Math.Max(1, (int)Math.Floor(p.Plot.Height / metrics.LineHeight) - 2);
@@ -80,7 +82,7 @@ public static class ChartReadings
         {
             var i = points.ToList().FindIndex(q => q.X == x);
             if (i < 0) return Make(null, "no point here", null);
-            return points[i].Y is { } value ? Make(s.Write(value), Method(s, x), Y(value.ToDouble())) : Make(null, "missing", null);
+            return points[i].Y is { } value ? Make(s.Write(value), Join(Method(s, x), Bounds(s, x)), Y(value.ToDouble())) : Make(null, "missing", null);
         }
 
         // A step names its interval (ADR-0253): the point whose value holds at x, and the interval it holds over.
@@ -93,6 +95,39 @@ public static class ChartReadings
         var drawn = s.Kind == SeriesKind.AmountPerPeriod && from != to ? v1.ToDouble() / axis.Years(from, to) : v1.ToDouble();
         return Make(s.Write(v1), note, Y(drawn));
     }
+
+    // A candle's four values, its change from the previous candle's close and its volume; a merged
+    // candle names its period and how many rows it holds (ADR-0300, ADR-0302). In a volume panel, the
+    // volume alone.
+    private static ReadingLine Candle(ChartSeries s, SeriesPiece piece, PanelScene panel, ChartAxis axis, double x)
+    {
+        var vertical = panel.Left;
+        double? Y(double height) => vertical is { } v ? panel.Plot.Y + panel.Plot.Height - (v.Max == v.Min ? 0.5 : (height - v.Min) / (v.Max - v.Min)) * panel.Plot.Height : null;
+        ReadingLine Make(string? value, string? note, double? y) => new(s.Id, piece.Name, piece.Look, value, note, y);
+        var period = piece.Period;
+        var candles = PriceRanges.Candles(s, double.NegativeInfinity, double.PositiveInfinity, period);
+        var i = candles.FindIndex(c => period == CandlePeriod.Row ? c.From == x : PriceRanges.PeriodStart(c.From, period) == PriceRanges.PeriodStart(x, period));
+        if (i < 0)
+            return s.Bars.Any(b => b.X == x) ? Make(null, "(no value)", null) : Make(null, "no candle here", null);
+        var c = candles[i];
+        string W(double v) => s.Write(ChartValue.Of(v));
+        string? Volume() => c.Volume is { } vol ? $"Vol {s.Write(ChartValue.Of(vol))}" : null;
+        var span = c.Rows > 1 || period != CandlePeriod.Row ? $"{axis.Write(c.From)} – {axis.Write(c.To)}, {c.Rows} rows" : null;
+        if (panel.VolumeOf is not null)
+            return Make(Volume() ?? "(no value)", span, c.Volume is { } v0 ? Y(v0) : null);
+        var values = c.Open is { } o ? $"O {W(o)} H {W(c.High)} L {W(c.Low)} C {W(c.Close)}" : $"H {W(c.High)} L {W(c.Low)} C {W(c.Close)}";
+        var change = i == 0 ? "Chg —" : $"Chg {(c.Close - candles[i - 1].Close >= 0 ? "+" : "")}{W(c.Close - candles[i - 1].Close)}{PriceRanges.Percent(c.Close - candles[i - 1].Close, candles[i - 1].Close)}";
+        return Make(values, Join(Join(span, c.Unchanged ? "unchanged" : null), Join(change, Volume())), Y(c.Close));
+    }
+
+    private static string? Bounds(ChartSeries s, double x)
+    {
+        if (s.Interval is not { } iv) return null;
+        var found = iv.Bounds.Where(b => b.X == x).ToList();
+        return found is [var b] && b.Lower is { } lo && b.Upper is { } hi ? $"[{s.Write(lo)}, {s.Write(hi)}] {iv.Meaning}" : "(no interval)";
+    }
+
+    private static string? Join(string? a, string? b) => a is null ? b : b is null ? a : $"{a}, {b}";
 
     private static double Mid(ChartValue lo, ChartValue hi) => (lo.ToDouble() + hi.ToDouble()) / 2;
 

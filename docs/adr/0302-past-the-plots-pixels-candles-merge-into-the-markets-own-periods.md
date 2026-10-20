@@ -13,7 +13,8 @@ maximum per pixel would keep the wicks but lose the open and the close.
   and its volume the sum. Those are the market's own weekly and monthly bars, so nothing is drawn
   that the data does not hold, and no spike is lost (ADR-0254's rule, kept). Highcharts Stock groups
   the same way.
-- **It says so.** The axis title gives the period (`Weekly (merged from daily to fit)`), and the
+- **It says so.** The axis title gives the period (`Weekly (merged from daily to fit)`), the Notes
+  say it under the chart (`Index: weekly candles, merged from rows to fit.`), and the
   tooltip the period and its count (`2026-10-05 – 2026-10-09, 5 rows`). The CSV and the files carry
   every row. Narrowing the range brings the rows back as they are.
 - **A packed axis merges on the same calendar boundaries.**

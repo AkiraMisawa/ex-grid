@@ -80,6 +80,8 @@ public static class DemoPageList
             "An exposure profile in two panels and a hazard curve drawn as steps: the tooltip lists every series at the pointer's date, the legend hides a series, a drag narrows the range, and Next run replaces the data keeping what the user changed (ADR-0252, ADR-0270 to ADR-0273)."),
         new("chart-bridge", "Charting a selection", "ExChart",
             "A curve history charted from the grid's context menu: series in columns along the dates or in rows across the tenors, Add to chart, a refusal by name, a chart that keeps its rows through a recalculation and a deleted row, and a click that moves the grid's Focus (ADR-0258)."),
+        new("chart-candles", "Candles and intervals", "ExChart",
+            "Ten years of a synthetic index as candles with volume and a moving average: rising hollow and falling filled, merged into months to fit and back to days when narrowed, on calendar time or packed sessions, in three colour conventions; a yield curve with a Bid–Ask band and forecasts with 95% CI whiskers (ADR-0300 to ADR-0303)."),
         new("surface", "3D surface", "ExChart",
             "An FX volatility surface turned by dragging or with the arrow keys, zoomed and panned, read at the grid point nearest the pointer, sliced into a smile or a term structure by a click, with a hole drawn as a hole (ADR-0274)."),
     ];
