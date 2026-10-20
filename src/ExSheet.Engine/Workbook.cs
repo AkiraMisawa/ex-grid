@@ -50,7 +50,10 @@ public sealed class Workbook
     /// <summary>The Workbook's declared culture, which every one of its Sheets reads and shows under (ADR-0048, ADR-0331).</summary>
     public CultureInfo Culture { get; }
 
-    /// <summary>The Sheets, in the order their tabs stand.</summary>
+    /// <summary>
+    /// The Sheets, in the order their tabs stand. Change one through <see cref="Do"/>: a change made on
+    /// the Sheet itself recalculates the whole Workbook too, but reports only what it changed on that Sheet.
+    /// </summary>
     public IReadOnlyList<Sheet> Sheets => _sheets;
 
     /// <summary>The Sheet named <paramref name="name"/>, without regard to case, as a Reference's qualifier names one; <see langword="null"/> when none is.</summary>
@@ -78,6 +81,11 @@ public sealed class Workbook
     /// <exception cref="ArgumentException">No Sheet of the Workbook is named <paramref name="sheet"/>.</exception>
     /// <exception cref="SheetRefusedException">The Sheet refuses the operation (<see cref="Check"/> says why).</exception>
     /// <exception cref="FormulaSyntaxException">A typed Formula cannot be read.</exception>
+    /// <exception cref="NotSupportedException">
+    /// The edit renames the Sheet, or inserts or deletes its rows or columns, in a Workbook of several
+    /// Sheets: not done yet, as it would leave the other Sheets' References to it stale. <see cref="Check"/>
+    /// does not report it.
+    /// </exception>
     public WorkbookStep Do(string sheet, SheetEdit edit)
     {
         var target = Named(sheet);
@@ -147,8 +155,8 @@ public sealed class Workbook
         }
         return new WorkbookChange(_sheets
             .Where(collected.ContainsKey)
-            .Select(s => (s, SheetChange.Merge(collected[s])))
-            .Where(p => p.s == sheet || !ReferenceEquals(p.Item2, SheetChange.None))
+            .Select(s => (Sheet: s, Change: SheetChange.Merge(collected[s])))
+            .Where(p => p.Sheet == sheet || !ReferenceEquals(p.Change, SheetChange.None))
             .ToList());
     }
 

@@ -33,7 +33,7 @@ public sealed partial class Sheet
     /// <summary>For each table name, declared or not, the Formula cells that name it in a structured reference.</summary>
     private readonly Dictionary<string, HashSet<CellAddress>> _tableReaders = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>The Linked Tables declared on this Sheet, in the order they were declared.</summary>
+    /// <summary>The Linked Tables declared on the Sheet's Workbook, which any of its Sheets reads (ADR-0331), in the order they were declared.</summary>
     public IReadOnlyList<LinkedTable> LinkedTables =>
         [.. Tables.Values.OrderBy(t => t.Order).Select(t => new LinkedTable(t.Name, t.Columns, t.Data is null, t.RowCount, t.Key.Count == 1 ? t.Key[0] : null) { KeyColumns = t.Key })];
 
