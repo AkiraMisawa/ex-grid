@@ -89,8 +89,9 @@ public partial class ExGrid<TRow>
     /// <param name="input">The number the script gave this input, which the root names once it has
     /// been answered (ADR-0220); 0 for none.</param>
     /// <returns>A task that completes once the refusal is said.</returns>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task OnHeldTabRefusedAsync(int input = 0)
+    public Task OnHeldTabRefusedAsync(int input = 0, GridInputText? fieldText = null)
         => AnsweredAsync(() =>
         {
             if (_disposed)
@@ -102,7 +103,7 @@ public partial class ExGrid<TRow>
                 _suppressRender = false;
                 StateHasChanged();
             }
-        }, input);
+        }, input, fieldText);
 
     /// <summary>
     /// Keys the script held while an earlier input was answered, to hand on where the keyboard went,
@@ -116,8 +117,9 @@ public partial class ExGrid<TRow>
     /// <param name="input">The number the script gave this input, which the root names once it has
     /// been answered (ADR-0220); 0 for none.</param>
     /// <returns>A task that completes once the refusal is said.</returns>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task OnHeldInputsRefusedAsync(int input = 0)
+    public Task OnHeldInputsRefusedAsync(int input = 0, GridInputText? fieldText = null)
         => AnsweredAsync(() =>
         {
             if (_disposed)
@@ -129,7 +131,7 @@ public partial class ExGrid<TRow>
                 _suppressRender = false;
                 StateHasChanged();
             }
-        }, input);
+        }, input, fieldText);
 
     /// <summary>
     /// The Escape with nothing left to dismiss, pressed on the root (ADR-0012, ADR-0070): the

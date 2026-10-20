@@ -2512,11 +2512,11 @@ public class WritesLandAsEnteredTests : GridTestContext
             reader.Groups["body"].Value);
         // A key carries it from its keydown, held or not.
         Assert.Matches(new Regex(@"const snapshot = \(event\) => \(\{[^}]*paint: paintNow\(\),"), script);
-        Assert.Matches(new Regex(@"'OnKeyAsync',[^;]*k\.paint, nextInput\(neutral\)\)"), script);
+        Assert.Matches(new Regex(@"'OnKeyAsync',[^;]*k\.paint, nextInput\(neutral\), input \? null : inputText\(\)\)"), script);
         // A paste carries it from its event, held or not.
         Assert.Matches(new Regex(@"sendPaste\(event\.clipboardData\.getData\('text/plain'\), event\.clipboardData\.getData\('text/html'\), paintNow\(\)\)"), script);
         Assert.Matches(new Regex(@"clipboard: 'paste',[^}]*paint: paintNow\(\),"), script);
-        Assert.Matches(new Regex(@"const input = nextInput\(\);[^;]*;\s*pasteUnderWay = input;\s*return core\.invokeMethodAsync\('OnPasteTakenAsync', flavours\.text\?\.byteLength \?\? 0, flavours\.html\?\.byteLength \?\? 0, paint, input\)"), script);
+        Assert.Matches(new Regex(@"const input = nextInput\(\);[^;]*;\s*pasteUnderWay = input;\s*return core\.invokeMethodAsync\('OnPasteTakenAsync', flavours\.text\?\.byteLength \?\? 0, flavours\.html\?\.byteLength \?\? 0, paint, input, inputText\(\)\)"), script);
         // A press on an action carries it with the row, column and action it pressed.
         Assert.Contains("'RememberRowClick'", script);
     }

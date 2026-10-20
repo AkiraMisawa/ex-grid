@@ -143,6 +143,19 @@
             its place.
         </p>
         <p>
+            <strong>Typing is covered too.</strong> The Cell Editor, Formula Bar and Name Box keep the mark
+            off until their text has reached the core and its answer is rendered. A key, row press, heading
+            click or menu command immediately after typing carries the full field text into its turn.
+            No pause between the last character and the command is needed. A draft in a popover or dialog
+            still waits for its Apply or OK command.
+        </p>
+        <DocsExample Title="Text before the next command" Builtin="typeof(OrderedFieldText)"
+                     Mud="typeof(OrderedFieldTextMud)" Files="@(["Examples/Grid/OrderedFieldText.razor"])">
+            <p>Edit the Text column with F2, type, then immediately press another row or a heading.
+                The status shows the full committed text. The Formula Bar edits the same value;
+                the Name Box reports the name you submit with Enter.</p>
+        </DocsExample>
+        <p>
             <strong>Clicks keep their place among the keys.</strong> A click on a heading, a column's ▾, an item of the
             column menu or the Context Menu, a completion candidate, the pager, the status line's buttons, a grip's
             double click (Size to fit), a filter panel's OK and Cancel, and Find's Previous and Next is numbered as it
@@ -150,6 +163,8 @@
             long the grid takes to answer either. A click made while keys are still being answered waits with them and
             is carried out in its turn, so <code>Enter</code> then a click on ▾, sent at once, opens the menu of the row
             the Enter moved to, as it does typed slowly.
+            Right-click followed immediately by a menu key waits for the Context Menu to receive the
+            keyboard, including when no Cell Editor was open.
         </p>
         <p>
             <strong>A drag is carried out however fast it is.</strong> A drag across the rows, across the headings, or

@@ -132,4 +132,13 @@ cancelling the already-running whole-suite hunt. Normal CI passed at implementat
 `38c57a6a` ([run 39342985942](https://github.com/AkiraMisawa/ex-grid/actions/runs/39342985942));
 the policy update changes documentation only. The full hunt at that implementation revision is
 [run 39344122821](https://github.com/AkiraMisawa/ex-grid/actions/runs/39344122821) and is not the
-next-stage gate. The selected input run passed at `03053917` ([run 39345897183](https://github.com/AkiraMisawa/ex-grid/actions/runs/39345897183)), and ticket 03 began. The later full Hunt exposed failures; [the follow-up record](hunt-2026-10-20.md) documents their causes, fixes and the related verification scope. Ticket 03 is preserved while those observed failures are resolved.
+next-stage gate. The selected input run passed at `03053917`, and ticket 03 began. The later full
+Hunt exposed failures; [the follow-up record](hunt-2026-10-20.md) documents their causes and fixes.
+
+### Stage gate passed, 2026-10-20
+
+Integrated revision `8027b9f5` passed [normal CI 39494741182](https://github.com/AkiraMisawa/ex-grid/actions/runs/39494741182)
+and the preselected 14-spec [input gate 39494769626](https://github.com/AkiraMisawa/ex-grid/actions/runs/39494769626):
+all 57 jobs passed, covering ten repetitions and the widened run on both hosts and browsers.
+Ticket 03 resumes on `codex/input-order-field-text` from that revision. The whole-suite Hunt
+continues asynchronously; it is not the next-stage gate.

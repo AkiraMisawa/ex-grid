@@ -57,10 +57,12 @@ public partial class ExGrid<TRow>
     /// its Blazor event. Called only by the grid's script (ADR-0240).</summary>
     /// <param name="ticket">The registered click ticket.</param>
     /// <param name="input">The click's Input Order number.</param>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public void BeginRowClick(int ticket, int input)
+    public void BeginRowClick(int ticket, int input, GridInputText? fieldText = null)
     {
         InputReached(input);
+        RememberInputText(input, fieldText);
         if (_disposed || !_rowCommands.TryGetValue(ticket, out var command))
         {
             InputVoid(input);

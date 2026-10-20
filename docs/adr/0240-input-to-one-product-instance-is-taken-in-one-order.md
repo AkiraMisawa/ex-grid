@@ -378,3 +378,26 @@ dispatch-end replies. Those calls are still sent and their errors reported, but 
 for its numbered Begin and answered stamp. Otherwise a click made while disconnected kept the
 hold waiting for two replies Blazor never supplies, even after the core declared its number lost.
 The partial-wire exclusions in section 11 are unchanged.
+
+## As built: ticket 03 field text (2026-10-20)
+
+The existing numbered interop calls carry `GridInputText` for the owning Cell Editor, Formula Bar
+or Name Box. Keys reuse the editor text they already carry rather than sending it twice.
+Tellings ahead of Blazor events keep their text by input number; the existing Input Order adopts
+it in that number's turn, and voiding or disposal releases it. This is no second command queue.
+The existing overtaken-input rule covers presses and claims as well as keys. Name Box submission
+claims its existing form event before reading the carried text; a later acknowledgement cannot
+restore a Name Box submission that has already ended.
+
+Typing still uses its existing Blazor input message. The existing root input listener remembers
+only typed owned surfaces, and the Settled Mark remains off until their rendered text agrees
+with the field. Animation frames check attributes and values while text is owed; they read no
+layout. A removed editor or a Formula Bar whose editing mark has gone no longer owes typing;
+its closing command still owes its numbered answer. No per-cell observer or new event listener
+is introduced. Popover and dialog drafts keep section 5's exclusion.
+
+The typing-then-menu regression also exposed two gaps in section 4's existing hand-off. A
+right-click now holds following keys for its popover just as Shift+F10 does, including when no
+edit was open. An older render's after-work must not consume a newer popover's focus request
+before that opening has rendered its control references. The request remains pending until
+the render bearing it is built. Neither wait uses a clock or adds another queue.

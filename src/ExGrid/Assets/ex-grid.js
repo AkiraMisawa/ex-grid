@@ -243,8 +243,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     //   description of a selection, the Placeholders filling;
     // - a reveal's write, its repaint, and the page's follow over;
     // - no copy's write to the clipboard in flight.
-    // Text typed into a field — the Cell Editor, the Formula Bar, the Name Box — is the field's, and
-    // goes to the core as Blazor's own input events: the mark does not wait on it.
+    // Text typed into the Cell Editor, Formula Bar or Name Box is also owed until the surface
+    // renders that text (ADR-0240 section 5). Typing still uses Blazor's own input events only.
     // It changes once as a burst of input starts and once as it ends, on the root only. It is looked
     // at in a microtask after anything that may change it, so a state passed through within one task
     // is never shown. An observer of the two attributes the core writes is the one thing added, and it
@@ -302,6 +302,26 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             });
         },
     } : raw))(core);
+    // At most the three owned surfaces, never a collection per character or per cell. A field
+    // removed by a commit no longer owes a text render; the numbered commit still owes its answer.
+    const typedFields = new Map();
+    let typingFrame = null;
+    function typingAnswered() {
+        for (const [surface, field] of typedFields) {
+            if (!surface.isConnected || !field.isConnected || !surface.hasAttribute('data-ex-mode-text')
+                || surface.closest('.ex-grid') !== root
+                || surface.getAttribute('data-ex-mode-text') === field.value) {
+                typedFields.delete(surface);
+            }
+        }
+        if (typedFields.size > 0 && typingFrame === null) {
+            typingFrame = requestAnimationFrame(() => {
+                typingFrame = null;
+                lookSettled();
+            });
+        }
+        return typedFields.size === 0;
+    }
     let clipboardWrites = 0;
     let settledShown = null;
     let journalAnswered = null;
@@ -332,7 +352,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             journalAnswered = answered;
             journal.note('answered', { input: answered, sent: inputsSent });
         }
-        const settled = held.length === 0 && !answering && pressAnswer === null && pressToAsk === null
+        const textAnswered = typingAnswered();
+        const settled = textAnswered && held.length === 0 && !answering && pressAnswer === null && pressToAsk === null
             && handOff === null && settledWaits.size === 0 && pendingReveal === null && repaint === null
             && follow === null && clipboardWrites === 0
             && stamp !== null && Number(stamp.getAttribute('data-ex-answered')) >= inputsSent
@@ -1030,7 +1051,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             'OnKeyAsync', k.key, k.ctrlKey, k.shiftKey, k.altKey, k.metaKey, metaIsPrimary, !k.onRoot,
             input ? input.value : null, input ? (input.selectionStart ?? input.value.length) : -1,
             input ? (input.selectionEnd ?? input.value.length) : -1, input ? movedByUser(input) : false,
-            k.repeat === true, k.paint, nextInput(neutral))
+            k.repeat === true, k.paint, nextInput(neutral), input ? null : inputText())
             .catch((error) => {
                 // Disposal can overtake a key in flight, and that is not a fault. Anything
                 // else is reported: a swallowed failure here means keys that silently stop
@@ -1126,6 +1147,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         lastSurface = ownSurface(target) ?? lastSurface;
     };
 
+    // A numbered input takes the field's value with it (ADR-0240 section 5), without another
+    // message for typing. A press can already have moved DOM focus by its click; the standing
+    // editor still supplies that edit's text. Nested grids and popover drafts belong elsewhere.
+    const inputText = () => {
+        const active = document.activeElement;
+        const name = ownNameBox(active);
+        if (name !== null) {
+            return { surface: 'name', text: name.value, caret: name.selectionStart ?? -1 };
+        }
+        const surface = ownSurface(active) ?? (editing !== 'none' ? ownSurface(lastSurface) : null);
+        const field = surface !== null ? surfaceField(surface) : null;
+        if (field === null || !surface.hasAttribute('data-ex-mode-text')) return null;
+        return {
+            surface: surface.classList.contains('ex-formula-bar-text') ? 'bar' : 'cell',
+            text: field.value, caret: field.selectionStart ?? -1,
+        };
+    };
+
     // Each input reports at once: Blazor's input event is on its way, and the core waits for
     // this report before it asks anything about the new text.
     const onEditorInput = (event) => {
@@ -1152,6 +1191,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         const input = event.target;
         noteSurface(input);
+        const surface = ownNameBox(input)?.closest('.ex-name-box') ?? ownSurface(input);
+        if (surface?.hasAttribute('data-ex-mode-text') && isTextField(input)) {
+            // Drop an old surface when a render replaced it, before adding its replacement.
+            typingAnswered();
+            typedFields.set(surface, input);
+            lookSettled();
+        }
         if (!reportCaret || !core || !(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)
             || input.closest('.ex-editor') === null) {
             return;
@@ -2292,7 +2338,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // a key taken off the queue already is among them.
     const refuseHeld = (dropped = false) => {
         if (core && (dropped || held.length > 0)) {
-            core.invokeMethodAsync('OnHeldInputsRefusedAsync', nextInput(true)).catch((error) => {
+            core.invokeMethodAsync('OnHeldInputsRefusedAsync', nextInput(true), inputText()).catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to refuse the held keys', error);
                 }
@@ -2320,7 +2366,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // by time; an Enter that submitted nothing finds the last answer, long complete.
     const nameBoxAnswered = () => new Promise((submitted) => {
         setTimeout(submitted);
-    }).then(() => (core ? core.invokeMethodAsync('NameBoxAnsweredAsync', nextInput()).catch((error) => {
+    }).then(() => (core ? core.invokeMethodAsync('NameBoxAnsweredAsync', nextInput(), inputText()).catch((error) => {
         if (core) {
             console.error('[ex-grid] the grid failed to answer the Name Box', error);
         }
@@ -2464,7 +2510,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     continue;
                 }
                 if (editing === 'none') {
-                    const opened = await core.invokeMethodAsync('OnKeyFieldTextAsync', k.text, k.paint, nextInput()).catch((error) => {
+                    const opened = await core.invokeMethodAsync('OnKeyFieldTextAsync', k.text, k.paint, nextInput(), inputText()).catch((error) => {
                         if (core) {
                             console.error('[ex-grid] the grid failed to take a composition', error);
                         }
@@ -2589,7 +2635,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // Tab is in a popover, rather than hand the grid keys meant for the page's next
                 // element. The release stands, for the Tab the user presses again, and the live
                 // region says so: refused, not dropped silently (ADR-0230 section 1 (b)).
-                core?.invokeMethodAsync('OnHeldTabRefusedAsync', nextInput(true)).catch((error) => {
+                core?.invokeMethodAsync('OnHeldTabRefusedAsync', nextInput(true), inputText()).catch((error) => {
                     if (core) {
                         console.error('[ex-grid] the grid failed to refuse a held Tab', error);
                     }
@@ -2679,7 +2725,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             event.stopPropagation();
             const paste = pasteUnderWay;
             pasteUnderWay = 0;
-            core.invokeMethodAsync('OnPasteCancelAsync', paste, nextInput(true)).catch((error) => {
+            core.invokeMethodAsync('OnPasteCancelAsync', paste, nextInput(true), inputText()).catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to cancel a paste', error);
                 }
@@ -3062,7 +3108,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         keyFieldPaint = paintNow();
         event.target.classList.add('ex-key-field-composing');
         if (editing === 'none' && !answering) {
-            core.invokeMethodAsync('OnKeyFieldCompositionStartAsync', nextInput()).catch((error) => {
+            core.invokeMethodAsync('OnKeyFieldCompositionStartAsync', nextInput(), inputText()).catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to hear a composition', error);
                 }
@@ -3345,7 +3391,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const active = document.activeElement;
         const inBar = active instanceof Element && root.contains(active)
             && active.closest('.ex-formula-bar-text') !== null;
-        await core.invokeMethodAsync('BarPressAnsweredAsync', inBar, nextInput()).catch((error) => {
+        await core.invokeMethodAsync('BarPressAnsweredAsync', inBar, nextInput(), inputText()).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to answer a press', error);
             }
@@ -3472,7 +3518,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // browser fires next and the core answers in its turn (ADR-0220).
         core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left, taken.top,
             taken.sequence, taken.layout, taken.editorRow ?? -1, taken.editorColumn ?? -1, nextInput(),
-            taken.doubleClick === true ? nextInput() : 0).catch((error) => {
+            taken.doubleClick === true ? nextInput() : 0, inputText()).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to hear where a press was taken', error);
             }
@@ -3520,11 +3566,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const tellKeyClaim = (event) => (core && claimOf(event.target, 'keydown') !== null ? tellClaim('keydown') : 0);
     const tellClaim = (kind) => {
         const input = nextInput();
-        core.invokeMethodAsync('InputTakenAt', kind, input).catch((error) => {
+        // A right-click opens the same popover as Shift+F10. Its held keys wait for that
+        // keyboard destination too, even if the press committed the editor before the menu renders.
+        if (kind === 'contextmenu') awaitingPopover = true;
+        core.invokeMethodAsync('InputTakenAt', kind, input, inputText()).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to hear a click', error);
             }
         });
+        if (kind === 'contextmenu' && !answering) startHold();
         return input;
     };
 
@@ -3554,7 +3604,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         pressToAsk = null;
         const answered = core
-            ? core.invokeMethodAsync('PressAnsweredAsync', nextInput()).catch((error) => {
+            ? core.invokeMethodAsync('PressAnsweredAsync', nextInput(), inputText()).catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to answer a press', error);
                 }
@@ -4058,7 +4108,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         } finally {
             replaying = false;
         }
-        await core.invokeMethodAsync('PressAnsweredAsync', nextInput()).catch((error) => {
+        await core.invokeMethodAsync('PressAnsweredAsync', nextInput(), inputText()).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to answer a press', error);
             }
@@ -4083,7 +4133,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const replayRowClick = async (k) => {
         if (!core) return;
         const input = nextInput();
-        const begun = core.invokeMethodAsync('BeginRowClick', k.rowClick, input);
+        const begun = core.invokeMethodAsync('BeginRowClick', k.rowClick, input, inputText());
         replaying = true;
         try {
             if (k.target.isConnected && root.contains(k.target)) {
@@ -4234,7 +4284,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // (`owned`, ADR-0240), is that input's: the payload takes no number of its own, which would wait for
     // the click that waits for this copy.
     const buildCopy = (withHeaders, owned = false) => core.invokeMethodAsync('BuildCopyPayloadAsync', withHeaders,
-        owned ? 0 : nextInput())
+        owned ? 0 : nextInput(), inputText())
         .catch((error) => {
             // A .NET failure — a Consumer delegate that threw, a circuit that
             // dropped. Reported here, because the null it becomes reads as a
@@ -4303,7 +4353,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         outlined = true;
-        core.invokeMethodAsync('OnCopyLandedAsync', payload.landing, nextInput()).catch((error) => {
+        core.invokeMethodAsync('OnCopyLandedAsync', payload.landing, nextInput(), inputText()).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to outline a copy', error);
             }
@@ -4330,7 +4380,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const copyNotWritten = (error) => {
         if (error instanceof DOMException && error.name === 'NotAllowedError') {
             if (core) {
-                core.invokeMethodAsync('OnCopyWriteRejectedAsync', nextInput()).catch((reportError) => {
+                core.invokeMethodAsync('OnCopyWriteRejectedAsync', nextInput(), inputText()).catch((reportError) => {
                     if (core) {
                         console.error('[ex-grid] the grid failed to report a rejected copy', reportError);
                     }
@@ -4424,7 +4474,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const input = nextInput();
         pastes.set(input, flavours);
         pasteUnderWay = input;
-        return core.invokeMethodAsync('OnPasteTakenAsync', flavours.text?.byteLength ?? 0, flavours.html?.byteLength ?? 0, paint, input)
+        return core.invokeMethodAsync('OnPasteTakenAsync', flavours.text?.byteLength ?? 0, flavours.html?.byteLength ?? 0, paint, input, inputText())
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to take a paste', error);
@@ -4888,7 +4938,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             keyboardMissed = false;
             if (to === 'popover') {
                 handOffInput = nextInput(true);
-                core.invokeMethodAsync('HandOffHeardAsync', handOffInput).catch((error) => {
+                core.invokeMethodAsync('HandOffHeardAsync', handOffInput, inputText()).catch((error) => {
                     if (core) {
                         console.error('[ex-grid] the grid failed to hear a hand-off', error);
                     }
@@ -5312,6 +5362,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.removeEventListener('cut', onHeldClipboard, true);
             root.removeEventListener('paste', onHeldClipboard, true);
             lastSurface = null;
+            typedFields.clear();
+            if (typingFrame !== null) cancelAnimationFrame(typingFrame);
+            typingFrame = null;
             staleField = null;
             nameBoxPressed = null;
             nameBoxSelected = null;

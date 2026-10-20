@@ -480,7 +480,7 @@ _Avoid_: hidden input, hidden textarea, proxy input
 
 **Settled Mark**:
 The attribute `data-ex-settled` on a grid's root, present while every input the grid's key gate has
-taken (a key, a press on the rows, a paste, a composition, a copy) has been handled and its effect
+taken (including text in its Cell Editor, Formula Bar and Name Box) has been handled and its effect
 is in the DOM: nothing held, no hand-off of the keyboard under way, no render owed, a reveal and its
 repaint over. It changes at most once as a burst of input starts and once as it ends. A test, or a
 Consumer's own automation, reads the grid only once it is there. It is not `aria-busy`, which a

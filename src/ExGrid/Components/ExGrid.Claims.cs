@@ -46,10 +46,15 @@ public partial class ExGrid<TRow>
     /// <c>contextmenu</c>, <c>keydown</c>, <c>submit</c> or <c>focus</c>.</param>
     /// <param name="input">The number the script gave the event, which the root names once it has
     /// been answered (ADR-0220).</param>
+    /// <param name="fieldText">The browser field's text at this input (ADR-0240 section 5).</param>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public void InputTakenAt(string kind, int input) => TellInput(kind, input);
+    public void InputTakenAt(string kind, int input, GridInputText? fieldText = null)
+    {
+        RememberInputText(input, fieldText);
+        TellInput(kind, input);
+    }
 
     private void TellInput(string kind, int input, int rowCommand = 0)
     {

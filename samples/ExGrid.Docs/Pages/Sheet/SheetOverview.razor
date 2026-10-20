@@ -69,6 +69,8 @@
             Selection spans — as Ctrl++ and Ctrl+- do from the keyboard, on a Selection of whole rows or whole
             columns. References keep naming the same cells, and a deleted target becomes
             <code>#REF!</code>.
+            A menu key typed immediately after right-click waits for that Context Menu to take the
+            keyboard, under either Chrome and on Blazor Server too.
         </p>
         <ul>
             <li><code>PinnedColumnCount</code> freezes leading columns.</li>
@@ -175,8 +177,9 @@
             The grid a Sheet is drawn with carries the <MudLink Href="exgrid/selection">Settled Mark</MudLink>:
             <code>data-ex-settled</code> on its root once every key, press on the cells, paste and copy it has
             taken has been handled and painted. A test or a macro types at full speed, waits for the mark, and
-            reads. Text typed into the Cell Editor, the Formula Bar or the Name Box, and a press on the toolbar,
-            are read with an expectation that waits for their effect.
+            reads. Text typed into the Cell Editor, Formula Bar and Name Box is covered too: the next
+            grid command takes the full field text, and the mark waits for its rendered answer.
+            A press on the Sheet Toolbar still needs an expectation that waits for its effect.
         </p>
         <p>
             On Blazor Server, input made while the connection is lost never reaches the Sheet. Once the connection is

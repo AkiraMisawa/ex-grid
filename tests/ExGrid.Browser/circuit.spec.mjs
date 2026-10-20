@@ -761,11 +761,8 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
 
             await page.keyboard.type('abcdefghij', { delay: 100 });
 
-            // Every answer has landed: on the Server host once the circuit is quiet, however long
-            // that takes; the fixed wait is the page's own time, all there is on WebAssembly.
-            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the value back
-            await page.waitForTimeout(1000);
-            await circuitQuiet();
+            // ADR-0240: the mark now covers the field's rendered answer too.
+            await settled(grid(page));
             await expect(editor).toHaveValue('Xabcdefghij');
             expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
             await page.keyboard.press('Enter');
@@ -786,9 +783,7 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
 
         await page.keyboard.type('nonsense', { delay: 100 });
 
-        // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the value back
-        await page.waitForTimeout(1000);
-        await circuitQuiet();
+        await settled(sheet);
         await expect(nameBox).toHaveValue('nonsense');
         expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
     });
@@ -857,11 +852,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('123456789');
 
             await expect.poll(() => editor.inputValue(), { timeout: 3000 }).toMatch(/123456789$/);
-            // And stays whole once every round trip has landed: on the Server host once the
-            // circuit is quiet, however long that takes; on WebAssembly after the fixed wait.
-            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the text back
-            await page.waitForTimeout(500);
-            await circuitQuiet();
+            await settled(grid(page));
             expect(await editor.inputValue()).toMatch(/123456789$/);
         });
 
@@ -872,7 +863,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(field).toBeFocused();
             await page.keyboard.type('5320984.5');
 
-            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the text back
+            // spec-lint: fixed-wait: this popover draft remains outside the Settled Mark until its committing input (ADR-0240 section 5); circuitQuiet() covers the Server host, and the WebAssembly draft has no rendered-answer mark
             await page.waitForTimeout(500);
             await circuitQuiet();
             expect(await field.inputValue()).toBe('5320984.5');
@@ -886,7 +877,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(field).toBeFocused();
             await page.keyboard.type('Gammadelta');
 
-            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the text back
+            // spec-lint: fixed-wait: this popover draft remains outside the Settled Mark until its committing input (ADR-0240 section 5); circuitQuiet() covers the Server host, and the WebAssembly draft has no rendered-answer mark
             await page.waitForTimeout(500);
             await circuitQuiet();
             expect(await field.inputValue()).toBe('Gammadelta');
@@ -900,7 +891,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(field).toHaveCount(1);
             await page.keyboard.type('1234567.89');
 
-            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the text back
+            // spec-lint: fixed-wait: this popover draft remains outside the Settled Mark until its committing input (ADR-0240 section 5); circuitQuiet() covers the Server host, and the WebAssembly draft has no rendered-answer mark
             await page.waitForTimeout(500);
             await circuitQuiet();
             expect(await field.inputValue()).toBe('1234567.89');

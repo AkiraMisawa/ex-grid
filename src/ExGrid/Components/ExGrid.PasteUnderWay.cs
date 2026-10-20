@@ -74,8 +74,9 @@ public partial class ExGrid<TRow>
     /// <returns>A task that completes once the Escape's turn has been taken.</returns>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task OnPasteCancelAsync(int paste, int input = 0)
+    public Task OnPasteCancelAsync(int paste, int input = 0, GridInputText? fieldText = null)
     {
         if (!_disposed && paste > 0)
         {
@@ -96,7 +97,7 @@ public partial class ExGrid<TRow>
             Announce(RefusalWords(GridLabelIds.PasteAlreadyLanded));
             _suppressRender = false;
             StateHasChanged();
-        }, input);
+        }, input, fieldText);
     }
 
     /// <summary>The paste numbered <paramref name="input"/> starts in its turn: the root is busy, and the

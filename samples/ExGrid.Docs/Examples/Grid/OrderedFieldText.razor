@@ -1,0 +1,33 @@
+@using global::ExGrid.Chrome
+@using global::ExGrid.Cells
+@using global::ExGrid.Columns
+@using global::ExGrid.Selection
+
+<div class="docs-ordered-field-text">
+    <ExGrid TRow="Note" Source="_source" Columns="Columns" Chrome="Chrome"
+            ShowFormulaBar="true" NameBoxLabel="Name" OnNameBoxEntered="NameEntered"
+            OnEdit="Edited" ViewportHeight="180" ViewportWidth="ViewportSize.Stretch" />
+    <p role="status">@_message</p>
+</div>
+
+@code {
+    [Parameter] public IGridChrome? Chrome { get; set; }
+    public sealed record Note(int Id, string Text);
+    private readonly InMemoryGridSource<Note> _source = GridSource.From(new[]
+    {
+        new Note(1, "Edit this note"), new Note(2, "Then press another row"), new Note(3, "The whole text is kept"),
+    });
+    private static readonly GridColumn<Note>[] Columns =
+    [
+        new("Id", ColumnType.Number, row => row.Id, width: new(ColumnWidth.Fixed(90))),
+        new("Text", ColumnType.Text, row => row.Text, editable: true, width: new(ColumnWidth.Fixed(300))),
+    ];
+    private static readonly Func<CellPosition, string> Name = cell => $"Row {cell.Row + 1}";
+    private string _message = "Edit a note or type a name and press Enter.";
+    private void Edited(GridEditIntent<Note> edit)
+    {
+        _source.ReplaceRow(edit.Row, edit.Row with { Text = edit.Value });
+        _message = $"Committed: {edit.Value}";
+    }
+    private void NameEntered(string name) => _message = $"Name received: {name}";
+}

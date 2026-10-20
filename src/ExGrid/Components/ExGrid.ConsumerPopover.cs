@@ -319,8 +319,9 @@ public partial class ExGrid<TRow>
     /// <param name="input">The number the script gave the telling, which the root names once it has
     /// been answered (ADR-0220).</param>
     /// <returns>A task that completes once the telling is answered.</returns>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task HandOffHeardAsync(int input = 0) => AnsweredAsync(() => { }, input);
+    public Task HandOffHeardAsync(int input = 0, GridInputText? fieldText = null) => AnsweredAsync(() => { }, input, fieldText);
 
     /// <summary>
     /// Opens the Consumer's contents in the frame, in place of any popover that stands.

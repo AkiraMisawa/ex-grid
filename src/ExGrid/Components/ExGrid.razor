@@ -652,14 +652,14 @@
         var barChrome = Chrome?.FormulaBarText(BuildFormulaBarTextContext());
         _formulaBarIsChrome = barChrome is not null;
         <div class="ex-formula-bar" style="@FormulaBarStyle()" role="presentation">
-            <form class="ex-name-box-form" @onsubmit="_onNameBoxSubmit ??= OnNameBoxSubmitted" @onsubmit:preventDefault>
+            <form class="ex-name-box-form" data-ex-claims="submit" @onsubmit="_onNameBoxSubmit ??= OnNameBoxSubmitted" @onsubmit:preventDefault>
                 @if (nameBoxChrome is not null)
                 {
-                    <div class="ex-name-box" style="@NameBoxStyle()">@nameBoxChrome</div>
+                    <div class="ex-name-box" data-ex-mode-text="@(_nameBoxText ?? NameBoxText())" style="@NameBoxStyle()">@nameBoxChrome</div>
                 }
                 else
                 {
-                    <input class="ex-name-box" style="@NameBoxStyle()" @bind:get="_nameBoxText ?? NameBoxText()" @bind:set="OnNameBoxInput" @bind:event="oninput" tabindex="-1" aria-label="@WordFor(GridLabelIds.NameBox)"
+                    <input class="ex-name-box" data-ex-mode-text="@(_nameBoxText ?? NameBoxText())" style="@NameBoxStyle()" @bind:get="_nameBoxText ?? NameBoxText()" @bind:set="OnNameBoxInput" @bind:event="oninput" tabindex="-1" aria-label="@WordFor(GridLabelIds.NameBox)"
                            @onfocus="_onNameBoxFocus ??= OnNameBoxFocusAsync"
                            @onblur="_onNameBoxBlur ??= OnNameBoxBlur" />
                 }
@@ -712,6 +712,7 @@
            is not captured again — the new menu would open with nothing asked to take the
            keyboard. A new opening is new contents, for a substituted Chrome's too. *@
         var menuColumn = _menuColumn;
+        _renderedPopoverFocusRequest = _popoverFocusRequest;
         var menuContext = BuildMenuContext(menuColumn);
         _shownMenuCommands = menuContext.Commands;
         var filterBelow = IsFilterable(menuColumn);
@@ -850,6 +851,7 @@
     @if (_contextCell is { } contextCell && contextCell.Row - _windowStart is var contextSlice
          && contextSlice >= 0 && contextSlice < _window.Count && contextCell.Column < Columns.Count)
     {
+        _renderedPopoverFocusRequest = _popoverFocusRequest;
         var contextMenu = BuildContextMenuContext(contextCell, contextSlice);
         <div class="ex-popover" style="@ContextPopoverStyle()" role="menu" @key="_popoverFocusRequest">
             @if (Chrome?.ContextMenu(contextMenu) is { } contextFragment)
@@ -870,6 +872,7 @@
            the opening like the others, with a Tab-wrap sentinel either side that hands the
            keyboard back to its field. The Chrome's contents, or the built-in form: Enter in the
            field is the form's implicit submission, which an IME's candidate Enter is not. *@
+        _renderedPopoverFocusRequest = _popoverFocusRequest;
         var findContext = BuildFindContext();
         <div class="ex-popover ex-popover-find" style="@FindPopoverStyle()" role="dialog"
              aria-label="@Label(FindPanelLabelIds.Title)" @key="_popoverFocusRequest">
@@ -908,6 +911,7 @@
     }
     @if (_consumerPopover is { } consumerPopover)
     {
+        _renderedPopoverFocusRequest = _popoverFocusRequest;
         @* A Consumer's popover (ADR-0050, item 16): the Consumer's contents in the core's frame,
            a popover by every popover rule (ADR-0039/0040) and keyed by its opening like the
            others. A sentinel either side wraps Tab inside it: the trailing one asks the contents
@@ -2058,6 +2062,7 @@
     private int _panelFocusLastRequest;
     private int _panelSearchRequest;
     private PopoverFocus _popoverFocusPending;
+    private int _renderedPopoverFocusRequest;
     private ElementReference _panelFirst;
     private ElementReference _panelLast;
     private ElementReference _panelValueField;
@@ -2319,6 +2324,7 @@
     // The core's focus functions a Chrome's editor controls call (TakeFocus), held so the
     // contexts built each render carry the same delegate.
     private Func<Task>? _chromeEditorTakeFocus;
+    private Action<string>? _chromeEditorTextChanged;
     private Func<Task>? _chromeBarTakeFocus;
     private Action<string>? _chromeFormulaBarTextChanged;
     // Whether a Chrome paints the bar's text field, and its focus requests — the core holds
@@ -5863,6 +5869,11 @@
             return;
         }
         var target = _popoverFocusPending;
+        // An older render's after-work can resume after a numbered input opened a popover,
+        // before that opening was rendered. Its controls have no references yet: keep the
+        // request for the render that paints them, as the Cell Editor's focus does.
+        if (_renderedPopoverFocusRequest != _popoverFocusRequest)
+            return;
         // The built-in filter paints its condition form while a value list is on its way,
         // and swaps it for the list when the answer lands: focusing one of its controls
         // before then would put DOM focus on an element about to be removed.
@@ -6692,9 +6703,10 @@
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     /// <param name="input">The number the script gave this input, which the root names once it has
     /// been answered (ADR-0220); 0 for none.</param>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task<ClipboardPayload?> BuildCopyPayloadAsync(bool withHeaders = false, int input = 0)
-        => AnsweredAsync(() => BuildCopyAsync(withHeaders), input);
+    public Task<ClipboardPayload?> BuildCopyPayloadAsync(bool withHeaders = false, int input = 0, GridInputText? fieldText = null)
+        => AnsweredAsync(() => BuildCopyAsync(withHeaders), input, fieldText);
 
     private async Task<ClipboardPayload?> BuildCopyAsync(bool withHeaders)
     {
@@ -6794,12 +6806,13 @@
     /// <returns>A task that completes once the paste has landed or been refused.</returns>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task OnPasteTakenAsync(long textLength, long htmlLength, int paint = PaintNotTold, int input = 0)
+    public Task OnPasteTakenAsync(long textLength, long htmlLength, int paint = PaintNotTold, int input = 0, GridInputText? fieldText = null)
         => AnsweredAsync(() => TakePasteAsync(textLength, htmlLength, paint, input,
             async (flavour, cancel) => _scrollHandle is { } handle
                 ? await handle.InvokeAsync<IJSStreamReference?>("takePaste", cancel, input, flavour)
-                : null, owned: true), input);
+                : null, owned: true), input, fieldText);
 
     private const string PasteText = "text", PasteHtml = "html";
 
@@ -7146,9 +7159,10 @@
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     /// <param name="input">The number the script gave this input, which the root names once it has
     /// been answered (ADR-0220); 0 for none.</param>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task OnCopyWriteRejectedAsync(int input = 0)
-        => AnsweredAsync(() => NotifyCopyRefused(CopyRefusalReason.ClipboardUnavailable), input);
+    public Task OnCopyWriteRejectedAsync(int input = 0, GridInputText? fieldText = null)
+        => AnsweredAsync(() => NotifyCopyRefused(CopyRefusalReason.ClipboardUnavailable), input, fieldText);
 
     /// <summary>
     /// A key the core claimed (ADR-0010). Called from the instance's own capture-phase
@@ -7176,14 +7190,15 @@
     /// </summary>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <remarks>The field text is adopted in this input's turn (ADR-0240 section 5).</remarks>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnKeyAsync(
         string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary,
         bool fromDescendant = false, string? editorText = null, int editorCaret = -1,
         int editorSelectionEnd = -1, bool editorCaretMoved = false, bool repeat = false, int paint = PaintNotTold,
-        int input = 0)
+        int input = 0, GridInputText? fieldText = null)
         => AnsweredAsync(() => HandleKeyAsync(key, ctrl, shift, alt, meta, metaIsPrimary, fromDescendant, editorText,
-            editorCaret, editorSelectionEnd, editorCaretMoved, repeat, paint), input);
+            editorCaret, editorSelectionEnd, editorCaretMoved, repeat, paint), input, fieldText);
 
     private async Task HandleKeyAsync(
         string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary, bool fromDescendant,
@@ -8989,6 +9004,7 @@
     /// </summary>
     private async Task OnNameBoxFocusAsync()
     {
+        _nameBoxEditing = true;
         if (_editMode == EditMode.None)
         {
             _suppressRender = true;
@@ -9000,9 +9016,23 @@
             RequestEditorFocus(fromField: true);
     }
 
-    private void OnNameBoxInput(string? text) => _nameBoxText = text ?? "";
+    private void OnNameBoxInput(string? text)
+    {
+        if (_nameInputOvertakenBy is { } carried)
+        {
+            if (string.Equals(text, carried, StringComparison.Ordinal))
+                _nameInputOvertakenBy = null;
+            return;
+        }
+        _nameBoxText = text ?? "";
+        _suppressRender = false;
+    }
 
-    private void OnNameBoxBlur() => _nameBoxText = null;
+    private void OnNameBoxBlur()
+    {
+        _nameBoxEditing = false;
+        _nameBoxText = null;
+    }
 
     /// <summary>
     /// Enter in the Name Box (ADR-0051): the typed text goes to the Consumer, who resolves it
@@ -9012,6 +9042,7 @@
     /// </summary>
     private async Task SubmitNameBoxAsync()
     {
+        _nameBoxEditing = false;
         var text = _nameBoxText;
         _nameBoxText = null;
         await ReclaimFocusAsync(fromField: true);
@@ -9044,7 +9075,7 @@
     private NameBoxContext BuildNameBoxContext()
         => new(
             _nameBoxText ?? NameBoxText(),
-            _chromeNameBoxTextChanged ??= text => FromChrome(() => _nameBoxText = text),
+            _chromeNameBoxTextChanged ??= text => FromChrome(() => OnNameBoxInput(text)),
             _chromeNameBoxFocused ??= () => FromChromeAsync(OnNameBoxFocusAsync),
             _chromeNameBoxBlurred ??= () => FromChrome(OnNameBoxBlur));
 
@@ -9101,16 +9132,9 @@
                 _ => CellEditMode.Overwrite,
             },
             _editError,
-            text =>
-            {
-                _editSurface = EditSurface.Cell;
-                TextTyped(text);
-                // The bar shows the same uncommitted text, the completion box answers it
-                // (ADR-0051) and the Reference Outlines follow it (ADR-0057): a Chrome's
-                // control reports into its own component, so the root is told to paint them.
-                if (ShowFormulaBar || CompleteEditorText is not null || ReferencesIn is not null)
-                    StateHasChanged();
-            },
+            // The surface's rendered text answers typing even without a Formula Bar or
+            // completion list (ADR-0240). Use the same overtaken-input rule as the built-in field.
+            _chromeEditorTextChanged ??= text => FromChrome(() => OnEditorInput(text)),
             () => _ = InvokeAsync(() => CommitAndMoveAsync(next => next)),
             () => _ = InvokeAsync(async () =>
             {
@@ -10309,6 +10333,7 @@
     {
         _disposed = true;
         _inputOrder?.Dispose();
+        _inputTexts.Clear();
         ReleaseWaitingRows();
         // A Find step still out is nobody's any more: the Consumer's search is told to stop
         // (ADR-0055, the fetching Source's rule).

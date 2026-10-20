@@ -1269,11 +1269,10 @@ Two traps live in that, and the DemoHost has hit both:
   the pointer reaches nothing. The ExSheet specs use a 1000 px high window.
 - A cell whose right edge sits under the vertical scrollbar has its fill handle there too,
   where a press lands on the scrollbar. Drag from a column that is wholly in view.
-- On the Server host, typing into an editor that is already open is not safe at full speed
-  (the SRV-5/ED-22 test in `declarations.spec.mjs` pins why). A test whose subject is not
-  typing speed types with `typeSteadily`, one character waited for at a time; a test that
-  asserts after typing waits for the editor to show the text before a press elsewhere, or
-  the press can land while the edit is still opening and point instead.
+- Type into the Cell Editor, Formula Bar and Name Box at machine speed, with no wait before
+  the next command. ADR-0240 ticket 03 carries field text with that command and includes typing
+  in the Settled Mark. Wait for the mark at the reading, not between those inputs. Popover and
+  dialog drafts remain outside the mark until their committing command.
 - A chord is two keydowns — the modifier first. A `{ once: true }` listener waiting for
   the key is spent on the modifier; and a `page.evaluate` that registers a listener must
   be awaited before the key is sent, or it races the key through a different channel.
