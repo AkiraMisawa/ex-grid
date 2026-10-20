@@ -7,7 +7,11 @@ namespace ExGrid.Components.Tests.Support;
 /// ADR-0220 §6: the lint for layer 3's specs. It refuses a spec that waits for a fixed time, or that
 /// reads the DOM, a scroll offset or a picture straight after an input with nothing between them that
 /// waits for the grid to have answered: an awaited expectation that retries, <c>circuitQuiet()</c>, or
-/// the Settled Mark (<c>settled(</c>). It does not judge what a test asserts.
+/// the Settled Mark (<c>settled(</c>). It does not judge what a test asserts, with one exception: a test
+/// that records where its keys land (<c>watchWhereKeysLand</c>) under a round trip
+/// (<c>setRoundTrip</c> above 0) types them with the host's answers held (<c>holdAnswers(true)</c>),
+/// because where a key lands depends on what stands when it is typed, and a round trip only makes it
+/// likely that what stood still stands (2026-10-20).
 /// <para>
 /// It reads a spec as statements, not lines: the text is cut at every <c>;</c>, <c>{</c> and <c>}</c>
 /// outside a string, a template, a regular expression and a comment, so a call written over several
@@ -18,13 +22,16 @@ namespace ExGrid.Components.Tests.Support;
 /// <para>
 /// A statement the lint cannot judge is allowed by a comment on it, or in the comment block straight
 /// above it, that names the rule and why: <c>// spec-lint: fixed-wait: &lt;why&gt;</c> or
-/// <c>// spec-lint: early-read: &lt;why&gt;</c>. An allowance without a reason is itself a finding.
+/// <c>// spec-lint: early-read: &lt;why&gt;</c> or <c>// spec-lint: round-trip: &lt;why&gt;</c>. An allowance without a reason is itself a finding.
 /// </para>
 /// </summary>
 public static class SpecLint
 {
-    /// <summary>What a finding refuses: a fixed wait, an early read, or an allowance that names no reason.</summary>
-    public enum Rule { FixedWait, EarlyRead, Allowance }
+    /// <summary>
+    /// What a finding refuses: a fixed wait, an early read, a key whose landing is recorded under a round
+    /// trip with the host's answers flowing, or an allowance that names no reason.
+    /// </summary>
+    public enum Rule { FixedWait, EarlyRead, RoundTrip, Allowance }
 
     /// <summary>One finding: its rule, the line its statement starts on, the statement, and why.</summary>
     public sealed record Finding(Rule Rule, int Line, string Statement, string Why);
@@ -76,6 +83,16 @@ public static class SpecLint
         @"^(?:test(?:\.\w+)*\(|(?:export\s+)?(?:async\s+)?function\b|(?:const|let)\s+[\w$]+\s*=\s*(?:async\s+)?(?:\([^)]*\)|[\w$]+)\s*=>)",
         RegexOptions.CultureInvariant);
 
+    // A round trip set above 0, or taken back to 0; the host's answers held or let go; keys watched for
+    // where they land (fixtures.mjs, sheet-toolbar.spec.mjs, popovers.spec.mjs).
+    private static readonly Regex RoundTripOn = new(@"\bsetRoundTrip\(\s*(?!0\s*\))[^)]", RegexOptions.CultureInvariant);
+    private static readonly Regex RoundTripOff = new(@"\bsetRoundTrip\(\s*0\s*\)", RegexOptions.CultureInvariant);
+    private static readonly Regex Hold = new(@"\bholdAnswers\(\s*true\s*\)", RegexOptions.CultureInvariant);
+    private static readonly Regex LetGo = new(@"\bholdAnswers\(\s*false\s*\)", RegexOptions.CultureInvariant);
+    private static readonly Regex Watches = new(@"\bwatchWhereKeysLand\(", RegexOptions.CultureInvariant);
+    private static readonly Regex Bound = new(@"^(?:const|let)\s+(?<name>[\w$]+)\s*=\s*await\b", RegexOptions.CultureInvariant);
+    private static readonly Regex KeysTyped = new(@"^(?:await\s+)?keyTips\(", RegexOptions.CultureInvariant);
+
     private static readonly Regex Allowance = new(
         @"spec-lint:\s*(?<rule>[\w-]+)\s*:?\s*(?<why>.*)$", RegexOptions.CultureInvariant);
 
@@ -95,9 +112,9 @@ public static class SpecLint
                 continue;
             }
             var rule = allowance.Groups["rule"].Value;
-            if (rule is not ("fixed-wait" or "early-read"))
+            if (rule is not ("fixed-wait" or "early-read" or "round-trip"))
             {
-                findings.Add(new(Rule.Allowance, line, comment.Trim(), $"\"{rule}\" is no rule of the lint's: it allows fixed-wait or early-read"));
+                findings.Add(new(Rule.Allowance, line, comment.Trim(), $"\"{rule}\" is no rule of the lint's: it allows fixed-wait, early-read or round-trip"));
             }
             else if (allowance.Groups["why"].Value.Trim().Length < ShortestReason)
             {
@@ -106,9 +123,42 @@ public static class SpecLint
         }
 
         int? owed = null;
+        // The round-trip rule: the first key typed while the round trip is up, the answers flow and its
+        // landing is watched; it is a finding once the test asserts where its keys landed.
+        bool slowed = false, held = false, said = false;
+        var watchers = new List<string>();
+        Statement? typed = null;
         foreach (var statement in statements)
         {
             var s = statement.Text;
+            if (Starts.IsMatch(s) && s.StartsWith("test", StringComparison.Ordinal))
+            {
+                (slowed, held, said, typed) = (false, false, false, null);
+                watchers.Clear();
+            }
+            if (RoundTripOn.IsMatch(s)) slowed = true;
+            if (RoundTripOff.IsMatch(s)) slowed = false;
+            if (Hold.IsMatch(s)) held = true;
+            if (LetGo.IsMatch(s)) held = false;
+            // const landed = await watchWhereKeysLand(page), and const keys = await landed(): both name the record.
+            if (Bound.Match(s) is { Success: true } bound
+                && (Watches.IsMatch(s) || watchers.Any((w) => s.Contains(w + "()", StringComparison.Ordinal))))
+            {
+                watchers.Add(bound.Groups["name"].Value);
+            }
+            if (slowed && !held && typed is null && watchers.Count > 0
+                && (Input.IsMatch(s) || SettledInput.IsMatch(s) || KeysTyped.IsMatch(s))
+                && !Allowed(statement, "round-trip", lines, comments))
+            {
+                typed = statement;
+            }
+            if (typed is { } key && !said && s.Contains("expect(", StringComparison.Ordinal)
+                && watchers.Any((w) => System.Text.RegularExpressions.Regex.IsMatch(s, $@"(?<![\w$]){System.Text.RegularExpressions.Regex.Escape(w)}\b")))
+            {
+                said = true;
+                findings.Add(new(Rule.RoundTrip, key.FirstLine, key.Text,
+                    $"where this key lands is asserted on line {statement.FirstLine}, under a round trip with the host's answers flowing: hold them across the keys (holdAnswers), for the round trip only makes it likely that what stood still stands (ADR-0220 §6)"));
+            }
             if (FixedWait.IsMatch(s) && !Allowed(statement, "fixed-wait", lines, comments))
             {
                 findings.Add(new(Rule.FixedWait, statement.FirstLine, s,
