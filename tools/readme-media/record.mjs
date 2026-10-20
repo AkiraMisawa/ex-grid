@@ -23,7 +23,6 @@ const args = Object.fromEntries(process.argv.slice(2).reduce((pairs, arg, i, all
 const base = String(args.base ?? 'http://localhost:5310/').replace(/\/?$/, '/');
 const only = args.only ? String(args.only).split(',') : null;
 const chromes = String(args.chrome ?? 'builtin,mud').split(',');
-const width = 1280, height = 720;
 const out = join(here, 'out');
 mkdirSync(out, { recursive: true });
 
@@ -40,8 +39,11 @@ const browser = await chromium.launch({
 });
 
 for (const scene of scenes) {
-  for (const chrome of chromes) {
+  // A scene may be recorded under one Chrome only, where the other would show the same thing again.
+  for (const chrome of chromes.filter(c => !scene.chromes || scene.chromes.includes(c))) {
     const name = `${scene.name}-${chrome}`;
+    // 1280×720 unless the scene needs more room, as a screen that lays out side by side only when wide.
+    const { width, height } = scene.viewport ?? { width: 1280, height: 720 };
     const videoDir = join(out, `video-${name}`);
     rmSync(videoDir, { recursive: true, force: true });
     const context = await browser.newContext({
@@ -73,8 +75,10 @@ for (const scene of scenes) {
 
     const video = join(videoDir, readdirSync(videoDir)[0]);
     const gif = join(out, `${name}.gif`);
+    // A scene may ask for a narrower GIF, or fewer frames or colours, to keep a long one small.
+    const { width: gifWidth = 960, fps = 10, colours = 96, dither = 'bayer:bayer_scale=5' } = scene.gif ?? {};
     execFileSync('ffmpeg', ['-v', 'error', '-y', '-ss', String(start), '-i', video, '-t', String(end - start),
-      '-vf', 'fps=10,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle',
+      '-vf', `fps=${fps},scale=${gifWidth}:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=${colours}:stats_mode=diff[p];[b][p]paletteuse=dither=${dither}:diff_mode=rectangle`,
       gif]);
     rmSync(videoDir, { recursive: true, force: true });
     console.log(`${name}: ${(end - start).toFixed(1)} s -> ${gif}`);

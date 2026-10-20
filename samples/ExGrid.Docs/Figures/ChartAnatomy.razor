@@ -1,0 +1,49 @@
+@page "/figure/chart-anatomy"
+@layout BareLayout
+@using ExChart
+@using ExChart.Components
+@using ExChart.Engine
+@using ExGrid.Docs.Examples.Chart
+
+@* The chart the ExChart Overview's figure names the parts of. tools/readme-media/figures.mjs opens this
+   page, rests the pointer on the plot as a user would, numbers each part and takes the picture, so the
+   figure is never drawn by hand (ADR-0110). Two years of an index's sessions are more candles than the
+   plot has pixels for, so they merge into weeks and the Notes say so (ADR-0302); the volume stands in a
+   panel of its own below them, and the price axis, which does not reach zero, keeps its break mark. *@
+<ShowcaseFrame Title="The parts of a chart">
+    <style>
+        .anatomy-page {
+            min-height: calc(100vh - var(--docs-banner-height, 0px));
+            padding: 24px;
+            box-sizing: border-box;
+            background: light-dark(#ffffff, #121418);
+        }
+        .anatomy-chart { width: @(Width)px; }
+    </style>
+    <div class="anatomy-page">
+        <div class="anatomy-chart">
+            <ExChart Definition="Definition" Title="Equity index" FileName="Equity index" Width="Width" Height="Height" />
+        </div>
+    </div>
+</ShowcaseFrame>
+
+@code {
+    private const double Width = 720, Height = 420;
+
+    private static string Price(object v) => Convert.ToDecimal(v, CultureInfo.InvariantCulture).ToString("N2", CultureInfo.InvariantCulture);
+
+    // One Price Range, each session's open, high, low, close and volume, and the page's own 25-day average.
+    private static readonly PriceBar[] Bars =
+        [.. IndexSessions.All.Select(s => new PriceBar(s.Date.DayNumber, s.Open, s.High, s.Low, s.Close, s.Volume))];
+
+    private static readonly ChartSeries Average = ChartSeries.Of("average", "25-day average", SeriesKind.Level,
+        IndexSessions.All.Select((s, i) => new ChartPoint(s.Date.DayNumber, i < 24 ? null
+            : ChartValue.Of(Math.Round(IndexSessions.All.Skip(i - 24).Take(25).Average(x => x.Close), 2)))))
+        with { FromZero = false, Format = Price };
+
+    private static readonly ChartDefinition Definition = new(ChartAxis.Dates("Date"),
+    [
+        ChartSeries.Candles("index", "Index", Bars) with { Format = Price },
+        Average,
+    ]);
+}

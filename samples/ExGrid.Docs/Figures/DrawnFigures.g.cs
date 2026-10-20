@@ -10,6 +10,31 @@ internal static class DrawnFigures
 {
     internal static readonly IReadOnlyDictionary<string, DrawnFigure> ByName = new Dictionary<string, DrawnFigure>
     {
+        ["chart-anatomy"] = new(
+            "chart-anatomy", 832, 581,
+            "An ExChart of two years of an equity index as weekly candles with a 25-day average and the volume in a panel below, the pointer resting on the plot; each part the list names is ringed and numbered",
+            [
+                new("Chart Filters", "the series shown and the range, raised to your application, which holds them"),
+                new("Export", "the CSV, SVG and PNG of what the chart draws, each saved on one click"),
+                new("Legend", "a click on an entry hides its series"),
+                new("Tooltip", "every series of the panel, at the position the pointer is over"),
+                new("Break mark", "the axis does not start at zero, and says so at its foot"),
+                new("Merged candle", "too many sessions for the plot's pixels: each candle is a week, and the tooltip names its rows"),
+                new("Guide", "the pointer's position, drawn down every panel"),
+                new("Panel", "the volume, below its candles on a value axis of its own"),
+                new("Notes", "what the chart did to fit, said in words, with the Consumer's own notes"),
+            ]),
+        ["chart-dock-anatomy"] = new(
+            "chart-dock-anatomy", 1104, 468,
+            "A grid of a curve history under MudBlazor with a range selected and its context menu open, beside the Chart Dock holding the chart made from that range; each part the list names is ringed and numbered",
+            [
+                new("Selection", "the cells to chart, the Date beside the figures"),
+                new("Chart commands", "in the grid's context menu: a new chart with a series a column or a row, or the series added to a chart already open"),
+                new("Chart Dock", "the MudBlazor Wrapper's place for charts made from the grid: beside it or below it, never over it"),
+                new("Tab", "one a chart, which keeps following the rows it was made from"),
+                new("Toolbar", "Chart Filters, the table and the files, in MudBlazor's own buttons and menus"),
+                new("Legend", "a series a tenor, coloured from the MudBlazor theme's palette"),
+            ]),
         ["grid-anatomy"] = new(
             "grid-anatomy", 778, 524,
             "An ExGrid of positions under Header Groups, panned past its Pinned Columns, with two rows marked and a range selected; each part the list names is ringed and numbered",

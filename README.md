@@ -20,15 +20,16 @@ keep the same DOM, and a grid that refuses rather than guesses: a number that do
 
 [![A trade blotter in ExGrid: prices tick and the changed cells flash, a desk is chosen, and a rectangle of P&L is selected with the mouse and extended with the keyboard](docs/readme/blotter-builtin.gif)](https://akiramisawa.github.io/ex-grid/showcase/blotter)
 
-One repository, three products, each a separate package:
+One repository, four products, each a separate package:
 
 | | |
 |---|---|
 | **ExGrid** | The grid. Display-oriented: your application holds the rows, ExGrid shows them and tells you what the user asked for |
 | **ExSheet** | A general-purpose sheet — cells addressed `A1`, Formulas computed as Excel computes them — drawn by ExGrid |
 | **ExPivot** | Excel's PivotTable — Filters, Columns, Rows and Values in a Fields pane — drawn by ExGrid |
+| **ExChart** | Charts of the data the grids show, or your application hands over, drawn as SVG — charted from a selection in a click |
 
-Each has a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.MudBlazor`).
+Each has a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.MudBlazor`, `ExChart.MudBlazor`).
 
 ## Features
 
@@ -146,6 +147,94 @@ The parts of a pivot, as [the Docs Site](https://akiramisawa.github.io/ex-grid/e
 
 </details>
 
+### ExChart
+
+Line, step, point, candle, scatter and 3D surface charts of the family's data, drawn as SVG by Blazor.
+Chart a grid's selection from its context menu, or hand ExChart a definition in your data's terms.
+Three packages: `ExChart.Engine` (the definitions and the arithmetic, no UI), `ExChart` (the
+components) and `ExChart.MudBlazor` (the Chart Dock, a toolbar and menus in MudBlazor's controls).
+
+- **Every series says what it is** — a level is a line, a rate over an interval a step, an amount
+  per period is drawn per period, a price range a candle, an observation an unjoined mark; a
+  series without a Series Kind is refused, never drawn with a default
+- **Only what it is given** — no spline, no extrapolation; a missing value is a gap, never a zero,
+  and a curve between quotes is your analytics', declared as such and named in the Notes
+- **Read with the pointer** — the tooltip lists every series at the pointer's position and the
+  guide runs down every panel; a drag narrows the range, a legend entry hides its series, and
+  both come back to your application as Chart Filters, because the chart holds no View State
+- **Charted from the grid** — the chart keeps following the rows it was made from, and a click on
+  a point goes to its row
+- **Too many points for the pixels** is said, not hidden: a series is thinned to each pixel's
+  minimum and maximum, and candles merge into the market's own weeks or months
+- **A 3D surface** of a vol table, turned with the mouse or the keys, and sliced into a smile or a
+  term structure with a click
+- **Read aloud, and saved** — a summary for a screen reader, "View as table", and the CSV, SVG and
+  PNG on one click
+
+A selection charted into the Chart Dock under MudBlazor, a new tab beside the first:
+
+[![The Exposure profile under MudBlazor: the Date and EPE's three columns are selected by their headers, Chart is chosen from the grid's context menu, and the new chart opens in a second tab of the Chart Dock below the grid](docs/readme/exposure-mud.gif)](https://akiramisawa.github.io/ex-grid/showcase/exposure?chrome=mud)
+
+The parts of a chart, as [the Docs Site](https://akiramisawa.github.io/ex-grid/exchart) and the API name them:
+
+<!-- figure chart-anatomy -->
+[![An ExChart of two years of an equity index as weekly candles with a 25-day average and the volume in a panel below, the pointer resting on the plot; each part the list names is ringed and numbered](samples/ExGrid.Docs/wwwroot/figures/chart-anatomy.png)](https://akiramisawa.github.io/ex-grid/exchart)
+
+1. **Chart Filters**: the series shown and the range, raised to your application, which holds them
+2. **Export**: the CSV, SVG and PNG of what the chart draws, each saved on one click
+3. **Legend**: a click on an entry hides its series
+4. **Tooltip**: every series of the panel, at the position the pointer is over
+5. **Break mark**: the axis does not start at zero, and says so at its foot
+6. **Merged candle**: too many sessions for the plot's pixels: each candle is a week, and the tooltip names its rows
+7. **Guide**: the pointer's position, drawn down every panel
+8. **Panel**: the volume, below its candles on a value axis of its own
+9. **Notes**: what the chart did to fit, said in words, with the Consumer's own notes
+<!-- /figure chart-anatomy -->
+
+The Chart Dock beside the grid it charts:
+
+<!-- figure chart-dock-anatomy -->
+[![A grid of a curve history under MudBlazor with a range selected and its context menu open, beside the Chart Dock holding the chart made from that range; each part the list names is ringed and numbered](samples/ExGrid.Docs/wwwroot/figures/chart-dock-anatomy.png)](https://akiramisawa.github.io/ex-grid/exchart)
+
+1. **Selection**: the cells to chart, the Date beside the figures
+2. **Chart commands**: in the grid's context menu: a new chart with a series a column or a row, or the series added to a chart already open
+3. **Chart Dock**: the MudBlazor Wrapper's place for charts made from the grid: beside it or below it, never over it
+4. **Tab**: one a chart, which keeps following the rows it was made from
+5. **Toolbar**: Chart Filters, the table and the files, in MudBlazor's own buttons and menus
+6. **Legend**: a series a tenor, coloured from the MudBlazor theme's palette
+<!-- /figure chart-dock-anatomy -->
+
+Reading a chart: the tooltip and the guide follow the pointer, a legend entry hides a series, and a
+drag narrows the range that Chart Filters show:
+
+[![The Exposure profile's chart: the pointer moves along EPE before and after with the tooltip and the guide following it, a legend entry hides and shows a series, a drag narrows the dates and Chart Filters show the range, then Reset range](docs/readme/hover-builtin.gif)](https://akiramisawa.github.io/ex-grid/showcase/exposure)
+
+<details>
+<summary>The 3D vol surface, candles that merge, and a scatter</summary>
+
+The EURUSD volatility surface beside its quotes, turned with a drag and the arrow keys, then sliced
+into a smile and a term structure:
+
+[![The FX volatility Showcase: the surface is turned with the mouse and the arrow keys, a click on a tenor's line draws its smile beside it, and a click on the ATM line its term structure](docs/readme/surface-builtin.gif)](https://akiramisawa.github.io/ex-grid/showcase/fx-volatility)
+
+Ten years of an index merged into monthly candles, days again when the range is narrowed:
+
+[![The Equity index Showcase: a merged candle's tooltip names its month and rows, a drag across a few months narrows the range and the candles are days again, and Whole range merges them back into months](docs/readme/candles-builtin.gif)](https://akiramisawa.github.io/ex-grid/showcase/equity-index)
+
+200 names' CDS spread against leverage: a rectangle narrows both axes, and a click on a mark goes to its row:
+
+[![The CDS spread vs leverage Showcase: a rectangle across the crowded lower left narrows both axes, the whole range comes back, and a click on the distressed name's mark moves the grid to its row](docs/readme/scatter-builtin.gif)](https://akiramisawa.github.io/ex-grid/showcase/cds-spread)
+
+</details>
+
+The [Chart section of the Docs Site](https://akiramisawa.github.io/ex-grid/exchart) has a page and
+an Example for each of these, and five Showcases put them in a desk's screens:
+[exposure profile](https://akiramisawa.github.io/ex-grid/showcase/exposure),
+[curves](https://akiramisawa.github.io/ex-grid/showcase/curves),
+[FX volatility](https://akiramisawa.github.io/ex-grid/showcase/fx-volatility),
+[CDS spread vs leverage](https://akiramisawa.github.io/ex-grid/showcase/cds-spread) and
+[equity index](https://akiramisawa.github.io/ex-grid/showcase/equity-index).
+
 ## Quick start
 
 ```sh
@@ -188,6 +277,8 @@ dotnet add package ExSheet --prerelease             # the sheet; ExSheet.Engine 
 dotnet add package ExSheet.MudBlazor --prerelease
 dotnet add package ExPivot --prerelease             # the pivot table; ExPivot.Engine alone aggregates
 dotnet add package ExPivot.MudBlazor --prerelease
+dotnet add package ExChart --prerelease             # the charts; ExChart.Engine alone holds the definitions
+dotnet add package ExChart.MudBlazor --prerelease
 dotnet add package ExGrid.Data.Arrow --prerelease   # a Snapshot as Apache Arrow
 ```
 
@@ -198,6 +289,7 @@ Each package's own readme takes it from there:
 | ExGrid | [`ExGrid`](src/ExGrid/README.md), [`ExGrid.MudBlazor`](src/ExGrid.MudBlazor/README.md) |
 | ExSheet | [`ExSheet`](src/ExSheet/README.md), [`ExSheet.Engine`](src/ExSheet.Engine/README.md), [`ExSheet.MudBlazor`](src/ExSheet.MudBlazor/README.md) |
 | ExPivot | [`ExPivot`](src/ExPivot/README.md), [`ExPivot.Engine`](src/ExPivot.Engine/README.md), [`ExPivot.MudBlazor`](src/ExPivot.MudBlazor/README.md) |
+| ExChart | [`ExChart`](src/ExChart/README.md), [`ExChart.Engine`](src/ExChart.Engine/README.md), [`ExChart.MudBlazor`](src/ExChart.MudBlazor/README.md) |
 | Data | [`ExGrid.Data`](src/ExGrid.Data/README.md), [`ExGrid.Data.Arrow`](src/ExGrid.Data.Arrow/README.md) |
 
 **Requirements:** .NET 10 or newer, Chrome or Edge, and an interactive render mode. ExGrid is
@@ -210,8 +302,11 @@ page has Examples you can drive with the mouse and the keyboard, the code each o
 API. A switch at the top runs every Example under the built-in Chrome or MudBlazor's. The
 Showcases are whole applications:
 [a trade blotter](https://akiramisawa.github.io/ex-grid/showcase/blotter),
-[a budget sheet](https://akiramisawa.github.io/ex-grid/showcase/budget) and
-[a sales analysis](https://akiramisawa.github.io/ex-grid/showcase/sales).
+[a budget sheet](https://akiramisawa.github.io/ex-grid/showcase/budget),
+[a sales analysis](https://akiramisawa.github.io/ex-grid/showcase/sales), and ExChart's five, from
+[an exposure profile](https://akiramisawa.github.io/ex-grid/showcase/exposure) to
+[an equity index](https://akiramisawa.github.io/ex-grid/showcase/equity-index)
+(all of them on [the Showcases page](https://akiramisawa.github.io/ex-grid/showcases)).
 
 To run the site locally, clone the repository (the .NET 10 SDK is all it needs; see
 [CONTRIBUTING](CONTRIBUTING.md) for Nix) and open <http://localhost:5310>:
