@@ -588,6 +588,32 @@ function holdForcedPresses(page) {
     }
 }
 
+// A failed test carries the Input Journal of every grid on its page (ADR-0240 section 10): what the
+// script numbered, held, let go and called the core with, and what the stamp answered, read from each
+// root as the test ends, before anything navigates away. A passing test reads nothing.
+async function readJournals(page, testInfo) {
+    if (testInfo.status === testInfo.expectedStatus || testInfo.status === 'skipped' || page.isClosed()) {
+        return null;
+    }
+    return page.evaluate(() => [...document.querySelectorAll('.ex-grid')].map((root) => ({
+        root: root.id,
+        journal: root[Symbol.for('ex-grid.input-journal')]?.() ?? null,
+    }))).catch((error) => [{ unread: String(error) }]);
+}
+
+// With the core's side, which the Server host writes to its log under the journal's category; on
+// WebAssembly the core runs in the page and logs nothing (CON-8), so the script's side is the record.
+async function attachJournals(testInfo, journals, hostLog) {
+    if (journals === null) {
+        return;
+    }
+    const core = hostLog.filter((line) => line.includes(' ExGrid.InputOrder: '));
+    await testInfo.attach('input-journal.json', {
+        contentType: 'application/json',
+        body: JSON.stringify({ script: journals, core }, null, 1),
+    });
+}
+
 // A test with a document of its own (ADR-0056): a context of its own, every navigation real.
 async function ownPage(app, page, use, options, testInfo) {
     holdForcedPresses(page);
@@ -598,6 +624,7 @@ async function ownPage(app, page, use, options, testInfo) {
     page.reload = thenReady(page, page.reload.bind(page));
 
     await use(page);
+    const journals = await readJournals(page, testInfo);
 
     // A test that raised the round trip, or held the host's answers, leaves the wire as the
     // next one expects it.
@@ -607,7 +634,9 @@ async function ownPage(app, page, use, options, testInfo) {
     for (const pattern of options.expectedLeaks) {
         expect.soft(false, `the harness named ${pattern}: a document of the test's own is not checked`).toBe(true);
     }
-    verdict(sink, app.hostLog(), options, testInfo);
+    const hostLog = app.hostLog();
+    await attachJournals(testInfo, journals, hostLog);
+    verdict(sink, hostLog, options, testInfo);
 }
 
 async function sharedPage(app, context, viewport, use, options, testInfo) {
@@ -660,6 +689,7 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
     const listenersBefore = new Map(page.eventNames().map((name) => [name, page.listeners(name)]));
 
     await use(page);
+    const journals = await readJournals(page, testInfo);
 
     for (const undo of restore.reverse()) {
         undo();
@@ -705,7 +735,9 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
     }
     expect.soft(leaks.filter((leak) => !options.expectedLeaks.some((pattern) => pattern.test(leak))),
         'nothing left outside the test\'s own page (ADR-0056)').toEqual([]);
-    verdict(sink, app.hostLog(), options, testInfo);
+    const hostLog = app.hostLog();
+    await attachJournals(testInfo, journals, hostLog);
+    verdict(sink, hostLog, options, testInfo);
     if (!handOn || leaks.length > 0 || testInfo.errors.length > errorsBefore) {
         await app.close();
     }

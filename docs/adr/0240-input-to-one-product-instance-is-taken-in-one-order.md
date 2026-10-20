@@ -224,6 +224,14 @@ category. Neither is a public API: no parameter turns it on and no Consumer read
 both to a failed test, per instance. *Rejected:* a Consumer-facing opt-in (a public surface and a
 Change Note for a diagnostic), and a hook only the DemoHost turns on (blind outside CI).
 
+*As built (input-order ticket 08, 2026-10-20):* the script keeps 512 entries per instance, read through
+`Symbol.for('ex-grid.input-journal')` on the root and deleted with it; calls that report the pointer are
+not journaled, and a value is kept as a number, a boolean, a string of up to 16 characters or its kind,
+so a paste or a field's text never is. The core writes under `ExGrid.InputOrder`
+(`InputOrder.JournalCategory`); the Server DemoHost lets that category through to its log file at Debug,
+and `fixtures.mjs` attaches both halves to a failed test as `input-journal.json`. On WebAssembly the
+core's half is not written to the console, which CON-8 keeps silent.
+
 ### 11. Input made while the Server circuit is down is refused, never replayed
 
 A numbered input whose call to the core fails (the circuit is disconnected, so the promise rejects) is

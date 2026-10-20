@@ -398,6 +398,18 @@ EXGRID_HOSTING=server EXGRID_RTT_FLOOR=150 EXGRID_CPU_THROTTLE=4 ./counted-run.s
 A pull request that changes the workflow, `counted-run.sh` or the proxy runs one small file through
 every job of the hunt instead, so the jobs are seen to count before they are trusted to hunt.
 
+### A failed test carries the Input Journal
+
+A test that fails attaches `input-journal.json` (ADR-0240 section 10), read as the test ends, before
+anything navigates away. `script` holds, for every grid on the page, its root's id and the last 512
+entries of its script's journal: each input numbered, each call to the core and whether it was replied
+to or failed, each input held and let go, each hold, each number the stamp answered, and each change of
+the Settled Mark, stamped with the wall clock. `core` holds the Server host's lines for the same test
+under `ExGrid.InputOrder`, written at Debug to the host log: each number received, started, finished,
+voided and answered. On WebAssembly the core runs in the page and logs nothing (CON-8), so `core` is
+empty there and the script's calls and replies are the record. A passing test attaches nothing.
+`input-journal.spec.mjs` reads the journal from a grid that passed, to pin what it says.
+
 ## What a test shares with the rest of its file
 
 A spec file boots the app once; every test in it mounts its page afresh (ADR-0056). Booting
