@@ -42,10 +42,11 @@ public partial class ExSheet
     /// Gives a Sheet just opened its seed, the Consumer's or one chosen now, at a count of 0 changes.
     /// A prerender chooses none, so without the Consumer's its draws wait.
     /// </summary>
-    private void GiveTheSeed(Sheet sheet)
+    /// <remarks>Each Sheet of a Workbook keeps its own seed and count until the Workbook holds them (ticket 13 of exsheet-workbook): every Sheet is given the same.</remarks>
+    private void GiveTheSeed(IEnumerable<Sheet> sheets)
     {
         _chosenSeed = RendererInfo.IsInteractive ? ChooseSeed() : null;
-        sheet.SetSeed(Seed ?? _chosenSeed, 0);
+        foreach (var sheet in sheets) sheet.SetSeed(Seed ?? _chosenSeed, 0);
     }
 
     private static ulong ChooseSeed()
@@ -65,8 +66,12 @@ public partial class ExSheet
         if (_seedParameterSeen && Seed == _seedParameter) return;
         _seedParameterSeen = true;
         _seedParameter = Seed;
-        if (_sheet is not { } sheet) return;
-        _seedChange = sheet.SetSeed(Seed ?? _chosenSeed);
+        if (_workbook is not { } workbook) return;
+        foreach (var sheet in workbook.Sheets)
+        {
+            var change = sheet.SetSeed(Seed ?? _chosenSeed);
+            if (sheet == _sheet) _seedChange = change;
+        }
     }
 
     private async Task PaintTheSeedAsync()

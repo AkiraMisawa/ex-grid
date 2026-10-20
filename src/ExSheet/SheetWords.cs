@@ -43,6 +43,14 @@ internal static class SheetWords
     internal static string ToolbarWhileEditing =>
         "A cell is being edited. Press Enter to commit the edit or Escape to cancel it first.";
 
+    // ADR-0331: the Sheet Tabs' accessible name, and why another Sheet is not shown while an edit is
+    // open: the edit stands over a cell of the Sheet shown, and pointing at another Sheet's cells from
+    // a Formula is not built yet (ticket 09 of exsheet-workbook).
+    internal static string SheetTabsName => "Sheets";
+
+    internal static string SheetSwitchWhileEditing =>
+        "Another Sheet was not shown: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then try again.";
+
     // ADR-0100: Excel's Comma Style pads with *, as Accounting does (FormatCellsOffer).
     internal static string CommaStyleUnread =>
         "Excel's Comma Style pads each value with * to fill its column, which ExSheet does not read. Use Number with the thousands separator in Format Cells.";
@@ -57,9 +65,9 @@ internal static class SheetWords
         EditDiscardReason.ColumnsChanged => "What was typed was not entered: the columns changed while the cell was being edited.",
         EditDiscardReason.ColumnNoLongerEditable => "What was typed was not entered: the cell stopped taking entries while it was being edited.",
         // ADR-0142, decided 2026-10-08: typing that reached the Sheet after another Sheet Document was
-        // opened, the one move of order a Sheet has (ADR-0046).
+        // opened or another Sheet shown, the two moves of order a Sheet has (ADR-0046, ADR-0331).
         EditDiscardReason.OrderMoved =>
-            "What was typed was not entered: another Sheet Document was opened before the typing reached the Sheet, so nothing was written.",
+            "What was typed was not entered: another Sheet was shown, or another Sheet Document opened, before the typing reached the Sheet, so nothing was written.",
         // ADR-0142: a grid Source replaced by another instance. ExSheet binds none, so it is said for truth's sake.
         EditDiscardReason.SourceChanged =>
             "What was typed was not entered: the data the Sheet shows was replaced while it was being typed, so nothing was written.",
@@ -120,9 +128,9 @@ internal static class SheetWords
         PasteRefusalReason.SourceChanged =>
             "Nothing was entered: the data the Sheet shows was replaced before it landed, so nothing was written. Select the cells again.",
         // ADR-0142, ADR-0046: a Sheet's rows are places, and its Row Sequence Version moves only when
-        // another Sheet Document is opened in place of the one shown.
+        // another Sheet Document is opened in place of the one shown, or another Sheet shown (ADR-0331).
         PasteRefusalReason.OrderMoved =>
-            "Nothing was entered: another Sheet Document was opened after the cells were selected, so nothing was written. Select the cells again.",
+            "Nothing was entered: another Sheet was shown, or another Sheet Document opened, after the cells were selected, so nothing was written. Select the cells again.",
         // A reason with no sentence here would be told as something it is not (principle 1).
         _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "A paste refusal the Sheet does not word."),
     };
@@ -131,10 +139,11 @@ internal static class SheetWords
     /// LV-20): the editor stands with the typing, and only Escape leaves it.</summary>
     internal static string CommitRefused(string address, CommitRefusalReason reason) => reason switch
     {
-        // ADR-0046: in a Sheet only another Sheet Document opened in place of the one shown moves the
-        // order, and ExSheet discards an edit open across that itself; said true all the same.
+        // ADR-0046: in a Sheet only another Sheet Document opened in place of the one shown, or another
+        // Sheet shown (ADR-0331), moves the order, and ExSheet discards an edit open across a document
+        // and refuses to show another Sheet over one; said true all the same.
         CommitRefusalReason.OrderMoved =>
-            $"What was typed was not entered: another Sheet Document was opened while {address} was being edited, so nothing was written. Press Escape to leave it.",
+            $"What was typed was not entered: another Sheet was shown, or another Sheet Document opened, while {address} was being edited, so nothing was written. Press Escape to leave it.",
         CommitRefusalReason.RowLeftTheWindow =>
             $"What was typed was not entered: the row of {address} is not among the rows the Sheet holds now. Bring it back into view and press Enter again, or press Escape to leave it.",
         // A reason with no sentence here would be told as something it is not (principle 1).

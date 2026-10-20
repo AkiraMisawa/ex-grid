@@ -120,6 +120,12 @@ internal static class KeyboardByHand
         new("The Sheet Toolbar", "[Alt] released alone, or [F10]",
             "Show the KeyTips: each row's letter, then each item's, so that [Alt], [H], [1] sets bold and [Alt], [H], [O], [E] opens Format Cells. [Escape] goes back one level.",
             "exsheet/formatting#the-sheet-toolbar", ["ADR-0100"], Canonical: ["Alt+Alt", "F10"]),
+        new("Sheet Tabs", "[Ctrl] + [Page Up], [Ctrl] + [Page Down]",
+            "Show the Sheet before or after the one shown. Each Sheet keeps its own Selection and scroll position.",
+            "exsheet/workbook#sheet-tabs", ["ADR-0331"], Canonical: ["Control+PageUp", "Control+PageDown"]),
+        new("Sheet Tabs", "[←], [→], [Home], [End] on a tab",
+            "Show the Sheet before or after, the first or the last. [Enter] or [Escape] hands the keyboard back to the grid.",
+            "exsheet/workbook#sheet-tabs", ["ADR-0331"]),
     ];
 
     /// <summary>ExPivot's keys: ExGrid's on the report, and those of its pane and panels.</summary>

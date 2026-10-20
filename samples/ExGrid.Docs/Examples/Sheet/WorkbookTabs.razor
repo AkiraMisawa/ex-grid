@@ -1,0 +1,38 @@
+@using ExSheet.Components
+@using ExSheet.Engine
+
+<div class="d-flex gap-2 mb-3">
+    <button type="button" @onclick="AddSheet">Add a sheet</button>
+    <button type="button" @onclick="Save">Save</button>
+    <button type="button" disabled="@(_saved is null)" @onclick="Load">Load the saved copy</button>
+    <span>@_said</span>
+</div>
+
+<ExSheet @ref="_sheet" @bind-Workbook="_workbook" ViewportHeight="280" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    private ExSheet _sheet = default!;
+
+    // The claim, and a summary that reads it with References such as Claim!D7.
+    private WorkbookDocument? _workbook = Expenses.Workbook();
+
+    // Where your application would write to a database or a file.
+    private string? _saved;
+    private string _said = "";
+
+    // A Sheet operation is one step on the undo stack, as an edit is.
+    private Task AddSheet() => _sheet.DoAsync(SheetEdit.InsertSheet());
+
+    private void Save()
+    {
+        _saved = _workbook!.ToJson();
+        _said = $"Saved {_workbook.Sheets.Count} sheets, '{_workbook.Shown}' shown.";
+    }
+
+    // A different Workbook Document replaces the Workbook and clears its undo stack.
+    private void Load()
+    {
+        _workbook = WorkbookDocument.FromJson(_saved!);
+        _said = "Loaded the saved copy.";
+    }
+}

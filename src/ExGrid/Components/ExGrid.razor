@@ -3543,6 +3543,9 @@
         // that were aimed with it (ADR-0142).
         else if (reconciled.RowSequenceVersion != _selection.RowSequenceVersion)
             NoteSelectionDropped(_selection.Selection, sourceReplaced: false);
+        // A view the Consumer handed ahead of this version is shown with it (ADR-0331).
+        if (reconciled.RowSequenceVersion != _selection.RowSequenceVersion && !_sourceReplaced && !_columnsMoved)
+            reconciled = TakeViewAhead(reconciled);
 
         if (!reconciled.Selection.Equals(_selection.Selection))
             _selectionChanged = true;
@@ -3858,6 +3861,8 @@
         // that renders statically and still calls it.
         if (firstRender && RendererInfo.IsInteractive)
             await AttachScrollAsync();
+        // A view taken with the version this render took is scrolled to once it has painted (ADR-0331).
+        await PushViewScrollAsync();
 
         // The scroller's hand-off owed from before the root was a tab stop (OnScrollerFocusAsync),
         // asked once a render has made it one: that render is ahead of this request on the wire.

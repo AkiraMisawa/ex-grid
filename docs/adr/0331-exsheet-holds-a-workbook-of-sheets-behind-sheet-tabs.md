@@ -70,6 +70,15 @@ double click edits the name on the tab), deleting, moving (a drag, and Move left
 tab's menu) and copying. **Every one of them can be done from the keyboard alone.** Each is an input
 in the Input Order.
 
+*(As built, 2026-10-20, exsheet-workbook ticket 05: switching. The tabs show under one Sheet too, as
+Excel shows one, and `ShowSheetTabs="false"` hides them. Each Sheet keeps its Selection and scroll
+offsets, which the grid takes back with the Row Sequence Version the Sheet is shown under
+(`GridView`), so a gesture aimed at the Sheet left is refused, never applied to the one shown.
+Ctrl+PageUp and Ctrl+PageDown are numbered in the Input Order as declared keys; a press on a tab is
+not yet, because the tabs stand outside the grid's root, and joins the order with ExSheet's own
+surfaces in input-order ticket 04. Until §5 is built, another Sheet is not shown while an edit is
+open, and the Sheet's notice says so.)*
+
 **Later, each by an ADR:** tab colours, hiding and showing Sheets (references, selection and Find
 across a hidden Sheet need rules of their own, as hidden rows do in ADR-0046), and grouped Sheets,
 which edit Sheets the user cannot see.

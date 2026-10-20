@@ -1,1 +1,9 @@
 #nullable enable
+ExSheet.Components.ExSheet.ShowSheetTabs.get -> bool
+ExSheet.Components.ExSheet.ShowSheetTabs.set -> void
+ExSheet.Components.ExSheet.ToWorkbookDocument() -> ExSheet.Engine.WorkbookDocument!
+ExSheet.Components.ExSheet.Workbook.get -> ExSheet.Engine.WorkbookDocument?
+ExSheet.Components.ExSheet.Workbook.set -> void
+ExSheet.Components.ExSheet.WorkbookChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.WorkbookDocument!>
+ExSheet.Components.ExSheet.WorkbookChanged.set -> void
+override ExSheet.Components.ExSheet.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!

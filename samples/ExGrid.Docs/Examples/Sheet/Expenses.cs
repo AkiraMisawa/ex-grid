@@ -30,4 +30,26 @@ public static class Expenses
         sheet.Do(SheetEdit.SetCellFormat([CellRange.Parse("A1:D1"), CellRange.Parse("A7:D7")], new CellFormatChange { Bold = true }));
         return sheet.ToDocument();
     }
+
+    /// <summary>The claim and a summary that reads it, as a Workbook Document of two Sheets.</summary>
+    public static WorkbookDocument Workbook()
+    {
+        var claim = Sheet.Open(Document());
+        var workbook = claim.Workbook;
+        workbook.Do(claim.Name, SheetEdit.Rename("Claim"));
+        workbook.Do("Claim", SheetEdit.InsertSheet("Summary"));
+        string[][] rows =
+        [
+            ["Claimed", "=Claim!D7"],
+            ["Travel", "=Claim!D2+Claim!D5"],
+            ["Approved limit", "6000"],
+            ["Over the limit", "=MAX(0, B1-B3)"],
+        ];
+        for (var r = 0; r < rows.Length; r++)
+            for (var c = 0; c < rows[r].Length; c++)
+                workbook.Do("Summary", SheetEdit.Enter(new CellAddress(r, c), rows[r][c]));
+        workbook.Do("Summary", SheetEdit.SetColumnWidth(CellRange.Parse("A:A"), 18));
+        workbook.Do("Summary", SheetEdit.SetNumberFormat(CellRange.Parse("B1:B4"), NumberFormat.Parse("#,##0.00")));
+        return workbook.ToDocument();
+    }
 }
