@@ -42,7 +42,8 @@ block on `main` before it uses the first number.
 | 0270–0279 | `claude/project-thread-7nu0zc` | ExChart's components, grilled with the user beside M1's implementation: tooltip, legend, Chart Filters, the 3D surface, accessibility (2026-10-19) |
 | 0280–0289 | `claude/project-thread-yozdqm` | ExChart's Showcases and pages, the MudBlazor Wrapper, the files entry, shipping and checks, grilled with the user (M4 and later, 2026-10-19) |
 | 0290–0299 | `claude/project-thread-w5eo0t` | ExChart's scatter and fitted lines, put into the first version and grilled with the user (2026-10-19) |
-| 0300– | free | reserve a block of ten |
+| 0300–0309 | `claude/project-thread-umb8fm` | ExChart's candlesticks (Price Range), volume and intervals, grilled with the user (2026-10-20) |
+| 0310– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 

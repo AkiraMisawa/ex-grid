@@ -15,6 +15,7 @@ default:
 | **Level** | a quantity at an instant (EPE, a zero rate, a spread) | points, joined by a line or not | yes, unless the series declares otherwise |
 | **Rate over an interval** | constant on (tᵢ₋₁, tᵢ] or [tᵢ, tᵢ₊₁) (a hazard rate, an instantaneous forward under log-linear discount factors) | a step: filled end where it takes the value, open where it does not, no riser | declared per series |
 | **Amount per period** | a total over its interval (CVA by bucket) | a step over its interval, its height the amount per year, never a line | always |
+| **Price Range** *(added 2026-10-20, [ADR-0300](0300-a-price-range-is-one-bar-a-row-refused-where-its-values-disagree.md))* | one period's open, high, low and close (a daily bar) | a candle, or a High-Low-Close bar | no |
 
 *2026-10-19:* a fourth kind, **Observation** — one thing measured on two quantities, drawn as an
 unjoined marker on two value axes — was added for scatter (ADR-0290).
