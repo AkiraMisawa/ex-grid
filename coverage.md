@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.6% | 88.4% |
-| ExSheet | 95.7% | 88.6% |
+| ExSheet | 95.7% | 88.7% |
 | ExPivot | 94.4% | 85.3% |
 | ExChart | 89.6% | 80.4% |
 | Data | 94.5% | 90.3% |
@@ -13,19 +13,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/20/2026 - 23:09:23 |
+| Generated on: | 10/20/2026 - 23:25:48 |
 | Parser: | MultiReport (16x Cobertura) |
 | Assemblies: | 13 |
-| Classes: | 1003 |
-| Files: | 525 |
-| **Line coverage:** | 94.7% (65839 of 69497) |
-| Covered lines: | 65839 |
+| Classes: | 1004 |
+| Files: | 527 |
+| **Line coverage:** | 94.7% (65925 of 69583) |
+| Covered lines: | 65925 |
 | Uncovered lines: | 3658 |
-| Coverable lines: | 69497 |
-| Total lines: | 116225 |
-| **Branch coverage:** | 87.1% (39345 of 45142) |
-| Covered branches: | 39345 |
-| Total branches: | 45142 |
+| Coverable lines: | 69583 |
+| Total lines: | 116361 |
+| **Branch coverage:** | 87.1% (39369 of 45166) |
+| Covered branches: | 39369 |
+| Total branches: | 45166 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -316,8 +316,8 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|95.3%|90.3%|
 |ExGrid.Components.ExGrid<TRow>|90.6%|85.6%|
+|ExGrid.Components.ExGrid<TRow>|95.3%|90.3%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
@@ -875,11 +875,11 @@
 |ExPivot.MudBlazor.MudPivotValueFieldSettings|96.8%|77.2%|
 
 </details>
-<details><summary>ExSheet - 92.9%</summary>
+<details><summary>ExSheet - 93%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**92.9%**|**84.7%**|
+|**ExSheet**|**93%**|**84.8%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -890,10 +890,10 @@
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|90.7%|82.7%|
+|ExSheet.Components.ExSheet|91%|82.9%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|90.7%|82.7%|
+|ExSheet.Components.ExSheet<T>|91%|82.9%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
@@ -937,6 +937,7 @@
 |ExSheet.SheetHistory|100%|75%|
 |ExSheet.SheetOwnCopy|100%|80%|
 |ExSheet.SheetRow|100%|100%|
+|ExSheet.SheetsChange|100%||
 |ExSheet.SheetStructureKeys|100%|90.9%|
 |ExSheet.SheetSummary|97.8%|82.5%|
 |ExSheet.SheetTabKeys|100%|100%|
