@@ -15,19 +15,19 @@ internal static class ShippedAssets
     internal const string ScriptPath = "_content/ExChart/ex-chart.min.js";
 
     /// <summary>The first 12 hex digits of the SHA-256 of that file as shipped: the version its address carries.</summary>
-    internal const string ScriptVersion = "75f0ff33f2c1";
+    internal const string ScriptVersion = "0356b53f29cf";
 
     /// <summary>The SHA-256 of <c>Assets/ex-chart.js</c>, which the shipped file names and answers: its stamp.</summary>
-    internal const string ScriptStamp = "0d72ec4744a4547d5e90c21dfbea49bd0ccbe188bc9c3def0427d67806c3e1e8";
+    internal const string ScriptStamp = "dbb775142642d036d64bf0679d8c97e654a812e3c5e351066c0c528c2a7f9128";
 
     /// <summary>Where the package serves <c>ex-chart.css</c>, minified, under the application's base.</summary>
     internal const string StylesheetPath = "_content/ExChart/ex-chart.min.css";
 
     /// <summary>The first 12 hex digits of the SHA-256 of that file as shipped: the version its address carries.</summary>
-    internal const string StylesheetVersion = "043b30a597bd";
+    internal const string StylesheetVersion = "e7907a1cfced";
 
     /// <summary>The SHA-256 of <c>Assets/ex-chart.css</c>, which the shipped file names and answers: its stamp.</summary>
-    internal const string StylesheetStamp = "2197251ede5402d672bab136e1967330420493d89b8ea976d76fdedb95f2a6ae";
+    internal const string StylesheetStamp = "c661e0151a0bd92cd584f5ca7a299fa65d03291841b54cbf6e8dcf17137eea62";
 
     /// <summary>The source's name, by which the stylesheet's notice rules find this package's notice.</summary>
     internal const string StylesheetName = "ex-chart.css";
