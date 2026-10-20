@@ -144,7 +144,11 @@ export default defineConfig({
     // fails that project by name, which is the honest outcome (ADR-0026).
     projects: [
         { name: 'chrome', use: { channel: 'chrome' } },
-        { name: 'msedge', use: { channel: 'msedge' } },
+        // Edge opens its Downloads hub when a download ends, and from Edge 155 a page under that
+        // hub never finishes closing: every test that saved a file (ADR-0282) timed out tearing its
+        // page down, after its assertions had passed. The hub is the browser's own window furniture,
+        // not the page's behaviour, so it is turned off; the download itself still runs.
+        { name: 'msedge', use: { channel: 'msedge', launchOptions: { args: ['--disable-features=msDownloadsHub'] } } },
         // The Layout Ceiling at 150% (ADR-0053, VZ-15): Chrome with the display scale set
         // the way the OS sets it, on the command line, and the viewport left to the window.
         // Playwright's deviceScaleFactor does NOT reproduce this — it raises

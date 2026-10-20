@@ -3,8 +3,9 @@ import { test, expect } from './fixtures.mjs';
 
 // The files a chart saves on /chart (ADR-0282, CH-10, CH-12): CSV, SVG and PNG, each by one click,
 // under the chart's file name. A PNG is drawn at the Device Pixel, not scaled up from 100%: its tests
-// carry CH-10, so the chrome-150 project also runs them at a display scale of 150%. (Emulating the
-// scale with deviceScaleFactor left Edge's pages unable to close after a download.)
+// carry CH-10, so the chrome-150 project also runs them at a display scale of 150%, set the way the
+// OS sets it. (Edge's pages failing to close after a download was its Downloads hub, which the
+// msedge project turns off; see playwright.config.mjs.)
 
 const exposure = (page) => page.locator('#exposure .ex-chart');
 
