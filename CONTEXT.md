@@ -158,6 +158,25 @@ The name a host's capability gives a Snapshot it made, which a Chart Spec names 
 ([ADR-0320](./docs/adr/0320-an-ai-draws-a-chart-by-writing-a-chart-spec-that-names-data-it-never-holds.md)).
 _Avoid_: dataset id, reference
 
+**Board**:
+JSON an AI writes once and a workflow runs without AI: views of the family (grids, pivots, charts)
+laid out in rows and columns, the links that narrow one by another's selection, and the outputs it
+hands on when the user confirms. Drawn by ExBoard, which never rewrites it
+([ADR-0340](./docs/adr/0340-an-ai-composes-a-board-once-and-a-workflow-reuses-it-without-ai.md)).
+_Avoid_: dashboard, layout, page
+
+**Board Input**:
+A name a Board gives its data, with each column's name and type, bound by the workflow at run time to
+a source whose shape is checked against it
+([ADR-0341](./docs/adr/0341-a-board-input-declares-its-columns-and-a-source-answers-its-shape-first.md)).
+_Avoid_: parameter, dataset
+
+**Board Diff**:
+What the user changed while a Board ran (sorts, widths, a pivot's layout, a chart's range), raised as
+one diff the host may lay over the Board next time
+([ADR-0340](./docs/adr/0340-an-ai-composes-a-board-once-and-a-workflow-reuses-it-without-ai.md)).
+_Avoid_: board state, user settings
+
 **Chart Source**:
 What a chart reads a column through, from one position to another at a number of pixels, answered
 already thinned, on whichever side holds the data
