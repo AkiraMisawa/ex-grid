@@ -129,11 +129,6 @@ public sealed partial class Workbook
     /// <exception cref="ArgumentException">No Sheet of the Workbook is named <paramref name="sheet"/>.</exception>
     /// <exception cref="SheetRefusedException">The Sheet refuses the operation (<see cref="Check"/> says why).</exception>
     /// <exception cref="FormulaSyntaxException">A typed Formula cannot be read.</exception>
-    /// <exception cref="NotSupportedException">
-    /// The edit inserts or deletes the Sheet's rows or columns in a Workbook of several Sheets: not done
-    /// yet, as it would leave the other Sheets' References to it stale. <see cref="Check"/> does not
-    /// report it.
-    /// </exception>
     /// <exception cref="ArgumentOutOfRangeException">A Sheet is moved or copied to a place the Workbook does not have.</exception>
     public WorkbookStep Do(string sheet, SheetEdit edit)
     {

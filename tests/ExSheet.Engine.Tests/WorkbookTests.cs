@@ -266,16 +266,6 @@ public class WorkbookTests
         Assert.All(workbook.Sheets, s => Assert.Empty(s.EntryAddresses));
     }
 
-    [Fact] // ADR-0331, spine rule 1: an insertion on one Sheet of several is not done while it would leave another Sheet's References stale
-    public void Insertions_are_not_done_on_one_sheet_of_several()
-    {
-        var workbook = NewWorkbook("Sheet1", "Sheet2");
-        Enter(workbook, "Sheet1", "A1", "=Sheet2!A1");
-
-        Assert.Throws<NotSupportedException>(() => workbook.Do("Sheet2", SheetEdit.InsertRows(1)));
-        Assert.Equal("=Sheet2!A1", workbook.Sheets[0].GetEntry(CellAddress.Parse("A1"))!.Formula);
-    }
-
     [Fact] // ADR-0331: a Sheet created on its own is a Workbook of one Sheet, and reads as it did
     public void A_sheet_on_its_own_still_refuses_other_sheets()
     {

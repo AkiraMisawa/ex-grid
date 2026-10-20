@@ -74,16 +74,6 @@ public sealed partial class Sheet
             q => Other(q) ? Name : q);
     }
 
-    /// <summary>
-    /// An insertion or deletion rewrites only this Sheet's own References so far; on a Sheet of a
-    /// Workbook of several it would leave the others' References to it naming what they no longer
-    /// mean, so it is not done there (ADR-0331, spine rule 1).
-    /// </summary>
-    private void ThrowIfOneOfSeveral(string operation)
-    {
-        if (Workbook.Sheets.Count > 1) throw new NotSupportedException($"{operation} on a Sheet of a Workbook of several Sheets is not supported yet.");
-    }
-
     internal static string CheckName(string name, string parameter) =>
         IsValidName(name, out var reason) ? name : throw new ArgumentException(reason, parameter);
 

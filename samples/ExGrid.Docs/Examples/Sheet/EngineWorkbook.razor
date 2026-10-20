@@ -43,6 +43,8 @@
         // Sheet operations are steps too: a rename rewrites every Formula that names the Sheet.
         workbook.Do("Rates", SheetEdit.Rename("Market"));
         workbook.Do("Market", SheetEdit.CopySheet());
+        // A row inserted on one Sheet moves the References to it on every other.
+        workbook.Do("Market", SheetEdit.InsertRows(0));
 
         // A Workbook Document carries every Sheet's Entries; opening one computes their Values again.
         var saved = workbook.ToDocument().ToJson();

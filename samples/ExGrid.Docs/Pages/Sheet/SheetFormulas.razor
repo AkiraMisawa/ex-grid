@@ -381,8 +381,11 @@
             the Sheet, and a deletion turns every Reference to it into <code>#REF!</code> and gives them back
             when it is undone. A name another Sheet has, without regard to case, is refused, and so is deleting
             the last Sheet. <code>WorkbookChange.ChangesSheets</code> says that the Sheets themselves changed.
-            ExSheet does not show a Workbook yet, and inserting or deleting the rows or columns of a Sheet of
-            several is not done yet.
+            Inserting or deleting rows or columns on one Sheet rewrites the References to it on every Sheet,
+            as on its own: <code>Rates!A2</code> follows its cell down when a row is inserted above it, and
+            becomes <code>Rates!#REF!</code> when its row is deleted, given back exactly by the undo. A block
+            copied on one Sheet and pasted on another shifts its relative References, as Excel's copy does.
+            ExSheet does not show a Workbook yet.
         </p>
         <DocsExample Builtin="typeof(EngineWorkbook)" CodeOpen="true" />
     </DocsSection>
