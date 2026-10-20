@@ -38,6 +38,7 @@ public sealed class Workbook
             _sheets.Add(new Sheet(this, name));
         }
         if (_sheets.Count == 0) throw new ArgumentException("A Workbook holds at least one Sheet.", nameof(sheetNames));
+        _shown = _sheets[0];
     }
 
     /// <summary>The Workbook of one Sheet a Sheet created on its own belongs to.</summary>
@@ -45,6 +46,50 @@ public sealed class Workbook
     {
         Culture = only.Culture;
         _sheets.Add(only);
+        _shown = only;
+    }
+
+    /// <summary>
+    /// Opens a Workbook Document: a Workbook in the document's culture, with its Sheets in order, the
+    /// Sheet it shows shown, its Linked Tables declared and waiting for their first snapshot, and each
+    /// Sheet's Entries, Cell Formats and column widths, with every Value computed again (ADR-0048,
+    /// ADR-0049, ADR-0331). The culture of the thread that opens it plays no part.
+    /// </summary>
+    public static Workbook Open(WorkbookDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        var workbook = new Workbook(SheetDocument.ResolveCulture(document.Culture), document.Sheets.Select(s => s.Name));
+        // Declared before any Formula is computed: a reader shows #GETTING_DATA, never #NAME? (ADR-0049).
+        foreach (var table in document.LinkedTables) workbook._sheets[0].Declare(table.Name, table.Columns, table.KeyColumns);
+        for (var i = 0; i < document.Sheets.Count; i++) workbook._sheets[i].OpenFormats(document.Sheets[i]);
+        for (var i = 0; i < document.Sheets.Count; i++) workbook._sheets[i].OpenEntries(document.Sheets[i]);
+        workbook._shown = workbook.Find(document.Shown)!;
+        return workbook;
+    }
+
+    /// <summary>
+    /// The Workbook as a Workbook Document: its culture, the Sheet shown, its Linked Tables'
+    /// declarations, and each Sheet as <see cref="Sheet.ToDocument()"/> records one, in order — never a
+    /// Value, nor a table's rows (ADR-0331).
+    /// </summary>
+    public WorkbookDocument ToDocument() =>
+        new(Culture.Name, _shown.Name, _sheets[0].TableDeclarations, [.. _sheets.Select(s => s.ToDocument([]))]);
+
+    private Sheet _shown;
+
+    /// <summary>
+    /// The Sheet shown: the one whose tab is selected (ADR-0331). Showing another Sheet changes nothing
+    /// a step records; the Workbook Document records which Sheet is shown.
+    /// </summary>
+    /// <exception cref="ArgumentException">The Sheet is not one of this Workbook's.</exception>
+    public Sheet Shown
+    {
+        get => _shown;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            _shown = _sheets.Contains(value) ? value : throw new ArgumentException("The Sheet is not one of this Workbook's.", nameof(value));
+        }
     }
 
     /// <summary>The Workbook's declared culture, which every one of its Sheets reads and shows under (ADR-0048, ADR-0331).</summary>

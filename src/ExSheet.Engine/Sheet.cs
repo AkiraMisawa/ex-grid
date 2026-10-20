@@ -78,34 +78,45 @@ public sealed partial class Sheet
         var sheet = new Sheet(SheetDocument.ResolveCulture(document.Culture), document.Name);
         // Declared before any Formula is computed: a reader shows #GETTING_DATA, never #NAME? (ADR-0049).
         foreach (var table in document.LinkedTables) sheet.Declare(table.Name, table.Columns, table.KeyColumns);
+        sheet.OpenFormats(document);
+        sheet.OpenEntries(document);
+        return sheet;
+    }
+
+    /// <summary>Records what a document records on this Sheet's columns, rows and cells besides Entries: Cell Formats and column widths.</summary>
+    internal void OpenFormats(SheetDocument document)
+    {
         foreach (var run in document.Columns)
         {
-            for (var column = run.First; column <= run.Last; column++) sheet._columnFormats[column] = sheet.Opened(run.Level);
+            for (var column = run.First; column <= run.Last; column++) _columnFormats[column] = Opened(run.Level);
         }
         foreach (var run in document.ColumnWidths)
         {
-            for (var column = run.First; column <= run.Last; column++) sheet._columnWidths[column] = new SheetColumnWidth(run.Width, run.Kind);
+            for (var column = run.First; column <= run.Last; column++) _columnWidths[column] = new SheetColumnWidth(run.Width, run.Kind);
         }
         foreach (var run in document.Rows)
         {
-            for (var row = run.First; row <= run.Last; row++) sheet._rowFormats[row] = sheet.Opened(run.Level);
+            for (var row = run.First; row <= run.Last; row++) _rowFormats[row] = Opened(run.Level);
         }
         foreach (var cell in document.Cells)
         {
             if (cell.NumberFormat is null && cell.Alignment is null && cell.Font is null && cell.Fill is null && cell.Borders is null) continue;
-            sheet._cells[cell.Address] = new Cell(cell.Address)
+            _cells[cell.Address] = new Cell(cell.Address)
             {
-                NumberFormat = cell.NumberFormat?.OpenedIn(sheet.Culture),
+                NumberFormat = cell.NumberFormat?.OpenedIn(Culture),
                 Alignment = cell.Alignment,
                 Font = cell.Font,
                 Fill = cell.Fill,
                 Borders = cell.Borders,
             };
         }
-        sheet.SetEntries(document.Cells.Where(c => c.Entry is not null).Select(c => new KeyValuePair<CellAddress, Entry?>(c.Address, c.Entry)));
-        // Opening is no change: the count starts from 0, and the Sheet has no seed yet (ADR-0180).
-        sheet.Changes = 0;
-        return sheet;
+    }
+
+    /// <summary>Takes a document's Entries, computing every Value again. Opening is no change: the count starts from 0, and the Sheet has no seed yet (ADR-0180).</summary>
+    internal void OpenEntries(SheetDocument document)
+    {
+        SetEntries(document.Cells.Where(c => c.Entry is not null).Select(c => new KeyValuePair<CellAddress, Entry?>(c.Address, c.Entry)));
+        Changes = 0;
     }
 
     /// <summary>A column's or row's format as this Sheet opens it: its Number Format read under the Sheet's culture (<see cref="NumberFormat.OpenedIn"/>).</summary>
@@ -119,8 +130,11 @@ public sealed partial class Sheet
     /// ADR-0071). Adjacent columns or rows formatted alike, and adjacent columns of one width, are
     /// recorded as one entry; a column at the default width records none.
     /// </summary>
-    public SheetDocument ToDocument() =>
-        new(Culture.Name, Name, TableDeclarations, [.. _cells.Values
+    public SheetDocument ToDocument() => ToDocument(TableDeclarations);
+
+    /// <summary>The Sheet as a Sheet Document declaring <paramref name="tables"/>: none for a Sheet of a Workbook Document, which records them once (ADR-0331).</summary>
+    internal SheetDocument ToDocument(IReadOnlyList<SheetDocumentTable> tables) =>
+        new(Culture.Name, Name, tables, [.. _cells.Values
             .Where(c => c.Entry is not null || c.IsFormatted)
             .OrderBy(c => c.Address)
             .Select(c => new SheetDocumentCell(c.Address, c.Entry, c.NumberFormat, c.Alignment, c.Font, c.Fill, c.Borders))])

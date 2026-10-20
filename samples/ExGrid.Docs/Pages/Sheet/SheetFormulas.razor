@@ -370,7 +370,11 @@
             the whole recalculation is done. A name no Sheet of the Workbook has is <code>#REF!</code>, as in
             Excel. <code>Workbook.Do(sheet, edit)</code> names the Sheet an edit is made on and returns the step
             that undoes it; its <code>WorkbookChange</code> says what changed on each Sheet. Linked Tables are
-            declared on the Workbook, and read from any of its Sheets. ExSheet does not show a Workbook yet, and
+            declared on the Workbook, and read from any of its Sheets. <code>ToDocument()</code> gives the
+            Workbook Document — every Sheet in order, the Sheet shown, the culture and the Linked Tables'
+            declarations, never a Value — and <code>Workbook.Open</code> opens one again;
+            <code>WorkbookDocument.FromJson</code> reads a Sheet Document too, as a Workbook of that one Sheet,
+            and refuses a version it does not know or anything it does not understand. ExSheet does not show a Workbook yet, and
             renaming a Sheet of a Workbook, or inserting or deleting its rows or columns, is not done yet.
         </p>
         <DocsExample Builtin="typeof(EngineWorkbook)" CodeOpen="true" />

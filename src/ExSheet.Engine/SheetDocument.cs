@@ -93,76 +93,88 @@ public sealed class SheetDocument
             json.WriteNumber("version", CurrentVersion);
             json.WriteString("culture", Culture);
             json.WriteString("name", Name);
-            if (LinkedTables.Count > 0)
-            {
-                json.WriteStartArray("linkedTables");
-                foreach (var table in LinkedTables)
-                {
-                    json.WriteStartObject();
-                    json.WriteString("name", table.Name);
-                    json.WriteStartArray("columns");
-                    foreach (var column in table.Columns) json.WriteStringValue(column);
-                    json.WriteEndArray();
-                    // One key column is written as its name, as version 7 wrote it; several as a list (version 9).
-                    if (table.KeyColumns.Count == 1)
-                    {
-                        json.WriteString("key", table.KeyColumns[0]);
-                    }
-                    else if (table.KeyColumns.Count > 1)
-                    {
-                        json.WriteStartArray("key");
-                        foreach (var column in table.KeyColumns) json.WriteStringValue(column);
-                        json.WriteEndArray();
-                    }
-                    json.WriteEndObject();
-                }
-                json.WriteEndArray();
-            }
-            WriteAxis(json, "columns", Columns, run => CellAddress.ColumnName(run.First) + ":" + CellAddress.ColumnName(run.Last));
-            WriteAxis(json, "rows", Rows, run => (run.First + 1).ToString(CultureInfo.InvariantCulture) + ":" + (run.Last + 1).ToString(CultureInfo.InvariantCulture));
-            if (ColumnWidths.Count > 0)
-            {
-                json.WriteStartArray("columnWidths");
-                foreach (var run in ColumnWidths)
-                {
-                    json.WriteStartObject();
-                    json.WriteString("at", CellAddress.ColumnName(run.First) + ":" + CellAddress.ColumnName(run.Last));
-                    json.WriteNumber("width", run.Width);
-                    json.WriteString("kind", KindName(run.Kind));
-                    json.WriteEndObject();
-                }
-                json.WriteEndArray();
-            }
-            json.WriteStartArray("cells");
-            foreach (var cell in Cells)
-            {
-                json.WriteStartObject();
-                json.WriteString("at", cell.Address.ToString());
-                if (cell.Entry is { } entry)
-                {
-                    if (entry.Formula is { } formula)
-                    {
-                        json.WriteString("formula", formula);
-                    }
-                    else
-                    {
-                        var constant = entry.Constant!.Value;
-                        switch (constant.Kind)
-                        {
-                            case ValueKind.Number: json.WriteNumber("number", constant.Number); break;
-                            case ValueKind.Text: json.WriteString("text", constant.Text); break;
-                            case ValueKind.Boolean: json.WriteBoolean("boolean", constant.Boolean); break;
-                            default: json.WriteString("error", constant.Error.ToText()); break;
-                        }
-                    }
-                }
-                WriteCellFormat(json, cell.NumberFormat, cell.Alignment, cell.Font, cell.Fill, cell.Borders);
-                json.WriteEndObject();
-            }
-            json.WriteEndArray();
+            WriteTables(json, LinkedTables);
+            WriteBody(json);
             json.WriteEndObject();
         }
         return Encoding.UTF8.GetString(buffer.ToArray());
+    }
+
+    /// <summary>The Linked Tables' declarations, as a Sheet Document and a Workbook Document both write them; nothing for none.</summary>
+    internal static void WriteTables(Utf8JsonWriter json, IReadOnlyList<SheetDocumentTable> tables)
+    {
+        if (tables.Count > 0)
+        {
+            json.WriteStartArray("linkedTables");
+            foreach (var table in tables)
+            {
+                json.WriteStartObject();
+                json.WriteString("name", table.Name);
+                json.WriteStartArray("columns");
+                foreach (var column in table.Columns) json.WriteStringValue(column);
+                json.WriteEndArray();
+                // One key column is written as its name, as version 7 wrote it; several as a list (version 9).
+                if (table.KeyColumns.Count == 1)
+                {
+                    json.WriteString("key", table.KeyColumns[0]);
+                }
+                else if (table.KeyColumns.Count > 1)
+                {
+                    json.WriteStartArray("key");
+                    foreach (var column in table.KeyColumns) json.WriteStringValue(column);
+                    json.WriteEndArray();
+                }
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+        }
+    }
+
+    /// <summary>What a Sheet records of its own: the formats on its columns and rows, its column widths and its cells.</summary>
+    internal void WriteBody(Utf8JsonWriter json)
+    {
+        WriteAxis(json, "columns", Columns, run => CellAddress.ColumnName(run.First) + ":" + CellAddress.ColumnName(run.Last));
+        WriteAxis(json, "rows", Rows, run => (run.First + 1).ToString(CultureInfo.InvariantCulture) + ":" + (run.Last + 1).ToString(CultureInfo.InvariantCulture));
+        if (ColumnWidths.Count > 0)
+        {
+            json.WriteStartArray("columnWidths");
+            foreach (var run in ColumnWidths)
+            {
+                json.WriteStartObject();
+                json.WriteString("at", CellAddress.ColumnName(run.First) + ":" + CellAddress.ColumnName(run.Last));
+                json.WriteNumber("width", run.Width);
+                json.WriteString("kind", KindName(run.Kind));
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+        }
+        json.WriteStartArray("cells");
+        foreach (var cell in Cells)
+        {
+            json.WriteStartObject();
+            json.WriteString("at", cell.Address.ToString());
+            if (cell.Entry is { } entry)
+            {
+                if (entry.Formula is { } formula)
+                {
+                    json.WriteString("formula", formula);
+                }
+                else
+                {
+                    var constant = entry.Constant!.Value;
+                    switch (constant.Kind)
+                    {
+                        case ValueKind.Number: json.WriteNumber("number", constant.Number); break;
+                        case ValueKind.Text: json.WriteString("text", constant.Text); break;
+                        case ValueKind.Boolean: json.WriteBoolean("boolean", constant.Boolean); break;
+                        default: json.WriteString("error", constant.Error.ToText()); break;
+                    }
+                }
+            }
+            WriteCellFormat(json, cell.NumberFormat, cell.Alignment, cell.Font, cell.Fill, cell.Borders);
+            json.WriteEndObject();
+        }
+        json.WriteEndArray();
     }
 
     private static void WriteAxis(Utf8JsonWriter json, string name, IReadOnlyList<SheetDocumentAxisFormat> runs, Func<SheetDocumentAxisFormat, string> at)
@@ -258,68 +270,95 @@ public sealed class SheetDocument
                 throw new SheetDocumentException($"The Sheet Document is version {number}; this engine reads versions {OldestReadableVersion} to {CurrentVersion}.") { DocumentVersion = number };
             }
 
-            string? culture = null;
-            string? name = null;
-            var tables = new List<SheetDocumentTable>();
-            var cells = new List<SheetDocumentCell>();
-            var seen = new HashSet<CellAddress>();
-            var columns = new List<SheetDocumentAxisFormat>();
-            var rows = new List<SheetDocumentAxisFormat>();
-            var widths = new List<SheetDocumentColumnWidth>();
-            foreach (var property in root.EnumerateObject())
-            {
-                switch (property.Name)
-                {
-                    case "version":
-                        break;
-                    case "culture":
-                        culture = property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : throw new SheetDocumentException("The culture is not a string.");
-                        break;
-                    case "name" when number >= 2:
-                        name = property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : throw new SheetDocumentException("The name is not a string.");
-                        if (!Sheet.IsValidName(name, out var why)) throw new SheetDocumentException($"'{name}' is not a Sheet's name: {why}");
-                        break;
-                    case "linkedTables" when number >= 2:
-                        if (property.Value.ValueKind != JsonValueKind.Array) throw new SheetDocumentException("The Linked Tables are not an array.");
-                        foreach (var element in property.Value.EnumerateArray())
-                        {
-                            var table = ReadTable(element, number);
-                            if (tables.Any(t => string.Equals(t.Name, table.Name, StringComparison.OrdinalIgnoreCase)))
-                            {
-                                throw new SheetDocumentException($"The Linked Table '{table.Name}' is declared twice.");
-                            }
-                            tables.Add(table);
-                        }
-                        break;
-                    case "columns" when number >= 3:
-                        // The whole Sheet is recorded as whole columns (A:XFD), so a column run may span every row and every column.
-                        columns = ReadAxis(property.Value, "column", number, text => CellRange.TryParse(text, out var r) && r.IsWholeColumns ? (r.First.Column, r.Last.Column) : null);
-                        break;
-                    case "rows" when number >= 3:
-                        rows = ReadAxis(property.Value, "row", number, text => CellRange.TryParse(text, out var r) && r.IsWholeRows && !r.IsWholeColumns ? (r.First.Row, r.Last.Row) : null);
-                        break;
-                    case "columnWidths" when number >= 4:
-                        widths = ReadWidths(property.Value, number);
-                        break;
-                    case "cells":
-                        if (property.Value.ValueKind != JsonValueKind.Array) throw new SheetDocumentException("The cells are not an array.");
-                        foreach (var element in property.Value.EnumerateArray())
-                        {
-                            var cell = ReadCell(element, number);
-                            if (!seen.Add(cell.Address)) throw new SheetDocumentException($"The cell {cell.Address} appears twice.");
-                            cells.Add(cell);
-                        }
-                        break;
-                    default:
-                        throw new SheetDocumentException($"'{property.Name}' is not part of a version {number} Sheet Document.");
-                }
-            }
-            if (culture is null) throw new SheetDocumentException("The Sheet Document records no culture.");
-            if (number >= 2 && name is null) throw new SheetDocumentException("The Sheet Document records no name.");
-            ResolveCulture(culture);
-            cells.Sort((a, b) => a.Address.CompareTo(b.Address));
-            return new SheetDocument(culture, name ?? Sheet.DefaultName, tables, cells) { Columns = columns, Rows = rows, ColumnWidths = widths };
+            return Read(root, number, workbookCulture: null);
         }
+    }
+
+    /// <summary>
+    /// Reads one Sheet of a Workbook Document (ADR-0331): its name and what it records of its own, in
+    /// the Sheet Document's current version, under the Workbook's culture. The version, the culture and
+    /// the Linked Tables are the Workbook's, and are refused here.
+    /// </summary>
+    internal static SheetDocument ReadSheetOfWorkbook(JsonElement element, string culture)
+    {
+        if (element.ValueKind != JsonValueKind.Object) throw new SheetDocumentException("A Sheet of a Workbook Document is a JSON object.");
+        return Read(element, CurrentVersion, culture);
+    }
+
+    /// <summary>Reads a Sheet Document's object, or with <paramref name="workbookCulture"/> one Sheet of a Workbook Document.</summary>
+    private static SheetDocument Read(JsonElement root, int number, string? workbookCulture)
+    {
+        var culture = workbookCulture;
+        string? name = null;
+        var tables = new List<SheetDocumentTable>();
+        var cells = new List<SheetDocumentCell>();
+        var seen = new HashSet<CellAddress>();
+        var columns = new List<SheetDocumentAxisFormat>();
+        var rows = new List<SheetDocumentAxisFormat>();
+        var widths = new List<SheetDocumentColumnWidth>();
+        foreach (var property in root.EnumerateObject())
+        {
+            switch (property.Name)
+            {
+                case "version" when workbookCulture is null:
+                    break;
+                case "culture" when workbookCulture is null:
+                    culture = property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : throw new SheetDocumentException("The culture is not a string.");
+                    break;
+                case "name" when number >= 2:
+                    name = property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : throw new SheetDocumentException("The name is not a string.");
+                    if (!Sheet.IsValidName(name, out var why)) throw new SheetDocumentException($"'{name}' is not a Sheet's name: {why}");
+                    break;
+                case "linkedTables" when number >= 2 && workbookCulture is null:
+                    tables = ReadTables(property.Value, number);
+                    break;
+                case "columns" when number >= 3:
+                    // The whole Sheet is recorded as whole columns (A:XFD), so a column run may span every row and every column.
+                    columns = ReadAxis(property.Value, "column", number, text => CellRange.TryParse(text, out var r) && r.IsWholeColumns ? (r.First.Column, r.Last.Column) : null);
+                    break;
+                case "rows" when number >= 3:
+                    rows = ReadAxis(property.Value, "row", number, text => CellRange.TryParse(text, out var r) && r.IsWholeRows && !r.IsWholeColumns ? (r.First.Row, r.Last.Row) : null);
+                    break;
+                case "columnWidths" when number >= 4:
+                    widths = ReadWidths(property.Value, number);
+                    break;
+                case "cells":
+                    if (property.Value.ValueKind != JsonValueKind.Array) throw new SheetDocumentException("The cells are not an array.");
+                    foreach (var element in property.Value.EnumerateArray())
+                    {
+                        var cell = ReadCell(element, number);
+                        if (!seen.Add(cell.Address)) throw new SheetDocumentException($"The cell {cell.Address} appears twice.");
+                        cells.Add(cell);
+                    }
+                    break;
+                default:
+                    throw new SheetDocumentException(workbookCulture is null
+                        ? $"'{property.Name}' is not part of a version {number} Sheet Document."
+                        : $"'{property.Name}' is not part of a Sheet of a Workbook Document.");
+            }
+        }
+        if (culture is null) throw new SheetDocumentException("The Sheet Document records no culture.");
+        if (number >= 2 && name is null) throw new SheetDocumentException(workbookCulture is null ? "The Sheet Document records no name." : "A Sheet of the Workbook Document records no name.");
+        ResolveCulture(culture);
+        cells.Sort((a, b) => a.Address.CompareTo(b.Address));
+        return new SheetDocument(culture, name ?? Sheet.DefaultName, tables, cells) { Columns = columns, Rows = rows, ColumnWidths = widths };
+    }
+
+    /// <summary>The Linked Tables' declarations, as a Sheet Document and a Workbook Document both read them; none declared twice.</summary>
+    internal static List<SheetDocumentTable> ReadTables(JsonElement array, int version)
+    {
+        if (array.ValueKind != JsonValueKind.Array) throw new SheetDocumentException("The Linked Tables are not an array.");
+        var tables = new List<SheetDocumentTable>();
+        foreach (var element in array.EnumerateArray())
+        {
+            var table = ReadTable(element, version);
+            if (tables.Any(t => string.Equals(t.Name, table.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new SheetDocumentException($"The Linked Table '{table.Name}' is declared twice.");
+            }
+            tables.Add(table);
+        }
+        return tables;
     }
 
     internal static CultureInfo ResolveCulture(string name)
