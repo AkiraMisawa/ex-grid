@@ -51,7 +51,7 @@ internal static partial class FunctionLibrary
             var line = vertical
                 ? new Area(area.Row1, area.Column1 + index, area.Row2, area.Column1 + index)
                 : new Area(area.Row1 + index, area.Column1, area.Row1 + index, area.Column2);
-            return new Vector(Operand.Of(line), vertical, vertical ? area.Rows : area.Columns);
+            return new Vector(table.SameSheet(line), vertical, vertical ? area.Rows : area.Columns);
         }
         if (table.Kind == OperandKind.Column)
         {

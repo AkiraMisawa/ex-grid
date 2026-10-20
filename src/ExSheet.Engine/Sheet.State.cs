@@ -33,7 +33,7 @@ internal readonly record struct CellState(
 public sealed partial class Sheet
 {
     /// <summary>Every held cell's state, keyed by address.</summary>
-    private Dictionary<CellAddress, CellState> Snapshot() => _cells.Values.ToDictionary(c => c.Address, State);
+    internal Dictionary<CellAddress, CellState> Snapshot() => _cells.Values.ToDictionary(c => c.Address, State);
 
     private CellState StateOf(CellAddress address) => _cells.TryGetValue(address, out var c) ? State(c) : CellState.Blank;
 
@@ -83,7 +83,7 @@ public sealed partial class Sheet
     /// The change between <paramref name="before"/> and now, address by address: a Value that
     /// differs is a value change, and anything that differs puts its row in <see cref="SheetChange.Rows"/>.
     /// </summary>
-    private SheetChange Diff(
+    internal SheetChange Diff(
         Dictionary<CellAddress, CellState> before,
         IEnumerable<CellAddress> recalculated,
         Dictionary<CellAddress, CellFormat>? shownBefore = null)
@@ -110,10 +110,11 @@ public sealed partial class Sheet
     }
 
     /// <summary>Forgets and rebuilds the dependency graph from every Formula held.</summary>
-    private void RebuildDependencies()
+    internal void RebuildDependencies()
     {
         _cellDependents.Clear();
         _areaPrecedents.Clear();
+        foreach (var formulaCell in _remoteReferences.Keys.ToList()) UnregisterRemote(formulaCell);
         _tableReaders.Clear();
         _todayReaders.Clear();
         _volatileFormulas.Clear();

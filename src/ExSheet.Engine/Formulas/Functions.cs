@@ -657,7 +657,7 @@ internal static partial class FunctionLibrary
         if (returnArray.Kind == OperandKind.Area)
         {
             var area = returnArray.Area;
-            return Operand.Of(vector.Vertical
+            return returnArray.SameSheet(vector.Vertical
                 ? new Area(area.Row1 + index, area.Column1, area.Row1 + index, area.Column2)
                 : new Area(area.Row1, area.Column1 + index, area.Row2, area.Column1 + index));
         }
@@ -860,7 +860,8 @@ internal static partial class FunctionLibrary
             }
             var area = Source.Area;
             var vertical = Vertical;
-            return evaluator.Cells.NonBlankIn(area).Select(a => (vertical ? a.Row - area.Row1 : a.Column - area.Column1, evaluator.Cells.Read(a)!.Value));
+            var cells = Source.Cells!;
+            return cells.NonBlankIn(area).Select(a => (vertical ? a.Row - area.Row1 : a.Column - area.Column1, cells.Read(a)!.Value));
         }
 
         /// <summary>The first blank position in search order, from the end when <paramref name="fromEnd"/>; <see langword="null"/> when none is blank.</summary>
@@ -884,7 +885,7 @@ internal static partial class FunctionLibrary
             var area = Source.Area;
             var row = Vertical ? area.Row1 + index : area.Row1;
             var column = Vertical ? area.Column1 : area.Column1 + index;
-            return Operand.Of(new Area(row, column, row, column));
+            return Source.SameSheet(new Area(row, column, row, column));
         }
 
         private Value? At(ValueArray array, int index) => Vertical ? array[index, 0] : array[0, index];

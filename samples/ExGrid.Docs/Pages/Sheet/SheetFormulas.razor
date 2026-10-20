@@ -363,9 +363,35 @@
             without doing it. <code>GetDisplay(address, width)</code> gives what the cell shows in a column so many characters wide:
             General rounds to fit, and any other format that does not fit is <code>####</code>.
         </p>
+        <p>
+            A <code>Workbook</code> holds several Sheets, in order, under one culture. A Formula on one reads
+            another's cells by naming it, <code>=Rates!A1</code> or <code>=SUM('Q1 Sales'!B2:B9)</code>, and a
+            change on any Sheet recalculates what reads it on every Sheet, the new Values published together once
+            the whole recalculation is done. A name no Sheet of the Workbook has is <code>#REF!</code>, as in
+            Excel. <code>Workbook.Do(sheet, edit)</code> names the Sheet an edit is made on and returns the step
+            that undoes it; its <code>WorkbookChange</code> says what changed on each Sheet. Linked Tables are
+            declared on the Workbook, and read from any of its Sheets. <code>ToDocument()</code> gives the
+            Workbook Document — every Sheet in order, the Sheet shown, the culture and the Linked Tables'
+            declarations, never a Value — and <code>Workbook.Open</code> opens one again;
+            <code>WorkbookDocument.FromJson</code> reads a Sheet Document too, as a Workbook of that one Sheet,
+            and refuses a version it does not know or anything it does not understand. <code>SheetEdit.InsertSheet</code>,
+            <code>Rename</code>, <code>MoveSheet</code>, <code>CopySheet</code> and <code>DeleteSheet</code> change
+            the Workbook's Sheets, each one step that undoes it exactly: a new Sheet takes the next free
+            <code>SheetN</code>, a copy takes <code>Name (2)</code>, a rename rewrites every Formula that names
+            the Sheet, and a deletion turns every Reference to it into <code>#REF!</code> and gives them back
+            when it is undone. A name another Sheet has, without regard to case, is refused, and so is deleting
+            the last Sheet. <code>WorkbookChange.ChangesSheets</code> says that the Sheets themselves changed.
+            Inserting or deleting rows or columns on one Sheet rewrites the References to it on every Sheet,
+            as on its own: <code>Rates!A2</code> follows its cell down when a row is inserted above it, and
+            becomes <code>Rates!#REF!</code> when its row is deleted, given back exactly by the undo. A block
+            copied on one Sheet and pasted on another shifts its relative References, as Excel's copy does.
+            ExSheet does not show a Workbook yet.
+        </p>
+        <DocsExample Builtin="typeof(EngineWorkbook)" CodeOpen="true" />
     </DocsSection>
 
     <DocsSection Title="API">
         <ApiTable Type="typeof(global::ExSheet.Engine.Sheet)" />
+        <ApiTable Type="typeof(global::ExSheet.Engine.Workbook)" />
     </DocsSection>
 </DocsPage>

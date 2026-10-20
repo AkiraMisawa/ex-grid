@@ -1,0 +1,328 @@
+@using System.Globalization
+@* A binomial lattice (ADR-0280): an option priced on a Cox–Ross–Rubinstein lattice, each node a row of the
+   grid and a mark of the chart beside it, coloured by the option's value, an American option's early
+   exercise ringed; and the lattice price for every N against Black–Scholes. The page prices; the grid and
+   the charts only show what it priced (spine rule 3).
+
+   Today's ExChart has no colour scale for marks, no marker size, no ring and no edge between two points,
+   so this screen builds them from what it has, and says so here: the nodes are eight Observation series,
+   one per band of value, whose colour slots the page's tokens fill with a ramp; the edges are the
+   lattice's 2(N+1) diagonals, each a Level series; the ring is an Observation under the nodes with a
+   wider stroke; and the colour bar is the page's markup over the legend's column, which is hidden.
+   The rules that size the marks and hide the legend are the page's, under .xs-bin-lattice. *@
+<div class="xs-bin-app">
+<ShowcaseShell Mud="Mud" App="Option Lattice Pricer" Crumb="Derivatives · Binomial lattice">
+    <Tools>
+        @Switch("Scheme", ["Light", "Dark"], Dark ? "Dark" : "Light", s => DarkChanged.InvokeAsync(s == "Dark"))
+    </Tools>
+    <ChildContent>
+        <p class="xs-note">
+            An option priced on a recombining lattice. Each node is a row of the grid: the underlying after j up-moves in i steps,
+            and the option's value there. Change a term and the lattice, its rows and the convergence are priced again.
+        </p>
+        <div class="xs-bin">
+            <div class="xs-panel xs-bin-inputs">
+                <div class="xs-bin-heading">Contract</div>
+                @Switch("Option type", ["Call", "Put"], _put ? "Put" : "Call", s => Set(() => _put = s == "Put"))
+                @Switch("Exercise", ["European", "American"], _american ? "American" : "European", s => Set(() => _american = s == "American"))
+                @Field("Spot S₀", "spot", () => _spot, v => _spot = v, 1)
+                @Field("Strike K", "strike", () => _strike, v => _strike = v, 1)
+                @Field("Risk-free rate r", "rate", () => _rate, v => _rate = v, 0.01)
+                @Field("Volatility σ", "vol", () => _vol, v => _vol = v, 0.01)
+                @Field("Maturity T (years)", "maturity", () => _maturity, v => _maturity = v, 0.25)
+                <div class="xs-bin-heading">Lattice</div>
+                @Field($"Steps drawn N (1–{MaxDrawn})", "steps", () => _n, v => _n = Math.Clamp((int)v, 1, MaxDrawn), 1)
+                @Field($"Convergence up to N ({MinConvergence}–{MaxConvergence})", "convergence", () => _nMax, v => _nMax = Math.Clamp((int)v, MinConvergence, MaxConvergence), 10)
+            </div>
+            <div class="xs-bin-main">
+                <div class="xs-bin-cards">
+                    @Card($"Lattice price (N = {_n})", F(_price, 4), "xs-bin-primary")
+                    @Card("Black–Scholes, European", F(_bs, 4), "xs-bin-secondary")
+                    @Card("Lattice − Black–Scholes", F(_price - _bs, 4), "")
+                </div>
+                <div class="xs-bin-cards xs-bin-greeks">
+                    @Card("Delta Δ", F(_greeks.Delta, 4), "")
+                    @Card("Gamma Γ", F(_greeks.Gamma, 5), "")
+                    @Card("Vega ν, per vol point", F(_greeks.Vega, 4), "")
+                    @Card("Theta Θ, per day", F(_greeks.Theta, 4), "")
+                </div>
+                <div class="xs-panel xs-bin-lattice">
+                    @Chart(_lattice, LatticeTitle, LatticeHeight, LatticeLegend)
+                    <div class="xs-bin-bar" aria-hidden="true">
+                        <div>Option value</div>
+                        <div class="xs-bin-ramp"></div>
+                        @for (var q = 0; q <= 4; q++)
+                        {
+                            <div class="xs-bin-tick" style="bottom: calc(34px + (100% - 56px) * @(F(q / 4.0, 2)))">@F(_maxValue * q / 4, 1)</div>
+                        }
+                        @if (_american)
+                        {
+                            <div class="xs-bin-ring">early exercise</div>
+                        }
+                    </div>
+                </div>
+                <div class="xs-panel">
+                    @Chart(_convergence, ConvergenceTitle, ConvergenceHeight, null)
+                </div>
+                <div class="xs-panel xs-bin-grid">
+                    @if (Mud)
+                    {
+                        <MudExGridPaper Elevation="1" Style="display: flex">
+                            <ExGrid TRow="LatticeNode" Window="_nodes" RowKey="KeyOf" Columns="Columns" ViewportHeight="GridHeight"
+                                    ViewportWidth="ViewportSize.Stretch" Chrome="MudGridChrome.Default" />
+                        </MudExGridPaper>
+                    }
+                    else
+                    {
+                        <ExGrid TRow="LatticeNode" Window="_nodes" RowKey="KeyOf" Columns="Columns" ViewportHeight="GridHeight"
+                                ViewportWidth="ViewportSize.Stretch" />
+                    }
+                </div>
+            </div>
+        </div>
+    </ChildContent>
+</ShowcaseShell>
+</div>
+
+<style>
+    /* Under MudBlazor the screen's own blue and teal, whatever the host's theme: the switches, the fields'
+       focus and the convergence chart's two lines take them, as they do under the built-in Chrome. */
+    .xs-bin-app {
+        --mud-palette-primary: light-dark(#2457c5, #7aa2f7);
+        --mud-palette-primary-text: light-dark(#ffffff, #10131a);
+        --mud-palette-secondary: light-dark(#00838f, #4dd0e1);
+        --mud-palette-secondary-text: light-dark(#ffffff, #10131a);
+    }
+    .xs-bin { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+    .xs-bin-inputs { flex: 0 0 240px; display: flex; flex-direction: column; gap: 10px; }
+    .xs-mud .xs-bin-inputs { padding: 12px 16px; background: var(--xs-surface); border: 1px solid var(--xs-line); border-radius: 8px; }
+    .xs-bin-heading { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--xs-muted); }
+    .xs-bin-field { display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--xs-muted); }
+    .xs-bin-field input {
+        font: 500 14px "Roboto Mono", ui-monospace, monospace; color: var(--xs-text); background: var(--xs-surface);
+        border: 1px solid var(--xs-line); border-radius: 6px; padding: 6px 8px;
+    }
+    /* As wide as its charts, which are drawn at a width of their own: the cards and the grid stretch to it. */
+    .xs-bin-main { flex: 0 0 auto; width: max-content; max-width: 100%; display: flex; flex-direction: column; gap: 12px; }
+    /* The grid takes the width the charts give it, and asks for none of its own. */
+    .xs-bin-grid { width: 0; min-width: 100%; box-sizing: border-box; }
+    .xs-bin-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .xs-bin-greeks { grid-template-columns: repeat(4, 1fr); }
+    .xs-bin-card { padding: 10px 14px; border-radius: 8px; background: var(--xs-surface); border: 1px solid var(--xs-line); }
+    .xs-bin-card.xs-bin-primary { border-top: 3px solid var(--xs-accent); }
+    .xs-bin-card.xs-bin-secondary { border-top: 3px solid var(--xs-bin-secondary); }
+    .xs-bin-label { font-size: 12px; color: var(--xs-muted); }
+    .xs-bin-value { font: 500 22px "Roboto Mono", ui-monospace, monospace; }
+    .xs-bin-greeks .xs-bin-value { font-size: 17px; }
+    .xs-bin-lattice { position: relative; }
+    /* On the Wrapper's paper too, which sets the first three slots to the theme's colours. */
+    .xs-bin-lattice, .xs-bin-lattice .mud-ex-grid {
+        --xs-bin-secondary: light-dark(#00838f, #4dd0e1);
+        /* Slot 0 the edges, slot 1 the ring, slots 2 to 9 the value bands, low to high: a ramp on the
+           accent's blue, pale to deep on a light page and dim to bright on a dark one. */
+        --ex-chart-colour-0: light-dark(#5f6368, #9aa0a6);
+        --ex-chart-colour-1: light-dark(#e8710a, #f6a04d);
+        --ex-chart-colour-2: light-dark(#c6d8f8, #23365c);
+        --ex-chart-colour-3: light-dark(#a3c0f2, #2b4880);
+        --ex-chart-colour-4: light-dark(#7fa6ea, #345ca6);
+        --ex-chart-colour-5: light-dark(#5a8ae0, #4272c9);
+        --ex-chart-colour-6: light-dark(#3a6fd3, #5a8ae0);
+        --ex-chart-colour-7: light-dark(#2457c5, #7fa6ea);
+        --ex-chart-colour-8: light-dark(#1a419a, #a9c4f3);
+        --ex-chart-colour-9: light-dark(#0f2b6e, #d6e4fc);
+    }
+    .xs-bin-cards .xs-bin-secondary { --xs-bin-secondary: light-dark(#00838f, #4dd0e1); }
+    .xs-bin-lattice .ex-chart-grid, .xs-bin-lattice .ex-chart-zero, .xs-bin-lattice .ex-chart-plot { display: none; }
+    .xs-bin-lattice .ex-chart-legend-entry { display: none; }
+    .xs-bin-lattice .ex-chart-series.ex-chart-colour-0 .ex-chart-path { opacity: .4; }
+    .xs-bin-lattice .ex-chart-series.ex-chart-colour-0 .ex-chart-markers { display: none; }
+    .xs-bin-lattice .ex-chart-series .ex-chart-markers { stroke-width: 10; }
+    .xs-bin-lattice .ex-chart-series.ex-chart-colour-1 .ex-chart-markers { stroke-width: 16; }
+    .xs-bin-bar { position: absolute; right: 28px; top: 100px; bottom: 100px; width: 110px; font-size: 12px; color: var(--xs-muted); }
+    .xs-bin-ramp {
+        position: absolute; left: 0; top: 22px; bottom: 34px; width: 12px; border-radius: 6px;
+        background: linear-gradient(to top, var(--ex-chart-colour-2), var(--ex-chart-colour-3), var(--ex-chart-colour-4), var(--ex-chart-colour-5),
+            var(--ex-chart-colour-6), var(--ex-chart-colour-7), var(--ex-chart-colour-8), var(--ex-chart-colour-9));
+    }
+    .xs-bin-tick { position: absolute; left: 20px; transform: translateY(50%); }
+    .xs-bin-ring { position: absolute; left: 0; bottom: 0; white-space: nowrap; }
+    .xs-bin-ring::before {
+        content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle;
+        border: 3px solid var(--ex-chart-colour-1); background: var(--ex-chart-colour-6);
+    }
+</style>
+
+@code {
+    /// <summary>Whether the screen is drawn with MudBlazor's Chrome.</summary>
+    [Parameter] public bool Mud { get; set; }
+
+    /// <summary>Whether the page is in the dark scheme; the switch in the bar asks the host to change it.</summary>
+    [Parameter] public bool Dark { get; set; }
+
+    /// <summary>Raised when the switch in the bar asks for the other scheme.</summary>
+    [Parameter] public EventCallback<bool> DarkChanged { get; set; }
+
+    private const int MaxDrawn = 10, MinConvergence = 2, MaxConvergence = 500, Bands = 8, GreekSteps = 200;
+    private const double ChartWidth = 900, LatticeHeight = 480, ConvergenceHeight = 320;
+    private static readonly ViewportSize GridHeight = 320;
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+    private static readonly LegendPlacement LatticeLegend = new(LegendPosition.Right);
+
+    private static string Money(object v) => Convert.ToDouble(v, Invariant).ToString("0.0000", Invariant);
+
+    private static readonly GridColumn<LatticeNode>[] Columns =
+    [
+        new("Step", ColumnType.Number, n => n.Step, "Step i"),
+        new("Up", ColumnType.Number, n => n.Up, "Up-moves j"),
+        new("Net", ColumnType.Number, n => n.Net, "2j − i"),
+        new("Spot", ColumnType.Number, n => n.Spot, "Underlying", format: Money),
+        new("Value", ColumnType.Number, n => n.Value, "Option value", format: Money),
+        new("Exercise", ColumnType.Number, n => n.Exercise, "Exercise pays", format: Money),
+        new("Early", ColumnType.Text, n => n.Early ? "Exercise" : "", "Early"),
+    ];
+
+    // Held in a field, never rebuilt per render (AGENTS.md: a new delegate is a changed parameter).
+    private static readonly Func<LatticeNode, object> KeyOf = n => n.Key;
+
+    private double _spot = 100, _strike = 100, _rate = 0.05, _vol = 0.2, _maturity = 1;
+    private int _n = 5, _nMax = 200;
+    private bool _put, _american;
+
+    private double _price, _bs, _maxValue;
+    private (double Delta, double Gamma, double Vega, double Theta) _greeks;
+    private LatticeNode[] _nodes = [];
+    private ChartDefinition _lattice = null!, _convergence = null!;
+
+    private string Kind => (_american ? "American " : "European ") + (_put ? "put" : "call");
+    private string LatticeTitle => $"CRR lattice, {Kind}, N = {_n}: net up-moves 2j − i by step i";
+    private string ConvergenceTitle => $"Lattice price by N against Black–Scholes, {Kind}";
+    private static string F(double v, int digits) => v.ToString("F" + digits, Invariant);
+
+    protected override void OnInitialized() => Reprice();
+
+    private Task Set(Action change)
+    {
+        change();
+        Reprice();
+        return Task.CompletedTask;
+    }
+
+    private void Reprice()
+    {
+        var terms = new OptionTerms(_spot, _strike, _rate, _vol, _maturity, _put, _american);
+        (_price, _nodes) = BinomialLattice.Price(terms, _n);
+        _maxValue = _nodes.Max(n => n.Value);
+        _bs = BinomialLattice.BlackScholes(terms);
+        _greeks = BinomialLattice.Greeks(terms, GreekSteps);
+        _lattice = Lattice(_nodes, _n);
+        _convergence = Convergence(terms, _nMax, _bs);
+    }
+
+    private static ChartDefinition Lattice(LatticeNode[] nodes, int n)
+    {
+        var series = new List<ChartSeries>();
+        // Slot order is the order keys are first named: the edges take slot 0, the ring 1, the bands 2 to 9.
+        var edge = new AppearanceKeys("edge");
+        // Every edge lies on a diagonal: an up-diagonal holds the nodes with k down-moves, a down-diagonal those with k up-moves.
+        for (var k = 0; k <= n; k++)
+        {
+            series.Add(ChartSeries.Of($"edge-u{k}", $"Edges, {k} down", SeriesKind.Level,
+                nodes.Where(x => x.Step - x.Up == k).OrderBy(x => x.Step).Select(Position)) with { Keys = edge });
+            series.Add(ChartSeries.Of($"edge-d{k}", $"Edges, {k} up", SeriesKind.Level,
+                nodes.Where(x => x.Up == k).OrderBy(x => x.Step).Select(Position)) with { Keys = edge });
+        }
+        series.Add(ChartSeries.Of("early", "Early exercise", SeriesKind.Observation, nodes.Where(x => x.Early).Select(Mark))
+            with { Keys = new AppearanceKeys("early") });
+        var max = Math.Max(nodes.Max(x => x.Value), 1e-9);
+        for (var b = 0; b < Bands; b++)
+        {
+            var band = b;
+            series.Add(ChartSeries.Of($"band{b}", string.Create(Invariant, $"Value {max * b / Bands:0.0}–{max * (b + 1) / Bands:0.0}"),
+                SeriesKind.Observation, nodes.Where(x => Band(x.Value, max) == band).Select(Mark)) with { Keys = new AppearanceKeys($"band{b}") });
+        }
+        return new ChartDefinition(ChartAxis.Numbers("Step i") with { Format = x => x.ToString("0", Invariant) }, series,
+            ["Colour is the option value, in eight bands; a ring marks early exercise."]);
+    }
+
+    private static ChartPoint Position(LatticeNode x) => new(x.Step, ChartValue.Of((double)x.Net));
+
+    private static ChartPoint Mark(LatticeNode x) => Position(x) with
+    {
+        Name = string.Create(Invariant, $"i {x.Step}, j {x.Up}: S {x.Spot:0.00}, V {x.Value:0.0000}{(x.Early ? ", exercised" : "")}"),
+        Row = x.Key,
+    };
+
+    private static int Band(double v, double max) => Math.Min(Bands - 1, (int)(v / max * Bands));
+
+    private static ChartDefinition Convergence(OptionTerms terms, int nMax, double bs)
+    {
+        var lattice = Enumerable.Range(1, nMax).Select(m => new ChartPoint(m, ChartValue.Of(BinomialLattice.Price(terms, m).Price)));
+        ChartPoint[] flat = [new(1, ChartValue.Of(bs)), new(nMax, ChartValue.Of(bs))];
+        return new ChartDefinition(ChartAxis.Numbers("Steps N") with { Format = x => x.ToString("0", Invariant) },
+        [
+            ChartSeries.Of("lattice", "Lattice price", SeriesKind.Level, lattice) with { Keys = new AppearanceKeys("lattice", "solid"), FromZero = false, Format = Money },
+            ChartSeries.Of("black-scholes", string.Create(Invariant, $"Black–Scholes {bs:0.0000}"), SeriesKind.Level, flat)
+                with { Keys = new AppearanceKeys("black-scholes", "dashed"), FromZero = false, Format = Money },
+        ]);
+    }
+
+    private RenderFragment Chart(ChartDefinition definition, string title, double height, LegendPlacement? legend) =>
+        @<text>
+            @if (Mud)
+            {
+                <MudExGridPaper Elevation="1">
+                    <ExChart Definition="definition" Title="@title" Width="ChartWidth" Height="height" Legend="legend" Chrome="MudChartChrome.Default" />
+                </MudExGridPaper>
+            }
+            else
+            {
+                <ExChart Definition="definition" Title="@title" Width="ChartWidth" Height="height" Legend="legend" />
+            }
+        </text>;
+
+    private RenderFragment Card(string label, string value, string cls) =>
+        @<div class="@($"xs-bin-card {cls}")" role="group" aria-label="@label">
+            <div class="xs-bin-label">@label</div>
+            <div class="xs-bin-value">@value</div>
+        </div>;
+
+    private RenderFragment Switch(string label, string[] options, string value, Func<string, Task> select) =>
+        @<text>
+            @if (Mud)
+            {
+                <MudToggleGroup T="string" Value="value" ValueChanged="select" Size="Size.Small" Outlined="false"
+                                Delimiters="false" SelectedClass="xs-mud-view-selected" Class="xs-mud-views" aria-label="@label">
+                    @foreach (var option in options)
+                    {
+                        <MudToggleItem Value="@option" Text="@option" />
+                    }
+                </MudToggleGroup>
+            }
+            else
+            {
+                <nav class="xs-views" aria-label="@label">
+                    @foreach (var option in options)
+                    {
+                        <button type="button" class="@(option == value ? "xs-view xs-view-on" : "xs-view")" aria-pressed="@(option == value ? "true" : "false")"
+                                @onclick="() => select(option)">@option</button>
+                    }
+                </nav>
+            }
+        </text>;
+
+    private RenderFragment Field(string label, string id, Func<double> get, Action<double> set, double step) =>
+        @<text>
+            @if (Mud)
+            {
+                <MudNumericField T="double" Label="@label" Value="get()" ValueChanged="v => Set(() => set(v))" Step="step"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense" Class="@($"xs-bin-{id}")" />
+            }
+            else
+            {
+                <label class="@($"xs-bin-field xs-bin-{id}")">
+                    <span>@label</span>
+                    <input type="number" step="any" @bind:get="get()" @bind:set="v => Set(() => set(v))" />
+                </label>
+            }
+        </text>;
+}

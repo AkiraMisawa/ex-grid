@@ -29,7 +29,7 @@ public static class ChartSummary
             foreach (var v in new[] { panel.Left, panel.Right }.OfType<VerticalAxis>())
                 parts.Add($"{named}{(v.Side == AxisSide.Left ? "Left" : "Right")} axis, {Number(v.Min)} to {Number(v.Max)}.");
             foreach (var piece in panel.Series)
-                parts.Add(Series(byId[piece.Id], axis, scene));
+                parts.Add(panel.VolumeOf is null ? Series(byId[piece.Id], axis, scene) : Volume(byId[piece.Id], axis, scene));
         }
         if (!string.IsNullOrWhiteSpace(description)) parts.Add(description.Trim());
         return string.Join(" ", parts);
@@ -37,6 +37,21 @@ public static class ChartSummary
 
     private static string Series(ChartSeries s, ChartAxis axis, ChartScene scene)
     {
+        if (s.Kind == SeriesKind.Observation)
+        {
+            var seen = s.Points.Where(p => p.Y is not null && p.X >= scene.XFrom && p.X <= scene.XTo).ToList();
+            if (seen.Count == 0) return $"{s.Name}: no point in range.";
+            var low = seen.MinBy(p => p.Y!.Value.ToDouble());
+            var high = seen.MaxBy(p => p.Y!.Value.ToDouble());
+            var said = $"{s.Name}: {seen.Count} points, {axis.Write(seen.Min(p => p.X))} to {axis.Write(seen.Max(p => p.X))} across, {s.Write(low.Y!.Value)} to {s.Write(high.Y!.Value)} up.";
+            if (s.Edges.Count > 0)
+                said = $"{s.Name}: {s.Points.Count} nodes and {s.Edges.Count} edges, {axis.Write(seen.Min(p => p.X))} to {axis.Write(seen.Max(p => p.X))} across, {s.Write(low.Y!.Value)} to {s.Write(high.Y!.Value)} up.";
+            if (s.ColourBy is { } c && PointScales.Range(c.Values) is { } cr)
+                said += $" {s.Name}: colour is {c.Title}, {Number(cr.Lo)} to {Number(cr.Hi)}.";
+            if (s.SizeBy is { } z && PointScales.Range(z.Values) is { } zr)
+                said += $" {s.Name}: size is {z.Title}, {Number(zr.Lo)} to {Number(zr.Hi)}.";
+            return said;
+        }
         IEnumerable<ChartPoint> points = s.Sampler is { } f
             ? scene.Positions.Where(p => p.Position >= f.From && p.Position <= f.To).Select(p => new ChartPoint(p.Position, f.ValueAt(p.Position)))
             : s.Points.Where(p => p.X >= scene.XFrom && p.X <= scene.XTo);
@@ -44,6 +59,15 @@ public static class ChartSummary
         if (valued.Count == 0) return $"{s.Name}: no value in range.";
         var max = valued.MaxBy(p => p.Y!.Value.ToDouble());
         return $"{s.Name}: maximum {s.Write(max.Y!.Value)} at {axis.Write(max.X)}.";
+    }
+
+    // A volume panel says the volume, never its series' prices again (ADR-0300).
+    private static string Volume(ChartSeries s, ChartAxis axis, ChartScene scene)
+    {
+        var seen = s.Bars.Where(b => b.Volume is not null && b.X >= scene.XFrom && b.X <= scene.XTo).ToList();
+        if (seen.Count == 0) return $"{s.Name} volume: no value in range.";
+        var max = seen.MaxBy(b => b.Volume!.Value.ToDouble());
+        return $"{s.Name} volume: maximum {s.Write(max.Volume!.Value)} at {axis.Write(max.X)}.";
     }
 
     private static string Number(double v) => v.ToString("0.####", CultureInfo.InvariantCulture);

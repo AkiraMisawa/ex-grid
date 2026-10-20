@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using global::ExChart.Chrome;
 using global::ExChart.Engine;
 using global::ExGrid;
 using global::ExGrid.Chrome;
@@ -68,7 +69,28 @@ public partial class ExChart
     /// <summary>Raised when the user switches the horizontal axis under Chart Filters.</summary>
     [Parameter] public EventCallback<AxisScale> OnScaleChanged { get; set; }
 
+    /// <summary>The vertical axes' scale: <see cref="AxisScale.Logarithmic"/>, or null for proportional (ADR-0290). A value at or below zero keeps them proportional, with a Note naming it.</summary>
+    [Parameter] public AxisScale? YScale { get; set; }
+
+    /// <summary>
+    /// Raised when the user clicks a point: pressed and released at one position, on the series
+    /// nearest the pointer that has a value there (ADR-0258). A grid bridge shows its cell.
+    /// </summary>
+    [Parameter] public EventCallback<ChartPointClick> OnPointClick { get; set; }
+
+    /// <summary>
+    /// What draws the toolbar and the context menu (ADR-0281): ExChart.MudBlazor's
+    /// <c>MudChartChrome</c>, or null for the built-in markup. The legend, the tooltip and the plot
+    /// are ExChart's under any Chrome, and swapping it changes no behaviour.
+    /// </summary>
+    [Parameter] public IChartChrome? Chrome { get; set; }
+
+    /// <summary>The name a saved file takes, without its extension; the title's when null, else "chart" (ADR-0282).</summary>
+    [Parameter] public string? FileName { get; set; }
+
     [Inject] private IJSRuntime JS { get; set; } = null!;
+
+    [Inject] private IServiceProvider Services { get; set; } = null!;
 
     private static readonly IReadOnlySet<string> NoneHidden = new HashSet<string>();
 
@@ -97,6 +119,9 @@ public partial class ExChart
     /// <summary>The drawing's version, as the pointer entry's reports must carry it.</summary>
     internal int Version => _version;
 
+    /// <summary>The scene as drawn, for the tests.</summary>
+    internal ChartScene Scene => _scene;
+
     // The pointer, as the script last reported it, and a drag's press.
     private int? _pointerIndex;
     private int _pointerPanel;
@@ -111,7 +136,27 @@ public partial class ExChart
     private string? _filterError;
 
     /// <summary>Creates the chart.</summary>
-    public ExChart() => _toggle = EventCallback.Factory.Create<string>(this, ToggleAsync);
+    public ExChart()
+    {
+        _toggle = EventCallback.Factory.Create<string>(this, ToggleAsync);
+        // Held once, so a context built from them is equal to the last while nothing changed.
+        _toggleFilters = () => { ToggleFilters(); StateHasChanged(); return Task.CompletedTask; };
+        _resetRange = ResetRangeAsync;
+        _toggleTable = () => { ToggleTable(); StateHasChanged(); return Task.CompletedTask; };
+        _csv = DownloadCsvAsync;
+        _svg = DownloadSvgAsync;
+        _png = DownloadPngAsync;
+        _apply = ApplyRangeAsync;
+        _setScale = scale => SetScaleAsync(scale.ToString());
+        _fromMenu = new Dictionary<string, Func<Task>>
+        {
+            [ChartCommandIds.ResetRange] = () => FromMenuAsync(_resetRange),
+            [ChartCommandIds.Table] = () => FromMenuAsync(_toggleTable),
+            [ChartCommandIds.DownloadCsv] = () => FromMenuAsync(_csv),
+            [ChartCommandIds.DownloadSvg] = () => FromMenuAsync(_svg),
+            [ChartCommandIds.DownloadPng] = () => FromMenuAsync(_png),
+        };
+    }
 
     /// <inheritdoc />
     protected override void OnParametersSet()
@@ -128,7 +173,7 @@ public partial class ExChart
 
     private void Rebuild()
     {
-        var builtFrom = new object?[] { Definition, Width, Height, Density, Legend, AxisStyle, IndependentScales, ColourSlots, _hidden, _range, _scale };
+        var builtFrom = new object?[] { Definition, Width, Height, Density, Legend, AxisStyle, IndependentScales, ColourSlots, _hidden, _range, _scale, YScale };
         if (builtFrom.SequenceEqual(_builtFrom)) return;
         var definitionChanged = _builtFrom.Length == 0 || !ReferenceEquals(_builtFrom[0], Definition);
         _builtFrom = builtFrom;
@@ -140,13 +185,13 @@ public partial class ExChart
         // the chart is told nothing about, and no more (ADR-0254).
         _metrics = new ChartMetrics(Width, Height, DevicePixelRatio: 2, LineHeight: Math.Ceiling(font * 1.4), Padding: Math.Round(font * 0.6),
             PanelGap: Math.Round(font * 1.2), TextWidth: s => cells.TextWidthPx(s), ColourSlots: ColourSlots);
-        _view = new ChartView(_hidden, _range?.From, _range?.To, _scale);
+        _view = new ChartView(_hidden, _range?.From, _range?.To, _scale, _range?.YFrom, _range?.YTo, YScale);
         var previous = _scene;
         _scene = ChartScene.Build(Definition, _metrics, _view, AxisStyle, IndependentScales, Legend);
         _summary = ChartSummary.Of(Definition, _scene, _view, Title, Description);
         _table = _tableOpen ? ChartCsv.WideTable(Definition, _metrics, _view) : null;
 
-        if (definitionChanged || previous is null || !previous.Positions.Equals(_scene.Positions)
+        if (definitionChanged || previous is null || !previous.Positions.Equals(_scene.Positions) || !previous.Marks.Equals(_scene.Marks)
             || !previous.Panels.Select(p => p.Plot).SequenceEqual(_scene.Panels.Select(p => p.Plot)))
         {
             _version++;
@@ -170,6 +215,11 @@ public partial class ExChart
 
     private void Read(int index, int panel, double y)
     {
+        if (_scene.Scatter)
+        {
+            ReadMark(index);
+            return;
+        }
         if (index < 0 || index >= _scene.Positions.Count || panel < 0 || panel >= _scene.Panels.Count)
         {
             ClearPointer();
@@ -180,6 +230,22 @@ public partial class ExChart
         _readingY = y;
         _reading = ChartReadings.At(Definition, _scene, _metrics, _view, _scene.Positions[index].Position, panel, y);
         _dots = _reading.Lines.Where(l => l.Y is not null).Select(l => (l.Y!.Value, l.Look)).ToEquatableList();
+    }
+
+    // On a scatter the pointer is over the nearest mark, if any (ADR-0290).
+    private void ReadMark(int index)
+    {
+        if (index < 0 || index >= _scene.Marks.Count)
+        {
+            ClearPointer();
+            return;
+        }
+        var m = _scene.Marks[index];
+        _pointerIndex = index;
+        _pointerPanel = m.Panel;
+        _readingY = m.Y;
+        _reading = ChartReadings.OfMark(Definition, _scene, index);
+        _dots = _reading.Lines.Select(l => (m.Y, l.Look)).ToEquatableList();
     }
 
     // The pointer entry's reports (ADR-0255), through ChartPointer. Each carries the drawing's
@@ -195,22 +261,104 @@ public partial class ExChart
     /// <summary>Runs a report on the renderer's own context, as any event of the chart's runs.</summary>
     internal Task Dispatch(Func<Task> work) => InvokeAsync(work);
 
-    internal void OnPress(int version, int index)
+    internal void OnPress(int version, int index, double x = 0, double y = 0, int panel = 0)
     {
-        if (version != _version || index < 0 || index >= _scene.Positions.Count) return;
+        if (version != _version) return;
+        if (_scene.Scatter)
+        {
+            if (panel < 0 || panel >= _scene.Panels.Count) return;
+            _pressAt = (version, index, x, y, panel);
+            _dragAt = null;
+            return;
+        }
+        if (index < 0 || index >= _scene.Positions.Count) return;
         _press = (version, index);
+    }
+
+    // A scatter's press, at the lattice cell the pointer entry snapped it to, and where a drag from it
+    // has come to (ADR-0290).
+    private (int Version, int Index, double X, double Y, int Panel)? _pressAt;
+    private (double X, double Y)? _dragAt;
+
+    internal void OnDrag(int version, double x, double y)
+    {
+        if (version != _version || _pressAt is not { } p || p.Version != version) return;
+        _dragAt = (x, y);
+        StateHasChanged();
+    }
+
+    // A scatter's release (ADR-0290): on the mark it was pressed on, a click on that point; elsewhere,
+    // the rectangle from the press narrows both axes. Against another drawing, nothing (spine rule 6).
+    private async Task OnScatterReleaseAsync(int version, int index, double x, double y)
+    {
+        var press = _pressAt;
+        _pressAt = null;
+        _dragAt = null;
+        if (press is not { } p) return;
+        // Released outside the plot, or against another drawing: nothing (spine rule 6).
+        if (p.Version != _version || version != _version || x < 0 || y < 0)
+        {
+            StateHasChanged();
+            return;
+        }
+        // Within one cell of the lattice it was pressed on, a click; a slip of a pixel across a cell's
+        // edge is still a click (ADR-0290).
+        if (Math.Abs(x - p.X) <= DragCell && Math.Abs(y - p.Y) <= DragCell)
+        {
+            StateHasChanged();
+            if (index >= 0 && index == p.Index && index < _scene.Marks.Count)
+            {
+                var m = _scene.Marks[index];
+                var point = Definition.Series.First(s => s.Id == m.SeriesId).Points[m.Point];
+                await OnPointClick.InvokeAsync(new ChartPointClick(m.SeriesId, point.X, point.Row));
+            }
+            return;
+        }
+        var panel = _scene.Panels[p.Panel];
+        var (x0, x1) = (_scene.PositionAt(Math.Min(p.X, x)), _scene.PositionAt(Math.Max(p.X, x)));
+        // The left axis is narrowed only where it is the chart's one vertical axis that a rectangle
+        // can mean: one panel. Elsewhere the rectangle narrows the axis across alone (ADR-0290).
+        if (panel.Left is not { } left || _scene.Panels.Count > 1)
+        {
+            await SetRangeAsync(new ChartRange(x0, x1));
+            return;
+        }
+        // Down the page is down the axis: the lower edge is the larger pixel.
+        await SetRangeAsync(new ChartRange(x0, x1, left.ValueAt(Math.Max(p.Y, y), panel.Plot), left.ValueAt(Math.Min(p.Y, y), panel.Plot)));
     }
 
     // A drag ends (ADR-0273): narrowed to the positions it began and ended on, unless the drawing
     // it began against is no longer the one shown (ADR-0272).
-    internal async Task OnReleaseAsync(int version, int index)
+    internal async Task OnReleaseAsync(int version, int index, double x = 0, double y = 0)
     {
+        if (_scene.Scatter)
+        {
+            await OnScatterReleaseAsync(version, index, x, y);
+            return;
+        }
         var press = _press;
         _press = null;
         if (press is not { } p) return;
-        if (p.Version != _version || version != _version || index < 0 || index >= _scene.Positions.Count || index == p.Index)
+        if (p.Version != _version || version != _version || index < 0 || index >= _scene.Positions.Count)
         {
             StateHasChanged();
+            return;
+        }
+        if (index == p.Index)
+        {
+            // A click, read from the reading the pointer's position holds: one taken at another
+            // position, or none, names no point, and nothing is raised (spine rule 6).
+            if (_pointerIndex == index && _reading?.Lines.Where(l => l.Y is not null && l.Value is not null)
+                    .MinBy(l => Math.Abs(l.Y!.Value - _readingY)) is { } line)
+            {
+                var position = _scene.Positions[index].Position;
+                // A merged candle stands for no one row: a click narrows to its period (ADR-0300, ADR-0302).
+                if (_scene.Panels.SelectMany(panel => panel.Series).FirstOrDefault(piece => piece.Id == line.Id && piece.Period != CandlePeriod.Row) is { } merged
+                    && merged.Candles.FirstOrDefault(c => c.From <= position && position <= c.To) is { Rows: > 0 } candle)
+                    await SetRangeAsync(new ChartRange(candle.From, candle.To));
+                else
+                    await OnPointClick.InvokeAsync(new ChartPointClick(line.Id, position));
+            }
             return;
         }
         var a = _scene.Positions[Math.Min(p.Index, index)].Position;
@@ -222,6 +370,9 @@ public partial class ExChart
     {
         _range = range;
         _filterError = null;
+        // Chart Filters shows the range as it now stands, however it was set (ADR-0273).
+        _fromText = range?.From is { } f ? Invariant(f) : null;
+        _toText = range?.To is { } t ? Invariant(t) : null;
         Rebuild();
         StateHasChanged();
         await OnRangeChanged.InvokeAsync(range);
@@ -255,17 +406,23 @@ public partial class ExChart
 
     // The range typed under Chart Filters (ADR-0273), in the axis' own values. A value that does
     // not read as one is said, never guessed (spine rule 1).
-    private async Task ApplyTypedRangeAsync()
+    private Task ApplyTypedRangeAsync() => ApplyRangeAsync(_fromText, _toText);
+
+    private async Task ApplyRangeAsync(string? fromText, string? toText)
     {
-        if (!TryRead(_fromText, out var from) || !TryRead(_toText, out var to))
+        _fromText = fromText;
+        _toText = toText;
+        if (!TryRead(fromText, out var from) || !TryRead(toText, out var to))
         {
-            var bad = !TryRead(_fromText, out _) ? _fromText : _toText;
+            var bad = !TryRead(fromText, out _) ? fromText : toText;
             _filterError = $"“{bad}” is not {AxisKind} on this axis.";
+            StateHasChanged();
             return;
         }
         if (from > to)
         {
             _filterError = "From is after To.";
+            StateHasChanged();
             return;
         }
         await SetRangeAsync(from is null && to is null ? null : new ChartRange(from, to));
@@ -276,6 +433,7 @@ public partial class ExChart
         if (!Enum.TryParse<AxisScale>(value, out var scale) || scale == (_scale ?? Definition.Axis.EffectiveScale)) return;
         _scale = scale;
         Rebuild();
+        StateHasChanged();
         await OnScaleChanged.InvokeAsync(scale);
     }
 
@@ -333,42 +491,16 @@ public partial class ExChart
     private RenderFragment Drawing => b =>
     {
         var lh = _metrics.LineHeight;
-        for (var i = 0; i < _scene.Panels.Count; i++)
-        {
-            var panel = _scene.Panels[i];
-            b.OpenComponent<ChartAxesView>(0);
-            b.SetKey("axes:" + panel.Name);
-            b.AddComponentParameter(1, nameof(ChartAxesView.Panel), panel);
-            b.AddComponentParameter(2, nameof(ChartAxesView.XTicks), _scene.XTicks);
-            b.AddComponentParameter(3, nameof(ChartAxesView.Last), i == _scene.Panels.Count - 1);
-            b.AddComponentParameter(4, nameof(ChartAxesView.LineHeight), lh);
-            b.AddComponentParameter(5, nameof(ChartAxesView.Angle), AxisStyle?.Angle ?? 0);
-            b.CloseComponent();
-            foreach (var piece in panel.Series)
-            {
-                b.OpenComponent<ChartSeriesView>(6);
-                b.SetKey("series:" + piece.Id);
-                b.AddComponentParameter(7, nameof(ChartSeriesView.Piece), piece);
-                b.AddComponentParameter(8, nameof(ChartSeriesView.Plot), panel.Plot);
-                b.AddComponentParameter(9, nameof(ChartSeriesView.LineHeight), lh);
-                b.CloseComponent();
-            }
-            b.OpenComponent<ChartLegendView>(10);
-            b.SetKey("legend:" + panel.Name);
-            b.AddComponentParameter(11, nameof(ChartLegendView.Entries), panel.Legend);
-            b.AddComponentParameter(12, nameof(ChartLegendView.LineHeight), lh);
-            b.AddComponentParameter(13, nameof(ChartLegendView.Toggle), _toggle);
-            b.CloseComponent();
-        }
+        b.AddContent(0, ChartDrawing.Panels(_scene, lh, AxisStyle?.Angle ?? 0, _toggle));
         b.OpenComponent<ChartBandView>(14);
         b.AddComponentParameter(15, nameof(ChartBandView.Span), BandSpan);
-        b.AddComponentParameter(16, nameof(ChartBandView.Top), PlotsTop);
-        b.AddComponentParameter(17, nameof(ChartBandView.Bottom), PlotsBottom);
+        b.AddComponentParameter(16, nameof(ChartBandView.Top), BandTop);
+        b.AddComponentParameter(17, nameof(ChartBandView.Bottom), BandBottom);
         b.CloseComponent();
         b.OpenComponent<ChartGuideView>(18);
         b.AddComponentParameter(19, nameof(ChartGuideView.X), GuideX);
-        b.AddComponentParameter(20, nameof(ChartGuideView.Top), PlotsTop);
-        b.AddComponentParameter(21, nameof(ChartGuideView.Bottom), PlotsBottom);
+        b.AddComponentParameter(20, nameof(ChartGuideView.Top), GuideTop);
+        b.AddComponentParameter(21, nameof(ChartGuideView.Bottom), GuideBottom);
         b.AddComponentParameter(22, nameof(ChartGuideView.Dots), _dots);
         b.AddComponentParameter(23, nameof(ChartGuideView.LineHeight), lh);
         b.CloseComponent();
@@ -385,14 +517,27 @@ public partial class ExChart
         b.CloseComponent();
     };
 
+    // The lattice, in CSS pixels, a drag across a scatter is reported on: one report a cell, not one a
+    // pointer move (ADR-0255, ADR-0290).
+    internal const double DragCell = 4;
+
     private double PlotsTop => _scene.Panels.Count == 0 ? 0 : _scene.Panels[0].Plot.Y;
 
     private double PlotsBottom => _scene.Panels.Count == 0 ? 0 : _scene.Panels[^1].Plot.Y + _scene.Panels[^1].Plot.Height;
 
-    private double? GuideX => _pointerIndex is { } i ? _scene.Positions[i].X : null;
+    private double? GuideX => _pointerIndex is { } i ? (_scene.Scatter ? _scene.Marks[i].X : _scene.Positions[i].X) : null;
 
-    private (double From, double To)? BandSpan =>
-        _press is { } p && p.Version == _version && _pointerIndex is { } i && i != p.Index ? (_scene.Positions[p.Index].X, _scene.Positions[i].X) : null;
+    private double GuideTop => _scene.Scatter && _pointerIndex is { } i ? _scene.Marks[i].Y : PlotsTop;
+
+    private double GuideBottom => _scene.Scatter && _pointerIndex is { } i ? _scene.Marks[i].Y : PlotsBottom;
+
+    private (double From, double To)? BandSpan => _scene.Scatter
+        ? _pressAt is { } q && q.Version == _version && _dragAt is { } d ? (q.X, d.X) : null
+        : _press is { } p && p.Version == _version && _pointerIndex is { } i && i != p.Index ? (_scene.Positions[p.Index].X, _scene.Positions[i].X) : null;
+
+    private double BandTop => _scene.Scatter && _pressAt is { } q && _dragAt is { } d ? Math.Min(q.Y, d.Y) : PlotsTop;
+
+    private double BandBottom => _scene.Scatter && _pressAt is { } q && _dragAt is { } d ? Math.Max(q.Y, d.Y) : PlotsBottom;
 
     private double TooltipLeft => GuideX is { } x ? (TooltipFlip ? x - _metrics.LineHeight / 2 : x + _metrics.LineHeight / 2) : 0;
 
@@ -414,7 +559,68 @@ public partial class ExChart
 
     private static string ScriptNotice => BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script);
 
-    // ---- The pointer entry (ADR-0255, eleventh): imported at its versioned address, refused when
+    // ---- Files (ADR-0252, ADR-0282): written on the click, never during a render, and saved by the
+    // files entry, the fifteenth use the JavaScript allowlist permits.
+
+    /// <summary>
+    /// Saves the chart as a file, as the user sees it: CSV of the visible series in the range shown,
+    /// the SVG of the drawing, or that SVG painted to PNG at the screen's Device Pixel (ADR-0282).
+    /// One call is one save. False when the chart's script is not loaded, which the chart says on
+    /// its face, or the circuit has gone.
+    /// </summary>
+    public async Task<bool> DownloadAsync(ChartFileFormat format)
+    {
+        // Taken now: the file is the drawing on screen at the click, whatever renders meanwhile.
+        var module = _module;
+        var scene = _scene;
+        var definition = Definition;
+        var metrics = _metrics;
+        var view = _view;
+        var summary = _summary;
+        if (module is null || _scriptRefused || _disposed) return false;
+        var name = ChartFiles.Name(FileName, Title, format);
+        try
+        {
+            byte[] bytes;
+            if (format == ChartFileFormat.Csv)
+            {
+                bytes = ChartFiles.Csv(definition, metrics, view);
+            }
+            else
+            {
+                var font = GridMetrics.Resolve(Density).FontSizePx;
+                var angle = AxisStyle?.Angle ?? 0;
+                // The theme as the screen shows it, read on the click (ADR-0282).
+                var theme = ChartFiles.Theme(await module.InvokeAsync<string[]>("tokens", _root, ChartFiles.TokenNames.Value));
+                var svg = await ChartFiles.SvgAsync(Services, new ChartFileDrawing.Input(scene, Width, Height, font, metrics.LineHeight, angle, summary, theme));
+                if (format == ChartFileFormat.Png)
+                {
+                    // Painted and saved in the browser: the PNG's bytes never cross back (ADR-0282).
+                    await module.InvokeVoidAsync("savePng", name, svg, Width, Height);
+                    return true;
+                }
+                bytes = System.Text.Encoding.UTF8.GetBytes(svg);
+            }
+            await module.InvokeVoidAsync("save", name, ChartFiles.MediaType(format), bytes);
+            return true;
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            return false;
+        }
+    }
+
+    private Task DownloadCsvAsync() => DownloadAsync(ChartFileFormat.Csv);
+
+    private Task DownloadSvgAsync() => DownloadAsync(ChartFileFormat.Svg);
+
+    private Task DownloadPngAsync() => DownloadAsync(ChartFileFormat.Png);
+
+    // A file needs the script: until it is told the first drawing, and when it is refused, the
+    // buttons say so by being unavailable rather than doing nothing (spine rule 1).
+    private bool FilesUnavailable => !_told || _scriptRefused;
+
+    // ---- The pointer entry (ADR-0255, thirteenth): imported at its versioned address, refused when
     // its stamp is not this build's (ADR-0123).
 
     private IJSObjectReference? _module;
@@ -437,14 +643,18 @@ public partial class ExChart
     {
         if (firstRender)
             await AttachAsync();
+        await FocusMenuAsync();
         if (_handle is not null && _drawPending && !_disposed)
         {
             _drawPending = false;
             var version = _version;
             var xs = _scene.Positions.Select(p => Math.Round(p.X, 2)).ToArray();
+            // A scatter's marks, as x, y and panel in turn, with how far from one the pointer still
+            // finds it and the lattice a drag is reported on (ADR-0290).
+            var marks = _scene.Scatter ? _scene.Marks.SelectMany(m => new[] { Math.Round(m.X, 2), Math.Round(m.Y, 2), m.Panel }).ToArray() : null;
             try
             {
-                await _handle.InvokeVoidAsync("draw", version, xs);
+                await _handle.InvokeVoidAsync("draw", version, xs, marks, Math.Round(_metrics.LineHeight * 0.6, 2), DragCell);
                 if (!_told)
                 {
                     _told = true;
@@ -541,10 +751,13 @@ internal sealed class ChartPointer(ExChart chart)
     public Task OnPointerAsync(int version, int index, int panel, double y) => Dispatch(() => { chart.OnPointer(version, index, panel, y); return Task.CompletedTask; });
 
     [JSInvokable]
-    public Task OnPressAsync(int version, int index) => Dispatch(() => { chart.OnPress(version, index); return Task.CompletedTask; });
+    public Task OnPressAsync(int version, int index, double x, double y, int panel) => Dispatch(() => { chart.OnPress(version, index, x, y, panel); return Task.CompletedTask; });
 
     [JSInvokable]
-    public Task OnReleaseAsync(int version, int index) => Dispatch(() => chart.OnReleaseAsync(version, index));
+    public Task OnDragAsync(int version, double x, double y) => Dispatch(() => { chart.OnDrag(version, x, y); return Task.CompletedTask; });
+
+    [JSInvokable]
+    public Task OnReleaseAsync(int version, int index, double x, double y) => Dispatch(() => chart.OnReleaseAsync(version, index, x, y));
 
     private Task Dispatch(Func<Task> work) => chart.Dispatch(work);
 }

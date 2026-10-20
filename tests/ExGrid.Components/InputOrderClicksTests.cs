@@ -45,6 +45,16 @@ public class InputOrderClicksTests : GridTestContext
     private static Task KeyAsync(IRenderedComponent<ExGrid<TestRow>> cut, string key, int input)
         => cut.InvokeAsync(() => cut.Instance.OnKeyAsync(key, false, false, false, false, false, input: input));
 
+    /// <summary>Sends a paste numbered 1 whose reading holds the Input Order until <paramref name="opens"/>
+    /// ends, and then changes nothing: the input before a told one, which reached the core first, as every
+    /// number does (ADR-0240 section 11), and is still being handled.</summary>
+    private static async Task<Task> HoldTheOrderAsync(IRenderedComponent<ExGrid<TestRow>> cut, TaskCompletionSource opens)
+    {
+        Task paste = Task.CompletedTask;
+        await cut.InvokeAsync(() => { paste = cut.Instance.OnPasteStreamsAsync(FakeJSStream.Held(opens.Task), null, input: 1); });
+        return paste;
+    }
+
     private Task<string?> AnsweredAsync(IRenderedComponent<ExGrid<TestRow>> cut)
         => ReadWhenIdleAsync(() => cut.Find(".ex-grid > [data-ex-answered]").GetAttribute("data-ex-answered"));
 
@@ -61,10 +71,12 @@ public class InputOrderClicksTests : GridTestContext
         Assert.All(cut.FindAll(".ex-pager button"), button => Assert.Equal("click", button.GetAttribute("data-ex-claims")));
     }
 
-    [Fact] // ADR-0240 §2: a click told ahead of its event is handled in its number, after a key numbered before it that arrives later
+    [Fact] // ADR-0240 §2: a click told ahead of its event is handled in its number, after the input numbered before it is handled
     public async Task ADR0240_a_told_click_waits_for_the_input_numbered_before_it()
     {
         var cut = RenderGrid();
+        var opens = new TaskCompletionSource();
+        var paste = await HoldTheOrderAsync(cut, opens);
         await TellAsync(cut, "click", input: 2);
         Task opener = Task.CompletedTask;
         await cut.InvokeAsync(() => { opener = cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs()); });
@@ -72,7 +84,8 @@ public class InputOrderClicksTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-popover"));
         Assert.Equal("0", await AnsweredAsync(cut));
 
-        await KeyAsync(cut, "ArrowDown", input: 1);
+        opens.SetResult();
+        await paste;
         await opener;
 
         Assert.Single(cut.FindAll(".ex-popover"));
@@ -104,18 +117,21 @@ public class InputOrderClicksTests : GridTestContext
         Assert.Equal("1", await AnsweredAsync(cut));
     }
 
-    [Fact] // ADR-0240 §2: a heading's press and click each take the number told ahead of them, in turn behind a key
+    [Fact] // ADR-0240 §2: a heading's press and click each take the number told ahead of them, in turn behind the input before them
     public async Task ADR0240_a_headings_press_and_click_take_their_numbers_in_turn()
     {
         var cut = RenderGrid();
         await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 50, OffsetY = 10 });
+        var opens = new TaskCompletionSource();
+        var paste = await HoldTheOrderAsync(cut, opens);
         await TellAsync(cut, "mousedown", input: 2);
         Task press = Task.CompletedTask;
         await cut.InvokeAsync(() => { press = cut.Find(".ex-header").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 130, OffsetY = 10, ClientX = 130 }); });
         await WhenIdleAsync();
         Assert.False(press.IsCompleted);
 
-        await KeyAsync(cut, "ArrowDown", input: 1);
+        opens.SetResult();
+        await paste;
         await press;
         Assert.Equal("2", await AnsweredAsync(cut));
         await TellAsync(cut, "click", input: 3);
@@ -147,15 +163,19 @@ public class InputOrderClicksTests : GridTestContext
         var cut = RenderGrid();
         await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 50, OffsetY = 10 });
         await cut.Find(".ex-viewport").ContextMenuAsync(new MouseEventArgs { OffsetX = 50, OffsetY = 10 });
-        var copy = cut.FindAll("[role=menu] button[role=menuitem]").First(b => b.TextContent == "Copy");
 
+        var opens = new TaskCompletionSource();
+        var paste = await HoldTheOrderAsync(cut, opens);
+        // Found once the paste is under way, whose render gives the menu's handlers new ids.
+        var copy = cut.FindAll("[role=menu] button[role=menuitem]").First(b => b.TextContent == "Copy");
         await TellAsync(cut, "keydown", input: 2);
         Task key = Task.CompletedTask;
         await cut.InvokeAsync(() => { key = copy.KeyDownAsync(new KeyboardEventArgs { Key = "Enter" }); });
         await WhenIdleAsync();
         Assert.Empty(JSInterop.Invocations["writeCopy"]);
 
-        await cut.InvokeAsync(() => cut.Instance.OnHeldTabRefusedAsync(input: 1));
+        opens.SetResult();
+        await paste;
         await key;
         Assert.Equal([false, true], Assert.Single(JSInterop.Invocations["writeCopy"]).Arguments);
         Assert.Equal("2", await AnsweredAsync(cut));

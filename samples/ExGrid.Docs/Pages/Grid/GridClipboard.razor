@@ -109,6 +109,28 @@
         </DocsExample>
     </DocsSection>
 
+    <DocsSection Title="A paste under way and Escape">
+        <p>
+            A large paste on a Blazor Server connection takes a moment to cross: the clipboard's data is read
+            over the circuit before anything is decided. It crosses gzip-compressed, so a spreadsheet's text
+            takes about a tenth of the time it would as it is; a ~10 MB paste over a 150 ms round trip lands in
+            a few seconds. From the paste's start until it lands or is refused the
+            grid says it is <strong>busy</strong>. Its root carries <code>aria-busy="true"</code>, a bar runs
+            across its top edge with a progress pointer (the <code>--ex-pasting-*</code> tokens on Appearance),
+            and the live region says once: “@BuiltInCommandLabels.For(GridLabelIds.PasteUnderWay)” The keys typed
+            meanwhile wait their turn behind the paste, as every input does.
+        </p>
+        <p>
+            <kbd>Escape</kbd>, pressed then, <strong>cancels the paste</strong> and does nothing else. If the grid
+            has not yet raised the paste's Edit Intent, nothing is written and the paste is refused as
+            <code>PasteRefusalReason.Cancelled</code>, through <code>OnPasteRefused</code> like any refusal. If
+            the intent was already raised, your handler has the paste, it stands, and the grid says so:
+            “@BuiltInCommandLabels.For(GridLabelIds.PasteAlreadyLanded)” Which of the two you get depends on
+            when the key arrives, the one outcome in the grid that does; either is said aloud. On WebAssembly a
+            paste is read at once, so there is seldom anything under way to cancel.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="What a refusal sounds like">
         <p>
             Every refused copy and every refused paste, fill or <kbd>Delete</kbd> is <strong>announced</strong> as it
@@ -125,6 +147,8 @@
                 <tr><td><code>TargetNotEditable</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.PasteTargetNotEditable).Replace(RefusalLabelIds.ColumnPlaceholder, "Desk") — naming the column that refused, by its header, or by its name where the header is blank, as a Mark Column's is.</td></tr>
                 <tr><td><code>TooLarge</code> (copy)</td><td>@BuiltInCommandLabels.For(RefusalLabelIds.CopyTooLarge)</td></tr>
                 <tr><td><code>ClipboardUnavailable</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.CopyClipboardUnavailable)</td></tr>
+                <tr><td><code>Cancelled</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.PasteCancelled) — <kbd>Escape</kbd> was pressed while the paste was still being read, so nothing is written.</td></tr>
+                <tr><td><code>Unreadable</code></td><td>@BuiltInCommandLabels.For(RefusalLabelIds.PasteUnreadable) — the clipboard's data stopped arriving before it was read whole, as a large paste can on a slow Blazor Server connection. Nothing is pasted from part of it, and the grid goes on answering.</td></tr>
             </tbody>
         </MudSimpleTable>
         <p>

@@ -53,6 +53,7 @@ public partial class ExGrid<TRow>
 
     private void TellInput(string kind, int input, int rowCommand = 0)
     {
+        InputReached(input);
         var previous = _claimTold;
         _claimTold = null;
         if (previous is { } unheard)

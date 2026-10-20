@@ -70,6 +70,10 @@ const paintedRows = (page) => rows(page).evaluateAll((painted) => painted
 async function open(page, chrome) {
     await page.goto(`/pivot-csv?chrome=${chrome}`);
     await expect(page.locator('#csv-sample')).toBeEnabled();
+    // Enabled once InputFile's script is attached: setInputFiles does not wait for it, and on the
+    // Server host a file set before then is never heard (widened-run ticket 01).
+    await expect(page.locator('#csv-file')).toBeEnabled();
+    await expect(page.locator('#csv-unknown-file')).toBeEnabled();
     await expect(status(page)).toHaveText('Choose a file, or a sample.');
 }
 
@@ -351,7 +355,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(schema).toContain('public static readonly CsvSchema TradeExport = new(');
             const input = await shown('PivotCsvPage.razor', 'input');
             expect(input).toBe(codeRegion('PivotCsvPage.razor', 'input'));
-            expect(input).toContain('<InputFile');
+            expect(input).toContain('<AttachedInputFile');
             const choose = await shown('PivotCsvPage.razor', 'choose');
             expect(choose).toBe(codeRegion('PivotCsvPage.razor', 'choose'));
             expect(choose).toContain('OpenReadStream(MaxFileSize, token)');

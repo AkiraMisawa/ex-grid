@@ -52,7 +52,7 @@ capture phase, filtered to the grid's own root, because Blazor hears both on the
 any listener on the root (ADR-0240). The thirteenth reports the position under the pointer on an
 ExChart plot only when it moves onto another, in the hover band's shape; the fourteenth projects and
 draws ExChart's 3D surface while it is turned, which a round trip per frame cannot follow (ADR-0255).
-The fifteenth paints a chart's SVG to PNG and saves its files, on the click, which Blazor cannot do
+The fifteenth paints a chart's SVG to PNG, saves its files and reads the theme's tokens for them, on the click, which Blazor cannot do
 (ADR-0282).
 The four touch additions are approved for implementation: the scoped pointer bridge and initial
 capability hint ([ADR-0260](docs/adr/0260-touch-input-reports-browser-facts-and-keeps-command-meaning-in-csharp.md)),

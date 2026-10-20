@@ -47,6 +47,9 @@ public static class ClipboardParse
         return fields;
     }
 
+    // What ends an unquoted cell's run of text.
+    private static readonly System.Buffers.SearchValues<char> CellEnds = System.Buffers.SearchValues.Create("\t\r\n");
+
     /// <summary>
     /// Excel-shaped TSV: cells split on tabs, rows on line breaks, and a cell that was
     /// quoted (because it holds a tab, a break or a quote) read back as one cell with
@@ -80,7 +83,12 @@ public static class ClipboardParse
                 }
                 else
                 {
-                    cell.Append(c);
+                    // Up to the next quote in one append: a paste of megabytes is read in runs, not a
+                    // character at a time, which on WebAssembly's interpreter took seconds (PST-5).
+                    var run = text.AsSpan(i).IndexOf('"');
+                    run = run < 0 ? text.Length - i : run;
+                    cell.Append(text, i, run);
+                    i += run - 1;
                 }
                 continue;
             }
@@ -107,9 +115,16 @@ public static class ClipboardParse
                     row = [];
                     break;
                 default:
-                    cell.Append(c);
-                    cellStart = false;
-                    break;
+                    {
+                        // Past a cell's first character a quote is only text, so the run goes on to
+                        // the next tab or break, appended at once (PST-5).
+                        var run = text.AsSpan(i + 1).IndexOfAny(CellEnds);
+                        run = 1 + (run < 0 ? text.Length - i - 1 : run);
+                        cell.Append(text, i, run);
+                        i += run - 1;
+                        cellStart = false;
+                        break;
+                    }
             }
         }
 

@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, circuitQuiet, alterPage, settled } from './fixtures.mjs';
+import { test, expect, setRoundTrip, holdAnswers, circuitQuiet, alterPage, settled } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { watchHiddenFocus } from './hidden-focus.mjs';
@@ -425,6 +425,9 @@ for (const chrome of ['builtin', 'mud']) {
         const grid = sheet(page);
         await pressCell(grid, 'C2');
         const formatCells = formatCellsOf(page, grid, chrome);
+        // Read once the page has heard C2's format: on the Server host it is told a round trip after
+        // the press, and read sooner it is the page's empty first text (widened-run ticket 02).
+        await circuitQuiet();
         const before = await page.locator('#sheet-focus-number-format').textContent();
         // The Number Format's list from its KeyTip, holding the keyboard on its last choice.
         const onMoreNumberFormats = async () => {
@@ -727,10 +730,13 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(openLists(page)).toHaveCount(1);
             await expect(page.locator(':focus')).toContainText('No Fill');
             const landed = await watchWhereKeysLand(page);
-            const circuit = await setRoundTrip(80);
+            // The host's answers are held across both keys, so the list stands for the 1 however fast it is
+            // typed: a round trip of 80ms only made that likely (ADR-0220).
+            const circuit = await holdAnswers(true);
 
             await page.keyboard.press('Escape');
             await page.keyboard.press('1');
+            await holdAnswers(false);
 
             await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
             await circuitQuiet();
@@ -871,9 +877,12 @@ for (const chrome of ['builtin', 'mud']) {
             const grid = sheet(page);
             await pressCell(grid, 'B3');
             const landed = await watchWhereKeysLand(page);
-            const circuit = await setRoundTrip(80);
+            // The host's answers are held across the keys, so the list has not taken the keyboard when the
+            // arrows are typed, however slowly: a round trip of 80ms only made that likely (ADR-0220).
+            const circuit = await holdAnswers(true);
 
             await keyTips(page, 'h', 'h', 'ArrowDown', 'ArrowRight', 'Enter');
+            await holdAnswers(false);
 
             await expect(cell(grid, 'B3')).toHaveCSS('background-color', 'rgb(0, 0, 0)');
             await circuitQuiet();
@@ -895,6 +904,8 @@ for (const chrome of ['builtin', 'mud']) {
             const grid = sheet(page);
             await pressCell(grid, 'C2');
             const formatCells = formatCellsOf(page, grid, chrome);
+            // Read once the page has heard C2's format (widened-run ticket 02).
+            await circuitQuiet();
             const before = await page.locator('#sheet-focus-number-format').textContent();
             await setRoundTrip(80);
 
@@ -961,13 +972,17 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('ArrowRight');
             await expect(page.locator(':focus')).toHaveAttribute('aria-label', 'Black, Text 1');
             const landed = await watchWhereKeysLand(page);
-            const circuit = await setRoundTrip(80);
+            // The host's answers are held across the three keys, so the list the first Enter closes still
+            // stands when the other two are typed however slowly the runner types them (ADR-0220); a round
+            // trip of 80ms only made that likely, and a slow runner typed the ↓ after the list had gone.
+            const circuit = await holdAnswers(true);
 
             // The second Enter and the ↓ at once, while the list the first Enter closes still stands: under
             // either Chrome they are held, from the list itself, and are the Sheet's once the keyboard is back.
             await page.keyboard.press('Enter');
             await page.keyboard.press('Enter');
             await page.keyboard.press('ArrowDown');
+            await holdAnswers(false);
 
             await expectFocusAt(grid, 'B5');
             await circuitQuiet();

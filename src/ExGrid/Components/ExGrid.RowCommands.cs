@@ -60,6 +60,7 @@ public partial class ExGrid<TRow>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public void BeginRowClick(int ticket, int input)
     {
+        InputReached(input);
         if (_disposed || !_rowCommands.TryGetValue(ticket, out var command))
         {
             InputVoid(input);

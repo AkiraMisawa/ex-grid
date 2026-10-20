@@ -13,6 +13,8 @@ builder.RootComponents.Add<ExSheet.Components.ExSheetStylesheet>("head::after");
 builder.RootComponents.Add<ExSheet.MudBlazor.MudExSheetStylesheet>("head::after");
 builder.RootComponents.Add<ExPivot.Components.ExPivotStylesheet>("head::after");
 builder.RootComponents.Add<ExPivot.MudBlazor.MudExPivotStylesheet>("head::after");
+builder.RootComponents.Add<ExChart.Components.ExChartStylesheet>("head::after");
+builder.RootComponents.Add<ExChart.MudBlazor.MudExChartStylesheet>("head::after");
 builder.Services.AddMudServices();
 
 await builder.Build().RunAsync();

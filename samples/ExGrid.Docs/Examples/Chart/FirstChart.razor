@@ -1,0 +1,9 @@
+@using ExChart.Components
+@using ExChart.Engine
+
+<ExChart Definition="Definition" Title="Exposure profile" Width="720" Height="360" />
+
+@code {
+    // Held in a field: a new definition is a new chart, redrawn.
+    private static readonly ChartDefinition Definition = new(ChartAxis.Dates("Date"), ChartData.Exposure().Take(2).ToList());
+}

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ExChart.Engine;
 
 /// <summary>One series' line in the tooltip (ADR-0270).</summary>
@@ -37,7 +39,9 @@ public static class ChartReadings
         var p = scene.Panels[panel];
         var axis = definition.Axis;
         var byId = definition.Series.ToDictionary(s => s.Id);
-        var lines = p.Series.Select(piece => Line(byId[piece.Id], piece, p, axis, position)).ToList();
+        var lines = p.Series.Select(piece => byId[piece.Id].Kind == SeriesKind.PriceRange
+            ? Candle(byId[piece.Id], piece, p, scene, axis, position)
+            : Line(byId[piece.Id], piece, p, axis, position)).ToList();
 
         // A header line, the lines, and the "more" line, all inside the plot's height.
         var room = Math.Max(1, (int)Math.Floor(p.Plot.Height / metrics.LineHeight) - 2);
@@ -47,10 +51,37 @@ public static class ChartReadings
         return new ChartReading(axis.Write(position), ordered, lines.Count - shown.Count);
     }
 
+    /// <summary>
+    /// What the tooltip says over an Observation's mark (ADR-0290): the point's name, or its position
+    /// across, then the series with the point's x and y, and how many points the mark stands for when
+    /// markers on one device pixel were merged — never one of them as if it were the only one.
+    /// </summary>
+    public static ChartReading OfMark(ChartDefinition definition, ChartScene scene, int mark)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        ArgumentNullException.ThrowIfNull(scene);
+        var m = scene.Marks[mark];
+        var s = definition.Series.First(x => x.Id == m.SeriesId);
+        var look = scene.Panels[m.Panel].Series.First(p => p.Id == s.Id).Look;
+        var p = s.Points[m.Point];
+        var axis = definition.Axis;
+        var value = $"{axis.Write(p.X)}, {(p.Y is { } y ? s.Write(y) : "")}";
+        var note = Join(Join(ObservedBounds(s.Interval, m.Point, s.Write, s.XInterval is null ? "" : "y "), ObservedBounds(s.XInterval, m.Point, v => axis.Write(v.ToDouble()), "x ")),
+            m.Count > 1 ? $"{m.Count} points here: {p.Name ?? "this one"} and {m.Count - 1} more" : null);
+        // A colour or a size read from a column is said with its value (ADR-0320).
+        if (s.ColourBy is { } c)
+            note = Join(note, $"{c.Title} {(c.Values[m.Point] is { } cv ? cv.ToInvariantString() : "has no value")}");
+        if (s.SizeBy is { } z)
+            note = Join(note, $"{z.Title} {(z.Values[m.Point] is { } zv ? zv.ToInvariantString() : "has no value")}");
+        // A node with no label is named by its key (ADR-0321).
+        var named = p.Name ?? (s.Edges.Count > 0 ? Convert.ToString(p.Row, CultureInfo.InvariantCulture) : null);
+        return new ChartReading(named ?? axis.Write(p.X), new[] { new ReadingLine(s.Id, s.Name, look, value, note, m.Y) }.ToEquatableList(), 0);
+    }
+
     private static ReadingLine Line(ChartSeries s, SeriesPiece piece, PanelScene panel, ChartAxis axis, double x)
     {
         var vertical = s.Axis == AxisSide.Right ? panel.Right : panel.Left;
-        double? Y(double height) => vertical is { } v ? panel.Plot.Y + panel.Plot.Height - (v.Max == v.Min ? 0.5 : (height - v.Min) / (v.Max - v.Min)) * panel.Plot.Height : null;
+        double? Y(double height) => vertical is { } v ? v.YOf(height, panel.Plot) : null;
         ReadingLine Make(string? value, string? note, double? y) => new(s.Id, s.Name, piece.Look, value, note, y);
 
         // A thinned pixel names its range, never one point as if it were the only one (ADR-0254).
@@ -80,7 +111,7 @@ public static class ChartReadings
         {
             var i = points.ToList().FindIndex(q => q.X == x);
             if (i < 0) return Make(null, "no point here", null);
-            return points[i].Y is { } value ? Make(s.Write(value), Method(s, x), Y(value.ToDouble())) : Make(null, "missing", null);
+            return points[i].Y is { } value ? Make(s.Write(value), Join(Method(s, x), Bounds(s, x)), Y(value.ToDouble())) : Make(null, "missing", null);
         }
 
         // A step names its interval (ADR-0253): the point whose value holds at x, and the interval it holds over.
@@ -93,6 +124,48 @@ public static class ChartReadings
         var drawn = s.Kind == SeriesKind.AmountPerPeriod && from != to ? v1.ToDouble() / axis.Years(from, to) : v1.ToDouble();
         return Make(s.Write(v1), note, Y(drawn));
     }
+
+    // A candle's four values, its change from the previous candle's close and its volume; a merged
+    // candle names its period and how many rows it holds (ADR-0300, ADR-0302). In a volume panel, the
+    // volume alone.
+    private static ReadingLine Candle(ChartSeries s, SeriesPiece piece, PanelScene panel, ChartScene scene, ChartAxis axis, double x)
+    {
+        var vertical = panel.Left;
+        double? Y(double height) => vertical is { } v ? panel.Plot.Y + panel.Plot.Height - (v.Max == v.Min ? 0.5 : (height - v.Min) / (v.Max - v.Min)) * panel.Plot.Height : null;
+        ReadingLine Make(string? value, string? note, double? y) => new(s.Id, piece.Name, piece.Look, value, note, y);
+        var period = piece.Period;
+        // The candles as drawn, over the range shown, so the tooltip reads what the plot draws.
+        var candles = PriceRanges.Candles(s, scene.XFrom, scene.XTo, period);
+        var i = candles.FindIndex(c => period == CandlePeriod.Row ? c.From == x : PriceRanges.PeriodStart(c.From, period) == PriceRanges.PeriodStart(x, period));
+        if (i < 0)
+            return s.Bars.Any(b => b.X == x) ? Make(null, "(no value)", null) : Make(null, "no candle here", null);
+        var c = candles[i];
+        string W(double v) => s.Write(ChartValue.Of(v));
+        string? Volume() => c.Volume is { } vol ? $"Vol {s.Write(ChartValue.Of(vol))}" : null;
+        var span = c.Rows > 1 || period != CandlePeriod.Row ? $"{axis.Write(c.From)} – {axis.Write(c.To)}, {c.Rows} rows" : null;
+        if (panel.VolumeOf is not null)
+            return Make(Volume() ?? "(no value)", span, c.Volume is { } v0 ? Y(v0) : null);
+        var values = c.Open is { } o ? $"O {W(o)} H {W(c.High)} L {W(c.Low)} C {W(c.Close)}" : $"H {W(c.High)} L {W(c.Low)} C {W(c.Close)}";
+        // The change from the last close before this candle, shown or not.
+        var hasOpen = PriceRanges.HasOpen(s);
+        var previous = s.Bars.Where(b => b.X < c.From && PriceRanges.Whole(b, hasOpen)).Select(b => (double?)b.Close!.Value.ToDouble()).LastOrDefault();
+        var change = previous is not { } p0 ? "Chg —" : $"Chg {(c.Close - p0 >= 0 ? "+" : "")}{W(c.Close - p0)}{PriceRanges.Percent(c.Close - p0, p0)}";
+        return Make(values, Join(Join(span, c.Unchanged ? "unchanged" : null), Join(change, Volume())), Y(c.Close));
+    }
+
+    private static string? Bounds(ChartSeries s, double x)
+    {
+        if (s.Interval is not { } iv) return null;
+        var found = iv.Bounds.Where(b => b.X == x).ToList();
+        return found is [var b] && b.Lower is { } lo && b.Upper is { } hi ? $"[{s.Write(lo)}, {s.Write(hi)}] {iv.Meaning}" : "(no interval)";
+    }
+
+    // An Observation's bounds at its row, with their meaning (ADR-0304).
+    private static string? ObservedBounds(SeriesInterval? iv, int point, Func<ChartValue, string> write, string which) =>
+        iv is null ? null
+        : iv.Bounds[point] is { Lower: { } lo, Upper: { } hi } ? $"{which}[{write(lo)}, {write(hi)}] {iv.Meaning}" : $"{which}(no interval)";
+
+    private static string? Join(string? a, string? b) => a is null ? b : b is null ? a : $"{a}, {b}";
 
     private static double Mid(ChartValue lo, ChartValue hi) => (lo.ToDouble() + hi.ToDouble()) / 2;
 

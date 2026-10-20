@@ -207,6 +207,13 @@
             the Source instead reports <code>SourceChanged</code>. The grid announces the refusal;
             <code>KeyRefusalLabelIds.RowCommandTargetLeft</code> supplies customizable words.
         </p>
+        <p>
+            When no earlier input is held in the browser, successive row Marks are sent immediately
+            in order. Marking several rows before using a page button does not add a round trip
+            between Marks. A Mark behind a held key or Action still waits for that earlier input.
+            On Blazor Server, a row click made while the connection is down is refused when the
+            next input after reconnection exposes the loss; later input can continue.
+        </p>
         <DocsExample Title="Row commands behind an asynchronous Consumer" Builtin="typeof(QueuedRowCommands)"
                      Mud="typeof(QueuedRowCommandsMud)" Files="@(["Examples/Grid/QueuedRowCommands.razor"])">
             Focus the grid and press <kbd>Control+B</kbd> (Command+B on macOS), then click Open on row 0

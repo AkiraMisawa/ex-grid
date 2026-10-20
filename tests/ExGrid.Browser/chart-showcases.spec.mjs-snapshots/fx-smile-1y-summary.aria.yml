@@ -1,0 +1,4 @@
+- 'img "EURUSD 1Y smile. Delta, 10P to 10C. Left axis, 7.75 to 9.25. 1Y smile: maximum 9.19% at 10C. 1Y smile: maximum 9.19% at 10C."':
+  - text: 7.75 8 8.25 8.5 8.75 9 9.25 10P 25P ATM 25C 10C
+  - button "1Y smile" [pressed]
+  - button "1Y smile" [pressed]

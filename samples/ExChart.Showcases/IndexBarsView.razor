@@ -1,0 +1,185 @@
+@using System.Globalization
+@* Equity index › Daily bars: the index's 2,608 sessions in a grid beside their candles, the volume in a
+   panel below, and a 25-day moving average the page computes. Ten years do not fit as days, so the
+   candles merge into the market's own months, and the Notes say so; a click on a merged candle narrows
+   to its rows, and a click on a day's candle goes to its row in the grid (ADR-0300, ADR-0302). The dates
+   are calendar time, so a weekend is a gap; packed, the closed days are left out, and the Notes say that
+   too (ADR-0301). Rising candles are hollow and falling ones filled whatever the colours; the colours
+   are the page's, set on --ex-chart-rise and --ex-chart-fall. *@
+<style>
+    .xs-candles-japan .ex-chart { --ex-chart-rise: #d32f2f; --ex-chart-fall: #1565c0; }
+    .xs-candles-west .ex-chart { --ex-chart-rise: #2e7d32; --ex-chart-fall: #c62828; }
+</style>
+<div class="xs-tools">
+    @if (Mud)
+    {
+        <MudSwitch T="bool" Value="_packed" ValueChanged="SetPacked" Color="Color.Primary" Class="xs-packed" Label="Packed sessions" />
+        <MudToggleGroup T="string" Value="_colours" ValueChanged="SetColours" Size="Size.Small" Outlined="false"
+                        Delimiters="false" SelectedClass="xs-mud-view-selected" Class="xs-mud-views xs-colours">
+            @foreach (var (value, label) in Colours)
+            {
+                <MudToggleItem Value="@value" Text="@label" />
+            }
+        </MudToggleGroup>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@(_range is null)" OnClick="Reset" Class="xs-reset">Whole range</MudButton>
+    }
+    else
+    {
+        <label class="xs-packed"><input type="checkbox" checked="@_packed" @onchange="e => SetPacked(e.Value is true)" /> Packed sessions</label>
+        <nav class="xs-views xs-colours" aria-label="Colours">
+            @foreach (var (value, label) in Colours)
+            {
+                <button type="button" class="@(value == _colours ? "xs-view xs-view-on" : "xs-view")" aria-pressed="@(value == _colours ? "true" : "false")"
+                        @onclick="() => SetColours(value)">@label</button>
+            }
+        </nav>
+        <button type="button" class="xs-button xs-reset" disabled="@(_range is null)" @onclick="Reset">Whole range</button>
+    }
+    <span class="xs-spacer"></span>
+    <span class="xs-events" role="status">@_said</span>
+</div>
+<div class="xs-side">
+    <div class="xs-panel xs-side-grid">
+        @if (Mud)
+        {
+            @* A block-level paper: the Wrapper's own is inline, as wide as its grids, which leaves a stretched grid no width. *@
+            <MudExGridPaper Elevation="1" Style="display: flex">
+                <ExGrid @ref="_bridge.Grid" TRow="IndexRow" Window="Rows" RowKey="KeyOf" Columns="Columns" PinnedColumnCount="1"
+                        ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" Chrome="MudGridChrome.Default" />
+            </MudExGridPaper>
+        }
+        else
+        {
+            <ExGrid @ref="_bridge.Grid" TRow="IndexRow" Window="Rows" RowKey="KeyOf" Columns="Columns" PinnedColumnCount="1"
+                    ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" />
+        }
+    </div>
+    <div class="xs-panel @($"xs-candles-{_colours}")">
+        @if (Mud)
+        {
+            <MudExGridPaper Elevation="1">
+                <ExChart Definition="Definition" Title="@IndexData.Name" FileName="@IndexData.Name" Width="ChartWidth" Height="ChartHeight"
+                         Range="_range" OnRangeChanged="_rangeChanged" OnPointClick="_clicked" Chrome="MudChartChrome.Default" />
+            </MudExGridPaper>
+        }
+        else
+        {
+            <ExChart Definition="Definition" Title="@IndexData.Name" FileName="@IndexData.Name" Width="ChartWidth" Height="ChartHeight"
+                     Range="_range" OnRangeChanged="_rangeChanged" OnPointClick="_clicked" />
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>Whether the view is drawn with MudBlazor's Chrome.</summary>
+    [Parameter] public bool Mud { get; set; }
+
+    /// <summary>One session as the grid shows it: the bar, its change from the previous close, and the page's average.</summary>
+    public sealed record IndexRow(IndexBar Bar, decimal? ChangePct, decimal? Average);
+
+    private const int AverageDays = 25;
+    private const double ChartWidth = 760, ChartHeight = 480;
+    private static readonly ViewportSize GridHeight = 520;
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private static readonly (string Value, string Label)[] Colours =
+        [("shape", "Shape only"), ("japan", "Red rises, blue falls"), ("west", "Green rises, red falls")];
+
+    private static string Price(object v) => Convert.ToDecimal(v, Invariant).ToString("N2", Invariant);
+    private static string Percent(object v) => Convert.ToDecimal(v, Invariant).ToString("+0.00'%';−0.00'%';0.00'%'", Invariant);
+    private static string Count(object v) => Convert.ToDecimal(v, Invariant).ToString("N0", Invariant);
+
+    // The page's own calculation, as a Consumer's would be: each close's change, and the mean of the last 25 closes.
+    private static readonly IReadOnlyList<IndexRow> Rows = MakeRows();
+
+    private static IReadOnlyList<IndexRow> MakeRows()
+    {
+        var bars = IndexData.Bars;
+        var rows = new IndexRow[bars.Length];
+        var sum = 0m;
+        for (var i = 0; i < bars.Length; i++)
+        {
+            sum += bars[i].Close;
+            if (i >= AverageDays) sum -= bars[i - AverageDays].Close;
+            decimal? change = i == 0 ? null : Math.Round((bars[i].Close / bars[i - 1].Close - 1) * 100, 2);
+            decimal? average = i + 1 < AverageDays ? null : Math.Round(sum / AverageDays, 2);
+            rows[i] = new IndexRow(bars[i], change, average);
+        }
+        return rows;
+    }
+
+    private static readonly GridColumn<IndexRow>[] Columns =
+    [
+        new("Date", ColumnType.Date, r => r.Bar.Date, dateType: DateType.DateOnly),
+        new("Open", ColumnType.Number, r => r.Bar.Open, format: Price),
+        new("High", ColumnType.Number, r => r.Bar.High, format: Price),
+        new("Low", ColumnType.Number, r => r.Bar.Low, format: Price),
+        new("Close", ColumnType.Number, r => r.Bar.Close, format: Price),
+        new("Change", ColumnType.Number, r => r.ChangePct, header: "Chg", format: Percent),
+        new("Volume", ColumnType.Number, r => r.Bar.Volume, format: Count),
+        new("Average", ColumnType.Number, r => r.Average, header: "25-day avg", format: Price),
+    ];
+
+    // Held in fields, never rebuilt per render (AGENTS.md: a new delegate is a changed parameter).
+    private static readonly Func<IndexRow, object> KeyOf = r => r.Bar.Date;
+
+    private static readonly IReadOnlyList<PriceBar> Bars =
+        [.. Rows.Select(r => new PriceBar(r.Bar.Date.DayNumber, r.Bar.Open, r.Bar.High, r.Bar.Low, r.Bar.Close, r.Bar.Volume))];
+
+    private static readonly ChartSeries Average =
+        ChartSeries.Of("average", $"{AverageDays}-day average", SeriesKind.Level,
+            Rows.Select(r => new ChartPoint(r.Bar.Date.DayNumber, r.Average is { } a ? ChartValue.Of(a) : null))) with { FromZero = false, Format = Price };
+
+    private static ChartDefinition Make(bool packed) => new(ChartAxis.Dates("Date") with { Packed = packed },
+    [
+        ChartSeries.Candles("index", IndexData.Name, Bars) with { Format = Price },
+        Average,
+    ]);
+
+    private static readonly ChartDefinition Calendar = Make(packed: false);
+    private static readonly ChartDefinition Packed = Make(packed: true);
+
+    private bool _packed;
+    private string _colours = "shape";
+    private ChartRange? _range;
+    private string _said = "";
+    private GridChartBridge<IndexRow> _bridge = null!;
+    private EventCallback<ChartRange?> _rangeChanged;
+    private EventCallback<ChartPointClick> _clicked;
+
+    private ChartDefinition Definition => _packed ? Packed : Calendar;
+
+    protected override void OnInitialized()
+    {
+        _bridge = new GridChartBridge<IndexRow>(new GridChartDeclarations<IndexRow>
+        {
+            RowKey = KeyOf,
+            RowOf = key => Rows.FirstOrDefault(r => r.Bar.Date == (DateOnly)key),
+        });
+        // The chart holds no View State (ADR-0272): a narrowing comes back as an event, and the page hands it back.
+        _rangeChanged = EventCallback.Factory.Create<ChartRange?>(this, RangeChanged);
+        _clicked = EventCallback.Factory.Create<ChartPointClick>(this, ShowAsync);
+    }
+
+    private void SetPacked(bool on) => _packed = on;
+
+    private void SetColours(string colours) => _colours = colours;
+
+    private void Reset() => RangeChanged(null);
+
+    private void RangeChanged(ChartRange? range)
+    {
+        _range = range;
+        _said = range is null ? "" : $"{Day(range.From)} to {Day(range.To)}";
+    }
+
+    // A click on a day's candle, or on the average at a day, goes to that row (ADR-0258).
+    private async Task ShowAsync(ChartPointClick click)
+    {
+        var date = DateOnly.FromDayNumber((int)click.Position);
+        _said = $"Went to {Day(click.Position)}";
+        await _bridge.ShowInGridAsync(new GridCell(date, "Close"));
+    }
+
+    private static string Day(double? day) => day is { } d ? DateOnly.FromDayNumber((int)d).ToString("yyyy-MM-dd", Invariant) : "…";
+}

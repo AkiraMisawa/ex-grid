@@ -1,0 +1,40 @@
+@page "/chart-showcase/binomial-lattice"
+@using global::ExChart.Components
+@using global::ExChart.MudBlazor
+@using global::ExChart.Showcases
+@inject NavigationManager Navigation
+
+<DemoNav />
+
+@* ExChart's Binomial lattice Showcase (ADR-0280), the component the Docs Site shows at /showcase/binomial-lattice,
+   here so layer 3 drives it on both hosts: an option priced on a CRR lattice, its nodes in a grid and on a chart
+   coloured by value, early exercise ringed, and the lattice price by N against Black–Scholes. ?chrome=mud draws it
+   with MudBlazor's Chrome; ?scheme=dark in the dark scheme, which the switch in the bar sets. *@
+<DemoChromeAssets Name="@Chrome" Paper="true" Dark="DemoChrome.IsDark(Scheme)">
+    <Head>
+        <ExChartStylesheet />
+        @if (DemoChrome.IsMud(Chrome))
+        {
+            <MudExChartStylesheet />
+        }
+    </Head>
+</DemoChromeAssets>
+
+<BinomialLatticeShowcase Mud="DemoChrome.IsMud(Chrome)" Dark="DemoChrome.IsDark(Scheme)" DarkChanged="_schemeChanged" />
+
+@code {
+    /// <summary><c>mud</c> for MudBlazor's Chrome; absent or <c>builtin</c> for the built-in one.</summary>
+    [SupplyParameterFromQuery(Name = "chrome")] public string? Chrome { get; set; }
+
+    /// <summary><c>dark</c> for the dark scheme; absent or <c>light</c> for the light one.</summary>
+    [SupplyParameterFromQuery(Name = "scheme")] public string? Scheme { get; set; }
+
+    private EventCallback<bool> _schemeChanged;
+
+    protected override void OnInitialized() =>
+        // The scheme lives in the address, as every page's does: the switch asks for the other one.
+        _schemeChanged = EventCallback.Factory.Create<bool>(this, dark =>
+            Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("scheme", dark ? "dark" : null)));
+
+    protected override void OnParametersSet() => DemoChrome.From(Chrome);
+}

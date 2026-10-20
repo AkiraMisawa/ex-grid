@@ -132,4 +132,4 @@ cancelling the already-running whole-suite hunt. Normal CI passed at implementat
 `38c57a6a` ([run 39342985942](https://github.com/AkiraMisawa/ex-grid/actions/runs/39342985942));
 the policy update changes documentation only. The full hunt at that implementation revision is
 [run 39344122821](https://github.com/AkiraMisawa/ex-grid/actions/runs/39344122821) and is not the
-next-stage gate. The selected input run must pass before ticket 03 begins.
+next-stage gate. The selected input run passed at `03053917` ([run 39345897183](https://github.com/AkiraMisawa/ex-grid/actions/runs/39345897183)), and ticket 03 began. The later full Hunt exposed failures; [the follow-up record](hunt-2026-10-20.md) documents their causes, fixes and the related verification scope. Ticket 03 is preserved while those observed failures are resolved.

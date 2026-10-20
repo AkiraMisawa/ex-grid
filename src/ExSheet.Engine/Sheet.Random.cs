@@ -78,8 +78,11 @@ public sealed partial class Sheet
         }
     }
 
+    /// <summary>Takes another Sheet's seed, as a copy of it does (ADR-0331).</summary>
+    internal void TakeSeedOf(Sheet other) => Seed = other.Seed;
+
     /// <summary>Counts a change (ADR-0180), before the recalculation it brings draws: once for the operation under way, or once on its own.</summary>
-    private void CountChange()
+    internal void CountChange()
     {
         if (_operationDepth > 0)
         {

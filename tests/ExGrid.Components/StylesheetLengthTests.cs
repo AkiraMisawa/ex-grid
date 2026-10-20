@@ -46,6 +46,7 @@ public class StylesheetLengthTests : GridTestContext
         [("--ex-grid-focus-outline", "2px")] = Outline,
         [("--ex-size-tip-outline", "1px")] = Outline,
         [("--ex-scrollbar-width", "12px")] = Scrollbar,
+        [("--ex-pasting-bar-height", "3px")] = "the bar a paste under way paints over the root's top edge, absolutely placed: a painted mark, never a box the arithmetic reads (ADR-0240 section 12)",
         [("--ex-dp", "1px")] = "the Device Pixel's own default before the browser's resolution is read: a painted line's width and inset, never a box the arithmetic reads (ADR-0090)",
     };
 

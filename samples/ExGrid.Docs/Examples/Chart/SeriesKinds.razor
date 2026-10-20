@@ -1,0 +1,15 @@
+@using ExChart.Components
+@using ExChart.Engine
+
+<ExChart Definition="Rates" Title="Zero rates and hazard rates" Width="720" Height="320" />
+<ExChart Definition="Cva" Title="CVA by bucket" Width="720" Height="240" />
+
+@code {
+    // Each series says what it is, and is drawn as that: the quotes as points with a gap where 3Y is
+    // missing, the analytics' curve as a line named Interpolated, the hazard rate as steps.
+    private static readonly ChartDefinition Rates = new(ChartData.TenorAxis(),
+        [ChartData.Quotes(), ChartData.Curve(), ChartData.Hazard() with { Panel = "Hazard" }]);
+
+    // An amount per period is drawn per year, so widening buckets do not read as a jump in risk.
+    private static readonly ChartDefinition Cva = new(ChartData.TenorAxis(), [ChartData.CvaByBucket()]);
+}

@@ -1,0 +1,152 @@
+@using System.Globalization
+@using global::ExChart.Engine.Fitting
+@* CDS spread vs leverage (ADR-0290, ADR-0291): two hundred reference names, each a row of the grid and a
+   point of the scatter beside it, with the least-squares and the Theil–Sen line through them. One name,
+   DSTR, is distressed: it pulls the least-squares line up and leaves Theil–Sen where the others put it.
+   The page fits both with ExChart.Engine.Fitting, which is the page computing, and each line puts its
+   method and coefficients in the Notes. Hover a point to read it, click it to go to its row, drag a
+   rectangle to narrow both axes. The names are fixed values under Data/. *@
+<ShowcaseShell Mud="Mud" App="Credit Relative Value" Crumb="Credit · CDS spread vs leverage">
+    <Tools>
+        @if (Mud)
+        {
+            <MudText Typo="Typo.body2" Class="xs-crumb xs-range" role="status">@RangeText</MudText>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@(_range is null)" OnClick="Reset" Class="xs-reset">Whole range</MudButton>
+            <MudSwitch T="bool" Value="_logSpread" ValueChanged="SetLog" Color="Color.Primary" Class="xs-log" Label="Log spread" />
+        }
+        else
+        {
+            <span class="xs-crumb xs-range" role="status">@RangeText</span>
+            <span class="xs-tools">
+                <button type="button" class="xs-button xs-reset" disabled="@(_range is null)" @onclick="Reset">Whole range</button>
+                <label class="xs-log"><input type="checkbox" checked="@_logSpread" @onchange="e => SetLog(e.Value is true)" /> Log spread</label>
+            </span>
+        }
+    </Tools>
+    <ChildContent>
+        <p class="xs-note">
+            Five-year CDS spreads against leverage (debt over EBITDA) on @Iso(CreditData.AsOf). Hover a point to read it,
+            click it to go to its row, drag a rectangle to narrow both axes. The fitted lines' methods and coefficients are
+            under the chart.
+        </p>
+        @if (_refusal is { } refusal)
+        {
+            <p class="xs-refusal" role="alert">@refusal</p>
+        }
+        <div class="xs-side">
+            <div class="xs-panel xs-side-grid">
+                @if (Mud)
+                {
+                    @* A block-level paper: the Wrapper's own is inline, as wide as its grids, which leaves a stretched grid no width. *@
+                    <MudExGridPaper Elevation="1" Style="display: flex">
+                        <ExGrid @ref="_bridge.Grid" TRow="CreditName" Window="CreditData.Names" RowKey="KeyOf" Columns="Columns"
+                                ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" Chrome="MudGridChrome.Default" />
+                    </MudExGridPaper>
+                }
+                else
+                {
+                    <ExGrid @ref="_bridge.Grid" TRow="CreditName" Window="CreditData.Names" RowKey="KeyOf" Columns="Columns"
+                            ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" />
+                }
+            </div>
+            <div class="xs-panel">
+                @if (Mud)
+                {
+                    <MudExGridPaper Elevation="1">
+                        <ExChart Definition="Definition" Title="@Title" FileName="@Title" Width="ChartWidth" Height="ChartHeight" YScale="_yScale"
+                                 Range="_range" OnRangeChanged="_rangeChanged" OnPointClick="_clicked" Chrome="MudChartChrome.Default" />
+                    </MudExGridPaper>
+                }
+                else
+                {
+                    <ExChart Definition="Definition" Title="@Title" FileName="@Title" Width="ChartWidth" Height="ChartHeight" YScale="_yScale"
+                             Range="_range" OnRangeChanged="_rangeChanged" OnPointClick="_clicked" />
+                }
+            </div>
+        </div>
+    </ChildContent>
+</ShowcaseShell>
+
+@code {
+    /// <summary>Whether the screen is drawn with MudBlazor's Chrome.</summary>
+    [Parameter] public bool Mud { get; set; }
+
+    private const string Title = "CDS spread vs leverage";
+    private const double ChartWidth = 680, ChartHeight = 440;
+    private static readonly ViewportSize GridHeight = 470;
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private static string Times(object v) => Convert.ToDouble(v, Invariant).ToString("0.00", Invariant) + "x";
+    private static string Bp(object v) => Convert.ToDouble(v, Invariant).ToString("#,##0", Invariant) + "bp";
+
+    private static readonly GridColumn<CreditName>[] Columns =
+    [
+        new("Ticker", ColumnType.Text, n => n.Ticker, "Name"),
+        new("Leverage", ColumnType.Number, n => n.Leverage, "Leverage", format: Times),
+        new("Spread", ColumnType.Number, n => n.SpreadBp, "5Y spread", format: Bp),
+    ];
+
+    // Held in fields, never rebuilt per render (AGENTS.md: a new delegate is a changed parameter).
+    private static readonly Func<CreditName, object> KeyOf = n => n.Ticker;
+
+    // The page fits both lines once, over every name: the chart draws them and names their method (ADR-0291).
+    private static readonly ChartDefinition Definition = MakeDefinition();
+
+    private static ChartDefinition MakeDefinition()
+    {
+        double[] xs = [.. CreditData.Names.Select(n => n.Leverage)];
+        double[] ys = [.. CreditData.Names.Select(n => n.SpreadBp)];
+        var points = CreditData.Names.Select(n => new ChartPoint(n.Leverage, ChartValue.Of(n.SpreadBp)) { Name = n.Ticker, Row = n.Ticker });
+        return new ChartDefinition(ChartAxis.Numbers("Leverage") with { Format = x => x.ToString("0.00", Invariant) + "x" },
+        [
+            ChartSeries.Of("names", "Names", SeriesKind.Observation, points) with { Format = Bp },
+            Fit.LeastSquares(xs, ys).Series("ols", "Least squares") with { Format = Bp },
+            Fit.TheilSen(xs, ys).Series("theil-sen", "Theil–Sen") with { Format = Bp },
+        ], ["Synthetic names; DSTR is distressed."]);
+    }
+
+    private bool _logSpread;
+    private AxisScale? _yScale;
+    private ChartRange? _range;
+    private string? _refusal;
+    private GridChartBridge<CreditName> _bridge = null!;
+    private EventCallback<ChartRange?> _rangeChanged;
+    private EventCallback<ChartPointClick> _clicked;
+
+    private string RangeText => _range is { } r
+        ? $"Leverage {r.From:0.00}x–{r.To:0.00}x, spread {r.YFrom:#,##0}–{r.YTo:#,##0}bp"
+        : $"{CreditData.Names.Length} names";
+
+    protected override void OnInitialized()
+    {
+        _bridge = new GridChartBridge<CreditName>(new GridChartDeclarations<CreditName>
+        {
+            RowKey = KeyOf,
+            RowOf = key => CreditData.Names.FirstOrDefault(n => n.Ticker == (string)key),
+        })
+        {
+            OnRefused = why => { _refusal = why; StateHasChanged(); return Task.CompletedTask; },
+        };
+        // The chart holds no View State (ADR-0272): the rectangle comes back as an event, and the page hands it back.
+        _rangeChanged = EventCallback.Factory.Create<ChartRange?>(this, r => _range = r);
+        _clicked = EventCallback.Factory.Create<ChartPointClick>(this, ShowAsync);
+    }
+
+    private void SetLog(bool on)
+    {
+        _logSpread = on;
+        _yScale = on ? AxisScale.Logarithmic : null;
+        _range = null;
+    }
+
+    private void Reset() => _range = null;
+
+    private async Task ShowAsync(ChartPointClick click)
+    {
+        _refusal = null;
+        if (click.Row is string ticker)
+            await _bridge.ShowInGridAsync(new GridCell(ticker, "Spread"));
+    }
+
+    private static string Iso(DateOnly d) => d.ToString("yyyy-MM-dd", Invariant);
+}

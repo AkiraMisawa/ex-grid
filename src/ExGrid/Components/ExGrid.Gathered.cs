@@ -73,6 +73,31 @@ public partial class ExGrid<TRow>
         return !_disposed;
     }
 
+    // Set while the part of a Consumer's write handler that runs before its first await runs (a paste,
+    // a fill, a clear): a source it changes row by row raises StateChanged at each row, on this
+    // thread, and taking each in re-laid the grid out once a row, which for a paste of 400 long cells
+    // on WebAssembly was seconds (widened-run ticket 05). The changes are taken in once instead, by
+    // the write's own OwnWriteAnsweredAsync, before the next gesture is handled. A change raised from
+    // another thread, or after the handler's first await, is taken in as ever. The thread the handler
+    // runs on while it does; 0 for none.
+    private int _handlingWriteOn;
+
+    /// <summary>Runs a Consumer's handler of the grid's own write intent, noting rather than answering
+    /// the changes it makes to the bound source before its first await.</summary>
+    private Task HandleWriteAsync(Func<Task> handler)
+    {
+        var outer = _handlingWriteOn;
+        _handlingWriteOn = Environment.CurrentManagedThreadId;
+        try
+        {
+            return handler();
+        }
+        finally
+        {
+            _handlingWriteOn = outer;
+        }
+    }
+
     /// <summary>Whether the source's state is not what the grid last took in.</summary>
     private bool SourceMovedOn(IGridSource<TRow> source)
         => !ReferenceEquals(source.Window, _window) || source.WindowStart != _windowStart

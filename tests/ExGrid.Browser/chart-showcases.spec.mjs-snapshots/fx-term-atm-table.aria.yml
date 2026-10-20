@@ -1,0 +1,31 @@
+- table "EURUSD ATM volatility by tenor":
+  - caption: EURUSD ATM volatility by tenor
+  - rowgroup:
+    - row "Tenor ATM volatility":
+      - columnheader "Tenor"
+      - columnheader "ATM volatility"
+  - rowgroup:
+    - row "1W 7.15":
+      - rowheader "1W"
+      - cell "7.15"
+    - row "1M 7.32":
+      - rowheader "1M"
+      - cell "7.32"
+    - row "2M 7.41":
+      - rowheader "2M"
+      - cell "7.41"
+    - row "3M 7.52":
+      - rowheader "3M"
+      - cell "7.52"
+    - row "6M 7.74":
+      - rowheader "6M"
+      - cell "7.74"
+    - row "1Y 7.98":
+      - rowheader "1Y"
+      - cell "7.98"
+    - row "2Y 8.21":
+      - rowheader "2Y"
+      - cell "8.21"
+    - row "5Y 8.64":
+      - rowheader "5Y"
+      - cell "8.64"

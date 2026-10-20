@@ -274,6 +274,134 @@ public class ClipboardWiringTests : GridTestContext
         Assert.True(text.Disposed && html.Disposed);
     }
 
+    private static int Utf8(string text) => System.Text.Encoding.UTF8.GetByteCount(text);
+
+    [Fact] // ADR-0005 (amended 2026-10-20): a paste taken from the script crosses compressed, in its turn, and means what the strings meant
+    public async Task A_paste_taken_from_the_script_crosses_compressed()
+    {
+        var intents = new List<GridPasteIntent>();
+        var cut = RenderGrid(ps => ps.Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i)));
+        await ClickCellAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
+        const string text = "1\r\n2\r\n";
+        const string html = "<table><tr><td x:num=\"1.25\">1</td></tr><tr><td x:num=\"2.5\">2</td></tr></table>";
+        var textStream = FakeJSStream.Gzipped(text);
+        var htmlStream = FakeJSStream.Gzipped(html);
+        Js.HoldsPaste(1, flavour => flavour == "text" ? textStream : htmlStream);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteTakenAsync(Utf8(text), Utf8(html), input: 1));
+
+        var intent = Assert.Single(intents);
+        Assert.Equal("1.25", intent.ValueFor(new CellPosition(0, 0)));
+        Assert.Equal("2.5", intent.ValueFor(new CellPosition(1, 0)));
+        Assert.True(textStream.Disposed && htmlStream.Disposed);
+    }
+
+    [Fact] // ADR-0005 (amended 2026-10-20): a paste handler that replaces rows one at a time has the grid take its changes in once, not once a row
+    public async Task A_paste_handler_replacing_rows_one_by_one_renders_the_grid_once_whatever_the_row_count()
+    {
+        var few = await RendersForPasteOf(3);
+        var many = await RendersForPasteOf(30);
+        Assert.True(many <= few, $"30 rows rendered the grid {many} times, 3 rows {few}");
+
+        async Task<int> RendersForPasteOf(int lines)
+        {
+            var source = GridSource.From(TestRows.Many(40));
+            var cut = Render<ExGrid<TestRow>>(ps => ps
+                .Add(g => g.Source, source)
+                .Add(g => g.Columns, Columns())
+                .Add(g => g.RowHeight, 20)
+                .Add(g => g.ViewportHeight, 100)
+                .Add(g => g.ViewportWidth, 350)
+                .Add(g => g.OnPaste, (GridPasteIntent intent) =>
+                {
+                    var window = source.Window;
+                    var target = intent.Plan.Targets[0];
+                    var replaced = new List<(TestRow Row, TestRow Replacement)>();
+                    for (var row = target.TopRow; row <= target.BottomRow; row++)
+                        replaced.Add((window[row], new TestRow
+                        {
+                            Book = window[row].Book,
+                            Amount = decimal.Parse(intent.ValueFor(new CellPosition(row, 1))!, System.Globalization.CultureInfo.InvariantCulture),
+                        }));
+                    foreach (var (row, replacement) in replaced)
+                        source.ReplaceRow(row, replacement);
+                }));
+            await ClickCellAsync(cut, 150, 10);
+            // The block's own shape selected: a paste never spills past the Selection (ADR-0014).
+            for (var extended = 1; extended < lines; extended++)
+                await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
+            var text = string.Concat(Enumerable.Range(1, lines).Select(n => $"{n}\r\n"));
+            var before = cut.RenderCount;
+
+            await cut.InvokeAsync(() => cut.Instance.OnPasteStreamsAsync(FakeJSStream.Of(text), null));
+
+            Assert.Equal(lines, source.Window[lines - 1].Amount);
+            return cut.RenderCount - before;
+        }
+    }
+
+    [Fact] // ADR-0005 (amended 2026-10-20): where the browser cannot compress, the flavour crosses as it is
+    public async Task A_paste_taken_from_the_script_uncompressed_is_read_as_it_is()
+    {
+        var intents = new List<GridPasteIntent>();
+        var cut = RenderGrid(ps => ps.Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i)));
+        await ClickCellAsync(cut, 50, 10);
+        Js.HoldsPaste(1, flavour => flavour == "text" ? FakeJSStream.Of("fill") : null);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteTakenAsync(4, 0, input: 1));
+
+        Assert.Equal("fill", Assert.Single(intents).ValueFor(new CellPosition(0, 0)));
+    }
+
+    [Fact] // ADR-0005 / CP-22 (amended 2026-10-20): the cap is judged on the declared lengths, before the script is asked for anything
+    public async Task A_paste_taken_from_the_script_past_the_cap_is_refused_unasked()
+    {
+        PasteRefusalReason? refused = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.PasteByteCap, 100L)
+            .Add(g => g.OnPasteRefused, (PasteRefusalReason r) => refused = r));
+        await ClickCellAsync(cut, 50, 10);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteTakenAsync(40, 61, input: 1));
+
+        Assert.Equal(PasteRefusalReason.TooLarge, refused);
+        Assert.DoesNotContain(JSInterop.Invocations, invocation => invocation.Identifier == "takePaste");
+    }
+
+    [Theory] // ADR-0005 (amended 2026-10-20): a flavour that is not the length its call declared is refused aloud, never read on
+    [InlineData("more than declared, packed", true, 3)]
+    [InlineData("fewer than declared, packed", true, 40)]
+    [InlineData("more than declared, as it is", false, 3)]
+    public async Task A_paste_flavour_that_is_not_its_declared_length_is_refused(string text, bool gzipped, int declared)
+    {
+        var intents = new List<GridPasteIntent>();
+        var refused = new List<PasteRefusalReason>();
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.OnPasteRefused, (PasteRefusalReason r) => refused.Add(r)));
+        await ClickCellAsync(cut, 50, 10);
+        Js.HoldsPaste(1, flavour => flavour == "text" ? (gzipped ? FakeJSStream.Gzipped(text) : FakeJSStream.Of(text)) : null);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteTakenAsync(declared, 0, input: 1));
+
+        Assert.Equal([PasteRefusalReason.Unreadable], refused);
+        Assert.Empty(intents);
+    }
+
+    [Fact] // ADR-0005 (amended 2026-10-20): a script that no longer holds the paste refuses it aloud
+    public async Task A_paste_the_script_no_longer_holds_is_refused()
+    {
+        var refused = new List<PasteRefusalReason>();
+        var cut = RenderGrid(ps => ps.Add(g => g.OnPasteRefused, (PasteRefusalReason r) => refused.Add(r)));
+        await ClickCellAsync(cut, 50, 10);
+        Js.HoldsPaste(1, _ => null);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteTakenAsync(4, 0, input: 1));
+
+        Assert.Equal([PasteRefusalReason.Unreadable], refused);
+    }
+
     [Fact] // ADR-0005 / CP-22: past the byte cap the paste is refused whole, and nothing is read
     public async Task A_paste_past_the_byte_cap_is_refused_unread()
     {
@@ -296,6 +424,30 @@ public class ClipboardWiringTests : GridTestContext
         Assert.False(text.Opened);
         Assert.False(html.Opened);
         Assert.True(text.Disposed && html.Disposed);
+    }
+
+    [Fact] // ADR-0005, widened-run ticket 06: a stream that stops delivering refuses the paste aloud, and the grid keeps answering
+    public async Task A_paste_stream_that_fails_to_read_is_refused_and_the_next_paste_lands()
+    {
+        var intents = new List<GridPasteIntent>();
+        var refused = new List<PasteRefusalReason>();
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.OnPasteRefused, (PasteRefusalReason r) => refused.Add(r)));
+        await ClickCellAsync(cut, 50, 10);
+        var text = FakeJSStream.Of("1");
+        var html = FakeJSStream.Failing(20, new TimeoutException("Did not receive any data in the allotted time."));
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteStreamsAsync(text, html));
+
+        Assert.Equal([PasteRefusalReason.Unreadable], refused);
+        Assert.Empty(intents);
+        Assert.True(text.Disposed && html.Disposed);
+        Assert.Contains("the clipboard could not be read", cut.Find(".ex-announce").TextContent);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteStreamsAsync(FakeJSStream.Of("fill"), null));
+
+        Assert.Equal("fill", Assert.Single(intents).ValueFor(new CellPosition(0, 0)));
     }
 
     [Fact] // ADR-0005 / CP-22: exactly on the cap is not past it

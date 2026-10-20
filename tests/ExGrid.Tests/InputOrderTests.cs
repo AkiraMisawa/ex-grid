@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace ExGrid.Tests;
@@ -192,5 +193,113 @@ public class InputOrderTests
         // Work input 1 started and left behind runs inside input 2's handling, but is not its flow.
         Assert.Null(seenAfterward);
         Assert.Null(order.Flow);
+    }
+
+    [Fact] // ADR-0240 §10: the core's side of the Input Journal says what happened to each number, at Debug
+    public async Task ADR0240_the_journal_names_each_number_received_started_finished_voided_and_answered()
+    {
+        var journal = new JournalLog(LogLevel.Debug);
+        var order = new InputOrder(_answered.Add, journal, "ex7-");
+
+        var third = order.RunAsync(3, () => Task.CompletedTask);
+        order.Void(2);
+        await order.RunAsync(1, () => Task.CompletedTask);
+        await third;
+
+        Assert.Equal(
+        [
+            "ex7- received 3 (done 0, waiting 1)",
+            "ex7- voided 2 (done 0, waiting 1)",
+            "ex7- received 1 (done 0, waiting 2)",
+            "ex7- started 1 (done 0, waiting 1)",
+            "ex7- finished 1 (done 0, waiting 1)",
+            "ex7- answered 1 (done 1, waiting 1)",
+            "ex7- answered 2 (done 2, waiting 1)",
+            "ex7- started 3 (done 2, waiting 0)",
+            "ex7- finished 3 (done 2, waiting 0)",
+            "ex7- answered 3 (done 3, waiting 0)",
+        ], journal.Lines);
+        Assert.All(journal.Levels, level => Assert.Equal(LogLevel.Debug, level));
+    }
+
+    [Fact] // ADR-0240 §10: with Debug off, the journal writes nothing
+    public async Task ADR0240_the_journal_writes_nothing_while_debug_is_off()
+    {
+        var journal = new JournalLog(LogLevel.Information);
+        var order = new InputOrder(_answered.Add, journal, "ex7-");
+
+        await order.RunAsync(1, () => Task.CompletedTask);
+
+        Assert.Empty(journal.Lines);
+        Assert.Equal([1], _answered);
+    }
+
+    [Fact] // ADR-0240 §11: numbers reach the core in the order they were sent, so one missing behind a later number was lost on the way, and is void
+    public async Task ADR0240_a_number_missing_when_a_later_one_arrives_was_lost_and_is_void()
+    {
+        var order = NewOrder();
+        Assert.Null(order.Reached(1));
+        await order.RunAsync(1, () => { _log.Add("1"); return Task.CompletedTask; });
+
+        Assert.Equal((2, 3), order.Reached(4));
+        await order.RunAsync(4, () => { _log.Add("4"); return Task.CompletedTask; });
+
+        Assert.Equal(["1", "4"], _log);
+        Assert.Equal([1, 2, 3, 4], _answered);
+    }
+
+    [Fact] // ADR-0240 §11: told how far the script's numbers have gone, the core finds the ones it never received, and the input waiting behind them goes on
+    public async Task ADR0240_told_how_far_the_numbers_went_the_order_voids_the_ones_never_received()
+    {
+        var order = NewOrder();
+        Assert.Null(order.Reached(1));
+        var first = order.RunAsync(1, () => { _log.Add("1"); return Task.CompletedTask; });
+        await first;
+
+        Assert.Equal((2, 3), order.Reached(3, carried: false));
+        Assert.Null(order.Reached(3, carried: false));
+        Assert.Null(order.Reached(4));
+        await order.RunAsync(4, () => { _log.Add("4"); return Task.CompletedTask; });
+
+        Assert.Equal(["1", "4"], _log);
+        Assert.Equal([1, 2, 3, 4], _answered);
+    }
+
+    [Fact] // ADR-0240 §11: a number that reached the core and is still being handled is not taken for lost
+    public async Task ADR0240_a_number_still_being_handled_is_not_lost()
+    {
+        var order = NewOrder();
+        var consumer = new TaskCompletionSource();
+        Assert.Null(order.Reached(1));
+        var first = order.RunAsync(1, async () => { await consumer.Task; _log.Add("1"); });
+
+        Assert.Null(order.Reached(1, carried: false));
+        Assert.Null(order.Reached(2));
+        var second = order.RunAsync(2, () => { _log.Add("2"); return Task.CompletedTask; });
+        consumer.SetResult();
+        await Task.WhenAll(first, second);
+
+        Assert.Equal(["1", "2"], _log);
+        Assert.Equal([1, 2], _answered);
+    }
+
+    private sealed class JournalLog(LogLevel minimum) : ILogger
+    {
+        public List<string> Lines { get; } = [];
+
+        public List<LogLevel> Levels { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= minimum;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            if (!IsEnabled(logLevel))
+                return;
+            Lines.Add(formatter(state, exception));
+            Levels.Add(logLevel);
+        }
     }
 }

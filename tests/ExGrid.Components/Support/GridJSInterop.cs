@@ -1,4 +1,5 @@
 using Bunit;
+using Microsoft.JSInterop;
 using Microsoft.JSInterop.Infrastructure;
 
 namespace ExGrid.Components.Tests.Support;
@@ -85,6 +86,20 @@ internal sealed class GridJSInterop
     /// <summary>The browser has not yet collected the keys returned from a Consumer frame.</summary>
     internal HeldJSAnswer<IJSVoidResult> UnansweredKeyboardHandBack()
         => HeldJSAnswer<IJSVoidResult>.Setup(_handle!, "takeKeyboardBack");
+
+    /// <summary>The script holds a paste's flavours, numbered <paramref name="input"/>, and hands each over
+    /// as the core asks in the paste's turn (<c>takePaste</c>; ADR-0005, as amended 2026-10-20): the
+    /// stream <paramref name="flavour"/> answers for "text" or "html", or null where it holds none.</summary>
+    internal void HoldsPaste(int input, Func<string, IJSStreamReference?> flavour)
+    {
+        foreach (var name in new[] { "text", "html" })
+        {
+            var stream = flavour(name);
+            _handle!.Setup<IJSStreamReference?>("takePaste",
+                    invocation => (int)invocation.Arguments[0]! == input && (string)invocation.Arguments[1]! == name)
+                .SetResult(stream);
+        }
+    }
 
     /// <summary>The browser answers that Meta is this platform's primary modifier — an Apple
     /// platform, where Cmd+click adds a range (ADR-0012). Asked once at attach, so this is set
@@ -215,6 +230,9 @@ internal sealed class GridJSInterop
         // answer, as a real browser's does: answered "untouched". A test that answers it itself
         // takes the question over (UnansweredUntouched).
         handle.Setup<bool>("askUntouched", _ => true).SetResult(true);
+        // The numbers the core found lost on the way (ADR-0240 section 11), told to the script.
+        var inputsLost = handle.SetupVoid("inputsLost", _ => true);
+        inputsLost.SetVoidResult();
         var closeAnswered = handle.SetupVoid("closeAnswered");
         closeAnswered.SetVoidResult();
         var dispose = handle.SetupVoid("dispose");
@@ -238,6 +256,7 @@ internal sealed class GridJSInterop
             HandedOff = handOff,
             TakenBack = takeKeyboardBack,
             KeysPassedOut = passKeysOut,
+            InputsLost = inputsLost,
             _context = context,
             _module = module,
             _handle = handle,
@@ -286,6 +305,9 @@ internal sealed class GridJSInterop
     /// <summary>Every time the core told the gate the keys after a leaving Escape go out to the element
     /// around the root (<c>passKeysOut</c>).</summary>
     internal JSRuntimeInvocationHandler KeysPassedOut { get; private init; } = default!;
+
+    /// <summary>The numbers the core told the script were lost on the way (ADR-0240 section 11).</summary>
+    internal JSRuntimeInvocationHandler InputsLost { get; private init; } = default!;
 
     /// <summary>Every time the core asked for the keyboard back on its root (ADR-0021/0018) —
     /// granted by the browser only while DOM focus is still inside the root or on nothing.</summary>

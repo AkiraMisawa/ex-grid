@@ -203,6 +203,8 @@ public partial class ExGrid<TRow>
         double scrollLeftPx, double scrollTopPx, int rowSequence, int layout, int editorRow = -1, int editorColumn = -1,
         int input = 0, int doubleClickInput = 0)
     {
+        InputReached(input);
+        InputReached(doubleClickInput);
         // Told of before the event it describes was heard, the event never came: its number, and a
         // double click still awaited, are no longer owed (ADR-0220).
         if (_taken is { } unheard)

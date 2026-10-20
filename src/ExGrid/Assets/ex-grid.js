@@ -86,6 +86,127 @@ export function stamp() {
  * @returns a handle owned by that one grid
  */
 export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared, gateKeys) {
+    // The Input Journal's reader on the instance's root (ADR-0240 section 10). A symbol from the registry, not
+    // a global: a failed layer-3 test reads it from each grid on the page; no Consumer reads it.
+    const JOURNAL = Symbol.for('ex-grid.input-journal');
+
+    // How many entries an instance keeps: the last few hundred inputs, enough for one test's burst.
+    const JOURNAL_SIZE = 512;
+
+    // The calls that report where the pointer is, made per row crossed and per pause: not journaled, so
+    // that a pointer moving never fills the journal (ADR-0027).
+    const unjournaled = (method) => method.startsWith('OnPointer');
+
+    // A value as the journal keeps it: numbers, booleans and short strings (a key's name) as they are, a long
+    // string by its length, anything else by its kind, so the journal never holds a paste or an element.
+    function journaled(value) {
+        if (value === null || value === undefined || typeof value === 'number' || typeof value === 'boolean') {
+            return value ?? null;
+        }
+        if (typeof value === 'string') {
+            return value.length <= 16 ? value : `<${value.length} chars>`;
+        }
+        return `<${typeof value}>`;
+    }
+
+    // One instance's Input Journal: a ring of the last JOURNAL_SIZE entries, each stamped with the wall
+    // clock, so that it lines up with the host's log.
+    function inputJournal() {
+        const entries = new Array(JOURNAL_SIZE);
+        let next = 0;
+        let calls = 0;
+        const note = (what, detail) => {
+            entries[next % JOURNAL_SIZE] = { at: Date.now(), what, ...detail };
+            next += 1;
+        };
+        // An input taken into a hold, as its own fields say what it is; a drag's move is a pointer move.
+        const heldEntry = (k) => {
+            const fields = {};
+            for (const [name, value] of Object.entries(k ?? {})) {
+                if (value === null || (typeof value !== 'object' && typeof value !== 'function')) {
+                    fields[name] = journaled(value);
+                }
+            }
+            return fields;
+        };
+        class Hold extends Array {
+            static get [Symbol.species]() {
+                return Array;
+            }
+
+            push(...items) {
+                for (const k of items) {
+                    if (k?.dragMove !== true) {
+                        note('held', heldEntry(k));
+                        this.taken?.();
+                    }
+                }
+                return super.push(...items);
+            }
+
+            unshift(...items) {
+                for (const k of items) {
+                    note('held first', heldEntry(k));
+                    this.taken?.();
+                }
+                return super.unshift(...items);
+            }
+
+            shift() {
+                const k = super.shift();
+                if (k?.dragMove !== true) {
+                    note('let go', heldEntry(k));
+                }
+                return k;
+            }
+
+            splice(...args) {
+                const removed = super.splice(...args);
+                if (removed.length > 0) {
+                    note('taken out', { count: removed.length });
+                }
+                return removed;
+            }
+        }
+        return {
+            note,
+            // `taken` is told of each input taken into the hold, a drag's moves aside.
+            hold: (taken) => Object.assign(new Hold(), { taken }),
+            // The core, with each call it is asked for journaled, and how the call ended.
+            watch: (raw) => (raw ? {
+                invokeMethod: (name, ...args) => raw.invokeMethod(name, ...args),
+                invokeMethodAsync: (name, ...args) => {
+                    if (unjournaled(name)) {
+                        return raw.invokeMethodAsync(name, ...args);
+                    }
+                    const call = ++calls;
+                    note('call', { call, method: name, args: args.map(journaled) });
+                    return raw.invokeMethodAsync(name, ...args).then((value) => {
+                        note('replied', { call });
+                        return value;
+                    }, (error) => {
+                        note('failed', { call, error: String(error?.message ?? error).slice(0, 200) });
+                        throw error;
+                    });
+                },
+            } : raw),
+            read: () => {
+                const kept = Math.min(next, JOURNAL_SIZE);
+                const out = [];
+                for (let i = next - kept; i < next; i++) {
+                    out.push(entries[i % JOURNAL_SIZE]);
+                }
+                return { dropped: next - kept, entries: out };
+            },
+        };
+    }
+
+    // The script's side of the Input Journal (ADR-0240 section 10): every call to the core and how it
+    // ended, every input held and let go, every hold, every answer the stamp names. Kept here, by the
+    // listeners and calls that already exist, so it adds no listener, reads no layout and sets no timer.
+    const journal = inputJournal();
+    core = journal.watch(core);
+    root[JOURNAL] = journal.read;
     let taken = new Set(takenKeys);
     const gateSet = (name) => new Set(gateKeys?.[name] ?? []);
     // The Consumer's declared keys (ADR-0050, item 14), handed by C# like the core's own. With no
@@ -138,8 +259,52 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the core hears without a number of its own (one no control claims, ADR-0240) counts as the next
     // input's, so only an answer that came after it is trusted.
     let layerInputAt = inputsSent;
+    // The calls carrying an input's number that the core has not answered, by number (ADR-0240 section
+    // 11). Each number goes to the core in the call made as it is given (nextInput), so a call carries
+    // the numbers given since the call before it. One made while the Server circuit is down never
+    // reaches the core, and Blazor never ends its promise: the core, finding the number missing when a
+    // later message arrives, makes it void, refuses it aloud and tells this script (inputsLost), which
+    // ends the call with null, as a call that did nothing.
+    const carried = new Map();
+    let carriedUpTo = inputsSent;
+    core = ((raw) => (raw ? {
+        invokeMethod: (name, ...args) => raw.invokeMethod(name, ...args),
+        invokeMethodAsync: (name, ...args) => {
+            const reply = raw.invokeMethodAsync(name, ...args);
+            if (inputsSent <= carriedUpTo) {
+                return reply;
+            }
+            const first = carriedUpTo + 1;
+            carriedUpTo = inputsSent;
+            const last = carriedUpTo;
+            return new Promise((resolve, reject) => {
+                const end = () => {
+                    for (let n = first; n <= last; n++) {
+                        if (carried.get(n) === end) {
+                            carried.delete(n);
+                        }
+                    }
+                };
+                const lost = () => {
+                    end();
+                    resolve(null);
+                };
+                for (let n = first; n <= last; n++) {
+                    carried.set(n, lost);
+                }
+                reply.then((value) => {
+                    end();
+                    resolve(value);
+                }, (error) => {
+                    end();
+                    reject(error);
+                });
+            });
+        },
+    } : raw))(core);
     let clipboardWrites = 0;
     let settledShown = null;
+    let journalAnswered = null;
     const answeredWaits = [];
     let settledLook = false;
     function lookSettled() {
@@ -162,6 +327,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!core) {
             return;
         }
+        const answered = stamp === null ? null : Number(stamp.getAttribute('data-ex-answered'));
+        if (answered !== journalAnswered) {
+            journalAnswered = answered;
+            journal.note('answered', { input: answered, sent: inputsSent });
+        }
         const settled = held.length === 0 && !answering && pressAnswer === null && pressToAsk === null
             && handOff === null && settledWaits.size === 0 && pendingReveal === null && repaint === null
             && follow === null && clipboardWrites === 0
@@ -169,6 +339,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             && !stamp.hasAttribute('data-ex-owing');
         if (settled !== settledShown) {
             settledShown = settled;
+            journal.note(settled ? 'settled' : 'unsettled');
             root.toggleAttribute('data-ex-settled', settled);
             // Observed only while the mark is off, as the reveal's and the follow's observers are only
             // while they wait.
@@ -182,13 +353,30 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     }
     // The number the next input sent to the core carries (data-ex-answered). A neutral one cannot add a
     // layer an Escape peels (layerInputAt).
+    // The number of the paste sent and not yet answered, which an Escape cancels (ADR-0240 section 12);
+    // 0 for none.
+    let pasteUnderWay = 0;
     function nextInput(neutral = false) {
         inputsSent += 1;
         if (!neutral) {
             layerInputAt = inputsSent;
         }
+        journal.note('numbered', { input: inputsSent });
         lookSettled();
         return inputsSent;
+    }
+    // An input taken into the hold while a call carrying a number is still unanswered (ADR-0240 section
+    // 11): the hold may be waiting on a call made while the circuit was down, which nothing numbered
+    // will follow until the hold lets go. So the core is told how far the numbers have gone, and finds
+    // any it never received.
+    function heldWhileCarried() {
+        if (core && carried.size > 0) {
+            core.invokeMethodAsync('InputsSent', inputsSent).catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to hear how far its inputs had gone', error);
+                }
+            });
+        }
     }
     // The keys on the root that cannot add a layer an Escape peels (ADR-0230 section 1).
     const neutralKeys = gateSet('neutral');
@@ -1156,7 +1344,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // cell would open Overwrite with `1` and lose `500` — so while a mode-changing key is
     // unanswered every key after it waits here, in order, and is gated again once the
     // answer has landed. Plain navigation changes no mode and is never held behind.
-    const held = [];
+    const held = journal.hold(heldWhileCarried);
     let answering = false;
     // A clipboard key's keydown let through a hold, until the copy, cut or paste event its default
     // fires in the same task takes its place among the held keys (onHeldClipboard).
@@ -2093,6 +2281,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 k.take(false);
             }
         }
+        if (held.length > 0) {
+            journal.note('dropped', { count: held.length });
+        }
         held.length = 0;
     };
     // Held input that cannot be carried out where the keyboard is now, dropped with every one behind
@@ -2120,6 +2311,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         } else {
             drain();
         }
+        journal.note('hold');
     };
 
     // The answer to the Name Box's Enter (ExGrid.NameBoxAnsweredAsync): asked from the task after
@@ -2431,6 +2623,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
         }
         answering = false;
+        journal.note('hold over');
         keyboardMissed = false;
         lookSettled();
         deliveringOutside = false;
@@ -2475,6 +2668,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // grid the keyboard is leaving.
         if (keysOut && !replaying) {
             event.preventDefault();
+            return;
+        }
+        // An Escape typed while a paste is under way cancels it, and does nothing else (ADR-0240
+        // section 12). It is not held behind the paste, which is what it races: numbered as a cancel
+        // naming the paste, its call is heard at once, and its turn says so if it came too late.
+        if (pasteUnderWay !== 0 && !replaying && event.key === 'Escape' && !event.repeat
+            && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
+            event.preventDefault();
+            event.stopPropagation();
+            const paste = pasteUnderWay;
+            pasteUnderWay = 0;
+            core.invokeMethodAsync('OnPasteCancelAsync', paste, nextInput(true)).catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to cancel a paste', error);
+                }
+            });
             return;
         }
         const k = snapshot(event);
@@ -3718,6 +3927,23 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             askAboutPress();
             noteBarPressCaret();
         }
+        // A release over the scroller where no rows are painted — the spacer a render still behind an
+        // edge band's scroll leaves bare under the pointer, or the space below a short grid's rows — is
+        // the rows': handed to the Viewport as the release it was, where the core hears it, so a drag
+        // ends wherever the button came up. Heard where it landed, nothing heard it, and a drag released
+        // at machine speed behind its scroll never ended (widened-run ticket 04). Its offsets are the
+        // browser's, from the Viewport; nothing is measured.
+        if (core && !replaying && event.isTrusted && event.button === 0 && scroller
+            && (event.target === scroller || (event.target.parentElement === scroller && event.target.classList.contains('ex-spacer')))) {
+            const viewport = scroller.querySelector('.ex-viewport');
+            if (viewport) {
+                event.stopPropagation();
+                // The drag this release ends holds no more moves (holdsDragMove), as below.
+                dragPressInput = 0;
+                viewport.dispatchEvent(new MouseEvent('mouseup', mouseInit(event)));
+                return;
+            }
+        }
         // The click this release makes on an action is told the render it was pressed on, and the
         // address the press read in it (actionPress).
         const action = replaying ? null : actionPress;
@@ -3867,8 +4093,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             replaying = false;
         }
         if (!core) return;
-        const ended = core.invokeMethodAsync('EndRowClickDispatch', k.rowClick);
-        await Promise.all([k.registered, begun, ended]);
+        core.invokeMethodAsync('EndRowClickDispatch', k.rowClick).catch((error) => {
+            if (core) console.error('[ex-grid] the grid failed to end a row click dispatch', error);
+        });
+        // The answered number covers handling, including recovery by EndRowClickDispatch.
+        // Registration and dispatch-end are unnumbered: when sent while disconnected, Blazor
+        // never ends their promises. Only the numbered Begin can be released by inputsLost.
+        await begun;
         await answeredUpTo(input);
         await editorSettled();
     };
@@ -3932,11 +4163,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     marked: mark.getAttribute('aria-checked') === 'true',
                 });
             const ticket = ++rowClickTicket;
-            const registered = core.invokeMethodAsync('RememberRowClick', ticket, press.paint, press.row,
+            core.invokeMethodAsync('RememberRowClick', ticket, press.paint, press.row,
                 press.column ?? -1, press.index ?? -1, action === null, press.marked === true).catch((error) => {
                 if (core) console.error('[ex-grid] the grid failed to remember a row click', error);
             });
-            held.push({ rowClick: ticket, registered, target: event.target, init: mouseInit(event) });
+            const click = { rowClick: ticket, target: event.target, init: mouseInit(event) };
+            // A Mark changes no keyboard mode (ADR-0043). With no earlier input held, send it
+            // now through the same numbered dispatch: the C# Input Order already serialises its
+            // handling. Waiting a browser round trip here held the next Mark behind the first,
+            // while a Consumer's button outside the root could read only the first marked row
+            // (RI-13). A Mark behind a held key or Action still takes its place in that hold.
+            if (action === null && !answering && held.length === 0 && pressAnswer === null
+                && pressToAsk === null && handOff === null) {
+                replayRowClick(click).catch((error) => {
+                    if (core) console.error('[ex-grid] the grid failed to handle a row Mark', error);
+                });
+                return;
+            }
+            held.push(click);
             if (!answering) startHold();
             return;
         }
@@ -4159,26 +4403,48 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         event.preventDefault();
         sendPaste(event.clipboardData.getData('text/plain'), event.clipboardData.getData('text/html'), paintNow());
     };
-    // Handed over as streams, never as two strings in one call (ADR-0005): on a
-    // Blazor Server circuit that call is one hub message, and a message past the
-    // hub's receive limit — 32 KB unless the application raised it — closes the
-    // connection. Excel's HTML for a few hundred cells is past it. A stream is
-    // Blazor's own route for large interop data and is not subject to that limit;
-    // its length travels with it, so C# can refuse a paste past the grid's ceiling
-    // without reading a byte. An empty flavour is sent as nothing at all. With them goes the
-    // render the paste was taken against, read at its event (paintNow): the paste is refused when
-    // the order that render was painted under has moved since (ADR-0142, LV-13/LV-14).
+    // Handed over as streams, never as two strings in one call (ADR-0005): on a Blazor Server circuit
+    // that call is one hub message, and a message past the hub's receive limit — 32 KB unless the
+    // application raised it — closes the connection. The call carries only each flavour's length, so C#
+    // can refuse a paste past the grid's ceiling before anything crosses, and the render the paste was
+    // taken against, read at its event (paintNow): the paste is refused when the order that render was
+    // painted under has moved since (ADR-0142, LV-13/LV-14). The flavours stay here, by the paste's
+    // number, until the core takes them in the paste's turn (takePaste), compressed: a stream crosses a
+    // circuit at about one chunk per round trip, so ten megabytes took over half a minute on a slow one
+    // (ADR-0005, as amended 2026-10-20). Numbered and sent at the event, as every input is, so nothing
+    // typed after it overtakes it while it is compressed. Until it is answered, the paste is under way,
+    // and an Escape cancels it (onKeyDown).
+    const pastes = new Map();
     const sendPaste = (plain, markup, paint) => {
         const encoder = new TextEncoder();
-        const stream = (value) => (value
-            ? DotNet.createJSStreamReference(encoder.encode(value))
-            : null);
-        return core.invokeMethodAsync('OnPasteStreamsAsync', stream(plain), stream(markup), paint, nextInput())
+        const flavours = {
+            text: plain ? encoder.encode(plain) : null,
+            html: markup ? encoder.encode(markup) : null,
+        };
+        const input = nextInput();
+        pastes.set(input, flavours);
+        pasteUnderWay = input;
+        return core.invokeMethodAsync('OnPasteTakenAsync', flavours.text?.byteLength ?? 0, flavours.html?.byteLength ?? 0, paint, input)
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to take a paste', error);
                 }
+            })
+            .finally(() => {
+                pastes.delete(input);
+                if (pasteUnderWay === input) {
+                    pasteUnderWay = 0;
+                }
             });
+    };
+    // A flavour gzip-compressed for the crossing, or as it is where the browser cannot compress: C#
+    // tells the two apart by gzip's first bytes, which no UTF-8 text begins with.
+    const packed = async (bytes) => {
+        if (typeof CompressionStream !== 'function') {
+            return bytes;
+        }
+        const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
+        return new Uint8Array(await new Response(stream).arrayBuffer());
     };
 
     // A copy, cut or paste fired by a clipboard key let through a hold (onKeyDown), taken in the
@@ -4632,6 +4898,23 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 startHold();
             }
         },
+        // A paste's flavour, asked for in the paste's turn (ExGrid.OnPasteTakenAsync): compressed, as the
+        // bytes Blazor makes the stream from, the result asked for being a stream; null if this script no
+        // longer holds it.
+        takePaste: async (input, flavour) => {
+            const bytes = pastes.get(input)?.[flavour];
+            return bytes ? packed(bytes) : null;
+        },
+        // The inputs numbered first to last never reached the core: sent while the Server circuit was
+        // down, they are void and refused (ExGrid.InputsLost, ADR-0240 section 11). The calls that
+        // carried them end with null, so nothing waits on them any longer.
+        inputsLost: (first, last) => {
+            journal.note('lost', { first, last });
+            for (let n = first; n <= last; n++) {
+                carried.get(n)?.();
+            }
+            lookSettled();
+        },
         // The keyboard is leaving this grid for the Consumer's element around it (keysOut; ExGrid's
         // PassKeysOutAsync): told before the answer to the Escape
         // that led here, so the keys held behind that Escape go out too, in order.
@@ -5038,6 +5321,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             pressToAsk = null;
             // A copy still held has no grid left to copy from: its write lands nothing.
             dropHeld();
+            delete root[JOURNAL];
             root = null;
             scroller = null;
             // The stamp too: the handle outlives this dispose until .NET releases it, a round trip

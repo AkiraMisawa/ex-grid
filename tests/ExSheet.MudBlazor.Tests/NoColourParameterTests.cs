@@ -61,7 +61,7 @@ public class NoColourParameterTests
             .Select(Path.GetFileNameWithoutExtension)
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToList();
-        Assert.Equal(["ExChart", "ExGrid", "ExGrid.MudBlazor", "ExPivot", "ExPivot.MudBlazor", "ExSheet", "ExSheet.MudBlazor"], names);
+        Assert.Equal(["ExChart", "ExChart.MudBlazor", "ExGrid", "ExGrid.MudBlazor", "ExPivot", "ExPivot.MudBlazor", "ExSheet", "ExSheet.MudBlazor"], names);
         return names.Select(name => Assembly.Load(name!)).ToList();
     }
 

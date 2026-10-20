@@ -89,6 +89,17 @@ public enum PasteRefusalReason
     /// (<see cref="Cells.EditDiscardReason.SourceChanged"/>), so a Ctrl+Enter fill never reaches it.
     /// Component-level, never produced by the pure rules.</summary>
     SourceChanged,
+
+    /// <summary>The clipboard's data could not be read: its stream failed or stopped delivering before
+    /// it was read whole. Nothing is written, and the grid keeps answering; a paste is never made
+    /// from part of the clipboard (ADR-0005). Component-level, never produced by the pure
+    /// rules.</summary>
+    Unreadable,
+
+    /// <summary>An Escape typed while the paste was still being read or parsed cancelled it, before it
+    /// raised its Edit Intent: nothing is written (ADR-0240 section 12). Component-level, never produced
+    /// by the pure rules.</summary>
+    Cancelled,
 }
 
 /// <summary>

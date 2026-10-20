@@ -546,11 +546,21 @@
         }
     }
 
+    private const int ShownFields = 20, ShownFieldLength = 40;
+
+    private static string Shown(string value)
+        => value.Length <= ShownFieldLength ? value : $"{value[..ShownFieldLength]}… ({value.Length} characters)";
+
     private void OnPaste(GridPasteIntent intent)
     {
         _pasteStatus = $"{intent.CellCount} cells from {intent.Plan.Source.Rows}x{intent.Plan.Source.Columns}";
-        _pasteFields = string.Join(" | ", intent.Values.SelectMany((row, r) =>
-            row.Select((value, c) => $"{value}:{intent.Origins[r][c]}")));
+        // Shown in part: the page is read by people and by tests, and a ten-megabyte paste written whole
+        // into one text node cost the browser seconds of text shaping after every render (widened-run
+        // ticket 05), which was this page's cost and not the grid's.
+        var fields = intent.Values.SelectMany((row, r) =>
+            row.Select((value, c) => $"{Shown(value)}:{intent.Origins[r][c]}")).ToList();
+        _pasteFields = string.Join(" | ", fields.Take(ShownFields))
+            + (fields.Count > ShownFields ? $" | … {fields.Count - ShownFields} more" : "");
         // Positions are the current order's, so every (row, column, value) is resolved
         // against the Window FIRST — applying as we go could reorder mid-loop under a
         // sort on the edited column (ADR-0011/0014).
@@ -633,6 +643,10 @@
                 "TargetNotEditable — the selection covers a column that is not editable",
             PasteRefusalReason.TooLarge =>
                 "TooLarge — more than a paste or a fill reads at once",
+            PasteRefusalReason.Unreadable =>
+                "Unreadable — the clipboard could not be read; nothing was written",
+            PasteRefusalReason.Cancelled =>
+                "Cancelled — Escape cancelled the paste while it was read; nothing was written",
             PasteRefusalReason.SpillPastExtent =>
                 "SpillPastExtent — the block would run past the last row or column",
             PasteRefusalReason.NothingToFillFrom =>

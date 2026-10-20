@@ -59,7 +59,8 @@ public sealed partial class Sheet
         IReadOnlyList<(CellAddress Address, Entry Entry)> Rewritten,
         Dictionary<int, AxisFormat> RowsBefore,
         Dictionary<int, AxisFormat> ColumnsBefore,
-        Dictionary<int, SheetColumnWidth> WidthsBefore);
+        Dictionary<int, SheetColumnWidth> WidthsBefore,
+        IReadOnlyList<(Sheet Sheet, CellAddress Address, Entry Entry)> RewrittenElsewhere);
 
     /// <summary>Whether <paramref name="edit"/> would be refused, and why; nothing changes either way.</summary>
     internal SheetRefusal? CheckStructural(StructuralEdit edit)
@@ -155,19 +156,84 @@ public sealed partial class Sheet
             moved.Add(movedCell);
         }
 
+        var elsewhere = RewriteElsewhere(edit);
+        var elsewhereBefore = elsewhere.Rewritten.Select(r => r.Sheet).Distinct().ToDictionary(o => o, o => o.Snapshot());
+
         _cells.Clear();
         foreach (var cell in moved) _cells[cell.Address] = cell;
         if (edit.IsInsert && formatInserted && edit.Start > 0) FormatInserted(edit, moved);
         ShiftAxisFormats(edit, formatInserted);
         ShiftColumnWidths(edit, formatInserted);
         RebuildDependencies();
+        foreach (var (other, address, entry, _) in elsewhere.Rewritten) other.Reregister(address, entry);
+        var changed = dirty.Select(a => new SheetCell(this, a)).ToHashSet();
+        changed.UnionWith(elsewhere.Dirty);
         // A volatile Formula is recalculated whatever the change, an insertion's or a deletion's
         // included, though nothing it names moved: INDIRECT's text names the same place (ADR-0124).
-        var recalculated = dirty.Count == 0 && !HasVolatileFormulas ? [] : Recalculate(dirty, []).Recalculated;
+        var recalculated = changed.Count == 0 && !Workbook.Sheets.Any(s => s.HasVolatileFormulas) ? [] : Recalculate(changed, []).Recalculated;
+        // The Formulas rewritten on another Sheet changed there, whatever their Values did.
+        foreach (var (other, snapshot) in elsewhereBefore) Workbook.Collect(other, other.Diff(snapshot, []));
         // Rows and columns moved: two cells' sides meet on a new edge, from cells that may hold nothing.
         var change = SheetChange.Merge([Diff(before, recalculated, shownBefore), new SheetChange([], [], [], WidthsChangedSince(widthsBefore))])
             .ReformattingUnnamedRows();
-        return new StructuralOutcome(change, dropped, rewritten, rowsBefore, columnsBefore, widthsBefore);
+        return new StructuralOutcome(change, dropped, rewritten, rowsBefore, columnsBefore, widthsBefore,
+            [.. elsewhere.Rewritten.Select(r => (r.Sheet, r.Address, r.Before))]);
+    }
+
+    /// <summary>
+    /// What an insertion or deletion on this Sheet does to the Formulas of the Workbook's other Sheets
+    /// (ADR-0331, ADR-0046: the engine belongs to the workbook): every Reference qualified with this
+    /// Sheet's name is rewritten as one of its own would be. Nothing changes yet: the rewritten Entries,
+    /// each with the one it replaces, and every Formula whose References reach the edit, to recalculate.
+    /// </summary>
+    private (List<(Sheet Sheet, CellAddress Address, Entry Entry, Entry Before)> Rewritten, HashSet<SheetCell> Dirty) RewriteElsewhere(StructuralEdit edit)
+    {
+        var rewritten = new List<(Sheet, CellAddress, Entry, Entry)>();
+        var dirty = new HashSet<SheetCell>();
+        bool Mine(Reference r) => r.SheetName is { } qualifier && IsThisSheet(qualifier);
+        foreach (var other in Workbook.Sheets)
+        {
+            if (other == this) continue;
+            foreach (var (address, entry) in other.FormulaEntries())
+            {
+                if (!entry.Formula!.Contains('!', StringComparison.Ordinal)) continue;
+                var mapped = ReferenceRewriter.Rewrite(entry, r => Mine(r) ? edit.Map(r, this) : r);
+                if (!ReferenceEquals(mapped, entry))
+                {
+                    rewritten.Add((other, address, mapped, entry));
+                    dirty.Add(new SheetCell(other, address));
+                }
+                else if (entry.Parsed!.References.Any(r => Mine(r) && edit.Reaches(r, this)))
+                {
+                    // Sheet1!A:A kept its text, but what it covers moved underneath it.
+                    dirty.Add(new SheetCell(other, address));
+                }
+            }
+        }
+        return (rewritten, dirty);
+    }
+
+    /// <summary>Puts a rewritten Formula in a cell of this Sheet, its References registered again; nothing is recalculated.</summary>
+    private void Reregister(CellAddress address, Entry entry)
+    {
+        var cell = _cells[address];
+        if (cell.Entry?.Parsed is { } old) Unregister(address, old);
+        cell.Entry = entry;
+        if (entry.Parsed is { } parsed) Register(address, parsed);
+    }
+
+    /// <summary>
+    /// Puts back, on the Workbook's other Sheets, the Formulas an insertion or deletion on this Sheet
+    /// rewrote, exactly as they were, and recalculates them: what it changed here.
+    /// </summary>
+    private SheetChange PutBackElsewhere(IReadOnlyList<(Sheet Sheet, CellAddress Address, Entry Entry)> rewritten)
+    {
+        if (rewritten.Count == 0) return SheetChange.None;
+        var before = rewritten.Select(r => r.Sheet).Distinct().ToDictionary(o => o, o => o.Snapshot());
+        foreach (var (other, address, entry) in rewritten) other.Reregister(address, entry);
+        var change = Recalculate([.. rewritten.Select(r => new SheetCell(r.Sheet, r.Address))], []);
+        foreach (var (other, snapshot) in before) Workbook.Collect(other, other.Diff(snapshot, []));
+        return change;
     }
 
     /// <summary>Whether a Formula calls <c>ROW()</c> or <c>COLUMN()</c> with no argument: its Value is its own cell's place.</summary>

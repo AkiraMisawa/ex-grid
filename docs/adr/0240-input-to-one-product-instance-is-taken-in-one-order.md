@@ -225,6 +225,97 @@ The Chrome contexts' delegates may change shape to carry the order. Each change 
   in one task at 60 ms end on the wrong row on `main` in every round (four of the ↓ lost); the branch ends
   on the right one in about 3.1 s, the round trips each step waits for.
 
+## Added 2026-10-20, decided with the user: the Input Journal, a circuit that is down, and a paste cancelled
+
+Three questions the order left open, asked after the Hunt traces of 2026-10-19 had to infer which inputs
+were held and answered (FD-6, KB-31, ED-22 nested), and after the ~10 MB paste was seen to hold every
+input behind it for a minute on the widened run. Each was put to the user with a recommendation.
+
+### 10. The Input Journal is internal
+
+Each instance keeps an **Input Journal**: in order, every input the script numbers (number, kind, held or
+sent, the mode it was gated against), every hold and its release, every answer the core gives, and the
+core's side of each number (entered, finished, made void). The script's side is a bounded ring buffer,
+always on, kept by the listeners the order already has: it adds no listener, reads no layout and sets
+no timer, so ADR-0021 gains no entry. The core's side goes to `ILogger` at Debug, under its own
+category. Neither is a public API: no parameter turns it on and no Consumer reads it. Layer 3 attaches
+both to a failed test, per instance. *Rejected:* a Consumer-facing opt-in (a public surface and a
+Change Note for a diagnostic), and a hook only the DemoHost turns on (blind outside CI).
+
+*As built (input-order ticket 08, 2026-10-20):* the script keeps 512 entries per instance, read through
+`Symbol.for('ex-grid.input-journal')` on the root and deleted with it; calls that report the pointer are
+not journaled, and a value is kept as a number, a boolean, a string of up to 16 characters or its kind,
+so a paste or a field's text never is. The core writes under `ExGrid.InputOrder`
+(`InputOrder.JournalCategory`); the Server DemoHost lets that category through to its log file at Debug,
+and `fixtures.mjs` attaches both halves to a failed test as `input-journal.json`. On WebAssembly the
+core's half is not written to the console, which CON-8 keeps silent.
+
+### 11. Input made while the Server circuit is down is refused, never replayed
+
+A numbered input made while the circuit is disconnected is **not** held for the reconnection. Its number
+is made void, so the inputs behind it are not kept waiting, and the input is refused aloud (section 4,
+`KeyRefusalLabelIds.LostOnTheWay`) only if it never reached the core: a call that reached the core before
+its reply was lost is not refused. A circuit that does not come back is Blazor's to show. *Rejected:*
+holding the input and replaying it after the reconnection, which would act against whatever stands then
+(section 4).
+
+**How the loss is found (the mechanism was replaced once, 2026-10-20, before it was built).** As first
+written, the script was to learn of the failure from its own call's rejected promise. It cannot:
+`blazor.web.js` (10.0.7) does not await the send of a call to .NET, so on a connection that is down the
+send's rejection escapes as an uncaught error and the call's promise never ends. Reproduced on the
+Server host through the latency proxy: two ↓ typed while the connection was cut never arrived, and the ↓
+typed after the reconnection reached the core and waited for them for good.
+
+So the loss is found by count, decided with the user (decision card, 2026-10-20; *rejected:* listening
+to Blazor's reconnection, which needs an ADR-0021 entry and does not fire under a Consumer's own
+reconnection handler):
+
+- **Every number reaches the core in order, or not at all.** The script gives a number in the call that
+  carries it (`nextInput` as an argument), so numbers are sent in order, over one connection that
+  delivers in order, and each call's first synchronous step runs in that order on the renderer. This rests
+  on the hub taking one invocation at a time per client (`HubOptions.MaximumParallelInvocationsPerClient`,
+  1 by default); a host that raises it can see a number overtaken, which reads here as lost.
+- **So a number missing when a later one arrives was lost.** Every call that carries a number marks it as
+  having reached the core first (`InputOrder.Reached`), and the numbers between the last that reached it
+  and this one are void and refused. An earlier number never arrives after a later one any more, so the
+  layer-2 tests that sent them out of order now hold the order with a paste still being read instead.
+- **A hold says how far the numbers went.** A key typed behind an unanswered call is held, so nothing
+  numbered follows a lost call that a hold waits on. An input taken into the hold while a numbered call is
+  unanswered sends the core how far the numbers have gone (`InputsSent`, unnumbered), which finds the lost
+  ones the same way. One small message per input held on a slow circuit is the cost.
+- **The script's waits end.** The core tells the script the numbers it found lost (`inputsLost` on the
+  instance's handle), and the calls that carried them end with null, as a call that did nothing, so a
+  hold waiting on one lets go.
+
+Nothing listens to the reconnection, so the refusal is said when the user's next input after it finds
+the loss, not at the reconnection itself; ADR-0021 gains no entry. **Not covered**, each a case of the
+connection dropping between two messages already on the wire rather than of input made while it is down:
+a reply lost after its call reached the core (the script's wait on it does not end), and a click whose
+telling arrived and whose Blazor event did not (its number waits for the next telling, as section 2
+says).
+
+### 12. Escape cancels a paste still being read: the one input that acts ahead of its turn
+
+A paste whose streams are still being read or parsed is under way: the root says so (`aria-busy`) and
+the live region announces it once. **An Escape typed while it is under way cancels it.** The script
+numbers that Escape as a cancel and also tells the core at once, outside the order; the paste, if it
+has not raised its Edit Intent, stops reading and is refused aloud (`PasteRefusalReason.Cancelled`). If
+it has, the cancel finds nothing, and the Escape's turn says aloud that the paste had already landed.
+The Escape's turn does nothing else: it closes no editor and no popover.
+
+This is the one place an outcome depends on timing, against the spine's sixth rule, and it is accepted
+deliberately: a cancel exists to race the work it cancels. What keeps it honest is that both outcomes
+are said aloud, and which one happened is never left to be guessed. *Recommended against, and chosen:*
+progress alone, with no cancel.
+
+*As built (2026-10-20, large-paste ticket 01):* the Escape is one call, `OnPasteCancelAsync(paste,
+input)`, naming the paste by its number; the core hears it on arrival and answers it in its own turn.
+A cancel that arrives while the paste still waits for its turn cancels it as that turn starts, and one
+naming a paste already finished finds it landed. The visible sign is the root's `ex-pasting` class,
+painted from Visual Tokens (`--ex-pasting-bar`, `--ex-pasting-bar-height`, `--ex-pasting-cursor`): a
+bar across the top edge and a progress pointer, nothing dimmed, since the rows shown are the ones
+being pasted over.
+
 ## What it may cost
 
 Nothing per character (5) and nothing per cell. A click that was not numbered gains the number told
@@ -274,3 +365,16 @@ cancellation and ordinary claim abandonment release the target and void any assi
 Existing unnumbered interop methods remain callable; the shipped row listener uses the ticket
 protocol. This adds no parallel command queue: tickets capture targets, and Input Order still
 executes every command.
+
+*As built, corrected after the 2026-10-20 hunt (RI-13):* a row Mark with no earlier browser-held
+input is dispatched immediately through that same ticket protocol. Mark changes no keyboard mode
+(ADR-0043), so C# can serialise its handling without a browser round trip before the next Mark is
+sent. Holding every Mark until its reply had made a Consumer's button outside the root read only
+the first of two rapidly marked rows. A Mark behind a held key or Action still joins that hold;
+target retention, numbering, refusal and discarded-event recovery are unchanged.
+
+Integrating section 11 also removed the browser's wait for the unnumbered registration and
+dispatch-end replies. Those calls are still sent and their errors reported, but a row click waits
+for its numbered Begin and answered stamp. Otherwise a click made while disconnected kept the
+hold waiting for two replies Blazor never supplies, even after the core declared its number lost.
+The partial-wire exclusions in section 11 are unchanged.

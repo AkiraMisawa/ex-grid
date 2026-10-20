@@ -35,6 +35,7 @@ internal static partial class Packages
         "ExGrid" => "exgrid",
         "ExSheet" => "exsheet",
         "ExPivot" => "expivot",
+        "ExChart" => "exchart",
         "The Snapshot" or "Data" => "data",
         _ => null,
     };

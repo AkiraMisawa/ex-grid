@@ -116,6 +116,49 @@ export async function holdAnswers(held) {
     return true;
 }
 
+/**
+ * The number the next connection through the latency proxy will take: taken before a test opens its
+ * own page, it names that page's connections to dropCircuit, so a document another test left open
+ * keeps its circuit. Null on WebAssembly, where there is no circuit.
+ */
+export async function connectionMark() {
+    if (!SERVER) {
+        return null;
+    }
+    return Number((await (await fetch(`${LATENCY_CONTROL_URL}/mark`)).text()).trim());
+}
+
+/**
+ * Cuts the connections made since `from` (connectionMark) in the latency proxy and refuses new ones,
+ * or lets the browser connect again (latency-proxy.mjs), as a network that goes away and comes back
+ * does. The host keeps the circuit, so Blazor reconnects to it (ADR-0240 §11). Answers false on
+ * WebAssembly, where there is no circuit; the fixture lets the browser connect again after every test.
+ */
+export async function dropCircuit(down, from = 0) {
+    if (!SERVER) {
+        return false;
+    }
+    const response = await fetch(`${LATENCY_CONTROL_URL}/drop?down=${down ? 1 : 0}&from=${from ?? 0}`, { method: 'POST' });
+    if (!response.ok) {
+        throw new Error(`the latency proxy refused to ${down ? 'cut' : 'restore'} the connection: ${response.status}`
+            + ' (one started from an older checkout does not know /drop, so stop it and run again)');
+    }
+    return true;
+}
+
+/**
+ * Returns once Blazor has opened its WebSocket again since dropCircuit(false), and the wire has gone
+ * quiet behind it, so the circuit has been taken up again (ADR-0240 §11). Blazor retries on a backoff of
+ * its own, so this waits for the opening, never for a fixed time.
+ */
+export async function circuitBack({ timeout = 60_000 } = {}) {
+    const response = await fetch(`${LATENCY_CONTROL_URL}/reconnected?within=${timeout}`);
+    if (!response.ok) {
+        throw new Error(`the circuit did not come back: ${(await response.text()).trim()}`);
+    }
+    await circuitQuiet();
+}
+
 /** The round trip the latency proxy is set to, in ms; null on WebAssembly, which has none. */
 export async function roundTrip() {
     if (!SERVER) {
@@ -229,7 +272,11 @@ function listen(page, sinkOf) {
 
 // The console verdict every test ends with, and its entry in console.json. Soft: every check
 // is reported, and the record is written whatever the others found.
-function verdict({ messages, pageErrors }, hostLog, { expectedHostLog, expectedWarnings, expectedErrors = [] }, testInfo) {
+function verdict({ messages, pageErrors: allPageErrors }, hostLog, { expectedHostLog, expectedWarnings, expectedErrors = [], expectedPageErrors = [] }, testInfo) {
+    // An uncaught error a library raises by design, provoked on purpose by the test that pins it (Blazor's
+    // send on a connection that is down, ADR-0240 section 11), is named by expectedPageErrors, as an error
+    // the browser writes is by expectedErrors.
+    const pageErrors = allPageErrors.filter((text) => !expectedPageErrors.some((pattern) => pattern.test(text)));
     // A console error the browser writes by design, provoked on purpose by the test that pins it
     // (a script the import map's integrity refuses, ADR-0123), is named by expectedErrors: not a
     // CON-1 failure, and asserted to appear. Any other error still fails the test.
@@ -256,6 +303,9 @@ function verdict({ messages, pageErrors }, hostLog, { expectedHostLog, expectedW
     }
     for (const pattern of ran ? expectedErrors : []) {
         expect.soft(allErrors.some((m) => pattern.test(m.text)), `the browser wrote the error ${pattern}`).toBe(true);
+    }
+    for (const pattern of ran ? expectedPageErrors : []) {
+        expect.soft(allPageErrors.some((text) => pattern.test(text)), `the page raised the error ${pattern}`).toBe(true);
     }
 
     // console.json keeps each test's errors and warnings under its title, so a rerun
@@ -369,7 +419,7 @@ const CONTEXT_METHODS_THAT_OUTLIVE_A_NAVIGATION = ['addCookies', 'addInitScript'
 // (pivot.spec.mjs on WebAssembly, after #82; every time with the files held back 400 ms). What the
 // page says is read — the sheet each link holds — never a wait or a retry (ADR-0056). A file that
 // never loads is a hang, said by name; its console error fails the test besides (CON-1).
-async function stylesheetsLoaded(page) {
+export async function stylesheetsLoaded(page) {
     try {
         await page.waitForFunction(() => [...document.querySelectorAll('link[rel~="stylesheet"]')]
             .every((link) => link.sheet !== null), null, { timeout: 60_000 });
@@ -588,6 +638,32 @@ function holdForcedPresses(page) {
     }
 }
 
+// A failed test carries the Input Journal of every grid on its page (ADR-0240 section 10): what the
+// script numbered, held, let go and called the core with, and what the stamp answered, read from each
+// root as the test ends, before anything navigates away. A passing test reads nothing.
+async function readJournals(page, testInfo) {
+    if (testInfo.status === testInfo.expectedStatus || testInfo.status === 'skipped' || page.isClosed()) {
+        return null;
+    }
+    return page.evaluate(() => [...document.querySelectorAll('.ex-grid')].map((root) => ({
+        root: root.id,
+        journal: root[Symbol.for('ex-grid.input-journal')]?.() ?? null,
+    }))).catch((error) => [{ unread: String(error) }]);
+}
+
+// With the core's side, which the Server host writes to its log under the journal's category; on
+// WebAssembly the core runs in the page and logs nothing (CON-8), so the script's side is the record.
+async function attachJournals(testInfo, journals, hostLog) {
+    if (journals === null) {
+        return;
+    }
+    const core = hostLog.filter((line) => line.includes(' ExGrid.InputOrder: '));
+    await testInfo.attach('input-journal.json', {
+        contentType: 'application/json',
+        body: JSON.stringify({ script: journals, core }, null, 1),
+    });
+}
+
 // A test with a document of its own (ADR-0056): a context of its own, every navigation real.
 async function ownPage(app, page, use, options, testInfo) {
     holdForcedPresses(page);
@@ -598,16 +674,20 @@ async function ownPage(app, page, use, options, testInfo) {
     page.reload = thenReady(page, page.reload.bind(page));
 
     await use(page);
+    const journals = await readJournals(page, testInfo);
 
     // A test that raised the round trip, or held the host's answers, leaves the wire as the
     // next one expects it.
     await holdAnswers(false);
+    await dropCircuit(false);
     await undoAlterations(page);
     await setRoundTrip(0);
     for (const pattern of options.expectedLeaks) {
         expect.soft(false, `the harness named ${pattern}: a document of the test's own is not checked`).toBe(true);
     }
-    verdict(sink, app.hostLog(), options, testInfo);
+    const hostLog = app.hostLog();
+    await attachJournals(testInfo, journals, hostLog);
+    verdict(sink, hostLog, options, testInfo);
 }
 
 async function sharedPage(app, context, viewport, use, options, testInfo) {
@@ -660,6 +740,7 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
     const listenersBefore = new Map(page.eventNames().map((name) => [name, page.listeners(name)]));
 
     await use(page);
+    const journals = await readJournals(page, testInfo);
 
     for (const undo of restore.reverse()) {
         undo();
@@ -673,6 +754,7 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
         }
     }
     await holdAnswers(false);
+    await dropCircuit(false);
     await undoAlterations(page);
     await setRoundTrip(0);
     for (const other of context.pages().filter((p) => p !== page)) {
@@ -705,7 +787,9 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
     }
     expect.soft(leaks.filter((leak) => !options.expectedLeaks.some((pattern) => pattern.test(leak))),
         'nothing left outside the test\'s own page (ADR-0056)').toEqual([]);
-    verdict(sink, app.hostLog(), options, testInfo);
+    const hostLog = app.hostLog();
+    await attachJournals(testInfo, journals, hostLog);
+    verdict(sink, hostLog, options, testInfo);
     if (!handOn || leaks.length > 0 || testInfo.errors.length > errorsBefore) {
         await app.close();
     }
@@ -755,6 +839,8 @@ export const test = base.extend({
     // A console error the browser writes by design, provoked on purpose by the test that pins it,
     // and named here the same way: not a CON-1 failure, and asserted to appear.
     expectedErrors: [[], { option: true }],
+    // Uncaught errors a test provokes on purpose, by pattern; each must appear.
+    expectedPageErrors: [[], { option: true }],
     // A change a test makes outside its own page without alterPage, provoked on purpose by the
     // harness's own tests (harness.spec.mjs) and named here: asserted to be reported, and not
     // a failure (ADR-0056).
@@ -784,8 +870,8 @@ export const test = base.extend({
         await use(context);
         await context.clearPermissions().catch(() => { });
     },
-    page: async ({ app, context, viewport, freshDocument, expectedHostLog, expectedWarnings, expectedErrors, expectedLeaks }, use, testInfo) => {
-        const options = { expectedHostLog, expectedWarnings, expectedErrors, expectedLeaks };
+    page: async ({ app, context, viewport, freshDocument, expectedHostLog, expectedWarnings, expectedErrors, expectedPageErrors, expectedLeaks }, use, testInfo) => {
+        const options = { expectedHostLog, expectedWarnings, expectedErrors, expectedPageErrors, expectedLeaks };
         if (viewport === null || freshDocument) {
             await ownPage(app, await context.newPage(), use, options, testInfo);
         } else {

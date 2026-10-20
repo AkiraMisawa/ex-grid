@@ -24,6 +24,15 @@
 // POST /hold?answers=0 lets them go in order (holdAnswers in fixtures.mjs). A test that needs
 // the browser to act before an answer arrives holds them, rather than counting on the round
 // trip outlasting its own inputs (ADR-0220).
+//
+// POST /drop?down=1&from=<n> cuts every connection through here numbered n or later and refuses new
+// ones, as a network that goes away does, until POST /drop?down=0 lets the browser connect again
+// (dropCircuit in fixtures.mjs; ADR-0240 §11). GET /mark answers the number the next connection will
+// take, so a test cuts only its own page's, and a document another test left open keeps its circuit.
+// The host keeps the circuit, so Blazor reconnects to the same one.
+// GET /reconnected?within=<ms> answers once the host has accepted a WebSocket through here since the
+// connections were let through again (the host's 101 answer has crossed): 200 then, or 504 when that has
+// not happened within `within` ms (circuitBack in fixtures.mjs).
 import http from 'node:http';
 import net from 'node:net';
 
@@ -41,6 +50,10 @@ let lastCrossed = Date.now();
 const crossed = { fromBrowser: 0, fromHost: 0 };
 const sockets = new Set();
 let answersHeld = false;
+let down = false;
+let connections = 0;
+const numbered = new Map();
+let reopened = false;
 const answerDrains = new Set();
 
 // SignalR's keep-alive: each end pings the other every 15 s when it has sent nothing else —
@@ -116,9 +129,24 @@ const track = (socket) => {
 };
 
 net.createServer((client) => {
+    if (down) {
+        client.destroy();
+        return;
+    }
     const upstream = net.connect(targetPort, '127.0.0.1');
     track(client);
     track(upstream);
+    const number = connections++;
+    numbered.set(client, number);
+    numbered.set(upstream, number);
+    client.on('close', () => numbered.delete(client));
+    upstream.on('close', () => numbered.delete(upstream));
+    // The host's answer to a WebSocket's opening, through a connection made since they were let through.
+    upstream.once('data', (chunk) => {
+        if (!down && chunk.subarray(0, 12).toString('latin1') === 'HTTP/1.1 101') {
+            reopened = true;
+        }
+    });
     delayed(client, upstream, 'fromBrowser');
     delayed(upstream, client, 'fromHost');
     const close = () => {
@@ -186,6 +214,51 @@ http.createServer((request, response) => {
             }
         }
         response.end(`answers ${answersHeld ? 'held' : 'let go'}\n`);
+        return;
+    }
+    if (url.pathname === '/mark') {
+        response.end(`${connections}\n`);
+        return;
+    }
+    if (url.pathname === '/reconnected') {
+        const within = Number(url.searchParams.get('within'));
+        if (request.method !== 'GET' || !(within >= 0)) {
+            response.statusCode = 400;
+            response.end('GET /reconnected?within=<milliseconds>\n');
+            return;
+        }
+        const started = Date.now();
+        const check = () => {
+            if (reopened) {
+                response.end(`reconnected after ${Date.now() - started} ms\n`);
+            } else if (Date.now() - started >= within) {
+                response.statusCode = 504;
+                response.end(`no WebSocket was opened within ${within} ms\n`);
+            } else {
+                setTimeout(check, 20);
+            }
+        };
+        check();
+        return;
+    }
+    if (url.pathname === '/drop') {
+        const value = url.searchParams.get('down');
+        if (request.method !== 'POST' || (value !== '1' && value !== '0')) {
+            response.statusCode = 400;
+            response.end('POST /drop?down=1|0[&from=<connection>]\n');
+            return;
+        }
+        const from = Number(url.searchParams.get('from') ?? 0);
+        down = value === '1';
+        reopened = false;
+        if (down) {
+            for (const socket of sockets) {
+                if ((numbered.get(socket) ?? 0) >= from) {
+                    socket.destroy();
+                }
+            }
+        }
+        response.end(`connections ${down ? 'cut' : 'let through'}\n`);
         return;
     }
     const rtt = Number(url.searchParams.get('rtt'));

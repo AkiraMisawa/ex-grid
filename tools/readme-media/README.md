@@ -34,6 +34,8 @@ reworded needs no new picture, a part added or moved does.
 | `grid-anatomy` | `/figure/grid-anatomy` | ExGrid's Overview, and the README's ExGrid section |
 | `sheet-anatomy` | `/figure/sheet-anatomy` | ExSheet's Overview, and the README's ExSheet section |
 | `pivot-anatomy` | `/figure/pivot-anatomy` | ExPivot's Overview, and the README's ExPivot section |
+| `chart-anatomy` | `/figure/chart-anatomy` | ExChart's Overview, and the README's ExChart section |
+| `chart-dock-anatomy` | `/figure/chart-dock-anatomy` | ExChart's Overview, and the README's ExChart section |
 
 ## Run it
 
@@ -64,5 +66,9 @@ node figures.mjs --names                                 # the names alone, from
 
 Set `CHROMIUM_PATH` to use an installed Chromium instead of Playwright's own.
 
-A recording is 1280×720, turned into a 960-pixel-wide GIF at 10 frames a second. A figure is as
+A recording is 1280×720, turned into a 960-pixel-wide GIF at 10 frames a second. A scene may say
+otherwise: `chromes` records it under one Chrome only, where the other would show the same again;
+`viewport` gives it a larger window, for a screen that lays out side by side only when wide (the FX
+volatility surface and its slice); and `gif` asks for a narrower GIF, fewer frames or colours, or
+no dither, to keep it small. ExChart's scenes are 800 pixels wide at 6 frames a second. A figure is as
 large as its page's frame and the names around it.

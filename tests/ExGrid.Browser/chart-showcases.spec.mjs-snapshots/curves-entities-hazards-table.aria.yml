@@ -1,0 +1,59 @@
+- table "Chart 2":
+  - caption: Chart 2
+  - rowgroup:
+    - row "Tenor (years) ACMEC SNRFOR USD XR14 · Hazard rate (%) CYGNUS SNRFOR USD XR14 · Hazard rate (%) CYGNUS SUBLT2 USD XR14 · Hazard rate (%)":
+      - columnheader "Tenor (years)"
+      - columnheader "ACMEC SNRFOR USD XR14 · Hazard rate (%)"
+      - columnheader "CYGNUS SNRFOR USD XR14 · Hazard rate (%)"
+      - columnheader "CYGNUS SUBLT2 USD XR14 · Hazard rate (%)"
+  - rowgroup:
+    - row "0.5 0.3030 3.5353 4.2929":
+      - rowheader "0.5"
+      - cell "0.3030"
+      - cell "3.5353"
+      - cell "4.2929"
+    - row "1 0.5068 4.7352 5.5811":
+      - rowheader "1"
+      - cell "0.5068"
+      - cell "4.7352"
+      - cell "5.5811"
+    - row "2 0.7812 5.7033 6.5097":
+      - rowheader "2"
+      - cell "0.7812"
+      - cell "5.7033"
+      - cell "6.5097"
+    - row "3 1.2721 6.8183 7.5646":
+      - rowheader "3"
+      - cell "1.2721"
+      - cell "6.8183"
+      - cell "7.5646"
+    - row "4 1.6693 7.4225 8.0270":
+      - rowheader "4"
+      - cell "1.6693"
+      - cell "7.4225"
+      - cell "8.0270"
+    - row "5 2.1165 7.9660 8.2053":
+      - rowheader "5"
+      - cell "2.1165"
+      - cell "7.9660"
+      - cell "8.2053"
+    - row "7 2.2789 7.3917 7.7661":
+      - rowheader "7"
+      - cell "2.2789"
+      - cell "7.3917"
+      - cell "7.7661"
+    - row "10 2.3601 7.3178 7.7100":
+      - rowheader "10"
+      - cell "2.3601"
+      - cell "7.3178"
+      - cell "7.7100"
+    - row "15 2.4382 7.1086 7.4800":
+      - rowheader "15"
+      - cell "2.4382"
+      - cell "7.1086"
+      - cell "7.4800"
+    - row "20 2.5157 7.0716 7.5119":
+      - rowheader "20"
+      - cell "2.5157"
+      - cell "7.0716"
+      - cell "7.5119"

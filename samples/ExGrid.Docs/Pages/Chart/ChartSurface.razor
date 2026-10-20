@@ -1,0 +1,88 @@
+@page "/exchart/surface"
+@using ExGrid.Docs.Examples.Chart
+
+<DocsPage Product="ExChart" Title="3D surface"
+          Lead="A surface over a grid of two axes, as a volatility surface over deltas and tenors. Turn it, zoom it, read a point, and click a row of the grid to draw its slice beside it as a chart.">
+
+    <DocsSection Title="A surface">
+        <p>
+            <code>ExSurface</code> takes a <code>SurfaceDefinition</code>: an axis across, an axis along, and a
+            value at each point of their grid, or none. Drag to turn it, or use the arrow keys; <kbd>Shift</kbd>
+            with a drag or an arrow pans, and the wheel or <kbd>+</kbd> and <kbd>-</kbd> zoom. Move over it to read
+            the grid point nearest the pointer. Click a tenor or a delta to draw that slice beside the surface,
+            a smile or a term structure, as an ordinary chart. A point with no value is drawn as a hole, never as
+            a zero: the surface below has no quote at 25C 5Y. "Reset view" returns it to where it started, and
+            the SVG and PNG buttons save the drawing as it stands, turned and zoomed as the user left it. The
+            colour bar at the right says which value each colour is, and is saved with the drawing.
+        </p>
+        <DocsExample Builtin="typeof(Surface)" Mud="typeof(SurfaceMud)" Files="@(["Examples/Chart/VolSurface.cs"])" CodeOpen="true" />
+    </DocsSection>
+
+    <DocsSection Title="Interpolated by the page">
+        <p>
+            As a chart's curve is, a surface between quotes is the application's. ExChart.Engine's Interpolation
+            Helpers interpolate a grid of quotes, bilinearly here, into a function the surface samples, so the
+            page chooses the method and the surface says it: under the surface and in the tooltip, with no dot
+            at an interpolated value. The helper does not reach past the quotes, so a cell with a missing corner
+            stays a hole.
+        </p>
+        <p>
+            The <MudLink Href="showcase/fx-volatility" Target="_blank">FX volatility showcase</MudLink> marks the
+            values it filled instead: its grid of quotes keeps the quoted values, a spline across each expiry's
+            smile fills a quote that did not come in, and the surface is handed the grid with those values marked,
+            so its tooltip says "quoted" or "interpolated" at each point.
+        </p>
+        <DocsExample Builtin="typeof(SurfaceInterpolated)" Mud="typeof(SurfaceInterpolatedMud)" Files="@(["Examples/Chart/VolSurface.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Coloured from a centre">
+        <p>
+            A P&amp;L, a Greek or a basis has a value that means nothing, usually zero. Coloured from its lowest
+            value to its highest, a small loss beside a large gain would take the deepest colour, as alarming
+            as a large loss. Set <code>Centre</code> on the <code>SurfaceDefinition</code> and the colours diverge
+            from it instead: red below, blue above, each as deep as its distance from the centre, the same
+            distance as deep on either side, and the band that holds the centre neutral. The colour bar then
+            runs as far below the centre as above it, and always marks the centre. The colours are the Visual
+            Tokens <code>--ex-chart-diverge-0</code> to <code>--ex-chart-diverge-8</code>, low to high, for a
+            theme that wants green above.
+        </p>
+        <DocsExample Builtin="typeof(SurfaceCentre)" Mud="typeof(SurfaceCentreMud)" Files="@(["Examples/Chart/SurfaceShapes.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="On your own triangles">
+        <p>
+            Values on a triangle mesh, such as a finite element solution or quotes the application triangulated
+            itself, are handed in with <code>SurfaceDefinition.FromTriangles</code>: the nodes, each a position and
+            a value, and the triangles, each three node indices. The surface draws each triangle flat through its
+            corners, which is the application's own piecewise-linear function, and never resamples it onto a grid.
+            A dot marks each node, and the tooltip reads the nearest one. A node without a value, or a part of the
+            domain with no triangles, is a hole. A click on a node slices through its position, along whichever
+            axis the click lies nearer, and the slice cuts the triangles exactly. Between nodes its values are read
+            linearly on the triangles, which the slice says. "View as table" lists the nodes. A triangle naming a
+            node the mesh does not hold, a triangle with no area, or two nodes at one place is refused by name.
+        </p>
+        <DocsExample Builtin="typeof(SurfaceTriangles)" Mud="typeof(SurfaceTrianglesMud)" Files="@(["Examples/Chart/SurfaceShapes.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Logarithmic axes">
+        <p>
+            A grid's lines are evenly spaced by default, one per value, as a market quotes tenors and deltas.
+            <code>SurfaceAxis</code>'s <code>Scale</code> places numbers in proportion to their value instead, or to
+            their logarithm. The values must rise along the axis, and on a logarithmic axis lie above zero, or the
+            surface is refused by name. <code>ZScale</code> puts the values on a logarithmic scale, with decade
+            ticks on the walls. A value at or below zero keeps that scale proportional, with a Note saying why, as a
+            chart's vertical axis does. The slice keeps both scales. Below, total variance over expiries spans three
+            decades.
+        </p>
+        <DocsExample Builtin="typeof(SurfaceLog)" Mud="typeof(SurfaceLogMud)" Files="@(["Examples/Chart/SurfaceShapes.cs", "Examples/Chart/VolSurface.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="How it is drawn">
+        <p>
+            The surface is projected and drawn by the chart's own script while it is turned, because a round
+            trip per frame cannot follow a drag. Blazor renders the toolbar, the tooltip, the slice and the table;
+            the script reports the point under the pointer only when it moves onto another. "View as table" lists
+            every value of the grid, or every node of a mesh.
+        </p>
+    </DocsSection>
+</DocsPage>

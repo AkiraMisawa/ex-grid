@@ -24,4 +24,8 @@ public static class KeyRefusalLabelIds
 
     /// <summary>A queued row command lost its target from the current Window (ADR-0160).</summary>
     public const string RowCommandTargetLeft = "key-refusal-row-command-target-left";
+    /// <summary>Input made while the Blazor Server circuit was down — a key, a press, a paste — that
+    /// never reached the grid: refused once the circuit is back and the next input finds it missing,
+    /// never replayed against whatever stands then (ADR-0240 section 11).</summary>
+    public const string LostOnTheWay = "key-refusal-lost-on-the-way";
 }

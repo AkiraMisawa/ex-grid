@@ -1,0 +1,163 @@
+@page "/chart-bridge"
+@using global::ExChart
+@using global::ExChart.Components
+@using global::ExChart.Engine
+@using global::ExGrid.Chrome
+
+<DemoNav />
+
+@* The selection bridge's page (/chart-bridge): the browser layer's fixture for M3 (ticket 20). A curve
+   history, dates down and tenors across, charted from the grid's context menu (ADR-0258). The page is
+   the Consumer: it adds the bridge's commands to the grid in one line, shows each chart it is handed,
+   registers every open chart as a target of "Add to chart", and moves the grid's Focus when a point is
+   clicked. "Recalculate" moves every rate; "Delete the first row" removes a row the charts were made from. *@
+<DemoChromeAssets>
+    <Head>
+        <ExChartStylesheet />
+    </Head>
+</DemoChromeAssets>
+
+<h1>Charting a selection</h1>
+
+<p>
+    Select cells and open the context menu (ADR-0258). A selection with the Date column charts each
+    column as a series along the dates; one of tenor columns charts each row as a curve across the tenors;
+    one holding both offers both. A chart keeps the rows it was made from: a recalculated rate is redrawn,
+    a deleted row becomes a gap with a note, and a new row is never added. Click a point to move the grid
+    to its cell.
+</p>
+
+<ExGrid @ref="_bridge.Grid" TRow="CurveRow"
+        Window="_rows"
+        RowKey="KeyOf"
+        RowSequenceVersion="_version"
+        Columns="Columns"
+        HeaderGroups="Groups"
+        ContextCommands="_commands"
+        CommandLabel="Label"
+        PinnedColumnCount="1"
+        ViewportHeight="260"
+        ViewportWidth="760" />
+
+<p>
+    <button type="button" id="recalculate" @onclick="Recalculate">Recalculate</button>
+    <button type="button" id="drop-row" @onclick="DropRow">Delete the first row</button>
+</p>
+<p id="bridge-refusal" role="status">@_refusal</p>
+
+@foreach (var (name, chart) in _charts)
+{
+    <section class="bridge-chart" data-chart="@name">
+        <h2>@name</h2>
+        <ExChart Definition="_bridge.Draw(chart)" Title="@name" Width="760" Height="280" OnPointClick="ClickOf(name)" />
+    </section>
+}
+
+@code {
+    /// <summary>One date's rates, and a note that is not charted.</summary>
+    public sealed record CurveRow(DateOnly Date, string Note, double Y1, double Y2, double Y5, double Y10, double Spread);
+
+    private static readonly DateOnly Start = new(2026, 10, 1);
+
+    private static readonly GridColumn<CurveRow>[] Columns =
+    [
+        new("date", ColumnType.Date, r => r.Date, "Date"),
+        new("note", ColumnType.Text, r => r.Note, "Note"),
+        new("y1", ColumnType.Number, r => r.Y1, "1Y", format: v => ((double)v).ToString("0.000")),
+        new("y2", ColumnType.Number, r => r.Y2, "2Y", format: v => ((double)v).ToString("0.000")),
+        new("y5", ColumnType.Number, r => r.Y5, "5Y", format: v => ((double)v).ToString("0.000")),
+        new("y10", ColumnType.Number, r => r.Y10, "10Y", format: v => ((double)v).ToString("0.000")),
+        new("spread", ColumnType.Number, r => r.Spread, "Spread"),
+    ];
+
+    private static readonly HeaderGroup[] Groups = [new("Rates", ["y1", "y2", "y5", "y10"])];
+
+    private static readonly Dictionary<string, double> Tenors = new() { ["y1"] = 1, ["y2"] = 2, ["y5"] = 5, ["y10"] = 10 };
+
+    // Held in fields, never rebuilt per render (CLAUDE.md: a new delegate is a changed parameter).
+    private static readonly Func<CurveRow, object> KeyOf = r => r.Date;
+    private static readonly Func<string, string?> Label = GridChartCommands.Label;
+
+    private IReadOnlyList<CurveRow> _rows = Enumerable.Range(0, 8).Select(i => Row(i, 0)).ToList();
+    private int _version;
+    private int _recalculations;
+    private string _refusal = "";
+    private readonly List<(string Name, GridChart Chart)> _charts = [];
+    private readonly Dictionary<string, EventCallback<ChartPointClick>> _clicks = [];
+    private GridChartBridge<CurveRow> _bridge = null!;
+    private Func<ContextMenuContext<CurveRow>, IEnumerable<GridCommand>> _commands = null!;
+
+    private static CurveRow Row(int i, int recalculation) =>
+        new(Start.AddDays(i), i % 3 == 0 ? "month end" : "", 3.0 + i * 0.01 + recalculation * 0.1, 3.1 + i * 0.01 + recalculation * 0.1,
+            3.3 - i * 0.02 + recalculation * 0.1, 3.6 - i * 0.01 + recalculation * 0.1, 40 + i);
+
+    protected override void OnInitialized()
+    {
+        _bridge = new GridChartBridge<CurveRow>(new GridChartDeclarations<CurveRow>
+        {
+            RowKey = KeyOf,
+            RowOf = key => _rows.FirstOrDefault(r => r.Date == (DateOnly)key),
+            KindOf = _ => SeriesKind.Level,
+            PositionOf = column => Tenors.TryGetValue(column, out var years) ? years : null,
+            PositionTitle = "Tenor (years)",
+            RowName = r => r.Date.ToString("yyyy-MM-dd"),
+        })
+        {
+            OnChart = Made,
+            OnAdded = Added,
+            OnRefused = Refused,
+        };
+        _commands = _bridge.Commands;
+    }
+
+    private Task Made(GridChart chart)
+    {
+        _refusal = "";
+        _charts.Add(($"Chart {_charts.Count + 1}", chart));
+        Retarget();
+        return Task.CompletedTask;
+    }
+
+    private Task Added(ChartTarget target, GridChart chart)
+    {
+        _refusal = "";
+        var at = _charts.FindIndex(c => c.Name == target.Name);
+        if (at >= 0) _charts[at] = (target.Name, chart);
+        Retarget();
+        return Task.CompletedTask;
+    }
+
+    private Task Refused(string why)
+    {
+        _refusal = why;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private void Retarget()
+    {
+        _bridge.Targets = _charts.Select(c => new ChartTarget(c.Name, c.Chart)).ToList();
+        StateHasChanged();
+    }
+
+    private EventCallback<ChartPointClick> ClickOf(string name)
+    {
+        if (!_clicks.TryGetValue(name, out var click))
+            _clicks[name] = click = EventCallback.Factory.Create<ChartPointClick>(this,
+                c => _bridge.ShowInGridAsync(_charts.First(x => x.Name == name).Chart, c));
+        return click;
+    }
+
+    private void Recalculate()
+    {
+        _recalculations++;
+        _rows = _rows.Select(r => Row(r.Date.DayNumber - Start.DayNumber, _recalculations)).ToList();
+    }
+
+    private void DropRow()
+    {
+        if (_rows.Count == 0) return;
+        _rows = _rows.Skip(1).ToList();
+        _version++;
+    }
+}

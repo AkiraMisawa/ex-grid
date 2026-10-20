@@ -1,7 +1,6 @@
 # 06: A paste stream that fails to read is a refused paste, not an unhandled exception
 
-Status: ready-for-agent
-Roadmap: ExGrid — A paste whose data cannot be read is refused aloud, and the connection stays up.
+Status: done
 
 **Seen:** in both runs, about 60 s after each Server-host failure of ticket 05, the host logs:
 
@@ -26,6 +25,6 @@ would end the circuit.
 cannot carry out is (the spine's first principle). It should not take the circuit down or reach the
 host log as unhandled.
 
-- [ ] A failed or timed-out read refuses the paste with a stated reason.
-- [ ] Layer 2: a stream that throws on read refuses the paste and leaves the grid working.
-- [ ] Change Note and the Docs Site's paste page, if the refusal is visible.
+- [x] A failed or timed-out read refuses the paste with a stated reason.
+- [x] Layer 2: a stream that throws on read refuses the paste and leaves the grid working.
+- [x] Change Note and the Docs Site's paste page, if the refusal is visible.

@@ -7,7 +7,9 @@ namespace ExChart;
 /// </summary>
 /// <param name="From">The first position shown, or null for the data's first.</param>
 /// <param name="To">The last position shown, or null for the data's last.</param>
-public sealed record ChartRange(double? From, double? To)
+/// <param name="YFrom">The lowest value the left axis shows, which a rectangle dragged across a scatter narrows (ADR-0290); null for the data's.</param>
+/// <param name="YTo">The highest, or null for the data's.</param>
+public sealed record ChartRange(double? From, double? To, double? YFrom = null, double? YTo = null)
 {
     /// <summary>A range of dates.</summary>
     public static ChartRange Dates(DateOnly? from, DateOnly? to) => new(from?.DayNumber, to?.DayNumber);
@@ -18,3 +20,9 @@ public sealed record ChartRange(double? From, double? To)
 /// <param name="Hidden">Whether it is now hidden.</param>
 public sealed record SeriesVisibility(string Key, bool Hidden);
 
+
+/// <summary>A click on a point of a chart (ADR-0258, M3-Q6): the series nearest the pointer, at the position clicked.</summary>
+/// <param name="SeriesId">The series' identity, as the Chart Definition gives it.</param>
+/// <param name="Position">The position clicked, in the axis' own values.</param>
+/// <param name="Row">The Row Key of an Observation's point clicked, as its <see cref="ExChart.Engine.ChartPoint.Row"/> gives it (ADR-0290); null otherwise.</param>
+public sealed record ChartPointClick(string SeriesId, double Position, object? Row = null);

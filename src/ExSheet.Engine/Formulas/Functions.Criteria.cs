@@ -17,7 +17,7 @@ internal static partial class FunctionLibrary
     {
         var operand = call.Operand(0);
         if (operand.IsError) return operand;
-        if (CriteriaRange.From(operand, call.Evaluator) is not { } range) return Operand.Of(ErrorValue.Value);
+        if (CriteriaRange.From(operand) is not { } range) return Operand.Of(ErrorValue.Value);
         var count = range.Count;
         foreach (var position in range.Occupied())
             if (range.Read(position) is { } value && !(value.Kind == ValueKind.Text && value.Text.Length == 0)) count--;
@@ -35,7 +35,7 @@ internal static partial class FunctionLibrary
         {
             var operand = call.Operand(i);
             if (operand.IsError) return operand;
-            if (CriteriaRange.From(operand, call.Evaluator) is not { } range) return Operand.Of(ErrorValue.Value);
+            if (CriteriaRange.From(operand) is not { } range) return Operand.Of(ErrorValue.Value);
             var criterionOperand = call.Operand(i + 1);
             if (Evaluator.IsMulti(criterionOperand)) return Unlifted(call);
             var criterion = Criterion.Parse(call.Evaluator.ScalarOf(criterionOperand), call.Evaluator.Culture);
@@ -50,7 +50,7 @@ internal static partial class FunctionLibrary
         {
             var operand = single ? call.Count > 2 ? call.Operand(2) : call.Operand(0) : call.Operand(0);
             if (operand.IsError) return operand;
-            results = CriteriaRange.From(operand, call.Evaluator);
+            results = CriteriaRange.From(operand);
             if (results is null) return Operand.Of(ErrorValue.Value);
             if (!results.SameShape(first))
             {
@@ -64,8 +64,8 @@ internal static partial class FunctionLibrary
                 var a = operand.Area;
                 if ((long)a.Row1 + first.Rows > Sheet.RowCount || (long)a.Column1 + first.Columns > Sheet.ColumnCount)
                     return Operand.Of(ErrorValue.Ref);
-                results = CriteriaRange.From(Operand.Of(new Area(a.Row1, a.Column1,
-                    a.Row1 + first.Rows - 1, a.Column1 + first.Columns - 1)), call.Evaluator)!;
+                results = CriteriaRange.From(operand.SameSheet(new Area(a.Row1, a.Column1,
+                    a.Row1 + first.Rows - 1, a.Column1 + first.Columns - 1)))!;
             }
         }
 
@@ -109,26 +109,26 @@ internal static partial class FunctionLibrary
         };
     }
 
-    private sealed class CriteriaRange(Operand operand, Evaluator evaluator, int rows, int columns)
+    private sealed class CriteriaRange(Operand operand, int rows, int columns)
     {
         public int Rows => rows;
         public int Columns => columns;
         public long Count => (long)rows * columns;
         public bool SameShape(CriteriaRange other) => rows == other.Rows && columns == other.Columns;
-        public static CriteriaRange? From(Operand operand, Evaluator evaluator) => operand.Kind switch
+        public static CriteriaRange? From(Operand operand) => operand.Kind switch
         {
-            OperandKind.Area => new(operand, evaluator, operand.Area.Rows, operand.Area.Columns),
-            OperandKind.Column => new(operand, evaluator, operand.Column!.Count, 1),
+            OperandKind.Area => new(operand, operand.Area.Rows, operand.Area.Columns),
+            OperandKind.Column => new(operand, operand.Column!.Count, 1),
             _ => null,
         };
         public Value? Read(long position) => operand.Kind == OperandKind.Area
-            ? evaluator.Cells.Read(new CellAddress(operand.Area.Row1 + (int)(position / columns), operand.Area.Column1 + (int)(position % columns)))
+            ? operand.Cells!.Read(new CellAddress(operand.Area.Row1 + (int)(position / columns), operand.Area.Column1 + (int)(position % columns)))
             : operand.Column![(int)position];
         public IEnumerable<long> Occupied()
         {
             if (operand.Kind == OperandKind.Area)
             {
-                foreach (var address in evaluator.Cells.NonBlankIn(operand.Area))
+                foreach (var address in operand.Cells!.NonBlankIn(operand.Area))
                     yield return (long)(address.Row - operand.Area.Row1) * columns + address.Column - operand.Area.Column1;
             }
             else

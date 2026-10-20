@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="samples/ExChart.Showcases/ExChart.Showcases.csproj" />
   <Project Path="samples/ExGrid.DemoApi/ExGrid.DemoApi.csproj" />
   <Project Path="samples/ExGrid.DemoHost/ExGrid.DemoHost.csproj" />
   <Project Path="samples/ExGrid.DemoHost.Server/ExGrid.DemoHost.Server.csproj" />
@@ -11,6 +12,7 @@
   <Project Path="src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj" />
   <Project Path="src/ExChart.Engine/ExChart.Engine.csproj" />
   <Project Path="src/ExChart/ExChart.csproj" />
+  <Project Path="src/ExChart.MudBlazor/ExChart.MudBlazor.csproj" />
   <Project Path="src/ExPivot/ExPivot.csproj" />
   <Project Path="src/ExPivot.Engine/ExPivot.Engine.csproj" />
   <Project Path="src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj" />

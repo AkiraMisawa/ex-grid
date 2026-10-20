@@ -1,0 +1,17 @@
+@using ExChart.Components
+@using ExChart.Engine
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExSurface Definition="Definition" Title="EURUSD volatility" FileName="eurusd-vol"
+               Width="560" Height="400" SliceWidth="360"
+               View="_view" OnViewChanged="v => _view = v" Slice="_slice" OnSliceChanged="s => _slice = s" />
+</MudExGridPaper>
+
+@code {
+    private static readonly SurfaceDefinition Definition = VolSurface.Quoted();
+
+    // The surface holds no View State either: the angle the user turned it to and the slice they
+    // clicked come back as events, for the page to keep.
+    private SurfaceView? _view;
+    private SurfaceSlice? _slice;
+}

@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount, settled } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount, settled, stylesheetsLoaded } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
 
@@ -39,6 +39,10 @@ const firstValue = (page) => rows(page).nth(1).locator('[role=gridcell]').nth(1)
 async function open(page, chrome, query = '') {
     await page.goto(`/pivot?chrome=${chrome}${query}`);
     await expect(rows(page).first()).toBeVisible({ timeout: 30_000 });
+    // The Wrapper's token can arrive before MudBlazor's own stylesheet. Geometry read in
+    // that gap belonged to unstyled icons and changed before the raw mouse press (Hunt,
+    // 2026-10-20). Finish loading the page's styles before any test takes its coordinates.
+    await stylesheetsLoaded(page);
     // ExPivot's stylesheet has landed when its root lays the report and the pane out side by
     // side; a Wrapper's, when one of its tokens reaches the paper.
     await expect.poll(() => pivot(page).evaluate((p) => getComputedStyle(p).display)).toBe('flex');

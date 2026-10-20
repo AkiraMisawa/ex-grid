@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ExGrid;
 
 /// <summary>
@@ -16,10 +18,21 @@ namespace ExGrid;
 /// for itself. Work the instance starts itself, outside any input, goes after every input received so
 /// far (<see cref="AfterReceivedAsync"/>).</para>
 /// <para>Not thread-safe: it lives on the renderer's synchronisation context, as the component does.</para>
+/// <para>The core's side of the Input Journal (ADR-0240 section 10): each number received, started,
+/// finished or made void, and each answer, is written at Debug under the category
+/// <see cref="JournalCategory"/>, so that a failed run says what the core did with each input. Nothing is
+/// written while that level is off.</para>
+/// <para>A number sent while the Server circuit was down never arrives: the next message that does finds it
+/// missing (<see cref="Reached"/>), and it is made void (ADR-0240 section 11).</para>
 /// </remarks>
 internal sealed class InputOrder
 {
+    /// <summary>The logging category of the core's side of the Input Journal (ADR-0240 section 10).</summary>
+    public const string JournalCategory = "ExGrid.InputOrder";
+
     private readonly Action<int> _answered;
+    private readonly ILogger? _journal;
+    private readonly string _instance;
     private readonly SortedDictionary<int, Waiting> _waiting = [];
     private readonly HashSet<int> _voided = [];
     private readonly Queue<Waiting> _unnumbered = new();
@@ -31,13 +44,24 @@ internal sealed class InputOrder
     // The highest number received, handled, waiting or voided: work the instance starts itself goes after it.
     private int _received;
 
+    // Every number up to this one has reached the core or been found lost on the way (Reached).
+    private int _arrived;
+
     // The handling under way, and the token its flow carries.
     private object? _running;
     private bool _disposed;
 
     /// <param name="answered">Told each number once it has been handled or voided, in order, every number
     /// before it included (the Settled Stamp's <c>data-ex-answered</c>).</param>
-    public InputOrder(Action<int> answered) => _answered = answered;
+    /// <param name="journal">Where the core's side of the Input Journal is written, at Debug; null for
+    /// nowhere.</param>
+    /// <param name="instance">The instance's id prefix, which names it in the journal.</param>
+    public InputOrder(Action<int> answered, ILogger? journal = null, string instance = "")
+    {
+        _answered = answered;
+        _journal = journal is not null && journal.IsEnabled(LogLevel.Debug) ? journal : null;
+        _instance = instance;
+    }
 
     /// <summary>The last number handled or voided, every one before it included.</summary>
     public int AnsweredUpTo => _done;
@@ -69,6 +93,7 @@ internal sealed class InputOrder
             return AfterReceivedAsync(handling);
         var waiting = new Waiting(input, handling);
         _waiting.Add(input, waiting);
+        Note("received", input);
         if (input > _received)
             _received = input;
         Pump();
@@ -92,9 +117,38 @@ internal sealed class InputOrder
         if (input <= _done || _waiting.ContainsKey(input) || _disposed)
             return;
         _voided.Add(input);
+        Note("voided", input);
         if (input > _received)
             _received = input;
         Pump();
+    }
+
+    /// <summary>
+    /// A message from the script has reached the core, sent after every number up to
+    /// <paramref name="sentUpTo"/> (ADR-0240 section 11). The script sends each number in the call made as
+    /// it gives it, in order, over one connection, which delivers in order: a number at or below it that
+    /// has not reached the core never will, because it was sent while the circuit was down. Those numbers
+    /// are made void, so the inputs behind them are not kept waiting, and answered as lost.
+    /// </summary>
+    /// <param name="sentUpTo">The last number the script had sent; the message's own, when it carries one
+    /// (<paramref name="carried"/>).</param>
+    /// <param name="carried">Whether the message carries <paramref name="sentUpTo"/> itself, which has then
+    /// reached the core; otherwise it only says that every number up to it was sent ahead of it.</param>
+    /// <returns>The numbers found lost, first and last; null when none was.</returns>
+    public (int First, int Last)? Reached(int sentUpTo, bool carried = true)
+    {
+        if (sentUpTo <= 0 || _disposed)
+            return null;
+        var first = Math.Max(_arrived, _done) + 1;
+        var last = carried ? sentUpTo - 1 : sentUpTo;
+        if (sentUpTo > _arrived)
+            _arrived = sentUpTo;
+        if (first > last)
+            return null;
+        Note("lost", first, last);
+        for (var input = first; input <= last; input++)
+            Void(input);
+        return (first, last);
     }
 
     /// <summary>Runs work the instance starts itself, outside any input, after every input received so
@@ -136,6 +190,7 @@ internal sealed class InputOrder
             else if (_voided.Remove(_done + 1))
             {
                 _done++;
+                Note("answered", _done);
                 _answered(_done);
                 continue;
             }
@@ -146,6 +201,7 @@ internal sealed class InputOrder
 
             var token = new object();
             _running = token;
+            Note("started", next.Input, next.After);
             Task task;
             var outer = _flow.Value;
             _flow.Value = token;
@@ -185,9 +241,11 @@ internal sealed class InputOrder
     private void Finish(Waiting waiting, Task task)
     {
         _running = null;
+        Note(task.IsFaulted ? "faulted" : task.IsCanceled ? "cancelled" : "finished", waiting.Input, waiting.After);
         if (waiting.Input > 0)
         {
             _done = waiting.Input;
+            Note("answered", _done);
             _answered(_done);
         }
         if (task.IsFaulted)
@@ -196,6 +254,21 @@ internal sealed class InputOrder
             waiting.Completion.TrySetCanceled();
         else
             waiting.Completion.TrySetResult();
+    }
+
+    // One line of the journal: what happened to which number, and how far the order had got. Work with no
+    // number of its own is named by the number it went after.
+    private void Note(string what, int input, int after = 0)
+    {
+        if (_journal is null)
+            return;
+        var subject = what == "lost"
+            ? FormattableString.Invariant($"{input} to {after}")
+            : input > 0
+            ? input.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            : "after " + after.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        _journal.LogDebug("{Instance} {What} {Subject} (done {Done}, waiting {Waiting})",
+            _instance, what, subject, _done, _waiting.Count);
     }
 
     private sealed record Waiting(int Input, Func<Task> Handling, int After = 0)

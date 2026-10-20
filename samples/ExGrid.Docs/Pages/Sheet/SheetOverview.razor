@@ -89,6 +89,8 @@
                 by the grid's live region, in the Sheet's own words, and the Sheet's notice under the grid shows the
                 same sentence. <code>CommandLabel</code> replaces those words as it replaces the menu's, by the ids in
                 ExGrid's <a href="exgrid/clipboard#what-a-refusal-sounds-like"><code>RefusalLabelIds</code></a>.
+                A large paste on Blazor Server says it is under way while it is read, and <kbd>Escape</kbd> then
+                cancels it, as <a href="exgrid/clipboard#a-paste-under-way-and-escape">ExGrid's does</a>.
             </li>
         </ul>
     </DocsSection>
@@ -175,6 +177,11 @@
             taken has been handled and painted. A test or a macro types at full speed, waits for the mark, and
             reads. Text typed into the Cell Editor, the Formula Bar or the Name Box, and a press on the toolbar,
             are read with an expectation that waits for their effect.
+        </p>
+        <p>
+            On Blazor Server, input made while the connection is lost never reaches the Sheet. Once the connection is
+            back, the next input finds it missing: it is refused aloud and never replayed, and the new input is handled
+            as usual, as on <MudLink Href="exgrid/selection">the grid</MudLink>.
         </p>
     </DocsSection>
 

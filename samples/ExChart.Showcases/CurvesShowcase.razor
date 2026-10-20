@@ -1,0 +1,55 @@
+@* Curves (ADR-0280): three views of credit and rate curves, switched in the application bar — one name's
+   CDS term structure, CDS curves by reference entity with their tenors across, and an interest-rate curve
+   three ways. Each view keeps its own grid, controls and chart; only the selected one is on the screen.
+   Every figure is a fixed value under Data/, computed once by the analytics the proof of concept stood a
+   risk system in for; nothing here bootstraps or interpolates a curve. *@
+<ShowcaseShell Mud="Mud" App="Curve Viewer" Crumb="@($"Market data · {_view}")">
+    <Tools>
+        @if (Mud)
+        {
+            <MudToggleGroup T="string" Value="_view" ValueChanged="Select" Size="Size.Small" Outlined="false"
+                            Delimiters="false" SelectedClass="xs-mud-view-selected" Class="xs-mud-views">
+                @foreach (var view in Views)
+                {
+                    <MudToggleItem Value="@view" Text="@view" />
+                }
+            </MudToggleGroup>
+        }
+        else
+        {
+            <nav class="xs-views" aria-label="View">
+                @foreach (var view in Views)
+                {
+                    <button type="button" class="@(view == _view ? "xs-view xs-view-on" : "xs-view")" aria-pressed="@(view == _view ? "true" : "false")"
+                            @onclick="() => Select(view)">@view</button>
+                }
+            </nav>
+        }
+    </Tools>
+    <ChildContent>
+        @switch (_view)
+        {
+            case CdsView:
+                <CdsCurveView Mud="Mud" />
+                break;
+            case EntitiesView:
+                <EntityCurvesView Mud="Mud" />
+                break;
+            default:
+                <RateCurveView Mud="Mud" />
+                break;
+        }
+    </ChildContent>
+</ShowcaseShell>
+
+@code {
+    /// <summary>Whether the screen is drawn with MudBlazor's Chrome.</summary>
+    [Parameter] public bool Mud { get; set; }
+
+    private const string CdsView = "CDS curve", EntitiesView = "By reference entity", RatesView = "Rates";
+    private static readonly string[] Views = [CdsView, EntitiesView, RatesView];
+
+    private string _view = CdsView;
+
+    private void Select(string view) => _view = view;
+}

@@ -114,6 +114,19 @@ public static class DocsNav
             new("Sources", "expivot/sources"),
             new("Live data", "expivot/live"),
         ]),
+        new("ExChart", DocsNavSection.Docs,
+        [
+            new("Overview", "exchart"),
+            new("Series and axes", "exchart/series"),
+            new("Panels, legend and colours", "exchart/panels"),
+            new("Tooltip and Chart Filters", "exchart/tooltip"),
+            new("From the grid", "exchart/grid"),
+            new("3D surface", "exchart/surface"),
+            new("Scatter and fitted lines", "exchart/scatter"),
+            new("Candles and intervals", "exchart/candles"),
+            new("Charts from a Chart Spec", "exchart/spec"),
+            new("Reading and export", "exchart/export"),
+        ]),
         new("Data", DocsNavSection.Docs,
         [
             new("Snapshot", "data"),
@@ -125,6 +138,12 @@ public static class DocsNav
             new("Trade blotter", "showcase/blotter", DocsLinkKind.Showcase),
             new("Budget sheet", "showcase/budget", DocsLinkKind.Showcase),
             new("Sales analysis", "showcase/sales", DocsLinkKind.Showcase),
+            new("Exposure profile", "showcase/exposure", DocsLinkKind.Showcase),
+            new("Curves", "showcase/curves", DocsLinkKind.Showcase),
+            new("FX volatility", "showcase/fx-volatility", DocsLinkKind.Showcase),
+            new("CDS spread vs leverage", "showcase/cds-spread", DocsLinkKind.Showcase),
+            new("Equity index daily bars", "showcase/equity-index", DocsLinkKind.Showcase),
+            new("Binomial lattice", "showcase/binomial-lattice", DocsLinkKind.Showcase),
         ]),
         new("Reference", DocsNavSection.Reference,
         [
@@ -162,6 +181,7 @@ public static class DocsNav
         new(new("ExGrid", "exgrid"), "The grid: a spreadsheet's selection, keys and clipboard over a million rows"),
         new(new("ExSheet", "exsheet"), "A sheet with Formulas, drawn by ExGrid"),
         new(new("ExPivot", "expivot"), "Excel's PivotTable, drawn by ExGrid"),
+        new(new("ExChart", "exchart"), "Charts of the family's data, drawn as SVG Blazor diffs"),
         new(new("Data", "data"), "The Snapshot, the family's immutable data, and Apache Arrow"),
     ];
 

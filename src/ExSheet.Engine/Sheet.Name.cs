@@ -15,7 +15,7 @@ public sealed partial class Sheet
     /// qualified with it (<c>Sheet1!A1</c>, matched without regard to case) names this Sheet's
     /// cells; one qualified with any other name is <c>#REF!</c>, as there is one Sheet.
     /// </summary>
-    public string Name { get; private set; } = DefaultName;
+    public string Name { get; internal set; } = DefaultName;
 
     /// <summary>
     /// Whether <paramref name="name"/> is a name a Sheet can have, as Excel decides one: 1 to 31
@@ -77,43 +77,14 @@ public sealed partial class Sheet
     internal static string CheckName(string name, string parameter) =>
         IsValidName(name, out var reason) ? name : throw new ArgumentException(reason, parameter);
 
-    /// <summary>What a rename did, and the Formulas it rewrote, as they were, for undoing it.</summary>
-    internal sealed record RenameOutcome(SheetChange Change, string OldName, IReadOnlyList<(CellAddress Address, Entry Entry)> Rewritten);
-
-    internal RenameOutcome ApplyRename(string name)
+    /// <summary>Renames the Sheet through its Workbook, which rewrites every Sheet's References to it (ADR-0331).</summary>
+    /// <exception cref="ArgumentException">The name is not one a Sheet can have (<see cref="IsValidName"/>).</exception>
+    /// <exception cref="SheetRefusedException">Another Sheet of the Workbook has the name.</exception>
+    internal Workbook.SheetRename ApplyRename(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
         CheckName(name, nameof(name));
-        var oldName = Name;
-        if (string.Equals(oldName, name, StringComparison.Ordinal)) return new RenameOutcome(SheetChange.None, oldName, []);
-        // A rename is a change, and draws again, as Excel's did (ADR-0180, the seventeenth Windows run).
-        CountChange();
-
-        var before = Snapshot();
-        var rewritten = new List<(CellAddress, Entry)>();
-        var dirty = new HashSet<CellAddress>();
-        foreach (var cell in _cells.Values)
-        {
-            if (cell.Entry?.Parsed is not { } parsed) continue;
-            var qualified = parsed.References.Any(r => r.SheetName is not null);
-            // A qualified #REF! (Sheet1!#REF!) is no Reference, but its qualifier is renamed too.
-            if (!qualified && !cell.Entry.Formula!.Contains("!#REF!", StringComparison.OrdinalIgnoreCase)) continue;
-            // Whether a qualifier names this Sheet may change with the name: recompute it.
-            if (qualified) dirty.Add(cell.Address);
-            string Requalify(string qualifier) => string.Equals(qualifier, oldName, StringComparison.OrdinalIgnoreCase) ? name : qualifier;
-            var mapped = ReferenceRewriter.Rewrite(cell.Entry, r =>
-                r.SheetName is not null && string.Equals(r.SheetName, oldName, StringComparison.OrdinalIgnoreCase) ? r with { SheetName = name } : r, Requalify);
-            if (!ReferenceEquals(mapped, cell.Entry))
-            {
-                rewritten.Add((cell.Address, cell.Entry));
-                cell.Entry = mapped;
-            }
-        }
-        Name = name;
-        RebuildDependencies();
-        // INDIRECT's text may name the Sheet by the name it has had or now has (ADR-0124).
-        var recalculated = dirty.Count == 0 && !HasVolatileFormulas ? [] : Recalculate(dirty, []).Recalculated;
-        return new RenameOutcome(Diff(before, recalculated), oldName, rewritten);
+        return Workbook.Rename(this, name);
     }
 
     /// <summary>
@@ -121,25 +92,26 @@ public sealed partial class Sheet
     /// is a change and draws again, as Excel's did (ADR-0180); the undo of a rename that changed
     /// nothing changes nothing.
     /// </summary>
-    internal SheetChange UndoRename(RenameOutcome outcome)
+    internal SheetChange UndoRename(Workbook.SheetRename rename) => Workbook.UndoRename(this, rename);
+
+    /// <summary>Every Formula cell and its Entry.</summary>
+    internal IEnumerable<(CellAddress Address, Entry Entry)> FormulaEntries() =>
+        _cells.Values.Where(c => c.Entry?.Parsed is not null).Select(c => (c.Address, c.Entry!));
+
+    /// <summary>The Formula cells with a qualified Reference, which may name another Sheet or none as Sheets change.</summary>
+    internal IEnumerable<CellAddress> QualifiedFormulas() =>
+        _cells.Values.Where(c => c.Entry?.Parsed is { } parsed && parsed.References.Any(r => r.SheetName is not null)).Select(c => c.Address);
+
+    /// <summary>Puts an Entry in a cell without recalculating or registering it: for a change to the Workbook's Sheets, which rebuilds both after.</summary>
+    internal void ReplaceEntry(CellAddress address, Entry entry)
     {
-        if (string.Equals(Name, outcome.OldName, StringComparison.Ordinal)) return SheetChange.None;
-        CountChange();
-        var before = Snapshot();
-        var dirty = new HashSet<CellAddress>();
-        foreach (var cell in _cells.Values)
-        {
-            if (cell.Entry?.Parsed is { } parsed && parsed.References.Any(r => r.SheetName is not null)) dirty.Add(cell.Address);
-        }
-        foreach (var (address, entry) in outcome.Rewritten)
-        {
-            _cells[address].Entry = entry;
-            dirty.Add(address);
-        }
-        Name = outcome.OldName;
-        RebuildDependencies();
-        // INDIRECT's text may name the Sheet by the name it has had or now has (ADR-0124).
-        var recalculated = dirty.Count == 0 && !HasVolatileFormulas ? [] : Recalculate(dirty, []).Recalculated;
-        return Diff(before, recalculated);
+        if (!_cells.TryGetValue(address, out var cell)) _cells[address] = cell = new Cell(address);
+        cell.Entry = entry;
+    }
+
+    /// <summary>Forgets every Reference this Sheet's Formulas make to another Sheet, on the Sheets they name.</summary>
+    internal void UnregisterAllRemote()
+    {
+        foreach (var formulaCell in _remoteReferences.Keys.ToList()) UnregisterRemote(formulaCell);
     }
 }

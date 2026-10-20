@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, dataRowCount, holdAnswers, layoutCeilingTold, setRoundTrip, settled } from './fixtures.mjs';
+import { test, expect, alterPage, circuitBack, circuitQuiet, connectionMark, dataRowCount, dropCircuit, holdAnswers, layoutCeilingTold, setRoundTrip, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { activeDescendant, expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
@@ -63,6 +63,74 @@ test.describe('keys typed faster than the round trip are neither lost nor reorde
     });
 });
 
+test.describe('input made while the circuit is down is refused aloud, and the grid keeps answering (ADR-0240 §11)', () => {
+    // Blazor's own words for a connection that goes and comes back: its reconnection display, added to
+    // the body, and the errors its client writes and raises. A send made while the connection is down
+    // is rejected inside Blazor, which does not wait on it, so it surfaces as an uncaught error.
+    test.use({
+        freshDocument: true,
+        // A list of patterns is given as [list, options], or Playwright reads the second as options.
+        expectedErrors: [[
+            /WebSocket closed with status code: 1006/,
+            /Failed to complete negotiation with the server/,
+            /Failed to start the connection/,
+            /Failed to load resource: net::ERR_/,
+        ], { scope: 'test' }],
+        expectedPageErrors: [/Cannot send data if the connection is not in the 'Connected' State/],
+    });
+
+    test('ADR-0240: a row Action made while disconnected is refused and releases the next held input', async ({ page }) => {
+        test.skip(!SERVER, 'a WebAssembly tab has no circuit to lose');
+        const ownConnections = await connectionMark();
+        await page.goto('/row-command-order?chrome=builtin');
+        const root = grid(page);
+        await settled(root);
+        await root.focus();
+        const action = root.locator('.ex-row .ex-action').first();
+        // Dispatch through the real root listener while Blazor's reconnect overlay covers the
+        // page: no actionability wait can defer this input until the circuit comes back.
+        // Its registration, numbered Begin and dispatch end are all lost.
+        await dropCircuit(true, ownConnections);
+        await action.dispatchEvent('click');
+        await dropCircuit(false);
+        await circuitBack();
+        await page.keyboard.press('Control+i');
+        await settled(root);
+        await expect(page.locator('#row-order-trace')).toHaveText('second');
+        await expect(root.locator('.ex-announce'))
+            .toHaveText('Input made while the connection to the server was lost was not carried out. Make it again.');
+
+        await action.click();
+        await settled(root);
+        await expect(page.locator('#row-order-trace')).toHaveText('second | action:0');
+    });
+
+    test('keys typed while the connection is lost are refused once it is back, and the next key is answered', async ({ page }) => {
+        test.skip(!SERVER, 'a WebAssembly tab has no circuit to lose');
+        const ownConnections = await connectionMark();
+        await openFeatures(page);
+        await clickCell(page, 0, 1);                  // Trader, editable
+        await settled(grid(page));
+
+        // Two ↓ the script sends at once, and a letter it holds the keys behind until the editor opens:
+        // none reaches the host, and Blazor never ends the calls.
+        await dropCircuit(true, ownConnections);
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('x');
+        await dropCircuit(false);
+        await circuitBack();
+
+        // The next key finds them missing: they are refused aloud, never replayed, and it is answered.
+        await page.keyboard.press('ArrowDown');
+        await settled(grid(page));
+        await expectActiveDescendant(grid(page), /r1c1$/);
+        await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
+        await expect(grid(page).locator('.ex-announce'))
+            .toHaveText('Input made while the connection to the server was lost was not carried out. Make it again.');
+    });
+});
+
 test('a paste past a Server hub\'s message limit arrives whole (CP-21, ADR-0052)', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await openFeatures(page);
@@ -87,6 +155,83 @@ test('a paste past a Server hub\'s message limit arrives whole (CP-21, ADR-0052)
     // Focus, which Shift+↓ left on row 0 (ADR-0052).
     await page.keyboard.press('ArrowDown');
     await expect.poll(() => activeDescendant(grid(page))).toMatch(/r1c1$/);
+});
+
+// Puts two cells of about 100 KB each on the clipboard, as a spreadsheet does: some 200 KB, read as
+// streams over the circuit (CP-21).
+async function writeLargeClipboard(page) {
+    await page.evaluate(async () => {
+        const cell = (c) => c.repeat(100_000);
+        const html = `<table><tr><td>${cell('A')}</td></tr><tr><td>${cell('B')}</td></tr></table>`;
+        const text = `${cell('A')}\r\n${cell('B')}\r\n`;
+        await navigator.clipboard.write([new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([text], { type: 'text/plain' }),
+        })]);
+    });
+}
+
+test.describe('a large paste says it is under way, and Escape cancels it (ADR-0240 §12, large-paste 01)', () => {
+    // A paste is read in a moment where there is no circuit: nothing is under way long enough to see.
+    test.skip(!SERVER, 'Server host only: the paste is read over the circuit');
+
+    test.beforeEach(async ({ page, context }) => {
+        await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        await openFeatures(page);
+        await writeLargeClipboard(page);
+        await clickCell(page, 0, 1);
+        await page.keyboard.press('Shift+ArrowDown');
+    });
+
+    test('the root is busy and painted so while the paste is read, and not once it lands', async ({ page }) => {
+        // Every render that marks the root as pasting is read as it is applied: what it painted then.
+        await grid(page).evaluate((root) => {
+            const seen = [];
+            const read = () => {
+                if (root.classList.contains('ex-pasting')) {
+                    const bar = getComputedStyle(root, '::after');
+                    seen.push({ busy: root.getAttribute('aria-busy'), height: bar.height, content: bar.content, cursor: getComputedStyle(root).cursor });
+                }
+            };
+            const observer = new MutationObserver(read);
+            observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+            root.__pastingSeen = { seen, stop: () => observer.disconnect() };
+        });
+
+        await page.keyboard.press('ControlOrMeta+V');
+
+        await expect(page.locator('#paste-status')).toContainText('2 cells from 2x1');
+        const seen = await grid(page).evaluate((root) => {
+            root.__pastingSeen.stop();
+            const { seen } = root.__pastingSeen;
+            delete root.__pastingSeen;
+            return seen;
+        });
+        expect(seen.length).toBeGreaterThan(0);
+        expect(seen[0]).toEqual({ busy: 'true', height: '3px', content: '""', cursor: 'progress' });
+        await expect(grid(page)).not.toHaveClass(/ex-pasting/);
+        await expect(grid(page)).not.toHaveAttribute('aria-busy');
+    });
+
+    test('an Escape typed while the paste is read cancels it aloud, writes nothing, and does nothing else', async ({ page }) => {
+        const before = await grid(page).locator("[id$='r0c1']").textContent();
+        // Held, the host cannot have read the paste before the Escape reaches it: the Escape is told
+        // to it at once, ahead of the read the host is waiting on (ADR-0220).
+        await holdAnswers(true);
+        await page.keyboard.press('ControlOrMeta+V');
+        await page.keyboard.press('Escape');
+        await holdAnswers(false);
+
+        await expect(page.locator('#paste-refused-status')).toContainText('Cancelled');
+        await expect(grid(page).locator('.ex-announce')).toContainText('Nothing was pasted: the paste was cancelled.');
+        await settled(grid(page));
+        await expect(grid(page).locator("[id$='r0c1']")).toHaveText(before);
+        await expect(page.locator('#paste-status')).not.toContainText('2 cells from 2x1');
+        // No longer busy, and the grid takes the next paste.
+        await expect(grid(page)).not.toHaveAttribute('aria-busy');
+        await page.keyboard.press('ControlOrMeta+V');
+        await expect(page.locator('#paste-status')).toContainText('2 cells from 2x1');
+    });
 });
 
 test('a clipboard write the browser rejects is refused by name (CP-23)', async ({ page }) => {

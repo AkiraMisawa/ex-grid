@@ -1,16 +1,24 @@
-# ExChart is shown in five Showcases and a Chart section of seven pages
+# ExChart is shown in five Showcases and a Chart section of nine pages
 
-*Decided with the user, 2026-10-19 (M4 grilling Q1, Q4 and Q5). ADR-0250 put the proof of concept's
+*Decided with the user, 2026-10-19 (M4 grilling Q1, Q4 and Q5). Rewritten the same day: the user
+merged the three curve Showcases into one whose views are switched by buttons. ADR-0250 put the proof of concept's
 pages into the first version; this says where they live and in what shape. ADR-0110 governs the Docs
 Site as a whole.*
 
-## Five Showcases, one per page of the proof of concept
+## Three Showcases: Exposure profile, Curves and FX volatility
 
-Each of the proof of concept's pages becomes a Showcase of its own (CONTEXT.md): **Exposure profile**,
-**CDS curves**, **Curves**, **Rates** and **FX volatility**. The user chose five over two merged ones
-("Exposure profile" and "Credit and rate curves"), accepting that CDS curves, Curves and Rates overlap
-in the features they show.
+The proof of concept's pages become three Showcases (CONTEXT.md): **Exposure profile**, **Curves**
+and **FX volatility**. Curves holds what were the proof of concept's CDS curves, Curves and Rates
+pages as three views of one page, switched by a row of buttons above one chart.
 
+*The rationale was replaced once.* The first decision of the day made each page a Showcase of its
+own, five in all, accepting that CDS curves, Curves and Rates overlap in the features they show. On
+seeing four Showcases under way, the user asked for the curve pages to be one, switched by a click:
+three pages that show the same features read as repetition, and a switch between views is itself
+something a Consumer builds.
+
+- **The switch is page code**, read as the Example's code (ADR-0110): each button hands the chart
+  another `ChartDefinition`, and the chart redraws it. No view switcher ships in a package.
 - **FX volatility keeps the proof of concept's five tabs**: the vol table (a grid), the 3D surface, the
   term structure and the smile on category axes, and the deposits and forwards.
 - **The data is precomputed, fixed values under `samples/`.** No analytics code is carried over: not
@@ -42,10 +50,23 @@ As ExPivot's pages are a Pivot section, ExChart's are a **Chart** section:
 
 Every Example carries the Built-in / MudBlazor switch (ADR-0110, ADR-0281).
 
+## Two more Showcases and pages, from the scatter and the candlesticks
+
+*Decided with the user later on 2026-10-19 and 2026-10-20, in the threads that build them (the scatter's
+grilling Q6, ADR block 0290; the candlesticks' Q9, ADR block 0300).* Scatter charts and candlesticks with
+error bars joined the first version, each with a Showcase and a page of its own: **CDS spread vs
+leverage** and **Equity index daily bars**, and the pages **Scatter and fitted lines** (ADR-0290's name for it) and **Candles and
+intervals**. The first version therefore has five Showcases and a Chart section of nine pages. Those threads'
+records say what theirs show; the title was rewritten from "three Showcases and … seven pages" on 2026-10-20,
+when their work landed beside this, and the two Showcases follow the shape the first three set: the grid
+beside its charts, fixed data, and a view switched from the bar where there is more than one.
+
 ## Considered
 
-- **Two Showcases, merging CDS curves, Curves and Rates into one**: fewer pages that repeat a
-  feature. The user preferred one per page.
+- **Five Showcases, one per page of the proof of concept**: chosen first, then replaced the same day
+  (above). Three of them repeated the same features.
+- **Two Showcases, merging the curve pages and FX volatility into one "Credit and rate curves"**:
+  would hide the 3D surface, the one feature only FX volatility shows, behind a curve page.
 - **One Showcase (FX volatility) and the rest as Examples on the feature pages**: a Consumer would
   not see a whole screen of their own kind.
 - **One long page, or a page per chart type**: one page buries a feature under scrolling; a page per

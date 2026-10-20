@@ -16,13 +16,12 @@
     @ChildContent
 </section>
 
-@if (_drag is not null)
-{
-    @* While a drag lasts, this layer covers the page and takes the moves, so the pointer
-       may leave the title bar — the job pointer capture would do, without the script
-       capture would need. *@
-    <div class="demo-drag-layer" @onpointermove="Drag" @onpointerup="EndDrag" @onpointercancel="EndDrag"></div>
-}
+@* While the title bar is pressed, this layer covers the page and takes the moves, so the pointer
+   may leave the title bar — the job pointer capture would do, without the script capture would
+   need. It is always in the markup and shown by the stylesheet (the title bar's :active), not by a
+   render: on the Server host a render is a round trip after the press, and moves and a release
+   made sooner, at machine speed, reached nothing and the panel stayed put (widened-run ticket 03). *@
+<div class="demo-drag-layer" @onpointermove="Drag" @onpointerup="EndDrag" @onpointercancel="EndDrag"></div>
 
 @code {
     private ElementReference _element;

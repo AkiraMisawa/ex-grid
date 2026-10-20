@@ -1,0 +1,84 @@
+@using System.Globalization
+@* FX volatility › Deposits and forwards: the two currencies' deposit rates and the forwards they imply
+   at each tenor of the surface, as a market screen's forwards tab shows them, and a chart with the rates
+   and the forward points in a panel each. The figures are fixed values under Data/. *@
+<p class="xs-note">
+    Spot @Spot on @Iso(FxVolData.AsOf), for value @Iso(FxVolData.SpotDate). Deposits accrue ACT/360; forward points are
+    pips, the outright less spot.
+</p>
+<div class="xs-panel">
+    @if (Mud)
+    {
+        @* A block-level paper: the Wrapper's own is inline, as wide as its grids, which leaves a stretched grid no width. *@
+        <MudExGridPaper Elevation="1" Style="display: flex">
+            <ExGrid TRow="FxForwardRow" Window="FxVolData.Forwards" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups" PinnedColumnCount="1"
+                    ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" Chrome="MudGridChrome.Default" />
+        </MudExGridPaper>
+    }
+    else
+    {
+        <ExGrid TRow="FxForwardRow" Window="FxVolData.Forwards" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups" PinnedColumnCount="1"
+                ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" />
+    }
+</div>
+<div class="xs-panel">
+    @if (Mud)
+    {
+        <MudExGridPaper Elevation="1">
+            <ExChart Definition="Definition" Title="@ChartTitle" Width="ChartWidth" Height="ChartHeight" FileName="@ChartTitle" Chrome="MudChartChrome.Default" />
+        </MudExGridPaper>
+    }
+    else
+    {
+        <ExChart Definition="Definition" Title="@ChartTitle" Width="ChartWidth" Height="ChartHeight" FileName="@ChartTitle" />
+    }
+</div>
+
+@code {
+    /// <summary>Whether the view is drawn with MudBlazor's Chrome.</summary>
+    [Parameter] public bool Mud { get; set; }
+
+    private const string ChartTitle = $"{FxVolData.Pair} deposits and forwards", RatePanel = "Deposit rate (%)", PointsPanel = "Forward points";
+    private const double ChartWidth = 1000, ChartHeight = 420;
+    private static readonly ViewportSize GridHeight = 300;
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private static readonly string Spot = FxVolData.Spot.ToString("0.0000", Invariant);
+
+    private static Func<object, string> Digits(int digits) => v => Convert.ToDouble(v, Invariant).ToString("N" + digits, Invariant);
+
+    private static readonly GridColumn<FxForwardRow>[] Columns =
+    [
+        new("Tenor", ColumnType.Text, r => r.Tenor),
+        new("ValueDate", ColumnType.Date, r => r.ValueDate, header: "Value date", dateType: DateType.DateOnly),
+        new("Days", ColumnType.Number, r => r.Days, format: Digits(0)),
+        new("Eur", ColumnType.Number, r => r.EurPct, header: "EUR (%)", format: Digits(2)),
+        new("Usd", ColumnType.Number, r => r.UsdPct, header: "USD (%)", format: Digits(2)),
+        new("Points", ColumnType.Number, r => r.Points, header: "Points", format: Digits(2)),
+        new("Outright", ColumnType.Number, r => r.Outright, format: Digits(5)),
+    ];
+
+    private static readonly HeaderGroup[] Groups =
+    [
+        new("Deposit rate", ["Eur", "Usd"]),
+        new("Forward", ["Points", "Outright"]),
+    ];
+
+    // The tenors on a category axis, as quoted: a rate at each, the forward points at each.
+    private static readonly ChartDefinition Definition = new(
+        ChartAxis.Categories(FxVolSurface.Tenors, "Tenor"),
+        [
+            Series("eur", "EUR deposit", RatePanel, r => r.EurPct, 2, false),
+            Series("usd", "USD deposit", RatePanel, r => r.UsdPct, 2, false),
+            Series("points", "Forward points", PointsPanel, r => r.Points, 2, true),
+        ]);
+
+    private static ChartSeries Series(string id, string name, string panel, Func<FxForwardRow, double> value, int digits, bool fromZero) =>
+        ChartSeries.Of(id, name, SeriesKind.Level, FxVolData.Forwards.Select((r, k) => new ChartPoint(k, ChartValue.Of(value(r)))))
+            with { Panel = panel, FromZero = fromZero, Format = Digits(digits) };
+
+    // Held in fields, never rebuilt per render (AGENTS.md: a new delegate is a changed parameter).
+    private static readonly Func<FxForwardRow, object> KeyOf = r => r.Tenor;
+
+    private static string Iso(DateOnly d) => d.ToString("yyyy-MM-dd", Invariant);
+}

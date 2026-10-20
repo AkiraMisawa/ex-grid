@@ -1,0 +1,33 @@
+@using ExChart
+@using ExChart.Components
+@using ExChart.Engine
+
+<p>
+    <button @onclick="() => Load(LatticeTables.LatticeSpec)">The lattice</button>
+    <button @onclick="() => Load(LatticeTables.NumbersSpec)">A spec with numbers in it</button>
+</p>
+<div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start">
+    <div style="flex: 1 1 340px; max-width: 460px">
+        <textarea class="chart-spec-text" @bind="_spec" @bind:after="Draw" rows="20" spellcheck="false"
+                  style="width: 100%; font-family: monospace; font-size: 12px"></textarea>
+        <p class="chart-spec-answer" role="status">@_answer.Text</p>
+    </div>
+    @if (_answer.Reading is { } reading)
+    {
+        <ExChart Definition="reading.Definition" Title="@reading.Title" Width="560" Height="380" />
+    }
+</div>
+
+@code {
+    private string _spec = LatticeTables.LatticeSpec;
+    private ChartSpecAnswer _answer = ChartSpec.Answer(LatticeTables.LatticeSpec, LatticeTables.Lookup, new ChartMetrics(560, 380));
+
+    private void Load(string spec)
+    {
+        _spec = spec;
+        Draw();
+    }
+
+    // What the tool answers the AI: the refusal, or the chart said in words. A refused spec leaves no chart.
+    private void Draw() => _answer = ChartSpec.Answer(_spec, LatticeTables.Lookup, new ChartMetrics(560, 380));
+}

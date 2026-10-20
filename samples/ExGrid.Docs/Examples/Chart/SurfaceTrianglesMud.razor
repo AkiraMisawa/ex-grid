@@ -1,0 +1,10 @@
+@using ExChart.Components
+@using ExChart.Engine
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExSurface Definition="Definition" Title="Field on a mesh" FileName="field" Width="560" Height="400" SliceWidth="360" />
+</MudExGridPaper>
+
+@code {
+    private static readonly SurfaceDefinition Definition = SurfaceShapes.Field();
+}

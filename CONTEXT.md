@@ -57,11 +57,48 @@ never over it, with several charts as tabs
 _Avoid_: chart panel (a chart's panels are parts of one chart), chart window, floating chart
 
 **Series Kind**:
-What a series' numbers are — a **Level** at an instant, a **Rate over an interval**, or an **Amount
-per period** — declared by the Consumer for every series, and what decides how it is drawn: a line
-only for a Level, a step for the other two
-([ADR-0253](./docs/adr/0253-every-series-declares-its-series-kind-and-its-drawing-follows.md)).
+What a series' numbers are — a **Level** at an instant, a **Rate over an interval**, an **Amount
+per period**, a **Price Range**, or an **Observation** (one thing measured on two quantities, a
+scatter's point) — declared by the Consumer for every series, and what decides how it is drawn: a line
+only for a Level, a step for a Rate or an Amount, a candle for a Price Range, an unjoined marker for an
+Observation
+([ADR-0253](./docs/adr/0253-every-series-declares-its-series-kind-and-its-drawing-follows.md),
+[ADR-0290](./docs/adr/0290-a-scatter-is-a-series-of-observations-each-a-row.md)).
 _Avoid_: chart type (a series kind is the data's, not the drawing's), series type
+
+**Fitted line**:
+A Level series the Consumer computed from an Observation series by a named method, drawn over the
+fitted points' range only, whose method and coefficients are a line of the Notes. ExChart fits
+nothing on its own; its fit helpers are the Consumer computing
+([ADR-0291](./docs/adr/0291-a-fitted-line-is-the-consumers-and-says-its-method-and-coefficients.md)).
+_Avoid_: trendline (Excel's, which reaches the plot's edges), regression line (names one method)
+
+**Price Range**:
+A Series Kind whose row is one period's open, high, low and close, and optionally its volume, drawn as
+a candle (or a High-Low-Close bar with no open column). A row whose values disagree is refused, never
+drawn or repaired. A **rising** candle closes above its own open, and is hollow; a **falling** one is
+filled ([ADR-0300](./docs/adr/0300-a-price-range-is-one-bar-a-row-refused-where-its-values-disagree.md)).
+_Avoid_: OHLC chart, stock chart (a kind is the data's, not the drawing's), up/down bars
+
+**Packed axis**:
+A Dates axis the Consumer declares to give each row of a Price Range one evenly spaced slot, skipping
+the days nobody traded; its title says so. The default is calendar time
+([ADR-0301](./docs/adr/0301-candles-stand-on-calendar-time-unless-the-consumer-packs-the-sessions.md)).
+_Avoid_: text axis (Excel's name, which says nothing about time), session axis
+
+**Merged candle**:
+Consecutive candles drawn as one of the market's own periods (a week, a month, a quarter, a year) —
+first open, highest high, lowest low, last close, summed volume — when the plot has too few pixels for
+each; the axis title and the tooltip say so
+([ADR-0302](./docs/adr/0302-past-the-plots-pixels-candles-merge-into-the-markets-own-periods.md)).
+_Avoid_: grouping, resampling, aggregation (none says the period is the market's own)
+
+**Interval**:
+A lower and an upper bound the Consumer hands in for the points of a Level or an Observation, with a
+required **meaning** (`95% CI`, `±1σ`, `Bid–Ask`), drawn as whiskers or a band. ExChart computes no
+width ([ADR-0303](./docs/adr/0303-an-interval-belongs-to-a-series-and-says-what-it-means.md)).
+_Avoid_: error bar (it assumes an error; a bid–ask is not one), confidence band (one meaning among
+several)
 
 **Thinning**:
 Keeping, for each device pixel across the plot, a series' first, last, minimum and maximum point,
@@ -79,9 +116,28 @@ _Avoid_: colour index, series colour (a colour is never a series' property, only
 **Interpolated series**:
 A series the Consumer declares to be values computed between quotes rather than quoted, drawn as a
 line paired with its quotes' markers, optionally in **Segments** that name the method over each range
-and whether it is extrapolated. ExChart computes none of it
+and whether it is extrapolated. ExChart never computes it on its own; the Consumer may compute it
+with an **Interpolation Helper**
 ([ADR-0257](./docs/adr/0257-notes-and-interpolated-series-are-the-consumers-said-as-such.md)).
 _Avoid_: smoothed series, fitted series
+
+**Interpolation Helper**:
+A general interpolation method in `ExChart.Engine.Interpolation` — linear, bilinear, natural cubic
+spline, linear on triangles — that a Consumer calls explicitly; its result names its method, which the
+chart shows, and has no value outside its points. The chart never calls one
+([ADR-0257](./docs/adr/0257-notes-and-interpolated-series-are-the-consumers-said-as-such.md)).
+_Avoid_: smoothing, fitting, extrapolation
+
+**Surface**:
+A 3D chart of x values × y values × a table of z, drawn with a hole wherever a value is missing; it may
+arrive as a function z(x, y) or with interpolated values marked, naming the method, or as the
+Consumer's own **Triangle Mesh**, drawn as its triangles. A click on a grid line, or on a node of a mesh,
+draws its **Slice** — a smile or a term structure — as a 2D chart beside it. Its **Colour Bar** says
+which colour is which value; with a **Centre** its colours diverge from that value alike on both sides
+([ADR-0274](./docs/adr/0274-a-3d-surface-takes-a-grid-and-is-turned-zoomed-and-sliced.md),
+[ADR-0310](./docs/adr/0310-a-surface-shows-its-colour-bar-and-its-colours-may-diverge-from-a-centre.md),
+[ADR-0311](./docs/adr/0311-a-consumers-triangle-mesh-is-drawn-as-its-own-triangles.md)).
+_Avoid_: mesh for a grid (a mesh is the Consumer's triangles), heatmap, legend for the Colour Bar
 
 **Chart Filters**:
 What the user narrows a chart to without changing its Chart Definition: the series shown, the x range,
@@ -89,6 +145,24 @@ and a declared axis' mode. Each change is raised to the Consumer and taken back 
 in the data's terms; the chart keeps no View State
 ([ADR-0272](./docs/adr/0272-a-chart-holds-no-view-state-it-raises-what-the-user-changed.md)).
 _Avoid_: chart settings, zoom state
+
+**Chart Spec**:
+A chart said in JSON, as an AI writes it: the Data Handles and columns it reads, each series' Series
+Kind, and its Notes, against a published schema with a version. It holds no numbers; one that cannot
+be drawn is refused with a sentence naming where and why
+([ADR-0320](./docs/adr/0320-an-ai-draws-a-chart-by-writing-a-chart-spec-that-names-data-it-never-holds.md)).
+_Avoid_: chart config, chart JSON
+
+**Data Handle**:
+The name a host's capability gives a Snapshot it made, which a Chart Spec names instead of its values
+([ADR-0320](./docs/adr/0320-an-ai-draws-a-chart-by-writing-a-chart-spec-that-names-data-it-never-holds.md)).
+_Avoid_: dataset id, reference
+
+**Chart Source**:
+What a chart reads a column through, from one position to another at a number of pixels, answered
+already thinned, on whichever side holds the data
+([ADR-0322](./docs/adr/0322-a-chart-reads-its-data-through-a-chart-source-that-thins-where-the-data-lives.md)).
+_Avoid_: data provider, loader
 
 > **How far do formulas go?** What people call "a formula" splits three ways, and **two of them
 > are already possible in ExGrid**.
@@ -430,6 +504,12 @@ ExGrid on its own, the Sheet's for an ExSheet, the pivot's for an ExPivot. A sur
 it (a Wrapper's dialog) is heard with it only while it is open
 ([ADR-0240](./docs/adr/0240-input-to-one-product-instance-is-taken-in-one-order.md)).
 _Avoid_: host element, container
+
+**Input Journal**:
+An instance's own record of its Input Order: each input numbered, held, released, answered or made
+void, in order. It is internal, for reading a failed run, and no Consumer reads it
+([ADR-0240](./docs/adr/0240-input-to-one-product-instance-is-taken-in-one-order.md) section 10).
+_Avoid_: input log, trace
 
 **Overwrite / Caret**:
 The two states of cell **editing** (four modes in total, with **Interactive** and **Point**). **Overwrite** is
@@ -795,6 +875,22 @@ extent. The product is **ExSheet**; a Sheet is what it holds. Its rows and colum
 inserting a row changes what the rows below hold, and moves none of them ([ADR-0046](./docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)).
 _Avoid_: worksheet, tab, spreadsheet
 
+**Workbook**:
+The ordered Sheets one ExSheet shows, with one engine and one undo stack. A Reference may reach
+any Sheet of it (`Sheet2!A1`), and inserting a row on one Sheet rewrites the References to it on
+every other ([ADR-0331](./docs/adr/0331-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md)).
+_Avoid_: book, file, document (that is the Workbook Document)
+
+**Sheet Tab**:
+The tab at an ExSheet's foot that names one Sheet of its Workbook and shows it when selected. It is
+where a Sheet is added, renamed, moved, copied and deleted ([ADR-0331](./docs/adr/0331-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md)).
+_Avoid_: page, worksheet tab, a details tab (that is ExPivot's Show Details)
+
+**3D Reference**:
+A Reference that reads one range on every Sheet from one to another in tab order
+(`Sheet1:Sheet3!B2`). Only the functions Excel accepts one in take it ([ADR-0331](./docs/adr/0331-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md)).
+_Avoid_: cross-sheet range, multi-sheet reference
+
 **Entry**:
 What a user put into a cell — a constant (`42`, `Tokyo`, `TRUE`) or a **Formula**. It is what a
 **Sheet Document** records, and what the user sees again when they edit the cell. Distinct from
@@ -932,6 +1028,19 @@ The serialisable form of a Sheet that ExSheet hands to its Consumer and takes ba
 Entries, never Values, with constants already parsed — so opening it under another culture
 cannot change a number. The Consumer persists it; ExSheet does not ([ADR-0048](./docs/adr/0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md)).
 _Avoid_: file, workbook, Snapshot (that is the Consumer's tabular data), save data
+
+**Open Report**:
+What reading an `.xlsx` file returns beside the Workbook Document: what the file held that ExSheet did
+not carry (merged cells, conditional formatting, a theme link, …), and the cells whose functions
+ExSheet does not support, each with its Sheet and place. The application tells the user
+([ADR-0330](./docs/adr/0330-exsheet-opens-and-saves-xlsx-with-a-reader-and-writer-of-its-own.md)).
+_Avoid_: warnings, import log, lossy report
+
+**Workbook Document**:
+The serialisable form of a Workbook: its Sheets in order, the Sheet shown, its culture and its
+Linked Tables, holding Entries and never Values, as a Sheet Document does. A Sheet Document opens as
+a Workbook of one Sheet ([ADR-0331](./docs/adr/0331-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md)).
+_Avoid_: file, `.xlsx` (that is Excel's format, read and written by ADR-0330), save data
 
 ### Pivots
 

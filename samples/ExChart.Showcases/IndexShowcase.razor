@@ -1,0 +1,51 @@
+@* Equity index daily bars (ADR-0300 to ADR-0304): ten years of an index's sessions as candles with their
+   volume and a 25-day moving average, beside the grid of its rows, and the figures that carry intervals
+   — a yield curve's Bid–Ask, forecasts' and estimates' 95% CI — in a second view, switched in the
+   application bar. Every figure is a fixed value under Data/; the one the page computes is the moving
+   average, as a Consumer's page would. *@
+<ShowcaseShell Mud="Mud" App="Equity Charts" Crumb="@($"Equities · {IndexData.Name} · {_view}")">
+    <Tools>
+        @if (Mud)
+        {
+            <MudToggleGroup T="string" Value="_view" ValueChanged="Select" Size="Size.Small" Outlined="false"
+                            Delimiters="false" SelectedClass="xs-mud-view-selected" Class="xs-mud-views">
+                @foreach (var view in Views)
+                {
+                    <MudToggleItem Value="@view" Text="@view" />
+                }
+            </MudToggleGroup>
+        }
+        else
+        {
+            <nav class="xs-views" aria-label="View">
+                @foreach (var view in Views)
+                {
+                    <button type="button" class="@(view == _view ? "xs-view xs-view-on" : "xs-view")" aria-pressed="@(view == _view ? "true" : "false")"
+                            @onclick="() => Select(view)">@view</button>
+                }
+            </nav>
+        }
+    </Tools>
+    <ChildContent>
+        @if (_view == BarsView)
+        {
+            <IndexBarsView Mud="Mud" />
+        }
+        else
+        {
+            <IndexIntervalsView Mud="Mud" />
+        }
+    </ChildContent>
+</ShowcaseShell>
+
+@code {
+    /// <summary>Whether the screen is drawn with MudBlazor's Chrome.</summary>
+    [Parameter] public bool Mud { get; set; }
+
+    private const string BarsView = "Daily bars", IntervalsView = "Intervals";
+    private static readonly string[] Views = [BarsView, IntervalsView];
+
+    private string _view = BarsView;
+
+    private void Select(string view) => _view = view;
+}

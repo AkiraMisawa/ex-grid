@@ -1,0 +1,170 @@
+@page "/surface"
+@using global::ExChart.Components
+@using global::ExChart.Engine
+
+<DemoNav />
+
+@* ExChart's 3D surface (/surface): the browser layer's fixture for tickets 30-34. An FX volatility
+   surface of five deltas by eight tenors with one hole (25C at 5Y), which is drawn as a hole. The page
+   keeps the view and the slice, as a Consumer would (ADR-0272), and writes the last event raised
+   under the surface. "Next run" replaces the data, as tomorrow's run would; "Copy SVG" asks the
+   surface for its drawing as SVG text and writes its length (ADR-0282). *@
+<DemoChromeAssets>
+    <Head>
+        <ExChartStylesheet />
+    </Head>
+</DemoChromeAssets>
+
+<h1>3D surface</h1>
+
+<p>
+    Drag to turn the surface, or use the arrow keys; Shift pans, the wheel or + and - zoom (ADR-0274).
+    Move over it to read the grid point nearest the pointer, and click a tenor or a delta to draw that
+    slice beside it. The surface has no value at 25C 5Y, and is drawn with a hole there.
+</p>
+
+<section id="vol">
+    <button type="button" id="next-run" @onclick="NextRun">Next run</button>
+    <button type="button" id="svg-text" @onclick="SvgText">Copy SVG</button>
+    <ExSurface @ref="_surface"
+               Definition="_definition"
+               Title="EURUSD volatility"
+               Width="640"
+               Height="420"
+               View="_view"
+               OnViewChanged="ViewChanged"
+               Slice="_slice"
+               OnSliceChanged="SliceChanged" />
+    <p id="surface-events">@_events</p>
+    <p id="surface-svg">@_svg</p>
+</section>
+
+<section id="interpolated">
+    <h2>Interpolated by the page</h2>
+    <p>
+        The same quotes on years and deltas, interpolated bilinearly by the page with ExChart.Engine's
+        helper and handed in as a function (ADR-0257). The chart samples it, says the method under the
+        surface and in the tooltip, draws no dot at an interpolated value, and leaves a hole wherever a
+        cell has a missing corner: the helper does not reach past the quotes.
+    </p>
+    <ExSurface Definition="Interpolated" Title="EURUSD volatility, bilinear" Width="640" Height="420" />
+</section>
+
+<section id="pnl">
+    <h2>Coloured from zero</h2>
+    <p>
+        A book's P&amp;L over spot and volatility shifts, coloured from zero (ADR-0310): losses red, gains blue,
+        each as deep as its distance from zero, so a small loss beside a large gain stays pale. The colour bar
+        beside it says which value each colour is.
+    </p>
+    <ExSurface Definition="Pnl" Title="Scenario P&amp;L" Width="640" Height="420" />
+</section>
+
+<section id="mesh">
+    <h2>The page's own triangles</h2>
+    <p>
+        A field on the page's own triangle mesh, drawn as its triangles (ADR-0311), with one cell of the domain
+        left out. The tooltip reads a node; a click on one slices through its position, cutting the triangles.
+    </p>
+    <ExSurface Definition="Mesh" Title="Field" Width="640" Height="420" />
+</section>
+
+<section id="log">
+    <h2>Logarithmic axes</h2>
+    <p>Tenors placed by their logarithm, and the values on a logarithmic scale (ADR-0312).</p>
+    <ExSurface Definition="LogVol" Title="Variance on years" Width="640" Height="420" />
+</section>
+
+@code {
+    private static readonly string[] Deltas = ["10P", "25P", "ATM", "25C", "10C"];
+    private static readonly string[] Tenors = ["1W", "1M", "3M", "6M", "1Y", "2Y", "5Y", "10Y"];
+
+    private ExSurface? _surface;
+    private SurfaceDefinition _definition = Vol(0);
+    private int _run;
+    private SurfaceView? _view;
+    private SurfaceSlice? _slice;
+    private string _events = "";
+    private string _svg = "";
+
+    // A smile over a term structure, deterministic, and moved a little by each run.
+    private static SurfaceDefinition Vol(int run)
+    {
+        double[] smile = [1.6, 0.5, 0, 0.3, 1.1];
+        double Term(int t) => 9.5 + 1.8 * Math.Exp(-t / 2.5) + 0.12 * t;
+        var z = Tenors.Select((_, t) => (IReadOnlyList<ChartValue?>)Deltas.Select((d, i) =>
+            d == "25C" && Tenors[t] == "5Y" ? (ChartValue?)null : ChartValue.Of(Math.Round(Term(t) + smile[i] * (1 + 0.1 * t) + run * 0.2, 2))).ToArray()).ToArray();
+        return new SurfaceDefinition(SurfaceAxis.Of("Delta", Deltas), SurfaceAxis.Of("Tenor", Tenors), z, "Volatility",
+            v => ((double)v).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) + "%");
+    }
+
+    private static readonly double[] DeltaValues = [10, 25, 50, 75, 90];
+    private static readonly double[] TenorYears = [7 / 365.0, 1 / 12.0, 0.25, 0.5, 1, 2, 5, 10];
+
+    private static readonly SurfaceDefinition Interpolated = SurfaceDefinition.Sampled(
+        global::ExChart.Engine.Interpolation.Interpolate.Bilinear(DeltaValues, TenorYears,
+            Vol(0).Z.Select(r => (IReadOnlyList<double?>)r.Select(v => v?.ToDouble()).ToArray()).ToArray()),
+        "Delta", "Years", "Volatility", samples: 13);
+
+    // A book short volatility and long a little spot: P&L in thousands over spot and volatility shifts.
+    private static readonly double[] SpotShifts = [-10, -5, -2, 0, 2, 5, 10];
+    private static readonly double[] VolShifts = [-4, -2, 0, 2, 4];
+    private static readonly SurfaceDefinition Pnl = new SurfaceDefinition(
+        SurfaceAxis.Of("Spot shift %", SpotShifts) with { Scale = AxisScale.Proportional },
+        SurfaceAxis.Of("Vol shift", VolShifts) with { Scale = AxisScale.Proportional },
+        VolShifts.Select(v => (IReadOnlyList<ChartValue?>)SpotShifts.Select(s => (ChartValue?)ChartValue.Of(Math.Round(12 * s - 3 * s * s - 40 * v, 1))).ToArray()).ToArray(),
+        "P&L (k)") { Centre = 0 };
+
+    // A five-by-five lattice on the unit square, its inner nodes nudged off the lattice, cut into
+    // triangles whose diagonal alternates, without the cell at (0.25, 0.25): a mesh, not a grid.
+    private static readonly SurfaceDefinition Mesh = BuildMesh();
+
+    private static SurfaceDefinition BuildMesh()
+    {
+        var nodes = new List<SurfaceNode>();
+        for (var j = 0; j <= 4; j++)
+            for (var i = 0; i <= 4; i++)
+            {
+                var inner = i is > 0 and < 4 && j is > 0 and < 4;
+                var x = i / 4.0 + (inner ? 0.04 * ((i + 2 * j) % 3 - 1) : 0);
+                var y = j / 4.0 + (inner ? 0.04 * ((2 * i + j) % 3 - 1) : 0);
+                nodes.Add(new SurfaceNode(Math.Round(x, 4), Math.Round(y, 4), ChartValue.Of(Math.Round(Math.Sin(Math.PI * x) * Math.Cos(Math.PI * y), 4))));
+            }
+        var triangles = new List<SurfaceTriangle>();
+        for (var j = 0; j < 4; j++)
+            for (var i = 0; i < 4; i++)
+            {
+                if (i == 1 && j == 1) continue;
+                int a = j * 5 + i, b = a + 1, c = a + 6, d = a + 5;
+                if ((i + j) % 2 == 0) { triangles.Add(new(a, b, c)); triangles.Add(new(a, c, d)); }
+                else { triangles.Add(new(a, b, d)); triangles.Add(new(b, c, d)); }
+            }
+        return SurfaceDefinition.FromTriangles(nodes, triangles, "x", "y", "u");
+    }
+
+    private static readonly SurfaceDefinition LogVol = new SurfaceDefinition(
+        SurfaceAxis.Of("Delta", Deltas),
+        SurfaceAxis.Of("Years", TenorYears, y => TickLayout.Tenor(y)) with { Scale = AxisScale.Logarithmic },
+        Vol(0).Z.Select((r, t) => (IReadOnlyList<ChartValue?>)r.Select(v => v is { } q ? (ChartValue?)ChartValue.Of(Math.Round(q.ToDouble() * q.ToDouble() * TenorYears[t] / 100, 4)) : null).ToArray()).ToArray(),
+        "Total variance") { ZScale = AxisScale.Logarithmic };
+
+    private void NextRun() => _definition = Vol(++_run);
+
+    private void ViewChanged(SurfaceView view)
+    {
+        _view = view;
+        _events = $"View: yaw {view.Yaw}, pitch {view.Pitch}, zoom {view.Zoom}, pan {view.PanX} {view.PanY}";
+    }
+
+    private void SliceChanged(SurfaceSlice slice)
+    {
+        _slice = slice;
+        _events = $"Slice: {slice.Axis} {slice.Value}";
+    }
+
+    private async Task SvgText()
+    {
+        var text = _surface is null ? null : await _surface.SvgTextAsync();
+        _svg = text is null ? "No drawing" : $"SVG: {text.Length} characters, {(text.Contains("ex-chart-heat") ? "with" : "without")} classes";
+    }
+}

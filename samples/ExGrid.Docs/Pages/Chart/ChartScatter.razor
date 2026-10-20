@@ -1,0 +1,67 @@
+@page "/exchart/scatter"
+@using ExGrid.Docs.Examples.Chart
+
+<DocsPage Product="ExChart" Title="Scatter and fitted lines"
+          Lead="A scatter is a series of Observations, each a row, on two value axes. A line through it is the page's, fitted with a helper that names its method, and the chart says that method and its coefficients under the drawing.">
+
+    <DocsSection Title="Observations, each a row">
+        <p>
+            An <code>Observation</code> series is one thing measured on two quantities: a name's leverage and its
+            spread. Its points are drawn as markers and never joined, and they need not rise in x or be unique
+            in it. A chart that holds one reads its horizontal axis as a value axis, Numbers or Dates, and
+            neither axis reaches down to zero unless a series asks for it; the break mark at the axis foot says so.
+            A point with a missing x or y is no point, never a point at zero.
+        </p>
+        <p>
+            Each point may carry a name and a Row Key. The tooltip shows the one point nearest the pointer, by its
+            name, and a click on it raises its Row Key: the bridge's <code>ShowInGridAsync</code> then moves the
+            grid's Focus to that row. A drag draws a rectangle and narrows both axes, raised through
+            <code>OnRangeChanged</code> like any other range; double-click to return. Either axis may be
+            logarithmic: here the spread is switched by the page's own toggle through <code>YScale</code>.
+        </p>
+        <DocsExample Builtin="typeof(Scatter)" Mud="typeof(ScatterMud)" Files="@(["Examples/Chart/CreditNames.cs"])" CodeOpen="true" />
+    </DocsSection>
+
+    <DocsSection Title="A fitted line is the page's">
+        <p>
+            ExChart fits nothing on its own. A line through a scatter is an ordinary Level series the page hands
+            in. <code>ExChart.Engine.Fitting</code> saves writing the arithmetic: <code>Fit.LeastSquares</code>,
+            <code>Fit.TheilSen</code> (the median of the pairwise slopes, which one distressed name does not drag)
+            and <code>Fit.Polynomial</code> each return a fit that knows its method, coefficients, R² and the
+            number of points, and <code>.Series(id, name)</code> makes it a series. The fit's Note,
+            <code>OLS: y = 41.2x + 88.5, R² = 0.63, n = 212</code>, goes under the chart and into the SVG and PNG,
+            so a reader checking the line reads how it was made.
+        </p>
+        <p>
+            A fitted line is drawn between the smallest and the largest x it was fitted on, never to the plot's
+            edges: that would be extrapolation. On a logarithmic axis it is drawn as the function it is, so a fit
+            made on linear values bends there. Confidence and prediction bands are not drawn for you; hand in
+            their edges as two series and say in the Notes what they assume.
+        </p>
+        <p>
+            Below, the least-squares polynomial of degree M through ten noisy points of sin 2πx. M = 9 passes
+            through every point and swings between them: it has learnt the noise.
+        </p>
+        <DocsExample Builtin="typeof(CurveFitting)" Mud="typeof(CurveFittingMud)" />
+    </DocsSection>
+
+    <DocsSection Title="Many points on one pixel">
+        <p>
+            When two or more of a series' markers centre on the same device pixel, one marker is drawn, so every
+            occupied pixel keeps its mark and no outlier is lost. The tooltip on such a mark says how many it holds,
+            "14 points here: N017 and 13 more", never one point as if it were alone. "View as table", the CSV and the files carry
+            every point.
+        </p>
+        <p>
+            The <MudLink Href="showcase/cds-spread" Target="_blank">CDS spread vs leverage showcase</MudLink> puts
+            two hundred names beside their grid, with both fitted lines through them.
+        </p>
+        <p>
+            A mark's colour and size can be read from columns, and edges can join the marks as nodes: see
+            <MudLink Href="exchart/spec">Charts from a Chart Spec</MudLink>, whose Example draws an option's binomial
+            lattice coloured by value, sized by the chance of reaching each node, with its branches as edges. The
+            <MudLink Href="showcase/binomial-lattice" Target="_blank">binomial lattice showcase</MudLink> was built
+            before these existed, and still draws its colour bar and its marks' sizes itself.
+        </p>
+    </DocsSection>
+</DocsPage>

@@ -22,7 +22,12 @@ builder.Services.AddDemoApi(builder.Configuration[DemoApiClient.AddressKey],
 // CON-6 reads this host's log: a circuit's unhandled exception is written here, not to
 // the browser console as it is on WebAssembly. Layer 3 names the file.
 if (Environment.GetEnvironmentVariable("EXGRID_HOST_LOG") is { Length: > 0 } hostLog)
+{
     builder.Logging.AddProvider(new FileLoggerProvider(hostLog));
+    // The core's side of the Input Journal reaches this file, and no other provider, at Debug
+    // (ADR-0240 section 10): a failed layer-3 test attaches it.
+    builder.Logging.AddFilter<FileLoggerProvider>(FileLoggerProvider.JournalCategory, LogLevel.Debug);
+}
 
 var app = builder.Build();
 

@@ -1,6 +1,7 @@
-# Publishes the family's ten packages, at one version, from a v* tag (ADR-0042, ADR-0205):
+# Publishes the family's thirteen packages, at one version, from a v* tag (ADR-0042, ADR-0205):
 # ExGrid, ExGrid.MudBlazor, ExSheet.Engine, ExSheet, ExSheet.MudBlazor, ExGrid.Data,
-# ExGrid.Data.Arrow, ExPivot.Engine, ExPivot and ExPivot.MudBlazor.
+# ExGrid.Data.Arrow, ExPivot.Engine, ExPivot, ExPivot.MudBlazor, ExChart.Engine, ExChart and
+# ExChart.MudBlazor (ADR-0283).
 #
 #   git tag v0.1.0-rc.1 <a commit on main or a release/* branch> && git push origin v0.1.0-rc.1
 #
@@ -186,13 +187,13 @@ jobs:
         run: |
           set -euo pipefail
           ls -l packages
-          ids="ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExGrid.Data ExGrid.Data.Arrow ExPivot.Engine ExPivot ExPivot.MudBlazor"
+          ids="ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExGrid.Data ExGrid.Data.Arrow ExPivot.Engine ExPivot ExPivot.MudBlazor ExChart.Engine ExChart ExChart.MudBlazor"
           for id in $ids; do
             for ext in nupkg snupkg; do
               [ -f "packages/$id.$VERSION.$ext" ] || { echo "::error::packages/$id.$VERSION.$ext is missing"; exit 1; }
             done
           done
-          [ "$(ls packages | wc -l)" -eq 20 ] || { echo "::error::the artifact holds more than the twenty expected files"; exit 1; }
+          [ "$(ls packages | wc -l)" -eq 26 ] || { echo "::error::the artifact holds more than the twenty-six expected files"; exit 1; }
 
       - uses: actions/setup-dotnet@v6
         with:

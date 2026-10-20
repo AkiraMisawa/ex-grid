@@ -1,0 +1,21 @@
+@page "/showcase/binomial-lattice"
+@layout BareLayout
+@inject DocsState State
+@inject NavigationManager Navigation
+@using global::ExChart.Showcases
+
+@* ExChart's Binomial lattice: an option priced on a CRR lattice, its nodes in a grid and on a chart coloured by
+   value, and the lattice price by N against Black–Scholes. The screen is ExChart.Showcases', shared with the demo
+   pages, so layer 3 drives the same component on both hosts. The switch in its bar changes ?scheme=, which
+   ShowcaseFrame reads, so the scheme stays in the address as a recording asks for it. *@
+<ShowcaseFrame Title="Binomial lattice">
+    <BinomialLatticeShowcase Mud="State.Mud" Dark="State.Dark" DarkChanged="_schemeChanged" />
+</ShowcaseFrame>
+
+@code {
+    private EventCallback<bool> _schemeChanged;
+
+    protected override void OnInitialized() =>
+        _schemeChanged = EventCallback.Factory.Create<bool>(this, dark =>
+            Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("scheme", dark ? "dark" : null)));
+}

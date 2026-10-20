@@ -1,11 +1,21 @@
 #nullable enable
+const ExGrid.Chrome.GridLabelIds.PasteAlreadyLanded = "paste-already-landed" -> string!
+const ExGrid.Chrome.GridLabelIds.PasteUnderWay = "paste-under-way" -> string!
 const ExGrid.Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive = "key-refusal-keyboard-did-not-arrive" -> string!
 const ExGrid.Chrome.KeyRefusalLabelIds.RowCommandTargetLeft = "key-refusal-row-command-target-left" -> string!
 ExGrid.Components.ExGrid<TRow>.BeginRowClick(int ticket, int input) -> void
 ExGrid.Components.ExGrid<TRow>.CancelRowClick(int ticket) -> void
 ExGrid.Components.ExGrid<TRow>.EndRowClickDispatch(int ticket) -> System.Threading.Tasks.Task!
+const ExGrid.Chrome.KeyRefusalLabelIds.LostOnTheWay = "key-refusal-lost-on-the-way" -> string!
+const ExGrid.Chrome.RefusalLabelIds.PasteCancelled = "refused-paste-cancelled" -> string!
+const ExGrid.Chrome.RefusalLabelIds.PasteUnreadable = "refused-paste-unreadable" -> string!
+ExGrid.Clipboard.PasteRefusalReason.Cancelled = 13 -> ExGrid.Clipboard.PasteRefusalReason
+ExGrid.Clipboard.PasteRefusalReason.Unreadable = 12 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.InputsSent(int input) -> void
 ExGrid.Components.ExGrid<TRow>.InputTakenAt(string! kind, int input) -> void
 ExGrid.Components.ExGrid<TRow>.OnHeldInputsRefusedAsync(int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.RememberRowClick(int ticket, int paint, int row, int column, int action, bool mark, bool wasMarked) -> void
 ExGrid.Rows.MarkRefusalReason.RowLeftTheWindow = 2 -> ExGrid.Rows.MarkRefusalReason
+ExGrid.Components.ExGrid<TRow>.OnPasteCancelAsync(int paste, int input = 0) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnPasteTakenAsync(long textLength, long htmlLength, int paint = -1, int input = 0) -> System.Threading.Tasks.Task!

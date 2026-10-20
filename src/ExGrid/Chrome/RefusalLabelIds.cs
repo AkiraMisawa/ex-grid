@@ -47,6 +47,8 @@ public static class RefusalLabelIds
         PasteRefusalReason.SourceUnavailable => PasteSourceUnavailable,
         PasteRefusalReason.OrderMoved => PasteOrderMoved,
         PasteRefusalReason.SourceChanged => PasteSourceChanged,
+        PasteRefusalReason.Unreadable => PasteUnreadable,
+        PasteRefusalReason.Cancelled => PasteCancelled,
         _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "A paste refusal with no words: every reason has an id (ADR-0203)."),
     };
 
@@ -102,6 +104,12 @@ public static class RefusalLabelIds
 
     /// <summary><see cref="PasteRefusalReason.TooLarge"/>.</summary>
     public const string PasteTooLarge = "refused-paste-too-large";
+
+    /// <summary><see cref="PasteRefusalReason.Unreadable"/>.</summary>
+    public const string PasteUnreadable = "refused-paste-unreadable";
+
+    /// <summary><see cref="PasteRefusalReason.Cancelled"/>.</summary>
+    public const string PasteCancelled = "refused-paste-cancelled";
 
     /// <summary><see cref="PasteRefusalReason.SpillPastExtent"/>.</summary>
     public const string PasteSpillPastExtent = "refused-paste-spill-past-extent";

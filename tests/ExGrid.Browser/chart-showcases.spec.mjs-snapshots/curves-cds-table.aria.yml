@@ -1,0 +1,44 @@
+- table "Chart 1":
+  - caption: Chart 1
+  - rowgroup:
+    - row "Maturity CDS quote · Par spread (bp) Bootstrapped · Hazard rate (%)":
+      - columnheader "Maturity"
+      - columnheader "CDS quote · Par spread (bp)"
+      - columnheader "Bootstrapped · Hazard rate (%)"
+  - rowgroup:
+    - row "2026-10-13":
+      - rowheader "2026-10-13"
+      - cell
+      - cell
+    - row "2027-06-20 42 0.7073":
+      - rowheader "2027-06-20"
+      - cell "42"
+      - cell "0.7073"
+    - row "2027-12-20 50 1.0300":
+      - rowheader "2027-12-20"
+      - cell "50"
+      - cell "1.0300"
+    - row "2028-12-20 66 1.4447":
+      - rowheader "2028-12-20"
+      - cell "66"
+      - cell "1.4447"
+    - row "2029-12-20 84 2.1276":
+      - rowheader "2029-12-20"
+      - cell "84"
+      - cell "2.1276"
+    - row "2030-12-20 101 2.7138":
+      - rowheader "2030-12-20"
+      - cell "101"
+      - cell "2.7138"
+    - row "2031-12-20 116 3.1698":
+      - rowheader "2031-12-20"
+      - cell "116"
+      - cell "3.1698"
+    - row "2033-12-20 134 3.2218":
+      - rowheader "2033-12-20"
+      - cell "134"
+      - cell "3.2218"
+    - row "2036-12-20 148 3.2606":
+      - rowheader "2036-12-20"
+      - cell "148"
+      - cell "3.2606"

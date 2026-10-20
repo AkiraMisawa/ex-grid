@@ -36,6 +36,8 @@ public static class BuiltInCommandLabels
         GridCommandIds.CopyWithHeaders => "Copy with headers",
         GridLabelIds.NameBox => "Name Box",
         GridLabelIds.FormulaBar => "Formula Bar",
+        GridLabelIds.PasteUnderWay => "Pasting. Press Escape to cancel.",
+        GridLabelIds.PasteAlreadyLanded => "The paste had already been made, so it was not cancelled.",
         ReloadNoticeLabelIds.Script => "This page holds another version of the grid's script. Reload the page.",
         ReloadNoticeLabelIds.Stylesheet => "This page holds another version's stylesheet. Reload the page.",
         KeyRefusalLabelIds.TabBeforeRelease =>
@@ -43,6 +45,8 @@ public static class BuiltInCommandLabels
         KeyRefusalLabelIds.RowCommandTargetLeft => "The row is no longer available. Repeat the command on the current data.",
         KeyRefusalLabelIds.KeyboardDidNotArrive =>
             "Keys typed while the grid was still answering were not carried out: the keyboard did not arrive where they could be.",
+        KeyRefusalLabelIds.LostOnTheWay =>
+            "Input made while the connection to the server was lost was not carried out. Make it again.",
         FindPanelLabelIds.Title => "Find",
         SummaryLabelIds.Average => "Average",
         SummaryLabelIds.Count => "Count",
@@ -76,6 +80,8 @@ public static class BuiltInCommandLabels
             "Nothing was changed: the selection covers " + RefusalLabelIds.ColumnPlaceholder
             + ", which cannot be edited. Select cells only in columns that can be edited.",
         RefusalLabelIds.PasteTooLarge => "Nothing was changed: that is more than the grid reads at once. Use a smaller block.",
+        RefusalLabelIds.PasteUnreadable => "Nothing was pasted: the clipboard could not be read. Paste again.",
+        RefusalLabelIds.PasteCancelled => "Nothing was pasted: the paste was cancelled.",
         RefusalLabelIds.PasteSpillPastExtent =>
             "Nothing was pasted: the copied block would run past the last row or column. Select a cell further from the edge.",
         RefusalLabelIds.PasteNothingToFillFrom =>

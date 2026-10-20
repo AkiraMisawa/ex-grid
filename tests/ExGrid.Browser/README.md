@@ -106,7 +106,13 @@ by half a round trip that starts at 0. A test that needs a real round trip sets 
 `setRoundTrip(ms)` from `fixtures.mjs`, and the fixture puts it back to 0 afterwards. A test
 whose inputs must all be made before the host answers any of them does not count on a round
 trip to outlast them: `holdAnswers(true)` holds everything the host sends in the proxy until
-`holdAnswers(false)` lets it go in order, and the fixture lets go after every test. The
+`holdAnswers(false)` lets it go in order, and the fixture lets go after every test. A test
+of input made while the connection is lost (ADR-0240 §11) takes `connectionMark()` before it
+opens its own page, cuts that page's connections with `dropCircuit(true, mark)`, lets the
+browser connect again with `dropCircuit(false)`, and waits with `circuitBack()` for Blazor's
+WebSocket to open again, never for a fixed time; the fixture lets the browser connect after
+every test. Blazor's errors for a lost connection, and the uncaught one its send raises while
+it is down, are named with `expectedErrors` and `expectedPageErrors`. The
 browser's own network throttling is not used because it is not reliably applied to the
 WebSocket that carries the circuit, which is the one connection that matters.
 
@@ -397,6 +403,18 @@ EXGRID_HOSTING=server EXGRID_RTT_FLOOR=150 EXGRID_CPU_THROTTLE=4 ./counted-run.s
 
 A pull request that changes the workflow, `counted-run.sh` or the proxy runs one small file through
 every job of the hunt instead, so the jobs are seen to count before they are trusted to hunt.
+
+### A failed test carries the Input Journal
+
+A test that fails attaches `input-journal.json` (ADR-0240 section 10), read as the test ends, before
+anything navigates away. `script` holds, for every grid on the page, its root's id and the last 512
+entries of its script's journal: each input numbered, each call to the core and whether it was replied
+to or failed, each input held and let go, each hold, each number the stamp answered, and each change of
+the Settled Mark, stamped with the wall clock. `core` holds the Server host's lines for the same test
+under `ExGrid.InputOrder`, written at Debug to the host log: each number received, started, finished,
+voided and answered. On WebAssembly the core runs in the page and logs nothing (CON-8), so `core` is
+empty there and the script's calls and replies are the record. A passing test attaches nothing.
+`input-journal.spec.mjs` reads the journal from a grid that passed, to pin what it says.
 
 ## What a test shares with the rest of its file
 
