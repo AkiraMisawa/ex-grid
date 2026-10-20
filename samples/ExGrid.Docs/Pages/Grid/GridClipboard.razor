@@ -112,7 +112,9 @@
     <DocsSection Title="A paste under way and Escape">
         <p>
             A large paste on a Blazor Server connection takes a moment to cross: the clipboard's data is read
-            over the circuit before anything is decided. From the paste's start until it lands or is refused the
+            over the circuit before anything is decided. It crosses gzip-compressed, so a spreadsheet's text
+            takes about a tenth of the time it would as it is; a ~10 MB paste over a 150 ms round trip lands in
+            a few seconds. From the paste's start until it lands or is refused the
             grid says it is <strong>busy</strong>. Its root carries <code>aria-busy="true"</code>, a bar runs
             across its top edge with a progress pointer (the <code>--ex-pasting-*</code> tokens on Appearance),
             and the live region says once: “@BuiltInCommandLabels.For(GridLabelIds.PasteUnderWay)” The keys typed

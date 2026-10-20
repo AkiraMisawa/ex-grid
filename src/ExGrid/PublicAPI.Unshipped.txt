@@ -12,3 +12,4 @@ ExGrid.Components.ExGrid<TRow>.InputsSent(int input) -> void
 ExGrid.Components.ExGrid<TRow>.InputTakenAt(string! kind, int input) -> void
 ExGrid.Components.ExGrid<TRow>.OnHeldInputsRefusedAsync(int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.OnPasteCancelAsync(int paste, int input = 0) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnPasteTakenAsync(long textLength, long htmlLength, int paint = -1, int input = 0) -> System.Threading.Tasks.Task!
