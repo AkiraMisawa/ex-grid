@@ -102,6 +102,44 @@ public class WorkbookTests
         Assert.Equal(4, workbook.Sheets[0].Number("A2"));
     }
 
+    [Fact] // ADR-0331: a Formula that stops naming another Sheet stops following it
+    public void A_replaced_formula_stops_following_another_sheet()
+    {
+        var workbook = NewWorkbook("Sheet1", "Sheet2");
+        Enter(workbook, "Sheet1", "A1", "=Sheet2!A1");
+        Enter(workbook, "Sheet1", "A2", "=SUM(Sheet2!A1:A3)");
+        Enter(workbook, "Sheet1", "A1", "1");
+        Enter(workbook, "Sheet1", "A2", "2");
+
+        var change = Enter(workbook, "Sheet2", "A1", "5").Change;
+
+        Assert.Equal(["Sheet2"], change.Sheets.Select(s => s.Name));
+        Assert.Empty(change.For(workbook.Sheets[0]).Recalculated);
+    }
+
+    [Fact] // ADR-0331, ADR-0047: a Formula entered into a General cell takes the format of the cell it reads on another Sheet, as of one on its own
+    public void A_formula_takes_the_format_of_a_cell_on_another_sheet()
+    {
+        var workbook = NewWorkbook("Sheet1", "Sheet2");
+        Enter(workbook, "Sheet2", "A1", "10%");
+        Enter(workbook, "Sheet1", "A1", "=Sheet2!A1");
+
+        Assert.Equal("10%", workbook.Sheets[0].GetDisplay(CellAddress.Parse("A1")).Text);
+    }
+
+    [Fact] // ADR-0331, ADR-0180: until the seed moves to the Workbook (ticket 13), RAND on another Sheet draws again only when its own Sheet changes
+    public void Rand_on_another_sheet_draws_with_its_own_sheet_for_now()
+    {
+        var workbook = NewWorkbook("Sheet1", "Sheet2");
+        workbook.Sheets[1].SetSeed(7);
+        Enter(workbook, "Sheet2", "A1", "=RAND()");
+        var drawn = workbook.Sheets[1].Number("A1");
+
+        Enter(workbook, "Sheet1", "A1", "1");
+
+        Assert.Equal(drawn, workbook.Sheets[1].Number("A1"));
+    }
+
     [Fact] // ADR-0331: a qualifier naming no Sheet of the Workbook is #REF!
     public void A_qualifier_naming_no_sheet_is_ref()
     {

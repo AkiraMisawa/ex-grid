@@ -72,8 +72,9 @@ public sealed partial class Sheet
         {
             switch (node)
             {
-                case ReferenceNode r when IsLocal(r.Reference):
-                    return FormatOf(new CellAddress(r.Reference.Row1, r.Reference.Column1));
+                case ReferenceNode r when SheetNamed(r.Reference.SheetName) is { } owner:
+                    // A cell of another Sheet gives its format as one of this Sheet's does (ADR-0331).
+                    return owner.GetNumberFormat(new CellAddress(r.Reference.Row1, r.Reference.Column1)) is { ShowsNumbersAsGeneral: false } given ? given : null;
                 case ParenthesesNode p:
                     return Operand(p.Inner);
                 case UnaryNode u:
@@ -104,7 +105,5 @@ public sealed partial class Sheet
                     return null;
             }
         }
-
-        NumberFormat? FormatOf(CellAddress address) => GetNumberFormat(address) is { ShowsNumbersAsGeneral: false } format ? format : null;
     }
 }

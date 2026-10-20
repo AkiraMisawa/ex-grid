@@ -13,25 +13,25 @@ public sealed partial class Sheet
     private IEnumerable<SheetCell> DependentsInWorkbook(CellAddress address)
     {
         foreach (var dependent in Dependents(address)) yield return new SheetCell(this, dependent);
-        foreach (var other in Workbook.Sheets)
+        if (_remoteCellDependents.TryGetValue(address, out var set))
         {
-            if (other == this) continue;
-            foreach (var (formulaCell, references) in other._remoteReferences)
+            foreach (var dependent in set) yield return dependent;
+        }
+        foreach (var (dependent, areas) in _remoteAreaDependents)
+        {
+            foreach (var area in areas)
             {
-                foreach (var reference in references)
+                if (area.Contains(address))
                 {
-                    if (Names(reference.SheetName, Name) && reference.Area.Contains(address))
-                    {
-                        yield return new SheetCell(other, formulaCell);
-                        break;
-                    }
+                    yield return dependent;
+                    break;
                 }
             }
         }
     }
 
-    /// <summary>Whether a Reference's qualifier names a Sheet of the Workbook: none, this Sheet's name, or another's.</summary>
-    private bool Resolves(string? qualifier) => IsThisSheet(qualifier) || Workbook.Find(qualifier!) is not null;
+    /// <summary>The Sheet a Reference's qualifier names: this one for none or its own name, another of the Workbook for its name; <see langword="null"/> for a name no Sheet has.</summary>
+    internal Sheet? SheetNamed(string? qualifier) => IsThisSheet(qualifier) ? this : Workbook.Find(qualifier!);
 
     /// <summary>
     /// One recalculation of <paramref name="changed"/> on this Sheet, across the Workbook
@@ -265,7 +265,7 @@ public sealed partial class Sheet
             // A refused Anchor whose array's shape its text settles spills refusals over that shape, so that
             // each cell of it reads as refused (2026-10-13, decided with the user); where the shape could
             // depend on a Value, nothing spills (KnownShape).
-            if (value.IsRefused && KnownShape.Of(node, r => sheet.Resolves(r.SheetName)) is { } shape && (shape.Rows > 1 || shape.Columns > 1))
+            if (value.IsRefused && KnownShape.Of(node, r => sheet.SheetNamed(r.SheetName) is not null) is { } shape && (shape.Rows > 1 || shape.Columns > 1))
             {
                 var refusals = new ValueArray(shape.Rows, shape.Columns);
                 for (var r = 0; r < shape.Rows; r++)

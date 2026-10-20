@@ -30,6 +30,12 @@ public sealed partial class Sheet
     /// <summary>For each Formula cell that names another Sheet's cells, those References (ADR-0331).</summary>
     private readonly Dictionary<CellAddress, Reference[]> _remoteReferences = [];
 
+    /// <summary>For each cell, the Formula cells on other Sheets that name it by a single-cell Reference (ADR-0331).</summary>
+    private readonly Dictionary<CellAddress, HashSet<SheetCell>> _remoteCellDependents = [];
+
+    /// <summary>For each Formula cell on another Sheet that reads a multi-cell rectangle of this Sheet, the rectangles (ADR-0331).</summary>
+    private readonly Dictionary<SheetCell, Area[]> _remoteAreaDependents = [];
+
     /// <summary>Creates an empty Sheet whose constants are read and whose Values are shown under <paramref name="culture"/>.</summary>
     public Sheet(CultureInfo culture)
         : this(culture, DefaultName)
@@ -380,7 +386,11 @@ public sealed partial class Sheet
             }
         }
         if (areas.Count > 0) _areaPrecedents[formulaCell] = [.. areas];
-        if (remote.Count > 0) _remoteReferences[formulaCell] = [.. remote];
+        if (remote.Count > 0)
+        {
+            _remoteReferences[formulaCell] = [.. remote];
+            RegisterRemote(formulaCell, remote);
+        }
         RegisterTableReaders(formulaCell, formula);
         RegisterTodayReader(formulaCell, formula);
         RegisterVolatile(formulaCell, formula);
@@ -399,11 +409,53 @@ public sealed partial class Sheet
             }
         }
         _areaPrecedents.Remove(formulaCell);
-        _remoteReferences.Remove(formulaCell);
+        UnregisterRemote(formulaCell);
         UnregisterTableReaders(formulaCell, formula);
         _todayReaders.Remove(formulaCell);
         _volatileFormulas.Remove(formulaCell);
         _randomReaders.Remove(formulaCell);
+    }
+
+    /// <summary>
+    /// Records a Formula cell's References to other Sheets on the Sheets they name, as this Sheet records
+    /// its own; a name no Sheet has is <c>#REF!</c>, and depends on nothing.
+    /// </summary>
+    private void RegisterRemote(CellAddress formulaCell, List<Reference> remote)
+    {
+        var dependent = new SheetCell(this, formulaCell);
+        foreach (var group in remote.GroupBy(r => Workbook.Find(r.SheetName!)))
+        {
+            if (group.Key is not { } target) continue;
+            var areas = new List<Area>();
+            foreach (var area in group.Select(r => r.Area))
+            {
+                if (!area.IsSingleCell)
+                {
+                    areas.Add(area);
+                    continue;
+                }
+                var address = new CellAddress(area.Row1, area.Column1);
+                if (!target._remoteCellDependents.TryGetValue(address, out var set)) target._remoteCellDependents[address] = set = [];
+                set.Add(dependent);
+            }
+            if (areas.Count > 0) target._remoteAreaDependents[dependent] = [.. areas];
+        }
+    }
+
+    /// <summary>Forgets what <see cref="RegisterRemote"/> recorded for a Formula cell.</summary>
+    private void UnregisterRemote(CellAddress formulaCell)
+    {
+        if (!_remoteReferences.Remove(formulaCell, out var remote)) return;
+        var dependent = new SheetCell(this, formulaCell);
+        foreach (var reference in remote)
+        {
+            if (Workbook.Find(reference.SheetName!) is not { } target) continue;
+            target._remoteAreaDependents.Remove(dependent);
+            var area = reference.Area;
+            if (!area.IsSingleCell) continue;
+            var address = new CellAddress(area.Row1, area.Column1);
+            if (target._remoteCellDependents.TryGetValue(address, out var set) && set.Remove(dependent) && set.Count == 0) target._remoteCellDependents.Remove(address);
+        }
     }
 
     /// <summary>The Formula cells that read <paramref name="address"/> directly.</summary>
