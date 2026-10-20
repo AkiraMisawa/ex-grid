@@ -167,5 +167,10 @@ internal static class ChartDrawing
             b.AddComponentParameter(13, nameof(ChartLegendView.Toggle), toggle);
             b.CloseComponent();
         }
+        b.OpenComponent<ChartKeysView>(20);
+        b.AddComponentParameter(21, nameof(ChartKeysView.Colours), scene.ColourKeys);
+        b.AddComponentParameter(22, nameof(ChartKeysView.Sizes), scene.SizeKeys);
+        b.AddComponentParameter(23, nameof(ChartKeysView.LineHeight), lineHeight);
+        b.CloseComponent();
     };
 }

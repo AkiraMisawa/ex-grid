@@ -198,6 +198,20 @@ internal sealed class ChartSeriesView : ComponentBase
             b.CloseElement();
         }
 
+        if (piece.Edges.Count > 0)
+        {
+            // A node's edges, under its markers (ADR-0321).
+            var e = new StringBuilder();
+            foreach (var edge in piece.Edges)
+                e.Append('M').Append(Svg.N(edge.X1)).Append(',').Append(Svg.N(edge.Y1)).Append('L').Append(Svg.N(edge.X2)).Append(',').Append(Svg.N(edge.Y2));
+            b.OpenRegion(9);
+            b.OpenElement(0, "path");
+            b.AddAttribute(1, "class", "ex-chart-edges");
+            b.AddAttribute(2, "d", e.ToString());
+            b.CloseElement();
+            b.CloseRegion();
+        }
+
         var d = new StringBuilder();
         foreach (var line in piece.Lines)
             for (var i = 0; i < line.Count; i++)
@@ -210,8 +224,15 @@ internal sealed class ChartSeriesView : ComponentBase
         var r = LineHeight / 5;
         var filled = new StringBuilder();
         var open = new StringBuilder();
+        // A marker coloured from a column is filled with its band's Visual Token (ADR-0320).
+        var banded = new SortedDictionary<int, StringBuilder>();
         foreach (var m in piece.Markers)
-            Svg.Marker(m.Filled ? filled : open, piece.Look.Shape, m.X, m.Y, r);
+        {
+            var into = !m.Filled ? open
+                : m.Band is { } band ? banded.TryGetValue(band, out var sb) ? sb : banded[band] = new StringBuilder()
+                : filled;
+            Svg.Marker(into, piece.Look.Shape, m.X, m.Y, m.Radius ?? r);
+        }
         b.OpenElement(20, "path");
         b.AddAttribute(21, "class", "ex-chart-markers");
         b.AddAttribute(22, "d", filled.ToString());
@@ -220,6 +241,14 @@ internal sealed class ChartSeriesView : ComponentBase
         b.AddAttribute(24, "class", "ex-chart-markers ex-chart-markers-open");
         b.AddAttribute(25, "d", open.ToString());
         b.CloseElement();
+        foreach (var (band, d2) in banded)
+        {
+            b.OpenElement(26, "path");
+            b.SetKey(band);
+            b.AddAttribute(27, "class", string.Create(CultureInfo.InvariantCulture, $"ex-chart-markers ex-chart-{(piece.ColourDiverging ? "diverge" : "heat")}-{band}"));
+            b.AddAttribute(28, "d", d2.ToString());
+            b.CloseElement();
+        }
         if (piece.Candles.Count > 0 || piece.Volumes.Count > 0) Candles(b, piece);
         if (piece.Whiskers.Count > 0 || piece.Bands.Count > 0) Intervals(b, piece, r);
         if (piece.Markers.Any(m => m.YBounds is not null || m.XBounds is not null)) MarkIntervals(b, piece, r);
@@ -544,6 +573,108 @@ internal sealed class ChartTooltipView : ComponentBase
             b.AddContent(34, reading.More == 1 ? "and 1 more series" : string.Create(CultureInfo.InvariantCulture, $"and {reading.More} more series"));
             b.CloseElement();
         }
+        b.CloseElement();
+    }
+}
+
+/// <summary>
+/// The keys of colours and sizes read from a column, beside the plot (ADR-0320): a colour bar of the
+/// bands with its ticks, and a size key of markers at round values. Always drawn with what they key.
+/// </summary>
+internal sealed class ChartKeysView : ComponentBase
+{
+    [Parameter, EditorRequired] public EquatableList<ColourKey> Colours { get; set; } = EquatableList<ColourKey>.Empty;
+    [Parameter, EditorRequired] public EquatableList<SizeKey> Sizes { get; set; } = EquatableList<SizeKey>.Empty;
+    [Parameter] public double LineHeight { get; set; }
+
+    private EquatableList<ColourKey>? _colours;
+    private EquatableList<SizeKey>? _sizes;
+    private double _lineHeight;
+
+    protected override bool ShouldRender() => !(Equals(_colours, Colours) && Equals(_sizes, Sizes) && _lineHeight == LineHeight);
+
+    protected override void BuildRenderTree(RenderTreeBuilder b)
+    {
+        (_colours, _sizes, _lineHeight) = (Colours, Sizes, LineHeight);
+        var lh = LineHeight;
+        foreach (var key in Colours)
+        {
+            var box = key.Box;
+            b.OpenElement(0, "g");
+            b.SetKey("colour:" + key.SeriesId);
+            b.AddAttribute(1, "class", "ex-chart-key ex-chart-colour-key");
+            b.AddAttribute(2, "data-series", key.SeriesId);
+            Title(b, 3, key.Title, box.X, box.Y - lh / 2);
+            var band = box.Height / key.Bands;
+            for (var i = 0; i < key.Bands; i++)
+            {
+                b.OpenElement(10, "rect");
+                b.AddAttribute(11, "class", string.Create(CultureInfo.InvariantCulture, $"ex-chart-key-band ex-chart-{(key.Diverging ? "diverge" : "heat")}-{i}"));
+                b.AddAttribute(12, "x", Svg.N(box.X));
+                b.AddAttribute(13, "y", Svg.N(box.Y + box.Height - (i + 1) * band));
+                b.AddAttribute(14, "width", Svg.N(box.Width));
+                b.AddAttribute(15, "height", Svg.N(band));
+                b.CloseElement();
+            }
+            b.OpenElement(20, "rect");
+            b.AddAttribute(21, "class", "ex-chart-key-frame");
+            b.AddAttribute(22, "x", Svg.N(box.X));
+            b.AddAttribute(23, "y", Svg.N(box.Y));
+            b.AddAttribute(24, "width", Svg.N(box.Width));
+            b.AddAttribute(25, "height", Svg.N(box.Height));
+            b.CloseElement();
+            foreach (var t in key.Ticks)
+            {
+                b.OpenElement(30, "text");
+                b.AddAttribute(31, "class", "ex-chart-tick");
+                b.AddAttribute(32, "x", Svg.N(box.X + box.Width + lh / 3));
+                b.AddAttribute(33, "y", Svg.N(t.Y));
+                b.AddAttribute(34, "dy", "0.35em");
+                b.AddContent(35, t.Label);
+                b.CloseElement();
+            }
+            b.CloseElement();
+        }
+        foreach (var key in Sizes)
+        {
+            var box = key.Box;
+            b.OpenElement(40, "g");
+            b.SetKey("size:" + key.SeriesId);
+            b.AddAttribute(41, "class", "ex-chart-key ex-chart-size-key");
+            b.AddAttribute(42, "data-series", key.SeriesId);
+            Title(b, 43, key.Title, box.X, box.Y - lh / 2);
+            var y = box.Y;
+            var cx = box.X + box.Width / 2;
+            foreach (var e in key.Entries)
+            {
+                var row = Math.Max(2 * e.Radius, lh);
+                var cy = y + row / 2;
+                b.OpenElement(50, "circle");
+                b.AddAttribute(51, "class", "ex-chart-key-size");
+                b.AddAttribute(52, "cx", Svg.N(cx));
+                b.AddAttribute(53, "cy", Svg.N(cy));
+                b.AddAttribute(54, "r", Svg.N(e.Radius));
+                b.CloseElement();
+                b.OpenElement(55, "text");
+                b.AddAttribute(56, "class", "ex-chart-tick");
+                b.AddAttribute(57, "x", Svg.N(box.X + box.Width + lh / 3));
+                b.AddAttribute(58, "y", Svg.N(cy));
+                b.AddAttribute(59, "dy", "0.35em");
+                b.AddContent(60, e.Label);
+                b.CloseElement();
+                y += row + lh / 4;
+            }
+            b.CloseElement();
+        }
+    }
+
+    private static void Title(RenderTreeBuilder b, int seq, string title, double x, double y)
+    {
+        b.OpenElement(seq, "text");
+        b.AddAttribute(seq + 1, "class", "ex-chart-key-title");
+        b.AddAttribute(seq + 2, "x", Svg.N(x));
+        b.AddAttribute(seq + 3, "y", Svg.N(y));
+        b.AddContent(seq + 4, title);
         b.CloseElement();
     }
 }

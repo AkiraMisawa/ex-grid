@@ -138,6 +138,10 @@ public static class ChartCsv
             header.AddRange(plain ? [$"{name} lower", $"{name} upper", $"{name} interval"] : [$"{name} lower ({meanings[0]})", $"{name} upper ({meanings[0]})"]);
             quantities.Add((of, plain));
         }
+        // A colour or a size read from a column is a column of the file: files carry every value (ADR-0320).
+        var scales = shown.Where(t => t.Series.Kind == SeriesKind.Observation)
+            .SelectMany(t => new[] { t.Series.ColourBy?.Title, t.Series.SizeBy?.Title }).OfType<string>().Distinct().ToList();
+        header.AddRange(scales);
         var rows = new List<IReadOnlyList<string>>();
         foreach (var (s, points) in shown)
             foreach (var (p, i) in Observed(s, points))
@@ -150,6 +154,19 @@ public static class ChartCsv
                     row.Add(iv?.Bounds[i].Upper?.ToInvariantString() ?? "");
                     if (plain) row.Add(iv?.Meaning ?? "");
                 }
+                foreach (var title in scales)
+                {
+                    var values = s.ColourBy?.Title == title ? s.ColourBy.Values : s.SizeBy?.Title == title ? s.SizeBy.Values : null;
+                    row.Add(values?[i]?.ToInvariantString() ?? "");
+                }
+                rows.Add(row);
+            }
+        // A node series lists its edges after its nodes (ADR-0321).
+        foreach (var (s, _) in shown.Where(t => t.Series.Edges.Count > 0))
+            foreach (var e in s.Edges)
+            {
+                var row = new List<string> { s.Name, $"edge {Convert.ToString(e.From, CultureInfo.InvariantCulture)} → {Convert.ToString(e.To, CultureInfo.InvariantCulture)}" };
+                while (row.Count < header.Count) row.Add("");
                 rows.Add(row);
             }
         return new ChartTable(header, rows);

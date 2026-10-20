@@ -1,0 +1,107 @@
+@page "/chart-spec"
+@using global::ExChart
+@using global::ExChart.Components
+@using global::ExChart.Engine
+@using global::ExChart.Showcases
+
+<DemoNav />
+
+@* The Chart Spec's page (/chart-spec): the browser layer's fixture for tickets 70 to 75 (ADR-0320,
+   ADR-0321). The Docs page's Example draws the same spec on an 8-step lattice; this one is 4 steps, so
+   its marks are few enough to read one by one. An American put's lattice
+   priced by the page, as two tables a capability would return, drawn from the spec in the field:
+   coloured by value, sized by the chance of reaching each node, its branches as edges. A second
+   button loads a spec with numbers in it, which is refused. *@
+<DemoChromeAssets>
+    <Head>
+        <ExChartStylesheet />
+    </Head>
+</DemoChromeAssets>
+
+<h1>Charts from a Chart Spec</h1>
+<p>
+    <button type="button" id="load-lattice" @onclick="() => Load(LatticeSpec)">The lattice</button>
+    <button type="button" id="load-numbers" @onclick="() => Load(NumbersSpec)">A spec with numbers in it</button>
+</p>
+<textarea id="spec" @bind="_spec" @bind:after="Draw" rows="18" cols="70" spellcheck="false" style="font-family: monospace"></textarea>
+<p id="answer" role="status">@_answer.Text</p>
+@if (_answer.Reading is { } reading)
+{
+    <ExChart Definition="reading.Definition" Title="@reading.Title" Width="620" Height="380" />
+}
+
+@code {
+    private const int Steps = 4;
+
+    private static readonly IChartData Nodes = MakeNodes();
+    private static readonly IChartData Branches = MakeBranches();
+    private static readonly ChartMetrics Size = new(620, 380);
+
+    private static IChartData? Lookup(string handle) => handle switch
+    {
+        "lattice" => Nodes,
+        "branches" => Branches,
+        _ => null,
+    };
+
+    private static IChartData MakeNodes()
+    {
+        var terms = new OptionTerms(Spot: 100, Strike: 100, Rate: 0.05, Volatility: 0.3, Maturity: 1, Put: true, American: true);
+        var (_, nodes) = BinomialLattice.Price(terms, Steps);
+        var u = Math.Exp(terms.Volatility * Math.Sqrt(terms.Maturity / Steps));
+        var p = (Math.Exp(terms.Rate * terms.Maturity / Steps) - 1 / u) / (u - 1 / u);
+        double Choose(int n, int k) => Enumerable.Range(1, k).Aggregate(1.0, (c, i) => c * (n - k + i) / i);
+        return ChartData.Of(
+            ("node", nodes.Select(n => n.Key).ToArray()),
+            ("step", nodes.Select(n => n.Step).ToArray()),
+            ("spot", nodes.Select(n => Math.Round(n.Spot, 2)).ToArray()),
+            ("value", nodes.Select(n => Math.Round(n.Value, 2)).ToArray()),
+            ("reach", nodes.Select(n => Math.Round(Choose(n.Step, n.Up) * Math.Pow(p, n.Up) * Math.Pow(1 - p, n.Step - n.Up), 4)).ToArray()));
+    }
+
+    private static IChartData MakeBranches()
+    {
+        var pairs = Enumerable.Range(0, Steps).SelectMany(i => Enumerable.Range(0, i + 1)
+            .SelectMany(j => new[] { ($"{i}:{j}", $"{i + 1}:{j}"), ($"{i}:{j}", $"{i + 1}:{j + 1}") })).ToArray();
+        return ChartData.Of(("from", pairs.Select(e => e.Item1).ToArray()), ("to", pairs.Select(e => e.Item2).ToArray()));
+    }
+
+    private const string LatticeSpec = """
+        {
+          "version": 1,
+          "title": "American put on a 4-step lattice",
+          "axis": { "values": "numbers", "title": "Step" },
+          "series": [
+            {
+              "id": "nodes", "name": "Nodes", "kind": "observation",
+              "data": "lattice", "x": "step", "y": "spot", "key": "node", "label": "node",
+              "colour": { "column": "value", "scale": "sequential", "title": "Value" },
+              "size": { "column": "reach", "title": "Chance of reaching" },
+              "edges": { "data": "branches", "from": "from", "to": "to" }
+            }
+          ]
+        }
+        """;
+
+    private const string NumbersSpec = """
+        {
+          "version": 1,
+          "axis": { "values": "numbers" },
+          "series": [
+            { "id": "nodes", "name": "Nodes", "kind": "observation", "data": "lattice", "x": "step", "y": "spot",
+              "values": [100, 109.1, 91.7] }
+          ]
+        }
+        """;
+
+    private string _spec = LatticeSpec;
+    private ChartSpecAnswer _answer = ChartSpec.Answer(LatticeSpec, Lookup, Size);
+
+    private void Load(string spec)
+    {
+        _spec = spec;
+        Draw();
+    }
+
+    private void Draw() => _answer = ChartSpec.Answer(_spec, Lookup, Size);
+}

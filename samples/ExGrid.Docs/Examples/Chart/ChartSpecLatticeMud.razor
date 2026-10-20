@@ -1,0 +1,36 @@
+@using ExChart
+@using ExChart.Components
+@using ExChart.Engine
+@using ExChart.MudBlazor
+
+<MudStack Row="true" Class="mb-3">
+    <MudButton Variant="Variant.Outlined" OnClick="() => Load(LatticeTables.LatticeSpec)">The lattice</MudButton>
+    <MudButton Variant="Variant.Outlined" OnClick="() => Load(LatticeTables.NumbersSpec)">A spec with numbers in it</MudButton>
+</MudStack>
+<div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start">
+    <div style="flex: 1 1 340px; max-width: 460px">
+        <MudTextField T="string" @bind-Value="_spec" @bind-Value:after="Draw" Lines="20" Variant="Variant.Outlined" Label="Chart Spec"
+                      Class="chart-spec-text" Style="font-family: monospace; font-size: 12px" spellcheck="false" />
+        <MudText Typo="Typo.body2" Class="chart-spec-answer mt-2" role="status">@_answer.Text</MudText>
+    </div>
+    @if (_answer.Reading is { } reading)
+    {
+        <MudExGridPaper Elevation="0" Outlined="true">
+            <ExChart Definition="reading.Definition" Title="@reading.Title" Width="560" Height="380" Chrome="MudChartChrome.Default" />
+        </MudExGridPaper>
+    }
+</div>
+
+@code {
+    private string _spec = LatticeTables.LatticeSpec;
+    private ChartSpecAnswer _answer = ChartSpec.Answer(LatticeTables.LatticeSpec, LatticeTables.Lookup, new ChartMetrics(560, 380));
+
+    private void Load(string spec)
+    {
+        _spec = spec;
+        Draw();
+    }
+
+    // What the tool answers the AI: the refusal, or the chart said in words. A refused spec leaves no chart.
+    private void Draw() => _answer = ChartSpec.Answer(_spec, LatticeTables.Lookup, new ChartMetrics(560, 380));
+}

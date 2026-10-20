@@ -26,7 +26,10 @@ colour bar, a marker's size, and a legend hidden by the page's stylesheet.
   result, and the AI corrects its spec. This is spine rule 1, said to an AI.
 - **A spec holds no numbers.** Values are only ever read from the Snapshot, so an AI copying a
   million values cannot drop a row or a digit, and the numbers cost no tokens. A small example still
-  goes through a capability.
+  goes through a capability. *Clarified while implementing (2026-10-20):* "numbers" means the data.
+  A setting of the drawing that is not data, such as a diverging colour's `centre` (0 for a P&L, as
+  [ADR-0310](0310-a-surface-shows-its-colour-bar-and-its-colours-may-diverge-from-a-centre.md) takes it) or the spec's `version`, is written in the spec; a refusal of an unknown key
+  speaks of numbers only when numbers were written in it.
 - **The AI writes every series' `kind`, with no default** ([ADR-0253](0253-every-series-declares-its-series-kind-and-its-drawing-follows.md)). *The user chose this over the
   recommendation that the capability put the meaning on the Snapshot's columns:* existing
   capabilities do not know ExChart's vocabulary, and the selection bridge already has the chart's

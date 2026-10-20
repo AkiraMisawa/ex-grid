@@ -124,6 +124,7 @@ public static class DocsNav
             new("3D surface", "exchart/surface"),
             new("Scatter and fitted lines", "exchart/scatter"),
             new("Candles and intervals", "exchart/candles"),
+            new("Charts from a Chart Spec", "exchart/spec"),
             new("Reading and export", "exchart/export"),
         ]),
         new("Data", DocsNavSection.Docs,

@@ -38,7 +38,10 @@ decided here.
 - **The Engine keeps a column seam of its own; the Snapshot's bridge is in `ExChart`.** *Default,
   decided here:* ExChart.Engine references nothing today, and keeps it so; its reference
   implementation reads plain columns. `ExChart`, which already reaches `ExGrid.Data` through
-  `ExGrid`, references it directly and adapts a Snapshot to the seam, so a Consumer adds no package.
+  `ExGrid`, adapts a Snapshot to the seam, so a Consumer adds no package. *Amended 2026-10-20, while
+  building it:* this said ExChart would reference `ExGrid.Data` directly. A direct reference would add
+  a dependency to ExChart's package, which CH-13 in the Definition of Done forbids (exactly ExGrid and
+  the engine); the reference through `ExGrid` gives the same types, so ExChart keeps it.
 
 ## Consequences
 

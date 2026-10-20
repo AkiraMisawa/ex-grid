@@ -106,6 +106,12 @@ public sealed record SeriesPiece(string Id, string Name, AppearanceKeys Keys, Se
 
     /// <summary>What its Interval means, or null when it has none.</summary>
     public string? IntervalMeaning { get; init; }
+
+    /// <summary>Whether its markers' colour bands diverge from a centre (ADR-0320, ADR-0310).</summary>
+    public bool ColourDiverging { get; init; }
+
+    /// <summary>Its edges in pixels, cut to the plot, drawn under its nodes (ADR-0321).</summary>
+    public EquatableList<DrawnEdge> Edges { get; init; } = EquatableList<DrawnEdge>.Empty;
 }
 
 /// <summary>A panel: its plot's box, its vertical axes and its series.</summary>
@@ -143,6 +149,12 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
 
     /// <summary>Whether the axis across is logarithmic as drawn (ADR-0290).</summary>
     public bool LogarithmicX { get; init; }
+
+    /// <summary>The colour bars of the visible series that take their colour from a column, beside the plot (ADR-0320).</summary>
+    public EquatableList<ColourKey> ColourKeys { get; init; } = EquatableList<ColourKey>.Empty;
+
+    /// <summary>The size keys of the visible series that take their size from a column, beside the plot (ADR-0320).</summary>
+    public EquatableList<SizeKey> SizeKeys { get; init; } = EquatableList<SizeKey>.Empty;
 
     /// <summary>The position across that stands at <paramref name="x"/> pixels, on a proportional or logarithmic axis.</summary>
     public double PositionAt(double x)
@@ -307,7 +319,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
                 notes.Add(panelNames.Count > 1 && name.Length > 0
                     ? $"{name}: the left and right axes put zero at different heights."
                     : "The left and right axes put zero at different heights.");
-            var pieces = members.Select(s => Piece(s, looks[s.Id], Marked(s, visible), drawings[s.Id], s.Axis == AxisSide.Right ? right! : left!, map, plot, from, to, metrics.DevicePixelRatio, devicePixels, rowWidth)
+            var pieces = members.Select(s => Piece(s, looks[s.Id], Marked(s, visible), drawings[s.Id], s.Axis == AxisSide.Right ? right! : left!, map, plot, from, to, metrics.DevicePixelRatio, devicePixels, rowWidth, PointScales.MaxRadius(lh))
                 with { Period = merged.TryGetValue(s.Id, out var m) ? m.Period : CandlePeriod.Row }).ToEquatableList();
             if (scatter)
                 foreach (var piece in pieces.Where(p => p.Kind == SeriesKind.Observation))
@@ -321,6 +333,12 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         foreach (var s in visible.Where(s => s.Segments.Count > 0))
             foreach (var g in s.Segments)
                 notes.Add($"{s.Name}: {XLabel(axis, g.From)}–{XLabel(axis, g.To)} {g.Method}{(g.Extrapolated ? " (extrapolated)" : "")}");
+        foreach (var s in visible)
+            notes.AddRange(PointScales.Notes(s));
+        var plots = panels.Where(p => p.VolumeOf is null).ToList();
+        var (colourKeys, sizeKeys) = plots.Count == 0 ? ([], []) : PointScales.Keys(visible,
+            plotLeft + plotWidth + (visible.Any(s => s.Axis == AxisSide.Right) ? YAxisWidth(metrics) : 0) + PointScales.Gap(metrics),
+            plots[0].Plot.Y, plots[^1].Plot.Y + plots[^1].Plot.Height - plots[0].Plot.Y, metrics);
         if (coloursRepeat)
             notes.Add("Colours repeat: there are more series than colours. The legend and the tooltip name each series.");
 
@@ -332,6 +350,8 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             Scatter = scatter,
             Marks = marks.ToEquatableList(),
             LogarithmicX = logX,
+            ColourKeys = colourKeys.ToEquatableList(),
+            SizeKeys = sizeKeys.ToEquatableList(),
         };
     }
 
@@ -377,7 +397,8 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             : 0;
         var plotLeft = pad + (legend?.Position == LegendPosition.Left ? column : 0) + YAxisWidth(metrics);
         var plotRight = metrics.Width - pad - (legend?.Position == LegendPosition.Right ? column : 0)
-            - (visible.Any(s => s.Axis == AxisSide.Right) ? YAxisWidth(metrics) : 0);
+            - (visible.Any(s => s.Axis == AxisSide.Right) ? YAxisWidth(metrics) : 0)
+            - PointScales.ColumnWidth(visible, metrics);
         var plotWidth = Math.Max(1, plotRight - plotLeft);
         return (axis, visible, from, to, plotLeft, plotWidth, (int)Math.Ceiling(plotWidth * metrics.DevicePixelRatio));
     }
@@ -615,7 +636,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         s.Kind != SeriesKind.Level || s.Keys?.Marker is not null || s.Interpolated
         || visible.Any(o => o.Id != s.Id && o.Interpolated && o.EffectiveKeys.Colour == s.EffectiveKeys.Colour);
 
-    private static SeriesPiece Piece(ChartSeries s, SeriesLook look, bool marked, SeriesDrawing drawing, VerticalAxis axis, Func<double, double> map, Box plot, double from, double to, double dpr, int devicePixels, double rowWidth)
+    private static SeriesPiece Piece(ChartSeries s, SeriesLook look, bool marked, SeriesDrawing drawing, VerticalAxis axis, Func<double, double> map, Box plot, double from, double to, double dpr, int devicePixels, double rowWidth, double maxRadius)
     {
         if (s.Kind == SeriesKind.PriceRange)
             return new SeriesPiece(s.Id, s.Name, s.EffectiveKeys, look, s.Kind, s.Interpolated, EquatableList<EquatableList<DrawnPoint>>.Empty,
@@ -645,8 +666,13 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
                     // A whisker stops at the plot's edge when the range is narrowed past it (ADR-0304).
                     YBounds = m.YBounds is { } yb ? Ordered(YOf(axis, Math.Clamp(yb.Lower, axis.Min, axis.Max), plot), YOf(axis, Math.Clamp(yb.Upper, axis.Min, axis.Max), plot)) : null,
                     XBounds = m.XBounds is { } xb ? Ordered(map(Math.Clamp(xb.Lower, from, to)), map(Math.Clamp(xb.Upper, from, to))) : null,
+                    Radius = m.Radius is { } share ? Math.Max(0.75, share * maxRadius) : null,
                 }), dpr).ToEquatableList(),
-                EquatableList<(double, double)>.Empty, EquatableList<PixelSummary>.Empty);
+                EquatableList<(double, double)>.Empty, EquatableList<PixelSummary>.Empty)
+            {
+                ColourDiverging = s.ColourBy?.Centre is not null,
+                Edges = ExChart.Engine.Edges.Pixels(s, map, v => YOf(axis, v, plot), plot).ToEquatableList(),
+            };
         var thinned = Thinning.Of(inRange, x => (map(x) - plot.X) * dpr, devicePixels);
         var (whiskers, bands) = Intervals(drawing with
         {
@@ -778,11 +804,12 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
     // many it stands for (ADR-0290). The first point drawn there names it.
     private static List<DrawnMarker> Merged(IEnumerable<DrawnMarker> marks, double dpr)
     {
-        var at = new Dictionary<(long, long), int>();
+        var at = new Dictionary<(long, long, int?, double?, bool), int>();
         var kept = new List<DrawnMarker>();
         foreach (var m in marks)
         {
-            var cell = ((long)Math.Floor(m.X * dpr), (long)Math.Floor(m.Y * dpr));
+            // Marks merge only where they look alike, so no colour or size is lost to a merge (ADR-0320).
+            var cell = ((long)Math.Floor(m.X * dpr), (long)Math.Floor(m.Y * dpr), m.Band, m.Radius, m.Filled);
             if (at.TryGetValue(cell, out var i))
                 kept[i] = kept[i] with { Count = kept[i].Count + m.Count, YBounds = Union(kept[i].YBounds, m.YBounds), XBounds = Union(kept[i].XBounds, m.XBounds) };
             else

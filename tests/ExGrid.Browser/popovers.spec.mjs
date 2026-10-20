@@ -1,4 +1,4 @@
-import { test, expect, alterPage, twoFrames, setRoundTrip, circuitQuiet } from './fixtures.mjs';
+import { test, expect, alterPage, twoFrames, holdAnswers, circuitQuiet } from './fixtures.mjs';
 import { expectKeyboardOn, keyboardCarrier, activeDescendant, expectActiveDescendant } from './keyboard.mjs';
 
 // The popovers' behaviour on /features, run once per Chrome (WR-5, FN-17): the built-in
@@ -352,11 +352,14 @@ for (const chrome of CHROMES) {
             await page.keyboard.press('Alt+ArrowDown');
             await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
             const landed = await watchWhereKeysLand(page);
-            const circuit = await setRoundTrip(80);
+            // The host's answers are held across the keys, so the popover stands for every one of them however
+            // fast they are typed: a round trip of 80ms only made that likely (ADR-0220).
+            const circuit = await holdAnswers(true);
             try {
                 await page.keyboard.press('Escape');
                 await page.keyboard.press('ArrowDown');
                 await page.keyboard.press('ArrowDown');
+                await holdAnswers(false);
 
                 await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
                 await circuitQuiet();
@@ -369,7 +372,7 @@ for (const chrome of CHROMES) {
                         { key: 'Escape', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }]);
                 }
             } finally {
-                await setRoundTrip(0);
+                await holdAnswers(false);
             }
         });
 
@@ -381,11 +384,14 @@ for (const chrome of CHROMES) {
             await page.keyboard.press('e');
             await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
             const landed = await watchWhereKeysLand(page);
-            const circuit = await setRoundTrip(80);
+            // The host's answers are held across the keys, so the popover stands for every one of them however
+            // fast they are typed: a round trip of 80ms only made that likely (ADR-0220).
+            const circuit = await holdAnswers(true);
             try {
                 await page.keyboard.press('Escape');
                 await page.keyboard.press('ArrowDown');
                 await page.keyboard.press('ArrowDown');
+                await holdAnswers(false);
 
                 await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
                 await circuitQuiet();
@@ -397,7 +403,7 @@ for (const chrome of CHROMES) {
                         { key: 'Escape', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }]);
                 }
             } finally {
-                await setRoundTrip(0);
+                await holdAnswers(false);
             }
         });
 
@@ -407,10 +413,13 @@ for (const chrome of CHROMES) {
             const command = grid(page).locator('[role=menu] button[role=menuitem]').last();
             await expect(command).toBeVisible();
             const landed = await watchWhereKeysLand(page);
-            const circuit = await setRoundTrip(80);
+            // The host's answers are held across the keys, so the popover stands for every one of them however
+            // fast they are typed: a round trip of 80ms only made that likely (ADR-0220).
+            const circuit = await holdAnswers(true);
             try {
                 await command.click();
                 await page.keyboard.press('ArrowDown');
+                await holdAnswers(false);
 
                 await expect(grid(page).locator('[role=menu]')).toHaveCount(0);
                 await expect(page.locator('#context-status')).toContainText('(1 cells selected');
@@ -421,7 +430,7 @@ for (const chrome of CHROMES) {
                     expect(await landed()).toEqual([{ key: 'ArrowDown', where: 'popover' }]);
                 }
             } finally {
-                await setRoundTrip(0);
+                await holdAnswers(false);
             }
         });
 
@@ -453,11 +462,14 @@ for (const chrome of CHROMES) {
             const panel = await notionalAboveZero(page);
             await closingButton[chrome].ok(panel).focus();
             const landed = await watchWhereKeysLand(page);
-            const circuit = await setRoundTrip(80);
+            // The host's answers are held across the keys, so the popover stands for every one of them however
+            // fast they are typed: a round trip of 80ms only made that likely (ADR-0220).
+            const circuit = await holdAnswers(true);
             try {
                 await page.keyboard.press('Enter');
                 await page.keyboard.press('ArrowDown');
                 await page.keyboard.press('ArrowDown');
+                await holdAnswers(false);
 
                 await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
                 await circuitQuiet();
@@ -470,7 +482,7 @@ for (const chrome of CHROMES) {
                         { key: 'Enter', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }]);
                 }
             } finally {
-                await setRoundTrip(0);
+                await holdAnswers(false);
             }
             // OK applied the condition: Clear filter is there to take it away.
             await page.keyboard.press('Alt+ArrowDown');
@@ -482,11 +494,14 @@ for (const chrome of CHROMES) {
             const panel = await notionalAboveZero(page);
             await closingButton[chrome].cancel(panel).focus();
             const landed = await watchWhereKeysLand(page);
-            const circuit = await setRoundTrip(80);
+            // The host's answers are held across the keys, so the popover stands for every one of them however
+            // fast they are typed: a round trip of 80ms only made that likely (ADR-0220).
+            const circuit = await holdAnswers(true);
             try {
                 await page.keyboard.press('Space');
                 await page.keyboard.press('ArrowDown');
                 await page.keyboard.press('ArrowDown');
+                await holdAnswers(false);
 
                 await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
                 await circuitQuiet();
@@ -497,7 +512,7 @@ for (const chrome of CHROMES) {
                         { key: ' ', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }]);
                 }
             } finally {
-                await setRoundTrip(0);
+                await holdAnswers(false);
             }
             // Cancel applied nothing.
             await page.keyboard.press('Alt+ArrowDown');
@@ -508,10 +523,13 @@ for (const chrome of CHROMES) {
         test('a key typed while a press on OK closes a filter panel is the grid\'s: ↓ typed at once moves the Focus (ADR-0039, ADR-0044, 2026-10-12)', async ({ page }) => {
             const panel = await notionalAboveZero(page);
             const landed = await watchWhereKeysLand(page);
-            const circuit = await setRoundTrip(80);
+            // The host's answers are held across the keys, so the popover stands for every one of them however
+            // fast they are typed: a round trip of 80ms only made that likely (ADR-0220).
+            const circuit = await holdAnswers(true);
             try {
                 await closingButton[chrome].ok(panel).click();
                 await page.keyboard.press('ArrowDown');
+                await holdAnswers(false);
 
                 await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
                 await circuitQuiet();
@@ -521,7 +539,7 @@ for (const chrome of CHROMES) {
                     expect(await landed()).toEqual([{ key: 'ArrowDown', where: 'popover' }]);
                 }
             } finally {
-                await setRoundTrip(0);
+                await holdAnswers(false);
             }
         });
 
