@@ -42,7 +42,7 @@ internal static class FormulaText
     /// (<c>Sheet1!#REF!</c>). <paramref name="requalify"/>, when given, maps the qualifier of a
     /// <c>#REF!</c> already written so (a rename). The same string when nothing changed.
     /// </summary>
-    public static string RewriteReferences(string stored, Func<Reference, Reference?> map, Func<string, string>? requalify = null)
+    public static string RewriteReferences(string stored, Func<Reference, Reference?> map, Func<string, string?>? requalify = null)
     {
         var tokens = Lexer.Tokenize(stored, 1);
         StringBuilder? text = null;
@@ -55,7 +55,9 @@ internal static class FormulaText
                 if (string.Equals(renamed, qualifier, StringComparison.Ordinal)) continue;
                 text ??= new StringBuilder(stored.Length + 8);
                 text.Append(stored, at, token.Position - at);
-                text.Append(Reference.QuoteSheetName(renamed)).Append('!').Append(ErrorValue.Ref.ToText());
+                // A qualifier requalified to none names a Sheet that is gone: what is left is #REF! (ADR-0331).
+                if (renamed is not null) text.Append(Reference.QuoteSheetName(renamed)).Append('!');
+                text.Append(ErrorValue.Ref.ToText());
                 at = token.Position + token.Length;
                 continue;
             }
@@ -71,7 +73,8 @@ internal static class FormulaText
                 var kept = token.Position;
                 while (kept > at && Lexer.IsFormulaWhitespace(stored[kept - 1])) kept--;
                 text.Append(stored, at, kept - at);
-                if (token.Reference!.SheetName is { } sheet) text.Append(Reference.QuoteSheetName(sheet)).Append('!');
+                // A qualifier requalified to none names a Sheet that is gone, and goes with it (ADR-0331).
+                if (token.Reference!.SheetName is { } sheet && (requalify is null || requalify(sheet) is not null)) text.Append(Reference.QuoteSheetName(sheet)).Append('!');
                 text.Append(ErrorValue.Ref.ToText());
             }
             else

@@ -10,7 +10,7 @@ namespace ExSheet.Engine.Formulas;
 internal static class ReferenceRewriter
 {
     /// <summary>The Entry with its References mapped; the same instance when nothing changed.</summary>
-    public static Entry Rewrite(Entry entry, Func<Reference, Reference?> map, Func<string, string>? requalify = null)
+    public static Entry Rewrite(Entry entry, Func<Reference, Reference?> map, Func<string, string?>? requalify = null)
     {
         if (entry.Formula is not { } formula) return entry;
         var rewritten = FormulaText.RewriteReferences(formula, map, requalify);

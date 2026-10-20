@@ -10,12 +10,15 @@ namespace ExSheet.Engine;
 /// (ADR-0047). Linked Tables are declared on the Workbook, and read from any of its Sheets.
 /// </summary>
 /// <remarks>Not thread-safe: one Workbook is changed and read from one thread at a time.</remarks>
-public sealed class Workbook
+public sealed partial class Workbook
 {
     private readonly List<Sheet> _sheets = [];
 
     /// <summary>What a Workbook operation under way has changed on the Sheets it did not start on; <see langword="null"/> when none is under way.</summary>
     private Dictionary<Sheet, List<SheetChange>>? _collected;
+
+    /// <summary>Whether the Workbook operation under way has changed which Sheets the Workbook holds, their order or their names.</summary>
+    private bool _reshaped;
 
     /// <summary>
     /// Creates a Workbook of empty Sheets named <paramref name="sheetNames"/>, in that order, whose
@@ -126,18 +129,25 @@ public sealed class Workbook
     /// <exception cref="ArgumentException">No Sheet of the Workbook is named <paramref name="sheet"/>.</exception>
     /// <exception cref="SheetRefusedException">The Sheet refuses the operation (<see cref="Check"/> says why).</exception>
     /// <exception cref="FormulaSyntaxException">A typed Formula cannot be read.</exception>
-    /// <exception cref="NotSupportedException">
-    /// The edit renames the Sheet, or inserts or deletes its rows or columns, in a Workbook of several
-    /// Sheets: not done yet, as it would leave the other Sheets' References to it stale. <see cref="Check"/>
-    /// does not report it.
-    /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">A Sheet is moved or copied to a place the Workbook does not have.</exception>
     public WorkbookStep Do(string sheet, SheetEdit edit)
     {
         var target = Named(sheet);
         ArgumentNullException.ThrowIfNull(edit);
+        if (edit is SheetEdit.WorkbookEdit sheetsEdit)
+        {
+            if (sheetsEdit.Check(this, target) is { } refusal) throw new SheetRefusedException(refusal);
+            SheetEdit.WorkbookEdit.Done? done = null;
+            var change = Collecting(() =>
+            {
+                done = sheetsEdit.Apply(this, target);
+                return (done.Sheet, done.Change);
+            });
+            return new WorkbookStep(done!.Sheet, change, () => Collecting(done.Sheet, done.Undo), () => Collecting(done.Sheet, done.Redo));
+        }
         SheetStep? step = null;
-        var change = Collecting(target, () => (step = target.Do(edit)).Change);
-        return new WorkbookStep(this, step!, change);
+        var made = Collecting(target, () => (step = target.Do(edit)).Change);
+        return new WorkbookStep(target, made, () => Collecting(target, step!.Undo), () => Collecting(target, step!.Redo));
     }
 
     /// <summary>Whether <see cref="Do"/> would refuse <paramref name="edit"/> on the Sheet named <paramref name="sheet"/> as it stands, and why; <see langword="null"/> when it would not.</summary>
@@ -178,17 +188,31 @@ public sealed class Workbook
     /// Runs an operation on <paramref name="sheet"/>, and reports what it changed there together with
     /// what its recalculation changed on every other Sheet.
     /// </summary>
-    internal WorkbookChange Collecting(Sheet sheet, Func<SheetChange> operation)
+    internal WorkbookChange Collecting(Sheet sheet, Func<SheetChange> operation) => Collecting(() => (sheet, operation()));
+
+    /// <summary>
+    /// Runs an operation, and reports what it changed on the Sheet it names together with what its
+    /// recalculation changed on every other Sheet, and whether it changed which Sheets the Workbook holds.
+    /// </summary>
+    internal WorkbookChange Collecting(Func<(Sheet Sheet, SheetChange Change)> operation)
     {
         var outer = _collected;
+        var outerReshaped = _reshaped;
         var collected = _collected = [];
+        _reshaped = false;
+        Sheet sheet;
+        bool reshaped;
         try
         {
-            collected[sheet] = [operation()];
+            (sheet, var change) = operation();
+            if (!collected.TryGetValue(sheet, out var own)) collected[sheet] = own = [];
+            own.Add(change);
         }
         finally
         {
+            reshaped = _reshaped;
             _collected = outer;
+            _reshaped = outerReshaped || reshaped;
         }
         if (outer is not null)
         {
@@ -202,7 +226,7 @@ public sealed class Workbook
             .Where(collected.ContainsKey)
             .Select(s => (Sheet: s, Change: SheetChange.Merge(collected[s])))
             .Where(p => p.Sheet == sheet || !ReferenceEquals(p.Change, SheetChange.None))
-            .ToList());
+            .ToList(), reshaped);
     }
 
     /// <summary>Records what a recalculation changed on <paramref name="sheet"/>, which the operation under way did not start on.</summary>
@@ -223,7 +247,17 @@ public sealed class WorkbookChange
 {
     private readonly IReadOnlyList<(Sheet Sheet, SheetChange Change)> _changes;
 
-    internal WorkbookChange(IReadOnlyList<(Sheet Sheet, SheetChange Change)> changes) => _changes = changes;
+    internal WorkbookChange(IReadOnlyList<(Sheet Sheet, SheetChange Change)> changes, bool changesSheets)
+    {
+        _changes = changes;
+        ChangesSheets = changesSheets;
+    }
+
+    /// <summary>
+    /// Whether the change added, deleted, renamed, moved or copied a Sheet, so that
+    /// <see cref="Workbook.Sheets"/> and the tabs that show them may differ (ADR-0331).
+    /// </summary>
+    public bool ChangesSheets { get; }
 
     /// <summary>The Sheets the change reached, in the Workbook's order: the one it was made on, and every other whose Values or formats it changed.</summary>
     public IReadOnlyList<Sheet> Sheets => [.. _changes.Select(c => c.Sheet)];
@@ -247,32 +281,45 @@ public sealed class WorkbookChange
 /// </summary>
 public sealed class WorkbookStep
 {
-    private readonly Workbook _workbook;
-    private readonly SheetStep _step;
+    private readonly Func<WorkbookChange> _undo;
+    private readonly Func<WorkbookChange> _redo;
 
-    internal WorkbookStep(Workbook workbook, SheetStep step, WorkbookChange change)
+    internal WorkbookStep(Sheet sheet, WorkbookChange change, Func<WorkbookChange> undo, Func<WorkbookChange> redo)
     {
-        _workbook = workbook;
-        _step = step;
+        Sheet = sheet;
         Change = change;
+        _undo = undo;
+        _redo = redo;
     }
 
-    /// <summary>The Sheet the operation was done on.</summary>
-    public Sheet Sheet => _step.Sheet;
+    /// <summary>The Sheet the operation was done on: for a Sheet added or copied, the new Sheet.</summary>
+    public Sheet Sheet { get; }
 
     /// <summary>What doing the operation changed.</summary>
     public WorkbookChange Change { get; }
 
     /// <summary>Whether the step is currently undone.</summary>
-    public bool IsUndone => _step.IsUndone;
+    public bool IsUndone { get; private set; }
 
     /// <summary>Undoes the operation, and says what that changed.</summary>
     /// <exception cref="InvalidOperationException">The step is already undone.</exception>
-    public WorkbookChange Undo() => _workbook.Collecting(Sheet, _step.Undo);
+    public WorkbookChange Undo()
+    {
+        if (IsUndone) throw new InvalidOperationException("The step is already undone.");
+        var change = _undo();
+        IsUndone = true;
+        return change;
+    }
 
     /// <summary>Does the operation again after <see cref="Undo"/>, and says what that changed.</summary>
     /// <exception cref="InvalidOperationException">The step is not undone.</exception>
-    public WorkbookChange Redo() => _workbook.Collecting(Sheet, _step.Redo);
+    public WorkbookChange Redo()
+    {
+        if (!IsUndone) throw new InvalidOperationException("Only an undone step can be redone.");
+        var change = _redo();
+        IsUndone = false;
+        return change;
+    }
 }
 
 /// <summary>A cell of one Sheet of a Workbook: what a recalculation across the Workbook keys its work by (ADR-0331).</summary>

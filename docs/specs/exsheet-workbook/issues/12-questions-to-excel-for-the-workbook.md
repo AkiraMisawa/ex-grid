@@ -10,5 +10,8 @@ Roadmap: internal
 - [ ] What a tab press does while a constant (not a Formula) is being typed
 - [ ] Ctrl+Z after a Sheet operation: which Sheet is shown and what is selected
 - [ ] Whether a Formula entered into a General cell takes the Number Format of a cell it reads on another Sheet (`=Sheet2!A1` over a percentage), as ExSheet now does since 01
+- [ ] What a Formula reading a deleted Sheet shows: `#REF!`, as ExSheet writes it since 03, or `#REF!A1`
+- [ ] Whether a copied Sheet's References qualified with its source's name name the copy, as ExSheet assumes since 03
+- [ ] The name Excel gives a new Sheet when `SheetN` names have gaps, and a copy's name when it would pass 31 characters
 
 **Blocked by:** None (can start immediately).

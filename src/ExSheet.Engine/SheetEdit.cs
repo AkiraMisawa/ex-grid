@@ -297,10 +297,49 @@ public abstract class SheetEdit
     /// it puts back the name and those Formulas exactly.
     /// </summary>
     /// <exception cref="ArgumentException">The name is not one a Sheet can have (<see cref="Sheet.IsValidName"/>).</exception>
+    /// <remarks>On a Sheet of a Workbook, every Reference on every Sheet qualified with the old name is rewritten; a name another Sheet has, without regard to case, is refused (<see cref="SheetRefusalReason.SheetNameTaken"/>; ADR-0331).</remarks>
     public static SheetEdit Rename(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
         return new RenameEdit(Sheet.CheckName(name, nameof(name)));
+    }
+
+    /// <summary>
+    /// A new, empty Sheet inserted beside the Sheet the edit is done on — after it, as Excel's <c>+</c>
+    /// button adds one, or before it, as Shift+F11 does — named <paramref name="name"/>, or <c>Sheet</c>
+    /// and one more than the highest number a <c>SheetN</c> of the Workbook has (ADR-0331). Undoing it
+    /// takes the Sheet out again. The step's <see cref="WorkbookStep.Sheet"/> is the new Sheet.
+    /// </summary>
+    /// <exception cref="ArgumentException">The name is not one a Sheet can have (<see cref="Sheet.IsValidName"/>).</exception>
+    public static SheetEdit InsertSheet(string? name = null, bool before = false) =>
+        new InsertSheetEdit(name is null ? null : Sheet.CheckName(name, nameof(name)), before);
+
+    /// <summary>
+    /// The Sheet deleted (ADR-0331): every Reference on another Sheet qualified with its name becomes
+    /// <c>#REF!</c>. Unlike Excel, nothing is asked first, and undoing it gives back the Sheet and those
+    /// Formulas exactly. The Workbook's last Sheet is not deleted (<see cref="SheetRefusalReason.LastSheet"/>).
+    /// </summary>
+    public static SheetEdit DeleteSheet() => new DeleteSheetEdit();
+
+    /// <summary>The Sheet moved to <paramref name="index"/> in the order of the Sheets after the move (ADR-0331).</summary>
+    /// <exception cref="ArgumentOutOfRangeException">The index is negative.</exception>
+    public static SheetEdit MoveSheet(int index)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(index);
+        return new MoveSheetEdit(index);
+    }
+
+    /// <summary>
+    /// A copy of the Sheet — its Entries, Cell Formats and column widths — named as Excel names one,
+    /// <c>Name (2)</c>, placed at <paramref name="index"/> in the order after the copy, or just after the
+    /// Sheet (ADR-0331). A Reference in it qualified with the Sheet's name names the copy. The step's
+    /// <see cref="WorkbookStep.Sheet"/> is the copy.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The index is negative.</exception>
+    public static SheetEdit CopySheet(int? index = null)
+    {
+        if (index is { } at) ArgumentOutOfRangeException.ThrowIfNegative(at, nameof(index));
+        return new CopySheetEdit(index);
     }
 
     /// <summary>Whether the Sheet would refuse this operation as it stands, and why. Changes nothing.</summary>
@@ -392,10 +431,97 @@ public abstract class SheetEdit
     /// <summary>A rename: undone by the old name and the Formulas it rewrote put back.</summary>
     internal sealed class RenameEdit(string name) : SheetEdit
     {
+        internal override SheetRefusal? Check(Sheet sheet) => sheet.Workbook.NameTaken(name, sheet);
+
         internal override SheetStep Apply(Sheet sheet)
         {
             var outcome = sheet.ApplyRename(name);
             return new SheetStep(sheet, outcome.Change, s => s.UndoRename(outcome), s => s.ApplyRename(name).Change);
+        }
+    }
+
+    /// <summary>
+    /// An operation on the Workbook's Sheets rather than on one Sheet's cells (ADR-0331). Done through
+    /// <see cref="Sheet.Do"/>, its step reports what it changed on that Sheet.
+    /// </summary>
+    internal abstract class WorkbookEdit : SheetEdit
+    {
+        /// <summary>What doing it changed on the Sheet it names, and how to undo and redo it.</summary>
+        internal sealed record Done(Sheet Sheet, SheetChange Change, Func<SheetChange> Undo, Func<SheetChange> Redo);
+
+        internal abstract SheetRefusal? Check(Workbook workbook, Sheet sheet);
+
+        internal abstract Done Apply(Workbook workbook, Sheet sheet);
+
+        internal override SheetRefusal? Check(Sheet sheet) => Check(sheet.Workbook, sheet);
+
+        internal override SheetStep Apply(Sheet sheet)
+        {
+            var done = Apply(sheet.Workbook, sheet);
+            return new SheetStep(done.Sheet, done.Change, _ => done.Undo(), _ => done.Redo());
+        }
+
+        private protected static int CheckIndex(int index, int count)
+        {
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(index, count - 1, nameof(index));
+            return index;
+        }
+    }
+
+    internal sealed class InsertSheetEdit(string? name, bool before) : WorkbookEdit
+    {
+        internal override SheetRefusal? Check(Workbook workbook, Sheet sheet) => name is null ? null : workbook.NameTaken(name, null);
+
+        internal override Done Apply(Workbook workbook, Sheet sheet)
+        {
+            var index = workbook.IndexOf(sheet) + (before ? 0 : 1);
+            var inserted = workbook.InsertSheet(index, name ?? workbook.NextSheetName(), out var change);
+            return new Done(inserted, change, () => workbook.TakeOut(inserted, delete: false, []), () => workbook.Reinsert(inserted, index));
+        }
+    }
+
+    internal sealed class DeleteSheetEdit : WorkbookEdit
+    {
+        internal override SheetRefusal? Check(Workbook workbook, Sheet sheet) =>
+            workbook.Sheets.Count == 1 ? new SheetRefusal(SheetRefusalReason.LastSheet, $"'{sheet.Name}' is the Workbook's only Sheet, and a Workbook holds at least one.") : null;
+
+        internal override Done Apply(Workbook workbook, Sheet sheet)
+        {
+            var index = workbook.IndexOf(sheet);
+            var shown = workbook.Shown == sheet;
+            var rewritten = new List<(Sheet, CellAddress, Entry)>();
+            var change = workbook.TakeOut(sheet, delete: true, rewritten);
+            return new Done(sheet, change, () => workbook.PutBack(sheet, index, rewritten, shown), () =>
+            {
+                rewritten.Clear();
+                return workbook.TakeOut(sheet, delete: true, rewritten);
+            });
+        }
+    }
+
+    internal sealed class MoveSheetEdit(int index) : WorkbookEdit
+    {
+        internal override SheetRefusal? Check(Workbook workbook, Sheet sheet) => null;
+
+        internal override Done Apply(Workbook workbook, Sheet sheet)
+        {
+            var to = CheckIndex(index, workbook.Sheets.Count);
+            var from = workbook.IndexOf(sheet);
+            if (from == to) return new Done(sheet, SheetChange.None, () => SheetChange.None, () => SheetChange.None);
+            var change = workbook.Move(sheet, to);
+            return new Done(sheet, change, () => workbook.Move(sheet, from), () => workbook.Move(sheet, to));
+        }
+    }
+
+    internal sealed class CopySheetEdit(int? index) : WorkbookEdit
+    {
+        internal override SheetRefusal? Check(Workbook workbook, Sheet sheet) => null;
+
+        internal override Done Apply(Workbook workbook, Sheet sheet)
+        {
+            var at = index is { } given ? CheckIndex(given, workbook.Sheets.Count + 1) : workbook.IndexOf(sheet) + 1;
+            var copy = workbook.Copy(sheet, at, workbook.CopyName(sheet.Name), out var change);
+            return new Done(copy, change, () => workbook.TakeOut(copy, delete: false, []), () => workbook.Reinsert(copy, at));
         }
     }
 

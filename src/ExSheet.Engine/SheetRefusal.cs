@@ -35,6 +35,12 @@ public enum SheetRefusalReason
     /// way (ADR-0048, ADR-0049).
     /// </summary>
     EditIsOpen,
+
+    /// <summary>A Sheet would be given a name another Sheet of the Workbook has, without regard to case, as Excel refuses (ADR-0331).</summary>
+    SheetNameTaken,
+
+    /// <summary>The Workbook's last Sheet would be deleted. A Workbook holds at least one Sheet, as Excel's does (ADR-0331).</summary>
+    LastSheet,
 }
 
 /// <summary>An operation a Sheet refused, and why. Nothing was changed.</summary>
