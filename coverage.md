@@ -13,19 +13,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/20/2026 - 20:15:34 |
+| Generated on: | 10/20/2026 - 20:24:23 |
 | Parser: | MultiReport (16x Cobertura) |
 | Assemblies: | 13 |
-| Classes: | 995 |
-| Files: | 521 |
-| **Line coverage:** | 94.7% (65236 of 68833) |
-| Covered lines: | 65236 |
-| Uncovered lines: | 3597 |
-| Coverable lines: | 68833 |
-| Total lines: | 115330 |
-| **Branch coverage:** | 87.2% (38971 of 44680) |
-| Covered branches: | 38971 |
-| Total branches: | 44680 |
+| Classes: | 1001 |
+| Files: | 522 |
+| **Line coverage:** | 94.7% (65496 of 69110) |
+| Covered lines: | 65496 |
+| Uncovered lines: | 3614 |
+| Coverable lines: | 69110 |
+| Total lines: | 115754 |
+| **Branch coverage:** | 87.2% (39119 of 44844) |
+| Covered branches: | 39119 |
+| Total branches: | 44844 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -367,8 +367,8 @@
 |ExGrid.IGridSource<TRow>|100%||
 |ExGrid.InMemoryGridSource.ChangePlan<TRow>|100%|100%|
 |ExGrid.InMemoryGridSource.Pending<TRow>|100%||
-|ExGrid.InMemoryGridSource<TRow>|93.5%|77.7%|
 |ExGrid.InMemoryGridSource<TRow>|96.5%|91.5%|
+|ExGrid.InMemoryGridSource<TRow>|93.5%|77.7%|
 |ExGrid.InputOrder|93.8%|82.2%|
 |ExGrid.InputOrder.Waiting|100%||
 |ExGrid.InputOrder<T>|93.8%|82.2%|
@@ -956,11 +956,11 @@
 |ExSheet.UnderlineItem|100%|100%|
 
 </details>
-<details><summary>ExSheet.Engine - 97.8%</summary>
+<details><summary>ExSheet.Engine - 97.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.8%**|**91%**|
+|**ExSheet.Engine**|**97.7%**|**91%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -1003,7 +1003,7 @@
 |ExSheet.Engine.Formulas.ExactPayment|99.3%|91.3%|
 |ExSheet.Engine.Formulas.ExactPayment.Bound|100%||
 |ExSheet.Engine.Formulas.ExcelFunctionNames|100%||
-|ExSheet.Engine.Formulas.FormulaText|100%|97.5%|
+|ExSheet.Engine.Formulas.FormulaText|100%|97.7%|
 |ExSheet.Engine.Formulas.FunctionCall|100%|100%|
 |ExSheet.Engine.Formulas.FunctionDefinition|100%||
 |ExSheet.Engine.Formulas.FunctionLibrary|97.3%|88.3%|
@@ -1036,7 +1036,7 @@
 |ExSheet.Engine.Formulas.ReferenceNode|100%||
 |ExSheet.Engine.Formulas.ReferenceRewriter|100%|100%|
 |ExSheet.Engine.Formulas.ReferenceShift|100%|100%|
-|ExSheet.Engine.Formulas.StructuralEdit|100%|90.2%|
+|ExSheet.Engine.Formulas.StructuralEdit|100%|91.4%|
 |ExSheet.Engine.Formulas.StructuredReferenceNode|100%||
 |ExSheet.Engine.Formulas.TextNode|100%||
 |ExSheet.Engine.Formulas.TextOrder|100%|97.2%|
@@ -1058,14 +1058,13 @@
 |ExSheet.Engine.RangeEdgeLines|100%||
 |ExSheet.Engine.ReferenceCycle|100%||
 |ExSheet.Engine.RepeatedKeyException|100%|88.8%|
-|ExSheet.Engine.Sheet|99.5%|96.4%|
+|ExSheet.Engine.Sheet|99.6%|96.4%|
 |ExSheet.Engine.Sheet.Cell|100%|100%|
 |ExSheet.Engine.Sheet.CellFormatOutcome|100%||
 |ExSheet.Engine.Sheet.CellFormatsOutcome|100%||
 |ExSheet.Engine.Sheet.FillLevels|100%||
 |ExSheet.Engine.Sheet.FillPlan|100%||
 |ExSheet.Engine.Sheet.ReadState|100%||
-|ExSheet.Engine.Sheet.RenameOutcome|100%||
 |ExSheet.Engine.Sheet.StagedReader|100%|92.5%|
 |ExSheet.Engine.Sheet.StructuralOutcome|100%||
 |ExSheet.Engine.Sheet.TableState|100%||
@@ -1081,24 +1080,31 @@
 |ExSheet.Engine.SheetDocumentColumnWidth|100%||
 |ExSheet.Engine.SheetDocumentException|100%||
 |ExSheet.Engine.SheetDocumentTable|100%|100%|
-|ExSheet.Engine.SheetEdit|99.4%|86.1%|
+|ExSheet.Engine.SheetEdit|95.6%|84%|
 |ExSheet.Engine.SheetEdit.CellFormatEdit|100%||
 |ExSheet.Engine.SheetEdit.CellFormatsEdit|100%||
 |ExSheet.Engine.SheetEdit.CellsEdit|100%||
 |ExSheet.Engine.SheetEdit.ColumnWidthEdit|100%||
+|ExSheet.Engine.SheetEdit.CopySheetEdit|100%|100%|
+|ExSheet.Engine.SheetEdit.DeleteSheetEdit|66.6%|100%|
 |ExSheet.Engine.SheetEdit.FillEdit|100%|83.3%|
+|ExSheet.Engine.SheetEdit.InsertSheetEdit|100%|100%|
+|ExSheet.Engine.SheetEdit.MoveSheetEdit|88.8%|16.6%|
 |ExSheet.Engine.SheetEdit.PlacedEdit|100%|100%|
 |ExSheet.Engine.SheetEdit.RefusedEdit|66.6%||
 |ExSheet.Engine.SheetEdit.RenameEdit|100%||
 |ExSheet.Engine.SheetEdit.StructureEdit|100%||
+|ExSheet.Engine.SheetEdit.WorkbookEdit|60%||
+|ExSheet.Engine.SheetEdit.WorkbookEdit.Done|100%||
 |ExSheet.Engine.SheetRefusal|100%||
 |ExSheet.Engine.SheetRefusedException|100%|50%|
 |ExSheet.Engine.SheetStep|100%|100%|
 |ExSheet.Engine.Value|94.2%|79.4%|
-|ExSheet.Engine.Workbook|91.2%|81.5%|
+|ExSheet.Engine.Workbook|96.6%|91.3%|
+|ExSheet.Engine.Workbook.SheetRename|100%||
 |ExSheet.Engine.WorkbookChange|100%|100%|
 |ExSheet.Engine.WorkbookDocument|95.6%|85%|
-|ExSheet.Engine.WorkbookStep|100%||
+|ExSheet.Engine.WorkbookStep|100%|50%|
 
 </details>
 <details><summary>ExSheet.MudBlazor - 92.6%</summary>
