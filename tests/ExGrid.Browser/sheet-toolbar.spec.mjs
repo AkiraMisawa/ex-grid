@@ -425,6 +425,9 @@ for (const chrome of ['builtin', 'mud']) {
         const grid = sheet(page);
         await pressCell(grid, 'C2');
         const formatCells = formatCellsOf(page, grid, chrome);
+        // Read once the page has heard C2's format: on the Server host it is told a round trip after
+        // the press, and read sooner it is the page's empty first text (widened-run ticket 02).
+        await circuitQuiet();
         const before = await page.locator('#sheet-focus-number-format').textContent();
         // The Number Format's list from its KeyTip, holding the keyboard on its last choice.
         const onMoreNumberFormats = async () => {
@@ -895,6 +898,8 @@ for (const chrome of ['builtin', 'mud']) {
             const grid = sheet(page);
             await pressCell(grid, 'C2');
             const formatCells = formatCellsOf(page, grid, chrome);
+            // Read once the page has heard C2's format (widened-run ticket 02).
+            await circuitQuiet();
             const before = await page.locator('#sheet-focus-number-format').textContent();
             await setRoundTrip(80);
 
