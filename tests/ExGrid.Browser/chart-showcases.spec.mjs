@@ -380,3 +380,53 @@ for (const [chrome, query] of CHROMES) {
         }
     });
 }
+
+// Binomial lattice (ADR-0280): an option priced on a CRR lattice, its nodes in a grid and on a chart coloured
+// by value, early exercise ringed, and the lattice price by N against Black–Scholes. The page prices; the
+// figures below are the CRR and Black–Scholes prices of a one-year at-the-money option at 20% and 5%.
+
+async function openLattice(page, route) {
+    await page.goto(route);
+    await expect(page.locator('#demo-interactive')).toBeAttached();
+    await expect(page.locator('.ex-grid [role=gridcell]').first()).toBeVisible();
+    await expect(page.locator('.ex-chart')).toHaveCount(2);
+    await expect(page.locator('.ex-chart[aria-busy="true"]')).toHaveCount(0);
+    await circuitQuiet();
+}
+
+const latticeCard = (page, label) => page.getByRole('group', { name: label, exact: true }).locator('.xs-bin-value');
+
+for (const [chrome, query] of CHROMES) {
+    test(`ADR-0280: Binomial lattice prices a European call on five steps beside Black–Scholes (${chrome})`, async ({ page }) => {
+        await openLattice(page, `/chart-showcase/binomial-lattice${query}`);
+        await expect(latticeCard(page, 'Lattice price (N = 5)')).toHaveText('10.8059');
+        await expect(latticeCard(page, 'Black–Scholes, European')).toHaveText('10.4506');
+        // Twelve diagonals, the ring and eight bands; 21 nodes, none exercised early.
+        const lattice = page.locator('.xs-bin-lattice .ex-chart');
+        await expect(lattice.locator('g.ex-chart-series')).toHaveCount(21);
+        await expect(lattice.locator('g.ex-chart-series[data-series="early"] .ex-chart-markers').first()).toHaveAttribute('d', '');
+        await expect(page.locator('.ex-grid [role=gridcell]').filter({ hasText: /^Exercise$/ })).toHaveCount(0);
+    });
+
+    test(`ADR-0280: Binomial lattice rings the nodes an American put is exercised at, and its rows say so (${chrome})`, async ({ page }) => {
+        await openLattice(page, `/chart-showcase/binomial-lattice${query}`);
+        await page.locator('[aria-label="Option type"]').getByText('Put', { exact: true }).click();
+        await page.locator('[aria-label="Exercise"]').getByText('American', { exact: true }).click();
+        await circuitQuiet();
+        await expect(latticeCard(page, 'Lattice price (N = 5)')).toHaveText('6.3678');
+        await expect(latticeCard(page, 'Black–Scholes, European')).toHaveText('5.5735');
+        const ring = page.locator('.xs-bin-lattice g.ex-chart-series[data-series="early"] .ex-chart-markers').first();
+        await expect(ring).not.toHaveAttribute('d', '');
+        await expect(page.locator('.xs-bin-ring')).toHaveText('early exercise');
+        await expect(page.locator('.ex-grid [role=gridcell]').filter({ hasText: /^Exercise$/ }).first()).toBeAttached();
+    });
+
+    test(`ADR-0280: Binomial lattice's switch puts the page in the dark scheme and back (${chrome})`, async ({ page }) => {
+        await openLattice(page, `/chart-showcase/binomial-lattice${query}`);
+        await page.locator('[aria-label="Scheme"]').getByText('Dark', { exact: true }).click();
+        await expect(page).toHaveURL(/[?&]scheme=dark/);
+        await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe('dark');
+        await page.locator('[aria-label="Scheme"]').getByText('Light', { exact: true }).click();
+        await expect(page).not.toHaveURL(/scheme=dark/);
+    });
+}

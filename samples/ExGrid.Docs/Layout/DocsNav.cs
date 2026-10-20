@@ -142,6 +142,7 @@ public static class DocsNav
             new("FX volatility", "showcase/fx-volatility", DocsLinkKind.Showcase),
             new("CDS spread vs leverage", "showcase/cds-spread", DocsLinkKind.Showcase),
             new("Equity index daily bars", "showcase/equity-index", DocsLinkKind.Showcase),
+            new("Binomial lattice", "showcase/binomial-lattice", DocsLinkKind.Showcase),
         ]),
         new("Reference", DocsNavSection.Reference,
         [

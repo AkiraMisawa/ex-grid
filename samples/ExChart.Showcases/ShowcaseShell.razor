@@ -1,5 +1,5 @@
-@* The frame every ExChart Showcase shares: an application bar with the desk's name and the screen's, and
-   the screen below it. Under MudBlazor's Chrome the bar is a MudPaper; under the built-in one, plain
+@* The frame every ExChart Showcase shares: an application bar with the application's name, which says what it
+   does, and the screen's, and the screen below it. Under MudBlazor's Chrome the bar is a MudPaper; under the built-in one, plain
    markup. The colours are the page's own, as an application's stylesheet would set them. *@
 <style>
     .xs-app {
@@ -63,8 +63,8 @@
     @if (Mud)
     {
         <MudPaper Square="true" Elevation="1" Class="xs-bar" Style="min-height: 56px">
-            <span class="xs-mark">R</span>
-            <MudText Typo="Typo.subtitle1" Style="font-weight: 600">Northgate Risk</MudText>
+            <span class="xs-mark">@Mark</span>
+            <MudText Typo="Typo.subtitle1" Style="font-weight: 600">@App</MudText>
             <MudText Typo="Typo.body2" Class="xs-crumb">@Crumb</MudText>
             <MudSpacer />
             @Tools
@@ -73,8 +73,8 @@
     else
     {
         <header class="xs-bar">
-            <span class="xs-mark">R</span>
-            <span class="xs-name">Northgate Risk</span>
+            <span class="xs-mark">@Mark</span>
+            <span class="xs-name">@App</span>
             <span class="xs-crumb">@Crumb</span>
             <span class="xs-spacer"></span>
             @Tools
@@ -87,6 +87,9 @@
     /// <summary>Whether the screen is drawn with MudBlazor's Chrome.</summary>
     [Parameter] public bool Mud { get; set; }
 
+    /// <summary>The application's name, which says what it does, such as "Curve Viewer".</summary>
+    [Parameter, EditorRequired] public string App { get; set; } = "";
+
     /// <summary>Where the screen sits in the application, shown beside its name.</summary>
     [Parameter] public string Crumb { get; set; } = "";
 
@@ -95,4 +98,6 @@
 
     /// <summary>The screen.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string Mark => App.Length > 0 ? App[..1] : "";
 }
