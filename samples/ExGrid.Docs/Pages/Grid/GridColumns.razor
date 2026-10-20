@@ -201,6 +201,44 @@
                      Files="@(["Examples/Grid/NoteField.razor", "Examples/Grid/Position.cs"])" />
     </DocsSection>
 
+    <DocsSection Title="Columns built at run time">
+        <p>
+            When the data's columns are not known until the program runs, as when an AI has just fetched it or a saved
+            workflow binds whatever its last step produced, there is no row type to write columns for.
+            <code>ShapedGrid</code> builds them from the data's shape instead: one column per column a grid's spec shows,
+            over a Snapshot, each row a <code>ShapedRow</code>, a position in it. Hand its <code>Columns</code>,
+            <code>Source</code> and <code>PinnedColumnCount</code> to an <code>ExGrid</code> of <code>TRow="ShapedRow"</code>.
+            The sort and the filter are executed by the source with <code>GridSource.From</code>'s semantics.
+        </p>
+        <p>
+            The spec is JSON. It names the input it shows in <code>data</code> and its <code>columns</code> in order, each
+            with an optional <code>header</code> and <code>format</code>; a column's <code>width</code> and
+            <code>pinned</code>, the <code>sorts</code> and the <code>filter</code> are the View State's JSON, read by the same
+            reader. <code>GridViewSpec.Read</code> takes each input's shape, its columns' names and kinds, and checks the
+            spec against it before any row is drawn.
+        </p>
+        <p>
+            <strong>A decimal or double column must carry its format</strong>, an Excel format code in the invariant
+            spelling: <code>#,##0.00</code>, <code>0.00%</code>, <code>0.00000</code>. One left out is refused, naming the
+            column, because the places depend on what the column holds — yen, basis points or an FX rate — and a default
+            guessed from the type would show a rate of <code>1.08734</code> as <code>1.09</code>. An integer shows as
+            <code>#,##0</code> and a date as <code>yyyy-mm-dd</code> unless the spec writes otherwise (a date holding a
+            time of day as <code>yyyy-mm-dd hh:mm:ss</code>, so the time is never hidden); text and booleans show as
+            they are. A code may have up to three sections (positive; negative; zero), quoted text, <code>%</code> and
+            exponents; colours and conditions in brackets, <code>@@</code>, <code>_</code>, <code>*</code>, <code>?</code>
+            and fractions are refused rather than shown some other way. A format that is merely wrong, two places on a
+            rate, is not caught: it is written in the spec, where a person reading it sees it.
+        </p>
+        <p>
+            The data itself may arrive as JSON, which tells no decimal from a double and has no dates. A
+            <code>BoardInput</code> declares each column's kind, and <code>FromJson</code> converts by the declaration;
+            a value that does not convert is refused by its row and column, never dropped or read as zero. Edit the
+            texts below and draw again: remove the rate's format, or write <code>"abc"</code> as a notional.
+        </p>
+        <DocsExample Title="A grid from JSON, its columns built at run time" Builtin="typeof(ShapedColumns)" Mud="typeof(ShapedColumnsMud)"
+                     Files="@(["Examples/Grid/ShapedTrades.cs"])" />
+    </DocsSection>
+
     <DocsSection Title="API">
         <ApiTable Type="typeof(GridColumn<>)" />
         <ApiTable Type="typeof(ExGrid.Columns.ColumnWidthSpec)" />
@@ -208,5 +246,7 @@
         <ApiTable Type="typeof(GridViewState)" />
         <ApiTable Type="typeof(ColumnViewState)" />
         <ApiTable Type="typeof(GridViewStateJson)" />
+        <ApiTable Type="typeof(ShapedGrid)" />
+        <ApiTable Type="typeof(GridViewSpec)" />
     </DocsSection>
 </DocsPage>

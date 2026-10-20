@@ -1,0 +1,34 @@
+<MudGrid Spacing="2">
+    <MudItem xs="12" md="4"><MudTextField T="string" Label="Input" Lines="9" Variant="Variant.Outlined" @bind-Value="_input" /></MudItem>
+    <MudItem xs="12" md="4"><MudTextField T="string" Label="Data" Lines="9" Variant="Variant.Outlined" @bind-Value="_data" /></MudItem>
+    <MudItem xs="12" md="4"><MudTextField T="string" Label="Grid" Lines="9" Variant="Variant.Outlined" @bind-Value="_spec" /></MudItem>
+</MudGrid>
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="my-2">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Draw">Draw</MudButton>
+    @if (_refusal is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Dense="true">@_refusal</MudAlert>
+    }
+</MudStack>
+
+@if (_grid is { } grid)
+{
+    <MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+        <ExGrid @key="grid" TRow="ShapedRow" Source="grid.Source" Columns="grid.Columns" PinnedColumnCount="grid.PinnedColumnCount"
+                Chrome="_chrome" ViewportHeight="180" ViewportWidth="ViewportSize.Stretch" />
+    </MudExGridPaper>
+}
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+
+    private string _input = ShapedTrades.Input;
+    private string _data = ShapedTrades.Data;
+    private string _spec = ShapedTrades.Spec;
+    private ShapedGrid? _grid;
+    private string? _refusal;
+
+    protected override void OnInitialized() => Draw();
+
+    private void Draw() => (_grid, _refusal) = ShapedTrades.Build(_input, _data, _spec);
+}

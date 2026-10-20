@@ -32,3 +32,23 @@ what lets a number that does not fit become `####` instead of being rounded to f
 
 - The grid gains a column type over a source's shape that needs no row type of the Consumer's; the
   virtualisation and memoisation invariants (ADR-0027 P1–P9) hold for it as for any column.
+
+## Implementation notes
+
+*Recorded with the implementation, 2026-10-20 (ticket `exboard/01`); no decision above changes.*
+
+- The type is `ShapedGrid` in `ExGrid`, over a Snapshot, a row a `ShapedRow` made once per row so its
+  reference is stable and its render is skipped (ADR-0003; `SnapshotRow` is a value and a grid's row is
+  an object). The spec is read by `GridViewSpec`; a column's `width` and `pinned`, the `sorts` and the
+  `filter` are handed to `GridViewStateJson`'s reader, so a Board's grid and a saved view cannot mean
+  two things.
+- The format code is read by a reader of the grid's own, a subset of the codes ExSheet's
+  `NumberFormat` reads: up to three number sections of `0 # . , % E+`, quoted text, escapes and
+  unquoted symbols, or one date section of `y m d h s` and `AM/PM`. A section is chosen by the sign
+  before rounding, and a negative that rounds to zero in one section shows no minus sign, as ExSheet
+  observed of Excel (FMT-063). Everything else is refused. ExGrid does not reference ExSheet.Engine,
+  whose `NumberFormat` lives beside the formula engine; sharing one renderer is left for when a grid
+  needs more of the code than this subset.
+- A date column holding a time of day, with no format written, shows `yyyy-mm-dd hh:mm:ss` rather
+  than the fixed `yyyy-mm-dd`, so that a time is never hidden (spine rule 1). The text is written in
+  the invariant culture unless the host passes one, as a column's default text is.
