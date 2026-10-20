@@ -13,19 +13,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/20/2026 - 14:55:33 |
+| Generated on: | 10/20/2026 - 17:02:31 |
 | Parser: | MultiReport (16x Cobertura) |
 | Assemblies: | 13 |
-| Classes: | 969 |
-| Files: | 512 |
-| **Line coverage:** | 94.9% (63988 of 67425) |
-| Covered lines: | 63988 |
+| Classes: | 970 |
+| Files: | 513 |
+| **Line coverage:** | 94.9% (64042 of 67479) |
+| Covered lines: | 64042 |
 | Uncovered lines: | 3437 |
-| Coverable lines: | 67425 |
-| Total lines: | 113307 |
-| **Branch coverage:** | 87.3% (38151 of 43680) |
-| Covered branches: | 38151 |
-| Total branches: | 43680 |
+| Coverable lines: | 67479 |
+| Total lines: | 113450 |
+| **Branch coverage:** | 87.3% (38188 of 43726) |
+| Covered branches: | 38188 |
+| Total branches: | 43726 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -228,7 +228,7 @@
 |ExGrid.ClauseDocument|100%||
 |ExGrid.Clipboard.ClipboardBlock|100%||
 |ExGrid.Clipboard.ClipboardData|91.6%|81.5%|
-|ExGrid.Clipboard.ClipboardParse|93.9%|72%|
+|ExGrid.Clipboard.ClipboardParse|94.1%|72.1%|
 |ExGrid.Clipboard.ClipboardPayload|100%||
 |ExGrid.Clipboard.ClipboardRules|99.3%|99.1%|
 |ExGrid.Clipboard.CopyDecision|100%|100%|
@@ -240,6 +240,7 @@
 |ExGrid.Clipboard.GridCopyRequest|100%||
 |ExGrid.Clipboard.GridPasteIntent|100%|100%|
 |ExGrid.Clipboard.PasteDecision|100%|50%|
+|ExGrid.Clipboard.PasteFlavour|95.6%|93.7%|
 |ExGrid.Clipboard.PastePlan|100%|100%|
 |ExGrid.Clipboard.PasteShape|100%|100%|
 |ExGrid.Clipboard.SourceCell|100%||
@@ -296,8 +297,8 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
+|ExGrid.Components.ExGrid<TRow>|90.7%|85.6%|
 |ExGrid.Components.ExGrid<TRow>|95.3%|90.2%|
-|ExGrid.Components.ExGrid<TRow>|90.6%|85.8%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
@@ -869,10 +870,10 @@
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|91.1%|84.7%|
+|ExSheet.Components.ExSheet|91.1%|84.5%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91.1%|84.7%|
+|ExSheet.Components.ExSheet<T>|91.1%|84.5%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
