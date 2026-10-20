@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.6% | 88.4% |
-| ExSheet | 95.8% | 88.8% |
+| ExSheet | 95.8% | 88.9% |
 | ExPivot | 94.4% | 85.3% |
 | ExChart | 90.6% | 80.7% |
 | Data | 94.5% | 90.3% |
@@ -13,19 +13,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/20/2026 - 18:22:19 |
+| Generated on: | 10/20/2026 - 19:05:53 |
 | Parser: | MultiReport (16x Cobertura) |
 | Assemblies: | 13 |
-| Classes: | 970 |
-| Files: | 513 |
-| **Line coverage:** | 94.9% (64043 of 67479) |
-| Covered lines: | 64043 |
-| Uncovered lines: | 3436 |
-| Coverable lines: | 67479 |
-| Total lines: | 113450 |
-| **Branch coverage:** | 87.3% (38191 of 43726) |
-| Covered branches: | 38191 |
-| Total branches: | 43726 |
+| Classes: | 975 |
+| Files: | 515 |
+| **Line coverage:** | 94.9% (64268 of 67713) |
+| Covered lines: | 64268 |
+| Uncovered lines: | 3445 |
+| Coverable lines: | 67713 |
+| Total lines: | 113909 |
+| **Branch coverage:** | 87.3% (38330 of 43870) |
+| Covered branches: | 38330 |
+| Total branches: | 43870 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -348,8 +348,8 @@
 |ExGrid.IGridSource<TRow>|100%||
 |ExGrid.InMemoryGridSource.ChangePlan<TRow>|100%|100%|
 |ExGrid.InMemoryGridSource.Pending<TRow>|100%||
-|ExGrid.InMemoryGridSource<TRow>|93.5%|77.7%|
 |ExGrid.InMemoryGridSource<TRow>|96.5%|91.5%|
+|ExGrid.InMemoryGridSource<TRow>|93.5%|77.7%|
 |ExGrid.InputOrder|93.8%|82.2%|
 |ExGrid.InputOrder.Waiting|100%||
 |ExGrid.InputOrder<T>|93.8%|82.2%|
@@ -937,11 +937,11 @@
 |ExSheet.UnderlineItem|100%|100%|
 
 </details>
-<details><summary>ExSheet.Engine - 97.9%</summary>
+<details><summary>ExSheet.Engine - 97.8%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.9%**|**90.9%**|
+|**ExSheet.Engine**|**97.8%**|**91%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -995,7 +995,7 @@
 |ExSheet.Engine.Formulas.FunctionLibrary.RowColumnPart|100%|100%|
 |ExSheet.Engine.Formulas.FunctionLibrary.RowColumnSpan|100%|95.4%|
 |ExSheet.Engine.Formulas.FunctionLibrary.SearchOutcome|100%||
-|ExSheet.Engine.Formulas.FunctionLibrary.Vector|92%|87.5%|
+|ExSheet.Engine.Formulas.FunctionLibrary.Vector|92.1%|87.5%|
 |ExSheet.Engine.Formulas.FunctionLibrary.XnpvOutcome|100%||
 |ExSheet.Engine.Formulas.FunctionNode|100%|100%|
 |ExSheet.Engine.Formulas.IntersectionNode|100%||
@@ -1007,7 +1007,7 @@
 |ExSheet.Engine.Formulas.NameNode|100%||
 |ExSheet.Engine.Formulas.Node|100%||
 |ExSheet.Engine.Formulas.NumberNode|100%||
-|ExSheet.Engine.Formulas.Operand|97.1%|95%|
+|ExSheet.Engine.Formulas.Operand|97.3%|90.9%|
 |ExSheet.Engine.Formulas.ParenthesesNode|100%||
 |ExSheet.Engine.Formulas.Parser|99.2%|94.9%|
 |ExSheet.Engine.Formulas.Parser.LetScope|100%||
@@ -1039,18 +1039,20 @@
 |ExSheet.Engine.RangeEdgeLines|100%||
 |ExSheet.Engine.ReferenceCycle|100%||
 |ExSheet.Engine.RepeatedKeyException|100%|88.8%|
-|ExSheet.Engine.Sheet|99.6%|96.1%|
+|ExSheet.Engine.Sheet|99.5%|96.4%|
 |ExSheet.Engine.Sheet.Cell|100%|100%|
 |ExSheet.Engine.Sheet.CellFormatOutcome|100%||
 |ExSheet.Engine.Sheet.CellFormatsOutcome|100%||
 |ExSheet.Engine.Sheet.FillLevels|100%||
 |ExSheet.Engine.Sheet.FillPlan|100%||
+|ExSheet.Engine.Sheet.ReadState|100%||
 |ExSheet.Engine.Sheet.RenameOutcome|100%||
-|ExSheet.Engine.Sheet.StagedReader|100%|89.2%|
+|ExSheet.Engine.Sheet.StagedReader|100%|92.5%|
 |ExSheet.Engine.Sheet.StructuralOutcome|100%||
 |ExSheet.Engine.Sheet.TableState|100%||
 |ExSheet.Engine.Sheet.TrendDigits|92%|78.1%|
 |ExSheet.Engine.SheetBlock|100%|50%|
+|ExSheet.Engine.SheetCell|100%||
 |ExSheet.Engine.SheetChange|100%|95.8%|
 |ExSheet.Engine.SheetColumnWidth|100%||
 |ExSheet.Engine.SheetCopy|100%||
@@ -1074,6 +1076,9 @@
 |ExSheet.Engine.SheetRefusedException|100%|50%|
 |ExSheet.Engine.SheetStep|100%|100%|
 |ExSheet.Engine.Value|94.2%|79.4%|
+|ExSheet.Engine.Workbook|89.1%|73%|
+|ExSheet.Engine.WorkbookChange|100%|100%|
+|ExSheet.Engine.WorkbookStep|100%||
 
 </details>
 <details><summary>ExSheet.MudBlazor - 92.6%</summary>
