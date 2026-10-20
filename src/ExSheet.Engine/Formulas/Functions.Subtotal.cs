@@ -118,10 +118,10 @@ internal static partial class FunctionLibrary
     private static bool TryCollect(FunctionCall call, Operand operand, bool arrays, bool skipNested, bool passOverErrors, List<Value> values, out Operand failure)
     {
         failure = default;
-        var cells = call.Evaluator.Cells;
         switch (operand.Kind)
         {
             case OperandKind.Area:
+                var cells = operand.Cells!;
                 foreach (var address in cells.NonBlankIn(operand.Area))
                 {
                     if (skipNested && IsNested(cells.FormulaAt(address))) continue;

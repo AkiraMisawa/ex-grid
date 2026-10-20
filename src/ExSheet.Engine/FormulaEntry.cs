@@ -914,8 +914,8 @@ public sealed partial class Sheet
         FormulaEntry.Complete(
             text,
             caret,
-            _tables.Values.OrderBy(t => t.Order).Select(t => t.Name),
-            name => _tables.TryGetValue(name, out var table) ? table.Columns : null);
+            Tables.Values.OrderBy(t => t.Order).Select(t => t.Name),
+            name => Tables.TryGetValue(name, out var table) ? table.Columns : null);
 
     /// <summary>
     /// The References in the Formula being edited (ADR-0057), a qualifier naming this Sheet by its
@@ -933,5 +933,5 @@ public sealed partial class Sheet
     }
 
     private bool IsDeclared(LinkedTableColumn column) =>
-        _tables.TryGetValue(column.Table, out var table) && table.ColumnIndex.ContainsKey(column.Column);
+        Tables.TryGetValue(column.Table, out var table) && table.ColumnIndex.ContainsKey(column.Column);
 }

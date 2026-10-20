@@ -114,6 +114,7 @@ public sealed partial class Sheet
     {
         _cellDependents.Clear();
         _areaPrecedents.Clear();
+        foreach (var formulaCell in _remoteReferences.Keys.ToList()) UnregisterRemote(formulaCell);
         _tableReaders.Clear();
         _todayReaders.Clear();
         _volatileFormulas.Clear();

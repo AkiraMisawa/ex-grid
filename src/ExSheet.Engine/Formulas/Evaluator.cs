@@ -26,8 +26,12 @@ internal interface ICellReader
     /// <summary>The moment <c>NOW</c> answers, in the Sheet's zone, read once for the recalculation (ADR-0124); <see langword="null"/> while it is not known.</summary>
     DateTime? Now { get; }
 
-    /// <summary>Whether a Reference names the Sheet's own cells: unqualified, or qualified with the Sheet's name (ADR-0046).</summary>
-    bool IsLocal(Reference reference);
+    /// <summary>
+    /// The cells of the Sheet a Reference's qualifier names, as this recalculation reads them: this
+    /// Sheet's for no qualifier, another Sheet's of the Workbook for its name, without regard to case;
+    /// <see langword="null"/> for a name no Sheet of the Workbook has, which is <c>#REF!</c> (ADR-0331).
+    /// </summary>
+    ICellReader? Resolve(string? sheetName);
 
     /// <summary>
     /// The draw of the <c>RAND</c> or <c>RANDBETWEEN</c> call at <paramref name="place"/> in the
@@ -183,7 +187,8 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
                 var area = operand.Area;
                 if ((long)area.Rows * area.Columns > ValueArray.MostCells) return ValueArray.Single(Value.FromError(ErrorValue.Num));
                 var array = new ValueArray(area.Rows, area.Columns);
-                foreach (var address in Cells.NonBlankIn(area)) array[address.Row - area.Row1, address.Column - area.Column1] = Cells.Read(address);
+                var cells = operand.Cells!;
+                foreach (var address in cells.NonBlankIn(area)) array[address.Row - area.Row1, address.Column - area.Column1] = cells.Read(address);
                 return array;
             case OperandKind.Column:
                 var column = operand.Column!;
@@ -232,10 +237,10 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         BooleanNode b => Formulas.Operand.Of(Value.FromBoolean(b.Value)),
         ErrorNode e => Formulas.Operand.Of(e.Error),
         MissingNode => Formulas.Operand.Missing,
-        // One Sheet exists: a Reference qualified with its name reads it, any other qualifier names nothing (ADR-0046).
-        ReferenceNode r => !Cells.IsLocal(r.Reference) ? Formulas.Operand.Of(ErrorValue.Ref)
-            : r.Reference.Spilled ? Cells.Spill(new CellAddress(r.Reference.Row1, r.Reference.Column1))
-            : Formulas.Operand.Of(r.Reference.Area),
+        // A Reference reads the Sheet its qualifier names; a name no Sheet of the Workbook has names nothing (ADR-0046, ADR-0331).
+        ReferenceNode r => Cells.Resolve(r.Reference.SheetName) is not { } sheet ? Formulas.Operand.Of(ErrorValue.Ref)
+            : r.Reference.Spilled ? sheet.Spill(new CellAddress(r.Reference.Row1, r.Reference.Column1))
+            : Formulas.Operand.Of(r.Reference.Area, sheet),
         StructuredReferenceNode s => Cells.TableColumn(s.Table, s.Column),
         NameNode { Binding: { } binding } => Read(binding),
         NameNode or IntersectionNode => NamesLinkedTable(node) ? RefuseName() : Formulas.Operand.Of(ErrorValue.Name),
@@ -267,7 +272,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     public Value? ScalarOf(Operand operand) => operand.Kind switch
     {
         OperandKind.Scalar => operand.Scalar,
-        OperandKind.Area when operand.Area.IsSingleCell => Cells.Read(new CellAddress(operand.Area.Row1, operand.Area.Column1)),
+        OperandKind.Area when operand.Area.IsSingleCell => operand.Cells!.Read(new CellAddress(operand.Area.Row1, operand.Area.Column1)),
         OperandKind.Area => Refused(),
         OperandKind.Column when operand.Column!.Count == 1 => operand.Column[0],
         OperandKind.Column => Refused(),
@@ -278,7 +283,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     /// <summary>The Values of a range that are not blank, in order: row-major for cells, top to bottom for a Linked Table's column.</summary>
     public IEnumerable<Value> RangeValues(Operand range) => range.Kind switch
     {
-        OperandKind.Area => Cells.NonBlankIn(range.Area).Select(a => Cells.Read(a)!.Value),
+        OperandKind.Area => range.Cells!.NonBlankIn(range.Area).Select(a => range.Cells.Read(a)!.Value),
         OperandKind.Column => range.Column!.Where(v => v is not null).Select(v => v!.Value),
         OperandKind.Array => range.Array!.NonBlank(),
         _ => throw new ArgumentException("Not a range.", nameof(range)),

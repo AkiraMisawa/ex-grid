@@ -111,6 +111,7 @@ public sealed partial class Sheet
     internal StructuralOutcome Restructure(StructuralEdit edit, bool formatInserted = true)
     {
         if (CheckStructural(edit) is { } refusal) throw new SheetRefusedException(refusal);
+        ThrowIfOneOfSeveral("Inserting or deleting rows or columns");
         CountChange();
 
         var before = Snapshot();

@@ -198,7 +198,7 @@ internal static partial class FunctionLibrary
                     {
                         for (var column = area.Column1; column <= area.Column2; column++)
                         {
-                            yield return evaluator.Cells.Read(new CellAddress(row, column));
+                            yield return operand.Cells!.Read(new CellAddress(row, column));
                         }
                     }
                     break;
