@@ -114,7 +114,8 @@ public class MudChartChromeTests : BunitContext
         Assert.Empty(cut.FindAll(".mud-ex-chart-filter-error"));
         Assert.False(cut.Find($".mud-ex-chart-toolbar [data-ex-command='{ChartCommandIds.ResetRange}']").HasAttribute("disabled"));
 
-        cut.Find($".mud-ex-chart-toolbar [data-ex-command='{ChartCommandIds.ResetRange}']").Click();
+        // The press is read once its handler has run: MudButton runs it after the event's own dispatch returns.
+        await cut.Find($".mud-ex-chart-toolbar [data-ex-command='{ChartCommandIds.ResetRange}']").ClickAsync(new MouseEventArgs());
         Assert.Null(ranges[^1]);
     }
 
