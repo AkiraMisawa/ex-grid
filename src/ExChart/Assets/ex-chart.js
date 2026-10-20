@@ -341,6 +341,7 @@ export function attachSurface(box, core) {
     let height = 0;
     let points = [];
     let lines = { rows: [], columns: [] };
+    let steps = null;
     let drag = null;
     let lastPoint = '';
 
@@ -378,6 +379,7 @@ export function attachSurface(box, core) {
         const drawn = drawSurface(svg, mesh, view, slice, width, height);
         points = drawn.points;
         lines = drawn.lines;
+        steps = drawn.steps;
     };
 
     const nearest = (x, y) => {
@@ -394,12 +396,12 @@ export function attachSurface(box, core) {
     };
 
     const reportPoint = (point, x, y) => {
-        const key = point ? `${point.i},${point.j}` : '';
+        const key = point ? String(point.k) : '';
         if (key === lastPoint || !core || version < 0) {
             return;
         }
         lastPoint = key;
-        core.invokeMethodAsync('OnPointAsync', version, point ? point.i : -1, point ? point.j : -1, x, y).catch(fail);
+        core.invokeMethodAsync('OnPointAsync', version, point ? point.k : -1, x, y).catch(fail);
     };
 
     // The positions are the event's offsets on the box itself: the drawing takes no pointer events,
@@ -450,7 +452,7 @@ export function attachSurface(box, core) {
         const point = nearest(pressed.x, pressed.y);
         if (point && core) {
             const axis = sliceAxis(point, pressed.x, pressed.y);
-            core.invokeMethodAsync('OnSliceAsync', version, axis, axis === 'x' ? point.i : point.j).catch(fail);
+            core.invokeMethodAsync('OnSliceAsync', version, axis, point.k).catch(fail);
         }
     };
 
@@ -469,11 +471,17 @@ export function attachSurface(box, core) {
 
     // A click on a grid point falls on two lines, a tenor's and a strike's; the one nearer the
     // pointer is the one it fell on. A tenor's line runs along x, so a click on it slices that
-    // tenor (axis 'y' held fixed).
+    // tenor (axis 'y' held fixed). A mesh's node has no grid line through it: the lines are those a
+    // step along x and along y draws through it, and the slice cuts its triangles (ADR-0311).
     const sliceAxis = (point, x, y) => {
-        const row = distanceToLine(lines.rows[point.j], x, y);
-        const column = distanceToLine(lines.columns[point.i], x, y);
-        return column < row ? 'x' : 'y';
+        const nx = lines.columns.length;
+        if (nx > 0) {
+            const row = distanceToLine(lines.rows[Math.floor(point.k / nx)], x, y);
+            const column = distanceToLine(lines.columns[point.k % nx], x, y);
+            return column < row ? 'x' : 'y';
+        }
+        const off = (d) => Math.abs((x - point.x) * d[1] - (y - point.y) * d[0]) / (Math.hypot(d[0], d[1]) || 1);
+        return off(steps.y) < off(steps.x) ? 'x' : 'y';
     };
 
     const onKey = (event) => {
@@ -620,25 +628,30 @@ const svgElement = (name, attrs, text) => {
 
 const f1 = (v) => v.toFixed(1);
 
-// Draws the mesh into the svg and returns the grid points where they were projected, and each
-// tenor's and strike's line, for the reports. A hole is a hole: a face with a hole at a corner is
-// not drawn, the hole has no point, and the lines through it break there.
+// The strip at the right of a surface's drawing that holds its colour bar (ADR-0310).
+const SURFACE_BAR = 80;
+
+// Draws the mesh into the svg and returns the points where they were projected, each grid line
+// through them, and how a step along x and along y is projected, for the reports. A hole is a hole:
+// a face with a hole at a corner is not drawn, the hole has no point, and the lines through it break
+// there. Where each point lies on the floor and on the vertical scale, and each face's colour band,
+// are .NET's (ADR-0255, ADR-0312); this projects, orders and draws them.
 function drawSurface(svg, mesh, view, slice, W, H) {
     svg.setAttribute('width', String(W));
     svg.setAttribute('height', String(H));
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     svg.replaceChildren();
-    const none = { points: [], lines: { rows: [], columns: [] } };
-    if (!mesh || mesh.values.length === 0 || W <= 0 || H <= 0) {
+    const none = { points: [], lines: { rows: [], columns: [] }, steps: null };
+    if (!mesh || mesh.nodes.length === 0 || W <= SURFACE_BAR || H <= 0) {
         return none;
     }
-    const nx = mesh.x.length;
-    const ny = mesh.y.length;
+    const nodes = mesh.nodes;
     const { zMin, zMax } = mesh;
+    const plotW = W - SURFACE_BAR;
     const a = (view.yaw * Math.PI) / 180;
     const b = (view.pitch * Math.PI) / 180;
-    // World: x across the strikes, y along the tenors, z up; each within [-0.5, 0.5], z squashed.
-    const world = (i, j, z) => [i / (nx - 1) - 0.5, j / (ny - 1) - 0.5, ((z - zMin) / (zMax - zMin || 1) - 0.5) * 0.6];
+    // World: x across the floor, y along it, z up; each within [-0.5, 0.5], z squashed.
+    const world = (x, y, z) => [x - 0.5, y - 0.5, ((z - zMin) / (zMax - zMin || 1) - 0.5) * 0.6];
     const raw = ([x, y, z]) => {
         const x1 = x * Math.cos(a) - y * Math.sin(a);
         const y1 = x * Math.sin(a) + y * Math.cos(a);
@@ -652,123 +665,123 @@ function drawSurface(svg, mesh, view, slice, W, H) {
     const maxX = Math.max(...corners.map((c) => c[0]));
     const minY = Math.min(...corners.map((c) => c[1]));
     const maxY = Math.max(...corners.map((c) => c[1]));
-    const s = Math.max(1, Math.min((W * 0.78) / (maxX - minX), (H * 0.8) / (maxY - minY))) * view.zoom;
-    const cx = W / 2 + view.panX * W;
+    const s = Math.max(1, Math.min((plotW * 0.78) / (maxX - minX), (H * 0.8) / (maxY - minY))) * view.zoom;
+    const cx = plotW / 2 + view.panX * W;
     const cy = H / 2 + view.panY * H;
     const project = (p) => {
         const [x, y, depth] = raw(p);
         return [cx + (x - (minX + maxX) / 2) * s, cy + (y - (minY + maxY) / 2) * s, depth];
     };
-    const P = (i, j, z) => project(world(i, j, z));
+    const P = (x, y, z) => project(world(x, y, z));
+    const node = (k) => P(nodes[k].x, nodes[k].y, nodes[k].z);
     const poly = (pts, cls) => svgElement('polygon', { points: pts.map((p) => `${f1(p[0])},${f1(p[1])}`).join(' '), class: cls });
     const line = (p, q, cls) => svgElement('line', { x1: f1(p[0]), y1: f1(p[1]), x2: f1(q[0]), y2: f1(q[1]), class: cls });
+    const heat = mesh.bar.diverging ? 'ex-chart-diverge-' : 'ex-chart-heat-';
 
     // The floor and the two walls behind the surface, each with its grid; which walls are behind
     // depends on where the viewer stands.
-    const backX = Math.sin(a) > 0 ? nx - 1 : 0;
-    const backY = Math.cos(a) > 0 ? ny - 1 : 0;
+    const backX = Math.sin(a) > 0 ? 1 : 0;
+    const backY = Math.cos(a) > 0 ? 1 : 0;
     const walls = svgElement('g', { class: 'ex-chart-surface-walls' });
-    walls.append(poly([P(0, 0, zMin), P(nx - 1, 0, zMin), P(nx - 1, ny - 1, zMin), P(0, ny - 1, zMin)], 'ex-chart-surface-wall'));
+    walls.append(poly([P(0, 0, zMin), P(1, 0, zMin), P(1, 1, zMin), P(0, 1, zMin)], 'ex-chart-surface-wall'));
     const upright = view.pitch < 89;
     if (upright) {
-        walls.append(poly([P(0, backY, zMin), P(nx - 1, backY, zMin), P(nx - 1, backY, zMax), P(0, backY, zMax)], 'ex-chart-surface-wall'));
-        walls.append(poly([P(backX, 0, zMin), P(backX, ny - 1, zMin), P(backX, ny - 1, zMax), P(backX, 0, zMax)], 'ex-chart-surface-wall'));
+        walls.append(poly([P(0, backY, zMin), P(1, backY, zMin), P(1, backY, zMax), P(0, backY, zMax)], 'ex-chart-surface-wall'));
+        walls.append(poly([P(backX, 0, zMin), P(backX, 1, zMin), P(backX, 1, zMax), P(backX, 0, zMax)], 'ex-chart-surface-wall'));
         for (const tick of mesh.zTicks) {
-            walls.append(line(P(0, backY, tick.value), P(nx - 1, backY, tick.value), 'ex-chart-surface-grid'));
-            walls.append(line(P(backX, 0, tick.value), P(backX, ny - 1, tick.value), 'ex-chart-surface-grid'));
-            const at = P(backX, backY === 0 ? ny - 1 : 0, tick.value);
+            walls.append(line(P(0, backY, tick.value), P(1, backY, tick.value), 'ex-chart-surface-grid'));
+            walls.append(line(P(backX, 0, tick.value), P(backX, 1, tick.value), 'ex-chart-surface-grid'));
+            const at = P(backX, 1 - backY, tick.value);
             const right = Math.sin(a) > 0;
             walls.append(svgElement('text', { x: f1(at[0] + (right ? 8 : -8)), y: f1(at[1] + 4), 'text-anchor': right ? 'start' : 'end', class: 'ex-chart-surface-label' }, tick.label));
         }
     }
-    for (let i = 0; i < nx; i++) walls.append(line(P(i, 0, zMin), P(i, ny - 1, zMin), 'ex-chart-surface-grid'));
-    for (let j = 0; j < ny; j++) walls.append(line(P(0, j, zMin), P(nx - 1, j, zMin), 'ex-chart-surface-grid'));
+    for (const t of mesh.xLines) walls.append(line(P(t.value, 0, zMin), P(t.value, 1, zMin), 'ex-chart-surface-grid'));
+    for (const t of mesh.yLines) walls.append(line(P(0, t.value, zMin), P(1, t.value, zMin), 'ex-chart-surface-grid'));
     svg.append(walls);
 
     // The faces, the farthest first, each in its colour band.
-    const faces = [];
-    for (let j = 0; j < ny - 1; j++) {
-        for (let i = 0; i < nx - 1; i++) {
-            const band = mesh.bands[j][i];
-            if (band === null || band === undefined) {
-                continue;
-            }
-            const v = mesh.values;
-            const pts = [P(i, j, v[j][i]), P(i + 1, j, v[j][i + 1]), P(i + 1, j + 1, v[j + 1][i + 1]), P(i, j + 1, v[j + 1][i])];
-            faces.push({ pts, depth: (pts[0][2] + pts[1][2] + pts[2][2] + pts[3][2]) / 4, band });
-        }
-    }
+    const faces = mesh.faces.map((face) => {
+        const pts = face.corners.map(node);
+        return { pts, depth: pts.reduce((sum, p) => sum + p[2], 0) / pts.length, band: face.band };
+    });
     faces.sort((p, q) => q.depth - p.depth);
     const surface = svgElement('g', { class: 'ex-chart-surface-faces' });
     for (const face of faces) {
-        surface.append(poly(face.pts, `ex-chart-surface-face ex-chart-heat-${face.band}`));
+        surface.append(poly(face.pts, `ex-chart-surface-face ${heat}${face.band}`));
     }
     svg.append(surface);
 
-    // The grid points, and each tenor's and strike's line through them, broken at a hole.
+    // The points, and a grid's lines through them, broken at a hole.
     const points = [];
-    const rows = [];
-    const columns = Array.from({ length: nx }, () => []);
+    const projected = new Array(nodes.length);
     const dots = svgElement('g', { class: 'ex-chart-surface-points' });
-    for (let j = 0; j < ny; j++) {
-        const row = [];
-        for (let i = 0; i < nx; i++) {
-            const z = mesh.values[j][i];
-            if (z === null || z === undefined) {
-                continue;
-            }
-            const p = P(i, j, z);
-            points.push({ i, j, x: p[0], y: p[1] });
-            row.push(p);
-            columns[i].push(p);
-            // A dot marks a value the data holds; an interpolated one is the Consumer's surface between them.
-            if (mesh.interpolated?.[j]?.[i]) {
-                continue;
-            }
+    for (let k = 0; k < nodes.length; k++) {
+        if (nodes[k].z === null || nodes[k].z === undefined) {
+            continue;
+        }
+        const p = node(k);
+        projected[k] = p;
+        points.push({ k, x: p[0], y: p[1] });
+        // A dot marks a value the data holds; an interpolated one is the Consumer's surface between them.
+        if (!nodes[k].interpolated) {
             dots.append(svgElement('circle', { cx: f1(p[0]), cy: f1(p[1]), r: '2.4', class: 'ex-chart-surface-point' }));
         }
-        rows.push(row);
     }
     svg.append(dots);
+    const through = (line) => line.map((k) => projected[k]).filter((p) => p);
+    const rows = mesh.rows.map(through);
+    const columns = mesh.columns.map(through);
 
     // The slice drawn on the surface, so the 2D chart beside it is seen to be this line.
-    if (slice) {
-        const pts = [];
-        const count = slice.axis === 'x' ? ny : nx;
-        const path = [];
-        for (let k = 0; k < count; k++) {
-            const i = slice.axis === 'x' ? slice.index : k;
-            const j = slice.axis === 'x' ? k : slice.index;
-            const z = mesh.values[j]?.[i];
-            if (z === null || z === undefined) {
-                if (pts.length > 0) path.push(pts.splice(0));
-                continue;
-            }
-            pts.push(P(i, j, z));
-        }
-        if (pts.length > 0) path.push(pts);
+    if (slice && slice.length > 0) {
         const g = svgElement('g', { class: 'ex-chart-surface-slice' });
-        for (const run of path) {
-            g.append(svgElement('polyline', { points: run.map((p) => `${f1(p[0])},${f1(p[1])}`).join(' ') }));
+        for (const run of slice) {
+            g.append(svgElement('polyline', { points: run.map((q) => P(q.x, q.y, q.z)).map((p) => `${f1(p[0])},${f1(p[1])}`).join(' ') }));
         }
         svg.append(g);
     }
 
     // The axes' labels along the front edges of the floor.
-    const frontY = backY === 0 ? ny - 1 : 0;
-    const frontX = backX === 0 ? nx - 1 : 0;
+    const frontY = 1 - backY;
+    const frontX = 1 - backX;
     const labels = svgElement('g', { class: 'ex-chart-surface-labels' });
-    const stepX = Math.ceil(nx / 12);
-    const stepY = Math.ceil(ny / 12);
     const label = (p, text, cls) => labels.append(svgElement('text', { x: f1(p[0]), y: f1(p[1] + 4), 'text-anchor': 'middle', class: cls }, text));
-    for (let i = 0; i < nx; i += stepX) label(P(i, frontY + (frontY === 0 ? -0.6 : 0.6), zMin), mesh.x[i], 'ex-chart-surface-label');
-    for (let j = 0; j < ny; j += stepY) label(P(frontX + (frontX === 0 ? -0.6 : 0.6), j, zMin), mesh.y[j], 'ex-chart-surface-label');
-    label(P((nx - 1) / 2, frontY + (frontY === 0 ? -1.6 : 1.6), zMin), mesh.xTitle, 'ex-chart-surface-label ex-chart-surface-title');
-    label(P(frontX + (frontX === 0 ? -1.8 : 1.8), (ny - 1) / 2, zMin), mesh.yTitle, 'ex-chart-surface-label ex-chart-surface-title');
+    const out = (front, by) => front + (front === 0 ? -by : by);
+    for (const t of mesh.xLines) if (t.label !== null && t.label !== undefined) label(P(t.value, out(frontY, 0.08), zMin), t.label, 'ex-chart-surface-label');
+    for (const t of mesh.yLines) if (t.label !== null && t.label !== undefined) label(P(out(frontX, 0.08), t.value, zMin), t.label, 'ex-chart-surface-label');
+    label(P(0.5, out(frontY, 0.22), zMin), mesh.xTitle, 'ex-chart-surface-label ex-chart-surface-title');
+    label(P(out(frontX, 0.26), 0.5, zMin), mesh.yTitle, 'ex-chart-surface-label ex-chart-surface-title');
     if (upright && mesh.zTitle) {
-        label(P(backX, backY === 0 ? ny - 1 : 0, zMax + (zMax - zMin) * 0.12), mesh.zTitle, 'ex-chart-surface-label ex-chart-surface-title');
+        label(P(backX, 1 - backY, zMax + (zMax - zMin) * 0.12), mesh.zTitle, 'ex-chart-surface-label ex-chart-surface-title');
     }
     svg.append(labels);
 
-    return { points, lines: { rows, columns } };
+    // The colour bar, which does not turn with the surface: its bands low to high, each the colour a
+    // face takes, and its values (ADR-0310).
+    const bar = svgElement('g', { class: 'ex-chart-surface-bar' });
+    const top = H * 0.1;
+    const bottom = H * 0.9;
+    const left = W - SURFACE_BAR + 8;
+    const count = 9;
+    const band = (bottom - top) / count;
+    for (let k = 0; k < count; k++) {
+        bar.append(svgElement('rect', { x: f1(left), y: f1(bottom - (k + 1) * band), width: '12', height: f1(band), class: `ex-chart-surface-bar-band ${heat}${k}` }));
+    }
+    bar.append(svgElement('rect', { x: f1(left), y: f1(top), width: '12', height: f1(bottom - top), class: 'ex-chart-surface-bar-frame' }));
+    const span = mesh.bar.to - mesh.bar.from || 1;
+    for (const tick of mesh.bar.ticks) {
+        const y = bottom - ((tick.value - mesh.bar.from) / span) * (bottom - top);
+        bar.append(line([left + 12, y], [left + 16, y], 'ex-chart-surface-bar-tick'));
+        bar.append(svgElement('text', { x: f1(left + 19), y: f1(y + 4), class: 'ex-chart-surface-label' }, tick.label));
+    }
+    svg.append(bar);
+
+    // How a step along x and along y is drawn at a point, for a click on a mesh, which has no grid line.
+    const o = project(world(0.5, 0.5, zMin));
+    const ox = project(world(0.6, 0.5, zMin));
+    const oy = project(world(0.5, 0.6, zMin));
+    const steps = { x: [ox[0] - o[0], ox[1] - o[1]], y: [oy[0] - o[0], oy[1] - o[1]] };
+
+    return { points, lines: { rows, columns }, steps };
 }

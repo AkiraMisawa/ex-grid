@@ -1,0 +1,8 @@
+@using ExChart.Components
+@using ExChart.Engine
+
+<ExSurface Definition="Definition" Title="Field on a mesh" FileName="field" Width="560" Height="400" SliceWidth="360" />
+
+@code {
+    private static readonly SurfaceDefinition Definition = SurfaceShapes.Field();
+}

@@ -71,7 +71,7 @@ public class InterpolationTests
         Assert.Equal(9, s.At(0, 0)!.Value.ToDouble(), 12);
         Assert.Contains("Interpolated by the Consumer: linear on triangles (P1).", s.AllNotes);
         Assert.EndsWith("Interpolated by the Consumer: linear on triangles (P1).", SurfaceMesh.Summary(s, null, null));
-        Assert.All(SurfaceMesh.Of(s).Interpolated!.SelectMany(r => r), Assert.True);
+        Assert.All(SurfaceMesh.Of(s).Nodes, n => Assert.True(n.Interpolated));
     }
 
     [Fact] // ADR-0257: a surface handed in as a function names its method

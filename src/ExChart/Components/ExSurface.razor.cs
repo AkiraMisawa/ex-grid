@@ -81,7 +81,7 @@ public partial class ExSurface
     /// <summary>The mesh's version, as the 3D entry's reports must carry it.</summary>
     internal int Version => _version;
 
-    private (int I, int J, double X, double Y)? _point;
+    private (int K, double X, double Y)? _point;
     private bool _tableOpen;
 
     /// <inheritdoc />
@@ -119,7 +119,8 @@ public partial class ExSurface
     {
         _sliceChart = _slice is { } s ? Definition.SliceChart(s) : null;
         _sliceNote = _slice is { } t && _sliceChart is null
-            ? $"No slice at {AxisName(t.Axis == SurfaceSliceAxis.X ? Definition.X.Title : Definition.Y.Title, t.Axis == SurfaceSliceAxis.X ? "x" : "y")} {(t.Axis == SurfaceSliceAxis.X ? Definition.X : Definition.Y).Write(t.Value)}: this surface has no such value."
+            ? $"No slice at {AxisName(t.Axis == SurfaceSliceAxis.X ? Definition.X.Title : Definition.Y.Title, t.Axis == SurfaceSliceAxis.X ? "x" : "y")} {(t.Axis == SurfaceSliceAxis.X ? Definition.X : Definition.Y).Write(t.Value)}: "
+              + (Definition.IsMesh ? "the mesh has no triangle there." : "this surface has no such value.")
             : null;
     }
 
@@ -128,8 +129,7 @@ public partial class ExSurface
         get
         {
             if (_slice is not { } s || _sliceChart is null) return null;
-            var axis = s.Axis == SurfaceSliceAxis.X ? Definition.X : Definition.Y;
-            return new { axis = s.Axis == SurfaceSliceAxis.X ? "x" : "y", index = axis.IndexOf(s.Value) };
+            return SurfaceMesh.SlicePath(Definition, s);
         }
     }
 
@@ -187,21 +187,21 @@ public partial class ExSurface
 
     // The 3D entry's reports (ADR-0255), through SurfaceReports. Each carries the mesh's version,
     // and one taken against another mesh is dropped (spine rule 6).
-    internal void OnPoint(int version, int i, int j, double x, double y)
+    internal void OnPoint(int version, int node, double x, double y)
     {
         if (version != _version) return;
-        _point = i >= 0 && i < Definition.X.Values.Count && j >= 0 && j < Definition.Y.Values.Count && Definition.At(i, j) is not null
-            ? (i, j, x, y)
-            : null;
+        _point = node >= 0 && node < Definition.NodeCount && Definition.Node(node).Z is not null ? (node, x, y) : null;
         StateHasChanged();
     }
 
-    internal async Task OnSliceAsync(int version, string axis, int index)
+    // A click on a point slices along the line it fell on: a grid's tenor or strike, or on a mesh the
+    // position of the node it fell on, which cuts its triangles (ADR-0311).
+    internal async Task OnSliceAsync(int version, string axis, int node)
     {
         if (version != _version) return;
-        var (fixedAxis, along) = axis == "x" ? (Definition.X, SurfaceSliceAxis.X) : (Definition.Y, SurfaceSliceAxis.Y);
-        if (index < 0 || index >= fixedAxis.Values.Count) return;
-        var slice = new SurfaceSlice(along, fixedAxis.Values[index]);
+        if (node < 0 || node >= Definition.NodeCount) return;
+        var point = Definition.Node(node);
+        var slice = axis == "x" ? new SurfaceSlice(SurfaceSliceAxis.X, point.X) : new SurfaceSlice(SurfaceSliceAxis.Y, point.Y);
         _slice = slice;
         BuildSlice();
         _drawPending = true;
@@ -236,12 +236,15 @@ public partial class ExSurface
 
     private string StageStyle => string.Create(CultureInfo.InvariantCulture, $"width:{Svg.N(Width)}px;height:{Svg.N(Height)}px");
 
-    private string TooltipStyle((int I, int J, double X, double Y) p)
+    private string TooltipStyle((int K, double X, double Y) p)
     {
         var gap = Math.Ceiling(GridMetrics.Resolve(Density).FontSizePx);
         var left = p.X > Width / 2 ? p.X - gap : p.X + gap;
         return string.Create(CultureInfo.InvariantCulture, $"left:{Svg.N(left)}px;top:{Svg.N(p.Y + gap)}px");
     }
+
+    // The slice is read on the surface's vertical scale (ADR-0312).
+    private AxisScale? SliceScale => Definition.EffectiveZScale == AxisScale.Logarithmic ? AxisScale.Logarithmic : null;
 
     private string ToolbarName => string.IsNullOrWhiteSpace(Title) ? "Surface" : Title;
 
@@ -364,10 +367,10 @@ public partial class ExSurface
 internal sealed class SurfaceReports(ExSurface surface)
 {
     [JSInvokable]
-    public Task OnPointAsync(int version, int i, int j, double x, double y) => surface.Dispatch(() => { surface.OnPoint(version, i, j, x, y); return Task.CompletedTask; });
+    public Task OnPointAsync(int version, int node, double x, double y) => surface.Dispatch(() => { surface.OnPoint(version, node, x, y); return Task.CompletedTask; });
 
     [JSInvokable]
-    public Task OnSliceAsync(int version, string axis, int index) => surface.Dispatch(() => surface.OnSliceAsync(version, axis, index));
+    public Task OnSliceAsync(int version, string axis, int node) => surface.Dispatch(() => surface.OnSliceAsync(version, axis, node));
 
     [JSInvokable]
     public Task OnViewAsync(int version, double yaw, double pitch, double zoom, double panX, double panY) =>
