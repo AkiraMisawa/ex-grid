@@ -1,0 +1,17 @@
+@using ExChart.Components
+@using ExChart.Engine
+@using ExChart.MudBlazor
+
+<MudExGridPaper Class="docs-stretch-paper mb-3" Elevation="0" Outlined="true">
+    <ExChart Definition="Definition" Title="Exposure profile" Width="720" Height="420" Legend="Legend" Chrome="MudChartChrome.Default" />
+</MudExGridPaper>
+
+@code {
+    // EPE and ENE stand in panels of their own, one above the other, sharing the dates. "Before" and
+    // "After" are colour keys: the same key is the same colour in both panels.
+    private static readonly ChartDefinition Definition = new(ChartAxis.Dates("Date"),
+        [.. ChartData.Exposure().Select(s => s.Panel == "" ? s with { Panel = "EPE" } : s)]);
+
+    // The legend sits where the page puts it.
+    private static readonly LegendPlacement Legend = new(LegendPosition.Right, LegendAlign.Centre);
+}

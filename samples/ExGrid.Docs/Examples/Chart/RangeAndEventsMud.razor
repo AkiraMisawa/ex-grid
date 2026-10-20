@@ -1,0 +1,39 @@
+@using ExChart
+@using ExChart.Components
+@using ExChart.Engine
+@using ExChart.MudBlazor
+
+<MudExGridPaper Class="docs-stretch-paper mb-3" Elevation="0" Outlined="true">
+    <ExChart Definition="Definition" Title="Exposure profile" Width="720" Height="360"
+             HiddenSeries="_hidden" OnSeriesVisibilityChanged="SeriesChanged"
+             Range="_range" OnRangeChanged="RangeChanged"
+             Chrome="MudChartChrome.Default" />
+</MudExGridPaper>
+<p class="docs-muted">@_said</p>
+
+@code {
+    private static readonly ChartDefinition Definition = new(ChartAxis.Dates("Date"), ChartData.Exposure().Take(2).ToList());
+
+    // The chart holds no View State: what the user hid and the range they dragged come back as
+    // events, and the page hands them back as parameters, to keep or to store.
+    private IReadOnlySet<string> _hidden = new HashSet<string>();
+    private ChartRange? _range;
+    private string _said = "Drag across the plot, or click a legend entry.";
+
+    private void SeriesChanged(SeriesVisibility change)
+    {
+        var hidden = new HashSet<string>(_hidden);
+        if (change.Hidden) hidden.Add(change.Key);
+        else hidden.Remove(change.Key);
+        _hidden = hidden;
+        _said = $"{change.Key} {(change.Hidden ? "hidden" : "shown")}";
+    }
+
+    private void RangeChanged(ChartRange? range)
+    {
+        _range = range;
+        _said = range is null ? "The whole range" : $"From {Day(range.From)} to {Day(range.To)}";
+    }
+
+    private static string Day(double? day) => day is { } d ? DateOnly.FromDayNumber((int)d).ToString("yyyy-MM-dd") : "…";
+}

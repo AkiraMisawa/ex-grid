@@ -1,0 +1,33 @@
+@page "/exchart/tooltip"
+@using ExGrid.Docs.Examples.Chart
+
+<DocsPage Product="ExChart" Title="Tooltip and Chart Filters"
+          Lead="The tooltip shows every series of a panel at the pointer's position. A drag across the plot narrows the range; the chart raises what the user changed and keeps none of it.">
+
+    <DocsSection Title="The tooltip">
+        <p>
+            Move over a plot: a guide marks the position, and the tooltip lists every series of that panel there,
+            written by the series' own <code>Format</code>. A date where a series has no point says "—". A move
+            redraws the tooltip and the guide only, never the series.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="The range, and state raised as events">
+        <p>
+            Drag across a plot to narrow the range, and double-click to return it; Chart Filters in the toolbar
+            take the range typed, and refuse one they cannot read, saying why. The chart holds no View State:
+            <code>OnRangeChanged</code>, <code>OnSeriesVisibilityChanged</code> and <code>OnScaleChanged</code>
+            say what the user changed, and <code>Range</code>, <code>HiddenSeries</code> and <code>Scale</code>
+            hand it back. A page that hands the same definition again with tomorrow's values keeps what the user
+            chose.
+        </p>
+        <DocsExample Builtin="typeof(RangeAndEvents)" Mud="typeof(RangeAndEventsMud)" Files="@(["Examples/Chart/ChartData.cs"])" CodeOpen="true" />
+    </DocsSection>
+
+    <DocsSection Title="The context menu">
+        <p>
+            A right-click on the plot opens the chart's context menu: Reset range, View as table, and the three
+            downloads, the same commands in the same order under either Chrome. <kbd>Esc</kbd> closes it.
+        </p>
+    </DocsSection>
+</DocsPage>

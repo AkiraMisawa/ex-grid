@@ -29,5 +29,6 @@
 /* The Chart Dock (ADR-0258): the grid and a panel of charts beside it or below it, never over it. */
 .mud-ex-chart-dock { display: flex; gap: 12px; align-items: flex-start; }
 .mud-ex-chart-dock-bottom { flex-direction: column; align-items: stretch; }
-.mud-ex-chart-dock-content { flex: 0 1 auto; min-width: 0; }
+.mud-ex-chart-dock-content { flex: 1 1 auto; min-width: 0; overflow-x: auto; }
 .mud-ex-chart-dock-panel { flex: 1 1 auto; min-width: 0; padding: 4px 8px 8px; }
+.mud-ex-chart-dock-tabs .mud-ex-chart-dock-no-add { display: none; }

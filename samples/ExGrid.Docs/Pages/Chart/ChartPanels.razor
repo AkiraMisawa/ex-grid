@@ -1,0 +1,35 @@
+@page "/exchart/panels"
+@using ExGrid.Docs.Examples.Chart
+
+<DocsPage Product="ExChart" Title="Panels, legend and colours"
+          Lead="Series that are read on different scales stand in panels of their own, sharing the axis. A series' look is chosen by three Appearance Keys, so the same thing has the same colour wherever it is drawn.">
+
+    <DocsSection Title="Panels">
+        <p>
+            A series' <code>Panel</code> names the panel it stands in; panels stand one above the other and
+            share the horizontal axis, its range and the tooltip's position. A series with
+            <code>Axis = AxisSide.Right</code> is read on the panel's right-hand axis, whose zero stands at the
+            same height as the left one's; a panel named in <code>IndependentScales</code> keeps each axis'
+            own scale, and a note under the chart says the axes put zero at different heights.
+        </p>
+        <DocsExample Builtin="typeof(Panels)" Mud="typeof(PanelsMud)" Files="@(["Examples/Chart/ChartData.cs"])" CodeOpen="true" />
+    </DocsSection>
+
+    <DocsSection Title="Appearance Keys">
+        <p>
+            <code>AppearanceKeys</code> carries a colour key, a line style key and a marker key. Series with the
+            same colour key take the same colour slot: "Before" and "After" above are the same two colours in
+            both panels. The slots are Visual Tokens the stylesheet reads, <code>--ex-chart-colour-0</code> and
+            on, never a colour in C#. Past the last slot the colours repeat, and the chart writes a note that
+            they do. Under MudBlazor the theme's Primary, Secondary and Tertiary colour the first three slots;
+            Error, Warning, Success and Info never colour a series.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="The legend">
+        <p>
+            <code>Legend</code> places the legend above, below, to either side, or nowhere, aligned at its
+            start, centre or end. Clicking an entry hides its series, and the event says so.
+        </p>
+    </DocsSection>
+</DocsPage>

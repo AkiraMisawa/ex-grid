@@ -1,0 +1,22 @@
+@using ExChart
+@using ExChart.MudBlazor
+@using ExGrid.Chrome
+
+@* The Chart Dock opens each chart the grid's context menu makes as a tab beside the grid, never over
+   it, and takes the bridge's events itself: the page writes no code to show a chart. *@
+<MudChartDock TRow="CurveHistory.Row" Bridge="_bridge" ChartWidth="480" ChartHeight="260">
+    <MudExGridPaper Elevation="0" Outlined="true">
+        <ExGrid @ref="_bridge.Grid" TRow="CurveHistory.Row" Window="CurveHistory.Rows" RowKey="CurveHistory.KeyOf"
+                Columns="CurveHistory.Columns" ContextCommands="_commands" CommandLabel="Label"
+                PinnedColumnCount="1" ViewportHeight="240" Chrome="MudChartChrome.GridChrome" />
+    </MudExGridPaper>
+</MudChartDock>
+
+@code {
+    // Held in fields, never rebuilt per render: a new delegate is a changed parameter.
+    private static readonly Func<string, string?> Label = GridChartCommands.Label;
+    private readonly GridChartBridge<CurveHistory.Row> _bridge = new(CurveHistory.Declarations());
+    private Func<ContextMenuContext<CurveHistory.Row>, IEnumerable<GridCommand>> _commands = null!;
+
+    protected override void OnInitialized() => _commands = _bridge.Commands;
+}
