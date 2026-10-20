@@ -162,16 +162,12 @@ public partial class ExSurface
         var module = _module;
         if (module is null || _scriptRefused || _disposed || format == ChartFileFormat.Csv) return false;
         var name = ChartFiles.Name(FileName, string.IsNullOrWhiteSpace(Title) ? "surface" : Title, format);
-        var width = Width;
-        var height = Height;
+        var handle = _handle;
+        if (handle is null) return false;
         try
         {
-            if (await SvgTextAsync() is not { } svg) return false;
-            var bytes = format == ChartFileFormat.Svg
-                ? System.Text.Encoding.UTF8.GetBytes(svg)
-                : await module.InvokeAsync<byte[]>("paint", svg, width, height);
-            await module.InvokeVoidAsync("save", name, ChartFiles.MediaType(format), bytes);
-            return true;
+            // The drawing's text stays in the browser, which paints and saves it (ADR-0282).
+            return await module.InvokeAsync<bool>("saveDrawing", handle, name, format == ChartFileFormat.Png ? "png" : "svg", Width, Height);
         }
         catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

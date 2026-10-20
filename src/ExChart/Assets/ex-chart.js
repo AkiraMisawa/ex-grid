@@ -9,8 +9,10 @@
 // C# drops one taken against an earlier drawing (spine rule 6). Blazor's @onmousemove would cross
 // to .NET on every event, a wire round trip each on Server.
 
-// The files entry (ADR-0282), the fifteenth use: three exported functions, each run once on a click
-// and never on a render, adding no listener and reading no layout (the SVG carries its own size).
+// The files entry (ADR-0282), the fifteenth use: its three jobs (read the tokens, paint to PNG, save),
+// each run once on a click and never on a render, adding no listener and reading no layout (the SVG
+// carries its own size). A PNG is painted and saved here, never handed back to .NET: on Server its
+// bytes would be one message from the browser, larger than a circuit takes, and the circuit would close.
 
 /**
  * The values the chart's Visual Tokens have on screen, read from its root's computed style on the
@@ -27,7 +29,7 @@ export function tokens(root, names) {
  * drawing's size at the screen's Device Pixel, so a PNG taken at 150% is drawn at 150% and not
  * scaled up from 100% (ADR-0090). The browser lays out its text in the fonts the screen shows.
  */
-export async function paint(svgText, width, height) {
+async function paint(svgText, width, height) {
     const scale = window.devicePixelRatio > 0 ? window.devicePixelRatio : 1;
     const url = URL.createObjectURL(new Blob([svgText], { type: 'image/svg+xml' }));
     try {
@@ -71,6 +73,28 @@ export function save(name, type, bytes) {
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 0);
     }
+}
+
+/** Paints an SVG to PNG and saves it under a file name (ADR-0282). */
+export async function savePng(name, svgText, width, height) {
+    save(name, 'image/png', await paint(svgText, width, height));
+}
+
+/**
+ * Saves a 3D surface's drawing as it stands, as SVG or PNG: `drawing` is the surface's handle, whose
+ * svgText the 3D entry writes (ADR-0255). The text stays in the browser. False when it has no drawing.
+ */
+export async function saveDrawing(drawing, name, format, width, height) {
+    const svgText = drawing?.svgText();
+    if (!svgText) {
+        return false;
+    }
+    if (format === 'png') {
+        await savePng(name, svgText, width, height);
+    } else {
+        save(name, 'image/svg+xml', new TextEncoder().encode(svgText));
+    }
+    return true;
 }
 
 /** The SHA-256 of this source, which the build writes in; the chart refuses a module of another version (ADR-0123). */
