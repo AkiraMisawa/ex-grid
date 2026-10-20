@@ -1,6 +1,6 @@
 # 55: The nearest point under the pointer, and a click to its row
 
-Status: open
+Status: ready-for-agent
 Roadmap: internal
 
 **Why:** [ADR-0290](../../../adr/0290-a-scatter-is-a-series-of-observations-each-a-row.md) (Q4), ADR-0255.
