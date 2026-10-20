@@ -58,10 +58,37 @@ _Avoid_: chart panel (a chart's panels are parts of one chart), chart window, fl
 
 **Series Kind**:
 What a series' numbers are — a **Level** at an instant, a **Rate over an interval**, or an **Amount
-per period** — declared by the Consumer for every series, and what decides how it is drawn: a line
-only for a Level, a step for the other two
+per period** — or a **Price Range** — declared by the Consumer for every series, and what decides how
+it is drawn: a line only for a Level, a step for the next two, a candle for a Price Range
 ([ADR-0253](./docs/adr/0253-every-series-declares-its-series-kind-and-its-drawing-follows.md)).
 _Avoid_: chart type (a series kind is the data's, not the drawing's), series type
+
+**Price Range**:
+A Series Kind whose row is one period's open, high, low and close, and optionally its volume, drawn as
+a candle (or a High-Low-Close bar with no open column). A row whose values disagree is refused, never
+drawn or repaired. A **rising** candle closes above its own open, and is hollow; a **falling** one is
+filled ([ADR-0300](./docs/adr/0300-a-price-range-is-one-bar-a-row-refused-where-its-values-disagree.md)).
+_Avoid_: OHLC chart, stock chart (a kind is the data's, not the drawing's), up/down bars
+
+**Packed axis**:
+A Dates axis the Consumer declares to give each row of a Price Range one evenly spaced slot, skipping
+the days nobody traded; its title says so. The default is calendar time
+([ADR-0301](./docs/adr/0301-candles-stand-on-calendar-time-unless-the-consumer-packs-the-sessions.md)).
+_Avoid_: text axis (Excel's name, which says nothing about time), session axis
+
+**Merged candle**:
+Consecutive candles drawn as one of the market's own periods (a week, a month, a quarter, a year) —
+first open, highest high, lowest low, last close, summed volume — when the plot has too few pixels for
+each; the axis title and the tooltip say so
+([ADR-0302](./docs/adr/0302-past-the-plots-pixels-candles-merge-into-the-markets-own-periods.md)).
+_Avoid_: grouping, resampling, aggregation (none says the period is the market's own)
+
+**Interval**:
+A lower and an upper bound the Consumer hands in for the points of a Level or an Observation, with a
+required **meaning** (`95% CI`, `±1σ`, `Bid–Ask`), drawn as whiskers or a band. ExChart computes no
+width ([ADR-0303](./docs/adr/0303-an-interval-belongs-to-a-series-and-says-what-it-means.md)).
+_Avoid_: error bar (it assumes an error; a bid–ask is not one), confidence band (one meaning among
+several)
 
 **Thinning**:
 Keeping, for each device pixel across the plot, a series' first, last, minimum and maximum point,
