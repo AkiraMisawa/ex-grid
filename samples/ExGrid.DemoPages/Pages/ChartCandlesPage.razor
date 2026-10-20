@@ -1,0 +1,155 @@
+@page "/chart-candles"
+@using global::ExChart
+@using global::ExChart.Components
+@using global::ExChart.Engine
+
+<DemoNav />
+
+@* Candles and intervals (/chart-candles): the browser layer's fixture for tickets 60 to 66. The index is
+   ten years of a synthetic daily series from a fixed seed, with one crash day, its volume in a panel
+   below, and a 25-day moving average the page computes, as a Consumer would. The page keeps the range
+   and writes the last event raised under the chart (ADR-0272). *@
+<DemoChromeAssets>
+    <Head>
+        <ExChartStylesheet />
+    </Head>
+</DemoChromeAssets>
+
+<h1>Candles and intervals</h1>
+
+<p>
+    A Price Range is one candle a row: rising hollow, falling filled, and a row whose values disagree is
+    refused (ADR-0300). Ten years do not fit as days, so the candles merge into the market's own months,
+    and a click on one narrows to it (ADR-0302). By default the dates are calendar time; packed, the
+    days nobody traded are left out (ADR-0301). An interval names what it means (ADR-0303).
+</p>
+
+<section id="index">
+    <h2>Equity index daily bars</h2>
+    <p>
+        <label><input type="checkbox" id="packed" checked="@_packed" @onchange="e => _packed = (bool)e.Value!" /> Packed sessions</label>
+        <label>
+            Colours
+            <select id="colours" @bind="_colours">
+                <option value="shape">Shape only</option>
+                <option value="japan">Japan: red rises, blue falls</option>
+                <option value="west">West: green rises, red falls</option>
+            </select>
+        </label>
+    </p>
+    <div class="@($"candles-{_colours}")">
+        <ExChart Definition="Definition"
+                 Title="Equity index"
+                 Width="760"
+                 Height="460"
+                 Range="_range"
+                 OnRangeChanged="RangeChanged"
+                 OnPointClick="PointClicked" />
+    </div>
+    <p id="index-events">@_events</p>
+</section>
+
+<section id="curve">
+    <h2>Yield curve with its Bid–Ask</h2>
+    <ExChart Definition="Curve" Title="Yield curve" Width="760" Height="260" />
+</section>
+
+<section id="forecasts">
+    <h2>Rate forecasts</h2>
+    <ExChart Definition="Forecasts" Title="Policy rate forecasts" Width="760" Height="260" />
+</section>
+
+<style>
+    .candles-japan .ex-chart { --ex-chart-rise: #d32f2f; --ex-chart-fall: #1565c0; }
+    .candles-west .ex-chart { --ex-chart-rise: #2e7d32; --ex-chart-fall: #c62828; }
+</style>
+
+@code {
+    private static readonly IReadOnlyList<PriceBar> Bars = Index();
+    private static readonly ChartSeries Average = MovingAverage(Bars, 25);
+
+    private bool _packed;
+    private string _colours = "shape";
+    private ChartRange? _range;
+    private string _events = "";
+
+    private ChartDefinition Definition => _packed ? Packed : Calendar;
+
+    private static readonly ChartDefinition Calendar = Make(packed: false);
+    private static readonly ChartDefinition Packed = Make(packed: true);
+
+    private static ChartDefinition Make(bool packed) => new(ChartAxis.Dates("Date") with { Packed = packed },
+    [
+        ChartSeries.Candles("index", "Index", Bars) with { Format = Price },
+        Average with { Format = Price },
+    ]);
+
+    private static string Price(object v) => Convert.ToDecimal(v).ToString("N2", System.Globalization.CultureInfo.InvariantCulture);
+
+    // Weekdays from 2016-01-04, a geometric walk from a fixed seed; 2020-03-16 falls 12%.
+    private static List<PriceBar> Index()
+    {
+        var random = new Random(20260920);
+        var bars = new List<PriceBar>();
+        var day = new DateOnly(2016, 1, 4);
+        var price = 20_000.0;
+        while (day < new DateOnly(2026, 1, 1))
+        {
+            if (day.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
+            {
+                var open = price * (1 + (random.NextDouble() - 0.5) * 0.006);
+                var move = day == new DateOnly(2020, 3, 16) ? -0.12 : (random.NextDouble() - 0.48) * 0.025;
+                var close = open * (1 + move);
+                var high = Math.Max(open, close) * (1 + random.NextDouble() * 0.008);
+                var low = Math.Min(open, close) * (1 - random.NextDouble() * 0.008);
+                decimal R(double v) => Math.Round((decimal)v, 2);
+                var volume = Math.Round((decimal)(1_000_000 * (0.6 + random.NextDouble()) * (Math.Abs(move) > 0.05 ? 4 : 1)));
+                bars.Add(new PriceBar(day.DayNumber, R(open), R(high), R(low), R(close), volume));
+                price = close;
+            }
+            day = day.AddDays(1);
+        }
+        return bars;
+    }
+
+    // The page's own calculation, as a Consumer's would be: the mean of the last n closes.
+    private static ChartSeries MovingAverage(IReadOnlyList<PriceBar> bars, int n) =>
+        ChartSeries.Of("ma25", "25-day average", SeriesKind.Level, bars.Select((b, i) => new ChartPoint(b.X,
+            i + 1 < n ? null : ChartValue.Of(Math.Round(bars.Skip(i + 1 - n).Take(n).Average(x => x.Close!.Value.ToDouble()), 2)))))
+            with { FromZero = false };
+
+    private static readonly (double Years, decimal Bid, decimal Ask)[] Quotes =
+        [(0.25, 3.71m, 3.75m), (0.5, 3.62m, 3.65m), (1, 3.48m, 3.51m), (2, 3.30m, 3.34m), (3, 3.27m, 3.30m), (5, 3.31m, 3.35m), (7, 3.42m, 3.47m), (10, 3.55m, 3.61m), (20, 3.81m, 3.90m), (30, 3.86m, 3.98m)];
+
+    private static readonly ChartDefinition Curve = new(ChartAxis.Numbers("Tenor (years)"),
+    [
+        ChartSeries.Of("mid", "Mid", SeriesKind.Level, Quotes.Select(q => new ChartPoint(q.Years, (q.Bid + q.Ask) / 2))) with
+        {
+            FromZero = false,
+            Interval = new SeriesInterval("Bid–Ask", Quotes.Select(q => new IntervalBound(q.Years, q.Bid, q.Ask)).ToList(), IntervalStyle.Band),
+        },
+    ]);
+
+    private static readonly (int Quarter, decimal Median, decimal Low, decimal High)[] Survey =
+        [(0, 4.25m, 4.25m, 4.25m), (1, 4.00m, 3.75m, 4.25m), (2, 3.75m, 3.25m, 4.25m), (3, 3.50m, 2.90m, 4.10m), (4, 3.50m, 2.60m, 4.20m), (5, 3.25m, 2.30m, 4.20m)];
+
+    private static readonly ChartDefinition Forecasts = new(ChartAxis.Categories(["Now", "Q1", "Q2", "Q3", "Q4", "Q5"], "Quarter"),
+    [
+        ChartSeries.Of("median", "Median forecast", SeriesKind.Level, Survey.Select(s => new ChartPoint(s.Quarter, s.Median))) with
+        {
+            FromZero = false,
+            Keys = new AppearanceKeys("Median", null, "circle"),
+            Interval = new SeriesInterval("95% CI", Survey.Select(s => new IntervalBound(s.Quarter, s.Low, s.High)).ToList()),
+        },
+    ]);
+
+    private void RangeChanged(ChartRange? range)
+    {
+        _range = range;
+        _events = range is null ? "range: all" : $"range: {Write(range.From)} to {Write(range.To)}";
+    }
+
+    private void PointClicked(ChartPointClick click) => _events = $"clicked {click.SeriesId} at {Write(click.Position)}";
+
+    private static string Write(double? day) => day is { } d ? DateOnly.FromDayNumber((int)d).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) : "…";
+}

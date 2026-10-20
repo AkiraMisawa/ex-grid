@@ -27,6 +27,15 @@ public readonly record struct DrawnMarker(double X, double Y, bool Filled)
 /// <param name="Markers">The markers, filled or an outline.</param>
 public sealed record SeriesDrawing(IReadOnlyList<IReadOnlyList<DrawnPoint>> Lines, IReadOnlyList<DrawnMarker> Markers)
 {
+    /// <summary>A Price Range's candles, one a row or merged (ADR-0300, ADR-0302).</summary>
+    public IReadOnlyList<DrawnCandle> Candles { get; init; } = [];
+
+    /// <summary>A Level's Interval drawn as whiskers (ADR-0303).</summary>
+    public IReadOnlyList<DrawnWhisker> Whiskers { get; init; } = [];
+
+    /// <summary>A Level's Interval drawn as a band: each run of neighbours that all have one (ADR-0303).</summary>
+    public IReadOnlyList<IReadOnlyList<DrawnWhisker>> Bands { get; init; } = [];
+
     /// <summary>
     /// What a series draws. A sampled series is asked at about <paramref name="pixels"/> positions over
     /// the part of its range inside <paramref name="from"/>–<paramref name="to"/>, and always at each
@@ -37,12 +46,34 @@ public sealed record SeriesDrawing(IReadOnlyList<IReadOnlyList<DrawnPoint>> Line
         {
             SeriesKind.Level => series.Sampler is { } f
                 ? Level(Sample(f, series.Segments, from, to, pixels, quotes ?? [], axis.EffectiveScale == AxisScale.Logarithmic), series.Segments, withMarkers: false)
-                : Level(series.Points, series.Segments, withMarkers: true),
+                : WithInterval(Level(series.Points, series.Segments, withMarkers: true), series),
+            SeriesKind.PriceRange => new SeriesDrawing([], []) { Candles = PriceRanges.Candles(series, from, to, CandlePeriod.Row) },
             SeriesKind.RateOverInterval => Steps(series, axis, perYear: false),
             SeriesKind.AmountPerPeriod => Steps(series, axis, perYear: true),
             SeriesKind.Observation => Observations(series.Points),
             _ => throw new ChartRefusedException($"'{series.Name}' declares no Series Kind."),
         };
+
+    // A point's interval where both its bounds are given; a band joins only neighbours that each have
+    // one, and breaks at a point that has none (ADR-0303).
+    private static SeriesDrawing WithInterval(SeriesDrawing drawing, ChartSeries series)
+    {
+        if (series.Interval is not { } iv) return drawing;
+        var bounds = iv.Bounds.Where(b => b.Lower is not null && b.Upper is not null)
+            .ToDictionary(b => b.X, b => new DrawnWhisker(b.X, b.Lower!.Value.ToDouble(), b.Upper!.Value.ToDouble()));
+        if (iv.Style == IntervalStyle.Whiskers)
+            return drawing with { Whiskers = series.Points.Where(p => bounds.ContainsKey(p.X)).Select(p => bounds[p.X]).ToList() };
+        var bands = new List<IReadOnlyList<DrawnWhisker>>();
+        var run = new List<DrawnWhisker>();
+        foreach (var p in series.Points)
+        {
+            if (bounds.TryGetValue(p.X, out var w)) { run.Add(w); continue; }
+            if (run.Count > 0) bands.Add(run);
+            run = [];
+        }
+        if (run.Count > 0) bands.Add(run);
+        return drawing with { Bands = bands };
+    }
 
     /// <summary>The height a step at point <paramref name="i"/> is drawn at: its value, or for an amount its value per year.</summary>
     internal static double Height(ChartSeries series, ChartAxis axis, int i)

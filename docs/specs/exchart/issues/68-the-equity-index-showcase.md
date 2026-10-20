@@ -8,6 +8,6 @@ Roadmap: internal
 - [ ] Ten years of a synthetic index (fixed seed, one crash day) in a grid beside candles, volume and a 25-day moving average the page computes
 - [ ] Toggles: calendar or packed axis; shape only, Japanese red and blue, Western green and red
 - [ ] The whole range merges to months; a narrowing returns days; a click goes to the row
-- [ ] Handed to the shipping thread for the README's GIFs
+- [ ] Handed to the shipping thread, which owns the Showcases and the README's GIFs; the DemoHost's `/chart-candles` holds the chart, the toggles and the data generator to build it from (2026-10-20)
 
 **Blocked by:** 62–65.

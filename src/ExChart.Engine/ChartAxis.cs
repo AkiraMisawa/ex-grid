@@ -31,6 +31,12 @@ public sealed record ChartAxis
     public double DaysPerYear { get; init; } = 365.25;
 
     /// <summary>
+    /// The sessions packed (ADR-0301): each position a Price Range has is one evenly spaced slot, the
+    /// days nobody traded skipped, and the title says so. By default a Dates axis is calendar time.
+    /// </summary>
+    public bool Packed { get; init; }
+
+    /// <summary>
     /// Writes a position, as the column the positions came from writes it (ADR-0250). Null writes a
     /// date as <c>yyyy-MM-dd</c>, a label as itself, a named position by its name and a number
     /// invariantly.

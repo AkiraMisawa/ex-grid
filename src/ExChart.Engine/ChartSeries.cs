@@ -53,6 +53,33 @@ public sealed record ChartSeries
     /// <summary>Its points, in increasing position; empty when it is sampled.</summary>
     public IReadOnlyList<ChartPoint> Points { get; init; } = [];
 
+    /// <summary>
+    /// A Price Range's rows (ADR-0300). Setting them also sets <see cref="Points"/> to each row's close,
+    /// or a gap where the row is not whole, so the series' domain, positions, CSV and grid bridge read
+    /// it as they read a Level's.
+    /// </summary>
+    public IReadOnlyList<PriceBar> Bars
+    {
+        get => _bars;
+        init
+        {
+            _bars = value;
+            var hasOpen = PriceRanges.HasOpen(value);
+            Points = value.Select(b => new ChartPoint(b.X, PriceRanges.Whole(b, hasOpen) ? b.Close : null)).ToArray();
+        }
+    }
+
+    private readonly IReadOnlyList<PriceBar> _bars = [];
+
+    /// <summary>
+    /// A Price Range's period fixed by the Consumer (ADR-0302); null merges into the first of the
+    /// market's periods that fits the plot.
+    /// </summary>
+    public CandlePeriod? MergeTo { get; init; }
+
+    /// <summary>The series' Interval, its bounds and their meaning (ADR-0303); a Level's only.</summary>
+    public SeriesInterval? Interval { get; init; }
+
     /// <summary>The function it is sampled from, or null when it is handed in as points.</summary>
     public SeriesSampler? Sampler { get; init; }
 
@@ -70,11 +97,15 @@ public sealed record ChartSeries
     public AppearanceKeys EffectiveKeys => Keys ?? new AppearanceKeys(Id);
 
     /// <summary>Whether its axis reaches zero, defaults applied.</summary>
-    public bool ReachesZero => Kind == SeriesKind.AmountPerPeriod || (Kind == SeriesKind.Observation ? FromZero == true : FromZero != false);
+    public bool ReachesZero => Kind == SeriesKind.AmountPerPeriod || (Kind is SeriesKind.Observation or SeriesKind.PriceRange ? FromZero == true : FromZero != false);
 
     /// <summary>A series of points.</summary>
     public static ChartSeries Of(string id, string name, SeriesKind kind, IEnumerable<ChartPoint> points) =>
         new() { Id = id, Name = name, Kind = kind, Points = points.ToArray() };
+
+    /// <summary>A Price Range of these rows (ADR-0300).</summary>
+    public static ChartSeries Candles(string id, string name, IEnumerable<PriceBar> bars) =>
+        new() { Id = id, Name = name, Kind = SeriesKind.PriceRange, Bars = bars.ToArray() };
 
     /// <summary>A series sampled from the Consumer's function over a range.</summary>
     public static ChartSeries Sampled(string id, string name, SeriesKind kind, double from, double to, Func<double, ChartValue?> valueAt) =>

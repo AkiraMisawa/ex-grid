@@ -106,6 +106,7 @@ public partial class ExChart
     /// <summary>The drawing's version, as the pointer entry's reports must carry it.</summary>
     internal int Version => _version;
 
+    /// <summary>The scene as drawn, for the tests.</summary>
     internal ChartScene Scene => _scene;
 
     // The pointer, as the script last reported it, and a drag's press.
@@ -316,7 +317,15 @@ public partial class ExChart
             // position, or none, names no point, and nothing is raised (spine rule 6).
             if (_pointerIndex == index && _reading?.Lines.Where(l => l.Y is not null && l.Value is not null)
                     .MinBy(l => Math.Abs(l.Y!.Value - _readingY)) is { } line)
-                await OnPointClick.InvokeAsync(new ChartPointClick(line.Id, _scene.Positions[index].Position));
+            {
+                var position = _scene.Positions[index].Position;
+                // A merged candle stands for no one row: a click narrows to its period (ADR-0300, ADR-0302).
+                if (_scene.Panels.SelectMany(panel => panel.Series).FirstOrDefault(piece => piece.Id == line.Id && piece.Period != CandlePeriod.Row) is { } merged
+                    && merged.Candles.FirstOrDefault(c => c.From <= position && position <= c.To) is { Rows: > 0 } candle)
+                    await SetRangeAsync(new ChartRange(candle.From, candle.To));
+                else
+                    await OnPointClick.InvokeAsync(new ChartPointClick(line.Id, position));
+            }
             return;
         }
         var a = _scene.Positions[Math.Min(p.Index, index)].Position;
@@ -453,7 +462,7 @@ public partial class ExChart
             foreach (var piece in panel.Series)
             {
                 b.OpenComponent<ChartSeriesView>(6);
-                b.SetKey("series:" + piece.Id);
+                b.SetKey((panel.VolumeOf is null ? "series:" : "volume:") + piece.Id);
                 b.AddComponentParameter(7, nameof(ChartSeriesView.Piece), piece);
                 b.AddComponentParameter(8, nameof(ChartSeriesView.Plot), panel.Plot);
                 b.AddComponentParameter(9, nameof(ChartSeriesView.LineHeight), lh);
