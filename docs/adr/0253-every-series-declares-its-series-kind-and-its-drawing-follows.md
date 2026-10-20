@@ -17,6 +17,9 @@ default:
 | **Amount per period** | a total over its interval (CVA by bucket) | a step over its interval, its height the amount per year, never a line | always |
 | **Price Range** *(added 2026-10-20, [ADR-0300](0300-a-price-range-is-one-bar-a-row-refused-where-its-values-disagree.md))* | one period's open, high, low and close (a daily bar) | a candle, or a High-Low-Close bar | no |
 
+*2026-10-19:* a fourth kind, **Observation** — one thing measured on two quantities, drawn as an
+unjoined marker on two value axes — was added for scatter (ADR-0290).
+
 - **A line joins only neighbours in the data.** A series over two stretches of rows is not drawn
   across the rows between them.
 - **A missing value is a gap, never a zero.** The tooltip says "(no value)"; a date where the series

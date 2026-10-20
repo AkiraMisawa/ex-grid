@@ -1,0 +1,215 @@
+@page "/scatter"
+@using global::ExChart
+@using global::ExChart.Components
+@using global::ExChart.Engine
+@using global::ExChart.Engine.Fitting
+@using global::ExGrid.Chrome
+
+<DemoNav />
+
+@* The scatter's page (/scatter): the browser layer's fixture for tickets 54 to 59 (ADR-0290, ADR-0291),
+   and the source the CDS spread vs leverage Showcase and the Docs page are lifted from. Three charts: CDS
+   spreads against leverage beside their grid, with the least-squares and the Theil–Sen line; Old
+   Faithful's eruptions against the wait before them; and PRML's curve fitting, polynomials of degree 0,
+   1, 3 and 9 through ten noisy points of sin 2πx. *@
+<DemoChromeAssets>
+    <Head>
+        <ExChartStylesheet />
+    </Head>
+</DemoChromeAssets>
+
+<h1>Scatter and fitted lines</h1>
+
+<h2>CDS spread vs leverage</h2>
+<p>
+    Two hundred synthetic names (a fixed seed), one of them distressed. The least-squares line is pulled
+    up by it; the Theil–Sen line is not. Each line is drawn over the leverage it was fitted on, and its
+    method and coefficients are in the notes under the chart. Hover a point to read it, click it to move
+    the grid to its row, and drag a rectangle to narrow both axes.
+</p>
+<p>
+    <label><input type="checkbox" id="log-spread" checked="@_logSpread" @onchange="ToggleLog" /> Spread on a logarithmic axis</label>
+    <span id="cds-range" role="status">@RangeText</span>
+</p>
+<div class="scatter-side-by-side">
+    <ExGrid @ref="_bridge.Grid" TRow="Name"
+            Window="CdsNames"
+            RowKey="KeyOf"
+            RowSequenceVersion="0"
+            Columns="CdsColumns"
+            ViewportHeight="360"
+            ViewportWidth="380" />
+    <ExChart Definition="Cds" Title="CDS spread vs leverage" Width="620" Height="360" YScale="_yScale"
+             Range="_range" OnRangeChanged="_rangeChanged" OnPointClick="_clicked" />
+</div>
+<p id="cds-refusal" role="status">@_refusal</p>
+
+<h2>Old Faithful</h2>
+<p>
+    272 eruptions of the Old Faithful geyser: how long each lasted, against the wait before it. The two
+    clusters are the classic first look at a scatter (Bishop, <i>Pattern Recognition and Machine
+    Learning</i>, figure 9.1).
+</p>
+<ExChart Definition="Faithful" Title="Old Faithful" Width="620" Height="360" />
+
+<h2>Polynomial curve fitting</h2>
+<p>
+    Ten points of sin 2πx with noise, and the least-squares polynomial of degree M through them (PRML §1.1).
+    M = 9 passes through every point and swings between them: it has learnt the noise.
+</p>
+<p>
+    @foreach (var m in Degrees)
+    {
+        <button type="button" class="degree" data-degree="@m" aria-pressed="@(m == _degree ? "true" : "false")" @onclick="() => _degree = m">M = @m</button>
+    }
+</p>
+<ExChart Definition="Curve(_degree)" Title="Polynomial curve fitting" Width="620" Height="360" Range="CurveRange" />
+
+@code {
+    /// <summary>One reference name: its leverage and five-year spread.</summary>
+    public sealed record Name(string Ticker, double Leverage, double Spread);
+
+    private static readonly IReadOnlyList<Name> CdsNames = MakeNames();
+
+    private static IReadOnlyList<Name> MakeNames()
+    {
+        var rng = new Random(20261019);
+        var names = new List<Name>();
+        for (var i = 0; i < 199; i++)
+        {
+            var leverage = Math.Round(1 + 5 * rng.NextDouble() * rng.NextDouble() + rng.NextDouble(), 2);
+            var spread = Math.Round(Math.Exp(Math.Log(35) + 0.42 * leverage + 0.35 * Gaussian(rng)));
+            names.Add(new Name($"N{i + 1:000}", leverage, spread));
+        }
+        names.Insert(57, new Name("DSTR", 5.6, 2400));
+        return names;
+    }
+
+    private static double Gaussian(Random rng) => Math.Sqrt(-2 * Math.Log(1 - rng.NextDouble())) * Math.Cos(2 * Math.PI * rng.NextDouble());
+
+    private static readonly GridColumn<Name>[] CdsColumns =
+    [
+        new("ticker", ColumnType.Text, n => n.Ticker, "Name"),
+        new("leverage", ColumnType.Number, n => n.Leverage, "Leverage", format: v => ((double)v).ToString("0.00") + "x"),
+        new("spread", ColumnType.Number, n => n.Spread, "5Y spread", format: v => ((double)v).ToString("0") + "bp"),
+    ];
+
+    private static readonly Func<Name, object> KeyOf = n => n.Ticker;
+
+    private static readonly ChartDefinition Cds = MakeCds();
+
+    private static ChartDefinition MakeCds()
+    {
+        double[] xs = [.. CdsNames.Select(n => n.Leverage)];
+        double[] ys = [.. CdsNames.Select(n => n.Spread)];
+        var points = CdsNames.Select(n => new ChartPoint(n.Leverage, ChartValue.Of(n.Spread)) { Name = n.Ticker, Row = n.Ticker });
+        return new ChartDefinition(ChartAxis.Numbers("Leverage") with { Format = x => x.ToString("0.00") + "x" },
+        [
+            ChartSeries.Of("names", "Names", SeriesKind.Observation, points) with { Format = v => ((double)v).ToString("0") + "bp" },
+            Fit.LeastSquares(xs, ys).Series("ols", "Least squares") with { Format = v => ((double)v).ToString("0") + "bp" },
+            Fit.TheilSen(xs, ys).Series("theil-sen", "Theil–Sen") with { Format = v => ((double)v).ToString("0") + "bp" },
+        ], ["Synthetic names from a fixed seed; DSTR is distressed."]);
+    }
+
+    private static readonly (double Eruption, int Waiting)[] FaithfulData =
+    [
+        (3.6, 79), (1.8, 54), (3.333, 74), (2.283, 62), (4.533, 85), (2.883, 55), (4.7, 88), (3.6, 85), (1.95, 51), (4.35, 85),
+        (1.833, 54), (3.917, 84), (4.2, 78), (1.75, 47), (4.7, 83), (2.167, 52), (1.75, 62), (4.8, 84), (1.6, 52), (4.25, 79),
+        (1.8, 51), (1.75, 47), (3.45, 78), (3.067, 69), (4.533, 74), (3.6, 83), (1.967, 55), (4.083, 76), (3.85, 78), (4.433, 79),
+        (4.3, 73), (4.467, 77), (3.367, 66), (4.033, 80), (3.833, 74), (2.017, 52), (1.867, 48), (4.833, 80), (1.833, 59), (4.783, 90),
+        (4.35, 80), (1.883, 58), (4.567, 84), (1.75, 58), (4.533, 73), (3.317, 83), (3.833, 64), (2.1, 53), (4.633, 82), (2, 59),
+        (4.8, 75), (4.716, 90), (1.833, 54), (4.833, 80), (1.733, 54), (4.883, 83), (3.717, 71), (1.667, 64), (4.567, 77), (4.317, 81),
+        (2.233, 59), (4.5, 84), (1.75, 48), (4.8, 82), (1.817, 60), (4.4, 92), (4.167, 78), (4.7, 78), (2.067, 65), (4.7, 73),
+        (4.033, 82), (1.967, 56), (4.5, 79), (4, 71), (1.983, 62), (5.067, 76), (2.017, 60), (4.567, 78), (3.883, 76), (3.6, 83),
+        (4.133, 75), (4.333, 82), (4.1, 70), (2.633, 65), (4.067, 73), (4.933, 88), (3.95, 76), (4.517, 80), (2.167, 48), (4, 86),
+        (2.2, 60), (4.333, 90), (1.867, 50), (4.817, 78), (1.833, 63), (4.3, 72), (4.667, 84), (3.75, 75), (1.867, 51), (4.9, 82),
+        (2.483, 62), (4.367, 88), (2.1, 49), (4.5, 83), (4.05, 81), (1.867, 47), (4.7, 84), (1.783, 52), (4.85, 86), (3.683, 81),
+        (4.733, 75), (2.3, 59), (4.9, 89), (4.417, 79), (1.7, 59), (4.633, 81), (2.317, 50), (4.6, 85), (1.817, 59), (4.417, 87),
+        (2.617, 53), (4.067, 69), (4.25, 77), (1.967, 56), (4.6, 88), (3.767, 81), (1.917, 45), (4.5, 82), (2.267, 55), (4.65, 90),
+        (1.867, 45), (4.167, 83), (2.8, 56), (4.333, 89), (1.833, 46), (4.383, 82), (1.883, 51), (4.933, 86), (2.033, 53), (3.733, 79),
+        (4.233, 81), (2.233, 60), (4.533, 82), (4.817, 77), (4.333, 76), (1.983, 59), (4.633, 80), (2.017, 49), (5.1, 96), (1.8, 53),
+        (5.033, 77), (4, 77), (2.4, 65), (4.6, 81), (3.567, 71), (4, 70), (4.5, 81), (4.083, 93), (1.8, 53), (3.967, 89),
+        (2.2, 45), (4.15, 86), (2, 58), (3.833, 78), (3.5, 66), (4.583, 76), (2.367, 63), (5, 88), (1.933, 52), (4.617, 93),
+        (1.917, 49), (2.083, 57), (4.583, 77), (3.333, 68), (4.167, 81), (4.333, 81), (4.5, 73), (2.417, 50), (4, 85), (4.167, 74),
+        (1.883, 55), (4.583, 77), (4.25, 83), (3.767, 83), (2.033, 51), (4.433, 78), (4.083, 84), (1.833, 46), (4.417, 83), (2.183, 55),
+        (4.8, 81), (1.833, 57), (4.8, 76), (4.1, 84), (3.966, 77), (4.233, 81), (3.5, 87), (4.366, 77), (2.25, 51), (4.667, 78),
+        (2.1, 60), (4.35, 82), (4.133, 91), (1.867, 53), (4.6, 78), (1.783, 46), (4.367, 77), (3.85, 84), (1.933, 49), (4.5, 83),
+        (2.383, 71), (4.7, 80), (1.867, 49), (3.833, 75), (3.417, 64), (4.233, 76), (2.4, 53), (4.8, 94), (2, 55), (4.15, 76),
+        (1.867, 50), (4.267, 82), (1.75, 54), (4.483, 75), (4, 78), (4.117, 79), (4.083, 78), (4.267, 78), (3.917, 70), (4.55, 79),
+        (4.083, 70), (2.417, 54), (4.183, 86), (2.217, 50), (4.45, 90), (1.883, 54), (1.85, 54), (4.283, 77), (3.95, 79), (2.333, 64),
+        (4.15, 75), (2.35, 47), (4.933, 86), (2.9, 63), (4.583, 85), (3.833, 82), (2.083, 57), (4.367, 82), (2.133, 67), (4.35, 74),
+        (2.2, 54), (4.45, 83), (3.567, 73), (4.5, 73), (4.15, 88), (3.817, 80), (3.917, 71), (4.45, 83), (2, 56), (4.283, 79),
+        (4.767, 78), (4.533, 84), (1.85, 58), (4.25, 83), (1.983, 43), (2.25, 60), (4.75, 75), (4.117, 81), (2.15, 46), (4.417, 90),
+        (1.817, 46), (4.467, 74)
+    ];
+
+    private static readonly ChartDefinition Faithful = new(ChartAxis.Numbers("Eruption (minutes)"),
+        [ChartSeries.Of("eruptions", "Eruptions", SeriesKind.Observation,
+            FaithfulData.Select((p, i) => new ChartPoint(p.Eruption, ChartValue.Of((double)p.Waiting)) { Name = $"Eruption {i + 1}: waited {p.Waiting} minutes" }))]);
+
+    private static readonly int[] Degrees = [0, 1, 3, 9];
+
+    // PRML §1.1: ten points evenly across [0, 1], sin 2πx plus Gaussian noise of standard deviation 0.3.
+    private static readonly double[] CurveX = [.. Enumerable.Range(0, 10).Select(i => i / 9.0)];
+    private static readonly double[] CurveT = MakeTargets();
+
+    private static double[] MakeTargets()
+    {
+        var rng = new Random(1);
+        return [.. CurveX.Select(x => Math.Sin(2 * Math.PI * x) + 0.3 * Gaussian(rng))];
+    }
+
+    private static readonly Dictionary<int, ChartDefinition> Curves = Degrees.ToDictionary(m => m, m => new ChartDefinition(ChartAxis.Numbers("x"),
+    [
+        ChartSeries.Of("points", "Training points", SeriesKind.Observation, CurveX.Select((x, i) => new ChartPoint(x, ChartValue.Of(CurveT[i])))),
+        ChartSeries.Sampled("truth", "sin 2πx", SeriesKind.Level, 0, 1, x => ChartValue.Of(Math.Sin(2 * Math.PI * x))) with { FromZero = false },
+        Fit.Polynomial(CurveX, CurveT, m).Series("fit", $"M = {m}"),
+    ]));
+
+    private static ChartDefinition Curve(int degree) => Curves[degree];
+
+    // PRML's frame, held still as M changes, so M = 9's swings are cut at its edge rather than
+    // stretching the axis.
+    private static readonly ChartRange CurveRange = new(0, 1, -1.5, 1.5);
+
+    private int _degree = 3;
+    private bool _logSpread;
+    private AxisScale? _yScale;
+    private ChartRange? _range;
+    private string _refusal = "";
+    private GridChartBridge<Name> _bridge = null!;
+    private EventCallback<ChartRange?> _rangeChanged;
+    private EventCallback<ChartPointClick> _clicked;
+
+    private string RangeText => _range is { } r
+        ? $"Leverage {r.From:0.00}–{r.To:0.00}, spread {r.YFrom:0}–{r.YTo:0}bp"
+        : "Not narrowed";
+
+    protected override void OnInitialized()
+    {
+        _bridge = new GridChartBridge<Name>(new GridChartDeclarations<Name>
+        {
+            RowKey = KeyOf,
+            RowOf = key => CdsNames.FirstOrDefault(n => n.Ticker == (string)key),
+        })
+        {
+            OnRefused = why => { _refusal = why; StateHasChanged(); return Task.CompletedTask; },
+        };
+        _rangeChanged = EventCallback.Factory.Create<ChartRange?>(this, r => _range = r);
+        _clicked = EventCallback.Factory.Create<ChartPointClick>(this, ShowAsync);
+    }
+
+    private void ToggleLog(ChangeEventArgs e)
+    {
+        _logSpread = e.Value is true;
+        _yScale = _logSpread ? AxisScale.Logarithmic : null;
+        _range = null;
+    }
+
+    private async Task ShowAsync(ChartPointClick click)
+    {
+        _refusal = "";
+        if (click.Row is string ticker)
+            await _bridge.ShowInGridAsync(new GridCell(ticker, "spread"));
+    }
+}

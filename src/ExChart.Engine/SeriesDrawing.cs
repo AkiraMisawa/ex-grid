@@ -9,7 +9,14 @@ public readonly record struct DrawnPoint(double X, double Y);
 /// <param name="X">The horizontal position.</param>
 /// <param name="Y">The height.</param>
 /// <param name="Filled">Filled where the function takes the value; an outline where it does not.</param>
-public readonly record struct DrawnMarker(double X, double Y, bool Filled);
+public readonly record struct DrawnMarker(double X, double Y, bool Filled)
+{
+    /// <summary>The index of the series' point the marker stands for, or -1 when it stands for none.</summary>
+    public int Point { get; init; } = -1;
+
+    /// <summary>How many of the series' points the marker stands for: more than one where markers on one device pixel were merged (ADR-0290).</summary>
+    public int Count { get; init; } = 1;
+}
 
 /// <summary>
 /// What one series draws, in the axes' units, before any pixel: the lines — each joining only
@@ -29,10 +36,11 @@ public sealed record SeriesDrawing(IReadOnlyList<IReadOnlyList<DrawnPoint>> Line
         series.Kind switch
         {
             SeriesKind.Level => series.Sampler is { } f
-                ? Level(Sample(f, series.Segments, from, to, pixels, quotes ?? []), series.Segments, withMarkers: false)
+                ? Level(Sample(f, series.Segments, from, to, pixels, quotes ?? [], axis.EffectiveScale == AxisScale.Logarithmic), series.Segments, withMarkers: false)
                 : Level(series.Points, series.Segments, withMarkers: true),
             SeriesKind.RateOverInterval => Steps(series, axis, perYear: false),
             SeriesKind.AmountPerPeriod => Steps(series, axis, perYear: true),
+            SeriesKind.Observation => Observations(series.Points),
             _ => throw new ChartRefusedException($"'{series.Name}' declares no Series Kind."),
         };
 
@@ -121,14 +129,26 @@ public sealed record SeriesDrawing(IReadOnlyList<IReadOnlyList<DrawnPoint>> Line
         return hasInterval ? Height(series, axis, i) : series.Points[i].Y!.Value.ToDouble();
     }
 
-    internal static List<ChartPoint> Sample(SeriesSampler f, IReadOnlyList<Segment> segments, double from, double to, int pixels, IReadOnlyCollection<double> quotes)
+    // An Observation's points, each a marker of its own and none joined (ADR-0290); a point missing
+    // its value is no marker.
+    private static SeriesDrawing Observations(IReadOnlyList<ChartPoint> points)
+    {
+        var markers = new List<DrawnMarker>(points.Count);
+        for (var i = 0; i < points.Count; i++)
+            if (points[i].Y is { } y && double.IsFinite(points[i].X))
+                markers.Add(new DrawnMarker(points[i].X, y.ToDouble(), Filled: true) { Point = i });
+        return new SeriesDrawing([], markers);
+    }
+
+    internal static List<ChartPoint> Sample(SeriesSampler f, IReadOnlyList<Segment> segments, double from, double to, int pixels, IReadOnlyCollection<double> quotes, bool logarithmic = false)
     {
         var lo = Math.Max(f.From, from);
         var hi = Math.Min(f.To, to);
         if (!(lo <= hi)) return [];
         var xs = new SortedSet<double> { lo, hi };
         var n = Math.Max(pixels, 2);
-        for (var k = 1; k < n; k++) xs.Add(lo + (hi - lo) * k / n);
+        // On a logarithmic axis the samples are even in the axis' own scale (ADR-0290).
+        for (var k = 1; k < n; k++) xs.Add(logarithmic && lo > 0 ? lo * Math.Pow(hi / lo, (double)k / n) : lo + (hi - lo) * k / n);
         foreach (var g in segments)
             foreach (var b in new[] { g.From, g.To })
                 if (lo <= b && b <= hi) xs.Add(b);

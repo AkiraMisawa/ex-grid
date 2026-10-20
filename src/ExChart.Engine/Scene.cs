@@ -25,7 +25,11 @@ public sealed record ChartMetrics(double Width, double Height, double DevicePixe
 /// <param name="From">The first position shown, or null for the data's first.</param>
 /// <param name="To">The last position shown, or null for the data's last.</param>
 /// <param name="Scale">The scale the viewer switched the axis to, or null for the declared one (ADR-0251). A Labels axis stays categorical, and an axis with a sampled series stays proportional.</param>
-public sealed record ChartView(IReadOnlySet<string> Hidden, double? From = null, double? To = null, AxisScale? Scale = null)
+/// <param name="YFrom">The lowest value the left axis shows, or null for the data's (ADR-0290).</param>
+/// <param name="YTo">The highest value the left axis shows, or null for the data's.</param>
+/// <param name="YScale">The vertical axes' scale: <see cref="AxisScale.Logarithmic"/>, or null or <see cref="AxisScale.Proportional"/> for proportional (ADR-0290).</param>
+public sealed record ChartView(IReadOnlySet<string> Hidden, double? From = null, double? To = null, AxisScale? Scale = null,
+    double? YFrom = null, double? YTo = null, AxisScale? YScale = null)
 {
     /// <summary>Everything shown.</summary>
     public static ChartView All { get; } = new(new HashSet<string>());
@@ -44,7 +48,31 @@ public readonly record struct Box(double X, double Y, double Width, double Heigh
 /// <param name="Max">The value at its top.</param>
 /// <param name="Ticks">Each tick's value, height in pixels and label.</param>
 /// <param name="Broken">Whether it does not reach zero, which a break mark at its foot says (ADR-0253).</param>
-public sealed record VerticalAxis(AxisSide Side, double Min, double Max, EquatableList<(double Value, double Y, string Label)> Ticks, bool Broken);
+public sealed record VerticalAxis(AxisSide Side, double Min, double Max, EquatableList<(double Value, double Y, string Label)> Ticks, bool Broken)
+{
+    /// <summary>Whether it is logarithmic, its Min and Max then both above zero (ADR-0290).</summary>
+    public bool Logarithmic { get; init; }
+
+    /// <summary>The height in pixels at which <paramref name="value"/> stands on <paramref name="plot"/>.</summary>
+    public double YOf(double value, Box plot) =>
+        plot.Y + plot.Height - (Max == Min ? 0.5 : Logarithmic ? Math.Log(value / Min) / Math.Log(Max / Min) : (value - Min) / (Max - Min)) * plot.Height;
+
+    /// <summary>The value that stands at height <paramref name="y"/> on <paramref name="plot"/>.</summary>
+    public double ValueAt(double y, Box plot)
+    {
+        var share = plot.Height == 0 ? 0.5 : (plot.Y + plot.Height - y) / plot.Height;
+        return Logarithmic ? Min * Math.Pow(Max / Min, share) : Min + share * (Max - Min);
+    }
+}
+
+/// <summary>A marker of an Observation series as the pointer finds it (ADR-0290): which series and point, where it stands, and how many points it stands for.</summary>
+/// <param name="SeriesId">The series' identity.</param>
+/// <param name="Panel">The panel it stands in.</param>
+/// <param name="X">Its centre across, in pixels.</param>
+/// <param name="Y">Its centre down, in pixels.</param>
+/// <param name="Point">The index of the series' point it stands for, the first where it stands for more than one.</param>
+/// <param name="Count">How many of the series' points it stands for.</param>
+public readonly record struct ChartMark(string SeriesId, int Panel, double X, double Y, int Point, int Count);
 
 /// <summary>One series as the scene draws it: everything its component needs, equal when nothing in it changed (ADR-0252).</summary>
 /// <param name="Id">The series' identity.</param>
@@ -84,6 +112,24 @@ public sealed record PanelScene(string Name, Box Plot, VerticalAxis? Left, Verti
 public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<(double Position, double X, string? Label)> XTicks, double XFrom, double XTo, EquatableList<string> Notes,
     EquatableList<(double Position, double X)> Positions)
 {
+    /// <summary>Whether a visible series is an Observation: the pointer then finds the nearest mark, and a drag narrows both axes (ADR-0290).</summary>
+    public bool Scatter { get; init; }
+
+    /// <summary>The Observation series' marks, in drawing order, which the pointer finds the nearest of (ADR-0290).</summary>
+    public EquatableList<ChartMark> Marks { get; init; } = EquatableList<ChartMark>.Empty;
+
+    /// <summary>Whether the axis across is logarithmic as drawn (ADR-0290).</summary>
+    public bool LogarithmicX { get; init; }
+
+    /// <summary>The position across that stands at <paramref name="x"/> pixels, on a proportional or logarithmic axis.</summary>
+    public double PositionAt(double x)
+    {
+        if (Panels.Count == 0) return XFrom;
+        var plot = Panels[0].Plot;
+        var share = plot.Width == 0 ? 0.5 : (x - plot.X) / plot.Width;
+        return LogarithmicX ? XFrom * Math.Pow(XTo / XFrom, share) : XFrom + share * (XTo - XFrom);
+    }
+
     /// <summary>
     /// Lays <paramref name="definition"/> out at <paramref name="metrics"/>, narrowed by
     /// <paramref name="view"/>. <paramref name="independentScales"/> lists the panels whose left and
@@ -101,6 +147,8 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         var (looks, coloursRepeat) = Appearance.Of(definition, metrics.ColourSlots);
         var (axis, visible, from, to, plotLeft, plotWidth, devicePixels) = Frame(definition, metrics, view, legend);
         var categories = axis.EffectiveScale == AxisScale.Categories;
+        var logX = axis.EffectiveScale == AxisScale.Logarithmic;
+        var scatter = visible.Any(s => s.Kind == SeriesKind.Observation);
         var lh = metrics.LineHeight;
         var pad = metrics.Padding;
         var notes = new List<string>(definition.Notes);
@@ -108,11 +156,21 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         // What no longer matches is said, not ignored (ADR-0272).
         foreach (var key in view.Hidden.Where(k => definition.Series.All(s => s.Id != k)).Order(StringComparer.Ordinal))
             notes.Add($"\"{key}\" is hidden, but no series has that key.");
+        // A scale asked for and not drawn is said by name (ADR-0290).
+        if (view.Scale == AxisScale.Logarithmic && !logX)
+            notes.Add(NotLogarithmic(visible.FirstOrDefault(s => s.Points.Any(p => !(p.X > 0)) || s.Sampler is { From: <= 0 }), "across", axis.Values != AxisValues.Numbers));
+        var logY = view.YScale == AxisScale.Logarithmic;
+        if (logY && LogarithmicRefusal(visible, axis, from, to, devicePixels) is { } refusal)
+        {
+            notes.Add(refusal);
+            logY = false;
+        }
 
         // The horizontal map: proportional, or categories evenly spaced, centred in their slots.
         var slots = CategorySlots(axis, from, to);
         Func<double, double> map = categories
             ? x => slots.TryGetValue(x, out var i) ? plotLeft + (i + 0.5) * plotWidth / Math.Max(1, slots.Count) : double.NaN
+            : logX ? x => plotLeft + (to == from ? 0.5 : Math.Log(x / from) / Math.Log(to / from)) * plotWidth
             : x => plotLeft + (to == from ? 0.5 : (x - from) / (to - from)) * plotWidth;
 
         var positions = PositionsOf(visible, from, to, plotWidth, map, categories ? slots.Keys : null);
@@ -138,6 +196,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             : Math.Max(1, (metrics.Height - 2 * pad - ticksBand - bands - metrics.PanelGap * (panelNames.Count - 1)) / panelNames.Count);
 
         var panels = new List<PanelScene>();
+        var marks = new List<ChartMark>();
         var y = pad;
         for (var pi = 0; pi < panelNames.Count; pi++)
         {
@@ -162,12 +221,16 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             var members = visible.Where(s => s.Panel == name).ToList();
             var drawings = members.ToDictionary(s => s.Id, s =>
                 SeriesDrawing.Of(s, axis, from, to, devicePixels, Quotes(s, visible)));
-            var (left, right, independent) = VerticalAxes(members, drawings, from, to, plot, independentScales?.Contains(name) == true);
+            var (left, right, independent) = VerticalAxes(members, drawings, from, to, plot, independentScales?.Contains(name) == true, logY, view.YFrom, view.YTo);
             if (independent)
                 notes.Add(panelNames.Count > 1 && name.Length > 0
                     ? $"{name}: the left and right axes put zero at different heights."
                     : "The left and right axes put zero at different heights.");
             var pieces = members.Select(s => Piece(s, looks[s.Id], Marked(s, visible), drawings[s.Id], s.Axis == AxisSide.Right ? right! : left!, map, plot, from, to, metrics.DevicePixelRatio, devicePixels)).ToEquatableList();
+            if (scatter)
+                foreach (var piece in pieces.Where(p => p.Kind == SeriesKind.Observation))
+                    foreach (var m in piece.Markers)
+                        marks.Add(new ChartMark(piece.Id, pi, m.X, m.Y, m.Point, m.Count));
             var zero = left is { } l && l.Min <= 0 && l.Max >= 0 ? YOf(l, 0, plot) : right is { } r && r.Min <= 0 && r.Max >= 0 ? YOf(r, 0, plot) : (double?)null;
             var entries = Legend(definition.Series.Where(s => s.Panel == name).ToList(), rows[pi], legend, metrics, plot, legendY, looks, view.Hidden, EntryWidth);
             panels.Add(new PanelScene(name, plot, left, right, zero, pieces, entries));
@@ -181,7 +244,36 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
 
         return new ChartScene(panels.ToEquatableList(),
             xTicks.Ticks.Select(t => (t.Position, map(t.Position), t.Label)).ToEquatableList(), from, to, notes.ToEquatableList(),
-            positions.ToEquatableList());
+            positions.ToEquatableList())
+        {
+            Scatter = scatter,
+            Marks = marks.ToEquatableList(),
+            LogarithmicX = logX,
+        };
+    }
+
+    private static string NotLogarithmic(ChartSeries? s, string which, bool notNumbers) =>
+        notNumbers ? $"The axis {which} stays proportional: only numbers can be placed on a logarithmic axis."
+        : $"The axis {which} stays proportional: '{s?.Name}' has a value at or below zero, which a logarithmic axis cannot place.";
+
+    // A vertical log axis is refused, by name, by a series with a value at or below zero, or one that
+    // always reaches zero (ADR-0290). A value is never dropped to make the axis fit.
+    private static string? LogarithmicRefusal(List<ChartSeries> visible, ChartAxis axis, double from, double to, int devicePixels)
+    {
+        foreach (var s in visible)
+        {
+            if (s.Kind == SeriesKind.AmountPerPeriod)
+                return $"The vertical axis stays proportional: '{s.Name}' is an Amount per period, which is drawn from zero.";
+            // A function is judged by the samples it would be drawn from, such as a fitted line that
+            // crosses zero inside its range.
+            var low = s.Sampler is null ? [] : SeriesDrawing.Of(s, axis, from, to, devicePixels, Quotes(s, visible)).Lines.SelectMany(l => l).Where(p => !(p.Y > 0)).Take(1).ToList();
+            if (low is [var sample])
+                return $"The vertical axis stays proportional: '{s.Name}' reaches {sample.Y.ToString("0.####", CultureInfo.InvariantCulture)} at {axis.Write(sample.X)}, which a logarithmic axis cannot place.";
+            var point = s.Sampler is null ? s.Points.FirstOrDefault(p => p.Y is { } v && !(v.ToDouble() > 0)) : default;
+            if (s.Sampler is null && point.Y is { } value)
+                return $"The vertical axis stays proportional: '{s.Name}' has {s.Write(value)} at {axis.Write(point.X)}, which a logarithmic axis cannot place.";
+        }
+        return null;
     }
 
     /// <summary>
@@ -212,7 +304,10 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         var axis = d.Axis;
         if (view.Scale is not { } scale || scale == axis.EffectiveScale || axis.Values == AxisValues.Labels)
             return axis;
-        if (scale == AxisScale.Categories && d.Series.Any(s => s.Sampler is not null))
+        if (scale == AxisScale.Categories && d.Series.Any(s => s.Sampler is not null || s.Kind == SeriesKind.Observation))
+            return axis;
+        if (scale == AxisScale.Logarithmic && (axis.Values != AxisValues.Numbers
+                || d.Series.Any(s => s.Points.Any(p => !(p.X > 0)) || s.Sampler is { From: <= 0 })))
             return axis;
         if (scale == AxisScale.Categories && axis.Named.Count == 0)
             axis = axis with
@@ -322,9 +417,16 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             return (view.From ?? first, view.To ?? last);
         }
         var xs = visible.SelectMany(s => s.Points.Select(p => p.X).Concat(s.Sampler is { } f ? [f.From, f.To] : [])).ToList();
-        var lo = view.From ?? (xs.Count > 0 ? xs.Min() : 0);
-        var hi = view.To ?? (xs.Count > 0 ? xs.Max() : 1);
-        return (lo, hi);
+        var lo = xs.Count > 0 ? xs.Min() : axis.EffectiveScale == AxisScale.Logarithmic ? 1 : 0;
+        var hi = xs.Count > 0 ? xs.Max() : axis.EffectiveScale == AxisScale.Logarithmic ? 10 : 1;
+        // A scatter's marks are not drawn on the plot's edge: its bounds are rounded out, to whole
+        // decades on a logarithmic axis (ADR-0290).
+        if (visible.Any(s => s.Kind == SeriesKind.Observation) && axis.Values == AxisValues.Numbers)
+        {
+            var nice = TickLayout.Nice(lo, hi, 6);
+            (lo, hi) = axis.EffectiveScale == AxisScale.Logarithmic ? TickLayout.Decades(lo, hi) : (nice.Min, nice.Max);
+        }
+        return (view.From ?? lo, view.To ?? hi);
     }
 
     // The quotes an Interpolated series is paired with: the positions of the series that share its colour key.
@@ -332,7 +434,8 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         s.Sampler is null ? [] : visible.Where(o => o.Id != s.Id && !o.Interpolated && o.EffectiveKeys.Colour == s.EffectiveKeys.Colour)
             .SelectMany(o => o.Points.Select(p => p.X)).ToList();
 
-    private static (VerticalAxis? Left, VerticalAxis? Right, bool Independent) VerticalAxes(List<ChartSeries> members, Dictionary<string, SeriesDrawing> drawings, double from, double to, Box plot, bool declaredIndependent)
+    private static (VerticalAxis? Left, VerticalAxis? Right, bool Independent) VerticalAxes(List<ChartSeries> members, Dictionary<string, SeriesDrawing> drawings, double from, double to, Box plot, bool declaredIndependent,
+        bool logarithmic = false, double? yFrom = null, double? yTo = null)
     {
         (double Lo, double Hi, double Step, bool Zero)? Range(AxisSide side)
         {
@@ -340,16 +443,27 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             if (ss.Count == 0) return null;
             var ys = ss.SelectMany(s => drawings[s.Id].Lines.SelectMany(l => l).Where(p => p.X >= from && p.X <= to).Select(p => p.Y)
                 .Concat(drawings[s.Id].Markers.Where(m => m.X >= from && m.X <= to).Select(m => m.Y))).ToList();
-            var zero = ss.Any(s => s.ReachesZero);
-            var lo = ys.Count > 0 ? ys.Min() : 0;
-            var hi = ys.Count > 0 ? ys.Max() : 1;
-            if (zero) { lo = Math.Min(lo, 0); hi = Math.Max(hi, 0); }
+            var lo = ys.Count > 0 ? ys.Min() : logarithmic ? 1 : 0;
+            var hi = ys.Count > 0 ? ys.Max() : logarithmic ? 10 : 1;
+            // The left axis narrowed by a rectangle shows what was asked, unrounded (ADR-0290).
+            var narrowed = side == AxisSide.Left && (yFrom is not null || yTo is not null);
+            if (narrowed) { lo = yFrom ?? lo; hi = yTo ?? hi; }
+            if (logarithmic)
+            {
+                var (dlo, dhi) = narrowed && lo > 0 && hi > lo ? (lo, hi) : TickLayout.Decades(lo, hi);
+                return (dlo, dhi, 0, false);
+            }
+            if (narrowed && hi > lo) return (lo, hi, TickLayout.Nice(lo, hi).Step, lo <= 0 && hi >= 0);
+            if (ss.Any(s => s.ReachesZero)) { lo = Math.Min(lo, 0); hi = Math.Max(hi, 0); }
             var (nlo, nhi, step) = TickLayout.Nice(lo, hi);
             return (nlo, nhi, step, nlo <= 0 && nhi >= 0);
         }
         var l = Range(AxisSide.Left);
         var r = Range(AxisSide.Right);
         var independent = false;
+        // A logarithmic axis has no zero to align (ADR-0290).
+        if (logarithmic)
+            return (l is { } la ? LogAxis(AxisSide.Left, la.Lo, la.Hi, plot) : null, r is { } ra ? LogAxis(AxisSide.Right, ra.Lo, ra.Hi, plot) : null, false);
         if (l is { } a && r is { } b)
         {
             if (declaredIndependent || !a.Zero || !b.Zero) independent = true;
@@ -389,8 +503,14 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         return v with { Ticks = ticks.ToEquatableList() };
     }
 
-    private static double YOf(VerticalAxis axis, double value, Box plot) =>
-        plot.Y + plot.Height - (axis.Max == axis.Min ? 0.5 : (value - axis.Min) / (axis.Max - axis.Min)) * plot.Height;
+    private static VerticalAxis LogAxis(AxisSide side, double lo, double hi, Box plot)
+    {
+        var v = new VerticalAxis(side, lo, hi, EquatableList<(double, double, string)>.Empty, Broken: false) { Logarithmic = true };
+        var ticks = TickLayout.LogSteps(lo, hi).Select(t => (t, v.YOf(t, plot), t.ToString("0.####", CultureInfo.InvariantCulture))).ToEquatableList();
+        return v with { Ticks = ticks };
+    }
+
+    private static double YOf(VerticalAxis axis, double value, Box plot) => axis.YOf(value, plot);
 
     // A level's points are marked when its marker key asks for it, or when they are the quotes an
     // Interpolated series is drawn through, which the markers tell apart from the curve (ADR-0257).
@@ -404,6 +524,14 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         var inRange = new SeriesDrawing(
             drawing.Lines.Select(l => (IReadOnlyList<DrawnPoint>)l.Where(p => p.X >= from && p.X <= to).ToList()).Where(l => l.Count > 1).ToList(),
             drawing.Markers.Where(m => m.X >= from && m.X <= to).ToList());
+        // What the axis does not show is not drawn: a mark outside it is left out, and a line is cut at
+        // its edge (a rectangle narrows the left axis, ADR-0290).
+        bool Shown(double v) => v >= axis.Min - Math.Abs(axis.Max - axis.Min) * 1e-9 && v <= axis.Max + Math.Abs(axis.Max - axis.Min) * 1e-9;
+        inRange = new SeriesDrawing(inRange.Lines.SelectMany(l => ClipLine(l, axis.Min, axis.Max, axis.Logarithmic)).ToList(), inRange.Markers.Where(m => Shown(m.Y)).ToList());
+        if (s.Kind == SeriesKind.Observation)
+            return new SeriesPiece(s.Id, s.Name, s.EffectiveKeys, look, s.Kind, s.Interpolated, EquatableList<EquatableList<DrawnPoint>>.Empty,
+                Merged(inRange.Markers.Select(m => m with { X = map(m.X), Y = YOf(axis, m.Y, plot) }), dpr).ToEquatableList(),
+                EquatableList<(double, double)>.Empty, EquatableList<PixelSummary>.Empty);
         var thinned = Thinning.Of(inRange, x => (map(x) - plot.X) * dpr, devicePixels);
         DrawnPoint Px(DrawnPoint p) => new(map(p.X), YOf(axis, p.Y, plot));
         return new SeriesPiece(s.Id, s.Name, s.EffectiveKeys, look, s.Kind, s.Interpolated,
@@ -411,6 +539,59 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             (marked ? thinned.Drawing.Markers : []).Select(m => m with { X = map(m.X), Y = YOf(axis, m.Y, plot) }).ToEquatableList(),
             s.Segments.Where(g => g.Extrapolated).Select(g => (map(Math.Max(g.From, from)), map(Math.Min(g.To, to)))).ToEquatableList(),
             thinned.Thinned.ToEquatableList());
+    }
+
+    // Past the pixels, an Observation's marks centred on one device pixel are one mark, which says how
+    // many it stands for (ADR-0290). The first point drawn there names it.
+    private static List<DrawnMarker> Merged(IEnumerable<DrawnMarker> marks, double dpr)
+    {
+        var at = new Dictionary<(long, long), int>();
+        var kept = new List<DrawnMarker>();
+        foreach (var m in marks)
+        {
+            var cell = ((long)Math.Floor(m.X * dpr), (long)Math.Floor(m.Y * dpr));
+            if (at.TryGetValue(cell, out var i)) kept[i] = kept[i] with { Count = kept[i].Count + m.Count };
+            else
+            {
+                at[cell] = kept.Count;
+                kept.Add(m);
+            }
+        }
+        return kept;
+    }
+
+    // A line cut where it leaves [lo, hi], each piece ending on the edge it crosses.
+    // On a logarithmic axis the segment is straight in the logarithm, so the crossing is found there.
+    private static IEnumerable<IReadOnlyList<DrawnPoint>> ClipLine(IReadOnlyList<DrawnPoint> line, double lo, double hi, bool logarithmic)
+    {
+        if (line.All(p => p.Y >= lo && p.Y <= hi)) { yield return line; yield break; }
+        var piece = new List<DrawnPoint>();
+        double T(double v) => logarithmic ? Math.Log(v) : v;
+        DrawnPoint Cross(DrawnPoint a, DrawnPoint b, double edge) => new(a.X + (b.X - a.X) * (T(edge) - T(a.Y)) / (T(b.Y) - T(a.Y)), edge);
+        for (var i = 0; i < line.Count; i++)
+        {
+            var p = line[i];
+            var inside = p.Y >= lo && p.Y <= hi;
+            if (i > 0)
+            {
+                var q = line[i - 1];
+                var qInside = q.Y >= lo && q.Y <= hi;
+                if (qInside && !inside) piece.Add(Cross(q, p, p.Y > hi ? hi : lo));
+                else if (!qInside && inside) piece.Add(Cross(q, p, q.Y > hi ? hi : lo));
+                else if ((q.Y < lo && p.Y > hi) || (q.Y > hi && p.Y < lo))
+                {
+                    piece.Add(Cross(q, p, q.Y > hi ? hi : lo));
+                    piece.Add(Cross(q, p, q.Y > hi ? lo : hi));
+                }
+            }
+            if (inside) piece.Add(p);
+            else if (piece.Count > 0)
+            {
+                if (piece.Count > 1) yield return piece;
+                piece = [];
+            }
+        }
+        if (piece.Count > 1) yield return piece;
     }
 
     private static string XLabel(ChartAxis axis, double x) =>

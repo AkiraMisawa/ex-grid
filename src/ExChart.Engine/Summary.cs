@@ -37,6 +37,14 @@ public static class ChartSummary
 
     private static string Series(ChartSeries s, ChartAxis axis, ChartScene scene)
     {
+        if (s.Kind == SeriesKind.Observation)
+        {
+            var seen = s.Points.Where(p => p.Y is not null && p.X >= scene.XFrom && p.X <= scene.XTo).ToList();
+            if (seen.Count == 0) return $"{s.Name}: no point in range.";
+            var low = seen.MinBy(p => p.Y!.Value.ToDouble());
+            var high = seen.MaxBy(p => p.Y!.Value.ToDouble());
+            return $"{s.Name}: {seen.Count} points, {axis.Write(seen.Min(p => p.X))} to {axis.Write(seen.Max(p => p.X))} across, {s.Write(low.Y!.Value)} to {s.Write(high.Y!.Value)} up.";
+        }
         IEnumerable<ChartPoint> points = s.Sampler is { } f
             ? scene.Positions.Where(p => p.Position >= f.From && p.Position <= f.To).Select(p => new ChartPoint(p.Position, f.ValueAt(p.Position)))
             : s.Points.Where(p => p.X >= scene.XFrom && p.X <= scene.XTo);

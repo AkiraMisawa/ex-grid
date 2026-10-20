@@ -39,6 +39,9 @@ public sealed record ChartDefinition
     private void Validate()
     {
         var ids = new HashSet<string>(StringComparer.Ordinal);
+        var logarithmic = Axis.EffectiveScale == AxisScale.Logarithmic;
+        if (logarithmic && Axis.Values != AxisValues.Numbers)
+            throw new ChartRefusedException("Only a number axis can be logarithmic.");
         foreach (var s in Series)
         {
             if (!ids.Add(s.Id))
@@ -59,7 +62,16 @@ public sealed record ChartDefinition
                 throw new ChartRefusedException($"'{s.Name}' has an amount at {edge.X} with no interval to draw it per year over: an Amount per period's {(s.Step == StepSide.Preceding ? "first" : "last")} point only bounds the interval next to it, and holds no amount.");
             if (s.Sampler is { } f && !(f.From < f.To))
                 throw new ChartRefusedException($"'{s.Name}' is sampled over an empty range.");
-            for (var i = 1; i < s.Points.Count; i++)
+            if (s.Kind == SeriesKind.Observation && Axis.EffectiveScale == AxisScale.Categories)
+                throw new ChartRefusedException($"'{s.Name}' is an Observation, which needs a value axis across: numbers or dates, not categories.");
+            if (s.Kind == SeriesKind.Observation && s.Sampler is not null)
+                throw new ChartRefusedException($"'{s.Name}' is an Observation, which is handed in as its points, not as a function.");
+            if (logarithmic && s.Points.Any(p => !(p.X > 0)))
+                throw new ChartRefusedException($"'{s.Name}' has a point at {s.Points.First(p => !(p.X > 0)).X}, which a logarithmic axis cannot place: every position must be above zero.");
+            if (logarithmic && s.Sampler is { } sampled && !(sampled.From > 0))
+                throw new ChartRefusedException($"'{s.Name}' is sampled from {sampled.From}, which a logarithmic axis cannot place: every position must be above zero.");
+            // An Observation's points are neither ordered nor unique in x (ADR-0290).
+            for (var i = 1; i < s.Points.Count && s.Kind != SeriesKind.Observation; i++)
                 if (!(s.Points[i - 1].X < s.Points[i].X))
                     throw new ChartRefusedException($"'{s.Name}' has its points out of order at position {s.Points[i].X}; a line joins only neighbours, so the order must be the data's.");
             foreach (var g in s.Segments)

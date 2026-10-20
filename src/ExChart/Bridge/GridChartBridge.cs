@@ -146,9 +146,19 @@ public sealed class GridChartBridge<TRow>
     /// M3-Q6), through the grid's own placement, which drops a request made under another order.
     /// </summary>
     /// <returns>Whether the Focus was placed; when the row is not among the grid's rows, <see cref="OnRefused"/> says so.</returns>
-    public async Task<bool> ShowInGridAsync(GridChart chart, ChartPointClick click)
+    public Task<bool> ShowInGridAsync(GridChart chart, ChartPointClick click) =>
+        CellOf(chart, click) is { } cell ? ShowInGridAsync(cell) : Task.FromResult(false);
+
+    /// <summary>
+    /// Scrolls the grid to <paramref name="cell"/> and puts the Focus on it, as a click on a point does
+    /// (ADR-0258): for a chart the Consumer built by hand, such as a scatter whose points carry their Row
+    /// Keys, whose click names the row in <see cref="ChartPointClick.Row"/> (ADR-0290).
+    /// </summary>
+    /// <returns>Whether the Focus was placed; when the row is not among the grid's rows, <see cref="OnRefused"/> says so.</returns>
+    public async Task<bool> ShowInGridAsync(GridCell cell)
     {
-        if (Grid is not { } grid || CellOf(chart, click) is not { } cell || State() is not { } g) return false;
+        ArgumentNullException.ThrowIfNull(cell);
+        if (Grid is not { } grid || State() is not { } g) return false;
         var column = -1;
         for (var i = 0; i < g.Columns.Count; i++) if (g.Columns[i].Name == cell.Column) column = i;
         var row = -1;

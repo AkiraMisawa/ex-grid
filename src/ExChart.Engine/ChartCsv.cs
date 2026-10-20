@@ -20,12 +20,14 @@ public static class ChartCsv
     public static string Long(ChartDefinition definition, ChartMetrics metrics, ChartView? view = null)
     {
         var sb = new StringBuilder(Bom);
-        Row(sb, ["Series", Title(definition.Axis), "Value", "Kind", "Method"]);
+        var named = definition.Series.Any(s => s.Kind == SeriesKind.Observation);
+        Row(sb, named ? ["Series", "Point", Title(definition.Axis), "Value", "Kind", "Method"] : ["Series", Title(definition.Axis), "Value", "Kind", "Method"]);
         foreach (var (s, points) in Shown(definition, metrics, view ?? ChartView.All))
             foreach (var p in points)
             {
                 var (kind, method) = KindOf(s, p.X);
-                Row(sb, [s.Name, X(definition.Axis, p.X), p.Y?.ToInvariantString() ?? "", kind, method]);
+                string[] tail = [X(definition.Axis, p.X), p.Y?.ToInvariantString() ?? "", kind, method];
+                Row(sb, named ? [s.Name, p.Name ?? "", .. tail] : [s.Name, .. tail]);
             }
         return sb.ToString();
     }
@@ -54,6 +56,11 @@ public static class ChartCsv
         ArgumentNullException.ThrowIfNull(definition);
         ArgumentNullException.ThrowIfNull(metrics);
         var shown = Shown(definition, metrics, view ?? ChartView.All);
+        // A scatter's points share positions across, so its table is a row per point, never a column
+        // per series keyed by position, which would keep one point of each position (ADR-0290).
+        if (definition.Series.Any(s => s.Kind == SeriesKind.Observation))
+            return new ChartTable(["Series", "Point", Title(definition.Axis), "Value"],
+                shown.SelectMany(t => t.Points.Select(p => (IReadOnlyList<string>)[t.Series.Name, p.Name ?? "", X(definition.Axis, p.X), p.Y?.ToInvariantString() ?? ""])).ToList());
         var columns = new List<(string Header, Dictionary<double, string> Values)>();
         foreach (var (s, points) in shown)
         {
@@ -72,15 +79,16 @@ public static class ChartCsv
 
     private static List<(ChartSeries Series, IReadOnlyList<ChartPoint> Points)> Shown(ChartDefinition d, ChartMetrics metrics, ChartView view)
     {
-        var (_, visible, from, to, _, _, devicePixels) = ChartScene.Frame(d, metrics, view);
+        var (axis, visible, from, to, _, _, devicePixels) = ChartScene.Frame(d, metrics, view);
         return visible.Select(s => (s, (IReadOnlyList<ChartPoint>)(s.Sampler is { } f
-            ? SeriesDrawing.Sample(f, s.Segments, from, to, devicePixels, ChartScene.QuotesOf(s, visible))
+            ? SeriesDrawing.Sample(f, s.Segments, from, to, devicePixels, ChartScene.QuotesOf(s, visible), axis.EffectiveScale == AxisScale.Logarithmic)
             : s.Points.Where(p => p.X >= from && p.X <= to).ToList()))).ToList();
     }
 
     private static (string Kind, string Method) KindOf(ChartSeries s, double x)
     {
         var g = s.Segments.FirstOrDefault(g => g.From <= x && x < g.To) ?? s.Segments.LastOrDefault(g => g.To == x);
+        if (s.Kind == SeriesKind.Observation) return ("observed", "");
         if (g?.Extrapolated == true) return ("extrapolated", g.Method);
         return (s.Interpolated ? "interpolated" : "quoted", g?.Method ?? "");
     }
