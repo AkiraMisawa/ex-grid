@@ -40,7 +40,10 @@ public static class FxVolSurface
     {
         var quoted = row.Vols.Select((v, i) => (Delta: FxVolData.DeltaValues[i], Vol: v)).Where(p => p.Vol is not null).ToArray();
         var spline = Interpolate.NaturalCubicSpline([.. quoted.Select(p => p.Delta)], [.. quoted.Select(p => p.Vol!.Value)]);
-        return [.. row.Vols.Select((v, i) => v ?? spline.Evaluate(FxVolData.DeltaValues[i]))];
+        // A filled value is rounded to the quotes' precision, two decimals of a percent: a chart's
+        // "View as table" writes each value with the digits it was handed in with (ADR-0254), and a
+        // spline's full double there is a figure nobody can read.
+        return [.. row.Vols.Select((v, i) => v ?? (spline.Evaluate(FxVolData.DeltaValues[i]) is { } x ? (double?)Math.Round(x, 2) : null))];
     }
 
     private static IEnumerable<string> Holes()

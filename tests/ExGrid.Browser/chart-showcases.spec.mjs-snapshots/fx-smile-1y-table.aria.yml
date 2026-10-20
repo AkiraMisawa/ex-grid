@@ -18,10 +18,10 @@
       - rowheader "ATM"
       - cell "7.98"
       - cell "7.98"
-    - row "25C 8.625933503836318":
+    - row "25C 8.63":
       - rowheader "25C"
       - cell
-      - cell "8.625933503836318"
+      - cell "8.63"
     - row "10C 9.19 9.19":
       - rowheader "10C"
       - cell "9.19"
