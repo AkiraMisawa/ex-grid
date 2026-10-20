@@ -5,6 +5,7 @@
 | ExGrid | 95.6% | 88.5% |
 | ExSheet | 95.8% | 88.8% |
 | ExPivot | 94.4% | 85.3% |
+| ExChart | 89.6% | 79.1% |
 | Data | 94.5% | 90.3% |
 
 # Summary
@@ -12,24 +13,150 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/20/2026 - 02:37:50 |
+| Generated on: | 10/20/2026 - 10:03:50 |
 | Parser: | MultiReport (16x Cobertura) |
-| Assemblies: | 10 |
-| Classes: | 855 |
-| Files: | 471 |
-| **Line coverage:** | 95.2% (59286 of 62243) |
-| Covered lines: | 59286 |
-| Uncovered lines: | 2957 |
-| Coverable lines: | 62243 |
-| Total lines: | 105385 |
-| **Branch coverage:** | 88.1% (34470 of 39123) |
-| Covered branches: | 34470 |
-| Total branches: | 39123 |
+| Assemblies: | 13 |
+| Classes: | 960 |
+| Files: | 509 |
+| **Line coverage:** | 94.8% (63167 of 66573) |
+| Covered lines: | 63167 |
+| Uncovered lines: | 3406 |
+| Coverable lines: | 66573 |
+| Total lines: | 112313 |
+| **Branch coverage:** | 87.3% (37468 of 42910) |
+| Covered branches: | 37468 |
+| Total branches: | 42910 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
+<details><summary>ExChart - 87.9%</summary>
+
+|**Name**|**Line**|**Branch**|
+|:---|---:|---:|
+|**ExChart**|**87.9%**|**72.9%**|
+|ExChart.ChartPointClick|100%||
+|ExChart.ChartRange|50%|0%|
+|ExChart.ChartTarget|100%||
+|ExChart.Chrome.ChartCommand|100%||
+|ExChart.Chrome.ChartFiltersContext|90%||
+|ExChart.Chrome.ChartMenuContext|100%||
+|ExChart.Chrome.ChartToolbarContext|100%||
+|ExChart.Chrome.IChartChrome|0%||
+|ExChart.ColumnSeries|100%||
+|ExChart.Components.ChartAxesView|97.9%|86.1%|
+|ExChart.Components.ChartBandView|100%|42.8%|
+|ExChart.Components.ChartDrawing|100%|100%|
+|ExChart.Components.ChartFileDrawing|100%||
+|ExChart.Components.ChartFileDrawing.Input|100%||
+|ExChart.Components.ChartFiles|98.1%|88.8%|
+|ExChart.Components.ChartGuideView|100%|100%|
+|ExChart.Components.ChartLegendView|98.2%|62.5%|
+|ExChart.Components.ChartPointer|16.6%||
+|ExChart.Components.ChartSeriesView|89.6%|88.5%|
+|ExChart.Components.ChartTooltipView|100%|59%|
+|ExChart.Components.ExChart|89.7%|80.8%|
+|ExChart.Components.ExChartStylesheet|0%||
+|ExChart.Components.ExSurface|78%|76.6%|
+|ExChart.Components.SurfaceReports|25%||
+|ExChart.Components.Svg|50%|25%|
+|ExChart.GridCell|100%||
+|ExChart.GridChart|25%|0%|
+|ExChart.GridChartBridge<TRow>|46.3%|17.5%|
+|ExChart.GridChartBridge<TRow>|70.3%|42.3%|
+|ExChart.GridChartCommands|62.5%|62.5%|
+|ExChart.GridChartDeclarations<TRow>|90%||
+|ExChart.GridChartSeries|100%||
+|ExChart.GridState<TRow>|85.7%||
+|ExChart.KeyedPosition|100%||
+|ExChart.RowSeries|100%||
+|ExChart.SelectionReader|90.6%|72.8%|
+|ExChart.SelectionReader<TRow>|90.6%|72.8%|
+|ExChart.SeriesVisibility|100%||
+
+</details>
+<details><summary>ExChart.Engine - 96.2%</summary>
+
+|**Name**|**Line**|**Branch**|
+|:---|---:|---:|
+|**ExChart.Engine**|**96.2%**|**84.8%**|
+|ExChart.Engine.Appearance|100%|100%|
+|ExChart.Engine.AppearanceKeys|100%||
+|ExChart.Engine.AxisStyle|100%||
+|ExChart.Engine.AxisTick|100%||
+|ExChart.Engine.AxisTicks|100%|100%|
+|ExChart.Engine.Box|100%||
+|ExChart.Engine.ChartAxis|96%|77.2%|
+|ExChart.Engine.ChartCsv|97.4%|78%|
+|ExChart.Engine.ChartDefinition|86.2%|83.3%|
+|ExChart.Engine.ChartMark|100%||
+|ExChart.Engine.ChartMetrics|100%|100%|
+|ExChart.Engine.ChartPoint|100%||
+|ExChart.Engine.ChartReading|100%||
+|ExChart.Engine.ChartReadings|90%|60.3%|
+|ExChart.Engine.ChartRefusedException|100%||
+|ExChart.Engine.ChartScene|98.8%|87.9%|
+|ExChart.Engine.ChartSeries|100%|100%|
+|ExChart.Engine.ChartSummary|100%|92.8%|
+|ExChart.Engine.ChartTable|100%||
+|ExChart.Engine.ChartValue|92.8%|100%|
+|ExChart.Engine.ChartView|100%||
+|ExChart.Engine.DrawnCandle|100%|100%|
+|ExChart.Engine.DrawnMarker|100%||
+|ExChart.Engine.DrawnPoint|100%||
+|ExChart.Engine.DrawnWhisker|100%||
+|ExChart.Engine.EquatableList|100%||
+|ExChart.Engine.EquatableList<T>|61.5%|50%|
+|ExChart.Engine.Fitting.Fit|98.3%|86.5%|
+|ExChart.Engine.Fitting.FittedCurve|96%|84.6%|
+|ExChart.Engine.Interpolation.Interpolant1D|100%|100%|
+|ExChart.Engine.Interpolation.Interpolant2D|100%|100%|
+|ExChart.Engine.Interpolation.Interpolate|97.9%|87.1%|
+|ExChart.Engine.IntervalBound|100%||
+|ExChart.Engine.LegendEntry|100%||
+|ExChart.Engine.LegendPlacement|100%||
+|ExChart.Engine.PanelScene|100%||
+|ExChart.Engine.PixelSummary|100%||
+|ExChart.Engine.PlacedCandle|100%||
+|ExChart.Engine.PlacedVolume|100%||
+|ExChart.Engine.PriceBar|100%||
+|ExChart.Engine.PriceRanges|96.4%|94.2%|
+|ExChart.Engine.ReadingLine|100%||
+|ExChart.Engine.Segment|100%||
+|ExChart.Engine.SeriesDrawing|98.3%|92.8%|
+|ExChart.Engine.SeriesInterval|100%||
+|ExChart.Engine.SeriesLook|100%||
+|ExChart.Engine.SeriesPiece|100%||
+|ExChart.Engine.SeriesSampler|100%||
+|ExChart.Engine.SurfaceAxis|94.4%|91.6%|
+|ExChart.Engine.SurfaceAxis<T>|94.4%|91.6%|
+|ExChart.Engine.SurfaceDefinition|94.3%|90%|
+|ExChart.Engine.SurfaceDefinition<TX, TY>|94.3%|90%|
+|ExChart.Engine.SurfaceMesh|100%|89.1%|
+|ExChart.Engine.SurfaceSlice|100%||
+|ExChart.Engine.SurfaceTick|100%||
+|ExChart.Engine.SurfaceView|100%||
+|ExChart.Engine.ThinnedDrawing|100%||
+|ExChart.Engine.Thinning|100%|95.2%|
+|ExChart.Engine.TickLayout|95.3%|79.2%|
+|ExChart.Engine.TickLayout.CalendarStep|100%||
+|ExChart.Engine.VerticalAxis|100%|62.5%|
+
+</details>
+<details><summary>ExChart.MudBlazor - 37.3%</summary>
+
+|**Name**|**Line**|**Branch**|
+|:---|---:|---:|
+|**ExChart.MudBlazor**|**37.3%**|**45.7%**|
+|ExChart.MudBlazor.MudChartChrome|87.8%|66.6%|
+|ExChart.MudBlazor.MudChartDock<TRow>|0%|0%|
+|ExChart.MudBlazor.MudChartDock<TRow>|0%|0%|
+|ExChart.MudBlazor.MudChartMenu|66.6%|100%|
+|ExChart.MudBlazor.MudChartToolbar|66%|63%|
+|ExChart.MudBlazor.MudExChartStylesheet|0%||
+
+</details>
 <details><summary>ExGrid - 95.3%</summary>
 
 |**Name**|**Line**|**Branch**|
@@ -283,11 +410,11 @@
 |ExGrid.ViewStateDocument|100%||
 
 </details>
-<details><summary>ExGrid.Data - 94.6%</summary>
+<details><summary>ExGrid.Data - 94.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.6%**|
+|**ExGrid.Data**|**94.7%**|**90.6%**|
 |ExGrid.Data.AggregateAccumulator|86%|87.8%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -376,7 +503,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
