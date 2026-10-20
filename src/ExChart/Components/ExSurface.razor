@@ -22,12 +22,13 @@
             @if (_point is { } p)
             {
                 <div class="ex-chart-tooltip ex-chart-surface-tooltip@(p.X > Width / 2 ? " ex-chart-tooltip-flip" : "")" style="@TooltipStyle(p)" role="status">
-                    <div class="ex-chart-tooltip-line"><span class="ex-chart-tooltip-name">@AxisName(Definition.X.Title, "x")</span><span class="ex-chart-tooltip-value">@Definition.X.Write(p.I)</span></div>
-                    <div class="ex-chart-tooltip-line"><span class="ex-chart-tooltip-name">@AxisName(Definition.Y.Title, "y")</span><span class="ex-chart-tooltip-value">@Definition.Y.Write(p.J)</span></div>
-                    <div class="ex-chart-tooltip-line ex-chart-tooltip-position"><span class="ex-chart-tooltip-name">@AxisName(Definition.ZTitle, "Value")</span><span class="ex-chart-tooltip-value">@Definition.WriteZ(Definition.At(p.I, p.J)!.Value)</span></div>
+                    @{ var node = Definition.Node(p.K); }
+                    <div class="ex-chart-tooltip-line"><span class="ex-chart-tooltip-name">@AxisName(Definition.X.Title, "x")</span><span class="ex-chart-tooltip-value">@Definition.X.Write(node.X)</span></div>
+                    <div class="ex-chart-tooltip-line"><span class="ex-chart-tooltip-name">@AxisName(Definition.Y.Title, "y")</span><span class="ex-chart-tooltip-value">@Definition.Y.Write(node.Y)</span></div>
+                    <div class="ex-chart-tooltip-line ex-chart-tooltip-position"><span class="ex-chart-tooltip-name">@AxisName(Definition.ZTitle, "Value")</span><span class="ex-chart-tooltip-value">@Definition.WriteZ(node.Z!.Value)</span></div>
                     @if (Definition.Method is { } method)
                     {
-                        <div class="ex-chart-tooltip-note">@(Definition.IsInterpolated(p.I, p.J) ? $"interpolated, {method}" : "quoted")</div>
+                        <div class="ex-chart-tooltip-note">@(Definition.IsInterpolatedNode(p.K) ? $"interpolated, {method}" : "quoted")</div>
                     }
                 </div>
             }
@@ -35,7 +36,7 @@
         @if (_sliceChart is { } chart)
         {
             <div class="ex-chart-surface-slice-chart">
-                <ExChart Definition="chart" Title="@chart.Series[0].Name" Width="SliceWidth" Height="Height" Density="Density" />
+                <ExChart Definition="chart" Title="@chart.Series[0].Name" Width="SliceWidth" Height="Height" Density="Density" YScale="SliceScale" />
             </div>
         }
     </div>
@@ -61,27 +62,51 @@
         <div class="ex-chart-table-wrap">
             <table class="ex-chart-table">
                 <caption>@(string.IsNullOrWhiteSpace(Title) ? "Surface data" : Title)</caption>
-                <thead>
-                    <tr>
-                        <th scope="col">@AxisName(Definition.Y.Title, "y") \ @AxisName(Definition.X.Title, "x")</th>
-                        @for (var i = 0; i < Definition.X.Values.Count; i++)
-                        {
-                            <th scope="col">@Definition.X.Write(i)</th>
-                        }
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (var j = 0; j < Definition.Y.Values.Count; j++)
-                    {
+                @if (Definition.Nodes is { } nodes)
+                {
+                    @* A mesh has no grid to tabulate: its nodes are listed, each where it lies (ADR-0311). *@
+                    <thead>
                         <tr>
-                            <th scope="row">@Definition.Y.Write(j)</th>
+                            <th scope="col">@AxisName(Definition.X.Title, "x")</th>
+                            <th scope="col">@AxisName(Definition.Y.Title, "y")</th>
+                            <th scope="col">@AxisName(Definition.ZTitle, "Value")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var n in nodes)
+                        {
+                            <tr>
+                                <td>@Definition.X.Write(n.X)</td>
+                                <td>@Definition.Y.Write(n.Y)</td>
+                                <td>@(n.Z is { } v ? Definition.WriteZ(v) : "")</td>
+                            </tr>
+                        }
+                    </tbody>
+                }
+                else
+                {
+                    <thead>
+                        <tr>
+                            <th scope="col">@AxisName(Definition.Y.Title, "y") \ @AxisName(Definition.X.Title, "x")</th>
                             @for (var i = 0; i < Definition.X.Values.Count; i++)
                             {
-                                <td>@(Definition.At(i, j) is { } v ? Definition.WriteZ(v) : "")</td>
+                                <th scope="col">@Definition.X.Write(i)</th>
                             }
                         </tr>
-                    }
-                </tbody>
+                    </thead>
+                    <tbody>
+                        @for (var j = 0; j < Definition.Y.Values.Count; j++)
+                        {
+                            <tr>
+                                <th scope="row">@Definition.Y.Write(j)</th>
+                                @for (var i = 0; i < Definition.X.Values.Count; i++)
+                                {
+                                    <td>@(Definition.At(i, j) is { } v ? Definition.WriteZ(v) : "")</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                }
             </table>
         </div>
     }

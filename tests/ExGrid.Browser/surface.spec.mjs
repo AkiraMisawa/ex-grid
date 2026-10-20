@@ -117,3 +117,53 @@ test('ADR-0257: a surface the page interpolated names its method, draws no dot b
     await page.mouse.move(frame.x + fx, frame.y + fy);
     await expect(other.locator('.ex-chart-surface-tooltip .ex-chart-tooltip-note')).toHaveText('interpolated, bilinear');
 });
+
+const boxIn = (page, id) => page.locator(`#${id} .ex-chart-surface-box`);
+
+test('ADR-0310: a surface carries its colour bar, nine bands with their values beside them', async ({ page }) => {
+    await expect(box(page).locator('rect.ex-chart-surface-bar-band')).toHaveCount(9);
+    await expect(box(page).locator('.ex-chart-surface-bar text')).not.toHaveCount(0);
+    await expect(box(page).locator('polygon.ex-chart-surface-face.ex-chart-heat-0')).not.toHaveCount(0);
+});
+
+test('ADR-0310: colours that diverge from zero paint below it red and above it blue, and the bar marks zero', async ({ page }) => {
+    const pnl = boxIn(page, 'pnl');
+    await expect(pnl.locator('polygon.ex-chart-surface-face')).toHaveCount(6 * 4);
+    await expect(pnl.locator('polygon.ex-chart-surface-face[class*="ex-chart-heat-"]')).toHaveCount(0);
+    await expect(pnl.locator('.ex-chart-surface-bar text').filter({ hasText: /^0$/ })).toHaveCount(1);
+    const fill = (k) => pnl.locator(`rect.ex-chart-surface-bar-band.ex-chart-diverge-${k}`).evaluate((e) => getComputedStyle(e).fill);
+    await expect.poll(() => fill(0)).toBe('rgb(178, 24, 43)');
+    await expect.poll(() => fill(4)).toBe('rgb(247, 247, 247)');
+    await expect.poll(() => fill(8)).toBe('rgb(33, 102, 172)');
+});
+
+test('ADR-0311: a mesh is drawn as its own triangles, with a dot at each node and none where the domain has a hole', async ({ page }) => {
+    const mesh = boxIn(page, 'mesh');
+    await expect(mesh.locator('polygon.ex-chart-surface-face')).toHaveCount(2 * 15);
+    await expect(mesh.locator('circle.ex-chart-surface-point')).toHaveCount(25);
+    const corners = await mesh.locator('polygon.ex-chart-surface-face').first().getAttribute('points');
+    expect(corners.trim().split(/\s+/)).toHaveLength(3);
+});
+
+test('ADR-0311: a node is read in the tooltip, and a click on it slices through its position, cutting the triangles', async ({ page }) => {
+    const section = page.locator('#mesh .ex-chart-surface');
+    const mesh = boxIn(page, 'mesh');
+    await expect(section).not.toHaveAttribute('aria-busy', 'true');
+    await mesh.scrollIntoViewIfNeeded();
+    const circle = mesh.locator('circle.ex-chart-surface-point').nth(12);
+    const frame = await mesh.boundingBox();
+    const [x, y] = [frame.x + Number(await circle.getAttribute('cx')), frame.y + Number(await circle.getAttribute('cy'))];
+    await page.mouse.move(x, y);
+    await expect(section.locator('.ex-chart-surface-tooltip .ex-chart-tooltip-value')).toHaveCount(3);
+    await page.mouse.click(x, y);
+    await expect(section.locator('.ex-chart-surface-slice-chart .ex-chart g.ex-chart-series')).toHaveCount(1);
+    await expect(mesh.locator('.ex-chart-surface-slice polyline')).not.toHaveCount(0);
+    await expect(section.locator('.ex-chart-surface-slice-chart')).toContainText("linear on the Consumer's triangles (P1)");
+});
+
+test('ADR-0312: an axis and the vertical scale placed by their logarithm are labelled at round values', async ({ page }) => {
+    const log = boxIn(page, 'log');
+    await expect(log.locator('.ex-chart-surface-labels text').filter({ hasText: /^10Y$/ })).toHaveCount(1);
+    await expect(log.locator('.ex-chart-surface-walls text').filter({ hasText: /^10$/ })).toHaveCount(1);
+    await expect(page.locator('#log .ex-chart-surface-box')).toHaveAttribute('aria-label', /The vertical scale is logarithmic\./);
+});

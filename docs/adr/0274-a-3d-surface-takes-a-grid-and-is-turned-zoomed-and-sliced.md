@@ -26,6 +26,12 @@ surface are the data's. The grid stays the one shape ExChart draws: a function, 
 mesh evaluated through ADR-0257's helpers, becomes a grid before it is drawn, so a later input shape adds
 a way in and changes nothing drawn.
 
+*Amended 2026-10-20, with ADR-0311.* The last sentence held until a mesh came in. A Consumer's
+triangle mesh is now drawn as its own triangles, not resampled onto a grid, because a grid through a
+P1 mesh is not the Consumer's function. A function, and the helpers, still become a grid. The surface
+also gained its colour bar and colours that may diverge from a centre (ADR-0310), and axes placed by
+value or by logarithm (ADR-0312).
+
 ## What the user does
 
 - **Turn** it by dragging, or with the arrow keys.

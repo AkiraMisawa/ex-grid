@@ -50,6 +50,31 @@
     <ExSurface Definition="Interpolated" Title="EURUSD volatility, bilinear" Width="640" Height="420" />
 </section>
 
+<section id="pnl">
+    <h2>Coloured from zero</h2>
+    <p>
+        A book's P&amp;L over spot and volatility shifts, coloured from zero (ADR-0310): losses red, gains blue,
+        each as deep as its distance from zero, so a small loss beside a large gain stays pale. The colour bar
+        beside it says which value each colour is.
+    </p>
+    <ExSurface Definition="Pnl" Title="Scenario P&amp;L" Width="640" Height="420" />
+</section>
+
+<section id="mesh">
+    <h2>The page's own triangles</h2>
+    <p>
+        A field on the page's own triangle mesh, drawn as its triangles (ADR-0311), with one cell of the domain
+        left out. The tooltip reads a node; a click on one slices through its position, cutting the triangles.
+    </p>
+    <ExSurface Definition="Mesh" Title="Field" Width="640" Height="420" />
+</section>
+
+<section id="log">
+    <h2>Logarithmic axes</h2>
+    <p>Tenors placed by their logarithm, and the values on a logarithmic scale (ADR-0312).</p>
+    <ExSurface Definition="LogVol" Title="Variance on years" Width="640" Height="420" />
+</section>
+
 @code {
     private static readonly string[] Deltas = ["10P", "25P", "ATM", "25C", "10C"];
     private static readonly string[] Tenors = ["1W", "1M", "3M", "6M", "1Y", "2Y", "5Y", "10Y"];
@@ -80,6 +105,48 @@
         global::ExChart.Engine.Interpolation.Interpolate.Bilinear(DeltaValues, TenorYears,
             Vol(0).Z.Select(r => (IReadOnlyList<double?>)r.Select(v => v?.ToDouble()).ToArray()).ToArray()),
         "Delta", "Years", "Volatility", samples: 13);
+
+    // A book short volatility and long a little spot: P&L in thousands over spot and volatility shifts.
+    private static readonly double[] SpotShifts = [-10, -5, -2, 0, 2, 5, 10];
+    private static readonly double[] VolShifts = [-4, -2, 0, 2, 4];
+    private static readonly SurfaceDefinition Pnl = new SurfaceDefinition(
+        SurfaceAxis.Of("Spot shift %", SpotShifts) with { Scale = AxisScale.Proportional },
+        SurfaceAxis.Of("Vol shift", VolShifts) with { Scale = AxisScale.Proportional },
+        VolShifts.Select(v => (IReadOnlyList<ChartValue?>)SpotShifts.Select(s => (ChartValue?)ChartValue.Of(Math.Round(12 * s - 3 * s * s - 40 * v, 1))).ToArray()).ToArray(),
+        "P&L (k)") { Centre = 0 };
+
+    // A five-by-five lattice on the unit square, its inner nodes nudged off the lattice, cut into
+    // triangles whose diagonal alternates, without the cell at (0.25, 0.25): a mesh, not a grid.
+    private static readonly SurfaceDefinition Mesh = BuildMesh();
+
+    private static SurfaceDefinition BuildMesh()
+    {
+        var nodes = new List<SurfaceNode>();
+        for (var j = 0; j <= 4; j++)
+            for (var i = 0; i <= 4; i++)
+            {
+                var inner = i is > 0 and < 4 && j is > 0 and < 4;
+                var x = i / 4.0 + (inner ? 0.04 * ((i + 2 * j) % 3 - 1) : 0);
+                var y = j / 4.0 + (inner ? 0.04 * ((2 * i + j) % 3 - 1) : 0);
+                nodes.Add(new SurfaceNode(Math.Round(x, 4), Math.Round(y, 4), ChartValue.Of(Math.Round(Math.Sin(Math.PI * x) * Math.Cos(Math.PI * y), 4))));
+            }
+        var triangles = new List<SurfaceTriangle>();
+        for (var j = 0; j < 4; j++)
+            for (var i = 0; i < 4; i++)
+            {
+                if (i == 1 && j == 1) continue;
+                int a = j * 5 + i, b = a + 1, c = a + 6, d = a + 5;
+                if ((i + j) % 2 == 0) { triangles.Add(new(a, b, c)); triangles.Add(new(a, c, d)); }
+                else { triangles.Add(new(a, b, d)); triangles.Add(new(b, c, d)); }
+            }
+        return SurfaceDefinition.FromTriangles(nodes, triangles, "x", "y", "u");
+    }
+
+    private static readonly SurfaceDefinition LogVol = new SurfaceDefinition(
+        SurfaceAxis.Of("Delta", Deltas),
+        SurfaceAxis.Of("Years", TenorYears, y => TickLayout.Tenor(y)) with { Scale = AxisScale.Logarithmic },
+        Vol(0).Z.Select((r, t) => (IReadOnlyList<ChartValue?>)r.Select(v => v is { } q ? (ChartValue?)ChartValue.Of(Math.Round(q.ToDouble() * q.ToDouble() * TenorYears[t] / 100, 4)) : null).ToArray()).ToArray(),
+        "Total variance") { ZScale = AxisScale.Logarithmic };
 
     private void NextRun() => _definition = Vol(++_run);
 

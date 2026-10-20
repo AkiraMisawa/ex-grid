@@ -130,10 +130,14 @@ _Avoid_: smoothing, fitting, extrapolation
 
 **Surface**:
 A 3D chart of x values × y values × a table of z, drawn with a hole wherever a value is missing; it may
-arrive as a function z(x, y) or with interpolated values marked, naming the method. A click on a grid
-line draws its **Slice** — a smile or a term structure — as a 2D chart beside it
-([ADR-0274](./docs/adr/0274-a-3d-surface-takes-a-grid-and-is-turned-zoomed-and-sliced.md)).
-_Avoid_: mesh (a mesh is how it is drawn), heatmap
+arrive as a function z(x, y) or with interpolated values marked, naming the method, or as the
+Consumer's own **Triangle Mesh**, drawn as its triangles. A click on a grid line, or on a node of a mesh,
+draws its **Slice** — a smile or a term structure — as a 2D chart beside it. Its **Colour Bar** says
+which colour is which value; with a **Centre** its colours diverge from that value alike on both sides
+([ADR-0274](./docs/adr/0274-a-3d-surface-takes-a-grid-and-is-turned-zoomed-and-sliced.md),
+[ADR-0310](./docs/adr/0310-a-surface-shows-its-colour-bar-and-its-colours-may-diverge-from-a-centre.md),
+[ADR-0311](./docs/adr/0311-a-consumers-triangle-mesh-is-drawn-as-its-own-triangles.md)).
+_Avoid_: mesh for a grid (a mesh is the Consumer's triangles), heatmap, legend for the Colour Bar
 
 **Chart Filters**:
 What the user narrows a chart to without changing its Chart Definition: the series shown, the x range,

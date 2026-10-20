@@ -3,6 +3,7 @@ const ExChart.Engine.Appearance.DefaultColourSlots = 10 -> int
 const ExChart.Engine.Appearance.LineStyles = 4 -> int
 const ExChart.Engine.Appearance.Markers = 4 -> int
 const ExChart.Engine.Fitting.Fit.TheilSenLimit = 3000 -> int
+const ExChart.Engine.SurfaceDefinition.TrianglesMethod = "linear on the Consumer's triangles (P1)" -> string!
 const ExChart.Engine.SurfaceMesh.BandCount = 9 -> int
 ExChart.Engine.Appearance
 ExChart.Engine.AppearanceKeys
@@ -698,47 +699,87 @@ ExChart.Engine.SurfaceAxis.<Clone>$() -> ExChart.Engine.SurfaceAxis!
 ExChart.Engine.SurfaceAxis.Equals(ExChart.Engine.SurfaceAxis? other) -> bool
 ExChart.Engine.SurfaceAxis.Format.get -> System.Func<object!, string!>?
 ExChart.Engine.SurfaceAxis.IndexOf(object! value) -> int
+ExChart.Engine.SurfaceAxis.Scale.get -> ExChart.Engine.AxisScale
+ExChart.Engine.SurfaceAxis.Scale.init -> void
 ExChart.Engine.SurfaceAxis.SurfaceAxis(string! title, System.Collections.Generic.IReadOnlyList<object!>! values, System.Func<object!, string!>? format = null) -> void
 ExChart.Engine.SurfaceAxis.Title.get -> string!
 ExChart.Engine.SurfaceAxis.Values.get -> System.Collections.Generic.IReadOnlyList<object!>!
 ExChart.Engine.SurfaceAxis.Write(int index) -> string!
 ExChart.Engine.SurfaceAxis.Write(object! value) -> string!
+ExChart.Engine.SurfaceAxis.WriteTick(double position) -> string!
+ExChart.Engine.SurfaceColourBar
+ExChart.Engine.SurfaceColourBar.<Clone>$() -> ExChart.Engine.SurfaceColourBar!
+ExChart.Engine.SurfaceColourBar.Bands.get -> int
+ExChart.Engine.SurfaceColourBar.Deconstruct(out double From, out double To, out System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>! Ticks, out bool Diverging) -> void
+ExChart.Engine.SurfaceColourBar.Diverging.get -> bool
+ExChart.Engine.SurfaceColourBar.Diverging.init -> void
+ExChart.Engine.SurfaceColourBar.Equals(ExChart.Engine.SurfaceColourBar? other) -> bool
+ExChart.Engine.SurfaceColourBar.From.get -> double
+ExChart.Engine.SurfaceColourBar.From.init -> void
+ExChart.Engine.SurfaceColourBar.SurfaceColourBar(double From, double To, System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>! Ticks, bool Diverging) -> void
+ExChart.Engine.SurfaceColourBar.Ticks.get -> System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>!
+ExChart.Engine.SurfaceColourBar.Ticks.init -> void
+ExChart.Engine.SurfaceColourBar.To.get -> double
+ExChart.Engine.SurfaceColourBar.To.init -> void
 ExChart.Engine.SurfaceDefinition
 ExChart.Engine.SurfaceDefinition.<Clone>$() -> ExChart.Engine.SurfaceDefinition!
 ExChart.Engine.SurfaceDefinition.AllNotes.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExChart.Engine.SurfaceDefinition.At(int x, int y) -> ExChart.Engine.ChartValue?
+ExChart.Engine.SurfaceDefinition.Centre.get -> double?
+ExChart.Engine.SurfaceDefinition.Centre.init -> void
+ExChart.Engine.SurfaceDefinition.EffectiveZScale.get -> ExChart.Engine.AxisScale
 ExChart.Engine.SurfaceDefinition.Equals(ExChart.Engine.SurfaceDefinition? other) -> bool
 ExChart.Engine.SurfaceDefinition.Interpolated.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<bool>!>?
 ExChart.Engine.SurfaceDefinition.IsInterpolated(int x, int y) -> bool
+ExChart.Engine.SurfaceDefinition.IsInterpolatedNode(int index) -> bool
+ExChart.Engine.SurfaceDefinition.IsMesh.get -> bool
 ExChart.Engine.SurfaceDefinition.Method.get -> string?
+ExChart.Engine.SurfaceDefinition.Node(int index) -> (object! X, object! Y, ExChart.Engine.ChartValue? Z)
+ExChart.Engine.SurfaceDefinition.NodeCount.get -> int
+ExChart.Engine.SurfaceDefinition.Nodes.get -> System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceNode>?
 ExChart.Engine.SurfaceDefinition.Notes.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExChart.Engine.SurfaceDefinition.SliceChart(ExChart.Engine.SurfaceSlice! slice) -> ExChart.Engine.ChartDefinition?
 ExChart.Engine.SurfaceDefinition.SurfaceDefinition(ExChart.Engine.SurfaceAxis! x, ExChart.Engine.SurfaceAxis! y, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExChart.Engine.ChartValue?>!>! z, string! zTitle = "", System.Func<object!, string!>? zFormat = null, string? method = null, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<bool>!>? interpolated = null, System.Collections.Generic.IReadOnlyList<string!>? notes = null) -> void
+ExChart.Engine.SurfaceDefinition.Triangles.get -> System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTriangle>?
 ExChart.Engine.SurfaceDefinition.WriteZ(ExChart.Engine.ChartValue value) -> string!
 ExChart.Engine.SurfaceDefinition.X.get -> ExChart.Engine.SurfaceAxis!
 ExChart.Engine.SurfaceDefinition.Y.get -> ExChart.Engine.SurfaceAxis!
 ExChart.Engine.SurfaceDefinition.Z.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExChart.Engine.ChartValue?>!>!
 ExChart.Engine.SurfaceDefinition.ZFormat.get -> System.Func<object!, string!>?
+ExChart.Engine.SurfaceDefinition.ZScale.get -> ExChart.Engine.AxisScale
+ExChart.Engine.SurfaceDefinition.ZScale.init -> void
 ExChart.Engine.SurfaceDefinition.ZTitle.get -> string!
+ExChart.Engine.SurfaceFace
+ExChart.Engine.SurfaceFace.<Clone>$() -> ExChart.Engine.SurfaceFace!
+ExChart.Engine.SurfaceFace.Band.get -> int
+ExChart.Engine.SurfaceFace.Band.init -> void
+ExChart.Engine.SurfaceFace.Corners.get -> System.Collections.Generic.IReadOnlyList<int>!
+ExChart.Engine.SurfaceFace.Corners.init -> void
+ExChart.Engine.SurfaceFace.Deconstruct(out System.Collections.Generic.IReadOnlyList<int>! Corners, out int Band) -> void
+ExChart.Engine.SurfaceFace.Equals(ExChart.Engine.SurfaceFace? other) -> bool
+ExChart.Engine.SurfaceFace.SurfaceFace(System.Collections.Generic.IReadOnlyList<int>! Corners, int Band) -> void
 ExChart.Engine.SurfaceMesh
 ExChart.Engine.SurfaceMesh.<Clone>$() -> ExChart.Engine.SurfaceMesh!
-ExChart.Engine.SurfaceMesh.Bands.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int?>!>!
-ExChart.Engine.SurfaceMesh.Bands.init -> void
-ExChart.Engine.SurfaceMesh.Deconstruct(out string! XTitle, out string! YTitle, out string! ZTitle, out System.Collections.Generic.IReadOnlyList<string!>! X, out System.Collections.Generic.IReadOnlyList<string!>! Y, out System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<double?>!>! Values, out System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int?>!>! Bands, out double ZMin, out double ZMax, out System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>! ZTicks, out int Holes, out System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<bool>!>? Interpolated) -> void
+ExChart.Engine.SurfaceMesh.Bar.get -> ExChart.Engine.SurfaceColourBar!
+ExChart.Engine.SurfaceMesh.Bar.init -> void
+ExChart.Engine.SurfaceMesh.Columns.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>!>!
+ExChart.Engine.SurfaceMesh.Columns.init -> void
 ExChart.Engine.SurfaceMesh.Equals(ExChart.Engine.SurfaceMesh? other) -> bool
+ExChart.Engine.SurfaceMesh.Faces.get -> System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceFace!>!
+ExChart.Engine.SurfaceMesh.Faces.init -> void
 ExChart.Engine.SurfaceMesh.Holes.get -> int
 ExChart.Engine.SurfaceMesh.Holes.init -> void
-ExChart.Engine.SurfaceMesh.Interpolated.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<bool>!>?
-ExChart.Engine.SurfaceMesh.Interpolated.init -> void
-ExChart.Engine.SurfaceMesh.SurfaceMesh(string! XTitle, string! YTitle, string! ZTitle, System.Collections.Generic.IReadOnlyList<string!>! X, System.Collections.Generic.IReadOnlyList<string!>! Y, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<double?>!>! Values, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int?>!>! Bands, double ZMin, double ZMax, System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>! ZTicks, int Holes, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<bool>!>? Interpolated) -> void
-ExChart.Engine.SurfaceMesh.Values.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<double?>!>!
-ExChart.Engine.SurfaceMesh.Values.init -> void
-ExChart.Engine.SurfaceMesh.X.get -> System.Collections.Generic.IReadOnlyList<string!>!
-ExChart.Engine.SurfaceMesh.X.init -> void
+ExChart.Engine.SurfaceMesh.Nodes.get -> System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceMeshNode!>!
+ExChart.Engine.SurfaceMesh.Nodes.init -> void
+ExChart.Engine.SurfaceMesh.Rows.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>!>!
+ExChart.Engine.SurfaceMesh.Rows.init -> void
+ExChart.Engine.SurfaceMesh.SurfaceMesh(string! XTitle, string! YTitle, string! ZTitle, System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceMeshNode!>! Nodes, System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceFace!>! Faces, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>!>! Rows, System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>!>! Columns, System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>! XLines, System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>! YLines, double ZMin, double ZMax, System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>! ZTicks, ExChart.Engine.SurfaceColourBar! Bar, int Holes) -> void
+ExChart.Engine.SurfaceMesh.XLines.get -> System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>!
+ExChart.Engine.SurfaceMesh.XLines.init -> void
 ExChart.Engine.SurfaceMesh.XTitle.get -> string!
 ExChart.Engine.SurfaceMesh.XTitle.init -> void
-ExChart.Engine.SurfaceMesh.Y.get -> System.Collections.Generic.IReadOnlyList<string!>!
-ExChart.Engine.SurfaceMesh.Y.init -> void
+ExChart.Engine.SurfaceMesh.YLines.get -> System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>!
+ExChart.Engine.SurfaceMesh.YLines.init -> void
 ExChart.Engine.SurfaceMesh.YTitle.get -> string!
 ExChart.Engine.SurfaceMesh.YTitle.init -> void
 ExChart.Engine.SurfaceMesh.ZMax.get -> double
@@ -749,6 +790,41 @@ ExChart.Engine.SurfaceMesh.ZTicks.get -> System.Collections.Generic.IReadOnlyLis
 ExChart.Engine.SurfaceMesh.ZTicks.init -> void
 ExChart.Engine.SurfaceMesh.ZTitle.get -> string!
 ExChart.Engine.SurfaceMesh.ZTitle.init -> void
+ExChart.Engine.SurfaceMeshNode
+ExChart.Engine.SurfaceMeshNode.<Clone>$() -> ExChart.Engine.SurfaceMeshNode!
+ExChart.Engine.SurfaceMeshNode.Deconstruct(out double X, out double Y, out double? Z, out bool Interpolated) -> void
+ExChart.Engine.SurfaceMeshNode.Equals(ExChart.Engine.SurfaceMeshNode? other) -> bool
+ExChart.Engine.SurfaceMeshNode.Interpolated.get -> bool
+ExChart.Engine.SurfaceMeshNode.Interpolated.init -> void
+ExChart.Engine.SurfaceMeshNode.SurfaceMeshNode(double X, double Y, double? Z, bool Interpolated) -> void
+ExChart.Engine.SurfaceMeshNode.X.get -> double
+ExChart.Engine.SurfaceMeshNode.X.init -> void
+ExChart.Engine.SurfaceMeshNode.Y.get -> double
+ExChart.Engine.SurfaceMeshNode.Y.init -> void
+ExChart.Engine.SurfaceMeshNode.Z.get -> double?
+ExChart.Engine.SurfaceMeshNode.Z.init -> void
+ExChart.Engine.SurfaceMeshPoint
+ExChart.Engine.SurfaceMeshPoint.<Clone>$() -> ExChart.Engine.SurfaceMeshPoint!
+ExChart.Engine.SurfaceMeshPoint.Deconstruct(out double X, out double Y, out double Z) -> void
+ExChart.Engine.SurfaceMeshPoint.Equals(ExChart.Engine.SurfaceMeshPoint? other) -> bool
+ExChart.Engine.SurfaceMeshPoint.SurfaceMeshPoint(double X, double Y, double Z) -> void
+ExChart.Engine.SurfaceMeshPoint.X.get -> double
+ExChart.Engine.SurfaceMeshPoint.X.init -> void
+ExChart.Engine.SurfaceMeshPoint.Y.get -> double
+ExChart.Engine.SurfaceMeshPoint.Y.init -> void
+ExChart.Engine.SurfaceMeshPoint.Z.get -> double
+ExChart.Engine.SurfaceMeshPoint.Z.init -> void
+ExChart.Engine.SurfaceNode
+ExChart.Engine.SurfaceNode.Deconstruct(out double X, out double Y, out ExChart.Engine.ChartValue? Z) -> void
+ExChart.Engine.SurfaceNode.Equals(ExChart.Engine.SurfaceNode other) -> bool
+ExChart.Engine.SurfaceNode.SurfaceNode() -> void
+ExChart.Engine.SurfaceNode.SurfaceNode(double X, double Y, ExChart.Engine.ChartValue? Z) -> void
+ExChart.Engine.SurfaceNode.X.get -> double
+ExChart.Engine.SurfaceNode.X.init -> void
+ExChart.Engine.SurfaceNode.Y.get -> double
+ExChart.Engine.SurfaceNode.Y.init -> void
+ExChart.Engine.SurfaceNode.Z.get -> ExChart.Engine.ChartValue?
+ExChart.Engine.SurfaceNode.Z.init -> void
 ExChart.Engine.SurfaceSlice
 ExChart.Engine.SurfaceSlice.<Clone>$() -> ExChart.Engine.SurfaceSlice!
 ExChart.Engine.SurfaceSlice.Axis.get -> ExChart.Engine.SurfaceSliceAxis
@@ -763,13 +839,23 @@ ExChart.Engine.SurfaceSliceAxis.X = 0 -> ExChart.Engine.SurfaceSliceAxis
 ExChart.Engine.SurfaceSliceAxis.Y = 1 -> ExChart.Engine.SurfaceSliceAxis
 ExChart.Engine.SurfaceTick
 ExChart.Engine.SurfaceTick.<Clone>$() -> ExChart.Engine.SurfaceTick!
-ExChart.Engine.SurfaceTick.Deconstruct(out double Value, out string! Label) -> void
 ExChart.Engine.SurfaceTick.Equals(ExChart.Engine.SurfaceTick? other) -> bool
-ExChart.Engine.SurfaceTick.Label.get -> string!
+ExChart.Engine.SurfaceTick.Label.get -> string?
 ExChart.Engine.SurfaceTick.Label.init -> void
-ExChart.Engine.SurfaceTick.SurfaceTick(double Value, string! Label) -> void
+ExChart.Engine.SurfaceTick.SurfaceTick(double Value, string? Label) -> void
 ExChart.Engine.SurfaceTick.Value.get -> double
 ExChart.Engine.SurfaceTick.Value.init -> void
+ExChart.Engine.SurfaceTriangle
+ExChart.Engine.SurfaceTriangle.A.get -> int
+ExChart.Engine.SurfaceTriangle.A.init -> void
+ExChart.Engine.SurfaceTriangle.B.get -> int
+ExChart.Engine.SurfaceTriangle.B.init -> void
+ExChart.Engine.SurfaceTriangle.C.get -> int
+ExChart.Engine.SurfaceTriangle.C.init -> void
+ExChart.Engine.SurfaceTriangle.Deconstruct(out int A, out int B, out int C) -> void
+ExChart.Engine.SurfaceTriangle.Equals(ExChart.Engine.SurfaceTriangle other) -> bool
+ExChart.Engine.SurfaceTriangle.SurfaceTriangle() -> void
+ExChart.Engine.SurfaceTriangle.SurfaceTriangle(int A, int B, int C) -> void
 ExChart.Engine.SurfaceView
 ExChart.Engine.SurfaceView.<Clone>$() -> ExChart.Engine.SurfaceView!
 ExChart.Engine.SurfaceView.Deconstruct(out double Yaw, out double Pitch, out double Zoom, out double PanX, out double PanY) -> void
@@ -915,18 +1001,32 @@ override ExChart.Engine.SeriesSampler.ToString() -> string!
 override ExChart.Engine.SurfaceAxis.Equals(object? obj) -> bool
 override ExChart.Engine.SurfaceAxis.GetHashCode() -> int
 override ExChart.Engine.SurfaceAxis.ToString() -> string!
+override ExChart.Engine.SurfaceColourBar.Equals(object? obj) -> bool
+override ExChart.Engine.SurfaceColourBar.GetHashCode() -> int
+override ExChart.Engine.SurfaceColourBar.ToString() -> string!
 override ExChart.Engine.SurfaceDefinition.Equals(object? obj) -> bool
 override ExChart.Engine.SurfaceDefinition.GetHashCode() -> int
 override ExChart.Engine.SurfaceDefinition.ToString() -> string!
+override ExChart.Engine.SurfaceFace.Equals(object? obj) -> bool
+override ExChart.Engine.SurfaceFace.GetHashCode() -> int
+override ExChart.Engine.SurfaceFace.ToString() -> string!
 override ExChart.Engine.SurfaceMesh.Equals(object? obj) -> bool
 override ExChart.Engine.SurfaceMesh.GetHashCode() -> int
 override ExChart.Engine.SurfaceMesh.ToString() -> string!
+override ExChart.Engine.SurfaceMeshNode.Equals(object? obj) -> bool
+override ExChart.Engine.SurfaceMeshNode.GetHashCode() -> int
+override ExChart.Engine.SurfaceMeshNode.ToString() -> string!
+override ExChart.Engine.SurfaceMeshPoint.Equals(object? obj) -> bool
+override ExChart.Engine.SurfaceMeshPoint.GetHashCode() -> int
+override ExChart.Engine.SurfaceMeshPoint.ToString() -> string!
+override ExChart.Engine.SurfaceNode.GetHashCode() -> int
 override ExChart.Engine.SurfaceSlice.Equals(object? obj) -> bool
 override ExChart.Engine.SurfaceSlice.GetHashCode() -> int
 override ExChart.Engine.SurfaceSlice.ToString() -> string!
 override ExChart.Engine.SurfaceTick.Equals(object? obj) -> bool
 override ExChart.Engine.SurfaceTick.GetHashCode() -> int
 override ExChart.Engine.SurfaceTick.ToString() -> string!
+override ExChart.Engine.SurfaceTriangle.GetHashCode() -> int
 override ExChart.Engine.SurfaceView.Equals(object? obj) -> bool
 override ExChart.Engine.SurfaceView.GetHashCode() -> int
 override ExChart.Engine.SurfaceView.ToString() -> string!
@@ -1046,21 +1146,35 @@ static ExChart.Engine.SeriesSampler.operator ==(ExChart.Engine.SeriesSampler? le
 static ExChart.Engine.SurfaceAxis.Of<T>(string! title, System.Collections.Generic.IEnumerable<T>! values, System.Func<T, string!>? format = null) -> ExChart.Engine.SurfaceAxis!
 static ExChart.Engine.SurfaceAxis.operator !=(ExChart.Engine.SurfaceAxis? left, ExChart.Engine.SurfaceAxis? right) -> bool
 static ExChart.Engine.SurfaceAxis.operator ==(ExChart.Engine.SurfaceAxis? left, ExChart.Engine.SurfaceAxis? right) -> bool
+static ExChart.Engine.SurfaceColourBar.operator !=(ExChart.Engine.SurfaceColourBar? left, ExChart.Engine.SurfaceColourBar? right) -> bool
+static ExChart.Engine.SurfaceColourBar.operator ==(ExChart.Engine.SurfaceColourBar? left, ExChart.Engine.SurfaceColourBar? right) -> bool
 static ExChart.Engine.SurfaceDefinition.FromPoints<TX, TY>(System.Collections.Generic.IEnumerable<(TX X, TY Y, ExChart.Engine.ChartValue Z)>! points, string! xTitle, string! yTitle, string! zTitle = "", System.Func<TX, string!>? xFormat = null, System.Func<TY, string!>? yFormat = null, System.Func<object!, string!>? zFormat = null) -> ExChart.Engine.SurfaceDefinition!
-static ExChart.Engine.SurfaceDefinition.Sampled(ExChart.Engine.Interpolation.Interpolant2D! surface, string! xTitle, string! yTitle, string! zTitle = "", int samples = 25, System.Func<double, string!>? xFormat = null, System.Func<double, string!>? yFormat = null, System.Func<object!, string!>? zFormat = null) -> ExChart.Engine.SurfaceDefinition!
-static ExChart.Engine.SurfaceDefinition.Sampled(string! method, double xFrom, double xTo, double yFrom, double yTo, System.Func<double, double, ExChart.Engine.ChartValue?>! z, string! xTitle, string! yTitle, string! zTitle = "", int samples = 25, System.Func<double, string!>? xFormat = null, System.Func<double, string!>? yFormat = null, System.Func<object!, string!>? zFormat = null) -> ExChart.Engine.SurfaceDefinition!
+static ExChart.Engine.SurfaceDefinition.FromTriangles(System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceNode>! nodes, System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTriangle>! triangles, string! xTitle, string! yTitle, string! zTitle = "", System.Func<double, string!>? xFormat = null, System.Func<double, string!>? yFormat = null, System.Func<object!, string!>? zFormat = null, ExChart.Engine.AxisScale xScale = ExChart.Engine.AxisScale.Proportional, ExChart.Engine.AxisScale yScale = ExChart.Engine.AxisScale.Proportional, System.Collections.Generic.IReadOnlyList<string!>? notes = null) -> ExChart.Engine.SurfaceDefinition!
 static ExChart.Engine.SurfaceDefinition.operator !=(ExChart.Engine.SurfaceDefinition? left, ExChart.Engine.SurfaceDefinition? right) -> bool
 static ExChart.Engine.SurfaceDefinition.operator ==(ExChart.Engine.SurfaceDefinition? left, ExChart.Engine.SurfaceDefinition? right) -> bool
+static ExChart.Engine.SurfaceDefinition.Sampled(ExChart.Engine.Interpolation.Interpolant2D! surface, string! xTitle, string! yTitle, string! zTitle = "", int samples = 25, System.Func<double, string!>? xFormat = null, System.Func<double, string!>? yFormat = null, System.Func<object!, string!>? zFormat = null, ExChart.Engine.AxisScale xScale = ExChart.Engine.AxisScale.Categories, ExChart.Engine.AxisScale yScale = ExChart.Engine.AxisScale.Categories) -> ExChart.Engine.SurfaceDefinition!
+static ExChart.Engine.SurfaceDefinition.Sampled(string! method, double xFrom, double xTo, double yFrom, double yTo, System.Func<double, double, ExChart.Engine.ChartValue?>! z, string! xTitle, string! yTitle, string! zTitle = "", int samples = 25, System.Func<double, string!>? xFormat = null, System.Func<double, string!>? yFormat = null, System.Func<object!, string!>? zFormat = null, ExChart.Engine.AxisScale xScale = ExChart.Engine.AxisScale.Categories, ExChart.Engine.AxisScale yScale = ExChart.Engine.AxisScale.Categories) -> ExChart.Engine.SurfaceDefinition!
+static ExChart.Engine.SurfaceFace.operator !=(ExChart.Engine.SurfaceFace? left, ExChart.Engine.SurfaceFace? right) -> bool
+static ExChart.Engine.SurfaceFace.operator ==(ExChart.Engine.SurfaceFace? left, ExChart.Engine.SurfaceFace? right) -> bool
 static ExChart.Engine.SurfaceMesh.Of(ExChart.Engine.SurfaceDefinition! definition) -> ExChart.Engine.SurfaceMesh!
-static ExChart.Engine.SurfaceMesh.Summary(ExChart.Engine.SurfaceDefinition! definition, string? title, string? description) -> string!
 static ExChart.Engine.SurfaceMesh.operator !=(ExChart.Engine.SurfaceMesh? left, ExChart.Engine.SurfaceMesh? right) -> bool
 static ExChart.Engine.SurfaceMesh.operator ==(ExChart.Engine.SurfaceMesh? left, ExChart.Engine.SurfaceMesh? right) -> bool
+static ExChart.Engine.SurfaceMesh.SlicePath(ExChart.Engine.SurfaceDefinition! definition, ExChart.Engine.SurfaceSlice! slice) -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceMeshPoint!>!>!
+static ExChart.Engine.SurfaceMesh.Summary(ExChart.Engine.SurfaceDefinition! definition, string? title, string? description) -> string!
+static ExChart.Engine.SurfaceMeshNode.operator !=(ExChart.Engine.SurfaceMeshNode? left, ExChart.Engine.SurfaceMeshNode? right) -> bool
+static ExChart.Engine.SurfaceMeshNode.operator ==(ExChart.Engine.SurfaceMeshNode? left, ExChart.Engine.SurfaceMeshNode? right) -> bool
+static ExChart.Engine.SurfaceMeshPoint.operator !=(ExChart.Engine.SurfaceMeshPoint? left, ExChart.Engine.SurfaceMeshPoint? right) -> bool
+static ExChart.Engine.SurfaceMeshPoint.operator ==(ExChart.Engine.SurfaceMeshPoint? left, ExChart.Engine.SurfaceMeshPoint? right) -> bool
+static ExChart.Engine.SurfaceNode.operator !=(ExChart.Engine.SurfaceNode left, ExChart.Engine.SurfaceNode right) -> bool
+static ExChart.Engine.SurfaceNode.operator ==(ExChart.Engine.SurfaceNode left, ExChart.Engine.SurfaceNode right) -> bool
 static ExChart.Engine.SurfaceSlice.AtX(object! value) -> ExChart.Engine.SurfaceSlice!
 static ExChart.Engine.SurfaceSlice.AtY(object! value) -> ExChart.Engine.SurfaceSlice!
 static ExChart.Engine.SurfaceSlice.operator !=(ExChart.Engine.SurfaceSlice? left, ExChart.Engine.SurfaceSlice? right) -> bool
 static ExChart.Engine.SurfaceSlice.operator ==(ExChart.Engine.SurfaceSlice? left, ExChart.Engine.SurfaceSlice? right) -> bool
 static ExChart.Engine.SurfaceTick.operator !=(ExChart.Engine.SurfaceTick? left, ExChart.Engine.SurfaceTick? right) -> bool
 static ExChart.Engine.SurfaceTick.operator ==(ExChart.Engine.SurfaceTick? left, ExChart.Engine.SurfaceTick? right) -> bool
+static ExChart.Engine.SurfaceTriangle.operator !=(ExChart.Engine.SurfaceTriangle left, ExChart.Engine.SurfaceTriangle right) -> bool
+static ExChart.Engine.SurfaceTriangle.operator ==(ExChart.Engine.SurfaceTriangle left, ExChart.Engine.SurfaceTriangle right) -> bool
 static ExChart.Engine.SurfaceView.Default.get -> ExChart.Engine.SurfaceView!
 static ExChart.Engine.SurfaceView.operator !=(ExChart.Engine.SurfaceView? left, ExChart.Engine.SurfaceView? right) -> bool
 static ExChart.Engine.SurfaceView.operator ==(ExChart.Engine.SurfaceView? left, ExChart.Engine.SurfaceView? right) -> bool
@@ -1106,3 +1220,9 @@ ExChart.Engine.DrawnMarker.YBounds.get -> (double Lower, double Upper)?
 ExChart.Engine.DrawnMarker.YBounds.init -> void
 ExChart.Engine.DrawnMarker.XBounds.get -> (double Lower, double Upper)?
 ExChart.Engine.DrawnMarker.XBounds.init -> void
+~override ExChart.Engine.SurfaceNode.Equals(object obj) -> bool
+~override ExChart.Engine.SurfaceNode.ToString() -> string
+~override ExChart.Engine.SurfaceTriangle.Equals(object obj) -> bool
+~override ExChart.Engine.SurfaceTriangle.ToString() -> string
+ExChart.Engine.SurfaceMesh.Deconstruct(out string! XTitle, out string! YTitle, out string! ZTitle, out System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceMeshNode!>! Nodes, out System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceFace!>! Faces, out System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>!>! Rows, out System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>!>! Columns, out System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>! XLines, out System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>! YLines, out double ZMin, out double ZMax, out System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>! ZTicks, out ExChart.Engine.SurfaceColourBar! Bar, out int Holes) -> void
+ExChart.Engine.SurfaceTick.Deconstruct(out double Value, out string? Label) -> void

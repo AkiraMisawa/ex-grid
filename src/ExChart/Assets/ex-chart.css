@@ -47,6 +47,17 @@
     --_ex-chart-heat-6: var(--ex-chart-heat-6, #f46d43);
     --_ex-chart-heat-7: var(--ex-chart-heat-7, #d73027);
     --_ex-chart-heat-8: var(--ex-chart-heat-8, #a50026);
+    /* The same bands when a surface's colours diverge from a centre (ADR-0310): below it red, above
+       it blue, deepening alike with the distance; the middle band, which holds the centre, neutral. */
+    --_ex-chart-diverge-0: var(--ex-chart-diverge-0, #b2182b);
+    --_ex-chart-diverge-1: var(--ex-chart-diverge-1, #d6604d);
+    --_ex-chart-diverge-2: var(--ex-chart-diverge-2, #f4a582);
+    --_ex-chart-diverge-3: var(--ex-chart-diverge-3, #fddbc7);
+    --_ex-chart-diverge-4: var(--ex-chart-diverge-4, #f7f7f7);
+    --_ex-chart-diverge-5: var(--ex-chart-diverge-5, #d1e5f0);
+    --_ex-chart-diverge-6: var(--ex-chart-diverge-6, #92c5de);
+    --_ex-chart-diverge-7: var(--ex-chart-diverge-7, #4393c3);
+    --_ex-chart-diverge-8: var(--ex-chart-diverge-8, #2166ac);
     --_ex-chart-surface-wall: var(--ex-chart-surface-wall, color-mix(in srgb, var(--_ex-chart-text) 3%, var(--_ex-chart-background)));
     --_ex-chart-surface-mesh: var(--ex-chart-surface-mesh, color-mix(in srgb, var(--_ex-chart-text) 35%, transparent));
 
@@ -224,6 +235,9 @@
 .ex-chart-surface-slice polyline { fill: none; stroke: var(--_ex-chart-text); stroke-width: 2.5; stroke-linejoin: round; }
 .ex-chart-surface-label { fill: var(--_ex-chart-muted); stroke: var(--_ex-chart-background); stroke-width: 3px; paint-order: stroke; stroke-linejoin: round; }
 .ex-chart-surface-title { fill: var(--_ex-chart-text); font-weight: 600; }
+.ex-chart-surface-bar-band { stroke: none; }
+.ex-chart-surface-bar-frame { fill: none; stroke: var(--_ex-chart-surface-mesh); stroke-width: 1; }
+.ex-chart-surface-bar-tick { stroke: var(--_ex-chart-muted); stroke-width: 1; }
 .ex-chart-heat-0 { fill: var(--_ex-chart-heat-0); }
 .ex-chart-heat-1 { fill: var(--_ex-chart-heat-1); }
 .ex-chart-heat-2 { fill: var(--_ex-chart-heat-2); }
@@ -233,3 +247,12 @@
 .ex-chart-heat-6 { fill: var(--_ex-chart-heat-6); }
 .ex-chart-heat-7 { fill: var(--_ex-chart-heat-7); }
 .ex-chart-heat-8 { fill: var(--_ex-chart-heat-8); }
+.ex-chart-diverge-0 { fill: var(--_ex-chart-diverge-0); }
+.ex-chart-diverge-1 { fill: var(--_ex-chart-diverge-1); }
+.ex-chart-diverge-2 { fill: var(--_ex-chart-diverge-2); }
+.ex-chart-diverge-3 { fill: var(--_ex-chart-diverge-3); }
+.ex-chart-diverge-4 { fill: var(--_ex-chart-diverge-4); }
+.ex-chart-diverge-5 { fill: var(--_ex-chart-diverge-5); }
+.ex-chart-diverge-6 { fill: var(--_ex-chart-diverge-6); }
+.ex-chart-diverge-7 { fill: var(--_ex-chart-diverge-7); }
+.ex-chart-diverge-8 { fill: var(--_ex-chart-diverge-8); }

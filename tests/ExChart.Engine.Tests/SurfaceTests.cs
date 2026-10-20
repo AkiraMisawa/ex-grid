@@ -52,14 +52,11 @@ public class SurfaceTests
             [10.5, 9.8, 9.2, 9.9],
             [10.9, null, 9.6, 10.2],
             [11.4, 10.7, 10.3, 10.8]));
-        Assert.Null(mesh.Values[1][1]);
+        Assert.Null(mesh.Nodes[1 * 4 + 1].Z);
         Assert.Equal(1, mesh.Holes);
-        Assert.Null(mesh.Bands[0][0]);
-        Assert.Null(mesh.Bands[0][1]);
-        Assert.Null(mesh.Bands[1][0]);
-        Assert.Null(mesh.Bands[1][1]);
-        Assert.NotNull(mesh.Bands[0][2]);
-        Assert.NotNull(mesh.Bands[1][2]);
+        // Of the six cells, the four with the hole at a corner are no faces.
+        Assert.Equal(2, mesh.Faces.Count);
+        Assert.All(mesh.Faces, f => Assert.DoesNotContain(1 * 4 + 1, f.Corners));
         // The vertical scale is the values' own: a hole taken as 0 would pull it down to zero.
         Assert.True(mesh.ZMin >= 9);
     }
@@ -92,11 +89,11 @@ public class SurfaceTests
     public void Faces_are_banded_from_low_to_high()
     {
         var mesh = SurfaceMesh.Of(Full());
-        var bands = mesh.Bands.SelectMany(r => r).OfType<int>().ToArray();
+        var bands = mesh.Faces.Select(f => f.Band).ToArray();
         Assert.Equal(6, bands.Length);
         Assert.All(bands, b => Assert.InRange(b, 0, SurfaceMesh.BandCount - 1));
-        Assert.True(mesh.Bands[1][0] > mesh.Bands[0][2]);
-        Assert.Equal(["10P", "25P", "ATM", "25C"], mesh.X);
+        Assert.True(bands[3] > bands[2]);
+        Assert.Equal(["10P", "25P", "ATM", "25C"], mesh.XLines.Select(t => t.Label));
         Assert.True(mesh.ZMin <= 9.2 && mesh.ZMax >= 11.4);
         Assert.Equal(mesh.ZMin, mesh.ZTicks[0].Value);
         Assert.Equal(mesh.ZMax, mesh.ZTicks[^1].Value);
