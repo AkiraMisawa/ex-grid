@@ -102,7 +102,7 @@ page showing two Sheets of one workbook share one dependency graph, because inse
 Sheet has to rewrite the References to it in the other.
 
 *(2026-10-20, decided with the user: an ExSheet now holds a Workbook of several Sheets, by
-[ADR-0321](./0321-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md). The engine belongs to
+[ADR-0331](./0331-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md). The engine belongs to
 the Workbook, as this section foresaw; one ExSheet shows the whole Workbook behind Sheet Tabs,
 rather than two ExSheets sharing one. The section is kept as it was written.)*
 

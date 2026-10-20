@@ -1,7 +1,11 @@
 # ExSheet opens and saves `.xlsx` with a reader and writer of its own
 
+*(Numbered ADR-0320 until 2026-10-20. That block had been reserved on `main` by ExChart's Chart Spec
+first, so this branch moved into the block [`docs/agents/numbering.md`](../agents/numbering.md) reserves
+for it. Commit messages before then use the old number.)*
+
 *(Decided with the user, 2026-10-20, in a grilling (Q1 to Q5, then X1 to X4) that stopped half-way
-for [ADR-0321](./0321-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md): two answers had only
+for [ADR-0331](./0331-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md): two answers had only
 worked around ExSheet's one Sheet, so the user decided that ExSheet holds a Workbook first. This ADR
 was first written as a proposal for one Sheet; it now reads and writes a whole Workbook. The user took
 the recommendation of every question except Q5 and X1.)*
@@ -52,8 +56,8 @@ carry it); the two packages written independently (the file read twice).
 ### 3. A whole Workbook is opened and saved
 
 Every worksheet becomes a Sheet, in the file's order, and the worksheet shown becomes the Sheet shown.
-References across Sheets and 3D References (ADR-0321 §7) are carried as written. *(Q2 first decided
-"one worksheet per opening"; ADR-0321 replaced it.)*
+References across Sheets and 3D References (ADR-0331 §7) are carried as written. *(Q2 first decided
+"one worksheet per opening"; ADR-0331 replaced it.)*
 
 ### 4. What a workbook holds falls into three kinds
 
@@ -83,7 +87,7 @@ The refusal names the Sheet, the cell and what it held, as the CSV reader names 
 font names and sizes, row heights, vertical alignment, wrapping, indent and rotation, merged cells,
 pattern and gradient fills, conditional formatting, data validation, notes and comments, hyperlinks,
 pictures and charts, frozen panes, hidden rows and columns, protection, print settings, rich-text runs
-inside a cell (the text is carried), tab colours, a Sheet's being hidden (it opens shown, ADR-0321 §4),
+inside a cell (the text is carried), tab colours, a Sheet's being hidden (it opens shown, ADR-0331 §4),
 defined names no Formula reads, the structure of an Excel Table no Formula reads (its cells are
 carried), and the link from a colour to the theme (§8).
 
@@ -123,7 +127,7 @@ nothing; the application decides how to tell the user, and the Docs Site's Examp
 ### 7. The culture is the application's (X2)
 
 A workbook stores numbers and dates in one form in every language, so no Value read from it depends on
-a culture. What does is how the user's typing is read afterwards, and how Values are shown (ADR-0321
+a culture. What does is how the user's typing is read afterwards, and how Values are shown (ADR-0331
 §2). **Reading takes the Workbook's culture from the application**, which declares it, as a CSV's
 encoding is declared rather than guessed (ADR-0064). Writing records none; Excel shows a workbook in
 its reader's culture. *Rejected:* guessing from the language a workbook records, which turns a typed

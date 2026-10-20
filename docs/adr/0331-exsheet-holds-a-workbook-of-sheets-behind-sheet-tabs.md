@@ -1,7 +1,11 @@
 # ExSheet holds a Workbook of Sheets behind Sheet Tabs
 
+*(Numbered ADR-0321 until 2026-10-20. That block had been reserved on `main` by ExChart's Chart Spec
+first, so this branch moved into the block [`docs/agents/numbering.md`](../agents/numbering.md) reserves
+for it. Commit messages before then use the old number.)*
+
 *(Decided with the user, 2026-10-20, in a grilling (W1 to W9) that began as `.xlsx` reading and
-writing ([ADR-0320](./0320-exsheet-opens-and-saves-xlsx-with-a-reader-and-writer-of-its-own.md)).
+writing ([ADR-0330](./0330-exsheet-opens-and-saves-xlsx-with-a-reader-and-writer-of-its-own.md)).
 Two of that ADR's answers only worked around ExSheet's one Sheet: opening one worksheet of a
 workbook, and writing a Linked Table's rows to a sheet of their own. The user decided that ExSheet
 holds several Sheets first, and that `.xlsx` is then read and written whole. The user took the
@@ -127,6 +131,6 @@ The component's `Document` parameter is kept (§2). Only the engine's API breaks
 - Both Chromes draw the Sheet Tabs; the MudBlazor Wrapper's tabs render and call back, and the core
   decides what each press means, as for every other Chrome surface.
 - A Windows run gains the questions §5 and §7 put to Excel.
-- ADR-0320 is rewritten to read and write a whole Workbook.
+- ADR-0330 is rewritten to read and write a whole Workbook.
 - The Docs Site's ExSheet pages and their Examples move to the Workbook, and the Showcases that show a
   Sheet are re-recorded if they change.

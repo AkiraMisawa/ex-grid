@@ -44,8 +44,9 @@ block on `main` before it uses the first number.
 | 0290–0299 | `claude/project-thread-w5eo0t` | ExChart's scatter and fitted lines, put into the first version and grilled with the user (2026-10-19) |
 | 0300–0309 | `claude/project-thread-umb8fm` | ExChart's candlesticks (Price Range), volume and intervals, grilled with the user (2026-10-20) |
 | 0310–0319 | `claude/exchart-surface-remaining-d2lukv` | ExChart's 3D surface: the colour bar and colours that diverge from a centre, the Consumer's triangle mesh, and axes placed by value or logarithm (the three left open by ADR-0274; the user asked for all three, 2026-10-20) |
-| 0320–0329 | `claude/project-thread-5x47er` | ExSheet's `.xlsx` (ADR-0320) and the Workbook it waits on (ADR-0321), grilled with the user 2026-10-20 |
-| 0330– | free | reserve a block of ten |
+| 0320–0329 | `claude/project-thread-2f4kcm` | ExChart's Chart Spec: a declarative entry an AI writes, nodes and edges, and the Chart Source, grilled with the user (2026-10-20) |
+| 0330–0339 | `claude/project-thread-5x47er` | ExSheet's `.xlsx` (ADR-0330) and the Workbook it waits on (ADR-0331), grilled with the user 2026-10-20. Numbered 0320 and 0321 on the branch until 2026-10-20, when the block was found taken |
+| 0340– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 
