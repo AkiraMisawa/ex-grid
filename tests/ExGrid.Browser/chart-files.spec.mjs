@@ -65,3 +65,27 @@ test('ADR-0282, CH-10, CH-12: one click saves the PNG, painted at the Device Pix
     expect(bytes.readUInt32BE(16)).toBe(Math.round(width * 1.5));
     expect(bytes.readUInt32BE(20)).toBe(Math.round(height * 1.5));
 });
+
+test('ADR-0282, ADR-0274: the 3D surface saves its drawing as it stands, as SVG and as PNG at the Device Pixel', async ({ page }) => {
+    await page.goto('/surface');
+    const surface = page.locator('#vol .ex-chart-surface');
+    await expect(surface.locator('.ex-chart-download-png')).toBeEnabled();
+    const take = async (button) => {
+        const [download] = await Promise.all([page.waitForEvent('download'), surface.locator(button).click()]);
+        return { name: download.suggestedFilename(), bytes: await readFile(await download.path()) };
+    };
+    const svg = await take('.ex-chart-download-svg');
+    expect(svg.name).toBe('EURUSD volatility.svg');
+    const parsed = await page.evaluate((text) => {
+        const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+        return { error: doc.querySelector('parsererror')?.textContent ?? null, painted: [...doc.querySelectorAll('[style]')].filter((e) => /fill:rgb/.test(e.getAttribute('style'))).length };
+    }, svg.bytes.toString('utf8'));
+    expect(parsed.error).toBeNull();
+    // The colours are written on each element, as the screen computed them, so the file needs no stylesheet.
+    expect(parsed.painted).toBeGreaterThan(20);
+    const png = await take('.ex-chart-download-png');
+    expect(png.name).toBe('EURUSD volatility.png');
+    expect(png.bytes.subarray(1, 4).toString('latin1')).toBe('PNG');
+    expect(png.bytes.readUInt32BE(16)).toBe(Math.round(640 * 1.5));
+    expect(png.bytes.readUInt32BE(20)).toBe(Math.round(420 * 1.5));
+});
