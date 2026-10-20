@@ -131,6 +131,83 @@ test('a paste past a Server hub\'s message limit arrives whole (CP-21, ADR-0052)
     await expect.poll(() => activeDescendant(grid(page))).toMatch(/r1c1$/);
 });
 
+// Puts two cells of about 100 KB each on the clipboard, as a spreadsheet does: some 200 KB, read as
+// streams over the circuit (CP-21).
+async function writeLargeClipboard(page) {
+    await page.evaluate(async () => {
+        const cell = (c) => c.repeat(100_000);
+        const html = `<table><tr><td>${cell('A')}</td></tr><tr><td>${cell('B')}</td></tr></table>`;
+        const text = `${cell('A')}\r\n${cell('B')}\r\n`;
+        await navigator.clipboard.write([new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([text], { type: 'text/plain' }),
+        })]);
+    });
+}
+
+test.describe('a large paste says it is under way, and Escape cancels it (ADR-0240 §12, large-paste 01)', () => {
+    // A paste is read in a moment where there is no circuit: nothing is under way long enough to see.
+    test.skip(!SERVER, 'Server host only: the paste is read over the circuit');
+
+    test.beforeEach(async ({ page, context }) => {
+        await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        await openFeatures(page);
+        await writeLargeClipboard(page);
+        await clickCell(page, 0, 1);
+        await page.keyboard.press('Shift+ArrowDown');
+    });
+
+    test('the root is busy and painted so while the paste is read, and not once it lands', async ({ page }) => {
+        // Every render that marks the root as pasting is read as it is applied: what it painted then.
+        await grid(page).evaluate((root) => {
+            const seen = [];
+            const read = () => {
+                if (root.classList.contains('ex-pasting')) {
+                    const bar = getComputedStyle(root, '::after');
+                    seen.push({ busy: root.getAttribute('aria-busy'), height: bar.height, content: bar.content, cursor: getComputedStyle(root).cursor });
+                }
+            };
+            const observer = new MutationObserver(read);
+            observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+            root.__pastingSeen = { seen, stop: () => observer.disconnect() };
+        });
+
+        await page.keyboard.press('ControlOrMeta+V');
+
+        await expect(page.locator('#paste-status')).toContainText('2 cells from 2x1');
+        const seen = await grid(page).evaluate((root) => {
+            root.__pastingSeen.stop();
+            const { seen } = root.__pastingSeen;
+            delete root.__pastingSeen;
+            return seen;
+        });
+        expect(seen.length).toBeGreaterThan(0);
+        expect(seen[0]).toEqual({ busy: 'true', height: '3px', content: '""', cursor: 'progress' });
+        await expect(grid(page)).not.toHaveClass(/ex-pasting/);
+        await expect(grid(page)).not.toHaveAttribute('aria-busy');
+    });
+
+    test('an Escape typed while the paste is read cancels it aloud, writes nothing, and does nothing else', async ({ page }) => {
+        const before = await grid(page).locator("[id$='r0c1']").textContent();
+        // Held, the host cannot have read the paste before the Escape reaches it: the Escape is told
+        // to it at once, ahead of the read the host is waiting on (ADR-0220).
+        await holdAnswers(true);
+        await page.keyboard.press('ControlOrMeta+V');
+        await page.keyboard.press('Escape');
+        await holdAnswers(false);
+
+        await expect(page.locator('#paste-refused-status')).toContainText('Cancelled');
+        await expect(grid(page).locator('.ex-announce')).toContainText('Nothing was pasted: the paste was cancelled.');
+        await settled(grid(page));
+        await expect(grid(page).locator("[id$='r0c1']")).toHaveText(before);
+        await expect(page.locator('#paste-status')).not.toContainText('2 cells from 2x1');
+        // No longer busy, and the grid takes the next paste.
+        await expect(grid(page)).not.toHaveAttribute('aria-busy');
+        await page.keyboard.press('ControlOrMeta+V');
+        await expect(page.locator('#paste-status')).toContainText('2 cells from 2x1');
+    });
+});
+
 test('a clipboard write the browser rejects is refused by name (CP-23)', async ({ page }) => {
     await openFeatures(page);
     // The browser's rejection, as Chromium raises it for a denied permission or a lost

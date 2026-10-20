@@ -22,6 +22,11 @@ internal sealed class FakeJSStream(byte[] bytes, Exception? readFails = null, Ta
     /// a paste that holds the Input Order until the test lets it go, and then changes nothing.</summary>
     public static FakeJSStream Held(Task opens) => new(new byte[1], new IOException("the read failed"), opens);
 
+    /// <summary>A stream of <paramref name="text"/> that opens only once <paramref name="opens"/> ends, or
+    /// fails as the reader cancels it: a paste still being read, which an Escape can cancel (ADR-0240
+    /// section 12).</summary>
+    public static FakeJSStream Gated(string text, Task opens) => new(Encoding.UTF8.GetBytes(text), opens: opens);
+
     public bool Opened { get; private set; }
 
     public bool Disposed { get; private set; }
@@ -34,7 +39,7 @@ internal sealed class FakeJSStream(byte[] bytes, Exception? readFails = null, Ta
             throw new ArgumentOutOfRangeException(nameof(maxAllowedSize), "the stream is longer than allowed");
         Opened = true;
         if (opens is not null)
-            await opens;
+            await opens.WaitAsync(cancellationToken);
         return readFails is null ? new MemoryStream(bytes, writable: false) : new FailingStream(readFails);
     }
 

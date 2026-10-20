@@ -95,6 +95,11 @@ public enum PasteRefusalReason
     /// from part of the clipboard (ADR-0005). Component-level, never produced by the pure
     /// rules.</summary>
     Unreadable,
+
+    /// <summary>An Escape typed while the paste was still being read or parsed cancelled it, before it
+    /// raised its Edit Intent: nothing is written (ADR-0240 section 12). Component-level, never produced
+    /// by the pure rules.</summary>
+    Cancelled,
 }
 
 /// <summary>

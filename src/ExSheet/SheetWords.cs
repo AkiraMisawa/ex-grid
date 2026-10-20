@@ -110,6 +110,7 @@ internal static class SheetWords
         PasteRefusalReason.TargetNotEditable => "Nothing was pasted: the selection covers cells that cannot be written.",
         PasteRefusalReason.TooLarge => "Nothing was pasted: the clipboard holds more than a paste reads at once.",
         PasteRefusalReason.Unreadable => "Nothing was pasted: the clipboard could not be read. Paste again.",
+        PasteRefusalReason.Cancelled => "Nothing was pasted: the paste was cancelled.",
         PasteRefusalReason.SpillPastExtent => "Nothing was pasted: the block would run past the Sheet's edge (XFD1048576).",
         PasteRefusalReason.NothingToFillFrom =>
             "Nothing was filled: there is no row above the selection, or column to its left, to fill from.",

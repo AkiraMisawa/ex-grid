@@ -635,6 +635,8 @@
                 "TooLarge — more than a paste or a fill reads at once",
             PasteRefusalReason.Unreadable =>
                 "Unreadable — the clipboard could not be read; nothing was written",
+            PasteRefusalReason.Cancelled =>
+                "Cancelled — Escape cancelled the paste while it was read; nothing was written",
             PasteRefusalReason.SpillPastExtent =>
                 "SpillPastExtent — the block would run past the last row or column",
             PasteRefusalReason.NothingToFillFrom =>
