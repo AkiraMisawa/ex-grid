@@ -33,6 +33,8 @@ ExGrid.Components.GridInputText
 ExGrid.Components.GridInputText.Caret.get -> int
 ExGrid.Components.GridInputText.Caret.set -> void
 ExGrid.Components.GridInputText.GridInputText() -> void
+ExGrid.Components.GridInputText.Revision.get -> long
+ExGrid.Components.GridInputText.Revision.set -> void
 ExGrid.Components.GridInputText.Surface.get -> string!
 ExGrid.Components.GridInputText.Surface.set -> void
 ExGrid.Components.GridInputText.Text.get -> string!

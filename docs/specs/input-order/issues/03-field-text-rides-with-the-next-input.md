@@ -90,3 +90,11 @@ The widened WebAssembly run also exposed a context menu that recalculated a seco
 cell after the commit moved the grid on the page. The [defect record](../../responsive-touch/hunt-2026-10-20-context-menu-target.md)
 keeps the original evidence and deterministic red/green reproduction. The menu now reuses the
 existing press descriptor, preserving ADR-0036's original target without another message.
+
+The widened Server run exposed repeated carried text undoing Point after a press; the
+[field-text record](../../responsive-touch/hunt-2026-10-21-repeated-field-text.md) names the
+component and browser regressions. Normal CI also found the Input Journal assertion still
+reading the last argument as the input number after the field payload was appended. It now
+reads the number's actual position and requires positive safe integers. Its original checks
+of count, order, replies and the answered stamp remain. `input-journal.spec.mjs` is added to
+the next related gate; none of the original eleven specs is removed.

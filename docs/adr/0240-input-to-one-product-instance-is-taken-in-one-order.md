@@ -389,6 +389,15 @@ The existing overtaken-input rule covers presses and claims as well as keys. Nam
 claims its existing form event before reading the carried text; a later acknowledgement cannot
 restore a Name Box submission that has already ended.
 
+The first implementation treated each carried reading as fresh typing. The widened Server
+run exposed the mistake: a press inserted a Reference, then its acknowledgement or release
+carried the same pre-render text and erased that Reference. The field reading now carries a
+revision shared by inputs that saw the same text. The core adopts a revision once; unchanged
+text can still report a moved caret. The existing input listener advances the revision for
+new typing even when it returns to the same value, and a changed field value also advances it
+when read. These revisions add neither an input number nor an interop message per character.
+Keys carry the revision alongside their existing text argument, without repeating the string.
+
 Typing still uses its existing Blazor input message. The existing root input listener remembers
 only typed owned surfaces, and the Settled Mark remains off until their rendered text agrees
 with the field. Animation frames check attributes and values while text is owed; they read no

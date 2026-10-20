@@ -7197,12 +7197,19 @@
         bool fromDescendant = false, string? editorText = null, int editorCaret = -1,
         int editorSelectionEnd = -1, bool editorCaretMoved = false, bool repeat = false, int paint = PaintNotTold,
         int input = 0, GridInputText? fieldText = null)
-        => AnsweredAsync(() => HandleKeyAsync(key, ctrl, shift, alt, meta, metaIsPrimary, fromDescendant, editorText,
-            editorCaret, editorSelectionEnd, editorCaretMoved, repeat, paint), input, fieldText);
+    {
+        // A key already carries its text. Its field payload supplies only the revision and
+        // surface, so the same string is not sent twice over the circuit.
+        if (editorText is not null && fieldText is not null)
+            fieldText.Text = editorText;
+        return AnsweredAsync(() => HandleKeyAsync(key, ctrl, shift, alt, meta, metaIsPrimary, fromDescendant, editorText,
+            editorCaret, editorSelectionEnd, editorCaretMoved, repeat, paint, fieldText is not null), input, fieldText);
+    }
 
     private async Task HandleKeyAsync(
         string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary, bool fromDescendant,
-        string? editorText, int editorCaret, int editorSelectionEnd, bool editorCaretMoved, bool repeat, int paint)
+        string? editorText, int editorCaret, int editorSelectionEnd, bool editorCaretMoved, bool repeat, int paint,
+        bool textAdopted)
     {
         if (_disposed)
             return;
@@ -7224,7 +7231,8 @@
         // what it means is decided from those.
         if (_editMode != EditMode.None)
         {
-            AdoptKeyText(editorText, editorCaret);
+            if (!textAdopted)
+                AdoptKeyText(editorText, editorCaret);
             var canonical = GridKeys.Canonical(key, ctrl, shift, alt, meta, metaIsPrimary);
             // A declared key is the Consumer's to answer, told that an edit is open; the edit
             // stays as it is (ADR-0050, item 14).

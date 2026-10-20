@@ -1051,7 +1051,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             'OnKeyAsync', k.key, k.ctrlKey, k.shiftKey, k.altKey, k.metaKey, metaIsPrimary, !k.onRoot,
             input ? input.value : null, input ? (input.selectionStart ?? input.value.length) : -1,
             input ? (input.selectionEnd ?? input.value.length) : -1, input ? movedByUser(input) : false,
-            k.repeat === true, k.paint, nextInput(neutral), input ? null : inputText())
+            k.repeat === true, k.paint, nextInput(neutral), inputText(input === null))
             .catch((error) => {
                 // Disposal can overtake a key in flight, and that is not a fault. Anything
                 // else is reported: a swallowed failure here means keys that silently stop
@@ -1150,19 +1150,29 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // A numbered input takes the field's value with it (ADR-0240 section 5), without another
     // message for typing. A press can already have moved DOM focus by its click; the standing
     // editor still supplies that edit's text. Nested grids and popover drafts belong elsewhere.
-    const inputText = () => {
+    let fieldTextRevision = 0;
+    const fieldTexts = new WeakMap();
+    const readFieldText = (field, surface, includeText) => {
+        let reading = fieldTexts.get(field);
+        if (reading === undefined || reading.text !== field.value) {
+            reading = { text: field.value, revision: ++fieldTextRevision };
+            fieldTexts.set(field, reading);
+        }
+        return {
+            surface, ...(includeText ? { text: reading.text } : {}),
+            caret: field.selectionStart ?? -1, revision: reading.revision,
+        };
+    };
+    const inputText = (includeText = true) => {
         const active = document.activeElement;
         const name = ownNameBox(active);
         if (name !== null) {
-            return { surface: 'name', text: name.value, caret: name.selectionStart ?? -1 };
+            return readFieldText(name, 'name', includeText);
         }
         const surface = ownSurface(active) ?? (editing !== 'none' ? ownSurface(lastSurface) : null);
         const field = surface !== null ? surfaceField(surface) : null;
         if (field === null || !surface.hasAttribute('data-ex-mode-text')) return null;
-        return {
-            surface: surface.classList.contains('ex-formula-bar-text') ? 'bar' : 'cell',
-            text: field.value, caret: field.selectionStart ?? -1,
-        };
+        return readFieldText(field, surface.classList.contains('ex-formula-bar-text') ? 'bar' : 'cell', includeText);
     };
 
     // Each input reports at once: Blazor's input event is on its way, and the core waits for
@@ -1193,6 +1203,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         noteSurface(input);
         const surface = ownNameBox(input)?.closest('.ex-name-box') ?? ownSurface(input);
         if (surface?.hasAttribute('data-ex-mode-text') && isTextField(input)) {
+            // Typing away and back to the same value is still new typing. A render changes
+            // a field without this event; its next reading notices the changed value above.
+            fieldTexts.set(input, { text: input.value, revision: ++fieldTextRevision });
             // Drop an old surface when a render replaced it, before adding its replacement.
             typingAnswered();
             typedFields.set(surface, input);

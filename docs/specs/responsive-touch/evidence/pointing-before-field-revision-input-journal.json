@@ -1,0 +1,799 @@
+{
+ "script": [
+  {
+   "root": "ex6-root",
+   "journal": {
+    "dropped": 0,
+    "entries": [
+     {
+      "at": 1792536685653,
+      "what": "call",
+      "call": 1,
+      "method": "OnDevicePixelAsync",
+      "args": [
+       1
+      ]
+     },
+     {
+      "at": 1792536685690,
+      "what": "call",
+      "call": 2,
+      "method": "OnTimeZoneAsync",
+      "args": [
+       "Europe/London"
+      ]
+     },
+     {
+      "at": 1792536685691,
+      "what": "answered",
+      "input": 0,
+      "sent": 0
+     },
+     {
+      "at": 1792536685691,
+      "what": "settled"
+     },
+     {
+      "at": 1792536685692,
+      "what": "call",
+      "call": 3,
+      "method": "OnViewportReportAsync",
+      "args": [
+       0,
+       0,
+       720,
+       392
+      ]
+     },
+     {
+      "at": 1792536685692,
+      "what": "call",
+      "call": 4,
+      "method": "OnLayoutCeilingAsync",
+      "args": [
+       33554428
+      ]
+     },
+     {
+      "at": 1792536685849,
+      "what": "replied",
+      "call": 1
+     },
+     {
+      "at": 1792536685849,
+      "what": "replied",
+      "call": 2
+     },
+     {
+      "at": 1792536685850,
+      "what": "replied",
+      "call": 3
+     },
+     {
+      "at": 1792536685850,
+      "what": "replied",
+      "call": 4
+     },
+     {
+      "at": 1792536687035,
+      "what": "numbered",
+      "input": 1
+     },
+     {
+      "at": 1792536687035,
+      "what": "call",
+      "call": 5,
+      "method": "PressTakenAt",
+      "args": [
+       "mousedown",
+       629,
+       70,
+       0,
+       0,
+       0,
+       0,
+       2,
+       -1,
+       -1,
+       1,
+       0,
+       null
+      ]
+     },
+     {
+      "at": 1792536687036,
+      "what": "unsettled"
+     },
+     {
+      "at": 1792536687041,
+      "what": "numbered",
+      "input": 2
+     },
+     {
+      "at": 1792536687041,
+      "what": "call",
+      "call": 6,
+      "method": "PressTakenAt",
+      "args": [
+       "mouseup",
+       629,
+       70,
+       0,
+       0,
+       0,
+       0,
+       2,
+       -1,
+       -1,
+       2,
+       0,
+       null
+      ]
+     },
+     {
+      "at": 1792536687190,
+      "what": "replied",
+      "call": 5
+     },
+     {
+      "at": 1792536687202,
+      "what": "answered",
+      "input": 1,
+      "sent": 2
+     },
+     {
+      "at": 1792536687212,
+      "what": "replied",
+      "call": 6
+     },
+     {
+      "at": 1792536687263,
+      "what": "numbered",
+      "input": 3
+     },
+     {
+      "at": 1792536687263,
+      "what": "call",
+      "call": 7,
+      "method": "OnKeyAsync",
+      "args": [
+       "=",
+       false,
+       false,
+       false,
+       false,
+       true,
+       false,
+       null,
+       -1,
+       -1,
+       false,
+       false,
+       3,
+       3,
+       null
+      ]
+     },
+     {
+      "at": 1792536687263,
+      "what": "hold"
+     },
+     {
+      "at": 1792536687265,
+      "what": "held",
+      "key": "1",
+      "ctrlKey": false,
+      "shiftKey": false,
+      "altKey": false,
+      "metaKey": false,
+      "repeat": false,
+      "onRoot": true,
+      "inEditor": false,
+      "inPopover": false,
+      "inFindField": false,
+      "paint": 3
+     },
+     {
+      "at": 1792536687265,
+      "what": "call",
+      "call": 8,
+      "method": "InputsSent",
+      "args": [
+       3
+      ]
+     },
+     {
+      "at": 1792536687267,
+      "what": "held",
+      "key": "+",
+      "ctrlKey": false,
+      "shiftKey": false,
+      "altKey": false,
+      "metaKey": false,
+      "repeat": false,
+      "onRoot": true,
+      "inEditor": false,
+      "inPopover": false,
+      "inFindField": false,
+      "paint": 3
+     },
+     {
+      "at": 1792536687267,
+      "what": "call",
+      "call": 9,
+      "method": "InputsSent",
+      "args": [
+       3
+      ]
+     },
+     {
+      "at": 1792536687359,
+      "what": "answered",
+      "input": 2,
+      "sent": 3
+     },
+     {
+      "at": 1792536687452,
+      "what": "replied",
+      "call": 8
+     },
+     {
+      "at": 1792536687452,
+      "what": "replied",
+      "call": 9
+     },
+     {
+      "at": 1792536687551,
+      "what": "call",
+      "call": 10,
+      "method": "OnEditorCaretAsync",
+      "args": [
+       "=",
+       1,
+       false
+      ]
+     },
+     {
+      "at": 1792536687586,
+      "what": "replied",
+      "call": 7
+     },
+     {
+      "at": 1792536687587,
+      "what": "let go",
+      "key": "1",
+      "ctrlKey": false,
+      "shiftKey": false,
+      "altKey": false,
+      "metaKey": false,
+      "repeat": false,
+      "onRoot": true,
+      "inEditor": false,
+      "inPopover": false,
+      "inFindField": false,
+      "paint": 3
+     },
+     {
+      "at": 1792536687590,
+      "what": "call",
+      "call": 11,
+      "method": "OnEditorCaretAsync",
+      "args": [
+       "=1",
+       2,
+       false
+      ]
+     },
+     {
+      "at": 1792536687591,
+      "what": "let go",
+      "key": "+",
+      "ctrlKey": false,
+      "shiftKey": false,
+      "altKey": false,
+      "metaKey": false,
+      "repeat": false,
+      "onRoot": true,
+      "inEditor": false,
+      "inPopover": false,
+      "inFindField": false,
+      "paint": 3
+     },
+     {
+      "at": 1792536687592,
+      "what": "call",
+      "call": 12,
+      "method": "OnEditorCaretAsync",
+      "args": [
+       "=1+",
+       3,
+       false
+      ]
+     },
+     {
+      "at": 1792536687592,
+      "what": "hold over"
+     },
+     {
+      "at": 1792536687705,
+      "what": "replied",
+      "call": 10
+     },
+     {
+      "at": 1792536687732,
+      "what": "answered",
+      "input": 3,
+      "sent": 3
+     },
+     {
+      "at": 1792536687744,
+      "what": "replied",
+      "call": 11
+     },
+     {
+      "at": 1792536687747,
+      "what": "replied",
+      "call": 12
+     },
+     {
+      "at": 1792536687750,
+      "what": "settled"
+     },
+     {
+      "at": 1792536687837,
+      "what": "hold"
+     },
+     {
+      "at": 1792536687837,
+      "what": "unsettled"
+     },
+     {
+      "at": 1792536688032,
+      "what": "call",
+      "call": 13,
+      "method": "OnEditorCaretAsync",
+      "args": [
+       "<50 chars>",
+       50,
+       false
+      ]
+     },
+     {
+      "at": 1792536688048,
+      "what": "held"
+     },
+     {
+      "at": 1792536688048,
+      "what": "call",
+      "call": 14,
+      "method": "InputsSent",
+      "args": [
+       3
+      ]
+     },
+     {
+      "at": 1792536688153,
+      "what": "let go"
+     },
+     {
+      "at": 1792536688185,
+      "what": "replied",
+      "call": 13
+     },
+     {
+      "at": 1792536688202,
+      "what": "replied",
+      "call": 14
+     },
+     {
+      "at": 1792536688312,
+      "what": "hold over"
+     },
+     {
+      "at": 1792536688312,
+      "what": "settled"
+     },
+     {
+      "at": 1792536688316,
+      "what": "call",
+      "call": 15,
+      "method": "OnEditorCaretAsync",
+      "args": [
+       "=1+Positions[Id]",
+       16,
+       false
+      ]
+     },
+     {
+      "at": 1792536688361,
+      "what": "numbered",
+      "input": 4
+     },
+     {
+      "at": 1792536688361,
+      "what": "call",
+      "call": 16,
+      "method": "PressTakenAt",
+      "args": [
+       "mousedown",
+       233,
+       42,
+       0,
+       0,
+       0,
+       0,
+       2,
+       -1,
+       -1,
+       4,
+       0,
+       "<object>"
+      ]
+     },
+     {
+      "at": 1792536688362,
+      "what": "hold"
+     },
+     {
+      "at": 1792536688362,
+      "what": "unsettled"
+     },
+     {
+      "at": 1792536688362,
+      "what": "numbered",
+      "input": 5
+     },
+     {
+      "at": 1792536688362,
+      "what": "call",
+      "call": 17,
+      "method": "PressAnsweredAsync",
+      "args": [
+       5,
+       "<object>"
+      ]
+     },
+     {
+      "at": 1792536688363,
+      "what": "numbered",
+      "input": 6
+     },
+     {
+      "at": 1792536688363,
+      "what": "call",
+      "call": 18,
+      "method": "PressTakenAt",
+      "args": [
+       "mouseup",
+       233,
+       42,
+       0,
+       0,
+       0,
+       0,
+       2,
+       -1,
+       -1,
+       6,
+       0,
+       "<object>"
+      ]
+     },
+     {
+      "at": 1792536688468,
+      "what": "replied",
+      "call": 15
+     },
+     {
+      "at": 1792536688514,
+      "what": "replied",
+      "call": 16
+     },
+     {
+      "at": 1792536688523,
+      "what": "replied",
+      "call": 17
+     },
+     {
+      "at": 1792536688523,
+      "what": "hold over"
+     },
+     {
+      "at": 1792536688523,
+      "what": "replied",
+      "call": 18
+     },
+     {
+      "at": 1792536688824,
+      "what": "answered",
+      "input": 6,
+      "sent": 6
+     },
+     {
+      "at": 1792536688824,
+      "what": "settled"
+     }
+    ]
+   }
+  },
+  {
+   "root": "ex5-root",
+   "journal": {
+    "dropped": 0,
+    "entries": [
+     {
+      "at": 1792536685650,
+      "what": "call",
+      "call": 1,
+      "method": "OnDevicePixelAsync",
+      "args": [
+       1
+      ]
+     },
+     {
+      "at": 1792536685650,
+      "what": "answered",
+      "input": 0,
+      "sent": 0
+     },
+     {
+      "at": 1792536685650,
+      "what": "settled"
+     },
+     {
+      "at": 1792536685692,
+      "what": "call",
+      "call": 2,
+      "method": "OnViewportReportAsync",
+      "args": [
+       0,
+       0,
+       330,
+       420
+      ]
+     },
+     {
+      "at": 1792536685692,
+      "what": "call",
+      "call": 3,
+      "method": "OnLayoutCeilingAsync",
+      "args": [
+       33554428
+      ]
+     },
+     {
+      "at": 1792536685807,
+      "what": "replied",
+      "call": 1
+     },
+     {
+      "at": 1792536685849,
+      "what": "replied",
+      "call": 2
+     },
+     {
+      "at": 1792536685849,
+      "what": "replied",
+      "call": 3
+     },
+     {
+      "at": 1792536687837,
+      "what": "call",
+      "call": 4,
+      "method": "PressHandedOnAsync",
+      "args": [
+       1,
+       true
+      ]
+     },
+     {
+      "at": 1792536687837,
+      "what": "numbered",
+      "input": 1
+     },
+     {
+      "at": 1792536687837,
+      "what": "call",
+      "call": 5,
+      "method": "PressTakenAt",
+      "args": [
+       "mousedown",
+       240,
+       70,
+       0,
+       0,
+       0,
+       0,
+       2,
+       -1,
+       -1,
+       1,
+       0,
+       null
+      ]
+     },
+     {
+      "at": 1792536687837,
+      "what": "unsettled"
+     },
+     {
+      "at": 1792536687838,
+      "what": "numbered",
+      "input": 2
+     },
+     {
+      "at": 1792536687838,
+      "what": "call",
+      "call": 6,
+      "method": "PressTakenAt",
+      "args": [
+       "mouseup",
+       240,
+       70,
+       0,
+       0,
+       0,
+       0,
+       2,
+       -1,
+       -1,
+       2,
+       0,
+       null
+      ]
+     },
+     {
+      "at": 1792536687991,
+      "what": "replied",
+      "call": 5
+     },
+     {
+      "at": 1792536688018,
+      "what": "replied",
+      "call": 6
+     },
+     {
+      "at": 1792536688048,
+      "what": "call",
+      "call": 7,
+      "method": "PressHandedOnAsync",
+      "args": [
+       2,
+       false
+      ]
+     },
+     {
+      "at": 1792536688048,
+      "what": "numbered",
+      "input": 3
+     },
+     {
+      "at": 1792536688048,
+      "what": "call",
+      "call": 8,
+      "method": "InputTakenAt",
+      "args": [
+       "mousedown",
+       3,
+       null
+      ]
+     },
+     {
+      "at": 1792536688048,
+      "what": "numbered",
+      "input": 4
+     },
+     {
+      "at": 1792536688048,
+      "what": "call",
+      "call": 9,
+      "method": "InputTakenAt",
+      "args": [
+       "click",
+       4,
+       null
+      ]
+     },
+     {
+      "at": 1792536688153,
+      "what": "replied",
+      "call": 4
+     },
+     {
+      "at": 1792536688153,
+      "what": "call",
+      "call": 10,
+      "method": "PressInTurn",
+      "args": [
+       2
+      ]
+     },
+     {
+      "at": 1792536688156,
+      "what": "answered",
+      "input": 2,
+      "sent": 4
+     },
+     {
+      "at": 1792536688202,
+      "what": "replied",
+      "call": 8
+     },
+     {
+      "at": 1792536688205,
+      "what": "replied",
+      "call": 9
+     },
+     {
+      "at": 1792536688306,
+      "what": "replied",
+      "call": 10
+     },
+     {
+      "at": 1792536688312,
+      "what": "replied",
+      "call": 7
+     },
+     {
+      "at": 1792536688313,
+      "what": "answered",
+      "input": 3,
+      "sent": 4
+     },
+     {
+      "at": 1792536688313,
+      "what": "answered",
+      "input": 4,
+      "sent": 4
+     },
+     {
+      "at": 1792536688313,
+      "what": "settled"
+     }
+    ]
+   }
+  }
+ ],
+ "core": [
+  "2026-10-20T22:51:27.1156550+00:00 Debug ExGrid.InputOrder: ex6- received 1 (done 0, waiting 1)",
+  "2026-10-20T22:51:27.1169260+00:00 Debug ExGrid.InputOrder: ex6- started 1 (done 0, waiting 0)",
+  "2026-10-20T22:51:27.1208160+00:00 Debug ExGrid.InputOrder: ex6- finished 1 (done 0, waiting 0)",
+  "2026-10-20T22:51:27.1208540+00:00 Debug ExGrid.InputOrder: ex6- answered 1 (done 1, waiting 0)",
+  "2026-10-20T22:51:27.1275550+00:00 Debug ExGrid.InputOrder: ex6- received 2 (done 1, waiting 1)",
+  "2026-10-20T22:51:27.1276390+00:00 Debug ExGrid.InputOrder: ex6- started 2 (done 1, waiting 0)",
+  "2026-10-20T22:51:27.1284560+00:00 Debug ExGrid.InputOrder: ex6- finished 2 (done 1, waiting 0)",
+  "2026-10-20T22:51:27.1284900+00:00 Debug ExGrid.InputOrder: ex6- answered 2 (done 2, waiting 0)",
+  "2026-10-20T22:51:27.3414430+00:00 Debug ExGrid.InputOrder: ex6- received 3 (done 2, waiting 1)",
+  "2026-10-20T22:51:27.3416180+00:00 Debug ExGrid.InputOrder: ex6- started 3 (done 2, waiting 0)",
+  "2026-10-20T22:51:27.5045160+00:00 Debug ExGrid.InputOrder: ex6- finished 3 (done 2, waiting 0)",
+  "2026-10-20T22:51:27.5046840+00:00 Debug ExGrid.InputOrder: ex6- answered 3 (done 3, waiting 0)",
+  "2026-10-20T22:51:27.9187590+00:00 Debug ExGrid.InputOrder: ex5- received 1 (done 0, waiting 1)",
+  "2026-10-20T22:51:27.9189800+00:00 Debug ExGrid.InputOrder: ex5- started 1 (done 0, waiting 0)",
+  "2026-10-20T22:51:27.9219250+00:00 Debug ExGrid.InputOrder: ex5- received 2 (done 0, waiting 1)",
+  "2026-10-20T22:51:28.0715970+00:00 Debug ExGrid.InputOrder: ex5- finished 1 (done 0, waiting 1)",
+  "2026-10-20T22:51:28.0717090+00:00 Debug ExGrid.InputOrder: ex5- answered 1 (done 1, waiting 1)",
+  "2026-10-20T22:51:28.0717470+00:00 Debug ExGrid.InputOrder: ex5- started 2 (done 1, waiting 0)",
+  "2026-10-20T22:51:28.0721480+00:00 Debug ExGrid.InputOrder: ex5- finished 2 (done 1, waiting 0)",
+  "2026-10-20T22:51:28.0721950+00:00 Debug ExGrid.InputOrder: ex5- answered 2 (done 2, waiting 0)",
+  "2026-10-20T22:51:28.1271230+00:00 Debug ExGrid.InputOrder: ex5- received 3 (done 2, waiting 1)",
+  "2026-10-20T22:51:28.1272680+00:00 Debug ExGrid.InputOrder: ex5- started 3 (done 2, waiting 0)",
+  "2026-10-20T22:51:28.1298670+00:00 Debug ExGrid.InputOrder: ex5- received 4 (done 2, waiting 1)",
+  "2026-10-20T22:51:28.2314170+00:00 Debug ExGrid.InputOrder: ex5- finished 3 (done 2, waiting 1)",
+  "2026-10-20T22:51:28.2315710+00:00 Debug ExGrid.InputOrder: ex5- answered 3 (done 3, waiting 1)",
+  "2026-10-20T22:51:28.2316240+00:00 Debug ExGrid.InputOrder: ex5- started 4 (done 3, waiting 0)",
+  "2026-10-20T22:51:28.2330990+00:00 Debug ExGrid.InputOrder: ex5- finished 4 (done 3, waiting 0)",
+  "2026-10-20T22:51:28.2331280+00:00 Debug ExGrid.InputOrder: ex5- answered 4 (done 4, waiting 0)",
+  "2026-10-20T22:51:28.4381790+00:00 Debug ExGrid.InputOrder: ex6- received 4 (done 3, waiting 1)",
+  "2026-10-20T22:51:28.4383560+00:00 Debug ExGrid.InputOrder: ex6- started 4 (done 3, waiting 0)",
+  "2026-10-20T22:51:28.4392220+00:00 Debug ExGrid.InputOrder: ex6- finished 4 (done 3, waiting 0)",
+  "2026-10-20T22:51:28.4392550+00:00 Debug ExGrid.InputOrder: ex6- answered 4 (done 4, waiting 0)",
+  "2026-10-20T22:51:28.4404870+00:00 Debug ExGrid.InputOrder: ex6- received 5 (done 4, waiting 1)",
+  "2026-10-20T22:51:28.4405200+00:00 Debug ExGrid.InputOrder: ex6- started 5 (done 4, waiting 0)",
+  "2026-10-20T22:51:28.4408890+00:00 Debug ExGrid.InputOrder: ex6- finished 5 (done 4, waiting 0)",
+  "2026-10-20T22:51:28.4409410+00:00 Debug ExGrid.InputOrder: ex6- answered 5 (done 5, waiting 0)",
+  "2026-10-20T22:51:28.4410340+00:00 Debug ExGrid.InputOrder: ex6- received 6 (done 5, waiting 1)",
+  "2026-10-20T22:51:28.4410650+00:00 Debug ExGrid.InputOrder: ex6- started 6 (done 5, waiting 0)",
+  "2026-10-20T22:51:28.4411030+00:00 Debug ExGrid.InputOrder: ex6- finished 6 (done 5, waiting 0)",
+  "2026-10-20T22:51:28.4411250+00:00 Debug ExGrid.InputOrder: ex6- answered 6 (done 6, waiting 0)"
+ ]
+}

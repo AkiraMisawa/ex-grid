@@ -2512,7 +2512,7 @@ public class WritesLandAsEnteredTests : GridTestContext
             reader.Groups["body"].Value);
         // A key carries it from its keydown, held or not.
         Assert.Matches(new Regex(@"const snapshot = \(event\) => \(\{[^}]*paint: paintNow\(\),"), script);
-        Assert.Matches(new Regex(@"'OnKeyAsync',[^;]*k\.paint, nextInput\(neutral\), input \? null : inputText\(\)\)"), script);
+        Assert.Matches(new Regex(@"'OnKeyAsync',[^;]*k\.paint, nextInput\(neutral\), inputText\(input === null\)\)"), script);
         // A paste carries it from its event, held or not.
         Assert.Matches(new Regex(@"sendPaste\(event\.clipboardData\.getData\('text/plain'\), event\.clipboardData\.getData\('text/html'\), paintNow\(\)\)"), script);
         Assert.Matches(new Regex(@"clipboard: 'paste',[^}]*paint: paintNow\(\),"), script);
@@ -2529,7 +2529,7 @@ public class WritesLandAsEnteredTests : GridTestContext
         var press = Regex.Match(script, @"const onPress = \(event\) => \{(?<body>.*?)\n    \};", RegexOptions.Singleline);
         Assert.True(press.Success, "onPress is defined");
         var pressed = press.Groups["body"].Value;
-        Assert.Contains("const contextPress = metaIsPrimary && event.ctrlKey;", pressed);
+        Assert.Contains("const contextPress = event.button === 2 || (metaIsPrimary && event.ctrlKey);", pressed);
         Assert.Contains("event.button === 0 && !contextPress ? ownAction(event.target) : null", pressed);
         Assert.Matches(new Regex(@"actionPress = button !== null \? \{\s*button,\s*paint: paintNow\(\),\s*row: [^\n]+\s*column: [^\n]+\s*index: "), pressed);
 

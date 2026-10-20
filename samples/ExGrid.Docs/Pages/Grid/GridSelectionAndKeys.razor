@@ -148,6 +148,8 @@
             click or menu command immediately after typing carries the full field text into its turn.
             No pause between the last character and the command is needed. A draft in a popover or dialog
             still waits for its Apply or OK command.
+            If the command rewrites an open edit, as Point does when inserting a Reference, its answer
+            survives the following release; only fresh typing replaces that text.
         </p>
         <DocsExample Title="Text before the next command" Builtin="typeof(OrderedFieldText)"
                      Mud="typeof(OrderedFieldTextMud)" Files="@(["Examples/Grid/OrderedFieldText.razor"])">

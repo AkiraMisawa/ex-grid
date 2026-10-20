@@ -44,6 +44,29 @@ test('ADR-0240: typing alone is settled only when the editor render has heard it
 });
 
 for (const chrome of ['builtin', 'mud']) {
+    test(`ADR-0240: a point survives its press answer and release, and fresh typing replaces it (${chrome})`, async ({ page }) => {
+        await openSheet(page, chrome);
+        const grid = sheet(page);
+        await setRoundTrip(150);
+        await pressCell(grid, 'F3');
+        await page.keyboard.press('F2');
+        await settled(grid);
+        const targets = [];
+        for (const address of ['B2', 'C2']) {
+            const box = await cell(grid, address).boundingBox();
+            expect(box).not.toBeNull();
+            targets.push({ address, x: box.x + box.width / 2, y: box.y + box.height / 2 });
+        }
+
+        for (const target of targets) {
+            await page.keyboard.press('ControlOrMeta+A');
+            await page.keyboard.type('=1+');
+            await page.mouse.click(target.x, target.y);
+            await settled(grid);
+            expect(await editor(grid).inputValue()).toBe(`=1+${target.address}`);
+        }
+    });
+
     for (const surface of ['cell', 'bar', 'name']) {
         test(`ADR-0240: ${surface} typing is covered by the Settled Mark (${chrome})`, async ({ page }) => {
             await openSheet(page, chrome);
