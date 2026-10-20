@@ -126,4 +126,11 @@ public sealed class BoardInputTests
         Assert.Equal(2, snapshot.RowCount);
         Assert.Null(snapshot.ValueAt(snapshot.Rows[0], snapshot["notional"]));
     }
+
+    [Fact] // ADR-0341: a member written twice in a row is refused, never settled by whichever came last
+    public void A_row_naming_a_column_twice_is_refused()
+    {
+        var refused = Assert.Throws<BoardRefusedException>(() => Trades().FromJson("""[{"notional": 1, "notional": 1000000}]"""));
+        Assert.StartsWith("The data of input 'trades' is not JSON", refused.Message, StringComparison.Ordinal);
+    }
 }

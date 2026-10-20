@@ -28,6 +28,9 @@ public sealed class ShapedGridTests
     [InlineData("\"$\"#,##0.00", 1.5, "$1.50")]
     [InlineData("$#,##0.00", 1.5, "$1.50")]
     [InlineData("0.0 \"bp\"", 12.25, "12.3 bp")]
+    [InlineData("0.00\" p.a.\"", 4.5, "4.50 p.a.")]
+    [InlineData("#,##0.00;", -1500.0, "")]
+    [InlineData("#,##0;-#,##0;", 0.0, "")]
     public void A_number_shows_as_its_format_code_says(string code, double value, string text) =>
         Assert.Equal(text, Formatted(code, value));
 
@@ -53,6 +56,8 @@ public sealed class ShapedGridTests
     [InlineData("m/d/yy", "2026-10-20 09:05:07", "10/20/26")]
     [InlineData("h:mm AM/PM", "2026-10-20 15:05:07", "3:05 PM")]
     [InlineData("mm:ss", "2026-10-20 15:05:07", "05:07")]
+    [InlineData("d", "2026-10-20 15:05:07", "20")]
+    [InlineData("h", "2026-10-20 15:05:07", "15")]
     public void A_date_shows_as_its_format_code_says(string code, string value, string text) =>
         Assert.Equal(text, Formatted(code, DateTime.Parse(value, Invariant)));
 
@@ -103,6 +108,13 @@ public sealed class ShapedGridTests
         var refused = Assert.Throws<BoardRefusedException>(() => Read(json));
         Assert.Equal(path, refused.Path);
         Assert.Equal(message, refused.Message);
+    }
+
+    [Fact] // ADR-0342: a member written twice is never settled by whichever came last
+    public void A_member_written_twice_is_refused()
+    {
+        var refused = Assert.Throws<BoardRefusedException>(() => Read("""{"data": "trades", "data": "orders", "columns": [{"column": "desk"}]}"""));
+        Assert.StartsWith("The grid's spec is not JSON", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact] // ADR-0342 with ADR-0207: sorts and filters are the View State's, read by its reader

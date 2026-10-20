@@ -162,7 +162,7 @@ public sealed class BoardInput
         JsonDocument document;
         try
         {
-            document = JsonDocument.Parse(json);
+            document = JsonDocument.Parse(json, new JsonDocumentOptions { AllowDuplicateProperties = false });
         }
         catch (JsonException e)
         {

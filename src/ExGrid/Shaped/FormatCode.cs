@@ -101,21 +101,25 @@ internal sealed class FormatCode
         };
     }
 
+    // An empty section shows nothing, as Excel shows it; .NET would read "" as "G".
+    private static string Apply(IFormattable value, string section, CultureInfo culture) =>
+        section.Length == 0 ? "" : value.ToString(section, culture);
+
     private string Number(decimal number, CultureInfo culture)
     {
         if (number < 0 && sections.Length >= 2)
-            return (-number).ToString(sections[1], culture);
+            return Apply(-number, sections[1], culture);
         if (number == 0 && sections.Length >= 3)
-            return 0m.ToString(sections[2], culture);
+            return Apply(0m, sections[2], culture);
         // One section takes the sign itself, and a decimal that rounds to zero drops it, as Excel does.
-        return number.ToString(sections[0], culture);
+        return Apply(number, sections[0], culture);
     }
 
     private string NumberOutsideDecimal(double number, CultureInfo culture)
     {
         if (number < 0 && sections.Length >= 2)
-            return (-number).ToString(sections[1], culture);
-        return number.ToString(sections[0], culture);
+            return Apply(-number, sections[1], culture);
+        return Apply(number, sections[0], culture);
     }
 
     private static bool Split(string code, out List<string> parts, [NotNullWhen(false)] out string? reason)
@@ -214,9 +218,12 @@ internal sealed class FormatCode
     {
         var output = new StringBuilder();
         string? refused = null;
+        var points = 0;
         var ok = Walk(section, i =>
         {
             var c = section[i];
+            if (c == '.')
+                points++;
             switch (c)
             {
                 case '0' or '#' or '.' or ',' or '%':
@@ -249,7 +256,7 @@ internal sealed class FormatCode
             reason = refused!;
             return false;
         }
-        if (section.Count(c => c == '.') > 1)
+        if (points > 1)
         {
             reason = "holds two decimal points in a section";
             return false;
@@ -339,7 +346,9 @@ internal sealed class FormatCode
                     break;
             }
         }
-        translated = output.ToString();
+        // A custom format of one character is read by .NET as a standard one ("d" the short date)
+        // unless it is marked as custom.
+        translated = output.Length == 1 ? "%" + output : output.ToString();
         reason = null;
         return true;
     }
