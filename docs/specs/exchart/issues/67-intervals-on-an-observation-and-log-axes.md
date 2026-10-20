@@ -1,6 +1,6 @@
 # 67: Intervals on an Observation, and on log axes
 
-Status: open
+Status: ready-for-agent
 
 **Why:** [ADR-0303](../../../adr/0303-an-interval-belongs-to-a-series-and-says-what-it-means.md).
 

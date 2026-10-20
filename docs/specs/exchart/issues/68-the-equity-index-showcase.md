@@ -1,6 +1,6 @@
 # 68: The Equity index daily bars Showcase
 
-Status: open
+Status: ready-for-agent
 
 **Why:** grilling Q9 (2026-10-20); the Showcases of [ADR-0280](../../../adr/0280-exchart-is-shown-in-five-showcases-and-a-chart-section-of-seven-pages.md).
 

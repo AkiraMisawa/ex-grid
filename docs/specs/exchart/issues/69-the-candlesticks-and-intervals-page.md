@@ -1,6 +1,6 @@
 # 69: The Candlesticks and intervals page, and layer 3
 
-Status: open
+Status: ready-for-agent
 
 **Why:** grilling Q9 (2026-10-20); CLAUDE.md, "The Docs Site moves with the change".
 

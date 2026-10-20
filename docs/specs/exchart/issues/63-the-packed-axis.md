@@ -1,6 +1,6 @@
 # 63: The Packed axis
 
-Status: open
+Status: ready-for-agent
 
 **Why:** [ADR-0301](../../../adr/0301-candles-stand-on-calendar-time-unless-the-consumer-packs-the-sessions.md).
 

@@ -1,6 +1,6 @@
 # 65: A candle's tooltip and click
 
-Status: open
+Status: ready-for-agent
 
 **Why:** [ADR-0300](../../../adr/0300-a-price-range-is-one-bar-a-row-refused-where-its-values-disagree.md), [ADR-0302](../../../adr/0302-past-the-plots-pixels-candles-merge-into-the-markets-own-periods.md).
 

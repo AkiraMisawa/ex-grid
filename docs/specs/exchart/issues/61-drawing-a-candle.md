@@ -1,6 +1,6 @@
 # 61: Drawing a candle
 
-Status: open
+Status: ready-for-agent
 
 **Why:** [ADR-0300](../../../adr/0300-a-price-range-is-one-bar-a-row-refused-where-its-values-disagree.md).
 

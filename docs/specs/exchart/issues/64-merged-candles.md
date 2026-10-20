@@ -1,6 +1,6 @@
 # 64: Merged candles
 
-Status: open
+Status: ready-for-agent
 
 **Why:** [ADR-0302](../../../adr/0302-past-the-plots-pixels-candles-merge-into-the-markets-own-periods.md).
 

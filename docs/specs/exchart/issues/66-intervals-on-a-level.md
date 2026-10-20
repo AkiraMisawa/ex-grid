@@ -1,6 +1,6 @@
 # 66: Intervals on a Level
 
-Status: open
+Status: ready-for-agent
 
 **Why:** [ADR-0303](../../../adr/0303-an-interval-belongs-to-a-series-and-says-what-it-means.md).
 
