@@ -75,6 +75,7 @@ public static class BuiltInCommandLabels
             "Nothing was changed: the selection covers " + RefusalLabelIds.ColumnPlaceholder
             + ", which cannot be edited. Select cells only in columns that can be edited.",
         RefusalLabelIds.PasteTooLarge => "Nothing was changed: that is more than the grid reads at once. Use a smaller block.",
+        RefusalLabelIds.PasteUnreadable => "Nothing was pasted: the clipboard could not be read. Paste again.",
         RefusalLabelIds.PasteSpillPastExtent =>
             "Nothing was pasted: the copied block would run past the last row or column. Select a cell further from the edge.",
         RefusalLabelIds.PasteNothingToFillFrom =>

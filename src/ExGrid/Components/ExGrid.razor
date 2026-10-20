@@ -2409,8 +2409,7 @@
     // Every id this instance writes is prefixed per instance (ADR-0018/0033): two
     // grids on one page must not share a cell id, or aria-activedescendant resolves
     // into the wrong grid.
-    private static int InstanceCounter;
-    private readonly string _idPrefix = FormattableString.Invariant($"ex{Interlocked.Increment(ref InstanceCounter)}-");
+    private readonly string _idPrefix = InstanceIds.Next();
 
     // The live region's sentence, and the ranges it last described. The announcement
     // is made once per settled selection (ADR-0033) — the timer below is what "settled"
@@ -6764,7 +6763,23 @@
             await RefuseWriteAsync(PasteRefusalReason.TooLarge);
             return;
         }
-        await OnPasteAsync(await ReadAsync(text), await ReadAsync(html), paint);
+        string? plain, marked;
+        try
+        {
+            plain = await ReadAsync(text);
+            marked = await ReadAsync(html);
+        }
+        catch (Exception e) when (e is IOException or TimeoutException or JSException or OperationCanceledException)
+        {
+            // A stream that fails or stops delivering refuses the paste aloud; it never escapes as
+            // the circuit's unhandled exception, and nothing is pasted from part of it (ticket 06 of
+            // the widened run; ADR-0005).
+            if (_disposed)
+                return;
+            await RefuseWriteAsync(PasteRefusalReason.Unreadable);
+            return;
+        }
+        await OnPasteAsync(plain, marked, paint);
 
         static async Task<string?> ReadAsync(IJSStreamReference? reference)
         {

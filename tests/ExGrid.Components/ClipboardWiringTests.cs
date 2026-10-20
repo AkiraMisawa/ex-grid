@@ -298,6 +298,30 @@ public class ClipboardWiringTests : GridTestContext
         Assert.True(text.Disposed && html.Disposed);
     }
 
+    [Fact] // ADR-0005, widened-run ticket 06: a stream that stops delivering refuses the paste aloud, and the grid keeps answering
+    public async Task A_paste_stream_that_fails_to_read_is_refused_and_the_next_paste_lands()
+    {
+        var intents = new List<GridPasteIntent>();
+        var refused = new List<PasteRefusalReason>();
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.OnPasteRefused, (PasteRefusalReason r) => refused.Add(r)));
+        await ClickCellAsync(cut, 50, 10);
+        var text = FakeJSStream.Of("1");
+        var html = FakeJSStream.Failing(20, new TimeoutException("Did not receive any data in the allotted time."));
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteStreamsAsync(text, html));
+
+        Assert.Equal([PasteRefusalReason.Unreadable], refused);
+        Assert.Empty(intents);
+        Assert.True(text.Disposed && html.Disposed);
+        Assert.Contains("the clipboard could not be read", cut.Find(".ex-announce").TextContent);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteStreamsAsync(FakeJSStream.Of("fill"), null));
+
+        Assert.Equal("fill", Assert.Single(intents).ValueFor(new CellPosition(0, 0)));
+    }
+
     [Fact] // ADR-0005 / CP-22: exactly on the cap is not past it
     public async Task A_paste_exactly_on_the_byte_cap_is_read()
     {
