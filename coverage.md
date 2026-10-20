@@ -13,19 +13,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/20/2026 - 13:36:33 |
+| Generated on: | 10/20/2026 - 14:55:33 |
 | Parser: | MultiReport (16x Cobertura) |
 | Assemblies: | 13 |
-| Classes: | 968 |
-| Files: | 511 |
-| **Line coverage:** | 94.9% (63878 of 67306) |
-| Covered lines: | 63878 |
-| Uncovered lines: | 3428 |
-| Coverable lines: | 67306 |
-| Total lines: | 113096 |
-| **Branch coverage:** | 87.3% (38097 of 43612) |
-| Covered branches: | 38097 |
-| Total branches: | 43612 |
+| Classes: | 969 |
+| Files: | 512 |
+| **Line coverage:** | 94.9% (63988 of 67425) |
+| Covered lines: | 63988 |
+| Uncovered lines: | 3437 |
+| Coverable lines: | 67425 |
+| Total lines: | 113307 |
+| **Branch coverage:** | 87.3% (38151 of 43680) |
+| Covered branches: | 38151 |
+| Total branches: | 43680 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -168,7 +168,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**95.3%**|**88.6%**|
+|**ExGrid**|**95.3%**|**88.5%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -199,7 +199,7 @@
 |ExGrid.Cells.RgbColour|100%|100%|
 |ExGrid.Cells.TemplateCellContext<TRow>|100%||
 |ExGrid.ChangeGatherer|97.8%|90.9%|
-|ExGrid.Chrome.BuiltInCommandLabels|100%|69.8%|
+|ExGrid.Chrome.BuiltInCommandLabels|100%|69.2%|
 |ExGrid.Chrome.CellEditorContext|93.7%||
 |ExGrid.Chrome.CellMessageContext|100%||
 |ExGrid.Chrome.ChromeStylesheet|100%||
@@ -220,7 +220,7 @@
 |ExGrid.Chrome.MenuKeys|98.8%|87.1%|
 |ExGrid.Chrome.NameBoxContext|100%||
 |ExGrid.Chrome.OperandReading|100%||
-|ExGrid.Chrome.RefusalLabelIds|92.8%|92%|
+|ExGrid.Chrome.RefusalLabelIds|93.1%|92.3%|
 |ExGrid.Chrome.SelectionSummaryContext|100%||
 |ExGrid.Chrome.SummaryFigureText|100%||
 |ExGrid.Chrome.SummaryLabelIds|100%||
@@ -287,6 +287,7 @@
 |ExGrid.Components.ExGrid.PaintBasis<TRow>|100%|100%|
 |ExGrid.Components.ExGrid.PaintLayout<TRow>|100%||
 |ExGrid.Components.ExGrid.PaintRows<TRow>|100%||
+|ExGrid.Components.ExGrid.PasteUnderWay<TRow>|100%|100%|
 |ExGrid.Components.ExGrid.PlaceholderPosition<TRow>|0%||
 |ExGrid.Components.ExGrid.PointBefore<TRow>|100%||
 |ExGrid.Components.ExGrid.PointedDrag<TRow>|100%||
@@ -295,8 +296,8 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|90.7%|85.8%|
 |ExGrid.Components.ExGrid<TRow>|95.3%|90.2%|
+|ExGrid.Components.ExGrid<TRow>|90.6%|85.8%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
@@ -920,7 +921,7 @@
 |ExSheet.SheetToolbar|90.9%|79.6%|
 |ExSheet.SheetToolbarContext|95%|78.5%|
 |ExSheet.SheetWidening|100%|97.5%|
-|ExSheet.SheetWords|95.2%|89.2%|
+|ExSheet.SheetWords|95.2%|89.4%|
 |ExSheet.StrikethroughItem|100%|100%|
 |ExSheet.ToolbarButton|100%|50%|
 |ExSheet.ToolbarChoice|100%||
