@@ -2,7 +2,7 @@
 
 Status: done
 
-**Why:** grilling Q9 (2026-10-20); the Showcases of [ADR-0280](../../../adr/0280-exchart-is-shown-in-five-showcases-and-a-chart-section-of-seven-pages.md).
+**Why:** grilling Q9 (2026-10-20); the Showcases of [ADR-0280](../../../adr/0280-exchart-is-shown-in-five-showcases-and-a-chart-section-of-nine-pages.md).
 
 - [x] Ten years of a synthetic index (fixed seed, one crash day) in a grid beside candles, volume and a 25-day moving average the page computes
 - [x] Toggles: calendar or packed axis; shape only, Japanese red and blue, Western green and red
