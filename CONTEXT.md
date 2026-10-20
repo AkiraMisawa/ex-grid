@@ -483,6 +483,12 @@ it (a Wrapper's dialog) is heard with it only while it is open
 ([ADR-0240](./docs/adr/0240-input-to-one-product-instance-is-taken-in-one-order.md)).
 _Avoid_: host element, container
 
+**Input Journal**:
+An instance's own record of its Input Order: each input numbered, held, released, answered or made
+void, in order. It is internal, for reading a failed run, and no Consumer reads it
+([ADR-0240](./docs/adr/0240-input-to-one-product-instance-is-taken-in-one-order.md) section 10).
+_Avoid_: input log, trace
+
 **Overwrite / Caret**:
 The two states of cell **editing** (four modes in total, with **Interactive** and **Point**). **Overwrite** is
 entered by typing straight onto a selected cell: the original value is replaced, and **the arrow

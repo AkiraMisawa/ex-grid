@@ -207,6 +207,49 @@ The Chrome contexts' delegates may change shape to carry the order. Each change 
   in one task at 60 ms end on the wrong row on `main` in every round (four of the ↓ lost); the branch ends
   on the right one in about 3.1 s, the round trips each step waits for.
 
+## Added 2026-10-20, decided with the user: the Input Journal, a circuit that is down, and a paste cancelled
+
+Three questions the order left open, asked after the Hunt traces of 2026-10-19 had to infer which inputs
+were held and answered (FD-6, KB-31, ED-22 nested), and after the ~10 MB paste was seen to hold every
+input behind it for a minute on the widened run. Each was put to the user with a recommendation.
+
+### 10. The Input Journal is internal
+
+Each instance keeps an **Input Journal**: in order, every input the script numbers (number, kind, held or
+sent, the mode it was gated against), every hold and its release, every answer the core gives, and the
+core's side of each number (entered, finished, made void). The script's side is a bounded ring buffer,
+always on, kept by the listeners the order already has: it adds no listener, reads no layout and sets
+no timer, so ADR-0021 gains no entry. The core's side goes to `ILogger` at Debug, under its own
+category. Neither is a public API: no parameter turns it on and no Consumer reads it. Layer 3 attaches
+both to a failed test, per instance. *Rejected:* a Consumer-facing opt-in (a public surface and a
+Change Note for a diagnostic), and a hook only the DemoHost turns on (blind outside CI).
+
+### 11. Input made while the Server circuit is down is refused, never replayed
+
+A numbered input whose call to the core fails (the circuit is disconnected, so the promise rejects) is
+**not** held for the reconnection. The script keeps its number as owed-void, keeps the root unsettled
+(`data-ex-owing`), and sends the number with the next message that reaches the core. The core makes
+the number void, so the inputs behind it are not kept waiting, and refuses the input aloud (section 4)
+only if it never ran: a call that reached the core before its reply was lost is not refused twice. No
+listener on Blazor's reconnection is needed: the script learns of the failure from its own call, so
+ADR-0021 gains no entry. A circuit that does not come back is Blazor's to show. *Rejected:* holding
+the input and replaying it after the reconnection, which would act against whatever stands then (section
+4).
+
+### 12. Escape cancels a paste still being read: the one input that acts ahead of its turn
+
+A paste whose streams are still being read or parsed is under way: the root says so (`aria-busy`) and
+the live region announces it once. **An Escape typed while it is under way cancels it.** The script
+numbers that Escape as a cancel and also tells the core at once, outside the order; the paste, if it
+has not raised its Edit Intent, stops reading and is refused aloud (`PasteRefusalReason.Cancelled`). If
+it has, the cancel finds nothing, and the Escape's turn says aloud that the paste had already landed.
+The Escape's turn does nothing else: it closes no editor and no popover.
+
+This is the one place an outcome depends on timing, against the spine's sixth rule, and it is accepted
+deliberately: a cancel exists to race the work it cancels. What keeps it honest is that both outcomes
+are said aloud, and which one happened is never left to be guessed. *Recommended against, and chosen:*
+progress alone, with no cancel.
+
 ## What it may cost
 
 Nothing per character (5) and nothing per cell. A click that was not numbered gains the number told
