@@ -169,7 +169,7 @@ public partial class ExSurface
             // The drawing's text stays in the browser, which paints and saves it (ADR-0282).
             return await module.InvokeAsync<bool>("saveDrawing", handle, name, format == ChartFileFormat.Png ? "png" : "svg", Width, Height);
         }
-        catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
             return false;
         }

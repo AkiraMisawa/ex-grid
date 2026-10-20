@@ -73,6 +73,14 @@ public class ChartFileTests : BunitContext
         Assert.Contains("ENE", text, StringComparison.Ordinal);
     }
 
+    [Theory] // ADR-0282: a file name names a file: unsafe characters become underscores, and a stem of dots falls back
+    [InlineData("a/b:c", "a_b_c.csv")]
+    [InlineData("..", "chart.csv")]
+    [InlineData(" . ", "chart.csv")]
+    [InlineData("Report.", "Report.csv")]
+    public void A_file_name_names_a_file(string stem, string expected) =>
+        Assert.Equal(expected, ChartFiles.Name(stem, null, ChartFileFormat.Csv));
+
     [Fact] // ADR-0282: the SVG is the drawing on screen, standalone, with its stylesheet inside it
     public async Task The_svg_is_the_drawing_with_its_stylesheet()
     {

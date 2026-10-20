@@ -491,7 +491,7 @@ public partial class ExChart
             await module.InvokeVoidAsync("save", name, ChartFiles.MediaType(format), bytes);
             return true;
         }
-        catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
             return false;
         }
@@ -507,7 +507,7 @@ public partial class ExChart
     // buttons say so by being unavailable rather than doing nothing (spine rule 1).
     private bool FilesUnavailable => !_told || _scriptRefused;
 
-    // ---- The pointer entry (ADR-0255, eleventh): imported at its versioned address, refused when
+    // ---- The pointer entry (ADR-0255, thirteenth): imported at its versioned address, refused when
     // its stamp is not this build's (ADR-0123).
 
     private IJSObjectReference? _module;
