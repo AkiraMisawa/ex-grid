@@ -12,7 +12,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/20/2026 - 02:14:09 |
+| Generated on: | 10/20/2026 - 02:37:50 |
 | Parser: | MultiReport (16x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 855 |
@@ -233,8 +233,8 @@
 |ExGrid.RangeDocument|100%||
 |ExGrid.RowChange<TRow>|100%||
 |ExGrid.RowRange|100%||
-|ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
 |ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
+|ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
 |ExGrid.Rows.InMemoryRowMarks<TRow>|90.3%|77.4%|
 |ExGrid.Rows.RowMarkAdapter<TRow>|100%||
 |ExGrid.Rows.RowMarkCounts|100%||
