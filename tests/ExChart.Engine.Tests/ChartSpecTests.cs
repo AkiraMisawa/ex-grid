@@ -55,6 +55,29 @@ public class ChartSpecTests
     public void A_series_without_a_kind_is_refused_by_its_path() =>
         Assert.StartsWith("series[0].kind is missing", Refusal(Level.Replace("\"kind\": \"level\", ", "")));
 
+    [Fact] // ADR-0320: a kind written as null is missing, refused by its path, never a crash
+    public void A_null_kind_is_refused_by_its_path() =>
+        Assert.StartsWith("series[0].kind is missing", Refusal(Level.Replace("\"kind\": \"level\"", "\"kind\": null")));
+
+    [Fact] // ADR-0320: an unknown key is named; only numbers written in are told a spec holds none
+    public void An_unknown_key_says_numbers_only_when_numbers_were_written()
+    {
+        var typo = Refusal(Level.Replace("\"fromZero\": false", "\"color\": \"red\""));
+        Assert.StartsWith("series[0].color is not part of a Chart Spec", typo);
+        Assert.DoesNotContain("numbers", typo);
+        Assert.Contains("a spec holds no numbers", Refusal(Level.Replace("\"fromZero\": false", "\"values\": [1, 2]")));
+    }
+
+    [Fact] // ADR-0320: a definition's refusal names the series it belongs to, however the series are named
+    public void A_definition_refusal_names_the_series_by_its_index()
+    {
+        var two = Level.Replace("\"fromZero\": false }", "\"fromZero\": false },\n    { \"id\": \"other\", \"name\": \"Rate\", \"kind\": \"observation\", \"data\": \"rates\", \"x\": \"date\", \"y\": \"rate\", \"colour\": { \"column\": \"spread\", \"scale\": \"sequential\" } }");
+        var refusal = Assert.Throws<ChartSpecRefusedException>(() => Read(two.Replace("\"kind\": \"observation\"", "\"kind\": \"level\"")));
+        Assert.Equal("series[1]", refusal.Path);
+        var duplicate = Assert.Throws<ChartSpecRefusedException>(() => Read(two.Replace("\"id\": \"other\"", "\"id\": \"rate\"")));
+        Assert.Equal("series[1].id", duplicate.Path);
+    }
+
     [Fact] // ADR-0320: an unknown kind is named, with the kinds that exist
     public void An_unknown_kind_is_refused_with_the_kinds_that_exist()
     {
@@ -189,6 +212,9 @@ public class ChartSpecToolTests
         Assert.Equal(ChartSpec.RootKeys.Order(), Keys(root));
         Assert.Equal(ChartSpec.AxisKeys.Order(), Keys(root.GetProperty("$defs").GetProperty("axis")));
         Assert.Equal(ChartSpec.SeriesKeys.Order(), Keys(root.GetProperty("$defs").GetProperty("series")));
+        Assert.Equal(ChartSpec.ColourKeys.Order(), Keys(root.GetProperty("$defs").GetProperty("colour")));
+        Assert.Equal(ChartSpec.SizeKeys.Order(), Keys(root.GetProperty("$defs").GetProperty("size")));
+        Assert.Equal(ChartSpec.EdgeKeys.Order(), Keys(root.GetProperty("$defs").GetProperty("edges")));
         Assert.False(root.GetProperty("additionalProperties").GetBoolean());
         Assert.Equal(ChartSpec.KindNames.Order(),
             root.GetProperty("$defs").GetProperty("series").GetProperty("properties").GetProperty("kind").GetProperty("enum").EnumerateArray().Select(e => e.GetString()!).Order());
@@ -210,7 +236,7 @@ public class ChartSpecToolTests
         Assert.StartsWith("Policy rate.", answer.Text);
         Assert.Contains("Rate: maximum 1.5 at 2026-01-06.", answer.Text);
         Assert.Contains("1 point is missing, drawn as a gap.", answer.Text);
-        Assert.DoesNotContain("thinned", answer.Text);
+        Assert.Contains("No pixel holds more than one point.", answer.Text); // none is said, never left unsaid
     }
 
     [Fact] // ADR-0254: past the plot's pixels, the answer says how many pixels hold more than one point

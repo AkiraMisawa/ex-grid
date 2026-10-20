@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ExChart.Engine;
 
 /// <summary>One series' line in the tooltip (ADR-0270).</summary>
@@ -71,7 +73,9 @@ public static class ChartReadings
             note = Join(note, $"{c.Title} {(c.Values[m.Point] is { } cv ? cv.ToInvariantString() : "has no value")}");
         if (s.SizeBy is { } z)
             note = Join(note, $"{z.Title} {(z.Values[m.Point] is { } zv ? zv.ToInvariantString() : "has no value")}");
-        return new ChartReading(p.Name ?? axis.Write(p.X), new[] { new ReadingLine(s.Id, s.Name, look, value, note, m.Y) }.ToEquatableList(), 0);
+        // A node with no label is named by its key (ADR-0321).
+        var named = p.Name ?? (s.Edges.Count > 0 ? Convert.ToString(p.Row, CultureInfo.InvariantCulture) : null);
+        return new ChartReading(named ?? axis.Write(p.X), new[] { new ReadingLine(s.Id, s.Name, look, value, note, m.Y) }.ToEquatableList(), 0);
     }
 
     private static ReadingLine Line(ChartSeries s, SeriesPiece piece, PanelScene panel, ChartAxis axis, double x)

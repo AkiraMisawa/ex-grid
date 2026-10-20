@@ -81,7 +81,8 @@ internal static class PointScales
     {
         var keyed = visible.Where(Keyed).ToList();
         if (keyed.Count == 0) return 0;
-        var label = m.EffectiveTextWidth("-0,000.00");
+        var label = keyed.SelectMany(s => new[] { s.ColourBy is { } c ? Run(c) : (0, 0), (0, Range(s.SizeBy?.Values ?? [])?.Hi ?? 0) })
+            .SelectMany(r => new[] { r.Item1, r.Item2 }).Max(v => m.EffectiveTextWidth(Number(v)));
         var titles = keyed.SelectMany(s => new[] { s.ColourBy?.Title, s.SizeBy?.Title }).OfType<string>().Max(t => m.EffectiveTextWidth(t));
         return Gap(m) + Math.Max(titles, Math.Max(BarWidth, 2 * MaxRadius(m.LineHeight)) + m.Padding / 2 + label) + m.Padding;
     }
@@ -107,9 +108,9 @@ internal static class PointScales
     }
 
     /// <summary>A value's band: by its place in the run, or by its distance from the centre, the middle band neutral.</summary>
-    public static int Band(PointColour c, double value)
+    public static int Band(PointColour c, (double From, double To) run, double value)
     {
-        var (from, to) = Run(c);
+        var (from, to) = run;
         if (c.Centre is { } mid)
         {
             var t = (value - mid) / ((to - from) / 2);
@@ -120,11 +121,7 @@ internal static class PointScales
     }
 
     /// <summary>A value's radius as a share of the largest: its area in proportion to the value.</summary>
-    public static double Share(PointSize s, double value)
-    {
-        var max = Range(s.Values)?.Hi ?? 0;
-        return max > 0 ? Math.Sqrt(value / max) : 1;
-    }
+    public static double Share(double max, double value) => max > 0 ? Math.Sqrt(value / max) : 1;
 
     /// <summary>The keys of the visible series, stacked down the column at <paramref name="x"/>.</summary>
     public static (List<ColourKey> Colours, List<SizeKey> Sizes) Keys(IEnumerable<ChartSeries> visible, double x, double top, double height, ChartMetrics m)
@@ -148,13 +145,19 @@ internal static class PointScales
                 colours.Add(new ColourKey(s.Id, c.Title, from, to, ticks, c.Centre is not null, box));
                 y = barTop + barHeight + lh;
             }
-            if (s.SizeBy is { } z && Range(z.Values) is { } r && r.Hi > 0)
+            if (s.SizeBy is { } z)
             {
+                // Always drawn (ADR-0320): with no value above zero, every marker is drawn whole, and the key says so.
                 var rMax = MaxRadius(lh);
-                var (_, max, step) = TickLayout.Nice(0, r.Hi, 3);
-                var values = TickLayout.Steps(step, max, step).Where(v => v <= r.Hi).TakeLast(3).ToList();
-                if (values.Count == 0) values.Add(r.Hi);
-                var entries = values.Select(v => new SizeEntry(v, Number(v), Math.Max(0.75, rMax * Share(z, v)))).ToEquatableList();
+                var hi = Range(z.Values)?.Hi ?? 0;
+                var values = new List<double>();
+                if (hi > 0)
+                {
+                    var (_, max, step) = TickLayout.Nice(0, hi, 3);
+                    values.AddRange(TickLayout.Steps(step, max, step).Where(v => v <= hi).TakeLast(3));
+                }
+                if (values.Count == 0) values.Add(hi);
+                var entries = values.Select(v => new SizeEntry(v, Number(v), Math.Max(0.75, rMax * Share(hi, v)))).ToEquatableList();
                 var boxHeight = entries.Sum(e => Math.Max(2 * e.Radius, lh) + lh / 4);
                 sizes.Add(new SizeKey(s.Id, z.Title, entries, new Box(x, y + lh, 2 * rMax, boxHeight)));
                 y += lh + boxHeight + lh;

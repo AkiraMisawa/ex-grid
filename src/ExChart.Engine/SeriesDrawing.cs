@@ -182,6 +182,9 @@ public sealed record SeriesDrawing(IReadOnlyList<IReadOnlyList<DrawnPoint>> Line
     {
         var points = series.Points;
         var markers = new List<DrawnMarker>(points.Count);
+        // Each scale's run is read once, not once a point.
+        var run = series.ColourBy is { } scale ? PointScales.Run(scale) : default;
+        var largest = series.SizeBy is { } sizes ? PointScales.Range(sizes.Values)?.Hi ?? 0 : 0;
         for (var i = 0; i < points.Count; i++)
             if (points[i].Y is { } y && double.IsFinite(points[i].X))
             {
@@ -194,8 +197,8 @@ public sealed record SeriesDrawing(IReadOnlyList<IReadOnlyList<DrawnPoint>> Line
                     Point = i,
                     YBounds = BoundsAt(series.Interval, i),
                     XBounds = BoundsAt(series.XInterval, i),
-                    Band = colour is { } c ? PointScales.Band(series.ColourBy!, c.ToDouble()) : null,
-                    Radius = size is { } z ? PointScales.Share(series.SizeBy!, z.ToDouble()) : null,
+                    Band = colour is { } c ? PointScales.Band(series.ColourBy!, run, c.ToDouble()) : null,
+                    Radius = size is { } z ? PointScales.Share(largest, z.ToDouble()) : null,
                 });
             }
         return new SeriesDrawing([], markers);

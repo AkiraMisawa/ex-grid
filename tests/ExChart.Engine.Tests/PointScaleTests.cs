@@ -52,6 +52,24 @@ public class PointScaleTests
         Assert.All(key.Entries, e => Assert.True(e.Radius > 0));
     }
 
+    [Fact] // ADR-0320: a size's key is always drawn, even when no value is above zero
+    public void A_size_key_is_drawn_when_every_size_is_zero()
+    {
+        var scene = Scene(Names(1, 2) with { SizeBy = new PointSize("Notional", Values(0, 0)) });
+        var key = Assert.Single(scene.SizeKeys);
+        Assert.Equal("0", Assert.Single(key.Entries).Label);
+    }
+
+    [Fact] // ADR-0321: a node with no label is named by its key in the tooltip
+    public void A_node_without_a_label_is_read_by_its_key()
+    {
+        var s = ChartSeries.Of("n", "Nodes", SeriesKind.Observation, [new ChartPoint(1, ChartValue.Of(1.0)) { Row = "0:0" }, new ChartPoint(2, ChartValue.Of(2.0)) { Row = "1:1" }])
+            with { Edges = [new ChartEdge("0:0", "1:1")] };
+        var d = new ChartDefinition(ChartAxis.Numbers(), [s]);
+        var scene = ChartScene.Build(d, new ChartMetrics(600, 400));
+        Assert.Equal("0:0", ChartReadings.OfMark(d, scene, scene.Marks.ToList().FindIndex(m => m.Point == 0)).Position);
+    }
+
     [Fact] // ADR-0320: a key takes a column at the plot's right, clear of the largest marker at the plot's edge
     public void A_key_takes_a_column_beside_the_plot()
     {

@@ -101,11 +101,10 @@ public static class ChartSpec
         }
         var parts = new List<string> { ChartSummary.Of(reading.Definition, scene, ChartView.All, reading.Title) };
         var thinned = scene.Panels.SelectMany(p => p.Series).Sum(s => s.Thinned.Count);
-        if (thinned > 0)
-            parts.Add($"{thinned} {(thinned == 1 ? "pixel holds" : "pixels each hold")} more than one point, and say{(thinned == 1 ? "s" : "")} its range.");
+        parts.Add(thinned == 0 ? "No pixel holds more than one point."
+            : $"{thinned} {(thinned == 1 ? "pixel holds" : "pixels each hold")} more than one point, and say{(thinned == 1 ? "s" : "")} its range.");
         var missing = reading.Definition.Series.Sum(s => s.Points.Count(p => p.Y is null));
-        if (missing > 0)
-            parts.Add($"{missing} {(missing == 1 ? "point is" : "points are")} missing, drawn as {(missing == 1 ? "a gap" : "gaps")}.");
+        parts.Add(missing == 0 ? "No point is missing." : $"{missing} {(missing == 1 ? "point is" : "points are")} missing, drawn as {(missing == 1 ? "a gap" : "gaps")}.");
         parts.AddRange(scene.Notes.Except(reading.Definition.Notes));
         return new ChartSpecAnswer(true, string.Join(" ", parts), reading);
     }
@@ -282,17 +281,15 @@ public static class ChartSpec
                 Labels = _labels.ToArray(),
                 Packed = Bool(axisElement, "packed", "axis") ?? false,
             };
-            try
+            // Each series is checked on its own first, so a refusal names the series it belongs to.
+            for (var n = 0; n < series.Count; n++)
             {
-                return new ChartSpecReading(title, new ChartDefinition(axis, series, notes));
+                var duplicate = series.FindIndex(s => s.Id == series[n].Id);
+                if (duplicate < n)
+                    throw Refuse($"series[{n}].id", $"series[{n}].id \"{series[n].Id}\" is series[{duplicate}]'s too: each series needs an identity of its own.");
+                Defined($"series[{n}]", () => new ChartDefinition(axis, [series[n]]));
             }
-            catch (ChartRefusedException e)
-            {
-                // The definition names a series by its name; the spec's path says which one it was.
-                var at = series.FindIndex(s => e.Message.Contains($"'{s.Name}'", StringComparison.Ordinal));
-                var path = at >= 0 ? $"series[{at}]" : "axis";
-                throw Refuse(path, $"{path}: {e.Message}");
-            }
+            return new ChartSpecReading(title, Defined("", () => new ChartDefinition(axis, series, notes)));
         }
 
         private ChartSeries Series(JsonElement s, string path, AxisValues values)
@@ -302,9 +299,8 @@ public static class ChartSpec
             Known(s, path, SeriesKeys);
             var id = String(s, "id", path) ?? throw Missing(path, "id", "a series' identity, unique in the chart");
             var name = String(s, "name", path) ?? throw Missing(path, "name", "its name in the legend and the tooltip");
-            if (!s.TryGetProperty("kind", out _))
-                throw Missing(path, "kind", "every series says what its numbers are: " + string.Join(", ", Kinds.Keys) + "; there is no default");
-            var kindText = String(s, "kind", path)!;
+            var kindText = String(s, "kind", path)
+                ?? throw Missing(path, "kind", "every series says what its numbers are: " + string.Join(", ", Kinds.Keys) + "; there is no default");
             if (!Kinds.TryGetValue(kindText, out var kind))
                 throw Refuse($"{path}.kind", $"{path}.kind \"{kindText}\" is not a Series Kind: it is one of {string.Join(", ", Kinds.Keys)}.");
             var handle = String(s, "data", path) ?? throw Missing(path, "data", "the Data Handle of the table its values are read from");
@@ -478,13 +474,27 @@ public static class ChartSpec
             return name;
         }
 
+        private static ChartDefinition Defined(string path, Func<ChartDefinition> define)
+        {
+            try
+            {
+                return define();
+            }
+            catch (ChartRefusedException e)
+            {
+                throw Refuse(path, path.Length == 0 ? e.Message : $"{path}: {e.Message}");
+            }
+        }
+
         private static void Known(JsonElement o, string path, string[] keys)
         {
             foreach (var p in o.EnumerateObject())
                 if (!keys.Contains(p.Name))
                 {
                     var at = path.Length == 0 ? p.Name : $"{path}.{p.Name}";
-                    throw Refuse(at, $"{at} is not part of a Chart Spec: a spec holds no numbers, only the columns they are read from; {(path.Length == 0 ? "a spec" : path)} takes {string.Join(", ", keys)}.");
+                    var numbers = p.Value.ValueKind is JsonValueKind.Number or JsonValueKind.Array
+                        ? " a spec holds no numbers, only the columns they are read from;" : "";
+                    throw Refuse(at, $"{at} is not part of a Chart Spec:{numbers} {(path.Length == 0 ? "a spec" : path)} takes {string.Join(", ", keys)}.");
                 }
         }
 

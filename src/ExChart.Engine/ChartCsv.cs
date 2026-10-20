@@ -165,7 +165,7 @@ public static class ChartCsv
         foreach (var (s, _) in shown.Where(t => t.Series.Edges.Count > 0))
             foreach (var e in s.Edges)
             {
-                var row = new List<string> { s.Name, $"edge {e.From} → {e.To}" };
+                var row = new List<string> { s.Name, $"edge {Convert.ToString(e.From, CultureInfo.InvariantCulture)} → {Convert.ToString(e.To, CultureInfo.InvariantCulture)}" };
                 while (row.Count < header.Count) row.Add("");
                 rows.Add(row);
             }
