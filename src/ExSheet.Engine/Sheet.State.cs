@@ -114,6 +114,7 @@ public sealed partial class Sheet
     {
         _cellDependents.Clear();
         _areaPrecedents.Clear();
+        _remoteReferences.Clear();
         _tableReaders.Clear();
         _todayReaders.Clear();
         _volatileFormulas.Clear();

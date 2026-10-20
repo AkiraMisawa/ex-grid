@@ -11,5 +11,6 @@ Roadmap: ExSheet — Sheets are added, renamed, moved, copied and deleted, and e
 - [ ] A rename rewrites every Formula that names the Sheet
 - [ ] A deletion turns References to the Sheet into `#REF!`; undoing it gives back the Sheet and those Formulas exactly
 - [ ] Moving changes the order; copying copies Entries, formats and widths
+- [ ] A rename on a Sheet of a Workbook of several is no longer refused with `NotSupportedException` (01)
 
 **Blocked by:** 01.

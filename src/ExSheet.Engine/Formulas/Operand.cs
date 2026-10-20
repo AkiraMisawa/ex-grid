@@ -25,9 +25,10 @@ internal enum OperandKind
 /// </summary>
 internal readonly struct Operand
 {
-    private Operand(OperandKind kind, Value? scalar, Area area, IReadOnlyList<Value?>? column = null, ValueArray? array = null, bool isSpillRange = false, bool keptBlank = false)
+    private Operand(OperandKind kind, Value? scalar, Area area, IReadOnlyList<Value?>? column = null, ValueArray? array = null, bool isSpillRange = false, bool keptBlank = false, ICellReader? cells = null)
     {
         Kind = kind;
+        Cells = cells;
         Scalar = scalar;
         Area = area;
         Column = column;
@@ -42,6 +43,12 @@ internal readonly struct Operand
     public Value? Scalar { get; }
 
     public Area Area { get; }
+
+    /// <summary>
+    /// For <see cref="OperandKind.Area"/>: the Sheet its cells are on, as the recalculation reads it
+    /// (ADR-0331). A rectangle derived from one (<c>INDEX</c>, <c>OFFSET</c>) is on the same Sheet.
+    /// </summary>
+    public ICellReader? Cells { get; }
 
     /// <summary>For <see cref="OperandKind.Column"/>: the column's Values top to bottom, blank as <see langword="null"/>.</summary>
     public IReadOnlyList<Value?>? Column { get; }
@@ -94,7 +101,11 @@ internal readonly struct Operand
 
     public static Operand Of(ErrorValue error) => new(OperandKind.Scalar, Value.FromError(error), default);
 
-    public static Operand Of(Area area) => new(OperandKind.Area, null, area);
+    /// <summary>A rectangle of the Sheet <paramref name="cells"/> reads (ADR-0331).</summary>
+    public static Operand Of(Area area, ICellReader cells) => new(OperandKind.Area, null, area, cells: cells);
+
+    /// <summary>Another rectangle of the same Sheet as this one, which must be a rectangle.</summary>
+    public Operand SameSheet(Area area) => Kind == OperandKind.Area ? Of(area, Cells!) : throw new InvalidOperationException("Not a rectangle of cells.");
 
     public static Operand Of(IReadOnlyList<Value?> column) => new(OperandKind.Column, null, default, column);
 
@@ -124,5 +135,5 @@ internal readonly struct Operand
     /// This operand marked as holding a kept blank (<see cref="KeptBlank"/>), when it holds a blank at
     /// all; as it is otherwise.
     /// </summary>
-    public Operand WithKeptBlank() => HoldsBlank ? new(Kind, Scalar, Area, Column, Array, IsSpillRange, keptBlank: true) : this;
+    public Operand WithKeptBlank() => HoldsBlank ? new(Kind, Scalar, Area, Column, Array, IsSpillRange, keptBlank: true, Cells) : this;
 }

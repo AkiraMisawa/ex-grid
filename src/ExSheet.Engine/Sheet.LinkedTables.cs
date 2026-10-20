@@ -27,14 +27,15 @@ public sealed record LinkedTable(string Name, IReadOnlyList<string> Columns, boo
 
 public sealed partial class Sheet
 {
-    private readonly Dictionary<string, TableState> _tables = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>The Linked Tables declared, held by the Workbook so that every one of its Sheets reads them (ADR-0331).</summary>
+    private Dictionary<string, TableState> Tables => Workbook.Tables;
 
     /// <summary>For each table name, declared or not, the Formula cells that name it in a structured reference.</summary>
     private readonly Dictionary<string, HashSet<CellAddress>> _tableReaders = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The Linked Tables declared on this Sheet, in the order they were declared.</summary>
     public IReadOnlyList<LinkedTable> LinkedTables =>
-        [.. _tables.Values.OrderBy(t => t.Order).Select(t => new LinkedTable(t.Name, t.Columns, t.Data is null, t.RowCount, t.Key.Count == 1 ? t.Key[0] : null) { KeyColumns = t.Key })];
+        [.. Tables.Values.OrderBy(t => t.Order).Select(t => new LinkedTable(t.Name, t.Columns, t.Data is null, t.RowCount, t.Key.Count == 1 ? t.Key[0] : null) { KeyColumns = t.Key })];
 
     /// <summary>
     /// Declares a Linked Table by name and columns (ADR-0049), before any of its rows arrive.
@@ -87,11 +88,11 @@ public sealed partial class Sheet
         ArgumentNullException.ThrowIfNull(key);
         if (WhyNotALinkedTable(name, columns) is { } why) throw new ArgumentException(why, IsTableName(name) ? nameof(columns) : nameof(name));
         if (WhyNotAKey(name, columns, key) is { } whyNotKey) throw new ArgumentException(whyNotKey, nameof(key));
-        if (_tables.TryGetValue(name, out var held))
+        if (Tables.TryGetValue(name, out var held))
         {
             // The same declaration again changes nothing; other columns or another key replace it (ADR-0049).
             if (held.Columns.SequenceEqual(columns, StringComparer.Ordinal) && held.Key.SequenceEqual(KeyAsDeclared(columns, key), StringComparer.Ordinal)) return SheetChange.None;
-            _tables.Remove(name);
+            Tables.Remove(name);
             Declare(name, columns, key, held.Order);
         }
         else
@@ -108,14 +109,14 @@ public sealed partial class Sheet
     {
         var index = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < columns.Count; i++) index[columns[i]] = i;
-        _tables[name] = new TableState(name, [.. columns], index, KeyAsDeclared(columns, key), order ?? NextOrder());
+        Tables[name] = new TableState(name, [.. columns], index, KeyAsDeclared(columns, key), order ?? NextOrder());
     }
 
     /// <summary>The key's columns as the columns spell them, so that <c>id</c> and <c>Id</c> declare the same key.</summary>
     private static string[] KeyAsDeclared(IReadOnlyList<string> columns, IReadOnlyList<string> key) =>
         [.. key.Select(k => columns.First(column => string.Equals(column, k, StringComparison.OrdinalIgnoreCase)))];
 
-    private int NextOrder() => _tables.Count == 0 ? 0 : _tables.Values.Max(t => t.Order) + 1;
+    private int NextOrder() => Tables.Count == 0 ? 0 : Tables.Values.Max(t => t.Order) + 1;
 
     /// <summary>Why a name and columns cannot be declared as a Linked Table, or <see langword="null"/> when they can.</summary>
     internal static string? WhyNotALinkedTable(string name, IReadOnlyList<string> columns)
@@ -145,7 +146,7 @@ public sealed partial class Sheet
 
     /// <summary>The declarations, as a Sheet Document records them (ADR-0049).</summary>
     private IReadOnlyList<SheetDocumentTable> TableDeclarations =>
-        [.. _tables.Values.OrderBy(t => t.Order).Select(t => new SheetDocumentTable(t.Name, t.Columns, t.Key.Count == 1 ? t.Key[0] : null) { KeyColumns = t.Key })];
+        [.. Tables.Values.OrderBy(t => t.Order).Select(t => new SheetDocumentTable(t.Name, t.Columns, t.Key.Count == 1 ? t.Key[0] : null) { KeyColumns = t.Key })];
 
     /// <summary>
     /// Replaces a Linked Table's data with a whole snapshot, in one step (ADR-0049): no
@@ -176,7 +177,7 @@ public sealed partial class Sheet
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(rows);
-        if (!_tables.TryGetValue(name, out var table)) throw new InvalidOperationException($"No Linked Table named '{name}' is declared.");
+        if (!Tables.TryGetValue(name, out var table)) throw new InvalidOperationException($"No Linked Table named '{name}' is declared.");
         var width = table.Columns.Count;
         var columns = new List<Value?>[width];
         for (var c = 0; c < width; c++) columns[c] = [];
@@ -265,20 +266,23 @@ public sealed partial class Sheet
         _ => (ValueKind.Boolean, value.Boolean ? 1 : 0, null),
     };
 
+    /// <summary>Recalculates every Formula that reads the table, on any Sheet of the Workbook (ADR-0331).</summary>
     private SheetChange RecalculateReaders(string name)
     {
-        if (!_tableReaders.TryGetValue(name, out var readers) || readers.Count == 0)
+        var readers = new HashSet<SheetCell>();
+        foreach (var sheet in Workbook.Sheets)
         {
-            // Nothing reads the table, but a volatile Formula is recalculated whatever the change (ADR-0124).
-            return HasVolatileFormulas ? Recalculate([], []) : SheetChange.None;
+            if (sheet._tableReaders.TryGetValue(name, out var cells)) readers.UnionWith(cells.Select(c => new SheetCell(sheet, c)));
         }
-        return Recalculate([.. readers], []);
+        // Nothing reads the table, but a volatile Formula is recalculated whatever the change (ADR-0124).
+        if (readers.Count == 0 && !Workbook.Sheets.Any(s => s.HasVolatileFormulas)) return SheetChange.None;
+        return Recalculate(readers, []);
     }
 
     /// <summary>What a structured reference reads (ADR-0049).</summary>
     private Operand TableColumn(string name, string column)
     {
-        if (!_tables.TryGetValue(name, out var table)) return Operand.Of(ErrorValue.Name);
+        if (!Tables.TryGetValue(name, out var table)) return Operand.Of(ErrorValue.Name);
         if (table.Data is null) return Operand.Of(ErrorValue.GettingData);
         return table.ColumnIndex.TryGetValue(column, out var index) ? Operand.Of(table.Data[index]) : Operand.Of(ErrorValue.Ref);
     }
@@ -290,7 +294,7 @@ public sealed partial class Sheet
     /// refusal is never caught, anywhere).
     /// </summary>
     private bool ColumnHoldsRefusal(string name, string column) =>
-        _tables.TryGetValue(name, out var table) && table.Data is not null
+        Tables.TryGetValue(name, out var table) && table.Data is not null
         && table.ColumnIndex.TryGetValue(column, out var index) && table.Refusing[index];
 
     /// <summary>Whether a Formula's text names a Linked Table's column that holds a refusal (<see cref="ColumnHoldsRefusal"/>).</summary>
@@ -308,7 +312,7 @@ public sealed partial class Sheet
     {
         foreach (var reference in node.StructuredReferences)
         {
-            if (_tables.TryGetValue(reference.Table, out var table) && table.Data is null) return true;
+            if (Tables.TryGetValue(reference.Table, out var table) && table.Data is null) return true;
         }
         return false;
     }
@@ -366,7 +370,7 @@ public sealed partial class Sheet
         && !name.Equals("TRUE", StringComparison.OrdinalIgnoreCase)
         && !name.Equals("FALSE", StringComparison.OrdinalIgnoreCase);
 
-    private sealed class TableState(string name, IReadOnlyList<string> columns, Dictionary<string, int> columnIndex, IReadOnlyList<string> key, int order)
+    internal sealed class TableState(string name, IReadOnlyList<string> columns, Dictionary<string, int> columnIndex, IReadOnlyList<string> key, int order)
     {
         public string Name { get; } = name;
 

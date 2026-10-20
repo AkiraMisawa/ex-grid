@@ -27,6 +27,9 @@ public sealed partial class Sheet
     /// <summary>For each Formula cell that reads a multi-cell rectangle, the rectangles.</summary>
     private readonly Dictionary<CellAddress, Area[]> _areaPrecedents = [];
 
+    /// <summary>For each Formula cell that names another Sheet's cells, those References (ADR-0331).</summary>
+    private readonly Dictionary<CellAddress, Reference[]> _remoteReferences = [];
+
     /// <summary>Creates an empty Sheet whose constants are read and whose Values are shown under <paramref name="culture"/>.</summary>
     public Sheet(CultureInfo culture)
         : this(culture, DefaultName)
@@ -41,7 +44,19 @@ public sealed partial class Sheet
         ArgumentNullException.ThrowIfNull(name);
         Culture = CultureInfo.ReadOnly(culture);
         Name = CheckName(name, nameof(name));
+        Workbook = new Workbook(this);
     }
+
+    /// <summary>Creates an empty Sheet named <paramref name="name"/> in <paramref name="workbook"/>, under its culture (ADR-0331).</summary>
+    internal Sheet(Workbook workbook, string name)
+    {
+        Workbook = workbook;
+        Culture = workbook.Culture;
+        Name = CheckName(name, nameof(name));
+    }
+
+    /// <summary>The Workbook the Sheet belongs to: one of its own, of this Sheet alone, for a Sheet created on its own (ADR-0331).</summary>
+    internal Workbook Workbook { get; }
 
     /// <summary>The Sheet's declared culture (ADR-0048). Formulas are in invariant syntax whatever it is (ADR-0047).</summary>
     public CultureInfo Culture { get; }
@@ -344,9 +359,14 @@ public sealed partial class Sheet
     private void Register(CellAddress formulaCell, Node formula)
     {
         var areas = new List<Area>();
+        var remote = new List<Reference>();
         foreach (var reference in formula.References)
         {
-            if (!IsLocal(reference)) continue;
+            if (!IsLocal(reference))
+            {
+                remote.Add(reference);
+                continue;
+            }
             var area = reference.Area;
             if (area.IsSingleCell)
             {
@@ -360,6 +380,7 @@ public sealed partial class Sheet
             }
         }
         if (areas.Count > 0) _areaPrecedents[formulaCell] = [.. areas];
+        if (remote.Count > 0) _remoteReferences[formulaCell] = [.. remote];
         RegisterTableReaders(formulaCell, formula);
         RegisterTodayReader(formulaCell, formula);
         RegisterVolatile(formulaCell, formula);
@@ -378,6 +399,7 @@ public sealed partial class Sheet
             }
         }
         _areaPrecedents.Remove(formulaCell);
+        _remoteReferences.Remove(formulaCell);
         UnregisterTableReaders(formulaCell, formula);
         _todayReaders.Remove(formulaCell);
         _volatileFormulas.Remove(formulaCell);
@@ -404,223 +426,6 @@ public sealed partial class Sheet
         }
     }
 
-    /// <summary>
-    /// Recomputes the changed cells and everything that depends on them, in dependency order,
-    /// into a staging set; a cycle, and everything downstream of one, is <c>#CIRC!</c>
-    /// (ADR-0047). Only when every Value is computed are they published.
-    /// </summary>
-    private SheetChange RecalculatePass(HashSet<CellAddress> changed, SortedSet<int> rows, bool withVolatile)
-    {
-        // 1. Everything the change can reach, and every volatile Formula, whatever the change (ADR-0124).
-        var dirty = new HashSet<CellAddress>(changed);
-        if (withVolatile) dirty.UnionWith(_volatileFormulas);
-        var queue = new Queue<CellAddress>(dirty);
-        while (queue.Count > 0)
-        {
-            foreach (var dependent in Dependents(queue.Dequeue()))
-            {
-                if (dirty.Add(dependent)) queue.Enqueue(dependent);
-            }
-        }
-
-        var staged = new Dictionary<CellAddress, Value?>();
-        var formulas = new HashSet<CellAddress>();
-        foreach (var address in dirty)
-        {
-            var cell = _cells.GetValueOrDefault(address);
-            var entry = cell?.Entry;
-            if (entry?.Parsed is not null) formulas.Add(address);
-            // A spilled cell with no Entry keeps its Value: the spill's layout gives it, after the
-            // pass. One typed into takes its Entry's, and the layout then finds it in the way (ADR-0125).
-            else if (entry is not null || cell?.SpilledFrom is null) staged[address] = entry?.Constant;
-        }
-
-        // 2. Dependency order among the Formulas to recompute (Kahn). What never becomes ready
-        //    is in a cycle or downstream of one.
-        var edges = new Dictionary<CellAddress, List<CellAddress>>();
-        var waiting = formulas.ToDictionary(f => f, _ => 0);
-        foreach (var precedent in formulas)
-        {
-            var targets = new List<CellAddress>();
-            foreach (var dependent in Dependents(precedent).Distinct())
-            {
-                if (!formulas.Contains(dependent)) continue;
-                targets.Add(dependent);
-                waiting[dependent]++;
-            }
-            edges[precedent] = targets;
-        }
-
-        // A Reference a volatile function computes is read as it stands after this recalculation:
-        // a cell this recalculation has still to compute is computed first, on demand, and a
-        // Formula that reaches itself that way is #CIRC! (ADR-0124). What such a Reference reads is
-        // tainted as a named one is (Taint): a Formula that met a cycle is #CIRC!, one that met a
-        // waiting cell waits, and one that met a refused cell is refused, whatever it computes — a
-        // function that passes over or counts an Error Value included (ADR-0047, ADR-0049; 2026-10-12,
-        // decided with the user: a refusal is never caught, anywhere).
-        var inProgress = new HashSet<CellAddress>();
-        var arrays = new Dictionary<CellAddress, ValueArray?>();
-        var recalculated = new List<CellAddress>();
-        StagedReader reader = null!;
-        Evaluator evaluator = null!;
-        reader = new StagedReader(this, staged, address => formulas.Contains(address) ? Compute(address) : null, arrays);
-        evaluator = new Evaluator(reader, Culture);
-        var ready = new Queue<CellAddress>(waiting.Where(w => w.Value == 0).Select(w => w.Key));
-        while (ready.Count > 0)
-        {
-            var address = ready.Dequeue();
-            if (!staged.ContainsKey(address)) Compute(address);
-            foreach (var dependent in edges[address])
-            {
-                if (--waiting[dependent] == 0) ready.Enqueue(dependent);
-            }
-        }
-        foreach (var (address, count) in waiting)
-        {
-            if (count > 0)
-            {
-                if (!staged.ContainsKey(address)) recalculated.Add(address);
-                staged[address] = Value.FromError(ErrorValue.Circ);
-            }
-        }
-
-        // 3. Publish, all at once.
-        foreach (var (address, array) in arrays)
-        {
-            if (_cells.GetValueOrDefault(address) is { } anchor)
-            {
-                anchor.Array = array;
-                if (array is null) anchor.SpillBlocked = false;
-            }
-        }
-        var valueChanges = new List<CellAddress>();
-        foreach (var (address, value) in staged)
-        {
-            var cell = _cells.GetValueOrDefault(address);
-            var old = cell?.Value;
-            if (cell is not null)
-            {
-                cell.Value = value;
-                if (cell.IsEmpty) _cells.Remove(address);
-            }
-            if (!Value.Unchanged(old, value))
-            {
-                valueChanges.Add(address);
-                rows.Add(address.Row);
-            }
-        }
-        valueChanges.Sort();
-        recalculated.Sort();
-        return new SheetChange(valueChanges, recalculated, [.. rows]);
-
-        // One Formula, once: in dependency order from the loop above, or first, on demand, when a
-        // computed Reference reads it before its turn.
-        Value? Compute(CellAddress address)
-        {
-            if (staged.TryGetValue(address, out var done)) return done;
-            if (!inProgress.Add(address)) return Value.FromError(ErrorValue.Circ);
-            var node = _cells[address].Entry!.Parsed!;
-            var outer = evaluator.Self;
-            evaluator.Self = address;
-            // The outer Formula's reads so far are its own; this one's start from none.
-            var outerMet = reader.Met;
-            var outerMetRefusal = reader.MetRefusal;
-            reader.Met = null;
-            reader.MetRefusal = false;
-            Value value;
-            if (Taint(node, reader) is { } tainted)
-            {
-                value = tainted;
-                arrays[address] = null;
-            }
-            else
-            {
-                // A result of more than one Value spills (ADR-0125): the anchor holds the array, and
-                // shows its first Value until the layout after the pass says whether it spills. An
-                // array of the shape the last layout blocked shows #SPILL! still: only an obstacle
-                // moving changes that, and the layout after the pass is what sees one move. Computed
-                // again unchanged — a volatile Formula read again after a layout — the Anchor then
-                // changes nothing, and the recalculation settles (Recalculate).
-                var result = evaluator.EvaluateResult(node);
-                var array = Evaluator.IsMulti(result) ? evaluator.ToArray(result) : null;
-                var scalar = array is null ? evaluator.ScalarOf(result) : null;
-                if (reader.Met is { } met)
-                {
-                    // A computed Reference met a cycle or a waiting cell: tainted as Taint taints.
-                    value = Value.FromError(met);
-                    arrays[address] = null;
-                }
-                else if (reader.MetRefusal)
-                {
-                    // A computed Reference read a refused cell, or a Linked Table's column holding a
-                    // refusal: refused, as Taint refuses a Formula that names one.
-                    value = Value.Refusal;
-                    arrays[address] = null;
-                }
-                else
-                {
-                    arrays[address] = array;
-                    value = array is null ? scalar ?? Value.FromNumber(0)
-                        : StillBlocked(_cells[address], array) ? Value.FromError(ErrorValue.Spill)
-                        : array[0, 0] ?? Value.FromNumber(0);
-                }
-            }
-            // A refused Anchor whose array's shape its text settles spills refusals over that shape, so that
-            // each cell of it reads as refused (2026-10-13, decided with the user); where the shape could
-            // depend on a Value, nothing spills (KnownShape).
-            if (value.IsRefused && KnownShape.Of(node, IsLocal) is { } shape && (shape.Rows > 1 || shape.Columns > 1))
-            {
-                var refusals = new ValueArray(shape.Rows, shape.Columns);
-                for (var r = 0; r < shape.Rows; r++)
-                {
-                    for (var c = 0; c < shape.Columns; c++) refusals[r, c] = Value.Refusal;
-                }
-                arrays[address] = refusals;
-                if (StillBlocked(_cells[address], refusals)) value = Value.FromError(ErrorValue.Spill);
-            }
-            reader.Met = outerMet;
-            reader.MetRefusal = outerMetRefusal;
-            evaluator.Self = outer;
-            inProgress.Remove(address);
-            staged[address] = value;
-            recalculated.Add(address);
-            return value;
-        }
-
-        static bool StillBlocked(Cell anchor, ValueArray array) =>
-            anchor.SpillBlocked && anchor.Array is { } laidOut && laidOut.Rows == array.Rows && laidOut.Columns == array.Columns;
-    }
-
-    /// <summary>
-    /// A Formula that reads a cell in a cycle is <c>#CIRC!</c> whatever it computes; one that reads
-    /// a waiting cell, or calls <c>TODAY</c> before the Sheet Day is known, or draws before the Sheet
-    /// has a seed, waits (ADR-0047, ADR-0049, ADR-0121, ADR-0180); and one that reads a refused cell,
-    /// or a Linked Table's column that holds a refusal, is refused (<see cref="Value.Refusal"/>; 2026-10-12,
-    /// decided with the user: a refusal is never caught, anywhere). None can be caught by <c>IFERROR</c>.
-    /// As for a cycle, a Formula reads what its text names, whether or not the branch naming it is
-    /// taken: <c>=IF(TRUE,1,B1)</c> over a refused B1 is refused. A cycle comes before a wait, and a wait
-    /// before a refusal: the data on its way may change what the Formula is.
-    /// </summary>
-    private Value? Taint(Node node, StagedReader reader)
-    {
-        var gettingData = ReadsWaitingTable(node) || WaitsForToday(node) || WaitsForNow(node) || WaitsForSeed(node);
-        var refused = ReadsRefusingTable(node);
-        foreach (var reference in node.References)
-        {
-            if (!IsLocal(reference)) continue;
-            foreach (var address in CellsIn(reference.Area))
-            {
-                if (reader.Read(address) is { IsError: true } value)
-                {
-                    if (value.Error == ErrorValue.Circ) return value;
-                    if (value.Error == ErrorValue.GettingData) gettingData = true;
-                    if (value.IsRefused) refused = true;
-                }
-            }
-        }
-        return gettingData ? Value.FromError(ErrorValue.GettingData) : refused ? Value.Refusal : null;
-    }
-
     /// <summary>The addresses inside <paramref name="area"/> that hold something, in no particular order.</summary>
     internal IEnumerable<CellAddress> CellsIn(Area area)
     {
@@ -641,93 +446,6 @@ public sealed partial class Sheet
             {
                 if (area.Contains(address)) yield return address;
             }
-        }
-    }
-
-    private sealed class StagedReader(
-        Sheet sheet,
-        Dictionary<CellAddress, Value?> staged,
-        Func<CellAddress, Value?>? onDemand = null,
-        Dictionary<CellAddress, ValueArray?>? arrays = null) : ICellReader
-    {
-        /// <summary>
-        /// The worst a read has met while the Formula being computed was evaluated: <c>#CIRC!</c> for a
-        /// cell in a cycle, or one still being computed; else <c>#GETTING_DATA</c> for a waiting cell;
-        /// else <see langword="null"/>. The recalculation sets it aside for each Formula it computes
-        /// on demand, and taints the Formula's Value with it, as <c>Taint</c> taints a named cell's.
-        /// </summary>
-        public ErrorValue? Met { get; set; }
-
-        /// <summary>
-        /// Whether a read has met a refusal (<see cref="Value.Refusal"/>) while the Formula being computed
-        /// was evaluated: a refused cell, or a Linked Table's column that holds one. The recalculation sets
-        /// it aside as it sets <see cref="Met"/> aside, and refuses the Formula with it, as <c>Taint</c>
-        /// refuses one whose text names a refused cell.
-        /// </summary>
-        public bool MetRefusal { get; set; }
-
-        /// <summary>A cell as this recalculation leaves it: staged, or computed now when it is still to be (ADR-0124), or as it stood.</summary>
-        public Value? Read(CellAddress address)
-        {
-            var value = staged.TryGetValue(address, out var stagedValue) ? stagedValue
-                : onDemand?.Invoke(address) is { } computed ? computed
-                : sheet.GetValue(address);
-            if (value is { IsError: true, Error: ErrorValue.Circ or ErrorValue.GettingData } met && Met != ErrorValue.Circ) Met = met.Error;
-            if (value is { IsRefused: true }) MetRefusal = true;
-            return value;
-        }
-
-        public IEnumerable<CellAddress> NonBlankIn(Area area) =>
-            sheet.CellsIn(area).Where(a => Read(a) is not null).Order();
-
-        /// <summary>
-        /// A Linked Table's column. One a Formula names waits before it is evaluated (<c>Taint</c>);
-        /// one <c>INDIRECT</c>'s text names is met here, and waits the same way (ADR-0049, ADR-0124).
-        /// </summary>
-        public Operand TableColumn(string table, string column)
-        {
-            var read = sheet.TableColumn(table, column);
-            if (read.IsError && read.Scalar!.Value.Error == ErrorValue.GettingData && Met != ErrorValue.Circ) Met = ErrorValue.GettingData;
-            if (sheet.ColumnHoldsRefusal(table, column)) MetRefusal = true;
-            return read;
-        }
-
-        public bool IsLinkedTable(string name) => sheet._tables.ContainsKey(name);
-
-        public Node? FormulaAt(CellAddress address)
-        {
-            if (sheet._cells.GetValueOrDefault(address) is not { } cell) return null;
-            if (cell.Entry is { } entry) return entry.Parsed;
-            return cell.SpilledFrom is { } anchor ? sheet._cells.GetValueOrDefault(anchor)?.Entry?.Parsed : null;
-        }
-
-        public bool IsLocal(Reference reference) => sheet.IsLocal(reference);
-
-        public DateOnly? Today => sheet.Today;
-
-        public DateTime? Now => sheet._moment;
-
-        public ulong? Draw(CellAddress cell, int place) => sheet.Draw(cell, place);
-
-        /// <summary>
-        /// The Anchor's array as this pass computed it, or as it stood. Whether it spills is the last
-        /// layout's answer; a layout that changes it changes the Anchor's Value, which recalculates
-        /// whatever reads <c>A1#</c> (ADR-0125). A blank reads as the 0 its spilled cell shows.
-        /// </summary>
-        public Operand Spill(CellAddress anchor)
-        {
-            Read(anchor);
-            var cell = sheet._cells.GetValueOrDefault(anchor);
-            ValueArray? array = null;
-            if (arrays?.TryGetValue(anchor, out var computed) == true) array = computed;
-            else if (cell is not null) array = cell.Array;
-            if (array is null || cell is null || cell.SpillBlocked) return Operand.Of(ErrorValue.Ref);
-            var shown = new ValueArray(array.Rows, array.Columns);
-            for (var r = 0; r < array.Rows; r++)
-            {
-                for (var c = 0; c < array.Columns; c++) shown[r, c] = array[r, c] ?? Value.FromNumber(0);
-            }
-            return Operand.OfSpillRange(shown);
         }
     }
 

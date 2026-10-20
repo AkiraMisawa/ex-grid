@@ -363,9 +363,21 @@
             without doing it. <code>GetDisplay(address, width)</code> gives what the cell shows in a column so many characters wide:
             General rounds to fit, and any other format that does not fit is <code>####</code>.
         </p>
+        <p>
+            A <code>Workbook</code> holds several Sheets, in order, under one culture. A Formula on one reads
+            another's cells by naming it, <code>=Rates!A1</code> or <code>=SUM('Q1 Sales'!B2:B9)</code>, and a
+            change on any Sheet recalculates what reads it on every Sheet, the new Values published together once
+            the whole recalculation is done. A name no Sheet of the Workbook has is <code>#REF!</code>, as in
+            Excel. <code>Workbook.Do(sheet, edit)</code> names the Sheet an edit is made on and returns the step
+            that undoes it; its <code>WorkbookChange</code> says what changed on each Sheet. Linked Tables are
+            declared on the Workbook, and read from any of its Sheets. ExSheet does not show a Workbook yet, and
+            renaming a Sheet of a Workbook, or inserting or deleting its rows or columns, is not done yet.
+        </p>
+        <DocsExample Builtin="typeof(EngineWorkbook)" CodeOpen="true" />
     </DocsSection>
 
     <DocsSection Title="API">
         <ApiTable Type="typeof(global::ExSheet.Engine.Sheet)" />
+        <ApiTable Type="typeof(global::ExSheet.Engine.Workbook)" />
     </DocsSection>
 </DocsPage>

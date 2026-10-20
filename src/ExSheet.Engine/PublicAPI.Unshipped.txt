@@ -1,1 +1,20 @@
 #nullable enable
+ExSheet.Engine.Workbook
+ExSheet.Engine.Workbook.Check(string! sheet, ExSheet.Engine.SheetEdit! edit) -> ExSheet.Engine.SheetRefusal?
+ExSheet.Engine.Workbook.Culture.get -> System.Globalization.CultureInfo!
+ExSheet.Engine.Workbook.DeclareLinkedTable(string! name, System.Collections.Generic.IReadOnlyList<string!>! columns, System.Collections.Generic.IReadOnlyList<string!>! key) -> ExSheet.Engine.WorkbookChange!
+ExSheet.Engine.Workbook.Do(string! sheet, ExSheet.Engine.SheetEdit! edit) -> ExSheet.Engine.WorkbookStep!
+ExSheet.Engine.Workbook.Find(string! name) -> ExSheet.Engine.Sheet?
+ExSheet.Engine.Workbook.LinkedTables.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.LinkedTable!>!
+ExSheet.Engine.Workbook.PushLinkedTable(string! name, System.Collections.Generic.IEnumerable<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>!>! rows) -> ExSheet.Engine.WorkbookChange!
+ExSheet.Engine.Workbook.Sheets.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Sheet!>!
+ExSheet.Engine.Workbook.Workbook(System.Globalization.CultureInfo! culture, System.Collections.Generic.IEnumerable<string!>! sheetNames) -> void
+ExSheet.Engine.WorkbookChange
+ExSheet.Engine.WorkbookChange.For(ExSheet.Engine.Sheet! sheet) -> ExSheet.Engine.SheetChange!
+ExSheet.Engine.WorkbookChange.Sheets.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Sheet!>!
+ExSheet.Engine.WorkbookStep
+ExSheet.Engine.WorkbookStep.Change.get -> ExSheet.Engine.WorkbookChange!
+ExSheet.Engine.WorkbookStep.IsUndone.get -> bool
+ExSheet.Engine.WorkbookStep.Redo() -> ExSheet.Engine.WorkbookChange!
+ExSheet.Engine.WorkbookStep.Sheet.get -> ExSheet.Engine.Sheet!
+ExSheet.Engine.WorkbookStep.Undo() -> ExSheet.Engine.WorkbookChange!

@@ -74,6 +74,16 @@ public sealed partial class Sheet
             q => Other(q) ? Name : q);
     }
 
+    /// <summary>
+    /// A rename, and an insertion or deletion, rewrite only this Sheet's own References so far; on a
+    /// Sheet of a Workbook of several they would leave the others' References to it naming what they
+    /// no longer mean, so they are not done there (ADR-0331, spine rule 1).
+    /// </summary>
+    private void ThrowIfOneOfSeveral(string operation)
+    {
+        if (Workbook.Sheets.Count > 1) throw new NotSupportedException($"{operation} on a Sheet of a Workbook of several Sheets is not supported yet.");
+    }
+
     internal static string CheckName(string name, string parameter) =>
         IsValidName(name, out var reason) ? name : throw new ArgumentException(reason, parameter);
 
@@ -84,6 +94,7 @@ public sealed partial class Sheet
     {
         ArgumentNullException.ThrowIfNull(name);
         CheckName(name, nameof(name));
+        ThrowIfOneOfSeveral("Renaming");
         var oldName = Name;
         if (string.Equals(oldName, name, StringComparison.Ordinal)) return new RenameOutcome(SheetChange.None, oldName, []);
         // A rename is a change, and draws again, as Excel's did (ADR-0180, the seventeenth Windows run).

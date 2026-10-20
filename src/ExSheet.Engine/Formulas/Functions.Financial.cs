@@ -424,19 +424,19 @@ internal static partial class FunctionLibrary
             OperandKind.Scalar => [operand.Scalar],
             OperandKind.Column => operand.Column!,
             OperandKind.Array => operand.Array!.All(),
-            OperandKind.Area => Cells(operand.Area),
+            OperandKind.Area => Cells(operand.Area, operand.Cells!),
             _ => [null],
         };
         return [.. cells];
 
-        IEnumerable<Value?> Cells(Area area)
+        IEnumerable<Value?> Cells(Area area, ICellReader reader)
         {
             if ((long)area.Rows * area.Columns > 1_000_000) yield return null;
             else
             {
                 for (var row = area.Row1; row <= area.Row2; row++)
                 {
-                    for (var column = area.Column1; column <= area.Column2; column++) yield return call.Evaluator.Cells.Read(new CellAddress(row, column));
+                    for (var column = area.Column1; column <= area.Column2; column++) yield return reader.Read(new CellAddress(row, column));
                 }
             }
         }

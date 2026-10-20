@@ -1,0 +1,44 @@
+@using ExSheet.Engine
+
+<table style="border-spacing: 16px 4px; margin-left: -16px">
+    <thead>
+        <tr><th>Sheet</th><th>Cell</th><th>Entry</th><th>Value, as shown</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var sheet in _workbook.Sheets)
+        {
+            foreach (var address in sheet.EntryAddresses)
+            {
+                <tr>
+                    <td>@sheet.Name</td>
+                    <td>@address</td>
+                    <td><code>@sheet.GetEntryText(address)</code></td>
+                    <td>@sheet.GetDisplay(address).Text</td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+<p class="mt-3">Changing the rate on Rates recalculated @_recalculated.</p>
+
+@code {
+    private Workbook _workbook = default!;
+    private string _recalculated = "";
+
+    protected override void OnInitialized()
+    {
+        var workbook = new Workbook(CultureInfo.GetCultureInfo("en-US"), ["Deposit", "Rates"]);
+
+        // Every edit names the Sheet it is made on.
+        workbook.Do("Rates", SheetEdit.Enter(CellAddress.Parse("A1"), "4.25%"));
+        workbook.Do("Deposit", SheetEdit.Enter(CellAddress.Parse("A1"), "2500000"));
+        workbook.Do("Deposit", SheetEdit.Enter(CellAddress.Parse("A2"), "92"));
+        // A Reference qualified with a Sheet's name reads that Sheet's cells.
+        workbook.Do("Deposit", SheetEdit.Enter(CellAddress.Parse("A3"), "=ROUND(A1*Rates!A1*A2/360, 2)"));
+
+        // A change on one Sheet recalculates what reads it on every other.
+        var change = workbook.Do("Rates", SheetEdit.Enter(CellAddress.Parse("A1"), "4.5%")).Change;
+        _recalculated = string.Join(" and ", change.Sheets.SelectMany(s => change.For(s).ValueChanges.Select(a => $"{s.Name}!{a}")));
+        _workbook = workbook;
+    }
+}

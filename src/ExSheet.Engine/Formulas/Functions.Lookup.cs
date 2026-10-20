@@ -65,7 +65,7 @@ internal static partial class FunctionLibrary
             {
                 case OperandKind.Area:
                     var area = source.Area;
-                    return Operand.Of(new Area(area.Row1 + r1, area.Column1 + c1, area.Row1 + r2, area.Column1 + c2));
+                    return source.SameSheet(new Area(area.Row1 + r1, area.Column1 + c1, area.Row1 + r2, area.Column1 + c2));
                 case OperandKind.Column:
                     return Operand.Of(Slice(call.Evaluator.ToArray(source), r1, r2, c1, c2));
                 case OperandKind.Array:
@@ -77,7 +77,7 @@ internal static partial class FunctionLibrary
         var c = Math.Max((int)column, 1) - 1;
         return source.Kind switch
         {
-            OperandKind.Area => Operand.Of(new Area(source.Area.Row1 + r, source.Area.Column1 + c, source.Area.Row1 + r, source.Area.Column1 + c)),
+            OperandKind.Area => source.SameSheet(new Area(source.Area.Row1 + r, source.Area.Column1 + c, source.Area.Row1 + r, source.Area.Column1 + c)),
             OperandKind.Column => source.Column![r] is { } value ? Operand.Of(value) : Operand.Blank,
             OperandKind.Array => source.Array![r, c] is { } item ? Operand.Of(item) : Operand.Blank,
             _ => source,
@@ -209,7 +209,7 @@ internal static partial class FunctionLibrary
         var bottom = top + height - 1;
         var right = left + width - 1;
         if (top < 0 || left < 0 || bottom >= Sheet.RowCount || right >= Sheet.ColumnCount) return Operand.Of(ErrorValue.Ref);
-        return Operand.Of(new Area((int)top, (int)left, (int)bottom, (int)right));
+        return reference.SameSheet(new Area((int)top, (int)left, (int)bottom, (int)right));
     }
 
     /// <summary>
@@ -274,14 +274,14 @@ internal static partial class FunctionLibrary
         // The reader reads no Reference there, and every reading of the text meets that place, so it is
         // #REF! whatever follows it.
         if (Lexer.ReadReference(text, 0, out var length) is not { } reference) return Operand.Of(ErrorValue.Ref);
-        // Another Sheet's name names no place, as Sheet2!B2 was observed to (INDIRECT-008); so too whatever
-        // follows the name, a # included, since every reading of the rest names a place on a Sheet that is
-        // not there.
-        if (!cells.IsLocal(reference)) return Operand.Of(ErrorValue.Ref);
+        // A Sheet's name the Workbook does not have names no place, as Sheet2!B2 was observed to in a workbook
+        // of one Sheet (INDIRECT-008); so too whatever follows the name, a # included, since every reading of
+        // the rest names a place on a Sheet that is not there. A name it has reads that Sheet (ADR-0331).
+        if (cells.Resolve(reference.SheetName) is not { } target) return Operand.Of(ErrorValue.Ref);
         if (length == text.Length - 1 && text[length] == '#')
         {
             // A1#: the Spill Range of the Formula in A1, read as the typed one is (INDIRECT-026, 042; ADR-0125).
-            if (reference.Shape == ReferenceShape.Cell) return cells.Spill(new CellAddress(reference.Row1, reference.Column1));
+            if (reference.Shape == ReferenceShape.Cell) return target.Spill(new CellAddress(reference.Row1, reference.Column1));
             // A # after a range, a whole row or a whole column names no place: #REF!, as the oracle run
             // of 2026-10-18 read Excel (INDIRECT-092, 096).
             return Operand.Of(ErrorValue.Ref);
@@ -289,7 +289,7 @@ internal static partial class FunctionLibrary
         // Text that goes on past the Reference is no Reference: the engine's rule, generalised from the
         // intersection Excel was observed to refuse (INDIRECT-021).
         if (length != text.Length) return Operand.Of(ErrorValue.Ref);
-        return Operand.Of(reference.Area);
+        return Operand.Of(reference.Area, target);
     }
 
     /// <summary>
@@ -366,10 +366,10 @@ internal static partial class FunctionLibrary
             var raw = match.Groups["sheet"].Value;
             sheet = raw[0] == '\'' ? raw[1..^1].Replace("''", "'", StringComparison.Ordinal) : raw;
         }
-        // Another Sheet's name names no place, as it was observed to in A1 style (INDIRECT-008): read so in
-        // R1C1 style, which no run has asked (INDIRECT-093), whatever follows it, since every reading of
-        // the rest names a place on a Sheet that is not there.
-        if (!call.Evaluator.Cells.IsLocal(Reference.Rectangle(sheet, 0, 0, 0, 0, true, true, true, true))) return Operand.Of(ErrorValue.Ref);
+        // A Sheet's name the Workbook does not have names no place, as it was observed to in A1 style
+        // (INDIRECT-008): read so in R1C1 style, which no run has asked (INDIRECT-093), whatever follows it,
+        // since every reading of the rest names a place on a Sheet that is not there (ADR-0331).
+        if (call.Evaluator.Cells.Resolve(sheet) is not { } target) return Operand.Of(ErrorValue.Ref);
         var inside = match.Groups["inside"].Success;
         var parts = new List<RowColumnPart> { RowColumnPart.Read(match.Groups["first"].Value) };
         if (match.Groups["second"].Success) parts.Add(RowColumnPart.Read(match.Groups["second"].Value));
@@ -400,11 +400,11 @@ internal static partial class FunctionLibrary
         for (var i = 1; i < spans.Count; i++)
             if (RowColumnSpan.Join(joined, spans[i]) is { } next) joined = next;
             else return Operand.Of(ErrorValue.Ref);
-        if (spilled) return call.Evaluator.Cells.Spill(new CellAddress(joined.Row1, joined.Column1));
+        if (spilled) return target.Spill(new CellAddress(joined.Row1, joined.Column1));
         var (row1, row2) = joined.Rows ?? (0, Sheet.RowCount - 1);
         var (column1, column2) = joined.Columns ?? (0, Sheet.ColumnCount - 1);
         var reference = Reference.Rectangle(sheet, row1, column1, row2, column2, true, true, true, true);
-        return Operand.Of(reference.Area);
+        return Operand.Of(reference.Area, target);
     }
 
     /// <summary>
