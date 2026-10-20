@@ -1100,3 +1100,9 @@ static ExChart.Engine.VerticalAxis.operator ==(ExChart.Engine.VerticalAxis? left
 ~override ExChart.Engine.PriceBar.ToString() -> string
 ~override ExChart.Engine.SeriesLook.Equals(object obj) -> bool
 ~override ExChart.Engine.SeriesLook.ToString() -> string
+ExChart.Engine.ChartSeries.XInterval.get -> ExChart.Engine.SeriesInterval?
+ExChart.Engine.ChartSeries.XInterval.init -> void
+ExChart.Engine.DrawnMarker.YBounds.get -> (double Lower, double Upper)?
+ExChart.Engine.DrawnMarker.YBounds.init -> void
+ExChart.Engine.DrawnMarker.XBounds.get -> (double Lower, double Upper)?
+ExChart.Engine.DrawnMarker.XBounds.init -> void

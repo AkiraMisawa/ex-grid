@@ -25,6 +25,21 @@ public static class ChartCsv
         Row(sb, named ? ["Series", "Point", Title(definition.Axis), "Value", "Kind", "Method"] : ["Series", Title(definition.Axis), "Value", "Kind", "Method"]);
         foreach (var (s, points) in Shown(definition, metrics, view ?? ChartView.All))
         {
+            // An Observation's bounds follow each of its points, one a row (ADR-0304).
+            if (s.Kind == SeriesKind.Observation)
+            {
+                foreach (var (p, i) in Observed(s, points))
+                {
+                    Row(sb, [s.Name, p.Name ?? "", X(definition.Axis, p.X), p.Y?.ToInvariantString() ?? "", "observed", ""]);
+                    foreach (var (iv, which) in new[] { (s.Interval, s.XInterval is null ? "" : "y "), (s.XInterval, "x ") })
+                        if (iv is not null)
+                        {
+                            Row(sb, [$"{s.Name} {which}lower ({iv.Meaning})", p.Name ?? "", X(definition.Axis, p.X), iv.Bounds[i].Lower?.ToInvariantString() ?? "", "interval", ""]);
+                            Row(sb, [$"{s.Name} {which}upper ({iv.Meaning})", p.Name ?? "", X(definition.Axis, p.X), iv.Bounds[i].Upper?.ToInvariantString() ?? "", "interval", ""]);
+                        }
+                }
+                continue;
+            }
             if (Extra(s, points) is { Count: > 0 } extra)
             {
                 // A Price Range's every row, and an Interval's bounds named by their meaning (ADR-0300, ADR-0303).
@@ -77,8 +92,7 @@ public static class ChartCsv
         // A scatter's points share positions across, so its table is a row per point, never a column
         // per series keyed by position, which would keep one point of each position (ADR-0290).
         if (definition.Series.Any(s => s.Kind == SeriesKind.Observation))
-            return new ChartTable(["Series", "Point", Title(definition.Axis), "Value"],
-                shown.SelectMany(t => t.Points.Select(p => (IReadOnlyList<string>)[t.Series.Name, p.Name ?? "", X(definition.Axis, p.X), p.Y?.ToInvariantString() ?? ""])).ToList());
+            return Observations(definition, shown);
         var columns = new List<(string Header, Dictionary<double, string> Values)>();
         foreach (var (s, points) in shown)
         {
@@ -107,6 +121,51 @@ public static class ChartCsv
         return visible.Select(s => (s, (IReadOnlyList<ChartPoint>)(s.Sampler is { } f
             ? SeriesDrawing.Sample(f, s.Segments, from, to, devicePixels, ChartScene.QuotesOf(s, visible), axis.EffectiveScale == AxisScale.Logarithmic)
             : s.Points.Where(p => p.X >= from && p.X <= to).ToList()))).ToList();
+    }
+
+    // A scatter's table, a row per point, with a lower and an upper column for each quantity that has
+    // an interval: named by its meaning when every series means the same, else with the meaning in a
+    // column of its own (ADR-0304).
+    private static ChartTable Observations(ChartDefinition d, List<(ChartSeries Series, IReadOnlyList<ChartPoint> Points)> shown)
+    {
+        var header = new List<string> { "Series", "Point", Title(d.Axis), "Value" };
+        var quantities = new List<(Func<ChartSeries, SeriesInterval?> Of, bool Plain)>();
+        foreach (var (of, name) in new (Func<ChartSeries, SeriesInterval?>, string)[] { (s => s.Interval, "Value"), (s => s.XInterval, Title(d.Axis)) })
+        {
+            var meanings = shown.Where(t => t.Series.Kind == SeriesKind.Observation).Select(t => of(t.Series)?.Meaning).Where(m => m is not null).Distinct().ToList();
+            if (meanings.Count == 0) continue;
+            var plain = meanings.Count > 1 || shown.Any(t => t.Series.Kind == SeriesKind.Observation && of(t.Series) is null);
+            header.AddRange(plain ? [$"{name} lower", $"{name} upper", $"{name} interval"] : [$"{name} lower ({meanings[0]})", $"{name} upper ({meanings[0]})"]);
+            quantities.Add((of, plain));
+        }
+        var rows = new List<IReadOnlyList<string>>();
+        foreach (var (s, points) in shown)
+            foreach (var (p, i) in Observed(s, points))
+            {
+                var row = new List<string> { s.Name, p.Name ?? "", X(d.Axis, p.X), p.Y?.ToInvariantString() ?? "" };
+                foreach (var (of, plain) in quantities)
+                {
+                    var iv = s.Kind == SeriesKind.Observation ? of(s) : null;
+                    row.Add(iv?.Bounds[i].Lower?.ToInvariantString() ?? "");
+                    row.Add(iv?.Bounds[i].Upper?.ToInvariantString() ?? "");
+                    if (plain) row.Add(iv?.Meaning ?? "");
+                }
+                rows.Add(row);
+            }
+        return new ChartTable(header, rows);
+    }
+
+    // The points shown with their rows: an Observation's every point in range, a sampled series' samples.
+    private static IEnumerable<(ChartPoint Point, int Row)> Observed(ChartSeries s, IReadOnlyList<ChartPoint> shown)
+    {
+        if (s.Kind != SeriesKind.Observation || s.Sampler is not null)
+        {
+            for (var i = 0; i < shown.Count; i++) yield return (shown[i], -1);
+            yield break;
+        }
+        var kept = shown.ToHashSet();
+        for (var i = 0; i < s.Points.Count; i++)
+            if (kept.Contains(s.Points[i])) yield return (s.Points[i], i);
     }
 
     // The columns a series carries beyond its points: a Price Range's open, high, low, close and

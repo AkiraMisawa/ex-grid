@@ -59,6 +59,11 @@
     <ExChart Definition="Forecasts" Title="Policy rate forecasts" Width="760" Height="260" />
 </section>
 
+<section id="estimates">
+    <h2>Strategies' estimated risk and return</h2>
+    <ExChart Definition="Estimates" Title="Volatility against return, each a 95% CI" Width="760" Height="300" />
+</section>
+
 <style>
     .candles-japan .ex-chart { --ex-chart-rise: #d32f2f; --ex-chart-fall: #1565c0; }
     .candles-west .ex-chart { --ex-chart-rise: #2e7d32; --ex-chart-fall: #c62828; }
@@ -140,6 +145,23 @@
             FromZero = false,
             Keys = new AppearanceKeys("Median", null, "circle"),
             Interval = new SeriesInterval("95% CI", Survey.Select(s => new IntervalBound(s.Quarter, s.Low, s.High)).ToList()),
+        },
+    ]);
+
+    // Each strategy's annualised volatility and return, both estimated, with bootstrap intervals (ADR-0304).
+    private static readonly (string Name, decimal Vol, decimal VolLo, decimal VolHi, decimal Ret, decimal RetLo, decimal RetHi)[] Strategies =
+    [
+        ("Carry", 6.1m, 5.4m, 6.9m, 4.2m, 1.1m, 7.3m), ("Momentum", 11.8m, 10.5m, 13.4m, 6.0m, 0.2m, 11.9m),
+        ("Value", 9.4m, 8.3m, 10.6m, 2.9m, -2.0m, 7.8m), ("Low vol", 5.2m, 4.7m, 5.8m, 3.8m, 1.3m, 6.4m),
+        ("Trend", 14.6m, 12.9m, 16.5m, 7.1m, -0.1m, 14.3m), ("Short vol", 8.7m, 6.2m, 12.9m, 5.5m, 0.9m, 10.0m),
+    ];
+
+    private static readonly ChartDefinition Estimates = new(ChartAxis.Numbers("Volatility (% a year)"),
+    [
+        ChartSeries.Of("strategies", "Strategies", SeriesKind.Observation, Strategies.Select(s => new ChartPoint((double)s.Vol, s.Ret) { Name = s.Name })) with
+        {
+            Interval = new SeriesInterval("95% CI", Strategies.Select(s => new IntervalBound((double)s.Vol, s.RetLo, s.RetHi)).ToList()),
+            XInterval = new SeriesInterval("95% CI", Strategies.Select(s => new IntervalBound((double)s.Vol, s.VolLo, s.VolHi)).ToList()),
         },
     ]);
 

@@ -77,8 +77,14 @@ public sealed record ChartSeries
     /// </summary>
     public CandlePeriod? MergeTo { get; init; }
 
-    /// <summary>The series' Interval, its bounds and their meaning (ADR-0303); a Level's only.</summary>
+    /// <summary>
+    /// The series' vertical Interval, its bounds and their meaning (ADR-0303): a Level's, by position,
+    /// or an Observation's, one bound a row in the points' order (ADR-0304).
+    /// </summary>
     public SeriesInterval? Interval { get; init; }
+
+    /// <summary>An Observation's horizontal Interval, one bound a row in the points' order, its bounds in the axis' units across (ADR-0304).</summary>
+    public SeriesInterval? XInterval { get; init; }
 
     /// <summary>The function it is sampled from, or null when it is handed in as points.</summary>
     public SeriesSampler? Sampler { get; init; }

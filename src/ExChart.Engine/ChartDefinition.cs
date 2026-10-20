@@ -108,25 +108,55 @@ public sealed record ChartDefinition
                 throw new ChartRefusedException($"'{s.Name}' fixes a candle period, but is not a Price Range.");
             if (s.Interval is { } iv)
             {
-                if (s.Kind != SeriesKind.Level || s.Sampler is not null)
-                    throw new ChartRefusedException($"'{s.Name}' has an Interval, which belongs to a Level's points.");
-                if (string.IsNullOrWhiteSpace(iv.Meaning))
-                    throw new ChartRefusedException($"'{s.Name}' has an Interval that does not say what it means: name it (\"95% CI\", \"±1σ\", \"Bid–Ask\").");
-                var xs = s.Points.Select(p => p.X).ToHashSet();
-                var seen = new HashSet<double>();
-                foreach (var b in iv.Bounds)
-                {
-                    if (!xs.Contains(b.X))
-                        throw new ChartRefusedException($"'{s.Name}' has an interval at {Axis.Write(b.X)}, where it has no point.");
-                    if (!seen.Add(b.X))
-                        throw new ChartRefusedException($"'{s.Name}' has two intervals at {Axis.Write(b.X)}.");
-                    if (b.Lower is { } lo && b.Upper is { } hi && lo.ToDouble() > hi.ToDouble())
-                        throw new ChartRefusedException($"'{s.Name}' at {Axis.Write(b.X)}: the lower bound {s.Write(lo)} of its {iv.Meaning} is above the upper {s.Write(hi)}.");
-                }
+                if (s.Kind is not (SeriesKind.Level or SeriesKind.Observation) || s.Sampler is not null)
+                    throw new ChartRefusedException($"'{s.Name}' has an Interval, which belongs to a Level's or an Observation's points.");
+                ValidateInterval(s, iv, "");
+            }
+            if (s.XInterval is { } xv)
+            {
+                if (s.Kind != SeriesKind.Observation)
+                    throw new ChartRefusedException($"'{s.Name}' has a horizontal Interval, which belongs to an Observation's points.");
+                ValidateInterval(s, xv, "horizontal ");
             }
             foreach (var g in s.Segments)
                 if (!(g.From < g.To))
                     throw new ChartRefusedException($"'{s.Name}' has an empty segment, '{g.Method}'.");
+        }
+    }
+
+    // A Level's bounds are found by position; an Observation's are one a row, in the points' order (ADR-0303, ADR-0304).
+    private void ValidateInterval(ChartSeries s, SeriesInterval iv, string which)
+    {
+        if (string.IsNullOrWhiteSpace(iv.Meaning))
+            throw new ChartRefusedException($"'{s.Name}' has a {which}Interval that does not say what it means: name it (\"95% CI\", \"±1σ\", \"Bid–Ask\").");
+        string Write(ChartValue v) => which.Length > 0 ? Axis.Write(v.ToDouble()) : s.Write(v);
+        if (s.Kind == SeriesKind.Observation)
+        {
+            if (iv.Style != IntervalStyle.Whiskers)
+                throw new ChartRefusedException($"'{s.Name}' draws its {which}Interval as a band, which joins neighbours: an Observation's points have none, so it takes whiskers.");
+            if (iv.Bounds.Count != s.Points.Count)
+                throw new ChartRefusedException($"'{s.Name}' has {s.Points.Count} points and {iv.Bounds.Count} {which}bounds: an Observation's bounds are one a row, in its points' order.");
+            for (var i = 0; i < s.Points.Count; i++)
+            {
+                var b = iv.Bounds[i];
+                var at = s.Points[i].Name ?? $"row {i + 1}";
+                if (b.X != s.Points[i].X)
+                    throw new ChartRefusedException($"'{s.Name}' at {at}: the {which}bound stands at {Axis.Write(b.X)}, but its point at {Axis.Write(s.Points[i].X)}.");
+                if (b.Lower is { } lo && b.Upper is { } hi && lo.ToDouble() > hi.ToDouble())
+                    throw new ChartRefusedException($"'{s.Name}' at {at}: the lower bound {Write(lo)} of its {iv.Meaning} is above the upper {Write(hi)}.");
+            }
+            return;
+        }
+        var xs = s.Points.Select(p => p.X).ToHashSet();
+        var seen = new HashSet<double>();
+        foreach (var b in iv.Bounds)
+        {
+            if (!xs.Contains(b.X))
+                throw new ChartRefusedException($"'{s.Name}' has an interval at {Axis.Write(b.X)}, where it has no point.");
+            if (!seen.Add(b.X))
+                throw new ChartRefusedException($"'{s.Name}' has two intervals at {Axis.Write(b.X)}.");
+            if (b.Lower is { } lo && b.Upper is { } hi && lo.ToDouble() > hi.ToDouble())
+                throw new ChartRefusedException($"'{s.Name}' at {Axis.Write(b.X)}: the lower bound {s.Write(lo)} of its {iv.Meaning} is above the upper {s.Write(hi)}.");
         }
     }
 }

@@ -56,6 +56,20 @@ public class CandleTests : BunitContext
         Assert.Single(Render<ChartComponent>(ps => ps.Add(c => c.Definition, Curve(IntervalStyle.Band))).FindAll(".ex-chart-interval-band"));
     }
 
+    [Fact] // ADR-0304: an Observation's intervals are whiskers up and down and across, through its mark
+    public void An_observations_intervals_are_drawn_through_its_mark()
+    {
+        var names = ChartSeries.Of("n", "Names", SeriesKind.Observation, [new ChartPoint(1, 150m), new ChartPoint(3, 200m)]) with
+        {
+            Interval = new SeriesInterval("95% CI", [new IntervalBound(1, 140m, 160m), new IntervalBound(3, 190m, 215m)]),
+            XInterval = new SeriesInterval("±1σ", [new IntervalBound(1, 0.5m, 1.5m), new IntervalBound(3, 2.8m, 3.4m)]),
+        };
+        var cut = Render<ChartComponent>(ps => ps.Add(c => c.Definition, new ChartDefinition(ChartAxis.Numbers("Leverage"), [names])));
+        var d = Assert.Single(cut.FindAll(".ex-chart-whiskers")).GetAttribute("d")!;
+        Assert.Equal(2, d.Split('V').Length - 1);
+        Assert.Equal(2, d.Split('H').Length - 1);
+    }
+
     [Fact] // ADR-0302: a click on a merged candle narrows to its period; on a row's candle it names the row
     public async Task ADR0302_a_click_on_a_merged_candle_narrows_to_its_period()
     {

@@ -64,7 +64,8 @@ public static class ChartReadings
         var p = s.Points[m.Point];
         var axis = definition.Axis;
         var value = $"{axis.Write(p.X)}, {(p.Y is { } y ? s.Write(y) : "")}";
-        var note = m.Count > 1 ? $"{m.Count} points here: {p.Name ?? "this one"} and {m.Count - 1} more" : null;
+        var note = Join(Join(ObservedBounds(s.Interval, m.Point, s.Write, s.XInterval is null ? "" : "y "), ObservedBounds(s.XInterval, m.Point, v => axis.Write(v.ToDouble()), "x ")),
+            m.Count > 1 ? $"{m.Count} points here: {p.Name ?? "this one"} and {m.Count - 1} more" : null);
         return new ChartReading(p.Name ?? axis.Write(p.X), new[] { new ReadingLine(s.Id, s.Name, look, value, note, m.Y) }.ToEquatableList(), 0);
     }
 
@@ -149,6 +150,11 @@ public static class ChartReadings
         var found = iv.Bounds.Where(b => b.X == x).ToList();
         return found is [var b] && b.Lower is { } lo && b.Upper is { } hi ? $"[{s.Write(lo)}, {s.Write(hi)}] {iv.Meaning}" : "(no interval)";
     }
+
+    // An Observation's bounds at its row, with their meaning (ADR-0304).
+    private static string? ObservedBounds(SeriesInterval? iv, int point, Func<ChartValue, string> write, string which) =>
+        iv is null ? null
+        : iv.Bounds[point] is { Lower: { } lo, Upper: { } hi } ? $"{which}[{write(lo)}, {write(hi)}] {iv.Meaning}" : $"{which}(no interval)";
 
     private static string? Join(string? a, string? b) => a is null ? b : b is null ? a : $"{a}, {b}";
 
