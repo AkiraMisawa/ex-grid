@@ -278,7 +278,7 @@ acknowledges every render batch once it has applied it, so by then the last one 
 
 ## The spec lint
 
-A layer-2 test reads every spec here and refuses two things (ADR-0220 §6;
+A layer-2 test reads every spec here and refuses three things (ADR-0220 §6;
 `tests/ExGrid.Components/SpecLintTests.cs`, the lint itself in `Support/SpecLint.cs`):
 
 - **A fixed wait**: `waitForTimeout`, a `setTimeout` waited on, or a `sleep`. Wait for the state the
@@ -291,9 +291,15 @@ A layer-2 test reads every spec here and refuses two things (ADR-0220 §6;
   once the Settled Mark is in, and the helpers that wait through one of those (`pressCell`, `goTo`,
   `enter`, `expectFocusAt`, …). A read whose value is used counts; a bare `await x.evaluate(…)` is an
   action, not a read.
+- **Where keys land, asserted under a round trip with the answers flowing**: a test that records
+  where its keys land (`watchWhereKeysLand`) and asserts it, with `setRoundTrip` above 0 and the
+  keys typed without `holdAnswers(true)` around them. Where a key lands depends on what stands when
+  it is typed; the round trip only makes it likely that the list or popover still stands, and a slow
+  runner types the last key after it has gone (PR #206). Hold the answers across the keys and let
+  them go before reading. A record attached to the report but not asserted is not refused.
 
 It reads statements, not lines, so a call over several lines is one statement, and each test, hook
-or function starts owing nothing. It does not judge what a test asserts, and it does not see an input
+or function starts owing nothing. Apart from the third rule, it does not judge what a test asserts, and it does not see an input
 made inside `page.evaluate` or by a helper of a spec's own.
 
 A statement it cannot judge — a wait that proves nothing arrives, an input held on purpose, a read
@@ -305,7 +311,7 @@ naming the rule and why:
 await page.waitForTimeout(500);
 ```
 
-`early-read` is the other rule. A reason shorter than a few words, or a rule the lint does not have,
+`early-read` and `round-trip` are the others. A reason shorter than a few words, or a rule the lint does not have,
 is itself a finding.
 
 ## Reading pixels
