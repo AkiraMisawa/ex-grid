@@ -2,6 +2,7 @@
 const ExChart.Engine.Appearance.DefaultColourSlots = 10 -> int
 const ExChart.Engine.Appearance.LineStyles = 4 -> int
 const ExChart.Engine.Appearance.Markers = 4 -> int
+const ExChart.Engine.ChartSpec.Version = 1 -> int
 const ExChart.Engine.Fitting.Fit.TheilSenLimit = 3000 -> int
 const ExChart.Engine.SurfaceDefinition.TrianglesMethod = "linear on the Consumer's triangles (P1)" -> string!
 const ExChart.Engine.SurfaceMesh.BandCount = 9 -> int
@@ -100,6 +101,10 @@ ExChart.Engine.ChartAxis.Values.get -> ExChart.Engine.AxisValues
 ExChart.Engine.ChartAxis.Values.init -> void
 ExChart.Engine.ChartAxis.Write(double position) -> string!
 ExChart.Engine.ChartCsv
+ExChart.Engine.ChartData
+ExChart.Engine.ChartData.Columns.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExChart.Engine.ChartData.RowCount.get -> int
+ExChart.Engine.ChartData.Value(string! column, int row) -> object?
 ExChart.Engine.ChartDefinition
 ExChart.Engine.ChartDefinition.<Clone>$() -> ExChart.Engine.ChartDefinition!
 ExChart.Engine.ChartDefinition.Axis.get -> ExChart.Engine.ChartAxis!
@@ -238,6 +243,41 @@ ExChart.Engine.ChartSeries.Segments.init -> void
 ExChart.Engine.ChartSeries.Step.get -> ExChart.Engine.StepSide
 ExChart.Engine.ChartSeries.Step.init -> void
 ExChart.Engine.ChartSeries.Write(ExChart.Engine.ChartValue value) -> string!
+ExChart.Engine.ChartSpec
+ExChart.Engine.ChartSpecAnswer
+ExChart.Engine.ChartSpecAnswer.<Clone>$() -> ExChart.Engine.ChartSpecAnswer!
+ExChart.Engine.ChartSpecAnswer.Accepted.get -> bool
+ExChart.Engine.ChartSpecAnswer.Accepted.init -> void
+ExChart.Engine.ChartSpecAnswer.ChartSpecAnswer(bool Accepted, string! Text, ExChart.Engine.ChartSpecReading? Reading) -> void
+ExChart.Engine.ChartSpecAnswer.Deconstruct(out bool Accepted, out string! Text, out ExChart.Engine.ChartSpecReading? Reading) -> void
+ExChart.Engine.ChartSpecAnswer.Equals(ExChart.Engine.ChartSpecAnswer? other) -> bool
+ExChart.Engine.ChartSpecAnswer.Reading.get -> ExChart.Engine.ChartSpecReading?
+ExChart.Engine.ChartSpecAnswer.Reading.init -> void
+ExChart.Engine.ChartSpecAnswer.Text.get -> string!
+ExChart.Engine.ChartSpecAnswer.Text.init -> void
+ExChart.Engine.ChartSpecReading
+ExChart.Engine.ChartSpecReading.<Clone>$() -> ExChart.Engine.ChartSpecReading!
+ExChart.Engine.ChartSpecReading.ChartSpecReading(string! Title, ExChart.Engine.ChartDefinition! Definition) -> void
+ExChart.Engine.ChartSpecReading.Deconstruct(out string! Title, out ExChart.Engine.ChartDefinition! Definition) -> void
+ExChart.Engine.ChartSpecReading.Definition.get -> ExChart.Engine.ChartDefinition!
+ExChart.Engine.ChartSpecReading.Definition.init -> void
+ExChart.Engine.ChartSpecReading.Equals(ExChart.Engine.ChartSpecReading? other) -> bool
+ExChart.Engine.ChartSpecReading.Title.get -> string!
+ExChart.Engine.ChartSpecReading.Title.init -> void
+ExChart.Engine.ChartSpecRefusedException
+ExChart.Engine.ChartSpecRefusedException.ChartSpecRefusedException(string! path, string! message) -> void
+ExChart.Engine.ChartSpecRefusedException.Path.get -> string!
+ExChart.Engine.ChartSpecTool
+ExChart.Engine.ChartSpecTool.<Clone>$() -> ExChart.Engine.ChartSpecTool!
+ExChart.Engine.ChartSpecTool.ChartSpecTool(string! Name, string! Description, string! InputSchema) -> void
+ExChart.Engine.ChartSpecTool.Deconstruct(out string! Name, out string! Description, out string! InputSchema) -> void
+ExChart.Engine.ChartSpecTool.Description.get -> string!
+ExChart.Engine.ChartSpecTool.Description.init -> void
+ExChart.Engine.ChartSpecTool.Equals(ExChart.Engine.ChartSpecTool? other) -> bool
+ExChart.Engine.ChartSpecTool.InputSchema.get -> string!
+ExChart.Engine.ChartSpecTool.InputSchema.init -> void
+ExChart.Engine.ChartSpecTool.Name.get -> string!
+ExChart.Engine.ChartSpecTool.Name.init -> void
 ExChart.Engine.ChartSummary
 ExChart.Engine.ChartTable
 ExChart.Engine.ChartTable.<Clone>$() -> ExChart.Engine.ChartTable!
@@ -378,6 +418,10 @@ ExChart.Engine.Fitting.FittedCurve.Space.init -> void
 ExChart.Engine.Fitting.FittedCurve.To.get -> double
 ExChart.Engine.Fitting.FittedCurve.To.init -> void
 ExChart.Engine.Fitting.FittedCurve.ValueAt(double x) -> ExChart.Engine.ChartValue?
+ExChart.Engine.IChartData
+ExChart.Engine.IChartData.Columns.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExChart.Engine.IChartData.RowCount.get -> int
+ExChart.Engine.IChartData.Value(string! column, int row) -> object?
 ExChart.Engine.Interpolation.Interpolant1D
 ExChart.Engine.Interpolation.Interpolant1D.<Clone>$() -> ExChart.Engine.Interpolation.Interpolant1D!
 ExChart.Engine.Interpolation.Interpolant1D.Deconstruct(out string! Method, out double From, out double To, out System.Func<double, double?>! Evaluate) -> void
@@ -940,6 +984,15 @@ override ExChart.Engine.ChartScene.ToString() -> string!
 override ExChart.Engine.ChartSeries.Equals(object? obj) -> bool
 override ExChart.Engine.ChartSeries.GetHashCode() -> int
 override ExChart.Engine.ChartSeries.ToString() -> string!
+override ExChart.Engine.ChartSpecAnswer.Equals(object? obj) -> bool
+override ExChart.Engine.ChartSpecAnswer.GetHashCode() -> int
+override ExChart.Engine.ChartSpecAnswer.ToString() -> string!
+override ExChart.Engine.ChartSpecReading.Equals(object? obj) -> bool
+override ExChart.Engine.ChartSpecReading.GetHashCode() -> int
+override ExChart.Engine.ChartSpecReading.ToString() -> string!
+override ExChart.Engine.ChartSpecTool.Equals(object? obj) -> bool
+override ExChart.Engine.ChartSpecTool.GetHashCode() -> int
+override ExChart.Engine.ChartSpecTool.ToString() -> string!
 override ExChart.Engine.ChartTable.Equals(object? obj) -> bool
 override ExChart.Engine.ChartTable.GetHashCode() -> int
 override ExChart.Engine.ChartTable.ToString() -> string!
@@ -1056,6 +1109,7 @@ static ExChart.Engine.ChartAxis.operator ==(ExChart.Engine.ChartAxis? left, ExCh
 static ExChart.Engine.ChartCsv.Long(ExChart.Engine.ChartDefinition! definition, ExChart.Engine.ChartMetrics! metrics, ExChart.Engine.ChartView? view = null) -> string!
 static ExChart.Engine.ChartCsv.Wide(ExChart.Engine.ChartDefinition! definition, ExChart.Engine.ChartMetrics! metrics, ExChart.Engine.ChartView? view = null) -> string!
 static ExChart.Engine.ChartCsv.WideTable(ExChart.Engine.ChartDefinition! definition, ExChart.Engine.ChartMetrics! metrics, ExChart.Engine.ChartView? view = null) -> ExChart.Engine.ChartTable!
+static ExChart.Engine.ChartData.Of(params (string! Name, System.Collections.IList! Values)[]! columns) -> ExChart.Engine.ChartData!
 static ExChart.Engine.ChartDefinition.operator !=(ExChart.Engine.ChartDefinition? left, ExChart.Engine.ChartDefinition? right) -> bool
 static ExChart.Engine.ChartDefinition.operator ==(ExChart.Engine.ChartDefinition? left, ExChart.Engine.ChartDefinition? right) -> bool
 static ExChart.Engine.ChartMark.operator !=(ExChart.Engine.ChartMark left, ExChart.Engine.ChartMark right) -> bool
@@ -1076,6 +1130,15 @@ static ExChart.Engine.ChartSeries.Of(string! id, string! name, ExChart.Engine.Se
 static ExChart.Engine.ChartSeries.Sampled(string! id, string! name, ExChart.Engine.SeriesKind kind, double from, double to, System.Func<double, ExChart.Engine.ChartValue?>! valueAt) -> ExChart.Engine.ChartSeries!
 static ExChart.Engine.ChartSeries.operator !=(ExChart.Engine.ChartSeries? left, ExChart.Engine.ChartSeries? right) -> bool
 static ExChart.Engine.ChartSeries.operator ==(ExChart.Engine.ChartSeries? left, ExChart.Engine.ChartSeries? right) -> bool
+static ExChart.Engine.ChartSpec.Answer(string! json, System.Func<string!, ExChart.Engine.IChartData?>! tables, ExChart.Engine.ChartMetrics? metrics = null) -> ExChart.Engine.ChartSpecAnswer!
+static ExChart.Engine.ChartSpec.Read(string! json, System.Func<string!, ExChart.Engine.IChartData?>! tables) -> ExChart.Engine.ChartSpecReading!
+static ExChart.Engine.ChartSpec.Tool.get -> ExChart.Engine.ChartSpecTool!
+static ExChart.Engine.ChartSpecAnswer.operator !=(ExChart.Engine.ChartSpecAnswer? left, ExChart.Engine.ChartSpecAnswer? right) -> bool
+static ExChart.Engine.ChartSpecAnswer.operator ==(ExChart.Engine.ChartSpecAnswer? left, ExChart.Engine.ChartSpecAnswer? right) -> bool
+static ExChart.Engine.ChartSpecReading.operator !=(ExChart.Engine.ChartSpecReading? left, ExChart.Engine.ChartSpecReading? right) -> bool
+static ExChart.Engine.ChartSpecReading.operator ==(ExChart.Engine.ChartSpecReading? left, ExChart.Engine.ChartSpecReading? right) -> bool
+static ExChart.Engine.ChartSpecTool.operator !=(ExChart.Engine.ChartSpecTool? left, ExChart.Engine.ChartSpecTool? right) -> bool
+static ExChart.Engine.ChartSpecTool.operator ==(ExChart.Engine.ChartSpecTool? left, ExChart.Engine.ChartSpecTool? right) -> bool
 static ExChart.Engine.ChartSummary.Of(ExChart.Engine.ChartDefinition! definition, ExChart.Engine.ChartScene! scene, ExChart.Engine.ChartView! view, string? title = null, string? description = null) -> string!
 static ExChart.Engine.ChartTable.operator !=(ExChart.Engine.ChartTable? left, ExChart.Engine.ChartTable? right) -> bool
 static ExChart.Engine.ChartTable.operator ==(ExChart.Engine.ChartTable? left, ExChart.Engine.ChartTable? right) -> bool
