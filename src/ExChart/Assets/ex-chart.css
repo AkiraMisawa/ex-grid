@@ -236,6 +236,11 @@
 .ex-chart-surface-label { fill: var(--_ex-chart-muted); stroke: var(--_ex-chart-background); stroke-width: 3px; paint-order: stroke; stroke-linejoin: round; }
 .ex-chart-surface-title { fill: var(--_ex-chart-text); font-weight: 600; }
 .ex-chart-surface-bar-band { stroke: none; }
+/* A key of colours or sizes read from a column (ADR-0320): always drawn beside the plot. */
+.ex-chart-key-title { fill: var(--_ex-chart-text); }
+.ex-chart-key-band { stroke: none; }
+.ex-chart-key-frame { fill: none; stroke: var(--_ex-chart-axis); stroke-width: 1; }
+.ex-chart-key-size { fill: none; stroke: var(--_ex-chart-text); stroke-width: 1; }
 .ex-chart-surface-bar-frame { fill: none; stroke: var(--_ex-chart-surface-mesh); stroke-width: 1; }
 .ex-chart-surface-bar-tick { stroke: var(--_ex-chart-muted); stroke-width: 1; }
 .ex-chart-heat-0 { fill: var(--_ex-chart-heat-0); }

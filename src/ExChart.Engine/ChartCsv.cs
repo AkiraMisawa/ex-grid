@@ -138,6 +138,10 @@ public static class ChartCsv
             header.AddRange(plain ? [$"{name} lower", $"{name} upper", $"{name} interval"] : [$"{name} lower ({meanings[0]})", $"{name} upper ({meanings[0]})"]);
             quantities.Add((of, plain));
         }
+        // A colour or a size read from a column is a column of the file: files carry every value (ADR-0320).
+        var scales = shown.Where(t => t.Series.Kind == SeriesKind.Observation)
+            .SelectMany(t => new[] { t.Series.ColourBy?.Title, t.Series.SizeBy?.Title }).OfType<string>().Distinct().ToList();
+        header.AddRange(scales);
         var rows = new List<IReadOnlyList<string>>();
         foreach (var (s, points) in shown)
             foreach (var (p, i) in Observed(s, points))
@@ -149,6 +153,11 @@ public static class ChartCsv
                     row.Add(iv?.Bounds[i].Lower?.ToInvariantString() ?? "");
                     row.Add(iv?.Bounds[i].Upper?.ToInvariantString() ?? "");
                     if (plain) row.Add(iv?.Meaning ?? "");
+                }
+                foreach (var title in scales)
+                {
+                    var values = s.ColourBy?.Title == title ? s.ColourBy.Values : s.SizeBy?.Title == title ? s.SizeBy.Values : null;
+                    row.Add(values?[i]?.ToInvariantString() ?? "");
                 }
                 rows.Add(row);
             }

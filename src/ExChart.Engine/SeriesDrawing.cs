@@ -22,6 +22,15 @@ public readonly record struct DrawnMarker(double X, double Y, bool Filled)
 
     /// <summary>An Observation's horizontal interval at the marker, or null: where marks merged, the union of theirs (ADR-0304).</summary>
     public (double Lower, double Upper)? XBounds { get; init; }
+
+    /// <summary>Its colour band from the series' <see cref="ChartSeries.ColourBy"/>, or null for the series' own colour (ADR-0320).</summary>
+    public int? Band { get; init; }
+
+    /// <summary>
+    /// Its radius from the series' <see cref="ChartSeries.SizeBy"/>, or null for the series' own: a share of
+    /// the largest in a drawing, CSS pixels in a scene (ADR-0320).
+    /// </summary>
+    public double? Radius { get; init; }
 }
 
 /// <summary>
@@ -175,8 +184,20 @@ public sealed record SeriesDrawing(IReadOnlyList<IReadOnlyList<DrawnPoint>> Line
         var markers = new List<DrawnMarker>(points.Count);
         for (var i = 0; i < points.Count; i++)
             if (points[i].Y is { } y && double.IsFinite(points[i].X))
-                markers.Add(new DrawnMarker(points[i].X, y.ToDouble(), Filled: true)
-                    { Point = i, YBounds = BoundsAt(series.Interval, i), XBounds = BoundsAt(series.XInterval, i) });
+            {
+                // A point a scale has no value for is an outline, and the Notes say so (ADR-0320).
+                var colour = series.ColourBy?.Values[i];
+                var size = series.SizeBy?.Values[i];
+                var unscaled = (series.ColourBy is not null && colour is null) || (series.SizeBy is not null && size is null);
+                markers.Add(new DrawnMarker(points[i].X, y.ToDouble(), Filled: !unscaled)
+                {
+                    Point = i,
+                    YBounds = BoundsAt(series.Interval, i),
+                    XBounds = BoundsAt(series.XInterval, i),
+                    Band = colour is { } c ? PointScales.Band(series.ColourBy!, c.ToDouble()) : null,
+                    Radius = size is { } z ? PointScales.Share(series.SizeBy!, z.ToDouble()) : null,
+                });
+            }
         return new SeriesDrawing([], markers);
     }
 

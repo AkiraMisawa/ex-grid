@@ -1289,3 +1289,122 @@ ExChart.Engine.DrawnMarker.XBounds.init -> void
 ~override ExChart.Engine.SurfaceTriangle.ToString() -> string
 ExChart.Engine.SurfaceMesh.Deconstruct(out string! XTitle, out string! YTitle, out string! ZTitle, out System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceMeshNode!>! Nodes, out System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceFace!>! Faces, out System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>!>! Rows, out System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<int>!>! Columns, out System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>! XLines, out System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>! YLines, out double ZMin, out double ZMax, out System.Collections.Generic.IReadOnlyList<ExChart.Engine.SurfaceTick!>! ZTicks, out ExChart.Engine.SurfaceColourBar! Bar, out int Holes) -> void
 ExChart.Engine.SurfaceTick.Deconstruct(out double Value, out string? Label) -> void
+ExChart.Engine.ChartScene.ColourKeys.get -> ExChart.Engine.EquatableList<ExChart.Engine.ColourKey!>!
+ExChart.Engine.ChartScene.ColourKeys.init -> void
+ExChart.Engine.ChartScene.SizeKeys.get -> ExChart.Engine.EquatableList<ExChart.Engine.SizeKey!>!
+ExChart.Engine.ChartScene.SizeKeys.init -> void
+ExChart.Engine.ChartSeries.ColourBy.get -> ExChart.Engine.PointColour?
+ExChart.Engine.ChartSeries.ColourBy.init -> void
+ExChart.Engine.ChartSeries.SizeBy.get -> ExChart.Engine.PointSize?
+ExChart.Engine.ChartSeries.SizeBy.init -> void
+ExChart.Engine.ColourKey
+ExChart.Engine.ColourKey.<Clone>$() -> ExChart.Engine.ColourKey!
+ExChart.Engine.ColourKey.Bands.get -> int
+ExChart.Engine.ColourKey.Box.get -> ExChart.Engine.Box
+ExChart.Engine.ColourKey.Box.init -> void
+ExChart.Engine.ColourKey.ColourKey(string! SeriesId, string! Title, double From, double To, ExChart.Engine.EquatableList<ExChart.Engine.KeyTick>! Ticks, bool Diverging, ExChart.Engine.Box Box) -> void
+ExChart.Engine.ColourKey.Deconstruct(out string! SeriesId, out string! Title, out double From, out double To, out ExChart.Engine.EquatableList<ExChart.Engine.KeyTick>! Ticks, out bool Diverging, out ExChart.Engine.Box Box) -> void
+ExChart.Engine.ColourKey.Diverging.get -> bool
+ExChart.Engine.ColourKey.Diverging.init -> void
+ExChart.Engine.ColourKey.Equals(ExChart.Engine.ColourKey? other) -> bool
+ExChart.Engine.ColourKey.From.get -> double
+ExChart.Engine.ColourKey.From.init -> void
+ExChart.Engine.ColourKey.SeriesId.get -> string!
+ExChart.Engine.ColourKey.SeriesId.init -> void
+ExChart.Engine.ColourKey.Ticks.get -> ExChart.Engine.EquatableList<ExChart.Engine.KeyTick>!
+ExChart.Engine.ColourKey.Ticks.init -> void
+ExChart.Engine.ColourKey.Title.get -> string!
+ExChart.Engine.ColourKey.Title.init -> void
+ExChart.Engine.ColourKey.To.get -> double
+ExChart.Engine.ColourKey.To.init -> void
+ExChart.Engine.DrawnMarker.Band.get -> int?
+ExChart.Engine.DrawnMarker.Band.init -> void
+ExChart.Engine.DrawnMarker.Radius.get -> double?
+ExChart.Engine.DrawnMarker.Radius.init -> void
+ExChart.Engine.KeyTick
+ExChart.Engine.KeyTick.Deconstruct(out double Value, out double Y, out string! Label) -> void
+ExChart.Engine.KeyTick.Equals(ExChart.Engine.KeyTick other) -> bool
+ExChart.Engine.KeyTick.KeyTick() -> void
+ExChart.Engine.KeyTick.KeyTick(double Value, double Y, string! Label) -> void
+ExChart.Engine.KeyTick.Label.get -> string!
+ExChart.Engine.KeyTick.Label.init -> void
+ExChart.Engine.KeyTick.Value.get -> double
+ExChart.Engine.KeyTick.Value.init -> void
+ExChart.Engine.KeyTick.Y.get -> double
+ExChart.Engine.KeyTick.Y.init -> void
+ExChart.Engine.PointColour
+ExChart.Engine.PointColour.<Clone>$() -> ExChart.Engine.PointColour!
+ExChart.Engine.PointColour.Centre.get -> double?
+ExChart.Engine.PointColour.Centre.init -> void
+ExChart.Engine.PointColour.Deconstruct(out string! Title, out System.Collections.Generic.IReadOnlyList<ExChart.Engine.ChartValue?>! Values) -> void
+ExChart.Engine.PointColour.Equals(ExChart.Engine.PointColour? other) -> bool
+ExChart.Engine.PointColour.PointColour(string! Title, System.Collections.Generic.IReadOnlyList<ExChart.Engine.ChartValue?>! Values) -> void
+ExChart.Engine.PointColour.Title.get -> string!
+ExChart.Engine.PointColour.Title.init -> void
+ExChart.Engine.PointColour.Values.get -> System.Collections.Generic.IReadOnlyList<ExChart.Engine.ChartValue?>!
+ExChart.Engine.PointColour.Values.init -> void
+ExChart.Engine.PointSize
+ExChart.Engine.PointSize.<Clone>$() -> ExChart.Engine.PointSize!
+ExChart.Engine.PointSize.Deconstruct(out string! Title, out System.Collections.Generic.IReadOnlyList<ExChart.Engine.ChartValue?>! Values) -> void
+ExChart.Engine.PointSize.Equals(ExChart.Engine.PointSize? other) -> bool
+ExChart.Engine.PointSize.PointSize(string! Title, System.Collections.Generic.IReadOnlyList<ExChart.Engine.ChartValue?>! Values) -> void
+ExChart.Engine.PointSize.Title.get -> string!
+ExChart.Engine.PointSize.Title.init -> void
+ExChart.Engine.PointSize.Values.get -> System.Collections.Generic.IReadOnlyList<ExChart.Engine.ChartValue?>!
+ExChart.Engine.PointSize.Values.init -> void
+ExChart.Engine.SeriesPiece.ColourDiverging.get -> bool
+ExChart.Engine.SeriesPiece.ColourDiverging.init -> void
+ExChart.Engine.SizeEntry
+ExChart.Engine.SizeEntry.Deconstruct(out double Value, out string! Label, out double Radius) -> void
+ExChart.Engine.SizeEntry.Equals(ExChart.Engine.SizeEntry other) -> bool
+ExChart.Engine.SizeEntry.Label.get -> string!
+ExChart.Engine.SizeEntry.Label.init -> void
+ExChart.Engine.SizeEntry.Radius.get -> double
+ExChart.Engine.SizeEntry.Radius.init -> void
+ExChart.Engine.SizeEntry.SizeEntry() -> void
+ExChart.Engine.SizeEntry.SizeEntry(double Value, string! Label, double Radius) -> void
+ExChart.Engine.SizeEntry.Value.get -> double
+ExChart.Engine.SizeEntry.Value.init -> void
+ExChart.Engine.SizeKey
+ExChart.Engine.SizeKey.<Clone>$() -> ExChart.Engine.SizeKey!
+ExChart.Engine.SizeKey.Box.get -> ExChart.Engine.Box
+ExChart.Engine.SizeKey.Box.init -> void
+ExChart.Engine.SizeKey.Deconstruct(out string! SeriesId, out string! Title, out ExChart.Engine.EquatableList<ExChart.Engine.SizeEntry>! Entries, out ExChart.Engine.Box Box) -> void
+ExChart.Engine.SizeKey.Entries.get -> ExChart.Engine.EquatableList<ExChart.Engine.SizeEntry>!
+ExChart.Engine.SizeKey.Entries.init -> void
+ExChart.Engine.SizeKey.Equals(ExChart.Engine.SizeKey? other) -> bool
+ExChart.Engine.SizeKey.SeriesId.get -> string!
+ExChart.Engine.SizeKey.SeriesId.init -> void
+ExChart.Engine.SizeKey.SizeKey(string! SeriesId, string! Title, ExChart.Engine.EquatableList<ExChart.Engine.SizeEntry>! Entries, ExChart.Engine.Box Box) -> void
+ExChart.Engine.SizeKey.Title.get -> string!
+ExChart.Engine.SizeKey.Title.init -> void
+override ExChart.Engine.ColourKey.Equals(object? obj) -> bool
+override ExChart.Engine.ColourKey.GetHashCode() -> int
+override ExChart.Engine.ColourKey.ToString() -> string!
+override ExChart.Engine.KeyTick.GetHashCode() -> int
+override ExChart.Engine.PointColour.Equals(object? obj) -> bool
+override ExChart.Engine.PointColour.GetHashCode() -> int
+override ExChart.Engine.PointColour.ToString() -> string!
+override ExChart.Engine.PointSize.Equals(object? obj) -> bool
+override ExChart.Engine.PointSize.GetHashCode() -> int
+override ExChart.Engine.PointSize.ToString() -> string!
+override ExChart.Engine.SizeEntry.GetHashCode() -> int
+override ExChart.Engine.SizeKey.Equals(object? obj) -> bool
+override ExChart.Engine.SizeKey.GetHashCode() -> int
+override ExChart.Engine.SizeKey.ToString() -> string!
+static ExChart.Engine.ColourKey.operator !=(ExChart.Engine.ColourKey? left, ExChart.Engine.ColourKey? right) -> bool
+static ExChart.Engine.ColourKey.operator ==(ExChart.Engine.ColourKey? left, ExChart.Engine.ColourKey? right) -> bool
+static ExChart.Engine.KeyTick.operator !=(ExChart.Engine.KeyTick left, ExChart.Engine.KeyTick right) -> bool
+static ExChart.Engine.KeyTick.operator ==(ExChart.Engine.KeyTick left, ExChart.Engine.KeyTick right) -> bool
+static ExChart.Engine.PointColour.operator !=(ExChart.Engine.PointColour? left, ExChart.Engine.PointColour? right) -> bool
+static ExChart.Engine.PointColour.operator ==(ExChart.Engine.PointColour? left, ExChart.Engine.PointColour? right) -> bool
+static ExChart.Engine.PointSize.operator !=(ExChart.Engine.PointSize? left, ExChart.Engine.PointSize? right) -> bool
+static ExChart.Engine.PointSize.operator ==(ExChart.Engine.PointSize? left, ExChart.Engine.PointSize? right) -> bool
+static ExChart.Engine.SizeEntry.operator !=(ExChart.Engine.SizeEntry left, ExChart.Engine.SizeEntry right) -> bool
+static ExChart.Engine.SizeEntry.operator ==(ExChart.Engine.SizeEntry left, ExChart.Engine.SizeEntry right) -> bool
+static ExChart.Engine.SizeKey.operator !=(ExChart.Engine.SizeKey? left, ExChart.Engine.SizeKey? right) -> bool
+static ExChart.Engine.SizeKey.operator ==(ExChart.Engine.SizeKey? left, ExChart.Engine.SizeKey? right) -> bool
+~override ExChart.Engine.KeyTick.Equals(object obj) -> bool
+~override ExChart.Engine.KeyTick.ToString() -> string
+~override ExChart.Engine.SizeEntry.Equals(object obj) -> bool
+~override ExChart.Engine.SizeEntry.ToString() -> string

@@ -53,6 +53,12 @@ public sealed record ChartSeries
     /// <summary>Its points, in increasing position; empty when it is sampled.</summary>
     public IReadOnlyList<ChartPoint> Points { get; init; } = [];
 
+    /// <summary>An Observation's colour read from a column, one value a point, with its key always drawn (ADR-0320).</summary>
+    public PointColour? ColourBy { get; init; }
+
+    /// <summary>An Observation's size read from a column, one value a point, with its key always drawn (ADR-0320).</summary>
+    public PointSize? SizeBy { get; init; }
+
     /// <summary>
     /// A Price Range's rows (ADR-0300). Setting them also sets <see cref="Points"/> to each row's close,
     /// or a gap where the row is not whole, so the series' domain, positions, CSV and grid bridge read

@@ -235,3 +235,40 @@ public class ChartSpecToolTests
         Assert.StartsWith("axis is missing", answer.Text);
     }
 }
+
+public class ChartSpecScaleTests
+{
+    private static readonly ChartData Credit = ChartData.Of(
+        ("lev", new object?[] { 2.5, 4.0, 3.0 }), ("spr", new object?[] { 120m, 310m, 200m }),
+        ("pnl", new object?[] { -1m, 10m, 0m }), ("notional", new object?[] { 5m, 20m, 10m }));
+
+    private static string Spec(string scales) => $$"""
+        { "version": 1, "axis": { "values": "numbers" },
+          "series": [ { "id": "n", "name": "Names", "kind": "observation", "data": "credit", "x": "lev", "y": "spr"{{scales}} } ] }
+        """;
+
+    private static ChartSeries Read(string scales) => ChartSpec.Read(Spec(scales), h => Credit).Definition.Series[0];
+
+    private static string Refusal(string scales) => Assert.Throws<ChartSpecRefusedException>(() => ChartSpec.Read(Spec(scales), h => Credit)).Message;
+
+    [Fact] // ADR-0320: colour and size are read from columns, never written as values
+    public void Colour_and_size_are_read_from_columns()
+    {
+        var s = Read(""", "colour": { "column": "pnl", "scale": "diverging", "centre": 0, "title": "P&L" }, "size": { "column": "notional" }""");
+        Assert.Equal("P&L", s.ColourBy!.Title);
+        Assert.Equal(0, s.ColourBy.Centre);
+        Assert.Equal("10", s.ColourBy.Values[1]!.Value.ToInvariantString());
+        Assert.Equal("notional", s.SizeBy!.Title);
+    }
+
+    [Fact] // ADR-0310: a diverging scale says its centre, and a sequential one has none
+    public void A_diverging_scale_needs_its_centre()
+    {
+        Assert.StartsWith("series[0].colour.centre is missing", Refusal(""", "colour": { "column": "pnl", "scale": "diverging" }"""));
+        Assert.StartsWith("series[0].colour.centre belongs to a diverging scale", Refusal(""", "colour": { "column": "pnl", "scale": "sequential", "centre": 0 }"""));
+    }
+
+    [Fact] // ADR-0320: a colour value is not part of a spec
+    public void A_colour_value_is_refused() =>
+        Assert.StartsWith("series[0].colour.value is not part of a Chart Spec", Refusal(""", "colour": { "column": "pnl", "scale": "sequential", "value": "#ff0000" }"""));
+}

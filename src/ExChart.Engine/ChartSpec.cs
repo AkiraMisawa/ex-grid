@@ -46,7 +46,9 @@ public static class ChartSpec
     internal static readonly string[] RootKeys = ["version", "title", "axis", "series", "notes"];
     internal static readonly string[] AxisKeys = ["values", "title", "scale", "packed"];
     internal static readonly string[] SeriesKeys =
-        ["id", "name", "kind", "data", "x", "y", "open", "high", "low", "close", "volume", "label", "panel", "axis", "fromZero", "step"];
+        ["id", "name", "kind", "data", "x", "y", "open", "high", "low", "close", "volume", "label", "panel", "axis", "fromZero", "step", "colour", "size"];
+    internal static readonly string[] ColourKeys = ["column", "scale", "centre", "title"];
+    internal static readonly string[] SizeKeys = ["column", "title"];
     private static readonly string[] PriceColumns = ["open", "high", "low", "close", "volume"];
 
     private static readonly Dictionary<string, SeriesKind> Kinds = new(StringComparer.Ordinal)
@@ -175,7 +177,31 @@ public static class ChartSpec
                 "panel": { "type": "string", "description": "The panel it is drawn in; series naming the same panel share it." },
                 "axis": { "enum": ["left", "right"], "description": "The vertical axis it reads on." },
                 "fromZero": { "type": "boolean", "description": "Whether its axis reaches zero; false for a rate or a volatility." },
-                "step": { "enum": ["preceding", "following"], "description": "Which interval a step's point stands for." }
+                "step": { "enum": ["preceding", "following"], "description": "Which interval a step's point stands for." },
+                "colour": { "$ref": "#/$defs/colour" },
+                "size": { "$ref": "#/$defs/size" }
+              }
+            },
+            "colour": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["column", "scale"],
+              "description": "An observation's colour read from a column, in bands; its colour bar is always drawn. Never a colour value.",
+              "properties": {
+                "column": { "type": "string", "description": "The column of one value a point." },
+                "scale": { "enum": ["sequential", "diverging"], "description": "sequential from the lowest to the highest; diverging from a centre." },
+                "centre": { "type": "number", "description": "A diverging scale's value that means nothing, such as 0 for a P&L or 1 for a ratio." },
+                "title": { "type": "string", "description": "What the values are; by default the column's name." }
+              }
+            },
+            "size": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["column"],
+              "description": "An observation's size read from a column, its area in proportion to the value; its key is always drawn.",
+              "properties": {
+                "column": { "type": "string", "description": "The column of one value a point, never negative." },
+                "title": { "type": "string", "description": "What the values are; by default the column's name." }
               }
             }
           }
@@ -303,6 +329,16 @@ public static class ChartSpec
                     };
                 result = result with { Points = points };
             }
+            if (s.TryGetProperty("colour", out var colourElement))
+                result = result with { ColourBy = Colour(colourElement, $"{path}.colour", handle, table) };
+            if (s.TryGetProperty("size", out var sizeElement))
+            {
+                var at = $"{path}.size";
+                if (sizeElement.ValueKind != JsonValueKind.Object) throw Refuse(at, $"{at} is a JSON object.");
+                Known(sizeElement, at, SizeKeys);
+                var column = Column(sizeElement, "column", at, handle, table, required: true)!;
+                result = result with { SizeBy = new PointSize(String(sizeElement, "title", at) ?? column, Values(table, column, $"{at}.column", handle)) };
+            }
             return result with
             {
                 Panel = String(s, "panel", path) ?? "",
@@ -314,6 +350,34 @@ public static class ChartSpec
                     ? Choice(s, "step", path, new Dictionary<string, StepSide> { ["preceding"] = StepSide.Preceding, ["following"] = StepSide.Following }, "which interval a step's point stands for")
                     : StepSide.Preceding,
             };
+        }
+
+        private static PointColour Colour(JsonElement c, string path, string handle, IChartData table)
+        {
+            if (c.ValueKind != JsonValueKind.Object) throw Refuse(path, $"{path} is a JSON object.");
+            Known(c, path, ColourKeys);
+            var column = Column(c, "column", path, handle, table, required: true)!;
+            var diverging = Choice(c, "scale", path, new Dictionary<string, bool> { ["sequential"] = false, ["diverging"] = true }, "how the colours run");
+            double? centre = null;
+            if (c.TryGetProperty("centre", out var centreElement))
+            {
+                if (!diverging)
+                    throw Refuse($"{path}.centre", $"{path}.centre belongs to a diverging scale; a sequential one runs from the lowest value to the highest.");
+                if (centreElement.ValueKind != JsonValueKind.Number || !centreElement.TryGetDouble(out var mid) || !double.IsFinite(mid))
+                    throw Refuse($"{path}.centre", $"{path}.centre is a finite number.");
+                centre = mid;
+            }
+            else if (diverging)
+                throw Refuse($"{path}.centre", $"{path}.centre is missing: a diverging scale says the value that means nothing, such as 0 for a P&L or 1 for a ratio.");
+            return new PointColour(String(c, "title", path) ?? column, Values(table, column, $"{path}.column", handle)) { Centre = centre };
+        }
+
+        private static ChartValue?[] Values(IChartData table, string column, string path, string handle)
+        {
+            var values = new ChartValue?[table.RowCount];
+            for (var r = 0; r < values.Length; r++)
+                values[r] = ValueOf(table.Value(column, r), path, handle, r);
+            return values;
         }
 
         private double Position(object? value, AxisValues values, string path, string handle, int row)
