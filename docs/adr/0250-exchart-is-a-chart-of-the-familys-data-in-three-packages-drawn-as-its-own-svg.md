@@ -62,5 +62,6 @@ what was found; no file of it is moved into `src/`. It has no tests, renders its
   surface, the term structure and the smile on category axes, and the deposits and forwards (the
   user, 2026-10-19: 3D alone would have nothing to show).
 - The MudBlazor Wrapper (user, 2026-10-19).
-- Later: bars, scatter, waterfall, a heat map in the grid's own cells (an ExGrid decision), ExPivot's
+- Scatter and fitted lines (the user, 2026-10-19, after this ADR: ADR-0290, ADR-0291).
+- Later: bars, waterfall, a heat map in the grid's own cells (an ExGrid decision), ExPivot's
   pivot chart, chart state in a Saved View.

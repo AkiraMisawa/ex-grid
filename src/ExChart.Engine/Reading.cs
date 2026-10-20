@@ -49,10 +49,29 @@ public static class ChartReadings
         return new ChartReading(axis.Write(position), ordered, lines.Count - shown.Count);
     }
 
+    /// <summary>
+    /// What the tooltip says over an Observation's mark (ADR-0290): the point's name, or its position
+    /// across, then the series with the point's x and y, and how many points the mark stands for when
+    /// markers on one device pixel were merged — never one of them as if it were the only one.
+    /// </summary>
+    public static ChartReading OfMark(ChartDefinition definition, ChartScene scene, int mark)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        ArgumentNullException.ThrowIfNull(scene);
+        var m = scene.Marks[mark];
+        var s = definition.Series.First(x => x.Id == m.SeriesId);
+        var look = scene.Panels[m.Panel].Series.First(p => p.Id == s.Id).Look;
+        var p = s.Points[m.Point];
+        var axis = definition.Axis;
+        var value = $"{axis.Write(p.X)}, {(p.Y is { } y ? s.Write(y) : "")}";
+        var note = m.Count > 1 ? $"{m.Count} points here: {p.Name ?? "this one"} and {m.Count - 1} more" : null;
+        return new ChartReading(p.Name ?? axis.Write(p.X), new[] { new ReadingLine(s.Id, s.Name, look, value, note, m.Y) }.ToEquatableList(), 0);
+    }
+
     private static ReadingLine Line(ChartSeries s, SeriesPiece piece, PanelScene panel, ChartAxis axis, double x)
     {
         var vertical = s.Axis == AxisSide.Right ? panel.Right : panel.Left;
-        double? Y(double height) => vertical is { } v ? panel.Plot.Y + panel.Plot.Height - (v.Max == v.Min ? 0.5 : (height - v.Min) / (v.Max - v.Min)) * panel.Plot.Height : null;
+        double? Y(double height) => vertical is { } v ? v.YOf(height, panel.Plot) : null;
         ReadingLine Make(string? value, string? note, double? y) => new(s.Id, s.Name, piece.Look, value, note, y);
 
         // A thinned pixel names its range, never one point as if it were the only one (ADR-0254).

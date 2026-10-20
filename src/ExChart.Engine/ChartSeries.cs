@@ -39,7 +39,8 @@ public sealed record ChartSeries
 
     /// <summary>
     /// Whether its axis reaches zero. Null takes the default, which is yes (ADR-0253); a series read
-    /// away from zero — a rate, a volatility — says false. An Amount per period always reaches zero.
+    /// away from zero — a rate, a volatility — says false. An Amount per period always reaches zero; an
+    /// Observation reaches it only when it says true (ADR-0290).
     /// </summary>
     public bool? FromZero { get; init; }
 
@@ -96,7 +97,7 @@ public sealed record ChartSeries
     public AppearanceKeys EffectiveKeys => Keys ?? new AppearanceKeys(Id);
 
     /// <summary>Whether its axis reaches zero, defaults applied.</summary>
-    public bool ReachesZero => Kind == SeriesKind.AmountPerPeriod || (Kind == SeriesKind.PriceRange ? FromZero == true : FromZero != false);
+    public bool ReachesZero => Kind == SeriesKind.AmountPerPeriod || (Kind is SeriesKind.Observation or SeriesKind.PriceRange ? FromZero == true : FromZero != false);
 
     /// <summary>A series of points.</summary>
     public static ChartSeries Of(string id, string name, SeriesKind kind, IEnumerable<ChartPoint> points) =>
