@@ -37,7 +37,7 @@ public sealed partial class Sheet
     /// The width is not more than 0 and at most <see cref="MaxColumnWidth"/>. A width of 0 is how
     /// Excel hides a column, and hiding columns is not part of the first version (ADR-0046).
     /// </exception>
-    public SheetChange SetColumnWidth(CellRange columns, double? width) =>
+    internal SheetChange SetColumnWidth(CellRange columns, double? width) =>
         ApplyColumnWidth(columns, CheckColumnWidth(width) is { } w ? new SheetColumnWidth(w, SheetColumnWidthKind.SetByUser) : null).Change;
 
     /// <summary>
@@ -51,7 +51,7 @@ public sealed partial class Sheet
     /// whose kind, changed.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The width is not more than 0 and at most <see cref="MaxColumnWidth"/>.</exception>
-    public SheetChange SetAutomaticColumnWidth(CellRange columns, double width) =>
+    internal SheetChange SetAutomaticColumnWidth(CellRange columns, double width) =>
         ApplyColumnWidth(columns, new SheetColumnWidth(CheckColumnWidth(width)!.Value, SheetColumnWidthKind.WidenedByEntry)).Change;
 
     internal static double? CheckColumnWidth(double? width, string name = "width") =>

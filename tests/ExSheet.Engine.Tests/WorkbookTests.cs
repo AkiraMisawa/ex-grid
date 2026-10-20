@@ -127,17 +127,45 @@ public class WorkbookTests
         Assert.Equal("10%", workbook.Sheets[0].GetDisplay(CellAddress.Parse("A1")).Text);
     }
 
-    [Fact] // ADR-0331, ADR-0180: until the seed moves to the Workbook (ticket 13), RAND on another Sheet draws again only when its own Sheet changes
-    public void Rand_on_another_sheet_draws_with_its_own_sheet_for_now()
+    [Fact] // ADR-0331 §9, ADR-0180: the Workbook holds the seed and the count, so a change on one Sheet draws again on every Sheet, as Excel's recalculation does
+    public void Rand_on_another_sheet_draws_again_when_any_sheet_changes()
     {
         var workbook = NewWorkbook("Sheet1", "Sheet2");
-        workbook.Sheets[1].SetSeed(7);
+        workbook.SetSeed(7);
         Enter(workbook, "Sheet2", "A1", "=RAND()");
         var drawn = workbook.Sheets[1].Number("A1");
+        var changes = workbook.Changes;
 
-        Enter(workbook, "Sheet1", "A1", "1");
+        var change = Enter(workbook, "Sheet1", "A1", "1");
 
-        Assert.Equal(drawn, workbook.Sheets[1].Number("A1"));
+        Assert.Equal(changes + 1, workbook.Changes);
+        Assert.NotEqual(drawn, workbook.Sheets[1].Number("A1"));
+        Assert.Contains(workbook.Sheets[1], change.Change.Sheets);
+    }
+
+    [Fact] // ADR-0180 (2026-10-20), ADR-0331 §9: a draw names its Sheet, so the same Formula at the same cell of two Sheets draws two numbers
+    public void Rand_at_the_same_cell_of_two_sheets_draws_two_numbers()
+    {
+        var workbook = NewWorkbook("Sheet1", "Sheet2");
+        workbook.SetSeed(7);
+        Enter(workbook, "Sheet1", "A1", "=RAND()");
+        Enter(workbook, "Sheet2", "A1", "=RAND()");
+
+        Assert.NotEqual(workbook.Sheets[0].Number("A1"), workbook.Sheets[1].Number("A1"));
+    }
+
+    [Fact] // ADR-0331 §9: a copied Sheet draws from the Workbook's seed, under its own name
+    public void A_copied_sheet_draws_from_the_workbooks_seed()
+    {
+        var workbook = NewWorkbook("Sheet1");
+        workbook.SetSeed(7);
+        Enter(workbook, "Sheet1", "A1", "=RAND()");
+
+        workbook.Do("Sheet1", SheetEdit.CopySheet());
+
+        Assert.Equal(7UL, workbook.Seed);
+        Assert.Equal(2, workbook.Sheets.Count);
+        Assert.NotEqual(workbook.Sheets[0].Number("A1"), workbook.Sheets[1].Number("A1"));
     }
 
     [Fact] // ADR-0331: a qualifier naming no Sheet of the Workbook is #REF!

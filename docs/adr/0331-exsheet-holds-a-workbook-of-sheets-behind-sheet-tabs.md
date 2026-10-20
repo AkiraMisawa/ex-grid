@@ -139,6 +139,10 @@ that leaves is a Change Note (ADR-0190).
 
 The component's `Document` parameter is kept (§2). Only the engine's API breaks.
 
+*(As built, 2026-10-20: the Sheet Day, `NowSource`, the volatile recalculation, the Sheet Seed and the
+count of changes are the Workbook's too, so a change on any Sheet draws `RAND` again on every Sheet, as
+Excel does; the draw names its Sheet, decided with the user and recorded in ADR-0180.)*
+
 ## Consequences
 
 - `CONTEXT.md` gains **Workbook**, **Workbook Document**, **Sheet Tab** and **3D Reference**.

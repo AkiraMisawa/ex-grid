@@ -926,9 +926,10 @@ it is now in a time zone: the Consumer's, or else the browser's. Until one is kn
 _Avoid_: system date, server date, current date
 
 **Sheet Seed**:
-The number a Sheet's `RAND` and `RANDBETWEEN` draw from. With the cell, the call and the count of
-changes since the Sheet was opened, it decides each draw, so the same seed and the same changes give
-the same draws. It is the Consumer's `Seed` when one is given, or else one ExSheet chooses when it
+The number `RAND` and `RANDBETWEEN` draw from, held by the Workbook for every one of its Sheets. With
+the Sheet's name, the cell, the call and the count of changes since the Workbook was opened, it decides
+each draw, so the same seed and the same changes give the same draws, and a change on any Sheet draws
+again on all of them. It is the Consumer's `Seed` when one is given, or else one ExSheet chooses when it
 opens a Sheet Document, which never records it
 ([ADR-0180](./docs/adr/0180-rand-and-randbetween-draw-from-the-sheet-seed-and-draw-again-at-each-change.md)).
 _Avoid_: random state, RNG state

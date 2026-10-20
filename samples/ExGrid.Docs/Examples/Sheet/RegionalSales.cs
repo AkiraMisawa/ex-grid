@@ -9,7 +9,8 @@ public static class RegionalSales
     /// <summary>The sheet, as a Sheet Document.</summary>
     public static SheetDocument Document()
     {
-        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        var workbook = new Workbook(CultureInfo.GetCultureInfo("en-US"));
+        var sheet = workbook.Sheets[0];
         string[][] rows =
         [
             ["Region", "Q1", "Q2", "Q3", "Q4", "Total", "Average", "Best quarter", "Status"],
@@ -27,15 +28,15 @@ public static class RegionalSales
         for (var r = 0; r < rows.Length; r++)
             for (var c = 0; c < rows[r].Length; c++)
                 if (rows[r][c].Length > 0)
-                    sheet.Enter(new CellAddress(r, c), rows[r][c]);
+                    workbook.Do(sheet.Name, SheetEdit.Enter(new CellAddress(r, c), rows[r][c]));
 
-        sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse("A:A"), 22));
-        sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse("B:I"), 11));
-        sheet.Do(SheetEdit.SetNumberFormat(CellRange.Parse("B2:H5"), NumberFormat.Parse("#,##0")));
-        sheet.Do(SheetEdit.SetNumberFormat(CellRange.Parse("B8"), NumberFormat.Parse("#,##0")));
-        sheet.Do(SheetEdit.SetNumberFormat(CellRange.Parse("B9"), NumberFormat.Parse("0.0%")));
-        sheet.Do(SheetEdit.SetAlignment(CellRange.Parse("B1:H1"), HorizontalAlignment.Right));
-        sheet.Do(SheetEdit.SetCellFormat([CellRange.Parse("A1:I1"), CellRange.Parse("A5:F5"), CellRange.Parse("D7")], new CellFormatChange { Bold = true }));
-        return sheet.ToDocument();
+        workbook.Do(sheet.Name, SheetEdit.SetColumnWidth(CellRange.Parse("A:A"), 22));
+        workbook.Do(sheet.Name, SheetEdit.SetColumnWidth(CellRange.Parse("B:I"), 11));
+        workbook.Do(sheet.Name, SheetEdit.SetNumberFormat(CellRange.Parse("B2:H5"), NumberFormat.Parse("#,##0")));
+        workbook.Do(sheet.Name, SheetEdit.SetNumberFormat(CellRange.Parse("B8"), NumberFormat.Parse("#,##0")));
+        workbook.Do(sheet.Name, SheetEdit.SetNumberFormat(CellRange.Parse("B9"), NumberFormat.Parse("0.0%")));
+        workbook.Do(sheet.Name, SheetEdit.SetAlignment(CellRange.Parse("B1:H1"), HorizontalAlignment.Right));
+        workbook.Do(sheet.Name, SheetEdit.SetCellFormat([CellRange.Parse("A1:I1"), CellRange.Parse("A5:F5"), CellRange.Parse("D7")], new CellFormatChange { Bold = true }));
+        return workbook.ToDocument(sheet.Name);
     }
 }

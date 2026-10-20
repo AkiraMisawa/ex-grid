@@ -123,7 +123,7 @@ public sealed partial class Workbook
 
     /// <summary>
     /// A copy of <paramref name="source"/> named <paramref name="name"/> at <paramref name="index"/>: its
-    /// Entries, Cell Formats and column widths, and its seed. A Reference in it qualified with the
+    /// Entries, Cell Formats and column widths. A Reference in it qualified with the
     /// source's name names the copy, as Excel's copy does (ADR-0331).
     /// </summary>
     internal Sheet Copy(Sheet source, int index, string name, out SheetChange change)
@@ -135,7 +135,6 @@ public sealed partial class Workbook
         {
             _sheets.Insert(index, copy);
             copy.OpenFormats(document);
-            copy.TakeSeedOf(source);
             foreach (var cell in document.Cells)
             {
                 if (cell.Entry is not { } entry) continue;

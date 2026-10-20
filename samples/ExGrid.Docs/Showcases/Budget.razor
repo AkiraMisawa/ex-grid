@@ -121,7 +121,7 @@
     protected override void OnInitialized()
     {
         _editingChanged = EventCallback.Factory.Create<bool>(this, open => _editing = open);
-        _computed = Sheet.Open(_document);
+        _computed = Workbook.Open(_document).Sheets[0];
         State.Changed += OnStateChanged;
     }
 
@@ -129,7 +129,7 @@
 
     private void OnChanged()
     {
-        _computed = Sheet.Open(_document);
+        _computed = Workbook.Open(_document).Sheets[0];
         _saved = $"Saved {DateTime.Now:HH:mm}";
     }
 

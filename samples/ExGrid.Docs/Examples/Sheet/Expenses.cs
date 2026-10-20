@@ -9,7 +9,8 @@ public static class Expenses
     /// <summary>The claim. Entries only: the Values are computed when the Sheet opens.</summary>
     public static SheetDocument Document()
     {
-        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        var workbook = new Workbook(CultureInfo.GetCultureInfo("en-US"));
+        var sheet = workbook.Sheets[0];
         string[][] rows =
         [
             ["Item", "Qty", "Unit cost", "Amount"],
@@ -23,20 +24,19 @@ public static class Expenses
         for (var r = 0; r < rows.Length; r++)
             for (var c = 0; c < rows[r].Length; c++)
                 if (rows[r][c].Length > 0)
-                    sheet.Enter(new CellAddress(r, c), rows[r][c]);
+                    workbook.Do(sheet.Name, SheetEdit.Enter(new CellAddress(r, c), rows[r][c]));
 
-        sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse("A:A"), 18));
-        sheet.Do(SheetEdit.SetNumberFormat(CellRange.Parse("C2:D7"), NumberFormat.Parse("#,##0.00")));
-        sheet.Do(SheetEdit.SetCellFormat([CellRange.Parse("A1:D1"), CellRange.Parse("A7:D7")], new CellFormatChange { Bold = true }));
-        return sheet.ToDocument();
+        workbook.Do(sheet.Name, SheetEdit.SetColumnWidth(CellRange.Parse("A:A"), 18));
+        workbook.Do(sheet.Name, SheetEdit.SetNumberFormat(CellRange.Parse("C2:D7"), NumberFormat.Parse("#,##0.00")));
+        workbook.Do(sheet.Name, SheetEdit.SetCellFormat([CellRange.Parse("A1:D1"), CellRange.Parse("A7:D7")], new CellFormatChange { Bold = true }));
+        return workbook.ToDocument(sheet.Name);
     }
 
     /// <summary>The claim and a summary that reads it, as a Workbook Document of two Sheets.</summary>
     public static WorkbookDocument Workbook()
     {
-        var claim = Sheet.Open(Document());
-        var workbook = claim.Workbook;
-        workbook.Do(claim.Name, SheetEdit.Rename("Claim"));
+        var workbook = global::ExSheet.Engine.Workbook.Open(Document());
+        workbook.Do(workbook.Sheets[0].Name, SheetEdit.Rename("Claim"));
         workbook.Do("Claim", SheetEdit.InsertSheet("Summary"));
         string[][] rows =
         [
