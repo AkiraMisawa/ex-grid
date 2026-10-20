@@ -40,6 +40,10 @@
         var change = workbook.Do("Rates", SheetEdit.Enter(CellAddress.Parse("A1"), "4.5%")).Change;
         _recalculated = string.Join(" and ", change.Sheets.SelectMany(s => change.For(s).ValueChanges.Select(a => $"{s.Name}!{a}")));
 
+        // Sheet operations are steps too: a rename rewrites every Formula that names the Sheet.
+        workbook.Do("Rates", SheetEdit.Rename("Market"));
+        workbook.Do("Market", SheetEdit.CopySheet());
+
         // A Workbook Document carries every Sheet's Entries; opening one computes their Values again.
         var saved = workbook.ToDocument().ToJson();
         _workbook = Workbook.Open(WorkbookDocument.FromJson(saved));

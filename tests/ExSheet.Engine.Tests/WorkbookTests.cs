@@ -266,15 +266,13 @@ public class WorkbookTests
         Assert.All(workbook.Sheets, s => Assert.Empty(s.EntryAddresses));
     }
 
-    [Fact] // ADR-0331, spine rule 1: a rename or an insertion on one Sheet of several is not done while it would leave another Sheet's References stale
-    public void Renames_and_insertions_are_not_done_on_one_sheet_of_several()
+    [Fact] // ADR-0331, spine rule 1: an insertion on one Sheet of several is not done while it would leave another Sheet's References stale
+    public void Insertions_are_not_done_on_one_sheet_of_several()
     {
         var workbook = NewWorkbook("Sheet1", "Sheet2");
         Enter(workbook, "Sheet1", "A1", "=Sheet2!A1");
 
-        Assert.Throws<NotSupportedException>(() => workbook.Do("Sheet2", SheetEdit.Rename("Data")));
         Assert.Throws<NotSupportedException>(() => workbook.Do("Sheet2", SheetEdit.InsertRows(1)));
-        Assert.Equal("Sheet2", workbook.Sheets[1].Name);
         Assert.Equal("=Sheet2!A1", workbook.Sheets[0].GetEntry(CellAddress.Parse("A1"))!.Formula);
     }
 

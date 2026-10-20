@@ -71,7 +71,7 @@ public sealed partial class Sheet
     /// computed twice. Spills that move each other take a pass for each layout that moves one.
     /// </remarks>
     /// <returns>What it changed on each Sheet it reached; <paramref name="initiator"/>'s always, with <paramref name="initiatorRows"/>.</returns>
-    private static Dictionary<Sheet, SheetChange> RecalculateWorkbook(Workbook workbook, HashSet<SheetCell> changed, Sheet initiator, SortedSet<int> initiatorRows)
+    internal static Dictionary<Sheet, SheetChange> RecalculateWorkbook(Workbook workbook, HashSet<SheetCell> changed, Sheet initiator, SortedSet<int> initiatorRows)
     {
         foreach (var sheet in workbook.Sheets) sheet._moment = sheet.NowSource?.Invoke();
         var rows = workbook.Sheets.ToDictionary(s => s, s => s == initiator ? initiatorRows : []);

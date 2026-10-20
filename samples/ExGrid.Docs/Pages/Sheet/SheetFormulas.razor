@@ -374,8 +374,15 @@
             Workbook Document — every Sheet in order, the Sheet shown, the culture and the Linked Tables'
             declarations, never a Value — and <code>Workbook.Open</code> opens one again;
             <code>WorkbookDocument.FromJson</code> reads a Sheet Document too, as a Workbook of that one Sheet,
-            and refuses a version it does not know or anything it does not understand. ExSheet does not show a Workbook yet, and
-            renaming a Sheet of a Workbook, or inserting or deleting its rows or columns, is not done yet.
+            and refuses a version it does not know or anything it does not understand. <code>SheetEdit.InsertSheet</code>,
+            <code>Rename</code>, <code>MoveSheet</code>, <code>CopySheet</code> and <code>DeleteSheet</code> change
+            the Workbook's Sheets, each one step that undoes it exactly: a new Sheet takes the next free
+            <code>SheetN</code>, a copy takes <code>Name (2)</code>, a rename rewrites every Formula that names
+            the Sheet, and a deletion turns every Reference to it into <code>#REF!</code> and gives them back
+            when it is undone. A name another Sheet has, without regard to case, is refused, and so is deleting
+            the last Sheet. <code>WorkbookChange.ChangesSheets</code> says that the Sheets themselves changed.
+            ExSheet does not show a Workbook yet, and inserting or deleting the rows or columns of a Sheet of
+            several is not done yet.
         </p>
         <DocsExample Builtin="typeof(EngineWorkbook)" CodeOpen="true" />
     </DocsSection>

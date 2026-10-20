@@ -1,6 +1,8 @@
 #nullable enable
 const ExSheet.Engine.WorkbookDocument.CurrentVersion = 1 -> int
 const ExSheet.Engine.WorkbookDocument.OldestReadableVersion = 1 -> int
+ExSheet.Engine.SheetRefusalReason.LastSheet = 7 -> ExSheet.Engine.SheetRefusalReason
+ExSheet.Engine.SheetRefusalReason.SheetNameTaken = 6 -> ExSheet.Engine.SheetRefusalReason
 ExSheet.Engine.Workbook
 ExSheet.Engine.Workbook.Check(string! sheet, ExSheet.Engine.SheetEdit! edit) -> ExSheet.Engine.SheetRefusal?
 ExSheet.Engine.Workbook.Culture.get -> System.Globalization.CultureInfo!
@@ -15,6 +17,7 @@ ExSheet.Engine.Workbook.Shown.set -> void
 ExSheet.Engine.Workbook.ToDocument() -> ExSheet.Engine.WorkbookDocument!
 ExSheet.Engine.Workbook.Workbook(System.Globalization.CultureInfo! culture, System.Collections.Generic.IEnumerable<string!>! sheetNames) -> void
 ExSheet.Engine.WorkbookChange
+ExSheet.Engine.WorkbookChange.ChangesSheets.get -> bool
 ExSheet.Engine.WorkbookChange.For(ExSheet.Engine.Sheet! sheet) -> ExSheet.Engine.SheetChange!
 ExSheet.Engine.WorkbookChange.Sheets.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Sheet!>!
 ExSheet.Engine.WorkbookDocument
@@ -30,5 +33,9 @@ ExSheet.Engine.WorkbookStep.IsUndone.get -> bool
 ExSheet.Engine.WorkbookStep.Redo() -> ExSheet.Engine.WorkbookChange!
 ExSheet.Engine.WorkbookStep.Sheet.get -> ExSheet.Engine.Sheet!
 ExSheet.Engine.WorkbookStep.Undo() -> ExSheet.Engine.WorkbookChange!
+static ExSheet.Engine.SheetEdit.CopySheet(int? index = null) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.DeleteSheet() -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.InsertSheet(string? name = null, bool before = false) -> ExSheet.Engine.SheetEdit!
+static ExSheet.Engine.SheetEdit.MoveSheet(int index) -> ExSheet.Engine.SheetEdit!
 static ExSheet.Engine.Workbook.Open(ExSheet.Engine.WorkbookDocument! document) -> ExSheet.Engine.Workbook!
 static ExSheet.Engine.WorkbookDocument.FromJson(string! json) -> ExSheet.Engine.WorkbookDocument!
