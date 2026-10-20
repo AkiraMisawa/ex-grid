@@ -463,13 +463,14 @@ test.describe('in a box that follows the window', () => {
         await openFromMenu(grid, 'C2');
         await pick(choice(grid, 'Percentage'));
 
-        // The box is the window less 360px: at 560 it is 200px, under a Formula Bar and a header.
+        // The Sheet above its Tabs' strip is the window less 360px (the box, strip and all, is less
+        // 332px): at 560 it is 200px, under a Formula Bar and a header.
         // The browser reports the new box, and the frame's bound follows it in the render after.
         await page.setViewportSize({ width: 1280, height: 560 });
         await expect(async () => expectInside(formatCells(grid), grid)).toPass();
         expect(await formatCells(grid).evaluate((frame) => frame.scrollHeight > frame.clientHeight)).toBe(true);
 
-        // At 400 the box is 40px: less than a row under the Formula Bar and the header.
+        // At 400 it is 40px: less than a row under the Formula Bar and the header.
         await page.setViewportSize({ width: 1280, height: 400 });
         await expect(formatCells(grid)).toHaveCount(0);
         await expectKeyboardOn(grid);

@@ -64,8 +64,9 @@
 
 @* ?box=window gives the Sheet a box that follows the window's height (ViewportSize.Stretch), so a
    popover's room changes with the window: the browser tests shrink it under Format Cells
-   (DC-60, ADR-0040). *@
-<div class="demo-side-by-side" style="@(InWindowBox ? "height: calc(100vh - 360px); min-height: 0" : null)">
+   (DC-60, ADR-0040). The box is the window less 332px: 360px, and the Sheet Tabs' strip (ADR-0331),
+   which takes its height from the Sheet's, so the grid's own height is what it was before the strip. *@
+<div class="demo-side-by-side" style="@(InWindowBox ? "height: calc(100vh - 332px); min-height: 0" : null)">
     @if (DemoChrome.IsMud(ChromeName))
     {
         <MudExGridPaper>@Sheet</MudExGridPaper>
