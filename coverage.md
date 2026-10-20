@@ -12,7 +12,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/19/2026 - 23:34:20 |
+| Generated on: | 10/20/2026 - 00:16:21 |
 | Parser: | MultiReport (16x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 855 |
@@ -22,8 +22,8 @@
 | Uncovered lines: | 2956 |
 | Coverable lines: | 62243 |
 | Total lines: | 105385 |
-| **Branch coverage:** | 88.1% (34469 of 39123) |
-| Covered branches: | 34469 |
+| **Branch coverage:** | 88.1% (34471 of 39123) |
+| Covered branches: | 34471 |
 | Total branches: | 39123 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -733,10 +733,10 @@
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|91.1%|84.5%|
+|ExSheet.Components.ExSheet|91.1%|84.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91.1%|84.5%|
+|ExSheet.Components.ExSheet<T>|91.1%|84.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
