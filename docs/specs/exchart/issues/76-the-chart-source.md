@@ -1,6 +1,6 @@
 # 76: The Chart Source
 
-Status: open
+Status: ready-for-agent
 Roadmap: ExChart — A chart of a large table reads only what its pixels show, thinned where the data lives.
 
 **Why:** [ADR-0322](../../../adr/0322-a-chart-reads-its-data-through-a-chart-source-that-thins-where-the-data-lives.md).

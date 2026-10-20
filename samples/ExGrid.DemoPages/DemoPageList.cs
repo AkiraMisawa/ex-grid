@@ -84,6 +84,8 @@ public static class DemoPageList
             "ExChart.MudBlazor: the Chart Dock beside the grid opening each chart made from the selection as a tab, and a chart in the grid Wrapper's paper with the MudBlazor toolbar, download menu and context menu, the theme's colours leading its series (ADR-0258, ADR-0281)."),
         new("scatter", "Scatter and fitted lines", "ExChart",
             "CDS spreads against leverage beside their grid, with the least-squares and the Theil–Sen line; Old Faithful; and PRML's polynomial curve fitting of degree 0, 1, 3 and 9. The nearest point's tooltip, a click to the row, a rectangle that narrows both axes, a logarithmic spread axis (ADR-0290, ADR-0291)."),
+        new("chart-spec", "Charts from a Chart Spec", "ExChart",
+            "An American put's 4-step lattice, as two tables a capability would return, drawn from the Chart Spec in the field: coloured by value, sized by the chance of reaching each node, its branches as edges; the tool's answer under the field, and a spec with numbers in it refused with its path and reason (ADR-0320, ADR-0321)."),
         new("chart-candles", "Candles and intervals", "ExChart",
             "Ten years of a synthetic index as candles with volume and a moving average: rising hollow and falling filled, merged into months to fit and back to days when narrowed, on calendar time or packed sessions, in three colour conventions; a yield curve with a Bid–Ask band and forecasts with 95% CI whiskers; strategies' risk and return with intervals both ways (ADR-0300 to ADR-0304)."),
         new("chart-showcase/exposure", "Exposure profile showcase", "ExChart",

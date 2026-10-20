@@ -71,6 +71,9 @@ internal static class PointScales
     /// <summary>The largest marker's radius, against a line's height.</summary>
     public static double MaxRadius(double lineHeight) => lineHeight * 0.6;
 
+    /// <summary>The gap between the plot and the keys: a marker at the plot's edge reaches past it by its radius.</summary>
+    public static double Gap(ChartMetrics m) => m.Padding + MaxRadius(m.LineHeight);
+
     public static bool Keyed(ChartSeries s) => s.ColourBy is not null || s.SizeBy is not null;
 
     /// <summary>The width of the column the keys take at the plot's right, or 0 when no visible series has one.</summary>
@@ -80,7 +83,7 @@ internal static class PointScales
         if (keyed.Count == 0) return 0;
         var label = m.EffectiveTextWidth("-0,000.00");
         var titles = keyed.SelectMany(s => new[] { s.ColourBy?.Title, s.SizeBy?.Title }).OfType<string>().Max(t => m.EffectiveTextWidth(t));
-        return m.Padding + Math.Max(titles, Math.Max(BarWidth, 2 * MaxRadius(m.LineHeight)) + m.Padding / 2 + label) + m.Padding;
+        return Gap(m) + Math.Max(titles, Math.Max(BarWidth, 2 * MaxRadius(m.LineHeight)) + m.Padding / 2 + label) + m.Padding;
     }
 
     /// <summary>The lowest and highest of a scale's values, or null when it has none.</summary>

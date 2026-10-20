@@ -1,0 +1,59 @@
+@page "/exchart/spec"
+@using ExGrid.Docs.Examples.Chart
+
+<DocsPage Product="ExChart" Title="Charts from a Chart Spec"
+          Lead="An AI draws a chart by writing a Chart Spec: JSON that names the tables a capability already made and their columns, and never holds a number. The tool answers with the chart said in words, or refuses with the path and the reason, so the model can check what it drew or correct what it wrote.">
+
+    <DocsSection Title="Data first, then the spec">
+        <p>
+            The data comes from the host's own capabilities: a pricing call, a query, a file read. Each returns a
+            <em>Data Handle</em>, a name the host can look its table up by, and the AI writes a spec that refers to
+            those handles and their columns. The numbers never pass through the model, so it cannot round, drop or
+            invent one; a spec that tries to write values in is refused (ADR-0320).
+        </p>
+        <p>
+            <code>ChartSpec.Tool</code> is the tool definition a host hands its model, whatever the model: a name,
+            <code>draw_chart</code>, a description and the JSON Schema of the spec. When the model calls it, the host
+            passes the JSON and its lookup to <code>ChartSpec.Answer(json, handle =&gt; table)</code> and returns
+            <code>Text</code>. An accepted spec's text is the chart's summary (ADR-0275), with how many pixels were
+            thinned and how many points are missing; a refused one is one sentence, such as
+            <code>series[0].values is not part of a Chart Spec</code>. <code>ChartSpec.Read</code> gives the
+            <code>ChartDefinition</code> to draw. A table is any <code>IChartData</code>: <code>ChartData.Of</code>
+            builds one from columns, and <code>SnapshotChartData</code> reads a Snapshot by its columns' names.
+        </p>
+        <p>
+            Each series says its Series Kind, so a model cannot draw a rate as if it were a level by accident.
+            Below, a lattice priced by the page's own capability is drawn from the spec beside it. Edit the spec and
+            leave the field to see the answer change, or load the spec with numbers in it to see a refusal.
+        </p>
+        <DocsExample Builtin="typeof(ChartSpecLattice)" Mud="typeof(ChartSpecLatticeMud)" Files="@(["Examples/Chart/LatticeTables.cs"])" CodeOpen="true" />
+    </DocsSection>
+
+    <DocsSection Title="Colour, size and edges from columns">
+        <p>
+            An Observation's marks may take their colour and their size from columns (ADR-0320). A colour is drawn
+            in nine bands of the theme's heat tokens from the lowest value to the highest, or of its diverging tokens
+            alike on both sides of a <code>centre</code>, such as 0 for a P&amp;L, the centre neutral. A size makes
+            each marker's area proportional to its value, which is never negative. Either always brings a key at the
+            plot's right, in the saved files too; a point with no value for it is drawn as an outline, and the
+            Notes say how many. The tooltip and the CSV carry both values.
+        </p>
+        <p>
+            Edges join an Observation's nodes, each named by its key column, as the branches of a lattice or the
+            links of a network (ADR-0321). An edge has no look of its own and reads only as a line between its nodes;
+            an edge to a key no node carries is refused, never dropped. In C#, the same are
+            <code>ColourBy = new PointColour(title, values) { Centre = 0 }</code>,
+            <code>SizeBy = new PointSize(title, values)</code> and <code>Edges = [new ChartEdge(from, to)]</code> on
+            the series, each node's key its point's <code>Row</code>.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Following the data">
+        <p>
+            A Snapshot never changes in place; its next version is a new one. A chart drawn from a spec follows its
+            handle by being read again against the Snapshot the host now holds, and <code>SnapshotChartData.Version</code>
+            names the one it was read from (ADR-0322). A Chart Source that thins a large table where it lives, so
+            only what the pixels show crosses to the chart, is not built yet.
+        </p>
+    </DocsSection>
+</DocsPage>

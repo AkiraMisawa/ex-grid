@@ -337,7 +337,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             notes.AddRange(PointScales.Notes(s));
         var plots = panels.Where(p => p.VolumeOf is null).ToList();
         var (colourKeys, sizeKeys) = plots.Count == 0 ? ([], []) : PointScales.Keys(visible,
-            plotLeft + plotWidth + (visible.Any(s => s.Axis == AxisSide.Right) ? YAxisWidth(metrics) : 0) + pad,
+            plotLeft + plotWidth + (visible.Any(s => s.Axis == AxisSide.Right) ? YAxisWidth(metrics) : 0) + PointScales.Gap(metrics),
             plots[0].Plot.Y, plots[^1].Plot.Y + plots[^1].Plot.Height - plots[0].Plot.Y, metrics);
         if (coloursRepeat)
             notes.Add("Colours repeat: there are more series than colours. The legend and the tooltip name each series.");

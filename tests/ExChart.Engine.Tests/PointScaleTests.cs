@@ -52,13 +52,16 @@ public class PointScaleTests
         Assert.All(key.Entries, e => Assert.True(e.Radius > 0));
     }
 
-    [Fact] // ADR-0320: a key takes a column at the plot's right; the plot is narrower than without one
+    [Fact] // ADR-0320: a key takes a column at the plot's right, clear of the largest marker at the plot's edge
     public void A_key_takes_a_column_beside_the_plot()
     {
         var plain = Scene(Names(1, 2));
-        var keyed = Scene(Names(1, 2) with { ColourBy = new PointColour("Value", Values(1, 2)) });
-        Assert.True(keyed.Panels[0].Plot.Width < plain.Panels[0].Plot.Width);
-        Assert.True(keyed.ColourKeys[0].Box.X >= keyed.Panels[0].Plot.X + keyed.Panels[0].Plot.Width);
+        var keyed = Scene(Names(1, 2) with { ColourBy = new PointColour("Value", Values(1, 2)), SizeBy = new PointSize("N", Values(1, 2)) });
+        var plot = keyed.Panels[0].Plot;
+        Assert.True(plot.Width < plain.Panels[0].Plot.Width);
+        var rightmost = keyed.Panels[0].Series[0].Markers.MaxBy(m => m.X);
+        Assert.True(keyed.ColourKeys[0].Box.X > rightmost.X + rightmost.Radius!.Value);
+        Assert.True(keyed.SizeKeys[0].Box.X > rightmost.X + rightmost.Radius!.Value);
     }
 
     [Fact] // spine rule 1: a point with no colour value is drawn as an outline, and the Notes say how many
