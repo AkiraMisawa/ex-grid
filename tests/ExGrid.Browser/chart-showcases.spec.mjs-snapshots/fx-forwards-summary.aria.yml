@@ -1,0 +1,6 @@
+- 'img "EURUSD deposits and forwards. Tenor, 1W to 5Y. Deposit rate (%): Left axis, 2 to 4.5. EUR deposit: maximum 2.59 at 5Y. USD deposit: maximum 4.38 at 1W. Forward points: Left axis, 0 to 800. Forward points: maximum 768.37 at 5Y."':
+  - text: 2 2.5 3 3.5 4 4.5
+  - button "EUR deposit" [pressed]
+  - button "USD deposit" [pressed]
+  - text: 0 200 400 600 800 1W 1M 2M 3M 6M 1Y 2Y 5Y
+  - button "Forward points" [pressed]
