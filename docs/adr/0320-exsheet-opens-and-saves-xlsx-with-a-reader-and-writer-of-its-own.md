@@ -6,6 +6,12 @@ reader and writer are the project's own, with no third-party dependency. Everyth
 recommendation put to the user as a question; the "Questions" section lists them. This ADR is
 rewritten as decided once they are answered.)*
 
+*(2026-10-20, later the same day: the grilling decided §1 (two packages, `ExGrid.Data.Xlsx` for the
+workbook itself and `ExSheet.Xlsx` over it and the engine), §3's Number Format question (refuse) and
+§5's Values (written). It then decided that ExSheet holds a Workbook first
+([ADR-0321](./0321-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md)), and this ADR waits to be
+rewritten to read and write a whole Workbook. The text below is the first proposal, unchanged.)*
+
 [ADR-0046](./0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md) and
 [ADR-0048](./0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md) left
 `.xlsx` to "a separate package when it comes", and
