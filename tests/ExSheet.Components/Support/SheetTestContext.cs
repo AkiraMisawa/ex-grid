@@ -35,7 +35,7 @@ public abstract class SheetTestContext : BunitContext
         _handle.Setup<bool>("metaIsPrimary").SetResult(false);
         _handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
         _handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose", "handOff", "takeFocus", "followFocus", "takeKeyboardBack", "handKeyboardTo" })
+        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose", "handOff", "takeFocus", "followFocus", "takeKeyboardBack", "handKeyboardTo", "inputsLost" })
         {
             _handle.SetupVoid(name, _ => true).SetVoidResult();
         }

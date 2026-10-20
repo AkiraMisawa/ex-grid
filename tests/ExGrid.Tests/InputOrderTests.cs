@@ -234,6 +234,55 @@ public class InputOrderTests
         Assert.Equal([1], _answered);
     }
 
+    [Fact] // ADR-0240 §11: numbers reach the core in the order they were sent, so one missing behind a later number was lost on the way, and is void
+    public async Task ADR0240_a_number_missing_when_a_later_one_arrives_was_lost_and_is_void()
+    {
+        var order = NewOrder();
+        Assert.Null(order.Reached(1));
+        await order.RunAsync(1, () => { _log.Add("1"); return Task.CompletedTask; });
+
+        Assert.Equal((2, 3), order.Reached(4));
+        await order.RunAsync(4, () => { _log.Add("4"); return Task.CompletedTask; });
+
+        Assert.Equal(["1", "4"], _log);
+        Assert.Equal([1, 2, 3, 4], _answered);
+    }
+
+    [Fact] // ADR-0240 §11: told how far the script's numbers have gone, the core finds the ones it never received, and the input waiting behind them goes on
+    public async Task ADR0240_told_how_far_the_numbers_went_the_order_voids_the_ones_never_received()
+    {
+        var order = NewOrder();
+        Assert.Null(order.Reached(1));
+        var first = order.RunAsync(1, () => { _log.Add("1"); return Task.CompletedTask; });
+        await first;
+
+        Assert.Equal((2, 3), order.Reached(3, carried: false));
+        Assert.Null(order.Reached(3, carried: false));
+        Assert.Null(order.Reached(4));
+        await order.RunAsync(4, () => { _log.Add("4"); return Task.CompletedTask; });
+
+        Assert.Equal(["1", "4"], _log);
+        Assert.Equal([1, 2, 3, 4], _answered);
+    }
+
+    [Fact] // ADR-0240 §11: a number that reached the core and is still being handled is not taken for lost
+    public async Task ADR0240_a_number_still_being_handled_is_not_lost()
+    {
+        var order = NewOrder();
+        var consumer = new TaskCompletionSource();
+        Assert.Null(order.Reached(1));
+        var first = order.RunAsync(1, async () => { await consumer.Task; _log.Add("1"); });
+
+        Assert.Null(order.Reached(1, carried: false));
+        Assert.Null(order.Reached(2));
+        var second = order.RunAsync(2, () => { _log.Add("2"); return Task.CompletedTask; });
+        consumer.SetResult();
+        await Task.WhenAll(first, second);
+
+        Assert.Equal(["1", "2"], _log);
+        Assert.Equal([1, 2], _answered);
+    }
+
     private sealed class JournalLog(LogLevel minimum) : ILogger
     {
         public List<string> Lines { get; } = [];

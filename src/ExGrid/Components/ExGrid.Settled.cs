@@ -1,5 +1,7 @@
+using ExGrid.Chrome;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 
 namespace ExGrid.Components;
 
@@ -114,14 +116,87 @@ public partial class ExGrid<TRow>
     /// input numbered before it has been handled, and finished before any numbered after it starts.
     /// Its number is then answered, whether it succeeded or threw: a failure has been reported on its
     /// own path, and the mark is not held by it. An input with no number (0) is handled at once.</summary>
-    private Task AnsweredAsync(Func<Task> handling, int input) => Inputs.RunAsync(input, handling);
+    /// <remarks>Every call of the script's that carries a number reaches here as it arrives, so the number
+    /// is also marked as having reached the core (InputReached).</remarks>
+    private Task AnsweredAsync(Func<Task> handling, int input)
+    {
+        InputReached(input);
+        return Inputs.RunAsync(input, handling);
+    }
 
     /// <summary><see cref="AnsweredAsync(Func{Task}, int)"/> for a handling that answers a value.</summary>
-    private Task<T> AnsweredAsync<T>(Func<Task<T>> handling, int input) => Inputs.RunAsync(input, handling);
+    private Task<T> AnsweredAsync<T>(Func<Task<T>> handling, int input)
+    {
+        InputReached(input);
+        return Inputs.RunAsync(input, handling);
+    }
 
     /// <summary>An input handled at once, with nothing to wait on, in its place in the Input Order.</summary>
     private Task AnsweredAsync(Action handling, int input)
         => AnsweredAsync(() => { handling(); return Task.CompletedTask; }, input);
+
+    /// <summary>A message carrying the input numbered <paramref name="input"/> has reached the core
+    /// (ADR-0240 section 11). Called first by every call of the script's that carries a number, before
+    /// anything waits: a number before it that has not reached the core was sent while the circuit was
+    /// down, and never will (InputsLost).</summary>
+    private void InputReached(int input)
+    {
+        if (input > 0 && !_disposed && Inputs.Reached(input) is { } lost)
+            InputsLost(lost.First, lost.Last);
+    }
+
+    /// <summary>
+    /// The script had sent every input up to <paramref name="input"/> when it sent this, and is holding the
+    /// ones it has taken since behind an answer (ADR-0240 section 11). An input sent while the Server circuit
+    /// was down never reaches the core, and the answer it is held behind never comes; with nothing numbered
+    /// arriving behind it, this is how the core learns that it was lost.
+    /// </summary>
+    /// <param name="input">The last number the script had sent.</param>
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public void InputsSent(int input)
+    {
+        if (input > 0 && !_disposed && Inputs.Reached(input, carried: false) is { } lost)
+            InputsLost(lost.First, lost.Last);
+    }
+
+    /// <summary>
+    /// The inputs numbered <paramref name="first"/> to <paramref name="last"/> were sent while the Server
+    /// circuit was down and never reached the core (ADR-0240 section 11). They are void, so the inputs behind
+    /// them go on; they are refused aloud, in their place, never replayed against whatever stands now; and
+    /// the script is told, so that what it waits on for them ends with nothing.
+    /// </summary>
+    private void InputsLost(int first, int last)
+    {
+        _ = Inputs.AfterReceivedAsync(() =>
+        {
+            if (_disposed)
+                return Task.CompletedTask;
+            var words = RefusalWords(KeyRefusalLabelIds.LostOnTheWay);
+            if (!string.IsNullOrWhiteSpace(words))
+            {
+                Announce(words);
+                _suppressRender = false;
+                StateHasChanged();
+            }
+            return Task.CompletedTask;
+        });
+        _ = TellInputsLostAsync(first, last);
+    }
+
+    private async Task TellInputsLostAsync(int first, int last)
+    {
+        if (_scrollHandle is not { } handle)
+            return;
+        try
+        {
+            await handle.InvokeVoidAsync("inputsLost", first, last);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+        }
+    }
 
     /// <summary>The input numbered <paramref name="input"/> will not be handled: told of ahead of an
     /// event that never came. The Input Order moves past it (ADR-0240).</summary>

@@ -230,6 +230,16 @@ public class PopoverKeyboardTests : GridTestContext
     private Task<string?> AnsweredAsync(IRenderedComponent<ExGrid<TestRow>> cut)
         => ReadWhenIdleAsync(() => cut.Find(".ex-grid > [data-ex-answered]").GetAttribute("data-ex-answered"));
 
+    /// <summary>Sends a paste numbered 1 whose reading holds the Input Order until <paramref name="opens"/>
+    /// ends, and then changes nothing: the input before a told one, which reached the core first, as every
+    /// number does (ADR-0240 section 11), and is still being handled.</summary>
+    private static async Task<Task> HoldTheOrderAsync(IRenderedComponent<ExGrid<TestRow>> cut, TaskCompletionSource opens)
+    {
+        Task paste = Task.CompletedTask;
+        await cut.InvokeAsync(() => { paste = cut.Instance.OnPasteStreamsAsync(FakeJSStream.Held(opens.Task), null, input: 1); });
+        return paste;
+    }
+
     [Fact] // ADR-0240 §4: a key a substituted Chrome's menu resolves takes the number told for it, and the command its handler runs is handled under it, after the input before it
     public async Task ADR0240_a_chrome_menu_key_runs_its_command_under_the_number_told()
     {
@@ -239,6 +249,8 @@ public class PopoverKeyboardTests : GridTestContext
         await AltDownAsync(cut);
         Assert.NotEmpty(cut.FindAll(".ex-popover"));
 
+        var opens = new TaskCompletionSource();
+        var paste = await HoldTheOrderAsync(cut, opens);
         await cut.InvokeAsync(() => cut.Instance.InputTakenAt("keydown", 2));
         Task run = Task.CompletedTask;
         await cut.InvokeAsync(() =>
@@ -252,7 +264,8 @@ public class PopoverKeyboardTests : GridTestContext
         Assert.False(run.IsCompleted);
         Assert.NotEmpty(cut.FindAll(".ex-popover"));
 
-        await cut.InvokeAsync(() => cut.Instance.OnHeldTabRefusedAsync(input: 1));
+        opens.SetResult();
+        await paste;
         await run;
         Assert.Equal("2", await AnsweredAsync(cut));
         Assert.Empty(cut.FindAll(".ex-popover"));
@@ -280,6 +293,8 @@ public class PopoverKeyboardTests : GridTestContext
         await ClickCellAsync(cut, 50, 10);
         await AltDownAsync(cut);
 
+        var opens = new TaskCompletionSource();
+        var paste = await HoldTheOrderAsync(cut, opens);
         await cut.InvokeAsync(() => cut.Instance.InputTakenAt("keydown", 2));
         await cut.InvokeAsync(() =>
         {
@@ -289,7 +304,8 @@ public class PopoverKeyboardTests : GridTestContext
         await WhenIdleAsync();
         Assert.NotEmpty(cut.FindAll(".ex-popover"));
 
-        await cut.InvokeAsync(() => cut.Instance.OnHeldTabRefusedAsync(input: 1));
+        opens.SetResult();
+        await paste;
         Assert.Equal("2", await AnsweredAsync(cut));
         Assert.Empty(cut.FindAll(".ex-popover"));
     }

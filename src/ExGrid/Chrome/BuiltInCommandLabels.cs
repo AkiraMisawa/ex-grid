@@ -42,6 +42,8 @@ public static class BuiltInCommandLabels
             "Tab was pressed before Escape had let the keyboard leave the grid, so the keyboard stayed. Press Tab again to leave.",
         KeyRefusalLabelIds.KeyboardDidNotArrive =>
             "Keys typed while the grid was still answering were not carried out: the keyboard did not arrive where they could be.",
+        KeyRefusalLabelIds.LostOnTheWay =>
+            "Input made while the connection to the server was lost was not carried out. Make it again.",
         FindPanelLabelIds.Title => "Find",
         SummaryLabelIds.Average => "Average",
         SummaryLabelIds.Count => "Count",
