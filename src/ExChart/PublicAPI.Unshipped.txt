@@ -385,3 +385,9 @@ virtual ExChart.GridChartSeries.PrintMembers(System.Text.StringBuilder! builder)
 ExChart.ChartPointClick.Deconstruct(out string! SeriesId, out double Position, out object? Row) -> void
 ExChart.ChartRange.Deconstruct(out double? From, out double? To, out double? YFrom, out double? YTo) -> void
 ~override ExChart.Components.ExSurface.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+ExChart.SnapshotChartData
+ExChart.SnapshotChartData.Columns.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExChart.SnapshotChartData.RowCount.get -> int
+ExChart.SnapshotChartData.SnapshotChartData(ExGrid.Data.Snapshot! snapshot) -> void
+ExChart.SnapshotChartData.Value(string! column, int row) -> object?
+ExChart.SnapshotChartData.Version.get -> long
