@@ -60,6 +60,12 @@ public sealed record ChartSeries
     public PointSize? SizeBy { get; init; }
 
     /// <summary>
+    /// An Observation's edges, each joining two of its points by their <see cref="ChartPoint.Row"/>, its
+    /// nodes (ADR-0321). ExChart lays out nothing: a node stands where its point does.
+    /// </summary>
+    public IReadOnlyList<ChartEdge> Edges { get; init; } = [];
+
+    /// <summary>
     /// A Price Range's rows (ADR-0300). Setting them also sets <see cref="Points"/> to each row's close,
     /// or a gap where the row is not whole, so the series' domain, positions, CSV and grid bridge read
     /// it as they read a Level's.

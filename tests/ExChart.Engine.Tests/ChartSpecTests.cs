@@ -272,3 +272,41 @@ public class ChartSpecScaleTests
     public void A_colour_value_is_refused() =>
         Assert.StartsWith("series[0].colour.value is not part of a Chart Spec", Refusal(""", "colour": { "column": "pnl", "scale": "sequential", "value": "#ff0000" }"""));
 }
+
+public class ChartSpecEdgeTests
+{
+    private static readonly ChartData Nodes = ChartData.Of(
+        ("id", new object?[] { 0, 1, 2 }), ("step", new object?[] { 0, 1, 1 }), ("price", new object?[] { 100m, 90m, 110m }));
+
+    private static readonly ChartData Links = ChartData.Of(("from", new object?[] { "0", "0" }), ("to", new object?[] { "1", "2" }));
+
+    private static IChartData? Tables(string h) => h switch { "nodes" => Nodes, "links" => Links, _ => null };
+
+    private const string Spec = """
+        { "version": 1, "axis": { "values": "numbers", "title": "Step" },
+          "series": [ { "id": "t", "name": "Tree", "kind": "observation", "data": "nodes", "x": "step", "y": "price", "key": "id",
+                        "edges": { "data": "links", "from": "from", "to": "to" } } ] }
+        """;
+
+    [Fact] // ADR-0321: the nodes and the edges are two tables; keys meet as text
+    public void Nodes_and_edges_are_read_from_two_tables()
+    {
+        var s = ChartSpec.Read(Spec, Tables).Definition.Series[0];
+        Assert.Equal(2, s.Edges.Count);
+        Assert.Equal("0", s.Points[0].Row);
+        Assert.Equal(new ChartEdge("0", "2"), s.Edges[1]);
+    }
+
+    [Fact] // ADR-0321: edges need the nodes' keys
+    public void Edges_without_node_keys_are_refused() =>
+        Assert.StartsWith("series[0].key is missing", Assert.Throws<ChartSpecRefusedException>(() => ChartSpec.Read(Spec.Replace("\"key\": \"id\",", ""), Tables)).Message);
+
+    [Fact] // ADR-0321: an edge to a missing node comes back with the series' path
+    public void An_edge_to_a_missing_node_names_the_series()
+    {
+        var bad = ChartData.Of(("from", new object?[] { "0" }), ("to", new object?[] { "7" }));
+        var m = Assert.Throws<ChartSpecRefusedException>(() => ChartSpec.Read(Spec, h => h == "links" ? bad : Tables(h))).Message;
+        Assert.StartsWith("series[0]: ", m);
+        Assert.Contains("no node is keyed 7", m);
+    }
+}

@@ -161,6 +161,14 @@ public static class ChartCsv
                 }
                 rows.Add(row);
             }
+        // A node series lists its edges after its nodes (ADR-0321).
+        foreach (var (s, _) in shown.Where(t => t.Series.Edges.Count > 0))
+            foreach (var e in s.Edges)
+            {
+                var row = new List<string> { s.Name, $"edge {e.From} → {e.To}" };
+                while (row.Count < header.Count) row.Add("");
+                rows.Add(row);
+            }
         return new ChartTable(header, rows);
     }
 

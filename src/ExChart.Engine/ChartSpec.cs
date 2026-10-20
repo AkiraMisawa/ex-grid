@@ -46,7 +46,8 @@ public static class ChartSpec
     internal static readonly string[] RootKeys = ["version", "title", "axis", "series", "notes"];
     internal static readonly string[] AxisKeys = ["values", "title", "scale", "packed"];
     internal static readonly string[] SeriesKeys =
-        ["id", "name", "kind", "data", "x", "y", "open", "high", "low", "close", "volume", "label", "panel", "axis", "fromZero", "step", "colour", "size"];
+        ["id", "name", "kind", "data", "x", "y", "open", "high", "low", "close", "volume", "label", "panel", "axis", "fromZero", "step", "colour", "size", "key", "edges"];
+    internal static readonly string[] EdgeKeys = ["data", "from", "to"];
     internal static readonly string[] ColourKeys = ["column", "scale", "centre", "title"];
     internal static readonly string[] SizeKeys = ["column", "title"];
     private static readonly string[] PriceColumns = ["open", "high", "low", "close", "volume"];
@@ -179,7 +180,20 @@ public static class ChartSpec
                 "fromZero": { "type": "boolean", "description": "Whether its axis reaches zero; false for a rate or a volatility." },
                 "step": { "enum": ["preceding", "following"], "description": "Which interval a step's point stands for." },
                 "colour": { "$ref": "#/$defs/colour" },
-                "size": { "$ref": "#/$defs/size" }
+                "size": { "$ref": "#/$defs/size" },
+                "key": { "type": "string", "description": "An observation's column of node keys, which its edges name." },
+                "edges": { "$ref": "#/$defs/edges" }
+              }
+            },
+            "edges": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["data", "from", "to"],
+              "description": "An observation's edges, from a table of its own: each a line between two nodes, which stand where their points do. Nothing is laid out.",
+              "properties": {
+                "data": { "type": "string", "description": "The Data Handle of the edges' table." },
+                "from": { "type": "string", "description": "Its column of the keys edges start at." },
+                "to": { "type": "string", "description": "Its column of the keys edges end at." }
               }
             },
             "colour": {
@@ -301,6 +315,7 @@ public static class ChartSpec
             for (var r = 0; r < rows; r++)
                 positions[r] = Position(table.Value(x, r), values, $"{path}.x", handle, r);
             string? label = Column(s, "label", path, handle, table, required: false);
+            string? key = Column(s, "key", path, handle, table, required: false);
             var result = new ChartSeries { Id = id, Name = name, Kind = kind };
             if (kind == SeriesKind.PriceRange)
             {
@@ -326,8 +341,27 @@ public static class ChartSpec
                     points[r] = new ChartPoint(positions[r], ValueOf(table.Value(y, r), $"{path}.y", handle, r))
                     {
                         Name = label is null ? null : Text(table.Value(label, r)),
+                        Row = key is null ? null : Key(table.Value(key, r), $"{path}.key", handle, r),
                     };
                 result = result with { Points = points };
+            }
+            if (s.TryGetProperty("edges", out var edgesElement))
+            {
+                var at = $"{path}.edges";
+                if (kind != SeriesKind.Observation)
+                    throw Refuse(at, $"{at} belongs to an observation, whose points are the nodes.");
+                if (key is null)
+                    throw Refuse($"{path}.key", $"{path}.key is missing: an edge names its nodes by key, so the nodes say which column holds theirs.");
+                if (edgesElement.ValueKind != JsonValueKind.Object) throw Refuse(at, $"{at} is a JSON object.");
+                Known(edgesElement, at, EdgeKeys);
+                var edgeHandle = String(edgesElement, "data", at) ?? throw Missing(at, "data", "the Data Handle of the edges' table");
+                var edgeTable = tables(edgeHandle) ?? throw Refuse($"{at}.data", $"{at}.data \"{edgeHandle}\" is not known: name a Data Handle a capability returned.");
+                var from = Column(edgesElement, "from", at, edgeHandle, edgeTable, required: true)!;
+                var to = Column(edgesElement, "to", at, edgeHandle, edgeTable, required: true)!;
+                var edges = new ChartEdge[edgeTable.RowCount];
+                for (var r = 0; r < edges.Length; r++)
+                    edges[r] = new ChartEdge(Key(edgeTable.Value(from, r), $"{at}.from", edgeHandle, r), Key(edgeTable.Value(to, r), $"{at}.to", edgeHandle, r));
+                result = result with { Edges = edges };
             }
             if (s.TryGetProperty("colour", out var colourElement))
                 result = result with { ColourBy = Colour(colourElement, $"{path}.colour", handle, table) };
@@ -371,6 +405,10 @@ public static class ChartSpec
                 throw Refuse($"{path}.centre", $"{path}.centre is missing: a diverging scale says the value that means nothing, such as 0 for a P&L or 1 for a ratio.");
             return new PointColour(String(c, "title", path) ?? column, Values(table, column, $"{path}.column", handle)) { Centre = centre };
         }
+
+        // A key is compared as its text, so a key read as a number in one table meets the same key in another.
+        private static string Key(object? value, string path, string handle, int row) =>
+            value is null ? throw Refuse(path, $"{path}: row {row + 1} of \"{handle}\" has no key.") : Text(value);
 
         private static ChartValue?[] Values(IChartData table, string column, string path, string handle)
         {

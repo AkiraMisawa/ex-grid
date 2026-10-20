@@ -1408,3 +1408,39 @@ static ExChart.Engine.SizeKey.operator ==(ExChart.Engine.SizeKey? left, ExChart.
 ~override ExChart.Engine.KeyTick.ToString() -> string
 ~override ExChart.Engine.SizeEntry.Equals(object obj) -> bool
 ~override ExChart.Engine.SizeEntry.ToString() -> string
+ExChart.Engine.ChartEdge
+ExChart.Engine.ChartEdge.<Clone>$() -> ExChart.Engine.ChartEdge!
+ExChart.Engine.ChartEdge.ChartEdge(object! From, object! To) -> void
+ExChart.Engine.ChartEdge.Deconstruct(out object! From, out object! To) -> void
+ExChart.Engine.ChartEdge.Equals(ExChart.Engine.ChartEdge? other) -> bool
+ExChart.Engine.ChartEdge.From.get -> object!
+ExChart.Engine.ChartEdge.From.init -> void
+ExChart.Engine.ChartEdge.To.get -> object!
+ExChart.Engine.ChartEdge.To.init -> void
+ExChart.Engine.ChartSeries.Edges.get -> System.Collections.Generic.IReadOnlyList<ExChart.Engine.ChartEdge!>!
+ExChart.Engine.ChartSeries.Edges.init -> void
+ExChart.Engine.DrawnEdge
+ExChart.Engine.DrawnEdge.Deconstruct(out double X1, out double Y1, out double X2, out double Y2) -> void
+ExChart.Engine.DrawnEdge.DrawnEdge() -> void
+ExChart.Engine.DrawnEdge.DrawnEdge(double X1, double Y1, double X2, double Y2) -> void
+ExChart.Engine.DrawnEdge.Equals(ExChart.Engine.DrawnEdge other) -> bool
+ExChart.Engine.DrawnEdge.X1.get -> double
+ExChart.Engine.DrawnEdge.X1.init -> void
+ExChart.Engine.DrawnEdge.X2.get -> double
+ExChart.Engine.DrawnEdge.X2.init -> void
+ExChart.Engine.DrawnEdge.Y1.get -> double
+ExChart.Engine.DrawnEdge.Y1.init -> void
+ExChart.Engine.DrawnEdge.Y2.get -> double
+ExChart.Engine.DrawnEdge.Y2.init -> void
+ExChart.Engine.SeriesPiece.Edges.get -> ExChart.Engine.EquatableList<ExChart.Engine.DrawnEdge>!
+ExChart.Engine.SeriesPiece.Edges.init -> void
+override ExChart.Engine.ChartEdge.Equals(object? obj) -> bool
+override ExChart.Engine.ChartEdge.GetHashCode() -> int
+override ExChart.Engine.ChartEdge.ToString() -> string!
+override ExChart.Engine.DrawnEdge.GetHashCode() -> int
+static ExChart.Engine.ChartEdge.operator !=(ExChart.Engine.ChartEdge? left, ExChart.Engine.ChartEdge? right) -> bool
+static ExChart.Engine.ChartEdge.operator ==(ExChart.Engine.ChartEdge? left, ExChart.Engine.ChartEdge? right) -> bool
+static ExChart.Engine.DrawnEdge.operator !=(ExChart.Engine.DrawnEdge left, ExChart.Engine.DrawnEdge right) -> bool
+static ExChart.Engine.DrawnEdge.operator ==(ExChart.Engine.DrawnEdge left, ExChart.Engine.DrawnEdge right) -> bool
+~override ExChart.Engine.DrawnEdge.Equals(object obj) -> bool
+~override ExChart.Engine.DrawnEdge.ToString() -> string

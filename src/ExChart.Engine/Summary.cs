@@ -44,6 +44,8 @@ public static class ChartSummary
             var low = seen.MinBy(p => p.Y!.Value.ToDouble());
             var high = seen.MaxBy(p => p.Y!.Value.ToDouble());
             var said = $"{s.Name}: {seen.Count} points, {axis.Write(seen.Min(p => p.X))} to {axis.Write(seen.Max(p => p.X))} across, {s.Write(low.Y!.Value)} to {s.Write(high.Y!.Value)} up.";
+            if (s.Edges.Count > 0)
+                said = $"{s.Name}: {s.Points.Count} nodes and {s.Edges.Count} edges, {axis.Write(seen.Min(p => p.X))} to {axis.Write(seen.Max(p => p.X))} across, {s.Write(low.Y!.Value)} to {s.Write(high.Y!.Value)} up.";
             if (s.ColourBy is { } c && PointScales.Range(c.Values) is { } cr)
                 said += $" {s.Name}: colour is {c.Title}, {Number(cr.Lo)} to {Number(cr.Hi)}.";
             if (s.SizeBy is { } z && PointScales.Range(z.Values) is { } zr)

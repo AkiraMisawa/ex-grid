@@ -109,6 +109,9 @@ public sealed record SeriesPiece(string Id, string Name, AppearanceKeys Keys, Se
 
     /// <summary>Whether its markers' colour bands diverge from a centre (ADR-0320, ADR-0310).</summary>
     public bool ColourDiverging { get; init; }
+
+    /// <summary>Its edges in pixels, cut to the plot, drawn under its nodes (ADR-0321).</summary>
+    public EquatableList<DrawnEdge> Edges { get; init; } = EquatableList<DrawnEdge>.Empty;
 }
 
 /// <summary>A panel: its plot's box, its vertical axes and its series.</summary>
@@ -666,7 +669,10 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
                     Radius = m.Radius is { } share ? Math.Max(0.75, share * maxRadius) : null,
                 }), dpr).ToEquatableList(),
                 EquatableList<(double, double)>.Empty, EquatableList<PixelSummary>.Empty)
-            { ColourDiverging = s.ColourBy?.Centre is not null };
+            {
+                ColourDiverging = s.ColourBy?.Centre is not null,
+                Edges = ExChart.Engine.Edges.Pixels(s, map, v => YOf(axis, v, plot), plot).ToEquatableList(),
+            };
         var thinned = Thinning.Of(inRange, x => (map(x) - plot.X) * dpr, devicePixels);
         var (whiskers, bands) = Intervals(drawing with
         {

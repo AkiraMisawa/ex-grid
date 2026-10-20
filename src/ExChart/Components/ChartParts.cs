@@ -198,6 +198,20 @@ internal sealed class ChartSeriesView : ComponentBase
             b.CloseElement();
         }
 
+        if (piece.Edges.Count > 0)
+        {
+            // A node's edges, under its markers (ADR-0321).
+            var e = new StringBuilder();
+            foreach (var edge in piece.Edges)
+                e.Append('M').Append(Svg.N(edge.X1)).Append(',').Append(Svg.N(edge.Y1)).Append('L').Append(Svg.N(edge.X2)).Append(',').Append(Svg.N(edge.Y2));
+            b.OpenRegion(9);
+            b.OpenElement(0, "path");
+            b.AddAttribute(1, "class", "ex-chart-edges");
+            b.AddAttribute(2, "d", e.ToString());
+            b.CloseElement();
+            b.CloseRegion();
+        }
+
         var d = new StringBuilder();
         foreach (var line in piece.Lines)
             for (var i = 0; i < line.Count; i++)

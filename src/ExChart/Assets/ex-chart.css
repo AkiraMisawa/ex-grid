@@ -238,6 +238,8 @@
 .ex-chart-surface-bar-band { stroke: none; }
 /* A key of colours or sizes read from a column (ADR-0320): always drawn beside the plot. */
 .ex-chart-key-title { fill: var(--_ex-chart-text); }
+/* A node's edges (ADR-0321): a line between positions, lighter than the marks it joins. */
+.ex-chart-edges { fill: none; stroke: currentColor; stroke-opacity: 0.45; stroke-width: 1; }
 .ex-chart-key-band { stroke: none; }
 .ex-chart-key-frame { fill: none; stroke: var(--_ex-chart-axis); stroke-width: 1; }
 .ex-chart-key-size { fill: none; stroke: var(--_ex-chart-text); stroke-width: 1; }
