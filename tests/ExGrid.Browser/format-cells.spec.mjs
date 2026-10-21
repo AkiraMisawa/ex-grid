@@ -325,7 +325,10 @@ test.describe('on /sheet', () => {
         await tab(grid, 'Font').click();
         await pick(choice(grid, 'Bold'));
         await tab(grid, 'Fill').click();
-        await pick(formatCells(grid).getByRole('radio', { name: 'Red', exact: true }));
+        // Font and Fill each have a Red swatch, so the Fill panel's is named: until the Fill tab's
+        // click is answered, a bare 'Red' is the Font palette's, and the click lands there.
+        await pick(formatCells(grid).getByRole('tabpanel', { name: 'Fill', exact: true })
+            .getByRole('radio', { name: 'Red', exact: true }));
         await formatCells(grid).getByRole('button', { name: 'OK' }).click();
         await expect(formatCells(grid)).toHaveCount(0);
 
