@@ -1,6 +1,6 @@
 # 07: The Board Diff
 
-Status: ready-for-agent
+Status: done
 Roadmap: internal
 
 ADR-0340 (Q7): running a Board never rewrites it. What the user changes is raised as one Board Diff —

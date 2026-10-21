@@ -133,4 +133,41 @@ public sealed class BoardInputTests
         var refused = Assert.Throws<BoardRefusedException>(() => Trades().FromJson("""[{"notional": 1, "notional": 1000000}]"""));
         Assert.StartsWith("The data of input 'trades' is not JSON", refused.Message, StringComparison.Ordinal);
     }
+
+    private sealed class Answering(DataShape? shape) : IShapedSource
+    {
+        public int Asked { get; private set; }
+
+        public ValueTask<DataShape?> ShapeAsync(CancellationToken cancellationToken = default)
+        {
+            Asked++;
+            return ValueTask.FromResult(shape);
+        }
+    }
+
+    [Fact] // ADR-0341: a source held where the data lives is checked by the shape it answers, before any row
+    public async Task A_source_is_checked_by_the_shape_it_answers()
+    {
+        var input = new BoardInput("trades", [new("desk", SnapshotKind.Text), new("pnl", SnapshotKind.Decimal)]);
+        var shape = new DataShape([new("desk", SnapshotKind.Text), new("pnl", SnapshotKind.Decimal), new("book", SnapshotKind.Text)]);
+        var source = new Answering(shape);
+
+        Assert.Same(shape, await input.CheckAsync(source, TestContext.Current.CancellationToken));
+        Assert.Equal(1, source.Asked);
+
+        var other = await Assert.ThrowsAsync<BoardRefusedException>(async () =>
+            await input.CheckAsync(new Answering(new DataShape([new("desk", SnapshotKind.Text), new("pnl", SnapshotKind.Double)])), TestContext.Current.CancellationToken));
+        Assert.Equal("Input 'trades', column 'pnl': declared decimal, and its source holds double.", other.Message);
+    }
+
+    [Fact] // ADR-0341: a source that says no shape is refused, its kinds never guessed from its rows
+    public async Task A_source_that_says_no_shape_is_refused()
+    {
+        var input = new BoardInput("trades", [new("desk", SnapshotKind.Text)]);
+
+        var refused = await Assert.ThrowsAsync<BoardRefusedException>(async () => await input.CheckAsync(new Answering(null), TestContext.Current.CancellationToken));
+
+        Assert.Equal("trades", refused.Path);
+        Assert.Equal("Input 'trades' is bound to a source that does not say its shape, and its kinds are not guessed from its rows.", refused.Message);
+    }
 }

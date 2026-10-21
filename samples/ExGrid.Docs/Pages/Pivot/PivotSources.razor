@@ -138,6 +138,17 @@
         </DocsExample>
     </DocsSection>
 
+    <DocsSection Title="The shape before the report">
+        <p>
+            A report source answers the shape of the data it pivots, before any report, with <code>ShapeAsync</code>:
+            one over a Snapshot, records' included, answers the Snapshot's own, and a fetching source the one its
+            <code>Shape</code> call asks the server for, such as an Arrow schema read by
+            <code>SnapshotArrow.ReadShapeAsync</code>. A source that says none answers null. An
+            <a href="exboard">ExBoard</a> input is checked against it with <code>BoardInput.CheckAsync</code>, and
+            refused by name when a column is missing or of another kind (ADR-0341).
+        </p>
+    </DocsSection>
+
     <DocsSection Title="Caps">
         <p>
             <code>Caps</code> (<code>PivotCaps</code>) refuses, by name, a layout whose report is too large to read:

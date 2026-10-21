@@ -38,7 +38,9 @@
         </ul>
         <DocsExample Builtin="typeof(WorkbookTabs)" Mud="typeof(WorkbookTabsMud)" CodeOpen="true"
                      Files="@(["Examples/Sheet/Expenses.cs"])">
-            The claim, and a summary that reads it. Change a quantity on Claim, then select the Summary tab. "Add a
+            The claim, and a summary that reads it. Change a quantity on Claim, then select the Summary tab. Type
+            <code>=</code> in an empty cell of Summary, press the Claim tab and press a quantity: the Formula reads
+            <code>=Claim!</code> and that cell, and <kbd>Enter</kbd> puts it on Summary. "Add a
             sheet" inserts an empty Sheet after the last, named <code>Sheet</code> and the next number no Sheet has,
             the line beside the buttons says what the Sheets are now, and <kbd>Ctrl</kbd> + <kbd>Z</kbd> takes it out
             again.
@@ -101,8 +103,23 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
                 can cross on the wire.
             </li>
             <li>
-                <b>While an edit is open the Sheet shown stays.</b> A tab pressed then is refused, and the Sheet's notice
-                says to finish the edit first. Pointing at another Sheet's cells while a Formula is typed is not built yet.
+                <b>The Name Box goes to another Sheet.</b> Type the Sheet's name before the address, as a Reference
+                names it — <code>Summary!B5</code>, <code>'Q1 Sales'!A1:C3</code> — and press <kbd>Enter</kbd>: that
+                Sheet is shown with the cells selected and scrolled into view, in place of the view it kept. A name the
+                Workbook does not hold moves nothing, and the notice says the address could not be read.
+            </li>
+            <li>
+                <b>A Formula points at another Sheet's cells.</b> While a Formula is typed, press a tab, or
+                <kbd>Ctrl</kbd> + <kbd>Page Down</kbd>: that Sheet is shown and the edit stays open, its text in the
+                Formula Bar. An arrow or a press there writes the Reference with the Sheet's name,
+                <code>=Summary!B1</code>, from that Sheet's own Selection, and the next point replaces it.
+                <kbd>Enter</kbd> commits the Formula on the Sheet it was typed on, shows that Sheet again and moves
+                down there; <kbd>Escape</kbd> cancels it and shows that Sheet again too.
+            </li>
+            <li>
+                <b>While a constant is typed the Sheet shown stays.</b> A tab pressed then, or another Sheet's address
+                typed into the Name Box while any edit is open, is refused, and the Sheet's notice says to finish the
+                edit first.
             </li>
             <li>
                 The strip is as tall as the Formula Bar, and the height you give ExSheet includes it.

@@ -1,6 +1,7 @@
 using Bunit;
 using ExGrid.Columns;
 using ExGrid.Components.Tests.Support;
+using ExGrid.Selection;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
 
@@ -103,5 +104,67 @@ public class GridViewTests : GridTestContext
         var cut = RenderGrid();
 
         Assert.Throws<ArgumentException>(() => cut.Instance.ShowViewWith(default));
+    }
+
+    [Fact] // ADR-0331 §5, ADR-0050 item 4: a place handed with a view is placed under its version, and the Focus revealed from the view's offsets
+    public async Task A_place_handed_with_a_view_is_placed_and_revealed()
+    {
+        var cut = RenderGrid();
+        await ClickCellAsync(cut, 150, 30);
+        var kept = cut.Instance.ReadView();
+
+        await cut.InvokeAsync(() => cut.Instance.ShowViewWith(
+            kept with { RowSequenceVersion = 1 }, new SelectionRange(150, 1, 2, 1), new CellPosition(150, 1)));
+        cut.Render(ps => ps.Add(g => g.RowSequenceVersion, 1));
+        await WhenIdleAsync();
+
+        var held = cut.Instance.ReadSelection();
+        Assert.Equal(1, held.RowSequenceVersion);
+        Assert.Equal([new SelectionRange(150, 1, 2, 1)], held.Selection.Ranges);
+        Assert.Equal(new CellPosition(150, 1), held.Selection.Focus);
+        var (top, _) = Js.ScrolledTo[^1];
+        Assert.InRange(150 * 20d, top, top + 120);
+    }
+
+    [Fact] // ADR-0331 §5: a view handed later replaces a place not yet taken
+    public async Task A_view_handed_later_replaces_a_place()
+    {
+        var cut = RenderGrid();
+        await ClickCellAsync(cut, 150, 30);
+        var kept = cut.Instance.ReadView();
+
+        await cut.InvokeAsync(() =>
+        {
+            cut.Instance.ShowViewWith(kept with { RowSequenceVersion = 1 }, new SelectionRange(150, 1, 1, 1), new CellPosition(150, 1));
+            cut.Instance.ShowViewWith(kept with { RowSequenceVersion = 1 });
+        });
+        cut.Render(ps => ps.Add(g => g.RowSequenceVersion, 1));
+
+        Assert.Equal(kept.Selection.Ranges, cut.Instance.ReadSelection().Selection.Ranges);
+    }
+
+    [Fact] // ADR-0331 §5, principle 1: a place outside the rows the grid takes is not placed
+    public async Task A_place_outside_the_rows_is_not_placed()
+    {
+        var cut = RenderGrid();
+        var kept = cut.Instance.ReadView();
+
+        await cut.InvokeAsync(() => cut.Instance.ShowViewWith(
+            kept with { RowSequenceVersion = 1 }, new SelectionRange(150, 0, 1, 1), new CellPosition(150, 0)));
+        cut.Render(ps => ps
+            .Add(g => g.Window, TestRows.Many(10))
+            .Add(g => g.TotalCount, 10)
+            .Add(g => g.RowSequenceVersion, 1));
+
+        Assert.True(cut.Instance.ReadSelection().Selection.IsEmpty);
+    }
+
+    [Fact] // ADR-0050/0052: the Focus is placed inside its range
+    public void A_place_with_its_focus_outside_the_range_is_refused()
+    {
+        var cut = RenderGrid();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => cut.Instance.ShowViewWith(
+            cut.Instance.ReadView(), new SelectionRange(1, 0, 1, 1), new CellPosition(3, 0)));
     }
 }

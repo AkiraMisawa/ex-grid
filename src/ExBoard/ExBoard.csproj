@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0, like every shipped package (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ExBoard</RootNamespace>
+    <Description>ExBoard: a Board, JSON an AI composes once and a workflow runs without AI, laid out as rows of ExGrid, ExPivot and ExChart views over typed Board Inputs, each checked against its source's shape before anything is drawn.</Description>
+    <PackageTags>$(PackageTags);board;ai;workflow</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The Board references the three products it lays out, and no Engine references it (ADR-0340). -->
+    <ProjectReference Include="..\ExGrid\ExGrid.csproj" />
+    <ProjectReference Include="..\ExPivot\ExPivot.csproj" />
+    <ProjectReference Include="..\ExChart\ExChart.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ExBoard.Tests" />
+  </ItemGroup>
+
+  <!-- ExBoard depends on exactly the versions it was built with, as ExChart does (ADR-0042). -->
+  <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+
+</Project>

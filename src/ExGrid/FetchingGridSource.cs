@@ -31,7 +31,7 @@ namespace ExGrid;
 /// server's data moved under the write — a row changed upstream since that answer — is the
 /// Consumer's server's to judge when it takes the write (ADR-0141).</para>
 /// </summary>
-public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, IBindsToOneCircuit
+public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, IBindsToOneCircuit, Data.IShapedSource
 {
     CircuitBinding IBindsToOneCircuit.Binding { get; } = new();
 
@@ -127,6 +127,17 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     /// its Row Mark adapter's; null for none. The grid pairs a row's next version with the one it
     /// painted by it.</summary>
     public Func<TRow, object>? RowKey => _key;
+
+    /// <summary>
+    /// How the server answers the shape of what it holds, before any row (ADR-0341): its columns'
+    /// names and kinds, as an Arrow schema says them (<c>SnapshotArrow.ReadShapeAsync</c>). Set before the source is bound; null for a
+    /// source that says none, which a Board Input refuses to bind.
+    /// </summary>
+    public Func<CancellationToken, ValueTask<Data.DataShape>>? Shape { get; set; }
+
+    /// <inheritdoc />
+    public async ValueTask<Data.DataShape?> ShapeAsync(CancellationToken cancellationToken = default)
+        => Shape is { } shape ? await shape(cancellationToken).ConfigureAwait(false) : null;
 
     /// <summary>True under a Row Key: every answer is checked for a repeated or null key and refused
     /// by name, so no Window this source hands over holds a row twice (ADR-0141).</summary>
@@ -473,6 +484,20 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         if (GridFilters.Equal(filter, Filter))
             return;
         Filter = GridFilters.Snapshot(filter);
+        Restart();
+    }
+
+    /// <summary>
+    /// The query's meaning changed outside its sort and filter: the fetch reads state of the Consumer's
+    /// own that has changed, such as a Board's narrowing (ADR-0343). Drops the Window, bumps
+    /// <see cref="RowSequenceVersion"/>, so the grid drops its selection (ADR-0011), and fetches the
+    /// first page again, as a new sort does (ADR-0025). Not for data that moved on under the same
+    /// query, which is <see cref="NotifyChanged()"/>.
+    /// </summary>
+    public void Requery()
+    {
+        if (_disposed)
+            return;
         Restart();
     }
 

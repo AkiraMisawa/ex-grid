@@ -261,6 +261,18 @@
         </p>
         <DocsExample Title="A grid from JSON, its columns built at run time" Builtin="typeof(ShapedColumns)" Mud="typeof(ShapedColumnsMud)"
                      Files="@(["Examples/Grid/ShapedTrades.cs"])" />
+        <p>
+            <strong>Rows held on a server</strong> are fetched a page at a time instead: <code>ShapedGrid.Fetch</code> builds
+            the same columns from the spec alone, and its source hands each fetch the grid's query, its range, sort and
+            filter, to be answered with a <code>ShapedPage</code>, the rows as a Snapshot (an Arrow stream read with
+            <code>SnapshotArrow</code>, say), where they start and how many the result holds. Each page is checked against
+            the spec as a whole Snapshot is: one lacking a column, or holding it of another kind, fails its fetch, naming
+            the input, and is never shown. A shape cannot say whether a later page will hold a time of day, so a date column
+            with no format shows <code>yyyy-mm-dd hh:mm:ss</code> there; write <code>yyyy-mm-dd</code> to show dates only.
+            When the fetch reads state of your own that changes, <code>FetchingGridSource.Requery</code> asks again from
+            the top and drops the selection, as a new sort does. ExBoard's
+            <a href="exboard">Board over a server</a> draws one.
+        </p>
     </DocsSection>
 
     <DocsSection Title="API">
@@ -271,6 +283,8 @@
         <ApiTable Type="typeof(ColumnViewState)" />
         <ApiTable Type="typeof(GridViewStateJson)" />
         <ApiTable Type="typeof(ShapedGrid)" />
+        <ApiTable Type="typeof(FetchedShapedGrid)" />
+        <ApiTable Type="typeof(ShapedPage)" />
         <ApiTable Type="typeof(GridViewSpec)" />
     </DocsSection>
 </DocsPage>

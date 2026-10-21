@@ -1,0 +1,22 @@
+@using ExBoard
+@using ExBoard.Components
+@using ExGrid.Data
+
+<textarea rows="6" style="width: 100%; font-family: monospace; font-size: 12px" @bind="_spec" @bind:after="Draw"></textarea>
+<p role="status">@_refusal</p>
+@if (_board is not null)
+{
+    <ExBoard Board="_board" Data="_data!" Width="700" />
+}
+
+@code {
+    private string _spec = ChartSpecBoard.Spec;
+    private BoardReading? _board;
+    private IReadOnlyDictionary<string, Snapshot>? _data;
+    private string? _refusal;
+
+    protected override void OnInitialized() => Draw();
+
+    // Edit the spec and leave the field: a column the table does not have is refused by the spec's path.
+    private void Draw() => (_board, _data, _refusal) = ChartSpecBoard.Read(_spec);
+}

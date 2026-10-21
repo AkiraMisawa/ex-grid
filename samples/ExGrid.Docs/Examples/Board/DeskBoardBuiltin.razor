@@ -1,0 +1,48 @@
+@using ExBoard
+@using ExBoard.Components
+@using ExGrid.Data
+
+<textarea rows="10" style="width: 100%; font-family: monospace; font-size: 12px" @bind="_json"></textarea>
+<div style="margin: 8px 0">
+    <button type="button" @onclick="Draw">Draw</button>
+    <button type="button" disabled="@(_diff is null)" @onclick="DrawAgain">Draw with my changes</button>
+    <span role="status" style="margin-left: 8px">@_refusal</span>
+</div>
+@if (_board is not null)
+{
+    <ExBoard Board="_board" Data="_data!" Width="900" OnOutput="Raised" Diff="_laid" OnDiff="Changed" />
+    <pre role="log" style="white-space: pre-wrap; font-size: 12px">@_raised</pre>
+    <pre role="log" style="white-space: pre-wrap; font-size: 12px">@_diff</pre>
+}
+
+@code {
+    private string _json = DeskBoard.Json;
+    private BoardReading? _board;
+    private IReadOnlyDictionary<string, Snapshot>? _data;
+    private string? _refusal;
+    private string? _raised;
+    private string? _diff;
+    private BoardDiff? _laid;
+
+    protected override void OnInitialized() => Draw();
+
+    // What the host hands on to the workflow's next step: here, only shown.
+    private void Raised(BoardOutput output) => _raised = output.ToJson();
+
+    // What the host keeps for this user: here, only shown.
+    private void Changed(BoardDiff diff) => _diff = diff.ToJson();
+
+    private void Draw()
+    {
+        _laid = null;
+        (_board, _data, _refusal) = DeskBoard.Read(_json);
+    }
+
+    // Next time: the Board as written now, with the user's changes read back and laid over it.
+    private void DrawAgain()
+    {
+        (_board, _data, _refusal) = DeskBoard.Read(_json);
+        if (_board is not null)
+            (_laid, _refusal) = DeskBoard.LayOver(_diff!);
+    }
+}

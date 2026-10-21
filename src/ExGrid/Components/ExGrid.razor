@@ -3177,6 +3177,7 @@
     {
         var previousWindow = _window;
         var previousStart = _windowStart;
+        NoteEditRowLeaving(previousWindow, previousStart);
         _window = Source?.Window ?? Window;
         if (_window is null)
         {
@@ -3430,6 +3431,7 @@
         }
 
         ReconcileSelection();
+        _editRowLeaving = null;
         // A change of the visible columns mid-edit means the cell the editor floats over no
         // longer names the same column (ADR-0011): the uncommitted text is discarded rather than
         // committed into a stranger. A Source replaced by another instance takes the row the editor
@@ -5268,7 +5270,9 @@
     /// </summary>
     private (CellPosition Cell, string? Text, bool IsEditorError) MessageOnShow()
     {
-        if (_editError is { } error && _editMode != EditMode.None && _editingCell.Column < Columns.Count)
+        // Not while the edit is away (ADR-0331 §5): its cell is not among the rows shown, and the
+        // address names another cell there. The live region has told the error (A11Y-15).
+        if (_editError is { } error && _editMode != EditMode.None && !EditAway && _editingCell.Column < Columns.Count)
             return (_editingCell, error, true);
         // Only while its cell is painted. A wheel scroll moves the Viewport without moving
         // the Focus (ADR-0033's dangling-reference problem, in another shape), and a
@@ -8242,6 +8246,8 @@
     /// </summary>
     private string FormulaBarText()
     {
+        if (EditAway)
+            return _editText;
         if (_selection.Selection.IsEmpty)
             return "";
         var focus = _selection.Selection.Focus;
@@ -8590,14 +8596,23 @@
         // Without a Row Key, the row left the Window under the order the editor was opened under:
         // there is no identity to commit onto, and a positional guess would land the value on a
         // different row. The text is gone, and the grid says which rule took it (ADR-0011, ED-21).
-        if (_rowKey is null && _sequenceVersion == _editSequence && RowInHand(_editingCell.Row) is null)
+        // Away among rows another set replaced (ShowViewWith, ADR-0331 §5): the commit lands on the
+        // row the edit was opened on, as the grid last held it. The cell is the edit's own, among those
+        // rows: it names only the column here, and nothing the rows shown paint is read for it. The
+        // rows shown are another set's, so the Window says nothing about the edit's row.
+        var away = EditAway;
+        // Without a Row Key, the row left the Window under the order the editor was opened under, or
+        // had left it before the other set was shown, so the grid never held it away: there is no
+        // identity to commit onto, and a positional guess would land the value on a different row.
+        // The text is gone, and the grid says which rule took it (ADR-0011, ED-21).
+        if (away ? _editRow is null : _rowKey is null && _sequenceVersion == _editSequence && RowInHand(_editingCell.Row) is null)
         {
             await EndEditingAsync(reclaimFocus, byPress, DiscardedIn(EditDiscardReason.RowLeftTheWindow));
             return true;
         }
         // The row is gone, or, with no Row Key, the order moved: refused, the editor kept with the
         // typing, and the gesture keeps no meaning of its own, as after a Reject (ADR-0142, LV-20).
-        if (await CommitLandingAsync() is not { } cell)
+        if ((away ? _editingCell : await CommitLandingAsync()) is not { } cell)
         {
             RequestEditorFocus();
             return false;
@@ -8610,7 +8625,7 @@
             await EndEditingAsync(reclaimFocus, byPress, DiscardedIn(EditDiscardReason.ColumnNoLongerEditable));
             return true;
         }
-        var row = RowInHand(cell.Row)!;
+        var row = away ? _editRow! : RowInHand(cell.Row)!;
 
         // The Consumer's judgement, at the one moment a veto is still possible (ADR-0034).
         // No function means Accept, so a column that declares nothing behaves as before.
@@ -8629,7 +8644,9 @@
         // The commit lands over whatever the cell paints now, and says so when that is not what the
         // user saw — the editor's baseline (D1): the one change the user could not see (ADR-0142,
         // LV-11). The intent carries the same two texts the notice would.
-        var replaced = ReplacedTextAt(cell);
+        // Away, the cell is not painted: what it holds now is read from the edit's own row, so a change
+        // made there while the edit was away is told as any other is (LV-11).
+        var replaced = away ? PaintedTextOf(_editRow!, cell.Column) ?? "" : ReplacedTextAt(cell);
         var notice = OverwriteNoticeFor(cell, replaced);
         var intent = new GridEditIntent<TRow>(row, Columns[cell.Column].Name, text)
         {
@@ -8643,7 +8660,7 @@
             // behind its answer (ADR-0010), and an order move the Consumer's own write brings in is
             // this commit's, not a discard. The user's own write (D1), taken back if refused; the
             // bound source puts out what it gathered as the handler completes (D5).
-            var written = NoteOwnWrite([SelectionRange.FromCorners(cell, cell)]);
+            var written = NoteOwnWrite(away ? [] : [SelectionRange.FromCorners(cell, cell)]);
             // A Source, or visible columns, the Consumer hands over while it hears this are the
             // commit's own doing (ApplyState): noted while it is heard, and answered once the handler
             // has completed. Should the editor have to go meanwhile, the keyboard goes where this
@@ -8744,7 +8761,9 @@
         // was aimed with no longer names those rows, and it is refused as OrderMoved, the editor
         // kept with the typing — even where the Focus followed its row (ADR-0142; ADR-0011's note
         // of 2026-10-07).
-        if (_sequenceVersion != _editSequence)
+        // Away among another set's rows (ADR-0331 §5), the Selection names that set's rows, never the
+        // edit's: refused the same way, whatever version the shown set is under.
+        if (EditAway || _sequenceVersion != _editSequence)
         {
             await RefuseWriteAsync(PasteRefusalReason.OrderMoved);
             return;

@@ -71,6 +71,16 @@ internal static class SheetFormulaAids
         FormulaEntry.ReferenceText(RangeOf(range));
 
     /// <summary>
+    /// The Reference Point mode writes for a range pointed at on <paramref name="shown"/> while the
+    /// Formula is typed on <paramref name="home"/> (ADR-0331 §5): bare on the Sheet it is typed on, and
+    /// qualified with the Sheet's name on another, <c>Sheet2!A3</c>.
+    /// </summary>
+    internal static string ReferenceText(SelectionRange range, Sheet shown, Sheet? home) =>
+        home is null || home == shown
+            ? ReferenceText(range)
+            : FormulaEntry.ReferenceText(RangeOf(range), shown.Name);
+
+    /// <summary>
     /// F4 (ADR-0051, 2026-09-29): the Reference at the caret — the end of a range the caret
     /// touches — or every one the selection covers, overlaps or touches, cycled to its next form
     /// by the engine (<see cref="FormulaEntry.CycleReference"/>), with the selection over what was
@@ -97,15 +107,27 @@ internal static class SheetFormulaAids
     /// structured reference names no cells here, so it carries the key of its Linked Table's column
     /// instead. Nothing for text that is not a Formula.
     /// </summary>
-    internal static IReadOnlyList<EditorReference> References(Sheet sheet, string text)
+    internal static IReadOnlyList<EditorReference> References(Sheet sheet, string text) => References(sheet, null, text);
+
+    /// <summary>
+    /// The References function while a Formula typed on <paramref name="home"/> is edited with
+    /// <paramref name="sheet"/> shown (ADR-0331 §5): a Reference names cells on the Sheet shown only
+    /// where it names that Sheet, since one that names none is the home Sheet's. On the home Sheet, or
+    /// with no home, as <see cref="References(Sheet, string)"/>.
+    /// </summary>
+    internal static IReadOnlyList<EditorReference> References(Sheet sheet, Sheet? home, string text)
     {
         var found = sheet.References(text);
         if (found.Count == 0) return [];
+        var away = home is not null && home != sheet;
         var references = new List<EditorReference>(found.Count);
         foreach (var reference in found)
+        {
+            if (away && reference.Cells is not null && text.AsSpan(reference.Start, reference.Length).IndexOf('!') < 0) continue;
             references.Add(reference.Cells is { } cells
                 ? new EditorReference(reference.Start, reference.Length, SelectionOf(cells))
                 : new EditorReference(reference.Start, reference.Length, KeyOf(reference.LinkedColumn!)));
+        }
         return references;
     }
 

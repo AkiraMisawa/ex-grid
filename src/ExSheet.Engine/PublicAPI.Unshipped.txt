@@ -48,6 +48,7 @@ ExSheet.Engine.WorkbookStep.IsUndone.get -> bool
 ExSheet.Engine.WorkbookStep.Redo() -> ExSheet.Engine.WorkbookChange!
 ExSheet.Engine.WorkbookStep.Sheet.get -> ExSheet.Engine.Sheet!
 ExSheet.Engine.WorkbookStep.Undo() -> ExSheet.Engine.WorkbookChange!
+static ExSheet.Engine.FormulaEntry.ReferenceText(ExSheet.Engine.CellRange range, string! sheet) -> string!
 static ExSheet.Engine.SheetEdit.CopySheet(int? index = null) -> ExSheet.Engine.SheetEdit!
 static ExSheet.Engine.SheetEdit.DeleteSheet() -> ExSheet.Engine.SheetEdit!
 static ExSheet.Engine.SheetEdit.InsertSheet(string? name = null, bool before = false) -> ExSheet.Engine.SheetEdit!

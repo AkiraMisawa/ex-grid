@@ -59,6 +59,17 @@
         </DocsExample>
     </DocsSection>
 
+    <DocsSection Title="Saying the shape first">
+        <p>
+            A fetching source can say the shape of what its server holds, its columns' names and kinds, before it
+            fetches a row: set <code>Shape</code> to the call that asks the server, which can answer with an Arrow
+            stream's schema read by <code>SnapshotArrow.ReadShapeAsync</code>. <code>ShapeAsync</code> answers it,
+            or null when the source was given none. An <a href="exboard">ExBoard</a> input is checked against it
+            with <code>BoardInput.CheckAsync</code> before anything is drawn, so a column renamed or retyped upstream
+            is refused by name on the run that meets it (ADR-0341). Kinds are never guessed from the rows.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="Pushing a Window: a million rows">
         <p>
             When you hold the loading yourself, hand the grid the rows you have as <code>Window</code>, where they
@@ -84,7 +95,15 @@
             shown. Handed from the handler of one of the grid's inputs — a declared key, say — the switch is that
             input's answer, and the keys and pastes after it in the grid's order are taken under the new version
             even on Blazor Server, where they left the browser before the new rows reached it, as they would be
-            typed slowly. ExSheet keeps each Sheet's view this way.
+            typed slowly. ExSheet keeps each Sheet's view this way. To go to a place among the rows you show,
+            hand it with them: <code>ShowViewWith(view, range, focus)</code> places <code>range</code> with the
+            Focus on <code>focus</code> under the same version, and scrolls the Focus into view from the view's
+            offsets, as <code>PlaceSelectionAsync</code> does among the rows already shown. ExSheet's Name Box takes
+            <code>Sheet2!B5</code> this way. An edit open as you show other rows stays open with the rows it was
+            opened among: its editor keeps the keyboard unseen, the Formula Bar shows its text, Point points at the
+            rows shown, and its commit raises <code>OnEdit</code> with the row it was opened on. A view you read of its
+            rows, handed back, brings the editor back over its cell. <code>ReadEditText()</code> reads the open
+            edit's text from a handler, to decide what a declared key means while an edit is open.
         </p>
         <p>
             <strong>Name your rows by a Row Key</strong> when you make them afresh — fetched again, or rebuilt from a

@@ -28,12 +28,14 @@
     <PackageReference Include="ExSheet.MudBlazor" Version="$(ExGridVersion)" />
     <PackageReference Include="ExGrid.Data" Version="$(ExGridVersion)" />
     <PackageReference Include="ExGrid.Data.Arrow" Version="$(ExGridVersion)" />
+    <PackageReference Include="ExGrid.Data.Xlsx" Version="$(ExGridVersion)" />
     <PackageReference Include="ExPivot.Engine" Version="$(ExGridVersion)" />
     <PackageReference Include="ExPivot" Version="$(ExGridVersion)" />
     <PackageReference Include="ExPivot.MudBlazor" Version="$(ExGridVersion)" />
     <PackageReference Include="ExChart.Engine" Version="$(ExGridVersion)" />
     <PackageReference Include="ExChart" Version="$(ExGridVersion)" />
     <PackageReference Include="ExChart.MudBlazor" Version="$(ExGridVersion)" />
+    <PackageReference Include="ExBoard" Version="$(ExGridVersion)" />
   </ItemGroup>
 
   <Target Name="RequireThePackedVersion" BeforeTargets="CollectPackageReferences">
