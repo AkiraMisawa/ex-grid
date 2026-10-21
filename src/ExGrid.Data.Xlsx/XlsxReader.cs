@@ -19,6 +19,7 @@ public sealed class XlsxReader : IDisposable
     private readonly Package package;
     private readonly HashSet<int> dynamicArrayMetadata;
     private readonly Pacer pacer;
+    private readonly string? sharedStringsPart;
     private long cells;
     private long sheetBytesRead;
 
@@ -36,7 +37,7 @@ public sealed class XlsxReader : IDisposable
         DefinedNames = names;
         WorkbookPartName = workbookPart;
         string? Target(string type) => rels.Values.FirstOrDefault(r => r.Type == type).Target;
-        SharedStrings = Target(Names.SharedStringsType) is { } sst ? ReadSharedStrings(package, sst) : XlsxSharedStrings.Empty;
+        sharedStringsPart = Target(Names.SharedStringsType);
         Styles = Target(Names.StylesType) is { } styles ? StylesReader.Read(package, styles) : XlsxStyles.Default;
         var themePart = Target(Names.ThemeType);
         Theme = themePart is null ? XlsxTheme.Office : ReadTheme(package, themePart);
@@ -59,36 +60,37 @@ public sealed class XlsxReader : IDisposable
         ArgumentNullException.ThrowIfNull(stream);
         options ??= new XlsxReadOptions();
         cancellationToken.ThrowIfCancellationRequested();
-        var seekable = stream;
-        if (!stream.CanSeek)
-        {
-            seekable = await CopyAsync(stream, options.MaxUncompressedBytes, cancellationToken).ConfigureAwait(false);
-            await stream.DisposeAsync().ConfigureAwait(false);
-        }
+        var head = new byte[8];
+        Stream seekable = stream;
         try
         {
-            var head = new byte[8];
-            var start = seekable.Position;
-            var got = 0;
-            while (got < head.Length)
-            {
-                var n = await seekable.ReadAsync(head.AsMemory(got), cancellationToken).ConfigureAwait(false);
-                if (n == 0)
-                    break;
-                got += n;
-            }
-            seekable.Position = start;
+            var start = stream.CanSeek ? stream.Position : 0;
+            var got = await stream.ReadAtLeastAsync(head, head.Length, throwOnEndOfStream: false, cancellationToken).ConfigureAwait(false);
             if (Sniff.IsOle(head.AsSpan(0, got)))
             {
-                var whole = await CopyAsync(seekable, options.MaxUncompressedBytes, cancellationToken).ConfigureAwait(false);
-                throw Sniff.ClassifyOle(whole.ToArray());
+                // Only the compound file's header, the FAT sectors its directory's chain passes through and the directory
+                // are read: a stream that seeks is read where they lie, and one that cannot is read only as far as the
+                // last of them, never past the size limit.
+                var file = stream.CanSeek ? OleFile.Seeking(stream, start) : OleFile.Forward(stream, head.AsMemory(0, got), options.MaxUncompressedBytes);
+                throw await Sniff.ClassifyOleAsync(file, cancellationToken).ConfigureAwait(false);
             }
             if (!Sniff.IsZip(head.AsSpan(0, got)))
                 throw new XlsxException(XlsxRefusal.NotAZip, got == 0 ? "The file is empty." : "The file is not a zip package, so it is not an .xlsx.");
+            if (stream.CanSeek)
+            {
+                stream.Position = start;
+            }
+            else
+            {
+                seekable = await CopyAsync(stream, head.AsMemory(0, got), options.MaxUncompressedBytes, cancellationToken).ConfigureAwait(false);
+                await stream.DisposeAsync().ConfigureAwait(false);
+            }
             var package = Package.Open(seekable, options.MaxUncompressedBytes);
             try
             {
-                return new XlsxReader(package, options, cancellationToken);
+                var reader = new XlsxReader(package, options, cancellationToken);
+                await reader.ReadSharedStringsAsync().ConfigureAwait(false);
+                return reader;
             }
             catch
             {
@@ -122,7 +124,7 @@ public sealed class XlsxReader : IDisposable
     public IReadOnlyList<XlsxDefinedName> DefinedNames { get; }
 
     /// <summary>The shared strings, held whole.</summary>
-    public XlsxSharedStrings SharedStrings { get; }
+    public XlsxSharedStrings SharedStrings { get; private set; } = XlsxSharedStrings.Empty;
 
     /// <summary>The styles, as far as ADR-0330 §4 carries them; <see cref="XlsxStyles.Default"/> when the package has no styles part.</summary>
     public XlsxStyles Styles { get; }
@@ -154,7 +156,7 @@ public sealed class XlsxReader : IDisposable
         var sheet = Sheets[index];
         if (sheet.Part is null)
             throw new InvalidOperationException($"The sheet '{sheet.Name}' is not a worksheet and holds no cells.");
-        var stream = package.OpenPart(sheet.Part)
+        var stream = package.OpenPart(sheet.Part, sheet.Name)
             ?? throw new XlsxException(XlsxRefusal.Malformed, "The workbook names a worksheet part the package does not hold.", sheet.Part, sheet.Name);
         return new XlsxSheetReader(this, index, sheet, stream);
     }
@@ -201,9 +203,10 @@ public sealed class XlsxReader : IDisposable
 
     // ---- the package -------------------------------------------------------------------------
 
-    private static async ValueTask<MemoryStream> CopyAsync(Stream stream, long limit, CancellationToken cancellationToken)
+    private static async ValueTask<MemoryStream> CopyAsync(Stream stream, ReadOnlyMemory<byte> head, long limit, CancellationToken cancellationToken)
     {
         var memory = new MemoryStream();
+        memory.Write(head.Span);
         var buffer = new byte[1 << 20];
         while (true)
         {
@@ -416,13 +419,23 @@ public sealed class XlsxReader : IDisposable
         return (sheets, active, date1904, names);
     }
 
-    private static XlsxSharedStrings ReadSharedStrings(Package package, string part)
+    /// <summary>
+    /// Reads the shared strings, the one part held whole, in slices as a worksheet is read (ADR-0330 §9): cancellation is
+    /// looked at, progress reported and the read yields between them, so a browser keeps painting while a large part is
+    /// read. Its progress names no worksheet (<see cref="XlsxProgress.Sheet"/> is -1) and counts the part's bytes.
+    /// </summary>
+    private async ValueTask ReadSharedStringsAsync()
     {
+        if (sharedStringsPart is not { } part)
+            return;
         var texts = new List<string>();
         var rich = new HashSet<int>();
-        using var xml = package.OpenXml(part);
-        if (xml is null)
-            return XlsxSharedStrings.Empty;
+        var total = package.LengthOf(part);
+        using var stream = package.OpenPart(part);
+        if (stream is null)
+            return;
+        using var xml = XmlReader.Create(stream, Package.Settings);
+        XlsxProgress Progress() => new(-1, Sheets.Count, 0, stream.Position, total);
         try
         {
             xml.MoveToContent();
@@ -436,6 +449,8 @@ public sealed class XlsxReader : IDisposable
                     if (isRich)
                         rich.Add(texts.Count);
                     texts.Add(text);
+                    if (texts.Count % SharedStringSlice == 0)
+                        await pacer.CheckpointAsync(Progress()).ConfigureAwait(false);
                 }
             }
         }
@@ -443,8 +458,12 @@ public sealed class XlsxReader : IDisposable
         {
             throw package.Refuse(e, part);
         }
-        return new XlsxSharedStrings([.. texts], rich);
+        pacer.Report(Progress());
+        SharedStrings = new XlsxSharedStrings([.. texts], rich);
     }
+
+    /// <summary>The shared strings read between two looks at the clock: a few microseconds' work.</summary>
+    internal const int SharedStringSlice = 256;
 
     /// <summary>The text of a string item (<c>&lt;si&gt;</c> or <c>&lt;is&gt;</c>), the reader on its start: its <c>&lt;t&gt;</c>, or
     /// its runs' <c>&lt;t&gt;</c>s in order, a phonetic guide left out. Leaves the reader on its end.</summary>

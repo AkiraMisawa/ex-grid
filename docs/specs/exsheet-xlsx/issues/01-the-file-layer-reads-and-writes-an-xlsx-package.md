@@ -27,9 +27,10 @@ output asynchronously, so an ASP.NET body that refuses synchronous writes takes 
 `XlsxException` with an `XlsxRefusal` reason and the part, sheet and cell it concerns: `NotAZip`,
 `NotAWorkbook`, `MacroEnabled`, `Binary`, `Legacy` (an OLE file that is not encrypted), `Encrypted`
 (an OLE file holding `EncryptedPackage`), `StrictOpenXml`, `Dtd`, `Malformed`, `TooLarge` and
-`TooManyCells`. A zip whose entry inflates past the size it declares is cut there by the platform,
-and is refused as `Malformed`, naming the part; the size limit counts both what the zip declares and
-what is inflated.
+`TooManyCells`. A zip whose deflated entry inflates past the size it declares is cut there by the
+platform, and is refused as `Malformed`, naming the part; a stored entry, which the platform reads to
+its compressed size, is refused as `TooLarge` past what it declares. The size limit counts what the
+zip declares, and no part is read past that.
 
 The defaults were measured with `tests/ExGrid.Data.Xlsx.Tests/Measure` (run by hand, never gated) on
 a 4-vCPU Intel Xeon, .NET 10.0.7, Ubuntu 24.04, CoreCLR Release. Each workbook has ten columns a row

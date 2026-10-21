@@ -116,6 +116,51 @@ public class StreamingTests
         Assert.True(reader.CellsRead < Rows * 4L);
     }
 
+    /// <summary>A sheet of 20,000 cells, each its own text: a shared strings part of 20,000 items.</summary>
+    private static async Task<byte[]> ManyTexts() => await WriteAsync(async book =>
+    {
+        var sheet = book.AddSheet("Texts");
+        await sheet.WriteAsync(Enumerable.Range(0, 20_000).Select(i => new XlsxCell(i, 0, XlsxCellType.SharedString, null, "Text " + i.ToString(CultureInfo.InvariantCulture))), Token);
+    });
+
+    [Fact] // ADR-0330 §9: the shared strings, read whole as the workbook opens, are read in slices too: progress reported and a yield between them
+    public async Task The_shared_strings_are_read_in_slices()
+    {
+        var reports = new List<XlsxProgress>();
+        var yields = 0;
+        var options = new XlsxReadOptions
+        {
+            SliceBudget = TimeSpan.Zero,
+            Progress = new Inline(reports.Add),
+            Yield = () =>
+            {
+                yields++;
+                return ValueTask.CompletedTask;
+            },
+        };
+
+        using var reader = await OpenAsync(await ManyTexts(), options);
+
+        Assert.Equal(20_000, reader.SharedStrings.Count);
+        Assert.Equal("Text 19999", reader.SharedStrings[^1]);
+        Assert.True(yields >= 20_000 / XlsxReader.SharedStringSlice, $"{yields} yields");
+        Assert.All(reports, r => Assert.Equal((-1, 1, 0L), (r.Sheet, r.Sheets, r.Cells)));
+        Assert.Equal(reports.Select(r => r.Bytes).Order(), reports.Select(r => r.Bytes));
+        Assert.True(reports[^1].TotalBytes > 0);
+        Assert.Equal(reports[^1].TotalBytes, reports[^1].Bytes);
+    }
+
+    [Fact] // ADR-0330 §9: opening is cancelled between the shared strings' slices
+    public async Task Opening_is_cancelled_while_the_shared_strings_are_read()
+    {
+        using var cancel = new CancellationTokenSource();
+        var stream = new MemoryStream(await ManyTexts());
+        var options = new XlsxReadOptions { SliceBudget = TimeSpan.Zero, Yield = () => { cancel.Cancel(); return ValueTask.CompletedTask; } };
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await XlsxReader.OpenAsync(stream, options, cancel.Token));
+        Assert.False(stream.CanRead);
+    }
+
     [Fact] // ADR-0330 §9: what a worksheet holds beside its cells is listed, not read: merged cells, notes, print settings, and rows and panes that are not carried
     public async Task What_else_a_sheet_holds_is_listed()
     {

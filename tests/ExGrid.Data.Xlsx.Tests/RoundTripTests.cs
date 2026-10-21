@@ -193,4 +193,68 @@ public class RoundTripTests
         Assert.Throws<ArgumentException>(() => writer.AddSheet("'quoted'"));
         Assert.Throws<ArgumentException>(() => XlsxWriter.Create(new MemoryStream(), new XlsxWriteOptions { Styles = Styles with { Fills = [XlsxFill.None] } }));
     }
+
+    [Fact] // ADR-0330 §1: a cell is checked whole before anything of it is written, so a refused one leaves the sheet writable and the package well-formed
+    public async Task A_refused_cell_leaves_the_sheet_as_it_was()
+    {
+        var file = await WriteAsync(book =>
+        {
+            var sheet = book.AddSheet("One");
+            Assert.Throws<ArgumentException>(() => sheet.Write(new XlsxCell(0, 0, XlsxCellType.Number, "1", Formula: new XlsxFormula("A2", XlsxFormulaKind.Shared))));
+            Assert.Throws<ArgumentException>(() => sheet.Write(new XlsxCell(0, 0, XlsxCellType.Number, "1\u0001")));
+            Assert.Throws<ArgumentException>(() => sheet.Write(new XlsxCell(0, 0, XlsxCellType.SharedString, null, "half \uD800 a pair")));
+            Assert.Throws<ArgumentException>(() => sheet.Write(new XlsxCell(0, 0, XlsxCellType.InlineString, null, "\uDC00")));
+            Assert.Throws<ArgumentException>(() => sheet.Write(new XlsxCell(0, 0, XlsxCellType.Number, "1", Formula: new XlsxFormula("\uD800"))));
+            Assert.Throws<ArgumentException>(() => sheet.Write(new XlsxCell(0, 0, XlsxCellType.Number, "1", Formula: new XlsxFormula("1", XlsxFormulaKind.Array, "A1\u0002"))));
+            sheet.Write(new XlsxCell(0, 0, XlsxCellType.Number, "1", Formula: new XlsxFormula("A2", XlsxFormulaKind.Shared, "A1:A2", 0)));
+            sheet.Write(new XlsxCell(0, 1, XlsxCellType.SharedString, null, "a \u0001 \U0001F600 pair"));
+            return Task.CompletedTask;
+        });
+        using var reader = await OpenAsync(file);
+
+        var cells = (await reader.ReadSheetAsync(0)).Cells;
+
+        Assert.Equal(["A1", "B1"], cells.Select(c => c.Reference));
+        Assert.Equal(0, cells[0].Formula!.SharedIndex);
+        Assert.Equal("a \u0001 \U0001F600 pair", cells[1].Text);
+    }
+
+    [Fact] // ADR-0330 §4: column ranges that overlap, or name a cell format the styles do not hold, are refused before the sheet begins
+    public async Task Overlapping_columns_are_refused()
+    {
+        await using var writer = XlsxWriter.Create(new MemoryStream());
+
+        Assert.Throws<ArgumentException>(() => writer.AddSheet("A", [new XlsxColumn(0, 2, 10), new XlsxColumn(2, 4, 12)]));
+        Assert.Throws<ArgumentException>(() => writer.AddSheet("A", [new XlsxColumn(3, 3, 10), new XlsxColumn(1, 5, 12)]));
+        Assert.Throws<ArgumentException>(() => writer.AddSheet("A", [new XlsxColumn(1, 1, 10), new XlsxColumn(1, 1, 10)]));
+        Assert.Throws<ArgumentException>(() => writer.AddSheet("A", [new XlsxColumn(1, 1, 10, StyleIndex: 1)]));
+        var sheet = writer.AddSheet("A", [new XlsxColumn(2, 3, 12), new XlsxColumn(0, 1, 10)]);
+        Assert.Equal("A", sheet.Name);
+    }
+
+    [Fact] // ADR-0330 §1: a name XML cannot carry is refused where it is given, and a workbook whose completion fails still closes its package
+    public async Task Names_xml_cannot_carry_are_refused_and_a_failed_completion_closes_the_package()
+    {
+        await using (var writer = XlsxWriter.Create(new MemoryStream()))
+        {
+            Assert.Throws<ArgumentException>(() => writer.AddSheet("Tab\u0001"));
+            Assert.Throws<ArgumentException>(() => writer.AddSheet("Tab\tTwo"));
+            Assert.Throws<ArgumentException>(() => writer.AddSheet("Half \uD800"));
+            Assert.Equal("Tab \U0001F600", writer.AddSheet("Tab \U0001F600").Name);
+        }
+        Assert.Throws<ArgumentException>(() => XlsxWriter.Create(new MemoryStream(), new XlsxWriteOptions { DefinedNames = [new XlsxDefinedName("Rate\u0001", "1")] }));
+        Assert.Throws<ArgumentException>(() => XlsxWriter.Create(new MemoryStream(), new XlsxWriteOptions { DefinedNames = [new XlsxDefinedName("Rate", "\"\uDC00\"")] }));
+        Assert.Throws<ArgumentException>(() => XlsxWriter.Create(new MemoryStream(), new XlsxWriteOptions { Styles = Styles with { Fonts = [new XlsxFont("Cal\u0001ibri")] } }));
+
+        // A border style no name stands for makes the styles part fail as it is written, after the sheets have ended.
+        var broken = XlsxStyles.Default with { Borders = [XlsxBorder.None with { Left = new XlsxBorderEdge((XlsxBorderStyle)99) }] };
+        var failed = XlsxWriter.Create(new MemoryStream(), new XlsxWriteOptions { Styles = broken });
+        failed.AddSheet("One").Write(new XlsxCell(0, 0, XlsxCellType.Number, "1"));
+
+        await Assert.ThrowsAnyAsync<Exception>(async () => await failed.CompleteAsync(Token));
+        Assert.False(failed.PackageClosed);
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await failed.CompleteAsync(Token));
+        await failed.DisposeAsync();
+        Assert.True(failed.PackageClosed);
+    }
 }

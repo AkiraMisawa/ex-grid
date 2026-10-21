@@ -172,6 +172,11 @@ public sealed class XlsxSheetReader : IDisposable
                 double? width = xml.GetAttribute("width") is { } w ? XlsxReader.Double(w, part) : null;
                 var hidden = XlsxReader.Bool(xml.GetAttribute("hidden"));
                 var style = xml.GetAttribute("style") is { } s ? XlsxReader.Int(s, part, Sheet.Name) : 0;
+                if (style < 0 || style >= owner.Styles.CellFormats.Count)
+                {
+                    throw new XlsxException(XlsxRefusal.Malformed, string.Create(CultureInfo.InvariantCulture,
+                        $"The columns {min} to {max} name the cell format {style}, which the styles do not hold."), part, Sheet.Name);
+                }
                 columns.Add(new XlsxColumn(min - 1, max - 1, width, hidden, style));
             }
             if (xml.NodeType == XmlNodeType.Element)
@@ -253,6 +258,11 @@ public sealed class XlsxSheetReader : IDisposable
         }
         if (r < 0 || r >= XlsxCellReference.MaxRows)
             throw new XlsxException(XlsxRefusal.Malformed, string.Create(CultureInfo.InvariantCulture, $"Row {r + 1} lies outside the sheet's rows."), part, Sheet.Name);
+        if (r <= row)
+        {
+            throw new XlsxException(XlsxRefusal.Malformed, string.Create(CultureInfo.InvariantCulture,
+                $"Row {r + 1} comes after row {row + 1}: a worksheet's rows are in order, each once."), part, Sheet.Name);
+        }
         row = r;
         column = -1;
     }
@@ -295,6 +305,16 @@ public sealed class XlsxSheetReader : IDisposable
         {
             throw new XlsxException(XlsxRefusal.Malformed, $"'{reference}' is not a cell of the sheet.", part, Sheet.Name);
         }
+        else if (row >= 0 && r != row)
+        {
+            throw new XlsxException(XlsxRefusal.Malformed, string.Create(CultureInfo.InvariantCulture, $"The cell is written inside row {row + 1}, not its own."),
+                part, Sheet.Name, reference);
+        }
+        else if (c <= column)
+        {
+            throw new XlsxException(XlsxRefusal.Malformed,
+                $"The cell comes after {XlsxCellReference.Format(r, column)}: a row's cells are in order, each once.", part, Sheet.Name, reference);
+        }
         row = r;
         column = c;
         owner.CountCell(Sheet, r, c);
@@ -310,6 +330,11 @@ public sealed class XlsxSheetReader : IDisposable
             _ => throw new XlsxException(XlsxRefusal.Malformed, $"'{type}' is not a cell type.", part, Sheet.Name, XlsxCellReference.Format(r, c)),
         };
         var styleIndex = style is null ? 0 : XlsxReader.Int(style, part, Sheet.Name, XlsxCellReference.Format(r, c));
+        if (styleIndex < 0 || styleIndex >= owner.Styles.CellFormats.Count)
+        {
+            throw new XlsxException(XlsxRefusal.Malformed, string.Create(CultureInfo.InvariantCulture,
+                $"The cell names the cell format {styleIndex}, which the styles do not hold."), part, Sheet.Name, XlsxCellReference.Format(r, c));
+        }
         string? value = null, text = null;
         XlsxFormula? formula = null;
         var rich = false;

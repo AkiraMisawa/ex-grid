@@ -61,6 +61,33 @@ internal static class XString
         return builder.ToString();
     }
 
+    /// <summary>
+    /// Whether XML 1.0 carries <paramref name="text"/>: as it is, or, when <paramref name="encoded"/>, once
+    /// <see cref="Encode"/> has escaped it. Escaping carries every control character, but no half of a surrogate pair
+    /// without the other.
+    /// </summary>
+    public static bool Carries(string text, bool encoded)
+    {
+        for (var i = 0; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (char.IsHighSurrogate(c))
+            {
+                if (i + 1 < text.Length && char.IsLowSurrogate(text[i + 1]))
+                {
+                    i++;
+                    continue;
+                }
+                return false;
+            }
+            if (char.IsLowSurrogate(c))
+                return false;
+            if (!encoded && ((c < 0x20 && c is not ('\t' or '\n' or '\r')) || c is '\uFFFE' or '\uFFFF'))
+                return false;
+        }
+        return true;
+    }
+
     /// <summary>A character XML 1.0 cannot carry, or a carriage return, which XML would turn into a line feed.</summary>
     private static bool Escaped(char c) => (c < 0x20 && c != '\t' && c != '\n') || c == '￾' || c == '￿';
 

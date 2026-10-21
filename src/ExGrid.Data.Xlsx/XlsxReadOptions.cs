@@ -26,9 +26,9 @@ public sealed class XlsxReadOptions
     public const long DefaultMaxCells = 10_000_000;
 
     /// <summary>
-    /// The uncompressed bytes the whole package may hold, every part counted: the sizes its zip declares,
-    /// and the bytes actually inflated, which a hostile zip may make larger than it declares. The
-    /// default is <see cref="DefaultMaxUncompressedBytes"/>.
+    /// The uncompressed bytes the whole package may hold, every part counted, as its zip declares them. A
+    /// part is never read past what it declares: a hostile zip may declare less than a part holds, and the
+    /// read refuses it there. The default is <see cref="DefaultMaxUncompressedBytes"/>.
     /// </summary>
     public long MaxUncompressedBytes { get; init; } = DefaultMaxUncompressedBytes;
 
@@ -38,7 +38,8 @@ public sealed class XlsxReadOptions
     /// </summary>
     public long MaxCells { get; init; } = DefaultMaxCells;
 
-    /// <summary>Told how far the read has come after every slice, and once more at the end of each worksheet.</summary>
+    /// <summary>Told how far the read has come after every slice, and once more at the end of the shared strings and of
+    /// each worksheet.</summary>
     public IProgress<XlsxProgress>? Progress { get; init; }
 
     /// <summary>
@@ -54,10 +55,14 @@ public sealed class XlsxReadOptions
     public Func<ValueTask>? Yield { get; init; }
 }
 
-/// <summary>How far a read has come.</summary>
-/// <param name="Sheet">The index of the worksheet being read, in the workbook's order, from zero.</param>
+/// <summary>How far a read has come: the shared strings' part while <see cref="XlsxReader.OpenAsync"/> reads it, then the
+/// worksheets'.</summary>
+/// <param name="Sheet">The index of the worksheet being read, in the workbook's order, from zero; -1 while the shared
+/// strings are read.</param>
 /// <param name="Sheets">The worksheets the workbook holds.</param>
 /// <param name="Cells">The cells read so far, every worksheet counted.</param>
-/// <param name="Bytes">The worksheets' uncompressed bytes read so far.</param>
-/// <param name="TotalBytes">The uncompressed bytes of every worksheet, as the zip declares them.</param>
+/// <param name="Bytes">The worksheets' uncompressed bytes read so far; while <paramref name="Sheet"/> is -1, the shared
+/// strings'.</param>
+/// <param name="TotalBytes">The uncompressed bytes of every worksheet, as the zip declares them; while
+/// <paramref name="Sheet"/> is -1, the shared strings'.</param>
 public readonly record struct XlsxProgress(int Sheet, int Sheets, long Cells, long Bytes, long TotalBytes);

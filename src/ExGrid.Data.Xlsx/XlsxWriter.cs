@@ -52,6 +52,7 @@ public sealed class XlsxWriter : IAsyncDisposable
     private readonly List<string> shared = [];
     private XlsxSheetWriter? current;
     private bool completed;
+    private bool packageClosed;
     private long sharedReferences;
 
     private XlsxWriter(Stream output, XlsxWriteOptions options)
@@ -60,6 +61,7 @@ public sealed class XlsxWriter : IAsyncDisposable
         this.options = options;
         styles = options.Styles ?? XlsxStyles.Default;
         Validate(styles);
+        Validate(options.DefinedNames);
         zip = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true);
     }
 
@@ -76,18 +78,26 @@ public sealed class XlsxWriter : IAsyncDisposable
     /// Begins the next worksheet, after the ones before it, ending the one being written. Its cells are then written in
     /// the order of the sheet: row by row, left to right.
     /// </summary>
-    /// <param name="name">The sheet's name: 1 to 31 characters, none of <c>[ ] : * ? / \</c>, not beginning or ending with
-    /// <c>'</c>, and no other sheet's in any case.</param>
-    /// <param name="columns">The column widths, or null.</param>
+    /// <param name="name">The sheet's name: 1 to 31 characters, none of <c>[ ] : * ? / \</c> and no control character or
+    /// half of a surrogate pair, not beginning or ending with <c>'</c>, and no other sheet's in any case.</param>
+    /// <param name="columns">The column widths, or null: ranges that do not overlap, each naming a cell format the styles
+    /// hold.</param>
     /// <param name="visibility">Whether the sheet is shown.</param>
     public XlsxSheetWriter AddSheet(string name, IReadOnlyList<XlsxColumn>? columns = null, XlsxSheetVisibility visibility = XlsxSheetVisibility.Visible)
     {
         ObjectDisposedException.ThrowIf(completed, this);
         CheckName(name);
-        foreach (var c in columns ?? [])
+        var last = -1;
+        foreach (var c in (columns ?? []).OrderBy(c => c.First))
         {
+            ArgumentNullException.ThrowIfNull(c, nameof(columns));
             if (c.First < 0 || c.Last < c.First || c.Last >= XlsxCellReference.MaxColumns)
                 throw new ArgumentException($"The column range {c.First} to {c.Last} lies outside the sheet's columns.", nameof(columns));
+            if (c.First <= last)
+                throw new ArgumentException($"The column range {c.First} to {c.Last} overlaps another, which ends at {last}.", nameof(columns));
+            if (c.StyleIndex < 0 || c.StyleIndex >= styles.CellFormats.Count)
+                throw new ArgumentException($"The column range {c.First} to {c.Last} names the cell format {c.StyleIndex}, which the styles do not hold.", nameof(columns));
+            last = c.Last;
         }
         current?.End();
         var index = sheets.Count;
@@ -109,9 +119,11 @@ public sealed class XlsxWriter : IAsyncDisposable
             throw new InvalidOperationException("A workbook holds at least one sheet; add one before completing it.");
         if (options.ActiveSheet < 0 || options.ActiveSheet >= sheets.Count)
             throw new InvalidOperationException($"The active sheet {options.ActiveSheet} is not one of the workbook's {sheets.Count} sheets.");
+        // Completed from here, whatever happens: nothing more is written. Should a part fail, the package is still open,
+        // and DisposeAsync closes it.
+        completed = true;
         current?.End();
         current = null;
-        completed = true;
         var dynamic = HasDynamicArrays;
         if (shared.Count > 0)
             Part("xl/sharedStrings.xml", WriteSharedStrings);
@@ -122,7 +134,7 @@ public sealed class XlsxWriter : IAsyncDisposable
         Part("xl/_rels/workbook.xml.rels", w => WriteWorkbookRelationships(w, dynamic));
         Part("_rels/.rels", WriteRootRelationships);
         Part("[Content_Types].xml", w => WriteContentTypes(w, dynamic));
-        zip.Dispose();
+        ClosePackage();
         await buffer.DrainAsync(output, cancellationToken).ConfigureAwait(false);
         await output.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -130,14 +142,24 @@ public sealed class XlsxWriter : IAsyncDisposable
     /// <summary>Abandons a workbook not completed, writing nothing more; the stream is left open, holding what was handed to it.</summary>
     public ValueTask DisposeAsync()
     {
-        if (!completed)
+        completed = true;
+        if (!packageClosed)
         {
-            completed = true;
             current?.Abandon();
-            zip.Dispose();
+            current = null;
+            ClosePackage();
         }
         return ValueTask.CompletedTask;
     }
+
+    private void ClosePackage()
+    {
+        packageClosed = true;
+        zip.Dispose();
+    }
+
+    /// <summary>Whether the package is closed: by <see cref="CompleteAsync"/>, or by <see cref="DisposeAsync"/>.</summary>
+    internal bool PackageClosed => packageClosed;
 
     // ---- what the sheet writers share ----------------------------------------------------------
 
@@ -361,6 +383,8 @@ public sealed class XlsxWriter : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(name);
         if (name.Length is 0 or > 31)
             throw new ArgumentException($"A sheet's name is 1 to 31 characters; '{name}' is {name.Length}.", nameof(name));
+        if (!XString.Carries(name, encoded: false) || name.Any(c => c < 0x20))
+            throw new ArgumentException("A sheet's name holds no control character and no half of a surrogate pair, which XML cannot carry.", nameof(name));
         if (name.IndexOfAny(['[', ']', ':', '*', '?', '/', '\\']) >= 0)
             throw new ArgumentException($"A sheet's name holds none of [ ] : * ? / \\; '{name}' does.", nameof(name));
         if (name[0] == '\'' || name[^1] == '\'')
@@ -382,9 +406,31 @@ public sealed class XlsxWriter : IAsyncDisposable
             var f = styles.CellFormats[i];
             if (f.FontId < 0 || f.FontId >= styles.Fonts.Count || f.FillId < 0 || f.FillId >= styles.Fills.Count
                 || f.BorderId < 0 || f.BorderId >= styles.Borders.Count || f.NumberFormatId < 0
-                || (f.NumberFormatId >= 164 && !styles.NumberFormats.ContainsKey(f.NumberFormatId)))
+                || (f.NumberFormatId >= StylesReader.FirstCustomNumberFormat && !styles.NumberFormats.ContainsKey(f.NumberFormatId)))
             {
                 throw new ArgumentException($"The cell format {i} names a font, fill, border or Number Format the styles do not hold.", nameof(styles));
+            }
+        }
+        // What the styles part writes as text is checked here, so that completing the workbook cannot fail on it.
+        if (styles.NumberFormats.Values.Any(code => code is null || !XString.Carries(code, encoded: true))
+            || styles.Fonts.Any(f => f.Name is { } name && !XString.Carries(name, encoded: false))
+            || styles.Fills.Any(f => f.Pattern is { } pattern && !XString.Carries(pattern, encoded: false)))
+        {
+            throw new ArgumentException(
+                "A Number Format, a font's name or a fill's pattern holds text XML cannot carry: a control character, or half of a surrogate pair.", nameof(styles));
+        }
+    }
+
+    private static void Validate(IReadOnlyList<XlsxDefinedName>? names)
+    {
+        foreach (var name in names ?? [])
+        {
+            if (name?.Name is not { Length: > 0 } text || name.Text is null)
+                throw new ArgumentException("A defined name has a name and a text.", nameof(names));
+            if (!XString.Carries(text, encoded: false) || text.Any(c => c < 0x20) || !XString.Carries(name.Text, encoded: true))
+            {
+                throw new ArgumentException(
+                    $"The defined name '{text}' holds a control character or half of a surrogate pair, which XML cannot carry.", nameof(names));
             }
         }
     }
@@ -468,6 +514,19 @@ public sealed class XlsxSheetWriter
         }
         if (cell.StyleIndex < 0 || cell.StyleIndex >= owner.Styles.CellFormats.Count)
             throw new ArgumentException($"The cell {cell.Reference} names the cell format {cell.StyleIndex}, which the styles do not hold.", nameof(cell));
+        // Every argument is checked before anything is written, so that a refused cell leaves the sheet as it was.
+        if (cell.Formula is { Kind: XlsxFormulaKind.Shared, SharedIndex: null })
+            throw new ArgumentException($"The cell {cell.Reference}'s shared formula names no group.", nameof(cell));
+        if (cell.Formula is { } f && (f.Text is null || !XString.Carries(f.Text, encoded: true) || (f.Reference is { } fr && !XString.Carries(fr, encoded: false))))
+            throw new ArgumentException($"The cell {cell.Reference}'s Formula holds text XML cannot carry.", nameof(cell));
+        var carried = cell.Type switch
+        {
+            XlsxCellType.SharedString or XlsxCellType.InlineString => cell.Text is null || XString.Carries(cell.Text, encoded: true),
+            XlsxCellType.FormulaString => cell.Value is null || XString.Carries(cell.Value, encoded: true),
+            _ => cell.Value is null || XString.Carries(cell.Value, encoded: false),
+        };
+        if (!carried)
+            throw new ArgumentException($"The cell {cell.Reference} holds text XML cannot carry: a control character, or half of a surrogate pair.", nameof(cell));
         if (cell.Row != row)
         {
             if (rowOpen)
@@ -528,8 +587,6 @@ public sealed class XlsxSheetWriter
         switch (formula.Kind)
         {
             case XlsxFormulaKind.Shared:
-                if (formula.SharedIndex is null)
-                    throw new ArgumentException($"The cell {cell.Reference}'s shared formula names no group.", nameof(cell));
                 xml.WriteAttributeString("t", "shared");
                 break;
             case XlsxFormulaKind.Array:

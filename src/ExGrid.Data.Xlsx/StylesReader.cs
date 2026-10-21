@@ -6,6 +6,9 @@ namespace ExGrid.Data.Xlsx;
 /// <summary>Reads the styles part as far as ADR-0330 §4 carries it, and nothing past it.</summary>
 internal static class StylesReader
 {
+    /// <summary>The first Number Format id a styles part defines for itself; the ones below it are built in.</summary>
+    internal const int FirstCustomNumberFormat = 164;
+
     public static XlsxStyles Read(Package package, string part)
     {
         var numberFormats = new Dictionary<int, string>();
@@ -77,6 +80,27 @@ internal static class StylesReader
             borders.AddRange(XlsxStyles.Default.Borders);
         if (cellFormats.Count == 0)
             cellFormats.AddRange(XlsxStyles.Default.CellFormats);
+        for (var i = 0; i < cellFormats.Count; i++)
+        {
+            var f = cellFormats[i];
+            void Check(string what, int id, int count)
+            {
+                if (id < 0 || id >= count)
+                {
+                    throw new XlsxException(XlsxRefusal.Malformed, string.Create(CultureInfo.InvariantCulture,
+                        $"The cell format {i} names the {what} {id}, which the styles do not hold."), part);
+                }
+            }
+            Check("font", f.FontId, fonts.Count);
+            Check("fill", f.FillId, fills.Count);
+            Check("border", f.BorderId, borders.Count);
+            // Below 164 a Number Format is built in, or one the part may redefine; from 164 it is the part's own.
+            if (f.NumberFormatId < 0 || (f.NumberFormatId >= FirstCustomNumberFormat && !numberFormats.ContainsKey(f.NumberFormatId)))
+            {
+                throw new XlsxException(XlsxRefusal.Malformed, string.Create(CultureInfo.InvariantCulture,
+                    $"The cell format {i} names the Number Format {f.NumberFormatId}, which the styles do not hold."), part);
+            }
+        }
         return new XlsxStyles(numberFormats, fonts, fills, borders, cellFormats, indexed);
     }
 

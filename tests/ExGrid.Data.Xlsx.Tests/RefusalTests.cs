@@ -242,6 +242,118 @@ public class RefusalTests
         Assert.Equal(XlsxReadOptions.DefaultMaxCells, options.MaxCells);
     }
 
+    // ---- what the first cut let through -----------------------------------------------------------
+
+    [Fact] // ADR-0330 §9: a part whose compressed bytes cannot be inflated is refused by name, as malformed, wherever it is read
+    public async Task A_part_that_cannot_be_inflated_is_refused_by_name()
+    {
+        var sst = $"""<sst xmlns="{Main}"><si><t>only</t></si></sst>""";
+
+        var sheet = await RefusalAsync(Damage(Book(OneCell), "xl/worksheets/sheet1.xml"));
+        var strings = await RefusalAsync(Damage(Book(OneCell, sharedStrings: sst), "xl/sharedStrings.xml"));
+        var types = await RefusalAsync(Damage(Book(OneCell), "[Content_Types].xml"));
+        var rels = await RefusalAsync(Damage(Book(OneCell), "xl/_rels/workbook.xml.rels"));
+
+        Assert.Equal((XlsxRefusal.Malformed, "xl/worksheets/sheet1.xml", "Sheet1"), (sheet.Reason, sheet.Part, sheet.Sheet));
+        Assert.StartsWith("Sheet 'Sheet1': The part's compressed bytes cannot be inflated: ", sheet.Message);
+        Assert.IsType<InvalidDataException>(sheet.InnerException);
+        Assert.Equal((XlsxRefusal.Malformed, "xl/sharedStrings.xml"), (strings.Reason, strings.Part));
+        Assert.Equal((XlsxRefusal.Malformed, "[Content_Types].xml"), (types.Reason, types.Part));
+        Assert.Equal((XlsxRefusal.Malformed, "xl/_rels/workbook.xml.rels"), (rels.Reason, rels.Part));
+    }
+
+    public static TheoryData<string, string, string?> MisplacedCells => new()
+    {
+        { """<row r="1"><c r="A1"><v>1</v></c><c r="A1"><v>2</v></c></row>""", "Sheet 'Sheet1', cell A1: The cell comes after A1: a row's cells are in order, each once.", "A1" },
+        { """<row r="1"><c r="B1"><v>1</v></c><c r="A1"><v>2</v></c></row>""", "Sheet 'Sheet1', cell A1: The cell comes after B1: a row's cells are in order, each once.", "A1" },
+        { """<row r="1"><c><v>1</v></c><c r="A1"><v>2</v></c></row>""", "Sheet 'Sheet1', cell A1: The cell comes after A1: a row's cells are in order, each once.", "A1" },
+        { """<row r="1"><c r="A2"><v>1</v></c></row>""", "Sheet 'Sheet1', cell A2: The cell is written inside row 1, not its own.", "A2" },
+        { """<row r="2"><c r="A2"><v>1</v></c></row><row r="1"><c r="A1"><v>2</v></c></row>""", "Sheet 'Sheet1': Row 1 comes after row 2: a worksheet's rows are in order, each once.", null },
+        { """<row r="1"><c r="A1"><v>1</v></c></row><row r="1"><c r="B1"><v>2</v></c></row>""", "Sheet 'Sheet1': Row 1 comes after row 1: a worksheet's rows are in order, each once.", null },
+    };
+
+    [Theory] // ADR-0330 §9: a cell written twice, out of order or inside another row is refused by name, never read into a place it does not hold
+    [MemberData(nameof(MisplacedCells))]
+    public async Task A_cell_out_of_place_is_refused_by_name(string rows, string message, string? cell)
+    {
+        var refusal = await RefusalAsync(Book(Sheet(rows)));
+
+        Assert.Equal(XlsxRefusal.Malformed, refusal.Reason);
+        Assert.Equal(message, refusal.Message);
+        Assert.Equal(cell, refusal.Cell);
+    }
+
+    private static string Styles(string xf, string numFmts = "")
+        => $"""
+           <styleSheet xmlns="{Main}">{numFmts}<fonts count="1"><font/></fonts><fills count="2"><fill/><fill/></fills>
+           <borders count="1"><border/></borders><cellXfs count="2"><xf/>{xf}</cellXfs></styleSheet>
+           """;
+
+    [Fact] // ADR-0330 §4: a cell naming a cell format the styles do not hold, or a cell format naming a font, fill, border or custom Number Format they do not, is refused by name
+    public async Task A_style_the_styles_do_not_hold_is_refused_by_name()
+    {
+        var past = await RefusalAsync(Book(Sheet("""<row r="1"><c r="A1" s="2"><v>1</v></c></row>"""), styles: Styles("<xf/>")));
+        var negative = await RefusalAsync(Book(Sheet("""<row r="1"><c r="B1" s="-1"><v>1</v></c></row>""")));
+        var column = await RefusalAsync(Book(Sheet("", head: """<cols><col min="1" max="2" style="3"/></cols>"""), styles: Styles("<xf/>")));
+        var font = await RefusalAsync(Book(OneCell, styles: Styles("""<xf fontId="1"/>""")));
+        var fill = await RefusalAsync(Book(OneCell, styles: Styles("""<xf fillId="-1"/>""")));
+        var border = await RefusalAsync(Book(OneCell, styles: Styles("""<xf borderId="1"/>""")));
+        var format = await RefusalAsync(Book(OneCell, styles: Styles("""<xf numFmtId="200"/>""")));
+        var builtIn = Book(Sheet("""<row r="1"><c r="A1" s="1"><v>1</v></c></row>"""), styles: Styles("""<xf numFmtId="14"/>"""));
+        var custom = Book(Sheet("""<row r="1"><c r="A1" s="1"><v>1</v></c></row>"""),
+            styles: Styles("""<xf numFmtId="200"/>""", """<numFmts count="1"><numFmt numFmtId="200" formatCode="0.000"/></numFmts>"""));
+
+        Assert.Equal((XlsxRefusal.Malformed, "A1"), (past.Reason, past.Cell));
+        Assert.Equal("Sheet 'Sheet1', cell A1: The cell names the cell format 2, which the styles do not hold.", past.Message);
+        Assert.Equal((XlsxRefusal.Malformed, "B1"), (negative.Reason, negative.Cell));
+        Assert.Equal("Sheet 'Sheet1': The columns 1 to 2 name the cell format 3, which the styles do not hold.", column.Message);
+        Assert.Equal((XlsxRefusal.Malformed, "xl/styles.xml"), (font.Reason, font.Part));
+        Assert.Equal("Part 'xl/styles.xml': The cell format 1 names the font 1, which the styles do not hold.", font.Message);
+        Assert.Equal("Part 'xl/styles.xml': The cell format 1 names the fill -1, which the styles do not hold.", fill.Message);
+        Assert.Equal("Part 'xl/styles.xml': The cell format 1 names the border 1, which the styles do not hold.", border.Message);
+        Assert.Equal("Part 'xl/styles.xml': The cell format 1 names the Number Format 200, which the styles do not hold.", format.Message);
+        using (var reader = await OpenAsync(builtIn))
+            Assert.Equal(1, Assert.Single((await reader.ReadSheetAsync(0)).Cells).StyleIndex);
+        using (var reader = await OpenAsync(custom))
+            Assert.Equal("0.000", reader.Styles.NumberFormats[200]);
+    }
+
+    [Fact] // ADR-0330 §4: an encrypted workbook is told from a legacy one by its header and directory alone, never by reading the file whole, whether its stream seeks or not
+    public async Task An_ole_file_is_classified_without_being_read_whole()
+    {
+        byte[] Padded(byte[] ole) => [.. ole, .. new byte[4 << 20]];
+        var seeking = new Counting(Padded(Ole("Root Entry", "\u0006DataSpaces", "Version", "DataSpaceMap", "DataSpaceInfo", "EncryptedPackage")), seekable: true);
+        var forward = new Counting(Padded(Ole("Root Entry", "\u0006DataSpaces", "Version", "DataSpaceMap", "DataSpaceInfo", "EncryptedPackage")), seekable: false);
+        var legacy = new Counting(Padded(Ole("Root Entry", "Workbook")), seekable: false);
+
+        var a = await Assert.ThrowsAsync<XlsxException>(async () => await XlsxReader.OpenAsync(seeking, cancellationToken: Token));
+        var b = await Assert.ThrowsAsync<XlsxException>(async () => await XlsxReader.OpenAsync(forward, cancellationToken: Token));
+        var c = await Assert.ThrowsAsync<XlsxException>(async () => await XlsxReader.OpenAsync(legacy, cancellationToken: Token));
+
+        Assert.Equal(XlsxRefusal.Encrypted, a.Reason);
+        Assert.Equal(XlsxRefusal.Encrypted, b.Reason);
+        Assert.Equal(XlsxRefusal.Legacy, c.Reason);
+        // The header, the FAT and two directory sectors: a few sectors of the 4 MiB.
+        Assert.InRange(seeking.BytesRead, 1, 4 * 512 + 8);
+        Assert.InRange(forward.BytesRead, 1, 4 * 512);
+        Assert.InRange(legacy.BytesRead, 1, 4 * 512);
+        Assert.True(seeking.Disposed && forward.Disposed && legacy.Disposed);
+    }
+
+    [Fact] // ADR-0330 §9: a stored part, which the platform reads to its compressed size, is refused past the size its zip declares, naming the part and the Sheet
+    public async Task A_stored_part_that_holds_more_than_it_declares_is_refused()
+    {
+        var sheet = Sheet(string.Concat(Enumerable.Range(1, 2_000).Select(i => $"""<row r="{i}"><c r="A{i}"><v>{i}</v></c></row>""")));
+        var book = Stored(Book(sheet));
+        Lie(book, "xl/worksheets/sheet1.xml", Encoding.UTF8.GetByteCount(sheet), 1_000);
+
+        var refusal = await RefusalAsync(book);
+
+        Assert.Equal(XlsxRefusal.TooLarge, refusal.Reason);
+        Assert.Equal(("xl/worksheets/sheet1.xml", "Sheet1"), (refusal.Part, refusal.Sheet));
+        Assert.Equal("Sheet 'Sheet1': The part inflates to more than the 1,000 bytes the zip declares for it.", refusal.Message);
+    }
+
     // ---- files built for the refusals ------------------------------------------------------------
 
     /// <summary>An OLE compound file (MS-CFB, version 3) whose directory lists <paramref name="names"/>, four to a sector.</summary>
@@ -280,6 +392,88 @@ public class RefusalTests
             entry[66] = (byte)(i == 0 ? 5 : 2);
         }
         return file;
+    }
+
+    /// <summary>The same zip, every part stored rather than deflated.</summary>
+    private static byte[] Stored(byte[] zip)
+    {
+        using var source = new System.IO.Compression.ZipArchive(new MemoryStream(zip), System.IO.Compression.ZipArchiveMode.Read);
+        using var memory = new MemoryStream();
+        using (var target = new System.IO.Compression.ZipArchive(memory, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var entry in source.Entries)
+            {
+                using var from = entry.Open();
+                using var to = target.CreateEntry(entry.FullName, System.IO.Compression.CompressionLevel.NoCompression).Open();
+                from.CopyTo(to);
+            }
+        }
+        return memory.ToArray();
+    }
+
+    /// <summary>Makes <paramref name="part"/>'s deflate stream one that cannot be inflated: its first block's type is the
+    /// reserved one.</summary>
+    private static byte[] Damage(byte[] zip, string part)
+    {
+        var name = Encoding.UTF8.GetBytes(part);
+        for (var at = 0; at + 30 < zip.Length; at++)
+        {
+            if (BinaryPrimitives.ReadUInt32LittleEndian(zip.AsSpan(at)) != 0x04034b50)
+                continue;
+            var nameLength = BinaryPrimitives.ReadUInt16LittleEndian(zip.AsSpan(at + 26));
+            var extraLength = BinaryPrimitives.ReadUInt16LittleEndian(zip.AsSpan(at + 28));
+            if (nameLength == name.Length && zip.AsSpan(at + 30, nameLength).SequenceEqual(name))
+            {
+                Assert.Equal(8, BinaryPrimitives.ReadUInt16LittleEndian(zip.AsSpan(at + 8)));
+                zip[at + 30 + nameLength + extraLength] = 0b111;
+                return zip;
+            }
+        }
+        throw new InvalidOperationException($"The zip has no part '{part}'.");
+    }
+
+    /// <summary>A stream over <paramref name="bytes"/> that counts what is read from it, seeking or not.</summary>
+    private sealed class Counting(byte[] bytes, bool seekable) : Stream
+    {
+        private readonly MemoryStream inner = new(bytes, writable: false);
+
+        public long BytesRead { get; private set; }
+
+        public bool Disposed { get; private set; }
+
+        public override int Read(Span<byte> buffer)
+        {
+            var n = inner.Read(buffer);
+            BytesRead += n;
+            return n;
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan(offset, count));
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) => new(Read(buffer.Span));
+
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            => Task.FromResult(Read(buffer.AsSpan(offset, count)));
+
+        public override bool CanRead => true;
+        public override bool CanSeek => seekable;
+        public override bool CanWrite => false;
+        public override long Length => seekable ? inner.Length : throw new NotSupportedException();
+        public override long Position
+        {
+            get => seekable ? inner.Position : throw new NotSupportedException();
+            set => inner.Position = seekable ? value : throw new NotSupportedException();
+        }
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => seekable ? inner.Seek(offset, origin) : throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        protected override void Dispose(bool disposing)
+        {
+            Disposed = true;
+            base.Dispose(disposing);
+        }
     }
 
     /// <summary>Rewrites the uncompressed size the zip declares for <paramref name="part"/>, in its local header and its central

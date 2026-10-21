@@ -9,8 +9,9 @@ file layer of the Ex family's `.xlsx` support: ExSheet maps a workbook to its ow
   `_xlfn.` prefixes), a style an index into the styles part. Nothing is interpreted.
 - **A worksheet is read as a stream**, a batch of cells at a time, never as a document. The shared
   strings are the one part held whole, because cells refer to them by index.
-- **Reading works in slices**, reporting progress and yielding between them, so a browser
-  application keeps painting while a large file is read.
+- **Reading works in slices**, reporting progress and yielding between them — the shared strings
+  as `OpenAsync` reads them, then each worksheet — so a browser application keeps painting while a
+  large file is read.
 - **A file it cannot read faithfully is refused by name**, and nothing of it is read: not a zip,
   a workbook with macros (`.xlsm`), a binary workbook (`.xlsb`), an Excel 97–2003 workbook
   (`.xls`), an encrypted workbook, Strict Open XML, a part that declares a DTD, a part that is not
@@ -56,7 +57,9 @@ worksheet's cells: its column widths come first, and `OtherElements` lists what 
 (merged cells, conditional formatting, notes and the rest), none of which is read.
 
 A stream that cannot seek — a browser's `IBrowserFile` stream, a request body — is copied into
-memory first, as far as the size limit allows.
+memory first, as far as the size limit allows. An Excel 97–2003 or encrypted file is told apart
+by its header and directory alone: only those sectors are read, and a stream that cannot seek is
+read no further than the last of them.
 
 ### Limits
 
@@ -65,7 +68,7 @@ an application raises them for files it trusts.
 
 | Option | Default | Counts |
 |---|---|---|
-| `MaxUncompressedBytes` | 1 GiB | every part's uncompressed bytes, as the zip declares them and as they inflate |
+| `MaxUncompressedBytes` | 1 GiB | every part's uncompressed bytes, as the zip declares them; a part is never read past what it declares |
 | `MaxCells` | 10,000,000 | the cells of every worksheet, as they are read |
 
 ### Styles and colours
