@@ -1,7 +1,11 @@
 #nullable enable
 const ExSheet.Engine.WorkbookDocument.CurrentVersion = 1 -> int
 const ExSheet.Engine.WorkbookDocument.OldestReadableVersion = 1 -> int
+ExSheet.Engine.Entry.MovedBy(int rows, int columns) -> ExSheet.Engine.Entry!
+ExSheet.Engine.Entry.UnboundNames.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExSheet.Engine.Entry.UndeclaredFunctions.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExSheet.Engine.Sheet.Workbook.get -> ExSheet.Engine.Workbook!
+ExSheet.Engine.SheetDocument.SheetDocument(System.Globalization.CultureInfo! culture, string! name, System.Collections.Generic.IEnumerable<ExSheet.Engine.SheetDocumentCell!>! cells) -> void
 ExSheet.Engine.SheetRefusalReason.LastSheet = 7 -> ExSheet.Engine.SheetRefusalReason
 ExSheet.Engine.SheetRefusalReason.SheetNameTaken = 6 -> ExSheet.Engine.SheetRefusalReason
 ExSheet.Engine.SheetRefusalReason.SheetNotNamed = 8 -> ExSheet.Engine.SheetRefusalReason
@@ -42,6 +46,7 @@ ExSheet.Engine.WorkbookDocument.Sheets.get -> System.Collections.Generic.IReadOn
 ExSheet.Engine.WorkbookDocument.Shown.get -> string!
 ExSheet.Engine.WorkbookDocument.ToJson() -> string!
 ExSheet.Engine.WorkbookDocument.Version.get -> int
+ExSheet.Engine.WorkbookDocument.WorkbookDocument(System.Globalization.CultureInfo! culture, string! shown, System.Collections.Generic.IEnumerable<ExSheet.Engine.SheetDocument!>! sheets) -> void
 ExSheet.Engine.WorkbookStep
 ExSheet.Engine.WorkbookStep.Change.get -> ExSheet.Engine.WorkbookChange!
 ExSheet.Engine.WorkbookStep.IsUndone.get -> bool

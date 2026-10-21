@@ -1,12 +1,15 @@
 using System.Globalization;
 using ExGrid.Data.Xlsx;
+using ExSheet.Engine;
+using ExSheet.Xlsx;
 
 namespace PackageSmoke;
 
 /// <summary>
 /// A workbook written and read back through the packed ExGrid.Data.Xlsx, as a Consumer's server and browser take it
 /// (ADR-0330 §1, §2): two sheets, the second shown, shared and inline text, a number, a boolean, an error, a shared
-/// formula, a dynamic array, a style with a theme colour, and a column width. check.sh runs it through
+/// formula, a dynamic array, a style with a theme colour, and a column width; then the same workbook is opened through the
+/// packed ExSheet.Xlsx as a Workbook Document, and computed by the packed engine. check.sh runs it through
 /// <c>RoundTrip/</c> and fails when what is read back differs; the Blazor application beside it compiles it as a browser
 /// takes the package.
 /// </summary>
@@ -43,6 +46,7 @@ internal static class XlsxRoundTrip
             await writer.AddSheet("Desks").WriteAsync(second, token);
             await writer.CompleteAsync(token);
         }
+        var file = stream.ToArray();
         stream.Position = 0;
 
         var differences = new List<string>();
@@ -58,7 +62,29 @@ internal static class XlsxRoundTrip
             differences.Add("the fill's theme colour did not resolve");
         Compare(differences, "Trades", first, await reader.ReadSheetAsync(0));
         Compare(differences, "Desks", second, await reader.ReadSheetAsync(1));
+        await OpenAsync(differences, file, token);
         return differences;
+    }
+
+    /// <summary>The workbook opened as ExSheet opens it (ADR-0330 §3, §4): its Sheets, the one shown, and every Value computed again.</summary>
+    private static async Task OpenAsync(List<string> differences, byte[] file, CancellationToken token)
+    {
+        var (document, report) = await XlsxWorkbookReader.ReadAsync(new MemoryStream(file), CultureInfo.InvariantCulture, cancellationToken: token);
+        if (!document.Sheets.Select(s => s.Name).SequenceEqual(["Trades", "Desks"]) || document.Shown != "Desks")
+            differences.Add($"ExSheet.Xlsx opened the sheets as {string.Join(", ", document.Sheets.Select(s => s.Name))}, '{document.Shown}' shown");
+        var trades = Workbook.Open(document).Sheets[0];
+        (string Cell, Value Value)[] expected =
+        [
+            ("B2", Value.FromNumber(1000000.25)), ("B3", Value.FromNumber(2000000.5)), ("B4", Value.FromNumber(4000001)),
+            ("A3", Value.FromBoolean(true)), ("A4", Value.FromError(ErrorValue.NA)), ("A5", Value.FromNumber(1)), ("A6", Value.FromNumber(2)),
+        ];
+        foreach (var (cell, value) in expected)
+        {
+            if (trades.GetValue(CellAddress.Parse(cell)) is var got && got != value)
+                differences.Add($"ExSheet.Xlsx opened Trades!{cell} as {got}, not {value}");
+        }
+        if (report.UnsupportedFunctions.Count != 0)
+            differences.Add("ExSheet.Xlsx reported a function the engine supports as unsupported");
     }
 
     private static void Compare(List<string> differences, string name, XlsxCell[] written, XlsxWorksheet read)

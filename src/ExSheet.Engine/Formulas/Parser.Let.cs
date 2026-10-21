@@ -100,6 +100,7 @@ internal sealed partial class Parser
         var bound = (NameNode)argument;
         // Its own name is no unbound use of one.
         _wideNames.RemoveAll(w => ReferenceEquals(w.Name, bound));
+        _names.Remove(bound);
         return bound.Name;
     }
 

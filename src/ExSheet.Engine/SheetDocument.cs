@@ -44,6 +44,55 @@ public sealed class SheetDocument
         Cells = cells;
     }
 
+    /// <summary>
+    /// A Sheet Document built from its parts, as a reader of another format builds one (ADR-0330): a
+    /// Sheet named <paramref name="name"/> holding <paramref name="cells"/> under
+    /// <paramref name="culture"/>, declaring no Linked Table. The cells are recorded in row-major
+    /// order whatever order they come in. Its column and row formats and its column widths are
+    /// set as properties.
+    /// </summary>
+    /// <param name="culture">The culture its constants were read under, and its Values are shown under; one this engine knows by name.</param>
+    /// <param name="name">The Sheet's name (<see cref="Sheet.IsValidName"/>).</param>
+    /// <param name="cells">The cells that hold something.</param>
+    /// <exception cref="ArgumentException">
+    /// The culture is not one this engine knows by name, the name is not one a Sheet can have, or a
+    /// cell appears twice. Nothing is guessed.
+    /// </exception>
+    public SheetDocument(CultureInfo culture, string name, IEnumerable<SheetDocumentCell> cells)
+    {
+        ArgumentNullException.ThrowIfNull(culture);
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(cells);
+        CheckCulture(culture, nameof(culture));
+        Sheet.CheckName(name, nameof(name));
+        var list = new List<SheetDocumentCell>();
+        var seen = new HashSet<CellAddress>();
+        foreach (var cell in cells)
+        {
+            ArgumentNullException.ThrowIfNull(cell, nameof(cells));
+            if (!seen.Add(cell.Address)) throw new ArgumentException($"The cell {cell.Address} appears twice.", nameof(cells));
+            list.Add(cell);
+        }
+        list.Sort((a, b) => a.Address.CompareTo(b.Address));
+        Culture = culture.Name;
+        Name = name;
+        LinkedTables = [];
+        Cells = list;
+    }
+
+    /// <summary>Refuses a culture a document could not be opened under again: one this engine does not know by its name.</summary>
+    internal static void CheckCulture(CultureInfo culture, string parameter)
+    {
+        try
+        {
+            ResolveCulture(culture.Name);
+        }
+        catch (SheetDocumentException e)
+        {
+            throw new ArgumentException(e.Message, parameter, e);
+        }
+    }
+
     /// <summary>The format version the document is written in: <see cref="CurrentVersion"/>, whatever version it was read from.</summary>
     public int Version => CurrentVersion;
 

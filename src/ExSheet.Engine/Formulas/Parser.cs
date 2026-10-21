@@ -30,6 +30,9 @@ internal sealed partial class Parser
     /// </summary>
     private readonly List<(NameNode Name, LetScope[] Around)> _wideNames = [];
 
+    /// <summary>Every name read as an operand, in the text's order: a <c>LET</c>'s, or one nothing binds (<see cref="UnboundNames"/>).</summary>
+    private readonly List<NameNode> _names = [];
+
     private Parser(string formula, List<Token> tokens)
     {
         _formula = formula;
@@ -53,6 +56,28 @@ internal sealed partial class Parser
         if (parser.Peek.Kind != TokenKind.End) throw parser.Unexpected();
         parser.RefuseUnboundWideNames();
         return node;
+    }
+
+    /// <summary>
+    /// The names a Formula reads that nothing in it binds, in the text's order, each once without regard
+    /// to case: in Excel a defined name, or <c>#NAME?</c> where none is defined; in ExSheet, which
+    /// defines none, <c>#NAME?</c> (ADR-0047, ADR-0181). A name of another script that a <c>LET</c> binds
+    /// later in its text is bound; one no <c>LET</c> binds refuses the Formula, as <see cref="Parse(string)"/> does.
+    /// </summary>
+    public static IReadOnlyList<string> UnboundNames(string formula)
+    {
+        if (formula.Length == 0 || formula[0] != '=') throw new FormulaSyntaxException(formula, 0, "a Formula begins with '='.");
+        var parser = new Parser(formula, Lexer.Tokenize(formula, 1));
+        if (parser.Peek.Kind == TokenKind.End) throw new FormulaSyntaxException(formula, 1, "the Formula is empty.");
+        if (Lexer.WideNameOutsideLet(parser._tokens) is { } wide) throw parser.NotSyntax(wide.Position + Lexer.FirstWide(wide.Text));
+        parser.ParseComparison();
+        if (parser.Peek.Kind != TokenKind.End) throw parser.Unexpected();
+        parser.RefuseUnboundWideNames();
+        return parser._names
+            .Where(n => n.Binding is null && Lexer.FirstWide(n.Name) < 0)
+            .Select(n => n.Name)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
     private Token Peek => _tokens[_at];
@@ -230,6 +255,7 @@ internal sealed partial class Parser
                 if (token.Text.Equals("TRUE", StringComparison.OrdinalIgnoreCase)) return new BooleanNode(true);
                 if (token.Text.Equals("FALSE", StringComparison.OrdinalIgnoreCase)) return new BooleanNode(false);
                 var name = new NameNode(token.Text, token.Position, Resolve(token.Text));
+                _names.Add(name);
                 if (name.Binding is null && Lexer.FirstWide(token.Text) >= 0) _wideNames.Add((name, [.. _lets]));
                 return name;
             default:
