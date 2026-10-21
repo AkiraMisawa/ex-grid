@@ -441,6 +441,124 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         }));
     }
 
+    /// <summary>
+    /// The reference Replace All (ADR-0332 §3), for the grid's <c>OnReplace</c>:
+    /// <see cref="Finding.GridReplace.Plan{TRow}"/> over the current result, and, when every match can
+    /// be written, the rewritten rows applied as one change — one requery, one move of the Row
+    /// Sequence Version at most, the user's own write under a Row Key as <see cref="ReplaceRow"/> is.
+    /// When any match cannot be written, nothing is applied and the answer names every such cell. A
+    /// request read under another version than this source's plans nothing, and the grid refuses the
+    /// answer as the order having moved. Keep the answer's <see cref="Finding.GridReplaceAnswer{TRow}.Changes"/>
+    /// as one step of your undo stack, and hand the grid its <see cref="Finding.GridReplaceAnswer{TRow}.Result"/>.
+    /// </summary>
+    /// <param name="request">The grid's Replace Request.</param>
+    /// <param name="write">Your write of one cell: the row as written so far, the column's name and
+    /// the replaced entry, answered with a new instance holding it or a refusal in your words — the
+    /// same write your <c>OnEdit</c> makes of an Edit Intent. It must only plan; this source applies.</param>
+    /// <param name="entryOf">The entry a cell's editor opens with, where you pass the grid an
+    /// <c>EditorTextOf</c>: the row and the column's name, answered with the entry, or null for the
+    /// displayed text. Null: every entry is the column's displayed text
+    /// (<see cref="ColumnInfo{TRow}.TextOf(TRow)"/>), which is what the editor opens with by default.</param>
+    public Finding.GridReplaceAnswer<TRow> Replace(
+        Finding.GridReplaceRequest request,
+        Func<TRow, string, string, Finding.GridReplaceWrite<TRow>> write,
+        Func<TRow, string, string?>? entryOf = null)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(write);
+        var columns = _columns ?? [];
+        var answer = Finding.GridReplace.Plan(Window, RowSequenceVersion, request, name =>
+        {
+            foreach (var column in columns)
+            {
+                if (column.Name != name)
+                    continue;
+                if (!column.IsQueryable)
+                    return null;
+                return entryOf is null ? column.TextOf : row => entryOf(row, name) ?? column.TextOf(row);
+            }
+            return null;
+        }, write);
+        if (answer.Changes.Count > 0)
+            ReplaceRows(answer.Changes);
+        return answer;
+    }
+
+    /// <summary>Applies a Replace All's rewritten rows as one change (ADR-0332 §3): each by identity,
+    /// as <see cref="ReplaceRow"/> places one, every one checked before any is taken in, and the
+    /// result requeried once.</summary>
+    private void ReplaceRows(IReadOnlyList<Finding.GridReplacedRow<TRow>> changes)
+    {
+        RequireColumns();
+        if (_keyed is { } keyed)
+        {
+            bool raise;
+            lock (_gate)
+            {
+                var changed = new List<(object Key, TRow Row)>(changes.Count);
+                var replacements = new List<TRow>(changes.Count);
+                foreach (var (row, replacement) in changes)
+                {
+                    var key = keyed.KeyOf(row, "The row");
+                    if (!keyed.TryGet(key, out var held, out _) || !ReferenceEquals(held, row))
+                    {
+                        throw new ArgumentException(
+                            $"The row under the Row Key '{key}' is not the version this source holds: a Replace All is planned " +
+                            "on the rows as they are held (ADR-0141/0332).", nameof(changes));
+                    }
+                    if (!Equals(keyed.KeyOf(replacement, "The replacement"), key))
+                    {
+                        throw new ArgumentException(
+                            $"A replacement changes the Row Key '{key}'. A Row Key stays the same when a row's data changes (ADR-0140).",
+                            nameof(changes));
+                    }
+                    changed.Add((key, replacement));
+                    replacements.Add(replacement);
+                }
+                CheckValues(replacements);
+                Fold(keyed, new ChangePlan([], changed, [], []), byUser: true);
+                raise = PublishPending();
+            }
+            if (raise)
+                StateChanged?.Invoke();
+            return;
+        }
+
+        var index = new Dictionary<object, int>(_rows.Length, ReferenceEqualityComparer.Instance);
+        for (var i = 0; i < _rows.Length; i++)
+            index.TryAdd(_rows[i]!, i);
+        var at = new int[changes.Count];
+        for (var i = 0; i < changes.Count; i++)
+        {
+            if (!index.TryGetValue(changes[i].Before!, out at[i]))
+            {
+                throw new ArgumentException(
+                    "A rewritten row is not in this source: a Replace All is planned on the rows this source holds (ADR-0332).",
+                    nameof(changes));
+            }
+        }
+        // What each new instance stands for, so the sequence compares as one edit per row.
+        var stoodFor = new Dictionary<object, object>(changes.Count, ReferenceEqualityComparer.Instance);
+        for (var i = 0; i < changes.Count; i++)
+        {
+            var (row, replacement) = changes[i];
+            _rows[at[i]] = replacement;
+            Marks.Replaced(at[i], row, replacement);
+            stoodFor[replacement!] = row!;
+        }
+        var next = GridQueryEngine.Apply(_rows, _columns!, Filter, Sorts);
+        var sequenceChanged = next.Count != Window.Count;
+        for (var i = 0; !sequenceChanged && i < next.Count; i++)
+        {
+            var was = stoodFor.TryGetValue(next[i]!, out var old) ? old : next[i];
+            sequenceChanged = !ReferenceEquals(was, Window[i]);
+        }
+        if (sequenceChanged)
+            RowSequenceVersion++;
+        Window = next;
+        StateChanged?.Invoke();
+    }
+
     /// <summary>Always: every row is in hand (ADR-0130).</summary>
     public bool CanSummarize => true;
 

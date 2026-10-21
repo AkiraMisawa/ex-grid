@@ -123,10 +123,11 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
     {
         var cut = RenderGrid();
         var attach = JSInterop.Invocations.Last(i => i.Identifier == "attach");
-        Assert.Equal(false, attach.Arguments[^2]);
+        // leaveDeclared: before the gate sets and the Replace claim (ADR-0332), the last two.
+        Assert.Equal(false, attach.Arguments[^3]);
 
         cut.Render(ps => ps.Add(g => g.OnLeave, () => { }));
-        Assert.Equal(true, Js.ClaimsTold.Invocations.Last().Arguments[^1]);
+        Assert.Equal(true, Js.ClaimsTold.Invocations.Last().Arguments[^2]);
         var passed = Js.KeysPassedOut.Invocations.Count;
 
         await cut.InvokeAsync(cut.Instance.PassKeysOutAsync);

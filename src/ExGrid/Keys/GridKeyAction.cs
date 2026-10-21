@@ -88,6 +88,10 @@ internal enum GridKeyKind
     /// Claimed on every grid.</summary>
     Find,
 
+    /// <summary>Ctrl+H: the find panel with Replace, or a refusal where no Replace can land
+    /// (ADR-0332 §2). Claimed on every grid.</summary>
+    Replace,
+
     /// <summary>Ctrl+. (period): move the Focus to the next corner of the range holding it,
     /// clockwise; the Selection does not change (ADR-0052).</summary>
     MoveFocusToNextCorner,

@@ -631,7 +631,7 @@ public class ShippedStylesheetTests
             .Where(line => line.Length > 0 && !char.IsWhiteSpace(line[0]) && !line.StartsWith("//", StringComparison.Ordinal)
                 && !line.StartsWith("/**", StringComparison.Ordinal))
             .ToList();
-        Assert.Equal(["export function stamp() {", "}", "export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared, gateKeys) {", "}"], topLevel);
+        Assert.Equal(["export function stamp() {", "}", "export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared, gateKeys, canReplace) {", "}"], topLevel);
     }
 
     [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
@@ -1323,7 +1323,7 @@ public class ShippedStylesheetTests
         // hands it, at attach or re-told through setClaims, and that set is consulted only
         // while no edit is open. While one is, the editing sets decide, and they carry none.
         Assert.DoesNotMatch(new Regex(@"'Control\+(Shift\+)?[zZyY]'"), script.Text);
-        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys, leaveDeclared\) => \{\s*taken = new Set\(takenKeys\);"), script.Text);
+        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys, leaveDeclared, replaceable\) => \{\s*taken = new Set\(takenKeys\);"), script.Text);
         Assert.Matches(new Regex(@"if \(!taken\.has\(canonical\)\)"), script.Text);
     }
 
@@ -1335,9 +1335,9 @@ public class ShippedStylesheetTests
         Assert.True(gate.Success, "the gate is not in the module");
 
         // Handed at attach and re-told with the claims, per instance.
-        Assert.Matches(new Regex(@"export function attach\([^)]*, declaredKeys, reportTimeZone, leaveDeclared, gateKeys\) \{"), script.Text);
+        Assert.Matches(new Regex(@"export function attach\([^)]*, declaredKeys, reportTimeZone, leaveDeclared, gateKeys, canReplace\) \{"), script.Text);
         Assert.Matches(new Regex(@"let declared = new Set\(declaredKeys \?\? \[\]\);"), script.Text);
-        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys, leaveDeclared\) => \{[^}]*declared = new Set\(declaredKeys \?\? \[\]\);", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys, leaveDeclared, replaceable\) => \{[^}]*declared = new Set\(declaredKeys \?\? \[\]\);", RegexOptions.Singleline), script.Text);
         // With no edit open they are among the taken keys, and only a taken one is asked about: the
         // Consumer answers it, and may open a popover or a frame of its own (Format Cells' Ctrl+1),
         // so the keys after it are held until that answer, and then until the keyboard has arrived

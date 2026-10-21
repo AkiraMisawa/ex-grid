@@ -874,7 +874,7 @@
            field is the form's implicit submission, which an IME's candidate Enter is not. *@
         var findContext = BuildFindContext();
         <div class="ex-popover ex-popover-find" style="@FindPopoverStyle()" role="dialog"
-             aria-label="@Label(FindPanelLabelIds.Title)" @key="_popoverFocusRequest">
+             aria-label="@Label(findContext.ReplaceShown ? FindPanelLabelIds.ReplaceTitle : FindPanelLabelIds.Title)" @key="_popoverFocusRequest">
             <span class="ex-focus-wrap" tabindex="0" data-ex-claims="@ClaimKinds.Focus" @onfocus="ReturnToFindHandler"></span>
             <div class="ex-popover-find-body ex-popover-body">
                 @if (Chrome?.FindPanel(findContext) is { } findFragment)
@@ -899,9 +899,20 @@
                             <button type="button" class="ex-find-previous" data-ex-claims="@ClaimKinds.Click" @onclick="FindPreviousHandler">@Label(FindPanelLabelIds.Previous)</button>
                             <button type="button" class="ex-find-next" data-ex-claims="@ClaimKinds.Click" @onclick="FindNextHandler">@Label(FindPanelLabelIds.Next)</button>
                         </div>
-                        @* What the last step came to, announced: a step that moves nothing is
+                        @if (findContext.ReplaceShown)
+                        {
+                            @* Replace (ADR-0332 §2): the replacement, and the two writes, each taken in
+                               the Input Order as Find's steps are (ADR-0240). Enter in either field is
+                               still "find next", as in Excel's dialog. *@
+                            @ReplaceField
+                            <div class="ex-popover-actions">
+                                <button type="button" class="ex-find-replace" data-ex-claims="@ClaimKinds.Click" @onclick="ReplaceOneHandler">@Label(FindPanelLabelIds.Replace)</button>
+                                <button type="button" class="ex-find-replace-all" data-ex-claims="@ClaimKinds.Click" @onclick="ReplaceAllHandler">@Label(FindPanelLabelIds.ReplaceAll)</button>
+                            </div>
+                        }
+                        @* What the last step or Replace came to, announced: a step that moves nothing is
                            otherwise a key that did nothing and said nothing (ADR-0033). *@
-                        <div class="ex-find-outcome" role="status">@(FindPanelLabelIds.For(_findOutcome) is { } said ? Label(said) : "")</div>
+                        <div class="ex-find-outcome" role="status">@FindPanelLabelIds.OutcomeText(findContext, Label)</div>
                     </form>
                 }
             </div>
@@ -3908,7 +3919,7 @@
             try
             {
                 await _scrollHandle.InvokeVoidAsync(
-                    "setClaims", TakenKeys(claims), claims.CanEdit, claims.CanFind, DeclaredForGate(), _jsLeaves);
+                    "setClaims", TakenKeys(claims), claims.CanEdit, claims.CanFind, DeclaredForGate(), _jsLeaves, claims.CanReplace);
             }
             catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
             {
@@ -4022,7 +4033,7 @@
             var handle = await _module.InvokeAsync<IJSObjectReference>(
                 "attach", _root, _scroller, _self, TakenKeys(claims), claims.CanEdit,
                 PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate(), OnBrowserTimeZone.HasDelegate, _jsLeaves,
-                GridKeys.GateSets);
+                GridKeys.GateSets, claims.CanReplace);
             if (_disposed)
             {
                 // Disposal overtook the attach; nobody else holds this handle now. Its own
@@ -7312,6 +7323,10 @@
                 await OpenFindAsync();
                 StateHasChanged();
                 return;
+            case GridKeyKind.Replace:
+                await OpenReplaceAsync();
+                StateHasChanged();
+                return;
             case GridKeyKind.ClearAndEdit:
                 // Backspace: an editor entry like a printable key, minus the character
                 // (ADR-0035) — judged where every entry is, on the Focus — and, typed against a
@@ -7742,7 +7757,7 @@
 
     /// <summary>What decides this grid's conditional key claims (ADR-0007/0010/0054/0055).</summary>
     private GridKeyClaims KeyClaims()
-        => new(AnyColumnEdits(), OnUndo.HasDelegate, OnRedo.HasDelegate, CanFind());
+        => new(AnyColumnEdits(), OnUndo.HasDelegate, OnRedo.HasDelegate, CanFind(), CanReplace());
 
     /// <summary>Whether anything can answer a Find (ADR-0055): the push-mode delegate, or a
     /// bound Source that says it can — never both, which is refused by name.</summary>
@@ -7779,6 +7794,10 @@
         _findOpen = true;
         _findOutcome = FindOutcome.None;
         _findCurrent = null;
+        // Ctrl+F opens Find alone, and Ctrl+H asks for Replace once this has opened (OpenReplaceAsync).
+        _findReplace = false;
+        _replacedCount = 0;
+        _replaceRefused = [];
         BeginPopoverFocus();
         _findFocusRequest++;
         _popoverFocusPending = PopoverFocus.FindField;
@@ -7920,7 +7939,7 @@
     }
 
     /// <summary>The find panel's context (ADR-0055), for a substituted Chrome.</summary>
-    private FindContext BuildFindContext() => new(
+    private FindContext BuildFindContext() => WithReplace(new(
         _findText,
         _findMatchCase,
         _findWholeCell,
@@ -7945,7 +7964,7 @@
         CloseFromChrome,
         _findFocusRequest,
         InnerPopupChangedFromChrome,
-        TakePopoverFocus);
+        TakePopoverFocus));
 
     // The built-in find field, written as @bind writes it (the value the field's own typing
     // outranks a render with, SetUpdatesAttributeName) but with its handlers kept: the same instance

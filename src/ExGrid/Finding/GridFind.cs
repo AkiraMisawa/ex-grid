@@ -87,7 +87,7 @@ public static class GridFind
     private static bool Matches(string shown, string text, StringComparison comparison, bool wholeCell)
         => wholeCell ? string.Equals(shown, text, comparison) : shown.Contains(text, comparison);
 
-    private static bool InScope(IReadOnlyList<SelectionRange> scope, int row, int column)
+    internal static bool InScope(IReadOnlyList<SelectionRange> scope, int row, int column)
     {
         foreach (var range in scope)
         {
