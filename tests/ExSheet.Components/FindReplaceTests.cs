@@ -174,6 +174,19 @@ public class FindReplaceTests : SheetTestContext
         Assert.Contains("No match", Outcome(cut));
     }
 
+    [Fact] // ADR-0333 §2: the column letters are addresses, not content — Find never stops on them, nor marks them
+    public async Task ADR0333_the_column_letters_are_not_searched()
+    {
+        var cut = RenderWorkbook(Workbook(("One", "A1", "apple")));
+        await GoToAsync(cut, "A1");
+
+        await FindAsync(cut, "B");
+
+        Assert.Equal("A1", NameBox(cut));
+        Assert.Contains("No match", Outcome(cut));
+        Assert.Empty(cut.FindAll(".ex-header .ex-match-mark"));
+    }
+
     [Fact] // ADR-0332 §4: the marks are ExSheet's rule — a cell's displayed text, a Formula's Value as shown, and a Blank never
     public async Task ADR0332_the_marks_follow_the_sheets_own_rule()
     {

@@ -1,6 +1,7 @@
 #nullable enable
 const ExGrid.Chrome.FindPanelLabelIds.ColumnPlaceholder = "{column}" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.CountPlaceholder = "{count}" -> string!
+const ExGrid.Chrome.FindPanelLabelIds.FoundInHeader = "find-found-in-header" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.NotEditable = "find-not-editable" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.ReasonPlaceholder = "{reason}" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.RefusedCellsNamed = 5 -> int
@@ -69,6 +70,8 @@ ExGrid.Chrome.GridPopoverContext.InOrder.init -> void
 ExGrid.Clipboard.PasteRefusalReason.Cancelled = 13 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Clipboard.PasteRefusalReason.Unreadable = 12 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.FindsHeaders.get -> bool
+ExGrid.Components.ExGrid<TRow>.FindsHeaders.set -> void
 ExGrid.Components.ExGrid<TRow>.ForgetCurrentMatch() -> void
 ExGrid.Components.ExGrid<TRow>.HandKeyboardToAsync(Microsoft.AspNetCore.Components.ElementReference control, bool preventScroll) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.FindMatch.get -> ExGrid.Finding.FindMatchOf<TRow!>?
@@ -147,6 +150,7 @@ ExGrid.FetchingGridSource<TRow>.Shape.get -> System.Func<System.Threading.Cancel
 ExGrid.FetchingGridSource<TRow>.Shape.set -> void
 ExGrid.FetchingGridSource<TRow>.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
 ExGrid.Finding.FindMatchOf<TRow>
+ExGrid.Finding.FindOutcome.FoundInHeader = 7 -> ExGrid.Finding.FindOutcome
 ExGrid.Finding.FindOutcome.Replaced = 5 -> ExGrid.Finding.FindOutcome
 ExGrid.Finding.FindOutcome.ReplaceRefused = 6 -> ExGrid.Finding.FindOutcome
 ExGrid.Finding.FindRefusalReason.ReplaceRefused = 5 -> ExGrid.Finding.FindRefusalReason

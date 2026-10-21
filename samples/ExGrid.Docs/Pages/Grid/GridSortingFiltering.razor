@@ -23,8 +23,8 @@
             </li>
             <li>
                 <strong>Press <kbd>Ctrl</kbd>+<kbd>F</kbd></strong> in the grid for the find panel. It searches
-                every row of the result, not only the painted ones, and matches the text each cell shows.
-                With several cells selected, it searches the selection. <kbd>Enter</kbd> in its field goes to the
+                every row of the result, not only the painted ones, and matches the text each cell shows; it
+                searches the column headers too, below. With several cells selected, it searches the selection. <kbd>Enter</kbd> in its field goes to the
                 next match, and <kbd>Shift</kbd>+<kbd>Enter</kbd> to the previous one. If the rows move, or another
                 <code>Source</code> is handed over, while a step is out, its answer moves nothing: the panel says
                 to find again, and <code>OnFindRefused</code> says <code>OrderChanged</code> or
@@ -49,6 +49,54 @@
                      Files="@(["Examples/Data/Trade.cs"])" />
     </DocsSection>
 
+    <DocsSection Title="Find in the headers">
+        <p>
+            <strong>Find searches the column headers and the Header Group labels too</strong>, as they are shown,
+            on every grid and with nothing to wire. A search for "price" in a grid whose cells never say it stops
+            on the Price header, rather than answering "No match" for a word that is on the screen.
+        </p>
+        <ul>
+            <li>
+                <strong>The headers come before the first row.</strong> A step walks the top Header Group row
+                first, down to the column header row, each left to right in the order the columns stand now, and
+                then the rows; past the last row it comes back to the headers. <kbd>Shift</kbd>+<kbd>Enter</kbd>
+                walks the other way. A search whose only match is a header finds it again on every step.
+            </li>
+            <li>
+                <strong>A header found is the current match, and the Focus stays where it is</strong>: a header is
+                not a cell, and moving the Focus to a cell under it would show something that did not match. The
+                header wears the current match's mark, is scrolled into view across, and the panel says "Found
+                in a header". The next step goes on from that header. Selecting a cell leaves it, and the next
+                step starts from your Focus.
+            </li>
+            <li>
+                <strong>Every header on screen that matches is marked</strong>, as matching cells are, with the
+                same two Visual Tokens. The grid judges the headers itself, by the rule <code>GridSource.From</code>
+                finds by, over the text the header shows; it holds that text, so this needs no
+                <code>FindMatch</code> of yours, and headers are marked even where your own <code>OnFind</code>
+                answers and no cell is.
+            </li>
+            <li>
+                <strong>Not searched:</strong> a hidden column's header, the headers of a grid that hides them
+                (<code>HideHeader</code>), and any header while several cells are selected, since the selection
+                as the scope is cells. Replace never writes a header: with one as the current match it finds the
+                next match, and Replace All asks about cells only.
+            </li>
+            <li>
+                <strong><code>FindsHeaders="false"</code></strong> turns this off, for headers that are addresses
+                rather than content. ExSheet does, so its column letters are never found.
+            </li>
+        </ul>
+        <p>
+            Your answer to a step is unchanged: the request still names a cell, or none, and you still answer with a
+            cell or "not found". The grid reads whether your answer wrapped past the end (or the start, backward)
+            and, when it did, or found nothing, stops on the first matching header (the last, backward) instead.
+            From a header, it asks you from the start of the rows (the end, backward).
+        </p>
+        <DocsExample Title="Find in the headers" Builtin="typeof(FindHeaders)" Mud="typeof(FindHeadersMud)"
+                     Files="@(["Examples/Data/Trade.cs"])" />
+    </DocsSection>
+
     <DocsSection Title="Replace">
         <p>
             <strong>Press <kbd>Ctrl</kbd>+<kbd>H</kbd></strong> for the find panel with Replace, as Excel's dialog
@@ -67,7 +115,8 @@
             </li>
             <li>
                 <strong>Replace</strong> writes the current match (the cell the last step found, while the Focus
-                stays there) and then finds the next. It is an ordinary write of that one cell: an
+                stays there) and then finds the next; a header as the current match is never written, and the
+                press only finds the next. It is an ordinary write of that one cell: an
                 <code>OnEdit</code> Edit Intent, with the column's Edit Verdict. With no current match it finds one
                 first, so you see what the next press writes. A match in a column that is not Editable, a Reject,
                 or an intent you <code>Refuse</code> writes nothing, and the panel says which cell and why.

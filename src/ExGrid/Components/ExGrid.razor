@@ -130,6 +130,8 @@
                them; each is display: contents, so the band lays out, paints and stacks exactly as
                one element of cells and rectangles did (ADR-0032), and only the tree says rows. *@
             var tiered = _headerLayout.TierCount > 0;
+            @* The headers Find marks (ADR-0333 §1): judged once per search, not per frame. *@
+            var headerMarks = HeaderMarksNow();
             <div class="ex-header" role="@(tiered ? "rowgroup" : "row")" aria-rowindex="@(tiered ? null : CellIds.HeaderRowIndex(0))" style="@HeaderBandStyle()" data-ex-claims="mousedown click" @attributes="_headerDragHandler" @onclick="HeaderClickHandler" @onmousedown="HeaderPressHandler" @onmousedown:preventDefault="PointedAtNow">
                 @if (MarksColumns && MarksPinnedColumns)
                 {
@@ -174,7 +176,7 @@
                                         var group = _headerLayout.Groups[g];
                                         @if (group.TopTier == tier && IsGroupHeld(group))
                                         {
-                                            <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(group.FirstColumn)" aria-colspan="@CellIds.Span(group.MemberCount)" aria-rowspan="@GroupRowSpan(group)">@group.Label</div>
+                                            <div class="@GroupClass(g, headerMarks)" style="@GroupStyle(g)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(group.FirstColumn)" aria-colspan="@CellIds.Span(group.MemberCount)" aria-rowspan="@GroupRowSpan(group)">@group.Label</div>
                                         }
                                     }
                                 </div>
@@ -187,7 +189,7 @@
                                 var group = _headerLayout.Groups[g];
                                 @if (group.TopTier == tier && !IsGroupHeld(group))
                                 {
-                                    <div class="ex-header-group" style="@GroupStyle(g)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(group.FirstColumn)" aria-colspan="@CellIds.Span(group.MemberCount)" aria-rowspan="@GroupRowSpan(group)">@group.Label</div>
+                                    <div class="@GroupClass(g, headerMarks)" style="@GroupStyle(g)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(group.FirstColumn)" aria-colspan="@CellIds.Span(group.MemberCount)" aria-rowspan="@GroupRowSpan(group)">@group.Label</div>
                                 }
                             }
                         </div>
@@ -7827,6 +7829,7 @@
         {
             _findOutcome = FindOutcome.None;
             _findCurrent = null;
+            ForgetCurrentHeader();
             _findReplace = false;
             _replacedCount = 0;
             _replaceRefused = [];
@@ -7841,6 +7844,7 @@
         _findOpen = true;
         _findOutcome = FindOutcome.None;
         _findCurrent = null;
+        ForgetCurrentHeader();
         // Ctrl+F opens Find alone, and Ctrl+H asks for Replace once this has opened (OpenReplaceAsync).
         _findReplace = false;
         _replacedCount = 0;
@@ -7863,13 +7867,29 @@
             return;
         _findCancellation?.Cancel();
         var cancellation = _findCancellation = new CancellationTokenSource();
+
+        var selection = _selection.Selection;
+        var scope = !selection.IsEmpty && selection.CellCount > 1 ? selection.Ranges : null;
+        // The headers this step may stop on, read now and carried with it (ADR-0333): a selection as
+        // the scope searches none. The header it starts from, when the current match is one.
+        var headers = scope is null ? FindHeaders() : [];
+        var fromHeader = CurrentHeaderIn(headers);
+        var headerMatches = MatchingHeaders(headers, new GridFindPattern(_findText, _findMatchCase, _findWholeCell));
         // No match is current until this step finds one (ADR-0332 §4).
         _findCurrent = null;
+        ForgetCurrentHeader();
+        // From a header, or from nothing going forward, a header may be the next stop before any row
+        // is reached: the grid holds every header, so nobody is asked (ADR-0333 §3).
+        if (HeaderFindWalk.BeforeAsking(headerMatches, fromHeader, fromCell: !selection.IsEmpty, backward) is { } before)
+        {
+            _findCancellation = null;
+            LandOnHeader(headers[before]);
+            return;
+        }
         // The binding the question is asked of: the version alone cannot tell a replaced Source, as
         // two fresh sources both start at 0 (ADR-0142).
         var binding = _binding;
 
-        var selection = _selection.Selection;
         var names = new string[Columns.Count];
         for (var i = 0; i < Columns.Count; i++)
             names[i] = Columns[i].Name;
@@ -7879,8 +7899,10 @@
             MatchCase = _findMatchCase,
             WholeCell = _findWholeCell,
             Backward = backward,
-            From = selection.IsEmpty ? null : selection.Focus,
-            Scope = !selection.IsEmpty && selection.CellCount > 1 ? selection.Ranges : null,
+            // From a header the rows are searched from their start (their end, backward): the header
+            // rows lie before the first data row (ADR-0333 §3).
+            From = selection.IsEmpty || fromHeader is not null ? null : selection.Focus,
+            Scope = scope,
             Columns = names,
             RowSequenceVersion = _sequenceVersion,
         };
@@ -7931,21 +7953,39 @@
             await RefuseFindAsync(FindRefusalReason.OrderChanged);
             return;
         }
+        // An answer outside the question is the Consumer's defect, named rather than reworded
+        // as a reorder (ADR-0055, 2026-09-27): a column it was not asked about, or a row the
+        // result does not have.
+        var extent = Extent;
+        if (answer.IsFound && (answer.Column is not { } asked || !request.Columns.Contains(asked)
+            || answer.Row >= extent.RowCount))
+        {
+            throw new InvalidOperationException(FormattableString.Invariant(
+                $"ExGrid: the Find answer (row {answer.Row}, column '{answer.Column}') is outside the request: it asked about the columns [{string.Join(", ", request.Columns)}] of a result of {extent.RowCount} rows (ADR-0055)."));
+        }
+        // Whether the walk passes the header rows before it reaches the answer (ADR-0333 §3): the
+        // answer wrapped, or there was none. The header it lands on is one of those read when the step
+        // was taken, so they must still stand as they were; headers that moved meanwhile are the
+        // visible columns having moved, OrderChanged's other half.
+        CellPosition? answeredCell = answer.IsFound
+            ? new CellPosition(answer.Row, RequestColumnIndex(request.Columns, answer.Column!))
+            : null;
+        if (HeaderFindWalk.AfterAnswer(headerMatches, request.From, answeredCell, backward) is { } after)
+        {
+            if (!headers.AsSpan().SequenceEqual(FindHeaders()))
+            {
+                await RefuseFindAsync(FindRefusalReason.OrderChanged);
+                return;
+            }
+            LandOnHeader(headers[after]);
+            return;
+        }
         if (!answer.IsFound)
         {
             await RefuseFindAsync(FindRefusalReason.NotFound);
             return;
         }
-        // An answer outside the question is the Consumer's defect, named rather than reworded
-        // as a reorder (ADR-0055, 2026-09-27): a column it was not asked about, or a row the
-        // result does not have.
-        var extent = Extent;
-        if (answer.Column is not { } answered || !request.Columns.Contains(answered)
-            || answer.Row >= extent.RowCount)
-        {
-            throw new InvalidOperationException(FormattableString.Invariant(
-                $"ExGrid: the Find answer (row {answer.Row}, column '{answer.Column}') is outside the request: it asked about the columns [{string.Join(", ", request.Columns)}] of a result of {extent.RowCount} rows (ADR-0055)."));
-        }
+        var answered = answer.Column!;
         // A column the request named that has since left the grid: the visible columns moved
         // while the step was out, which is OrderChanged's other half.
         var column = -1;
@@ -9674,8 +9714,17 @@
         _revealTarget = null;
         var across = _revealColumnAcross;
         _revealColumnAcross = null;
-        if (_disposed || _scrollHandle is null || (target is null && across is null && _selection.Selection.IsEmpty))
+        var header = _revealHeaderAcross;
+        _revealHeaderAcross = null;
+        if (_disposed || _scrollHandle is null || (target is null && across is null && header is null && _selection.Selection.IsEmpty))
             return;
+        // A header Find found is revealed across only (ADR-0333 §1): the header band does not scroll
+        // down, and the rows stay where they are, as the Focus does.
+        if (header is { } headerColumns)
+        {
+            StageScroll(_scrollTopPx, ScrollLeftToRevealHeader(headerColumns.First, headerColumns.Last));
+            return;
+        }
         // A column pointed at from outside is revealed across only (ADR-0058, 2026-10-01; DC-55): its
         // body is what is dashed, and no row of it is the one pointed at, so the rows stay where they
         // are painted, as they do when a cell's row is already in view. A pinned column, or one whole
@@ -10756,18 +10805,23 @@
             "ex-header-cell ex-align-center", "ex-header-cell ex-pinned ex-align-center",
             "ex-header-cell ex-align-right", "ex-header-cell ex-pinned ex-align-right",
         ];
-        var classes = new string[24];
-        for (var i = 0; i < plain.Length; i++)
+        // Then each again with the Match Mark (ADR-0333 §1), and with the current one.
+        string[] matched = ["", " ex-match-mark", " ex-match-mark ex-match-mark-current"];
+        var classes = new string[72];
+        for (var m = 0; m < matched.Length; m++)
         {
-            classes[i] = plain[i];
-            classes[i + 8] = plain[i] + " ex-heading-marked";
-            classes[i + 16] = plain[i] + " ex-heading-marked ex-heading-whole";
+            for (var i = 0; i < plain.Length; i++)
+            {
+                classes[(m * 24) + i] = plain[i] + matched[m];
+                classes[(m * 24) + i + 8] = plain[i] + " ex-heading-marked" + matched[m];
+                classes[(m * 24) + i + 16] = plain[i] + " ex-heading-marked ex-heading-whole" + matched[m];
+            }
         }
         return classes;
     }
 
-    private string HeaderClass(int column, bool pinned)
-        => HeaderClasses[(ColumnHeadingMark(column) * 8) + ((int)Columns[column].HeaderAlign * 2) + (pinned ? 1 : 0)];
+    private string HeaderClass(int column, bool pinned, HeaderMatchMarks? marks)
+        => HeaderClasses[(LeafMark(column, marks) * 24) + (ColumnHeadingMark(column) * 8) + ((int)Columns[column].HeaderAlign * 2) + (pinned ? 1 : 0)];
 
     /// <summary>
     /// One leaf header's style: the cached width and offset, and — while tiers exist —
@@ -10891,7 +10945,7 @@
                after the header in the markup, and a Tab into the grid went through every
                column's ▾ before the first cell. Alt+↓ opens the column's popover by key
                (ADR-0044). On every grid, and under every Chrome: the button is the core's. *@
-            <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
+            <div class="@HeaderClass(i, pinned: true, _headerMarks)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
                 {@HeaderMark}@if (ShowMenuButtons)
                 {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" data-ex-claims="@ClaimKinds.Click" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
                 {<div class="ex-resize-grip" data-ex-claims="mousedown dblclick" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
@@ -10904,7 +10958,7 @@
             }
             for (var i = headerColumns.Start; i < headerColumns.Start + headerColumns.Count; i++)
             {
-                <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
+                <div class="@HeaderClass(i, pinned: false, _headerMarks)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
                     {@HeaderMark}@if (ShowMenuButtons)
                     {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" data-ex-claims="@ClaimKinds.Click" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
                     {<div class="ex-resize-grip" data-ex-claims="mousedown dblclick" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>

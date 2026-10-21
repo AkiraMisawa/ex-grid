@@ -86,9 +86,10 @@ public partial class ExGrid<TRow>
     /// </summary>
     public void ForgetCurrentMatch()
     {
-        if (_findCurrent is null)
+        if (_findCurrent is null && _findCurrentHeader is null)
             return;
         _findCurrent = null;
+        ForgetCurrentHeader();
         _suppressRender = false;
         StateHasChanged();
     }

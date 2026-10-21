@@ -1,5 +1,6 @@
-import { test, expect, watchNextKey, keySeenUntouched, scrollRowToTop } from './fixtures.mjs';
+import { test, expect, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet } from './fixtures.mjs';
 import { expectKeyboardOn, activeDescendant } from './keyboard.mjs';
+import { acrossEdges, blend, onDevicePixels, paints } from './pixels.mjs';
 
 // Find with real keys (ADR-0055): Ctrl+F on a focused grid opens the grid's own panel — never
 // the browser's find bar, which sees only the painted rows — the keys typed straight after it
@@ -13,6 +14,19 @@ import { expectKeyboardOn, activeDescendant } from './keyboard.mjs';
 
 function grid(page) {
     return page.locator('.ex-grid').first();
+}
+
+const MARK = /(^|\s)ex-match-mark(\s|$)/;
+
+/** A colour as the cascade keeps it, `rgb(…)`, `rgba(…)` or `color(srgb … / …)`, in sRGB bytes and the
+ * alpha the browser holds, a whole number of 255ths. */
+function rgba(css) {
+    const srgb = css.match(/^color\(srgb ([\d.e-]+) ([\d.e-]+) ([\d.e-]+)(?: \/ ([\d.e-]+))?\)$/);
+    const legacy = css.match(/^rgba?\(([\d.]+), ([\d.]+), ([\d.]+)(?:, ([\d.]+))?\)$/);
+    const parts = srgb ? srgb.slice(1, 4).map((v) => Number(v) * 255) : legacy?.slice(1, 4).map(Number);
+    if (!parts) throw new Error(`a colour this test cannot read: ${css}`);
+    const alpha = Math.round(Number((srgb ?? legacy)[4] ?? 1) * 255) / 255;
+    return { rgb: parts, alpha };
 }
 
 async function focusedCell(page) {
@@ -351,6 +365,78 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#replace-status')).toHaveText('Replace All: refused, 100 cells');
             await expect(grid(page).locator("[id$='r0c0']")).toHaveText('Alpha');
             await expect(page.locator('#find-refused-status')).toContainText('ReplaceRefused');
+        });
+
+        // Find reaches the column headers (ADR-0333): /features's headers are Book, Trader, Notional,
+        // Narrow, TradeDate and Confirmed, under the Header Groups Who (Book, Trader) and What. No cell
+        // says "trade", so a step from r0c0 finds no row and the walk reaches the headers, which stand
+        // before the first row; the Focus stays where it is.
+        const header = (page, text) => grid(page).locator('.ex-header-cell, .ex-header-group').filter({ hasText: new RegExp(`^${text}$`) });
+
+        test('ADR-0333: a column header Find reaches is the current match, marked over its own box, said in the panel, and the Focus stays', async ({ page }) => {
+            const trader = header(page, 'Trader');
+            await circuitQuiet();
+            // Its edges on Device Pixels (ADR-0090), read before the mark and after it.
+            const box = await onDevicePixels(page, trader);
+            const unmarked = await acrossEdges(page, box);
+
+            await page.keyboard.press('ControlOrMeta+f');
+            await page.keyboard.type('trade');
+            const field = grid(page).locator('.ex-popover-find input').first();
+            await expect(field).toHaveValue('trade');
+            // Every header that says it is marked as it is typed, no step asked.
+            await expect(trader).toHaveClass(MARK);
+            await expect(header(page, 'TradeDate')).toHaveClass(MARK);
+            await expect(header(page, 'Notional')).not.toHaveClass(MARK);
+            await expect(grid(page).locator('.ex-match-mark-current')).toHaveCount(0);
+
+            await page.keyboard.press('Enter');
+            await expect(trader).toHaveClass(/ex-match-mark-current/);
+            await expect(grid(page).locator('.ex-popover-find [role=status]')).toHaveText('Found in a header');
+            await expect.poll(() => focusedCell(page)).toMatch(/r0c0$/);
+            await expect(field).toBeFocused();
+
+            // The current mark is laid over the header's own ground, up to its edges and not past them.
+            await circuitQuiet();
+            const fill = rgba(await trader.evaluate((el) => getComputedStyle(el, '::before').backgroundColor));
+            expect(fill.alpha, 'the current fill is seen').toBeGreaterThan(0);
+            const marked = await acrossEdges(page, box);
+            for (const side of ['left', 'right']) {
+                for (const index of [0, 1]) {
+                    const expected = blend(fill.rgb, fill.alpha, unmarked.at(side, index));
+                    expect(paints(marked.at(side, index), expected), `${side} ${index} paints ${expected.map((v) => v.toFixed(2))}, saw ${marked.at(side, index)}`).toBe(true);
+                }
+                expect(marked.at(side, -1), `${side} -1, outside the header, is not marked`).toEqual(unmarked.at(side, -1));
+            }
+
+            // The next step goes on from the header: to the next header that says it, then round the
+            // rows, none of which does, and back to the first.
+            await page.keyboard.press('Enter');
+            await expect(header(page, 'TradeDate')).toHaveClass(/ex-match-mark-current/);
+            await expect(trader).not.toHaveClass(/ex-match-mark-current/);
+            await page.keyboard.press('Enter');
+            await expect(trader).toHaveClass(/ex-match-mark-current/);
+            await expect(grid(page).locator('.ex-match-mark-current')).toHaveCount(1);
+            await expect.poll(() => focusedCell(page)).toMatch(/r0c0$/);
+        });
+
+        test('ADR-0333: a Header Group label is found before the column headers, and a step from it goes on to the rows', async ({ page }) => {
+            await page.keyboard.press('ControlOrMeta+f');
+            await page.keyboard.type('who');
+            await expect(grid(page).locator('.ex-popover-find input').first()).toHaveValue('who');
+            await expect(header(page, 'Who')).toHaveClass(MARK);
+
+            await page.keyboard.press('Enter');
+            await expect(header(page, 'Who')).toHaveClass(/ex-match-mark-current/);
+            await expect(grid(page).locator('.ex-popover-find [role=status]')).toHaveText('Found in a header');
+
+            // Novak is in Trader's rows: from the header the rows are searched from their start.
+            await page.keyboard.press('ControlOrMeta+a');
+            await page.keyboard.type('novak');
+            await page.keyboard.press('Enter');
+            await expect.poll(() => focusedCell(page)).toMatch(/r3c1$/);
+            await expect(header(page, 'Who')).not.toHaveClass(MARK);
+            await expect(grid(page).locator('.ex-popover-find [role=status]')).toHaveText('');
         });
     });
 }

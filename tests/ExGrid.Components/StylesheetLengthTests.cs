@@ -78,6 +78,8 @@ public class StylesheetLengthTests : GridTestContext
         [(".ex-cell.ex-changed", "outline-offset", "-2px")] = Outline,
         [(".ex-cell.ex-match-mark::before", "inset", "3px")] = Mark,
         [(".ex-cell.ex-match-mark::before", "border", "2px")] = Mark,
+        [(".ex-header-cell.ex-match-mark::before, .ex-header-group.ex-match-mark::before", "inset", "3px")] = Mark,
+        [(".ex-header-cell.ex-match-mark::before, .ex-header-group.ex-match-mark::before", "border", "2px")] = Mark,
         [(".ex-cell.ex-state-missing", "outline", "1px")] = Outline,
         [(".ex-cell.ex-state-missing", "outline-offset", "-2px")] = Outline,
         [(".ex-cell.ex-state-modified", "outline", "1px")] = Outline,

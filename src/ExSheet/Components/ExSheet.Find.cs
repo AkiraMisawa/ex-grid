@@ -17,7 +17,9 @@ namespace ExSheet.Components;
 /// edit (an Edit Intent, ExSheet's <c>OnEdit</c>), one step on the undo stack. Replace All over the Sheet
 /// is the grid's Replace Request, which ExSheet performs as one step; over the Workbook, which the grid's
 /// request cannot name, ExSheet performs it itself, in its place in the Input Order, as one step too.
-/// What Replace matches is the Entry — a Formula's text — and Find the text shown (ADR-0332 §2).
+/// What Replace matches is the Entry — a Formula's text — and Find the text shown (ADR-0332 §2). The
+/// column letters are addresses, not content, and Excel's Find never stops on them, so the grid's header
+/// search is turned off (<c>FindsHeaders</c>, ADR-0333 §2).
 /// </summary>
 public partial class ExSheet
 {

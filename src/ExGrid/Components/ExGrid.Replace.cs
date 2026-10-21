@@ -162,6 +162,7 @@ public partial class ExGrid<TRow>
             return;
         // The write moves the Focus nowhere, and no match is current after it (ADR-0332 §4).
         _findCurrent = null;
+        ForgetCurrentHeader();
         var selection = _selection.Selection;
         var names = new string[Columns.Count];
         var editable = new List<string>(Columns.Count);

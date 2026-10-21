@@ -10,7 +10,8 @@ namespace ExGrid.Chrome;
 public static class FindPanelLabelIds
 {
     /// <summary>The id of what the panel says about a step's outcome, or null for an outcome
-    /// that says nothing — no step yet, or a match, which the moved Focus shows.</summary>
+    /// that says nothing — no step yet, or a match in a cell, which the moved Focus shows. A match
+    /// in a header is said, as the Focus does not move to it (ADR-0333).</summary>
     public static string? For(Finding.FindOutcome outcome) => outcome switch
     {
         Finding.FindOutcome.NotFound => NotFound,
@@ -18,6 +19,7 @@ public static class FindPanelLabelIds
         Finding.FindOutcome.SourceChanged => SourceChanged,
         Finding.FindOutcome.Replaced => Replaced,
         Finding.FindOutcome.ReplaceRefused => ReplaceRefused,
+        Finding.FindOutcome.FoundInHeader => FoundInHeader,
         _ => null,
     };
 
@@ -97,6 +99,11 @@ public static class FindPanelLabelIds
 
     /// <summary>What a step that matched nothing says.</summary>
     public const string NotFound = "find-not-found";
+
+    /// <summary>What a step that found its match in a column header or a Header Group label says
+    /// (ADR-0333): the Focus stays where it was, so the words are what tells the user where the
+    /// match is.</summary>
+    public const string FoundInHeader = "find-found-in-header";
 
     /// <summary>What a step whose answer arrived under another order says.</summary>
     public const string OrderChanged = "find-order-changed";

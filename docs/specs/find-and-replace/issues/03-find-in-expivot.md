@@ -1,6 +1,6 @@
 # 03: Find in ExPivot
 
-Status: ready-for-agent
+Status: done
 Roadmap: ExPivot — Ctrl+F finds a label or a value in the report as shown.
 
 **Why:** [ADR-0332](../../../adr/0332-find-reaches-every-product-replace-is-a-write-asked-of-the-consumer-and-the-matches-in-view-are-marked.md) §1.
@@ -31,8 +31,8 @@ Roadmap: ExPivot — Ctrl+F finds a label or a value in the report as shown.
   changing across three searches — is said on the Pivot Toolbar and given up, moving nothing; a live
   update while a step reads is searched again over the report now shown. For that, ExGrid now takes an
   `OperationCanceledException` thrown by `OnFind` as a step its Consumer gave up, not as a crash.
-- 2026-10-21: **Awaiting a decision: column labels.** ADR-0332 §1 names the column labels among what
-  Find searches, but in ExPivot the column Items and the value captions stand in the report grid's
-  headers, and ExGrid's Find lands only on cells. They are not searched today; the Layout page, the
-  READMEs and the Change Note say so. Whether Find reaches the headers (and how a header match is
-  shown) is an ADR question put to the user; the first item stays ticked for what the cells cover.
+- 2026-10-21: **Column labels: decided by ADR-0333 and built in ticket 05.** ADR-0332 §1 names the
+  column labels among what Find searches; in ExPivot the column Items and the value captions stand in
+  the report grid's headers, which ExGrid's Find now searches itself before the rows, so they are found,
+  marked and said ("Found in a header") with the Focus left where it was. The Layout page, the README
+  and the Change Note say so.

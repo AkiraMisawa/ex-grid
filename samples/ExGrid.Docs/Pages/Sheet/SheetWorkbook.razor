@@ -205,7 +205,8 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
             <li>
                 <b>Find matches what a cell shows</b>: a Formula's Value as painted, never its Entry, in every row, by rows
                 from the cell after the Focus and wrapping. Within the Sheet, with more than one cell selected, only the
-                Selection is searched.
+                Selection is searched. The column letters are not searched, as Excel's Find never stops on them: they are
+                addresses, not content (ExSheet turns ExGrid's header search off, <code>FindsHeaders</code>).
             </li>
             <li>
                 <b>Within the Workbook, a step goes on from Sheet to Sheet</b> in tab order (backwards with
