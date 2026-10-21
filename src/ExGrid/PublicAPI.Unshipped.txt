@@ -62,6 +62,7 @@ ExGrid.ShapedGrid
 ExGrid.ShapedGrid.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<ExGrid.ShapedRow!>!>!
 ExGrid.ShapedGrid.PinnedColumnCount.get -> int
 ExGrid.ShapedGrid.Snapshot.get -> ExGrid.Data.Snapshot!
+ExGrid.ShapedGrid.Rows.get -> System.Collections.Generic.IReadOnlyList<ExGrid.ShapedRow!>!
 ExGrid.ShapedGrid.Source.get -> ExGrid.InMemoryGridSource<ExGrid.ShapedRow!>!
 ExGrid.ShapedGrid.Spec.get -> ExGrid.GridViewSpecReading!
 ExGrid.ShapedRow

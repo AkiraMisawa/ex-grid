@@ -10,7 +10,8 @@ namespace ExBoard;
 /// <param name="Inputs">The inputs, in the order the Board declares them.</param>
 /// <param name="Views">The views, in the order the Board lists them.</param>
 /// <param name="Layout">The rows the views are laid out in, top to bottom.</param>
-public sealed record BoardReading(string Title, IReadOnlyList<BoardInput> Inputs, IReadOnlyList<BoardView> Views, IReadOnlyList<BoardRow> Layout)
+/// <param name="Links">The links, in the order the Board lists them.</param>
+public sealed record BoardReading(string Title, IReadOnlyList<BoardInput> Inputs, IReadOnlyList<BoardView> Views, IReadOnlyList<BoardRow> Layout, IReadOnlyList<BoardLink> Links)
 {
     /// <summary>The input named <paramref name="name"/>, or null.</summary>
     public BoardInput? Input(string name) => Inputs.FirstOrDefault(i => i.Name == name);
@@ -111,7 +112,8 @@ public sealed record BoardCell(string View, int Width);
 ///  "views": [{"id": "blotter", "title": "Trades", "grid": {…}},
 ///            {"id": "byDesk", "pivot": {"data": "trades", "layout": {…}}},
 ///            {"id": "curve", "chart": {…}}],
-///  "layout": [{"views": ["blotter", "byDesk"], "widths": [2, 1], "height": 360}, {"views": ["curve"]}]}
+///  "layout": [{"views": ["blotter", "byDesk"], "widths": [2, 1], "height": 360}, {"views": ["curve"]}],
+///  "links": [{"from": "blotter", "to": ["byDesk", "curve"], "on": ["desk"]}]}
 /// </code>
 /// A grid is <see cref="GridViewSpec"/>'s spec, a pivot names its input and holds a
 /// <see cref="PivotLayoutJson"/> layout, and a chart is a Chart Spec whose series name inputs in their
@@ -122,7 +124,9 @@ public sealed record BoardCell(string View, int Width);
 /// (<see cref="BoardInput.Read"/>); a view with no id, an id twice, or other than one of grid, pivot and
 /// chart; a view naming an input the Board does not declare, or a column or field the input does not
 /// declare; a pivot layout its reader refuses; and a layout that places a view twice, leaves one out,
-/// names one that is not there, or gives widths or heights that are no widths or heights.</para>
+/// names one that is not there, or gives widths or heights that are no widths or heights; and a link
+/// (<see cref="BoardLink"/>) from a view that is not a grid, to a view that is not there, to its own
+/// view or one that narrows it, on a column its views' inputs do not all declare of one kind.</para>
 /// </summary>
 public static class BoardSpec
 {
@@ -132,7 +136,8 @@ public static class BoardSpec
     /// <summary>A row's height when the layout gives none, in CSS pixels.</summary>
     public const double DefaultRowHeight = 320;
 
-    private static readonly string[] RootKeys = ["version", "title", "inputs", "views", "layout"];
+    private static readonly string[] RootKeys = ["version", "title", "inputs", "views", "layout", "links"];
+    private static readonly string[] LinkKeys = ["from", "to", "on"];
     private static readonly string[] ViewKeys = ["id", "title", "grid", "pivot", "chart"];
     private static readonly string[] Kinds = ["grid", "pivot", "chart"];
     private static readonly string[] PivotKeys = ["data", "layout"];
@@ -189,8 +194,116 @@ public static class BoardSpec
             views.Add(read);
         }
 
-        return new BoardReading(title, inputs, views, ReadLayout(root, views));
+        var layout = ReadLayout(root, views);
+        return new BoardReading(title, inputs, views, layout, ReadLinks(root, views, Shape));
     }
+
+    private static List<BoardLink> ReadLinks(JsonElement root, List<BoardView> views, Func<string, DataShape?> shape)
+    {
+        var links = new List<BoardLink>();
+        if (!root.TryGetProperty("links", out var list))
+            return links;
+        if (list.ValueKind != JsonValueKind.Array)
+            throw new BoardRefusedException("links", "A Board lists its links in 'links'.");
+        var l = 0;
+        foreach (var link in list.EnumerateArray())
+        {
+            var path = $"links[{l++}]";
+            if (link.ValueKind != JsonValueKind.Object)
+                throw new BoardRefusedException(path, "A link is an object.");
+            Members(link, LinkKeys, path, "A link");
+            if (!link.TryGetProperty("from", out var fromValue) || fromValue.ValueKind != JsonValueKind.String || fromValue.GetString() is not { Length: > 0 } fromId)
+                throw new BoardRefusedException($"{path}.from", "A link names the view whose selection narrows in 'from'.");
+            var from = views.FirstOrDefault(v => v.Id == fromId)
+                ?? throw new BoardRefusedException($"{path}.from", $"The link starts at view '{fromId}', which the Board does not have.");
+            if (from is not BoardGridView fromGrid)
+                throw new BoardRefusedException($"{path}.from", $"The link starts at view '{fromId}', a {KindOf(from)}; a link starts at a grid, whose selected rows narrow.");
+
+            var to = Names(link, "to", $"{path}.to", "A link names the views it narrows, in 'to'.");
+            for (var t = 0; t < to.Count; t++)
+            {
+                if (to[t] == fromId)
+                    throw new BoardRefusedException($"{path}.to[{t}]", $"The link narrows its own view '{fromId}'; a view's selection narrows other views.");
+                if (!views.Any(v => v.Id == to[t]))
+                    throw new BoardRefusedException($"{path}.to[{t}]", $"The link narrows view '{to[t]}', which the Board does not have.");
+            }
+
+            var on = Names(link, "on", $"{path}.on", "A link names the columns it compares, in 'on'.");
+            var fromShape = shape(fromGrid.Grid.Data)!;
+            for (var c = 0; c < on.Count; c++)
+            {
+                if (!fromShape.TryGetColumn(on[c], out var kind))
+                    throw new BoardRefusedException($"{path}.on[{c}]", $"The link compares column '{on[c]}', which input '{fromGrid.Grid.Data}' of view '{fromId}' does not declare.");
+                foreach (var target in to)
+                {
+                    foreach (var data in views.First(v => v.Id == target).Data)
+                    {
+                        if (!shape(data)!.TryGetColumn(on[c], out var other))
+                            throw new BoardRefusedException($"{path}.on[{c}]", $"The link compares column '{on[c]}', which input '{data}' of view '{target}' does not declare.");
+                        if (other.Kind != kind.Kind)
+                        {
+                            throw new BoardRefusedException($"{path}.on[{c}]", $"The link compares column '{on[c]}', a {BoardInput.NameOf(kind.Kind)} in input "
+                                + $"'{fromGrid.Grid.Data}' and a {BoardInput.NameOf(other.Kind)} in input '{data}'; a value is compared only with one of its kind.");
+                        }
+                    }
+                }
+            }
+            links.Add(new BoardLink(fromId, to, on));
+
+            // Links run one way: a view narrowed, directly or along other links, by the view it would
+            // narrow would drop its own selection each time it narrowed, and never settle.
+            foreach (var target in to)
+            {
+                if (Reaches(links, target, fromId))
+                    throw new BoardRefusedException($"{path}.to", $"The link narrows view '{target}', which already narrows view '{fromId}'; links run one way.");
+            }
+        }
+        return links;
+    }
+
+    private static bool Reaches(List<BoardLink> links, string from, string to)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var next = new Stack<string>([from]);
+        while (next.TryPop(out var at))
+        {
+            if (at == to)
+                return true;
+            if (!seen.Add(at))
+                continue;
+            foreach (var link in links.Where(k => k.From == at))
+            {
+                foreach (var target in link.To)
+                    next.Push(target);
+            }
+        }
+        return false;
+    }
+
+    private static List<string> Names(JsonElement owner, string member, string path, string missing)
+    {
+        if (!owner.TryGetProperty(member, out var list) || list.ValueKind != JsonValueKind.Array || list.GetArrayLength() == 0)
+            throw new BoardRefusedException(path, missing);
+        var names = new List<string>();
+        var i = 0;
+        foreach (var item in list.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.String || item.GetString() is not { Length: > 0 } name)
+                throw new BoardRefusedException($"{path}[{i}]", "A name is text.");
+            if (names.Contains(name))
+                throw new BoardRefusedException($"{path}[{i}]", $"'{name}' is named twice.");
+            names.Add(name);
+            i++;
+        }
+        return names;
+    }
+
+    private static string KindOf(BoardView view) => view switch
+    {
+        BoardGridView => "grid",
+        BoardPivotView => "pivot",
+        _ => "chart",
+    };
 
     private static BoardView ReadView(JsonElement view, string path, Func<string, DataShape?> shape)
     {

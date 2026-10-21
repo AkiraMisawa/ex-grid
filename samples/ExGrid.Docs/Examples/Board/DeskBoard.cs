@@ -16,11 +16,12 @@ public static class DeskBoard
              "columns": [{"column": "day", "header": "Day"}, {"column": "desk", "header": "Desk"},
                          {"column": "trader", "header": "Trader"}, {"column": "pnl", "header": "P&L", "format": "#,##0;(#,##0)"}],
              "sorts": [{"column": "day", "direction": "Ascending"}]}},
-           {"id": "byDesk", "title": "By desk", "pivot": {"data": "trades", "layout": {"version": 1,
-             "rows": [{"field": "desk"}], "values": [{"field": "pnl", "aggregation": "sum", "numberFormat": "#,##0"}]}}},
+           {"id": "byTrader", "title": "By trader", "pivot": {"data": "trades", "layout": {"version": 1,
+             "rows": [{"field": "trader"}], "values": [{"field": "pnl", "aggregation": "sum", "numberFormat": "#,##0"}]}}},
            {"id": "daily", "title": "P&L by day", "chart": {"version": 1, "axis": {"values": "dates"},
              "series": [{"id": "pnl", "name": "P&L", "kind": "observation", "data": "trades", "x": "day", "y": "pnl"}]}}],
-         "layout": [{"views": ["blotter", "byDesk"], "widths": [2, 1], "height": 260}, {"views": ["daily"], "height": 300}]}
+         "layout": [{"views": ["blotter", "byTrader"], "widths": [2, 1], "height": 260}, {"views": ["daily"], "height": 300}],
+         "links": [{"from": "blotter", "to": ["byTrader", "daily"], "on": ["desk"]}]}
         """;
 
     public const string Data = """

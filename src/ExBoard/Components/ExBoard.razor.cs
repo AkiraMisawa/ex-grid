@@ -2,6 +2,7 @@ using System.Globalization;
 using ExChart.Chrome;
 using ExGrid.Chrome;
 using ExGrid.Data;
+using ExGrid.Selection;
 using ExPivot.Chrome;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
@@ -30,6 +31,7 @@ public partial class ExBoard
     private string? _refusal;
     private readonly Dictionary<string, PivotLayout> _layouts = new(StringComparer.Ordinal);
     private readonly Dictionary<string, EventCallback<PivotLayout>> _layoutChanged = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, EventCallback<GridSelection>> _selectionChanged = new(StringComparer.Ordinal);
 
     /// <summary>The Board to draw, as <see cref="BoardSpec.Read(string)"/> read it.</summary>
     [Parameter, EditorRequired]
@@ -73,6 +75,7 @@ public partial class ExBoard
         _boundCulture = Culture;
         _layouts.Clear();
         _layoutChanged.Clear();
+        _selectionChanged.Clear();
         try
         {
             _bound = BoundBoard.Bind(Board, Data, Culture);
@@ -91,7 +94,23 @@ public partial class ExBoard
             // Cached, so a render does not hand the pivot a new delegate (AGENTS.md).
             _layoutChanged[id] = EventCallback.Factory.Create<PivotLayout>(this, layout => _layouts[id] = layout);
         }
+        foreach (var from in _bound.Board.Links.Select(l => l.From).Distinct())
+            _selectionChanged[from] = EventCallback.Factory.Create<GridSelection>(this, selection => Select(from, selection));
     }
+
+    private EventCallback<GridSelection> SelectionChangedOf(string view) => _selectionChanged.GetValueOrDefault(view);
+
+    // A grid's selection narrows the views its links reach; a dropped selection, which the grid raises
+    // as an empty one, takes the narrowing away with it (ADR-0011).
+    private void Select(string from, GridSelection selection)
+    {
+        if (_bound is not { } bound)
+            return;
+        foreach (var link in bound.Board.Links.Where(l => l.From == from))
+            bound.Narrow(link, bound.ConditionOf(link, selection));
+    }
+
+    private static string RefusalStyle(BoardRow row) => FormattableString.Invariant($"height: {row.Height}px");
 
     private PivotLayout LayoutOf(BoundPivotView pivot) => _layouts[pivot.View.Id];
 

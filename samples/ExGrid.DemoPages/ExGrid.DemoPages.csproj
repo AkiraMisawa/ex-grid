@@ -52,6 +52,8 @@
     <ProjectReference Include="..\..\src\ExChart.MudBlazor\ExChart.MudBlazor.csproj" />
     <!-- ExChart's Showcases (ADR-0280), the components the Docs Site shows, so layer 3 drives them on both hosts. -->
     <ProjectReference Include="..\ExChart.Showcases\ExChart.Showcases.csproj" />
+    <!-- ExBoard's page (/board): with its tests and the Docs Site, the only thing that references ExBoard (ADR-0340). -->
+    <ProjectReference Include="..\..\src\ExBoard\ExBoard.csproj" />
   </ItemGroup>
 
   <ItemGroup>

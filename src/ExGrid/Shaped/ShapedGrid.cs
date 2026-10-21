@@ -27,9 +27,10 @@ public sealed class ShapedGrid
     /// <summary>The format a date column holding a time of day shows in when the spec writes none.</summary>
     public const string DateTimeFormat = "yyyy-mm-dd hh:mm:ss";
 
-    private ShapedGrid(Snapshot snapshot, GridViewSpecReading spec, IReadOnlyList<GridColumn<ShapedRow>> columns, InMemoryGridSource<ShapedRow> source)
+    private ShapedGrid(Snapshot snapshot, GridViewSpecReading spec, IReadOnlyList<GridColumn<ShapedRow>> columns, ShapedRow[] rows, InMemoryGridSource<ShapedRow> source)
     {
         Snapshot = snapshot;
+        Rows = Array.AsReadOnly(rows);
         Spec = spec;
         Columns = columns;
         Source = source;
@@ -45,7 +46,12 @@ public sealed class ShapedGrid
     /// <summary>The columns, in the spec's order at its widths.</summary>
     public IReadOnlyList<GridColumn<ShapedRow>> Columns { get; }
 
-    /// <summary>The source, already under the spec's sort and filter.</summary>
+    /// <summary>Every row of the Snapshot, in its base order, each made once (<see cref="ShapedRow"/>).</summary>
+    public IReadOnlyList<ShapedRow> Rows { get; }
+
+    /// <summary>The source, already under the spec's sort and filter. Each row is its own Row Key, so
+    /// <see cref="InMemoryGridSource{TRow}.ReplaceAll"/> with some of <see cref="Rows"/>, in their
+    /// order, narrows it and keeps the sort and the filter the user has set.</summary>
     public InMemoryGridSource<ShapedRow> Source { get; }
 
     /// <summary>How many leading columns the spec pins.</summary>
@@ -76,11 +82,15 @@ public sealed class ShapedGrid
             }
             columns[i] = Column(snapshot, held, shown, widths[shown.Column], culture);
         }
-        var source = GridSource.From(ShapedRow.Of(snapshot));
+        var rows = ShapedRow.Of(snapshot);
+        // Its rows change only when its Consumer narrows them, a step the user took, which reaches
+        // the grid at once rather than at the end of a live feed's gathering interval.
+        var source = GridSource.From<ShapedRow>(rows, row => row);
+        source.GatherInterval = TimeSpan.Zero;
         source.OnColumnsChanged([.. columns.Select(c => c.Info)]);
         source.OnSortChanged(spec.ViewState.Sorts);
         source.OnFilterChanged(spec.ViewState.Filter);
-        return new ShapedGrid(snapshot, spec, columns, source);
+        return new ShapedGrid(snapshot, spec, columns, rows, source);
     }
 
     private static GridColumn<ShapedRow> Column(Snapshot snapshot, SnapshotColumn held, ShapedColumn shown, ColumnWidth width, CultureInfo culture)

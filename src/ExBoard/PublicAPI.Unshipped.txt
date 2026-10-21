@@ -20,20 +20,32 @@ ExBoard.BoardChartView.Spec.get -> string!
 ExBoard.BoardGridView
 ExBoard.BoardGridView.Equals(ExBoard.BoardGridView? other) -> bool
 ExBoard.BoardGridView.Grid.get -> ExGrid.GridViewSpecReading!
+ExBoard.BoardLink
+ExBoard.BoardLink.<Clone>$() -> ExBoard.BoardLink!
+ExBoard.BoardLink.BoardLink(string! From, System.Collections.Generic.IReadOnlyList<string!>! To, System.Collections.Generic.IReadOnlyList<string!>! On) -> void
+ExBoard.BoardLink.Deconstruct(out string! From, out System.Collections.Generic.IReadOnlyList<string!>! To, out System.Collections.Generic.IReadOnlyList<string!>! On) -> void
+ExBoard.BoardLink.Equals(ExBoard.BoardLink? other) -> bool
+ExBoard.BoardLink.From.get -> string!
+ExBoard.BoardLink.From.init -> void
+ExBoard.BoardLink.On.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExBoard.BoardLink.On.init -> void
+ExBoard.BoardLink.To.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExBoard.BoardLink.To.init -> void
 ExBoard.BoardPivotView
 ExBoard.BoardPivotView.Equals(ExBoard.BoardPivotView? other) -> bool
 ExBoard.BoardPivotView.Input.get -> string!
 ExBoard.BoardPivotView.Layout.get -> ExPivot.Engine.PivotLayout!
 ExBoard.BoardReading
 ExBoard.BoardReading.<Clone>$() -> ExBoard.BoardReading!
-ExBoard.BoardReading.BoardReading(string! Title, System.Collections.Generic.IReadOnlyList<ExGrid.Data.BoardInput!>! Inputs, System.Collections.Generic.IReadOnlyList<ExBoard.BoardView!>! Views, System.Collections.Generic.IReadOnlyList<ExBoard.BoardRow!>! Layout) -> void
-ExBoard.BoardReading.Deconstruct(out string! Title, out System.Collections.Generic.IReadOnlyList<ExGrid.Data.BoardInput!>! Inputs, out System.Collections.Generic.IReadOnlyList<ExBoard.BoardView!>! Views, out System.Collections.Generic.IReadOnlyList<ExBoard.BoardRow!>! Layout) -> void
+ExBoard.BoardReading.BoardReading(string! Title, System.Collections.Generic.IReadOnlyList<ExGrid.Data.BoardInput!>! Inputs, System.Collections.Generic.IReadOnlyList<ExBoard.BoardView!>! Views, System.Collections.Generic.IReadOnlyList<ExBoard.BoardRow!>! Layout, System.Collections.Generic.IReadOnlyList<ExBoard.BoardLink!>! Links) -> void
 ExBoard.BoardReading.Equals(ExBoard.BoardReading? other) -> bool
 ExBoard.BoardReading.Input(string! name) -> ExGrid.Data.BoardInput?
 ExBoard.BoardReading.Inputs.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.BoardInput!>!
 ExBoard.BoardReading.Inputs.init -> void
 ExBoard.BoardReading.Layout.get -> System.Collections.Generic.IReadOnlyList<ExBoard.BoardRow!>!
 ExBoard.BoardReading.Layout.init -> void
+ExBoard.BoardReading.Links.get -> System.Collections.Generic.IReadOnlyList<ExBoard.BoardLink!>!
+ExBoard.BoardReading.Links.init -> void
 ExBoard.BoardReading.Title.get -> string!
 ExBoard.BoardReading.Title.init -> void
 ExBoard.BoardReading.View(string! id) -> ExBoard.BoardView?
@@ -55,11 +67,15 @@ ExBoard.BoardView.Id.get -> string!
 ExBoard.BoardView.Title.get -> string!
 ExBoard.BoundBoard
 ExBoard.BoundBoard.Board.get -> ExBoard.BoardReading!
+ExBoard.BoundBoard.ConditionOf(ExBoard.BoardLink! link) -> ExBoard.LinkCondition?
+ExBoard.BoundBoard.ConditionOf(ExBoard.BoardLink! link, ExGrid.Selection.GridSelection! selection) -> ExBoard.LinkCondition?
 ExBoard.BoundBoard.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>!
+ExBoard.BoundBoard.Narrow(ExBoard.BoardLink! link, ExBoard.LinkCondition? condition) -> void
 ExBoard.BoundBoard.this[string! id].get -> ExBoard.BoundView!
 ExBoard.BoundBoard.Views.get -> System.Collections.Generic.IReadOnlyList<ExBoard.BoundView!>!
 ExBoard.BoundChartView
 ExBoard.BoundChartView.Reading.get -> ExChart.Engine.ChartSpecReading!
+ExBoard.BoundChartView.Refusal.get -> string?
 ExBoard.BoundGridView
 ExBoard.BoundGridView.Grid.get -> ExGrid.ShapedGrid!
 ExBoard.BoundPivotView
@@ -83,6 +99,11 @@ ExBoard.Components.ExBoard.PivotChrome.get -> ExPivot.Chrome.IPivotChrome?
 ExBoard.Components.ExBoard.PivotChrome.set -> void
 ExBoard.Components.ExBoard.Width.get -> double
 ExBoard.Components.ExBoard.Width.set -> void
+ExBoard.LinkCondition
+ExBoard.LinkCondition.LinkCondition(System.Collections.Generic.IReadOnlyList<string!>! on, System.Collections.Generic.IEnumerable<System.Collections.Generic.IReadOnlyList<object?>!>! values) -> void
+ExBoard.LinkCondition.Matches(object?[]! tuple) -> bool
+ExBoard.LinkCondition.On.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExBoard.LinkCondition.Values.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<object?>!>!
 override ExBoard.BoardCell.Equals(object? obj) -> bool
 override ExBoard.BoardCell.GetHashCode() -> int
 override ExBoard.BoardCell.ToString() -> string!
@@ -96,6 +117,9 @@ override ExBoard.BoardGridView.Data.get -> System.Collections.Generic.IReadOnlyL
 override ExBoard.BoardGridView.Equals(object? obj) -> bool
 override ExBoard.BoardGridView.GetHashCode() -> int
 override ExBoard.BoardGridView.ToString() -> string!
+override ExBoard.BoardLink.Equals(object? obj) -> bool
+override ExBoard.BoardLink.GetHashCode() -> int
+override ExBoard.BoardLink.ToString() -> string!
 override ExBoard.BoardPivotView.<Clone>$() -> ExBoard.BoardPivotView!
 override ExBoard.BoardPivotView.Data.get -> System.Collections.Generic.IReadOnlyList<string!>!
 override ExBoard.BoardPivotView.Equals(object? obj) -> bool
@@ -120,6 +144,8 @@ static ExBoard.BoardChartView.operator !=(ExBoard.BoardChartView? left, ExBoard.
 static ExBoard.BoardChartView.operator ==(ExBoard.BoardChartView? left, ExBoard.BoardChartView? right) -> bool
 static ExBoard.BoardGridView.operator !=(ExBoard.BoardGridView? left, ExBoard.BoardGridView? right) -> bool
 static ExBoard.BoardGridView.operator ==(ExBoard.BoardGridView? left, ExBoard.BoardGridView? right) -> bool
+static ExBoard.BoardLink.operator !=(ExBoard.BoardLink? left, ExBoard.BoardLink? right) -> bool
+static ExBoard.BoardLink.operator ==(ExBoard.BoardLink? left, ExBoard.BoardLink? right) -> bool
 static ExBoard.BoardPivotView.operator !=(ExBoard.BoardPivotView? left, ExBoard.BoardPivotView? right) -> bool
 static ExBoard.BoardPivotView.operator ==(ExBoard.BoardPivotView? left, ExBoard.BoardPivotView? right) -> bool
 static ExBoard.BoardReading.operator !=(ExBoard.BoardReading? left, ExBoard.BoardReading? right) -> bool
@@ -134,3 +160,4 @@ virtual ExBoard.BoardView.EqualityContract.get -> System.Type!
 virtual ExBoard.BoardView.Equals(ExBoard.BoardView? other) -> bool
 virtual ExBoard.BoardView.PrintMembers(System.Text.StringBuilder! builder) -> bool
 ~override ExBoard.Components.ExBoard.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+ExBoard.BoardReading.Deconstruct(out string! Title, out System.Collections.Generic.IReadOnlyList<ExGrid.Data.BoardInput!>! Inputs, out System.Collections.Generic.IReadOnlyList<ExBoard.BoardView!>! Views, out System.Collections.Generic.IReadOnlyList<ExBoard.BoardRow!>! Layout, out System.Collections.Generic.IReadOnlyList<ExBoard.BoardLink!>! Links) -> void
