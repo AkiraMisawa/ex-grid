@@ -168,6 +168,12 @@ public partial class ExGrid<TRow>
     /// meanwhile (ADR-0018) — the grid still asks, so the frame stops holding, and drops them. Before
     /// the grid is attached to the page, and after it is gone, it asks at once and drops them.</para>
     ///
+    /// <para>A frame inside the product's Input Root that claims its keys (<c>data-ex-claims</c>), and puts
+    /// each in the grid's order through <see cref="InOrderAsync"/>, holds none: the grid holds the keys
+    /// typed after the one that gave the keyboard back until that one has been answered, and hands them
+    /// on where the keyboard landed (ADR-0240 section 6). Its <paramref name="typedOnTheWay"/> then
+    /// answers only the keys it held for some other reason.</para>
+    ///
     /// <para>It moves neither the Focus nor the Selection, and scrolls nothing. It adds no JavaScript:
     /// it is the grid's own hand-back, whose condition is widened to the frame (ADR-0021).</para>
     /// </summary>
@@ -374,6 +380,7 @@ public partial class ExGrid<TRow>
         => new(CloseFromChrome, _consumerFocusRequest, _consumerFocusLastRequest, InnerPopupChangedFromChrome)
         {
             TakeFocus = TakeConsumerPopoverFocus,
+            InOrder = InOrderHandler,
         };
 
     /// <summary>The focus function a Consumer's popover is handed (<see cref="GridPopoverContext.TakeFocus"/>):

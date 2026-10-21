@@ -448,8 +448,9 @@ public class ShippedStylesheetTests
         Assert.True(handOn.Success, "handKeyboardTo(element, inTurn) is not in the module");
         var body = handOn.Value;
 
-        // The hand-back's condition: this root's own focus, not a nested grid's, or none (ADR-0018)...
-        Assert.Contains("ownsFocus(active)", body, StringComparison.Ordinal);
+        // The hand-back's condition: this root's own focus, not a nested grid's, or a surface of the Input
+        // Root's own around it (ADR-0240 section 6), or none (ADR-0018)...
+        Assert.Contains("instanceHolds(active)", body, StringComparison.Ordinal);
         Assert.Contains("active === document.body", body, StringComparison.Ordinal);
         Assert.Contains("active === document.documentElement", body, StringComparison.Ordinal);
         // ...and not a field beside the rows with focus of its own, unless a press on the rows left
@@ -743,6 +744,11 @@ public class ShippedStylesheetTests
         // reclaimFocus's condition (ED-22 under the hunt, 2026-10-19).
         Assert.Contains("!active || active === document.body || active === document.documentElement || ownsFocus(active)", body, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"const ownsFocus = \(active\) => !!root && active instanceof Element && root\.contains\(active\)\s*&& active\.closest\('\.ex-grid'\) === root;"), script.Text);
+        // Where the core hands the keyboard on itself, a surface of the Input Root's own that claims its
+        // input — ExSheet's toolbar band, its Sheet Tabs — is the instance's too (ADR-0240 section 6,
+        // input-order ticket 04); a focus asked back into the root is not taken from it.
+        Assert.Contains("const instanceHolds = (active) => ownsFocus(active) || outerSurface(active) !== null;", script.Text, StringComparison.Ordinal);
+        Assert.DoesNotContain("instanceHolds(active)", body, StringComparison.Ordinal);
         // Where DOM focus is, or, granted as the keyboard leaves the Keyboard Field, where it is going:
         // the browser has it on nothing while it tells the departure (ADR-0080, 2026-10-12).
         Assert.Contains("const active = toward instanceof Element ? toward : document.activeElement;", body, StringComparison.Ordinal);
@@ -1192,7 +1198,8 @@ public class ShippedStylesheetTests
         // opened a Cell Editor behind the popover.
         Assert.Matches(new Regex(
             @"^\s*if \(k\.text !== undefined\) \{\s*"
-            + @"const holder = focusedControl\(\) \?\? \(deliveringOutside \? outsideControl\(\) : null\);\s*"
+            // A surface of the Input Root's that claims its keys (ADR-0240 section 6) holds it as well.
+            + @"const holder = focusedControl\(\) \?\? outerControl\(\) \?\? \(deliveringOutside \? outsideControl\(\) : null\);\s*"
             + @"if \(holder\) \{\s*"
             // A cancelled composition typed nothing: nothing to hand on, and nothing dropped.
             + @"if \(k\.text\.length === 0\) \{\s*continue;\s*\}\s*"
@@ -1672,7 +1679,7 @@ public class ShippedStylesheetTests
                 "new Set(['PageUp', 'PageDown'])",
                 "new Set(['Shift', 'Control', 'Alt', 'Meta'])",
                 "new Set(['text', 'search', 'url', 'tel', 'email', 'password', 'date', 'month', 'week', 'time', 'datetime-local', 'number'])",
-                "new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number'])",
+                "new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number', 'radio', 'checkbox'])",
                 "new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'])",
                 "new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'])",
                 "new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'])",

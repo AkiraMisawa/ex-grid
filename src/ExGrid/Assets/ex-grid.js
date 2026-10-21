@@ -227,6 +227,38 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // leaving the root, a press on the grid, and disposal.
     let keysOut = false;
 
+    // The Input Root (ADR-0240 section 6): the product instance's outermost element, where the key
+    // gate's capture listeners hear input. A product that draws this grid as its Consumer marks it
+    // (data-ex-input-root: ExSheet's box, around its toolbar band and its Sheet Tabs), and the grid
+    // takes its place in that product's order; an ExGrid on its own is its own Input Root (ADR-0018).
+    // Only the nearest mark around this root counts, never one beyond a grid this root is nested in.
+    let inputRoot = (() => {
+        const outer = root.parentElement?.closest('[data-ex-input-root], .ex-grid') ?? null;
+        return outer !== null && outer.hasAttribute('data-ex-input-root') ? outer : root;
+    })();
+    // Inside the Input Root and outside this root: the product's own markup around the grid.
+    const outsideRootWithin = (node) => node instanceof Node && !!root && !!inputRoot && inputRoot !== root
+        && inputRoot.contains(node) && !root.contains(node);
+    // A surface of the product's own around this root that puts its input in this instance's order
+    // (ExGrid.InOrderAsync), and says which events its handler claims (data-ex-claims): the nearest
+    // such element around `node` — ExSheet's toolbar band, a built-in toolbar button, a Sheet Tab — or
+    // null. Not the Input Root itself, whose claims are the keyboard crossing its edge (onFocused), and
+    // nothing inside another grid. An element of the product's that claims nothing — a design
+    // system's control a Wrapper draws on the band — is not this order's (ADR-0240 section 7, ticket 06).
+    const outerClaimant = (node) => {
+        if (!outsideRootWithin(node)) {
+            return null;
+        }
+        const element = node instanceof Element ? node : node.parentElement;
+        const claimant = element?.closest('[data-ex-claims]') ?? null;
+        return claimant !== null && claimant !== inputRoot && claimant.closest('.ex-grid, [data-ex-input-root]') === inputRoot
+            ? claimant : null;
+    };
+    // Such a surface that holds the keyboard itself — the band, a tab —, where a key typed is its own.
+    const outerSurface = (node) => (node !== null && outerClaimant(node) === node ? node : null);
+    // The surface of the product's own that holds DOM focus, if one does (outerSurface).
+    const outerControl = () => outerSurface(document.activeElement);
+
     // The Settled Mark (ADR-0220; ADR-0021's note of 2026-10-16): `data-ex-settled` on the root while
     // every input the gate has taken has been handled and its effect is in the DOM, so that a test, or
     // any automation driving the grid at machine speed, reads only then. Written here, from what the
@@ -524,6 +556,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // and put the keyboard back in the Sheet's edit (ED-22 under the hunt, 2026-10-19).
     const ownsFocus = (active) => !!root && active instanceof Element && root.contains(active)
         && active.closest('.ex-grid') === root;
+    // Widened to the Input Root (ADR-0240 section 6, decided with the user on 2026-10-20) where the core
+    // hands the keyboard on itself (handKeyboardTo): a surface of the product's own around this root that
+    // holds the keyboard — ExSheet's toolbar band, a Sheet Tab — is the instance's, so the arrow on a tab
+    // gives the keyboard to the tab it selects. A focus the core asks for back into this root is not taken
+    // from such a surface: asked a round trip before the band took the keyboard, it would take it back.
+    const instanceHolds = (active) => ownsFocus(active) || outerSurface(active) !== null;
     // DOM focus inside this root, or on nothing: the keyboard is still this grid's.
     const keyboardStillHere = () => {
         const active = document.activeElement;
@@ -1609,7 +1647,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // way back from it, and were gated against the root ahead of the keys it held (Escape three times in
     // a list a KeyTip opened, then Alt, H, H, typed at once: H, H opened an edit in the cell).
     const replayAltRelease = async () => {
-        const control = focusedControl();
+        const control = focusedControl() ?? outerControl();
         const frame = control === null && deliveringOutside ? outsideControl() : null;
         const target = control ?? frame ?? keyFieldOf() ?? root;
         replaying = true;
@@ -1730,8 +1768,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         return elements.filter((e) => e instanceof HTMLInputElement && blocksImplicitSubmit.has(e.type)).length === 1;
     };
-    // The fields in which Enter submits the form they stand in, as the browser's implicit submission has it.
-    const implicitSubmitTypes = new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number']);
+    // The fields in which Enter submits the form they stand in, as the browser's implicit submission has it:
+    // Chrome's and Edge's radio buttons and checkboxes too — Enter on Format Cells' Percentage closed it,
+    // and on a circuit the ↓ typed straight after it moved the choice instead of the Focus (input-order
+    // ticket 04).
+    const implicitSubmitTypes = new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number', 'radio', 'checkbox']);
     const onSentinel = (target) => target instanceof Element && target.classList.contains('ex-focus-wrap')
         && popoverOf(target) !== null;
     // A popover closing, and the keyboard in flight back from it (decided with the user on
@@ -2438,7 +2479,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // dropped with every key held behind it (ADR-0010). A cancelled composition typed
             // nothing, and hands nothing on.
             if (k.text !== undefined) {
-                const holder = focusedControl() ?? (deliveringOutside ? outsideControl() : null);
+                const holder = focusedControl() ?? outerControl() ?? (deliveringOutside ? outsideControl() : null);
                 if (holder) {
                     if (k.text.length === 0) {
                         continue;
@@ -2483,7 +2524,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // after it, finds it (altPending): to the root or the edit, or to a frame of the Consumer's own.
             // Landing on a control inside this root — a popover's — or in a text field, which cannot
             // reproduce it, it is no Alt alone, and its release goes with it.
-            const target = focusedControl() ?? (deliveringOutside ? outsideControl() : null);
+            const target = focusedControl() ?? outerControl() ?? (deliveringOutside ? outsideControl() : null);
             if (k.key === 'Alt' && k.altAlone === true && target && (isTextField(target) || root.contains(target))) {
                 k.altAlone = false;
             }
@@ -2518,6 +2559,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // its number; answered by a Blazor handler of the popover's, it is not (awaitMove).
                 const sentBefore = inputsSent;
                 handToPopover(target, k);
+                // Handed to a surface of the product's own around this root — the toolbar band, a Sheet
+                // Tab — the key was numbered as it went on (onOuterKey), and the keys after it wait until
+                // it has been answered, then go where its answer left the keyboard (ADR-0240 section 6):
+                // handed on in the same task, a key the band's answer sent back to the Sheet reached the
+                // band first, and was lost. An Alt alone handed there is the surface's, press and
+                // release: its release is not handed on again (altPending).
+                // A surface that is holding the keys typed on it itself (data-ex-holds) — the band while a
+                // list it opened is on its way to the keyboard — takes the rest straight on, in order, as
+                // typed there: waited for, the key after it went to the list ahead of the one it held.
+                if (outerSurface(target) !== null) {
+                    if (k.key === 'Alt') {
+                        k.altAlone = false;
+                    }
+                    if (inputsSent > sentBefore && !target.closest('[data-ex-holds]')) {
+                        await answeredUpTo(inputsSent);
+                        await editorSettled();
+                    }
+                    continue;
+                }
                 // A held Enter handed to this grid's Name Box submitted its form: the keys behind it
                 // wait for its answer, as behind one typed there (holdBehindNameBoxEnter).
                 if (k.key === 'Enter' && ownNameBox(target) !== null) {
@@ -2621,6 +2681,41 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
     };
 
+    // A key on a surface of the product's own around this root (ADR-0240 section 6): ExSheet's toolbar
+    // band, a Sheet Tab. Its Blazor handler puts it in this instance's order (ExGrid.InOrderAsync), told
+    // its number here as it goes on (tellClaim). Typed while the gate holds input, it is held in its place
+    // among the held keys and handed on where the keyboard is at its turn, as every held key is. The keys
+    // typed after it wait until it has been answered, and then go where its answer left the keyboard:
+    // typed at once behind the band's Escape, a tab's Escape or a KeyTip's command, they reached the band
+    // or the tab before the keyboard had left it, or the Sheet before the command had run. A key on an
+    // element there that claims nothing — a design system's control a Wrapper draws on the band, the
+    // Wrapper's Format Cells frame on its way out — is left to it, as before the Input Root (ticket 06).
+    const onOuterKey = (event) => {
+        lookSettled();
+        if (!core || event.isComposing || event.keyCode === 229 || outerSurface(event.target) === null
+            || claimOf(event.target, 'keydown') === null) {
+            return;
+        }
+        if (replaying) {
+            tellClaim('keydown');
+            return;
+        }
+        if (answering) {
+            const k = snapshot(event);
+            // A clipboard key's own event does nothing on the band or a tab: it goes as it came.
+            if (isClipboardKey(k)) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            noteAlt(k, k, true);
+            held.push(k);
+            return;
+        }
+        // A press of Alt here starts no KeyTips of the root's: its release is this surface's.
+        altPending = null;
+        startHold(answeredUpTo(tellClaim('keydown')));
+    };
     const onKeyDown = (event) => {
         lookSettled();
         if (!core) {
@@ -3152,6 +3247,64 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the next key: Blazor's own focus would land a round trip later on a circuit. One of the five
     // decisions about focus made in script (ADR-0021). Heard in the capture phase, where the
     // field's own focus, which does not bubble, is heard too.
+    // The keyboard crossing the Input Root's edge (ADR-0240 sections 1 and 6; GridInputKind.KeyboardIn
+    // and KeyboardOut), told as it crosses where the Input Root claims it (data-ex-claims: focusin,
+    // focusout): the handler that hears it — ExSheet's word to its Pointing Scope of whether it holds the
+    // keyboard (ADR-0058) — is handled in its place among the keys and presses, never ahead of the key
+    // before it nor behind the press after it. A move inside the Input Root — the root to the Cell
+    // Editor, the band to the root — crosses nothing and is not told, so its handler does nothing; that
+    // is how a focusout followed by a focusin inside is told apart from the keyboard leaving, without
+    // waiting for the browser's next turn. The one exception is a keyboard that came in untold, whose
+    // first move inside is told as its arrival (keyboardToldIn). The window losing focus is no departure (onFocusLeft), and
+    // its coming back no arrival. Reads the event's own targets; no layout is read.
+    const inputRootClaims = (kind) => !!core && !!inputRoot
+        && (inputRoot.getAttribute('data-ex-claims') ?? '').split(' ').includes(kind);
+    const tellCrossing = (event) => {
+        const other = event.relatedTarget;
+        if (event.type === 'focus') {
+            // A focus the keyboard did not follow — a press's own on a focusable box, after the grid
+            // has already put the keyboard in its key field — moves nothing: no focusin follows it, so
+            // a number told for it would never be taken, and every input behind it would wait.
+            if (event.target !== document.activeElement) {
+                return;
+            }
+            if (other instanceof Node && inputRoot?.contains(other)) {
+                // A move inside crosses nothing, unless the keyboard came in untold — before the Input
+                // Root claimed its crossings, or as the page loaded: the first move inside is then told
+                // as its arrival, and the handler that hears it learns that the keyboard is here.
+                if (!keyboardToldIn && inputRootClaims('focusin')) {
+                    keyboardToldIn = true;
+                    tellClaim('focusin');
+                }
+                return;
+            }
+            // Back from another window, or a tab of the browser's, the keyboard never left.
+            if (other === null && windowLeft) {
+                windowLeft = false;
+                return;
+            }
+            if (inputRootClaims('focusin')) {
+                keyboardToldIn = true;
+                tellClaim('focusin');
+            }
+            return;
+        }
+        if (other instanceof Node && inputRoot?.contains(other)) {
+            return;
+        }
+        if (event.target === document.activeElement) {
+            windowLeft = true;
+            return;
+        }
+        if (inputRootClaims('focusout')) {
+            keyboardToldIn = false;
+            tellClaim('focusout');
+        }
+    };
+    // The window, not the page, took the keyboard last: the focus that comes back with it is no arrival.
+    let windowLeft = false;
+    // The keyboard's arrival in the Input Root has been told, and its departure not since.
+    let keyboardToldIn = false;
     const onFocused = (event) => {
         const field = keyFieldOf();
         if (field === null) {
@@ -3475,9 +3628,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // event is numbered as it goes on to Blazor (nextInput) and told to the core just before Blazor
     // dispatches it (ExGrid.InputTakenAt), so the handler that hears it claims that number and is
     // handled in its place among the keys and presses. Reads one attribute; nothing is measured.
+    // Or a surface of the product's own around this root, inside the Input Root (outerClaimant).
     const claimantOf = (target) => {
         const claimant = target instanceof Element ? target.closest('[data-ex-claims]') : null;
-        return claimant !== null && root !== null && claimant.closest('.ex-grid') === root ? claimant : null;
+        if (claimant === null || root === null) {
+            return null;
+        }
+        return claimant.closest('.ex-grid') === root ? claimant : outerClaimant(target);
     };
     const claimOf = (target, kind) => {
         const claimant = claimantOf(target);
@@ -3648,6 +3805,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     root.addEventListener('ex-press-handed-on', onPressHandedOn);
 
+    // A press on the product's own markup around this root (outsideRootWithin): on a surface that
+    // claims its events (outerClaimant) — a toolbar button, a Sheet Tab — it takes its place among the
+    // held keys while the gate holds input, its release and its click behind it, and is otherwise told
+    // as it goes on, as a press on one of the grid's own controls is. Nothing else there is the gate's.
+    const onOuterPress = (event) => {
+        lookSettled();
+        if (!core || replaying) {
+            return;
+        }
+        if ((answering || held.length > 0) && holdsClaimedPress(event.target)) {
+            event.preventDefault();
+            event.stopPropagation();
+            held.push({ press: 'mousedown', claim: true, target: event.target, init: mouseInit(event) });
+            return;
+        }
+        if (claimOf(event.target, 'mousedown') !== null) {
+            tellClaim('mousedown');
+        }
+    };
     const onPress = (event) => {
         lookSettled();
         // A press while the Keyboard Field composes (ADR-0080): the press would end the
@@ -3896,6 +4072,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     // A release is held only behind its press: once the press has been handed on, the
     // release follows it to Blazor as it comes, and Blazor keeps the two in order.
+    // On the product's own markup around this root, only the release of a press held there is the
+    // gate's (onOuterPress).
+    const onOuterRelease = (event) => {
+        lookSettled();
+        if (core && !replaying && held.findLast((k) => k.press === 'mousedown' || k.dragMove === true)?.claim === true) {
+            event.stopPropagation();
+            held.push({ press: 'mouseup', claim: true, target: event.target, init: mouseInit(event) });
+        }
+    };
     const onRelease = (event) => {
         lookSettled();
         // A passed-on press the keys wait behind is asked about now, ahead of this release
@@ -4056,7 +4241,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // left it (editorSettled). On the element it was made on: one a render has removed since was a
     // control that no longer stands, and the event carries out nothing there.
     const replayClaimed = async (k) => {
-        if (!k.target.isConnected || !root.contains(k.target)) {
+        if (!k.target.isConnected || !(root.contains(k.target) || outerClaimant(k.target) !== null)) {
             return;
         }
         const input = claimOf(k.target, k.press) !== null ? tellClaim(k.press) : 0;
@@ -4076,14 +4261,21 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Blazor (tellClaim); one whose press the gate holds is held behind it, in its turn, with its default
     // (replayClaimed) — a press the gate let through takes its click with it. Reads one attribute; no
     // layout is read.
+    // Whether `target` is a submit button of the form the field `from` stands in.
+    const submitsFormOf = (target, from) => (target instanceof HTMLButtonElement || target instanceof HTMLInputElement)
+        && target.type === 'submit' && (from instanceof HTMLInputElement || from instanceof HTMLSelectElement
+            || from instanceof HTMLTextAreaElement) && from.form !== null && target.form === from.form;
     const onClaimedEvent = (event) => {
         lookSettled();
         if (!core || (replaying && event.type !== 'submit')) {
             return;
         }
-        // A press on an item that did not end in a click on it moved nothing (onPress).
+        // A press on an item that did not end in a click on it moved nothing (onPress). The click Enter's
+        // implicit submission makes on its form's default button is that Enter's own: its submission,
+        // which comes next, numbers the move.
         if (event.type === 'click' && awaitingMove?.unnumbered === true && awaitingMove.from instanceof Node
-            && !awaitingMove.from.contains(event.target) && !(event.target instanceof Node && event.target.contains(awaitingMove.from))) {
+            && !awaitingMove.from.contains(event.target) && !(event.target instanceof Node && event.target.contains(awaitingMove.from))
+            && !submitsFormOf(event.target, awaitingMove.from)) {
             awaitingMove = null;
             lookAgain();
         }
@@ -4101,6 +4293,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 && (awaitingMove.from.contains(event.target) || event.target.contains(awaitingMove.from))) {
                 const { unnumbered, focusAtStart, ...move } = awaitingMove;
                 awaitingMove = { ...move, upTo: input };
+            }
+            // A command run from the product's own surface around this root — a toolbar button, a Sheet
+            // Tab — changes what the keys after it act on, and may send the keyboard on (a list opening):
+            // they wait until it has been answered, and go where it left the keyboard (ADR-0240 section 6).
+            if (!answering && outerClaimant(event.target) !== null) {
+                startHold(answeredUpTo(input));
             }
         }
     };
@@ -4127,6 +4325,40 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     window.addEventListener('submit', onClaimedAhead, true);
     window.addEventListener('focus', onClaimedAhead, true);
+
+    // The Input Root (ADR-0240 section 6): where a product that draws this grid marks one around it —
+    // ExSheet's box — the gate's capture listeners hear the product's own markup around this root too.
+    // The same events this root's listeners hear, on the element around it, in the capture phase, so
+    // they run first: what lands inside this root is left to the listeners above, and what lands on the
+    // product's surfaces that claim their events — the toolbar band, its buttons, the Sheet Tabs — takes
+    // its place in this instance's order (onOuterKey, onOuterPress, onOuterRelease, onClaimedEvent). The
+    // keyboard crossing the Input Root's edge is told from here (tellCrossing). An ExGrid on its own is
+    // its own Input Root, and nothing is added. No new kind of event is heard (ADR-0021's entries for the
+    // capture-phase keys, presses, clicks and focus).
+    const outer = (listener) => (event) => {
+        if (outsideRootWithin(event.target)) {
+            listener(event);
+        }
+    };
+    const onOuterKeyDown = outer(onOuterKey);
+    // An Alt's release typed on a surface while the gate holds input is held in its place behind its
+    // press, as one typed on the root is (onRootKeyUp); any other is left to the surface.
+    const onOuterKeyUp = outer((event) => {
+        if (answering && outerSurface(event.target) !== null) {
+            onRootKeyUp(event);
+        }
+    });
+    const onOuterPressed = outer(onOuterPress);
+    const onOuterReleased = outer(onOuterRelease);
+    const onOuterClaimed = outer(onClaimedEvent);
+    const outerListeners = inputRoot === root ? [] : [
+        ['keydown', onOuterKeyDown], ['keyup', onOuterKeyUp], ['mousedown', onOuterPressed], ['mouseup', onOuterReleased],
+        ['click', onOuterClaimed], ['dblclick', onOuterClaimed], ['contextmenu', onOuterClaimed],
+        ['focus', tellCrossing], ['focusout', tellCrossing],
+    ];
+    for (const [type, listener] of outerListeners) {
+        inputRoot.addEventListener(type, listener, true);
+    }
 
     // The clipboard (ADR-0005) — the fourth allowlist entry (ADR-0021). Both events
     // fire on the focused root — verified on the real Chrome: a non-editable,
@@ -4407,7 +4639,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // Formula Bar a press has given it — a read-only one, over a cell that is not Editable,
         // where a paste does nothing. Only with none of these is it the grid's.
         const active = document.activeElement;
-        let field = focusedControl() ?? (deliveringOutside ? outsideControl() : null);
+        let field = focusedControl() ?? outerControl() ?? (deliveringOutside ? outsideControl() : null);
         if (field === null && editing !== 'none') {
             field = editorInput();
         } else if (field === null && active instanceof Element && root.contains(active) && !isRoot(active)) {
@@ -5068,7 +5300,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 && active.closest('.ex-formula-bar') !== null;
             if (root && element instanceof HTMLElement && element.isConnected
                 && (!active || active === document.body || active === document.documentElement
-                    || (ownsFocus(active) && !own))) {
+                    || (instanceHolds(active) && !own))) {
                 staleField = null;
                 // A Chrome can name the box of a design-system control whose input it cannot
                 // reference in .NET (More Colours, ADR-0039). A box starts at its first enabled
@@ -5083,6 +5315,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     target.focus();
                     if (target === firstText && isTextField(target)) {
                         target.select();
+                    }
+                    // Given to the frame the keyboard was on its way to, it has arrived, even where that
+                    // frame is the one it came from: the toolbar band taking it back before a list it
+                    // asked for had it (handedOver). The band is the instance's (instanceHolds), so it is
+                    // granted there now.
+                    if (handOff === 'frame' && document.activeElement === target && !root.contains(target)) {
+                        handOffFrom = null;
                     }
                 }
             }
@@ -5230,8 +5469,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             pressToAsk = null;
             // A copy still held has no grid left to copy from: its write lands nothing.
             dropHeld();
+            for (const [type, listener] of outerListeners) {
+                inputRoot.removeEventListener(type, listener, true);
+            }
             delete root[JOURNAL];
             root = null;
+            inputRoot = null;
             scroller = null;
             // The stamp too: the handle outlives this dispose until .NET releases it, a round trip
             // later on a circuit, and the stamp's parent is the whole grid (MEM-2).

@@ -633,6 +633,50 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
         });
 
+        // Input-order ticket 04: the KeyTip's command is an input in the Sheet's order, and the key typed
+        // behind it is taken after it, where the keyboard landed: the arrow moves the Focus from the cell the
+        // command set bold, and never reaches the band.
+        test(`ADR-0240/ADR-0100: Alt, H, 1, ↓ typed at once sets bold on the Focus cell, then moves the Focus (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'A4');
+            await setRoundTrip(80);
+
+            await page.keyboard.press('Alt');
+            await page.keyboard.press('h');
+            await page.keyboard.press('1');
+            await page.keyboard.press('ArrowDown');
+
+            await expectFocusAt(grid, 'A5');
+            await circuitQuiet();
+            await expect(tips(page)).toHaveCount(0);
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
+            await expectKeyboardOn(grid);
+            await page.keyboard.press('ArrowUp');
+            await expectFocusAt(grid, 'A4');
+            await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
+        });
+
+        // Input-order ticket 04: a press on a command is numbered as it happens (data-ex-claims), so the
+        // arrow typed straight after it is taken once the command has been answered: bold lands on the cell
+        // pressed, and the arrow moves from it.
+        test(`ADR-0240/ADR-0100: Bold pressed, then ↓ at once, sets bold where the Focus was and then moves it (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'A4');
+            await setRoundTrip(80);
+
+            await toolbarItem(page, 'Bold').click();
+            await page.keyboard.press('ArrowDown');
+
+            await expectFocusAt(grid, 'A5');
+            await circuitQuiet();
+            await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
+            await expectKeyboardOn(grid);
+            await page.keyboard.press('ArrowUp');
+            await expectFocusAt(grid, 'A4');
+            await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
+        });
+
         test(`SH-52/ADR-0100/ADR-0050: F10, H, 2 typed at once sets italic, with no edit opened and the KeyTips gone (${chrome})`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'A4');

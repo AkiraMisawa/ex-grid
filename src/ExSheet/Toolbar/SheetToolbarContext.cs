@@ -212,6 +212,17 @@ public sealed class SheetToolbarContext
     /// </summary>
     internal Func<ElementReference, Task>? GiveToolbarTheKeyboard { get; set; }
 
+    /// <summary>
+    /// Puts an input of the toolbar's own in the Sheet's Input Order (ADR-0240 section 6): the grid's
+    /// <c>InOrderAsync</c>, for the band's keys and the built-in buttons' clicks, which their elements
+    /// claim (<c>data-ex-claims</c>). Set by the Sheet; without a grid the input is handled at once.
+    /// </summary>
+    internal Func<global::ExGrid.Chrome.GridInputKind, Func<Task>, Task>? InOrder { get; set; }
+
+    /// <summary>The toolbar's input <paramref name="handling"/>, in its place in the Sheet's Input Order (<see cref="InOrder"/>).</summary>
+    internal Task InOrderAsync(global::ExGrid.Chrome.GridInputKind kind, Func<Task> handling) =>
+        InOrder?.Invoke(kind, handling) ?? handling();
+
     /// <summary>Closes the list titled so in the Sheet's built-in frame, if it is what the frame shows. Set by the Sheet.</summary>
     internal Func<string, Task>? CloseChoices { get; set; }
 

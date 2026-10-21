@@ -123,6 +123,31 @@ test.describe('on /sheet', () => {
         }
     });
 
+    // Input-order ticket 04: Format Cells' OK is a submission numbered as it happens (data-ex-claims), so
+    // the arrow typed straight after the Enter that submits it is taken once the format is set, where the
+    // keyboard landed: the Percentage lands on C2, and the arrow moves from it.
+    test('ADR-0240/SH-45: Ctrl+1, a choice, then Enter and ↓ at once, sets the format and then moves the Focus', async ({ page }) => {
+        const grid = sheet(page);
+        await pressCell(grid, 'C2');
+        await page.keyboard.press('Control+1');
+        await expect(formatCells(grid)).toBeVisible();
+        await pick(choice(grid, 'Percentage'));
+        const circuit = await setRoundTrip(80);
+        try {
+            await page.keyboard.press('Enter');
+            await page.keyboard.press('ArrowDown');
+
+            await expectFocusAt(grid, 'C3');
+            await circuitQuiet();
+            await expect(formatCells(grid)).toHaveCount(0);
+            await expect(cell(grid, 'C2')).toHaveText('50.00%');
+            await expect(cell(grid, 'C3')).not.toHaveText(/%$/);
+            await expectKeyboardOn(grid);
+        } finally {
+            if (circuit) await setRoundTrip(0);
+        }
+    });
+
     // A press inside Format Cells made as it appears keeps the keyboard where it was pressed (ticket 240,
     // ADR-0204's note of 2026-10-17). On a circuit the frame's opening focus comes a round trip after the
     // frame is drawn, and it took the keyboard back from the pressed choice to the first tab, where the

@@ -36,9 +36,14 @@
     OK and Cancel close the frame, a round trip later on a circuit, and carry ex-popover-closes, by
     which the grid's key listener holds the keys typed meanwhile, and after Enter in a field, which
     submits the form, and hands them on where the keyboard lands (ADR-0010; ADR-0044's note of
-    2026-10-12).
+    2026-10-12). The form's submission and Cancel's click are numbered in the Sheet's Input Order
+    (data-ex-claims; ADR-0240 section 6), so that wait ends on the commit's answer.
+
+    The draft follows ADR-0240 section 1's rule: a render never writes back over what the user chose.
+    Each control's state is written only when the draft changes, and a render the grid's parameters
+    cause draws nothing new here (ShouldRender).
 *@
-<form class="ex-format-cells" @onsubmit="OkAsync" @onsubmit:preventDefault>
+<form class="ex-format-cells" data-ex-claims="submit" @onsubmit="OkInOrderAsync" @onsubmit:preventDefault>
     <div class="ex-format-cells-tabs" role="tablist" aria-label="Format Cells">
         @foreach (var tab in FormatCellsOffer.Tabs)
         {
@@ -76,7 +81,7 @@
     }
     <div class="ex-popover-actions ex-format-cells-actions">
         <button type="submit" class="ex-format-cells-ok ex-popover-closes">OK</button>
-        <button type="button" class="ex-format-cells-cancel ex-popover-closes" @onclick="Cancel" @ref="_cancel">Cancel</button>
+        <button type="button" class="ex-format-cells-cancel ex-popover-closes" data-ex-claims="click" @onclick="CancelInOrderAsync" @ref="_cancel">Cancel</button>
     </div>
 </form>
 
@@ -211,6 +216,21 @@
     }
 
     private void Cancel() => FormatCells.Cancel();
+
+    // OK, by its click or Enter in a field, and Cancel, in their place in the Sheet's Input Order
+    // (ADR-0240 sections 1 and 6): the form claims its submission and Cancel its click, so the commit
+    // judges the draft after every input before it, and the keys typed after it act on what it left. The
+    // draft itself is not in the order: a choice made here changes nothing until OK.
+    private Task OkInOrderAsync() => InOrderAsync(GridInputKind.Submit, OkAsync);
+
+    private Task CancelInOrderAsync() => InOrderAsync(GridInputKind.Click, () =>
+    {
+        Cancel();
+        return Task.CompletedTask;
+    });
+
+    private Task InOrderAsync(GridInputKind kind, Func<Task> handling) =>
+        Popover.InOrder is { } inOrder ? inOrder(kind, handling) : handling();
 
     // ---- Number ----
 

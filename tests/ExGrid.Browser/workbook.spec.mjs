@@ -7,7 +7,8 @@ import { expectKeyboardOn } from './keyboard.mjs';
 // Ctrl+PageUp show the Sheet after and before; a key typed straight after the switch, at machine
 // speed, lands on the Sheet shown, at its own Selection, though on a circuit it told the paint before
 // the switch (numbered after it in the Input Order, ADR-0240); each Sheet keeps where it was scrolled;
-// a press on a tab leaves the keyboard in the grid.
+// a press on a tab leaves the keyboard in the grid; and the keys typed straight after a press on a tab,
+// or after Escape on the tab list, are taken in their place in the Input Order (input-order ticket 04).
 
 test.use({ viewport: { width: 1280, height: 1000 } });
 
@@ -88,9 +89,53 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(tab(page, 'Summary')).toHaveAttribute('aria-selected', 'true');
             await expect(cell(grid, 'A1')).toHaveText('Claimed');
             await expectKeyboardOn(grid);
-            // A key typed straight after a press on a tab is not tested here: the press is not numbered
-            // in the Input Order until ExSheet's own surfaces join it (input-order ticket 04), and on a
-            // circuit such a key is refused as aimed at the Sheet left.
+            // A key typed straight after the press is WB-5's.
+        });
+
+        // Input-order ticket 04: a press on a tab is numbered as it happens (data-ex-claims), so the keys
+        // typed straight after it are taken once the Sheet it shows is shown, at that Sheet's own Focus.
+        test('WB-5/ADR-0240: keys typed at once after a press on a tab land on the Sheet shown, at its own Focus', async ({ page }) => {
+            await openWorkbook(page);
+            const grid = sheet(page);
+            await clickCell(grid, 'A1');
+            await page.keyboard.press('Control+PageDown');
+            await expect(cell(grid, 'A1')).toHaveText('Claimed');
+            await goTo(grid, 'C2');
+            await page.keyboard.press('Control+PageUp');
+            await expect(cell(grid, 'A1')).toHaveText('Item');
+            await clickCell(grid, 'C3');
+            await settled(grid);
+
+            // At machine speed: the press and the typing, with nothing awaited between them.
+            await tab(page, 'Summary').click();
+            await page.keyboard.type('77');
+            await page.keyboard.press('Enter');
+            await settled(grid);
+
+            await expect(tab(page, 'Summary')).toHaveAttribute('aria-selected', 'true');
+            await expect(cell(grid, 'C2')).toHaveText('77');
+            await expect(editor(grid)).toHaveCount(0);
+            await page.keyboard.press('Control+PageUp');
+            await expect(cell(grid, 'C3')).toHaveText('289.5');
+        });
+
+        // Input-order ticket 04: a key on the tab list is in the Sheet's order. Escape gives the keyboard
+        // back to the grid, and the arrow typed straight after it is taken there, once Escape is answered.
+        test('WB-6/ADR-0240: Escape on the tab list, then ↓ at once, moves the Focus in the grid', async ({ page }) => {
+            await openWorkbook(page);
+            const grid = sheet(page);
+            await clickCell(grid, 'B2');
+            await tab(page, 'Claim').focus();
+            await expect(tab(page, 'Claim')).toBeFocused();
+
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('ArrowDown');
+            await page.keyboard.press('ArrowRight');
+
+            await expectFocusAt(grid, 'C3');
+            await settled(grid);
+            await expect(tab(page, 'Claim')).toHaveAttribute('aria-selected', 'true');
+            await expectKeyboardOn(grid);
         });
 
         test('WB-5: the Name Box goes to a cell on another Sheet, shows that Sheet and scrolls the cell into view', async ({ page }) => {

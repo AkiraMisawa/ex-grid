@@ -94,6 +94,85 @@ public partial class ExGrid<TRow>
     private Task ClaimedAsync(string kind, string alsoKind, Func<Task> handling)
         => AnsweredAsync(handling, ClaimInput(kind, alsoKind));
 
+    /// <summary>
+    /// Handles an input of a control outside the grid's own markup — a Chrome's, a Consumer's, or a
+    /// product's own surface inside the Input Root, such as ExSheet's toolbar — in its place in the Input
+    /// Order (ADR-0240 section 6): once every input numbered before it has been handled, and before any
+    /// numbered after it. The order is the instance's, so the control's input is taken one at a time
+    /// with the grid's own keys, presses and clicks, at machine speed as typed slowly.
+    ///
+    /// <para>Called from the control's Blazor handler as it starts, on the renderer's context, with the
+    /// kind of the event that handler hears. The control declares the events it takes in its
+    /// <c>data-ex-claims</c> attribute (<c>click</c>, <c>keydown</c>, …, space-separated): the grid's
+    /// listener numbers such an event inside the Input Root as it happens and tells the number just before
+    /// Blazor dispatches the event, and this call takes it. While the grid holds input — behind a key
+    /// still being answered — it holds such an event too, and dispatches it in its turn. A handler that
+    /// declares an event must call this every time it hears it: a number told and never taken holds every
+    /// input behind it until the next one is told.</para>
+    ///
+    /// <para>An input whose number was not told — a control that does not declare the event, one outside
+    /// the Input Root, a call from the Consumer's own code — runs after every input received so far.
+    /// Called from inside the handling of an input under way (a command a key runs), it runs at once, as
+    /// part of that input. <see cref="GridInputKind.KeyboardIn"/> and <see cref="GridInputKind.KeyboardOut"/>
+    /// run only for the keyboard crossing the Input Root's edge, which the grid tells: a move of DOM focus
+    /// inside it is no input, and its handling does not run.</para>
+    /// </summary>
+    /// <param name="kind">The event the handler hears.</param>
+    /// <param name="handling">The handler's work. Its <c>await</c>s are inside the input: the next input
+    /// starts once it has finished.</param>
+    /// <returns>A task that completes once <paramref name="handling"/> has run, or at once for a move of
+    /// DOM focus that is no input; it ends with nothing done once the grid is disposed.</returns>
+    public Task InOrderAsync(GridInputKind kind, Func<Task> handling)
+    {
+        ArgumentNullException.ThrowIfNull(handling);
+        if (_disposed)
+            return Task.CompletedTask;
+        var claimed = ClaimKindOf(kind);
+        if (kind is GridInputKind.KeyboardIn or GridInputKind.KeyboardOut)
+        {
+            // Only a telling of this kind is this handler's: one of another kind waits for its own
+            // handler, and is not voided by a move of DOM focus inside the Input Root.
+            if (_claimTold is not { } crossing || !string.Equals(crossing.Kind, claimed, StringComparison.Ordinal))
+                return Task.CompletedTask;
+            _claimTold = null;
+            // A crossing the input under way made itself (its focus, heard within its handling) is part
+            // of it: handled at once, and its own number is answered as void.
+            if (_inputOrder?.InFlow == true)
+            {
+                InputVoid(crossing.Input);
+                return handling();
+            }
+            return AnsweredAsync(handling, crossing.Input);
+        }
+        // Inside the handling of an input under way it is part of that input; a telling standing is
+        // another event's, left for its own handler.
+        if (_inputOrder?.InFlow == true)
+            return handling();
+        var input = ClaimInput(claimed);
+        return input > 0 ? AnsweredAsync(handling, input) : Inputs.AfterReceivedAsync(handling);
+    }
+
+    /// <summary>The event name the script tells for <paramref name="kind"/> (data-ex-claims).</summary>
+    private static string ClaimKindOf(GridInputKind kind) => kind switch
+    {
+        GridInputKind.Click => ClaimClick,
+        GridInputKind.DoubleClick => "dblclick",
+        GridInputKind.ContextMenu => "contextmenu",
+        GridInputKind.Press => "mousedown",
+        GridInputKind.KeyDown => ClaimKeyDown,
+        GridInputKind.Submit => ClaimSubmit,
+        GridInputKind.Focus => ClaimFocus,
+        GridInputKind.KeyboardIn => "focusin",
+        GridInputKind.KeyboardOut => "focusout",
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Not a kind of input the grid numbers (ADR-0240)."),
+    };
+
+    // InOrderAsync, as the popover frame's contents are handed it (GridPopoverContext.InOrder): one
+    // delegate, so the context compares equal from render to render.
+    private Func<GridInputKind, Func<Task>, Task>? _inOrder;
+
+    private Func<GridInputKind, Func<Task>, Task> InOrderHandler => _inOrder ??= InOrderAsync;
+
     // The kinds of event the script tells (data-ex-claims).
     private const string ClaimClick = "click";
     private const string ClaimKeyDown = "keydown";

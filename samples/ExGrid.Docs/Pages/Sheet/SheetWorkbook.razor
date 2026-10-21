@@ -88,7 +88,9 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
             <kbd>Ctrl</kbd> + <kbd>Page Down</kbd>, which show the Sheet before or after, as in Excel, and stop at
             the first and the last. <kbd>Tab</kbd> from the grid reaches the strip, where <kbd>←</kbd>,
             <kbd>→</kbd>, <kbd>Home</kbd> and <kbd>End</kbd> select a tab and show its Sheet, and <kbd>Enter</kbd> or
-            <kbd>Escape</kbd> hands the keyboard back to the grid.
+            <kbd>Escape</kbd> hands the keyboard back to the grid. A press on a tab and a key on the strip take their
+            place among the Sheet's keys: what is typed straight after them, over Blazor Server too, lands on the Sheet
+            they show, at its own Focus, or in the grid they hand the keyboard back to.
         </p>
         <ul>
             <li>

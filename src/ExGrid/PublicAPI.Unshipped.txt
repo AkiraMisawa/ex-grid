@@ -8,9 +8,22 @@ const ExGrid.Chrome.RefusalLabelIds.PasteUnreadable = "refused-paste-unreadable"
 const ExGrid.ShapedGrid.DateFormat = "yyyy-mm-dd" -> string!
 const ExGrid.ShapedGrid.DateTimeFormat = "yyyy-mm-dd hh:mm:ss" -> string!
 const ExGrid.ShapedGrid.IntegerFormat = "#,##0" -> string!
+ExGrid.Chrome.GridInputKind
+ExGrid.Chrome.GridInputKind.Click = 0 -> ExGrid.Chrome.GridInputKind
+ExGrid.Chrome.GridInputKind.ContextMenu = 2 -> ExGrid.Chrome.GridInputKind
+ExGrid.Chrome.GridInputKind.DoubleClick = 1 -> ExGrid.Chrome.GridInputKind
+ExGrid.Chrome.GridInputKind.Focus = 6 -> ExGrid.Chrome.GridInputKind
+ExGrid.Chrome.GridInputKind.KeyboardIn = 7 -> ExGrid.Chrome.GridInputKind
+ExGrid.Chrome.GridInputKind.KeyboardOut = 8 -> ExGrid.Chrome.GridInputKind
+ExGrid.Chrome.GridInputKind.KeyDown = 4 -> ExGrid.Chrome.GridInputKind
+ExGrid.Chrome.GridInputKind.Press = 3 -> ExGrid.Chrome.GridInputKind
+ExGrid.Chrome.GridInputKind.Submit = 5 -> ExGrid.Chrome.GridInputKind
+ExGrid.Chrome.GridPopoverContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>?
+ExGrid.Chrome.GridPopoverContext.InOrder.init -> void
 ExGrid.Clipboard.PasteRefusalReason.Cancelled = 13 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Clipboard.PasteRefusalReason.Unreadable = 12 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.InOrderAsync(ExGrid.Chrome.GridInputKind kind, System.Func<System.Threading.Tasks.Task!>! handling) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.InputsSent(int input) -> void
 ExGrid.Components.ExGrid<TRow>.InputTakenAt(string! kind, int input) -> void
 ExGrid.Components.ExGrid<TRow>.OnHeldInputsRefusedAsync(int input = 0) -> System.Threading.Tasks.Task!

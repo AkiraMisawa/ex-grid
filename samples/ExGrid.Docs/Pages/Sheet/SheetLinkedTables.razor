@@ -76,7 +76,10 @@ await sheet.PushLinkedTableAsync("CostCentres", centres.Select(c => c.ToRow()));
             <li>
                 The grid is pointed at only while a Sheet of the Scope has the keyboard and an edit open with its caret
                 where a Reference can go. Otherwise it is an ordinary grid. After a press, the arrow keys move inside
-                the grid as Excel's do inside another workbook.
+                the grid as Excel's do inside another workbook. The keyboard coming into the Sheet and leaving it
+                takes its place among the Sheet's keys and presses, so <code>=</code>, a press on the grid and
+                <code>+</code> typed straight off give <code>=</code>, the lookup and the <code>+</code>, in that order,
+                over Blazor Server too.
             </li>
             <li>
                 A press that cannot be written — several cells, a table without a key, a blank key, a row not yet

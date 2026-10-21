@@ -14,4 +14,3 @@ ExSheet.SheetsChange
 ExSheet.SheetsChange.After.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExSheet.SheetsChange.Before.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExSheet.SheetsChange.Shown.get -> string!
-override ExSheet.Components.ExSheet.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!

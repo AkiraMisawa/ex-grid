@@ -296,6 +296,25 @@ test.describe('/sheet', () => {
         await expect(table.locator('.ex-focus, .ex-range')).toHaveCount(0);
     });
 
+    // Input-order ticket 04: the press handed on to the Sheet holding the keyboard takes its number in the
+    // Sheet's order, and the keyboard's moves inside the Sheet's Input Root are no crossing, so nothing
+    // waits on the browser's next turn: =, the press and + typed with nothing awaited between them give
+    // the lookup and the +, in the order made.
+    test('ADR-0240/ADR-0058: =, a press on a PV cell and + typed at once give = then the lookup then +', async ({ page }) => {
+        const grid = sheet(page);
+        const table = positions(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=');
+        await pointedAtNow(table);
+        await clickCell(table, 'C3');
+        await page.keyboard.type('+');
+
+        await expect(editor(grid)).toHaveValue(`${LOOKUP_4471}+`);
+        await expect(editor(grid)).toBeFocused();
+        await expect(table.locator('.ex-focus, .ex-range')).toHaveCount(0);
+        await expectPointedAt(table);
+    });
+
     // Found on CI: as = opens the Cell Editor, DOM focus moves from the Sheet's root to it, and the
     // Sheet heard the focusout as the keyboard leaving, because on a circuit the focusin came in a
     // later message than the one turn it waited. The Scope stopped pointing for a round trip, and a
