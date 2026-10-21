@@ -102,4 +102,22 @@ public class WrapperStylesheetTests
 
         Assert.DoesNotMatch(new Regex(@"(?<![\w-])(transition|animation)(-[\w-]+)?\s*:|@keyframes"), css);
     }
+
+    [Fact] // ADR-0332 §4 / ADR-0030: the Wrapper maps the Match Mark's two tokens onto its palette, under its paper
+    public void ADR0332_the_match_mark_tokens_are_mapped_onto_the_palette()
+    {
+        var root = Regex.Match(WrapperStylesheet(), @"\.mud-ex-grid\s*\{([^}]*)\}");
+
+        Assert.True(root.Success, "no .mud-ex-grid rule in the Wrapper's stylesheet");
+        // The matches in the secondary, the current in the tertiary, more strongly: neither the
+        // selection's primary nor the Change Highlight's warning.
+        Assert.Matches(new Regex(@"(^|[;\s])--ex-match-mark-fill:\s*rgba\(var\(--mud-palette-secondary-rgb\), 0\.22\);"),
+            root.Groups[1].Value);
+        Assert.Matches(new Regex(@"(^|[;\s])--ex-match-mark-current-fill:\s*rgba\(var\(--mud-palette-tertiary-rgb\), 0\.45\);"),
+            root.Groups[1].Value);
+    }
+
+    [Fact] // ADR-0332 §4 / ADR-0029/0030: the Wrapper paints the mark through its tokens alone, and writes no rule against its classes
+    public void ADR0332_the_wrapper_writes_no_rule_against_the_match_mark()
+        => Assert.DoesNotContain(".ex-match-mark", WrapperStylesheet());
 }

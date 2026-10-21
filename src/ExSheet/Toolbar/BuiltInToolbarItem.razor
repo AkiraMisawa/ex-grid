@@ -24,7 +24,9 @@
     (mousedown's default is prevented), so the keyboard stays on the Sheet, as Excel's ribbon leaves
     it in the cell. No button is a tab stop: the toolbar is one, and names the item the keyboard is on
     (aria-activedescendant). A menu, and a split control's arrow, open their choices in the Sheet's
-    popover frame. Nothing here decides what an item means.
+    popover frame. Nothing here decides what an item means. A click takes its place in the Sheet's
+    Input Order (ADR-0240 section 6): each button claims it, and keys typed straight after it act on
+    what the command left.
 *@
 @switch (Context.Kind)
 {
@@ -35,12 +37,12 @@
         <span class="@GroupClass" id="@Context.Id" role="group" aria-label="@Context.Name">
             <button type="button" class="ex-sheet-toolbar-face" tabindex="-1" title="@Context.Tooltip"
                     aria-label="@Context.Name" disabled="@(!Context.Enabled)"
-                    @onmousedown:preventDefault="true" @onclick="() => Context.Invoke()">
+                    data-ex-claims="click" @onmousedown:preventDefault="true" @onclick="InvokeInOrderAsync">
                 @Picture
             </button>
             <button type="button" class="ex-sheet-toolbar-arrow" tabindex="-1" title="@Context.Name"
                     aria-label="@($"{Context.Name}, more")" aria-haspopup="menu" disabled="@(!Context.Enabled)"
-                    @onmousedown:preventDefault="true" @onclick="() => Item.OpenChoicesAsync()">
+                    data-ex-claims="click" @onmousedown:preventDefault="true" @onclick="OpenChoicesInOrderAsync">
                 @ToolbarIcons.Caret
             </button>
             @KeyTipBadge
@@ -49,7 +51,7 @@
     case ToolbarItemKind.Menu:
         <button type="button" class="@ItemClass ex-sheet-toolbar-menu" id="@Context.Id" tabindex="-1"
                 title="@Context.Tooltip" aria-label="@Context.Name" aria-haspopup="menu"
-                disabled="@(!Context.Enabled)" @onmousedown:preventDefault="true" @onclick="() => Context.Invoke()">
+                disabled="@(!Context.Enabled)" data-ex-claims="click" @onmousedown:preventDefault="true" @onclick="InvokeInOrderAsync">
             @Picture
             @ToolbarIcons.Caret
             @KeyTipBadge
@@ -58,7 +60,7 @@
     default:
         <button type="button" class="@ItemClass" id="@Context.Id" tabindex="-1" title="@Context.Tooltip"
                 aria-label="@Context.Name" aria-pressed="@(Context.Kind == ToolbarItemKind.Toggle ? (Context.Pressed ? "true" : "false") : null)"
-                disabled="@(!Context.Enabled)" @onmousedown:preventDefault="true" @onclick="() => Context.Invoke()">
+                disabled="@(!Context.Enabled)" data-ex-claims="click" @onmousedown:preventDefault="true" @onclick="InvokeInOrderAsync">
             @Picture
             @KeyTipBadge
         </button>
@@ -80,6 +82,15 @@
 
     /// <summary>The item itself, whose choices open in the Sheet's frame.</summary>
     [Parameter, EditorRequired] public ToolbarItemBase Item { get; set; } = default!;
+
+    // A button's click, in its place in the Sheet's Input Order (ADR-0240 section 6): each button claims
+    // it (data-ex-claims), so the keys typed straight after a command clicked here act on what it left —
+    // the bold set, the list it opened.
+    private Task InvokeInOrderAsync() => InOrderAsync(() => Context.Invoke());
+
+    private Task OpenChoicesInOrderAsync() => InOrderAsync(Item.OpenChoicesAsync);
+
+    private Task InOrderAsync(Func<Task> handling) => Item.InOrderAsync(GridInputKind.Click, handling);
 
     private int _answeredOpen;
     private int _answeredClose;

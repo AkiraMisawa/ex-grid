@@ -1,1 +1,9 @@
 #nullable enable
+ExSheet.MudBlazor.MudSheetChrome.SheetTab(ExSheet.SheetTabContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetChrome.SheetTabAdd() -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetChrome.SheetTabMenu(ExSheet.SheetTabMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetTabMenu
+ExSheet.MudBlazor.MudSheetTabMenu.Context.get -> ExSheet.SheetTabMenuContext!
+ExSheet.MudBlazor.MudSheetTabMenu.Context.set -> void
+ExSheet.MudBlazor.MudSheetTabMenu.MudSheetTabMenu() -> void
+~override ExSheet.MudBlazor.MudSheetTabMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void

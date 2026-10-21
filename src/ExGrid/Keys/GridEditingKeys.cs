@@ -11,12 +11,13 @@ internal static class GridEditingKeys
     /// <summary>
     /// Claimed in every mode: commit, cancel, Tab's moves and F2's switch. Ctrl+F too, taken and
     /// answered with nothing: Find is disabled while a cell is being edited, and the browser's own
-    /// find would search only the painted rows (ADR-0055).
+    /// find would search only the painted rows (ADR-0055). Ctrl+H likewise: Replace is Find's panel, and
+    /// the browser's key is its history (ADR-0332 §2).
     /// </summary>
     public static IReadOnlyList<string> Editing { get; } =
     [
         "Escape", "Enter", "Shift+Enter", "Control+Enter", "Tab", "Shift+Tab", "F2",
-        "Control+f", "Control+F",
+        "Control+f", "Control+F", "Control+h", "Control+H",
     ];
 
     /// <summary>

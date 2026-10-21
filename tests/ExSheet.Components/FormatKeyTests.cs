@@ -220,12 +220,12 @@ public class FormatKeyTests : SheetTestContext
         // Focus A2 (plain) over A1:A2: both bold, as one step — not A2 alone.
         Assert.True(FormatAt(cut, "A1").Font.Bold);
         Assert.True(FormatAt(cut, "A2").Font.Bold);
+        // ExSheet relays what the grid raises, and raises nothing of its own for the key.
+        Assert.Equal(told, selections.Count);
         Assert.True(await cut.Instance.UndoAsync());
         Assert.False(FormatAt(cut, "A1").Font.Bold);
         Assert.False(FormatAt(cut, "A2").Font.Bold);
         Assert.False(cut.Instance.CanUndo);
-        // ExSheet relays what the grid raises, and raises nothing of its own for the key.
-        Assert.Equal(told, selections.Count);
     }
 
     [Fact] // ADR-0050 item 14 / ADR-0071, SH-45: Ctrl+1 opens Format Cells over the Selection it carries, and the late notification naming that Selection leaves it open

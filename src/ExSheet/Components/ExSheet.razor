@@ -37,7 +37,11 @@
 @* With the Sheet Toolbar shown (ADR-0100), the same element is the Sheet's box: the toolbar above,
    the grid below with what the toolbar leaves. The element is always there, so showing the toolbar
    never re-creates the grid. *@
-<div class="ex-sheet" style="@FrameStyle" @attributes="_keyboardListeners">
+@* It is also the Sheet's Input Root (ADR-0240 section 6, data-ex-input-root): the grid's key listener
+   hears input on the whole Sheet from here, so the toolbar's keys and commands and the Sheet Tabs take
+   their place in one order with the grid's own keys and presses. In a Scope it claims the keyboard
+   crossing its edge (data-ex-claims, in _keyboardListeners). *@
+<div class="ex-sheet" data-ex-input-root style="@FrameStyle" @attributes="_keyboardListeners">
 @if (ShowToolbar)
 {
     <SheetToolbar Context="_toolbar" Content="ToolbarContent" HeightPx="ToolbarPx" />
@@ -69,20 +73,87 @@
    Excel draws them. A tab list to assistive technology, the selected tab its one tab stop. A press
    keeps the keyboard where it is, in the grid, and shows the Sheet; so do Ctrl+PageUp and
    Ctrl+PageDown, which the grid claims for the Sheet. Its height is the Formula Bar's, written inline
-   (ADR-0028), and the Sheet's ViewportHeight includes it. *@
+   (ADR-0028), and the Sheet's ViewportHeight includes it. A tab's press and the keys on the tab list
+   take their place in the grid's Input Order (ADR-0240 section 6): each tab claims them (data-ex-claims),
+   and a key typed straight after either acts on the Sheet it showed. *@
+@* What the tabs do (ADR-0331 §4, exsheet-workbook ticket 06): + adds a Sheet after the one shown, a
+   double click edits a tab's name in place, the context menu — a secondary press, Shift+F10 or the menu
+   key on a tab — offers Rename, Delete, Move Left, Move Right and Copy, and a drag moves a tab: pressed on
+   one and released on another, or past the last, with Blazor's own mouse events, so the drag reads no
+   layout and adds no script (ADR-0021). Each is claimed (data-ex-claims) and taken in its place in the
+   Input Order, one step on the undo stack, and said in the Sheet's notice, its live region. A Chrome that
+   is an ISheetChrome draws the tabs' faces, the + button's and the menu; the elements that hold the
+   keyboard and hear the input are these. *@
 @if (ShowSheetTabs && _workbook is { } tabbedWorkbook)
 {
-    <div class="ex-sheet-tabs" role="tablist" aria-label="@SheetWords.SheetTabsName" style="@SheetTabsStyle" @ref="_tabList"
-         @onkeydown="OnSheetTabKeyAsync">
-        @foreach (var tabSheet in tabbedWorkbook.Sheets)
+    var sheetChrome = Chrome as ISheetChrome;
+    var renameSession = _renameSession;
+    var menuSession = _menuSession;
+    @* A release anywhere in the area but on a tab or past the last ends a drag with nothing moved, and the
+       pointer leaving the area ends it too: heard always, since a pointer may leave before the press's
+       render could add a listener. *@
+    <div class="ex-sheet-tab-area" style="@SheetTabsStyle" @ref="_tabArea" data-ex-dragging="@(_dragFrom is not null ? "true" : null)"
+         @onmouseup="EndTabDrag" @onmouseleave="EndTabDrag">
+        <div class="ex-sheet-tabs" role="tablist" aria-label="@SheetWords.SheetTabsName" @ref="_tabList"
+             @onkeydown="OnSheetTabKeyAsync">
+            @* Keyed by its Sheet: an element reference is captured only as its element is made, so a tab
+               element is made for each Sheet, never handed on to another, and _tabs holds every tab. *@
+            @foreach (var tabSheet in tabbedWorkbook.Sheets)
+            {
+                var sheet = tabSheet;
+                var selected = sheet == _sheet;
+                if (_renaming == sheet)
+                {
+                    @* The tab keeps its place in the Tab order while its name is edited. The keyboard is handed to the
+                       box inside it, which takes no focus itself, so the grid gives it to the field with its name
+                       selected. *@
+                    <span @key="sheet" class="ex-sheet-tab ex-sheet-tab-renaming" role="tab" aria-selected="@(selected ? "true" : "false")" tabindex="@(selected ? "0" : "-1")">
+                        <span class="ex-sheet-tab-name-box" @ref="_renameBox">
+                            <input type="text" class="ex-sheet-tab-name" aria-label="@SheetWords.SheetNameField" spellcheck="false" autocomplete="off"
+                                   aria-invalid="@(_renameRefused ? "true" : null)" data-ex-claims="keydown"
+                                   @bind:get="_renameText" @bind:set="SetRenameText" @bind:event="oninput" @onchange="OnRenameChanged"
+                                   @onkeydown="OnRenameKeyAsync" @onkeydown:stopPropagation="true" @onfocusout="() => OnRenameLeftAsync(renameSession)" />
+                        </span>
+                    </span>
+                }
+                else
+                {
+                    <button @key="sheet" type="button" role="tab" class="ex-sheet-tab" @ref="_tabs[sheet]" aria-selected="@(selected ? "true" : "false")" tabindex="@(selected ? "0" : "-1")"
+                            aria-haspopup="menu" data-ex-claims="@TabClaims" @onmousedown="e => StartTabDrag(e, sheet)" @onmousedown:preventDefault="true"
+                            @onmouseup="e => DropOnTabAsync(e, sheet)" @onmouseup:stopPropagation="true"
+                            @onclick="() => ShowSheetByUserAsync(sheet)" @ondblclick="() => RenameByUserAsync(sheet)"
+                            @oncontextmenu="() => OpenTabMenuByUserAsync(sheet, GridInputKind.ContextMenu)" @oncontextmenu:preventDefault="true">@if (sheetChrome?.SheetTab(new SheetTabContext(sheet.Name, selected)) is { } face) {@face} else {@sheet.Name}</button>
+                }
+            }
+        </div>
+        <button type="button" class="ex-sheet-tab-add" tabindex="-1" aria-label="@SheetWords.NewSheetName" title="@SheetWords.NewSheetName"
+                data-ex-claims="click" @onmousedown:preventDefault="true" @onclick="AddSheetByUserAsync"
+                @onmouseup="DropPastLastTabAsync" @onmouseup:stopPropagation="true">@if (sheetChrome?.SheetTabAdd() is { } add) {@add} else {<span aria-hidden="true">+</span>}</button>
+        @* Past the last tab: the + button and the strip's empty end, where a tab dragged goes last. *@
+        <span class="ex-sheet-tab-end" aria-hidden="true" @onmouseup="DropPastLastTabAsync" @onmouseup:stopPropagation="true"></span>
+        @if (_menu is { } menu)
         {
-            var sheet = tabSheet;
-            var selected = sheet == _sheet;
-            <button type="button" role="tab" class="ex-sheet-tab" @ref="_tabs[sheet]" aria-selected="@(selected ? "true" : "false")" tabindex="@(selected ? "0" : "-1")"
-                    @onmousedown:preventDefault="true" @onclick="() => ShowSheetByUserAsync(sheet)">@sheet.Name</button>
+            <div class="ex-sheet-tab-menu" role="menu" tabindex="-1" aria-label="@SheetWords.SheetMenuName(menu.Sheet)"
+                 aria-activedescendant="@menu.Commands.FirstOrDefault(c => c.Active)?.Id" data-ex-claims="keydown click" @ref="_menuElement"
+                 @onkeydown="OnTabMenuKeyAsync" @onkeydown:preventDefault="true" @onclick="OnTabMenuClickAsync"
+                 @onmousedown:preventDefault="true" @oncontextmenu:preventDefault="true" @onfocusout="() => OnTabMenuLeftAsync(menuSession)">
+                @if (sheetChrome?.SheetTabMenu(menu) is { } drawn)
+                {
+                    @drawn
+                }
+                else
+                {
+                    @foreach (var command in menu.Commands)
+                    {
+                        <div id="@command.Id" role="menuitem" class="ex-sheet-tab-command@(command.Active ? " ex-sheet-tab-command-active" : "")"
+                             aria-disabled="@(command.Enabled ? null : "true")" title="@command.DisabledReason" @onclick="command.Invoke">@command.Label</div>
+                    }
+                }
+            </div>
         }
     </div>
 }
+@{ NoteDrawn(); }
 @* Format Cells in a frame of the Chrome's own (ADR-0071, ADR-0010's note of 2026-09-30): beside the
    grid and outside its root, from the opening until OK or Cancel. Under the built-in Chrome it
    stands in the grid's popover frame instead (ADR-0050 item 16), and nothing is rendered here. *@
@@ -99,8 +170,6 @@
    the grid has already announced in its own live region, in the Sheet's words (ADR-0203), is shown
    here and hidden from assistive technology, so that it is said once. *@
 <div class="ex-sheet-notice" role="status">@if (_noticeSaidByGrid) {<span aria-hidden="true">@_notice</span>} else {<text>@_notice</text>}</div>
-@* The browser's answer to a render, which a focusout waits for (ADR-0058). Renders nothing. *@
-@BrowserTurnMarkup
 @* ExSheet's stylesheet notice (ADR-0123, ERR-11), shown only by another version's stylesheet: last,
    so the toolbar and the grid stand where they always have. *@
 <div data-ex-notice="stylesheet" data-ex-stylesheet="@NoticeStylesheet" data-ex-stamp="@NoticeStamp" style="display: none">@StylesheetNoticeWords</div>
@@ -700,26 +769,49 @@
 
     /// <summary>
     /// Undoes the latest operation — the user's or a Consumer command's, whichever came last
-    /// (ADR-0048). Answers false when there is nothing to undo.
+    /// (ADR-0048) — on whichever Sheet it was done, and shows that Sheet with the range the operation
+    /// changed selected, as Excel's undo does (ADR-0331 §3). An operation on the Sheets themselves shows
+    /// the Sheet its undo brings back — a Sheet deleted, or the one renamed or moved — or, for a Sheet
+    /// added or copied, the one it was added beside or copied from. Answers false when there is nothing
+    /// to undo.
     /// </summary>
     /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
     public Task<bool> UndoAsync() => OnDispatcherAsync(async () =>
     {
         RefuseWhileEditing();
-        if (_history.Undo() is not { } changes) return false;
-        await ChangedAsync(changes);
+        if (_history.Undo() is not { } undone) return false;
+        await SteppedAsync(undone);
         return true;
     });
 
-    /// <summary>Redoes the operation undone last. Answers false when there is nothing to redo.</summary>
+    /// <summary>
+    /// Redoes the operation undone last, and shows and selects what it changed as
+    /// <see cref="UndoAsync"/> does: a Sheet added or copied is shown again, and a Sheet deleted again is
+    /// taken away, the Sheet shown staying shown unless it is the one deleted, when the Sheet that takes its
+    /// place is. Answers false when there is nothing to redo.
+    /// </summary>
     /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
     public Task<bool> RedoAsync() => OnDispatcherAsync(async () =>
     {
         RefuseWhileEditing();
-        if (_history.Redo() is not { } changes) return false;
-        await ChangedAsync(changes);
+        if (_history.Redo() is not { } redone) return false;
+        await SteppedAsync(redone);
         return true;
     });
+
+    /// <summary>
+    /// An operation undone or redone (ADR-0331 §3): the Sheet it was taken on is shown, with the range it
+    /// changed selected and its Focus, the range's top-left cell, scrolled into view — handed with the
+    /// Sheet's rows when another Sheet is shown, placed on the Sheet shown otherwise. An operation on the
+    /// Sheets themselves selects nothing: the Sheet it shows keeps its own Selection.
+    /// </summary>
+    private Task SteppedAsync(SheetOperationStepped stepped)
+    {
+        var operation = stepped.Operation;
+        var show = operation.ShownAfter(CurrentWorkbook);
+        var select = show == operation.Steps[0].Sheet ? operation.Selects() : null;
+        return ChangedAsync(stepped.Changes, show: show, select: select);
+    }
 
     /// <summary>
     /// A Consumer command: does <paramref name="edit"/> as one operation on the user's undo
@@ -881,6 +973,11 @@
     private async Task OnFormatKeyAsync(GridDeclaredKeyPress press)
     {
         if (await OnToolbarKeyAsync(press)) return;
+        if (press.Key == SheetTabKeys.Insert)
+        {
+            await AddSheetAsync(before: true);
+            return;
+        }
         if (SheetTabKeys.StepOf(press.Key) is { } step)
         {
             await OnSheetTabKeyAsync(press, step);
@@ -1307,6 +1404,8 @@
         _sheet = _workbook.Shown;
         HearSheetNames();
         _views.Clear();
+        // A name being edited, a tab's menu and a drag belong to the Sheets replaced.
+        ForgetTabGestures();
         // A Workbook opened from a document has no day: the Sheet Day is not recorded (ADR-0121).
         GiveTheDay(_workbook);
         // Nor a seed: the Consumer's, or one chosen now, at a count of 0 changes (ADR-0180).
@@ -1610,7 +1709,10 @@
         {
             // The typed fields and the exact numbers are one engine edit: one step on the undo
             // stack (ADR-0048), and one change, which draws once (ADR-0180).
-            await PerformAsync(exact.Count == 0 ? SheetEdit.PasteText(typed) : SheetEdit.PasteText(typed, exact));
+            // Its undo selects the ranges pasted over, the first the one it acted from (ADR-0331 §3), as
+            // the Sheet's own copy pasted over them does, not the range that holds them all.
+            await PerformAsync(exact.Count == 0 ? SheetEdit.PasteText(typed) : SheetEdit.PasteText(typed, exact),
+                selects: [.. intent.Plan.Targets.Select(SheetFormulaAids.RangeOf)]);
         }
         catch (SheetRefusedException refused)
         {
@@ -1766,7 +1868,8 @@
         if (cleared.Count == 0) return;
         try
         {
-            await PerformAsync(SheetEdit.SetEntries(cleared));
+            // Its undo selects what Delete was pressed over, as Excel's does, not only the cells it cleared.
+            await PerformAsync(SheetEdit.SetEntries(cleared), selects: [.. intent.Targets.Select(SheetFormulaAids.RangeOf)]);
         }
         catch (SheetRefusedException refused)
         {
@@ -1852,7 +1955,11 @@
         return true;
     }
 
-    private async Task PerformAsync(SheetEdit edit, IReadOnlyList<CellRange>? widenOver = null)
+    /// <summary>
+    /// <paramref name="edit"/> on the Sheet shown, as one operation on the undo stack; its undo selects
+    /// <paramref name="selects"/>, when given, in place of the ranges the edit names (ADR-0331 §3).
+    /// </summary>
+    private async Task PerformAsync(SheetEdit edit, IReadOnlyList<CellRange>? widenOver = null, IReadOnlyList<CellRange>? selects = null)
     {
         var step = Do(edit);
         // The operation and the widths it widens its columns to are one operation: one undo puts
@@ -1860,11 +1967,11 @@
         if (widenOver is not null && Widen(widenOver) is { Count: > 0 } widened)
         {
             WorkbookStep[] steps = [step, .. widened];
-            _history.Record(steps);
+            _history.Record(steps, CurrentSheet, selects);
             await ChangedAsync([.. steps.Select(s => s.Change)]);
             return;
         }
-        _history.Record(step);
+        _history.Record([step], CurrentSheet, selects);
         await ChangedAsync([step.Change]);
     }
 
@@ -1890,7 +1997,7 @@
         }
         else
         {
-            _history.Record(step);
+            _history.Record(step, CurrentSheet);
             // The whole columns the grid resizes with this one, as it reports them (FN-12c): from
             // the Selection it holds, which it chose them by.
             AdoptGridSelection();
@@ -1955,7 +2062,10 @@
         _toolbar ??= new SheetToolbarContext(this, "ex-sheet-" + RuntimeHelpers.GetHashCode(this).ToString(CultureInfo.InvariantCulture),
             OpenToolbarChoicesAsync, _returnKeyboard,
             sentence => { Tell(sentence); StateHasChanged(); },
-            () => _ = InvokeAsync(StateHasChanged));
+            () => _ = InvokeAsync(StateHasChanged),
+            // The band's keys and the built-in buttons' clicks take their place in the grid's Input Order
+            // (ADR-0240 section 6): the Sheet is their Input Root.
+            InOrderAsync);
         // The toolbar is a frame of the Sheet's own outside the grid (ADR-0050 item 16): the keys
         // typed while the keyboard goes to it are held for it, and the keys typed on it while the
         // keyboard comes back are handed to the grid (ADR-0050 item 16's note of 2026-10-12).
@@ -2162,18 +2272,38 @@
     /// it changed there; another Sheet's rows are read afresh when its tab is selected. An operation that
     /// took the Sheet shown out of the Workbook — its deletion, or the undo of its insertion — shows the
     /// Sheet the Workbook now shows, read whole.</summary>
-    private async Task ChangedAsync(IReadOnlyList<WorkbookChange> changes, bool raiseDocument = true, bool byUser = true)
+    /// <remarks>An undo or a redo names the Sheet to <paramref name="show"/> and the range to
+    /// <paramref name="select"/> on it (ADR-0331 §3): handed with the rows of another Sheet, so it lands
+    /// under the version that brings them, and placed on the Sheet shown under its own.</remarks>
+    private async Task ChangedAsync(IReadOnlyList<WorkbookChange> changes, bool raiseDocument = true, bool byUser = true, Sheet? show = null, CellRange? select = null)
     {
-        if (changes.Any(change => change.ChangesSheets) && ShowSheet(CurrentWorkbook.Shown))
+        (SelectionRange Range, CellPosition Focus)? place = select is { } range
+            ? (SheetFormulaAids.SelectionOf(range), new CellPosition(range.First.Row, range.First.Column))
+            : null;
+        var target = show ?? (changes.Any(change => change.ChangesSheets) ? CurrentWorkbook.Shown : null);
+        if (target is not null && ShowSheet(target, place))
         {
             if (byUser) ClearNotice();
+            await ForgetSheetsGoneAsync();
             if (_grid is { } summarized) await summarized.RefreshSummaryAsync();
             if (raiseDocument) await RaiseDocumentsAsync();
             await RaiseSheetsChangedAsync();
             return;
         }
+        // The Sheet and the version the change was made under, read before anything awaits: the range is
+        // placed under them, before any Consumer handler runs, and not at all once another Sheet is shown or
+        // another document opened (rows are places, so the version is the Sheet's own, ADR-0046). Placed after
+        // the Consumer heard the change, a handler that awaits would let the next undo's range land first and
+        // this one over it, and one that opens another document would put it among other rows.
         var sheet = CurrentSheet;
-        await ChangedAsync([.. changes.Select(change => change.For(sheet))], raiseDocument, byUser);
+        var version = _sequence;
+        // The tabs, views and gestures of Sheets gone are the Sheet's own to forget, and are forgotten
+        // before the repaint that shows what is left.
+        if (changes.Any(change => change.ChangesSheets)) await ForgetSheetsGoneAsync();
+        await ChangedAsync([.. changes.Select(change => change.For(sheet))], raiseDocument: false, byUser);
+        if (place is { } placed && _grid is { } grid && _sheet == sheet && _sequence == version)
+            await grid.PlaceSelectionAsync(placed.Range, placed.Focus, version);
+        if (raiseDocument) await RaiseDocumentsAsync();
         if (changes.Any(change => change.ChangesSheets)) await RaiseSheetsChangedAsync();
     }
 

@@ -264,4 +264,73 @@ public class GridFindTests
             Assert.Equal((row, column), (reference.Row, reference.Column));
         }
     }
+
+    [Theory] // ADR-0332 §4: the reference rule for one cell is ADR-0055's — ordinal, case ignored unless asked, containment unless whole cell
+    [InlineData("Novak", "nova", false, false, true)]
+    [InlineData("Novak", "NOVA", false, false, true)]
+    [InlineData("Novak", "NOVA", true, false, false)]
+    [InlineData("Novak", "Nova", true, false, true)]
+    [InlineData("Novak", "nova", false, true, false)]
+    [InlineData("Novak", "novak", false, true, true)]
+    [InlineData("Novak", "novak", true, true, false)]
+    [InlineData("2,500.50", "2,500", false, false, true)]
+    [InlineData("2,500.50", "2500", false, false, false)]
+    [InlineData("", "a", false, false, false)]
+    [InlineData("Straße", "STRASSE", false, false, false)] // ordinal: no culture folds ß
+    [InlineData("İstanbul", "istanbul", false, false, false)] // ordinal: no Turkish dotted I
+    public void The_reference_rule_matches_one_cell_as_a_step_does(string shown, string text, bool matchCase, bool wholeCell, bool expected)
+    {
+        Assert.Equal(expected, GridFind.Matches(shown, new GridFindPattern(text, matchCase, wholeCell)));
+    }
+
+    [Fact] // ADR-0332 §4: an empty pattern matches nothing, as an empty field asks nothing
+    public void An_empty_pattern_matches_nothing()
+    {
+        Assert.False(GridFind.Matches("Alpha", new GridFindPattern("", false, false)));
+        Assert.False(GridFind.Matches("", new GridFindPattern("", false, true)));
+    }
+
+    [Fact] // ADR-0332 §4: the step and the mark judge by one rule — the cells a step can land on are exactly the ones the rule marks
+    public void The_step_lands_only_on_cells_the_reference_rule_marks()
+    {
+        string[] texts = ["alpha", "ALPHA", "nova", "Novak", "a", "1,000.00", "et", "beta", "0"];
+        foreach (var text in texts)
+        {
+            foreach (var matchCase in new[] { false, true })
+            {
+                foreach (var wholeCell in new[] { false, true })
+                {
+                    var pattern = new GridFindPattern(text, matchCase, wholeCell);
+                    var marked = new HashSet<(int, string)>();
+                    for (var row = 0; row < Rows.Length; row++)
+                    {
+                        foreach (var column in Columns)
+                        {
+                            if (GridFind.Matches(TextOf(column)!(Rows[row]), pattern))
+                                marked.Add((row, column));
+                        }
+                    }
+                    // Every step from the start, until one comes back to a cell already reached.
+                    var reached = new HashSet<(int, string)>();
+                    CellPosition? from = null;
+                    for (var i = 0; i < Rows.Length * Columns.Length; i++)
+                    {
+                        var result = GridFind.Step(Rows, Ask(text, from: from, matchCase: matchCase, wholeCell: wholeCell), TextOf);
+                        if (!result.IsFound)
+                            break;
+                        reached.Add((result.Row, result.Column!));
+                        from = new CellPosition(result.Row, Array.IndexOf(Columns, result.Column));
+                    }
+                    Assert.Equal(marked, reached);
+                }
+            }
+        }
+    }
+
+    [Fact] // ADR-0332 §4: a request's pattern is its text and its two options
+    public void A_request_carries_its_pattern()
+    {
+        var request = Ask("nova", from: new(1, 1), backward: true, matchCase: true, wholeCell: true);
+        Assert.Equal(new GridFindPattern("nova", true, true), request.Pattern);
+    }
 }

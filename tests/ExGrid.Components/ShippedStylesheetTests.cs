@@ -444,12 +444,13 @@ public class ShippedStylesheetTests
     public void The_hand_on_gives_the_consumers_control_the_keyboard_only_while_it_is_still_this_grids()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
-        var handOn = Regex.Match(script, @"handKeyboardTo: \(element, inTurn\) => \{.*?\n        \},", RegexOptions.Singleline);
-        Assert.True(handOn.Success, "handKeyboardTo(element, inTurn) is not in the module");
+        var handOn = Regex.Match(script, @"handKeyboardTo: \(element, inTurn, preventScroll\) => \{.*?\n        \},", RegexOptions.Singleline);
+        Assert.True(handOn.Success, "handKeyboardTo(element, inTurn, preventScroll) is not in the module");
         var body = handOn.Value;
 
-        // The hand-back's condition: this root's own focus, not a nested grid's, or none (ADR-0018)...
-        Assert.Contains("ownsFocus(active)", body, StringComparison.Ordinal);
+        // The hand-back's condition: this root's own focus, not a nested grid's, or a surface of the Input
+        // Root's own around it (ADR-0240 section 6), or none (ADR-0018)...
+        Assert.Contains("instanceHolds(active)", body, StringComparison.Ordinal);
         Assert.Contains("active === document.body", body, StringComparison.Ordinal);
         Assert.Contains("active === document.documentElement", body, StringComparison.Ordinal);
         // ...and not a field beside the rows with focus of its own, unless a press on the rows left
@@ -457,10 +458,11 @@ public class ShippedStylesheetTests
         Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
         Assert.Contains("active !== staleField", body, StringComparison.Ordinal);
         Assert.DoesNotContain("fromField", body, StringComparison.Ordinal);
-        // Only an element still on the page, focused as its own FocusAsync would focus it, scrolled
-        // into view; the field a press left standing is given up with the keyboard.
+        // Only an element still on the page, focused as its own FocusAsync would focus it: scrolled
+        // into view unless the caller asked it to stay where it stands (HandKeyboardToAsync's
+        // preventScroll, a Sheet Tab's); the field a press left standing is given up with the keyboard.
         Assert.Contains("element instanceof HTMLElement && element.isConnected", body, StringComparison.Ordinal);
-        Assert.Matches(new Regex(@"staleField = null;[\s\S]*target\.focus\(\);"), body);
+        Assert.Matches(new Regex(@"staleField = null;[\s\S]*target\.focus\(\{ preventScroll: preventScroll === true \}\);"), body);
         Assert.Contains("element.querySelectorAll('input, textarea')].find(isTextField)", body, StringComparison.Ordinal);
         Assert.Contains("target === firstText && isTextField(target)", body, StringComparison.Ordinal);
         Assert.Contains("target.select()", body, StringComparison.Ordinal);
@@ -469,7 +471,7 @@ public class ShippedStylesheetTests
         // control takes it in turn, from the hold, with the keys held for it (ADR-0050 item 16's
         // note of 2026-10-12): the same call, made then.
         Assert.Contains("if (inTurn !== true && handOff === 'frame' && answering", body, StringComparison.Ordinal);
-        Assert.Contains("handle.handKeyboardTo(frame, true);", script, StringComparison.Ordinal);
+        Assert.Contains("handle.handKeyboardTo(frame, true, frameInTurnStill);", script, StringComparison.Ordinal);
         // A read of document.activeElement, never of layout, and no listener of its own.
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle|addEventListener"), body);
     }
@@ -629,7 +631,7 @@ public class ShippedStylesheetTests
             .Where(line => line.Length > 0 && !char.IsWhiteSpace(line[0]) && !line.StartsWith("//", StringComparison.Ordinal)
                 && !line.StartsWith("/**", StringComparison.Ordinal))
             .ToList();
-        Assert.Equal(["export function stamp() {", "}", "export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared, gateKeys) {", "}"], topLevel);
+        Assert.Equal(["export function stamp() {", "}", "export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared, gateKeys, canReplace) {", "}"], topLevel);
     }
 
     [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
@@ -743,6 +745,11 @@ public class ShippedStylesheetTests
         // reclaimFocus's condition (ED-22 under the hunt, 2026-10-19).
         Assert.Contains("!active || active === document.body || active === document.documentElement || ownsFocus(active)", body, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"const ownsFocus = \(active\) => !!root && active instanceof Element && root\.contains\(active\)\s*&& active\.closest\('\.ex-grid'\) === root;"), script.Text);
+        // Where the core hands the keyboard on itself, a surface of the Input Root's own that claims its
+        // input — ExSheet's toolbar band, its Sheet Tabs — is the instance's too (ADR-0240 section 6,
+        // input-order ticket 04); a focus asked back into the root is not taken from it.
+        Assert.Contains("const instanceHolds = (active) => ownsFocus(active) || outerSurface(active) !== null;", script.Text, StringComparison.Ordinal);
+        Assert.DoesNotContain("instanceHolds(active)", body, StringComparison.Ordinal);
         // Where DOM focus is, or, granted as the keyboard leaves the Keyboard Field, where it is going:
         // the browser has it on nothing while it tells the departure (ADR-0080, 2026-10-12).
         Assert.Contains("const active = toward instanceof Element ? toward : document.activeElement;", body, StringComparison.Ordinal);
@@ -1193,7 +1200,8 @@ public class ShippedStylesheetTests
         // opened a Cell Editor behind the popover.
         Assert.Matches(new Regex(
             @"^\s*if \(k\.text !== undefined\) \{\s*"
-            + @"const holder = focusedControl\(\) \?\? \(deliveringOutside \? outsideControl\(\) : null\);\s*"
+            // A surface of the Input Root's that claims its keys (ADR-0240 section 6) holds it as well.
+            + @"const holder = focusedControl\(\) \?\? outerControl\(\) \?\? \(deliveringOutside \? outsideControl\(\) : null\);\s*"
             + @"if \(holder\) \{\s*"
             // A cancelled composition typed nothing: nothing to hand on, and nothing dropped.
             + @"if \(k\.text\.length === 0\) \{\s*continue;\s*\}\s*"
@@ -1316,7 +1324,7 @@ public class ShippedStylesheetTests
         // hands it, at attach or re-told through setClaims, and that set is consulted only
         // while no edit is open. While one is, the editing sets decide, and they carry none.
         Assert.DoesNotMatch(new Regex(@"'Control\+(Shift\+)?[zZyY]'"), script.Text);
-        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys, leaveDeclared\) => \{\s*taken = new Set\(takenKeys\);"), script.Text);
+        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys, leaveDeclared, replaceable\) => \{\s*taken = new Set\(takenKeys\);"), script.Text);
         Assert.Matches(new Regex(@"if \(!taken\.has\(canonical\)\)"), script.Text);
     }
 
@@ -1328,9 +1336,9 @@ public class ShippedStylesheetTests
         Assert.True(gate.Success, "the gate is not in the module");
 
         // Handed at attach and re-told with the claims, per instance.
-        Assert.Matches(new Regex(@"export function attach\([^)]*, declaredKeys, reportTimeZone, leaveDeclared, gateKeys\) \{"), script.Text);
+        Assert.Matches(new Regex(@"export function attach\([^)]*, declaredKeys, reportTimeZone, leaveDeclared, gateKeys, canReplace\) \{"), script.Text);
         Assert.Matches(new Regex(@"let declared = new Set\(declaredKeys \?\? \[\]\);"), script.Text);
-        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys, leaveDeclared\) => \{[^}]*declared = new Set\(declaredKeys \?\? \[\]\);", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys, leaveDeclared, replaceable\) => \{[^}]*declared = new Set\(declaredKeys \?\? \[\]\);", RegexOptions.Singleline), script.Text);
         // With no edit open they are among the taken keys, and only a taken one is asked about: the
         // Consumer answers it, and may open a popover or a frame of its own (Format Cells' Ctrl+1),
         // so the keys after it are held until that answer, and then until the keyboard has arrived
@@ -1675,6 +1683,7 @@ public class ShippedStylesheetTests
                 "new Set(['Shift', 'Control', 'Alt', 'Meta'])",
                 "new Set(['text', 'search', 'url', 'tel', 'email', 'password', 'date', 'month', 'week', 'time', 'datetime-local', 'number'])",
                 "new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number'])",
+                "new Set(['radio', 'checkbox'])",
                 "new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'])",
                 "new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'])",
                 "new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'])",
@@ -2040,5 +2049,45 @@ public class ShippedStylesheetTests
         var (css, _) = CoreStylesheet();
 
         Assert.DoesNotMatch(new Regex(@"(?<![\w-])(transition|animation)(-[\w-]+)?\s*:|@keyframes"), css);
+    }
+
+    [Fact] // ADR-0332 §4 / ADR-0029: the Match Mark's two tokens default to tints of one orange, the current stronger, and neither is the Change Highlight's tint of Mark; the core only reads them
+    public void ADR0332_the_match_mark_defaults_are_its_own()
+    {
+        var rules = UnconditionalRules();
+        var match = Assert.Single(rules, rule => rule.Selectors.SequenceEqual([".ex-cell.ex-match-mark::before"]));
+        var current = Assert.Single(rules, rule => rule.Selectors.SequenceEqual([".ex-cell.ex-match-mark-current::before"]));
+
+        Assert.Contains("background: var(--ex-match-mark-fill, color-mix(in srgb, #ff9632 25%, transparent));", match.Body, StringComparison.Ordinal);
+        Assert.Contains("background: var(--ex-match-mark-current-fill, color-mix(in srgb, #ff9632 55%, transparent));", current.Body, StringComparison.Ordinal);
+        Assert.DoesNotContain("Mark 40%", match.Body, StringComparison.Ordinal);
+        Assert.DoesNotContain("Mark 40%", current.Body, StringComparison.Ordinal);
+        var (css, _) = CoreStylesheet();
+        Assert.DoesNotMatch(new Regex(@"--ex-match-mark(-current)?-fill\s*:"), css);
+    }
+
+    [Fact] // ADR-0332 §4 / ADR-0068 / UX-7: under forced colours a match is a frame of its own, not the cell's outline, so on a cell both changed and matching the Change Highlight's dashed outline stands beside it
+    public void ADR0332_under_forced_colours_a_match_and_a_change_stay_apart()
+    {
+        var (_, forced) = ForcedColorsSplit();
+
+        // Nothing restates the mark on the cell's own outline, which the Change Highlight and the
+        // states hold.
+        Assert.DoesNotContain(forced, rule => rule.Selectors.Any(selector => selector.StartsWith(".ex-cell.ex-match-mark", StringComparison.Ordinal) && !selector.EndsWith("::before", StringComparison.Ordinal)));
+        Assert.DoesNotContain(forced, rule => rule.Selectors.Any(selector => selector.Contains("ex-match-mark", StringComparison.Ordinal))
+            && Regex.IsMatch(rule.Body, @"(?<![\w-])(outline|box-shadow)(-[\w-]+)?\s*:"));
+
+        // A dotted border on the ::before, inset past the two-pixel band the outlines lie in, and
+        // solid for the current match.
+        var match = Assert.Single(forced, rule => rule.Selectors.SequenceEqual([".ex-cell.ex-match-mark::before"]));
+        Assert.Matches(new Regex(@"background:\s*none;"), match.Body);
+        Assert.Matches(new Regex(@"inset:\s*3px;"), match.Body);
+        Assert.Matches(new Regex(@"border:\s*2px dotted Highlight;"), match.Body);
+        var current = Assert.Single(forced, rule => rule.Selectors.SequenceEqual([".ex-cell.ex-match-mark-current::before"]));
+        Assert.Matches(new Regex(@"border-style:\s*solid;"), current.Body);
+
+        // The Change Highlight keeps its own, dashed outline.
+        var changed = Assert.Single(forced, rule => rule.Selectors.Contains(".ex-cell.ex-changed"));
+        Assert.Matches(new Regex(@"(?<![\w-])outline:\s*2px dashed Highlight;"), changed.Body);
     }
 }

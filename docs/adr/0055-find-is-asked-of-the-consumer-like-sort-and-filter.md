@@ -99,6 +99,9 @@ instance, as Excel's dialog keeps its last search.
 
 ## Not decided here, deliberately
 
+- *(2026-10-21: Replace is decided by
+  [ADR-0332](./0332-find-reaches-every-product-replace-is-a-write-asked-of-the-consumer-and-the-matches-in-view-are-marked.md),
+  which also marks the matches in view and brings Find to ExPivot. Find All stays undecided.)*
 - **Find All** (Excel's list of every match) and **Replace** (Ctrl+H). Replace is a bulk write —
   an Edit Intent over an unbounded, non-rectangular set of cells — and needs its own decision about
   refusal, caps and undo. Find All needs a result list the Consumer pages. Neither is claimed.

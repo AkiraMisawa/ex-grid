@@ -39,6 +39,49 @@ public sealed class Entry : IEquatable<Entry>
     internal Node? Parsed { get; }
 
     /// <summary>
+    /// The functions the Formula calls that are outside ExSheet's declared set
+    /// (<see cref="DeclaredFunction"/>), in the text's order, each once without regard to case: each
+    /// gives <c>#NAME?</c> (ADR-0047). Empty for a constant, and for a Formula that calls only
+    /// declared functions. A reader of another program's workbook lists them before the user meets
+    /// them (ADR-0330 §4).
+    /// </summary>
+    public IReadOnlyList<string> UndeclaredFunctions =>
+        Parsed is null
+            ? []
+            : Parsed.Calls.Where(c => c.Function is null).Select(c => c.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+
+    /// <summary>
+    /// The names the Formula reads that nothing in it binds — not a function's, not a <c>LET</c>'s,
+    /// not a <c>LAMBDA</c>'s parameter, not <c>TRUE</c> or <c>FALSE</c> — in the text's order, each once without regard to case. ExSheet
+    /// defines no names, so each gives <c>#NAME?</c>; in Excel each is a defined name, or an Excel
+    /// Table's, where the workbook has one (ADR-0047, ADR-0330 §4). Empty for a constant.
+    /// </summary>
+    public IReadOnlyList<string> UnboundNames => Parsed is null ? [] : UnboundNameWalk.Of(Parsed);
+
+    /// <summary>
+    /// The Entry as a copy writes it <paramref name="rows"/> down and <paramref name="columns"/>
+    /// across from where it stands, as Excel writes a copied Formula and a shared formula's cells
+    /// (ADR-0048, ADR-0330 §4): each relative part of a Reference moves by that distance, each
+    /// absolute part (<c>$</c>) stays, a whole column or row spans every row or column still, and a
+    /// Reference moved off the Sheet is written <c>#REF!</c>. A constant, or a move of nothing, is
+    /// this Entry. Negative distances move up and left.
+    /// </summary>
+    public Entry MovedBy(int rows, int columns) => ReferenceShift.Shift(this, rows, columns);
+
+    /// <summary>
+    /// The constant Entry of an Error Value written exactly as Excel writes one in a file, case and all
+    /// (<c>#N/A</c>, <c>#DIV/0!</c>, <c>#SPILL!</c>), or <see langword="null"/> when the text is no Error
+    /// Value a cell can hold: <c>#GETTING_DATA</c> and <c>#CIRC!</c> are not one, and nothing else is read
+    /// as a Formula or a number. A reader of another program's workbook takes an error cell through it
+    /// (ADR-0330 §4).
+    /// </summary>
+    public static Entry? FromErrorText(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        return ErrorValues.TryParseWritten(text, out var error) ? new Entry(Value.FromError(error)) : null;
+    }
+
+    /// <summary>
     /// A constant Entry. <c>#GETTING_DATA</c> and <c>#CIRC!</c> are states of a computation and cannot be one,
     /// and neither can the <c>#VALUE!</c> of a cell whose Formula ExSheet refuses, read from it: held as a
     /// constant it would be an Error Value a Formula can catch (ADR-0047; 2026-10-12, decided with the user:

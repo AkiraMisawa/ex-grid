@@ -124,7 +124,7 @@ public class RoundTripTests
         var sheet = await reader.ReadSheetAsync(0);
 
         Assert.Equal([new XlsxColumn(0, 0, 18.5), new XlsxColumn(2, 4, 9.140625, true, 3)], sheet.Columns);
-        Assert.Empty(sheet.OtherElements);
+        Assert.Equal(["sheetViews", "sheetFormatPr"], sheet.OtherElements.Select(e => e.Name));
     }
 
     [Fact] // ADR-0330 §4: Number Formats, fonts, fills, borders and alignment come back as written

@@ -370,8 +370,8 @@ public partial class ExGrid<TRow>
         if (SummaryFiguresChanged.HasDelegate)
         {
             // Its context menu takes its place in the Input Order (ADR-0240 section 2).
-            builder.AddAttribute(2, "data-ex-claims", "contextmenu");
-            builder.AddAttribute(3, "oncontextmenu", EventCallback.Factory.Create<MouseEventArgs>(this, _openSummaryMenu ??= () => ClaimedAsync("contextmenu", OpenSummaryMenu)));
+            builder.AddAttribute(2, "data-ex-claims", ClaimKinds.ContextMenu);
+            builder.AddAttribute(3, "oncontextmenu", EventCallback.Factory.Create<MouseEventArgs>(this, _openSummaryMenu ??= () => ClaimedAsync(ClaimKinds.ContextMenu, OpenSummaryMenu)));
             builder.AddEventPreventDefaultAttribute(4, "oncontextmenu", true);
             builder.AddEventStopPropagationAttribute(5, "oncontextmenu", true);
         }

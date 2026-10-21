@@ -32,8 +32,75 @@
                 Characters and completed IME compositions typed as the panel opens reach its text field in
                 order, including over Blazor Server.
             </li>
+            <li>
+                <strong>While the panel holds a search, every matching cell on screen is marked</strong>, as you
+                type, and the current match (the cell the last step moved to) is marked apart. Rows you scroll
+                to are marked as they appear, and the marks go when the panel closes or its field is emptied.
+                Only the cells on screen are judged, so nothing is counted: the grid shows no "3 of 40". The
+                grid judges those cells itself, by the same rule <code>GridSource.From</code> finds by, so the
+                marks follow the scroll with no round trip. Template cells are searched and marked like any
+                other cell with a value; action buttons are not. The colours are the Visual Tokens
+                <code>--ex-match-mark-fill</code> and <code>--ex-match-mark-current-fill</code>, on the classes
+                <code>ex-match-mark</code> and <code>ex-match-mark-current</code>; <code>ExGrid.MudBlazor</code>
+                maps them to the palette's secondary and tertiary.
+            </li>
         </ul>
         <DocsExample Title="Sort, filter and find" Builtin="typeof(SortFilterFind)" Mud="typeof(SortFilterFindMud)"
+                     Files="@(["Examples/Data/Trade.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Replace">
+        <p>
+            <strong>Press <kbd>Ctrl</kbd>+<kbd>H</kbd></strong> for the find panel with Replace, as Excel's dialog
+            has both. It is offered where a replacement can land: you pass <code>OnReplace</code>, at least one
+            visible column is Editable, and Find is wired. Anywhere else <kbd>Ctrl</kbd>+<kbd>H</kbd> is still taken
+            from the browser (whose own key opens its history), opens nothing, and <code>OnFindRefused</code> says
+            <code>ReplaceUnavailable</code>, as <kbd>Ctrl</kbd>+<kbd>F</kbd> is refused where nothing can search.
+            <kbd>Ctrl</kbd>+<kbd>F</kbd> turns the panel back into Find alone.
+        </p>
+        <ul>
+            <li>
+                <strong>What is matched is the cell's entry</strong>: the text the Cell Editor opens with
+                (<code>EditorTextOf</code>'s, or the text the cell shows), not only what it shows. Match case,
+                Whole cell and the selection as the scope are Find's own options, carried over. Every occurrence
+                in the entry is replaced; with Whole cell, the entry whole.
+            </li>
+            <li>
+                <strong>Replace</strong> writes the current match (the cell the last step found, while the Focus
+                stays there) and then finds the next. It is an ordinary write of that one cell: an
+                <code>OnEdit</code> Edit Intent, with the column's Edit Verdict. With no current match it finds one
+                first, so you see what the next press writes. A match in a column that is not Editable, a Reject,
+                or an intent you <code>Refuse</code> writes nothing, and the panel says which cell and why.
+                Replace moves as Find's steps do, so it reaches the cells whose shown text matches; a cell whose
+                entry matches and whose shown text does not (a number shown formatted) is reached by Replace All
+                only, and one whose shown text matches and whose entry does not is passed over.
+            </li>
+            <li>
+                <strong>Replace All</strong> is one <code>GridReplaceRequest</code>: Find's text and options, the
+                replacement, the scope, the visible columns, which of them are Editable, and the
+                <code>RowSequenceVersion</code> it was read in. The grid writes nothing: you write every match
+                <strong>or none</strong>, as one step of your undo stack, and answer with the count
+                (<code>GridReplaceResult.Replaced</code>) or the cells you could not write and why
+                (<code>GridReplaceResult.Refused</code>). There is no cap. The panel says "Replaced 40 cells.", or
+                "Nothing was replaced." and names the first five cells, counting the rest. You answer under the
+                version you read your rows in; an answer under another version than the request's is refused as
+                the rows having moved (<code>OrderChanged</code>), and you must have written nothing then.
+            </li>
+            <li>
+                <strong><code>GridSource.From</code> answers it for you</strong>: hand its <code>Replace</code> the
+                request and your write of one cell — the same write your <code>OnEdit</code> makes, returning a
+                new row instance or a refusal — and it plans every match, applies the rewritten rows at once if
+                none refused, and gives you the result for the grid and the rows it changed for your undo stack.
+                <code>GridReplace.Plan</code> is that reference implementation, for a server that answers itself.
+            </li>
+            <li>
+                The panel's Replace field and its two buttons take their place in the order of input with the
+                grid's keys and presses, as Find's steps do, so a click typed ahead of a round trip is never
+                handled out of turn. <code>ExGrid.MudBlazor</code> draws them as a <code>MudTextField</code> and
+                two <code>MudButton</code>s.
+            </li>
+        </ul>
+        <DocsExample Title="Find and replace" Builtin="typeof(FindReplace)" Mud="typeof(FindReplaceMud)"
                      Files="@(["Examples/Data/Trade.cs"])" />
     </DocsSection>
 
@@ -82,6 +149,25 @@
             left to the browser, whose find sees only the rows on screen and would report "no match" for a row a
             little further down.
         </p>
+        <p>
+            <strong>When you answer the find yourself — with <code>OnFind</code>, with the <code>find</code> delegate
+            of <code>GridSource.Fetch</code>, or with a Source of your own — the matches on screen are marked only if
+            you pass <code>FindMatch</code></strong>: the rule your answer finds by, asked of each cell on screen with the
+            text and the two options the panel holds (a <code>GridFindPattern</code>). Your search may not be the
+            reference one, and a mark your next step does not reach would be wrong, so without it nothing is marked.
+            If you find by the reference rule, pass it over the columns' displayed text,
+            <code>(row, column, pattern) =&gt; GridFind.Matches(column.Info.TextOf(row), pattern)</code>, and hold
+            the function in a field: a new one makes every row on screen judge its cells again.
+        </p>
+        <p>
+            <strong>A step you cannot answer is given up, not answered "no match".</strong> When your search cannot
+            read what it searches — a server refused, or the data moved under it — throw
+            <code>OperationCanceledException</code> from <code>OnFind</code>: the Focus does not move, the panel stays
+            open and says nothing, and you say why yourself, as ExPivot does on its toolbar. Answering
+            <code>NotFound</code> instead would claim that cells nobody read hold no match.
+        </p>
+        <DocsExample Title="Your own find, and its marks" Builtin="typeof(FindMarks)" Mud="typeof(FindMarksMud)"
+                     Files="@(["Examples/Data/Trade.cs"])" />
     </DocsSection>
 
     <DocsSection Title="API">
@@ -90,5 +176,8 @@
         <ApiTable Type="typeof(GridFilter)" />
         <ApiTable Type="typeof(FilterSpec)" />
         <ApiTable Type="typeof(FilterClause)" />
+        <ApiTable Type="typeof(ExGrid.Finding.GridReplaceRequest)" />
+        <ApiTable Type="typeof(ExGrid.Finding.GridReplaceResult)" />
+        <ApiTable Type="typeof(ExGrid.Finding.GridReplace)" />
     </DocsSection>
 </DocsPage>

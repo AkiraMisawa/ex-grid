@@ -114,8 +114,8 @@ public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
     /// <summary>What a press on the header reaches, as <see cref="RowsPressHandler"/> for the rows.</summary>
     private Func<MouseEventArgs, Task> HeaderPressHandler
         => PointedAtNow
-            ? _onPointedHeaderPress ??= e => ClaimedAsync("mousedown", () => OnPointedHeaderPress(e))
-            : _onHeaderPress ??= e => ClaimedAsync("mousedown", () => OnHeaderMouseDown(e));
+            ? _onPointedHeaderPress ??= e => ClaimedAsync(ClaimKinds.Press, () => OnPointedHeaderPress(e))
+            : _onHeaderPress ??= e => ClaimedAsync(ClaimKinds.Press, () => OnHeaderMouseDown(e));
 
     /// <summary>Whether a press on the rows suppresses its default, so DOM focus stays where it is:
     /// while an edit that may point is open (ADR-0051), and while the grid is pointed at from outside

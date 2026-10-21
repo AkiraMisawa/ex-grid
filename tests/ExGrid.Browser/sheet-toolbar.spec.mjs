@@ -297,12 +297,13 @@ for (const chrome of ['builtin', 'mud']) {
 }
 
 // The Sheet's frame was display: contents without the toolbar until the Sheet Tabs (ADR-0331), which stand
-// under the grid in that frame on every Sheet; SheetTabsTests pins the frame without either.
+// under the grid in that frame on every Sheet, inside the area that hears a tab's drag (workbook ticket 06);
+// SheetTabsTests pins the frame without either.
 test('SH-48/ADR-0100: the page can hide the toolbar, and the Sheet keeps its Sheet Tabs under the grid', async ({ page }) => {
     await page.goto('/sheet?toolbar=off');
     await expect(cell(sheet(page), 'A1')).toHaveText('Item');
     await expect(page.locator('.ex-sheet-toolbar')).toHaveCount(0);
-    await expect(page.locator('.ex-sheet > .ex-sheet-tabs')).toHaveCount(1);
+    await expect(page.locator('.ex-sheet > .ex-sheet-tab-area > .ex-sheet-tabs')).toHaveCount(1);
 });
 
 test('SH-50/ADR-0100: the toolbar is one tab stop; the arrows move among its items, Enter presses one, and the keyboard goes back to the Sheet', async ({ page }) => {
@@ -631,6 +632,50 @@ for (const chrome of ['builtin', 'mud']) {
             await expectFocusAt(grid, 'A5');
             await page.keyboard.press('Control+z');
             await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
+        });
+
+        // Input-order ticket 04: the KeyTip's command is an input in the Sheet's order, and the key typed
+        // behind it is taken after it, where the keyboard landed: the arrow moves the Focus from the cell the
+        // command set bold, and never reaches the band.
+        test(`ADR-0240/ADR-0100: Alt, H, 1, ↓ typed at once sets bold on the Focus cell, then moves the Focus (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'A4');
+            await setRoundTrip(80);
+
+            await page.keyboard.press('Alt');
+            await page.keyboard.press('h');
+            await page.keyboard.press('1');
+            await page.keyboard.press('ArrowDown');
+
+            await expectFocusAt(grid, 'A5');
+            await circuitQuiet();
+            await expect(tips(page)).toHaveCount(0);
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
+            await expectKeyboardOn(grid);
+            await page.keyboard.press('ArrowUp');
+            await expectFocusAt(grid, 'A4');
+            await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
+        });
+
+        // Input-order ticket 04: a press on a command is numbered as it happens (data-ex-claims), so the
+        // arrow typed straight after it is taken once the command has been answered: bold lands on the cell
+        // pressed, and the arrow moves from it.
+        test(`ADR-0240/ADR-0100: Bold pressed, then ↓ at once, sets bold where the Focus was and then moves it (${chrome})`, async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'A4');
+            await setRoundTrip(80);
+
+            await toolbarItem(page, 'Bold').click();
+            await page.keyboard.press('ArrowDown');
+
+            await expectFocusAt(grid, 'A5');
+            await circuitQuiet();
+            await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
+            await expectKeyboardOn(grid);
+            await page.keyboard.press('ArrowUp');
+            await expectFocusAt(grid, 'A4');
+            await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
         });
 
         test(`SH-52/ADR-0100/ADR-0050: F10, H, 2 typed at once sets italic, with no edit opened and the KeyTips gone (${chrome})`, async ({ page }) => {
@@ -1003,3 +1048,56 @@ for (const chrome of ['builtin', 'mud']) {
         });
     });
 }
+
+// Input-order ticket 04's review: the gate hears the whole Sheet (its Input Root), and holds a press on a
+// toolbar command made while an input before it is still being answered, its release and its click
+// behind it. Markup of the Sheet's that claims nothing — a control of a Consumer's or a design system's
+// — is not the gate's: a press, release and click there reach their handler as they come, whatever the
+// gate holds. Held, the release and the click never did.
+test.describe('the Sheet\'s own markup that claims nothing (input-order ticket 04)', () => {
+    test.beforeEach(async ({ page }) => {
+        await openSheet(page);
+    });
+
+    test('ADR-0240: a press on unclaimed markup in the Sheet while a toolbar press is held reaches its handler, release and click too', async ({ page }) => {
+        const grid = sheet(page);
+        await pressCell(grid, 'A4');
+        // A control of the Consumer's own in the Sheet's box, outside the toolbar band and the grid, that
+        // claims no event: it hears what reaches it.
+        await alterPage(page, () => {
+            const box = document.querySelector('.ex-sheet');
+            const control = document.createElement('button');
+            control.type = 'button';
+            control.id = 'consumer-control';
+            control.textContent = 'Consumer';
+            control.addEventListener('mousedown', (event) => event.preventDefault());
+            for (const type of ['mousedown', 'mouseup', 'click']) {
+                control.addEventListener(type, () => control.setAttribute(`data-heard-${type}`, ''));
+            }
+            box.append(control);
+            return () => control.remove();
+        });
+        const control = page.locator('#consumer-control');
+
+        // Bold's answer is held, so the press on Italic straight after it is held behind it; the press on
+        // the Consumer's control comes while Italic's press, its release and its click are held.
+        const circuit = await holdAnswers(true);
+        await toolbarItem(page, 'Bold').click();
+        await toolbarItem(page, 'Italic').click();
+        await control.click();
+
+        await expect(control).toHaveAttribute('data-heard-mousedown', '');
+        await expect(control).toHaveAttribute('data-heard-mouseup', '');
+        await expect(control).toHaveAttribute('data-heard-click', '');
+        await holdAnswers(false);
+
+        // The held press on Italic is handed on in its turn, after Bold's answer.
+        await expect(toolbarItem(page, 'Bold')).toHaveAttribute('aria-pressed', 'true');
+        await expect(toolbarItem(page, 'Italic')).toHaveAttribute('aria-pressed', 'true');
+        await settled(grid);
+        if (circuit) {
+            await circuitQuiet();
+        }
+        await expectKeyboardOn(grid);
+    });
+});

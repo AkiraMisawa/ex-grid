@@ -23,9 +23,20 @@ public enum FindRefusalReason
     /// whatever the two sources' Row Sequence Versions are, as two fresh sources both start at 0 —
     /// and is discarded (ADR-0011, ADR-0142).</summary>
     SourceChanged,
+
+    /// <summary>Ctrl+H on a grid where no Replace can land (ADR-0332 §2): nothing handles the Replace
+    /// Request (<c>OnReplace</c>), no visible column is Editable, or nothing can search. The key is
+    /// still taken, as Ctrl+F's is, and nothing opens.</summary>
+    ReplaceUnavailable,
+
+    /// <summary>A Replace wrote nothing, because a match could not be written: its column is not
+    /// Editable, an Edit Verdict rejected the replaced text, or the Consumer refused it (ADR-0332 §2).
+    /// The panel names the cells and why.</summary>
+    ReplaceRefused,
 }
 
-/// <summary>What the last Find step came to, for the panel to show (ADR-0055).</summary>
+/// <summary>What the last Find step, or Replace, came to, for the panel to show (ADR-0055,
+/// ADR-0332).</summary>
 public enum FindOutcome
 {
     /// <summary>No step has been answered since the panel opened.</summary>
@@ -43,4 +54,12 @@ public enum FindOutcome
     /// <summary>The <c>Source</c> was replaced by another instance while the step was out; nothing
     /// moved.</summary>
     SourceChanged,
+
+    /// <summary>A Replace All replaced every match: <c>FindContext.ReplacedCount</c> cells, as one
+    /// write (ADR-0332 §2).</summary>
+    Replaced,
+
+    /// <summary>A Replace or a Replace All wrote nothing, because a match could not be written:
+    /// <c>FindContext.ReplaceRefusedCells</c> names them and why (ADR-0332 §2).</summary>
+    ReplaceRefused,
 }

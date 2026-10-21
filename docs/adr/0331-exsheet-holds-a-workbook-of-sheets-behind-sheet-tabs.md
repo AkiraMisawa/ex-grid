@@ -57,6 +57,16 @@ said.
 
 - **The Workbook has one undo stack.** Undoing a step shows the Sheet it was taken on and selects the
   range it changed, as Excel does.
+  - *Narrowed while building (workbook ticket 08, 2026-10-21):* the grid places one selected range
+    (ADR-0050, item 4), so a step over several ranges that do not make one rectangle together selects
+    the first in Selection order, the one it acted from, where Excel re-selects them all. Selecting all
+    of them waits on the grid placing several. The Focus goes to the range's top-left cell.
+  - A Sheet operation's undo or redo selects nothing. It shows the step's Sheet while the Workbook holds
+    it, else the Sheet it was done from (the one a Sheet was added beside or copied from), else the Sheet
+    the Workbook shows once the deletion is redone.
+  - On the Sheet shown, the range is placed under the version read before any Consumer handler hears the
+    change, so two undos in a row, or a handler that opens another document, cannot leave one step's
+    range over another's rows (spine rule 6).
 - **Adding, deleting, renaming, moving and copying a Sheet are each one step.** A Formula that
   referred to a deleted Sheet shows `#REF!`, and undoing the deletion gives it back its Formula.
 - **A deliberate difference from Excel:** Excel asks before deleting a Sheet, and the deletion

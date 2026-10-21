@@ -337,10 +337,26 @@
 /* The Sheet Tabs (ADR-0331): one per Sheet, at the Sheet's foot, under the grid, as Excel draws them.
    They frame the Paper, so they follow the page's scheme, as the Headings and the toolbar do. Their
    height is written inline from the Formula Bar's (ADR-0028); nothing here is geometry the grid
-   computes with. A Workbook with more tabs than the width holds scrolls them, rather than hide one. */
-.ex-sheet-tabs {
+   computes with. A Workbook with more tabs than the width holds scrolls them, rather than hide one.
+   The area holds the tab list, the + button after it and a tab's menu, which opens upward from the
+   area's start, over the grid, outside the tab list that scrolls (exsheet-workbook ticket 06). */
+.ex-sheet-tab-area {
+    position: relative;
     display: flex;
     flex: none;
+    align-items: stretch;
+    box-sizing: border-box;
+    font-family: var(--ex-font-family, system-ui, sans-serif);
+    font-size: var(--ex-font-size, 14px);
+    background: var(--ex-header-background, Canvas);
+    color: var(--ex-color, CanvasText);
+    border: 1px solid var(--ex-column-rule-color, GrayText);
+    border-top: 0;
+}
+.ex-sheet-tabs {
+    display: flex;
+    flex: 0 1 auto;
+    min-width: 0;
     align-items: stretch;
     gap: 2px;
     box-sizing: border-box;
@@ -348,12 +364,6 @@
     overflow-y: hidden;
     scrollbar-width: thin;
     padding: 0 4px;
-    font-family: var(--ex-font-family, system-ui, sans-serif);
-    font-size: var(--ex-font-size, 14px);
-    background: var(--ex-header-background, Canvas);
-    color: var(--ex-color, CanvasText);
-    border: 1px solid var(--ex-column-rule-color, GrayText);
-    border-top: 0;
 }
 .ex-sheet-tab {
     display: inline-flex;
@@ -377,6 +387,61 @@
     outline: 2px solid var(--ex-focus-color, Highlight);
     outline-offset: -2px;
 }
+/* While a tab is dragged, the tab under the pointer shows where it lands, the end of the area past the
+   last: drawn by :hover, so the pointer's moves cost no round trip and read no layout (ADR-0021). */
+.ex-sheet-tab-area[data-ex-dragging] { cursor: grabbing; }
+.ex-sheet-tab-area[data-ex-dragging] .ex-sheet-tab { cursor: grabbing; }
+.ex-sheet-tab-area[data-ex-dragging] .ex-sheet-tab:hover { box-shadow: inset 0 -3px 0 var(--ex-focus-color, Highlight); }
+.ex-sheet-tab-renaming { padding: 0 4px; cursor: text; }
+.ex-sheet-tab-name {
+    field-sizing: content;
+    min-width: 4ch;
+    max-width: 32ch;
+    margin: 2px 0;
+    padding: 0 4px;
+    font: inherit;
+    color: inherit;
+    background: var(--ex-background, Canvas);
+    border: 1px solid var(--ex-focus-outline, #217346);
+    outline: none;
+}
+.ex-sheet-tab-name[aria-invalid="true"] { border-color: var(--ex-state-error-color, #c00); }
+.ex-sheet-tab-add {
+    flex: none;
+    min-width: 28px;
+    padding: 0 8px;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+.ex-sheet-tab-add:hover { background: var(--ex-background, Canvas); }
+/* Past the last tab: the rest of the strip, where a tab released goes last. */
+.ex-sheet-tab-end { flex: 1 1 auto; min-width: 0; }
+.ex-sheet-tab-area[data-ex-dragging] .ex-sheet-tab-end:hover,
+.ex-sheet-tab-area[data-ex-dragging] .ex-sheet-tab-add:hover { box-shadow: inset 3px 0 0 var(--ex-focus-color, Highlight); }
+.ex-sheet-tab-menu {
+    position: absolute;
+    bottom: 100%;
+    left: 4px;
+    z-index: 20;
+    min-width: 10em;
+    padding: 4px 0;
+    background: var(--ex-header-background, Canvas);
+    color: var(--ex-color, CanvasText);
+    border: 1px solid var(--ex-column-rule-color, GrayText);
+    outline: var(--ex-grid-focus-outline, 1px solid Highlight);
+}
+.ex-sheet-tab-command {
+    padding: 4px 16px;
+    cursor: default;
+    white-space: nowrap;
+}
+.ex-sheet-tab-command:hover,
+.ex-sheet-tab-command-active { background: color-mix(in srgb, var(--ex-focus-outline, #217346) 18%, transparent); }
+.ex-sheet-tab-command[aria-disabled="true"] { opacity: 0.5; }
+.ex-sheet-tab-command[aria-disabled="true"]:hover { background: none; }
 .ex-sheet-toolbar:focus-visible {
     outline: 2px solid var(--ex-focus-color, Highlight);
     outline-offset: -2px;

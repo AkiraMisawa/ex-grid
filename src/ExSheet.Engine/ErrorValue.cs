@@ -84,14 +84,22 @@ internal static class ErrorValues
     /// <c>#BLOCKED!</c>, <c>#CONNECT!</c>, <c>#UNKNOWN!</c>) are read, as Excel reads them typed;
     /// they are data only. <c>#BUSY!</c> is not: Excel keeps it as text (ADR-0047, second run).
     /// </summary>
-    internal static bool TryParseTyped([NotNullWhen(true)] string? text, out ErrorValue error)
+    internal static bool TryParseTyped([NotNullWhen(true)] string? text, out ErrorValue error) => TryParse(text, StringComparison.OrdinalIgnoreCase, out error);
+
+    /// <summary>
+    /// Reads the text of an Error Value a cell can hold, exactly as Excel writes it in a file: case and all.
+    /// <c>#GETTING_DATA</c> and <c>#CIRC!</c> are not read, as in <see cref="TryParseTyped"/>.
+    /// </summary>
+    internal static bool TryParseWritten([NotNullWhen(true)] string? text, out ErrorValue error) => TryParse(text, StringComparison.Ordinal, out error);
+
+    private static bool TryParse(string? text, StringComparison comparison, out ErrorValue error)
     {
         error = default;
         if (text is null) return false;
         for (var i = 0; i < Texts.Length; i++)
         {
             if ((ErrorValue)i is ErrorValue.GettingData or ErrorValue.Circ) continue;
-            if (string.Equals(Texts[i], text, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(Texts[i], text, comparison))
             {
                 error = (ErrorValue)i;
                 return true;

@@ -60,10 +60,15 @@
 
     The band answers only its own keys. A Chrome's control inside it that a Tab reaches — MudMenu's
     button — keeps the keys typed on it: none of them is held, and none presses another item.
+
+    In the Sheet's Input Order (ADR-0240 section 6) the band claims its keys (data-ex-claims), and the
+    grid holds the keys typed after one until it has been answered. While the band holds keys itself, for
+    a list on its way, it says so (data-ex-holds): the grid then hands it the keys it held straight on,
+    in order, for the band to pass to the list with its own.
 *@
 <div class="ex-sheet-toolbar" role="toolbar" aria-label="@SheetWords.ToolbarName" aria-orientation="horizontal"
-     tabindex="0" style="@Style" aria-activedescendant="@ActiveId" @ref="_band"
-     @onkeydown="OnKeyAsync" @onkeydown:preventDefault="@(_keysAreKeyTips || _typedOnTheWay is not null || _defaultsHeld)"
+     tabindex="0" style="@Style" aria-activedescendant="@ActiveId" @ref="_band" data-ex-claims="keydown" data-ex-holds="@(_typedOnTheWay is not null ? "keys" : null)"
+     @onkeydown="OnBandKeyAsync" @onkeydown:preventDefault="@(_keysAreKeyTips || _typedOnTheWay is not null || _handingBack || _defaultsHeld)"
      @onkeyup="OnKeyUp" @onfocus="OnFocus" @onfocusout="OnFocusOut">
     @if (Context.KeyTips == KeyTipStage.Rows && Context.Rows.Count == 0)
     {
@@ -479,14 +484,17 @@
         // A list on its way: its keys are the Sheet's now, with the keyboard (CloseRequest).
         _openingList = null;
         if (Context.TakeKeyboardBack is not { } takeBack) return Context.ReturnKeyboardToSheetAsync();
-        // The keys held for this band, or for a list closing, are the Sheet's now, ahead of any typed after.
+        // The keys held for this band, or for a Chrome's list closing, are the Sheet's now, ahead of any
+        // typed after. The keys typed on the band from here are not held by the band: each key typed on it
+        // is in the Sheet's Input Order, and the grid holds the keys after the one that gave the keyboard
+        // back until that one has been answered, then hands them on where the keyboard landed (ADR-0240
+        // section 6, which replaced the band's own hold here).
         _heldForBand = false;
         _handingBack = true;
-        if (_typedOnTheWay is null)
-        {
-            _typedOnTheWay = [];
-            StateHasChanged();
-        }
+        // Drawn before the key that gave the keyboard back has finished its dispatch: the browser reads
+        // whether to prevent the key's default once the handler has run, and by then the keyboard can be
+        // in the grid's Keyboard Field, where a character's default would type it again.
+        StateHasChanged();
         return takeBack(_band, _handKeysOn);
     }
 
@@ -619,6 +627,12 @@
         held.Add(e);
         Context.KeyUpHeld = true;
     }
+
+    // A key typed on the band, in its place in the Sheet's Input Order (ADR-0240 section 6): the band
+    // claims its keys (data-ex-claims), and the grid's listener, which hears the whole Sheet, numbers each
+    // as it goes on and holds the keys typed after it until it has been answered. Every key is put in the
+    // order, the band's own or not: a number told and never taken would hold every input behind it.
+    private Task OnBandKeyAsync(KeyboardEventArgs e) => Context.InOrderAsync(GridInputKind.KeyDown, () => OnKeyAsync(e));
 
     private async Task OnKeyAsync(KeyboardEventArgs e)
     {

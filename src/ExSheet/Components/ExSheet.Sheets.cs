@@ -44,7 +44,7 @@ public partial class ExSheet
             var target = NamedSheet(sheet);
             RefuseWhileEditing();
             var step = CurrentWorkbook.Do(target.Name, edit);
-            _history.Record(step);
+            _history.Record(step, target);
             await ChangedAsync([step.Change]);
         });
     }
