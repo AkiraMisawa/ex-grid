@@ -1,0 +1,47 @@
+@using ExGrid.Finding
+@using ExGrid.Docs.Examples.Data
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ToolBarContent>
+        <MudSwitch T="bool" @bind-Value="_marked" Color="Color.Primary" Label="Pass the match function" />
+        <MudSpacer />
+        <MudText Typo="Typo.body2">Press Ctrl+F in the grid and type "novak"</MudText>
+    </ToolBarContent>
+    <ChildContent>
+        <ExGrid TRow="Trade" Window="_trades" TotalCount="_trades.Length" Columns="_columns" Chrome="_chrome"
+                OnFind="_find" FindMatch="@(_marked ? _match : null)"
+                ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
+    </ChildContent>
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+
+    private static readonly Trade[] _trades = Trade.Sample(2_000);
+
+    private readonly GridColumn<Trade>[] _columns =
+    [
+        new("Id", ColumnType.Number, t => t.Id),
+        new("Book", ColumnType.Text, t => t.Book),
+        new("Trader", ColumnType.Text, t => t.Trader),
+        new("Instrument", ColumnType.Text, t => t.Instrument),
+        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly),
+    ];
+
+    private bool _marked = true;
+
+    // Your own answer to a step: here the reference step over your rows, by the columns' displayed text.
+    private Func<GridFindRequest, CancellationToken, Task<GridFindResult>> _find = default!;
+
+    // The rule your answer finds by, judged over the painted cells. Held in a field: its identity is
+    // the change signal.
+    private static readonly FindMatchOf<Trade> _match =
+        static (trade, column, pattern) => GridFind.Matches(column.Info.TextOf(trade), pattern);
+
+    protected override void OnInitialized()
+    {
+        var textOf = _columns.ToDictionary(c => c.Name, c => (Func<Trade, string>)c.Info.TextOf);
+        _find = (request, _) => Task.FromResult(GridFind.Step(_trades, request, name => textOf.GetValueOrDefault(name)));
+    }
+}

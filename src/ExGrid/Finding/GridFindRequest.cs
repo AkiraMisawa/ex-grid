@@ -35,6 +35,11 @@ public sealed record GridFindRequest
     /// does not otherwise know the order the user dragged, or which columns are hidden.</summary>
     public required IReadOnlyList<string> Columns { get; init; }
 
+    /// <summary>What this step looks for, without the step: the text and the two options, as
+    /// <see cref="GridFind.Matches(string, GridFindPattern)"/> and a Match Mark judge a cell
+    /// (ADR-0332 §4).</summary>
+    public GridFindPattern Pattern => new(Text, MatchCase, WholeCell);
+
     /// <summary>The order the positions above were read in (ADR-0011). An answer the grid
     /// receives under another version is discarded, and so is one that arrives after the grid's
     /// <c>Source</c> was replaced by another instance, whatever its version (ADR-0142).</summary>

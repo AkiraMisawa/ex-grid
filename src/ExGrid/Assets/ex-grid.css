@@ -456,6 +456,33 @@
     background-position: var(--ex-line-t-at, 0 0), var(--ex-line-r-at, 0 0), var(--ex-line-b-at, 0 0), var(--ex-line-l-at, 0 0),
         0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
 }
+/* The Match Mark (ADR-0332 §4): while the find panel holds a search, every painted cell that
+   matches it, and the current match apart, the Focus a found step moved to. Two Visual Tokens
+   (ADR-0027/0029): --ex-match-mark-fill, by default a 40% tint of the system colour Mark, the
+   colour a browser's own find marks with and the Change Highlight's measured tint (about 5:1 on a
+   dark page, 20:1 on a light one); and --ex-match-mark-current-fill, by default a 50% tint of the
+   orange a browser marks its current match with, so the two read apart, and the current reads apart
+   from a Change Highlight.
+
+   Painted by the cell's ::before, not as a ground: a cell's grounds are a stack of images that
+   each combination of stripe, Row Kind, state, lines and Change Highlight restates (above), and a
+   mark that joined them would have to be restated in every one. The cell isolates, so the mark at
+   z-index -1 lies over all of them, the cell's own Fill included, and beneath the text, which keeps
+   its colour; a Pinned Column's cell already makes its own stacking context, and stays sticky,
+   since the position here has no specificity. Out of flow, so it costs no element and takes no
+   room. The overlays paint above every cell, so no mark hides a selection, the Focus or a band. */
+:where(.ex-cell.ex-match-mark) { position: relative; isolation: isolate; }
+.ex-cell.ex-match-mark::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--ex-match-mark-fill, color-mix(in srgb, Mark 40%, transparent));
+    pointer-events: none;
+}
+.ex-cell.ex-match-mark-current::before {
+    background: var(--ex-match-mark-current-fill, color-mix(in srgb, #ff9632 50%, transparent));
+}
 /* What stands in for the columns left out to the left of the first painted one. It must
    not be allowed to shrink: a flex-shrunk spacer would slide every painted column left
    of where the arithmetic put it, and the header and the body would disagree. */
@@ -1239,6 +1266,12 @@
        state as well, the state's own restatement is the one kept, because a state must never be
        the thing that disappears (ADR-0006). */
     .ex-cell.ex-changed { outline: 2px dashed Highlight; outline-offset: -2px; }
+    /* The Match Mark (ADR-0332 §4): forced colours discard its ground, so a match is restated as
+       a dotted outline in the colour of marked text, and the current match as a solid one. Declared
+       before the states, so a state's own restatement is the one kept on a cell with both. */
+    .ex-cell.ex-match-mark::before { background: none; }
+    .ex-cell.ex-match-mark { outline: 2px dotted Highlight; outline-offset: -2px; }
+    .ex-cell.ex-match-mark-current { outline-style: solid; }
     .ex-cell.ex-state-stale { color: GrayText; }
     .ex-cell.ex-state-missing { outline: 1px dotted GrayText; outline-offset: -2px; }
     .ex-cell.ex-state-error { color: LinkText; }

@@ -42,7 +42,7 @@
    (ADR-0033, 2026-10-13); what a reader says of it is learned from users' reports.
    aria-busy while a Placeholder: values that have not arrived must not be read out as
    though they had (ADR-0004). *@
-@{ _paintingHighlightEnd = null; }
+@{ _paintingHighlightEnd = null; _paintingMarkCount = 0; }
 <div class="@RowClasses.For(RowKind?.Invoke(Row) ?? default, Placeholder, Stripe)"
      role="row" aria-rowindex="@((long)HeaderRowCount + RowIndex + 1)" aria-busy="@(Placeholder ? "true" : null)">
     @if (HeadingStyle is not null)
@@ -89,7 +89,7 @@
             var value = column.Value(Row);
             var text = column.Info.TextFor(value);
             var decision = Paint(column, i, type, text);
-            var cellClass = CellClasses.For(numeric, pinned: true, StateOf(column), column.AlignAt(Row, CellAlign), ToneOf(column, value), Changed(column));
+            var cellClass = CellClasses.For(numeric, pinned: true, StateOf(column), column.AlignAt(Row, CellAlign), ToneOf(column, value), Changed(column), MarkOf(column, i));
             @* aria-label only when what is painted is not the value's text: the accessible
                name of a #### cell, or of a cell whose painted text the Consumer supplied, is
                the real value (ADR-0016/0033/0050), and on every other cell the text names
@@ -121,7 +121,7 @@
                 var value = column.Value(Row);
                 var text = column.Info.TextFor(value);
                 var decision = Paint(column, i, type, text);
-                var cellClass = CellClasses.For(numeric, pinned: false, StateOf(column), column.AlignAt(Row, CellAlign), ToneOf(column, value), Changed(column));
+                var cellClass = CellClasses.For(numeric, pinned: false, StateOf(column), column.AlignAt(Row, CellAlign), ToneOf(column, value), Changed(column), MarkOf(column, i));
                 <div class="@(Appearance?.ClassOf(i, cellClass) ?? cellClass)" style="@Styles.Cell(i)"
                      role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
                      aria-label="@AccessibleName(decision, text)">@if (decision.IsHashed) {<span class="ex-hashes">@decision.DisplayText</span>} else {@decision.DisplayText}</div>
@@ -129,7 +129,7 @@
         }
     }
 </div>
-@{ RecordHighlights(); }
+@{ RecordHighlights(); RecordMarks(); }
 
 @code {
     /// <summary>The row to paint. Its identity is the change signal: a new instance
@@ -283,6 +283,20 @@
     /// </summary>
     [Parameter] public RowAppearance? Appearance { get; set; }
 
+    /// <summary>
+    /// What this row judges its painted value cells by for the Match Mark (ADR-0332 §4), or null
+    /// while no search is held or nobody can judge one. Compared by reference, as a row instance is
+    /// (ADR-0003); but a new one is a reason to render only when it marks other cells of this row
+    /// than the last render did, so a search typed over the painted rows re-renders only the rows
+    /// whose marks moved.
+    /// </summary>
+    [Parameter] public MatchMarks<TRow>? MatchMarks { get; set; }
+
+    /// <summary>The column of this row's current match — the Focus a found step moved to — or -1,
+    /// which every other row is handed, so none of them re-renders for it (ADR-0332 §4). A value,
+    /// compared by content. Marked as current only while the cell matches.</summary>
+    [Parameter] public int CurrentMatch { get; set; } = -1;
+
     /// <summary>The Row Headings' inline width, or null while there is no band
     /// (ADR-0050/0028). One string for every row, rebuilt by the grid only when the width
     /// moves.</summary>
@@ -311,6 +325,8 @@
     private string? _renderedHeading;
     private string? _renderedHeadingStyle;
     private RowAppearance? _renderedAppearance;
+    private MatchMarks<TRow>? _renderedMatchMarks;
+    private int _renderedCurrentMatch = -1;
 
     protected override void OnInitialized()
     {
@@ -352,9 +368,18 @@
             && ReferenceEquals(_renderedOnMark, OnMark)
             && string.Equals(_renderedHeading, Heading, StringComparison.Ordinal)
             && ReferenceEquals(_renderedHeadingStyle, HeadingStyle)
-            && ReferenceEquals(_renderedAppearance, Appearance))
+            && ReferenceEquals(_renderedAppearance, Appearance)
+            && _renderedCurrentMatch == CurrentMatch)
         {
-            return false;
+            // A new search is a reason to render only where it moves a mark (ADR-0332 §4): the
+            // painted cells are judged again, and a row whose marks stand keeps what it painted.
+            if (ReferenceEquals(_renderedMatchMarks, MatchMarks))
+                return false;
+            if (MarksStand())
+            {
+                _renderedMatchMarks = MatchMarks;
+                return false;
+            }
         }
 
         Record();
@@ -386,6 +411,8 @@
         _renderedHeading = Heading;
         _renderedHeadingStyle = HeadingStyle;
         _renderedAppearance = Appearance;
+        _renderedMatchMarks = MatchMarks;
+        _renderedCurrentMatch = CurrentMatch;
     }
 
     // Each cell's id, composed the first time the cell is painted in this row and kept
@@ -618,6 +645,61 @@
             return;
         _highlightEnd = end;
         ChangeHighlightPainted?.Invoke(this, end);
+    }
+
+    // The Match Mark (ADR-0332 §4): the columns this row's last render marked, in paint order, and
+    // the ones being gathered while a render is under way. Kept so that ShouldRender can tell a
+    // new search that leaves this row's marks where they were.
+    private int[] _marks = [];
+    private int _markCount;
+    private int[] _paintingMarks = [];
+    private int _paintingMarkCount;
+
+    /// <summary>Whether a painted value cell wears the Match Mark, and whether as the current
+    /// match; a match joins the marks this render paints.</summary>
+    private MatchMark MarkOf(GridColumn<TRow> column, int index)
+    {
+        if (MatchMarks is not { } marks || !marks.Matches(Row, column))
+            return MatchMark.None;
+        if (_paintingMarkCount == _paintingMarks.Length)
+            Array.Resize(ref _paintingMarks, Math.Max(4, _paintingMarks.Length * 2));
+        _paintingMarks[_paintingMarkCount++] = index;
+        return index == CurrentMatch ? MatchMark.Current : MatchMark.Match;
+    }
+
+    /// <summary>Keeps the marks this render painted, for the next ShouldRender to compare with.</summary>
+    private void RecordMarks()
+    {
+        (_marks, _paintingMarks) = (_paintingMarks, _marks);
+        _markCount = _paintingMarkCount;
+        _paintingMarkCount = 0;
+    }
+
+    /// <summary>
+    /// Whether <see cref="MatchMarks"/> marks exactly the cells the last render marked: the painted
+    /// value cells judged again — the Pinned Columns, and the scrollable ones on screen unless this is
+    /// a Placeholder — in the order they are painted. Nothing per cell leaves the server (ADR-0027).
+    /// </summary>
+    private bool MarksStand()
+    {
+        var seen = 0;
+        if (MatchMarks is { } marks)
+        {
+            for (var i = 0; i < Styles.Geometry.PinnedCount; i++)
+            {
+                if (marks.Matches(Row, Columns[i]) && (seen >= _markCount || _marks[seen++] != i))
+                    return false;
+            }
+            if (!Placeholder && Scrollable is { } scrollable)
+            {
+                for (var i = scrollable.Start; i < scrollable.Start + scrollable.Count; i++)
+                {
+                    if (marks.Matches(Row, Columns[i]) && (seen >= _markCount || _marks[seen++] != i))
+                        return false;
+                }
+            }
+        }
+        return seen == _markCount;
     }
 
     /// <summary>A row leaving the DOM takes its marks with it, so the grid's timer no longer
