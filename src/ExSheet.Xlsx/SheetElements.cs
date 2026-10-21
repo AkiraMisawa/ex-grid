@@ -27,6 +27,9 @@ internal static class SheetElements
             case "sheetFormatPr":
                 if (True(element.Attribute("zeroHeight"))) yield return (NotCarriedKind.HiddenRows, null);
                 if (True(element.Attribute("customHeight"))) yield return (NotCarriedKind.RowHeights, null);
+                // Excel's own base width is 8 characters, which the default 8.43 is; any other default is the Sheet's own.
+                if (element.Attribute("defaultColWidth") is not null || element.Attribute("baseColWidth") is { } b && b != "8")
+                    yield return (NotCarriedKind.DefaultColumnWidth, null);
                 break;
             case "sheetViews":
                 if (element.Children.Any(ViewSetsAnything)) yield return (NotCarriedKind.View, null);

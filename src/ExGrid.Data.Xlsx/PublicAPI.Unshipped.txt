@@ -132,7 +132,11 @@ ExGrid.Data.Xlsx.XlsxColorKind.Rgb = 1 -> ExGrid.Data.Xlsx.XlsxColorKind
 ExGrid.Data.Xlsx.XlsxColorKind.Theme = 2 -> ExGrid.Data.Xlsx.XlsxColorKind
 ExGrid.Data.Xlsx.XlsxColumn
 ExGrid.Data.Xlsx.XlsxColumn.<Clone>$() -> ExGrid.Data.Xlsx.XlsxColumn!
-ExGrid.Data.Xlsx.XlsxColumn.Deconstruct(out int First, out int Last, out double? Width, out bool Hidden, out int StyleIndex) -> void
+ExGrid.Data.Xlsx.XlsxColumn.BestFit.get -> bool
+ExGrid.Data.Xlsx.XlsxColumn.BestFit.init -> void
+ExGrid.Data.Xlsx.XlsxColumn.CustomWidth.get -> bool
+ExGrid.Data.Xlsx.XlsxColumn.CustomWidth.init -> void
+ExGrid.Data.Xlsx.XlsxColumn.Deconstruct(out int First, out int Last, out double? Width, out bool Hidden, out int StyleIndex, out bool BestFit, out bool CustomWidth) -> void
 ExGrid.Data.Xlsx.XlsxColumn.Equals(ExGrid.Data.Xlsx.XlsxColumn? other) -> bool
 ExGrid.Data.Xlsx.XlsxColumn.First.get -> int
 ExGrid.Data.Xlsx.XlsxColumn.First.init -> void
@@ -144,7 +148,7 @@ ExGrid.Data.Xlsx.XlsxColumn.StyleIndex.get -> int
 ExGrid.Data.Xlsx.XlsxColumn.StyleIndex.init -> void
 ExGrid.Data.Xlsx.XlsxColumn.Width.get -> double?
 ExGrid.Data.Xlsx.XlsxColumn.Width.init -> void
-ExGrid.Data.Xlsx.XlsxColumn.XlsxColumn(int First, int Last, double? Width, bool Hidden = false, int StyleIndex = 0) -> void
+ExGrid.Data.Xlsx.XlsxColumn.XlsxColumn(int First, int Last, double? Width, bool Hidden = false, int StyleIndex = 0, bool BestFit = false, bool CustomWidth = true) -> void
 ExGrid.Data.Xlsx.XlsxDefinedName
 ExGrid.Data.Xlsx.XlsxDefinedName.<Clone>$() -> ExGrid.Data.Xlsx.XlsxDefinedName!
 ExGrid.Data.Xlsx.XlsxDefinedName.Deconstruct(out string! Name, out string! Text, out int? LocalSheet, out bool Hidden) -> void
@@ -288,6 +292,15 @@ ExGrid.Data.Xlsx.XlsxRefusal.NotAZip = 0 -> ExGrid.Data.Xlsx.XlsxRefusal
 ExGrid.Data.Xlsx.XlsxRefusal.StrictOpenXml = 6 -> ExGrid.Data.Xlsx.XlsxRefusal
 ExGrid.Data.Xlsx.XlsxRefusal.TooLarge = 9 -> ExGrid.Data.Xlsx.XlsxRefusal
 ExGrid.Data.Xlsx.XlsxRefusal.TooManyCells = 10 -> ExGrid.Data.Xlsx.XlsxRefusal
+ExGrid.Data.Xlsx.XlsxRow
+ExGrid.Data.Xlsx.XlsxRow.<Clone>$() -> ExGrid.Data.Xlsx.XlsxRow!
+ExGrid.Data.Xlsx.XlsxRow.Deconstruct(out int Row, out int StyleIndex) -> void
+ExGrid.Data.Xlsx.XlsxRow.Equals(ExGrid.Data.Xlsx.XlsxRow? other) -> bool
+ExGrid.Data.Xlsx.XlsxRow.Row.get -> int
+ExGrid.Data.Xlsx.XlsxRow.Row.init -> void
+ExGrid.Data.Xlsx.XlsxRow.StyleIndex.get -> int
+ExGrid.Data.Xlsx.XlsxRow.StyleIndex.init -> void
+ExGrid.Data.Xlsx.XlsxRow.XlsxRow(int Row, int StyleIndex) -> void
 ExGrid.Data.Xlsx.XlsxSharedStrings
 ExGrid.Data.Xlsx.XlsxSharedStrings.Count.get -> int
 ExGrid.Data.Xlsx.XlsxSharedStrings.GetEnumerator() -> System.Collections.Generic.IEnumerator<string!>!
@@ -320,6 +333,7 @@ ExGrid.Data.Xlsx.XlsxSheetReader.FrozenPanes.get -> bool
 ExGrid.Data.Xlsx.XlsxSheetReader.HiddenRows.get -> bool
 ExGrid.Data.Xlsx.XlsxSheetReader.OtherElements.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxElement!>!
 ExGrid.Data.Xlsx.XlsxSheetReader.ReadAsync() -> System.Threading.Tasks.ValueTask<bool>
+ExGrid.Data.Xlsx.XlsxSheetReader.Rows.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxRow!>!
 ExGrid.Data.Xlsx.XlsxSheetReader.Sheet.get -> ExGrid.Data.Xlsx.XlsxSheetInfo!
 ExGrid.Data.Xlsx.XlsxSheetVisibility
 ExGrid.Data.Xlsx.XlsxSheetVisibility.Hidden = 1 -> ExGrid.Data.Xlsx.XlsxSheetVisibility
@@ -330,6 +344,7 @@ ExGrid.Data.Xlsx.XlsxSheetWriter.FlushAsync(System.Threading.CancellationToken c
 ExGrid.Data.Xlsx.XlsxSheetWriter.Name.get -> string!
 ExGrid.Data.Xlsx.XlsxSheetWriter.Write(in ExGrid.Data.Xlsx.XlsxCell cell) -> void
 ExGrid.Data.Xlsx.XlsxSheetWriter.WriteAsync(System.Collections.Generic.IEnumerable<ExGrid.Data.Xlsx.XlsxCell>! cells, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+ExGrid.Data.Xlsx.XlsxSheetWriter.WriteRow(ExGrid.Data.Xlsx.XlsxRow! row) -> void
 ExGrid.Data.Xlsx.XlsxStyles
 ExGrid.Data.Xlsx.XlsxStyles.<Clone>$() -> ExGrid.Data.Xlsx.XlsxStyles!
 ExGrid.Data.Xlsx.XlsxStyles.Borders.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxBorder!>!
@@ -372,7 +387,7 @@ ExGrid.Data.Xlsx.XlsxWorksheet.Columns.get -> System.Collections.Generic.IReadOn
 ExGrid.Data.Xlsx.XlsxWorksheet.Columns.init -> void
 ExGrid.Data.Xlsx.XlsxWorksheet.CustomRowHeights.get -> bool
 ExGrid.Data.Xlsx.XlsxWorksheet.CustomRowHeights.init -> void
-ExGrid.Data.Xlsx.XlsxWorksheet.Deconstruct(out ExGrid.Data.Xlsx.XlsxSheetInfo! Sheet, out System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxColumn!>! Columns, out System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxCell>! Cells, out System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxElement!>! OtherElements, out bool CustomRowHeights, out bool HiddenRows, out bool FrozenPanes) -> void
+ExGrid.Data.Xlsx.XlsxWorksheet.Deconstruct(out ExGrid.Data.Xlsx.XlsxSheetInfo! Sheet, out System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxColumn!>! Columns, out System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxCell>! Cells, out System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxElement!>! OtherElements, out System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxRow!>! Rows, out bool CustomRowHeights, out bool HiddenRows, out bool FrozenPanes) -> void
 ExGrid.Data.Xlsx.XlsxWorksheet.Equals(ExGrid.Data.Xlsx.XlsxWorksheet? other) -> bool
 ExGrid.Data.Xlsx.XlsxWorksheet.FrozenPanes.get -> bool
 ExGrid.Data.Xlsx.XlsxWorksheet.FrozenPanes.init -> void
@@ -380,9 +395,11 @@ ExGrid.Data.Xlsx.XlsxWorksheet.HiddenRows.get -> bool
 ExGrid.Data.Xlsx.XlsxWorksheet.HiddenRows.init -> void
 ExGrid.Data.Xlsx.XlsxWorksheet.OtherElements.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxElement!>!
 ExGrid.Data.Xlsx.XlsxWorksheet.OtherElements.init -> void
+ExGrid.Data.Xlsx.XlsxWorksheet.Rows.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxRow!>!
+ExGrid.Data.Xlsx.XlsxWorksheet.Rows.init -> void
 ExGrid.Data.Xlsx.XlsxWorksheet.Sheet.get -> ExGrid.Data.Xlsx.XlsxSheetInfo!
 ExGrid.Data.Xlsx.XlsxWorksheet.Sheet.init -> void
-ExGrid.Data.Xlsx.XlsxWorksheet.XlsxWorksheet(ExGrid.Data.Xlsx.XlsxSheetInfo! Sheet, System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxColumn!>! Columns, System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxCell>! Cells, System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxElement!>! OtherElements, bool CustomRowHeights = false, bool HiddenRows = false, bool FrozenPanes = false) -> void
+ExGrid.Data.Xlsx.XlsxWorksheet.XlsxWorksheet(ExGrid.Data.Xlsx.XlsxSheetInfo! Sheet, System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxColumn!>! Columns, System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxCell>! Cells, System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxElement!>! OtherElements, System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxRow!>! Rows, bool CustomRowHeights = false, bool HiddenRows = false, bool FrozenPanes = false) -> void
 ExGrid.Data.Xlsx.XlsxWriteOptions
 ExGrid.Data.Xlsx.XlsxWriteOptions.ActiveSheet.get -> int
 ExGrid.Data.Xlsx.XlsxWriteOptions.ActiveSheet.init -> void
@@ -430,6 +447,9 @@ override ExGrid.Data.Xlsx.XlsxFormula.Equals(object? obj) -> bool
 override ExGrid.Data.Xlsx.XlsxFormula.GetHashCode() -> int
 override ExGrid.Data.Xlsx.XlsxFormula.ToString() -> string!
 override ExGrid.Data.Xlsx.XlsxProgress.GetHashCode() -> int
+override ExGrid.Data.Xlsx.XlsxRow.Equals(object? obj) -> bool
+override ExGrid.Data.Xlsx.XlsxRow.GetHashCode() -> int
+override ExGrid.Data.Xlsx.XlsxRow.ToString() -> string!
 override ExGrid.Data.Xlsx.XlsxSheetInfo.Equals(object? obj) -> bool
 override ExGrid.Data.Xlsx.XlsxSheetInfo.GetHashCode() -> int
 override ExGrid.Data.Xlsx.XlsxSheetInfo.ToString() -> string!
@@ -477,6 +497,8 @@ static ExGrid.Data.Xlsx.XlsxFormula.operator ==(ExGrid.Data.Xlsx.XlsxFormula? le
 static ExGrid.Data.Xlsx.XlsxProgress.operator !=(ExGrid.Data.Xlsx.XlsxProgress left, ExGrid.Data.Xlsx.XlsxProgress right) -> bool
 static ExGrid.Data.Xlsx.XlsxProgress.operator ==(ExGrid.Data.Xlsx.XlsxProgress left, ExGrid.Data.Xlsx.XlsxProgress right) -> bool
 static ExGrid.Data.Xlsx.XlsxReader.OpenAsync(System.IO.Stream! stream, ExGrid.Data.Xlsx.XlsxReadOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.Xlsx.XlsxReader!>
+static ExGrid.Data.Xlsx.XlsxRow.operator !=(ExGrid.Data.Xlsx.XlsxRow? left, ExGrid.Data.Xlsx.XlsxRow? right) -> bool
+static ExGrid.Data.Xlsx.XlsxRow.operator ==(ExGrid.Data.Xlsx.XlsxRow? left, ExGrid.Data.Xlsx.XlsxRow? right) -> bool
 static ExGrid.Data.Xlsx.XlsxSharedStrings.Empty.get -> ExGrid.Data.Xlsx.XlsxSharedStrings!
 static ExGrid.Data.Xlsx.XlsxSheetInfo.operator !=(ExGrid.Data.Xlsx.XlsxSheetInfo? left, ExGrid.Data.Xlsx.XlsxSheetInfo? right) -> bool
 static ExGrid.Data.Xlsx.XlsxSheetInfo.operator ==(ExGrid.Data.Xlsx.XlsxSheetInfo? left, ExGrid.Data.Xlsx.XlsxSheetInfo? right) -> bool

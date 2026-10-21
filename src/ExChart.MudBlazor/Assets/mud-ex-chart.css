@@ -22,7 +22,14 @@
 
 .mud-ex-chart-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding-bottom: 4px; }
 .mud-ex-chart-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; padding-bottom: 8px; }
-.mud-ex-chart-filters .mud-input-control { flex: 0 1 12em; margin-top: 0; }
+/* Every field is one width. A picker or a select wraps its input, and its Class lands on the wrapper
+   or on the input depending on the control: the row's child takes the width, the input fills it. */
+.mud-ex-chart-filters > :not(.mud-ex-chart-apply) { flex: 0 1 12em; min-width: 9em; }
+.mud-ex-chart-filters > * > .mud-input-control { flex: none; width: 100%; }
+/* Apply sits on the fields' outline: as tall as a dense outlined input, above the same bottom margin. */
+.mud-ex-chart-filters > .mud-ex-chart-apply { height: 40px; margin-bottom: 4px; }
+/* The axis switch takes effect at once, so it stands apart from the range Apply commits. */
+.mud-ex-chart-filters > :has(> .mud-ex-chart-scale) { margin-left: 16px; }
 .mud-ex-chart-menu { display: flex; flex-direction: column; padding: 4px 0; }
 .mud-ex-chart-menu .mud-button-root { justify-content: flex-start; text-transform: none; border-radius: 0; }
 

@@ -58,6 +58,7 @@ ExSheet.Engine.WorkbookStep.Undo() -> ExSheet.Engine.WorkbookChange!
 static ExSheet.Engine.DateSerial.FromDate(int year, int month, int day) -> int?
 static ExSheet.Engine.Entry.FromErrorText(string! text) -> ExSheet.Engine.Entry?
 static ExSheet.Engine.FormulaEntry.ReferenceText(ExSheet.Engine.CellRange range, string! sheet) -> string!
+static ExSheet.Engine.NumberFormat.TryParseAsWritten(string! code, out ExSheet.Engine.NumberFormat? format, out string? reason) -> bool
 static ExSheet.Engine.SheetEdit.CopySheet(int? index = null) -> ExSheet.Engine.SheetEdit!
 static ExSheet.Engine.SheetEdit.DeleteSheet() -> ExSheet.Engine.SheetEdit!
 static ExSheet.Engine.SheetEdit.InsertSheet(string? name = null, bool before = false) -> ExSheet.Engine.SheetEdit!

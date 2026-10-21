@@ -112,13 +112,44 @@ public enum NotCarriedKind
 
     /// <summary>Anything else a worksheet holds; <see cref="NotCarried.Detail"/> names its element, as <c>customSheetViews</c>.</summary>
     Other,
+
+    /// <summary>
+    /// Colours that name the workbook's theme: each is carried as the RGB value the file's theme gives it, and the link to the
+    /// theme is not, so another theme does not recolour them (ADR-0330 §8). Said once, of the whole workbook.
+    /// </summary>
+    ThemeColours,
+
+    /// <summary>A typeface or a size other than the workbook's own font's: the cells open in the Sheet's one font (ADR-0071).</summary>
+    FontNamesAndSizes,
+
+    /// <summary>Vertical alignment other than bottom.</summary>
+    VerticalAlignment,
+
+    /// <summary>Wrapped, indented, rotated or shrunk text.</summary>
+    TextLayout,
+
+    /// <summary>A horizontal alignment a Sheet does not have — fill, justify, distributed, centred across the selection: the cells open aligned as General.</summary>
+    HorizontalAlignment,
+
+    /// <summary>A double or accounting underline: the cells open with a single underline.</summary>
+    Underline,
+
+    /// <summary>A pattern or gradient fill, or a solid one of no colour: the cells open with no Fill.</summary>
+    PatternFills,
+
+    /// <summary>Diagonal borders: the cells keep their four sides.</summary>
+    DiagonalBorders,
+
+    /// <summary>A default column width of the Sheet's own: its columns without a width of their own open at the default width.</summary>
+    DefaultColumnWidth,
 }
 
 /// <summary>One thing the file held that was not carried (ADR-0330 §4).</summary>
 /// <param name="Kind">What it is.</param>
 /// <param name="Sheet">The Sheet it was on, or <see langword="null"/> for what the workbook as a whole held.</param>
-/// <param name="Detail">What names it more closely, where something does: a defined name, the first cell of rich text, an
-/// element's name; otherwise <see langword="null"/>.</param>
+/// <param name="Detail">What names it more closely, where something does: a defined name, the first cell of rich text or of a
+/// format not carried (a cell as <c>B7</c>, columns as <c>B:C</c>, rows as <c>5:5</c>), an element's name; otherwise
+/// <see langword="null"/>.</param>
 /// <param name="Description">One sentence an application can show as it stands.</param>
 public sealed record NotCarried(NotCarriedKind Kind, string? Sheet, string? Detail, string Description);
 
