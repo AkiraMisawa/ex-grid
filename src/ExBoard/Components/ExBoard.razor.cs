@@ -191,7 +191,8 @@ public partial class ExBoard : IDisposable
                     _layoutChanged[id] = EventCallback.Factory.Create<PivotLayout>(this, layout => Changed(() =>
                     {
                         pivot.ChangeLayout(layout);
-                        Select(id, GridSelection.Empty);
+                        // An empty selection asks no source, so it is done here and now.
+                        _ = Select(id, GridSelection.Empty);
                     }));
                     break;
                 case BoundChartView chart:
@@ -218,6 +219,9 @@ public partial class ExBoard : IDisposable
         });
         foreach (var grid in _bound.Views.OfType<BoundGridView>())
             grid.Source.StateChanged += _sourceChanged;
+        // A chart over a server input is drawn when its sources answer (ADR-0344).
+        foreach (var chart in _bound.Views.OfType<BoundChartView>())
+            chart.Answered += _sourceChanged;
         foreach (var from in _bound.Board.Links.Select(l => l.From).Concat(_bound.Board.Outputs.Select(o => o.From)).Distinct())
             _selectionChanged[from] = EventCallback.Factory.Create<GridSelection>(this, selection => Select(from, selection));
     }
@@ -253,7 +257,7 @@ public partial class ExBoard : IDisposable
 
     // A grid's selection narrows the views its links reach; a dropped selection, which the grid raises
     // as an empty one, takes the narrowing away with it (ADR-0011).
-    private void Select(string from, GridSelection selection)
+    private async Task Select(string from, GridSelection selection)
     {
         if (_bound is not { } bound)
             return;
@@ -262,11 +266,22 @@ public partial class ExBoard : IDisposable
             // A pivot's cells narrow by the Items they stand for, read as the selection is raised, from
             // the report its grid holds then. One the pivot cannot read narrows nothing, and says so.
             var cells = selection.Ranges.Count == 0 ? [] : _pivots.GetValueOrDefault(from)?.ItemsOf(selection);
-            bound.SelectCells(from, cells);
             if (cells is null)
                 _linkStatus[from] = "The selection cannot be read from the report as drawn, so it narrows nothing.";
             else
                 _linkStatus.Remove(from);
+            try
+            {
+                // Over a server, the source is asked for the values under the cells (ADR-0345).
+                await bound.SelectCellsAsync(from, cells);
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                if (ReferenceEquals(bound, _bound))
+                    _linkStatus[from] = $"The source did not answer for the cells selected, so they narrow nothing: {e.Message}";
+            }
+            if (!ReferenceEquals(bound, _bound))
+                return;
         }
         else
         {
@@ -314,7 +329,7 @@ public partial class ExBoard : IDisposable
             var selection = await grid.SelectionAfterInputsAsync();
             if (!ReferenceEquals(bound, _bound))
                 return;
-            Select(from, selection);
+            await Select(from, selection);
         }
         if (bound.Confirm(output) is not { } raised)
         {
@@ -344,6 +359,8 @@ public partial class ExBoard : IDisposable
         {
             foreach (var grid in _bound.Views.OfType<BoundGridView>())
                 grid.Source.StateChanged -= _sourceChanged;
+            foreach (var chart in _bound.Views.OfType<BoundChartView>())
+                chart.Answered -= _sourceChanged;
         }
         _sourceChanged = null;
         if (_bound is not null)

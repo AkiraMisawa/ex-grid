@@ -1,6 +1,8 @@
 namespace ExGrid.Docs.Examples.Board;
 
 using ExBoard;
+using ExChart;
+using ExChart.Engine;
 using ExGrid.Data;
 using ExPivot.Engine;
 
@@ -10,14 +12,16 @@ public static class ServerBoard
     public const string Json = """
         {"version": 1, "title": "All trades",
          "inputs": {"trades": {"columns": [{"name": "id", "type": "text"}, {"name": "desk", "type": "text"},
-                                           {"name": "pnl", "type": "decimal"}]}},
+                                           {"name": "day", "type": "date"}, {"name": "seq", "type": "integer"}, {"name": "pnl", "type": "decimal"}]}},
          "views": [
            {"id": "blotter", "title": "Trades", "grid": {"data": "trades", "columns": [{"column": "id", "header": "Trade"},
              {"column": "desk", "header": "Desk"}, {"column": "pnl", "header": "P&L", "format": "#,##0;(#,##0)"}]}},
            {"id": "byDesk", "title": "By desk", "pivot": {"data": "trades", "layout": {"version": 1,
-             "rows": [{"field": "desk"}], "values": [{"field": "pnl", "aggregation": "sum", "numberFormat": "#,##0"}]}}}],
-         "layout": [{"views": ["blotter", "byDesk"], "widths": [2, 1], "height": 280}],
-         "links": [{"from": "blotter", "to": ["byDesk"], "on": ["desk"]}]}
+             "rows": [{"field": "desk"}], "values": [{"field": "pnl", "aggregation": "sum", "numberFormat": "#,##0"}]}}},
+           {"id": "curve", "title": "P&L by trade", "chart": {"version": 1, "axis": {"values": "numbers"},
+             "series": [{"id": "pnl", "name": "P&L", "kind": "level", "data": "trades", "x": "seq", "y": "pnl", "fromZero": false}]}}],
+         "layout": [{"views": ["blotter", "byDesk"], "widths": [2, 1], "height": 280}, {"views": ["curve"], "height": 240}],
+         "links": [{"from": "blotter", "to": ["byDesk"], "on": ["desk"]}, {"from": "byDesk", "to": ["curve"], "on": ["desk"]}]}
         """;
 
     public static readonly BoardReading Board = BoardSpec.Read(Json);
@@ -45,6 +49,11 @@ public static class ServerBoard
         })
         {
             Report = narrowing => PivotReportSource.From(PivotSource.From(Copy(Through(narrowing)))),
+            // A chart's points are thinned where the trades are, as ChartSource.Thin thins (ADR-0344):
+            // each pixel's first, last, lowest and highest row; only those cross to the chart.
+            Thin = (query, _) => ValueTask.FromResult(ChartSource.Thin(new SnapshotChartData(Copy(Through(query.Narrowing))), query.Chart, Held.Version)),
+            // The desks under a pivot's selected cells, a subtotal's and the grand total's included (ADR-0345).
+            Under = (query, _) => ValueTask.FromResult(BoardSource.ValuesUnder(Held, query)),
         },
     };
 
@@ -68,12 +77,16 @@ public static class ServerBoard
         var builder = new SnapshotColumnsBuilder { Version = from.Version };
         var id = builder.Text("id");
         var desk = builder.Text("desk");
+        var day = builder.Date("day");
+        var seq = builder.Integer("seq");
         var pnl = builder.Decimal("pnl");
         foreach (var p in positions)
         {
             var row = from.Rows[p];
             id.Append((string)from.ValueAt(row, from["id"])!);
             desk.Append((string)from.ValueAt(row, from["desk"])!);
+            day.Append((DateTime)from.ValueAt(row, from["day"])!);
+            seq.Append((long)from.ValueAt(row, from["seq"])!);
             pnl.Append((decimal)from.ValueAt(row, from["pnl"])!);
         }
         return builder.Build();
@@ -85,11 +98,15 @@ public static class ServerBoard
         var builder = new SnapshotColumnsBuilder { Version = 1 };
         var id = builder.Text("id");
         var desk = builder.Text("desk");
+        var day = builder.Date("day");
+        var seq = builder.Integer("seq");
         var pnl = builder.Decimal("pnl");
         for (var i = 0; i < count; i++)
         {
             id.Append($"T-{i + 1:D5}");
             desk.Append(desks[i % desks.Length]);
+            day.Append(new DateOnly(2026, 1, 1).AddDays(i / 100));
+            seq.Append(i + 1);
             pnl.Append((i * 7919 % 20001) - 10000);
         }
         return builder.Build();

@@ -131,6 +131,55 @@ public static class ChartSpec
             return new Reader(tables).Read(document.RootElement);
     }
 
+    /// <summary>
+    /// Reads <paramref name="json"/> through Chart Sources (ADR-0344): each series asks the source of its
+    /// Data Handle for its own column, from <paramref name="from"/> to <paramref name="to"/> at
+    /// <paramref name="pixels"/> columns, all at once, and is read from the points the source kept.
+    /// </summary>
+    /// <exception cref="ChartSpecRefusedException">The spec cannot be drawn from Chart Sources, or the
+    /// answers for one Data Handle name different versions of its data; the message says where and why.</exception>
+    public static async Task<ChartSourceReading> ReadAsync(string json, Func<string, IChartSource?> sources, int pixels,
+        double? from = null, double? to = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(json);
+        ArgumentNullException.ThrowIfNull(sources);
+        ArgumentOutOfRangeException.ThrowIfLessThan(pixels, 1);
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(json);
+        }
+        catch (JsonException e)
+        {
+            throw new ChartSpecRefusedException("", $"The Chart Spec is not JSON: {e.Message}");
+        }
+        using (document)
+        {
+            var (values, asked) = ChartSource.Asked(document.RootElement);
+            var answers = new ChartSourceAnswer[asked.Count];
+            if (asked.Count > 0)
+            {
+                var asks = new Task<ChartSourceAnswer>[asked.Count];
+                for (var i = 0; i < asked.Count; i++)
+                {
+                    var (data, x, y) = asked[i];
+                    var source = sources(data) ?? throw new ChartSpecRefusedException($"series[{i}].data", $"series[{i}].data \"{data}\" is not known: name a Data Handle a capability returned.");
+                    asks[i] = source.ThinAsync(new ChartSourceQuery(data, x, y, values, from, to, pixels), cancellationToken).AsTask();
+                }
+                answers = await Task.WhenAll(asks).ConfigureAwait(false);
+            }
+            var versions = new Dictionary<string, long>(StringComparer.Ordinal);
+            for (var i = 0; i < asked.Count; i++)
+            {
+                if (versions.TryGetValue(asked[i].Data, out var seen) && seen != answers[i].Version)
+                    throw new ChartSpecRefusedException($"series[{i}].data", $"series[{i}].data \"{asked[i].Data}\" answered version {answers[i].Version}, and an earlier series of it version {seen}: one chart is never drawn from two moments of its data.");
+                versions[asked[i].Data] = answers[i].Version;
+            }
+            var reading = new Reader(_ => null, asked.Count == 0 ? null : answers).Read(document.RootElement);
+            return new ChartSourceReading(reading, versions);
+        }
+    }
+
     private const string Schema = """
         {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -221,8 +270,11 @@ public static class ChartSpec
         }
         """;
 
-    private sealed class Reader(Func<string, IChartData?> tables)
+    // A reader through Chart Sources is handed each series' answer, in the series' order (ReadAsync).
+    private sealed class Reader(Func<string, IChartData?> tables, IReadOnlyList<ChartSourceAnswer>? answers = null)
     {
+        private int _series;
+
         // A label axis' categories, in the order the data first shows them (ADR-0251).
         private readonly List<string> _labels = [];
         private readonly Dictionary<string, int> _labelIndex = new(StringComparer.Ordinal);
@@ -304,7 +356,8 @@ public static class ChartSpec
             if (!Kinds.TryGetValue(kindText, out var kind))
                 throw Refuse($"{path}.kind", $"{path}.kind \"{kindText}\" is not a Series Kind: it is one of {string.Join(", ", Kinds.Keys)}.");
             var handle = String(s, "data", path) ?? throw Missing(path, "data", "the Data Handle of the table its values are read from");
-            var table = tables(handle) ?? throw Refuse($"{path}.data", $"{path}.data \"{handle}\" is not known: name a Data Handle a capability returned.");
+            var answer = answers?[_series++];
+            var table = answer?.Points ?? tables(handle) ?? throw Refuse($"{path}.data", $"{path}.data \"{handle}\" is not known: name a Data Handle a capability returned.");
             var x = Column(s, "x", path, handle, table, required: true)!;
             var rows = table.RowCount;
             var positions = new double[rows];
@@ -379,6 +432,7 @@ public static class ChartSpec
                 Step = s.TryGetProperty("step", out _)
                     ? Choice(s, "step", path, new Dictionary<string, StepSide> { ["preceding"] = StepSide.Preceding, ["following"] = StepSide.Following }, "which interval a step's point stands for")
                     : StepSide.Preceding,
+                Thinned = answer?.Thinned ?? [],
             };
         }
 

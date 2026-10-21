@@ -5,6 +5,7 @@ const ExBoard.BoardDiff.Version = 1 -> int
 const ExBoard.BoardSpec.ChartViewId = "chart" -> string!
 const ExBoard.BoardSpec.DefaultRowHeight = 320 -> double
 const ExBoard.BoardSpec.Version = 1 -> int
+const ExBoard.BoundBoard.ChartPixels = 2048 -> int
 const ExBoard.Components.ExBoard.Gap = 12 -> double
 const ExBoard.Components.ExBoard.TitleHeight = 28 -> double
 ExBoard.BoardCell
@@ -16,11 +17,37 @@ ExBoard.BoardCell.View.get -> string!
 ExBoard.BoardCell.View.init -> void
 ExBoard.BoardCell.Width.get -> int
 ExBoard.BoardCell.Width.init -> void
+ExBoard.BoardCellsQuery
+ExBoard.BoardCellsQuery.<Clone>$() -> ExBoard.BoardCellsQuery!
+ExBoard.BoardCellsQuery.BoardCellsQuery(string! View, ExPivot.Engine.PivotLayout! Layout, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotCellItems!>! Cells, System.Collections.Generic.IReadOnlyList<string!>! On, System.Collections.Generic.IReadOnlyList<ExBoard.LinkCondition!>! Narrowing) -> void
+ExBoard.BoardCellsQuery.Cells.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotCellItems!>!
+ExBoard.BoardCellsQuery.Cells.init -> void
+ExBoard.BoardCellsQuery.Deconstruct(out string! View, out ExPivot.Engine.PivotLayout! Layout, out System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotCellItems!>! Cells, out System.Collections.Generic.IReadOnlyList<string!>! On, out System.Collections.Generic.IReadOnlyList<ExBoard.LinkCondition!>! Narrowing) -> void
+ExBoard.BoardCellsQuery.Equals(ExBoard.BoardCellsQuery? other) -> bool
+ExBoard.BoardCellsQuery.Layout.get -> ExPivot.Engine.PivotLayout!
+ExBoard.BoardCellsQuery.Layout.init -> void
+ExBoard.BoardCellsQuery.Narrowing.get -> System.Collections.Generic.IReadOnlyList<ExBoard.LinkCondition!>!
+ExBoard.BoardCellsQuery.Narrowing.init -> void
+ExBoard.BoardCellsQuery.On.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExBoard.BoardCellsQuery.On.init -> void
+ExBoard.BoardCellsQuery.View.get -> string!
+ExBoard.BoardCellsQuery.View.init -> void
 ExBoard.BoardChartChange
 ExBoard.BoardChartChange.BoardChartChange(System.Collections.Generic.IEnumerable<string!>! hiddenSeries, ExChart.ChartRange? range, ExChart.Engine.AxisScale? scale) -> void
 ExBoard.BoardChartChange.HiddenSeries.get -> System.Collections.Generic.IReadOnlySet<string!>!
 ExBoard.BoardChartChange.Range.get -> ExChart.ChartRange?
 ExBoard.BoardChartChange.Scale.get -> ExChart.Engine.AxisScale?
+ExBoard.BoardChartQuery
+ExBoard.BoardChartQuery.<Clone>$() -> ExBoard.BoardChartQuery!
+ExBoard.BoardChartQuery.BoardChartQuery(string! View, ExChart.Engine.ChartSourceQuery! Chart, System.Collections.Generic.IReadOnlyList<ExBoard.LinkCondition!>! Narrowing) -> void
+ExBoard.BoardChartQuery.Chart.get -> ExChart.Engine.ChartSourceQuery!
+ExBoard.BoardChartQuery.Chart.init -> void
+ExBoard.BoardChartQuery.Deconstruct(out string! View, out ExChart.Engine.ChartSourceQuery! Chart, out System.Collections.Generic.IReadOnlyList<ExBoard.LinkCondition!>! Narrowing) -> void
+ExBoard.BoardChartQuery.Equals(ExBoard.BoardChartQuery? other) -> bool
+ExBoard.BoardChartQuery.Narrowing.get -> System.Collections.Generic.IReadOnlyList<ExBoard.LinkCondition!>!
+ExBoard.BoardChartQuery.Narrowing.init -> void
+ExBoard.BoardChartQuery.View.get -> string!
+ExBoard.BoardChartQuery.View.init -> void
 ExBoard.BoardChartView
 ExBoard.BoardChartView.Equals(ExBoard.BoardChartView? other) -> bool
 ExBoard.BoardChartView.Spec.get -> string!
@@ -133,6 +160,10 @@ ExBoard.BoardSource.Fetch.get -> System.Func<ExBoard.BoardQuery!, System.Threadi
 ExBoard.BoardSource.Report.get -> System.Func<System.Collections.Generic.IReadOnlyList<ExBoard.LinkCondition!>!, ExPivot.Engine.PivotReportSource!>?
 ExBoard.BoardSource.Report.init -> void
 ExBoard.BoardSource.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
+ExBoard.BoardSource.Thin.get -> System.Func<ExBoard.BoardChartQuery!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExChart.Engine.ChartSourceAnswer!>>?
+ExBoard.BoardSource.Thin.init -> void
+ExBoard.BoardSource.Under.get -> System.Func<ExBoard.BoardCellsQuery!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExBoard.LinkCondition!>>?
+ExBoard.BoardSource.Under.init -> void
 ExBoard.BoardSpec
 ExBoard.BoardSpecAnswer
 ExBoard.BoardSpecAnswer.<Clone>$() -> ExBoard.BoardSpecAnswer!
@@ -175,10 +206,12 @@ ExBoard.BoundBoard.Dropped.get -> System.Collections.Generic.IReadOnlyList<strin
 ExBoard.BoundBoard.Narrow(ExBoard.BoardLink! link, ExBoard.LinkCondition? condition) -> void
 ExBoard.BoundBoard.Select(string! from, ExGrid.Selection.GridSelection! selection) -> bool
 ExBoard.BoundBoard.SelectCells(string! from, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotCellItems!>? cells) -> bool
+ExBoard.BoundBoard.SelectCellsAsync(string! from, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotCellItems!>? cells, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>!
 ExBoard.BoundBoard.Sources.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExBoard.BoardSource!>!
 ExBoard.BoundBoard.this[string! id].get -> ExBoard.BoundView!
 ExBoard.BoundBoard.Views.get -> System.Collections.Generic.IReadOnlyList<ExBoard.BoundView!>!
 ExBoard.BoundChartView
+ExBoard.BoundChartView.Answered -> System.Action?
 ExBoard.BoundChartView.Change.get -> ExBoard.BoardChartChange?
 ExBoard.BoundChartView.ChangeRange(ExChart.ChartRange? range) -> void
 ExBoard.BoundChartView.ChangeScale(ExChart.Engine.AxisScale scale) -> void
@@ -188,6 +221,7 @@ ExBoard.BoundChartView.Range.get -> ExChart.ChartRange?
 ExBoard.BoundChartView.Reading.get -> ExChart.Engine.ChartSpecReading!
 ExBoard.BoundChartView.Refusal.get -> string?
 ExBoard.BoundChartView.Scale.get -> ExChart.Engine.AxisScale?
+ExBoard.BoundChartView.Thinned.get -> bool
 ExBoard.BoundGridView
 ExBoard.BoundGridView.Change.get -> ExBoard.BoardGridChange?
 ExBoard.BoundGridView.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<ExGrid.ShapedRow!>!>!
@@ -245,6 +279,12 @@ ExBoard.LinkCondition.Values.get -> System.Collections.Generic.IReadOnlyList<Sys
 override ExBoard.BoardCell.Equals(object? obj) -> bool
 override ExBoard.BoardCell.GetHashCode() -> int
 override ExBoard.BoardCell.ToString() -> string!
+override ExBoard.BoardCellsQuery.Equals(object? obj) -> bool
+override ExBoard.BoardCellsQuery.GetHashCode() -> int
+override ExBoard.BoardCellsQuery.ToString() -> string!
+override ExBoard.BoardChartQuery.Equals(object? obj) -> bool
+override ExBoard.BoardChartQuery.GetHashCode() -> int
+override ExBoard.BoardChartQuery.ToString() -> string!
 override ExBoard.BoardChartView.<Clone>$() -> ExBoard.BoardChartView!
 override ExBoard.BoardChartView.Data.get -> System.Collections.Generic.IReadOnlyList<string!>!
 override ExBoard.BoardChartView.Equals(object? obj) -> bool
@@ -294,6 +334,10 @@ override sealed ExBoard.BoardGridView.Equals(ExBoard.BoardView? other) -> bool
 override sealed ExBoard.BoardPivotView.Equals(ExBoard.BoardView? other) -> bool
 static ExBoard.BoardCell.operator !=(ExBoard.BoardCell? left, ExBoard.BoardCell? right) -> bool
 static ExBoard.BoardCell.operator ==(ExBoard.BoardCell? left, ExBoard.BoardCell? right) -> bool
+static ExBoard.BoardCellsQuery.operator !=(ExBoard.BoardCellsQuery? left, ExBoard.BoardCellsQuery? right) -> bool
+static ExBoard.BoardCellsQuery.operator ==(ExBoard.BoardCellsQuery? left, ExBoard.BoardCellsQuery? right) -> bool
+static ExBoard.BoardChartQuery.operator !=(ExBoard.BoardChartQuery? left, ExBoard.BoardChartQuery? right) -> bool
+static ExBoard.BoardChartQuery.operator ==(ExBoard.BoardChartQuery? left, ExBoard.BoardChartQuery? right) -> bool
 static ExBoard.BoardChartView.operator !=(ExBoard.BoardChartView? left, ExBoard.BoardChartView? right) -> bool
 static ExBoard.BoardChartView.operator ==(ExBoard.BoardChartView? left, ExBoard.BoardChartView? right) -> bool
 static ExBoard.BoardDiff.Empty.get -> ExBoard.BoardDiff!
@@ -314,6 +358,7 @@ static ExBoard.BoardReading.operator !=(ExBoard.BoardReading? left, ExBoard.Boar
 static ExBoard.BoardReading.operator ==(ExBoard.BoardReading? left, ExBoard.BoardReading? right) -> bool
 static ExBoard.BoardRow.operator !=(ExBoard.BoardRow? left, ExBoard.BoardRow? right) -> bool
 static ExBoard.BoardRow.operator ==(ExBoard.BoardRow? left, ExBoard.BoardRow? right) -> bool
+static ExBoard.BoardSource.ValuesUnder(ExGrid.Data.Snapshot! data, ExBoard.BoardCellsQuery! query) -> ExBoard.LinkCondition!
 static ExBoard.BoardSpec.Answer(string! json, System.Func<string!, ExGrid.Data.Snapshot?>! tables, System.Globalization.CultureInfo? culture = null) -> ExBoard.BoardSpecAnswer!
 static ExBoard.BoardSpec.DeclarationOf(ExGrid.Data.DataShape! shape) -> string!
 static ExBoard.BoardSpec.OfChart(string! chartSpec, System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.DataShape!>! tables) -> ExBoard.BoardReading!

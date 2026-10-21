@@ -58,6 +58,13 @@ view that cannot yet be drawn over a server source does.
     values of the link's columns among them cannot be read in the client. A link whose columns are the
     pivot's own row and column fields could be read from the cells. It waits for a host that needs it.
 
+  *Amended 2026-10-21:* the chart and the link are built. A chart over a server input is read through
+  the source's `Thin` ([ADR-0344](0344-a-chart-source-answers-thinned-points-and-a-board-charts-a-server-input-through-it.md)),
+  and a link from a pivot over one asks the source's `Under` for the values under its cells
+  ([ADR-0345](0345-a-link-from-a-pivot-over-a-server-asks-the-source-for-the-values-under-its-cells.md)),
+  never the cells' Items, which a subtotal does not name whole. Each is still refused at binding, by
+  path, when the source answers no such question, as a pivot is without a report source.
+
 ## Consequences
 
 - `ExGrid` gains `ShapedGrid.Fetch` and `ShapedPage`. A `ShapedRow` now knows its page, so one grid's
@@ -66,4 +73,5 @@ view that cannot yet be drawn over a server source does.
   `Sources` beside `Data`.
 - A Board is still the same JSON wherever its data lives (ADR-0340): nothing in it says which inputs are
   held on a server.
-- Open: the chart over a Chart Source, and a link from a server pivot. Each waits on its own decision.
+- ~~Open: the chart over a Chart Source, and a link from a server pivot. Each waits on its own decision.~~
+  Settled by ADR-0344 and ADR-0345 (2026-10-21).
