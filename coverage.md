@@ -3,29 +3,29 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.4% | 88.2% |
-| ExSheet | 95.7% | 88.6% |
+| ExSheet | 95.7% | 88.7% |
 | ExPivot | 94.4% | 85.3% |
-| ExChart | 89.6% | 80.4% |
-| Data | 94.5% | 90% |
+| ExChart | 89.7% | 80.4% |
+| Data | 94.5% | 90.1% |
 
 # Summary
 <details open><summary>Summary</summary>
 
 |||
 |:---|:---|
-| Generated on: | 10/21/2026 - 00:10:03 |
-| Parser: | MultiReport (16x Cobertura) |
+| Generated on: | 10/21/2026 - 01:08:30 |
+| Parser: | MultiReport (17x Cobertura) |
 | Assemblies: | 13 |
-| Classes: | 1014 |
+| Classes: | 1015 |
 | Files: | 535 |
-| **Line coverage:** | 94.7% (66565 of 70290) |
-| Covered lines: | 66565 |
-| Uncovered lines: | 3725 |
-| Coverable lines: | 70290 |
-| Total lines: | 117500 |
-| **Branch coverage:** | 87% (39769 of 45661) |
-| Covered branches: | 39769 |
-| Total branches: | 45661 |
+| **Line coverage:** | 94.7% (66779 of 70496) |
+| Covered lines: | 66779 |
+| Uncovered lines: | 3717 |
+| Coverable lines: | 70496 |
+| Total lines: | 117854 |
+| **Branch coverage:** | 87.1% (39976 of 45877) |
+| Covered branches: | 39976 |
+| Total branches: | 45877 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -78,11 +78,11 @@
 |ExChart.SnapshotChartData|100%|100%|
 
 </details>
-<details><summary>ExChart.Engine - 95.8%</summary>
+<details><summary>ExChart.Engine - 96%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart.Engine**|**95.8%**|**84.8%**|
+|**ExChart.Engine**|**96%**|**84.8%**|
 |ExChart.Engine.Appearance|100%|100%|
 |ExChart.Engine.AppearanceKeys|100%||
 |ExChart.Engine.AxisStyle|100%||
@@ -102,8 +102,8 @@
 |ExChart.Engine.ChartRefusedException|100%||
 |ExChart.Engine.ChartScene|98.8%|88.5%|
 |ExChart.Engine.ChartSeries|100%|100%|
-|ExChart.Engine.ChartSpec|92.4%|76.4%|
-|ExChart.Engine.ChartSpec.Reader|91.8%|76.1%|
+|ExChart.Engine.ChartSpec|93.3%|76.8%|
+|ExChart.Engine.ChartSpec.Reader|92.9%|76.6%|
 |ExChart.Engine.ChartSpecAnswer|100%||
 |ExChart.Engine.ChartSpecReading|100%||
 |ExChart.Engine.ChartSpecRefusedException|100%||
@@ -187,7 +187,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**95.1%**|**88.3%**|
+|**ExGrid**|**95.1%**|**88.4%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -267,7 +267,7 @@
 |ExGrid.ColumnGeometry|98.9%|93.1%|
 |ExGrid.ColumnInfo<TRow>|100%|100%|
 |ExGrid.Columns.AutoWidth|100%|100%|
-|ExGrid.Columns.CellTextMetrics|100%|81.1%|
+|ExGrid.Columns.CellTextMetrics|100%|81.6%|
 |ExGrid.Columns.ColumnWidth|100%|100%|
 |ExGrid.Columns.ColumnWidthSpec|100%|100%|
 |ExGrid.Columns.DefaultGlyphWidths|100%||
@@ -316,19 +316,20 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|95.3%|90.3%|
 |ExGrid.Components.ExGrid<TRow>|90.6%|85.6%|
+|ExGrid.Components.ExGrid<TRow>|95.3%|90.3%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridStylesheet|100%||
-|ExGrid.Components.GridView|100%||
+|ExGrid.Components.GridView|100%|50%|
 |ExGrid.Components.HeadingMarkStyles|95%|90%|
 |ExGrid.Components.InstanceIds|100%||
 |ExGrid.Components.PackageStylesheet|100%|100%|
 |ExGrid.Components.ReferenceHighlights|100%|97.7%|
 |ExGrid.Components.RowAppearance|100%|75%|
 |ExGrid.Components.RowClasses|96.5%|92.8%|
+|ExGrid.Components.RowSetStamp|100%||
 |ExGrid.Components.ScrollOffset|100%||
 |ExGrid.Components.SelectionStyles|100%|96.6%|
 |ExGrid.Components.SelectionStyles.OutlineCover|100%||
@@ -350,8 +351,8 @@
 |ExGrid.Finding.GridFindResult|100%||
 |ExGrid.FormatCode|86.5%|85.2%|
 |ExGrid.GridChangeBatch<TRow>|96.6%|68.7%|
-|ExGrid.GridColumn<TRow>|96.6%|92.6%|
 |ExGrid.GridColumn<TRow>|50%||
+|ExGrid.GridColumn<TRow>|96.6%|92.6%|
 |ExGrid.GridFilter|100%||
 |ExGrid.GridFilters|92.3%|83.3%|
 |ExGrid.GridMetrics|97.7%|92.5%|
@@ -446,11 +447,11 @@
 |ExGrid.ViewStateDocument|100%||
 
 </details>
-<details><summary>ExGrid.Data - 94.6%</summary>
+<details><summary>ExGrid.Data - 94.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.3%**|
+|**ExGrid.Data**|**94.7%**|**90.3%**|
 |ExGrid.Data.AggregateAccumulator|86%|87.8%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -543,7 +544,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -885,11 +886,11 @@
 |ExPivot.MudBlazor.MudPivotValueFieldSettings|96.8%|77.2%|
 
 </details>
-<details><summary>ExSheet - 93%</summary>
+<details><summary>ExSheet - 93.1%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**93%**|**84.6%**|
+|**ExSheet**|**93.1%**|**85%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -900,10 +901,10 @@
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|90.9%|82.4%|
+|ExSheet.Components.ExSheet|91.3%|83.4%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|90.9%|82.4%|
+|ExSheet.Components.ExSheet<T>|91.3%|83.4%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
@@ -919,7 +920,7 @@
 |ExSheet.ItalicItem|100%|100%|
 |ExSheet.LinkedColumnColour|100%||
 |ExSheet.LinkedColumnColours|66.6%||
-|ExSheet.NameBoxText|34.6%|20%|
+|ExSheet.NameBoxText|69.6%|46.1%|
 |ExSheet.NumberFormatCategoryOffer|100%||
 |ExSheet.NumberFormatCodes|95.8%|93.8%|
 |ExSheet.NumberFormatCodes.Recognised|100%||
@@ -943,7 +944,7 @@
 |ExSheet.SheetEdges|97.8%|97.7%|
 |ExSheet.SheetFind|96%|75%|
 |ExSheet.SheetFormatKeys|98.3%|90.9%|
-|ExSheet.SheetFormulaAids|98.3%|93.1%|
+|ExSheet.SheetFormulaAids|97%|94.6%|
 |ExSheet.SheetHistory|100%|75%|
 |ExSheet.SheetOwnCopy|100%|80%|
 |ExSheet.SheetRow|100%|100%|
@@ -954,7 +955,7 @@
 |ExSheet.SheetToolbar|90.9%|79.6%|
 |ExSheet.SheetToolbarContext|95%|78.5%|
 |ExSheet.SheetWidening|100%|97.5%|
-|ExSheet.SheetWords|95.3%|89.4%|
+|ExSheet.SheetWords|94.6%|89.4%|
 |ExSheet.StrikethroughItem|100%|100%|
 |ExSheet.ToolbarButton|100%|50%|
 |ExSheet.ToolbarChoice|100%||
@@ -1113,7 +1114,7 @@
 |ExSheet.Engine.SheetRefusedException|100%|50%|
 |ExSheet.Engine.SheetStep|100%|100%|
 |ExSheet.Engine.Value|94.2%|79.4%|
-|ExSheet.Engine.Workbook|97.2%|92.6%|
+|ExSheet.Engine.Workbook|97.2%|93.1%|
 |ExSheet.Engine.Workbook.SheetRename|100%||
 |ExSheet.Engine.WorkbookChange|100%|100%|
 |ExSheet.Engine.WorkbookDocument|95.6%|85%|
