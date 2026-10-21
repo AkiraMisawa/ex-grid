@@ -181,6 +181,8 @@ public sealed class FindTests : PivotTestContext
     {
         var records = Enumerable.Range(0, 600).Select(i => new Sale($"R{i:0000}", "Apples", i, 1, true)).ToArray();
         var cut = RenderPivot(RegionAmount, records: records);
+        // Six hundred records are summed off the renderer: the report is read once it has landed.
+        cut.WaitForState(() => !cut.Instance.IsLoading);
         Assert.DoesNotContain(RowTexts(cut), text => text.StartsWith("R0450", StringComparison.Ordinal));
         await PressAsync(cut, "f", ctrl: true);
 
