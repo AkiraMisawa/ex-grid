@@ -965,3 +965,24 @@ readings, the one by `DATE`'s arithmetic alone gives all three, and `EDATE` from
 `#VALUE!` as `EOMONTH`'s start, as `EDATE`'s months and as a date of `NETWORKDAYS` and `WORKDAY` (EOMONTH-018,
 EDATE-023, NETWORKDAYS-010, WORKDAY-011), and NETWORKDAYS's end, read as its start is, by generalisation. These are
 Error Values a Formula catches, Excel's, and no longer refusals.)*
+
+## How deep a Formula may go *(2026-10-21, decided with the user)*
+
+A chain of about 4,100 operators, which fits in Excel's 8,192 characters, overflowed the process's stack:
+Excel's operators group to the left, so `=1+1+…+1` is a tree as deep as the chain is long, and every walk over
+it recursed. The evaluator, the parser and the walks now loop along an operator chain, so a chain of any length
+computes. What still nests is bounded by refusal, as this ADR refuses whatever it cannot answer as Excel does:
+
+- **More than 64 levels of nested functions is refused as the Formula is typed**, with its reason. It is Excel's
+  documented limit, `LET` counted as one function.
+- **More than 256 levels of nesting is refused as the Formula is typed**, with its reason. This is the engine's
+  own limit, not Excel's: parentheses, signs, `%`, functions, an operation on the right of another and a `LET`
+  name (its value's depth plus one) each add a level, and an operator's left operand does not. 256 keeps the
+  deepest Formula within about 600 KB of stack on a 1 MB thread, measured on unoptimised code. Excel may accept
+  some Formulas it refuses (three nested `LET`s that each chain 100 names); a refusal is the honest answer to
+  those, and a later measurement may raise the number. Whether Excel limits parentheses apart from functions
+  has not been asked.
+- **Where the stack still runs short**, on a host whose threads are smaller, the parser refuses the Formula on
+  entry and a function call refuses it as a refused `#VALUE!`, instead of stopping the process. A chain of cells
+  computed on demand through `INDIRECT` is caught the same way. This depends on the host's stack size, not on
+  timing; within the limits above it does not happen on a 1 MB thread.
