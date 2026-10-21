@@ -215,27 +215,32 @@ test('DC-42: a drag across Row Headings selects whole rows, over the Headings an
     await expectWholeRows(grid, 3, 8);
 });
 
-test('DC-43: a Column Heading drag at the right edge scrolls sideways, and never down', async ({ page }) => {
-    const grid = sheet(page);
-    const b = centreOf(await boxOf(heading(grid, 'B')));
-    await page.mouse.move(b.x, b.y);
-    await page.mouse.down();
-    await expectActiveDescendant(grid, /-r0c1$/);
-    const readable = await readableOf(grid);
+test('DC-43: a Column Heading drag at the right edge scrolls sideways, and never down', async ({ page }, testInfo) => {
+    const stopProbe = await watchRenderer(page, testInfo);
+    try {
+        const grid = sheet(page);
+        const b = centreOf(await boxOf(heading(grid, 'B')));
+        await page.mouse.move(b.x, b.y);
+        await page.mouse.down();
+        await expectActiveDescendant(grid, /-r0c1$/);
+        const readable = await readableOf(grid);
 
-    // Into the right-hand edge band, along the header.
-    await page.mouse.move(readable.right - 3, b.y, { steps: 8 });
-    await expect.poll(async () => (await scrollOf(grid)).left, { timeout: 10_000 }).toBeGreaterThan(200);
-    // And down into the bottom band as well, over the cells: still sideways only.
-    await page.mouse.move(readable.right - 3, readable.bottom - 3, { steps: 4 });
-    // spec-lint: fixed-wait: a pointer resting in the edge band is no input the gate takes, and the band's steps run on the script's own timer, which the Settled Mark does not cover (ADR-0220, As built); nothing marks that no step down will come
-    await page.waitForTimeout(600);
-    expect((await scrollOf(grid)).top).toBe(0);
+        // Into the right-hand edge band, along the header.
+        await page.mouse.move(readable.right - 3, b.y, { steps: 8 });
+        await expect.poll(async () => (await scrollOf(grid)).left, { timeout: 10_000 }).toBeGreaterThan(200);
+        // And down into the bottom band as well, over the cells: still sideways only.
+        await page.mouse.move(readable.right - 3, readable.bottom - 3, { steps: 4 });
+        // spec-lint: fixed-wait: a pointer resting in the edge band is no input the gate takes, and the band's steps run on the script's own timer, which the Settled Mark does not cover (ADR-0220, As built); nothing marks that no step down will come
+        await page.waitForTimeout(600);
+        expect((await scrollOf(grid)).top).toBe(0);
 
-    await page.mouse.up();
-    // The Focus stayed on B1, now off screen, so the Name Box is where it is read.
-    await expect(nameBox(grid)).toHaveValue('B1');
-    expect((await scrollOf(grid)).top).toBe(0);
+        await page.mouse.up();
+        // The Focus stayed on B1, now off screen, so the Name Box is where it is read.
+        await expect(nameBox(grid)).toHaveValue('B1');
+        expect((await scrollOf(grid)).top).toBe(0);
+    } finally {
+        await stopProbe();
+    }
 });
 
 test('DC-43: a Row Heading drag at the bottom edge scrolls down, and never sideways', async ({ page }, testInfo) => {

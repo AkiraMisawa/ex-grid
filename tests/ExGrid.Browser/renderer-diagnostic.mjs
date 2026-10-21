@@ -1,9 +1,9 @@
 import fs from 'node:fs';
 import { execFile } from 'node:child_process';
 
-// Temporary evidence for the unresolved Row Heading renderer stop. The original test and
+// Temporary evidence for the unresolved Heading renderer stop. The original test and
 // timeout remain the verdict. This probe changes no page state. If the gesture has not
-// completed after ten seconds, it asks the debugger where the renderer is.
+// completed after three seconds, it asks the debugger where the renderer is.
 export async function watchRenderer(page, testInfo) {
     const rendererPids = new Set();
     if (process.platform === 'linux') {
@@ -20,7 +20,6 @@ export async function watchRenderer(page, testInfo) {
         }
     }
     const session = await page.context().newCDPSession(page);
-    await session.send('Debugger.enable');
     let stopped = false;
     let nativeWork = Promise.resolve();
     const write = (name, text) => {
@@ -41,29 +40,33 @@ export async function watchRenderer(page, testInfo) {
         void session.send('Debugger.resume').catch(() => {});
     });
     const timer = setTimeout(() => {
-        write('renderer-probe.txt', 'The Row Heading gesture has not completed after ten seconds.\n');
-        void session.send('Debugger.pause').catch((error) => write('renderer-pause-error.txt', String(error)));
+        write('renderer-probe.txt', 'The Heading gesture has not completed after three seconds.\n');
+        // Leave the debugger off during the original gesture. A stopped renderer may not
+        // answer enable; native stacks below do not depend on it.
+        void session.send('Debugger.enable').then(() => session.send('Debugger.pause'))
+            .catch((error) => write('renderer-pause-error.txt', String(error)));
         if (process.platform !== 'linux') {
             return;
         }
         nativeWork = (async () => {
             const { error, stdout, stderr } = await run('ps', ['-eo', 'pid,ppid,pcpu,rss,stat,wchan:32,args']);
-            if (stopped) {
-                return;
-            }
+            // Once started, finish and retain this bounded capture even if the test's
+            // assertion times out first. Cleanup awaits nativeWork before another test.
+            const save = (name, text) => fs.writeFileSync(testInfo.outputPath(name), text);
             const rows = stdout.split('\n').filter((row) => rendererPids.has(row.trim().split(/\s+/)[0]));
-            write('renderer-processes.txt', rows.join('\n') + '\n' + String(error ?? '') + stderr);
+            save('renderer-processes.txt', rows.join('\n') + '\n' + String(error ?? '') + stderr);
             await Promise.all(rows.map(async (row) => {
                 const pid = row.trim().split(/\s+/)[0];
                 if (!/^\d+$/.test(pid)) {
                     return;
                 }
                 const stack = await run('sudo', ['-n', 'gdb', '--batch', '-ex', 'set pagination off',
-                    '-ex', 'thread apply all bt 20', '-p', pid]);
-                write(`renderer-${pid}-native-stack.txt`, stack.stdout + stack.stderr + String(stack.error ?? ''));
+                    '-ex', 'thread apply all bt 40', '-ex', 'thread 1', '-ex', 'info registers',
+                    '-ex', 'x/16i $pc', '-ex', 'info proc mappings', '-p', pid]);
+                save(`renderer-${pid}-native-stack.txt`, stack.stdout + stack.stderr + String(stack.error ?? ''));
             }));
         })().catch((error) => write('renderer-native-probe-error.txt', String(error)));
-    }, 10_000);
+    }, 3_000);
     return async () => {
         stopped = true;
         clearTimeout(timer);

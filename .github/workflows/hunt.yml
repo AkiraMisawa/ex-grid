@@ -1,12 +1,7 @@
 name: Hunt
 
 on:
-  workflow_dispatch:
-    inputs:
-      repeat:
-        description: Heading repetitions per browser
-        type: number
-        default: 100
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -18,13 +13,19 @@ concurrency:
 
 jobs:
   heading:
-    name: Row Heading diagnosis, Server on ${{ matrix.project }}
+    name: Heading diagnosis, Server Chrome, ${{ matrix.scope }}
     runs-on: ubuntu-latest
     timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
-        project: [chrome, msedge]
+        include:
+          - scope: sequence
+            repeat: 100
+            grep: '.*'
+          - scope: edges
+            repeat: 1000
+            grep: 'DC-43: a (Column|Row) Heading drag' 
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
@@ -58,12 +59,13 @@ jobs:
           EXGRID_HOSTING: server
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
-          ./counted-run.sh ${{ inputs.repeat }} headings.spec.mjs --project=${{ matrix.project }}
+          ./counted-run.sh ${{ matrix.repeat }} headings.spec.mjs --project=chrome
+          --grep '${{ matrix.grep }}' --max-failures=1
       - name: Keep diagnostic records
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: heading-native-${{ matrix.project }}
+          name: heading-native-${{ matrix.scope }}
           path: |
             verification/
             tests/ExGrid.Browser/test-results/
