@@ -9,7 +9,7 @@
 # round-trips report Windows, Window Changes and versioned operations with reflection disabled (ADR-0152).
 #
 # ExGrid.Data.Xlsx and ExSheet.Xlsx (ADR-0330) are packed and checked the same way, and a workbook is
-# written and read back through the first and opened through the second, but they go to
+# written and read back through the first, and opened and saved again through the second, but they go to
 # .feed-unreleased, not to .feed: the release publishes the packages ADR-0042 names, and that list does
 # not name them yet.
 #

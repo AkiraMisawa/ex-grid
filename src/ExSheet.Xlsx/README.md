@@ -1,8 +1,9 @@
 # ExSheet.Xlsx
 
 ExSheet's **`.xlsx` support**: a workbook read into a **Workbook Document**, beside an **Open
-Report** of what the file held that was not carried. It references no component, so a server
-converts files with no Blazor in the process; the file itself is read by `ExGrid.Data.Xlsx`.
+Report** of what the file held that was not carried, and a Workbook written back to a file. It
+references no component, so a server converts files with no Blazor in the process; the file itself
+is read and written by `ExGrid.Data.Xlsx`.
 
 - **Every worksheet becomes a Sheet**, in the file's order, and the worksheet shown is the Sheet
   shown.
@@ -21,7 +22,13 @@ converts files with no Blazor in the process; the file itself is read by `ExGrid
   the cells whose Formulas name a function ExSheet does not support, which open as `#NAME?`. The
   package shows nothing; the application decides how to tell the user.
 
-Cell formats and column widths are not carried yet: every cell opens in General.
+- **Cell Formats cross both ways** at cell, row and column level — Number Formats the engine reads,
+  horizontal alignment, the Font's colour and emphasis, solid fills and borders — with column
+  widths in Excel's own unit. A theme colour is carried as the RGB value the file's theme gives it.
+- **Saving writes the Workbook as it stands**: every Sheet, each Formula with the Value it shows,
+  Excel's prefixes put back, and the workbook marked to be calculated in full when Excel opens it,
+  so a program that does not calculate still reads the Values the user saw. What cannot be written
+  faithfully is refused by name, and nothing is written.
 
 > **ExSheet.Xlsx ships with ExSheet, at the same version.** While the version is `0.x`, the API
 > may change from one version to the next; each version's
@@ -69,3 +76,30 @@ afterwards, and how Values are shown. The application declares it, as a CSV's en
 `XlsxReadOptions` passes the file layer's limits, progress and pacing through: the read goes a batch
 of cells at a time, reports its progress and yields between slices, and a cancellation token stops
 it between them. See `ExGrid.Data.Xlsx` for the limits and what they count.
+
+## Saving a workbook
+
+```csharp
+await using var file = File.Create("book.xlsx");
+try
+{
+    await XlsxWorkbookWriter.WriteAsync(workbook, file);
+}
+catch (XlsxSaveException refused)
+{
+    Console.WriteLine(refused.Message);   // Sheet 'Trades', cell B2 (=C2+1): The cell shows #CIRC! …
+}
+```
+
+**The Workbook is read whole before the write first yields**, so the file is the Workbook as it
+stood when the call was made; the package is held in memory, compressed, and handed to the stream
+asynchronously, which an ASP.NET response body accepts.
+
+- **Every Formula is written with its Value**, `RAND()`'s included, and as a dynamic array over the
+  cells it spills into, so Excel computes it as ExSheet does.
+- **Refused by name, with nothing written:** a Workbook that declares a Linked Table (not written
+  yet), a cell that shows `#CIRC!` (a file cannot hold it, and Excel would show 0), a Formula longer
+  than Excel's 8,192 characters, text longer than its 32,767, and more cells than
+  `XlsxSaveOptions.MaxCells`. That limit is by default the most a file is read with, so what is
+  written opens again; a Sheet formatted on many rows and many columns counts a cell wherever a
+  formatted row crosses a formatted column that records a part the row does not.
