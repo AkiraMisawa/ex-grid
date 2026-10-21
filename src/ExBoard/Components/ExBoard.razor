@@ -38,7 +38,7 @@
                         @switch (view)
                         {
                             case BoundGridView grid:
-                                <ExGrid TRow="ShapedRow" Source="grid.Grid.Source" Columns="grid.Grid.Columns" PinnedColumnCount="grid.Grid.PinnedColumnCount"
+                                <ExGrid @ref="_grids[cell.View]" TRow="ShapedRow" Source="grid.Grid.Source" Columns="grid.Grid.Columns" PinnedColumnCount="grid.Grid.PinnedColumnCount"
                                         Chrome="Chrome" ViewportHeight="row.Height" ViewportWidth="ViewportSize.Stretch"
                                         SelectionChanged="SelectionChangedOf(cell.View)" />
                                 @foreach (var output in bound.Board.Outputs.Where(o => o.From == cell.View))

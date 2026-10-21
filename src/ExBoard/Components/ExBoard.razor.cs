@@ -33,6 +33,7 @@ public partial class ExBoard
     private readonly Dictionary<string, EventCallback<PivotLayout>> _layoutChanged = new(StringComparer.Ordinal);
     private readonly Dictionary<string, EventCallback<GridSelection>> _selectionChanged = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _confirmStatus = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, global::ExGrid.Components.ExGrid<global::ExGrid.ShapedRow>> _grids = new(StringComparer.Ordinal);
 
     /// <summary>The Board to draw, as <see cref="BoardSpec.Read(string)"/> read it.</summary>
     [Parameter, EditorRequired]
@@ -83,6 +84,7 @@ public partial class ExBoard
         _layoutChanged.Clear();
         _selectionChanged.Clear();
         _confirmStatus.Clear();
+        _grids.Clear();
         try
         {
             _bound = BoundBoard.Bind(Board, Data, Culture);
@@ -118,15 +120,29 @@ public partial class ExBoard
             _confirmStatus.Remove(output.Name);
     }
 
-    private Task ConfirmAsync(string output)
+    private async Task ConfirmAsync(string output)
     {
-        if (_bound?.Confirm(output) is not { } raised)
+        if (_bound is not { } bound)
+            return;
+        // The grid raises its selection after the render that paints it, a round trip later on the
+        // Server host, so a press that follows a click at machine speed would find the selection before
+        // it. It is read from the grid once the grid has answered every input it received before the
+        // press: the selection the press was made against (spine rule 6).
+        var from = bound.Board.Outputs.First(o => o.Name == output).From;
+        if (_grids.GetValueOrDefault(from) is { } grid)
+        {
+            var selection = await grid.SelectionAfterInputsAsync();
+            if (!ReferenceEquals(bound, _bound))
+                return;
+            Select(from, selection);
+        }
+        if (bound.Confirm(output) is not { } raised)
         {
             _confirmStatus[output] = "Select the rows to hand on first.";
-            return Task.CompletedTask;
+            return;
         }
         _confirmStatus.Remove(output);
-        return OnOutput.InvokeAsync(raised);
+        await OnOutput.InvokeAsync(raised);
     }
 
     private static string RefusalStyle(BoardRow row) => FormattableString.Invariant($"height: {row.Height}px");

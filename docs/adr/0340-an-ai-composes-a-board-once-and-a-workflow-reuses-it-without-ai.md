@@ -106,6 +106,14 @@ here so they are not re-derived:
   disabled: a press that follows a selection a round trip later is answered for that selection, where
   a button the browser still held disabled would drop it (spine rule 6). With nothing selected it says
   so. An output with no confirm is refused: nothing raises it but the user.
+- **The confirm reads the selection from its grid, not from the last `SelectionChanged`.** A grid
+  raises its selection after the render that paints it, which on the Server host is a round trip after
+  the press, so a confirm pressed straight after a click found the selection before it (seen in CI's
+  repeat of the confirm test on the Server host). The confirm asks the grid for its selection once the
+  grid has answered every input it received before the press (`ExGrid.SelectionAfterInputsAsync`, in
+  the grid's Input Order, ADR-0240), so the press acts on the selection it was made against, at any
+  speed (spine rule 6). The Board is not given an Input Root of its own: each grid keeps its order,
+  and a confirm outside them waits on the one it reads.
 - **The condition is a link's** (`LinkCondition`, the selected rows' tuples), and the version is the
   bound Snapshot's `Version`. `BoardOutput.Take` refuses data of another version, and other data at
   version 0, which names no version and so cannot vouch for itself; the very data it was taken from is
