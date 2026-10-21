@@ -142,12 +142,24 @@
         <DocsExample Builtin="typeof(ChartSpecBoardBuiltin)" Mud="typeof(ChartSpecBoardMud)" Files="@(["Examples/Board/ChartSpecBoard.cs"])" />
     </DocsSection>
 
-    <DocsSection Title="Still to come">
+    <DocsSection Title="A Board over a server">
         <p>
-            A source held on a server already says its shape before any row, and <code>BoardInput.CheckAsync</code>
-            checks an input against it; a Board drawn over such a source, rather than over Snapshots, is still to
-            come.
+            An input too large to download is bound to a <code>BoardSource</code> in <code>Sources</code>, beside the
+            Snapshots in <code>Data</code>. A <code>BoardSource</code> is your own code: it answers the input's shape, which
+            is checked against the declaration before anything is drawn; fetches a grid's rows a page at a time, as a
+            Snapshot; and, if it can, makes a pivot's report source. Every fetch and every report source is handed the
+            link conditions narrowing the view (<code>BoardQuery.Narrowing</code>), for the server to execute where the
+            data lives. When a selection changes them, the view is asked again. The Board JSON is the same either way:
+            nothing in it says where an input is held.
         </p>
+        <p>
+            A selection is read from the rows fetched. One that reaches rows the grid has not fetched, a Ctrl+A over
+            twenty thousand trades, narrows nothing and hands nothing on, and the Board says so under the grid rather
+            than read part of it. An output hands on the version of the page its rows were read from. A chart over an
+            input held on a server, and a link from a pivot over one, are refused by path for now: a chart waits for a
+            source that thins where the data lives, and the rows under a pivot's cell are on the server.
+        </p>
+        <DocsExample Builtin="typeof(ServerBoardBuiltin)" Mud="typeof(ServerBoardMud)" Files="@(["Examples/Board/ServerBoard.cs"])" />
     </DocsSection>
 
     <DocsSection Title="The package">
@@ -164,6 +176,8 @@
         <ApiTable Type="typeof(global::ExBoard.BoardSpec)" />
         <ApiTable Type="typeof(global::ExBoard.BoundBoard)" />
         <ApiTable Type="typeof(global::ExBoard.LinkCondition)" />
+        <ApiTable Type="typeof(global::ExBoard.BoardSource)" />
+        <ApiTable Type="typeof(global::ExBoard.BoardQuery)" />
         <ApiTable Type="typeof(global::ExBoard.BoardOutput)" />
         <ApiTable Type="typeof(global::ExBoard.BoardDiff)" />
         <ApiTable Type="typeof(global::ExBoard.Components.ExBoard)" />

@@ -106,6 +106,8 @@ public static class DemoPageList
             "An FX volatility surface turned by dragging or with the arrow keys, zoomed and panned, read at the grid point nearest the pointer, sliced into a smile or a term structure by a click, with a hole drawn as a hole (ADR-0274)."),
         new("board", "A Board", "ExBoard",
             "A Board read from JSON: a blotter, a pivot by trader and a chart by day over one checked input, and a limits grid over a second; the blotter's selected rows narrow the other three by desk, and a dropped selection restores them (ADR-0340)."),
+        new("board-server", "A Board over a server", "ExBoard",
+            "A Board whose input is held on a server: 50,000 trades fetched a page at a time, the blotter's selected rows handed to the server as the condition a second grid and a pivot are asked again under, and a selection past the rows fetched said, not read (ADR-0343)."),
     ];
 
     /// <summary>The entry for a base-relative path, ignoring any query or fragment, or null

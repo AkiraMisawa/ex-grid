@@ -173,7 +173,7 @@ public static partial class BoardSpec
         switch (view)
         {
             case BoundGridView grid:
-                return $"{named} is a grid of {Count(grid.Grid.Snapshot.RowCount, "row")} over {grid.View.Data[0]}, showing {And(grid.Columns.Select(c => c.Header))}.";
+                return $"{named} is a grid of {(grid.Grid is { } held ? Count(held.Snapshot.RowCount, "row") : "rows fetched")} over {grid.View.Data[0]}, showing {And(grid.Columns.Select(c => c.Header))}.";
             case BoundPivotView pivot:
                 var layout = pivot.Layout;
                 var parts = new List<string>();
@@ -184,7 +184,7 @@ public static partial class BoardSpec
                 if (layout.Filters.Count > 0)
                     parts.Add($"filtered by {And(layout.Filters.Select(f => f.Field))}");
                 parts.Add(layout.Values.Count == 0 ? "no values" : $"values {And(layout.Values.Select(v => $"{v.Aggregation} of {v.Field}"))}");
-                return $"{named} is a pivot of {Count(pivot.Source.Snapshot.RowCount, "row")} of {pivot.Input}: {string.Join("; ", parts)}.";
+                return $"{named} is a pivot of {(pivot.Source is { } snapshot ? Count(snapshot.Snapshot.RowCount, "row") : "a report")} of {pivot.Input}: {string.Join("; ", parts)}.";
             case BoundChartView chart:
                 ChartScene scene;
                 try

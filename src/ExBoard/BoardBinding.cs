@@ -17,12 +17,14 @@ namespace ExBoard;
 public sealed class BoundBoard
 {
     private readonly Dictionary<BoardLink, LinkCondition> _conditions = [];
-    private readonly Dictionary<string, LinkCondition> _taken = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, (LinkCondition Condition, Snapshot From)> _taken = new(StringComparer.Ordinal);
 
-    private BoundBoard(BoardReading board, IReadOnlyDictionary<string, Snapshot> data, IReadOnlyList<BoundView> views, IReadOnlyList<string> dropped)
+    private BoundBoard(BoardReading board, IReadOnlyDictionary<string, Snapshot> data, IReadOnlyDictionary<string, BoardSource> sources,
+        IReadOnlyList<BoundView> views, IReadOnlyList<string> dropped)
     {
         Board = board;
         Data = data;
+        Sources = sources;
         Views = views;
         Dropped = dropped;
     }
@@ -55,8 +57,11 @@ public sealed class BoundBoard
     /// <summary>The Board.</summary>
     public BoardReading Board { get; }
 
-    /// <summary>The Snapshot each input is bound to.</summary>
+    /// <summary>The Snapshot each input held in memory is bound to.</summary>
     public IReadOnlyDictionary<string, Snapshot> Data { get; }
+
+    /// <summary>The source each input held where the data lives is bound to (ADR-0343).</summary>
+    public IReadOnlyDictionary<string, BoardSource> Sources { get; }
 
     /// <summary>The views, in the Board's order.</summary>
     public IReadOnlyList<BoundView> Views { get; }
@@ -70,14 +75,16 @@ public sealed class BoundBoard
     /// <summary>
     /// The condition <paramref name="selection"/>, made in <paramref name="link"/>'s grid, narrows by:
     /// the values in the link's columns of every row the selection covers, in any column, read from
-    /// the rows the grid shows; null when it selects nothing, which narrows nothing (ADR-0011).
+    /// the rows the grid shows; null when it selects nothing, which narrows nothing (ADR-0011), and
+    /// when it reaches rows the grid does not hold, which a grid over a source held on a server has not
+    /// fetched (ADR-0343).
     /// </summary>
     /// <exception cref="ArgumentException"><paramref name="link"/> is not one of the Board's, or starts at a pivot.</exception>
     public LinkCondition? ConditionOf(BoardLink link, GridSelection selection)
     {
         ArgumentNullException.ThrowIfNull(selection);
         return LinkFrom(link) is BoundGridView grid
-            ? Condition(grid.Grid, link.On, selection)
+            ? Condition(grid, link.On, selection).Condition
             : throw new ArgumentException($"The link starts at pivot '{link.From}', whose selection narrows by the Items its cells stand for.", nameof(link));
     }
 
@@ -102,7 +109,8 @@ public sealed class BoundBoard
     {
         if (cells.Count == 0)
             return null;
-        var snapshot = pivot.Source.Snapshot;
+        // A link from a pivot over a source held on a server is refused at binding (ADR-0343).
+        var snapshot = pivot.Source!.Snapshot;
         var hidden = PivotQuery.For(pivot.Layout).Placed.Where(f => f.HiddenItems.Count > 0 && snapshot.TryGetColumn(f.Field, out _))
             .Select(f => (Column: snapshot[f.Field], Hidden: f.HiddenItems.ToHashSet())).ToArray();
         // The cells grouped by the fields their paths name, each group a set of the Items they name
@@ -149,30 +157,46 @@ public sealed class BoundBoard
         }
     }
 
-    private static LinkCondition? Condition(ShapedGrid grid, IReadOnlyList<string> on, GridSelection selection)
+    // The condition the selection makes on the rows the grid holds, and the data its rows were read
+    // from: the grid's Snapshot, or, over a fetched source, the page they came back in, null when they
+    // came back in pages of different versions. Null throughout when the selection reaches past the rows
+    // held (Unheld).
+    private static (LinkCondition? Condition, Snapshot? From) Condition(BoundGridView grid, IReadOnlyList<string> on, GridSelection selection)
     {
         if (selection.Ranges.Count == 0)
-            return null;
-        var shown = grid.Source.Window;
-        var snapshot = grid.Snapshot;
-        var columns = on.Select(n => snapshot[n]).ToArray();
-        var taken = new bool[shown.Count];
+            return (null, null);
+        var source = grid.Source;
+        var shown = source.Window;
+        var start = source.WindowStart;
+        var taken = new HashSet<int>();
         var tuples = new List<object?[]>();
+        Snapshot? page = null;
+        SnapshotColumn[] columns = [];
+        var versions = new HashSet<long>();
         foreach (var range in selection.Ranges)
         {
             // A selection taken against other rows than these is dropped, never read against them.
-            if (range.BottomRow >= shown.Count)
-                return null;
+            if (Unheld(grid, range))
+                return (null, null);
             for (var r = range.TopRow; r <= range.BottomRow; r++)
             {
-                if (taken[r])
+                if (!taken.Add(r))
                     continue;
-                taken[r] = true;
-                tuples.Add([.. columns.Select(c => snapshot.ValueAt(shown[r].At, c))]);
+                var row = shown[r - start];
+                if (!ReferenceEquals(row.Page, page))
+                {
+                    page = row.Page;
+                    columns = [.. on.Select(n => page[n])];
+                    versions.Add(page.Version);
+                }
+                tuples.Add([.. columns.Select(c => row.Page.ValueAt(row.At, c))]);
             }
         }
-        return new LinkCondition(on, tuples);
+        return (new LinkCondition(on, tuples), versions.Count == 1 ? page : null);
     }
+
+    private static bool Unheld(BoundGridView grid, SelectionRange range) =>
+        range.TopRow < grid.Source.WindowStart || range.BottomRow >= grid.Source.WindowStart + grid.Source.Window.Count;
 
     /// <summary>
     /// Narrows every view <paramref name="link"/> reaches by <paramref name="condition"/>, or, given
@@ -203,16 +227,21 @@ public sealed class BoundBoard
     {
         ArgumentNullException.ThrowIfNull(from);
         ArgumentNullException.ThrowIfNull(selection);
-        if (Board.View(from) is BoardGridView)
+        if (this[from] is BoundGridView grid)
         {
-            var grid = ((BoundGridView)this[from]).Grid;
+            // Over a source held on a server, a selection reaching rows not fetched is said, not read (ADR-0343).
+            grid.Unread = grid.Fetched is not null && selection.Ranges.Any(r => Unheld(grid, r))
+                ? "The selection reaches rows not fetched from the source, so it narrows nothing and hands nothing on."
+                : null;
             foreach (var output in Board.Outputs.Where(o => o.From == from))
             {
-                var condition = Condition(grid, output.On, selection);
-                if (condition is null)
+                var (condition, read) = Condition(grid, output.On, selection);
+                if (condition is not null && read is null)
+                    grid.Unread = "The selected rows were read at different versions of the source, so nothing is handed on.";
+                if (condition is null || read is null)
                     _taken.Remove(output.Name);
                 else
-                    _taken[output.Name] = condition;
+                    _taken[output.Name] = (condition, read);
             }
         }
         var targets = new HashSet<string>(StringComparer.Ordinal);
@@ -263,11 +292,11 @@ public sealed class BoundBoard
     {
         var declared = Board.Outputs.FirstOrDefault(o => o.Name == name)
             ?? throw new ArgumentException($"The Board declares no output '{name}'.", nameof(name));
-        if (!_taken.TryGetValue(name, out var condition))
+        if (!_taken.TryGetValue(name, out var taken))
             return null;
         var input = ((BoardGridView)Board.View(declared.From)!).Grid.Data;
         var shape = Board.Input(input)!.Shape;
-        return new BoardOutput(name, input, Data[input], condition, [.. declared.On.Select(c => shape.Columns.First(k => k.Name == c).Kind)]);
+        return new BoardOutput(name, input, taken.From, taken.Condition, [.. declared.On.Select(c => shape.Columns.First(k => k.Name == c).Kind)]);
     }
 
     // Records the link's condition; false when it is the one already held, which narrows nothing again.
@@ -299,17 +328,19 @@ public sealed class BoundBoard
         var conditions = _conditions.Where(c => c.Key.To.Contains(id)).Select(c => c.Value).ToArray();
         switch (this[id])
         {
+            case BoundGridView { Grid: { } held } grid:
+                var rows = held.Rows;
+                held.Source.ReplaceAll(conditions.Length == 0 ? rows : [.. Narrowing.Positions(held.Snapshot, conditions).Select(p => rows[p])]);
+                LetGo(grid, id);
+                break;
             case BoundGridView grid:
-                var snapshot = grid.Grid.Snapshot;
-                var rows = grid.Grid.Rows;
-                grid.Grid.Source.ReplaceAll(conditions.Length == 0 ? rows : [.. Narrowing.Positions(snapshot, conditions).Select(p => rows[p])]);
-                // Its rows changed, so its selection is dropped (ADR-0011): what the selection held is
-                // let go now, not when the grid next raises it, so nothing is confirmed or narrowed by
-                // a selection the grid no longer shows.
-                foreach (var output in Board.Outputs.Where(o => o.From == id))
-                    _taken.Remove(output.Name);
-                foreach (var link in Board.Links.Where(l => l.From == id))
-                    Narrow(link, null);
+                // Held on a server: the source is asked again, handed the conditions to execute (ADR-0343).
+                grid.Narrowing = conditions;
+                grid.Fetched!.Source.Requery();
+                LetGo(grid, id);
+                break;
+            case BoundPivotView { ReportSource: not null } pivot:
+                pivot.ReportSource = Sources[pivot.Input].Report!(conditions);
                 break;
             case BoundPivotView pivot:
                 var data = Data[pivot.Input];
@@ -334,6 +365,18 @@ public sealed class BoundBoard
         }
     }
 
+    // A grid's rows changed, so its selection is dropped (ADR-0011): what the selection held is let go
+    // now, not when the grid next raises it, so nothing is confirmed or narrowed by a selection the grid
+    // no longer shows.
+    private void LetGo(BoundGridView grid, string id)
+    {
+        grid.Unread = null;
+        foreach (var output in Board.Outputs.Where(o => o.From == id))
+            _taken.Remove(output.Name);
+        foreach (var link in Board.Links.Where(l => l.From == id))
+            Narrow(link, null);
+    }
+
     /// <summary>
     /// Binds each of <paramref name="board"/>'s inputs to the Snapshot <paramref name="data"/> holds
     /// under its name, and makes each view. Nothing is drawn unless every input binds and every view
@@ -351,24 +394,94 @@ public sealed class BoundBoard
     {
         ArgumentNullException.ThrowIfNull(board);
         ArgumentNullException.ThrowIfNull(data);
-        var bound = new Dictionary<string, Snapshot>(StringComparer.Ordinal);
+        var held = new Dictionary<string, BoardSource>(StringComparer.Ordinal);
+        return Make(board, BindData(board, data, held), held, culture, diff);
+    }
+
+    /// <summary>
+    /// Binds each of <paramref name="board"/>'s inputs to the Snapshot <paramref name="data"/> holds
+    /// under its name, or to the source held where the data lives that <paramref name="sources"/> holds
+    /// (ADR-0343), and makes each view. Each source is asked its shape, and checked against the input's
+    /// declaration, before any view is made or any row is fetched (ADR-0341). Nothing is drawn unless
+    /// every input binds and every view can be made. Over a source, a grid's rows are fetched a page at a
+    /// time, each fetch handed the narrowing the Board's links put on it; a pivot's report source is made
+    /// by the source, given that narrowing; and a chart, and a link from a pivot, are refused by path
+    /// until they can be drawn there.
+    /// </summary>
+    /// <param name="board">The Board.</param>
+    /// <param name="data">The Snapshot for each input held in memory, by the input's name.</param>
+    /// <param name="sources">The source for each input held where the data lives, by the input's name. An
+    /// input named in both is refused.</param>
+    /// <param name="culture">The culture a grid's text is written in; the invariant culture by default.</param>
+    /// <param name="diff">What the user changed last time, laid over the Board (ADR-0340, Q7).</param>
+    /// <param name="cancellationToken">Cancels the questions to the sources.</param>
+    /// <exception cref="BoardRefusedException">An input or a view is refused.</exception>
+    public static async Task<BoundBoard> BindAsync(BoardReading board, IReadOnlyDictionary<string, Snapshot> data, IReadOnlyDictionary<string, BoardSource> sources,
+        CultureInfo? culture = null, BoardDiff? diff = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(sources);
+        var held = new Dictionary<string, BoardSource>(StringComparer.Ordinal);
         foreach (var input in board.Inputs)
+        {
+            if (!sources.TryGetValue(input.Name, out var source) || source is null)
+                continue;
+            if (data.ContainsKey(input.Name))
+                throw new BoardRefusedException($"inputs.{input.Name}", $"Input '{input.Name}' is bound both to a Snapshot and to a source held on a server.");
+            try
+            {
+                await input.CheckAsync(source, cancellationToken).ConfigureAwait(false);
+            }
+            catch (BoardRefusedException refused)
+            {
+                throw new BoardRefusedException($"inputs.{input.Name}", refused.Message);
+            }
+            held[input.Name] = source;
+        }
+        return Make(board, BindData(board, data, held), held, culture, diff);
+    }
+
+    private static Dictionary<string, Snapshot> BindData(BoardReading board, IReadOnlyDictionary<string, Snapshot> data, Dictionary<string, BoardSource> held)
+    {
+        var bound = new Dictionary<string, Snapshot>(StringComparer.Ordinal);
+        foreach (var input in board.Inputs.Where(i => !held.ContainsKey(i.Name)))
         {
             if (!data.TryGetValue(input.Name, out var snapshot) || snapshot is null)
                 throw new BoardRefusedException($"inputs.{input.Name}", $"Input '{input.Name}' is bound to no data.");
             bound[input.Name] = input.Bind(snapshot);
         }
+        return bound;
+    }
+
+    private static BoundBoard Make(BoardReading board, Dictionary<string, Snapshot> bound, Dictionary<string, BoardSource> held, CultureInfo? culture, BoardDiff? diff)
+    {
         var inputs = board.Inputs.ToDictionary(i => i.Name, StringComparer.Ordinal);
         var views = new List<BoundView>();
         for (var i = 0; i < board.Views.Count; i++)
         {
+            var path = $"views[{i}]";
             views.Add(board.Views[i] switch
             {
+                BoardGridView grid when held.TryGetValue(grid.Grid.Data, out var source) => FetchedGrid(grid, source, culture),
                 BoardGridView grid => new BoundGridView(grid, GridOf(bound[grid.Grid.Data], grid.Grid, culture)),
+                BoardPivotView pivot when held.TryGetValue(pivot.Input, out var source) => source.Report is { } report
+                    ? new BoundPivotView(pivot, report([]), inputs[pivot.Input].Shape)
+                    : throw new BoardRefusedException($"{path}.pivot", $"Input '{pivot.Input}' is held on a server, and its source makes no report source for a pivot."),
                 BoardPivotView pivot => new BoundPivotView(pivot, PivotSource.From(bound[pivot.Input]), inputs[pivot.Input].Shape),
-                BoardChartView chart => new BoundChartView(chart, ReadChart(chart, bound, inputs, $"views[{i}].chart", null)),
+                BoardChartView chart when chart.Data.FirstOrDefault(held.ContainsKey) is { } server => throw new BoardRefusedException($"{path}.chart",
+                    $"Input '{server}' is held on a server, and a chart over it waits for the Chart Source that thins where the data lives (ADR-0322)."),
+                BoardChartView chart => new BoundChartView(chart, ReadChart(chart, bound, inputs, $"{path}.chart", null)),
                 var other => throw new InvalidOperationException($"Unknown view {other.GetType().Name}."),
             });
+        }
+        for (var l = 0; l < board.Links.Count; l++)
+        {
+            if (board.View(board.Links[l].From) is BoardPivotView pivot && held.ContainsKey(pivot.Input))
+            {
+                throw new BoardRefusedException($"links[{l}].from",
+                    $"Pivot '{pivot.Id}' is over input '{pivot.Input}', held on a server, where the rows under a cell are; a link from it cannot be read in the client yet (ADR-0343).");
+            }
         }
         var fitted = (diff ?? BoardDiff.Empty).FitTo(board);
         foreach (var view in views)
@@ -386,7 +499,16 @@ public sealed class BoundBoard
                     break;
             }
         }
-        return new BoundBoard(board, bound, views, fitted.Dropped);
+        return new BoundBoard(board, bound, held, views, fitted.Dropped);
+    }
+
+    // Each fetch hands the source the grid's query and the narrowing the view holds when it is asked.
+    private static BoundGridView FetchedGrid(BoardGridView view, BoardSource source, CultureInfo? culture)
+    {
+        BoundGridView? made = null;
+        var grid = ShapedGrid.Fetch(view.Grid, (query, cancellation) => source.Fetch(new BoardQuery(view.Id, query, made?.Narrowing ?? []), cancellation), culture);
+        made = new BoundGridView(view, grid);
+        return made;
     }
 
     private static ShapedGrid GridOf(Snapshot snapshot, GridViewSpecReading spec, CultureInfo? culture)
@@ -438,16 +560,41 @@ public sealed class BoundGridView : BoundView
     private SortedSet<string> _hidden = new(StringComparer.Ordinal);
 
     internal BoundGridView(BoardGridView view, ShapedGrid grid)
+        : this(view, grid.Spec, grid.Columns, grid.Source) => Grid = grid;
+
+    internal BoundGridView(BoardGridView view, FetchedShapedGrid grid)
+        : this(view, grid.Spec, grid.Columns, grid.Source) => Fetched = grid;
+
+    private BoundGridView(BoardGridView view, GridViewSpecReading spec, IReadOnlyList<GridColumn<ShapedRow>> columns, IGridSource<ShapedRow> source)
         : base(view)
     {
-        Grid = grid;
-        _declared = grid.Columns.ToDictionary(c => c.Name, StringComparer.Ordinal);
-        _shown = [.. grid.Spec.ViewState.Columns];
-        Columns = grid.Columns;
+        Spec = spec;
+        Source = source;
+        _declared = columns.ToDictionary(c => c.Name, StringComparer.Ordinal);
+        _shown = [.. spec.ViewState.Columns];
+        Columns = columns;
     }
 
-    /// <summary>The grid, as the Board's spec builds it.</summary>
-    public ShapedGrid Grid { get; }
+    /// <summary>The grid over its input's Snapshot, as the Board's spec builds it; null when its input is
+    /// held where the data lives, and its rows are fetched (<see cref="Fetched"/>).</summary>
+    public ShapedGrid? Grid { get; }
+
+    /// <summary>The grid whose rows are fetched from its input's source (ADR-0343); null when its input
+    /// is held in memory (<see cref="Grid"/>).</summary>
+    public FetchedShapedGrid? Fetched { get; }
+
+    /// <summary>The grid's source, in memory or fetching.</summary>
+    public IGridSource<ShapedRow> Source { get; }
+
+    /// <summary>The grid view's spec, as the Board writes it.</summary>
+    public GridViewSpecReading Spec { get; }
+
+    /// <summary>Why the grid's selection narrows nothing and hands nothing on although it selects rows, a
+    /// sentence the Board shows under the grid; null otherwise (ADR-0343).</summary>
+    public string? Unread { get; internal set; }
+
+    // The links' conditions narrowing a fetched grid now, handed to its source with each fetch.
+    internal IReadOnlyList<LinkCondition> Narrowing { get; set; } = [];
 
     /// <summary>The columns shown, in the user's order at the user's widths: a new list each time
     /// they change, which is what tells the grid (ADR-0003).</summary>
@@ -460,7 +607,7 @@ public sealed class BoundGridView : BoundView
     public IReadOnlyList<string> Hidden => [.. _hidden];
 
     /// <summary>The View State the grid is shown under now (ADR-0207).</summary>
-    public GridViewState ViewState => new(_shown, Grid.Source.Sorts, Grid.Source.Filter);
+    public GridViewState ViewState => new(_shown, Source.Sorts, Source.Filter);
 
     /// <summary>What differs from the Board's spec, or null where nothing does.</summary>
     public BoardGridChange? Change
@@ -468,9 +615,9 @@ public sealed class BoundGridView : BoundView
         get
         {
             var state = ViewState;
-            if (state == Grid.Spec.ViewState && _hidden.Count == 0)
+            if (state == Spec.ViewState && _hidden.Count == 0)
                 return null;
-            var kinds = Grid.Spec.Columns.ToDictionary(c => c.Column, c => c.Kind, StringComparer.Ordinal);
+            var kinds = Spec.Columns.ToDictionary(c => c.Column, c => c.Kind, StringComparer.Ordinal);
             return new BoardGridChange(state, _hidden,
                 state.Filter?.Columns.Keys.Where(kinds.ContainsKey).ToDictionary(c => c, c => kinds[c], StringComparer.Ordinal));
         }
@@ -540,8 +687,8 @@ public sealed class BoundGridView : BoundView
         _shown = [.. change.ViewState.Columns];
         _hidden = new SortedSet<string>(change.Hidden, StringComparer.Ordinal);
         Rebuild();
-        Grid.Source.OnSortChanged(change.ViewState.Sorts);
-        Grid.Source.OnFilterChanged(change.ViewState.Filter);
+        Source.OnSortChanged(change.ViewState.Sorts);
+        Source.OnFilterChanged(change.ViewState.Filter);
     }
 
     private int Shown(string column)
@@ -560,13 +707,19 @@ public sealed class BoundGridView : BoundView
             dateType: column.Type == ColumnType.Date ? column.DateType : null);
 }
 
-/// <summary>A pivot view over its input's Snapshot.</summary>
+/// <summary>A pivot view over its input's Snapshot, or over a report source its input's source held
+/// where the data lives makes (ADR-0343).</summary>
 public sealed class BoundPivotView : BoundView
 {
     internal BoundPivotView(BoardPivotView view, SnapshotPivotSource source, DataShape shape)
+        : this(view, shape) => Source = Unnarrowed = source;
+
+    internal BoundPivotView(BoardPivotView view, PivotReportSource source, DataShape shape)
+        : this(view, shape) => ReportSource = source;
+
+    private BoundPivotView(BoardPivotView view, DataShape shape)
         : base(view)
     {
-        Source = Unnarrowed = source;
         Input = view.Input;
         Layout = view.Layout;
         _shape = shape;
@@ -583,10 +736,14 @@ public sealed class BoundPivotView : BoundView
         : new BoardPivotChange(Layout, BoardDiff.KindsOf(_shape, BoardDiff.Placed(Layout)));
 
     /// <summary>The pivot's source: over its input's rows, or, while a link narrows it, over the rows
-    /// let through.</summary>
-    public SnapshotPivotSource Source { get; internal set; }
+    /// let through; null when its input is held where the data lives (<see cref="ReportSource"/>).</summary>
+    public SnapshotPivotSource? Source { get; internal set; }
 
-    internal SnapshotPivotSource Unnarrowed { get; }
+    /// <summary>The report source its input's source made, handed the links' narrowing, when its input is
+    /// held where the data lives; null when it is held in memory (<see cref="Source"/>).</summary>
+    public PivotReportSource? ReportSource { get; internal set; }
+
+    internal SnapshotPivotSource? Unnarrowed { get; }
 
     internal string Input { get; }
 

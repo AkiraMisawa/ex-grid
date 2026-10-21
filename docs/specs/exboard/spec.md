@@ -38,4 +38,4 @@ it, and raises its outputs and its Diff.
 | 09 | [The Board tool and the Docs Site](issues/09-the-board-tool-and-the-docs-site.md) | done |
 | 10 | [ExBoard ships as packages](issues/10-exboard-ships-as-packages.md) | done |
 | 11 | [A pivot's cell links](issues/11-a-pivot-cell-links.md) | done |
-| 12 | [A Board over sources held on a server](issues/12-a-board-over-sources-held-on-a-server.md) | ready-for-agent |
+| 12 | [A Board over sources held on a server](issues/12-a-board-over-sources-held-on-a-server.md) | done |

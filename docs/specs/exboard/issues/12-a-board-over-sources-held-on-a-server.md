@@ -1,6 +1,6 @@
 # 12: A Board over sources held on a server
 
-Status: ready-for-agent
+Status: done
 Roadmap: internal
 
 ADR-0341 (after ticket 02): an input binds to a source, not only to a Snapshot. A Board bound to an

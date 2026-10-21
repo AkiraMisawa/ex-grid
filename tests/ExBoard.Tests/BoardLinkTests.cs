@@ -61,7 +61,7 @@ public sealed class BoardLinkTests : BunitContext
     }
 
     private static IEnumerable<string> Desks(BoundGridView grid) =>
-        grid.Grid.Source.Window.Select(r => (string)grid.Grid.Snapshot.ValueAt(r.At, grid.Grid.Snapshot["desk"])!);
+        grid.Grid!.Source.Window.Select(r => (string)grid.Grid!.Snapshot.ValueAt(r.At, grid.Grid!.Snapshot["desk"])!);
 
     [Fact] // ADR-0340 Q5: a link names a grid, the views it narrows and the columns it compares
     public void A_link_is_read_from_its_grid_to_its_views_on_its_columns()
@@ -131,14 +131,14 @@ public sealed class BoardLinkTests : BunitContext
         Assert.Equal(["Rates", "Rates"], Desks((BoundGridView)board["other"]));
         // Across inputs that share the column, and as the grid's value list compares text.
         Assert.Equal(["rates"], Desks((BoundGridView)board["limits"]));
-        Assert.Equal(2, ((BoundPivotView)board["byDesk"]).Source.Snapshot.RowCount);
+        Assert.Equal(2, ((BoundPivotView)board["byDesk"]).Source!.Snapshot.RowCount);
         Assert.Equal<object>([100m, 300m], ((BoundChartView)board["curve"]).Reading.Definition.Series[0].Points.Select(p => p.Y!.Value.Value));
 
         board.Narrow(link, board.ConditionOf(link, GridSelection.Empty));
 
         Assert.Null(board.ConditionOf(link));
-        Assert.Equal(5, ((BoundGridView)board["other"]).Grid.Source.Window.Count);
-        Assert.Same(board.Data["trades"], ((BoundPivotView)board["byDesk"]).Source.Snapshot);
+        Assert.Equal(5, ((BoundGridView)board["other"]).Grid!.Source.Window.Count);
+        Assert.Same(board.Data["trades"], ((BoundPivotView)board["byDesk"]).Source!.Snapshot);
         Assert.Equal(5, ((BoundChartView)board["curve"]).Reading.Definition.Series[0].Points.Count);
     }
 
@@ -152,7 +152,7 @@ public sealed class BoardLinkTests : BunitContext
         board.Narrow(link, board.ConditionOf(link, Rows(0, 1)));
 
         var other = (BoundGridView)board["other"];
-        Assert.Equal([0, 1], other.Grid.Source.Window.Select(r => r.Position));
+        Assert.Equal([0, 1], other.Grid!.Source.Window.Select(r => r.Position));
     }
 
     [Fact] // ADR-0340 Q5 / ADR-0011: the selection is read against the rows as the grid shows them
@@ -162,7 +162,7 @@ public sealed class BoardLinkTests : BunitContext
         var board = BoundBoard.Bind(reading, Data(reading));
         var link = reading.Links[0];
         var blotter = (BoundGridView)board["blotter"];
-        blotter.Grid.Source.OnSortChanged([new SortSpec("pnl", SortDirection.Descending)]);
+        blotter.Grid!.Source.OnSortChanged([new SortSpec("pnl", SortDirection.Descending)]);
 
         // Shown first: FX (500); a selection taken against more rows than are shown narrows nothing.
         Assert.Equal([["FX"]], board.ConditionOf(link, Rows(0))!.Values);
@@ -176,13 +176,13 @@ public sealed class BoardLinkTests : BunitContext
         var board = BoundBoard.Bind(reading, Data(reading));
         var link = reading.Links[0];
         var other = (BoundGridView)board["other"];
-        other.Grid.Source.OnSortChanged([new SortSpec("month", SortDirection.Ascending)]);
+        other.Grid!.Source.OnSortChanged([new SortSpec("month", SortDirection.Ascending)]);
 
         board.Narrow(link, board.ConditionOf(link, Rows(0)));
 
         // Rates' rows, Feb before Jan.
-        Assert.Equal([2, 0], other.Grid.Source.Window.Select(r => r.Position));
-        Assert.Equal("month", Assert.Single(other.Grid.Source.Sorts).Column);
+        Assert.Equal([2, 0], other.Grid!.Source.Window.Select(r => r.Position));
+        Assert.Equal("month", Assert.Single(other.Grid!.Source.Sorts).Column);
     }
 
     [Fact] // ADR-0340 Q5: two links into one view narrow it to what both let through
@@ -196,7 +196,7 @@ public sealed class BoardLinkTests : BunitContext
         board.Narrow(reading.Links[0], new LinkCondition(["desk"], [["Rates"]]));
         board.Narrow(reading.Links[1], new LinkCondition(["month"], [["Feb"]]));
 
-        var pivot = ((BoundPivotView)board["byDesk"]).Source.Snapshot;
+        var pivot = ((BoundPivotView)board["byDesk"]).Source!.Snapshot;
         Assert.Equal(1, pivot.RowCount);
         Assert.Equal(300m, pivot.ValueAt(pivot.Rows[0], pivot["pnl"]));
         Assert.Throws<ArgumentException>(() => board.Narrow(reading.Links[0], new LinkCondition(["month"], [["Feb"]])));
@@ -305,10 +305,10 @@ public sealed class BoardLinkTests : BunitContext
         Assert.False(board.SelectCells("matrix", [Cell("Credit", "Feb")]));
 
         Assert.True(board.SelectCells("matrix", null));
-        Assert.Equal(5, blotter.Grid.Source.Window.Count);
+        Assert.Equal(5, blotter.Grid!.Source.Window.Count);
         board.SelectCells("matrix", [Cell("FX")]);
         Assert.True(board.SelectCells("matrix", []));
-        Assert.Equal(5, blotter.Grid.Source.Window.Count);
+        Assert.Equal(5, blotter.Grid!.Source.Window.Count);
     }
 
     [Fact] // ADR-0340 Q5 / ADR-0011: a pivot narrowed again drops its selection, and lets go of what it narrowed
@@ -317,13 +317,13 @@ public sealed class BoardLinkTests : BunitContext
         var board = MatrixBoard("""{"from": "other", "to": ["matrix"], "on": ["month"]}, {"from": "matrix", "to": ["blotter"], "on": ["desk"]}""");
         var blotter = (BoundGridView)board["blotter"];
         board.SelectCells("matrix", [Cell("Rates")]);
-        Assert.Equal(2, blotter.Grid.Source.Window.Count);
+        Assert.Equal(2, blotter.Grid!.Source.Window.Count);
 
         board.Select("other", Rows(0));
 
-        Assert.Equal(3, ((BoundPivotView)board["matrix"]).Source.Snapshot.RowCount);
+        Assert.Equal(3, ((BoundPivotView)board["matrix"]).Source!.Snapshot.RowCount);
         Assert.Null(board.ConditionOf(board.Board.Links[1]));
-        Assert.Equal(5, blotter.Grid.Source.Window.Count);
+        Assert.Equal(5, blotter.Grid!.Source.Window.Count);
     }
 
     [Fact] // ADR-0340 Q5: the grid's raised selection narrows, and its drop, raised as an empty one, restores
