@@ -12,8 +12,10 @@ namespace ExSheet.Xlsx;
 /// opens. What changes only how a Sheet looks, or what else the file held, is listed in the Open Report.
 /// </summary>
 /// <remarks>
-/// Cell formats and column widths are not carried yet; every cell opens in General (ticket 03 of
-/// <c>docs/specs/exsheet-xlsx</c>).
+/// Cell Formats cross at the levels the file records them — cell, row and column — with the column widths, in Excel's own
+/// unit: the Number Format, horizontal alignment, the Font's colour and emphasis, a solid Fill and the four sides' borders
+/// (ADR-0071). A colour that names the theme is the RGB the file's theme gives it (ADR-0330 §8). A Number Format the engine
+/// does not read refuses the file by name, as a Formula does.
 /// </remarks>
 public static class XlsxWorkbookReader
 {
@@ -80,6 +82,8 @@ public static class XlsxWorkbookReader
         private readonly HashSet<string> definedNames = new(reader.DefinedNames.Select(n => n.Name), StringComparer.OrdinalIgnoreCase);
         private readonly bool hasExcelTables = reader.Parts.Any(p => p.StartsWith("xl/tables/", StringComparison.OrdinalIgnoreCase));
         private readonly Dictionary<int, bool> dateStyles = [];
+        private readonly StyleReading styles = new(reader.Styles, reader.Theme);
+        private bool namesTheme;
 
         public async ValueTask<XlsxOpenResult> ReadAsync()
         {
@@ -115,6 +119,7 @@ public static class XlsxWorkbookReader
                 var sheet = name.LocalSheet is { } other && other >= 0 && other < reader.Sheets.Count ? reader.Sheets[other].Name : null;
                 notCarried.Add(new(NotCarriedKind.DefinedName, sheet, shown, DescribeName(name, shown, sheet)));
             }
+            var workbookEntries = notCarried.Count;
             var sheets = new List<SheetDocument>(worksheets.Count);
             foreach (var index in worksheets)
             {
@@ -130,6 +135,12 @@ public static class XlsxWorkbookReader
                         notCarried.Add(new(NotCarriedKind.DefinedName, info.Name, shown, DescribeName(name, shown, info.Name)));
                 }
                 sheets.Add(await ReadSheetAsync(index, printNames).ConfigureAwait(false));
+            }
+            if (namesTheme)
+            {
+                // Said of the whole workbook, with what else it holds, before each Sheet's entries.
+                notCarried.Insert(workbookEntries, new(NotCarriedKind.ThemeColours, null, null,
+                    "Colours of the workbook name its theme: each is carried as the RGB value the file's theme gives it, and the link to the theme is not, so another theme will not recolour them."));
             }
             var shownIndex = worksheets.Contains(reader.ActiveSheet) ? reader.ActiveSheet : worksheets[0];
             var document = new WorkbookDocument(culture, reader.Sheets[shownIndex].Name, sheets);
@@ -175,9 +186,26 @@ public static class XlsxWorkbookReader
             var spillRow = -1;
             var richCells = 0;
             string? firstRich = null;
+            var formats = new List<(NotCarriedKind Kind, string Detail)>();
+            ColumnLevels? columns = null;
+            var rowRuns = new List<SheetDocumentAxisFormat>();
+            var rowLevels = new Dictionary<int, FormatParts>();
+            (int Row, FormatParts Level)? lastRow = null;
             while (await sheet.ReadAsync().ConfigureAwait(false))
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                // The columns come before the cells, complete once the first batch is read.
+                columns ??= ReadColumns(name, sheet.Columns, formats);
+                // A row is begun in the batch of its first cell or an earlier one; only the last row begun can hold cells of a later batch.
+                rowLevels.Clear();
+                if (lastRow is { } carried) rowLevels[carried.Row] = carried.Level;
+                foreach (var row in sheet.Rows)
+                {
+                    var level = ReadRow(name, row, columns, formats);
+                    rowLevels[row.Row] = level;
+                    lastRow = (row.Row, level);
+                    AddRun(rowRuns, row.Row, level);
+                }
                 foreach (var cell in sheet.Cells)
                 {
                     if (cell.IsRichText)
@@ -194,11 +222,114 @@ public static class XlsxWorkbookReader
                     var entry = cell.Formula is { } formula
                         ? FormulaEntry(name, cell, formula, shared, spills)
                         : InsideSpill(spills, new CellAddress(cell.Row, cell.Column)) ? null : Constant(name, cell);
-                    if (entry is not null) cells.Add(new SheetDocumentCell(new CellAddress(cell.Row, cell.Column), entry, null, null, null, null, null));
+                    var own = ReadCell(name, cell, columns, rowLevels.TryGetValue(cell.Row, out var rowLevel) ? rowLevel : default, formats);
+                    if (entry is not null || !own.IsEmpty)
+                        cells.Add(new SheetDocumentCell(new CellAddress(cell.Row, cell.Column), entry, own.NumberFormat, own.Alignment, own.Font, own.Fill, own.Borders));
                 }
             }
-            SheetElements(name, sheet, richCells, firstRich, printNames);
-            return new SheetDocument(culture, name, cells);
+            columns ??= ReadColumns(name, sheet.Columns, formats);
+            SheetElements(name, sheet, richCells, firstRich, printNames, formats);
+            return new SheetDocument(culture, name, cells) { Columns = columns.Runs, Rows = rowRuns, ColumnWidths = Widths(sheet.Columns) };
+        }
+
+        /// <summary>
+        /// The formats the columns record, by column, with the parts any of them records: a formatted row records those parts
+        /// even at their defaults, because in the file a row's format stands in place of its columns', where in a Sheet each part
+        /// of a row's level that records nothing takes the column's.
+        /// </summary>
+        private sealed record ColumnLevels(Dictionary<int, FormatParts> ByColumn, List<SheetDocumentAxisFormat> Runs, FormatParts Recorded);
+
+        /// <summary>The cell format at <paramref name="style"/>, refusing the file where a level records a Number Format that cannot cross.</summary>
+        private ReadFormat Format(string sheet, int style, string place, List<(NotCarriedKind Kind, string Detail)> formats)
+        {
+            var format = styles[style];
+            if (format.Refusal is { } refusal)
+                throw new XlsxOpenException(XlsxOpenRefusal.NumberFormat, refusal, sheet, place, format.Held);
+            namesTheme |= format.NamesTheme;
+            foreach (var kind in format.NotCarried)
+            {
+                if (!formats.Any(f => f.Kind == kind)) formats.Add((kind, place));
+            }
+            return format;
+        }
+
+        private ColumnLevels ReadColumns(string sheet, IReadOnlyList<XlsxColumn> columns, List<(NotCarriedKind Kind, string Detail)> formats)
+        {
+            var byColumn = new Dictionary<int, FormatParts>();
+            var runs = new List<SheetDocumentAxisFormat>();
+            foreach (var range in columns.OrderBy(c => c.First))
+            {
+                if (range.StyleIndex == 0) continue;
+                var place = CellAddress.ColumnName(range.First) + ":" + CellAddress.ColumnName(range.Last);
+                var level = FormatParts.Differing(Format(sheet, range.StyleIndex, place, formats).Format, CellFormat.Default);
+                if (level.IsEmpty) continue;
+                for (var c = range.First; c <= range.Last; c++) byColumn[c] = level;
+                if (runs.Count > 0 && runs[^1] is var last && last.Last == range.First - 1 && Parts(last) == level)
+                    runs[^1] = last with { Last = range.Last };
+                else
+                    runs.Add(new SheetDocumentAxisFormat(range.First, range.Last, level.NumberFormat, level.Alignment, level.Font, level.Fill, level.Borders));
+            }
+            var recorded = new FormatParts(
+                runs.Any(r => r.NumberFormat is not null) ? NumberFormat.General : null,
+                runs.Any(r => r.Alignment is not null) ? HorizontalAlignment.General : null,
+                runs.Any(r => r.Font is not null) ? CellFont.Default : null,
+                runs.Any(r => r.Fill is not null) ? CellFill.None : null,
+                runs.Any(r => r.Borders is not null) ? CellBorders.None : null);
+            return new ColumnLevels(byColumn, runs, recorded);
+        }
+
+        /// <summary>
+        /// A formatted row's level: each part that differs from the default, and each part a column records, so that the row
+        /// stands in place of its columns as in the file.
+        /// </summary>
+        private FormatParts ReadRow(string sheet, XlsxRow row, ColumnLevels columns, List<(NotCarriedKind Kind, string Detail)> formats)
+        {
+            var number = (row.Row + 1).ToString(CultureInfo.InvariantCulture);
+            var format = Format(sheet, row.StyleIndex, number + ":" + number, formats).Format;
+            var differing = FormatParts.Differing(format, CellFormat.Default);
+            var recorded = columns.Recorded;
+            return new FormatParts(
+                differing.NumberFormat ?? (recorded.NumberFormat is null ? null : format.NumberFormat),
+                differing.Alignment ?? (recorded.Alignment is null ? null : format.Alignment),
+                differing.Font ?? (recorded.Font is null ? null : format.Font),
+                differing.Fill ?? (recorded.Fill is null ? null : format.Fill),
+                differing.Borders ?? (recorded.Borders is null ? null : format.Borders));
+        }
+
+        /// <summary>A cell's own level: the parts of its format that differ from what its row and column give it. In the file a cell's format stands alone.</summary>
+        private FormatParts ReadCell(string sheet, XlsxCell cell, ColumnLevels columns, FormatParts row, List<(NotCarriedKind Kind, string Detail)> formats)
+        {
+            var format = Format(sheet, cell.StyleIndex, cell.Reference, formats).Format;
+            var column = columns.ByColumn.TryGetValue(cell.Column, out var level) ? level : default;
+            return FormatParts.Differing(format, row.Over(column.Over(CellFormat.Default)));
+        }
+
+        private static FormatParts Parts(SheetDocumentAxisFormat run) => new(run.NumberFormat, run.Alignment, run.Font, run.Fill, run.Borders);
+
+        /// <summary>Adds a formatted row to the runs, joining the run before it when it is the next row, formatted alike.</summary>
+        private static void AddRun(List<SheetDocumentAxisFormat> runs, int row, FormatParts level)
+        {
+            if (level.IsEmpty) return;
+            if (runs.Count > 0 && runs[^1] is var last && last.Last == row - 1 && Parts(last) == level)
+                runs[^1] = last with { Last = row };
+            else
+                runs.Add(new SheetDocumentAxisFormat(row, row, level.NumberFormat, level.Alignment, level.Font, level.Fill, level.Borders));
+        }
+
+        /// <summary>The columns' widths in the engine's unit (<see cref="ColumnWidthUnit"/>), a run wherever adjacent columns share one; a width fitted to an entry (<c>bestFit</c>) is one an entry widened.</summary>
+        private static List<SheetDocumentColumnWidth> Widths(IReadOnlyList<XlsxColumn> columns)
+        {
+            var runs = new List<SheetDocumentColumnWidth>();
+            foreach (var range in columns.OrderBy(c => c.First))
+            {
+                if (range.Width is not { } width || ColumnWidthUnit.Read(width) is not { } characters) continue;
+                var kind = range.BestFit ? SheetColumnWidthKind.WidenedByEntry : SheetColumnWidthKind.SetByUser;
+                if (runs.Count > 0 && runs[^1] is var last && last.Last == range.First - 1 && last.Width == characters && last.Kind == kind)
+                    runs[^1] = last with { Last = range.Last };
+                else
+                    runs.Add(new SheetDocumentColumnWidth(range.First, range.Last, characters, kind));
+            }
+            return runs;
         }
 
         /// <summary>A shared formula's master: its Entry where it stands, and what it names.</summary>
@@ -358,7 +489,7 @@ public static class XlsxWorkbookReader
         }
 
         /// <summary>What else a worksheet held, as the file layer reports it, said once per Sheet and kind.</summary>
-        private void SheetElements(string sheet, XlsxSheetReader read, int richCells, string? firstRich, bool printNames)
+        private void SheetElements(string sheet, XlsxSheetReader read, int richCells, string? firstRich, bool printNames, List<(NotCarriedKind Kind, string Detail)> formats)
         {
             var kinds = new List<(NotCarriedKind Kind, string? Detail)>();
             void Add(NotCarriedKind kind, string? detail = null)
@@ -375,6 +506,7 @@ public static class XlsxWorkbookReader
             }
             if (printNames) Add(NotCarriedKind.PrintSettings);
             if (richCells > 0) Add(NotCarriedKind.RichText, firstRich);
+            foreach (var (kind, detail) in formats) Add(kind, detail);
             foreach (var (kind, detail) in kinds)
             {
                 notCarried.Add(new NotCarried(kind, sheet, detail, Describe(kind, sheet, detail, richCells)));
@@ -402,6 +534,14 @@ public static class XlsxWorkbookReader
             NotCarriedKind.SheetProperties => $"The tab colour of '{sheet}' is not carried.",
             NotCarriedKind.RichText => string.Create(CultureInfo.InvariantCulture,
                 $"{richCells} cell(s) of '{sheet}', the first {detail}, hold rich text: the text is carried, the runs' own formatting is not."),
+            NotCarriedKind.DefaultColumnWidth => $"'{sheet}' has a default column width of its own, which is not carried; its columns without a width of their own open at the default width.",
+            NotCarriedKind.FontNamesAndSizes => $"Cells of '{sheet}', the first at {detail}, use a typeface or a size other than the workbook's own, which is not carried; they open in the Sheet's font.",
+            NotCarriedKind.VerticalAlignment => $"Cells of '{sheet}', the first at {detail}, are aligned vertically, which is not carried.",
+            NotCarriedKind.TextLayout => $"Cells of '{sheet}', the first at {detail}, wrap, indent, rotate or shrink their text, which is not carried.",
+            NotCarriedKind.HorizontalAlignment => $"Cells of '{sheet}', the first at {detail}, are aligned to fill, justify, distribute or centre across the selection, which is not carried; they open aligned as General.",
+            NotCarriedKind.Underline => $"Cells of '{sheet}', the first at {detail}, are underlined twice or for accounting; they open with a single underline.",
+            NotCarriedKind.PatternFills => $"Cells of '{sheet}', the first at {detail}, have a pattern or gradient fill, or a solid fill of no colour, which is not carried; they open with no Fill.",
+            NotCarriedKind.DiagonalBorders => $"Cells of '{sheet}', the first at {detail}, have diagonal borders, which are not carried; their four sides are.",
             _ => $"'{sheet}' holds <{detail}>, which is not carried.",
         };
     }

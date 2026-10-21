@@ -31,6 +31,13 @@ public enum XlsxOpenRefusal
 
     /// <summary>A worksheet's name is not one a Sheet can have, or the workbook holds no worksheet at all.</summary>
     Sheets,
+
+    /// <summary>
+    /// A cell, a row or a column takes a Number Format the engine does not read, or a built-in one whose code follows the
+    /// computer's locale and that the file does not spell out: shown in General instead, a date would show as a serial, or a
+    /// currency lose its symbol (ADR-0330 §4). <see cref="XlsxOpenException.Held"/> is the format's code.
+    /// </summary>
+    NumberFormat,
 }
 
 /// <summary>

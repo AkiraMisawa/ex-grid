@@ -87,7 +87,18 @@ public readonly record struct XlsxCell(
 /// the range sets none.</param>
 /// <param name="Hidden">Whether the columns are hidden.</param>
 /// <param name="StyleIndex">The style the columns' empty cells take, or 0.</param>
-public sealed record XlsxColumn(int First, int Last, double? Width, bool Hidden = false, int StyleIndex = 0);
+/// <param name="BestFit">Whether the width was fitted to what the columns hold (<c>bestFit</c>), as Excel marks a column a typed
+/// entry widened, which a longer entry widens again.</param>
+public sealed record XlsxColumn(int First, int Last, double? Width, bool Hidden = false, int StyleIndex = 0, bool BestFit = false);
+
+/// <summary>
+/// A row that records a cell format of its own (<c>&lt;row s="…" customFormat="1"&gt;</c>): the format its cells take where the
+/// row holds no cell, in place of their columns'.
+/// </summary>
+/// <param name="Row">The row, from zero (row 1 is 0).</param>
+/// <param name="StyleIndex">The index into <see cref="XlsxStyles.CellFormats"/> its empty cells take; 0 is the default format, which
+/// still stands in place of the columns'.</param>
+public sealed record XlsxRow(int Row, int StyleIndex);
 
 /// <summary>A worksheet as the workbook part lists it.</summary>
 /// <param name="Name">Its name, as its tab shows it.</param>

@@ -479,6 +479,8 @@ public sealed class XlsxSheetWriter
                 {
                     xml.WriteAttributeString("width", width.ToString("R", CultureInfo.InvariantCulture));
                     xml.WriteAttributeString("customWidth", "1");
+                    if (c.BestFit)
+                        xml.WriteAttributeString("bestFit", "1");
                 }
                 if (c.StyleIndex != 0)
                     xml.WriteAttributeString("style", c.StyleIndex.ToString(CultureInfo.InvariantCulture));
@@ -495,6 +497,38 @@ public sealed class XlsxSheetWriter
     public string Name { get; }
 
     /// <summary>
+    /// Begins <paramref name="row"/> with the cell format of its own that its empty cells take (<c>customFormat</c>), after
+    /// every row written before it; the row's cells, if any, are then written as any others. A row written before, or one
+    /// that already holds a cell, is refused.
+    /// </summary>
+    /// <param name="row">The row and its format.</param>
+    public void WriteRow(XlsxRow row)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        if (ended)
+            throw new InvalidOperationException($"The sheet '{Name}' is ended: another sheet was begun, or the workbook completed.");
+        if (row.Row < 0 || row.Row >= XlsxCellReference.MaxRows)
+            throw new ArgumentException($"The row {row.Row} lies outside the sheet.", nameof(row));
+        if (row.Row <= this.row)
+        {
+            throw new ArgumentException(
+                string.Create(CultureInfo.InvariantCulture, $"The row {row.Row + 1} is begun after row {this.row + 1}: a sheet's rows are written in order, each once."),
+                nameof(row));
+        }
+        if (row.StyleIndex < 0 || row.StyleIndex >= owner.Styles.CellFormats.Count)
+            throw new ArgumentException($"The row {row.Row + 1} names the cell format {row.StyleIndex}, which the styles do not hold.", nameof(row));
+        if (rowOpen)
+            xml.WriteEndElement();
+        xml.WriteStartElement("row");
+        xml.WriteAttributeString("r", (row.Row + 1).ToString(CultureInfo.InvariantCulture));
+        xml.WriteAttributeString("s", row.StyleIndex.ToString(CultureInfo.InvariantCulture));
+        xml.WriteAttributeString("customFormat", "1");
+        rowOpen = true;
+        this.row = row.Row;
+        column = -1;
+    }
+
+    /// <summary>
     /// Writes <paramref name="cell"/>, after every cell written before it in the sheet's order. A
     /// <see cref="XlsxCellType.SharedString"/> is written from its <see cref="XlsxCell.Text"/> into the workbook's shared
     /// strings, whatever its <see cref="XlsxCell.Value"/> says.
@@ -509,7 +543,7 @@ public sealed class XlsxSheetWriter
         if (cell.Row < row || (cell.Row == row && cell.Column <= column))
         {
             throw new ArgumentException(
-                $"The cell {cell.Reference} is written after {XlsxCellReference.Format(row, column)}: a sheet's cells are written row by row, left to right, each once.",
+                $"The cell {cell.Reference} is written after {(column < 0 ? string.Create(CultureInfo.InvariantCulture, $"row {row + 1}") : XlsxCellReference.Format(row, column))}: a sheet's cells are written row by row, left to right, each once.",
                 nameof(cell));
         }
         if (cell.StyleIndex < 0 || cell.StyleIndex >= owner.Styles.CellFormats.Count)

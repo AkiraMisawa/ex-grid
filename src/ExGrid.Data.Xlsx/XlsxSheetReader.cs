@@ -21,6 +21,7 @@ public sealed class XlsxSheetReader : IDisposable
     private readonly string part;
     private readonly List<XlsxCell> batch = new(BatchSize);
     private readonly List<XlsxColumn> columns = [];
+    private readonly List<XlsxRow> rows = [];
     private readonly List<XlsxElement> other = [];
     private State state;
     private int row = -1;
@@ -44,6 +45,12 @@ public sealed class XlsxSheetReader : IDisposable
 
     /// <summary>The cells of the batch the last <see cref="ReadAsync"/> read, in the file's order.</summary>
     public IReadOnlyList<XlsxCell> Cells => batch;
+
+    /// <summary>
+    /// The rows the last <see cref="ReadAsync"/> began that record a cell format of their own (<c>customFormat</c>), in the
+    /// file's order. A row comes in the batch that holds its first cell, or in an earlier one.
+    /// </summary>
+    public IReadOnlyList<XlsxRow> Rows => rows;
 
     /// <summary>The worksheet's column widths, complete once the first <see cref="ReadAsync"/> has returned: they come before the cells.</summary>
     public IReadOnlyList<XlsxColumn> Columns => columns;
@@ -75,6 +82,7 @@ public sealed class XlsxSheetReader : IDisposable
     public async ValueTask<bool> ReadAsync()
     {
         batch.Clear();
+        rows.Clear();
         if (state == State.Done)
             return false;
         await owner.CheckpointAsync(index).ConfigureAwait(false);
@@ -99,7 +107,8 @@ public sealed class XlsxSheetReader : IDisposable
         }
         if (state == State.Done)
             owner.Report(index);
-        return batch.Count > 0 || state != State.Done;
+        // A last batch of formatted rows with no cell is still a batch: their formats are read.
+        return batch.Count > 0 || rows.Count > 0 || state != State.Done;
     }
 
     /// <summary>Reads up to the cells: the root, and the children before <c>&lt;sheetData&gt;</c>.</summary>
@@ -179,7 +188,7 @@ public sealed class XlsxSheetReader : IDisposable
                     throw new XlsxException(XlsxRefusal.Malformed, string.Create(CultureInfo.InvariantCulture,
                         $"The columns {min} to {max} name the cell format {style}, which the styles do not hold."), part, Sheet.Name);
                 }
-                columns.Add(new XlsxColumn(min - 1, max - 1, width, hidden, style));
+                columns.Add(new XlsxColumn(min - 1, max - 1, width, hidden, style, XlsxReader.Bool(xml.GetAttribute("bestFit"))));
             }
             if (xml.NodeType == XmlNodeType.Element)
                 xml.Skip();
@@ -245,7 +254,8 @@ public sealed class XlsxSheetReader : IDisposable
     /// <summary>Reads cells until the batch is full or <c>&lt;sheetData&gt;</c> ends.</summary>
     private void ReadCells()
     {
-        while (batch.Count < BatchSize)
+        // Formatted rows count toward the batch, so that rows formatted with no cell are not gathered without end.
+        while (batch.Count + rows.Count < BatchSize)
         {
             if (xml.EOF)
                 throw new XlsxException(XlsxRefusal.Malformed, "The worksheet ends inside its cells.", part, Sheet.Name);
@@ -278,6 +288,8 @@ public sealed class XlsxSheetReader : IDisposable
     private void StartRow()
     {
         var r = row + 1;
+        string? style = null;
+        var customFormat = false;
         if (xml.MoveToFirstAttribute())
         {
             do
@@ -293,6 +305,12 @@ public sealed class XlsxSheetReader : IDisposable
                     case "hidden" when XlsxReader.Bool(xml.Value):
                         HiddenRows = true;
                         break;
+                    case "s":
+                        style = xml.Value;
+                        break;
+                    case "customFormat":
+                        customFormat = XlsxReader.Bool(xml.Value);
+                        break;
                 }
             }
             while (xml.MoveToNextAttribute());
@@ -307,6 +325,16 @@ public sealed class XlsxSheetReader : IDisposable
         }
         row = r;
         column = -1;
+        if (!customFormat)
+            return;
+        // A row's s counts only beside customFormat (ECMA-376 Part 1, §18.3.1.73); without it the row records no format.
+        var index = style is null ? 0 : XlsxReader.Int(style, part, Sheet.Name);
+        if (index < 0 || index >= owner.Styles.CellFormats.Count)
+        {
+            throw new XlsxException(XlsxRefusal.Malformed, string.Create(CultureInfo.InvariantCulture,
+                $"Row {r + 1} names the cell format {index}, which the styles do not hold."), part, Sheet.Name);
+        }
+        rows.Add(new XlsxRow(r, index));
     }
 
     private void ReadCell()
