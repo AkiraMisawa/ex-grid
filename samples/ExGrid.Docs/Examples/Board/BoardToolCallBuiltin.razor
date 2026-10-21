@@ -1,0 +1,18 @@
+@using ExBoard
+@using ExBoard.Components
+
+<p style="font-size: 12px">The capability said of <code>h-7f3a</code>: <code>@BoardToolCall.Told</code></p>
+<textarea rows="8" style="width: 100%; font-family: monospace; font-size: 12px" @bind="_call" @bind:after="Answer"></textarea>
+<p role="status" style="font-size: 13px">@_answer.Text</p>
+@if (_answer is { Board: { } board, Bound: { } bound })
+{
+    <ExBoard Board="board" Data="bound.Data" Width="900" />
+}
+
+@code {
+    private string _call = BoardToolCall.Call;
+    private BoardSpecAnswer _answer = BoardToolCall.Answer(BoardToolCall.Call);
+
+    // What the tool answers the model: the Board said in words, or one sentence naming the path and the reason.
+    private void Answer() => _answer = BoardToolCall.Answer(_call);
+}

@@ -61,6 +61,25 @@ public static class SnapshotArrow
     }
 
     /// <summary>
+    /// Reads the shape an Arrow IPC stream's schema says, before any row (ADR-0341): its columns' names
+    /// and kinds, by ADR-0065's table, as <see cref="ReadAsync(Stream, SnapshotLoadOptions?, ICompressionCodecFactory?, CancellationToken)"/>
+    /// would make them. Only the schema, the stream's first message, is read; the stream is left open, at
+    /// its first record batch. A server answers a Board Input's check with it before sending a row.
+    /// </summary>
+    /// <param name="stream">The stream, at its first byte.</param>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    /// <exception cref="SnapshotException">The bytes are not an Arrow stream's schema, an Arrow file (whose
+    /// schema is in its footer), or a schema with a type outside ADR-0065's table, a column with no name
+    /// or a name twice.</exception>
+    public static ValueTask<DataShape> ReadShapeAsync(Stream stream, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        if (!stream.CanRead)
+            throw new ArgumentException("The stream cannot be read.", nameof(stream));
+        return new ArrowSnapshotReader(null, null, cancellationToken).ReadShapeAsync(stream);
+    }
+
+    /// <summary>
     /// Reads a Snapshot from an Arrow IPC stream, or an Arrow file, held in memory — a payload already
     /// fetched whole. Its uncompressed buffers are read where they lie, without a copy.
     /// </summary>

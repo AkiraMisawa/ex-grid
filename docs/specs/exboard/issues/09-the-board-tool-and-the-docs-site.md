@@ -1,6 +1,6 @@
 # 09: The Board tool and the Docs Site
 
-Status: ready-for-agent
+Status: done
 Roadmap: internal
 
 ADR-0340: the tool definition an AI calls with a Board, in ADR-0320's form (what the AI is told while

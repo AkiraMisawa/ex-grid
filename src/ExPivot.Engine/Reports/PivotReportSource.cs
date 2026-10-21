@@ -3,7 +3,7 @@ namespace ExPivot.Engine;
 /// <summary>A report source: the asynchronous report boundary shared by a local browser and a remote
 /// server (ADR-0151). It computes a Pivot Report over a Pivot Source and answers the Window asked for,
 /// in full or as Window Changes, and the operations versioned by it.</summary>
-public abstract class PivotReportSource : IAsyncDisposable
+public abstract class PivotReportSource : IAsyncDisposable, ExGrid.Data.IShapedSource
 {
     /// <summary>Fields offered to the Field List.</summary>
     public abstract IReadOnlyList<PivotField> Fields { get; }
@@ -49,6 +49,14 @@ public abstract class PivotReportSource : IAsyncDisposable
     public abstract ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken cancellationToken = default);
     /// <summary>Asks the Pivot Source to refresh.</summary>
     public abstract ValueTask RefreshAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The shape of the data the report is computed over, before any report (ADR-0341): its columns'
+    /// names and kinds. None by default, which a Board Input refuses to bind; a source over a Snapshot
+    /// answers the Snapshot's own, and a fetching source the one its server says.
+    /// </summary>
+    public virtual ValueTask<ExGrid.Data.DataShape?> ShapeAsync(CancellationToken cancellationToken = default)
+        => ValueTask.FromResult<ExGrid.Data.DataShape?>(null);
     /// <summary>Releases this report's calculation state; it does not own the Pivot Source it computes over.</summary>
     public abstract ValueTask DisposeAsync();
     /// <summary>The Pivot Source learned that its data changed.</summary>
@@ -162,6 +170,16 @@ public sealed class FetchingPivotReportSource : PivotReportSource
         _dispose = dispose;
         ReadAheadRows = readAheadRows;
     }
+    /// <summary>
+    /// How the server answers the shape of the data it pivots, before any report (ADR-0341), as an
+    /// Arrow schema says it. Set before the source is bound; null for a source that says none.
+    /// </summary>
+    public Func<CancellationToken, ValueTask<ExGrid.Data.DataShape>>? Shape { get; set; }
+
+    /// <inheritdoc />
+    public override async ValueTask<ExGrid.Data.DataShape?> ShapeAsync(CancellationToken cancellationToken = default)
+        => Shape is { } shape ? await shape(cancellationToken).ConfigureAwait(false) : null;
+
     /// <inheritdoc />
     public override IReadOnlyList<PivotField> Fields { get; }
     /// <inheritdoc />

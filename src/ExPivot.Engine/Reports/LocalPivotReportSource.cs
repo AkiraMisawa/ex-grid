@@ -636,6 +636,10 @@ public sealed class LocalPivotReportSource : PivotReportSource
     }
     /// <inheritdoc />
     public override ValueTask RefreshAsync(CancellationToken cancellationToken = default) => _source.RefreshAsync(cancellationToken);
+
+    /// <summary>A source over a Snapshot answers the Snapshot's shape (ADR-0341); any other, none.</summary>
+    public override ValueTask<ExGrid.Data.DataShape?> ShapeAsync(CancellationToken cancellationToken = default)
+        => ValueTask.FromResult(_source is SnapshotPivotSource snapshot ? ExGrid.Data.DataShape.Of(snapshot.Snapshot) : null);
     /// <inheritdoc />
     public override async ValueTask DisposeAsync()
     {
