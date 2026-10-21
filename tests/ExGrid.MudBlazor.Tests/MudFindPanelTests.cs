@@ -1,6 +1,7 @@
 using Bunit;
 using Bunit.Rendering;
 using ExGrid.Chrome;
+using ExGrid.Columns;
 using ExGrid.Finding;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -95,5 +96,68 @@ public class MudFindPanelTests : MudTestContext
         var cut = RenderPanel(Context(), chrome);
 
         Assert.Contains("Weiter", cut.Find(".mud-ex-grid-find-next").TextContent);
+    }
+
+    private sealed record Book(string Name, int Lots);
+
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<Book>> RenderGridWith(IGridChrome? chrome)
+        => Render<global::ExGrid.Components.ExGrid<Book>>(ps => ps
+            .Add(g => g.Source, GridSource.From(Enumerable.Range(0, 100).Select(i => new Book($"Book {i:D3}", i)).ToArray()))
+            .Add(g => g.Columns, (GridColumn<Book>[])[
+                new("Name", ColumnType.Text, r => r.Name, width: new ColumnWidthSpec(ColumnWidth.Fixed(100))),
+                new("Lots", ColumnType.Number, r => r.Lots, width: new ColumnWidthSpec(ColumnWidth.Fixed(100)))])
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 300)
+            .Add(g => g.Chrome, chrome));
+
+    private static string[] MarkedNames(IRenderedComponent<global::ExGrid.Components.ExGrid<Book>> cut, string mark = "ex-match-mark")
+        => [.. cut.FindAll($".ex-cell.{mark}").Select(c => c.TextContent)];
+
+    [Fact] // ADR-0332 §4 / WR-1: the Match Mark is the same under both Chromes — typed into the Wrapper's field, the painted matches are marked, the current apart, and cleared on close
+    public async Task ADR0332_the_match_mark_is_the_same_under_both_chromes()
+    {
+        var seen = new List<(string[] Typed, string[] Current, string[] Closed)>();
+        foreach (var chrome in new IGridChrome?[] { null, MudGridChrome.Default })
+        {
+            var cut = RenderGridWith(chrome);
+            await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("f", true, false, false, false, false));
+
+            if (chrome is null)
+                await cut.Find("input.ex-find-field").InputAsync(new ChangeEventArgs { Value = "book 00" });
+            else
+                await cut.Find(".mud-ex-grid-find-field input").InputAsync(new ChangeEventArgs { Value = "book 00" });
+            var typed = MarkedNames(cut);
+
+            if (chrome is null)
+                await cut.Find("button.ex-find-next").ClickAsync(new MouseEventArgs());
+            else
+                await cut.Find(".mud-ex-grid-find-next").ClickAsync(new MouseEventArgs());
+            var current = MarkedNames(cut, "ex-match-mark-current");
+
+            await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("Escape", false, false, false, false, false, fromDescendant: true));
+            seen.Add((typed, current, MarkedNames(cut)));
+        }
+
+        Assert.NotEmpty(seen[0].Typed);
+        Assert.All(seen[0].Typed, name => Assert.StartsWith("Book 00", name, StringComparison.Ordinal));
+        Assert.Equal(["Book 000"], seen[0].Current);
+        Assert.Empty(seen[0].Closed);
+        Assert.Equal(seen[0].Typed, seen[1].Typed);
+        Assert.Equal(seen[0].Current, seen[1].Current);
+        Assert.Equal(seen[0].Closed, seen[1].Closed);
+    }
+
+    [Fact] // ADR-0332 §4: the Wrapper's options reach the marks as the built-in panel's do
+    public async Task ADR0332_the_wrappers_options_change_the_marks()
+    {
+        var cut = RenderGridWith(MudGridChrome.Default);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("f", true, false, false, false, false));
+        await cut.Find(".mud-ex-grid-find-field input").InputAsync(new ChangeEventArgs { Value = "book 001" });
+        Assert.Equal(["Book 001"], MarkedNames(cut));
+
+        await cut.Find(".mud-ex-grid-find-match-case input").ChangeAsync(new ChangeEventArgs { Value = true });
+
+        Assert.Empty(MarkedNames(cut));
     }
 }

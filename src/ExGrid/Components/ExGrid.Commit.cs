@@ -170,6 +170,7 @@ public partial class ExGrid<TRow>
         if (_selection.Selection.IsEmpty || _selection.Selection.Focus != _editingCell)
         {
             _selection = _selection.With(GridSelection.Empty.Click(_editingCell, Extent));
+            ForgetCurrentMatchOffFocus();
             _selectionChanged = true;
         }
     }

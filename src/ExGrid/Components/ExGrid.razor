@@ -576,6 +576,7 @@
                        the delegate and the channel each row reports its marks through are the
                        same instances render after render. *@
                     var highlightNow = HighlightNow();
+                    var matchMarks = MatchMarksNow();
                     var headingStates = _rowHeadingStyle is not null ? HeadingStates(visible) : null;
                     BeginAppearances();
                     BeginPaintedKeys();
@@ -599,7 +600,8 @@
                                        Engagement="EngagementFor(row)"
                                        Marked="@MarkedAt(data)" OnMark="@(_onMark ??= RaiseRowMarkAsync)"
                                        Heading="@RowHeadingAt(row)" HeadingStyle="@_rowHeadingStyle"
-                                       Appearance="@AppearanceAt(row, slice)" />
+                                       Appearance="@AppearanceAt(row, slice)"
+                                       MatchMarks="matchMarks" CurrentMatch="@CurrentMatchAt(row, matchMarks)" />
                         }
                         else
                         {
@@ -3552,6 +3554,7 @@
         if (!reconciled.Selection.Equals(_selection.Selection))
             _selectionChanged = true;
         _selection = reconciled;
+        ForgetCurrentMatchOffFocus();
         // The Copied Range is written in the same coordinates, and dropped on the same triggers; it
         // also goes when a copied cell comes to read otherwise (ADR-0170).
         ReconcileCopiedRange(columnsMoved: _columnsMoved || _sourceReplaced);
@@ -6468,6 +6471,7 @@
             || next.Focus != _selection.Selection.Focus;
         _selection = _selection.With(next);
         _selectionChanged = true;
+        ForgetCurrentMatchOffFocus();
         if (movedFocus)
             ScheduleMessage(next.IsEmpty ? null : next.Focus);
         return true;
@@ -7774,6 +7778,7 @@
         CloseMenus();
         _findOpen = true;
         _findOutcome = FindOutcome.None;
+        _findCurrent = null;
         BeginPopoverFocus();
         _findFocusRequest++;
         _popoverFocusPending = PopoverFocus.FindField;
@@ -7792,6 +7797,8 @@
             return;
         _findCancellation?.Cancel();
         var cancellation = _findCancellation = new CancellationTokenSource();
+        // No match is current until this step finds one (ADR-0332 §4).
+        _findCurrent = null;
         // The binding the question is asked of: the version alone cannot tell a replaced Source, as
         // two fresh sources both start at 0 (ADR-0142).
         var binding = _binding;
@@ -7878,6 +7885,7 @@
 
         _findOutcome = FindOutcome.Found;
         var found = new CellPosition(answer.Row, column);
+        TakeCurrentMatch(found);
         // With a scope the selection stands and only the Focus moves inside it, so the next
         // step searches the same ranges; without one it collapses onto the match.
         var next = request.Scope is not null && selection.Contains(found)
@@ -7917,9 +7925,21 @@
         _findMatchCase,
         _findWholeCell,
         _findOutcome,
-        text => _findText = text,
-        value => _findMatchCase = value,
-        value => _findWholeCell = value,
+        _findTextChanged ??= text =>
+        {
+            _findText = text;
+            FindHeldChanged();
+        },
+        _findMatchCaseSet ??= value =>
+        {
+            _findMatchCase = value;
+            FindHeldChanged();
+        },
+        _findWholeCellSet ??= value =>
+        {
+            _findWholeCell = value;
+            FindHeldChanged();
+        },
         () => InvokeAsync(() => ClaimedAsync(ClaimKinds.Click, ClaimKinds.Submit, () => FindStepAsync(backward: false))),
         () => InvokeAsync(() => ClaimedAsync(ClaimKinds.Click, ClaimKinds.Submit, () => FindStepAsync(backward: true))),
         CloseFromChrome,
@@ -7951,6 +7971,9 @@
     }
 
     private RenderFragment? _findFieldFragment;
+    private Action<string>? _findTextChanged;
+    private Action<bool>? _findMatchCaseSet;
+    private Action<bool>? _findWholeCellSet;
     private EventCallback<ChangeEventArgs>? _findTextInput;
     private EventCallback<KeyboardEventArgs>? _findFieldKeyDown;
     private Action<ChangeEventArgs> FindMatchCaseChanged => _findMatchCaseChanged ??= e => _findMatchCase = e.Value is true;

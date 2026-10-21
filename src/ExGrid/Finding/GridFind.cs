@@ -58,15 +58,34 @@ public static class GridFind
                 continue;
             if (request.Scope is { } scope && !InScope(scope, row, column))
                 continue;
-            var shown = text(rows[row]);
-            var matches = request.WholeCell
-                ? string.Equals(shown, request.Text, comparison)
-                : shown.Contains(request.Text, comparison);
-            if (matches)
+            if (Matches(text(rows[row]), request.Text, comparison, request.WholeCell))
                 return GridFindResult.Found(row, request.Columns[column]);
         }
         return GridFindResult.NotFound;
     }
+
+    /// <summary>
+    /// The reference rule for one cell (ADR-0055, ADR-0332 §4): whether
+    /// <paramref name="displayedText"/> — the column's format applied, the text a user reads —
+    /// matches <paramref name="pattern"/>. Compared <c>OrdinalIgnoreCase</c> unless
+    /// <see cref="GridFindPattern.MatchCase"/>, containment unless
+    /// <see cref="GridFindPattern.WholeCell"/>. <see cref="Step{TRow}"/> finds by it, and the
+    /// grid marks the painted matches by it wherever a Grid Source answers Find. An empty
+    /// pattern matches nothing, as an empty field asks nothing.
+    /// </summary>
+    /// <param name="displayedText">The cell's displayed text.</param>
+    /// <param name="pattern">What the find panel holds.</param>
+    public static bool Matches(string displayedText, GridFindPattern pattern)
+    {
+        ArgumentNullException.ThrowIfNull(displayedText);
+        ArgumentNullException.ThrowIfNull(pattern);
+        return !string.IsNullOrEmpty(pattern.Text)
+            && Matches(displayedText, pattern.Text, pattern.MatchCase ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase, pattern.WholeCell);
+    }
+
+    // The rule itself, written once: the step and the mark both judge by it.
+    private static bool Matches(string shown, string text, StringComparison comparison, bool wholeCell)
+        => wholeCell ? string.Equals(shown, text, comparison) : shown.Contains(text, comparison);
 
     private static bool InScope(IReadOnlyList<SelectionRange> scope, int row, int column)
     {

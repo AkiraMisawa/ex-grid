@@ -1,4 +1,4 @@
-import { test, expect, watchNextKey, keySeenUntouched } from './fixtures.mjs';
+import { test, expect, watchNextKey, keySeenUntouched, scrollRowToTop } from './fixtures.mjs';
 import { expectKeyboardOn, activeDescendant } from './keyboard.mjs';
 
 // Find with real keys (ADR-0055): Ctrl+F on a focused grid opens the grid's own panel — never
@@ -8,7 +8,8 @@ import { expectKeyboardOn, activeDescendant } from './keyboard.mjs';
 // per Chrome: the built-in panel and ExGrid.MudBlazor's must give identical outcomes (WR-5).
 //
 // Its Trader column (1) repeats every three rows through four names: rows 3-5 are Novak, then
-// rows 15-17, and so on to 397-399. Notional (2) is unique per row.
+// rows 15-17, and so on to 397-399. Notional (2) is unique per row. While the panel holds a search,
+// the painted Novaks wear the Match Mark (ADR-0332 §4), judged by the reference rule.
 
 function grid(page) {
     return page.locator('.ex-grid').first();
@@ -178,6 +179,76 @@ for (const chrome of ['builtin', 'mud']) {
             await expectKeyboardOn(grid(page));
             await page.keyboard.press('ArrowDown');
             await expect.poll(() => focusedCell(page)).toMatch(/r1c0$/);
+        });
+
+        // The Match Mark (ADR-0332 §4): /features is bound to GridSource.From, so the reference rule
+        // marks every painted match, and the current match apart, under either Chrome.
+        test('every painted match is marked as it is typed, and the current match apart (ADR-0332)', async ({ page }) => {
+            await page.keyboard.press('ControlOrMeta+f');
+            await page.keyboard.type('novak');
+            const field = grid(page).locator('.ex-popover-find input').first();
+            await expect(field).toHaveValue('novak');
+
+            for (const row of [3, 4, 5]) {
+                await expect(grid(page).locator(`[id$='r${row}c1']`)).toHaveClass(/(^|\s)ex-match-mark(\s|$)/);
+            }
+            await expect(grid(page).locator("[id$='r2c1']")).not.toHaveClass(/ex-match-mark/);
+            await expect(grid(page).locator('.ex-match-mark-current')).toHaveCount(0);
+
+            await page.keyboard.press('Enter');
+            await expect.poll(() => focusedCell(page)).toMatch(/r3c1$/);
+            await expect(grid(page).locator("[id$='r3c1']")).toHaveClass(/ex-match-mark-current/);
+            await expect(grid(page).locator('.ex-match-mark-current')).toHaveCount(1);
+
+            // Painted, in a colour of its own: a match's ground and the current one's differ, and
+            // neither is transparent. Read from the cell's ::before, which holds the mark.
+            const ground = (id) => grid(page).locator(`[id$='${id}']`).evaluate((el) => getComputedStyle(el, '::before').backgroundColor);
+            const [match, current] = [await ground('r4c1'), await ground('r3c1')];
+            expect(match).not.toMatch(/^(transparent|rgba\(0, 0, 0, 0\))$/);
+            expect(current).not.toMatch(/^(transparent|rgba\(0, 0, 0, 0\))$/);
+            expect(current).not.toBe(match);
+
+            await page.keyboard.press('Enter');
+            await expect.poll(() => focusedCell(page)).toMatch(/r4c1$/);
+            await expect(grid(page).locator("[id$='r4c1']")).toHaveClass(/ex-match-mark-current/);
+            await expect(grid(page).locator("[id$='r3c1']")).not.toHaveClass(/ex-match-mark-current/);
+            await expect(grid(page).locator("[id$='r3c1']")).toHaveClass(/ex-match-mark/);
+        });
+
+        test('a match scrolled into view is marked as it is painted, with no step asked (ADR-0332)', async ({ page }) => {
+            await page.keyboard.press('ControlOrMeta+f');
+            await page.keyboard.type('novak');
+            await expect(grid(page).locator("[id$='r3c1']")).toHaveClass(/ex-match-mark/);
+
+            // Rows 207-209 are Novaks far below the rows painted at the top, so none of them was
+            // painted before the scroll.
+            await expect(grid(page).locator("[id$='r207c1']")).toHaveCount(0);
+            await scrollRowToTop(grid(page), 205);
+
+            for (const row of [207, 208, 209]) {
+                await expect(grid(page).locator(`[id$='r${row}c1']`)).toHaveClass(/(^|\s)ex-match-mark(\s|$)/);
+            }
+            await expect(grid(page).locator("[id$='r206c1']")).not.toHaveClass(/ex-match-mark/);
+            // The panel stood through the scroll, holding its text.
+            await expect(grid(page).locator('.ex-popover-find input').first()).toHaveValue('novak');
+        });
+
+        test('the marks clear when the text is emptied and when the panel closes (ADR-0332)', async ({ page }) => {
+            await page.keyboard.press('ControlOrMeta+f');
+            await page.keyboard.type('novak');
+            await expect(grid(page).locator("[id$='r3c1']")).toHaveClass(/ex-match-mark/);
+
+            const field = grid(page).locator('.ex-popover-find input').first();
+            await field.press('ControlOrMeta+a');
+            await field.press('Backspace');
+            await expect(field).toHaveValue('');
+            await expect(grid(page).locator('.ex-match-mark')).toHaveCount(0);
+
+            await page.keyboard.type('novak');
+            await expect(grid(page).locator("[id$='r3c1']")).toHaveClass(/ex-match-mark/);
+            await page.keyboard.press('Escape');
+            await expect(grid(page).locator('.ex-popover-find')).toHaveCount(0);
+            await expect(grid(page).locator('.ex-match-mark')).toHaveCount(0);
         });
     });
 }

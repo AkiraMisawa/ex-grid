@@ -2049,4 +2049,44 @@ public class ShippedStylesheetTests
 
         Assert.DoesNotMatch(new Regex(@"(?<![\w-])(transition|animation)(-[\w-]+)?\s*:|@keyframes"), css);
     }
+
+    [Fact] // ADR-0332 §4 / ADR-0029: the Match Mark's two tokens default to tints of one orange, the current stronger, and neither is the Change Highlight's tint of Mark; the core only reads them
+    public void ADR0332_the_match_mark_defaults_are_its_own()
+    {
+        var rules = UnconditionalRules();
+        var match = Assert.Single(rules, rule => rule.Selectors.SequenceEqual([".ex-cell.ex-match-mark::before"]));
+        var current = Assert.Single(rules, rule => rule.Selectors.SequenceEqual([".ex-cell.ex-match-mark-current::before"]));
+
+        Assert.Contains("background: var(--ex-match-mark-fill, color-mix(in srgb, #ff9632 25%, transparent));", match.Body, StringComparison.Ordinal);
+        Assert.Contains("background: var(--ex-match-mark-current-fill, color-mix(in srgb, #ff9632 55%, transparent));", current.Body, StringComparison.Ordinal);
+        Assert.DoesNotContain("Mark 40%", match.Body, StringComparison.Ordinal);
+        Assert.DoesNotContain("Mark 40%", current.Body, StringComparison.Ordinal);
+        var (css, _) = CoreStylesheet();
+        Assert.DoesNotMatch(new Regex(@"--ex-match-mark(-current)?-fill\s*:"), css);
+    }
+
+    [Fact] // ADR-0332 §4 / ADR-0068 / UX-7: under forced colours a match is a frame of its own, not the cell's outline, so on a cell both changed and matching the Change Highlight's dashed outline stands beside it
+    public void ADR0332_under_forced_colours_a_match_and_a_change_stay_apart()
+    {
+        var (_, forced) = ForcedColorsSplit();
+
+        // Nothing restates the mark on the cell's own outline, which the Change Highlight and the
+        // states hold.
+        Assert.DoesNotContain(forced, rule => rule.Selectors.Any(selector => selector.StartsWith(".ex-cell.ex-match-mark", StringComparison.Ordinal) && !selector.EndsWith("::before", StringComparison.Ordinal)));
+        Assert.DoesNotContain(forced, rule => rule.Selectors.Any(selector => selector.Contains("ex-match-mark", StringComparison.Ordinal))
+            && Regex.IsMatch(rule.Body, @"(?<![\w-])(outline|box-shadow)(-[\w-]+)?\s*:"));
+
+        // A dotted border on the ::before, inset past the two-pixel band the outlines lie in, and
+        // solid for the current match.
+        var match = Assert.Single(forced, rule => rule.Selectors.SequenceEqual([".ex-cell.ex-match-mark::before"]));
+        Assert.Matches(new Regex(@"background:\s*none;"), match.Body);
+        Assert.Matches(new Regex(@"inset:\s*3px;"), match.Body);
+        Assert.Matches(new Regex(@"border:\s*2px dotted Highlight;"), match.Body);
+        var current = Assert.Single(forced, rule => rule.Selectors.SequenceEqual([".ex-cell.ex-match-mark-current::before"]));
+        Assert.Matches(new Regex(@"border-style:\s*solid;"), current.Body);
+
+        // The Change Highlight keeps its own, dashed outline.
+        var changed = Assert.Single(forced, rule => rule.Selectors.Contains(".ex-cell.ex-changed"));
+        Assert.Matches(new Regex(@"(?<![\w-])outline:\s*2px dashed Highlight;"), changed.Body);
+    }
 }

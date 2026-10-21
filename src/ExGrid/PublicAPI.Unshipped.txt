@@ -23,6 +23,8 @@ ExGrid.Chrome.GridPopoverContext.InOrder.init -> void
 ExGrid.Clipboard.PasteRefusalReason.Cancelled = 13 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Clipboard.PasteRefusalReason.Unreadable = 12 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Components.ExGrid<TRow>.HandKeyboardToAsync(Microsoft.AspNetCore.Components.ElementReference control, bool preventScroll) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.FindMatch.get -> ExGrid.Finding.FindMatchOf<TRow!>?
+ExGrid.Components.ExGrid<TRow>.FindMatch.set -> void
 ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.InOrderAsync(ExGrid.Chrome.GridInputKind kind, System.Func<System.Threading.Tasks.Task!>! handling) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.InputsSent(int input) -> void
@@ -35,6 +37,10 @@ ExGrid.Components.ExGrid<TRow>.ReadView() -> ExGrid.Components.GridView
 ExGrid.Components.ExGrid<TRow>.SelectionAfterInputsAsync() -> System.Threading.Tasks.Task<ExGrid.Selection.GridSelection!>!
 ExGrid.Components.ExGrid<TRow>.ShowViewWith(ExGrid.Components.GridView view) -> void
 ExGrid.Components.ExGrid<TRow>.ShowViewWith(ExGrid.Components.GridView view, ExGrid.Selection.SelectionRange range, ExGrid.Selection.CellPosition focus) -> void
+ExGrid.Components.ExGridRow<TRow>.CurrentMatch.get -> int
+ExGrid.Components.ExGridRow<TRow>.CurrentMatch.set -> void
+ExGrid.Components.ExGridRow<TRow>.MatchMarks.get -> ExGrid.Components.MatchMarks<TRow!>?
+ExGrid.Components.ExGridRow<TRow>.MatchMarks.set -> void
 ExGrid.Components.GridView
 ExGrid.Components.GridView.Deconstruct(out int RowSequenceVersion, out ExGrid.Selection.GridSelection! Selection, out double ScrollTopPx, out double ScrollLeftPx) -> void
 ExGrid.Components.GridView.Equals(ExGrid.Components.GridView other) -> bool
@@ -48,6 +54,7 @@ ExGrid.Components.GridView.ScrollTopPx.get -> double
 ExGrid.Components.GridView.ScrollTopPx.init -> void
 ExGrid.Components.GridView.Selection.get -> ExGrid.Selection.GridSelection!
 ExGrid.Components.GridView.Selection.init -> void
+ExGrid.Components.MatchMarks<TRow>
 ExGrid.FetchedShapedGrid
 ExGrid.FetchedShapedGrid.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<ExGrid.ShapedRow!>!>!
 ExGrid.FetchedShapedGrid.PinnedColumnCount.get -> int
@@ -57,6 +64,19 @@ ExGrid.FetchingGridSource<TRow>.Requery() -> void
 ExGrid.FetchingGridSource<TRow>.Shape.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape!>>?
 ExGrid.FetchingGridSource<TRow>.Shape.set -> void
 ExGrid.FetchingGridSource<TRow>.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
+ExGrid.Finding.FindMatchOf<TRow>
+ExGrid.Finding.GridFindPattern
+ExGrid.Finding.GridFindPattern.<Clone>$() -> ExGrid.Finding.GridFindPattern!
+ExGrid.Finding.GridFindPattern.Deconstruct(out string! Text, out bool MatchCase, out bool WholeCell) -> void
+ExGrid.Finding.GridFindPattern.Equals(ExGrid.Finding.GridFindPattern? other) -> bool
+ExGrid.Finding.GridFindPattern.GridFindPattern(string! Text, bool MatchCase, bool WholeCell) -> void
+ExGrid.Finding.GridFindPattern.MatchCase.get -> bool
+ExGrid.Finding.GridFindPattern.MatchCase.init -> void
+ExGrid.Finding.GridFindPattern.Text.get -> string!
+ExGrid.Finding.GridFindPattern.Text.init -> void
+ExGrid.Finding.GridFindPattern.WholeCell.get -> bool
+ExGrid.Finding.GridFindPattern.WholeCell.init -> void
+ExGrid.Finding.GridFindRequest.Pattern.get -> ExGrid.Finding.GridFindPattern!
 ExGrid.GridViewSpec
 ExGrid.GridViewSpecReading
 ExGrid.GridViewSpecReading.<Clone>$() -> ExGrid.GridViewSpecReading!
@@ -101,6 +121,9 @@ ExGrid.ShapedRow.At.get -> ExGrid.Data.SnapshotRow
 ExGrid.ShapedRow.Page.get -> ExGrid.Data.Snapshot!
 ExGrid.ShapedRow.Position.get -> int
 override ExGrid.Components.GridView.GetHashCode() -> int
+override ExGrid.Finding.GridFindPattern.Equals(object? obj) -> bool
+override ExGrid.Finding.GridFindPattern.GetHashCode() -> int
+override ExGrid.Finding.GridFindPattern.ToString() -> string!
 override ExGrid.GridViewSpecReading.Equals(object? obj) -> bool
 override ExGrid.GridViewSpecReading.GetHashCode() -> int
 override ExGrid.GridViewSpecReading.ToString() -> string!
@@ -112,6 +135,9 @@ override ExGrid.ShapedPage.GetHashCode() -> int
 override ExGrid.ShapedPage.ToString() -> string!
 static ExGrid.Components.GridView.operator !=(ExGrid.Components.GridView left, ExGrid.Components.GridView right) -> bool
 static ExGrid.Components.GridView.operator ==(ExGrid.Components.GridView left, ExGrid.Components.GridView right) -> bool
+static ExGrid.Finding.GridFind.Matches(string! displayedText, ExGrid.Finding.GridFindPattern! pattern) -> bool
+static ExGrid.Finding.GridFindPattern.operator !=(ExGrid.Finding.GridFindPattern? left, ExGrid.Finding.GridFindPattern? right) -> bool
+static ExGrid.Finding.GridFindPattern.operator ==(ExGrid.Finding.GridFindPattern? left, ExGrid.Finding.GridFindPattern? right) -> bool
 static ExGrid.GridViewSpec.Read(string! json, System.Func<string!, ExGrid.Data.DataShape?>! inputs) -> ExGrid.GridViewSpecReading!
 static ExGrid.GridViewSpec.Read(System.Text.Json.JsonElement spec, System.Func<string!, ExGrid.Data.DataShape?>! inputs, string! path) -> ExGrid.GridViewSpecReading!
 static ExGrid.GridViewSpecReading.operator !=(ExGrid.GridViewSpecReading? left, ExGrid.GridViewSpecReading? right) -> bool
@@ -122,5 +148,6 @@ static ExGrid.ShapedGrid.Fetch(ExGrid.GridViewSpecReading! spec, System.Func<ExG
 static ExGrid.ShapedGrid.Of(ExGrid.Data.Snapshot! snapshot, ExGrid.GridViewSpecReading! spec, System.Globalization.CultureInfo? culture = null) -> ExGrid.ShapedGrid!
 static ExGrid.ShapedPage.operator !=(ExGrid.ShapedPage? left, ExGrid.ShapedPage? right) -> bool
 static ExGrid.ShapedPage.operator ==(ExGrid.ShapedPage? left, ExGrid.ShapedPage? right) -> bool
+virtual ExGrid.Finding.FindMatchOf<TRow>.Invoke(TRow row, ExGrid.GridColumn<TRow>! column, ExGrid.Finding.GridFindPattern! pattern) -> bool
 ~override ExGrid.Components.GridView.Equals(object obj) -> bool
 ~override ExGrid.Components.GridView.ToString() -> string
