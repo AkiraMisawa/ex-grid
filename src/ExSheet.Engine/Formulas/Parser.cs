@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>
@@ -30,6 +32,28 @@ internal sealed partial class Parser
     /// </summary>
     private readonly List<(NameNode Name, LetScope[] Around)> _wideNames = [];
 
+    /// <summary>
+    /// The most levels of nested functions a Formula holds, a <c>LET</c> counted as one: 64, Excel's
+    /// own limit, past which Excel refuses the Formula on entry ("more levels of nesting than allowed").
+    /// </summary>
+    internal const int MostNestedFunctions = 64;
+
+    /// <summary>
+    /// The deepest Formula the engine reads (<see cref="Node.Depth"/>): parentheses, signs, <c>%</c>,
+    /// functions, the right operands of operators and the <c>LET</c> names read, each counted as a
+    /// level, while a chain of operators down their left operands (<c>=1+1+…+1</c>) is not, since
+    /// every walk loops along it. Deeper, a walk of the Formula could exhaust the stack and end the
+    /// process, so the Formula is refused on entry rather than accepted and crash (the spine's first
+    /// rule). Sixty-four functions nested with ordinary arguments stay well inside it.
+    /// </summary>
+    internal const int MostNesting = 256;
+
+    /// <summary>How many parentheses, signs and calls the parser is inside: its own recursion, kept within <see cref="MostNesting"/>.</summary>
+    private int _nesting;
+
+    /// <summary>How many calls the parser is inside, kept within <see cref="MostNestedFunctions"/>.</summary>
+    private int _functions;
+
     private Parser(string formula, List<Token> tokens)
     {
         _formula = formula;
@@ -51,6 +75,7 @@ internal sealed partial class Parser
         if (Lexer.WideNameOutsideLet(parser._tokens) is { } wide) throw parser.NotSyntax(wide.Position + Lexer.FirstWide(wide.Text));
         var node = parser.ParseComparison();
         if (parser.Peek.Kind != TokenKind.End) throw parser.Unexpected();
+        parser.Bounded(node, parser.Peek);
         parser.RefuseUnboundWideNames();
         return node;
     }
@@ -87,80 +112,69 @@ internal sealed partial class Parser
                 ? NotSyntax(Peek.Position + wide)
                 : new FormulaSyntaxException(_formula, Peek.Position, $"'{Peek.Text}' is not expected here.");
 
+    /// <summary>
+    /// An expression: operands joined by binary operators, read with a stack of operators rather than a
+    /// method for each level of precedence, so that a level of parentheses or a call costs the parser
+    /// few frames of its own (<see cref="MostNesting"/>). An operator applies every operator before it
+    /// that binds at least as tightly, which makes each associate to the left, as in Excel.
+    /// </summary>
     private Node ParseComparison()
     {
-        var left = ParseConcatenation();
-        while (PeekOperator("=", "<>", "<", ">", "<=", ">="))
+        var operands = new List<Node> { ParseUnary() };
+        var operators = new List<Token>();
+        while (Peek.Kind == TokenKind.Operator && Precedence(Peek.Text) is var precedence and > 0)
         {
-            var op = Next().Text;
-            left = new BinaryNode(op, left, ParseConcatenation());
+            while (operators.Count > 0 && Precedence(operators[^1].Text) >= precedence) Apply();
+            operators.Add(Next());
+            operands.Add(ParseUnary());
         }
-        return left;
+        while (operators.Count > 0) Apply();
+        return operands[0];
+
+        void Apply()
+        {
+            var op = operators[^1];
+            operators.RemoveAt(operators.Count - 1);
+            var right = operands[^1];
+            operands.RemoveAt(operands.Count - 1);
+            operands[^1] = Bounded(new BinaryNode(op.Text, operands[^1], right), op);
+        }
     }
 
-    private Node ParseConcatenation()
+    /// <summary>
+    /// How tightly a binary operator binds, from the loosest: comparison, <c>&amp;</c>, <c>+ -</c>,
+    /// <c>* /</c>, <c>^</c>; 0 for a token that is no binary operator (<c>%</c>). Every one associates
+    /// to the left, <c>^</c> too: <c>2^3^2</c> is <c>(2^3)^2</c>, as in Excel.
+    /// </summary>
+    private static int Precedence(string op) => op switch
     {
-        var left = ParseAdditive();
-        while (PeekOperator("&"))
-        {
-            Next();
-            left = new BinaryNode("&", left, ParseAdditive());
-        }
-        return left;
-    }
+        "=" or "<>" or "<" or ">" or "<=" or ">=" => 1,
+        "&" => 2,
+        "+" or "-" => 3,
+        "*" or "/" => 4,
+        "^" => 5,
+        _ => 0,
+    };
 
-    private Node ParseAdditive()
-    {
-        var left = ParseMultiplicative();
-        while (PeekOperator("+", "-"))
-        {
-            var op = Next().Text;
-            left = new BinaryNode(op, left, ParseMultiplicative());
-        }
-        return left;
-    }
-
-    private Node ParseMultiplicative()
-    {
-        var left = ParsePower();
-        while (PeekOperator("*", "/"))
-        {
-            var op = Next().Text;
-            left = new BinaryNode(op, left, ParsePower());
-        }
-        return left;
-    }
-
-    /// <summary><c>^</c> associates to the left in Excel: <c>2^3^2</c> is <c>(2^3)^2</c>.</summary>
-    private Node ParsePower()
-    {
-        var left = ParseUnary();
-        while (PeekOperator("^"))
-        {
-            Next();
-            left = new BinaryNode("^", left, ParseUnary());
-        }
-        return left;
-    }
-
-    /// <summary>Negation binds tighter than <c>%</c> and <c>^</c> in Excel.</summary>
+    /// <summary>
+    /// An operand: signs, then an intersection or a primary, then any <c>%</c>. Negation binds tighter
+    /// than <c>^</c> in Excel, and <c>%</c> tighter than negation. A run of signs is read in a loop,
+    /// not by recursion.
+    /// </summary>
     private Node ParseUnary()
     {
-        if (PeekOperator("-", "+"))
+        var signs = new List<Token>();
+        while (PeekOperator("-", "+"))
         {
-            var op = Next().Text[0];
-            return new UnaryNode(op, ParseUnary());
+            signs.Add(Next());
+            Enter(signs[^1]);
         }
-        return ParsePercent();
-    }
-
-    private Node ParsePercent()
-    {
         var node = ParseIntersection();
-        while (PeekOperator("%"))
+        while (PeekOperator("%")) node = Bounded(new PercentNode(node), Next());
+        for (var i = signs.Count - 1; i >= 0; i--)
         {
-            Next();
-            node = new PercentNode(node);
+            node = Bounded(new UnaryNode(signs[i].Text[0], node), signs[i]);
+            _nesting--;
         }
         return node;
     }
@@ -183,7 +197,7 @@ internal sealed partial class Parser
             {
                 throw new FormulaSyntaxException(_formula, at.Position, "the intersection operator (a space between two References) is not implemented.") { IsUnimplemented = true };
             }
-            node = new IntersectionNode(node, right);
+            node = Bounded(new IntersectionNode(node, right), at);
         }
         return node;
     }
@@ -219,17 +233,17 @@ internal sealed partial class Parser
                 Next();
                 return new StructuredReferenceNode(token.TableName!, token.Text);
             case TokenKind.LeftParenthesis:
-                Next();
+                Enter(Next());
                 var inner = ParseComparison();
                 if (Peek.Kind != TokenKind.RightParenthesis) throw Unexpected();
-                Next();
-                return new ParenthesesNode(inner);
+                _nesting--;
+                return Bounded(new ParenthesesNode(inner), Next());
             case TokenKind.Name:
                 Next();
                 if (Peek.Kind == TokenKind.LeftParenthesis && !Peek.AfterSpace) return ParseCall(token);
                 if (token.Text.Equals("TRUE", StringComparison.OrdinalIgnoreCase)) return new BooleanNode(true);
                 if (token.Text.Equals("FALSE", StringComparison.OrdinalIgnoreCase)) return new BooleanNode(false);
-                var name = new NameNode(token.Text, token.Position, Resolve(token.Text));
+                var name = Bounded(new NameNode(token.Text, token.Position, Resolve(token.Text)), token);
                 if (name.Binding is null && Lexer.FirstWide(token.Text) >= 0) _wideNames.Add((name, [.. _lets]));
                 return name;
             default:
@@ -242,7 +256,45 @@ internal sealed partial class Parser
         // A function's name is ASCII: one of another script is refused as it was before LET (ADR-0181).
         if (Lexer.FirstWide(name.Text) is var wide and >= 0) throw NotSyntax(name.Position + wide);
         var function = FunctionLibrary.Find(name.Text);
-        if (function?.Name == "LET") return ParseLet(name);
+        EnterFunction(name);
+        Node call = function?.Name == "LET" ? ParseLet(name) : ParseCall(name, function);
+        _functions--;
+        _nesting--;
+        return Bounded(call, name);
+    }
+
+    /// <summary>
+    /// Goes one level deeper into parentheses, a sign or a call, refusing the Formula once that is
+    /// deeper than <see cref="MostNesting"/>: the parser's own recursion stays bounded.
+    /// </summary>
+    private void Enter(Token at)
+    {
+        // A host whose threads have little stack is refused the same way, never crashed on.
+        if (++_nesting > MostNesting || !RuntimeHelpers.TryEnsureSufficientExecutionStack()) throw TooDeep(at.Position);
+    }
+
+    /// <summary>Goes into a call's arguments, refusing a 65th level of nested functions as Excel does (<see cref="MostNestedFunctions"/>).</summary>
+    private void EnterFunction(Token name)
+    {
+        if (_functions + 1 > MostNestedFunctions)
+        {
+            throw new FormulaSyntaxException(_formula, name.Position,
+                $"functions are nested more than {MostNestedFunctions} levels deep; Excel refuses such a Formula too.");
+        }
+        _functions++;
+        Enter(name);
+    }
+
+    /// <summary>The node, or a refusal when it is deeper than <see cref="MostNesting"/> (<see cref="Node.Depth"/>).</summary>
+    private T Bounded<T>(T node, Token at) where T : Node =>
+        node.Depth > MostNesting ? throw TooDeep(at.Position) : node;
+
+    private FormulaSyntaxException TooDeep(int position) =>
+        new(_formula, position,
+            $"the Formula is nested more than {MostNesting} levels deep (parentheses, signs, functions, and operators within operators); ExSheet cannot compute one so deep.");
+
+    private FunctionNode ParseCall(Token name, FunctionDefinition? function)
+    {
         Next(); // (
         var arguments = new List<Node>();
         if (Peek.Kind == TokenKind.RightParenthesis)

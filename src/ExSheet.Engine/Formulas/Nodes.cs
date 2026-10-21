@@ -11,6 +11,17 @@ internal abstract class Node
 
     /// <summary>Every function call this node makes, statically, its arguments' calls included: <c>TODAY</c>'s readers (ADR-0121).</summary>
     public virtual IEnumerable<FunctionNode> Calls => [];
+
+    /// <summary>
+    /// How deep a walk of this node goes, counted in nodes, where a walk that reads an operator's
+    /// chain (<see cref="BinaryNode.Operands"/>) loops along it rather than descending: a leaf is 1, a
+    /// node one more than its deepest child, except a <see cref="BinaryNode"/>'s left operand, which
+    /// stands at the operator's own depth; and a name a <c>LET</c> binds one more than its value, which
+    /// is computed where the name is read. The parser refuses a Formula deeper than
+    /// <see cref="Parser.MostNesting"/>, so that no walk of a Formula the engine accepts can exhaust
+    /// the stack.
+    /// </summary>
+    public virtual int Depth => 1;
 }
 
 internal sealed class NumberNode(double number) : Node
@@ -81,6 +92,9 @@ internal sealed class NameNode(string name, int position, LetBinding? binding) :
 
     /// <summary>The <c>LET</c> binding the name reads, as the text's scopes resolve it; <see langword="null"/> for none (<c>#NAME?</c>).</summary>
     public LetBinding? Binding { get; } = binding;
+
+    /// <summary>Reading a bound name computes its value there, so it is one deeper than the value; the value is bound before any name can read it.</summary>
+    public override int Depth { get; } = binding is null ? 1 : binding.Value.Depth + 1;
 }
 
 /// <summary>One name a <c>LET</c> binds, and the value it is bound to (ADR-0181).</summary>
@@ -112,6 +126,8 @@ internal sealed class LetNode(IReadOnlyList<LetBinding> bindings, Node calculati
     public override IEnumerable<StructuredReferenceNode> StructuredReferences => Parts.SelectMany(p => p.StructuredReferences);
 
     public override IEnumerable<FunctionNode> Calls => Parts.SelectMany(p => p.Calls);
+
+    public override int Depth { get; } = Math.Max(bindings.Select(b => b.Value.Depth).DefaultIfEmpty(0).Max(), calculation.Depth) + 1;
 }
 
 /// <summary>
@@ -128,6 +144,8 @@ internal sealed class IntersectionNode(Node left, Node right) : Node
     public override IEnumerable<Reference> References => Left.References.Concat(Right.References);
 
     public override IEnumerable<FunctionNode> Calls => Left.Calls.Concat(Right.Calls);
+
+    public override int Depth { get; } = Math.Max(left.Depth, right.Depth) + 1;
 }
 
 internal sealed class FunctionNode(string name, IReadOnlyList<Node> arguments, FunctionDefinition? function) : Node
@@ -153,6 +171,8 @@ internal sealed class FunctionNode(string name, IReadOnlyList<Node> arguments, F
     public override IEnumerable<StructuredReferenceNode> StructuredReferences => Arguments.SelectMany(a => a.StructuredReferences);
 
     public override IEnumerable<FunctionNode> Calls => Arguments.SelectMany(a => a.Calls).Prepend(this);
+
+    public override int Depth { get; } = arguments.Select(a => a.Depth).DefaultIfEmpty(0).Max() + 1;
 }
 
 internal sealed class ParenthesesNode(Node inner) : Node
@@ -164,6 +184,8 @@ internal sealed class ParenthesesNode(Node inner) : Node
     public override IEnumerable<StructuredReferenceNode> StructuredReferences => Inner.StructuredReferences;
 
     public override IEnumerable<FunctionNode> Calls => Inner.Calls;
+
+    public override int Depth { get; } = inner.Depth + 1;
 }
 
 internal sealed class UnaryNode(char op, Node operand) : Node
@@ -177,6 +199,8 @@ internal sealed class UnaryNode(char op, Node operand) : Node
     public override IEnumerable<StructuredReferenceNode> StructuredReferences => Operand.StructuredReferences;
 
     public override IEnumerable<FunctionNode> Calls => Operand.Calls;
+
+    public override int Depth { get; } = operand.Depth + 1;
 }
 
 internal sealed class PercentNode(Node operand) : Node
@@ -188,8 +212,16 @@ internal sealed class PercentNode(Node operand) : Node
     public override IEnumerable<StructuredReferenceNode> StructuredReferences => Operand.StructuredReferences;
 
     public override IEnumerable<FunctionNode> Calls => Operand.Calls;
+
+    public override int Depth { get; } = operand.Depth + 1;
 }
 
+/// <summary>
+/// A binary operator. Excel's operators associate to the left, so <c>=1+1+…+1</c> is a chain of
+/// these down their left operands, as long as the Formula: a walk over one loops along that chain
+/// (<see cref="Spine"/>, <see cref="Operands"/>) and descends only into the right operands, so a
+/// chain of thousands of operators, which Excel accepts, never deepens the stack.
+/// </summary>
 internal sealed class BinaryNode(string op, Node left, Node right) : Node
 {
     public string Operator { get; } = op;
@@ -198,9 +230,50 @@ internal sealed class BinaryNode(string op, Node left, Node right) : Node
 
     public Node Right { get; } = right;
 
-    public override IEnumerable<Reference> References => Left.References.Concat(Right.References);
+    /// <summary>The left operand stands at this operator's depth: a walk loops along it.</summary>
+    public override int Depth { get; } = Math.Max(left.Depth, right.Depth + 1);
 
-    public override IEnumerable<StructuredReferenceNode> StructuredReferences => Left.StructuredReferences.Concat(Right.StructuredReferences);
+    public override IEnumerable<Reference> References => Operands.SelectMany(o => o.References);
 
-    public override IEnumerable<FunctionNode> Calls => Left.Calls.Concat(Right.Calls);
+    public override IEnumerable<StructuredReferenceNode> StructuredReferences => Operands.SelectMany(o => o.StructuredReferences);
+
+    public override IEnumerable<FunctionNode> Calls => Operands.SelectMany(o => o.Calls);
+
+    /// <summary>
+    /// This operator and those down its left operands, innermost (the first applied) first: the
+    /// chain <c>1+2-3</c> is the <c>+</c>, then the <c>-</c>. The innermost's left operand is
+    /// <see cref="Leftmost"/>.
+    /// </summary>
+    public IReadOnlyList<BinaryNode> Spine
+    {
+        get
+        {
+            var spine = new List<BinaryNode>();
+            for (Node node = this; node is BinaryNode binary; node = binary.Left) spine.Add(binary);
+            spine.Reverse();
+            return spine;
+        }
+    }
+
+    /// <summary>The first operand of the chain: the left operand of its innermost operator, which is no operator.</summary>
+    public Node Leftmost
+    {
+        get
+        {
+            Node node = this;
+            while (node is BinaryNode binary) node = binary.Left;
+            return node;
+        }
+    }
+
+    /// <summary>The chain's operands in the text's order: <see cref="Leftmost"/>, then each operator's right operand.</summary>
+    public IEnumerable<Node> Operands
+    {
+        get
+        {
+            var spine = Spine;
+            yield return spine[0].Left;
+            foreach (var binary in spine) yield return binary.Right;
+        }
+    }
 }

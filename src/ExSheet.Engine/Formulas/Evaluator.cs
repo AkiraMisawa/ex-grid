@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace ExSheet.Engine.Formulas;
 
@@ -230,7 +231,33 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         return Formulas.Operand.Of(result);
     }
 
+    /// <summary>
+    /// What a node evaluates to. Operators, parentheses and the <c>LET</c> names read are computed in a
+    /// loop with a stack of their own (<see cref="Operator"/>), so the evaluator's recursion goes only
+    /// through calls and <c>LET</c>s, which the parser bounds (<see cref="Parser.MostNestedFunctions"/>,
+    /// <see cref="Parser.MostNesting"/>); each frame of it is kept small.
+    /// </summary>
     public Operand Operand(Node node) => node switch
+    {
+        BinaryNode or ParenthesesNode or UnaryNode or PercentNode or NameNode { Binding: not null } => Operator(node),
+        LetNode l => Let(l),
+        FunctionNode f => Call(f),
+        _ => Leaf(node),
+    };
+
+    /// <summary>
+    /// A call. Should the stack run short all the same — a host whose threads have little of it, or
+    /// cells computed on demand through <c>INDIRECT</c>, each from the one before — the Formula is
+    /// refused (<see cref="Refuse"/>) rather than the process ended: said it cannot be done, never
+    /// crashed on. Within the parser's bounds, on a thread of 1 MB, it never runs short.
+    /// </summary>
+    private Operand Call(FunctionNode f) =>
+        !RuntimeHelpers.TryEnsureSufficientExecutionStack() ? Refuse()
+        : f.Function is null ? ExcelFunctionNames.Undeclared(f.Name) ? RefuseName() : Formulas.Operand.Of(ErrorValue.Name)
+        : f.Function.Invoke(new FunctionCall(this, f.Arguments) { Place = f.Place });
+
+    /// <summary>A node that holds no other to compute: a constant, a Reference, a Linked Table's column, or a name nothing binds.</summary>
+    private Operand Leaf(Node node) => node switch
     {
         NumberNode n => Formulas.Operand.Of(Value.FromNumber(n.Number)),
         TextNode t => Formulas.Operand.Of(Value.FromText(t.Text)),
@@ -242,15 +269,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
             : r.Reference.Spilled ? sheet.Spill(new CellAddress(r.Reference.Row1, r.Reference.Column1))
             : Formulas.Operand.Of(r.Reference.Area, sheet),
         StructuredReferenceNode s => Cells.TableColumn(s.Table, s.Column),
-        NameNode { Binding: { } binding } => Read(binding),
         NameNode or IntersectionNode => NamesLinkedTable(node) ? RefuseName() : Formulas.Operand.Of(ErrorValue.Name),
-        LetNode l => Let(l),
-        ParenthesesNode p => Operand(p.Inner),
-        UnaryNode u => Map(Operand(u.Operand), value => Negate(u.Operator, value)),
-        PercentNode p => Map(Operand(p.Operand), Percent),
-        BinaryNode b => Binary(b),
-        FunctionNode f => f.Function is null ? ExcelFunctionNames.Undeclared(f.Name) ? RefuseName() : Formulas.Operand.Of(ErrorValue.Name)
-            : f.Function.Invoke(new FunctionCall(this, f.Arguments) { Place = f.Place }),
         _ => throw new InvalidOperationException($"No evaluation for {node.GetType().Name}."),
     };
 
@@ -328,28 +347,6 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         }
     }
 
-    /// <summary>
-    /// A name's binding: its Value, computed now if this is its first read. The parser resolves a name
-    /// only where its binding is in scope, so a binding is never read outside its <c>LET</c> nor
-    /// inside its own value; were it, it would be <c>#NAME?</c>, as an unbound name is.
-    /// </summary>
-    private Operand Read(LetBinding binding)
-    {
-        if (!_bindings.TryGetValue(binding, out var slot)) return Formulas.Operand.Of(ErrorValue.Name);
-        if (slot.Value is { } value) return value;
-        _bindings.Remove(binding);
-        try
-        {
-            value = Operand(binding.Value);
-        }
-        finally
-        {
-            _bindings[binding] = slot;
-        }
-        slot.Value = value;
-        return value;
-    }
-
     private Value Negate(char op, Value? value)
     {
         var operand = ToNumber(value, out var error);
@@ -363,13 +360,122 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         return error is { } e ? Value.FromError(e) : Number(operand / 100);
     }
 
-    /// <summary>A binary operator over its operands: one Value from two, or element by element when either holds several (ADR-0125).</summary>
-    private Operand Binary(BinaryNode node)
+    /// <summary>
+    /// Operators, parentheses and the <c>LET</c> names read, computed with a stack of their own rather
+    /// than by recursion, so that a chain as long as Excel accepts (<c>=1+1+…+1</c>, left-associative),
+    /// parentheses and signs as deep as the parser reads, or a chain of names each bound to the one
+    /// before, never deepen the call stack. Each operator computes its left operand, then its right,
+    /// then itself, as Excel does; a binary operator gives one Value from two, or works element by
+    /// element when either operand holds several (ADR-0125). A name's binding is computed where it is
+    /// first read and at most once, every read giving that one Value. The parser resolves a name only
+    /// where its binding is in scope, so a binding is never read outside its <c>LET</c> nor inside its
+    /// own value; were it, it would be <c>#NAME?</c>, as an unbound name is: it is out of scope while
+    /// its value is computed.
+    /// </summary>
+    private Operand Operator(Node top)
     {
-        var left = Operand(node.Left);
-        var right = Operand(node.Right);
-        if (IsMulti(left) || IsMulti(right)) return Elementwise(node.Operator, left, right);
-        return Formulas.Operand.Of(BinaryValues(node.Operator, ScalarOf(left), ScalarOf(right), finalOperation: false));
+        var work = new Stack<Step>();
+        var done = new Stack<Operand>();
+        // The bindings taken out of scope while their value is computed: put back if anything throws.
+        var computing = new List<LetBinding>();
+        work.Push(new Step(top, false));
+        try
+        {
+            while (work.Count > 0)
+            {
+                var step = work.Pop();
+                if (step.Operands) Combine(step.Node, done, computing);
+                else Expand(step.Node, work, done, computing);
+            }
+        }
+        finally
+        {
+            foreach (var binding in computing)
+            {
+                _bindings[binding] = _bindingsOutOfScope[binding];
+                _bindingsOutOfScope.Remove(binding);
+            }
+        }
+        return done.Pop();
+    }
+
+    /// <summary>A node to compute, or (<see cref="Operands"/>) one whose operands are computed and stand on the stack of results.</summary>
+    private readonly record struct Step(Node Node, bool Operands);
+
+    /// <summary>The slots of the bindings <see cref="Operator"/> has taken out of scope while their value is computed.</summary>
+    private readonly Dictionary<LetBinding, BindingSlot> _bindingsOutOfScope = [];
+
+    /// <summary>Puts a node's operands on the work stack, after itself, or computes a node that holds none of those.</summary>
+    private void Expand(Node node, Stack<Step> work, Stack<Operand> done, List<LetBinding> computing)
+    {
+        switch (node)
+        {
+            case ParenthesesNode p:
+                work.Push(new Step(p.Inner, false));
+                return;
+            case UnaryNode u:
+                work.Push(new Step(node, true));
+                work.Push(new Step(u.Operand, false));
+                return;
+            case PercentNode p:
+                work.Push(new Step(node, true));
+                work.Push(new Step(p.Operand, false));
+                return;
+            case BinaryNode b:
+                work.Push(new Step(node, true));
+                work.Push(new Step(b.Right, false));
+                work.Push(new Step(b.Left, false));
+                return;
+            case NameNode { Binding: { } binding }:
+                // Read: the Value once computed; else computed now, out of scope while it is.
+                if (!_bindings.TryGetValue(binding, out var slot))
+                {
+                    done.Push(Formulas.Operand.Of(ErrorValue.Name));
+                    return;
+                }
+                if (slot.Value is { } value)
+                {
+                    done.Push(value);
+                    return;
+                }
+                _bindings.Remove(binding);
+                _bindingsOutOfScope[binding] = slot;
+                computing.Add(binding);
+                work.Push(new Step(node, true));
+                work.Push(new Step(binding.Value, false));
+                return;
+            default:
+                done.Push(Operand(node));
+                return;
+        }
+    }
+
+    /// <summary>Computes a node from its operands' results, on top of the stack of results.</summary>
+    private void Combine(Node node, Stack<Operand> done, List<LetBinding> computing)
+    {
+        switch (node)
+        {
+            case UnaryNode u:
+                done.Push(Map(done.Pop(), value => Negate(u.Operator, value)));
+                return;
+            case PercentNode:
+                done.Push(Map(done.Pop(), Percent));
+                return;
+            case BinaryNode b:
+                var right = done.Pop();
+                var left = done.Pop();
+                done.Push(IsMulti(left) || IsMulti(right)
+                    ? Elementwise(b.Operator, left, right)
+                    : Formulas.Operand.Of(BinaryValues(b.Operator, ScalarOf(left), ScalarOf(right), finalOperation: false)));
+                return;
+            case NameNode { Binding: { } binding }:
+                var slot = _bindingsOutOfScope[binding];
+                _bindingsOutOfScope.Remove(binding);
+                computing.Remove(binding);
+                _bindings[binding] = slot;
+                slot.Value = done.Peek();
+                return;
+        }
     }
 
     private Value BinaryValues(string op, Value? left, Value? right, bool finalOperation)
