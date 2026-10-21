@@ -56,11 +56,30 @@ public partial class PointingScopeTests : SheetTestContext
         return new Page(cut, sheets[0], sheets[1], grids[0], grids[1]);
     }
 
-    /// <summary>DOM focus comes into a Sheet, as the browser tells it.</summary>
-    private static Task KeyboardInAsync(IRenderedComponent<SheetComponent> sheet) => sheet.Find(".ex-sheet").FocusInAsync(new FocusEventArgs());
+    /// <summary>DOM focus comes into a Sheet, as the browser tells it: the grid's listener tells the
+    /// keyboard crossing the Sheet's edge, numbered in its Input Order (ADR-0240 section 6), and the
+    /// Sheet's handler takes that number.</summary>
+    private static async Task KeyboardInAsync(IRenderedComponent<SheetComponent> sheet)
+    {
+        await TellCrossingAsync(sheet, "focusin");
+        await sheet.Find(".ex-sheet").FocusInAsync(new FocusEventArgs());
+    }
 
-    /// <summary>DOM focus leaves a Sheet for somewhere else on the page.</summary>
-    private static Task KeyboardOutAsync(IRenderedComponent<SheetComponent> sheet) => sheet.Find(".ex-sheet").FocusOutAsync(new FocusEventArgs());
+    /// <summary>DOM focus leaves a Sheet for somewhere else on the page, told as the keyboard crossing its edge.</summary>
+    private static async Task KeyboardOutAsync(IRenderedComponent<SheetComponent> sheet)
+    {
+        await TellCrossingAsync(sheet, "focusout");
+        await sheet.Find(".ex-sheet").FocusOutAsync(new FocusEventArgs());
+    }
+
+    /// <summary>The grid's listener tells the keyboard crossing the Sheet's edge, under the next number.</summary>
+    private static Task TellCrossingAsync(IRenderedComponent<SheetComponent> sheet, string kind)
+    {
+        var grid = Grid(sheet);
+        var answered = int.Parse(grid.Find(".ex-grid > [data-ex-answered]").GetAttribute("data-ex-answered") ?? "0",
+            System.Globalization.CultureInfo.InvariantCulture);
+        return grid.InvokeAsync(() => grid.Instance.InputTakenAt(kind, answered + 1));
+    }
 
     /// <summary>The keyboard in the Sheet, the Focus at <paramref name="address"/>, and
     /// <paramref name="typed"/> typed there.</summary>
@@ -420,7 +439,7 @@ public partial class PointingScopeTests : SheetTestContext
         Assert.Equal("=" + LookupR2, EditorText(page.Left));
     }
 
-    [Fact] // ADR-0058 / SH-35: the keyboard moving inside the Sheet — out of one element and into another at once — is not the keyboard leaving
+    [Fact] // ADR-0058 / SH-35 / ADR-0240 §6: the keyboard moving inside the Sheet — out of one element and into another — is not the keyboard leaving
     public async Task The_keyboard_moving_inside_the_sheet_does_not_stop_pointing()
     {
         var page = await RenderAsync();
@@ -429,16 +448,34 @@ public partial class PointingScopeTests : SheetTestContext
         page.Cut.Instance.PointedAt.Changed += () => changes++;
         var wrapper = page.Left.Find(".ex-sheet");
 
-        // As the browser raises them when focus moves from the root into the Cell Editor: in one task.
-        await page.Left.InvokeAsync(async () =>
-        {
-            var leaving = wrapper.FocusOutAsync(new FocusEventArgs());
-            await wrapper.FocusInAsync(new FocusEventArgs());
-            await leaving;
-        });
+        // As the browser raises them when focus moves from the root into the Cell Editor. The move
+        // crosses no edge of the Sheet's Input Root, so the grid's listener tells nothing, and nothing is
+        // heard: whatever the round trip between the two events, nothing waits for the second.
+        await wrapper.FocusOutAsync(new FocusEventArgs());
+        Assert.True(PointedAt(page.Positions));
+        await wrapper.FocusInAsync(new FocusEventArgs());
 
         Assert.Equal(0, changes);
         Assert.True(PointedAt(page.Positions));
+    }
+
+    [Fact] // ADR-0240 §6 / ADR-0058: in a Scope the Sheet claims the keyboard crossing its edge, and takes the crossing told in its place in the order
+    public async Task The_keyboard_crossing_the_sheets_edge_is_claimed_and_taken_in_order()
+    {
+        var page = await RenderAsync();
+        Assert.Equal("focusin focusout", page.Left.Find(".ex-sheet").GetAttribute("data-ex-claims"));
+        await StartTypingAsync(page.Left, "D2", "=");
+        Assert.True(PointedAt(page.Positions));
+
+        // The departure told under its number: the Sheet's handler takes it, and the order has answered it.
+        var grid = Grid(page.Left);
+        var before = grid.Find(".ex-grid > [data-ex-answered]").GetAttribute("data-ex-answered");
+        await KeyboardOutAsync(page.Left);
+
+        Assert.False(PointedAt(page.Positions));
+        var after = grid.Find(".ex-grid > [data-ex-answered]").GetAttribute("data-ex-answered");
+        Assert.Equal(int.Parse(before!, System.Globalization.CultureInfo.InvariantCulture) + 1,
+            int.Parse(after!, System.Globalization.CultureInfo.InvariantCulture));
     }
 
     [Fact] // ADR-0058 / SH-35: only the Sheet that holds the keyboard points; another Sheet of the Scope points in its turn, and is never pointed at

@@ -444,12 +444,13 @@ public class ShippedStylesheetTests
     public void The_hand_on_gives_the_consumers_control_the_keyboard_only_while_it_is_still_this_grids()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
-        var handOn = Regex.Match(script, @"handKeyboardTo: \(element, inTurn\) => \{.*?\n        \},", RegexOptions.Singleline);
-        Assert.True(handOn.Success, "handKeyboardTo(element, inTurn) is not in the module");
+        var handOn = Regex.Match(script, @"handKeyboardTo: \(element, inTurn, preventScroll\) => \{.*?\n        \},", RegexOptions.Singleline);
+        Assert.True(handOn.Success, "handKeyboardTo(element, inTurn, preventScroll) is not in the module");
         var body = handOn.Value;
 
-        // The hand-back's condition: this root's own focus, not a nested grid's, or none (ADR-0018)...
-        Assert.Contains("ownsFocus(active)", body, StringComparison.Ordinal);
+        // The hand-back's condition: this root's own focus, not a nested grid's, or a surface of the Input
+        // Root's own around it (ADR-0240 section 6), or none (ADR-0018)...
+        Assert.Contains("instanceHolds(active)", body, StringComparison.Ordinal);
         Assert.Contains("active === document.body", body, StringComparison.Ordinal);
         Assert.Contains("active === document.documentElement", body, StringComparison.Ordinal);
         // ...and not a field beside the rows with focus of its own, unless a press on the rows left
@@ -457,10 +458,11 @@ public class ShippedStylesheetTests
         Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
         Assert.Contains("active !== staleField", body, StringComparison.Ordinal);
         Assert.DoesNotContain("fromField", body, StringComparison.Ordinal);
-        // Only an element still on the page, focused as its own FocusAsync would focus it, scrolled
-        // into view; the field a press left standing is given up with the keyboard.
+        // Only an element still on the page, focused as its own FocusAsync would focus it: scrolled
+        // into view unless the caller asked it to stay where it stands (HandKeyboardToAsync's
+        // preventScroll, a Sheet Tab's); the field a press left standing is given up with the keyboard.
         Assert.Contains("element instanceof HTMLElement && element.isConnected", body, StringComparison.Ordinal);
-        Assert.Matches(new Regex(@"staleField = null;[\s\S]*target\.focus\(\);"), body);
+        Assert.Matches(new Regex(@"staleField = null;[\s\S]*target\.focus\(\{ preventScroll: preventScroll === true \}\);"), body);
         Assert.Contains("element.querySelectorAll('input, textarea')].find(isTextField)", body, StringComparison.Ordinal);
         Assert.Contains("target === firstText && isTextField(target)", body, StringComparison.Ordinal);
         Assert.Contains("target.select()", body, StringComparison.Ordinal);
@@ -469,7 +471,7 @@ public class ShippedStylesheetTests
         // control takes it in turn, from the hold, with the keys held for it (ADR-0050 item 16's
         // note of 2026-10-12): the same call, made then.
         Assert.Contains("if (inTurn !== true && handOff === 'frame' && answering", body, StringComparison.Ordinal);
-        Assert.Contains("handle.handKeyboardTo(frame, true);", script, StringComparison.Ordinal);
+        Assert.Contains("handle.handKeyboardTo(frame, true, frameInTurnStill);", script, StringComparison.Ordinal);
         // A read of document.activeElement, never of layout, and no listener of its own.
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle|addEventListener"), body);
     }
@@ -743,6 +745,11 @@ public class ShippedStylesheetTests
         // reclaimFocus's condition (ED-22 under the hunt, 2026-10-19).
         Assert.Contains("!active || active === document.body || active === document.documentElement || ownsFocus(active)", body, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"const ownsFocus = \(active\) => !!root && active instanceof Element && root\.contains\(active\)\s*&& active\.closest\('\.ex-grid'\) === root;"), script.Text);
+        // Where the core hands the keyboard on itself, a surface of the Input Root's own that claims its
+        // input — ExSheet's toolbar band, its Sheet Tabs — is the instance's too (ADR-0240 section 6,
+        // input-order ticket 04); a focus asked back into the root is not taken from it.
+        Assert.Contains("const instanceHolds = (active) => ownsFocus(active) || outerSurface(active) !== null;", script.Text, StringComparison.Ordinal);
+        Assert.DoesNotContain("instanceHolds(active)", body, StringComparison.Ordinal);
         // Where DOM focus is, or, granted as the keyboard leaves the Keyboard Field, where it is going:
         // the browser has it on nothing while it tells the departure (ADR-0080, 2026-10-12).
         Assert.Contains("const active = toward instanceof Element ? toward : document.activeElement;", body, StringComparison.Ordinal);
@@ -1193,7 +1200,8 @@ public class ShippedStylesheetTests
         // opened a Cell Editor behind the popover.
         Assert.Matches(new Regex(
             @"^\s*if \(k\.text !== undefined\) \{\s*"
-            + @"const holder = focusedControl\(\) \?\? \(deliveringOutside \? outsideControl\(\) : null\);\s*"
+            // A surface of the Input Root's that claims its keys (ADR-0240 section 6) holds it as well.
+            + @"const holder = focusedControl\(\) \?\? outerControl\(\) \?\? \(deliveringOutside \? outsideControl\(\) : null\);\s*"
             + @"if \(holder\) \{\s*"
             // A cancelled composition typed nothing: nothing to hand on, and nothing dropped.
             + @"if \(k\.text\.length === 0\) \{\s*continue;\s*\}\s*"
@@ -1674,6 +1682,7 @@ public class ShippedStylesheetTests
                 "new Set(['Shift', 'Control', 'Alt', 'Meta'])",
                 "new Set(['text', 'search', 'url', 'tel', 'email', 'password', 'date', 'month', 'week', 'time', 'datetime-local', 'number'])",
                 "new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number'])",
+                "new Set(['radio', 'checkbox'])",
                 "new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'])",
                 "new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'])",
                 "new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'])",

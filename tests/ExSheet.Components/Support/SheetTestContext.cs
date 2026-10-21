@@ -65,6 +65,18 @@ public abstract class SheetTestContext : BunitContext
     /// keyboard through the grid (ADR-0050 item 16's note of 2026-10-12).</summary>
     internal int HandedToCount => _handle.Invocations["handKeyboardTo"].Count;
 
+    /// <summary>The last control handed the keyboard through the grid, and whether it was asked to take it
+    /// without scrolling (ExGrid's <c>HandKeyboardToAsync(control, preventScroll)</c>).</summary>
+    internal (string Id, bool PreventScroll) LastHandedTo
+    {
+        get
+        {
+            var call = _handle.Invocations["handKeyboardTo"][^1];
+            return (((Microsoft.AspNetCore.Components.ElementReference)call.Arguments[0]!).Id,
+                call.Arguments.Count > 2 && call.Arguments[2] is true);
+        }
+    }
+
     /// <summary>How many times the keyboard has been asked back for the Sheet, either way.</summary>
     internal int KeyboardReturns => ReclaimCount + TakeBackCount;
 

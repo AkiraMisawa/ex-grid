@@ -517,29 +517,22 @@ public class SheetToolbarTests : SheetTestContext
         Assert.Empty(AnswerTakeBacks(cut));
     }
 
-    [Fact] // ADR-0100, ADR-0050 item 16's note of 2026-10-12: keys typed on the band while the keyboard is on its way back are held, in order, and handed to the grid; Enter never presses the item again
-    public async Task Keys_typed_on_the_way_back_are_the_sheets_in_order()
+    [Fact] // ADR-0240 §6 (input-order ticket 04, which replaced ADR-0050 item 16's band hold of 2026-10-12): the band holds no key of its own on the way back — each key typed on it is in the Sheet's Input Order, and the grid's key gate holds the keys behind Enter until Enter is answered, then hands them on where the keyboard landed (layer 3)
+    public async Task Keys_typed_on_the_way_back_are_held_by_the_input_order_not_the_band()
     {
         var cut = RenderToolbarSheet();
         await GoToAsync(cut, "B2");
         var toolbar = cut.Find(".ex-sheet-toolbar");
         await toolbar.FocusAsync(new FocusEventArgs());
         Assert.Equal(Item(cut, "Bold").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
+        var returned = KeyboardReturns;
 
-        // Enter presses Bold and asks for the keyboard back; on a circuit it lands a round trip later,
-        // and the keys typed meanwhile still reach the band.
         await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
-        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
-        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
-        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "x" });
 
-        // Bold was pressed once, and the keys after it pressed nothing, moved nothing on the band.
+        // Enter pressed Bold and gave the keyboard back, carrying no key the band held for the Sheet.
         Assert.True(FormatAt(cut, "B2").Font.Bold);
-        Assert.Equal(Item(cut, "Bold").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
-        Assert.Equal(["Enter", "ArrowRight", "x"], AnswerTakeBacks(cut).Select(k => k.Key));
-        // Handed on, the band's keys are its own again.
-        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
-        Assert.Equal(Item(cut, "Italic").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
+        Assert.True(KeyboardReturns > returned);
+        Assert.Empty(AnswerTakeBacks(cut));
     }
 
     [Fact] // ADR-0100 (the verifier's round-2 finding 1, a keyboard trap): a key typed on a control inside the band that holds the keyboard itself — a Chrome's own, which a Tab reaches — is that control's: the band holds nothing and presses nothing, and its own keys work after it

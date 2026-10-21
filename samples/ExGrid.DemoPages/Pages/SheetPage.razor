@@ -56,6 +56,13 @@
     <button id="sheet-format-cells" disabled="@_editing" @onclick="FormatCellsAsync">Format Cells…</button>
     <button id="sheet-insert-row" disabled="@_editing" @onclick="InsertRowAsync">Insert a row above row 2</button>
     <button id="sheet-revalue" @onclick="RevalueAsync">Revalue the positions by +1%</button>
+    @* ?scope=switch: a button that takes the Sheet out of its Pointing Scope and gives it back, leaving
+       the keyboard where it is (its press takes no focus), for the browser tests of the keyboard's
+       crossings while the Scope is given again (ADR-0240, ADR-0058). *@
+    @if (ScopeSwitch == "switch")
+    {
+        <button id="sheet-scope-switch" @onmousedown:preventDefault="true" @onclick="() => _inScope = !_inScope">@(_inScope ? "Leave the Pointing Scope" : "Join the Pointing Scope")</button>
+    }
 </div>
 
 <p class="demo-status">
@@ -177,7 +184,7 @@
     private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="@PinnedColumns" Chrome="_chrome" TimeZone="DayZone" Today="DayGiven"
                                               EditingChanged="_editingChanged" ViewportHeight="@(InWindowBox ? ViewportSize.Stretch : SheetHeight)" ViewportWidth="720"
                                               SelectionChanged="_selectionChanged" OnFormatKeyRefused="_formatKeyRefused"
-                                              PointingScope="_scope" OnPointingRefused="ShowPointingRefusal"
+                                              PointingScope="@(_inScope ? _scope : null)" OnPointingRefused="ShowPointingRefusal"
                                               @bind-ShowToolbar="_toolbarShown">
                                          <ToolbarContent>
                                              <DefaultToolbarRow />
@@ -186,6 +193,13 @@
                                              </ToolbarRow>
                                          </ToolbarContent>
                                      </ExSheet>;
+
+    /// <summary><c>switch</c> shows a button that takes the Sheet out of its Pointing Scope and back (ADR-0058).</summary>
+    [SupplyParameterFromQuery(Name = "scope")]
+    public string? ScopeSwitch { get; set; }
+
+    // Whether the Sheet is in the page's Pointing Scope: always, unless ?scope=switch's button took it out.
+    private bool _inScope = true;
 
     /// <summary><c>off</c> opens the Sheet without its Sheet Toolbar (ADR-0100).</summary>
     [SupplyParameterFromQuery(Name = "toolbar")]

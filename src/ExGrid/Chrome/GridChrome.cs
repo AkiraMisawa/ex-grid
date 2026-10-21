@@ -427,6 +427,19 @@ public sealed record GridPopoverContext(
     /// the opening focus is then not taken. Null only in a context the core did not make.
     /// </summary>
     public Func<ElementReference, bool, Task>? TakeFocus { get; init; }
+
+    /// <summary>
+    /// The Input Order's seam (ADR-0240 section 6), as <c>ExGrid.InOrderAsync</c> offers it: the
+    /// contents' handler of an input that changes the instance or moves the keyboard — an OK, a Cancel,
+    /// a choice made, a key the contents answer — calls it as it starts, with the kind of the event it
+    /// hears and its work, and is handled in its place among the grid's keys, presses and clicks. The
+    /// control declares the event in its <c>data-ex-claims</c> attribute (<c>click</c>, <c>keydown</c>,
+    /// <c>submit</c>, …), so the grid numbers it as it happens; a handler that declares an event calls this
+    /// every time it hears it. What the contents' draft holds — a field typed into, a box ticked — is not
+    /// an input and needs no call: the input that commits it is one. Null only in a context the core did
+    /// not make.
+    /// </summary>
+    public Func<GridInputKind, Func<Task>, Task>? InOrder { get; init; }
 }
 
 /// <summary>

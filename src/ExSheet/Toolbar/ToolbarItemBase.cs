@@ -81,6 +81,10 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     protected SheetToolbarContext Context => Toolbar
         ?? throw new InvalidOperationException($"{GetType().Name} is a Toolbar Item: it stands inside an ExSheet's ToolbarContent (ADR-0100).");
 
+    /// <summary>An input of this item's — its button's click — in its place in the Sheet's Input Order
+    /// (ADR-0240 section 6).</summary>
+    internal Task InOrderAsync(global::ExGrid.Chrome.GridInputKind kind, Func<Task> handling) => Context.InOrderAsync(kind, handling);
+
     /// <summary>What the item is and shows now.</summary>
     protected abstract ToolbarItemFace Face();
 

@@ -3,7 +3,7 @@
 Decided with the user, 2026-10-18, for `docs/specs/input-order/issues/01`. Grilled in two rounds; the
 user took the recommendation of every question, and of (1) after it was explained with an example.
 The inventory it rests on is `docs/specs/input-order/inventory.md`. Tickets 02 to 07 of the same spec build
-it in turn (7); ticket 02 is built ("As built", below).
+it in turn (7); tickets 02 and 04 are built ("As built", below).
 
 ## Why
 
@@ -206,6 +206,34 @@ The Chrome contexts' delegates may change shape to carry the order. Each change 
   one task on WebAssembly, is about 10 ms in 170 and swaps sides between passes. Ten Shift+F10, Escape, ↓
   in one task at 60 ms end on the wrong row on `main` in every round (four of the ↓ lost); the branch ends
   on the right one in about 3.1 s, the round trips each step waits for.
+
+## As built: ticket 04, ExSheet in the order (2026-10-21)
+
+Five questions were put to the user on 2026-10-20; the user took the recommendation of each.
+
+- **The seam is a method and a mark.** `ExGrid.InOrderAsync(GridInputKind, Func<Task>)`, and the same as
+  `GridPopoverContext.InOrder`, put a surface's handler in the order; the control carries
+  `data-ex-claims`, documented, so the script numbers its event. A handler whose input was told runs in
+  that number's turn; one called with nothing told runs after every input received so far.
+- **The Wrapper's lists and its Format Cells dialog wait for ticket 06.** ExSheet's Built-in surfaces
+  join here: the Sheet Toolbar's band and buttons, the Sheet Tabs (a press and the tab list's keys), and
+  Format Cells' OK and Cancel. The band's own queue of keys is gone; it holds keys only for a list on its
+  way, marking itself `data-ex-holds` so the script hands it the held keys in their order.
+- **The keyboard on the toolbar or the tabs is inside the Sheet.** A grant to hand the keyboard on widens
+  from the grid's root to the Input Root, for the grid's own hand-offs only: a late focus the grid asked
+  for no longer takes the keyboard back from the band.
+- **The Input Root is a DOM mark**, `data-ex-input-root`, on `.ex-sheet`. The script's capture listeners
+  attach there when the grid finds one around it, and to the grid's root otherwise.
+- **The keyboard crossing the Input Root's edge is numbered**, as `GridInputKind.KeyboardIn` and
+  `KeyboardOut`, through the focus listeners already allowed, when the Input Root names `focusin` and
+  `focusout` in its own `data-ex-claims`. That replaces the Pointing Scope's wait for a browser turn
+  (`BrowserTurn`, ADR-0058): a Sheet learns that it holds the keyboard in its place in the order. A crossing
+  is told only for an Input Root; asked of any other element, the two kinds do nothing.
+- **Found while building it:** a focus event whose target is not the active element is not a crossing; the
+  first focus inside the Sheet is its arrival when none was told; a Scope given again counts the next focus
+  inside as an arrival; the window returning counts only when focus comes back to the element it left;
+  Enter on a radio button or a checkbox in a popover form holds the keys behind it only once the form's
+  submission arrives, so a browser that submits nothing holds nothing.
 
 ## Added 2026-10-20, decided with the user: the Input Journal, a circuit that is down, and a paste cancelled
 

@@ -37,7 +37,11 @@
 @* With the Sheet Toolbar shown (ADR-0100), the same element is the Sheet's box: the toolbar above,
    the grid below with what the toolbar leaves. The element is always there, so showing the toolbar
    never re-creates the grid. *@
-<div class="ex-sheet" style="@FrameStyle" @attributes="_keyboardListeners">
+@* It is also the Sheet's Input Root (ADR-0240 section 6, data-ex-input-root): the grid's key listener
+   hears input on the whole Sheet from here, so the toolbar's keys and commands and the Sheet Tabs take
+   their place in one order with the grid's own keys and presses. In a Scope it claims the keyboard
+   crossing its edge (data-ex-claims, in _keyboardListeners). *@
+<div class="ex-sheet" data-ex-input-root style="@FrameStyle" @attributes="_keyboardListeners">
 @if (ShowToolbar)
 {
     <SheetToolbar Context="_toolbar" Content="ToolbarContent" HeightPx="ToolbarPx" />
@@ -69,7 +73,9 @@
    Excel draws them. A tab list to assistive technology, the selected tab its one tab stop. A press
    keeps the keyboard where it is, in the grid, and shows the Sheet; so do Ctrl+PageUp and
    Ctrl+PageDown, which the grid claims for the Sheet. Its height is the Formula Bar's, written inline
-   (ADR-0028), and the Sheet's ViewportHeight includes it. *@
+   (ADR-0028), and the Sheet's ViewportHeight includes it. A tab's press and the keys on the tab list
+   take their place in the grid's Input Order (ADR-0240 section 6): each tab claims them (data-ex-claims),
+   and a key typed straight after either acts on the Sheet it showed. *@
 @if (ShowSheetTabs && _workbook is { } tabbedWorkbook)
 {
     <div class="ex-sheet-tabs" role="tablist" aria-label="@SheetWords.SheetTabsName" style="@SheetTabsStyle" @ref="_tabList"
@@ -79,7 +85,7 @@
             var sheet = tabSheet;
             var selected = sheet == _sheet;
             <button type="button" role="tab" class="ex-sheet-tab" @ref="_tabs[sheet]" aria-selected="@(selected ? "true" : "false")" tabindex="@(selected ? "0" : "-1")"
-                    @onmousedown:preventDefault="true" @onclick="() => ShowSheetByUserAsync(sheet)">@sheet.Name</button>
+                    data-ex-claims="@TabClaims" @onmousedown:preventDefault="true" @onclick="() => ShowSheetByUserAsync(sheet)">@sheet.Name</button>
         }
     </div>
 }
@@ -99,8 +105,6 @@
    the grid has already announced in its own live region, in the Sheet's words (ADR-0203), is shown
    here and hidden from assistive technology, so that it is said once. *@
 <div class="ex-sheet-notice" role="status">@if (_noticeSaidByGrid) {<span aria-hidden="true">@_notice</span>} else {<text>@_notice</text>}</div>
-@* The browser's answer to a render, which a focusout waits for (ADR-0058). Renders nothing. *@
-@BrowserTurnMarkup
 @* ExSheet's stylesheet notice (ADR-0123, ERR-11), shown only by another version's stylesheet: last,
    so the toolbar and the grid stand where they always have. *@
 <div data-ex-notice="stylesheet" data-ex-stylesheet="@NoticeStylesheet" data-ex-stamp="@NoticeStamp" style="display: none">@StylesheetNoticeWords</div>
@@ -1955,7 +1959,10 @@
         _toolbar ??= new SheetToolbarContext(this, "ex-sheet-" + RuntimeHelpers.GetHashCode(this).ToString(CultureInfo.InvariantCulture),
             OpenToolbarChoicesAsync, _returnKeyboard,
             sentence => { Tell(sentence); StateHasChanged(); },
-            () => _ = InvokeAsync(StateHasChanged));
+            () => _ = InvokeAsync(StateHasChanged),
+            // The band's keys and the built-in buttons' clicks take their place in the grid's Input Order
+            // (ADR-0240 section 6): the Sheet is their Input Root.
+            InOrderAsync);
         // The toolbar is a frame of the Sheet's own outside the grid (ADR-0050 item 16): the keys
         // typed while the keyboard goes to it are held for it, and the keys typed on it while the
         // keyboard comes back are handed to the grid (ADR-0050 item 16's note of 2026-10-12).
