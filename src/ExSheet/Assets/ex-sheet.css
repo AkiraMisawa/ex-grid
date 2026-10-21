@@ -365,6 +365,11 @@
     scrollbar-width: thin;
     padding: 0 4px;
 }
+/* The tab list holds the keyboard only while a tab's element is swapped for its name's field, or back:
+   a moment between two holders, not a stop of its own, so it draws no ring. */
+.ex-sheet-tabs:focus {
+    outline: none;
+}
 .ex-sheet-tab {
     display: inline-flex;
     align-items: center;

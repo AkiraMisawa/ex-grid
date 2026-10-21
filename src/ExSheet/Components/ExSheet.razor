@@ -94,7 +94,11 @@
        render could add a listener. *@
     <div class="ex-sheet-tab-area" style="@SheetTabsStyle" @ref="_tabArea" data-ex-dragging="@(_dragFrom is not null ? "true" : null)"
          @onmouseup="EndTabDrag" @onmouseleave="EndTabDrag">
+        @* While a tab's element is swapped — the tab for its name's field as a rename begins, the field for
+           the tab as it ends — the tab list holds the keyboard (tabindex, and the keys typed on it claimed),
+           so that it is never on the page's body, where no listener of the grid's hears a key typed then. *@
         <div class="ex-sheet-tabs" role="tablist" aria-label="@SheetWords.SheetTabsName" @ref="_tabList"
+             tabindex="@(_tabListHolds ? "-1" : null)" data-ex-claims="@(_tabListHolds ? "keydown" : null)"
              @onkeydown="OnSheetTabKeyAsync">
             @* Keyed by its Sheet: an element reference is captured only as its element is made, so a tab
                element is made for each Sheet, never handed on to another, and _tabs holds every tab. *@

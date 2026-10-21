@@ -152,6 +152,7 @@ public class SheetTabOperationsTests : SheetTestContext
         Assert.Equal("Two", field.GetAttribute("value"));
         Assert.Equal("keydown", field.GetAttribute("data-ex-claims"));
         Assert.Equal("Two", SelectedTab(cut));
+        // Straight to the field: the keyboard stays in the grid, which stays drawn, until the field has it.
         Assert.Equal(handed + 1, HandedToCount);
         // The field's box, so the grid selects the whole name as it hands the keyboard over, where it stands.
         Assert.False(string.IsNullOrEmpty(LastHandedTo.Id));
@@ -451,7 +452,8 @@ public class SheetTabOperationsTests : SheetTestContext
 
         Assert.Empty(cut.FindAll(".ex-sheet-tab-menu"));
         Assert.Equal("Two", NameField(cut).GetAttribute("value"));
-        Assert.Equal(handed + 1, HandedToCount);
+        // Through the tab list, which holds it while the menu and the tab are drawn away, then to the field.
+        Assert.Equal(handed + 2, HandedToCount);
         await NameField(cut).InputAsync(new ChangeEventArgs { Value = "Summary" });
         await NameField(cut).KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
         Assert.Equal(["One", "Summary"], TabNames(cut));
@@ -983,9 +985,67 @@ public class SheetTabOperationsTests : SheetTestContext
 
         Assert.Equal([name, "Two"], TabNames(cut));
         Assert.Equal(returns, KeyboardReturns);
-        Assert.Equal(handed + 1, HandedToCount);
+        // Through the tab list, which holds it while the field is swapped for the tab again, then to the tab.
+        Assert.Equal(handed + 2, HandedToCount);
         Assert.Equal(TabReference(cut, name), LastHandedTo.Id);
     }
+
+    [Theory] // ADR-0331 §4, ADR-0240 §6: a rename begun from the keys on a tab and ended there never leaves the keyboard on the page's body: the element that holds it stays drawn until the next one has it, so the keys typed meanwhile are heard and held
+    [InlineData("Enter")]
+    [InlineData("Escape")]
+    public async Task ADR0331_a_rename_from_the_tab_list_never_draws_away_the_element_holding_the_keyboard(string key)
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await Tab(cut, "One").KeyDownAsync(new KeyboardEventArgs { Key = "F10", ShiftKey = true });
+        Assert.NotEmpty(cut.FindAll(".ex-sheet-tab-menu"));
+        // DOM focus as the browser keeps it: on the element the grid last handed the keyboard to, the menu
+        // now. Every render must leave that element drawn, and each element handed it must be able to take it.
+        var holder = Holder(cut, LastHandedTo.Id);
+        var lost = new List<string>();
+        OnHandKeyboardTo(id =>
+        {
+            holder = Holder(cut, id);
+            if (holder.Find() is not { } handed || !TakesFocus(handed)) lost.Add("handed to what cannot take it: " + holder.Name);
+        });
+        cut.OnMarkupUpdated += (_, _) =>
+        {
+            if (holder.Find() is null) lost.Add("drawn away while holding the keyboard: " + holder.Name);
+        };
+
+        await MenuKeyAsync(cut, "Enter");
+        Assert.Equal("One", NameField(cut).GetAttribute("value"));
+        Assert.Equal("the name's field", holder.Name);
+        await NameField(cut).InputAsync(new ChangeEventArgs { Value = "Costs" });
+        await NameField(cut).KeyDownAsync(new KeyboardEventArgs { Key = key });
+
+        Assert.Equal([key == "Enter" ? "Costs" : "One", "Two"], TabNames(cut));
+        Assert.Equal("the tab " + (key == "Enter" ? "Costs" : "One"), holder.Name);
+        Assert.Empty(lost);
+        // The tab list holds the keyboard only across the swap: it is no stop of its own after.
+        Assert.Null(cut.Find(".ex-sheet-tabs").GetAttribute("tabindex"));
+        Assert.Null(cut.Find(".ex-sheet-tabs").GetAttribute("data-ex-claims"));
+    }
+
+    // The element of the Sheet's own an element reference names, found in the markup as it stands each time:
+    // bUnit draws no reference's id, so it is matched to the field ExSheet holds it in.
+    private static (string Name, Func<IElement?> Find) Holder(IRenderedComponent<SheetComponent> cut, string id)
+    {
+        string Reference(string field) => ((ElementReference)typeof(SheetComponent)
+            .GetField(field, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .GetValue(cut.Instance)!).Id;
+        if (id == Reference("_menuElement")) return ("the menu", () => cut.FindAll(".ex-sheet-tab-menu").FirstOrDefault());
+        if (id == Reference("_renameBox")) return ("the name's field", () => cut.FindAll(".ex-sheet-tab-name-box").FirstOrDefault());
+        if (id == Reference("_tabList")) return ("the tab list", () => cut.FindAll(".ex-sheet-tabs").FirstOrDefault());
+        foreach (var name in new[] { "One", "Two", "Costs" })
+        {
+            if (id == TabReference(cut, name)) return ("the tab " + name, () => cut.FindAll("button.ex-sheet-tab").FirstOrDefault(tab => tab.TextContent == name));
+        }
+        return ("an element unknown", static () => null);
+    }
+
+    // Focusable as the grid's hand-off finds it: the element itself, or, for a box that takes none, a field inside it.
+    private static bool TakesFocus(IElement element) =>
+        element.LocalName is "button" or "input" || element.HasAttribute("tabindex") || element.QuerySelector("input") is not null;
 
     [Fact] // ADR-0331 §4: a rename begun by a double click gives the keyboard back to the grid, as before
     public async Task A_rename_from_a_double_click_gives_the_keyboard_to_the_grid()

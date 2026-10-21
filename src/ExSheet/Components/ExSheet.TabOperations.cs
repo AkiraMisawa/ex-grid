@@ -43,6 +43,9 @@ public partial class ExSheet
     // that ended it says something of its own: both are said, the first not lost under the second.
     private string? _saidOnLeaving;
     private ElementReference _renameBox;
+    // Whether the tab list holds the keyboard, while a tab's element is swapped for its name's field or
+    // back (HoldKeyboardOnTabListAsync).
+    private bool _tabListHolds;
 
     // The tab's menu, the Sheet it acts on, the command the keyboard is on, whether the keyboard came
     // from that Sheet's tab (Escape takes it back there; else to the grid), and the menu's own session.
@@ -81,6 +84,33 @@ public partial class ExSheet
         return drawn.Task;
     }
 
+    /// <summary>
+    /// The tab list takes the keyboard from the tab, the menu or the name's field that holds it, ahead of a
+    /// render that draws that element away: a rename's begin swaps the tab's element for the field, and its
+    /// end swaps it back, and the element taking the keyboard next is only drawn by that render. Between
+    /// the render and the hand-off to the new element, DOM focus would be on the page's body, where no
+    /// listener of the grid's hears a key — and a key typed then, at machine speed or over a circuit's
+    /// round trip, was lost: the C and the o of "Costs" typed straight after Rename, and the field then
+    /// took the keyboard with its whole name selected, so it read "sts" (ADR-0240 section 6, WB-14). The
+    /// tab list stays drawn throughout; while it holds, a key typed on it is claimed, held behind the
+    /// input under way and handed on, in order, to where that input leaves the keyboard. Granted as every
+    /// hand-off through the grid is: only while the keyboard is still the instance's.
+    /// </summary>
+    private async Task HoldKeyboardOnTabListAsync()
+    {
+        _tabListHolds = true;
+        await DrawnAsync();
+        if (_grid is { } grid) await grid.HandKeyboardToAsync(_tabList, preventScroll: true);
+    }
+
+    /// <summary>The tab list is no holder again, once the keyboard has gone on from it.</summary>
+    private void ReleaseTabList()
+    {
+        if (!_tabListHolds) return;
+        _tabListHolds = false;
+        StateHasChanged();
+    }
+
     /// <summary>A Workbook opened afresh: nothing of a gesture on the tabs it replaced stands, nor a tab of its Sheets.</summary>
     private void ForgetTabGestures()
     {
@@ -88,6 +118,7 @@ public partial class ExSheet
         _renaming = null;
         _renameEnding = false;
         _renameFromTab = false;
+        _tabListHolds = false;
         _saidOnLeaving = null;
         _renameRefused = false;
         _renameSession++;
@@ -169,6 +200,11 @@ public partial class ExSheet
     {
         if (RefuseSheetOperationWhileEditing() || _workbook is not { } workbook || !workbook.Sheets.Contains(sheet)) return;
         if (_renaming == sheet) return;
+        // The menu, or another name's field, holding the keyboard is drawn away below, and so is the tab
+        // where the keyboard came from the tab list: the tab list holds it meanwhile. A double click on a
+        // tab leaves the keyboard where it was, in the grid, which stays drawn.
+        var held = fromTab || _menuSheet is not null || _renaming is not null;
+        if (held) await HoldKeyboardOnTabListAsync();
         await LeaveTabGesturesAsync(KeyboardTo.Nowhere);
         if (sheet != _sheet)
         {
@@ -181,7 +217,14 @@ public partial class ExSheet
         _renameRefused = false;
         _renameSession++;
         await DrawnAsync();
-        if (_renaming == sheet && _grid is { } grid) await grid.HandKeyboardToAsync(_renameBox, preventScroll: true);
+        if (_grid is { } grid)
+        {
+            if (_renaming == sheet) await grid.HandKeyboardToAsync(_renameBox, preventScroll: true);
+            // Ended before the field had the keyboard — its Sheet taken away meanwhile: back to the grid,
+            // not left on the tab list.
+            else if (held) await grid.ReturnKeyboardAsync(_tabArea, static () => []);
+        }
+        ReleaseTabList();
     }
 
     // A name refused stays marked until it is changed: the change event Chrome raises for the Enter that
@@ -283,7 +326,8 @@ public partial class ExSheet
     /// <summary>
     /// Ends the name's edit, the keyboard going <paramref name="keyboard"/>: back to the grid first, while
     /// the field still holds it, and the field then goes; or, to the tab, once the tab is drawn again in the
-    /// field's place, within the same input, so the keys typed after it wait and reach the tab.
+    /// field's place, within the same input, the tab list holding it meanwhile, so the keys typed after it
+    /// are heard, wait and reach the tab.
     /// </summary>
     private async Task EndRenameAsync(KeyboardTo keyboard)
     {
@@ -294,6 +338,9 @@ public partial class ExSheet
         _renameSession++;
         if (keyboard == KeyboardTo.Tab && _workbook?.Sheets.Contains(sheet) != true) keyboard = KeyboardTo.Grid;
         if (keyboard == KeyboardTo.Grid && _grid is { } grid) await grid.ReturnKeyboardAsync(_tabArea, static () => []);
+        // The field holding the keyboard is drawn away below, and the tab that takes it after is only drawn
+        // then: the tab list holds it meanwhile.
+        else if (keyboard == KeyboardTo.Tab) await HoldKeyboardOnTabListAsync();
         _renaming = null;
         _renameEnding = false;
         _renameFromTab = false;
@@ -304,7 +351,13 @@ public partial class ExSheet
             return;
         }
         await DrawnAsync();
-        if (_renaming is null && _tabs.TryGetValue(sheet, out var tab) && _grid is { } tabs) await tabs.HandKeyboardToAsync(tab, preventScroll: true);
+        if (_renaming is null && _grid is { } tabs)
+        {
+            if (_tabs.TryGetValue(sheet, out var tab)) await tabs.HandKeyboardToAsync(tab, preventScroll: true);
+            // Its tab not drawn — its Sheet taken away meanwhile: back to the grid, not left on the tab list.
+            else await tabs.ReturnKeyboardAsync(_tabArea, static () => []);
+        }
+        ReleaseTabList();
     }
 
     // ---- The tab's menu ------------------------------------------------------------------------
@@ -476,9 +529,8 @@ public partial class ExSheet
         if (_menuSheet is not { } sheet || !CommandEnabled(kind, sheet, out _)) return;
         if (kind == SheetTabCommandKind.Rename)
         {
-            var fromTab = _menuFromTab;
-            await CloseTabMenuAsync(KeyboardTo.Nowhere);
-            await BeginRenameAsync(sheet, fromTab);
+            // The menu closes as the rename begins, once the tab list holds the keyboard it held.
+            await BeginRenameAsync(sheet, _menuFromTab);
             return;
         }
         await CloseTabMenuAsync(KeyboardTo.Grid);

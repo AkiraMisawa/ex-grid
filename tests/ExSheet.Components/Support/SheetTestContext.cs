@@ -120,6 +120,17 @@ public abstract class SheetTestContext : BunitContext
             return false;
         });
 
+    /// <summary>Runs <paramref name="heard"/> with the element reference's id at each hand-off of the keyboard
+    /// to a control of the Sheet's own through the grid (handKeyboardTo), as the grid makes it, so a test
+    /// can read what stood on screen at that moment. A handler that matches nothing, registered after the
+    /// one that answers: bUnit asks it first.</summary>
+    internal void OnHandKeyboardTo(Action<string> heard)
+        => _handle.SetupVoid(invocation =>
+        {
+            if (invocation.Identifier == "handKeyboardTo") heard(((Microsoft.AspNetCore.Components.ElementReference)invocation.Arguments[0]!).Id);
+            return false;
+        });
+
     /// <summary>How many times Escape with nothing to dismiss has told the gate to release Tab
     /// (ADR-0012, rewritten 2026-10-01). The handle has no blur: a call to one fails the strict
     /// stub.</summary>
