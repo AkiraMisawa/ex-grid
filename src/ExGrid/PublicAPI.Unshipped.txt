@@ -117,6 +117,7 @@ ExGrid.Components.ExGrid<TRow>.ReadView() -> ExGrid.Components.GridView
 ExGrid.Components.ExGrid<TRow>.SelectionAfterInputsAsync() -> System.Threading.Tasks.Task<ExGrid.Selection.GridSelection!>!
 ExGrid.Components.ExGrid<TRow>.ShowViewWith(ExGrid.Components.GridView view) -> void
 ExGrid.Components.ExGrid<TRow>.ShowViewWith(ExGrid.Components.GridView view, ExGrid.Selection.SelectionRange range, ExGrid.Selection.CellPosition focus) -> void
+ExGrid.Components.ExGrid<TRow>.ShowViewWithMatch(ExGrid.Components.GridView view, ExGrid.Selection.CellPosition match) -> void
 ExGrid.Components.ExGridRow<TRow>.CurrentMatch.get -> int
 ExGrid.Components.ExGridRow<TRow>.CurrentMatch.set -> void
 ExGrid.Components.ExGridRow<TRow>.MatchMarks.get -> ExGrid.Components.MatchMarks<TRow!>?

@@ -176,6 +176,22 @@ public sealed class MudSheetChrome : ISheetChrome
     }
 
     /// <summary>
+    /// A Sheet's find panel in MudBlazor's controls (ADR-0332 §5): <see cref="Grid"/>'s find panel, control for
+    /// control, with Within as a <c>MudRadioGroup</c>. What a step finds and what Replace writes are ExSheet's,
+    /// in <paramref name="context"/>.
+    /// </summary>
+    public RenderFragment? SheetFindPanel(SheetFindContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return builder =>
+        {
+            builder.OpenComponent<MudSheetFindPanel>(0);
+            builder.AddComponentParameter(1, nameof(MudSheetFindPanel.Context), context);
+            builder.CloseComponent();
+        };
+    }
+
+    /// <summary>
     /// Format Cells as a <c>MudDialog</c> (ADR-0071). ExSheet renders the fragment beside the grid
     /// from the opening until OK or Cancel; each opening is a dialog of its own.
     /// </summary>

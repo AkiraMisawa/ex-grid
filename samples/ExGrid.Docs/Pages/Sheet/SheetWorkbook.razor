@@ -193,7 +193,69 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
         </ul>
     </DocsSection>
 
+    <DocsSection Title="Find and Replace">
+        <p>
+            <kbd>Ctrl</kbd> + <kbd>F</kbd> on a Sheet opens its find panel, and <kbd>Ctrl</kbd> + <kbd>H</kbd> opens it with
+            Replace, as in Excel. There is nothing to wire: ExSheet answers both itself. The panel is ExGrid's — the
+            field, Match case, Match entire cell contents, the two steps, the Replace field and its two buttons — with
+            one choice added, <b>Within</b>: the Sheet shown, which is the default, or the Workbook. ExSheet keeps the
+            choice across a close and reopen, as it keeps the text.
+        </p>
+        <ul>
+            <li>
+                <b>Find matches what a cell shows</b>: a Formula's Value as painted, never its Entry, in every row, by rows
+                from the cell after the Focus and wrapping. Within the Sheet, with more than one cell selected, only the
+                Selection is searched.
+            </li>
+            <li>
+                <b>Within the Workbook, a step goes on from Sheet to Sheet</b> in tab order (backwards with
+                <kbd>Shift</kbd> + <kbd>Enter</kbd>), wrapping past the last back to the Sheet you started on. A match on
+                another Sheet shows that Sheet with the cell selected, marked as the current match, and the next step goes
+                on from there. The Selection is no scope here: every cell of every Sheet is searched. While a cell is
+                being edited no other Sheet is shown, and the notice says why.
+            </li>
+            <li>
+                <b>Replace matches the Entry</b> — the text the Cell Editor opens with, so a Formula's text, not its
+                Value. Replace writes the current match as if you had typed it, one step on the undo stack, and finds
+                the next match; the first press, with no match current, only finds one, so you see what the next press
+                writes.
+            </li>
+            <li>
+                <b>Replace All is all or nothing, and one step.</b> It writes every match, in the Sheet shown (inside the
+                Selection when more than one cell is selected) or in every Sheet of the Workbook, with no cap, and the
+                panel says how many cells it replaced. If a replaced Formula cannot be read, nothing is written, and the
+                panel names each such cell — by its Sheet as well, <code>Summary!B</code>, within the Workbook. One
+                <kbd>Ctrl</kbd> + <kbd>Z</kbd> undoes the whole of it, on every Sheet, and <code>WorkbookChanged</code> is
+                raised once.
+            </li>
+            <li>
+                <b>The marks are the Sheet's.</b> While the panel holds a text, every painted cell that a step would find is
+                marked, the current match apart: the same rule, displayed text and only cells that hold an Entry, so a
+                mark never shows a match a step does not reach.
+            </li>
+            <li>
+                <b>Drawn by the Chrome.</b> With <code>MudSheetChrome</code> the panel is ExGrid.MudBlazor's, Within a
+                <code>MudRadioGroup</code>. A Chrome of your own draws it through <code>ISheetChrome.SheetFindPanel</code>,
+                which is handed a <code>SheetFindContext</code>: the grid's <code>FindContext</code>, Within and its
+                callback, and the outcome in words. Its words are <code>SheetFindLabelIds</code>, translated through
+                <code>CommandLabel</code> or the Chrome's own. A Chrome that draws no Sheet panel gets the built-in one; the
+                grid's own <code>IGridChrome.FindPanel</code> is not asked on a Sheet.
+            </li>
+        </ul>
+        <DocsExample Builtin="typeof(FindReplace)" Mud="typeof(FindReplaceMud)" CodeOpen="true"
+                     Files="@(["Examples/Sheet/Expenses.cs"])">
+            Click a cell of Claim and press <kbd>Ctrl</kbd> + <kbd>F</kbd>, type <code>limit</code> and press
+            <kbd>Enter</kbd>: within the Sheet there is no match. Choose Workbook and press <kbd>Enter</kbd> again: Summary
+            is shown with <code>Approved limit</code> selected, and the next <kbd>Enter</kbd> moves to
+            <code>Over the limit</code>. Now press <kbd>Ctrl</kbd> + <kbd>H</kbd>, replace <code>limit</code> with
+            <code>cap</code> and press Replace All: the panel says it replaced 2 cells, and Undo takes both back in one
+            step.
+        </DocsExample>
+    </DocsSection>
+
     <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExSheet.SheetFindContext)" />
+        <ApiTable Type="typeof(global::ExSheet.SheetFindLabelIds)" />
         <ApiTable Type="typeof(global::ExSheet.Engine.WorkbookDocument)" />
         <ApiTable Type="typeof(global::ExSheet.Engine.WorkbookChange)" />
         <ApiTable Type="typeof(global::ExSheet.SheetsChange)" />

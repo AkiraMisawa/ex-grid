@@ -50,6 +50,6 @@ public static class SheetCommandIds
         DeleteColumns => "Delete columns",
         FormatCells => "Format Cells…",
         SummaryRefused => SheetWords.SummaryRefusedEnglish,
-        _ => SheetWords.RefusalWords(id),
+        _ => SheetFindLabelIds.EnglishFor(id) ?? SheetWords.RefusalWords(id),
     };
 }

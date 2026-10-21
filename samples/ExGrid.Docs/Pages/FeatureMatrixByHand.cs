@@ -60,6 +60,7 @@ internal static class FeatureMatrixByHand
         new("ISheetChrome.SheetTab", "A Sheet Tab's face", ["ADR-0331"]),
         new("ISheetChrome.SheetTabAdd", "The button that adds a Sheet", ["ADR-0331"]),
         new("ISheetChrome.SheetTabMenu", "A Sheet Tab's menu", ["ADR-0331"]),
+        new("ISheetChrome.SheetFindPanel", "A Sheet's find panel, with Within", ["ADR-0332"]),
         new("IPivotChrome.GridChrome", "The report's grid, dressed by ExGrid.MudBlazor's Chrome", ["ADR-0061", "ADR-0062"]),
         new("IPivotChrome.FieldList", "The PivotTable Fields pane", ["ADR-0061"]),
         new("IPivotChrome.ReportFilters", "The report filter band", ["ADR-0061"]),

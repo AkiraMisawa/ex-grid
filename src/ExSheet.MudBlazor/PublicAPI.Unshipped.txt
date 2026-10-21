@@ -1,9 +1,17 @@
 #nullable enable
+ExSheet.MudBlazor.MudSheetChrome.SheetFindPanel(ExSheet.SheetFindContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.SheetTab(ExSheet.SheetTabContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.SheetTabAdd() -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.SheetTabMenu(ExSheet.SheetTabMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetFindPanel
+ExSheet.MudBlazor.MudSheetFindPanel.Context.get -> ExSheet.SheetFindContext!
+ExSheet.MudBlazor.MudSheetFindPanel.Context.set -> void
+ExSheet.MudBlazor.MudSheetFindPanel.MudSheetFindPanel() -> void
 ExSheet.MudBlazor.MudSheetTabMenu
 ExSheet.MudBlazor.MudSheetTabMenu.Context.get -> ExSheet.SheetTabMenuContext!
 ExSheet.MudBlazor.MudSheetTabMenu.Context.set -> void
 ExSheet.MudBlazor.MudSheetTabMenu.MudSheetTabMenu() -> void
+override ExSheet.MudBlazor.MudSheetFindPanel.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+override ExSheet.MudBlazor.MudSheetFindPanel.OnParametersSet() -> void
+~override ExSheet.MudBlazor.MudSheetFindPanel.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExSheet.MudBlazor.MudSheetTabMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void

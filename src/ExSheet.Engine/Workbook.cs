@@ -126,7 +126,7 @@ public sealed partial class Workbook
     public CultureInfo Culture { get; }
 
     /// <summary>
-    /// The Sheets, in the order their tabs stand. Change one through <see cref="Do"/>: a change made on
+    /// The Sheets, in the order their tabs stand. Change one through <see cref="Do(string, SheetEdit)"/>: a change made on
     /// the Sheet itself recalculates the whole Workbook too, but reports only what it changed on that Sheet.
     /// </summary>
     public IReadOnlyList<Sheet> Sheets => _sheets;
@@ -193,7 +193,82 @@ public sealed partial class Workbook
         return new WorkbookStep(target, made, () => Collecting(target, step!.Undo), () => Collecting(target, step!.Redo), edit.Ranges);
     }
 
-    /// <summary>Whether <see cref="Do"/> would refuse <paramref name="edit"/> on the Sheet named <paramref name="sheet"/> as it stands, and why; <see langword="null"/> when it would not.</summary>
+    /// <summary>
+    /// Does several edits, each on the Sheet it names, as one operation, and returns the one step that
+    /// undoes them all (ADR-0048, ADR-0331 §3): a Replace All over the Workbook (ADR-0332 §5) is one step
+    /// on the undo stack and one change (ADR-0180), however many Sheets it writes on. The edits are done in
+    /// the order given and undone in the reverse. Every edit is checked before any is done, and one that
+    /// cannot be done — refused, or a typed Formula that cannot be read — leaves the Workbook as it was:
+    /// the edits done before it are put back, and the count of changes with them. A Sheet operation
+    /// (adding, renaming, moving, copying or deleting a Sheet) is done alone, with
+    /// <see cref="Do(string, SheetEdit)"/>.
+    /// </summary>
+    /// <param name="edits">The edits, each with the name of the Sheet it is done on; at least one.</param>
+    /// <exception cref="ArgumentException">No edit is given, a Sheet operation is among them, or no Sheet of
+    /// the Workbook is named as one of them names it.</exception>
+    /// <exception cref="SheetRefusedException">A Sheet refuses its edit (<see cref="Check"/> says why); nothing changed.</exception>
+    /// <exception cref="FormulaSyntaxException">A typed Formula cannot be read; nothing changed.</exception>
+    public WorkbookStep Do(IReadOnlyList<(string Sheet, SheetEdit Edit)> edits)
+    {
+        ArgumentNullException.ThrowIfNull(edits);
+        if (edits.Count == 0) throw new ArgumentException("An operation is at least one edit.", nameof(edits));
+        var targets = new Sheet[edits.Count];
+        for (var i = 0; i < edits.Count; i++)
+        {
+            ArgumentNullException.ThrowIfNull(edits[i].Edit, nameof(edits));
+            if (edits[i].Edit is SheetEdit.WorkbookEdit)
+            {
+                throw new ArgumentException("A Sheet operation is done alone, with Do(sheet, edit) (ADR-0331).", nameof(edits));
+            }
+            targets[i] = Named(edits[i].Sheet);
+        }
+        for (var i = 0; i < edits.Count; i++)
+        {
+            if (targets[i].Check(edits[i].Edit) is { } refusal) throw new SheetRefusedException(refusal);
+        }
+        var first = targets[0];
+        var steps = new List<SheetStep>(edits.Count);
+        var countBefore = Changes;
+        WorkbookChange change;
+        try
+        {
+            change = AsOneChange(() => Collecting(() =>
+            {
+                for (var i = 0; i < edits.Count; i++)
+                {
+                    var step = targets[i].Do(edits[i].Edit);
+                    steps.Add(step);
+                    Collect(targets[i], step.Change);
+                }
+                return (first, SheetChange.None);
+            }));
+        }
+        catch
+        {
+            // Put back what was done before the edit that could not be, with the count of changes: the
+            // same Entries, seed and count draw the same, so the Workbook is as it was (ADR-0180).
+            AsOneChange(() => Collecting(() =>
+            {
+                for (var i = steps.Count - 1; i >= 0; i--) Collect(steps[i].Sheet, steps[i].Undo());
+                return (first, SheetChange.None);
+            }));
+            if (Changes != countBefore) SetSeed(Seed, countBefore);
+            throw;
+        }
+        return new WorkbookStep(first, change,
+            () => AsOneChange(() => Collecting(() =>
+            {
+                for (var i = steps.Count - 1; i >= 0; i--) Collect(steps[i].Sheet, steps[i].Undo());
+                return (first, SheetChange.None);
+            })),
+            () => AsOneChange(() => Collecting(() =>
+            {
+                foreach (var step in steps) Collect(step.Sheet, step.Redo());
+                return (first, SheetChange.None);
+            })));
+    }
+
+    /// <summary>Whether <see cref="Do(string, SheetEdit)"/> would refuse <paramref name="edit"/> on the Sheet named <paramref name="sheet"/> as it stands, and why; <see langword="null"/> when it would not.</summary>
     /// <exception cref="ArgumentException">No Sheet of the Workbook is named <paramref name="sheet"/>.</exception>
     public SheetRefusal? Check(string sheet, SheetEdit edit) => Named(sheet).Check(edit);
 

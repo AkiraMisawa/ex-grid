@@ -584,3 +584,7 @@
     transform: translate(0, -50%);
     font-weight: 600;
 }
+/* A Sheet's find panel (ADR-0332 §5): Within, its two choices on one line under the options, with no
+   box of the fieldset's own, as the grid's panel draws its options. */
+.ex-sheet-find-within { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.ex-sheet-find-within legend { float: left; padding: 0; }

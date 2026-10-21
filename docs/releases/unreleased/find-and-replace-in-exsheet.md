@@ -1,0 +1,5 @@
+Product: ExSheet
+Kind: Added
+ADR: 0332
+
+Ctrl+H on a Sheet now opens the find panel with Replace, where before the key was refused. ExSheet draws the panel itself in both Chromes, adding Within: the Sheet shown (the default) or the Workbook. Within the Workbook, a step goes on to the next Sheet in tab order, wrapping, and a match on another Sheet shows that Sheet with the cell selected as the current match. Replace matches each cell's Entry, a Formula's text included, and writes it as typing would, one undo step. Replace All is all or nothing with no cap: a replaced Formula that cannot be read refuses it all and names each cell, with its Sheet when within the Workbook. Otherwise it is one undo step across every Sheet it writes, and the panel says the count. The Match Mark uses ExSheet's own rule, so it marks exactly the cells a step finds. A Chrome draws the panel through the new `ISheetChrome.SheetFindPanel`, handed a `SheetFindContext`, with words by `SheetFindLabelIds`; `MudSheetChrome` draws it with Within as a `MudRadioGroup`. The engine's new `Workbook.Do(edits)` does edits on several Sheets as one operation and one undo step.

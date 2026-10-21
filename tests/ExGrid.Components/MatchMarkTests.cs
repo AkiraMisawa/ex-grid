@@ -432,6 +432,42 @@ public class MatchMarkTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-match-mark-current"));
     }
 
+    [Fact] // ADR-0332 §4, §5: a match a Consumer shows with a view handed ahead — ExSheet's on another Sheet — is the current match, marked apart, and the next step goes on from it
+    public async Task ADR0332_a_match_shown_with_a_view_is_the_current_match()
+    {
+        FindMatchOf<TestRow> rule = static (row, column, pattern) => GridFind.Matches(column.Info.TextOf(row), pattern);
+        var cut = RenderWithOwnFind(rule);
+        await PressAsync(cut, "f", ctrl: true);
+        await TypeAsync(cut, "Row 00000");
+
+        await cut.InvokeAsync(() => cut.Instance.ShowViewWithMatch(new GridView(1, GridSelection.Empty, 0, 0), new CellPosition(3, 0)));
+        cut.Render(ps => ps.Add(g => g.Window, TestRows.Many(200)).Add(g => g.RowSequenceVersion, 1));
+
+        Assert.Equal(new CellPosition(3, 0), _selection!.Focus);
+        Assert.Equal("0*", Marks(cut)["Row 000003"]);
+        Assert.Single(cut.FindAll(".ex-match-mark-current"));
+
+        await NextAsync(cut);
+        Assert.Equal(new CellPosition(4, 0), _selection!.Focus);
+        Assert.Equal("0*", Marks(cut)["Row 000004"]);
+    }
+
+    [Fact] // ADR-0332 §4: a match handed while the panel is closed is no current match: nothing is marked once it opens
+    public async Task ADR0332_a_match_shown_with_the_panel_closed_is_not_current()
+    {
+        FindMatchOf<TestRow> rule = static (row, column, pattern) => GridFind.Matches(column.Info.TextOf(row), pattern);
+        var cut = RenderWithOwnFind(rule);
+
+        await cut.InvokeAsync(() => cut.Instance.ShowViewWithMatch(new GridView(1, GridSelection.Empty, 0, 0), new CellPosition(3, 0)));
+        cut.Render(ps => ps.Add(g => g.Window, TestRows.Many(200)).Add(g => g.RowSequenceVersion, 1));
+        await PressAsync(cut, "f", ctrl: true);
+        await TypeAsync(cut, "Row 00000");
+
+        Assert.Equal(new CellPosition(3, 0), _selection!.Focus);
+        Assert.Equal("0", Marks(cut)["Row 000003"]);
+        Assert.Empty(cut.FindAll(".ex-match-mark-current"));
+    }
+
     [Fact] // ADR-0332 §4: a Template cell has displayed text a step lands on, so it is marked like any other — the current match too — and an Action cell is not
     public async Task ADR0332_a_template_cell_is_marked_and_can_be_the_current_match()
     {
