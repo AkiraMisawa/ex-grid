@@ -112,7 +112,8 @@ public sealed class Entry : IEquatable<Entry>
     /// </summary>
     /// <exception cref="FormulaSyntaxException">
     /// The text is a Formula that cannot be read, or text with a leading <c>+</c> or <c>-</c> that
-    /// Excel reads as a Formula using syntax the engine does not implement (<c>-B2 C2</c>).
+    /// Excel reads as a Formula using syntax the engine does not implement (<c>-B2 C2</c>) or nested
+    /// past the limits the engine reads.
     /// </exception>
     public static Entry? Parse(string typed, CultureInfo culture)
     {
@@ -135,7 +136,9 @@ public sealed class Entry : IEquatable<Entry>
     /// <exception cref="FormulaSyntaxException">
     /// Excel reads the text as a Formula whose syntax the engine does not implement: <c>-B2 C2</c>,
     /// the intersection of two References, is refused by name, not kept as text, since Excel makes
-    /// it the Formula <c>=-B2 C2</c> (TYPED-054; ADR-0047, third run).
+    /// it the Formula <c>=-B2 C2</c> (TYPED-054; ADR-0047, third run). So is a Formula refused for its
+    /// size alone, nested past the limits (<see cref="FormulaSyntaxException.IsBeyondLimit"/>): it is a
+    /// Formula still, and kept as text it would quietly be another Entry than the one typed.
     /// </exception>
     internal static Entry? SignedFormula(string typed)
     {
@@ -144,7 +147,7 @@ public sealed class Entry : IEquatable<Entry>
         {
             return FromFormula("=" + typed);
         }
-        catch (FormulaSyntaxException e) when (!e.IsUnimplemented)
+        catch (FormulaSyntaxException e) when (!e.IsUnimplemented && !e.IsBeyondLimit)
         {
             return null;
         }

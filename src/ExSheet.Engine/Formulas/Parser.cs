@@ -269,8 +269,13 @@ internal sealed partial class Parser
     /// </summary>
     private void Enter(Token at)
     {
-        // A host whose threads have little stack is refused the same way, never crashed on.
-        if (++_nesting > MostNesting || !RuntimeHelpers.TryEnsureSufficientExecutionStack()) throw TooDeep(at.Position);
+        if (++_nesting > MostNesting) throw TooDeep(at.Position);
+        // A host whose thread has too little stack for this Formula refuses it, never crashes on it.
+        if (!RuntimeHelpers.TryEnsureSufficientExecutionStack())
+        {
+            throw new FormulaSyntaxException(_formula, at.Position,
+                "the stack of the thread reading it cannot hold a Formula nested this deep; ExSheet refuses it rather than stop.") { IsBeyondLimit = true };
+        }
     }
 
     /// <summary>Goes into a call's arguments, refusing a 65th level of nested functions as Excel does (<see cref="MostNestedFunctions"/>).</summary>
@@ -279,7 +284,7 @@ internal sealed partial class Parser
         if (_functions + 1 > MostNestedFunctions)
         {
             throw new FormulaSyntaxException(_formula, name.Position,
-                $"functions are nested more than {MostNestedFunctions} levels deep; Excel refuses such a Formula too.");
+                $"functions are nested more than {MostNestedFunctions} levels deep; Excel refuses such a Formula too.") { IsBeyondLimit = true };
         }
         _functions++;
         Enter(name);
@@ -291,7 +296,7 @@ internal sealed partial class Parser
 
     private FormulaSyntaxException TooDeep(int position) =>
         new(_formula, position,
-            $"the Formula is nested more than {MostNesting} levels deep (parentheses, signs, functions, and operators within operators); ExSheet cannot compute one so deep.");
+            $"the Formula is nested more than {MostNesting} levels deep (parentheses, signs, functions, and operators within operators); ExSheet cannot compute one so deep.") { IsBeyondLimit = true };
 
     private FunctionNode ParseCall(Token name, FunctionDefinition? function)
     {

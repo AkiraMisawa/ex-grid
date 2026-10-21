@@ -220,24 +220,72 @@ public class FormulaDepthTests
         Assert.Equal(126, sheet.Number("A1"));
     });
 
-    [Fact] // ADR-0047 and the spine: on a thread whose stack runs short all the same, the Formula is refused, not the process ended
-    public void A_formula_the_stack_cannot_hold_is_refused_not_crashed_on() => OnSmallStack(() =>
+    [Fact] // ADR-0047 and the spine: a Formula computed where the stack runs short all the same is refused (#VALUE!), not the process ended
+    public void A_formula_computed_where_the_stack_runs_short_is_refused_not_crashed_on()
     {
-        // The runtime keeps the last 128 KB of a 64-bit thread's stack in reserve, so on 160 KB the
-        // stack runs short within a few calls: on entry, or while the Formula is computed. Either way
-        // it is said, never crashed on.
+        // Read on an ordinary thread; computed again on a 160 KB thread, at the edge of the stack the
+        // runtime keeps in reserve, where the evaluator's first call finds it short.
         var sheet = NewSheet();
-        try
+        sheet.Enter("A1", "1");
+        sheet.Enter("B1", NamesReadThroughCalls().Replace("LET(x_0,1", "LET(x_0,A1", StringComparison.Ordinal));
+        Assert.Equal(126, sheet.Number("B1"));
+
+        OnSmallStack(() => AtStackEdge(() => sheet.Enter("A1", "2")), stack: 160 * 1024);
+        Assert.True(sheet.Value("B1")!.Value.IsRefused, sheet.Value("B1")!.Value.ToString());
+
+        // With the stack to compute it, it is computed again.
+        sheet.Enter("A1", "3");
+        Assert.Equal(128, sheet.Number("B1"));
+    }
+
+    [Fact] // ADR-0047 and the spine: a Formula read where the stack runs short is refused on entry, saying so, however shallow
+    public void A_formula_read_where_the_stack_runs_short_is_refused_with_its_own_reason() => OnSmallStack(() => AtStackEdge(() =>
+    {
+        var refusal = Assert.Throws<FormulaSyntaxException>(() => Entry.FromFormula("=(1)"));
+        Assert.Contains("stack", refusal.Reason);
+        Assert.DoesNotContain("levels deep", refusal.Reason);
+        Assert.True(refusal.IsBeyondLimit);
+    }), stack: 160 * 1024);
+
+    /// <summary>Runs <paramref name="test"/> once the runtime says the thread's stack is short (<see cref="System.Runtime.CompilerServices.RuntimeHelpers.TryEnsureSufficientExecutionStack"/>), inside the reserve it keeps.</summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static void AtStackEdge(Action test)
+    {
+        if (!System.Runtime.CompilerServices.RuntimeHelpers.TryEnsureSufficientExecutionStack())
         {
-            sheet.Enter("A1", NamesReadThroughCalls());
-        }
-        catch (FormulaSyntaxException refusal)
-        {
-            Assert.Contains("levels deep", refusal.Reason);
+            test();
             return;
         }
-        Assert.True(sheet.Value("A1")!.Value.IsRefused, sheet.Value("A1")!.Value.ToString());
-    }, stack: 160 * 1024);
+        Span<byte> pad = stackalloc byte[512];
+        pad[0] = 1;
+        AtStackEdge(test);
+        Assert.Equal(1, pad[0]);
+    }
+
+    [Theory] // ADR-0047, third run: text typed after a sign without '=' that is a Formula past the limits is refused by name, never kept as text
+    [InlineData("-", "ABS(", "1", ")", 65)]
+    [InlineData("-", "(", "1", ")", 300)]
+    [InlineData("+", "-", "1", "", 300)]
+    public void A_signed_formula_past_the_limits_is_refused_not_kept_as_text(string sign, string open, string inner, string close, int levels) => OnSmallStack(() =>
+    {
+        var typed = sign + string.Concat(Enumerable.Repeat(open, levels)) + inner + string.Concat(Enumerable.Repeat(close, levels));
+        var sheet = NewSheet();
+        var refusal = Assert.Throws<FormulaSyntaxException>(() => sheet.Enter("A1", typed));
+
+        Assert.True(refusal.IsBeyondLimit);
+        Assert.Null(sheet.Value("A1"));
+        Assert.True(Entry.IsSignedFormula(typed)); // and text that spells one keeps its apostrophe
+    });
+
+    [Fact] // ADR-0047: a chain's References and calls are read in the text's order, as they were before it was walked in a loop
+    public void A_chains_references_and_calls_keep_the_texts_order()
+    {
+        var references = Parser.Parse("=A1+B1*C1-D1^E1&F1").References.Select(r => new CellAddress(r.Row1, r.Column1).ToString());
+        Assert.Equal(["A1", "B1", "C1", "D1", "E1", "F1"], references);
+
+        var calls = Parser.Parse("=ABS(SUM(1))+MAX(2)*MIN(3)-ROUND(INT(4),0)").Calls.Select(c => c.Name);
+        Assert.Equal(["ABS", "SUM", "MAX", "MIN", "ROUND", "INT"], calls);
+    }
 
     /// <summary>A <c>LET</c> of 126 names, each <c>ABS</c> of the one before plus 1: 126.</summary>
     private static string NamesReadThroughCalls()

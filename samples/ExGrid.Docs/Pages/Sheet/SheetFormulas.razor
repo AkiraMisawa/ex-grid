@@ -30,8 +30,10 @@
             so is a Formula nested more than 256 levels deep, which the engine cannot compute safely: parentheses,
             signs, <code>%</code>, functions and an operation on the right of another each count a level, and a
             <code>LET</code> name one more than the value it is bound to. The Sheet says why, as for any Formula it
-            cannot read. Should the host's stack run short all the same, the Formula is refused with
-            <code>#VALUE!</code>, never the server stopped.
+            cannot read; such text typed after a sign without <code>=</code> is refused the same way, not kept as
+            text. A Sheet Document or an <code>.xlsx</code> workbook holding such a Formula is refused on open, whole.
+            Should the host's stack run short all the same, the Formula is refused: as it is typed, saying the
+            stack cannot hold it, or, while it is computed, with <code>#VALUE!</code>. The server is never stopped.
         </p>
         <DocsExample Builtin="typeof(Formulas)" Mud="typeof(FormulasMud)" Files="@(["Examples/Sheet/RegionalSales.cs"])">
             Select a total to read its Formula in the Formula Bar, press F2 to edit it, change a quarter's figure and watch the totals, the
