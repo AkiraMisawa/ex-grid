@@ -141,7 +141,7 @@ public partial class ExGrid<TRow>
         _actionPressAnswered = false;
         // The click of a press the core has answered already, which its component, disposed since,
         // still delivered: the press was acted on once.
-        var input = ClaimInput(ClaimClick);
+        var input = ClaimInput(ClaimKinds.Click);
         if (press is null && answered && !RendersRowComponentOf(args.Row))
             return QueueRowCommand(input, () => Task.CompletedTask);
         if (input > 0)
