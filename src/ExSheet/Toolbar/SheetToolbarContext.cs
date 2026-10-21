@@ -19,13 +19,16 @@ public sealed class SheetToolbarContext
     private readonly Func<Task> _returnKeyboard;
     private readonly Action<string> _tell;
     private readonly Action _rowsChanged;
+    private readonly Func<global::ExGrid.Chrome.GridInputKind, Func<Task>, Task> _inOrder;
     private readonly List<ToolbarRow> _rows = [];
     private int _nextId;
 
     internal SheetToolbarContext(
         SheetComponent sheet, string idPrefix, Func<string, IReadOnlyList<ToolbarChoice>, Func<Task>?, Action?, Task<bool>> openChoices,
-        Func<Task> returnKeyboard, Action<string> tell, Action rowsChanged)
+        Func<Task> returnKeyboard, Action<string> tell, Action rowsChanged,
+        Func<global::ExGrid.Chrome.GridInputKind, Func<Task>, Task> inOrder)
     {
+        _inOrder = inOrder;
         Sheet = sheet;
         IdPrefix = idPrefix;
         _openChoices = openChoices;
@@ -211,6 +214,13 @@ public sealed class SheetToolbarContext
     /// 2026-10-12). Set by the Sheet.
     /// </summary>
     internal Func<ElementReference, Task>? GiveToolbarTheKeyboard { get; set; }
+
+    /// <summary>
+    /// The toolbar's input <paramref name="handling"/> — the band's keys, the built-in buttons' clicks,
+    /// which their elements claim (<c>data-ex-claims</c>) — in its place in the Sheet's Input Order
+    /// (ADR-0240 section 6), through the seam the Sheet gave it.
+    /// </summary>
+    internal Task InOrderAsync(global::ExGrid.Chrome.GridInputKind kind, Func<Task> handling) => _inOrder(kind, handling);
 
     /// <summary>Closes the list titled so in the Sheet's built-in frame, if it is what the frame shows. Set by the Sheet.</summary>
     internal Func<string, Task>? CloseChoices { get; set; }

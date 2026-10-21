@@ -121,6 +121,8 @@ The parts of a sheet, as [the Docs Site](https://akiramisawa.github.io/ex-grid/e
   and Tabular forms, expand and collapse, Hidden Items, sorting by label or value, Show Values As,
   Show Details
 - The **PivotTable Fields** pane with drag and drop, Field Settings and Value Field Settings
+- **Find (Ctrl+F)** over the report as shown — row labels, values and totals, every row included,
+  collapsed groups left closed
 - Money summed exactly — never through a `double`
 - In-process data, CSV, a database, or a server answering with leaf aggregates; live data folded
   in as Change Batches

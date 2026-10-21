@@ -8,9 +8,10 @@
 # packages, and the check fails if it comes back different (DA-16). A trimmed Consumer also
 # round-trips report Windows, Window Changes and versioned operations with reflection disabled (ADR-0152).
 #
-# ExGrid.Data.Xlsx (ADR-0330) is packed and checked the same way, and a workbook is written and read
-# back through it, but it goes to .feed-unreleased, not to .feed: the release publishes the packages
-# ADR-0042 names, and that list does not name it yet.
+# ExGrid.Data.Xlsx and ExSheet.Xlsx (ADR-0330) are packed and checked the same way, and a workbook is
+# written and read back through the first and opened through the second, but they go to
+# .feed-unreleased, not to .feed: the release publishes the packages ADR-0042 names, and that list does
+# not name them yet.
 #
 #   tests/ExGrid.PackageSmoke/check.sh [version]
 #
@@ -37,7 +38,7 @@ packages="ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExGri
 for project in $packages; do
   dotnet pack "$root/src/$project" -c Release -o "$feed" -p:Version="$version" --nologo
 done
-held="ExGrid.Data.Xlsx"
+held="ExGrid.Data.Xlsx ExSheet.Xlsx"
 for project in $held; do
   dotnet pack "$root/src/$project" -c Release -o "$unreleased" -p:Version="$version" --nologo
 done
@@ -117,6 +118,11 @@ arrowdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExGrid
 xlsxdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExGrid.Data.Xlsx)" | sort)
 [ "$xlsxdeps" = "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" ] \
   || fail "ExGrid.Data.Xlsx's dependencies are not exactly ExGrid.Data $version: $xlsxdeps"
+# ExSheet's xlsx package depends on exactly the file layer and the engine it was built with, and on
+# nothing else: no component, so a server converts files with no Blazor (ADR-0330 §2).
+sheetxlsxdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExSheet.Xlsx)" | sort)
+[ "$sheetxlsxdeps" = "$(printf '%s\n' "<dependency id=\"ExGrid.Data.Xlsx\" version=\"[$version]\"" "<dependency id=\"ExSheet.Engine\" version=\"[$version]\"" | sort)" ] \
+  || fail "ExSheet.Xlsx's dependencies are not exactly ExGrid.Data.Xlsx $version and ExSheet.Engine $version: $sheetxlsxdeps"
 [ "$(ls "$unreleased" | sort)" = "$(for id in $held; do printf '%s\n' "$id.$version.nupkg" "$id.$version.snupkg"; done | sort)" ] \
   || fail "$unreleased does not hold exactly the packages held back from the release: $(ls "$unreleased" | tr '\n' ' ')"
 # ExPivot's engine depends on exactly the ExGrid.Data it was built with, and on nothing else: it
@@ -217,7 +223,9 @@ dotnet publish "$here/RoundTrip" -c Release --nologo -o "$out/roundtrip" --self-
 for id in exgrid.data exgrid.data.arrow expivot.engine; do
   grep -qF "$feed" "$cache/$id/$version/.nupkg.metadata" || fail "the round trip took $id $version from somewhere other than $feed"
 done
-grep -qF "$unreleased" "$cache/exgrid.data.xlsx/$version/.nupkg.metadata" || fail "the round trip took exgrid.data.xlsx $version from somewhere other than $unreleased"
+for id in exgrid.data.xlsx exsheet.xlsx; do
+  grep -qF "$unreleased" "$cache/$id/$version/.nupkg.metadata" || fail "the round trip took $id $version from somewhere other than $unreleased"
+done
 dotnet "$out/roundtrip/PackageSmoke.RoundTrip.dll" \
   || fail "a packed data, workbook or report protocol round trip changed its result"
 

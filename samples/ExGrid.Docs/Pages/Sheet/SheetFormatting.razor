@@ -160,7 +160,11 @@
             no top, is ExSheet's reading, not yet asked of Excel.
         </p>
         <ul>
-            <li><b>Under the built-in Chrome</b> it is a popover inside the Sheet's box, which scrolls when the box is small.</li>
+            <li>
+                <b>Under the built-in Chrome</b> it is a popover inside the Sheet's box, which scrolls when the box is small.
+                Its OK and Cancel take their place among the Sheet's keys and presses: Enter on a choice and ↓ typed straight
+                after it set the format, then move the Focus, over Blazor Server too.
+            </li>
             <li>
                 <b>Under <code>MudSheetChrome</code></b> (<code>ExSheet.MudBlazor</code>) it is a page-level, modal
                 <code>MudDialog</code>, with a More Colours button opening MudBlazor's colour picker. More Colours starts in HEX,
@@ -228,7 +232,9 @@
                 after Alt or F10 wait for the KeyTips and reach them ahead of any typed once the toolbar has the
                 keyboard, and the keys typed while a list opens or closes, or while the
                 keyboard goes back to the Sheet, wait for the keyboard and go where it lands, so Alt, H, 1 typed straight
-                off sets bold, and Alt, H, H, ↓, →, Enter fills the cell from the palette, as typed one at a time. The
+                off sets bold, and Alt, H, H, ↓, →, Enter fills the cell from the palette, as typed one at a time.
+                Every press on an item and every key on the toolbar takes its place among the Sheet's keys and presses:
+                Bold pressed and ↓ typed straight after it set bold on the cell that had the Focus, then move it. The
                 Number Format list's More Number Formats… opens Format Cells; Escape typed immediately after
                 choosing it closes Format Cells under either Chrome. Your rows and buttons have a KeyTip where
                 you set <code>KeyTip</code>; two letters that collide at one level

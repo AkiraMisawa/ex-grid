@@ -636,10 +636,12 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
     // held key had opened took DOM focus, the root took the keyboard from the editor, and the
     // listener went on holding every key and click behind it for an editor that no longer had
     // focus — until its two-second fallback (Server host: typing-probe-2 found nothing landed
-    // 1.5 s later in 6 of 12 trials at 30 ms on Windows, and 4 of 12 at 0 ms on Linux). The
-    // bound here is that fallback, not a performance figure: an answered step takes a round
-    // trip or two.
-    test('a click straight after a key waits for no fallback: each step lands before the hold would give up (ED-22, ADR-0010)', async ({ page }) => {
+    // 1.5 s later in 6 of 12 trials at 30 ms on Windows, and 4 of 12 at 0 ms on Linux). That
+    // fallback is gone: every wait is on a number now (ADR-0240 section 4), so a hold left waiting
+    // for that editor never ends, and the pair's wait below runs out. It used to be bounded at
+    // 1.5 s, under the fallback; with nothing left to come in under, the bound only timed the
+    // round trips, and the widened run's slowed browser met it (2026-10-21).
+    test('a click straight after a key waits for no fallback: each step lands, and no hold is left waiting (ED-22, ADR-0010, ADR-0240)', async ({ page }) => {
         await openSheet(page);
         const nameBox = sheetGrid(page).locator('input.ex-name-box');
         // Twelve rows in pairs: the second click of each pair comes while the first pair's key
@@ -650,7 +652,7 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
                 await page.keyboard.type(String(r % 10));
                 await page.keyboard.press('Enter');
             }
-            await expect(nameBox, `the pair from F${row + 1} was answered`).toHaveValue(`F${row + 3}`, { timeout: 1500 });
+            await expect(nameBox, `the pair from F${row + 1} was answered`).toHaveValue(`F${row + 3}`);
         }
         await expect.poll(() => sheetGrid(page).evaluate((root) => [...Array(12).keys()]
             .map((r) => root.querySelector(`[id$='-r${r}c5']`)?.textContent.trim() ?? '')))

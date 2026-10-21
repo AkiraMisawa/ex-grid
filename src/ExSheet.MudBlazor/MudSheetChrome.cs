@@ -133,6 +133,49 @@ public sealed class MudSheetChrome : ISheetChrome
     }
 
     /// <summary>
+    /// A Sheet Tab's face in MudBlazor's type (ADR-0331 §4): the Sheet's name in a <c>MudText</c>, in the
+    /// palette's primary on the Sheet shown. The tab around it, and what pressing it means, are ExSheet's.
+    /// </summary>
+    public RenderFragment? SheetTab(SheetTabContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return builder =>
+        {
+            builder.OpenComponent<global::MudBlazor.MudText>(0);
+            builder.AddComponentParameter(1, nameof(global::MudBlazor.MudText.Typo), global::MudBlazor.Typo.body2);
+            builder.AddComponentParameter(2, nameof(global::MudBlazor.MudText.HtmlTag), "span");
+            builder.AddComponentParameter(3, nameof(global::MudBlazor.MudText.Color), context.Selected ? global::MudBlazor.Color.Primary : global::MudBlazor.Color.Inherit);
+            builder.AddComponentParameter(4, nameof(global::MudBlazor.MudText.Class), "mud-ex-sheet-tab-face");
+            builder.AddComponentParameter(5, nameof(global::MudBlazor.MudText.ChildContent), (RenderFragment)(name => name.AddContent(0, context.Name)));
+            builder.CloseComponent();
+        };
+    }
+
+    /// <summary>The face of the button that adds a Sheet: MudBlazor's Add icon (ADR-0331 §4).</summary>
+    public RenderFragment? SheetTabAdd() => static builder =>
+    {
+        builder.OpenComponent<global::MudBlazor.MudIcon>(0);
+        builder.AddComponentParameter(1, nameof(global::MudBlazor.MudIcon.Icon), global::MudBlazor.Icons.Material.Filled.Add);
+        builder.AddComponentParameter(2, nameof(global::MudBlazor.MudIcon.Size), global::MudBlazor.Size.Small);
+        builder.CloseComponent();
+    };
+
+    /// <summary>
+    /// A Sheet Tab's menu as a <c>MudPaper</c> of commands, each with its <c>MudIcon</c> (ADR-0331 §4). ExSheet
+    /// keeps the element around it that holds the keyboard; every command calls back into the context.
+    /// </summary>
+    public RenderFragment? SheetTabMenu(SheetTabMenuContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return builder =>
+        {
+            builder.OpenComponent<MudSheetTabMenu>(0);
+            builder.AddComponentParameter(1, nameof(MudSheetTabMenu.Context), context);
+            builder.CloseComponent();
+        };
+    }
+
+    /// <summary>
     /// Format Cells as a <c>MudDialog</c> (ADR-0071). ExSheet renders the fragment beside the grid
     /// from the opening until OK or Cancel; each opening is a dialog of its own.
     /// </summary>

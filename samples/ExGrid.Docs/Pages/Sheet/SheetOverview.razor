@@ -65,7 +65,8 @@
             any other pattern is refused, with the reason; for whole columns or rows it stands beside the
             Heading, and from one whole column or row it fills every row or column, a single number going on by
             one, as Excel's did beside it in the readings of 2026-10-12, R5), Ctrl+D and Ctrl+R, Delete to clear contents and keep formats, Ctrl+F to
-            find text as it is shown, and a Context Menu that inserts and deletes the rows or columns the
+            find text as it is shown (Ctrl+H, Replace, is not offered on a Sheet yet: the key is kept from the
+            browser and refused, as ExGrid refuses it where nothing can be replaced), and a Context Menu that inserts and deletes the rows or columns the
             Selection spans — as Ctrl++ and Ctrl+- do from the keyboard, on a Selection of whole rows or whole
             columns. References keep naming the same cells, and a deleted target becomes
             <code>#REF!</code>.
@@ -146,8 +147,15 @@
             Each ExSheet has one undo stack. Ctrl+Z and Ctrl+Y work from the keyboard; <code>UndoAsync</code>
             and <code>RedoAsync</code> do the same from your buttons. A command you give —
             <code>DoAsync(SheetEdit)</code>, <code>SetCellFormatAsync</code> — goes onto the same stack in its
-            place in the order, so the user can undo it like anything they typed. In a Workbook of several Sheets
-            a command names the Sheet it acts on, <code>DoAsync("Claim", edit)</code>
+            place in the order, so the user can undo it like anything they typed. An undo or a redo selects the
+            range its step changed, as Excel's does — the cell typed in, not the one <kbd>Enter</kbd> moved to; the
+            range pasted, filled or formatted; the whole rows or columns inserted or deleted — and scrolls its
+            top-left cell into view. The grid selects one range, so a step over several selects the range they make
+            together when they make one rectangle, as the whole columns of one resize of B to D do, and otherwise
+            the first of them in Selection order, the one it acted from: <kbd>Ctrl</kbd> + <kbd>Enter</kbd> over a
+            Selection of several ranges selects the one it was typed in, and a resize of B and D alone selects B.
+            In a Workbook of several Sheets an undo shows the Sheet its step was taken on, and a command names the
+            Sheet it acts on, <code>DoAsync("Claim", edit)</code>
             (<a href="exsheet/workbook#commands-name-their-sheet">Commands name their Sheet</a>).
         </p>
         <p>

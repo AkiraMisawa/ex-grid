@@ -1,4 +1,5 @@
 using ExGrid.Cells;
+using ExGrid.Chrome;
 using ExSheet.Engine;
 using Microsoft.AspNetCore.Components;
 
@@ -64,23 +65,6 @@ public partial class ExSheet : IPointingSheet, IDisposable
     private bool _holdsKeyboard;
     private bool _scopeHeardPoints;
 
-    // A number for each focus event, so that a focusout followed by a focusin — the keyboard moving
-    // inside the Sheet, from the root to the Cell Editor, say — is not heard as the keyboard leaving.
-    private int _keyboardMoves;
-
-    // What a focusout waits for before it is heard as the keyboard leaving, and its markup: built
-    // in C#, because Razor does not find an internal component by its tag. Held in a field, so a
-    // render does not see a new fragment each time.
-    private BrowserTurn? _browserTurn;
-    private RenderFragment? _browserTurnMarkup;
-
-    private RenderFragment BrowserTurnMarkup => _browserTurnMarkup ??= builder =>
-    {
-        builder.OpenComponent<BrowserTurn>(0);
-        builder.AddComponentReferenceCapture(1, turn => _browserTurn = (BrowserTurn)turn);
-        builder.CloseComponent();
-    };
-
     // The focus listeners on the Sheet's element, present only while a Scope is given, so a Sheet in
     // none sends the browser's focus events nowhere.
     private readonly Dictionary<string, object> _keyboardListeners = new(StringComparer.Ordinal);
@@ -120,7 +104,7 @@ public partial class ExSheet : IPointingSheet, IDisposable
             // Unheard from here on: what was last heard of the keyboard would go stale.
             _keyboardListeners.Remove("onfocusin");
             _keyboardListeners.Remove("onfocusout");
-            _keyboardMoves++;
+            _keyboardListeners.Remove(ClaimsAttribute);
             _holdsKeyboard = false;
             return;
         }
@@ -132,6 +116,10 @@ public partial class ExSheet : IPointingSheet, IDisposable
         _keyboardListener ??= new KeyboardListener(this);
         _keyboardListeners["onfocusin"] = (Func<Task>)_keyboardListener.In;
         _keyboardListeners["onfocusout"] = (Func<Task>)_keyboardListener.Out;
+        // The grid's listener tells the keyboard crossing the Sheet's edge, numbered in its order, only
+        // while these handlers are here to take it: a number told that nothing takes holds every input
+        // behind it (ADR-0240 section 6).
+        _keyboardListeners[ClaimsAttribute] = KeyboardCrossingClaims;
         TellScopeWhetherPointing();
     }
 
@@ -147,36 +135,36 @@ public partial class ExSheet : IPointingSheet, IDisposable
         scope.Points(this, points);
     }
 
-    /// <summary>DOM focus came into the Sheet.</summary>
-    private Task OnKeyboardIn()
-    {
-        _keyboardMoves++;
-        _holdsKeyboard = true;
-        TellScopeWhetherPointing();
-        return Task.CompletedTask;
-    }
+    // The Input Root's claims (ADR-0240 section 6): the keyboard coming into the Sheet and leaving it.
+    private const string ClaimsAttribute = "data-ex-claims";
+    private const string KeyboardCrossingClaims = "focusin focusout";
 
     /// <summary>
-    /// DOM focus left an element of the Sheet. The browser raises this before it raises the focusin
-    /// of wherever focus went, and the two come in one task: a focusin of this Sheet's that follows
-    /// is the keyboard moving inside it, and not leaving it. So the Sheet waits before it says the
-    /// keyboard left, rather than stop pointing and start again. In a browser one turn of the
-    /// renderer's queue is enough. On a circuit the focusin is a message of its own, which can come
-    /// after that turn (the Scope stopped pointing for a round trip as = opened the Cell Editor, and
-    /// a press then was the other grid's own); it always comes before the browser answers a render
-    /// sent after the focusout, so the Sheet waits for that answer, and then for the turn.
+    /// The keyboard came into the Sheet: in its place in the Input Order (ADR-0240 sections 1 and 6), as
+    /// the grid's listener told it crossing the Sheet's edge. A move of DOM focus inside the Sheet — from
+    /// the grid's root to the Cell Editor as = opens it, from the toolbar to the grid — crosses nothing, is
+    /// not told, and changes nothing here; except the first such move of a keyboard that came in untold,
+    /// before the Sheet listened or as the page loaded, which is told as its arrival.
     /// </summary>
-    private async Task OnKeyboardOut()
+    private Task OnKeyboardIn() => InOrderAsync(GridInputKind.KeyboardIn, () =>
     {
-        var move = ++_keyboardMoves;
-        if (_browserTurn is { } turn)
-            await turn.AnsweredAsync();
-        await Task.Yield();
-        if (move != _keyboardMoves)
-            return;
+        _holdsKeyboard = true;
+        TellScopeWhetherPointing();
+    });
+
+    /// <summary>
+    /// The keyboard left the Sheet: in its place in the Input Order (ADR-0240 sections 1 and 6). Taken
+    /// after the inputs before it, and before the inputs after it: a press on another grid of the Scope
+    /// that took the keyboard is that grid's own once this is handled, and one the keys before it still
+    /// point with is pointed. Nothing waits for the browser's next turn: the move inside the Sheet that
+    /// a focusout followed by a focusin made is never told as a departure, so the wait for the browser's
+    /// turn that told the two apart before (input-order ticket 04) is gone.
+    /// </summary>
+    private Task OnKeyboardOut() => InOrderAsync(GridInputKind.KeyboardOut, () =>
+    {
         _holdsKeyboard = false;
         TellScopeWhetherPointing();
-    }
+    });
 
     /// <inheritdoc />
     string? IPointingSheet.RootId => _grid?.RootId;

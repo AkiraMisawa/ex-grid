@@ -100,9 +100,26 @@ const delayed = (from, to, direction) => {
             }
         };
         answerDrains.add(release);
-        from.on('close', () => answerDrains.delete(release));
+        // Kept past the host's side closing: what the host sent before it closed is still the
+        // browser's once the answers are let go. Dropped with the queue when the browser's side
+        // closes, below. Dropped when the host's side closed instead, a host that closed an idle
+        // connection while answers were held left its chunks counted as held for good, and every
+        // circuitQuiet after it timed out (Hunt, 2026-10-21: 241 tests of one shard).
+        to.on('close', () => answerDrains.delete(release));
     }
+    // What waits for a socket that has closed never crosses, so it is not held here any more.
+    to.on('close', () => {
+        held -= queue.length;
+        queue.length = 0;
+        if (timer !== null) {
+            clearTimeout(timer);
+            timer = null;
+        }
+    });
     from.on('data', (chunk) => {
+        if (to.destroyed) {
+            return;
+        }
         held++;
         crossed[direction]++;
         lastCrossed = Date.now();
@@ -115,6 +132,9 @@ const delayed = (from, to, direction) => {
     });
     // The end goes behind the last chunk, through the same queue.
     from.on('end', () => {
+        if (to.destroyed) {
+            return;
+        }
         held++;
         queue.push({ end: true, at: Math.max(Date.now(), releaseAt) });
         if (timer === null) {

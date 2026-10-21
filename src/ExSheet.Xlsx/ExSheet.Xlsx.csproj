@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0; newer runtimes load it as-is (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <Description>ExSheet's .xlsx support: a workbook read into a Workbook Document, every worksheet a Sheet with its constants and Formulas, beside an Open Report of what the file held that was not carried. Anything that would change a Value is refused by name, naming the Sheet and the cell. No component, so a server converts files with no Blazor in the process. Ships at the same version as ExSheet.Engine and ExGrid.Data.Xlsx, and depends on exactly those versions.</Description>
+    <PackageTags>excel;xlsx;spreadsheet;sheet;workbook;openxml</PackageTags>
+    <IsTrimmable>true</IsTrimmable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The one direction there is (ADR-0330 §2): ExSheet.Xlsx maps the file layer to the engine's
+         documents. It references no component, and neither package it references knows it exists. -->
+    <ProjectReference Include="..\ExGrid.Data.Xlsx\ExGrid.Data.Xlsx.csproj" />
+    <ProjectReference Include="..\ExSheet.Engine\ExSheet.Engine.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ExSheet.Xlsx.Tests" />
+  </ItemGroup>
+
+  <!-- ExSheet.Xlsx depends on exactly the file layer and the engine it was built with, as ExSheet
+       does (ADR-0042); the package check reads it back from the .nuspec. -->
+  <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+
+</Project>

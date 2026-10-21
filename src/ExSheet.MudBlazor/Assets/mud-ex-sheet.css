@@ -150,3 +150,30 @@ button.mud-ex-sheet-swatch { padding: 0; }
 .mud-ex-sheet-format-cells:not(:has(.mud-ex-sheet-format-cells-keys-ready)) {
     display: none;
 }
+
+/* The Sheet Tabs (ADR-0331 §4; exsheet-workbook ticket 06): a tab's face in MudBlazor's type and the
+   palette's primary, the + button's MudIcon, and a tab's menu as a MudPaper of commands. ExSheet keeps
+   the elements that hold the keyboard; their own box gives way to the paper drawn inside it. */
+.ex-sheet-tab .mud-ex-sheet-tab-face { font-weight: inherit; }
+.ex-sheet-tab[aria-selected="true"] { border-bottom-color: var(--mud-palette-primary); }
+.ex-sheet-tab-add .mud-icon-root { vertical-align: middle; }
+.ex-sheet-tab-name { border-color: var(--mud-palette-primary); }
+.ex-sheet-tab-menu:has(> .mud-ex-sheet-tab-menu) {
+    padding: 0;
+    border: 0;
+    background: none;
+    outline: none;
+}
+.mud-ex-sheet-tab-menu { padding: 4px 0; min-width: 12em; }
+.mud-ex-sheet-tab-command {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 16px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.mud-ex-sheet-tab-command:hover,
+.mud-ex-sheet-tab-command-active { background: var(--mud-palette-action-default-hover); }
+.mud-ex-sheet-tab-command-disabled { color: var(--mud-palette-text-disabled); cursor: default; }
+.mud-ex-sheet-tab-command-disabled:hover { background: none; }

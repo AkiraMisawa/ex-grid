@@ -67,6 +67,12 @@
        value reads through it. At 0.25, over MudBlazor's default surfaces, the default text keeps
        8.3:1 in the light scheme and 4.5:1 in the dark one; 0.3 fell to 4.2:1 there. */
     --ex-change-highlight-background: rgba(var(--mud-palette-warning-rgb), 0.25);
+    /* The Match Mark (ADR-0332 §4): the matches in view in the palette's secondary, and the current
+       match in its tertiary, more strongly, so the two read apart and neither reads as the
+       selection's primary or the Change Highlight's warning. Translucent beneath the text, which
+       keeps its colour. */
+    --ex-match-mark-fill: rgba(var(--mud-palette-secondary-rgb), 0.22);
+    --ex-match-mark-current-fill: rgba(var(--mud-palette-tertiary-rgb), 0.45);
     --ex-scrollbar-color: var(--mud-palette-gray-light);
 
     /* The surface itself. Inline-flex so the paper is as wide as its grids, and the

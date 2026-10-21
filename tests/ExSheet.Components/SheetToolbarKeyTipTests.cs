@@ -163,31 +163,19 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         Assert.Equal(["frame"], HandOffs);
     }
 
-    [Fact] // ADR-0100's KeyTips (decided with the user, 2026-10-13: the Alt key's release is held in order with the keys): an Alt pressed and released on the band while the keyboard goes back to the Sheet is held there, its release with its press, and handed to the grid in order; the Sheet's own keyup handler, which hears the same release, starts nothing with it
-    public async Task An_alt_released_on_the_band_while_the_keyboard_goes_back_is_held_with_its_press()
+    [Fact] // ADR-0100's KeyTips, ADR-0240 §6 (input-order ticket 04, which moved the hold of 2026-10-13 from the band to the grid's key gate): a KeyTip's command gives the keyboard back with no key the band held; an Alt typed on the band behind it is held, its release with its press, by the key gate in the Input Order (layer 3), never by the band
+    public async Task A_keytips_command_gives_the_keyboard_back_holding_nothing_on_the_band()
     {
         var cut = RenderToolbarSheet();
         await GoToAsync(cut, "B2");
         await PressAsync(cut, "F10");
         await TypeOnToolbarAsync(cut, "H");
-        // 1 sets bold and gives the keyboard back: the band holds what is typed on it from now.
+        // 1 sets bold and gives the keyboard back.
         await TypeOnToolbarAsync(cut, "1");
         Assert.True(FormatAt(cut, "B2").Font.Bold);
-        var handOffs = HandOffs.Count;
 
-        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Alt", AltKey = true, Type = "keydown" });
-        // Even with an Alt press the Sheet has heard standing, the release held on the band is not its to
-        // answer now: it reaches the Sheet in its turn, after the press held with it.
-        await AltDownAsync(cut);
-        await cut.Find(".ex-sheet-toolbar").KeyUpAsync(new KeyboardEventArgs { Key = "Alt", Type = "keyup" });
-        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "h", Type = "keydown" });
-
-        // Nothing started early: the release was not the Sheet's to answer yet.
         Assert.Empty(ShownKeyTips(cut));
-        Assert.Equal(handOffs, HandOffs.Count);
-        // The grid has the keyboard and asks for the keys: the press, its release, then H, in order.
-        var keys = AnswerTakeBacks(cut);
-        Assert.Equal(["keydown:Alt", "keyup:Alt", "keydown:h"], keys.Select(k => $"{k.Type}:{k.Key}"));
+        Assert.Empty(AnswerTakeBacks(cut));
     }
 
     [Fact] // ADR-0100, SH-52 (the release heard by the gate, decided with the user, 2026-10-13): whether the Alt went down alone is the key gate's to tell, which hears every key between the press and the release in order and keeps a chord's release from the Sheet; another key's release reaching the Sheet — out of turn while the gate holds keys — changes nothing, and a key typed on the band forgets a press whose release the gate kept

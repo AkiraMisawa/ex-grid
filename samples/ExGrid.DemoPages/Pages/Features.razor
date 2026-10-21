@@ -47,6 +47,7 @@
     <span id="overwrite-notice-status" role="status">Overwritten: @_overwriteStatus</span>
     <span id="action-refused-status" role="status">Action refused: @_actionRefusedStatus</span>
     <span id="find-refused-status" role="status">Find: @_findStatus</span>
+    <span id="replace-status">Replace All: @_replaceStatus</span>
     <span id="context-status">Context: @_contextStatus</span>
     <span id="order-status">Order: @string.Join(",", _columns.Select(c => c.Name))</span>
     <span id="width-status">Width: @_widthStatus</span>
@@ -85,6 +86,7 @@
         DeclaredKeys="@(RowKeyOn ? UpstreamAndResortKeys : UpstreamOn ? UpstreamKeys : null)"
         OnDeclaredKey="OnUpstreamKey"
         OnFindRefused="OnFindRefused"
+        OnReplace="OnReplace"
         OnColumnWidthChanged="OnWidthChanged"
         OnColumnOrderChanged="OnOrderChanged"
         OnColumnHidden="OnHidden"
@@ -420,6 +422,7 @@
     private string _editStatus = "—";
     private string _clearStatus = "—";
     private string _findStatus = "—";
+    private string _replaceStatus = "—";
     private string _historyStatus = "—";
     private string _pasteStatus = "—";
     private string _pasteFields = "—";
@@ -441,6 +444,27 @@
     /// searches, so Unavailable never arrives here; the panel words NotFound itself too.</summary>
     private void OnFindRefused(FindRefusalReason reason)
         => Status(reason, reason.ToString(), s => _findStatus = s);
+
+    /// <summary>Replace All (ADR-0332 §3): GridSource.From plans every match through this page's own
+    /// write of one cell — the one its edits use — and applies them all, or none; the rows it rewrote are
+    /// one history step, so one Ctrl+Z undoes the whole Replace All.</summary>
+    private Task<GridReplaceResult> OnReplace(GridReplaceRequest request)
+    {
+        var answer = _source.Replace(request, (row, column, text) => Edited(row, column, text) is { } replacement
+            ? GridReplaceWrite<DemoTrade>.To(replacement)
+            : GridReplaceWrite<DemoTrade>.Refuse($"'{text}' is not a number"));
+        if (answer.Changes.Count > 0)
+        {
+            _undo.Push(new HistoryStep([.. answer.Changes.Select(change => (change.Before, change.After))]));
+            _redo.Clear();
+        }
+        _rules.Evaluate(_source.Window, _columns);
+        _replaceStatus = answer.Result.IsReplaced
+            ? $"{answer.Result.Count} cells in {answer.Changes.Count} rows"
+            : $"refused, {answer.Result.RefusedCells.Count} cells";
+        StateHasChanged();
+        return Task.FromResult(answer.Result);
+    }
 
     /// <summary>One history step: the row instances one intent replaced and the ones it put in
     /// their place, in the order it replaced them.</summary>

@@ -64,6 +64,18 @@ public static class BuiltInCommandLabels
         FindPanelLabelIds.NotFound => "No match",
         FindPanelLabelIds.OrderChanged => "The rows moved; find again",
         FindPanelLabelIds.SourceChanged => "The data was replaced; find again",
+        FindPanelLabelIds.ReplaceTitle => "Find and Replace",
+        FindPanelLabelIds.ReplaceField => "Replace with",
+        FindPanelLabelIds.Replace => "Replace",
+        FindPanelLabelIds.ReplaceAll => "Replace All",
+        FindPanelLabelIds.Replaced => "Replaced " + FindPanelLabelIds.CountPlaceholder + " cells.",
+        FindPanelLabelIds.ReplacedOne => "Replaced 1 cell.",
+        FindPanelLabelIds.ReplaceRefused => "Nothing was replaced.",
+        FindPanelLabelIds.ReplaceRefusedCell =>
+            "Row " + FindPanelLabelIds.RowPlaceholder + ", " + FindPanelLabelIds.ColumnPlaceholder + ": "
+            + FindPanelLabelIds.ReasonPlaceholder + ".",
+        FindPanelLabelIds.ReplaceRefusedMore => "And " + FindPanelLabelIds.CountPlaceholder + " more.",
+        FindPanelLabelIds.NotEditable => "this column cannot be edited",
         // ADR-0203: a paste, a fill and Delete go through one gate (ADR-0035), so a reason any of
         // them can meet is worded for all three; one only a paste or a fill meets says which.
         RefusalLabelIds.PasteEmptySelection => "Nothing was changed: no cell is selected. Select the cells first.",

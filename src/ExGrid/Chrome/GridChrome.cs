@@ -381,7 +381,59 @@ public sealed record FindContext(
     Action Close,
     int FocusRequest = 0,
     Action<bool>? InnerPopupChanged = null,
-    Func<ElementReference, bool, Task>? TakeFocus = null);
+    Func<ElementReference, bool, Task>? TakeFocus = null)
+{
+    /// <summary>
+    /// Whether the panel offers Replace (ADR-0332 §2): it was opened by Ctrl+H, and a Replace can
+    /// land — the Consumer handles the Replace Request and a visible column is Editable. While it
+    /// does, the Chrome draws a second field, <see cref="ReplaceText"/>, and the two writes,
+    /// <see cref="Replace"/> and <see cref="ReplaceAll"/>; Find's field, options and steps stand as
+    /// they are. Ctrl+F turns the panel back into Find alone, as Excel's dialog changes tab.
+    /// </summary>
+    public bool ReplaceShown { get; init; }
+
+    /// <summary>What the Replace field shows, kept across a close and reopen within the instance, as
+    /// <see cref="Text"/> is.</summary>
+    public string ReplaceText { get; init; } = "";
+
+    /// <summary>The Chrome reports a change of the Replace field. Null while Replace is not
+    /// shown.</summary>
+    public Action<string>? ReplaceTextChanged { get; init; }
+
+    /// <summary>Replace (ADR-0332 §2): the current match — the cell the last step found, while the
+    /// Focus stays on it — written with the replacement as one Edit Intent, with its Edit Verdict,
+    /// and then the next match found. With no current match it finds the next one first, so the user
+    /// sees what the next press writes. Null while Replace is not shown. Taken in its place in the
+    /// Input Order, as <see cref="Next"/> is: a button that calls it declares <c>click</c> in its
+    /// <c>data-ex-claims</c>.</summary>
+    public Func<Task>? Replace { get; init; }
+
+    /// <summary>Replace All (ADR-0332 §3): one Replace Request over every match, which the Consumer
+    /// performs all or nothing and answers with the count or the cells it could not write. Null while
+    /// Replace is not shown. Taken in the Input Order, as <see cref="Replace"/> is.</summary>
+    public Func<Task>? ReplaceAll { get; init; }
+
+    /// <summary>How many cells the last Replace All replaced, while <see cref="Outcome"/> is
+    /// <see cref="Finding.FindOutcome.Replaced"/>.</summary>
+    public int ReplacedCount { get; init; }
+
+    /// <summary>The matches the last Replace could not write, and why, while <see cref="Outcome"/> is
+    /// <see cref="Finding.FindOutcome.ReplaceRefused"/>; empty otherwise. Every one is listed: a
+    /// Chrome may show the first few and count the rest, as
+    /// <see cref="FindPanelLabelIds.OutcomeText"/> does.</summary>
+    public IReadOnlyList<FindPanelRefusedCell> ReplaceRefusedCells { get; init; } = [];
+}
+
+/// <summary>
+/// One match a Replace could not write, as the find panel names it (ADR-0332 §2): its row as the user
+/// counts rows — the first is 1, in the order the request was read in — its column's header, and why.
+/// </summary>
+/// <param name="RowNumber">The row's number, from 1, in the order the request was read in.</param>
+/// <param name="Column">The column's header, or its name where the header is blank.</param>
+/// <param name="Reason">The Consumer's words, or an Edit Verdict's, for why the replaced text cannot
+/// be written. Null: the column is not Editable, which the Chrome words
+/// (<see cref="FindPanelLabelIds.NotEditable"/>).</param>
+public sealed record FindPanelRefusedCell(int RowNumber, string Column, string? Reason);
 
 /// <summary>
 /// What the grid hands a Consumer's own contents in its popover frame (ADR-0050, item 16;
@@ -427,6 +479,19 @@ public sealed record GridPopoverContext(
     /// the opening focus is then not taken. Null only in a context the core did not make.
     /// </summary>
     public Func<ElementReference, bool, Task>? TakeFocus { get; init; }
+
+    /// <summary>
+    /// The Input Order's seam (ADR-0240 section 6), as <c>ExGrid.InOrderAsync</c> offers it: the
+    /// contents' handler of an input that changes the instance or moves the keyboard — an OK, a Cancel,
+    /// a choice made, a key the contents answer — calls it as it starts, with the kind of the event it
+    /// hears and its work, and is handled in its place among the grid's keys, presses and clicks. The
+    /// control declares the event in its <c>data-ex-claims</c> attribute (<c>click</c>, <c>keydown</c>,
+    /// <c>submit</c>, …), so the grid numbers it as it happens; a handler that declares an event calls this
+    /// every time it hears it. What the contents' draft holds — a field typed into, a box ticked — is not
+    /// an input and needs no call: the input that commits it is one. Null only in a context the core did
+    /// not make.
+    /// </summary>
+    public Func<GridInputKind, Func<Task>, Task>? InOrder { get; init; }
 }
 
 /// <summary>

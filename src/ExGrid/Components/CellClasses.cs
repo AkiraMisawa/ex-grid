@@ -19,13 +19,14 @@ namespace ExGrid.Components;
 /// </summary>
 internal static class CellClasses
 {
-    // Indexed by (changed, tone, state, align, numeric, pinned) so the lookup is arithmetic,
+    // Indexed by (mark, changed, tone, state, align, numeric, pinned) so the lookup is arithmetic,
     // never a switch over combinations that would have to be kept in step with the enums by
     // hand.
     private const int Variants = 4;
     private const int Aligns = 4;
     private const int States = 5;
     private const int Tones = 3;
+    private const int Changes = 2;
     private static readonly string[] Composed = Compose();
 
     /// <summary>
@@ -36,13 +37,31 @@ internal static class CellClasses
     /// cell is painted exactly as it was before any of the vocabularies existed
     /// (ADR-0006/0016/0068). <paramref name="changed"/> is the Change Highlight's
     /// <c>ex-changed</c>: the Consumer said the cell's shown value changed less than the
-    /// highlight's duration ago (ADR-0068).
+    /// highlight's duration ago (ADR-0068). <paramref name="mark"/> is the Match Mark: the cell
+    /// matches what the find panel holds, <c>ex-match-mark</c>, and is the current match besides,
+    /// <c>ex-match-mark-current</c> as well (ADR-0332 §4).
     /// </summary>
-    public static string For(bool numeric, bool pinned, CellState state, CellAlign align = CellAlign.Auto, CellTone tone = CellTone.None, bool changed = false)
-        => Composed[IndexOf(changed, tone, state, align) * Variants + (numeric ? 2 : 0) + (pinned ? 1 : 0)];
+    public static string For(bool numeric, bool pinned, CellState state, CellAlign align = CellAlign.Auto, CellTone tone = CellTone.None, bool changed = false, MatchMark mark = MatchMark.None)
+        => Composed[IndexOf(mark, changed, tone, state, align) * Variants + (numeric ? 2 : 0) + (pinned ? 1 : 0)];
 
-    private static int IndexOf(bool changed, CellTone tone, CellState state, CellAlign align)
-        => (((changed ? 1 : 0) * Tones + ToneIndex(tone)) * States + Index(state)) * Aligns + AlignIndex(align);
+    private static int IndexOf(MatchMark mark, bool changed, CellTone tone, CellState state, CellAlign align)
+        => ((((MarkIndex(mark) * Changes) + (changed ? 1 : 0)) * Tones + ToneIndex(tone)) * States + Index(state)) * Aligns + AlignIndex(align);
+
+    private static int MarkIndex(MatchMark mark) => mark switch
+    {
+        MatchMark.None => 0,
+        MatchMark.Match => 1,
+        MatchMark.Current => 2,
+        _ => throw new ArgumentOutOfRangeException(nameof(mark), mark, null),
+    };
+
+    private static string MarkSuffix(MatchMark mark) => mark switch
+    {
+        MatchMark.None => "",
+        MatchMark.Match => " ex-match-mark",
+        MatchMark.Current => " ex-match-mark ex-match-mark-current",
+        _ => throw new ArgumentOutOfRangeException(nameof(mark), mark, null),
+    };
 
     private static int ToneIndex(CellTone tone) => tone switch
     {
@@ -107,32 +126,38 @@ internal static class CellClasses
         CellTone[] tones = [CellTone.None, CellTone.Positive, CellTone.Negative];
         CellState[] states = [CellState.Normal, CellState.Stale, CellState.Missing, CellState.Error, CellState.Modified];
         CellAlign[] aligns = [CellAlign.Auto, CellAlign.Left, CellAlign.Center, CellAlign.Right];
+        MatchMark[] marks = [MatchMark.None, MatchMark.Match, MatchMark.Current];
         bool[] changes = [false, true];
-        var composed = new string[changes.Length * Tones * States * Aligns * Variants];
-        foreach (var changed in changes)
+        var composed = new string[marks.Length * Changes * Tones * States * Aligns * Variants];
+        foreach (var mark in marks)
         {
-            var changedSuffix = changed ? " ex-changed" : "";
-            foreach (var tone in tones)
+            var markSuffix = MarkSuffix(mark);
+            foreach (var changed in changes)
             {
-                var toneSuffix = ToneSuffix(tone);
-                foreach (var state in states)
+                var changedSuffix = changed ? " ex-changed" : "";
+                foreach (var tone in tones)
                 {
-                    var suffix = Suffix(state);
-                    foreach (var align in aligns)
+                    var toneSuffix = ToneSuffix(tone);
+                    foreach (var state in states)
                     {
-                        var alignSuffix = AlignSuffix(align);
-                        for (var variant = 0; variant < Variants; variant++)
+                        var suffix = Suffix(state);
+                        foreach (var align in aligns)
                         {
-                            var numeric = (variant & 2) != 0;
-                            var pinned = (variant & 1) != 0;
-                            composed[IndexOf(changed, tone, state, align) * Variants + variant] = string.Concat(
-                                "ex-cell",
-                                numeric ? " ex-cell-numeric" : "",
-                                pinned ? " ex-pinned" : "",
-                                alignSuffix,
-                                toneSuffix,
-                                suffix,
-                                changedSuffix);
+                            var alignSuffix = AlignSuffix(align);
+                            for (var variant = 0; variant < Variants; variant++)
+                            {
+                                var numeric = (variant & 2) != 0;
+                                var pinned = (variant & 1) != 0;
+                                composed[IndexOf(mark, changed, tone, state, align) * Variants + variant] = string.Concat(
+                                    "ex-cell",
+                                    numeric ? " ex-cell-numeric" : "",
+                                    pinned ? " ex-pinned" : "",
+                                    alignSuffix,
+                                    toneSuffix,
+                                    suffix,
+                                    changedSuffix,
+                                    markSuffix);
+                            }
                         }
                     }
                 }
@@ -141,4 +166,18 @@ internal static class CellClasses
 
         return composed;
     }
+}
+
+/// <summary>Whether a painted cell wears the Match Mark (ADR-0332 §4): not at all, as a match of
+/// what the find panel holds, or as the current match — the Focus a found step moved to.</summary>
+internal enum MatchMark
+{
+    /// <summary>Not a match, or no search is held.</summary>
+    None,
+
+    /// <summary>A match among the painted cells.</summary>
+    Match,
+
+    /// <summary>The current match.</summary>
+    Current,
 }

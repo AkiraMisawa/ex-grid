@@ -54,7 +54,9 @@ while (await sheet.ReadAsync())
 `OpenAsync` reads the workbook part (the sheets in order, the one shown, the 1904 date system and
 the defined names), the shared strings, the styles and the theme. `OpenSheet` then reads one
 worksheet's cells: its column widths come first, and `OtherElements` lists what else it holds
-(merged cells, conditional formatting, notes and the rest), none of which is read.
+(merged cells, conditional formatting, notes, print settings, extensions and the rest), none of which
+is read: each comes as an `XlsxElement` with its attributes, its text and its first children, enough
+for the program reading the file to judge whether it holds anything that matters to it.
 
 A stream that cannot seek — a browser's `IBrowserFile` stream, a request body — is copied into
 memory first, as far as the size limit allows. An Excel 97–2003 or encrypted file is told apart

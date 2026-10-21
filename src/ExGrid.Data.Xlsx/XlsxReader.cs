@@ -647,7 +647,7 @@ public sealed record XlsxWorksheet(
     XlsxSheetInfo Sheet,
     IReadOnlyList<XlsxColumn> Columns,
     IReadOnlyList<XlsxCell> Cells,
-    IReadOnlyList<string> OtherElements,
+    IReadOnlyList<XlsxElement> OtherElements,
     bool CustomRowHeights = false,
     bool HiddenRows = false,
     bool FrozenPanes = false);

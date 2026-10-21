@@ -4,12 +4,13 @@ namespace ExSheet.Engine;
 /// Excel's 1900 date system (ADR-0047): serial 1 is 1 January 1900, and serial 60 is 29 February
 /// 1900, a day that never existed. Excel keeps it for compatibility with Lotus 1-2-3; matching
 /// Excel's serials is the promise, and every serial from 1 March 1900 onward disagrees with Excel
-/// if that day is left out. Serial 0 is written as 0 January 1900, as Excel writes it.
+/// if that day is left out. Serial 0 is written as 0 January 1900, as Excel writes it. Public for
+/// what reads another program's dates into a document (ADR-0201's sibling rule, ADR-0330 §4).
 /// </summary>
-internal static class DateSerial
+public static class DateSerial
 {
     /// <summary>The last day Excel shows: 31 December 9999.</summary>
-    public const int Maximum = 2_958_465;
+    internal const int Maximum = 2_958_465;
 
     private static readonly int Base = new DateOnly(1899, 12, 31).DayNumber;
 
@@ -23,7 +24,7 @@ internal static class DateSerial
     }
 
     /// <summary>The calendar day of a whole serial, 0 to <see cref="Maximum"/>.</summary>
-    public static (int Year, int Month, int Day) ToDate(int serial)
+    internal static (int Year, int Month, int Day) ToDate(int serial)
     {
         if (serial == 0) return (1900, 1, 0);
         if (serial == 60) return (1900, 2, 29);
@@ -32,5 +33,5 @@ internal static class DateSerial
     }
 
     /// <summary>The weekday Excel gives a serial, 0 for Sunday: Excel counts 1 January 1900 as a Sunday.</summary>
-    public static int DayOfWeek(int serial) => (serial + 6) % 7;
+    internal static int DayOfWeek(int serial) => (serial + 6) % 7;
 }

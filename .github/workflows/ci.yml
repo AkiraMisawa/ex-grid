@@ -133,7 +133,7 @@ jobs:
               -reporttypes:"TextSummary"
           }
           product ExGrid  "+ExGrid;+ExGrid.MudBlazor"
-          product ExSheet "+ExSheet;+ExSheet.Engine;+ExSheet.MudBlazor"
+          product ExSheet "+ExSheet;+ExSheet.Engine;+ExSheet.MudBlazor;+ExSheet.Xlsx"
           product ExPivot "+ExPivot;+ExPivot.Engine;+ExPivot.MudBlazor"
           product ExChart "+ExChart;+ExChart.Engine;+ExChart.MudBlazor"
           product ExBoard "+ExBoard"

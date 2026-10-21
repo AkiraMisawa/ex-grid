@@ -119,7 +119,9 @@ public abstract class SheetEdit
     public static SheetEdit Paste(SheetBlock block, CellAddress origin)
     {
         ArgumentNullException.ThrowIfNull(block);
-        return new PlacedEdit(Sheet.OffSheet(origin, block.RowCount, block.ColumnCount), () => Sheet.Place(block, origin));
+        var refusal = Sheet.OffSheet(origin, block.RowCount, block.ColumnCount);
+        return new PlacedEdit(refusal, () => Sheet.Place(block, origin),
+            refusal is null ? [new CellRange(origin, new CellAddress(origin.Row + block.RowCount - 1, origin.Column + block.ColumnCount - 1))] : []);
     }
 
     /// <summary>
@@ -131,7 +133,7 @@ public abstract class SheetEdit
     {
         ArgumentNullException.ThrowIfNull(block);
         CheckWholeMultiple(block, target, nameof(target));
-        return new PlacedEdit(null, () => Tiles(block, target).SelectMany(origin => Sheet.Place(block, origin)));
+        return new PlacedEdit(null, () => Tiles(block, target).SelectMany(origin => Sheet.Place(block, origin)), [target]);
     }
 
     /// <summary>
@@ -155,7 +157,7 @@ public abstract class SheetEdit
             var states = new Dictionary<CellAddress, CellState>();
             foreach (var (address, state) in ranges.SelectMany(target => Tiles(block, target)).SelectMany(origin => Sheet.Place(block, origin))) states[address] = state;
             return states.Select(p => (p.Key, p.Value));
-        });
+        }, ranges);
     }
 
     private static void CheckWholeMultiple(SheetBlock block, CellRange target, string parameter)
@@ -286,7 +288,7 @@ public abstract class SheetEdit
             throw new ArgumentException($"{enteredAt} is not inside any target range.", nameof(enteredAt));
         }
         var cells = ranges.SelectMany(range => range.Cells()).Distinct().ToList();
-        return new CellsEdit(cells, sheet => sheet.EnterInto(cells, enteredAt, typed));
+        return new CellsEdit(cells, sheet => sheet.EnterInto(cells, enteredAt, typed), FocusFirst(ranges, enteredAt));
     }
 
     /// <summary>
@@ -348,11 +350,41 @@ public abstract class SheetEdit
     internal abstract SheetStep Apply(Sheet sheet);
 
     /// <summary>
+    /// The ranges the operation changes on its Sheet, the one it acts from first: what an undo or a redo
+    /// of it selects, as Excel's do (ADR-0331 §3). None for an operation on the Sheets themselves.
+    /// </summary>
+    internal virtual IReadOnlyList<CellRange> Ranges => [];
+
+    /// <summary>The smallest range holding every one of <paramref name="cells"/>; none for no cells.</summary>
+    private static IReadOnlyList<CellRange> Bounding(IEnumerable<CellAddress> cells)
+    {
+        int top = int.MaxValue, left = int.MaxValue, bottom = -1, right = -1;
+        foreach (var cell in cells)
+        {
+            top = Math.Min(top, cell.Row);
+            left = Math.Min(left, cell.Column);
+            bottom = Math.Max(bottom, cell.Row);
+            right = Math.Max(right, cell.Column);
+        }
+        return bottom < 0 ? [] : [new CellRange(new CellAddress(top, left), new CellAddress(bottom, right))];
+    }
+
+    /// <summary><paramref name="ranges"/> with the one holding <paramref name="cell"/> first.</summary>
+    private static IReadOnlyList<CellRange> FocusFirst(IReadOnlyList<CellRange> ranges, CellAddress cell)
+    {
+        var at = ranges.ToList().FindIndex(range => range.Contains(cell));
+        return at <= 0 ? ranges : [ranges[at], .. ranges.Where((_, i) => i != at)];
+    }
+
+    /// <summary>
     /// An operation on cells in place: undone by putting back what those cells recorded before,
     /// redone by putting back what they recorded after.
     /// </summary>
-    internal sealed class CellsEdit(IEnumerable<CellAddress> touched, Func<Sheet, SheetChange> apply) : SheetEdit
+    internal sealed class CellsEdit(IEnumerable<CellAddress> touched, Func<Sheet, SheetChange> apply, IReadOnlyList<CellRange>? ranges = null) : SheetEdit
     {
+        // The cells it names, unless it was given the ranges they were named from.
+        internal override IReadOnlyList<CellRange> Ranges => ranges ??= Bounding(touched);
+
         internal override SheetStep Apply(Sheet sheet)
         {
             var addresses = touched.Distinct().ToList();
@@ -367,9 +399,11 @@ public abstract class SheetEdit
     /// Cells written whole — Entry and Cell Format — such as a paste of Entries or a fill:
     /// the states are computed when the edit is done, and a refusal known in advance stops it.
     /// </summary>
-    internal sealed class PlacedEdit(SheetRefusal? refusal, Func<IEnumerable<(CellAddress Address, CellState State)>> states) : SheetEdit
+    internal sealed class PlacedEdit(SheetRefusal? refusal, Func<IEnumerable<(CellAddress Address, CellState State)>> states, IReadOnlyList<CellRange> ranges) : SheetEdit
     {
         internal override SheetRefusal? Check(Sheet sheet) => refusal;
+
+        internal override IReadOnlyList<CellRange> Ranges => ranges;
 
         internal override SheetStep Apply(Sheet sheet)
         {
@@ -382,6 +416,12 @@ public abstract class SheetEdit
     internal sealed class FillEdit(CellRange source, CellRange target, FillDirection direction, bool copyOnly) : SheetEdit
     {
         internal override SheetRefusal? Check(Sheet sheet) => sheet.PlanFill(source, target, direction, copyOnly).Refusal;
+
+        // The source and what it was extended over, as Excel's fill leaves them selected.
+        internal override IReadOnlyList<CellRange> Ranges =>
+            [new CellRange(
+                new CellAddress(Math.Min(source.First.Row, target.First.Row), Math.Min(source.First.Column, target.First.Column)),
+                new CellAddress(Math.Max(source.Last.Row, target.Last.Row), Math.Max(source.Last.Column, target.Last.Column)))];
 
         internal override SheetStep Apply(Sheet sheet)
         {
@@ -400,6 +440,8 @@ public abstract class SheetEdit
     /// </summary>
     internal sealed class CellFormatEdit(CellRange range, CellFormatChange change) : SheetEdit
     {
+        internal override IReadOnlyList<CellRange> Ranges => [range];
+
         internal override SheetStep Apply(Sheet sheet)
         {
             var outcome = sheet.ApplyCellFormat(range, change);
@@ -410,6 +452,8 @@ public abstract class SheetEdit
     /// <summary>A change set on several ranges: undone by every range's part undone in reverse, redone by setting it again.</summary>
     internal sealed class CellFormatsEdit(IReadOnlyList<CellRange> ranges, CellFormatChange change) : SheetEdit
     {
+        internal override IReadOnlyList<CellRange> Ranges => ranges;
+
         internal override SheetStep Apply(Sheet sheet)
         {
             var outcome = sheet.ApplyCellFormats(ranges, change);
@@ -420,6 +464,8 @@ public abstract class SheetEdit
     /// <summary>A width set on columns: undone by every column's width put back, redone by the widths it left.</summary>
     internal sealed class ColumnWidthEdit(CellRange columns, SheetColumnWidth? width) : SheetEdit
     {
+        internal override IReadOnlyList<CellRange> Ranges => [columns];
+
         internal override SheetStep Apply(Sheet sheet)
         {
             var (change, before) = sheet.ApplyColumnWidth(columns, width);
@@ -541,6 +587,11 @@ public abstract class SheetEdit
     internal sealed class StructureEdit(StructuralEdit edit) : SheetEdit
     {
         internal override SheetRefusal? Check(Sheet sheet) => sheet.CheckStructural(edit);
+
+        // The whole rows or columns inserted, or deleted.
+        internal override IReadOnlyList<CellRange> Ranges => edit.Axis == SheetAxis.Rows
+            ? [CellRange.WholeRows(edit.Start, edit.Start + edit.Count - 1)]
+            : [CellRange.WholeColumns(edit.Start, edit.Start + edit.Count - 1)];
 
         internal override SheetStep Apply(Sheet sheet)
         {

@@ -390,6 +390,10 @@ internal sealed class GridJSInterop
     internal IReadOnlyList<string> TakenAtAttach =>
         (IReadOnlyList<string>)_module!.Invocations["attach"][^1].Arguments[3]!;
 
+    /// <summary>Whether the gate was told at attach that a Replace can land (ADR-0332): the last
+    /// argument of <c>attach</c>.</summary>
+    internal bool ReplaceableAtAttach => (bool)_module!.Invocations["attach"][^1].Arguments[^1]!;
+
     /// <summary>The Consumer's declared keys the gate was handed at attach for its editing
     /// branch (ADR-0050, item 14): the last argument of <c>attach</c>.</summary>
     internal IReadOnlyList<string> DeclaredAtAttach =>
