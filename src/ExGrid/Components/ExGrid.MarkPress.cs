@@ -198,7 +198,7 @@ public partial class ExGrid<TRow>
     private Task RaiseRowMarkAsync(TRow row, bool marked)
     {
         if (TakeDispatchedRowCommand(true) is { } command) return QueueRememberedRowCommand(command);
-        var input = ClaimInput(ClaimClick);
+        var input = ClaimInput(ClaimKinds.Click);
         if (input <= 0) return RaiseUnnumberedRowMarkAsync(row, marked);
         var paint = _markPress?.Paint ?? PaintNotTold;
         _markPress = null;
