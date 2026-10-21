@@ -126,6 +126,15 @@ internal static class KeyboardByHand
         new("Sheet Tabs", "[←], [→], [Home], [End] on a tab",
             "Show the Sheet before or after, the first or the last. [Enter] or [Escape] hands the keyboard back to the grid.",
             "exsheet/workbook#sheet-tabs", ["ADR-0331"]),
+        new("Sheet Tabs", "[Shift] + [F11]",
+            "Add an empty Sheet before the one shown, named Sheet and the next number, and show it. One undo step.",
+            "exsheet/workbook#sheet-tabs", ["ADR-0331"], Canonical: ["Shift+F11"]),
+        new("Sheet Tabs", "[Shift] + [F10], the menu key on a tab",
+            "Open the tab's menu: Rename, Delete, Move Left, Move Right, Copy. [↑] [↓] choose, [Enter] does it, [Escape] closes it.",
+            "exsheet/workbook#sheet-tabs", ["ADR-0331"]),
+        new("Sheet Tabs", "[Enter] / [Escape] in a tab's name",
+            "Commit the name being edited on its tab, or keep the old one. A name Excel refuses is refused by name.",
+            "exsheet/workbook#sheet-tabs", ["ADR-0331"]),
     ];
 
     /// <summary>ExPivot's keys: ExGrid's on the report, and those of its pane and panels.</summary>

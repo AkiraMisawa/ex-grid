@@ -2306,6 +2306,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // A dispatched keydown does neither: a change-bound field such as More Colours'
                 // HEX would show the held text while its Consumer still held the old value.
                 // Keep the key first for handlers such as Find's Shift+Enter (ADR-0055).
+                // On the product's own surface around this root — a Sheet Tab's name being edited — the
+                // field's Enter is numbered and its handler reads the text in that number's turn, as a
+                // native Enter's does after commitOnEnter: the held text is committed ahead of the key.
+                if (heldTextEdit?.field === target && outsideRootWithin(target)) commitHeldText();
                 replayInto(target, k);
                 if (heldTextEdit?.field === target) commitHeldText();
                 target.form?.requestSubmit();
@@ -3089,7 +3093,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }, restDelayMs);
         }
     };
-    const onPointerLeave = () => {
+    const onPointerLeave = (event) => {
+        // A drag's moves held behind its press (holdDragMove) are handed to Blazor at their turn, after
+        // the leaving Blazor heard as it came: the last of them, in the edge band, armed an auto-scroll
+        // nothing stopped, and the selection grew row by row with the pointer long gone (WB-13, Server
+        // host, CI, 2026-10-21). So the leaving is held behind them too, and handed on after the last.
+        if (core && !replaying && event.isTrusted && held.some((k) => k.dragMove === true)) {
+            held.push({ press: 'mouseleave', claim: true, target: root, init: { ...mouseInit(event), bubbles: false } });
+        }
         clearTimeout(restTimer);
         lastPointerRow = -2;
         // Unconditionally: a message opened while rests were reported outlives the

@@ -10,7 +10,68 @@ ExSheet.Components.ExSheet.Workbook.get -> ExSheet.Engine.WorkbookDocument?
 ExSheet.Components.ExSheet.Workbook.set -> void
 ExSheet.Components.ExSheet.WorkbookChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.WorkbookDocument!>
 ExSheet.Components.ExSheet.WorkbookChanged.set -> void
+ExSheet.ISheetChrome.SheetTab(ExSheet.SheetTabContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.ISheetChrome.SheetTabAdd() -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.ISheetChrome.SheetTabMenu(ExSheet.SheetTabMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.SheetsChange
 ExSheet.SheetsChange.After.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExSheet.SheetsChange.Before.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExSheet.SheetsChange.Shown.get -> string!
+ExSheet.SheetTabCommand
+ExSheet.SheetTabCommand.<Clone>$() -> ExSheet.SheetTabCommand!
+ExSheet.SheetTabCommand.Active.get -> bool
+ExSheet.SheetTabCommand.Active.init -> void
+ExSheet.SheetTabCommand.Deconstruct(out string! Id, out ExSheet.SheetTabCommandKind Kind, out string! Label, out bool Enabled, out string? DisabledReason, out bool Active, out System.Func<System.Threading.Tasks.Task!>! Invoke) -> void
+ExSheet.SheetTabCommand.DisabledReason.get -> string?
+ExSheet.SheetTabCommand.DisabledReason.init -> void
+ExSheet.SheetTabCommand.Enabled.get -> bool
+ExSheet.SheetTabCommand.Enabled.init -> void
+ExSheet.SheetTabCommand.Equals(ExSheet.SheetTabCommand? other) -> bool
+ExSheet.SheetTabCommand.Id.get -> string!
+ExSheet.SheetTabCommand.Id.init -> void
+ExSheet.SheetTabCommand.Invoke.get -> System.Func<System.Threading.Tasks.Task!>!
+ExSheet.SheetTabCommand.Invoke.init -> void
+ExSheet.SheetTabCommand.Kind.get -> ExSheet.SheetTabCommandKind
+ExSheet.SheetTabCommand.Kind.init -> void
+ExSheet.SheetTabCommand.Label.get -> string!
+ExSheet.SheetTabCommand.Label.init -> void
+ExSheet.SheetTabCommand.SheetTabCommand(string! Id, ExSheet.SheetTabCommandKind Kind, string! Label, bool Enabled, string? DisabledReason, bool Active, System.Func<System.Threading.Tasks.Task!>! Invoke) -> void
+ExSheet.SheetTabCommandKind
+ExSheet.SheetTabCommandKind.Copy = 4 -> ExSheet.SheetTabCommandKind
+ExSheet.SheetTabCommandKind.Delete = 1 -> ExSheet.SheetTabCommandKind
+ExSheet.SheetTabCommandKind.MoveLeft = 2 -> ExSheet.SheetTabCommandKind
+ExSheet.SheetTabCommandKind.MoveRight = 3 -> ExSheet.SheetTabCommandKind
+ExSheet.SheetTabCommandKind.Rename = 0 -> ExSheet.SheetTabCommandKind
+ExSheet.SheetTabContext
+ExSheet.SheetTabContext.<Clone>$() -> ExSheet.SheetTabContext!
+ExSheet.SheetTabContext.Deconstruct(out string! Name, out bool Selected) -> void
+ExSheet.SheetTabContext.Equals(ExSheet.SheetTabContext? other) -> bool
+ExSheet.SheetTabContext.Name.get -> string!
+ExSheet.SheetTabContext.Name.init -> void
+ExSheet.SheetTabContext.Selected.get -> bool
+ExSheet.SheetTabContext.Selected.init -> void
+ExSheet.SheetTabContext.SheetTabContext(string! Name, bool Selected) -> void
+ExSheet.SheetTabMenuContext
+ExSheet.SheetTabMenuContext.<Clone>$() -> ExSheet.SheetTabMenuContext!
+ExSheet.SheetTabMenuContext.Commands.get -> System.Collections.Generic.IReadOnlyList<ExSheet.SheetTabCommand!>!
+ExSheet.SheetTabMenuContext.Commands.init -> void
+ExSheet.SheetTabMenuContext.Deconstruct(out string! Sheet, out System.Collections.Generic.IReadOnlyList<ExSheet.SheetTabCommand!>! Commands) -> void
+ExSheet.SheetTabMenuContext.Equals(ExSheet.SheetTabMenuContext? other) -> bool
+ExSheet.SheetTabMenuContext.Sheet.get -> string!
+ExSheet.SheetTabMenuContext.Sheet.init -> void
+ExSheet.SheetTabMenuContext.SheetTabMenuContext(string! Sheet, System.Collections.Generic.IReadOnlyList<ExSheet.SheetTabCommand!>! Commands) -> void
+override ExSheet.SheetTabCommand.Equals(object? obj) -> bool
+override ExSheet.SheetTabCommand.GetHashCode() -> int
+override ExSheet.SheetTabCommand.ToString() -> string!
+override ExSheet.SheetTabContext.Equals(object? obj) -> bool
+override ExSheet.SheetTabContext.GetHashCode() -> int
+override ExSheet.SheetTabContext.ToString() -> string!
+override ExSheet.SheetTabMenuContext.Equals(object? obj) -> bool
+override ExSheet.SheetTabMenuContext.GetHashCode() -> int
+override ExSheet.SheetTabMenuContext.ToString() -> string!
+static ExSheet.SheetTabCommand.operator !=(ExSheet.SheetTabCommand? left, ExSheet.SheetTabCommand? right) -> bool
+static ExSheet.SheetTabCommand.operator ==(ExSheet.SheetTabCommand? left, ExSheet.SheetTabCommand? right) -> bool
+static ExSheet.SheetTabContext.operator !=(ExSheet.SheetTabContext? left, ExSheet.SheetTabContext? right) -> bool
+static ExSheet.SheetTabContext.operator ==(ExSheet.SheetTabContext? left, ExSheet.SheetTabContext? right) -> bool
+static ExSheet.SheetTabMenuContext.operator !=(ExSheet.SheetTabMenuContext? left, ExSheet.SheetTabMenuContext? right) -> bool
+static ExSheet.SheetTabMenuContext.operator ==(ExSheet.SheetTabMenuContext? left, ExSheet.SheetTabMenuContext? right) -> bool
