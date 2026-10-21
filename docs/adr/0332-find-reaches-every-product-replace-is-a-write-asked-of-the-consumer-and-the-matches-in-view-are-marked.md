@@ -64,8 +64,11 @@ left unreplaced, silently).
 - **A Consumer that answers Find itself gets the mark only by passing a match function.** Its rule may
   not be the reference one, and a mark the next step does not reach would be quietly wrong; so without
   one, nothing is marked.
-- The mark is painted like the Selection (ADR-0008): a class on the painted cells, a Visual Token for its
-  colour (ADR-0027). Nothing per cell reaches JavaScript.
+- The mark is painted as the Change Highlight is (ADR-0068): a class on the painted cells, a Visual Token
+  for its colour (ADR-0027, listed in ADR-0029). Its cost follows the rule ADR-0008 measured: what counts is
+  how many rows change membership at once. Nothing per cell reaches JavaScript.
+- **The current match** is the cell a step found, while the Focus stays on it; a new step, a refused step
+  or the panel reopened takes it away.
 
 *Rejected:* asking the Consumer for the matches of every painted range (the mark would trail the scroll
 on a circuit or a remote Source).
