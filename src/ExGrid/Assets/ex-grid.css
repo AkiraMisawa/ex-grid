@@ -458,11 +458,10 @@
 }
 /* The Match Mark (ADR-0332 §4): while the find panel holds a search, every painted cell that
    matches it, and the current match apart, the Focus a found step moved to. Two Visual Tokens
-   (ADR-0027/0029): --ex-match-mark-fill, by default a 40% tint of the system colour Mark, the
-   colour a browser's own find marks with and the Change Highlight's measured tint (about 5:1 on a
-   dark page, 20:1 on a light one); and --ex-match-mark-current-fill, by default a 50% tint of the
-   orange a browser marks its current match with, so the two read apart, and the current reads apart
-   from a Change Highlight.
+   (ADR-0027/0029), both tints of the orange a browser marks its current match with:
+   --ex-match-mark-fill a light one, 25%, and --ex-match-mark-current-fill a strong one, 55%, so the
+   current match reads apart from the rest. Neither is the Change Highlight's tint of Mark, so a
+   match never reads as a changed value, nor the selection's blue.
 
    Painted by the cell's ::before, not as a ground: a cell's grounds are a stack of images that
    each combination of stripe, Row Kind, state, lines and Change Highlight restates (above), and a
@@ -477,11 +476,11 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: var(--ex-match-mark-fill, color-mix(in srgb, Mark 40%, transparent));
+    background: var(--ex-match-mark-fill, color-mix(in srgb, #ff9632 25%, transparent));
     pointer-events: none;
 }
 .ex-cell.ex-match-mark-current::before {
-    background: var(--ex-match-mark-current-fill, color-mix(in srgb, #ff9632 50%, transparent));
+    background: var(--ex-match-mark-current-fill, color-mix(in srgb, #ff9632 55%, transparent));
 }
 /* What stands in for the columns left out to the left of the first painted one. It must
    not be allowed to shrink: a flex-shrunk spacer would slide every painted column left
@@ -1267,11 +1266,14 @@
        the thing that disappears (ADR-0006). */
     .ex-cell.ex-changed { outline: 2px dashed Highlight; outline-offset: -2px; }
     /* The Match Mark (ADR-0332 §4): forced colours discard its ground, so a match is restated as
-       a dotted outline in the colour of marked text, and the current match as a solid one. Declared
-       before the states, so a state's own restatement is the one kept on a cell with both. */
-    .ex-cell.ex-match-mark::before { background: none; }
-    .ex-cell.ex-match-mark { outline: 2px dotted Highlight; outline-offset: -2px; }
-    .ex-cell.ex-match-mark-current { outline-style: solid; }
+       a dotted frame, and the current match as a solid one, drawn by the ::before's border on a band
+       of its own inside the cell: three pixels in, clear of the two-pixel band at the cell's edge
+       where the Change Highlight's dashed outline, the states' outlines and the Focus's lie. It is
+       not an outline, which the cell has one of: on a cell both changed and matching, one would
+       replace the other and two meanings would read as one. Not a box-shadow either, which forced
+       colours discard. */
+    .ex-cell.ex-match-mark::before { background: none; inset: 3px; border: 2px dotted Highlight; }
+    .ex-cell.ex-match-mark-current::before { background: none; border-style: solid; }
     .ex-cell.ex-state-stale { color: GrayText; }
     .ex-cell.ex-state-missing { outline: 1px dotted GrayText; outline-offset: -2px; }
     .ex-cell.ex-state-error { color: LinkText; }

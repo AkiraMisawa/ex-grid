@@ -76,8 +76,8 @@ public class StylesheetLengthTests : GridTestContext
         // The forced-colors block restates states and bands as outlines (ADR-0027).
         [(".ex-cell.ex-changed", "outline", "2px")] = Outline,
         [(".ex-cell.ex-changed", "outline-offset", "-2px")] = Outline,
-        [(".ex-cell.ex-match-mark", "outline", "2px")] = Outline,
-        [(".ex-cell.ex-match-mark", "outline-offset", "-2px")] = Outline,
+        [(".ex-cell.ex-match-mark::before", "inset", "3px")] = Mark,
+        [(".ex-cell.ex-match-mark::before", "border", "2px")] = Mark,
         [(".ex-cell.ex-state-missing", "outline", "1px")] = Outline,
         [(".ex-cell.ex-state-missing", "outline-offset", "-2px")] = Outline,
         [(".ex-cell.ex-state-modified", "outline", "1px")] = Outline,

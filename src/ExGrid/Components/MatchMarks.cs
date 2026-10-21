@@ -26,13 +26,19 @@ public sealed class MatchMarks<TRow>
         _pattern = pattern;
     }
 
-    /// <summary>Whether this judges as <paramref name="match"/> would over <paramref name="pattern"/>:
-    /// then the grid keeps this instance, and every row skips.</summary>
-    internal bool Same(FindMatchOf<TRow> match, GridFindPattern pattern)
-        => ReferenceEquals(_match, match) && _pattern == pattern;
+    /// <summary>Whether this judges as <paramref name="match"/> would over the text and options the
+    /// panel holds: then the grid keeps this instance, every row skips, and no pattern is made to
+    /// find that out.</summary>
+    internal bool Same(FindMatchOf<TRow> match, string text, bool matchCase, bool wholeCell)
+        => ReferenceEquals(_match, match)
+            && string.Equals(_pattern.Text, text, StringComparison.Ordinal)
+            && _pattern.MatchCase == matchCase
+            && _pattern.WholeCell == wholeCell;
 
-    /// <summary>Whether a painted value cell matches. An Action or Template cell paints no value, so
-    /// is never asked and never marked.</summary>
+    /// <summary>Whether a painted cell matches. Only a cell Find can land on is asked: a value or a
+    /// Template cell, whose column is queryable and has displayed text that
+    /// <c>GridSource.From</c> searches, so a step and the mark agree. An Action or Mark cell has no
+    /// text to search, and is never asked and never marked.</summary>
     internal bool Matches(TRow row, GridColumn<TRow> column)
-        => column.PaintsValue && _match(row, column, _pattern);
+        => column.IsQueryable && _match(row, column, _pattern);
 }

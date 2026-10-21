@@ -3554,6 +3554,7 @@
         if (!reconciled.Selection.Equals(_selection.Selection))
             _selectionChanged = true;
         _selection = reconciled;
+        ForgetCurrentMatchOffFocus();
         // The Copied Range is written in the same coordinates, and dropped on the same triggers; it
         // also goes when a copied cell comes to read otherwise (ADR-0170).
         ReconcileCopiedRange(columnsMoved: _columnsMoved || _sourceReplaced);
@@ -6470,6 +6471,7 @@
             || next.Focus != _selection.Selection.Focus;
         _selection = _selection.With(next);
         _selectionChanged = true;
+        ForgetCurrentMatchOffFocus();
         if (movedFocus)
             ScheduleMessage(next.IsEmpty ? null : next.Focus);
         return true;
@@ -7883,7 +7885,7 @@
 
         _findOutcome = FindOutcome.Found;
         var found = new CellPosition(answer.Row, column);
-        _findCurrent = found;
+        TakeCurrentMatch(found);
         // With a scope the selection stands and only the Focus moves inside it, so the next
         // step searches the same ranges; without one it collapses onto the match.
         var next = request.Scope is not null && selection.Contains(found)

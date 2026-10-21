@@ -9,7 +9,7 @@ namespace ExGrid.Finding;
 /// (<see cref="ColumnInfo{TRow}.TextOf"/>) is the reference rule, the one a Grid Source answers by.
 /// </summary>
 /// <param name="row">The row the cell is in.</param>
-/// <param name="column">The cell's column: one that paints a value, never an Action or Template
-/// column.</param>
+/// <param name="column">The cell's column: one Find can land on — a value or Template column, whose
+/// displayed text <see cref="ColumnInfo{TRow}.TextOf"/> gives — never an Action or Mark column.</param>
 /// <param name="pattern">What the find panel holds. Its text is never empty.</param>
 public delegate bool FindMatchOf<TRow>(TRow row, GridColumn<TRow> column, GridFindPattern pattern);

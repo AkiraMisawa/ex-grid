@@ -38,7 +38,8 @@
                 to are marked as they appear, and the marks go when the panel closes or its field is emptied.
                 Only the cells on screen are judged, so nothing is counted: the grid shows no "3 of 40". The
                 grid judges those cells itself, by the same rule <code>GridSource.From</code> finds by, so the
-                marks follow the scroll with no round trip. The colours are the Visual Tokens
+                marks follow the scroll with no round trip. Template cells are searched and marked like any
+                other cell with a value; action buttons are not. The colours are the Visual Tokens
                 <code>--ex-match-mark-fill</code> and <code>--ex-match-mark-current-fill</code>, on the classes
                 <code>ex-match-mark</code> and <code>ex-match-mark-current</code>; <code>ExGrid.MudBlazor</code>
                 maps them to the palette's secondary and tertiary.
@@ -94,8 +95,9 @@
             little further down.
         </p>
         <p>
-            <strong>When you answer <code>OnFind</code> yourself, the matches on screen are marked only if you pass
-            <code>FindMatch</code></strong>: the rule your answer finds by, asked of each cell on screen with the
+            <strong>When you answer the find yourself — with <code>OnFind</code>, with the <code>find</code> delegate
+            of <code>GridSource.Fetch</code>, or with a Source of your own — the matches on screen are marked only if
+            you pass <code>FindMatch</code></strong>: the rule your answer finds by, asked of each cell on screen with the
             text and the two options the panel holds (a <code>GridFindPattern</code>). Your search may not be the
             reference one, and a mark your next step does not reach would be wrong, so without it nothing is marked.
             If you find by the reference rule, pass it over the columns' displayed text,
