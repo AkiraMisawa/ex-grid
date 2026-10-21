@@ -151,3 +151,17 @@ executions) and ten without additional latency or CPU throttling (140 executions
 run reproduced the renderer stop, so those passes do not close that defect. Eighteen further
 Chrome Server executions passed at 150 ms / CPU4: three repetitions under both Chromes of
 cell-to-bar transfer, Point preservation and main's new cross-Sheet Point/commit case (WB-6).
+
+
+## Main follow-up, 2026-10-21
+
+Main `fcd295ba` (PR #229) is integrated through responsive branch `898400a7` and stage 03
+`6cec63ee`. Both merges were clean. Its browser fixture addition prints the already-captured
+Input Journal in failure output; it does not change the input or settling boundary. The
+combined solution builds with zero warnings/errors, and all eighteen logic/component suites
+pass: 14,895 passed, 11 skipped. The corrected closing-menu test passes six more executions
+on Chrome Server at 150 ms RTT floor and fourfold CPU throttling, three under each Chrome.
+
+The heading investigation remains pinned to `9a4ed03a` so this unrelated main update cannot
+change its reproduction. These integration passes do not resolve the heading stop or replace
+the required fifteen-spec gate.
