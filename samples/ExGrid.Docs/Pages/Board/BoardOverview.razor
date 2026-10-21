@@ -32,17 +32,41 @@
         <DocsExample Builtin="typeof(DeskBoardBuiltin)" Mud="typeof(DeskBoardMud)" Files="@(["Examples/Board/DeskBoard.cs"])" />
     </DocsSection>
 
+    <DocsSection Title="Links narrow by values">
+        <p>
+            A link names a grid, the views it narrows and the columns it compares:
+            <code>{"from": "blotter", "to": ["byTrader", "daily"], "on": ["desk"]}</code>. Select rows in the grid, in any
+            column, and each view the link reaches shows only the rows whose values in those columns are the selected
+            rows' values. In the Board above, select an FX trade: the pivot shows FX's traders and the chart FX's days.
+            A selection of several rows, with Ctrl or Shift, lets through every one of their values.
+        </p>
+        <p>
+            It narrows by values, not by rows, so it reaches views over other inputs that declare the same columns, and
+            keeps its meaning when the data moves on. On two columns it lets through the selected rows' own pairs:
+            rows (Rates, Jan) and (Credit, Feb) let through no (Rates, Feb). Text is compared as a grid's value list
+            compares it, without regard to case. A narrowed grid keeps the sort and the filter set on it; a pivot is
+            computed again over the rows let through, and a chart drawn from them. When the selection is dropped,
+            because the grid was sorted or filtered or the selection cleared, the narrowing goes with it: a view is
+            never left narrowed by a selection that is no longer there.
+        </p>
+        <p>
+            Reading refuses a link that starts at a pivot or a chart (a pivot's cell is still to come), narrows its own
+            view, names a view or a column that is not there, compares a column of one type with one of another, or
+            would close a loop: links run one way.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="Still to come">
         <p>
-            Links that narrow one view by another's selection, outputs raised when the user confirms, and the Board Diff
-            that hands back what the user changed are decided (ADR-0340) and not yet drawn. ExBoard is not yet published
-            as a package.
+            A link from a pivot's cell, outputs raised when the user confirms, and the Board Diff that hands back what
+            the user changed are decided (ADR-0340) and not yet drawn. ExBoard is not yet published as a package.
         </p>
     </DocsSection>
 
     <DocsSection Title="API">
         <ApiTable Type="typeof(global::ExBoard.BoardSpec)" />
         <ApiTable Type="typeof(global::ExBoard.BoundBoard)" />
+        <ApiTable Type="typeof(global::ExBoard.LinkCondition)" />
         <ApiTable Type="typeof(global::ExBoard.Components.ExBoard)" />
     </DocsSection>
 </DocsPage>

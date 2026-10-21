@@ -19,6 +19,7 @@
            like the whole (spine rule 1). *@
         <div class="ex-board-refusal" role="alert">@_refusal</div>
     }
+
     else if (_bound is { } bound)
     {
         @foreach (var row in bound.Board.Layout)
@@ -38,12 +39,18 @@
                         {
                             case BoundGridView grid:
                                 <ExGrid TRow="ShapedRow" Source="grid.Grid.Source" Columns="grid.Grid.Columns" PinnedColumnCount="grid.Grid.PinnedColumnCount"
-                                        Chrome="Chrome" ViewportHeight="row.Height" ViewportWidth="ViewportSize.Stretch" />
+                                        Chrome="Chrome" ViewportHeight="row.Height" ViewportWidth="ViewportSize.Stretch"
+                                        SelectionChanged="SelectionChangedOf(cell.View)" />
                                 break;
                             case BoundPivotView pivot:
                                 <ExPivot Source="pivot.Source" Layout="LayoutOf(pivot)" LayoutChanged="_layoutChanged[cell.View]"
                                          Chrome="Chrome" PivotChrome="PivotChrome" ShowFieldList="false"
                                          ViewportHeight="row.Height" ViewportWidth="ViewportSize.Stretch" />
+                                break;
+                            case BoundChartView { Refusal: { } refusal }:
+                                @* The rows a link lets through are not a chart its spec draws: said in
+                                   its place, never the chart of other rows (spine rule 1). *@
+                                <div class="ex-board-refusal" role="alert" style="@RefusalStyle(row)">@refusal</div>
                                 break;
                             case BoundChartView chart:
                                 <ExChart Definition="chart.Reading.Definition" Title="@chart.Reading.Title" Chrome="ChartChrome"

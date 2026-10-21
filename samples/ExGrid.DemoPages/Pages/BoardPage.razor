@@ -1,0 +1,59 @@
+@page "/board"
+@using global::ExBoard
+@using global::ExBoard.Components
+@using global::ExChart.Components
+@using global::ExGrid.Data
+@using global::ExPivot.Components
+
+<DemoNav />
+
+@* ExBoard's page (/board): the browser layer's fixture for links (ADR-0340, ExBoard ticket 05). The
+   blotter's selected rows narrow the pivot, the chart and the limits grid, which reads another input,
+   by desk. *@
+<DemoChromeAssets>
+    <Head>
+        <ExPivotStylesheet />
+        <ExChartStylesheet />
+    </Head>
+</DemoChromeAssets>
+
+<h1>A Board</h1>
+<ExBoard Board="Reading" Data="Data" Width="1000" />
+
+@code {
+    private const string Json = """
+        {"version": 1, "title": "Desk P&L",
+         "inputs": {
+           "trades": {"columns": [{"name": "desk", "type": "text"}, {"name": "trader", "type": "text"},
+                                  {"name": "day", "type": "date"}, {"name": "pnl", "type": "decimal"}]},
+           "limits": {"columns": [{"name": "desk", "type": "text"}, {"name": "limit", "type": "decimal"}]}},
+         "views": [
+           {"id": "blotter", "title": "Trades", "grid": {"data": "trades",
+             "columns": [{"column": "day", "header": "Day"}, {"column": "desk", "header": "Desk"},
+                         {"column": "trader", "header": "Trader"}, {"column": "pnl", "header": "P&L", "format": "#,##0;(#,##0)"}]}},
+           {"id": "byTrader", "title": "By trader", "pivot": {"data": "trades", "layout": {"version": 1,
+             "rows": [{"field": "trader"}], "values": [{"field": "pnl", "aggregation": "sum", "numberFormat": "#,##0"}]}}},
+           {"id": "limits", "title": "Limits", "grid": {"data": "limits",
+             "columns": [{"column": "desk", "header": "Desk"}, {"column": "limit", "header": "Limit", "format": "#,##0"}]}},
+           {"id": "daily", "title": "P&L by day", "chart": {"version": 1, "axis": {"values": "dates"},
+             "series": [{"id": "pnl", "name": "P&L", "kind": "observation", "data": "trades", "x": "day", "y": "pnl"}]}}],
+         "layout": [{"views": ["blotter", "byTrader", "limits"], "widths": [2, 1, 1], "height": 240}, {"views": ["daily"], "height": 260}],
+         "links": [{"from": "blotter", "to": ["byTrader", "limits", "daily"], "on": ["desk"]}]}
+        """;
+
+    private static readonly BoardReading Reading = BoardSpec.Read(Json);
+
+    private static readonly IReadOnlyDictionary<string, Snapshot> Data = new Dictionary<string, Snapshot>
+    {
+        ["trades"] = Reading.Input("trades")!.FromJson("""
+            [{"desk": "Rates", "trader": "Aoki", "day": "2026-10-14", "pnl": 120500},
+             {"desk": "FX", "trader": "Brandt", "day": "2026-10-15", "pnl": -42000},
+             {"desk": "Rates", "trader": "Chen", "day": "2026-10-16", "pnl": 88250},
+             {"desk": "Credit", "trader": "Dubois", "day": "2026-10-17", "pnl": 15400},
+             {"desk": "FX", "trader": "Aoki", "day": "2026-10-20", "pnl": 61000}]
+            """),
+        ["limits"] = Reading.Input("limits")!.FromJson("""
+            [{"desk": "Rates", "limit": 500000}, {"desk": "FX", "limit": 250000}, {"desk": "Credit", "limit": 100000}]
+            """),
+    };
+}

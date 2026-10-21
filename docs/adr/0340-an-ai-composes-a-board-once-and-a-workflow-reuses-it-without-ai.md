@@ -69,3 +69,30 @@ next step.
 - What an AI is told while it composes (a source's shape without its rows, a Board said in words) and
   the tool definitions follow ADR-0320's form and are settled with the implementation.
 - The grilling's record is `exchart/grilling-family-ai.md` in the project's shared files.
+
+## Implementation notes
+
+*Links, 2026-10-21 (ExBoard ticket 05).* Defaults taken where the decision left a choice, recorded
+here so they are not re-derived:
+
+- **The condition is the selected rows' tuples**, one per distinct combination of values in the
+  link's `on` columns, never a value list per column. Per-column lists would let (Rates, Feb) through
+  a selection of (Rates, Jan) and (Credit, Feb): plausible and wrong (spine rule 1). On one column it
+  is exactly ADR-0002's value list filter; on several, ADR-0002's model, whose columns combine with
+  And, cannot say it, so the condition is a model of its own (`LinkCondition`), its values compared
+  as the grid's value list compares them (text without regard to case, every other value by its
+  type, a Blank only to a Blank).
+- **In memory, ExBoard executes it** over the bound Snapshots: a grid's rows are handed again to its
+  source, which keeps the user's sort and filter; a pivot is given a source over a Snapshot of the
+  rows let through; a chart reads only those rows. A source held where the data lives (ticket 02) is
+  handed the condition instead. A pivot's narrowed Snapshot is a copy, made once per change of
+  condition (a selection moving within the same values narrows nothing again), so its cost is the
+  input's size; a large input belongs on a server, where the copy is not made.
+- **A link starts at a grid** for now; a pivot's cell follows (it needs ExPivot to say which items a
+  selected cell stands for). A chart's selection does not narrow.
+- **Links run one way**: a link that would let a view narrow, directly or along other links, the
+  view that narrows it is refused. Such a view would drop its own selection each time it was
+  narrowed. Along a chain, a narrowing that changes a grid's rows drops that grid's selection
+  (ADR-0011), and the views it narrowed are restored with it.
+- **The selection is read against the rows as the grid shows them** when it is raised; a range past
+  them narrows nothing.
