@@ -8,12 +8,12 @@ permissions:
   actions: read
 
 concurrency:
-  group: hunt-after-failure-${{ github.ref }}
+  group: hunt-original-probe-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   heading:
-    name: Heading after-failure diagnosis, Server Chrome, ${{ matrix.scope }}
+    name: Heading original-probe diagnosis, Server Chrome, ${{ matrix.scope }}
     runs-on: ubuntu-latest
     timeout-minutes: 150
     strategy:
@@ -23,9 +23,6 @@ jobs:
           - scope: sequence
             repeat: 100
             grep: '.*'
-          - scope: edges
-            repeat: 1000
-            grep: 'DC-43: a (Column|Row) Heading drag' 
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
@@ -63,12 +60,12 @@ jobs:
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
           ./counted-run.sh ${{ matrix.repeat }} headings.spec.mjs --project=chrome
-          --grep '${{ matrix.grep }}' --max-failures=1 --timeout=60000
+          --grep '${{ matrix.grep }}' --max-failures=1 --timeout=300000
       - name: Keep diagnostic records
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: heading-after-failure-${{ matrix.scope }}
+          name: heading-original-probe-${{ matrix.scope }}
           path: |
             verification/
             tests/ExGrid.Browser/test-results/

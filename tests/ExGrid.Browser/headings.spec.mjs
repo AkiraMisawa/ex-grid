@@ -1,7 +1,7 @@
-import { captureFailedRenderer } from './renderer-diagnostic.mjs';
 import { test, expect, alterPage, settled } from './fixtures.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
 import { sheet, cell, expectFocusAt, boxOf, spanOf, nameBox, pressCell, expectSelectionIsCell, pressAt } from './sheet-helpers.mjs';
+import { watchRenderer, captureFailedRenderer } from './renderer-diagnostic.mjs';
 
 // The Headings as Excel's (ADR-0050 item 1, ADR-0052 and ADR-0012, all as settled on 2026-09-29),
 // on the DemoHost's /sheet: an axis a range spans end to end is not scrolled for (SR-2c), a drag
@@ -245,25 +245,30 @@ test('DC-43: a Column Heading drag at the right edge scrolls sideways, and never
     expect((await scrollOf(grid)).top).toBe(0);
 });
 
-test('DC-43: a Row Heading drag at the bottom edge scrolls down, and never sideways', async ({ page }) => {
-    const grid = sheet(page);
-    const three = centreOf(await boxOf(rowHeading(grid, 3)));
-    await page.mouse.move(three.x, three.y);
-    await page.mouse.down();
-    await expectActiveDescendant(grid, /-r2c0$/);
-    const readable = await readableOf(grid);
+test('DC-43: a Row Heading drag at the bottom edge scrolls down, and never sideways', async ({ page }, testInfo) => {
+    const stopProbe = await watchRenderer(page, testInfo);
+    try {
+        const grid = sheet(page);
+        const three = centreOf(await boxOf(rowHeading(grid, 3)));
+        await page.mouse.move(three.x, three.y);
+        await page.mouse.down();
+        await expectActiveDescendant(grid, /-r2c0$/);
+        const readable = await readableOf(grid);
 
-    // Into the bottom-right corner: both edge bands at once.
-    await page.mouse.move(readable.right - 3, readable.bottom - 3, { steps: 8 });
-    await expect.poll(async () => (await scrollOf(grid)).top, { timeout: 10_000 }).toBeGreaterThan(200);
-    // spec-lint: fixed-wait: a pointer resting in the edge band is no input the gate takes, and the band's steps run on the script's own timer, which the Settled Mark does not cover (ADR-0220, As built); nothing marks that no step sideways will come
-    await page.waitForTimeout(300);
-    expect((await scrollOf(grid)).left).toBe(0);
+        // Into the bottom-right corner: both edge bands at once.
+        await page.mouse.move(readable.right - 3, readable.bottom - 3, { steps: 8 });
+        await expect.poll(async () => (await scrollOf(grid)).top, { timeout: 10_000 }).toBeGreaterThan(200);
+        // spec-lint: fixed-wait: a pointer resting in the edge band is no input the gate takes, and the band's steps run on the script's own timer, which the Settled Mark does not cover (ADR-0220, As built); nothing marks that no step sideways will come
+        await page.waitForTimeout(300);
+        expect((await scrollOf(grid)).left).toBe(0);
 
-    await page.mouse.up();
-    // The Focus stayed on A3, now off screen, so the Name Box is where it is read.
-    await expect(nameBox(grid)).toHaveValue('A3');
-    expect((await scrollOf(grid)).left).toBe(0);
+        await page.mouse.up();
+        // The Focus stayed on A3, now off screen, so the Name Box is where it is read.
+        await expect(nameBox(grid)).toHaveValue('A3');
+        expect((await scrollOf(grid)).left).toBe(0);
+    } finally {
+        await stopProbe();
+    }
 });
 
 test('DC-44: over more than one column the Size Tip shows the size at the Extent\'s Heading, and the Name Box is empty', async ({ page }) => {
