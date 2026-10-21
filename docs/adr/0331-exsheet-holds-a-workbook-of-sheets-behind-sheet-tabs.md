@@ -70,6 +70,15 @@ double click edits the name on the tab), deleting, moving (a drag, and Move left
 tab's menu) and copying. **Every one of them can be done from the keyboard alone.** Each is an input
 in the Input Order.
 
+*(As built, 2026-10-20, exsheet-workbook ticket 05: switching. The tabs show under one Sheet too, as
+Excel shows one, and `ShowSheetTabs="false"` hides them. Each Sheet keeps its Selection and scroll
+offsets, which the grid takes back with the Row Sequence Version the Sheet is shown under
+(`GridView`), so a gesture aimed at the Sheet left is refused, never applied to the one shown.
+Ctrl+PageUp and Ctrl+PageDown are numbered in the Input Order as declared keys; a press on a tab is
+not yet, because the tabs stand outside the grid's root, and joins the order with ExSheet's own
+surfaces in input-order ticket 04. Until §5 is built, another Sheet is not shown while an edit is
+open, and the Sheet's notice says so.)*
+
 **Later, each by an ADR:** tab colours, hiding and showing Sheets (references, selection and Find
 across a hidden Sheet need rules of their own, as hidden rows do in ADR-0046), and grouped Sheets,
 which edit Sheets the user cannot see.
@@ -93,6 +102,13 @@ typed is a question to Excel, put in the next Windows run, and built as observed
   spine's sixth rule refuses.
 - **The application gets commands** to add, delete, rename, move and copy a Sheet, and hears each
   change. Every one goes onto the one undo stack (ADR-0048).
+- *As built, 2026-10-20:* a command that acts on the Selection — the Cell Format commands, and the
+  toolbar's buttons through them — names no Sheet and is still taken with several: the Selection is
+  the shown Sheet's, and the command reads the Selection and its Sheet together when it runs, so what
+  it acts on does not depend on when a tab press arrived any more than which cells are selected does.
+  An address names its Sheet: `DoAsync(sheet, edit)` and `CellFormatAt(sheet, address)`; the ones that
+  name none are refused with `SheetRefusalReason.SheetNotNamed`. The application hears each change to
+  the Sheets through `SheetsChanged`.
 
 ### 7. 3D references are in the first version (W7)
 
@@ -122,6 +138,10 @@ forwarders to a Workbook of one Sheet.)* The surface goes out in `0.2.0`, which 
 that leaves is a Change Note (ADR-0190).
 
 The component's `Document` parameter is kept (§2). Only the engine's API breaks.
+
+*(As built, 2026-10-20: the Sheet Day, `NowSource`, the volatile recalculation, the Sheet Seed and the
+count of changes are the Workbook's too, so a change on any Sheet draws `RAND` again on every Sheet, as
+Excel does; the draw names its Sheet, decided with the user and recorded in ADR-0180.)*
 
 ## Consequences
 

@@ -107,7 +107,17 @@ A check, run with layer 2 in CI, refuses a spec that:
   expectation, `circuitQuiet()` or, once built, the settled mark between them.
 
 A line the lint cannot judge is allowed by a comment that names why. It does not judge what a test
-asserts.
+asserts, with one exception added below.
+
+*Widened, decided with the user (2026-10-20):* the lint also refuses a test that **asserts where its
+keys landed** (`watchWhereKeysLand`) when those keys were typed under a round trip
+(`setRoundTrip` above 0) with the host's answers flowing (no `holdAnswers(true)` around them). Where
+a key lands depends on what stands when it is typed, and a round trip only makes it likely that a
+list or a popover still stands: nine tests did this and passed by the runner's speed, until a slow
+runner typed a ↓ after the list had gone (PR #206). Holding the answers makes it certain. A record
+kept for the report and not asserted is not refused. The wider form, every input under a round trip
+held, was rejected: most of the 216 places that set a round trip assert an outcome that does not
+depend on speed, and would have been allowances.
 
 ## As built: the Settled Mark (2026-10-16)
 

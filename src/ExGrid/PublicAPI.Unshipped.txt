@@ -9,6 +9,9 @@ ExGrid.Components.ExGrid<TRow>.EndRowClickDispatch(int ticket) -> System.Threadi
 const ExGrid.Chrome.KeyRefusalLabelIds.LostOnTheWay = "key-refusal-lost-on-the-way" -> string!
 const ExGrid.Chrome.RefusalLabelIds.PasteCancelled = "refused-paste-cancelled" -> string!
 const ExGrid.Chrome.RefusalLabelIds.PasteUnreadable = "refused-paste-unreadable" -> string!
+const ExGrid.ShapedGrid.DateFormat = "yyyy-mm-dd" -> string!
+const ExGrid.ShapedGrid.DateTimeFormat = "yyyy-mm-dd hh:mm:ss" -> string!
+const ExGrid.ShapedGrid.IntegerFormat = "#,##0" -> string!
 ExGrid.Clipboard.PasteRefusalReason.Cancelled = 13 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Clipboard.PasteRefusalReason.Unreadable = 12 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0) -> System.Threading.Tasks.Task!
@@ -19,3 +22,70 @@ ExGrid.Components.ExGrid<TRow>.RememberRowClick(int ticket, int paint, int row, 
 ExGrid.Rows.MarkRefusalReason.RowLeftTheWindow = 2 -> ExGrid.Rows.MarkRefusalReason
 ExGrid.Components.ExGrid<TRow>.OnPasteCancelAsync(int paste, int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.OnPasteTakenAsync(long textLength, long htmlLength, int paint = -1, int input = 0) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.ReadView() -> ExGrid.Components.GridView
+ExGrid.Components.ExGrid<TRow>.ShowViewWith(ExGrid.Components.GridView view) -> void
+ExGrid.Components.GridView
+ExGrid.Components.GridView.Deconstruct(out int RowSequenceVersion, out ExGrid.Selection.GridSelection! Selection, out double ScrollTopPx, out double ScrollLeftPx) -> void
+ExGrid.Components.GridView.Equals(ExGrid.Components.GridView other) -> bool
+ExGrid.Components.GridView.GridView() -> void
+ExGrid.Components.GridView.GridView(int RowSequenceVersion, ExGrid.Selection.GridSelection! Selection, double ScrollTopPx, double ScrollLeftPx) -> void
+ExGrid.Components.GridView.RowSequenceVersion.get -> int
+ExGrid.Components.GridView.RowSequenceVersion.init -> void
+ExGrid.Components.GridView.ScrollLeftPx.get -> double
+ExGrid.Components.GridView.ScrollLeftPx.init -> void
+ExGrid.Components.GridView.ScrollTopPx.get -> double
+ExGrid.Components.GridView.ScrollTopPx.init -> void
+ExGrid.Components.GridView.Selection.get -> ExGrid.Selection.GridSelection!
+ExGrid.Components.GridView.Selection.init -> void
+ExGrid.GridViewSpec
+ExGrid.GridViewSpecReading
+ExGrid.GridViewSpecReading.<Clone>$() -> ExGrid.GridViewSpecReading!
+ExGrid.GridViewSpecReading.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.ShapedColumn!>!
+ExGrid.GridViewSpecReading.Columns.init -> void
+ExGrid.GridViewSpecReading.Data.get -> string!
+ExGrid.GridViewSpecReading.Data.init -> void
+ExGrid.GridViewSpecReading.Deconstruct(out string! Data, out System.Collections.Generic.IReadOnlyList<ExGrid.ShapedColumn!>! Columns, out ExGrid.GridViewState! ViewState) -> void
+ExGrid.GridViewSpecReading.Equals(ExGrid.GridViewSpecReading? other) -> bool
+ExGrid.GridViewSpecReading.GridViewSpecReading(string! Data, System.Collections.Generic.IReadOnlyList<ExGrid.ShapedColumn!>! Columns, ExGrid.GridViewState! ViewState) -> void
+ExGrid.GridViewSpecReading.ViewState.get -> ExGrid.GridViewState!
+ExGrid.GridViewSpecReading.ViewState.init -> void
+ExGrid.ShapedColumn
+ExGrid.ShapedColumn.<Clone>$() -> ExGrid.ShapedColumn!
+ExGrid.ShapedColumn.Column.get -> string!
+ExGrid.ShapedColumn.Column.init -> void
+ExGrid.ShapedColumn.Deconstruct(out string! Column, out ExGrid.Data.SnapshotKind Kind, out string! Header, out string? Format) -> void
+ExGrid.ShapedColumn.Equals(ExGrid.ShapedColumn? other) -> bool
+ExGrid.ShapedColumn.Format.get -> string?
+ExGrid.ShapedColumn.Format.init -> void
+ExGrid.ShapedColumn.Header.get -> string!
+ExGrid.ShapedColumn.Header.init -> void
+ExGrid.ShapedColumn.Kind.get -> ExGrid.Data.SnapshotKind
+ExGrid.ShapedColumn.Kind.init -> void
+ExGrid.ShapedColumn.ShapedColumn(string! Column, ExGrid.Data.SnapshotKind Kind, string! Header, string? Format) -> void
+ExGrid.ShapedGrid
+ExGrid.ShapedGrid.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<ExGrid.ShapedRow!>!>!
+ExGrid.ShapedGrid.PinnedColumnCount.get -> int
+ExGrid.ShapedGrid.Snapshot.get -> ExGrid.Data.Snapshot!
+ExGrid.ShapedGrid.Source.get -> ExGrid.InMemoryGridSource<ExGrid.ShapedRow!>!
+ExGrid.ShapedGrid.Spec.get -> ExGrid.GridViewSpecReading!
+ExGrid.ShapedRow
+ExGrid.ShapedRow.At.get -> ExGrid.Data.SnapshotRow
+ExGrid.ShapedRow.Position.get -> int
+override ExGrid.Components.GridView.GetHashCode() -> int
+override ExGrid.GridViewSpecReading.Equals(object? obj) -> bool
+override ExGrid.GridViewSpecReading.GetHashCode() -> int
+override ExGrid.GridViewSpecReading.ToString() -> string!
+override ExGrid.ShapedColumn.Equals(object? obj) -> bool
+override ExGrid.ShapedColumn.GetHashCode() -> int
+override ExGrid.ShapedColumn.ToString() -> string!
+static ExGrid.Components.GridView.operator !=(ExGrid.Components.GridView left, ExGrid.Components.GridView right) -> bool
+static ExGrid.Components.GridView.operator ==(ExGrid.Components.GridView left, ExGrid.Components.GridView right) -> bool
+static ExGrid.GridViewSpec.Read(string! json, System.Func<string!, ExGrid.Data.DataShape?>! inputs) -> ExGrid.GridViewSpecReading!
+static ExGrid.GridViewSpec.Read(System.Text.Json.JsonElement spec, System.Func<string!, ExGrid.Data.DataShape?>! inputs, string! path) -> ExGrid.GridViewSpecReading!
+static ExGrid.GridViewSpecReading.operator !=(ExGrid.GridViewSpecReading? left, ExGrid.GridViewSpecReading? right) -> bool
+static ExGrid.GridViewSpecReading.operator ==(ExGrid.GridViewSpecReading? left, ExGrid.GridViewSpecReading? right) -> bool
+static ExGrid.ShapedColumn.operator !=(ExGrid.ShapedColumn? left, ExGrid.ShapedColumn? right) -> bool
+static ExGrid.ShapedColumn.operator ==(ExGrid.ShapedColumn? left, ExGrid.ShapedColumn? right) -> bool
+static ExGrid.ShapedGrid.Of(ExGrid.Data.Snapshot! snapshot, ExGrid.GridViewSpecReading! spec, System.Globalization.CultureInfo? culture = null) -> ExGrid.ShapedGrid!
+~override ExGrid.Components.GridView.Equals(object obj) -> bool
+~override ExGrid.Components.GridView.ToString() -> string

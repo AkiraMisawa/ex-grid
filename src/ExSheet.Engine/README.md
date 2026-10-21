@@ -40,16 +40,22 @@ Add `--prerelease` for a prerelease, a version with a suffix such as `-rc.1`.
 using System.Globalization;
 using ExSheet.Engine;
 
-var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
-sheet.Enter(CellAddress.Parse("A1"), "2");
-sheet.Enter(CellAddress.Parse("B1"), "3");
-var change = sheet.Enter(CellAddress.Parse("C1"), "=A1+B1");
+var workbook = new Workbook(CultureInfo.GetCultureInfo("en-US"));   // one Sheet, Sheet1
+var sheet = workbook.Sheets[0];
+workbook.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("A1"), "2"));
+workbook.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("B1"), "3"));
+var step = workbook.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("C1"), "=A1+B1"));
 
-sheet.GetValue(CellAddress.Parse("C1"));   // 5
-change.ValueChanges;                        // C1
+sheet.GetValue(CellAddress.Parse("C1"));    // 5
+step.Change.For(sheet).ValueChanges;        // C1
 ```
 
-`Enter` reads text as a user typed it: text beginning with `=` is a Formula, and anything else is
+A `Workbook` holds the Sheets, in order, and everything that changes them: `Do` takes an edit and
+the name of the Sheet it is made on, `Open` and `ToDocument` read and write documents, and the
+Sheet Day, the clock and the Linked Tables are the Workbook's. A `Sheet` is one Sheet of it, read
+through `GetValue`, `GetDisplay`, `GetCellFormat` and their peers.
+
+`SheetEdit.Enter` reads text as a user typed it: text beginning with `=` is a Formula, and anything else is
 a constant read under the Sheet's culture and recorded already parsed. Typing into a General cell
 can give it a format, as in Excel: a date or a percentage typed as one, and a Formula of simple
 arithmetic (`+`, `-`, single-cell References, parentheses) takes the format of the first
@@ -63,7 +69,7 @@ spanning every row as whole columns (`A1:A1048576` is `A:A`), one spanning every
 rows (`A:XFD` is `$1:$1048576`), and a structured reference in single brackets
 (`Positions[[Market Value]]` is `Positions[Market Value]`).
 
-A Sheet has a name, `Sheet1` unless it is given one (`new Sheet(culture, "Risk")`), and
+A Sheet has a name, `Sheet1` unless it is given one (`new Workbook(culture, ["Risk"])`), and
 `SheetEdit.Rename` changes it as Excel does, rewriting every Reference qualified with the old
 name. A Reference qualified with the Sheet's own name (`Sheet1!A1`, `'My Sheet'!A1`) reads its
 cells; any other qualifier is `#REF!`. `Sheet.IsValidName` applies Excel's rules: 1 to 31
@@ -78,7 +84,7 @@ charged one digit width, so a column holds `⌊width⌋` characters. A component
 pixel width as `(columnPx − 2 × paddingPx) / digitWidthPx`.
 
 ```csharp
-sheet.Enter(CellAddress.Parse("A1"), "=1/3");
+workbook.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("A1"), "=1/3"));
 sheet.GetDisplay(CellAddress.Parse("A1"), Sheet.DefaultColumnWidth).Text;   // 0.333333
 sheet.GetDisplay(CellAddress.Parse("A1")).Text;                             // 0.333333333333333
 ```
@@ -147,9 +153,9 @@ them:
 | `MOD` | `number, divisor` |
 | `POWER` | `number, power` |
 | `DATE` | `year, month, day` |
-| `TODAY` | (none) — the Sheet Day, `#GETTING_DATA` until it is set (`Sheet.SetToday`, ADR-0121) |
-| `NOW` | (none) — the moment `Sheet.NowSource` gives, read once per recalculation; volatile (ADR-0124) |
-| `RAND` | (none) — drawn from the Sheet Seed (`Sheet.SetSeed`), `#GETTING_DATA` until it is set; volatile (ADR-0180) |
+| `TODAY` | (none) — the Sheet Day, `#GETTING_DATA` until it is set (`Workbook.SetToday`, ADR-0121) |
+| `NOW` | (none) — the moment `Workbook.NowSource` gives, read once per recalculation; volatile (ADR-0124) |
+| `RAND` | (none) — drawn from the Sheet Seed (`Workbook.SetSeed`), `#GETTING_DATA` until it is set; volatile (ADR-0180) |
 | `RANDBETWEEN` | `bottom, top` — as `RAND`, a whole number with both bounds drawn |
 | `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND` | `serial_number` |
 | `TIME` | `hour, minute, second` |
@@ -347,16 +353,17 @@ could depend on a Value, nothing spills (ADR-0125, 2026-10-13). The refusals:
 - **`RAND` and `RANDBETWEEN` draw from the Sheet Seed** (ADR-0180). Excel names no generator and no
   seed, so its numbers cannot be matched; what is Excel's is its contract — a draw of `RAND` in
   [0,1), evenly spread; `RANDBETWEEN`'s whole numbers, both bounds drawn; two calls two draws; a
-  `LET` binding one draw. Each draw is a function of `Sheet.Seed`, the cell, the call's place in its
-  Formula and `Sheet.Changes`, the count of changes since the Sheet was made or opened, so the same
-  Entries, seed and count give the same draws whatever order cells are computed in. An edit, an
-  insertion or a deletion, a rename of the Sheet, the undo or redo of one, a Linked Table's snapshot
+  `LET` binding one draw. Each draw is a function of `Workbook.Seed`, the Sheet's name and the cell,
+  the call's place in its Formula and `Workbook.Changes`, the count of changes since the Workbook was
+  made or opened, so the same Entries, seed and count give the same draws whatever order cells are
+  computed in. An edit, an insertion or a deletion on any Sheet, a Sheet added, deleted, renamed,
+  moved or copied, the undo or redo of one, a Linked Table's snapshot
   whatever its rows, and a Linked Table's declaration that declares it or replaces it each count once
-  and draw again; a recalculation by the clock, a format, a rename to the Sheet's own name and a new
+  and draw again on every Sheet; a recalculation by the clock, a format, a rename to the Sheet's own name and a new
   seed draw nothing. Without a seed,
   every Formula that draws is `#GETTING_DATA`. The engine never chooses a seed of its own:
-  `Sheet.SetSeed(seed)` gives one, and `SetSeed(seed, changes)` the count as well, so a Sheet opened
-  from a document shows another Sheet's draws (SH-17). Neither is part of a Sheet Document. Unlike
+  `Workbook.SetSeed(seed)` gives one, and `SetSeed(seed, changes)` the count as well, so a Workbook
+  opened from a document shows another Workbook's draws (SH-17). Neither is part of a document. Unlike
   Excel, nothing draws without a change, and there is no manual recalculation. An undo, a redo and a
   rename draw again, as Excel's were seen to (ADR-0180, 2026-10-12).
   `RANDBETWEEN` refuses a fractional bound and a bound past 2^53 in magnitude with `#VALUE!`, and
@@ -497,12 +504,12 @@ observation run did not resolve existing Supported functions' other `uncertain` 
 
 ## Operations, and undoing them
 
-Every user operation is a `SheetEdit`, and `Sheet.Do` returns the one `SheetStep` that undoes and
-redoes it, each with one recalculation. The stack of steps is the caller's.
+Every user operation is a `SheetEdit`, and `Workbook.Do` returns the one `WorkbookStep` that undoes
+and redoes it, each with one recalculation across the Workbook. The stack of steps is the caller's.
 
 ```csharp
-var step = sheet.Do(SheetEdit.InsertRows(row: 2));   // References are rewritten to keep naming the same cells
-step.Undo();                                         // Entries, formats and References exactly as they were
+var step = workbook.Do("Sheet1", SheetEdit.InsertRows(row: 2));   // References are rewritten to keep naming the same cells
+step.Undo();                                                      // Entries, formats and References exactly as they were
 ```
 
 - **Insertion and deletion** of rows and columns rewrite every Reference, relative and absolute
@@ -580,7 +587,7 @@ step.Undo();                                         // Entries, formats and Ref
   as Excel holds it), and a single date by day, and
   refuses every other pattern — `Item 1`, day and month names, several dates — rather than fill
   it with copies.
-- `Sheet.Check(edit)` says whether an edit would be refused, without doing it.
+- `Workbook.Check(sheet, edit)` says whether an edit would be refused, without doing it.
 
 ## Linked Tables
 
@@ -588,10 +595,10 @@ Data the application holds reaches Formulas as a Linked Table, pushed whole and 
 structured reference and by key:
 
 ```csharp
-sheet.DeclareLinkedTable("Positions", ["Id", "PV"], key: "Id");
-sheet.Enter(CellAddress.Parse("A1"), "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])");
+workbook.DeclareLinkedTable("Positions", ["Id", "PV"], key: "Id");
+workbook.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("A1"), "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])"));
 // A1 is #GETTING_DATA until the first snapshot arrives.
-sheet.PushLinkedTable("Positions", [[Value.FromText("R-4471"), Value.FromNumber(250.5)]]);
+workbook.PushLinkedTable("Positions", [[Value.FromText("R-4471"), Value.FromNumber(250.5)]]);
 ```
 
 A snapshot replaces the last in one step and recalculates only the Formulas that read the table.

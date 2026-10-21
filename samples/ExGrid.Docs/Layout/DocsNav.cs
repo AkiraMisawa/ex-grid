@@ -105,6 +105,7 @@ public static class DocsNav
             new("Functions", "exsheet/functions"),
             new("Formatting", "exsheet/formatting"),
             new("Linked Tables", "exsheet/linked-tables"),
+            new("Workbook", "exsheet/workbook"),
         ]),
         new("ExPivot", DocsNavSection.Docs,
         [

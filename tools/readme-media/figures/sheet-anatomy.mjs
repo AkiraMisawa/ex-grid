@@ -38,5 +38,6 @@ export default {
     { term: 'Error Value', note: 'an error, carried as data; here a division by nothing', side: 'right', target: page => cellBox(page, 'F', 5) },
     // Along the line under the total's row, clear of the change beside it.
     { term: 'Value', note: "what a cell's Entry evaluates to", side: 'right', at: 1, target: page => cellBox(page, 'E', 6) },
+    { term: 'Sheet Tab', note: 'one for each Sheet of the Workbook; a press shows its Sheet', side: 'below', target: page => page.locator('.ex-sheet-tab') },
   ],
 };

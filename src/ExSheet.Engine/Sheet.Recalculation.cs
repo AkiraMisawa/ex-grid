@@ -73,7 +73,9 @@ public sealed partial class Sheet
     /// <returns>What it changed on each Sheet it reached; <paramref name="initiator"/>'s always, with <paramref name="initiatorRows"/>.</returns>
     internal static Dictionary<Sheet, SheetChange> RecalculateWorkbook(Workbook workbook, HashSet<SheetCell> changed, Sheet initiator, SortedSet<int> initiatorRows)
     {
-        foreach (var sheet in workbook.Sheets) sheet._moment = sheet.NowSource?.Invoke();
+        // Read once, so every NOW of the Workbook in one recalculation answers the same moment.
+        var moment = workbook.NowSource?.Invoke();
+        foreach (var sheet in workbook.Sheets) sheet._moment = moment;
         var rows = workbook.Sheets.ToDictionary(s => s, s => s == initiator ? initiatorRows : []);
         var changes = workbook.Sheets.ToDictionary(s => s, _ => new List<SheetChange>());
         Add(RecalculatePass(workbook, changed, rows, withVolatile: true));

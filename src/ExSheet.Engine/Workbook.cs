@@ -44,6 +44,15 @@ public sealed partial class Workbook
         _shown = _sheets[0];
     }
 
+    /// <summary>
+    /// Creates a Workbook of one empty Sheet, <c>Sheet1</c>, whose constants are read and whose Values
+    /// are shown under <paramref name="culture"/> (ADR-0048, ADR-0331).
+    /// </summary>
+    public Workbook(CultureInfo culture)
+        : this(culture, [Sheet.DefaultName])
+    {
+    }
+
     /// <summary>The Workbook of one Sheet a Sheet created on its own belongs to.</summary>
     internal Workbook(Sheet only)
     {
@@ -69,6 +78,24 @@ public sealed partial class Workbook
         workbook._shown = workbook.Find(document.Shown)!;
         return workbook;
     }
+
+    /// <summary>
+    /// Opens a Sheet Document as a Workbook of that one Sheet: its culture, its name, its Linked Tables
+    /// declared and waiting for their first snapshot, and its Entries, Cell Formats and column widths,
+    /// with every Value computed again (ADR-0048, ADR-0049, ADR-0331). The culture of the thread that
+    /// opens it plays no part.
+    /// </summary>
+    public static Workbook Open(SheetDocument document) => Sheet.Open(document).Workbook;
+
+    /// <summary>
+    /// The Sheet named <paramref name="sheet"/> as a Sheet Document: the Workbook's culture, the Sheet's
+    /// name, the Linked Tables' declarations, its Entries, the Cell Formats recorded on its columns, rows
+    /// and cells, and the widths set on its columns — never its Values, nor a table's rows (ADR-0046,
+    /// ADR-0047, ADR-0048, ADR-0049, ADR-0071). A Reference to another Sheet is kept as it is written,
+    /// so opened on its own it reads <c>#REF!</c>.
+    /// </summary>
+    /// <exception cref="ArgumentException">No Sheet of the Workbook is named <paramref name="sheet"/>.</exception>
+    public SheetDocument ToDocument(string sheet) => Named(sheet).ToDocument();
 
     /// <summary>
     /// The Workbook as a Workbook Document: its culture, the Sheet shown, its Linked Tables'
@@ -155,26 +182,77 @@ public sealed partial class Workbook
     public SheetRefusal? Check(string sheet, SheetEdit edit) => Named(sheet).Check(edit);
 
     /// <summary>
-    /// Declares a Linked Table on the Workbook (ADR-0049, ADR-0331), as
-    /// <see cref="Sheet.DeclareLinkedTable(string, IReadOnlyList{string}, IReadOnlyList{string})"/>
-    /// declares one; a Formula on any Sheet reads it.
+    /// Declares a Linked Table by name and columns (ADR-0049), before any of its rows arrive.
+    /// Formulas that read it stop being <c>#NAME?</c> and show <c>#GETTING_DATA</c> until the
+    /// first snapshot is pushed, on every Sheet. The declaration is recorded in the document, and a
+    /// Workbook opened from one already has it; a table is never undeclared.
+    /// <para>Declaring a table again is how a Consumer that declares at start-up meets a document
+    /// that already carries the declaration: the same columns, in the same order, with the same key,
+    /// change nothing; other columns or another key replace the declaration — the table's shape is
+    /// the Consumer's — and drop the rows held so far, so readers wait again and a Formula naming a
+    /// column that is gone reads <c>#REF!</c>.</para>
     /// </summary>
-    /// <param name="name">The name Formulas read it by.</param>
-    /// <param name="columns">The column names.</param>
-    /// <param name="key">The key's columns; an empty list declares no key.</param>
-    /// <exception cref="ArgumentException">The name, the columns or the key are not ones a table can have.</exception>
+    /// <param name="name">
+    /// The name Formulas read it by, as Excel names a Table: a letter, <c>_</c> or <c>\</c>, then
+    /// letters, digits, <c>_</c> and <c>.</c> (ASCII); not a cell address, not <c>R</c>, <c>C</c> or an
+    /// R1C1 address, not <c>TRUE</c> or <c>FALSE</c>; at most 255 characters.
+    /// </param>
+    /// <param name="columns">The column names: at least one, none empty, no two the same without regard to case.</param>
+    /// <param name="key">
+    /// The key column, one of <paramref name="columns"/> named without regard to case, or
+    /// <see langword="null"/> for none (ADR-0049, 2026-09-30). A row is read by its key
+    /// (<c>XLOOKUP</c>), and every snapshot of a keyed table is checked: one in which a key repeats is
+    /// refused (<see cref="PushLinkedTable"/>). A table whose rows are told apart by several columns
+    /// is declared with all of them as its key (the overload that takes a list).
+    /// </param>
+    /// <exception cref="ArgumentException">
+    /// The name or the columns are not ones a structured reference can name, or the key is not one of
+    /// the columns.
+    /// </exception>
+    public WorkbookChange DeclareLinkedTable(string name, IReadOnlyList<string> columns, string? key = null) =>
+        DeclareLinkedTable(name, columns, key is null ? (IReadOnlyList<string>)[] : [key]);
+
+    /// <summary>
+    /// Declares a Linked Table whose rows are told apart by the Values of several columns together
+    /// (ADR-0058, amended 2026-10-03): a row is read by all of them, and a snapshot in which two rows
+    /// hold the same Values in every one of them is refused. Otherwise as the overload that takes one
+    /// key column; an empty list declares no key.
+    /// </summary>
+    /// <param name="name">The name Formulas read it by, as for the overload that takes one key column.</param>
+    /// <param name="columns">The column names, as for the overload that takes one key column.</param>
+    /// <param name="key">The key's columns, each one of <paramref name="columns"/> named without regard to case, none twice.</param>
+    /// <exception cref="ArgumentException">
+    /// The name or the columns are not ones a structured reference can name, or a key column is not
+    /// one of the columns, or is named twice.
+    /// </exception>
     public WorkbookChange DeclareLinkedTable(string name, IReadOnlyList<string> columns, IReadOnlyList<string> key) =>
         Collecting(_sheets[0], () => _sheets[0].DeclareLinkedTable(name, columns, key));
 
     /// <summary>
-    /// Takes a Linked Table's snapshot (ADR-0049), as <see cref="Sheet.PushLinkedTable"/> takes one,
-    /// and recalculates every Formula that reads it, on every Sheet.
+    /// Replaces a Linked Table's data with a whole snapshot, in one step (ADR-0049): no
+    /// recalculation sees part of one snapshot and part of another, and only the Formulas that
+    /// read the table — and what depends on them — recalculate.
+    /// <para>A snapshot of a table declared with a key is checked first: no key may appear twice,
+    /// compared as <c>XLOOKUP</c>'s exact match compares them, so <c>r-1</c> and <c>R-1</c> are one
+    /// key while the number 1 and the text <c>1</c> are two. A blank key is not a key, and any number
+    /// of rows may have none; an Error Value matches nothing, and is not compared either.</para>
+    /// <para>A <c>#VALUE!</c> read from a cell whose Formula ExSheet refused, because it cannot answer
+    /// it as Excel, is taken as it came, and a Formula that reads its column is refused as one that reads
+    /// the cell is: no Formula can catch it (ADR-0047; 2026-10-12, decided with the user: a refusal is
+    /// never caught, anywhere).</para>
     /// </summary>
-    /// <param name="name">The table's name.</param>
-    /// <param name="rows">The rows, each one Value per column.</param>
+    /// <param name="name">The declared table's name.</param>
+    /// <param name="rows">The rows, each holding one Value per declared column in order; <see langword="null"/> is a blank.</param>
     /// <exception cref="InvalidOperationException">No table of that name is declared.</exception>
-    /// <exception cref="RepeatedKeyException">A key repeats in the snapshot; the table waits again.</exception>
-    /// <exception cref="ArgumentException">A row does not have one Value per column, or holds a state of a computation.</exception>
+    /// <exception cref="RepeatedKeyException">
+    /// A key repeats in the snapshot. It is refused, and the previous snapshot is not kept: the table
+    /// waits again, and every Formula that reads it shows <c>#GETTING_DATA</c>
+    /// (<see cref="RepeatedKeyException.Change"/> says which cells changed with it).
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// A row does not have one Value per column, or holds <c>#GETTING_DATA</c> or <c>#CIRC!</c>, which
+    /// are states of a computation and not data. Nothing changes.
+    /// </exception>
     public WorkbookChange PushLinkedTable(string name, IEnumerable<IReadOnlyList<Value?>> rows) =>
         Collecting(_sheets[0], () => _sheets[0].PushLinkedTable(name, rows));
 

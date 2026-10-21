@@ -127,8 +127,9 @@
             From code, <code>SetCellFormatAsync(CellFormatChange)</code> sets only the parts the change names, on every
             range of the Selection, as one undo step: a change that sets bold keeps each cell's italic, Fill and Number
             Format. Its borders are relative to each range, so each range gets its own outline.
-            <code>CellFormatAt(address)</code> reads back what a cell shows. Like every command, these are refused while
-            an edit is open.
+            <code>CellFormatAt(address)</code> reads back what a cell shows; in a Workbook of several Sheets it names
+            the Sheet, <code>CellFormatAt("Claim", address)</code> (<a href="exsheet/workbook#commands-name-their-sheet">Commands name their Sheet</a>).
+            Like every command, these are refused while an edit is open.
         </p>
         <DocsExample Builtin="typeof(FormatFromCode)" Mud="typeof(FormatFromCodeMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])">
             Select a range, then press a button. Ctrl+Z undoes each press.

@@ -46,6 +46,79 @@ public class SpecLintTests
         });
         """;
 
+    [Fact] // ADR-0220 §6 (2026-10-20): keys watched for where they land, typed under a round trip with the answers flowing
+    public void Keys_watched_under_a_round_trip_without_the_answers_held_are_refused()
+    {
+        var findings = Check(InTest("""
+                const landed = await watchWhereKeysLand(page);
+                const circuit = await setRoundTrip(80);
+                await page.keyboard.press('Escape');
+                await page.keyboard.press('ArrowDown');
+                await circuitQuiet();
+                expect(await landed()).toEqual([]);
+            """));
+        var finding = Assert.Single(findings);
+        Assert.Equal(Rule.RoundTrip, finding.Rule);
+        Assert.Contains("Escape", finding.Statement);
+    }
+
+    [Theory] // ADR-0220 §6 (2026-10-20): held answers, no round trip, a reason given, or a record kept but not asserted, pass
+    [InlineData("""
+            const landed = await watchWhereKeysLand(page);
+            const circuit = await holdAnswers(true);
+            await page.keyboard.press('Escape');
+            await holdAnswers(false);
+            await circuitQuiet();
+        """)]
+    [InlineData("""
+            const landed = await watchWhereKeysLand(page);
+            await page.keyboard.press('Escape');
+            await circuitQuiet();
+        """)]
+    [InlineData("""
+            await setRoundTrip(80);
+            await page.keyboard.press('Escape');
+            await circuitQuiet();
+        """)]
+    [InlineData("""
+            const landed = await watchWhereKeysLand(page);
+            await setRoundTrip(80);
+            await setRoundTrip(0);
+            await page.keyboard.press('Escape');
+            await circuitQuiet();
+        """)]
+    [InlineData("""
+            const landed = await watchWhereKeysLand(page);
+            await setRoundTrip(80);
+            // spec-lint: round-trip: the test is about keys typed while the answer is on its way
+            await page.keyboard.press('Escape');
+            await circuitQuiet();
+        """)]
+    [InlineData("""
+            const landed = await watchWhereKeysLand(page);
+            await setRoundTrip(150);
+            await page.keyboard.press('Escape');
+            await circuitQuiet();
+            await testInfo.attach('keys', { body: JSON.stringify(await landed()) });
+        """)]
+    public void Keys_watched_with_the_answers_held_or_with_no_round_trip_pass(string body)
+    {
+        Assert.Empty(Check(InTest(body)));
+    }
+
+    [Fact] // ADR-0220 §6: KeyTips typed under a round trip are keys too, and a record read into a variable is still the record
+    public void KeyTips_typed_under_a_round_trip_are_watched_keys()
+    {
+        Assert.Equal([Rule.RoundTrip], Rules(InTest("""
+                const landed = await watchWhereKeysLand(page);
+                await setRoundTrip(80);
+                await keyTips(page, 'h', 'h');
+                await circuitQuiet();
+                const keys = await landed();
+                expect(keys.find((k) => k.key === 'h')?.where).not.toBe('list');
+            """)));
+    }
+
     [Theory] // ADR-0220 §6: a fixed wait, however it is spelled
     [InlineData("    await page.waitForTimeout(500);")]
     [InlineData("    await grid.page().waitForTimeout(PACE_MS);")]

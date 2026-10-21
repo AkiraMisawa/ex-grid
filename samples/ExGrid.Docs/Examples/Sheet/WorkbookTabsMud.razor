@@ -1,0 +1,47 @@
+@using ExSheet
+@using ExSheet.Components
+@using ExSheet.Engine
+@using ExSheet.MudBlazor
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-3">
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="AddSheet">Add a sheet</MudButton>
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="Save">Save</MudButton>
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@(_saved is null)" OnClick="Load">Load the saved copy</MudButton>
+    <MudText Typo="Typo.body2">@_said</MudText>
+</MudStack>
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExSheet @ref="_sheet" @bind-Workbook="_workbook" SheetsChanged="SheetsChanged" Chrome="MudSheetChrome.Default"
+             ViewportHeight="280" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+@code {
+    private ExSheet _sheet = default!;
+
+    // The claim, and a summary that reads it with References such as Claim!D7.
+    private WorkbookDocument? _workbook = Expenses.Workbook();
+
+    // Where your application would write to a database or a file.
+    private string? _saved;
+    private string _said = "";
+
+    // A command names the Sheet it acts on: with several Sheets, one naming none is refused.
+    // A Sheet operation is one step on the undo stack, as an edit is.
+    private Task AddSheet() => _sheet.DoAsync(_workbook!.Sheets[^1].Name, SheetEdit.InsertSheet());
+
+    // Every change to the Sheets, the user's, a command's or an undo's, is heard with the names before and after.
+    private void SheetsChanged(SheetsChange change) => _said = $"Sheets: {string.Join(", ", change.After)}.";
+
+    private void Save()
+    {
+        _saved = _workbook!.ToJson();
+        _said = $"Saved {_workbook.Sheets.Count} sheets, '{_workbook.Shown}' shown.";
+    }
+
+    // A different Workbook Document replaces the Workbook and clears its undo stack.
+    private void Load()
+    {
+        _workbook = WorkbookDocument.FromJson(_saved!);
+        _said = "Loaded the saved copy.";
+    }
+}

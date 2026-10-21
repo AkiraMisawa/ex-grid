@@ -25,9 +25,9 @@ What Excel was observed to do (RAND-002/003/005, RANDBETWEEN-017, LET-017/018/03
 
 ## The decision
 
-**A draw is a function of four things and of nothing else:** the Sheet Seed, the cell whose Formula
-calls the function, which call in that Formula it is (counted in the Formula's text), and how many
-changes the Sheet has had since it was opened. The same Entries, Sheet Seed and count of changes give
+**A draw is a function of five things and of nothing else:** the Sheet Seed, the name of the Sheet
+and the cell whose Formula calls the function, which call in that Formula it is (counted in the
+Formula's text), and how many changes the Workbook has had since it was opened (2026-10-20, below). The same Entries, Sheet Seed and count of changes give
 the same draws, whatever order the engine computes cells in and whenever it computes them. No draw
 comes from a stream that an earlier draw advanced, so the order of the work never shows in a Value,
 as ADR-0124 already holds for a computed Reference.
@@ -122,6 +122,17 @@ asked on the seventeenth Windows run, and this follows Excel's answer.)*
 file unchanged, once after it changed and once more unchanged. A refresh brings data, and ExSheet's
 counterpart is a Linked Table's snapshot, which already counted whatever its rows; nothing changes.
 The same declaration again still draws nothing: a refresh does not declare its query again.)*
+
+*(2026-10-20, decided with the user, with [ADR-0331](./0331-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md)
+§9: the Sheet Seed and the count of changes are the Workbook's, as the Sheet Day is, so a change on any
+Sheet draws again on every Sheet, as Excel's recalculation draws every `RAND` of the workbook. The rule
+read "four things": the seed, the cell, the call and the Sheet's own count. With one seed for the
+Workbook, `=RAND()` at A1 of two Sheets would then draw the same number, so the draw names its Sheet
+too. It names it by the name the Sheet has, compared as Excel compares Sheet names, ignoring case: a
+rename already draws again, and a copy, which takes another name, draws numbers of its own. The
+Sheet's place in the order was the other candidate and was not taken, since moving a Sheet would then
+change its draws without a change to anything its Formulas read. `Workbook.Seed`, `Changes` and
+`SetSeed` replace the Sheet's members of those names.)*
 
 ## Considered options
 

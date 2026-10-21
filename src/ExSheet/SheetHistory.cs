@@ -4,9 +4,10 @@ namespace ExSheet;
 
 /// <summary>
 /// ExSheet's one undo stack (ADR-0048): every operation, the user's and the Consumer's alike, is
-/// one step on it, in the order it was done. Undoing walks back through that order and redoing
-/// walks forward again; doing anything new forgets what was undone, as every undo stack does. One
-/// per ExSheet instance (ADR-0018).
+/// one step on it, in the order it was done, whichever Sheet of the Workbook it was done on
+/// (ADR-0331). Undoing walks back through that order and redoing walks forward again; doing
+/// anything new forgets what was undone, as every undo stack does. One per ExSheet instance
+/// (ADR-0018).
 /// </summary>
 /// <remarks>
 /// An operation is usually one engine step. One done as several — an edit with the widths it
@@ -19,18 +20,18 @@ namespace ExSheet;
 /// </remarks>
 internal sealed class SheetHistory
 {
-    private readonly List<SheetStep[]> _done = [];
-    private readonly List<SheetStep[]> _undone = [];
+    private readonly List<WorkbookStep[]> _done = [];
+    private readonly List<WorkbookStep[]> _undone = [];
 
     internal bool CanUndo => _done.Count > 0;
 
     internal bool CanRedo => _undone.Count > 0;
 
     /// <summary>A step just done: it goes on top, and nothing undone can be redone past it.</summary>
-    internal void Record(SheetStep step) => Record([step]);
+    internal void Record(WorkbookStep step) => Record([step]);
 
     /// <summary>One operation done as several engine steps, in the order they were done.</summary>
-    internal void Record(IReadOnlyList<SheetStep> steps)
+    internal void Record(IReadOnlyList<WorkbookStep> steps)
     {
         if (steps.Count == 0) throw new ArgumentException("An operation is at least one step.", nameof(steps));
         _done.Add([.. steps]);
@@ -43,7 +44,7 @@ internal sealed class SheetHistory
     /// reports in parts, such as a resize of several whole columns, one column at a time. Answers
     /// false, recording nothing, otherwise.
     /// </summary>
-    internal bool TryExtend(SheetStep first, SheetStep step)
+    internal bool TryExtend(WorkbookStep first, WorkbookStep step)
     {
         if (_done.Count == 0 || _undone.Count > 0 || !ReferenceEquals(_done[^1][0], first)) return false;
         _done[^1] = [.. _done[^1], step];
@@ -51,11 +52,11 @@ internal sealed class SheetHistory
     }
 
     /// <summary>Undoes the latest operation and says what that changed, or answers null when there is none.</summary>
-    internal IReadOnlyList<SheetChange>? Undo()
+    internal IReadOnlyList<WorkbookChange>? Undo()
     {
         if (_done.Count == 0) return null;
         var steps = _done[^1];
-        var changes = new List<SheetChange>(steps.Length);
+        var changes = new List<WorkbookChange>(steps.Length);
         for (var i = steps.Length - 1; i >= 0; i--) changes.Add(steps[i].Undo());
         _done.RemoveAt(_done.Count - 1);
         _undone.Add(steps);
@@ -63,11 +64,11 @@ internal sealed class SheetHistory
     }
 
     /// <summary>Redoes the operation undone last and says what that changed, or answers null when there is none.</summary>
-    internal IReadOnlyList<SheetChange>? Redo()
+    internal IReadOnlyList<WorkbookChange>? Redo()
     {
         if (_undone.Count == 0) return null;
         var steps = _undone[^1];
-        var changes = new List<SheetChange>(steps.Length);
+        var changes = new List<WorkbookChange>(steps.Length);
         foreach (var step in steps) changes.Add(step.Redo());
         _undone.RemoveAt(_undone.Count - 1);
         _done.Add(steps);

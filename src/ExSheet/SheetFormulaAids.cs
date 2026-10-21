@@ -126,7 +126,7 @@ internal static class SheetFormulaAids
     {
         if (keys.Count == 0) return LinkedColumnColours.None;
         var declared = new Dictionary<string, LinkedTableColumn>(StringComparer.Ordinal);
-        foreach (var table in sheet.LinkedTables)
+        foreach (var table in sheet.Workbook.LinkedTables)
         {
             foreach (var column in table.Columns)
             {

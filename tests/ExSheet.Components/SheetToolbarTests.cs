@@ -53,14 +53,13 @@ public class SheetToolbarTests : SheetTestContext
 
     // ---- Shown only when asked for, and where (SH-48) ----
 
-    [Fact] // ADR-0100, SH-48: a Sheet shows no toolbar unless asked, and its grid keeps the whole height
+    [Fact] // ADR-0100, SH-48, ADR-0331: a Sheet shows no toolbar unless asked, and its grid keeps the height the Sheet Tabs leave
     public void A_sheet_shows_no_toolbar_unless_asked()
     {
         var cut = RenderSheet();
 
         Assert.Empty(cut.FindAll(".ex-sheet-toolbar"));
-        Assert.Equal((ViewportSize)400, Grid(cut).Instance.ViewportHeight);
-        Assert.Equal("display: contents", cut.Find(".ex-sheet").GetAttribute("style"));
+        Assert.Equal((ViewportSize)(400 - RowPx), Grid(cut).Instance.ViewportHeight);
     }
 
     [Fact] // ADR-0100, SH-48: shown, it stands above the grid inside the Sheet's box and outside the grid's root
@@ -83,7 +82,8 @@ public class SheetToolbarTests : SheetTestContext
     {
         var cut = RenderToolbarSheet();
 
-        Assert.Equal((ViewportSize)(400 - RowPx), Grid(cut).Instance.ViewportHeight);
+        // And the Sheet Tabs a row of the same height (ADR-0331).
+        Assert.Equal((ViewportSize)(400 - 2 * RowPx), Grid(cut).Instance.ViewportHeight);
         Assert.Contains($"height: {RowPx}px", cut.Find(".ex-sheet-toolbar").GetAttribute("style"));
         Assert.Contains($"height: {RowPx}px", cut.Find(".ex-sheet-toolbar-row").GetAttribute("style"));
     }
@@ -97,7 +97,7 @@ public class SheetToolbarTests : SheetTestContext
 
         Assert.Equal(2, cut.FindAll(".ex-sheet-toolbar-row").Count);
         Assert.Contains($"height: {2 * RowPx}px", cut.Find(".ex-sheet-toolbar").GetAttribute("style"));
-        Assert.Equal((ViewportSize)(400 - 2 * RowPx), Grid(cut).Instance.ViewportHeight);
+        Assert.Equal((ViewportSize)(400 - 3 * RowPx), Grid(cut).Instance.ViewportHeight);
     }
 
     [Fact] // ADR-0100, SH-48: hiding and showing the toolbar keeps the same grid, and its Selection
@@ -110,7 +110,7 @@ public class SheetToolbarTests : SheetTestContext
 
         page.Render(ps => ps.Add(p => p.Shown, false));
         Assert.Empty(cut.FindAll(".ex-sheet-toolbar"));
-        Assert.Equal((ViewportSize)400, Grid(cut).Instance.ViewportHeight);
+        Assert.Equal((ViewportSize)(400 - RowPx), Grid(cut).Instance.ViewportHeight);
         page.Render(ps => ps.Add(p => p.Shown, true));
 
         Assert.Same(grid, Grid(cut).Instance);

@@ -118,13 +118,14 @@
     // crossed from one to the other would show in the other's cells.
     private static SheetDocument Opening(string name, int value)
     {
-        var sheet = new Sheet(Culture);
-        sheet.Enter(CellAddress.Parse("A1"), name);
-        sheet.Enter(CellAddress.Parse("B1"), value.ToString(CultureInfo.InvariantCulture));
-        sheet.Enter(CellAddress.Parse("C1"), "=B1*2");
+        var workbook = new Workbook(Culture);
+        var sheet = workbook.Sheets[0];
+        workbook.Do(sheet.Name, SheetEdit.Enter(CellAddress.Parse("A1"), name));
+        workbook.Do(sheet.Name, SheetEdit.Enter(CellAddress.Parse("B1"), value.ToString(CultureInfo.InvariantCulture)));
+        workbook.Do(sheet.Name, SheetEdit.Enter(CellAddress.Parse("C1"), "=B1*2"));
         // The declaration travels in the Sheet Document; the rows never do (ADR-0049).
-        sheet.DeclareLinkedTable(Table, TableColumns, TableKey);
-        return sheet.ToDocument();
+        workbook.DeclareLinkedTable(Table, TableColumns, TableKey);
+        return workbook.ToDocument(sheet.Name);
     }
 
     protected override void OnInitialized()
