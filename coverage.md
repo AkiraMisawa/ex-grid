@@ -5,7 +5,7 @@
 | ExGrid | 95.4% | 88.2% |
 | ExSheet | 95.7% | 88.7% |
 | ExPivot | 94.4% | 85.3% |
-| ExChart | 89.7% | 80.4% |
+| ExChart | 89.7% | 80.6% |
 | Data | 94.5% | 90% |
 
 # Summary
@@ -13,31 +13,31 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/21/2026 - 02:28:39 |
+| Generated on: | 10/21/2026 - 02:57:48 |
 | Parser: | MultiReport (17x Cobertura) |
 | Assemblies: | 13 |
 | Classes: | 1015 |
 | Files: | 535 |
-| **Line coverage:** | 94.7% (66793 of 70508) |
-| Covered lines: | 66793 |
-| Uncovered lines: | 3715 |
+| **Line coverage:** | 94.7% (66796 of 70508) |
+| Covered lines: | 66796 |
+| Uncovered lines: | 3712 |
 | Coverable lines: | 70508 |
 | Total lines: | 117881 |
-| **Branch coverage:** | 87.1% (39979 of 45879) |
-| Covered branches: | 39979 |
+| **Branch coverage:** | 87.1% (39985 of 45879) |
+| Covered branches: | 39985 |
 | Total branches: | 45879 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExChart - 84.4%</summary>
+<details><summary>ExChart - 84.5%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**84.4%**|**72.5%**|
+|**ExChart**|**84.5%**|**72.8%**|
 |ExChart.ChartPointClick|100%||
-|ExChart.ChartRange|50%|0%|
+|ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
 |ExChart.Chrome.ChartCommand|100%||
 |ExChart.Chrome.ChartFiltersContext|90%||
@@ -82,7 +82,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart.Engine**|**96%**|**84.8%**|
+|**ExChart.Engine**|**96%**|**84.9%**|
 |ExChart.Engine.Appearance|100%|100%|
 |ExChart.Engine.AppearanceKeys|100%||
 |ExChart.Engine.AxisStyle|100%||
@@ -100,7 +100,7 @@
 |ExChart.Engine.ChartReading|100%||
 |ExChart.Engine.ChartReadings|90.5%|61.3%|
 |ExChart.Engine.ChartRefusedException|100%||
-|ExChart.Engine.ChartScene|98.8%|88.5%|
+|ExChart.Engine.ChartScene|98.8%|89%|
 |ExChart.Engine.ChartSeries|100%|100%|
 |ExChart.Engine.ChartSpec|93.3%|76.8%|
 |ExChart.Engine.ChartSpec.Reader|92.9%|76.6%|
@@ -316,8 +316,8 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|95.4%|90.3%|
 |ExGrid.Components.ExGrid<TRow>|90.7%|85.6%|
+|ExGrid.Components.ExGrid<TRow>|95.4%|90.3%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
@@ -425,7 +425,7 @@
 |ExGrid.Selection.HeldSelection|100%|100%|
 |ExGrid.Selection.SelectionRange|100%|100%|
 |ExGrid.ShapedColumn|100%||
-|ExGrid.ShapedGrid|95.3%|90%|
+|ExGrid.ShapedGrid|96.8%|90%|
 |ExGrid.ShapedRow|100%|100%|
 |ExGrid.SortCycle|100%|100%|
 |ExGrid.SortDocument|100%||
@@ -447,15 +447,15 @@
 |ExGrid.ViewStateDocument|100%||
 
 </details>
-<details><summary>ExGrid.Data - 94.6%</summary>
+<details><summary>ExGrid.Data - 94.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.3%**|
+|**ExGrid.Data**|**94.7%**|**90.3%**|
 |ExGrid.Data.AggregateAccumulator|86%|87.8%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
-|ExGrid.Data.BoardInput|94%|82%|
+|ExGrid.Data.BoardInput|94.5%|82%|
 |ExGrid.Data.BoardRefusedException|100%||
 |ExGrid.Data.BooleanColumn|100%||
 |ExGrid.Data.BooleanColumnBuilder|100%|100%|
@@ -890,7 +890,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**93.1%**|**85.1%**|
+|**ExSheet**|**93.1%**|**85%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -901,10 +901,10 @@
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|91.3%|83.5%|
+|ExSheet.Components.ExSheet|91.3%|83.4%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91.3%|83.5%|
+|ExSheet.Components.ExSheet<T>|91.3%|83.4%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
