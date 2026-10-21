@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/21/2026 - 14:15:58 |
-| Parser: | MultiReport (18x Cobertura) |
+| Generated on: | 10/21/2026 - 14:49:25 |
+| Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 14 |
-| Classes: | 1061 |
-| Files: | 548 |
-| **Line coverage:** | 94.6% (69284 of 73188) |
-| Covered lines: | 69284 |
-| Uncovered lines: | 3904 |
-| Coverable lines: | 73188 |
-| Total lines: | 122572 |
-| **Branch coverage:** | 87% (41445 of 47630) |
-| Covered branches: | 41445 |
-| Total branches: | 47630 |
+| Classes: | 1062 |
+| Files: | 549 |
+| **Line coverage:** | 94.6% (69382 of 73296) |
+| Covered lines: | 69382 |
+| Uncovered lines: | 3914 |
+| Coverable lines: | 73296 |
+| Total lines: | 122783 |
+| **Branch coverage:** | 87% (41499 of 47692) |
+| Covered branches: | 41499 |
+| Total branches: | 47692 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -955,10 +955,10 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.6%|83.5%|
+|ExSheet.Components.ExSheet|91.6%|83.4%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91.6%|83.5%|
+|ExSheet.Components.ExSheet<T>|91.6%|83.4%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
@@ -1024,11 +1024,11 @@
 |ExSheet.UnderlineItem|100%|100%|
 
 </details>
-<details><summary>ExSheet.Engine - 97.7%</summary>
+<details><summary>ExSheet.Engine - 97.6%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.7%**|**91%**|
+|**ExSheet.Engine**|**97.6%**|**91%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -1048,7 +1048,7 @@
 |ExSheet.Engine.ConstantParser|96.4%|81.5%|
 |ExSheet.Engine.DateSerial|100%|100%|
 |ExSheet.Engine.DeclaredFunction|100%|100%|
-|ExSheet.Engine.Entry|98%|100%|
+|ExSheet.Engine.Entry|98.3%|100%|
 |ExSheet.Engine.EntryText|100%|100%|
 |ExSheet.Engine.ErrorValues|100%|90%|
 |ExSheet.Engine.FormulaCompletion|100%||
@@ -1110,6 +1110,7 @@
 |ExSheet.Engine.Formulas.TextOrder|100%|97.2%|
 |ExSheet.Engine.Formulas.Token|100%||
 |ExSheet.Engine.Formulas.UnaryNode|100%||
+|ExSheet.Engine.Formulas.UnboundNameWalk|76.1%|85.2%|
 |ExSheet.Engine.Formulas.ValueArray|100%|85%|
 |ExSheet.Engine.Formulas.Wide|100%||
 |ExSheet.Engine.Formulas.Wildcard|96.7%|78.1%|
@@ -1142,7 +1143,7 @@
 |ExSheet.Engine.SheetChange|100%|95.8%|
 |ExSheet.Engine.SheetColumnWidth|100%||
 |ExSheet.Engine.SheetCopy|100%||
-|ExSheet.Engine.SheetDocument|99.4%|93%|
+|ExSheet.Engine.SheetDocument|99.4%|93.1%|
 |ExSheet.Engine.SheetDocumentAxisFormat|100%||
 |ExSheet.Engine.SheetDocumentCell|100%||
 |ExSheet.Engine.SheetDocumentColumnWidth|100%||
@@ -1171,7 +1172,7 @@
 |ExSheet.Engine.Workbook|97.2%|93.1%|
 |ExSheet.Engine.Workbook.SheetRename|100%||
 |ExSheet.Engine.WorkbookChange|100%|100%|
-|ExSheet.Engine.WorkbookDocument|95.6%|85%|
+|ExSheet.Engine.WorkbookDocument|96.6%|86.5%|
 |ExSheet.Engine.WorkbookStep|100%|50%|
 
 </details>
