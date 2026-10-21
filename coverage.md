@@ -13,19 +13,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/21/2026 - 03:38:55 |
+| Generated on: | 10/21/2026 - 03:59:28 |
 | Parser: | MultiReport (17x Cobertura) |
 | Assemblies: | 13 |
 | Classes: | 1016 |
 | Files: | 535 |
-| **Line coverage:** | 94.7% (66856 of 70570) |
-| Covered lines: | 66856 |
-| Uncovered lines: | 3714 |
-| Coverable lines: | 70570 |
-| Total lines: | 117942 |
-| **Branch coverage:** | 87.1% (40037 of 45935) |
-| Covered branches: | 40037 |
-| Total branches: | 45935 |
+| **Line coverage:** | 94.7% (66913 of 70625) |
+| Covered lines: | 66913 |
+| Uncovered lines: | 3712 |
+| Coverable lines: | 70625 |
+| Total lines: | 118034 |
+| **Branch coverage:** | 87.1% (40056 of 45955) |
+| Covered branches: | 40056 |
+| Total branches: | 45955 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -338,7 +338,7 @@
 |ExGrid.Components.Share|100%|100%|
 |ExGrid.Components.SummaryFiguresMenu|80%|85.7%|
 |ExGrid.DisplayText|100%|90%|
-|ExGrid.FetchingGridSource<TRow>|80.8%|64.2%|
+|ExGrid.FetchingGridSource<TRow>|81%|65.9%|
 |ExGrid.FetchingGridSource<TRow>|96.2%|84.4%|
 |ExGrid.FilterClause|100%||
 |ExGrid.FilterDocument|100%||
@@ -455,7 +455,7 @@
 |ExGrid.Data.AggregateAccumulator|86%|87.8%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
-|ExGrid.Data.BoardInput|94.5%|82%|
+|ExGrid.Data.BoardInput|94.6%|82%|
 |ExGrid.Data.BoardRefusedException|100%||
 |ExGrid.Data.BooleanColumn|100%||
 |ExGrid.Data.BooleanColumnBuilder|100%|100%|
@@ -544,7 +544,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -584,9 +584,9 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data.Arrow**|**93.8%**|**89.2%**|
-|ExGrid.Data.Arrow.ArrowSnapshotReader|94.7%|93.4%|
-|ExGrid.Data.Arrow.ArrowSnapshotReader<T>|94.7%|93.4%|
+|**ExGrid.Data.Arrow**|**93.8%**|**89%**|
+|ExGrid.Data.Arrow.ArrowSnapshotReader|94.7%|92.6%|
+|ExGrid.Data.Arrow.ArrowSnapshotReader<T>|94.7%|92.6%|
 |ExGrid.Data.Arrow.ArrowSnapshotWriter|97.6%|91.6%|
 |ExGrid.Data.Arrow.ArrowTypeNames|75%|95.1%|
 |ExGrid.Data.Arrow.Bitmaps|100%|93.7%|
@@ -614,7 +614,7 @@
 |ExGrid.Data.Arrow.ReadScratch|100%||
 |ExGrid.Data.Arrow.RowOrder|100%|100%|
 |ExGrid.Data.Arrow.Run|100%||
-|ExGrid.Data.Arrow.SnapshotArrow|87.5%|50%|
+|ExGrid.Data.Arrow.SnapshotArrow|86.3%|50%|
 |ExGrid.Data.Arrow.TextViews|100%|92.8%|
 |ExGrid.Data.Arrow.TextWriter|98.3%|90%|
 |ExGrid.Data.Arrow.TimeReader|100%|100%|
@@ -734,7 +734,7 @@
 |ExPivot.Engine.ComputationReport.Part|0%||
 |ExPivot.Engine.DetailsPass|100%|100%|
 |ExPivot.Engine.Exactly|98.8%|86.5%|
-|ExPivot.Engine.FetchingPivotReportSource|64.5%|36.1%|
+|ExPivot.Engine.FetchingPivotReportSource|69.6%|39.5%|
 |ExPivot.Engine.FetchingPivotSource|94.3%|68.4%|
 |ExPivot.Engine.FieldBinding|96.4%|94.4%|
 |ExPivot.Engine.FieldMeta|100%|100%|
@@ -745,7 +745,7 @@
 |ExPivot.Engine.ItemSpace|98.4%|98.7%|
 |ExPivot.Engine.ItemsPass|100%|97%|
 |ExPivot.Engine.LeafIndex|84%|85.8%|
-|ExPivot.Engine.LocalPivotReportSource|98.7%|89.2%|
+|ExPivot.Engine.LocalPivotReportSource|98.7%|89%|
 |ExPivot.Engine.LocalPivotReportSource.HeldReport|100%||
 |ExPivot.Engine.LocalPivotReportSource.HighlightVersion|100%|100%|
 |ExPivot.Engine.LocalPivotReportSource.Unpublished|100%|100%|
@@ -825,7 +825,7 @@
 |ExPivot.Engine.PivotReportRow|100%||
 |ExPivot.Engine.PivotReportRowChange|100%||
 |ExPivot.Engine.PivotReportSettings|100%|100%|
-|ExPivot.Engine.PivotReportSource|100%|100%|
+|ExPivot.Engine.PivotReportSource|80%|100%|
 |ExPivot.Engine.PivotReportState|100%||
 |ExPivot.Engine.PivotReportSummaryQuery|100%||
 |ExPivot.Engine.PivotReportSummaryResult|100%||
