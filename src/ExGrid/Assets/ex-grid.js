@@ -3696,8 +3696,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // A keydown going on to the Blazor handler of a control that claims it — a menu's items, a value
     // list — told, and its number answered (tellClaim); 0 for one no control claims.
     const tellKeyClaim = (event) => (core && claimOf(event.target, 'keydown') !== null ? tellClaim('keydown') : 0);
+    // The keyboard crossing the root's edge (focusin, focusout) adds no layer an Escape peels, so it is
+    // numbered neutral (layerInputAt): an Escape typed straight after a Tab into the grid still releases
+    // Tab at its keydown, and the Tab after it leaves (ADR-0230 section 1).
     const tellClaim = (kind) => {
-        const input = nextInput();
+        const input = nextInput(kind === 'focusin' || kind === 'focusout');
         core.invokeMethodAsync('InputTakenAt', kind, input).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to hear a click', error);
