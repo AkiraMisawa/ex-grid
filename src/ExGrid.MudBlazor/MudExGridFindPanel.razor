@@ -5,13 +5,15 @@
 @using global::ExGrid
 @using global::ExGrid.Chrome
 @using global::ExGrid.Components
+@using global::ExGrid.Finding
 @using global::MudBlazor
 @* Not the contract (ADR-0201): MudGridChrome draws this part, and no Consumer places it. It is
    public only because Razor makes every component public, is hidden from a Consumer's editor, and
    may change in any version. *@
 @attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 @* The find panel under MudBlazor (ADR-0055/0030): a MudTextField, the two options as
-   MudCheckBoxes and the two steps as MudButtons, inside the core's popover. The search, the
+   MudCheckBoxes and the two steps as MudButtons, inside the core's popover; opened by Ctrl+H where a
+   Replace can land, a second MudTextField and Replace and Replace All as well (ADR-0332 §2). The search, the
    Focus it moves and what closes the panel are the core's; this draws and calls back.
 
    Enter in the field is the browser's implicit submission — which an IME's candidate Enter is
@@ -37,7 +39,24 @@
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowDown"
                    OnClick="Context.Next" data-ex-claims="click" Class="mud-ex-grid-find-next">@Own(FindPanelLabelIds.Next)</MudButton>
     </div>
-    <MudText Typo="Typo.caption" Color="Color.Error" Class="mud-ex-grid-find-outcome" role="status">@OutcomeText</MudText>
+    @if (Context.ReplaceShown)
+    {
+        @* Replace (ADR-0332 §2): the replacement and the two writes, each a click the core takes in
+           its place in the Input Order (ADR-0240), as Find's steps are. Enter in this field is still
+           "find next", as in Excel's dialog. *@
+        <MudTextField T="string" Value="Context.ReplaceText" ValueChanged="Context.ReplaceTextChanged!" Immediate="true"
+                      Label="@Own(FindPanelLabelIds.ReplaceField)" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.FindReplace"
+                      OnKeyDown="OnFieldKeyDown" Class="mud-ex-grid-find-replace-field" />
+        <div class="mud-ex-grid-find-actions">
+            <MudButton Variant="Variant.Text" Size="Size.Small"
+                       OnClick="Context.Replace!" data-ex-claims="click" Class="mud-ex-grid-find-replace">@Own(FindPanelLabelIds.Replace)</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                       OnClick="Context.ReplaceAll!" data-ex-claims="click" Class="mud-ex-grid-find-replace-all">@Own(FindPanelLabelIds.ReplaceAll)</MudButton>
+        </div>
+    }
+    <MudText Typo="Typo.caption" Color="@(Context.Outcome == FindOutcome.Replaced ? Color.Success : Color.Error)"
+             Class="mud-ex-grid-find-outcome" role="status">@OutcomeText</MudText>
 </form>
 
 @code {
@@ -55,7 +74,7 @@
 
     private string Own(string id) => MudExGridWords.Own(Chrome, id);
 
-    private string OutcomeText => FindPanelLabelIds.For(Context.Outcome) is { } said ? Own(said) : "";
+    private string OutcomeText => FindPanelLabelIds.OutcomeText(Context, Own);
 
     protected override void OnParametersSet()
     {

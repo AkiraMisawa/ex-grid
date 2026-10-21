@@ -41,7 +41,8 @@ internal static class GridKeys
     /// The keys the core takes on every grid, in canonical form. The JS listener takes exactly
     /// these and the ones <see cref="TakenFor"/> adds, and lets everything else through — a key
     /// taken for no meaning of the grid's is a key stolen from the browser. Ctrl+F is here
-    /// because the browser's own find would be a wrong answer on a virtualised grid (ADR-0055);
+    /// because the browser's own find would be a wrong answer on a virtualised grid (ADR-0055), and
+    /// Ctrl+H with it, Find's panel with Replace (ADR-0332 §2);
     /// Ctrl+R only on a grid that edits, where it is Excel's fill (ADR-0035).
     ///
     /// <para>Not here, deliberately: Ctrl+C / Ctrl+V (the clipboard rides the browser's
@@ -79,6 +80,10 @@ internal static class GridKeys
     public static IReadOnlyList<string> FindKeys { get; } =
         [.. Table.Where(entry => entry.Value.Kind == GridKeyKind.Find).Select(entry => entry.Key)];
 
+    /// <summary>Replace's key (ADR-0332 §2), both cases for CapsLock.</summary>
+    public static IReadOnlyList<string> ReplaceKeys { get; } =
+        [.. Table.Where(entry => entry.Value.Kind == GridKeyKind.Replace).Select(entry => entry.Key)];
+
     /// <summary>
     /// The clipboard's keys: the ones the core answers through the browser's copy and paste
     /// events (ADR-0005, ADR-0014), with cut, which the core does not answer and a field does, and
@@ -96,7 +101,7 @@ internal static class GridKeys
     /// Every set of keys the listener gates by beside <see cref="TakenFor"/>'s and the declared
     /// keys, under the name it reads each by, handed at attach (ADR-0010; KB-2): the claimed sets of
     /// the editing modes (<see cref="GridEditingKeys.ByMode"/>), and <c>neutral</c>,
-    /// <c>popoverOpeners</c>, <c>find</c> and <c>clipboard</c>.
+    /// <c>popoverOpeners</c>, <c>find</c>, <c>replace</c> and <c>clipboard</c>.
     /// </summary>
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> GateSets { get; } = BuildGateSets();
 
@@ -107,6 +112,7 @@ internal static class GridKeys
             ["neutral"] = Neutral,
             ["popoverOpeners"] = PopoverOpeners,
             ["find"] = FindKeys,
+            ["replace"] = ReplaceKeys,
             ["clipboard"] = ClipboardKeys,
         };
         return sets;
@@ -370,6 +376,11 @@ internal static class GridKeys
         // and is not — even where nothing better is wired, the refusal says so.
         table["Control+f"] = new(GridKeyKind.Find);
         table["Control+F"] = new(GridKeyKind.Find);
+
+        // Replace (ADR-0332 §2), on every grid, as Find is: the browser's Ctrl+H is its history, and
+        // a grid where no Replace can land refuses the key and says so rather than let it through.
+        table["Control+h"] = new(GridKeyKind.Replace);
+        table["Control+H"] = new(GridKeyKind.Replace);
 
         return table;
     }

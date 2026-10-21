@@ -82,10 +82,12 @@ export function stamp() {
  *   (ADR-0122): only then is it read, once, and reported
  * @param {Object<string, string[]>} gateKeys every other set of keys the gate reads, by name,
  *   built by GridKeys.GateSets (ADR-0010): the keys the core claims in each editing mode, and the
- *   neutral, popover-opening, find and clipboard keys — this file names none of them
+ *   neutral, popover-opening, find, replace and clipboard keys — this file names none of them
+ * @param {boolean} canReplace whether a Replace can land — Ctrl+H then opens the find panel with
+ *   Replace, and the keys after it wait for the panel; otherwise it is refused (ADR-0332)
  * @returns a handle owned by that one grid
  */
-export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared, gateKeys) {
+export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared, gateKeys, canReplace) {
     // The Input Journal's reader on the instance's root (ADR-0240 section 10). A symbol from the registry, not
     // a global: a failed layer-3 test reads it from each grid on the page; no Consumer reads it.
     const JOURNAL = Symbol.for('ex-grid.input-journal');
@@ -788,6 +790,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Find's key (ADR-0055), both cases for CapsLock, and the modifiers' own keydowns, which
     // mean nothing by themselves.
     const findKeys = gateSet('find');
+    // Replace's key (ADR-0332), the find panel with Replace, held and refused alike.
+    const replaceKeys = gateSet('replace');
+    // Whether a key of Find's or Replace's opens the panel (true), is refused by the core (false), or is
+    // neither (null).
+    const opensFind = (canonical) => (findKeys.has(canonical) ? canFind
+        : replaceKeys.has(canonical) ? canReplace === true : null);
+    // The find panel showing Find alone, where Find's key selects the field's text. With Replace
+    // shown the key is the core's in every field: it turns the panel back into Find alone (ADR-0332).
+    const findAloneSelector = '.ex-popover-find:not([data-ex-replace])';
     const modifierKeys = new Set(['Shift', 'Control', 'Alt', 'Meta']);
 
     // What the gate decides a key is for (ADR-0010): 'popover' — the core's, and it opens a
@@ -862,15 +873,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // selection instead of a caret and Ctrl+A would select the grid instead
                 // of the field's text.
                 // Ctrl+F in one of the grid's own popovers is the grid's too (ADR-0055, settled
-                // 2026-09-27): the browser's find would see only the painted rows. In the find
-                // field it selects the field's text, the field's own behaviour and no meaning of
-                // the core's; anywhere else in a popover it opens Find, as from the root. A
-                // Consumer's control in a Template cell keeps the key, as it keeps every other.
-                if (k.inPopover && findKeys.has(canonical)) {
-                    if (k.inFindField) {
+                // 2026-09-27): the browser's find would see only the painted rows. In the field of
+                // a panel showing Find alone it selects the field's text, the field's own behaviour
+                // and no meaning of the core's; anywhere else in a popover, a panel showing Replace
+                // included, it opens Find alone, as from the root. Ctrl+H
+                // opens the panel with Replace from anywhere in a popover, its field included
+                // (ADR-0332). A Consumer's control in a Template cell keeps the key, as it keeps
+                // every other.
+                if (k.inPopover && opensFind(canonical) !== null) {
+                    if (k.inFindField && findKeys.has(canonical)) {
                         return 'select';
                     }
-                    return canFind ? 'popover' : 'core';
+                    return opensFind(canonical) ? 'popover' : 'core';
                 }
                 if (canonical !== 'Escape') {
                     return null;
@@ -939,8 +953,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // Ctrl+F opens a popover only where a search is wired; elsewhere it is refused
             // and opens nothing, and holding the keys after it for a panel that never comes
             // would stall them (ADR-0055).
-            if (findKeys.has(canonical)) {
-                return canFind ? 'popover' : 'core';
+            if (opensFind(canonical) !== null) {
+                return opensFind(canonical) ? 'popover' : 'core';
             }
             // A declared key is the Consumer's to answer, and may open a popover or a frame of
             // the Consumer's own (Format Cells' Ctrl+1): the keys after it wait for its answer,
@@ -1040,7 +1054,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         onRoot: isRoot(event.target),
         inEditor: event.target instanceof Element && event.target.closest('.ex-editor') !== null,
         inPopover: popoverOf(event.target) !== null,
-        inFindField: isTextField(event.target) && event.target.closest('.ex-popover-find') !== null,
+        inFindField: isTextField(event.target) && event.target.closest(findAloneSelector) !== null,
         paint: paintNow(),
     });
 
@@ -2570,13 +2584,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // text field cannot reproduce a Ctrl chord at all, which would drop it and every
             // key after it. In the find field it selects the text; anywhere else in a popover
             // the core is asked to open Find, and the keys after it wait for the panel.
-            if (target && popoverOf(target) && findKeys.has(canonicalOf(k))) {
-                if (isTextField(target) && target.closest('.ex-popover-find')) {
+            if (target && popoverOf(target) && opensFind(canonicalOf(k)) !== null) {
+                if (findKeys.has(canonicalOf(k)) && isTextField(target) && target.closest(findAloneSelector)) {
                     target.select();
                     continue;
                 }
                 const aimed = { ...k, onRoot: false, inEditor: false, inPopover: true, inFindField: false };
-                awaitingPopover = canFind;
+                awaitingPopover = opensFind(canonicalOf(k));
                 await forward(aimed);
                 await editorSettled();
                 continue;
@@ -5194,10 +5208,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // becomes display-only stops taking printable keys, and one whose Consumer stops
         // listening for undo gives Ctrl+Z back to the page (ADR-0007/0010/0020/0055) — and
         // which of them the Consumer declared (ADR-0050, item 14).
-        setClaims: (takenKeys, editable, findable, declaredKeys, leaveDeclared) => {
+        setClaims: (takenKeys, editable, findable, declaredKeys, leaveDeclared, replaceable) => {
             taken = new Set(takenKeys);
             canEdit = editable;
             canFind = findable;
+            canReplace = replaceable === true;
             declared = new Set(declaredKeys ?? []);
             leaves = leaveDeclared === true;
         },

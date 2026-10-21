@@ -49,6 +49,61 @@
                      Files="@(["Examples/Data/Trade.cs"])" />
     </DocsSection>
 
+    <DocsSection Title="Replace">
+        <p>
+            <strong>Press <kbd>Ctrl</kbd>+<kbd>H</kbd></strong> for the find panel with Replace, as Excel's dialog
+            has both. It is offered where a replacement can land: you pass <code>OnReplace</code>, at least one
+            visible column is Editable, and Find is wired. Anywhere else <kbd>Ctrl</kbd>+<kbd>H</kbd> is still taken
+            from the browser (whose own key opens its history), opens nothing, and <code>OnFindRefused</code> says
+            <code>ReplaceUnavailable</code>, as <kbd>Ctrl</kbd>+<kbd>F</kbd> is refused where nothing can search.
+            <kbd>Ctrl</kbd>+<kbd>F</kbd> turns the panel back into Find alone.
+        </p>
+        <ul>
+            <li>
+                <strong>What is matched is the cell's entry</strong>: the text the Cell Editor opens with
+                (<code>EditorTextOf</code>'s, or the text the cell shows), not only what it shows. Match case,
+                Whole cell and the selection as the scope are Find's own options, carried over. Every occurrence
+                in the entry is replaced; with Whole cell, the entry whole.
+            </li>
+            <li>
+                <strong>Replace</strong> writes the current match (the cell the last step found, while the Focus
+                stays there) and then finds the next. It is an ordinary write of that one cell: an
+                <code>OnEdit</code> Edit Intent, with the column's Edit Verdict. With no current match it finds one
+                first, so you see what the next press writes. A match in a column that is not Editable, a Reject,
+                or an intent you <code>Refuse</code> writes nothing, and the panel says which cell and why.
+                Replace moves as Find's steps do, so it reaches the cells whose shown text matches; a cell whose
+                entry matches and whose shown text does not (a number shown formatted) is reached by Replace All
+                only, and one whose shown text matches and whose entry does not is passed over.
+            </li>
+            <li>
+                <strong>Replace All</strong> is one <code>GridReplaceRequest</code>: Find's text and options, the
+                replacement, the scope, the visible columns, which of them are Editable, and the
+                <code>RowSequenceVersion</code> it was read in. The grid writes nothing: you write every match
+                <strong>or none</strong>, as one step of your undo stack, and answer with the count
+                (<code>GridReplaceResult.Replaced</code>) or the cells you could not write and why
+                (<code>GridReplaceResult.Refused</code>). There is no cap. The panel says "Replaced 40 cells.", or
+                "Nothing was replaced." and names the first five cells, counting the rest. You answer under the
+                version you read your rows in; an answer under another version than the request's is refused as
+                the rows having moved (<code>OrderChanged</code>), and you must have written nothing then.
+            </li>
+            <li>
+                <strong><code>GridSource.From</code> answers it for you</strong>: hand its <code>Replace</code> the
+                request and your write of one cell — the same write your <code>OnEdit</code> makes, returning a
+                new row instance or a refusal — and it plans every match, applies the rewritten rows at once if
+                none refused, and gives you the result for the grid and the rows it changed for your undo stack.
+                <code>GridReplace.Plan</code> is that reference implementation, for a server that answers itself.
+            </li>
+            <li>
+                The panel's Replace field and its two buttons take their place in the order of input with the
+                grid's keys and presses, as Find's steps do, so a click typed ahead of a round trip is never
+                handled out of turn. <code>ExGrid.MudBlazor</code> draws them as a <code>MudTextField</code> and
+                two <code>MudButton</code>s.
+            </li>
+        </ul>
+        <DocsExample Title="Find and replace" Builtin="typeof(FindReplace)" Mud="typeof(FindReplaceMud)"
+                     Files="@(["Examples/Data/Trade.cs"])" />
+    </DocsSection>
+
     <DocsSection Title="What sorting and filtering mean">
         <p>
             <code>GridSource.From</code> is the reference implementation: a server that sorts or filters for the
@@ -114,5 +169,8 @@
         <ApiTable Type="typeof(GridFilter)" />
         <ApiTable Type="typeof(FilterSpec)" />
         <ApiTable Type="typeof(FilterClause)" />
+        <ApiTable Type="typeof(ExGrid.Finding.GridReplaceRequest)" />
+        <ApiTable Type="typeof(ExGrid.Finding.GridReplaceResult)" />
+        <ApiTable Type="typeof(ExGrid.Finding.GridReplace)" />
     </DocsSection>
 </DocsPage>
