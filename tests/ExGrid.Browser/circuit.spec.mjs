@@ -79,6 +79,32 @@ test.describe('input made while the circuit is down is refused aloud, and the gr
         expectedPageErrors: [/Cannot send data if the connection is not in the 'Connected' State/],
     });
 
+    test('ADR-0240: a row Action made while disconnected is refused and releases the next held input', async ({ page }) => {
+        test.skip(!SERVER, 'a WebAssembly tab has no circuit to lose');
+        const ownConnections = await connectionMark();
+        await page.goto('/row-command-order?chrome=builtin');
+        const root = grid(page);
+        await settled(root);
+        await root.focus();
+        const action = root.locator('.ex-row .ex-action').first();
+        // Dispatch through the real root listener while Blazor's reconnect overlay covers the
+        // page: no actionability wait can defer this input until the circuit comes back.
+        // Its registration, numbered Begin and dispatch end are all lost.
+        await dropCircuit(true, ownConnections);
+        await action.dispatchEvent('click');
+        await dropCircuit(false);
+        await circuitBack();
+        await page.keyboard.press('Control+i');
+        await settled(root);
+        await expect(page.locator('#row-order-trace')).toHaveText('second');
+        await expect(root.locator('.ex-announce'))
+            .toHaveText('Input made while the connection to the server was lost was not carried out. Make it again.');
+
+        await action.click();
+        await settled(root);
+        await expect(page.locator('#row-order-trace')).toHaveText('second | action:0');
+    });
+
     test('keys typed while the connection is lost are refused once it is back, and the next key is answered', async ({ page }) => {
         test.skip(!SERVER, 'a WebAssembly tab has no circuit to lose');
         const ownConnections = await connectionMark();
@@ -605,17 +631,11 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
         });
     }
 
-    // A press held behind a key kept its default, DOM focus onto the rows, and the rows hand
-    // focus to the root a round trip later. When that hand-over arrived after the Cell Editor the
-    // held key had opened took DOM focus, the root took the keyboard from the editor, and the
-    // listener went on holding every key and click behind it for an editor that no longer had
-    // focus — until its two-second fallback (Server host: typing-probe-2 found nothing landed
-    // 1.5 s later in 6 of 12 trials at 30 ms on Windows, and 4 of 12 at 0 ms on Linux). That
-    // fallback is gone: every wait is on a number now (ADR-0240 section 4), so a hold left waiting
-    // for that editor never ends, and the pair's wait below runs out. It used to be bounded at
-    // 1.5 s, under the fallback; with nothing left to come in under, the bound only timed the
-    // round trips, and the widened run's slowed browser met it (2026-10-21).
-    test('a click straight after a key waits for no fallback: each step lands, and no hold is left waiting (ED-22, ADR-0010, ADR-0240)', async ({ page }) => {
+    // ED-22's paired clicks/keys keep their order. The former 1.5-second bound predated
+    // ADR-0240's removal of the fallback: on the widened run every core input was answered
+    // in order, but the last render was still owed at that deadline. Read only after the
+    // Settled Mark; neither a passing re-run nor a larger time bound settles that defect.
+    test('a click straight after a key keeps each pair in order (ED-22, ADR-0240)', async ({ page }) => {
         await openSheet(page);
         const nameBox = sheetGrid(page).locator('input.ex-name-box');
         // Twelve rows in pairs: the second click of each pair comes while the first pair's key
@@ -626,9 +646,10 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
                 await page.keyboard.type(String(r % 10));
                 await page.keyboard.press('Enter');
             }
-            await expect(nameBox, `the pair from F${row + 1} was answered`).toHaveValue(`F${row + 3}`);
+            await settled(sheetGrid(page));
+            expect(await nameBox.inputValue(), `the pair from F${row + 1} was answered`).toBe(`F${row + 3}`);
         }
-        await expect.poll(() => sheetGrid(page).evaluate((root) => [...Array(12).keys()]
+        expect(await sheetGrid(page).evaluate((root) => [...Array(12).keys()]
             .map((r) => root.querySelector(`[id$='-r${r}c5']`)?.textContent.trim() ?? '')))
             .toEqual([...Array(12).keys()].map((r) => String(r % 10)));
     });
@@ -737,11 +758,8 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
 
             await page.keyboard.type('abcdefghij', { delay: 100 });
 
-            // Every answer has landed: on the Server host once the circuit is quiet, however long
-            // that takes; the fixed wait is the page's own time, all there is on WebAssembly.
-            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the value back
-            await page.waitForTimeout(1000);
-            await circuitQuiet();
+            // ADR-0240: the mark now covers the field's rendered answer too.
+            await settled(grid(page));
             await expect(editor).toHaveValue('Xabcdefghij');
             expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
             await page.keyboard.press('Enter');
@@ -762,9 +780,7 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
 
         await page.keyboard.type('nonsense', { delay: 100 });
 
-        // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the value back
-        await page.waitForTimeout(1000);
-        await circuitQuiet();
+        await settled(sheet);
         await expect(nameBox).toHaveValue('nonsense');
         expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
     });
@@ -833,11 +849,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('123456789');
 
             await expect.poll(() => editor.inputValue(), { timeout: 3000 }).toMatch(/123456789$/);
-            // And stays whole once every round trip has landed: on the Server host once the
-            // circuit is quiet, however long that takes; on WebAssembly after the fixed wait.
-            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the text back
-            await page.waitForTimeout(500);
-            await circuitQuiet();
+            await settled(grid(page));
             expect(await editor.inputValue()).toMatch(/123456789$/);
         });
 
@@ -848,7 +860,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(field).toBeFocused();
             await page.keyboard.type('5320984.5');
 
-            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the text back
+            // spec-lint: fixed-wait: this popover draft remains outside the Settled Mark until its committing input (ADR-0240 section 5); circuitQuiet() covers the Server host, and the WebAssembly draft has no rendered-answer mark
             await page.waitForTimeout(500);
             await circuitQuiet();
             expect(await field.inputValue()).toBe('5320984.5');
@@ -862,7 +874,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(field).toBeFocused();
             await page.keyboard.type('Gammadelta');
 
-            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the text back
+            // spec-lint: fixed-wait: this popover draft remains outside the Settled Mark until its committing input (ADR-0240 section 5); circuitQuiet() covers the Server host, and the WebAssembly draft has no rendered-answer mark
             await page.waitForTimeout(500);
             await circuitQuiet();
             expect(await field.inputValue()).toBe('Gammadelta');
@@ -876,7 +888,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(field).toHaveCount(1);
             await page.keyboard.type('1234567.89');
 
-            // spec-lint: fixed-wait: text typed into a field is the field's, not an input the gate takes, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that no late render will write the text back
+            // spec-lint: fixed-wait: this popover draft remains outside the Settled Mark until its committing input (ADR-0240 section 5); circuitQuiet() covers the Server host, and the WebAssembly draft has no rendered-answer mark
             await page.waitForTimeout(500);
             await circuitQuiet();
             expect(await field.inputValue()).toBe('1234567.89');

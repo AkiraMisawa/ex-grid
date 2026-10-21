@@ -4,6 +4,17 @@
 <DocsPage Product="ExSheet" Title="Overview"
           Lead="A general-purpose sheet for Blazor: cells addressed A1 over Excel's full extent, Formulas computed as Excel computes them, a Formula Bar and a Name Box. ExSheet holds and computes; one ExGrid paints it.">
 
+    <DocsSection Title="Responsive sizing">
+        <p>
+            ExSheet draws its cells with ExGrid. A <code>ViewportWidth="ViewportSize.Stretch"</code>
+            follows the available box while keeping column widths and the two-dimensional grid;
+            a narrower box is reached by horizontal scrolling. Enclosing flex and grid items must
+            permit shrinking with <code>min-width: 0</code>. A <code>MudExGridPaper</code> does so itself.
+            See the <a href="exgrid#a-responsive-box">responsive grid Example</a> for both Chromes.
+            This sizing support does not yet claim the complete mobile touch workflow.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="What ExSheet is">
         <p>
             ExSheet holds a <b>Sheet</b> — 1,048,576 rows by 16,384 columns, stored sparsely — and computes
@@ -59,6 +70,9 @@
             Selection spans — as Ctrl++ and Ctrl+- do from the keyboard, on a Selection of whole rows or whole
             columns. References keep naming the same cells, and a deleted target becomes
             <code>#REF!</code>.
+            A menu key typed immediately after right-click waits for that Context Menu to take the
+            keyboard, under either Chrome and on Blazor Server too.
+            The menu keeps the pressed cell even if committing an edit moves the Sheet on the page.
         </p>
         <ul>
             <li><code>PinnedColumnCount</code> freezes leading columns.</li>
@@ -95,6 +109,11 @@
             when you ask for it. The Sheet Tabs under the grid show a tab for each Sheet of the
             <a href="exsheet/workbook">Workbook</a>, one tab while it holds one Sheet; <code>ShowSheetTabs="false"</code>
             hides them.
+        </p>
+        <p>
+            Typing a Formula and immediately pressing a referenced cell keeps the inserted Reference,
+            including over a Server round trip. Releasing that press does not restore the earlier text;
+            typing again replaces it normally.
         </p>
         <DocsFigure Name="sheet-anatomy">
             An expenses claim beside last quarter's, with the total's Formula opened by F2. A script draws the figure
@@ -176,8 +195,9 @@
             The grid a Sheet is drawn with carries the <MudLink Href="exgrid/selection">Settled Mark</MudLink>:
             <code>data-ex-settled</code> on its root once every key, press on the cells, paste and copy it has
             taken has been handled and painted. A test or a macro types at full speed, waits for the mark, and
-            reads. Text typed into the Cell Editor, the Formula Bar or the Name Box, and a press on the toolbar,
-            are read with an expectation that waits for their effect.
+            reads. Text typed into the Cell Editor, Formula Bar and Name Box is covered too: the next
+            grid command takes the full field text, and the mark waits for its rendered answer.
+            A press on the Sheet Toolbar still needs an expectation that waits for its effect.
         </p>
         <p>
             On Blazor Server, input made while the connection is lost never reaches the Sheet. Once the connection is

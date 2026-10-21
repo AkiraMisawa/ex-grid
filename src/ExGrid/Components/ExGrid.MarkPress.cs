@@ -20,7 +20,11 @@ public partial class ExGrid<TRow>
     /// user on 2026-10-09; MK-9). A press on a row's checkbox, the header's or "Mark all N rows" is judged
     /// against the paint it was made on (<see cref="MarkPressTakenAt"/>), and what it can still name
     /// exactly is honoured: a row's checkbox marks its row by identity wherever the order has moved it,
-    /// and the header's checkbox marks what it named, by the mode in force at the press — under a pager,
+    /// while it remains continuously in the Window when waiting in Input Order. Once it leaves, the
+    /// waiting command is refused as <see cref="MarkRefusalReason.RowLeftTheWindow"/> even if the row
+    /// returns before the command's turn; leaving only the painted slice does not count. SourceChanged
+    /// takes precedence when the Source was replaced. The header's checkbox marks what it named,
+    /// by the mode in force at the press — under a pager,
     /// the page it was pressed on, as positions under the order it was pressed in, which the marks resolve
     /// whether or not the page is on screen, though the page has turned or the pager gone since; with
     /// none, the whole result, though a pager has come since. The rest marks nothing, raises no Row Mark
@@ -34,7 +38,8 @@ public partial class ExGrid<TRow>
     /// that has moved since, that position is all that names its row (ADR-0160), so it is refused as
     /// <see cref="MarkRefusalReason.OrderMoved"/> too. A press told the current paint, or told none, marks
     /// as before; a press pointed at from outside marks nothing and says nothing (ADR-0058). The grid
-    /// holds no string for it; a Consumer words it, into its refusal live region (A11Y-16).
+    /// holds no string for it. Chrome announces a queued row command's refusal in the grid's refusal
+    /// live region; for other mark refusals a Consumer supplies that announcement (A11Y-16).
     /// </summary>
     [Parameter] public EventCallback<MarkRefusalReason> OnMarkRefused { get; set; }
 
@@ -190,7 +195,40 @@ public partial class ExGrid<TRow>
     /// painted, it marks nothing and is refused as <see cref="MarkRefusalReason.SourceChanged"/>: the
     /// checkbox holds the new source's row now, which nobody pressed (ADR-0142, MK-9).
     /// </summary>
-    private async Task RaiseRowMarkAsync(TRow row, bool marked)
+    private Task RaiseRowMarkAsync(TRow row, bool marked)
+    {
+        if (TakeDispatchedRowCommand(true) is { } command) return QueueRememberedRowCommand(command);
+        var input = ClaimInput(ClaimKinds.Click);
+        if (input <= 0) return RaiseUnnumberedRowMarkAsync(row, marked);
+        var paint = _markPress?.Paint ?? PaintNotTold;
+        _markPress = null;
+        _markPressAnswered = false;
+        return QueueMarkAsync(input, KeepWaitingRow(row), paint, marked);
+    }
+
+    private Task QueueMarkAsync(int input, WaitingRow waiting, int paint, bool marked)
+    {
+        return QueueRowCommand(input, async () =>
+        {
+            var current = TakeWaitingRow(waiting);
+            if (_disposed || PointedAtNow) return;
+            if (waiting.Binding != _binding || AimedAtAReplacedSource(paint))
+            {
+                AnnounceRowCommandRefusal();
+                await RefuseMarkAsync(AimedAway.SourceReplaced);
+            }
+            else if (current is null)
+            {
+                AnnounceRowCommandRefusal();
+                await OnMarkRefused.InvokeAsync(!waiting.Identified && AimedUnderAnotherOrder(paint)
+                    ? MarkRefusalReason.OrderMoved : MarkRefusalReason.RowLeftTheWindow);
+            }
+            else if (_marks is not null)
+                await _marks.OnMarkIntentAsync(new RowMarkIntent<TRow>.OneRow(current, marked));
+        });
+    }
+
+    private async Task RaiseUnnumberedRowMarkAsync(TRow row, bool marked)
     {
         var press = await TakeMarkPressAsync(row);
         var answered = _markPressAnswered;

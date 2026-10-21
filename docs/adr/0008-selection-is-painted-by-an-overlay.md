@@ -125,11 +125,19 @@ The gestures ADR-0012 names are wired; two things around them are deliberately n
   context menu is a Chrome seam (ADR-0010) that has not been specified. Double-click starts editing
   and arrives with the editor.
 
-Touch and pen are out of scope for the same reason the browser target is narrow
+Touch and pen were originally out of scope for the same reason the browser target was narrow
 ([ADR-0017](./0017-target-chromium-browsers-only.md)): this is a desktop grid, and a touch drag is
 a different gesture vocabulary rather than the same one with a different device. *(The
 desktop scope as a whole is now stated in one place:
-[ADR-0045](./0045-exgrid-is-a-desktop-grid.md).)*
+[ADR-0045](./0045-exgrid-is-a-desktop-grid.md). Touch was brought into scope there on 2026-10-19,
+with its basic gestures decided later that day: ordinary touch swipes pan, a tap selects, a double
+tap edits where permitted, and a separate selection handle moves Extent without writing data.
+That revision does not decide pen behavior or make a touch swipe the mouse's selection drag.
+The revised Q9 there settles the mixed-input handle rule: mouse-capable initial presentation,
+actual touch switches to the Selection Handle, actual mouse click restores, and an active gesture
+does not switch meaning. Q15 limits initial touch range creation to one rectangle, including whole
+rows and columns, without dropping existing disjoint Selection on an input change. Q20 defines interruption and Q24 defines the browser input boundary; both still need implementation
+and verification.)*
 
 ## Dragging at the edge scrolls, and the pointer leaving stops it
 

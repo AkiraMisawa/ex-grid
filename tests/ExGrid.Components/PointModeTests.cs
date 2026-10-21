@@ -103,6 +103,85 @@ public class PointModeTests : GridTestContext
     private List<string> EditingModesTold()
         => [.. JSInterop.Invocations.Where(i => i.Identifier == "setEditing").Select(i => (string)i.Arguments[0]!)];
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ADR0240_a_press_answer_or_release_cannot_undo_the_reference_its_press_wrote(bool release)
+    {
+        var cut = RenderGrid();
+        await StartFormulaAsync(cut);
+        var viewport = cut.Find(".ex-viewport");
+        var text = new GridInputText { Surface = "cell", Text = "=1+", Caret = 3, Revision = 1 };
+        async Task TellPress(string kind, int number) => await cut.InvokeAsync(() => cut.Instance.PressTakenAt(
+            kind, 150, 30, int.Parse(viewport.GetAttribute("data-ex-first-row")!), 0, 0,
+            int.Parse(viewport.GetAttribute("data-ex-sequence")!),
+            int.Parse(viewport.GetAttribute("data-ex-layout")!), input: number, fieldText: text));
+
+        // All three messages were captured before the press's render reached the browser.
+        await TellPress("mousedown", 1);
+        await ClickAsync(cut, 150, 30);
+        Assert.Equal("=1+B2", EditorText(cut));
+        if (release)
+        {
+            await TellPress("mouseup", 2);
+            await viewport.MouseUpAsync(new MouseEventArgs { Button = 0, OffsetX = 150, OffsetY = 30 });
+        }
+        else
+            await cut.InvokeAsync(() => cut.Instance.PressAnsweredAsync(2, text));
+        await WhenIdleAsync();
+
+        Assert.Equal("=1+B2", EditorText(cut));
+        Assert.Single(cut.FindAll(".ex-selection .ex-point"));
+
+        // A fresh typing of the same text must still replace the reference.
+        await cut.InvokeAsync(() => cut.Instance.PressAnsweredAsync(3,
+            new GridInputText { Surface = "cell", Text = "=1+", Caret = 3, Revision = 2 }));
+        Assert.Equal("=1+", EditorText(cut));
+        Assert.Empty(cut.FindAll(".ex-selection .ex-point"));
+    }
+
+    [Fact]
+    public async Task ADR0240_a_key_and_following_press_answer_share_the_same_field_reading()
+    {
+        var cut = RenderGrid();
+        await StartFormulaAsync(cut);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("Home", false, false, false, false, false,
+            editorText: "=1+", editorCaret: 3, input: 1,
+            fieldText: new GridInputText { Surface = "cell", Caret = 3, Revision = 1 }));
+        Assert.Equal("=1+A1", EditorText(cut));
+
+        await cut.InvokeAsync(() => cut.Instance.PressAnsweredAsync(2,
+            new GridInputText { Surface = "cell", Text = "=1+", Caret = 3, Revision = 1 }));
+        Assert.Equal("=1+A1", EditorText(cut));
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, false, false, false, false,
+            editorText: "=1+", editorCaret: 3, input: 3,
+            fieldText: new GridInputText { Surface = "cell", Caret = 3, Revision = 1 }));
+        Assert.Equal("=1+A2", EditorText(cut));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ADR0240_a_bar_press_cannot_adopt_its_older_render_as_new_typing(bool typedInBar)
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(intents, formulaBar: true);
+        await StartFormulaAsync(cut);
+        await TypeAsync(cut, "=A1+");
+        await cut.Find(".ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+
+        // The bar has not yet rendered the cell's typing in the browser. Its acknowledgement
+        // carries a rendered value, not an input event in this edit (revision -1).
+        await cut.InvokeAsync(() => cut.Instance.BarPressAnsweredAsync(true, 1,
+            new GridInputText { Surface = "bar", Text = "=", Caret = 1, Revision = -1 }));
+        if (typedInBar)
+            await cut.InvokeAsync(() => cut.Instance.BarPressAnsweredAsync(true, 2,
+                new GridInputText { Surface = "bar", Text = "=A1+B1", Caret = 6, Revision = 1 }));
+        // Read the Consumer's committed value, not a render that the interop answer may still owe.
+        await PressAsync(cut, "Enter");
+        Assert.Equal(typedInBar ? "=A1+B1" : "=A1+", Assert.Single(intents).Value);
+    }
+
     [Fact] // ADR-0230 section 2 / ticket 221: a key that overtook the input events of the typing it carries points, and those events, heard after it, do not end pointing
     public async Task ADR0230_input_events_a_key_overtook_do_not_undo_its_answer()
     {

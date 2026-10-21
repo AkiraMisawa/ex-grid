@@ -525,6 +525,7 @@
             var chosen = Engagement.Column == index && Engagement.Action == a;
             builder.OpenElement(sequence++, "button");
             builder.AddAttribute(sequence++, "type", "button");
+            builder.AddAttribute(sequence++, "data-ex-claims", "click");
             builder.AddAttribute(sequence++, "class", chosen ? ChosenActionClass(action) : paints[a].Class);
             builder.AddAttribute(sequence++, "id", chosen ? CellIds.Action(IdPrefix, RowIndex, index, a) : null);
             // Never holding the keyboard (ADR-0033/0037). Out of the page's tab sequence,
@@ -580,6 +581,7 @@
         builder.AddAttribute(6, "tabindex", "-1");
         builder.AddEventPreventDefaultAttribute(7, "onmousedown", true);
         builder.AddAttribute(8, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _toggleMark ??= ToggleMarkAsync));
+        builder.AddAttribute(9, "data-ex-claims", "click");
         builder.CloseElement();
     }
 

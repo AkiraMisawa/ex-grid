@@ -115,3 +115,22 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
 - **ADR-0140's "holds nothing between Windows" is now a rule that can be checked**, and ADR-0050 item 15's
   cache keeps to it.
 - **The Definition of Done gains LV-22 and LV-23** (§32).
+
+## Queued row commands, 2026-10-19
+
+Decided with the user after reviewing upstream Input Order (PR #172): a waiting row Action or
+row Mark follows its original identity only while that identity remains continuously present in
+the current Window. A replacement instance with the same Row Key still names that identity;
+without a Row Key, identity is the row instance. Scrolling outside the painted slice alone does
+not end presence in the Window.
+
+Once the identity leaves the Window, the pending command releases its row and key and remains
+invalid even if that identity later returns. In its Input Order turn it changes nothing and says
+why through the refusal path. A Source replacement is still SourceChanged. The existing
+exceptions above gain no new holding: a queue callback, event continuation or detached row
+component must not retain historical rows on behalf of waiting commands.
+
+This deliberately narrows ADR-0142/0043's previous identity-following guarantee for commands
+waiting in Input Order. Keeping every unfinished input's historical identity was considered and
+rejected: a row or key can retain a whole old data generation. Refusing a command whose target
+left is preferred to unbounded retention; the user can issue a new command on the returned row.

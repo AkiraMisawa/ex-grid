@@ -138,6 +138,21 @@ Defer Layout Update edits. The Pivot Toolbar's toggle reopens it.
 
 ## Drag and drop without new JavaScript
 
+*(2026-10-19, responsive/touch Q8, [ADR-0045](./0045-exgrid-is-a-desktop-grid.md): the mobile
+design includes both tap commands and touch drag and drop. Both reuse the movement meanings
+above. The implementation below is the existing drag-event path; it does not prove touch
+support. Q12 chooses a dedicated narrow Field List surface with touch drags starting only on a
+grip, leaving the rest of an item for taps and scrolling. It shows destination and insertion
+position; a release outside that surface cancels. Remove and an explicit removal drop target
+within the surface replace the hidden report as a touch removal target. The desktop report target
+below remains. Q20 makes interruption discard the unconfirmed drag. Q23 agrees a bounded
+`elementFromPoint()` exception while a Pivot touch drag is active: registered targets and the
+rendering they refer to are reported, with C# judging validity. No target is rediscovered at
+replay time. [ADR-0263](./0263-pivot-touch-drag-resolves-only-registered-live-targets.md)
+and ADR-0021 now formally register this exception. Q24's input bridge is recorded in
+[ADR-0260](./0260-touch-input-reports-browser-facts-and-keeps-command-meaning-in-csharp.md);
+the input paths and Q20's interruption rules still need implementation and verification.)*
+
 *Extended 2026-10-05, decided with the user.* Removal originally accepted only a drop on the
 list of fields. The report (including its empty state) now accepts the same removal, showing an
 outline and **Remove Field** while a removable entry is dragged. A details tab's records, a

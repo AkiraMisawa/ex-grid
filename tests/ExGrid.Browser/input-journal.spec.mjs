@@ -36,8 +36,9 @@ test('ADR-0240 §10: twenty arrows typed at once are journaled as twenty numbere
     const entries = since(await journalOf(grid), before);
     const keys = entries.filter((e) => e.what === 'call' && e.method === 'OnKeyAsync' && e.args[0] === 'ArrowDown');
     expect(keys).toHaveLength(20);
-    // Each key carries its number as its last argument, in the order the keys were typed.
-    const numbers = keys.map((e) => e.args.at(-1));
+    // The field reading follows the input number (ADR-0240 section 5).
+    const numbers = keys.map((e) => e.args.at(-2));
+    expect(numbers.every((number) => Number.isSafeInteger(number) && number > 0)).toBe(true);
     expect(numbers).toEqual([...numbers].sort((a, b) => a - b));
     expect(entries.filter((e) => e.what === 'numbered').map((e) => e.input)).toEqual(expect.arrayContaining(numbers));
     // Every call was replied to, none failed, and the stamp answered the last number.

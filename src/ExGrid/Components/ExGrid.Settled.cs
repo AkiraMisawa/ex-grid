@@ -117,24 +117,35 @@ public partial class ExGrid<TRow>
     /// input numbered before it has been handled, and finished before any numbered after it starts.
     /// Its number is then answered, whether it succeeded or threw: a failure has been reported on its
     /// own path, and the mark is not held by it. An input with no number (0) is handled at once.</summary>
-    /// <remarks>Every call of the script's that carries a number reaches here as it arrives, so the number
-    /// is also marked as having reached the core (InputReached).</remarks>
-    private Task AnsweredAsync(Func<Task> handling, int input)
+    /// <remarks>Every numbered call marks its arrival before entering the order.</remarks>
+    private Task AnsweredAsync(Func<Task> handling, int input, GridInputText? fieldText = null)
     {
         InputReached(input);
-        return Inputs.RunAsync(input, handling);
+        var toldText = TakeInputText(input);
+        var text = fieldText ?? toldText;
+        return Inputs.RunAsync(input, () =>
+        {
+            AdoptInputText(text);
+            return handling();
+        });
     }
 
-    /// <summary><see cref="AnsweredAsync(Func{Task}, int)"/> for a handling that answers a value.</summary>
-    private Task<T> AnsweredAsync<T>(Func<Task<T>> handling, int input)
+    /// <summary><see cref="AnsweredAsync(Func{Task}, int, GridInputText)"/> for a handling that answers a value.</summary>
+    private Task<T> AnsweredAsync<T>(Func<Task<T>> handling, int input, GridInputText? fieldText = null)
     {
         InputReached(input);
-        return Inputs.RunAsync(input, handling);
+        var toldText = TakeInputText(input);
+        var text = fieldText ?? toldText;
+        return Inputs.RunAsync(input, () =>
+        {
+            AdoptInputText(text);
+            return handling();
+        });
     }
 
     /// <summary>An input handled at once, with nothing to wait on, in its place in the Input Order.</summary>
-    private Task AnsweredAsync(Action handling, int input)
-        => AnsweredAsync(() => { handling(); return Task.CompletedTask; }, input);
+    private Task AnsweredAsync(Action handling, int input, GridInputText? fieldText = null)
+        => AnsweredAsync(() => { handling(); return Task.CompletedTask; }, input, fieldText);
 
     /// <summary>A message carrying the input numbered <paramref name="input"/> has reached the core
     /// (ADR-0240 section 11). Called first by every call of the script's that carries a number, before
@@ -204,7 +215,10 @@ public partial class ExGrid<TRow>
     private void InputVoid(int input)
     {
         if (input > 0)
+        {
+            _inputTexts.Remove(input);
             Inputs.Void(input);
+        }
     }
 
     /// <summary>Called last in OnAfterRenderAsync, with the renders built when it began: those have

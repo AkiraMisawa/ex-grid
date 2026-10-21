@@ -82,9 +82,10 @@ public partial class ExGrid<TRow>
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     /// <param name="input">The number the script gave this input, which the root names once it has
     /// been answered (ADR-0220); 0 for none.</param>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task OnCopyLandedAsync(int landing, int input = 0)
-        => AnsweredAsync(() => OutlineLandedCopy(landing), input);
+    public Task OnCopyLandedAsync(int landing, int input = 0, GridInputText? fieldText = null)
+        => AnsweredAsync(() => OutlineLandedCopy(landing), input, fieldText);
 
     private void OutlineLandedCopy(int landing)
     {

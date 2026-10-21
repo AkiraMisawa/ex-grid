@@ -115,6 +115,12 @@ Name Box (ADR-0051) needs to: a user types `D200` and the Focus goes there.
 
 ## 5. The fill handle: the gesture is the core's, the meaning is the Consumer's
 
+*(2026-10-19, responsive/touch Q10, [ADR-0045](./0045-exgrid-is-a-desktop-grid.md): touch Fill
+is entered explicitly, captures its source range, previews the target and waits for Apply before
+raising the operation once. Finger release only ends target adjustment; Cancel writes nothing.
+ExSheet records one Undo step, and existing Source/order refusals still apply. The release-to-fill
+rule below remains the desktop gesture. The touch design reuses its Fill semantics and shape.)*
+
 The fill handle was reserved with nothing settled. [ADR-0008](./0008-selection-is-painted-by-an-overlay.md)
 reserved its painting, and the Definition of Done's §21 reserved "neither the gesture nor the fill
 semantics". This settles it in the shape ADR-0007 gave editing: **the grid reports the intent, and

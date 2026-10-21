@@ -79,6 +79,10 @@
        toolbar stacks above them. */
     display: inline-flex;
     flex-direction: column;
+    /* A flex/grid parent may give the paper less than its columns' intrinsic width.
+       Let a Stretch grid receive that box; a declared grid still keeps its pixel width
+       (ADR-0045). Clipping or max-width would change that declared-width contract. */
+    min-width: 0;
     box-sizing: border-box;
     background-color: var(--mud-palette-surface);
     color: var(--mud-palette-text-primary);

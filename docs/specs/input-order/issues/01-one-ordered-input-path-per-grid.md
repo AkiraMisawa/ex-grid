@@ -47,3 +47,7 @@ JavaScript of their own.
 recommendation taken. Step 3 is split into tickets 02 to 07 (ADR-0240 §7), each its own pull request,
 each green on the daily hunt and the widened run before the next starts. This ticket is done as the
 decision; the building is theirs.
+
+2026-10-20: The user revised ADR-0240 §7: normal CI and repeated/widened verification of the related
+input paths gate the next stage. The whole-suite hunt continues asynchronously; its completion is
+not a stage gate. Record the scope and reason before the run, and the revision and results after it.

@@ -1,0 +1,25 @@
+@using ExGrid.Docs.Examples.Data
+@using ExGrid.Columns
+
+<button type="button" @onclick="() => _narrow = !_narrow">@(_narrow ? "Widen container" : "Narrow container")</button>
+<p>Two columns are requested as pinned. Narrowing suspends their pinning; widening restores it.</p>
+<div style="@($"display: flex; width: {(_narrow ? "240px" : "100%")}; max-width: 100%")">
+    <aside style="width: 40px; flex: none">Box</aside>
+    <MudExGridPaper Square="true" Elevation="0" Style="flex: 1 1 auto">
+        <ExGrid TRow="Trade" Source="_source" Columns="_columns" PinnedColumnCount="2"
+                ViewportHeight="240" ViewportWidth="ViewportSize.Stretch" Chrome="_chrome" />
+    </MudExGridPaper>
+</div>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+    private bool _narrow;
+    private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample());
+    private readonly GridColumn<Trade>[] _columns =
+    [
+        new("Book", ColumnType.Text, t => t.Book, width: new(ColumnWidth.Fixed(120))),
+        new("Trader", ColumnType.Text, t => t.Trader, width: new(ColumnWidth.Fixed(140))),
+        new("Notional", ColumnType.Number, t => t.Notional, width: new(ColumnWidth.Fixed(180))),
+        new("Price", ColumnType.Number, t => t.Price, width: new(ColumnWidth.Fixed(180))),
+    ];
+}

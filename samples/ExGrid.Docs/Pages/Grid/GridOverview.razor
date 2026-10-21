@@ -21,6 +21,28 @@
         </p>
     </DocsSection>
 
+    <DocsSection Title="A responsive box">
+        <p>
+            Set <code>ViewportWidth="ViewportSize.Stretch"</code> to follow the container's width,
+            including a flex row or a CSS grid track. A Drawer or split pane can change that box without
+            changing the browser window. A declared pixel width stays declared. Give each enclosing
+            flex or grid item permission to shrink with <code>min-width: 0</code>; the grid and
+            <code>MudExGridPaper</code> handle their own roots.
+        </p>
+        <p>
+            Narrowing keeps the columns, their widths, their order and Density. Scroll horizontally
+            to reach the rest. Pinning is temporarily suspended when it leaves less than 40 pixels
+            for scrolling, then restored on widening without changing saved View State. Columns
+            narrower than the box leave empty space on the right. This is responsive sizing; the
+            complete mobile touch workflow is still being implemented.
+        </p>
+        <DocsExample Title="Resize the container" Builtin="typeof(ResponsiveBox)" Mud="typeof(ResponsiveBoxMud)"
+                     Files="@(["Examples/Data/Trade.cs"])">
+            Narrow and widen this container. The first two columns stay the same width, and the
+            rightmost column remains reachable through the horizontal scrollbar.
+        </DocsExample>
+    </DocsSection>
+
     <DocsSection Title="The parts of a grid">
         <p>
             These pages and the API name the parts of a grid as the list under the figure does. Header Groups

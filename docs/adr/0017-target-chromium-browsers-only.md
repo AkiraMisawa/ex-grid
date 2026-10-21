@@ -1,7 +1,20 @@
-# The target browsers are Chrome and Edge. Both are required
+# Desktop Chrome and Edge remain required; the mobile target includes Android Chrome and iOS Safari
 
 **Chrome and Edge are both hard requirements** — not "any Chromium build will probably work", but
-**both are targets and both are verified**. Safari and Firefox are out of scope.
+**both are targets and both are verified**.
+
+*(Scope expanded with the user, 2026-10-19, responsive/touch Q2;
+[ADR-0045](./0045-exgrid-is-a-desktop-grid.md). Android Chrome and Safari on iPhone and iPad
+join the initial mobile design and verification scope. Safari was previously excluded, and the
+reasoning below was written under that exclusion. It is historical evidence, not a current
+compatibility assessment of Safari. Mobile support is not yet implemented or verified by this
+decision. Q18 later chose Safari on the latest updated releases of the two most recent iOS and
+iPadOS major versions, and latest stable Android Chrome. Exact versions are recorded for each
+release's verification. Real Android, iPhone and iPad runs cover native panning, software keyboard,
+Japanese IME, clipboard, rotation and pinch, across Server/WebAssembly and Built-in/MudBlazor
+Chrome. Emulation does not discharge real-device verification. Detailed test allocation and
+clipboard implementation remain to be settled;
+desktop Safari and Firefox have not been added to the target.)*
 
 The first Consumer is an **authenticated, LAN, all-day internal tool**, so the browser is
 controlled. This is not a site handed to the public.

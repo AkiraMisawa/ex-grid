@@ -1,5 +1,11 @@
 # The context menu is the column menu's shape, aimed at a selection. Right-click moves the Focus first
 
+*(2026-10-19, responsive/touch Q5, [ADR-0045](./0045-exgrid-is-a-desktop-grid.md): selection
+actions also become reachable by a visible control and by long press. Inside Selection a long
+press preserves it; outside, it selects the pressed cell before opening the actions. Scrolling
+cancels a long-press candidate, and opening the menu writes no cell data. Q20 and Q24 define cancellation and the browser input boundary; timing thresholds are
+implementation parameters to verify. This is a decision, not an implemented touch path.)*
+
 A secondary click opens a menu whose items the core decides and the Consumer extends, exactly as
 [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) settled for the column menu. Almost
 all of this ADR is derivation; three things were genuine choices, and a fourth was a contradiction
@@ -37,6 +43,15 @@ what it said, to something the user was not looking at.
 Rejected: **leaving the selection alone**, the smaller change. It buys nothing and pays in a
 command whose target is invisible. Rejected: **opening only inside the selection** and letting the
 browser's own menu appear outside it — safe, and reads as a component that is broken in half.
+
+*Implementation correction, 2026-10-20 (ADR-0240 ticket 03):* the menu carries the secondary
+press's existing paint descriptor, including its offsets, first row, scroll and layout. A press
+can commit an edit, and the Consumer's result message can then grow and move the grid before
+the browser emits `contextmenu`. Reading that later event's offsets copied a different row in
+the widened WebAssembly run. The original target now travels through `PressTakenAt` and the
+same validation as other presses; held events keep that descriptor too. There is no additional
+message or layout measurement. A context menu event without a preceding secondary press uses
+its own descriptor. This corrects the implementation of the press rule above, not the rule.
 
 ## What a command is handed: coordinates, not rows
 
