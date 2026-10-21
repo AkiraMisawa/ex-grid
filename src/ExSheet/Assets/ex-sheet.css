@@ -417,6 +417,10 @@
     cursor: pointer;
 }
 .ex-sheet-tab-add:hover { background: var(--ex-background, Canvas); }
+/* Past the last tab: the rest of the strip, where a tab released goes last. */
+.ex-sheet-tab-end { flex: 1 1 auto; min-width: 0; }
+.ex-sheet-tab-area[data-ex-dragging] .ex-sheet-tab-end:hover,
+.ex-sheet-tab-area[data-ex-dragging] .ex-sheet-tab-add:hover { box-shadow: inset 3px 0 0 var(--ex-focus-color, Highlight); }
 .ex-sheet-tab-menu {
     position: absolute;
     bottom: 100%;

@@ -515,6 +515,40 @@ public class SheetTabOperationsTests : SheetTestContext
         await cut.Find(".ex-sheet-tab-add").MouseUpAsync(new MouseEventArgs { Button = 0 });
 
         Assert.Equal(["Two", "Three", "One"], TabNames(cut));
+
+        await Tab(cut, "Two").MouseDownAsync(new MouseEventArgs { Button = 0 });
+        await cut.Find(".ex-sheet-tab-end").MouseUpAsync(new MouseEventArgs { Button = 0 });
+
+        Assert.Equal(["Three", "One", "Two"], TabNames(cut));
+    }
+
+    [Theory] // ADR-0331 §4: released anywhere else in the tabs' area — between tabs, on the list's scrollbar, on the menu or the name's field — a drag ends with nothing moved
+    [InlineData(".ex-sheet-tabs")]
+    [InlineData(".ex-sheet-tab-area")]
+    [InlineData(".ex-sheet-tab-menu")]
+    [InlineData(".ex-sheet-tab-name")]
+    public async Task A_drag_released_elsewhere_in_the_area_moves_nothing(string where)
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two", "Three"));
+        if (where == ".ex-sheet-tab-menu") await OpenMenuAsync(cut, "Three");
+        if (where == ".ex-sheet-tab-name") await Tab(cut, "Three").DoubleClickAsync(new MouseEventArgs());
+
+        await Tab(cut, "One").MouseDownAsync(new MouseEventArgs { Button = 0 });
+        await cut.Find(where).MouseUpAsync(new MouseEventArgs { Button = 0 });
+
+        Assert.Equal(["One", "Two", "Three"], [.. cut.Instance.ToWorkbookDocument().Sheets.Select(s => s.Name)]);
+        Assert.Null(cut.Find(".ex-sheet-tab-area").GetAttribute("data-ex-dragging"));
+        // Ended: a release on a tab after it moves nothing either.
+        await Tab(cut, "Two").MouseUpAsync(new MouseEventArgs { Button = 0 });
+        Assert.Equal(["One", "Two", "Three"], [.. cut.Instance.ToWorkbookDocument().Sheets.Select(s => s.Name)]);
+    }
+
+    [Fact] // ADR-0331 §4: the pointer leaving the tabs' area is heard before any press, so a pointer that leaves before the press's render still ends the drag
+    public void Leaving_the_area_is_heard_before_any_drag()
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+
+        Assert.True(cut.Find(".ex-sheet-tab-area").HasAttribute("blazor:onmouseleave"));
     }
 
     [Fact] // ADR-0331 §4: a press and release on one tab is a click, which moves nothing; leaving the tabs ends a drag; a secondary press starts none

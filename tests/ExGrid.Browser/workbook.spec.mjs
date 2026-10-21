@@ -398,5 +398,32 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(tab(page, 'Summary')).toHaveAttribute('aria-selected', 'true');
             await expectKeyboardOn(grid);
         });
+
+        test('WB-13/ADR-0331: a press on a tab that leaves the strip at once ends the drag, and a release on a tab from a press elsewhere moves nothing', async ({ page }) => {
+            await openWorkbook(page);
+            const grid = sheet(page);
+            await clickCell(grid, 'B2');
+            await settled(grid);
+
+            // Pressed on a tab and taken off the strip at once, before the press's answer could have been
+            // drawn: the strip hears the pointer leave whatever it has drawn.
+            const from = await tab(page, 'Claim').boundingBox();
+            const away = await cell(grid, 'C3').boundingBox();
+            await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+            await page.mouse.down();
+            await page.mouse.move(away.x + away.width / 2, away.y + away.height / 2);
+            await page.mouse.up();
+            // A press on a cell, released on the other tab: no drag of a tab was under way.
+            const start = await cell(grid, 'B2').boundingBox();
+            const to = await tab(page, 'Summary').boundingBox();
+            await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+            await page.mouse.down();
+            await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 4 });
+            await page.mouse.up();
+            await settled(grid);
+
+            await expect(tabNames(page)).toHaveText(['Claim', 'Summary']);
+            await expect(page.locator('.ex-sheet-tab-area')).not.toHaveAttribute('data-ex-dragging', /.*/);
+        });
     });
 }

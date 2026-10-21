@@ -89,8 +89,11 @@
     var sheetChrome = Chrome as ISheetChrome;
     var renameSession = _renameSession;
     var menuSession = _menuSession;
+    @* A release anywhere in the area but on a tab or past the last ends a drag with nothing moved, and the
+       pointer leaving the area ends it too: heard always, since a pointer may leave before the press's
+       render could add a listener. *@
     <div class="ex-sheet-tab-area" style="@SheetTabsStyle" @ref="_tabArea" data-ex-dragging="@(_dragFrom is not null ? "true" : null)"
-         @onmouseup="DropOnTabAreaAsync" @attributes="_dragListeners">
+         @onmouseup="EndTabDrag" @onmouseleave="EndTabDrag">
         <div class="ex-sheet-tabs" role="tablist" aria-label="@SheetWords.SheetTabsName" @ref="_tabList"
              @onkeydown="OnSheetTabKeyAsync">
             @* Keyed by its Sheet: an element reference is captured only as its element is made, so a tab
@@ -119,7 +122,10 @@
             }
         </div>
         <button type="button" class="ex-sheet-tab-add" tabindex="-1" aria-label="@SheetWords.NewSheetName" title="@SheetWords.NewSheetName"
-                data-ex-claims="click" @onmousedown:preventDefault="true" @onclick="AddSheetByUserAsync">@if (sheetChrome?.SheetTabAdd() is { } add) {@add} else {<span aria-hidden="true">+</span>}</button>
+                data-ex-claims="click" @onmousedown:preventDefault="true" @onclick="AddSheetByUserAsync"
+                @onmouseup="DropPastLastTabAsync" @onmouseup:stopPropagation="true">@if (sheetChrome?.SheetTabAdd() is { } add) {@add} else {<span aria-hidden="true">+</span>}</button>
+        @* Past the last tab: the + button and the strip's empty end, where a tab dragged goes last. *@
+        <span class="ex-sheet-tab-end" aria-hidden="true" @onmouseup="DropPastLastTabAsync" @onmouseup:stopPropagation="true"></span>
         @if (_menu is { } menu)
         {
             <div class="ex-sheet-tab-menu" role="menu" tabindex="-1" aria-label="@SheetWords.SheetMenuName(menu.Sheet)"

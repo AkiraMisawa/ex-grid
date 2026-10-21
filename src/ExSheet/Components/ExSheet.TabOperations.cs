@@ -49,7 +49,6 @@ public partial class ExSheet
 
     // The tab a drag started on, from the press until its release or the pointer leaving the tabs.
     private Sheet? _dragFrom;
-    private readonly Dictionary<string, object> _dragListeners = new(StringComparer.Ordinal);
 
     // A render asked for, completed as it is built, so an element it draws can be handed the keyboard.
     private TaskCompletionSource? _drawn;
@@ -88,7 +87,6 @@ public partial class ExSheet
         _menuSheet = null;
         _menuSession++;
         _dragFrom = null;
-        _dragListeners.Clear();
     }
 
     /// <summary>Any open edit — a cell's, or the Formula Bar's — refuses a Sheet operation, and the notice says why.</summary>
@@ -526,15 +524,11 @@ public partial class ExSheet
             return;
         }
         _dragFrom = sheet;
-        // Heard only while a drag is under way: leaving the tabs ends it, moving nothing.
-        _dragListeners["onmouseleave"] = (Action)EndTabDrag;
     }
 
-    private void EndTabDrag()
-    {
-        _dragFrom = null;
-        _dragListeners.Clear();
-    }
+    /// <summary>A release elsewhere in the tabs' area, or the pointer leaving it: the drag ends, nothing moved.
+    /// With no drag under way it changes nothing.</summary>
+    private void EndTabDrag() => _dragFrom = null;
 
     /// <summary>The release on a tab: the tab dragged moves to that tab's place, and its Sheet is shown.</summary>
     private Task DropOnTabAsync(MouseEventArgs release, Sheet target)
@@ -546,7 +540,7 @@ public partial class ExSheet
     }
 
     /// <summary>The release past the last tab, on the <c>+</c> button or the strip's empty end: the tab dragged moves to the last place.</summary>
-    private Task DropOnTabAreaAsync(MouseEventArgs release)
+    private Task DropPastLastTabAsync(MouseEventArgs release)
     {
         var from = _dragFrom;
         EndTabDrag();
