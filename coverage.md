@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.5% | 88.2% |
-| ExSheet | 95.6% | 88.4% |
+| ExSheet | 95.7% | 88.5% |
 | ExPivot | 94.4% | 85.5% |
 | ExChart | 89.9% | 80.6% |
 | ExBoard | 91.9% | 81.9% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/21/2026 - 17:11:17 |
+| Generated on: | 10/21/2026 - 17:35:21 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 14 |
-| Classes: | 1074 |
+| Classes: | 1076 |
 | Files: | 558 |
-| **Line coverage:** | 94.6% (70962 of 74954) |
-| Covered lines: | 70962 |
-| Uncovered lines: | 3992 |
-| Coverable lines: | 74954 |
-| Total lines: | 124940 |
-| **Branch coverage:** | 86.9% (42408 of 48768) |
-| Covered branches: | 42408 |
-| Total branches: | 48768 |
+| **Line coverage:** | 94.6% (71067 of 75052) |
+| Covered lines: | 71067 |
+| Uncovered lines: | 3985 |
+| Coverable lines: | 75052 |
+| Total lines: | 125114 |
+| **Branch coverage:** | 86.9% (42497 of 48862) |
+| Covered branches: | 42497 |
+| Total branches: | 48862 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -606,7 +606,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -953,7 +953,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**93.3%**|**84.5%**|
+|**ExSheet**|**93.3%**|**84.7%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -963,10 +963,10 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|92.1%|82.9%|
+|ExSheet.Components.ExSheet|92.2%|83.1%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|92.1%|82.9%|
+|ExSheet.Components.ExSheet<T>|92.2%|83.1%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
@@ -993,8 +993,8 @@
 |ExSheet.PointingScope|93.1%|90.4%|
 |ExSheet.PointingScope.Dashed|100%||
 |ExSheet.PointingScope.GridMember|97.6%|96.1%|
-|ExSheet.PointingScope.GridMember<TRow>|97.6%|96.1%|
 |ExSheet.PointingScope.GridMember<TRow>|100%|100%|
+|ExSheet.PointingScope.GridMember<TRow>|97.6%|96.1%|
 |ExSheet.PointingScope.PointDashes|100%||
 |ExSheet.PointingScope.Step|100%||
 |ExSheet.SheetAppearance|97.6%|96%|
@@ -1007,7 +1007,9 @@
 |ExSheet.SheetFind|96%|75%|
 |ExSheet.SheetFormatKeys|98.3%|90.9%|
 |ExSheet.SheetFormulaAids|97%|94.6%|
-|ExSheet.SheetHistory|100%|75%|
+|ExSheet.SheetHistory|100%|77.7%|
+|ExSheet.SheetOperation|100%|96.8%|
+|ExSheet.SheetOperationStepped|100%||
 |ExSheet.SheetOwnCopy|100%|80%|
 |ExSheet.SheetRow|100%|100%|
 |ExSheet.SheetsChange|100%||
@@ -1035,11 +1037,11 @@
 |ExSheet.UnderlineItem|100%|100%|
 
 </details>
-<details><summary>ExSheet.Engine - 97.6%</summary>
+<details><summary>ExSheet.Engine - 97.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.6%**|**91%**|
+|**ExSheet.Engine**|**97.7%**|**91%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -1160,20 +1162,20 @@
 |ExSheet.Engine.SheetDocumentColumnWidth|100%||
 |ExSheet.Engine.SheetDocumentException|100%||
 |ExSheet.Engine.SheetDocumentTable|100%|100%|
-|ExSheet.Engine.SheetEdit|95.6%|84%|
+|ExSheet.Engine.SheetEdit|97.6%|84.9%|
 |ExSheet.Engine.SheetEdit.CellFormatEdit|100%||
 |ExSheet.Engine.SheetEdit.CellFormatsEdit|100%||
-|ExSheet.Engine.SheetEdit.CellsEdit|100%||
+|ExSheet.Engine.SheetEdit.CellsEdit|100%|100%|
 |ExSheet.Engine.SheetEdit.ColumnWidthEdit|100%||
 |ExSheet.Engine.SheetEdit.CopySheetEdit|100%|100%|
-|ExSheet.Engine.SheetEdit.DeleteSheetEdit|66.6%|100%|
+|ExSheet.Engine.SheetEdit.DeleteSheetEdit|100%|100%|
 |ExSheet.Engine.SheetEdit.FillEdit|100%|83.3%|
 |ExSheet.Engine.SheetEdit.InsertSheetEdit|100%|100%|
 |ExSheet.Engine.SheetEdit.MoveSheetEdit|88.8%|16.6%|
 |ExSheet.Engine.SheetEdit.PlacedEdit|100%|100%|
 |ExSheet.Engine.SheetEdit.RefusedEdit|66.6%||
 |ExSheet.Engine.SheetEdit.RenameEdit|100%||
-|ExSheet.Engine.SheetEdit.StructureEdit|100%||
+|ExSheet.Engine.SheetEdit.StructureEdit|100%|100%|
 |ExSheet.Engine.SheetEdit.WorkbookEdit|60%||
 |ExSheet.Engine.SheetEdit.WorkbookEdit.Done|100%||
 |ExSheet.Engine.SheetRefusal|100%||
