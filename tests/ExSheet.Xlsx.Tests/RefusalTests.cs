@@ -1,4 +1,5 @@
 using ExGrid.Data.Xlsx;
+using ExSheet.Engine;
 using Xunit;
 using static ExSheet.Xlsx.Tests.Book;
 
@@ -109,6 +110,18 @@ public class RefusalTests
         Assert.Equal("=SUM(Positions)", document.Sheet("Trades").EntryAt("B7")!.Formula);
     }
 
+    [Fact] // ADR-0330 §4: a LAMBDA's parameters (stored _xlpm.) are no names, so a workbook holding Excel Tables still opens a MAP over a LAMBDA
+    public async Task ADR0330_LAMBDA_parameters_are_not_refused_where_the_workbook_holds_Excel_Tables()
+    {
+        var file = await WriteAsync(new Page("Trades",
+            [Number("A1", "1"), Number("A2", "2"), Formula("B1", "_xlfn.MAP(A1:A2,_xlfn.LAMBDA(_xlpm.v,_xlpm.v*2))")]));
+        var withTable = Add(file, "xl/tables/table1.xml", """<?xml version="1.0" encoding="UTF-8"?><table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="1" name="v" displayName="v" ref="A1:A2"/>""");
+
+        var (document, _) = await ReadAsync(withTable);
+
+        Assert.Equal("=MAP(A1:A2,LAMBDA(v,v*2))", document.Sheet("Trades").EntryAt("B1")!.Formula);
+    }
+
     [Fact] // ADR-0330 §4: a legacy array formula (Ctrl+Shift+Enter) is refused, its braces shown
     public async Task ADR0330_a_legacy_array_formula_is_refused()
     {
@@ -148,15 +161,38 @@ public class RefusalTests
         Assert.Equal(("Trades", "C2", XlsxOpenRefusal.ExcelTable), (refused.Sheet, refused.Cell, refused.Reason));
     }
 
-    [Fact] // ADR-0330 §4: an Error Value no cell of ExSheet can hold is refused, not read as text
-    public async Task ADR0330_an_Error_Value_ExSheet_cannot_hold_is_refused()
+    [Theory] // ADR-0330 §4: an error cell holds one of Excel's Error Values as written; anything else — ExSheet's own, a Formula, a number — is refused, not read
+    [InlineData("#GETTING_DATA")]
+    [InlineData("#CIRC!")]
+    [InlineData("=SUM(1)")]
+    [InlineData("=SUM(")]
+    [InlineData("1")]
+    [InlineData("#n/a")]
+    public async Task ADR0330_an_Error_Value_ExSheet_cannot_hold_is_refused(string held)
     {
-        var file = await WriteAsync(new Page("Trades", [Error("D4", "#GETTING_DATA")]));
+        var file = await WriteAsync(new Page("Trades", [Error("D4", held)]));
 
         var refused = await RefusedAsync(file);
 
         Assert.Equal(XlsxOpenRefusal.UnreadableConstant, refused.Reason);
-        Assert.Equal(("Trades", "D4", "#GETTING_DATA"), (refused.Sheet, refused.Cell, refused.Held));
+        Assert.Equal(("Trades", "D4", held), (refused.Sheet, refused.Cell, refused.Held));
+    }
+
+    [Theory] // ADR-0330 §4: each of Excel's Error Values is carried from an error cell
+    [InlineData("#NULL!", ErrorValue.Null)]
+    [InlineData("#REF!", ErrorValue.Ref)]
+    [InlineData("#NAME?", ErrorValue.Name)]
+    [InlineData("#NUM!", ErrorValue.Num)]
+    [InlineData("#VALUE!", ErrorValue.Value)]
+    [InlineData("#SPILL!", ErrorValue.Spill)]
+    [InlineData("#CALC!", ErrorValue.Calc)]
+    public async Task ADR0330_Excels_Error_Values_are_carried(string held, ErrorValue error)
+    {
+        var file = await WriteAsync(new Page("Trades", [Error("D4", held)]));
+
+        var document = (await ReadAsync(file)).Document;
+
+        Assert.Equal(Value.FromError(error), document.Sheet("Trades").EntryAt("D4")!.Constant);
     }
 
     [Fact] // ADR-0330 §4: what the file layer refuses is refused here, its reason kept
@@ -168,6 +204,20 @@ public class RefusalTests
         Assert.Equal(XlsxRefusal.NotAZip, refused.FileRefusal);
         Assert.IsType<XlsxException>(refused.InnerException);
         Assert.Equal(refused.InnerException!.Message, refused.Message);
+    }
+
+    [Fact] // ADR-0330 §4, ADR-0331 §4: two worksheets whose names differ only in case are refused by name, both named
+    public async Task ADR0330_worksheet_names_differing_only_in_case_are_refused()
+    {
+        var file = await WriteAsync(new Page("Trades", [Number("A1", "1")]), new Page("Other", [Number("A1", "2")]));
+        var renamed = Edit(file, "xl/workbook.xml", xml => xml.Replace("name=\"Other\"", "name=\"TRADES\"", StringComparison.Ordinal));
+
+        var refused = await RefusedAsync(renamed);
+
+        Assert.Equal(XlsxOpenRefusal.Sheets, refused.Reason);
+        Assert.Equal("TRADES", refused.Sheet);
+        Assert.Contains("'Trades'", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("'TRADES'", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact] // ADR-0330 §4, ADR-0331 §4: a worksheet named as no Sheet can be is refused by name

@@ -64,7 +64,7 @@ public class OpenReportTests
         var file = await WriteAsync(new Page("Trades", [Number("A1", "1"), Number("B2", "2"), Number("A3", "3")]));
         var edited = Edit(file, Sheet1, xml => AfterCells(
                 """<sheetProtection sheet="1"/><autoFilter ref="A1:B2"/><mergeCells count="2"><mergeCell ref="A1:B1"/><mergeCell ref="A3:B3"/></mergeCells>"""
-                + """<phoneticPr fontId="1"/><conditionalFormatting sqref="A1"><cfRule type="expression" priority="1"><formula>TRUE</formula></cfRule></conditionalFormatting>"""
+                + """<customSheetViews><customSheetView guid="{00000000-0000-0000-0000-000000000001}"/></customSheetViews><conditionalFormatting sqref="A1"><cfRule type="expression" priority="1"><formula>TRUE</formula></cfRule></conditionalFormatting>"""
                 + """<dataValidations count="1"><dataValidation sqref="A1"/></dataValidations><hyperlinks><hyperlink ref="A1" r:id="rId9"/></hyperlinks>"""
                 + """<printOptions gridLines="1"/><pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/><pageSetup orientation="landscape"/>"""
                 + """<drawing r:id="rId1"/><legacyDrawing r:id="rId2"/><tableParts count="1"><tablePart r:id="rId3"/></tableParts>""")(xml)
@@ -82,7 +82,49 @@ public class OpenReportTests
             NotCarriedKind.ExcelTable,
         ], report.NotCarried.Select(n => n.Kind));
         Assert.All(report.NotCarried, n => Assert.Equal("Trades", n.Sheet));
-        Assert.Equal("phoneticPr", report.NotCarried.Single(n => n.Kind == NotCarriedKind.Other).Detail);
+        Assert.Equal("customSheetViews", report.NotCarried.Single(n => n.Kind == NotCarriedKind.Other).Detail);
+    }
+
+    [Fact] // ADR-0330 §4, §5: what every file Excel writes carries and no Sheet shows is not listed, so a plain file's report is empty
+    public async Task ADR0330_what_every_file_carries_and_no_Sheet_shows_is_not_listed()
+    {
+        var file = await WriteAsync(new Page("Trades", [Number("A1", "1"), Text("A2", "0042")]));
+        var edited = Edit(file, Sheet1, xml => AfterCells(
+                """<phoneticPr fontId="1"/><printOptions gridLinesSet="1"/><pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>"""
+                + """<pageSetup paperSize="9" orientation="portrait" horizontalDpi="300" verticalDpi="300"/><headerFooter/>"""
+                + """<ignoredErrors><ignoredError sqref="A2" numberStoredAsText="1"/></ignoredErrors>""")(xml)
+            .Replace("<sheetData>", """<sheetFormatPr defaultRowHeight="14.5"/><sheetData>""", StringComparison.Ordinal));
+
+        var report = (await ReadAsync(edited)).Report;
+
+        Assert.Empty(report.NotCarried);
+        Assert.True(report.IsEmpty);
+    }
+
+    [Fact] // ADR-0330 §4: a tab colour, a footer and an extension's conditional formatting are listed; each changes how the Sheet looks or prints
+    public async Task ADR0330_a_tab_colour_a_footer_and_extension_formatting_are_listed()
+    {
+        var file = await WriteAsync(new Page("Trades", [Number("A1", "1")]));
+        var edited = Edit(file, Sheet1, xml => AfterCells(
+                """<headerFooter><oddFooter>&amp;P</oddFooter></headerFooter>"""
+                + """<extLst><ext uri="{78C0D931-6437-407d-A8EE-F0AAD7539E65}" xmlns:x14="http://schemas.microsoft.com/office/spreadsheetml/2009/9/main"><x14:conditionalFormattings/></ext></extLst>""")(xml)
+            .Replace("<sheetViews>", """<sheetPr><tabColor rgb="FFFF0000"/></sheetPr><sheetViews>""", StringComparison.Ordinal));
+
+        var report = (await ReadAsync(edited)).Report;
+
+        Assert.Equal([NotCarriedKind.SheetProperties, NotCarriedKind.PrintSettings, NotCarriedKind.ConditionalFormatting], report.NotCarried.Select(n => n.Kind));
+    }
+
+    [Fact] // ADR-0330 §5: the workbook's entries come first, its defined names among them, then each Sheet's
+    public async Task ADR0330_the_workbooks_entries_come_before_each_Sheets()
+    {
+        var file = await WriteAsync(new XlsxWriteOptions { DefinedNames = [new XlsxDefinedName("Rate", "Trades!$A$1")] },
+            new Page("Trades", [Number("A1", "1")], [new XlsxColumn(1, 2, 10, Hidden: true)]));
+        var edited = Add(file, "xl/pivotTables/pivotTable1.xml", "<x/>");
+
+        var report = (await ReadAsync(edited)).Report;
+
+        Assert.Equal([NotCarriedKind.PivotTables, NotCarriedKind.DefinedName, NotCarriedKind.HiddenColumns], report.NotCarried.Select(n => n.Kind));
     }
 
     [Fact] // ADR-0330 §4: rich-text runs are listed; their text is carried

@@ -36,4 +36,35 @@ public class StoredFormulaTests
 
         Assert.Equal(expected, problem.ToString());
     }
+
+    [Theory] // ADR-0330 §4: ISO 8601 date and time text is its 1900 serial, read invariantly, an offset converting nothing
+    [InlineData("2023-03-15", 45000.0)]
+    [InlineData("2023-03-15T12:00:00", 45000.5)]
+    [InlineData("2023-03-15T12:00", 45000.5)]
+    [InlineData("2023-03-15T12:00:00Z", 45000.5)]
+    [InlineData("2023-03-15T12:00:00+09:00", 45000.5)]
+    [InlineData("2023-03-15T00:00:00.5", 45000 + 0.5 / 86400)]
+    [InlineData("06:00:00", 0.25)]
+    [InlineData("1900-02-28", 59.0)]
+    [InlineData("1900-03-01", 61.0)]
+    public void ADR0330_ISO_dates_are_their_serials(string text, double serial)
+    {
+        Assert.Equal(serial, IsoDate.Serial(text));
+    }
+
+    [Theory] // ADR-0330 §4: text that is not an ISO 8601 date or time, or lies before 1900, is no serial
+    [InlineData("")]
+    [InlineData("15/03/2023")]
+    [InlineData("2023-03-15 12:00:00")]
+    [InlineData("2023-02-29")]
+    [InlineData("2023-13-01")]
+    [InlineData("1899-12-31")]
+    [InlineData("24:00:00")]
+    [InlineData("12:60")]
+    [InlineData("Z")]
+    [InlineData("March 15, 2023")]
+    public void ADR0330_text_that_is_not_ISO_is_no_serial(string text)
+    {
+        Assert.Null(IsoDate.Serial(text));
+    }
 }

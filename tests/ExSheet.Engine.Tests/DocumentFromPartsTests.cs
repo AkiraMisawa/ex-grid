@@ -48,6 +48,17 @@ public class DocumentFromPartsTests
         Assert.Empty(Entry.FromValue(Value.FromNumber(1)).UnboundNames);
     }
 
+    [Fact] // ADR-0330 §4: a LAMBDA's parameters are bound in its body, and no name a workbook defines; a name its body reads besides them is not bound
+    public void ADR0330_a_LAMBDAs_parameters_are_not_unbound_names()
+    {
+        Assert.Empty(Formula("=MAP(A1:A3,LAMBDA(v,v*2))").UnboundNames);
+        Assert.Empty(Formula("=REDUCE(0,A1:A3,LAMBDA(acc,v,acc+v))").UnboundNames);
+        Assert.Equal(["Rate"], Formula("=MAP(A1:A3,LAMBDA(v,v*Rate))").UnboundNames);
+        // A parameter is bound only inside its own LAMBDA.
+        Assert.Equal(["v"], Formula("=MAP(A1:A3,LAMBDA(v,v*2))+v").UnboundNames);
+        Assert.Empty(Formula("=LET(f,LAMBDA(x,x+1),MAP(A1:A2,LAMBDA(y,f(y))))").UnboundNames);
+    }
+
     [Fact] // ADR-0330 §3: a Workbook Document built from its Sheets opens as the Workbook it describes
     public void ADR0330_a_Workbook_Document_built_from_its_Sheets_opens()
     {

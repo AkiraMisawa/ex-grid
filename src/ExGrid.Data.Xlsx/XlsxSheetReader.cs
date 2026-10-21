@@ -51,7 +51,11 @@ public sealed class XlsxSheetReader : IDisposable
     /// The local names of what else the worksheet holds, beside its cells and columns, in the file's order, complete once
     /// <see cref="ReadAsync"/> has returned false: <c>mergeCells</c>, <c>conditionalFormatting</c>, <c>dataValidations</c>,
     /// <c>hyperlinks</c>, <c>drawing</c>, <c>legacyDrawing</c> (notes), <c>tableParts</c>, <c>sheetProtection</c>,
-    /// <c>pageSetup</c> and the rest. None of it is read.
+    /// <c>pageSetup</c> and the rest. None of it is read. What holds nothing a reader sees is not listed, though every file
+    /// carries it: <c>pageMargins</c>, <c>phoneticPr</c>, <c>ignoredErrors</c>, <c>sheetCalcPr</c>, and <c>printOptions</c>,
+    /// <c>pageSetup</c>, <c>headerFooter</c>, <c>rowBreaks</c> and <c>colBreaks</c> in their defaults or empty. <c>sheetPr</c>
+    /// is listed for a tab colour, <c>pageSetUpPr</c> for a fit to pages, and <c>extLst</c> by the name of each extension it
+    /// holds, such as <c>conditionalFormattings</c>.
     /// </summary>
     public IReadOnlyList<string> OtherElements => other;
 
@@ -144,8 +148,7 @@ public sealed class XlsxSheetReader : IDisposable
                     xml.Skip();
                     break;
                 default:
-                    other.Add(xml.LocalName);
-                    xml.Skip();
+                    ReadOther();
                     break;
             }
         }
@@ -439,13 +442,128 @@ public sealed class XlsxSheetReader : IDisposable
         {
             if (xml.NodeType == XmlNodeType.Element)
             {
-                other.Add(xml.LocalName);
-                xml.Skip();
+                ReadOther();
             }
             else
             {
                 xml.Read();
             }
+        }
+    }
+
+    /// <summary>
+    /// Lists an element of the worksheet other than its cells, columns and views in <see cref="OtherElements"/> when it
+    /// holds something, and moves past it. Every file Excel writes carries some in a form that holds nothing a reader sees:
+    /// those are not listed, so a list that is empty means a worksheet that holds nothing else.
+    /// </summary>
+    private void ReadOther()
+    {
+        var name = xml.LocalName;
+        switch (name)
+        {
+            // Print margins, phonetic settings, dismissed error marks and calculation flags: nothing on a sheet, and in every file.
+            case "pageMargins" or "phoneticPr" or "ignoredErrors" or "sheetCalcPr":
+                xml.Skip();
+                return;
+            case "printOptions":
+                if (AnyAttributeTrue("horizontalCentered", "verticalCentered", "headings", "gridLines")) other.Add(name);
+                xml.Skip();
+                return;
+            case "pageSetup":
+                if (PageSetupSetsAnything()) other.Add(name);
+                xml.Skip();
+                return;
+            case "headerFooter":
+            case "rowBreaks" or "colBreaks":
+            case "sheetPr":
+            case "extLst":
+                ReadInside(name);
+                return;
+            default:
+                other.Add(name);
+                xml.Skip();
+                return;
+        }
+    }
+
+    private bool AnyAttributeTrue(params string[] names)
+    {
+        foreach (var attribute in names)
+        {
+            if (XlsxReader.Bool(xml.GetAttribute(attribute))) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Whether a <c>&lt;pageSetup&gt;</c> sets anything beyond Excel's defaults (ECMA-376 Part 1, §18.3.1.63). The paper
+    /// size, the printer's resolution and its settings part are the printer's, written whenever one is installed, and are
+    /// not counted.
+    /// </summary>
+    private bool PageSetupSetsAnything()
+    {
+        var sets = false;
+        if (xml.MoveToFirstAttribute())
+        {
+            do
+            {
+                var value = xml.Value;
+                sets |= xml.LocalName switch
+                {
+                    "paperSize" or "paperHeight" or "paperWidth" or "horizontalDpi" or "verticalDpi" or "id" or "usePrinterDefaults" => false,
+                    "orientation" => value is not ("default" or "portrait"),
+                    "scale" or "fitToWidth" or "fitToHeight" or "firstPageNumber" or "copies" => value != (xml.LocalName == "scale" ? "100" : "1"),
+                    "pageOrder" => value != "downThenOver",
+                    "cellComments" => value != "none",
+                    "errors" => value != "displayed",
+                    "blackAndWhite" or "draft" or "useFirstPageNumber" => XlsxReader.Bool(value),
+                    _ => true,
+                };
+            }
+            while (xml.MoveToNextAttribute());
+            xml.MoveToElement();
+        }
+        return sets;
+    }
+
+    /// <summary>
+    /// An element listed by what it holds: a header or footer with text, a page break, a tab colour (<c>sheetPr</c>) or a
+    /// fit to pages (<c>pageSetUpPr</c>), and each extension of <c>extLst</c> by its own name, such as Excel 2010's
+    /// <c>conditionalFormattings</c>, <c>dataValidations</c> or <c>sparklineGroups</c>.
+    /// </summary>
+    private void ReadInside(string name)
+    {
+        var found = new List<string>();
+        using (var sub = xml.ReadSubtree())
+        {
+            sub.Read();
+            var depth = sub.Depth;
+            while (sub.Read())
+            {
+                if (sub.NodeType == XmlNodeType.Text && name == "headerFooter" && !string.IsNullOrWhiteSpace(sub.Value))
+                    found.Add(name);
+                if (sub.NodeType != XmlNodeType.Element) continue;
+                switch (name)
+                {
+                    case "rowBreaks" or "colBreaks" when sub.LocalName == "brk":
+                        found.Add(name);
+                        break;
+                    case "sheetPr" when sub.LocalName == "tabColor":
+                        found.Add("sheetPr");
+                        break;
+                    case "sheetPr" when sub.LocalName == "pageSetUpPr" && XlsxReader.Bool(sub.GetAttribute("fitToPage")):
+                        found.Add("pageSetUpPr");
+                        break;
+                    case "extLst" when sub.Depth == depth + 2:
+                        found.Add(sub.LocalName);
+                        break;
+                }
+            }
+        }
+        xml.Skip();
+        foreach (var item in found.Distinct())
+        {
+            if (!other.Contains(item)) other.Add(item);
         }
     }
 

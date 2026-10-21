@@ -77,7 +77,7 @@ public enum NotCarriedKind
     /// <summary>The Sheet's protection.</summary>
     Protection,
 
-    /// <summary>Print settings: the page set-up, margins, headers and footers, page breaks and the print area.</summary>
+    /// <summary>Print settings beyond Excel's defaults: a page set-up of its own, headers and footers with text, page breaks, printed gridlines or headings, a fit to pages. Margins alone are not listed: every file holds them.</summary>
     PrintSettings,
 
     /// <summary>An AutoFilter, and the sort state it keeps.</summary>
@@ -86,7 +86,7 @@ public enum NotCarriedKind
     /// <summary>The structure of an Excel Table that no Formula reads: its cells are carried.</summary>
     ExcelTable,
 
-    /// <summary>The Sheet's properties: its tab colour, its outline settings and the like.</summary>
+    /// <summary>The Sheet's tab colour.</summary>
     SheetProperties,
 
     /// <summary>Rich-text runs inside cells: the text is carried, the runs' own formatting is not.</summary>
@@ -104,7 +104,7 @@ public enum NotCarriedKind
     /// <summary>Slicers and timelines.</summary>
     Slicers,
 
-    /// <summary>Anything else a worksheet holds; <see cref="NotCarried.Detail"/> names its element, as <c>phoneticPr</c>.</summary>
+    /// <summary>Anything else a worksheet holds; <see cref="NotCarried.Detail"/> names its element, as <c>customSheetViews</c>.</summary>
     Other,
 }
 

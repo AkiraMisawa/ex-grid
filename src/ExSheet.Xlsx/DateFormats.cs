@@ -15,8 +15,9 @@ internal static class DateFormats
 
     /// <summary>
     /// Whether a format code's first section shows a part of a date: a year (<c>y</c>, <c>e</c>), a day (<c>d</c>), or a
-    /// month (<c>m</c> in a section with no hour or second, where Excel reads it as minutes). Text in quotes, an escaped
-    /// character, what stands in brackets and <c>General</c> are not read as parts.
+    /// month (<c>m</c> in a section with no hour or second, where Excel reads it as minutes). An elapsed time in brackets
+    /// (<c>[h]</c>, <c>[mm]</c>, <c>[ss]</c>) makes the section a duration, so an <c>m</c> beside it is minutes. Text in
+    /// quotes, an escaped character, what else stands in brackets and <c>General</c> are not read as parts.
     /// </summary>
     public static bool CodeShowsDate(string code)
     {
@@ -35,7 +36,11 @@ internal static class DateFormats
                     i++;
                     continue;
                 case '[':
-                    i = code.IndexOf(']', i + 1) is var close and >= 0 ? close : code.Length;
+                    var close = code.IndexOf(']', i + 1);
+                    if (close < 0) close = code.Length;
+                    // [h], [mm], [ss]: an elapsed time, so the section is a duration, and an m beside it is minutes.
+                    if (IsElapsed(code.AsSpan(i + 1, close - i - 1))) hasTime = true;
+                    i = close;
                     continue;
             }
             if (string.Compare(code, i, "General", 0, 7, StringComparison.OrdinalIgnoreCase) == 0)
@@ -70,5 +75,18 @@ internal static class DateFormats
             }
         }
         return !hasTime && hasMonthOrMinute;
+    }
+
+    /// <summary>Whether a bracket's content is an elapsed time: one letter of <c>h</c>, <c>m</c> or <c>s</c>, repeated.</summary>
+    private static bool IsElapsed(ReadOnlySpan<char> inside)
+    {
+        if (inside.Length == 0) return false;
+        var letter = char.ToLowerInvariant(inside[0]);
+        if (letter is not ('h' or 'm' or 's')) return false;
+        foreach (var c in inside)
+        {
+            if (char.ToLowerInvariant(c) != letter) return false;
+        }
+        return true;
     }
 }

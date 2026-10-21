@@ -8,11 +8,11 @@ namespace ExSheet.Xlsx.Tests;
 /// <summary>A workbook on the 1904 date system has its date serials moved to 1900's, which changes no date (ADR-0330 §4).</summary>
 public class DateSystemTests
 {
-    /// <summary>Cell formats: 0 General, 1 built-in date (14), 2 built-in time (21), 3 a custom date, 4 a duration, 5 a custom time, 6 a number.</summary>
+    /// <summary>Cell formats: 0 General, 1 built-in date (14), 2 built-in time (21), 3 a custom date, 4 a duration, 5 a custom time, 6 a number, 7 <c>[h]:mm</c>, 8 <c>[mm]:ss</c>.</summary>
     private static readonly XlsxStyles Styles = XlsxStyles.Default with
     {
-        NumberFormats = new Dictionary<int, string> { [164] = "dd/mm/yyyy hh:mm", [165] = "[h]:mm:ss", [166] = "mm:ss.0", [167] = "0.00E+00" },
-        CellFormats = [new(), new(14), new(21), new(164), new(165), new(166), new(167)],
+        NumberFormats = new Dictionary<int, string> { [164] = "dd/mm/yyyy hh:mm", [165] = "[h]:mm:ss", [166] = "mm:ss.0", [167] = "0.00E+00", [168] = "[h]:mm", [169] = "[mm]:ss" },
+        CellFormats = [new(), new(14), new(21), new(164), new(165), new(166), new(167), new(168), new(169)],
     };
 
     private static async Task<SheetDocument> ReadAsync(bool date1904, params XlsxCell[] cells)
@@ -45,6 +45,15 @@ public class DateSystemTests
         Assert.Equal(Value.FromNumber(12345), sheet.EntryAt("A5")!.Constant);
     }
 
+    [Fact] // ADR-0330 §4: an elapsed time in brackets is a duration, so the m beside it is minutes and the number is not moved
+    public async Task ADR0330_1904_elapsed_durations_are_not_moved()
+    {
+        var sheet = await ReadAsync(true, Number("A1", "1.5", style: 7), Number("A2", "0.25", style: 8));
+
+        Assert.Equal(Value.FromNumber(1.5), sheet.EntryAt("A1")!.Constant);
+        Assert.Equal(Value.FromNumber(0.25), sheet.EntryAt("A2")!.Constant);
+    }
+
     [Fact] // ADR-0330 §4: on the 1900 system nothing is moved
     public async Task ADR0330_1900_serials_are_kept()
     {
@@ -74,6 +83,12 @@ public class DateSystemTests
     [InlineData("h:mm", false)]
     [InlineData("mm:ss", false)]
     [InlineData("[h]:mm:ss", false)]
+    [InlineData("[h]:mm", false)]
+    [InlineData("[mm]:ss", false)]
+    [InlineData("[m]", false)]
+    [InlineData("[hh]", false)]
+    [InlineData("[Red][h]:mm", false)]
+    [InlineData("[Red]mmm", true)]
     [InlineData("h:mm AM/PM", false)]
     [InlineData("0.00E+00", false)]
     [InlineData("General", false)]

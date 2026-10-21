@@ -81,6 +81,15 @@ public static class XlsxWorkbookReader
         private readonly bool hasExcelTables = reader.Parts.Any(p => p.StartsWith("xl/tables/", StringComparison.OrdinalIgnoreCase));
         private readonly Dictionary<int, bool> dateStyles = [];
 
+        /// <summary>The Error Values a cell of Excel's can hold, as the file writes them; <c>#GETTING_DATA</c> and <c>#CIRC!</c> are ExSheet's and never a constant.</summary>
+        private static readonly Dictionary<string, ErrorValue> ExcelErrors = new(StringComparer.Ordinal)
+        {
+            ["#NULL!"] = ErrorValue.Null, ["#DIV/0!"] = ErrorValue.Div0, ["#VALUE!"] = ErrorValue.Value, ["#REF!"] = ErrorValue.Ref,
+            ["#NAME?"] = ErrorValue.Name, ["#NUM!"] = ErrorValue.Num, ["#N/A"] = ErrorValue.NA, ["#SPILL!"] = ErrorValue.Spill,
+            ["#CALC!"] = ErrorValue.Calc, ["#FIELD!"] = ErrorValue.Field, ["#BLOCKED!"] = ErrorValue.Blocked,
+            ["#CONNECT!"] = ErrorValue.Connect, ["#UNKNOWN!"] = ErrorValue.Unknown,
+        };
+
         public async ValueTask<XlsxOpenResult> ReadAsync()
         {
             var worksheets = new List<int>();
@@ -94,12 +103,22 @@ public static class XlsxWorkbookReader
                 }
                 if (!Sheet.IsValidName(info.Name, out var why))
                     throw new XlsxOpenException(XlsxOpenRefusal.Sheets, $"The worksheet's name is not one a Sheet can have: {why}", info.Name);
+                if (worksheets.Select(w => reader.Sheets[w].Name).FirstOrDefault(n => string.Equals(n, info.Name, StringComparison.OrdinalIgnoreCase)) is { } same)
+                {
+                    throw new XlsxOpenException(XlsxOpenRefusal.Sheets,
+                        $"The worksheets '{same}' and '{info.Name}' have names that differ only in case, which two Sheets of one Workbook cannot have.", info.Name);
+                }
                 worksheets.Add(i);
             }
             if (worksheets.Count == 0)
                 throw new XlsxOpenException(XlsxOpenRefusal.Sheets, "The workbook holds no worksheet, so it holds no cells to open.");
 
             WorkbookParts();
+            foreach (var name in reader.DefinedNames)
+            {
+                notCarried.Add(new(NotCarriedKind.DefinedName, null, name.Name,
+                    $"The defined name '{name.Name}' ({name.Text}) is not carried; no Formula carried reads it."));
+            }
             var sheets = new List<SheetDocument>(worksheets.Count);
             foreach (var index in worksheets)
             {
@@ -107,11 +126,6 @@ public static class XlsxWorkbookReader
                 if (info.Visibility != XlsxSheetVisibility.Visible)
                     notCarried.Add(new(NotCarriedKind.HiddenSheet, info.Name, null, $"The Sheet '{info.Name}' is hidden in the file, and opens shown."));
                 sheets.Add(await ReadSheetAsync(index).ConfigureAwait(false));
-            }
-            foreach (var name in reader.DefinedNames)
-            {
-                notCarried.Add(new(NotCarriedKind.DefinedName, null, name.Name,
-                    $"The defined name '{name.Name}' ({name.Text}) is not carried; no Formula carried reads it."));
             }
             var shownIndex = worksheets.Contains(reader.ActiveSheet) ? reader.ActiveSheet : worksheets[0];
             var document = new WorkbookDocument(culture, reader.Sheets[shownIndex].Name, sheets);
@@ -139,7 +153,7 @@ public static class XlsxWorkbookReader
             var name = sheet.Sheet.Name;
             var cells = new List<SheetDocumentCell>();
             var shared = new Dictionary<int, SharedMaster>();
-            var spills = new List<(int Top, int Left, int Bottom, int Right)>();
+            var spills = new List<CellRange>();
             var richCells = 0;
             string? firstRich = null;
             while (await sheet.ReadAsync().ConfigureAwait(false))
@@ -154,7 +168,7 @@ public static class XlsxWorkbookReader
                     }
                     var entry = cell.Formula is { } formula
                         ? FormulaEntry(name, cell, formula, shared, spills)
-                        : InsideSpill(spills, cell.Row, cell.Column) ? null : Constant(name, cell);
+                        : InsideSpill(spills, new CellAddress(cell.Row, cell.Column)) ? null : Constant(name, cell);
                     if (entry is not null) cells.Add(new SheetDocumentCell(new CellAddress(cell.Row, cell.Column), entry, null, null, null, null, null));
                 }
             }
@@ -165,7 +179,7 @@ public static class XlsxWorkbookReader
         /// <summary>A shared formula's master: its Entry where it stands, and what it names.</summary>
         private sealed record SharedMaster(Entry Entry, int Row, int Column, IReadOnlyList<string> Unsupported);
 
-        private Entry FormulaEntry(string sheet, XlsxCell cell, XlsxFormula formula, Dictionary<int, SharedMaster> shared, List<(int, int, int, int)> spills)
+        private Entry FormulaEntry(string sheet, XlsxCell cell, XlsxFormula formula, Dictionary<int, SharedMaster> shared, List<CellRange> spills)
         {
             var at = cell.Reference;
             switch (formula.Kind)
@@ -270,30 +284,19 @@ public static class XlsxWorkbookReader
                     };
                 case XlsxCellType.Error:
                     if (cell.Value is null) return null;
-                    if (Entry.Parse(cell.Value, CultureInfo.InvariantCulture) is { Constant: { IsError: true } } error) return error;
+                    if (ExcelErrors.TryGetValue(cell.Value, out var error)) return Entry.FromValue(Value.FromError(error));
                     throw new XlsxOpenException(XlsxOpenRefusal.UnreadableConstant, "The cell holds an Error Value a cell of ExSheet cannot hold.", sheet, at, cell.Value);
                 case XlsxCellType.Date:
                     if (cell.Value is null) return null;
-                    if (!DateTime.TryParse(cell.Value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var date)
-                        || Serial(date) is not { } day)
+                    if (IsoDate.Serial(cell.Value) is not { } serial)
                     {
-                        throw new XlsxOpenException(XlsxOpenRefusal.UnreadableConstant, "The cell's date cannot be read, or lies outside the dates a serial counts.", sheet, at, cell.Value);
+                        throw new XlsxOpenException(XlsxOpenRefusal.UnreadableConstant,
+                            "The cell's date is not an ISO 8601 date or time, or lies outside the dates a serial counts.", sheet, at, cell.Value);
                     }
-                    return Entry.FromValue(Value.FromNumber(day + date.TimeOfDay.TotalDays));
+                    return Entry.FromValue(Value.FromNumber(serial));
                 default:
                     return null;
             }
-        }
-
-        /// <summary>
-        /// The 1900 date system's serial of a day, as Excel counts it: 1 is 1 January 1900, and 60 the 29 February 1900 Excel
-        /// keeps for Lotus's sake, so every day from 1 March 1900 counts from 30 December 1899. Null before 1900.
-        /// </summary>
-        private static int? Serial(DateTime date)
-        {
-            if (date.Year < 1900) return null;
-            var day = date.Date;
-            return day < new DateTime(1900, 3, 1) ? (day - new DateTime(1899, 12, 31)).Days : (day - new DateTime(1899, 12, 30)).Days;
         }
 
         /// <summary>Whether the cell format at <paramref name="style"/> shows a date (its serial moves from 1904's to 1900's).</summary>
@@ -306,23 +309,30 @@ public static class XlsxWorkbookReader
             return shows;
         }
 
-        private static bool InsideSpill(List<(int Top, int Left, int Bottom, int Right)> spills, int row, int column)
+        /// <summary>
+        /// Whether a cell lies in a dynamic array's Spill Range, whose cells hold the Values Excel stored, not constants.
+        /// Cells come row by row, so a Spill Range whose last row lies above the cell is behind the reader for good, and is
+        /// dropped: the list holds only the ranges still ahead.
+        /// </summary>
+        private static bool InsideSpill(List<CellRange> spills, CellAddress cell)
         {
-            foreach (var (top, left, bottom, right) in spills)
+            if (spills.Count == 0) return false;
+            spills.RemoveAll(s => s.Last.Row < cell.Row);
+            foreach (var spill in spills)
             {
-                if (row >= top && row <= bottom && column >= left && column <= right) return true;
+                if (spill.Contains(cell)) return true;
             }
             return false;
         }
 
         /// <summary>A range written <c>A1:B3</c> or <c>A1</c>, or null when it is not one.</summary>
-        private static (int Top, int Left, int Bottom, int Right)? Range(string text)
+        private static CellRange? Range(string text)
         {
             var colon = text.IndexOf(':', StringComparison.Ordinal);
             var first = colon < 0 ? text : text[..colon];
             var last = colon < 0 ? text : text[(colon + 1)..];
             if (!XlsxCellReference.TryParse(first, out var r1, out var c1) || !XlsxCellReference.TryParse(last, out var r2, out var c2)) return null;
-            return (Math.Min(r1, r2), Math.Min(c1, c2), Math.Max(r1, r2), Math.Max(c1, c2));
+            return new CellRange(new CellAddress(r1, c1), new CellAddress(r2, c2));
         }
 
         /// <summary>What else a worksheet held, as the file layer reports it, said once per Sheet and kind.</summary>
@@ -342,15 +352,16 @@ public static class XlsxWorkbookReader
                 switch (element)
                 {
                     case "mergeCells": Add(NotCarriedKind.MergedCells); break;
-                    case "conditionalFormatting": Add(NotCarriedKind.ConditionalFormatting); break;
+                    case "conditionalFormatting" or "conditionalFormattings": Add(NotCarriedKind.ConditionalFormatting); break;
                     case "dataValidations": Add(NotCarriedKind.DataValidation); break;
                     case "legacyDrawing": Add(NotCarriedKind.NotesAndComments); break;
                     case "hyperlinks": Add(NotCarriedKind.Hyperlinks); break;
-                    case "drawing" or "picture" or "oleObjects" or "controls" or "legacyDrawingHF": Add(NotCarriedKind.PicturesAndCharts); break;
+                    case "drawing" or "picture" or "oleObjects" or "controls" or "legacyDrawingHF" or "sparklineGroups": Add(NotCarriedKind.PicturesAndCharts); break;
                     case "sheetProtection" or "protectedRanges": Add(NotCarriedKind.Protection); break;
-                    case "printOptions" or "pageMargins" or "pageSetup" or "headerFooter" or "rowBreaks" or "colBreaks": Add(NotCarriedKind.PrintSettings); break;
+                    case "printOptions" or "pageSetup" or "pageSetUpPr" or "headerFooter" or "rowBreaks" or "colBreaks": Add(NotCarriedKind.PrintSettings); break;
                     case "autoFilter" or "sortState": Add(NotCarriedKind.AutoFilter); break;
                     case "tableParts": Add(NotCarriedKind.ExcelTable); break;
+                    case "slicerList" or "timelineRefs": Add(NotCarriedKind.Slicers); break;
                     case "sheetPr": Add(NotCarriedKind.SheetProperties); break;
                     default: Add(NotCarriedKind.Other, element); break;
                 }
@@ -375,10 +386,11 @@ public static class XlsxWorkbookReader
             NotCarriedKind.Hyperlinks => $"'{sheet}' has hyperlinks; their cells' text is carried, the links are not.",
             NotCarriedKind.PicturesAndCharts => $"'{sheet}' has pictures, charts, shapes or controls, which are not carried.",
             NotCarriedKind.Protection => $"'{sheet}' is protected in the file; the protection is not carried.",
-            NotCarriedKind.PrintSettings => $"'{sheet}' has print settings, which are not carried.",
+            NotCarriedKind.PrintSettings => $"'{sheet}' has print settings beyond Excel's defaults (a header or footer, page breaks, a scale or the like), which are not carried.",
             NotCarriedKind.AutoFilter => $"'{sheet}' has an AutoFilter, which is not carried; every row opens shown.",
             NotCarriedKind.ExcelTable => $"'{sheet}' has Excel Tables; their cells are carried, the Tables are not.",
-            NotCarriedKind.SheetProperties => $"The properties of '{sheet}' (its tab colour, outline settings and the like) are not carried.",
+            NotCarriedKind.Slicers => $"'{sheet}' has slicers or timelines, which are not carried.",
+            NotCarriedKind.SheetProperties => $"The tab colour of '{sheet}' is not carried.",
             NotCarriedKind.RichText => string.Create(CultureInfo.InvariantCulture,
                 $"{richCells} cell(s) of '{sheet}', the first {detail}, hold rich text: the text is carried, the runs' own formatting is not."),
             _ => $"'{sheet}' holds <{detail}>, which is not carried.",

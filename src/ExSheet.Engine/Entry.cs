@@ -52,11 +52,11 @@ public sealed class Entry : IEquatable<Entry>
 
     /// <summary>
     /// The names the Formula reads that nothing in it binds — not a function's, not a <c>LET</c>'s,
-    /// not <c>TRUE</c> or <c>FALSE</c> — in the text's order, each once without regard to case. ExSheet
+    /// not a <c>LAMBDA</c>'s parameter, not <c>TRUE</c> or <c>FALSE</c> — in the text's order, each once without regard to case. ExSheet
     /// defines no names, so each gives <c>#NAME?</c>; in Excel each is a defined name, or an Excel
     /// Table's, where the workbook has one (ADR-0047, ADR-0330 §4). Empty for a constant.
     /// </summary>
-    public IReadOnlyList<string> UnboundNames => Formula is null ? [] : Parser.UnboundNames(Formula);
+    public IReadOnlyList<string> UnboundNames => Parsed is null ? [] : UnboundNameWalk.Of(Parsed);
 
     /// <summary>
     /// The Entry as a copy writes it <paramref name="rows"/> down and <paramref name="columns"/>

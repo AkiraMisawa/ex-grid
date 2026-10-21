@@ -69,6 +69,50 @@ public class CarriedTests
         Assert.Equal(Value.FromNumber(61), sheet.EntryAt("A3")!.Constant);
     }
 
+    [Fact] // ADR-0330 §4: a date cell is read invariantly: a time alone is its fraction of a day, not today's, and an offset converts nothing
+    public async Task ADR0330_an_ISO_date_cell_depends_on_no_clock_or_zone()
+    {
+        var file = await WriteAsync(new Page("Sheet1",
+            [Cell("A1", XlsxCellType.Date, "18:00:00"), Cell("A2", XlsxCellType.Date, "2023-03-15T12:00:00Z"), Cell("A3", XlsxCellType.Date, "2023-03-15T23:00:00-05:00")]));
+
+        var sheet = (await ReadAsync(file)).Document.Sheet("Sheet1");
+
+        Assert.Equal(Value.FromNumber(0.75), sheet.EntryAt("A1")!.Constant);
+        Assert.Equal(Value.FromNumber(45000.5), sheet.EntryAt("A2")!.Constant);
+        Assert.Equal(Value.FromNumber(45000 + 23.0 / 24), sheet.EntryAt("A3")!.Constant);
+    }
+
+    [Fact] // ADR-0330 §4: a date cell that is not ISO 8601 is refused, not read by the server's culture
+    public async Task ADR0330_a_date_cell_that_is_not_ISO_is_refused()
+    {
+        var file = await WriteAsync(new Page("Sheet1", [Cell("A1", XlsxCellType.Date, "15/03/2023")]));
+
+        var refused = await RefusedAsync(file);
+
+        Assert.Equal(XlsxOpenRefusal.UnreadableConstant, refused.Reason);
+        Assert.Equal(("Sheet1", "A1", "15/03/2023"), (refused.Sheet, refused.Cell, refused.Held));
+    }
+
+    [Fact] // ADR-0330 §4, ADR-0125: Spill Ranges behind the reader are passed, and a constant below or beside one is carried
+    public async Task ADR0330_constants_past_a_spill_are_carried()
+    {
+        var file = await WriteAsync(new Page("Sheet1",
+        [
+            Cell("A1", XlsxCellType.Number, "1") with { Formula = new XlsxFormula("_xlfn.SEQUENCE(2)", XlsxFormulaKind.Array, "A1:A2", IsDynamicArray: true) },
+            Number("A2", "2"), Number("A3", "30"),
+            Cell("B3", XlsxCellType.Number, "1") with { Formula = new XlsxFormula("_xlfn.SEQUENCE(2)", XlsxFormulaKind.Array, "B3:B4", IsDynamicArray: true) },
+            Number("B4", "2"), Number("C4", "40"), Number("B5", "50"),
+        ]));
+
+        var sheet = (await ReadAsync(file)).Document.Sheet("Sheet1");
+
+        Assert.Null(sheet.EntryAt("A2"));
+        Assert.Null(sheet.EntryAt("B4"));
+        Assert.Equal(Value.FromNumber(30), sheet.EntryAt("A3")!.Constant);
+        Assert.Equal(Value.FromNumber(40), sheet.EntryAt("C4")!.Constant);
+        Assert.Equal(Value.FromNumber(50), sheet.EntryAt("B5")!.Constant);
+    }
+
     [Fact] // ADR-0330 §4, §6: Formulas are carried, never the Value the file stored: opening computes every Value again
     public async Task ADR0330_Formulas_are_carried_and_every_Value_computed_again()
     {

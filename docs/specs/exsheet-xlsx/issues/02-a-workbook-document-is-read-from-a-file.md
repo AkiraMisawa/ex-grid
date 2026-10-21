@@ -9,7 +9,7 @@ Status: done
 - [x] The culture taken from the caller
 - [x] Refused by name with Sheet and cell: an unreadable Formula, a defined name, another workbook, an Excel Table reference, a legacy array formula
 - [x] The Open Report: what was not carried, and cells naming unsupported functions
-- [ ] `CONTEXT.md` gains Open Report; layer 1 tests; Change Note *(left for the orchestrator: the layer 1 tests and the Change Note are done, and `CONTEXT.md` already holds **Open Report** on `main`; a background agent does not change the glossary)*
+- [x] `CONTEXT.md` gains Open Report; layer 1 tests; Change Note *(`CONTEXT.md` already held **Open Report** on `main`, matching what was built, so the glossary needed no change)*
 
 **Blocked by:** 01.
 
@@ -30,7 +30,8 @@ in `FileRefusal`.
   dynamic array is its anchor's Formula, and the values the file stored over its spill are not
   carried. Before the engine reads a Formula, a `[` after a name is an Excel Table, a `[n]` or a
   quoted Sheet name starting `[` another workbook, and `_xlfn.SINGLE` (Excel's `@`) unreadable.
-- **Names.** A name a Formula reads that nothing in it binds (`Entry.UnboundNames`) is refused when
+- **Names.** A name a Formula reads that nothing in it binds (`Entry.UnboundNames`: not a `LET`'s
+  name, not a `LAMBDA`'s parameter, found by walking the parsed Formula) is refused when
   the workbook defines it, and, where the workbook holds an Excel Table (a part under `xl/tables/`),
   when it does not: a bare name may be a Table's. Otherwise it is `#NAME?` in Excel too, and carried.
   A defined name called as a function (a `LAMBDA` in Name Manager) is refused as a defined name.
@@ -38,20 +39,35 @@ in `FileRefusal`.
   shows a one-cell legacy array's first value, and ExSheet would spill it.
 - **1904.** A constant number whose Number Format shows a date (a built-in date format, or a code
   with a year, a day, or a month in a section without hours or seconds) moves by 1,462 days. A time
-  of day, a duration (`[h]:mm`) and any other number are the same number on both systems, and stay.
-  A Formula is carried as written, and computes on 1900's.
-- **Not carried, as far as the file layer reports it:** hidden sheets (opened shown), chart sheets,
-  defined names, row heights, hidden rows and columns, frozen panes, and each worksheet element the
-  file layer lists (merged cells, conditional formatting, data validation, notes, hyperlinks,
-  drawings, protection, print settings, AutoFilter, Excel Tables, sheet properties, and any other
-  element by name), rich text, and the workbook's PivotTables, external links, data connections and
-  slicers, from its parts. Cell formats, column widths and the theme link are ticket 03's, and are
-  not listed yet.
+  of day, a duration (an elapsed `[h]`, `[mm]` or `[ss]` makes a section one, so `[h]:mm`'s `mm` is
+  minutes) and any other number are the same number on both systems, and stay. A Formula is carried as
+  written, and computes on 1900's.
+- **Date cells (`t="d"`)** are read as ISO 8601 invariantly, never by the server's culture, time zone or
+  today's date: a date with a time is its serial and the time's fraction, a time alone its fraction. A
+  written offset (`Z`, `+09:00`) converts nothing: a cell has no time zone, so the clock time written is
+  the one the writer showed, and it is carried. An Error Value is matched against Excel's error texts
+  exactly; anything else is refused as an unreadable constant.
+- **Sheet names that differ only in case** are refused as `XlsxOpenRefusal.Sheets`, naming both.
+- **Not carried, as far as the file layer reports it:** the workbook's entries first (chart sheets,
+  PivotTables, external links, data connections and slicers from its parts, then defined names), then
+  each Sheet's: hidden (opened shown), row heights, hidden rows and columns, frozen panes, and each
+  worksheet element the file layer lists (merged cells, conditional formatting, data validation,
+  notes, hyperlinks, drawings and sparklines, protection, print settings, AutoFilter, Excel Tables,
+  slicers, a tab colour, and any other element by name), rich text. **Only what holds something is
+  listed**, so a plain file's report is empty: the file layer no longer lists `pageMargins`,
+  `phoneticPr`, `ignoredErrors` or `sheetCalcPr`, which every file carries and no Sheet shows;
+  `printOptions` only when it prints gridlines or headings or centres; `pageSetup` only when it sets
+  something beyond Excel's defaults other than the printer's own paper size, resolution and settings;
+  `headerFooter` only with text; `rowBreaks`/`colBreaks` only with a break; `sheetPr` only for a tab
+  colour (and `pageSetUpPr` for a fit to pages); and `extLst` by the name of each extension it holds
+  (`conditionalFormattings`, `dataValidations`, `sparklineGroups`, …). Cell formats, column widths
+  and the theme link are ticket 03's, and are not listed yet.
 - **The engine gains, for readers like this one** (ADR-0201's sibling rule): public constructors
   `SheetDocument(culture, name, cells)` and `WorkbookDocument(culture, shown, sheets)`, validated as
   `FromJson` validates; `Entry.MovedBy(rows, columns)`; `Entry.UndeclaredFunctions` and
   `Entry.UnboundNames`.
 - The file layer's limits pass through unchanged. Ticket 01 expected that ExSheet's opening might want
   a lower `MaxCells` of its own; nothing was measured here, so none is set.
-- No Docs Site page yet: the page and its Example come with ticket 06.
+- No Docs Site page yet: nothing a Consumer sees reaches the site until ticket 06 puts the reader behind
+  ExSheet's open and save, and that ticket writes the page and its Example.
 
